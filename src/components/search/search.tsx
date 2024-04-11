@@ -40,7 +40,7 @@ export function Search() {
               </div>
             </Dialog.Close>
             <div className="nice-popup-content">
-              <Form.Root className="text-center p-3 p-md-5">
+              <Form.Root className="text-center p-3 p-md-5" action={'/search'}>
                 <Form.Field className="mb-3 mb-md-4" name="q">
                   <Form.Message className="FormMessage" match="valueMissing">
                     请输入查询的内容

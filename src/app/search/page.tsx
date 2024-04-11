@@ -1,13 +1,26 @@
 import Fuse from 'fuse.js';
 import { Metadata } from 'next';
+import { unstable_cache } from 'next/cache';
 import { redirect } from 'next/navigation';
 import React from 'react';
 
 import { PostSquare } from '@/components/page/post';
 import { options, Post, posts as allPosts } from '#site/content';
 
-const indexes = Fuse.createIndex(['title', 'raw'], allPosts);
-const fuse = new Fuse(allPosts, { keys: ['title', 'raw'] }, indexes);
+const searchIndex = unstable_cache(async () => {
+  const indexes = Fuse.createIndex(['title', 'raw'], allPosts);
+  return new Fuse(allPosts, { keys: ['title', 'raw'] }, indexes);
+}, ['search-index']);
+
+const getHitPosts = unstable_cache(
+  async (query) => {
+    const fuse = await searchIndex();
+    return fuse.search<Post>({
+      $or: [{ author: query }, { title: query }],
+    });
+  },
+  ['search-posts'],
+);
 
 export async function generateMetadata({ searchParams }: SearchProps): Promise<Metadata> {
   const query = searchParams ? searchParams['q'] : null;
@@ -20,15 +33,13 @@ export async function generateMetadata({ searchParams }: SearchProps): Promise<M
   };
 }
 
-export default function SearchComponent({ searchParams }: SearchProps) {
+export default async function SearchComponent({ searchParams }: SearchProps) {
   const query = searchParams ? (searchParams['q'] as string) : null;
   if (!query) {
     redirect('/');
   }
 
-  const search = fuse.search<Post>({
-    $or: [{ author: query }, { title: query }],
-  });
+  const search = await getHitPosts(query);
   const results = search.map((s) => s.item).slice(0, options.settings.pagination.search);
 
   return (
