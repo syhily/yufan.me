@@ -13,6 +13,6 @@ type PostPaginationProps = Readonly<{
   params: { pagination: string | number };
 }>;
 
-type SearchProps = {
+type SearchProps = Readonly<{
   searchParams?: { [key: string]: string | string[] | undefined };
-};
+}>;
