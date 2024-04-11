@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getLyric } from '@/components/netease/lyric';
-import { getSongInfo, getSongUrl } from '@/components/netease/song';
+import { getLyric } from '@/components/mdx/netease/lyric';
+import { getSongInfo, getSongUrl } from '@/components/mdx/netease/song';
 
 export async function GET(request: NextRequest) {
   const id = request.nextUrl.searchParams.get('id');

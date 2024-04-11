@@ -1,4 +1,4 @@
-import { mapSong, request } from '@/components/netease/util';
+import { mapSong, request } from '@/components/mdx/netease/util';
 
 export const getSongUrl = async (id: string) => {
   const data = {

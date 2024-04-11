@@ -8,6 +8,7 @@ export function LikeButton() {
     <div className="post-action text-center mt-5">
       <button
         className={`post-like btn btn-secondary btn-lg btn-rounded` /* add current for showing clicked */}
+        title={'Do you like me?'}
         type={'button'}
       >
         <i className="text-lg iconfont icon-heart-fill me-1"></i>

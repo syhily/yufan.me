@@ -4,7 +4,6 @@ import React from 'react';
 
 import { Navigation } from '@/components/navigation/navigation';
 import { PinnedCategories, QueryCategory } from '@/components/page/category';
-import { FeaturePosts } from '@/components/page/feature';
 import { LikeIcon, LikeIconSmall } from '@/components/page/like';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { formatShowDate } from '@/utils/formatter';
@@ -21,6 +20,61 @@ export function ListPosts({ posts, tags, pageNum }: { posts: Post[]; tags: Tag[]
           <Sidebar posts={posts} tags={tags} />
         </div>
         <PinnedCategories />
+      </div>
+    </div>
+  );
+}
+
+export function FeaturePosts({ posts }: { posts: Post[] }) {
+  const featurePosts = options.settings.post.feature ?? [];
+  const metas: Post[] = featurePosts
+    .map((slug) => posts.find((post) => post.slug === slug))
+    .flatMap((post) => (post == null ? [] : [post]))
+    .slice(0, 3);
+
+  return (
+    <div className="list-top-pushes mb-3 mb-md-4 mb-lg-5">
+      <div className="container">
+        <div className="row gx-2 gx-md-3 list-grouped">
+          <div className="col-lg-8">
+            <FeaturePost post={metas[0]} />
+          </div>
+          <div className="col-lg-4 d-flex flex-column mt-2 mt-md-3 mt-lg-0">
+            <div className="row g-2 g-md-3">
+              <div className="col-6 col-lg-12">
+                <FeaturePost post={metas[1]} />
+              </div>
+              <div className="col-6 col-lg-12">
+                <FeaturePost post={metas[2]} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeaturePost({ post }: { post: Post; first?: boolean }) {
+  return (
+    <div className="list-item list-nice-overlay" key={post.slug}>
+      <div className="media media-3x2">
+        <Link
+          href={post.permalink}
+          className={'media-content'}
+          style={{
+            backgroundImage: `url('https://cat.yufan.me${post.cover.src}-upyun520/both/600x400/quality/100/unsharp/true/progressive/true')`,
+          }}
+        >
+          <div className="overlay"></div>
+        </Link>
+      </div>
+      <div className="list-content p-2 p-md-3">
+        <div className="list-body">
+          <Link href={post.permalink} className="list-title h5 h-2x m-0">
+            {post.title}
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -48,16 +102,13 @@ function PostCard({ post }: { post: Post }) {
   return (
     <div className="list-item block">
       <div className="media media-3x2 col-6 col-md-5">
-        <Link href={post.permalink} className="media-content">
-          <Image
-            src={post.cover.src}
-            width={post.cover.width}
-            height={post.cover.height}
-            placeholder="blur"
-            blurDataURL={post.cover.blurDataURL}
-            alt={post.title}
-          />
-        </Link>
+        <Link
+          href={post.permalink}
+          className="media-content"
+          style={{
+            backgroundImage: `url('https://cat.yufan.me${post.cover.src}-upyun520/both/450x300/quality/100/unsharp/true/progressive/true')`,
+          }}
+        />
         <div className="media-overlay overlay-top">
           <Link
             className="d-none d-md-inline-block badge badge-md bg-white-overlay"
@@ -92,15 +143,13 @@ export function PostSquare({ post, first }: { post: Post; first: boolean }) {
     <div className={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
       <div className="list-item list-nice-overlay">
         <div className={`media ${first ? 'media-36x17' : ''}`}>
-          <Link href={post.permalink} className="media-content">
-            <Image
-              src={post.cover.src}
-              alt={post.title}
-              placeholder="blur"
-              blurDataURL={post.cover.blurDataURL}
-              width={post.cover.width}
-              height={post.cover.height}
-            />
+          <Link
+            href={post.permalink}
+            className="media-content"
+            style={{
+              backgroundImage: `url('https://cat.yufan.me${post.cover.src}-upyun520/both/${first ? '600' : '300'}x300/quality/100/unsharp/true/progressive/true')`,
+            }}
+          >
             <div className="overlay"></div>
           </Link>
         </div>

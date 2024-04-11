@@ -1,7 +1,7 @@
 import { customAlphabet } from 'nanoid/non-secure';
 
-import { neteaseAnonymousToken } from '@/components/netease/config';
-import { eAPI, linuxAPI, weAPI } from '@/components/netease/crypto';
+import { neteaseAnonymousToken } from '@/components/mdx/netease/config';
+import { eAPI, linuxAPI, weAPI } from '@/components/mdx/netease/crypto';
 
 const nanoid = customAlphabet('1234567890abcdef', 32);
 

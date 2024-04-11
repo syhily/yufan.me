@@ -163,14 +163,10 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
-- [ ] List recent comments in the sidebar. This should be finished on Artalk.
-- [ ] Drop icon fonts.
-- [ ] Add opengraph-image and twitter-image.
+~~- [ ] List recent comments in the sidebar. This should be finished on Artalk.~~
 - [ ] Add like button.
 - [ ] Add the click counter.
 - [ ] Add cover for all my posts.
-- [ ] Move all my blog images to third party storage service. 
-- [ ] Add image thumb support. Maybe the upyun or other oss service.
 
 ## License
 

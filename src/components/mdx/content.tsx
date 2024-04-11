@@ -3,7 +3,7 @@ import Link from 'next/link';
 import React from 'react';
 import * as runtime from 'react/jsx-runtime';
 
-import { NeteasePlayer } from '@/components/netease/player';
+import { NeteasePlayer } from '@/components/mdx/netease/player';
 
 // @ts-ignore
 async function MdxLink(props) {

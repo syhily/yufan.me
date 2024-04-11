@@ -41,17 +41,6 @@ export function Share({ post }: { post: Post }) {
           <i className="iconfont icon-weibo"></i>
         </span>
       </Link>
-      {/* TODO This poster is still WIP. */}
-      <a
-        hidden
-        id="btn-bigger-cover"
-        href="#"
-        className="btn btn-light btn-icon btn-circle btn-md mx-1 btn-bigger-cover"
-      >
-        <span>
-          <i className="iconfont icon-image-fill"></i>
-        </span>
-      </a>
     </div>
   );
 }

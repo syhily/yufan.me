@@ -1,4 +1,4 @@
-import { request } from '@/components/netease/util';
+import { request } from '@/components/mdx/netease/util';
 
 export const getLyric = async (id: string) => {
   const data = {
