@@ -42,12 +42,12 @@ const transformNextImage = async (imageNode: ImageNode) => {
   }
 
   (imageNode.type = 'mdxJsxFlowElement'),
-    (imageNode.name = 'image'),
+    (imageNode.name = 'img'),
     (imageNode.attributes = [
       { type: 'mdxJsxAttribute', name: 'alt', value: imageNode.alt },
       { type: 'mdxJsxAttribute', name: 'src', value: `https://cat.yufan.me${imageNode.url}` },
-      // { type: 'mdxJsxAttribute', name: 'width', value: metadata.width },
-      // { type: 'mdxJsxAttribute', name: 'height', value: metadata.height },
+      { type: 'mdxJsxAttribute', name: 'width', value: metadata.width },
+      { type: 'mdxJsxAttribute', name: 'height', value: metadata.height },
       // { type: 'mdxJsxAttribute', name: 'placeholder', value: 'blur' },
       // { type: 'mdxJsxAttribute', name: 'blurDataURL', value: metadata.blurDataURL },
     ]);
