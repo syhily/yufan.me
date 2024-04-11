@@ -26,6 +26,7 @@
     "url": "https://yufan.me"
   },
   "scripts": {
+    "watch": "velite dev",
     "build": "velite && next build",
     "dev": "velite && next dev -p 4321",
     "lint": "velite && next lint --fix",
