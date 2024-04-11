@@ -41,15 +41,14 @@ const transformNextImage = async (imageNode: ImageNode) => {
     throw new Error(`Failed to get image metadata: ${path}`);
   }
 
-  // Convert original node to next/image
   (imageNode.type = 'mdxJsxFlowElement'),
-    (imageNode.name = 'Image'),
+    (imageNode.name = 'image'),
     (imageNode.attributes = [
       { type: 'mdxJsxAttribute', name: 'alt', value: imageNode.alt },
-      { type: 'mdxJsxAttribute', name: 'src', value: imageNode.url },
-      { type: 'mdxJsxAttribute', name: 'width', value: metadata.width },
-      { type: 'mdxJsxAttribute', name: 'height', value: metadata.height },
-      { type: 'mdxJsxAttribute', name: 'placeholder', value: 'blur' },
-      { type: 'mdxJsxAttribute', name: 'blurDataURL', value: metadata.blurDataURL },
+      { type: 'mdxJsxAttribute', name: 'src', value: `https://cat.yufan.me${imageNode.url}` },
+      // { type: 'mdxJsxAttribute', name: 'width', value: metadata.width },
+      // { type: 'mdxJsxAttribute', name: 'height', value: metadata.height },
+      // { type: 'mdxJsxAttribute', name: 'placeholder', value: 'blur' },
+      // { type: 'mdxJsxAttribute', name: 'blurDataURL', value: metadata.blurDataURL },
     ]);
 };
