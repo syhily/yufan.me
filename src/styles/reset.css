@@ -1,0 +1,1111 @@
+:root {
+  --color-primary: #008c95;
+  --color-dark: #151b2b;
+  --color-secondary: #404b69;
+  --color-muted: #8a92a9;
+  --color-light: #e8e9ea;
+  --color-danger: #f7094c;
+  --color-warning: #ff8338;
+  --color-body: #151924;
+  --btn-primary: #008c95;
+  --btn-dark: #151b2b;
+  --btn-secondary: #20283b;
+  --btn-danger: #f7094c;
+  --btn-light: #eceef1;
+  --btn-success: #41d589;
+  --bg-primary: #008c95;
+  --bg-dark: #151b2b;
+  --bg-secondary: #283149;
+  --bg-danger: #ff625e;
+  --bg-warning: #ffe9d5;
+  --bg-light: #f6f6f7;
+  --bg-muted: #ededf1;
+  --bg-white: #fff;
+  --bg-body: #fbfbfd;
+  --border-primary: #008c95;
+  --border-dark: #2b2a2a;
+  --border-secondary: #283149;
+  --border-danger: #f7094c;
+  --border-muted: #d4ddec;
+  --border-light: #eff3fa;
+  --border-white: #fff;
+  --btn-outline-primary: #fff0f0;
+  --btn-outline-danger: #ffe8e8;
+  --border-outline-primary: #ffd1d1;
+  --border-outline-danger: #ffe8e8;
+  --night-color-primary: #008c95;
+  --night-color-dark: #d7d7d7;
+  --night-color-secondary: #8c8c91;
+  --night-color-muted: #8a8a8a;
+  --night-color-light: #6a6a6a;
+  --night-color-danger: #f7094c;
+  --night-color-body: #e4e4e5;
+  --night-btn-primary: #008c95;
+  --night-btn-outline-primary: #ffd1d1;
+  --night-btn-dark: #1e1e21;
+  --night-btn-secondary: #252628;
+  --night-btn-light: #414147;
+  --night-btn-danger: #f7094c;
+  --night-btn-success: #41d589;
+  --night-bg-primary: #008c95;
+  --night-bg-dark: #141417;
+  --night-bg-secondary: #2f3035;
+  --night-bg-light: #232327;
+  --night-bg-muted: #202023;
+  --night-bg-body: #19191d;
+  --night-bg-danger: #f7094c;
+  --night-bg-warmming: #f6d365;
+  --night-bg-white: #101012;
+  --night-border-primary: #008c95;
+  --night-border-outline-primary: #ffd1d1;
+  --night-border-dark: #141417;
+  --night-border-secondary: #2f3035;
+  --night-border-muted: #37373c;
+  --night-border-light: #3f4041;
+  --night-border-danger: #f7094c;
+  --night-border-white: #101012;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --shadow-xs: 0 10px 40px 5px rgb(62 61 80 / 2%);
+  --shadow-sm: 0 5px 30px 5px rgb(62 61 80 / 5%);
+  --shadow-md: 0 10px 40px 5px rgb(62 61 80 / 6%);
+  --shadow-lg: 0 10px 40px 5px rgb(62 61 80 / 10%);
+}
+
+/* -------------------------------------------------------------------------- */
+
+/*	0. CSS Reset
+/* -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+address,
+big,
+cite,
+code,
+em,
+font,
+img,
+small,
+strike,
+sub,
+sup,
+li,
+ol,
+ul,
+fieldset,
+form,
+label,
+legend,
+button,
+table,
+caption,
+tr,
+th,
+td {
+  border: none;
+  font-size: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+/* code -------------------------- */
+
+code {
+  font-size: 80%;
+  color: inherit;
+  padding: 4px 10px;
+  word-break: break-word;
+}
+
+pre {
+  padding: 14px;
+  margin-bottom: 24px;
+  display: block;
+  overflow: auto;
+  word-wrap: normal;
+  overflow-wrap: normal;
+}
+
+code {
+  counter-reset: line;
+}
+
+code > [data-line]::before {
+  counter-increment: line;
+  content: counter(line);
+
+  /* Other styling */
+  display: inline-block;
+  width: 1rem;
+  margin-right: 2rem;
+  text-align: right;
+  color: gray;
+}
+
+code[data-line-numbers-max-digits="2"] > [data-line]::before {
+  width: 2rem;
+}
+
+code[data-line-numbers-max-digits="3"] > [data-line]::before {
+  width: 3rem;
+}
+
+/* Table -------------------------- */
+
+table {
+  max-width: 100%;
+  background-color: transparent;
+}
+
+th,
+td {
+  background: transparent;
+  padding: 6px 12px;
+  border: 0.0625rem solid var(--border-light);
+  text-align: initial;
+}
+
+th {
+  background: rgba(var(--bg-light), 0.05);
+}
+
+table caption {
+  padding: 0 0 8px 0;
+  width: auto;
+}
+
+/* CJK Fonts */
+@font-face {
+  font-family: "OPPOSans2", "OPPOSans2";
+  src: url("https://cat.yufan.me/fonts/OPPOSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "OPPOSans2", "OPPOSans2";
+  src: url("https://cat.yufan.me/fonts/OPPOSans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "OPPOSans2", "OPPOSans2";
+  src: url("https://cat.yufan.me/fonts/OPPOSans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* -------------------------------------------------------------------------- */
+
+/*	1. Document Setup
+/* -------------------------------------------------------------------------- */
+
+body {
+  font-family: OPPO Sans,
+  OPPOSans2,
+  PingFang SC,
+  Lantinghei SC,
+  Microsoft YaHei,
+  Source Han Sans CN,
+  -apple-system,
+  BlinkMacSystemFont,
+  HanHei SC,
+  Helvetica Neue,
+  Open Sans,
+  Arial,
+  Hiragino Sans GB,
+  STHeiti,
+  WenQuanYi Micro Hei,
+  SimSun,
+  sans-serif,
+  Apple Color Emoji,
+  Segoe UI Emoji,
+  Segoe UI Symbol;
+  font-size: 0.9375rem;
+  background-color: var(--bg-body);
+  color: var(--color-body);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/* Base Transitions -------------------------- */
+
+p {
+  line-height: inherit;
+}
+
+/*--------------------------------------------------------------
+## Reboot
+--------------------------------------------------------------*/
+
+a {
+  color: var(--color-body);
+  text-decoration: none;
+  -webkit-transition: all 0.25s;
+  transition: all 0.25s;
+}
+
+a:hover,
+a:active,
+a:focus,
+a:not([href]),
+a:not([href]):hover {
+  color: inherit;
+  text-decoration: none;
+}
+
+svg {
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+template {
+  display: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.screen-reader-text,
+.sr-only {
+  display: none;
+}
+
+i {
+  font-style: normal;
+}
+
+/* -------------------------------------------------------------------------- */
+
+/*	2. Element Base
+/* ---------------------------------------------*---------------------------- */
+
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 500;
+  margin: 0;
+}
+
+/*--------------------------------------------------------------
+/*	3. title Font Size style
+--------------------------------------------------------------*/
+
+h1,
+.h1,
+.heading-size-1 {
+  font-size: 2rem;
+  line-height: 1.4;
+}
+
+h2,
+.h2,
+.heading-size-2 {
+  font-size: 1.5rem;
+}
+
+h3,
+.h3,
+.heading-size-3 {
+  font-size: 1.3125rem;
+}
+
+h4,
+.h4,
+.heading-size-4 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+h5,
+.h5,
+.heading-size-5 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+
+h6,
+.h6,
+.heading-size-6 {
+  line-height: 1.4;
+}
+
+@media (max-width: 767.98px) {
+  h1,
+  .h1,
+  .heading-size-1 {
+    font-size: 1.5rem;
+  }
+
+  h2,
+  .h2,
+  .heading-size-2 {
+    font-size: 1.25rem;
+  }
+
+  h3,
+  .h3,
+  .heading-size-3 {
+    font-size: 1.125rem;
+  }
+
+  h4,
+  .h4,
+  .heading-size-4 {
+    font-size: 1rem;
+  }
+
+  h5,
+  .h5,
+  .heading-size-5 {
+    font-size: 0.9375rem;
+  }
+
+  h6,
+  .h6,
+  .heading-size-6 {
+    font-size: 0.9375rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  h1,
+  .h1,
+  .heading-size-1 {
+    font-size: 1.625rem;
+  }
+
+  h2,
+  .h2,
+  .heading-size-2 {
+    font-size: 1.375rem;
+  }
+
+  h3,
+  .h3,
+  .heading-size-3 {
+    font-size: 1.125rem;
+  }
+
+  h4,
+  .h4,
+  .heading-size-4 {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  h5,
+  .h5,
+  .heading-size-5 {
+    font-size: 1rem;
+  }
+
+  h6,
+  .h6,
+  .heading-size-6 {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  h1,
+  .h1,
+  .heading-size-1 {
+    font-size: 1.75rem;
+  }
+
+  h2,
+  .h2,
+  .heading-size-2 {
+    font-size: 1.5rem;
+  }
+
+  h3,
+  .h3,
+  .heading-size-3 {
+    font-size: 1.375rem;
+  }
+
+  h4,
+  .h4,
+  .heading-size-4 {
+    font-size: 1.25rem;
+  }
+
+  h5,
+  .h5,
+  .heading-size-5 {
+    font-size: 1.125rem;
+  }
+
+  h6,
+  .h6,
+  .heading-size-6 {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1399.98px) {
+  h1,
+  .h1,
+  .heading-size-1 {
+    font-size: 1.75rem;
+  }
+
+  h2,
+  .h2,
+  .heading-size-2 {
+    font-size: 1.5rem;
+  }
+
+  h3,
+  .h3,
+  .heading-size-3 {
+    font-size: 1.375rem;
+  }
+
+  h4,
+  .h4,
+  .heading-size-4 {
+    font-size: 1.25rem;
+  }
+
+  h5,
+  .h5,
+  .heading-size-5 {
+    font-size: 1.125rem;
+  }
+
+  h6,
+  .h6,
+  .heading-size-6 {
+    font-size: 1rem;
+  }
+}
+
+.h4 .small,
+.h4 small,
+.h5 .small,
+.h5 small,
+.h6 .small,
+.h6 small,
+h4 .small,
+h4 small,
+h5 .small,
+h5 small,
+h6 .small,
+h6 small {
+  font-size: 85%;
+}
+
+/* Inputs ------------------------------------ */
+
+input,
+textarea {
+  border-color: var(--border-light);
+  color: var(--text-dark);
+}
+
+code,
+input[type='url'],
+input[type='email'],
+input[type='tel'] {
+  /*rtl:ignore*/
+  direction: ltr;
+}
+
+input[type='text'],
+input[type='password'],
+input[type='email'],
+input[type='url'] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  outline: 0;
+}
+
+input[type='date'],
+input[type='month'],
+input[type='time'],
+input[type='datetime'],
+input[type='datetime-local'],
+input[type='week'],
+input[type='number'],
+input[type='search'],
+input[type='tel'],
+input[type='color'],
+textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+textarea {
+  line-height: 1.5;
+  width: 100%;
+}
+
+input::-webkit-input-placeholder {
+  line-height: normal;
+}
+
+input:-ms-input-placeholder {
+  line-height: normal;
+}
+
+input::-moz-placeholder {
+  line-height: revert;
+  /* Reset to the value from the user-agent stylesheet. */
+}
+
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
+  display: none;
+}
+
+button,
+button:focus,
+button:hover,
+.button:focus,
+.button:hover {
+  -webkit-appearance: none;
+  outline: none !important;
+  -webkit-box-shadow: none !important;
+  box-shadow: none !important;
+}
+
+input[type='button'],
+input[type='reset'],
+input[type='submit'] {
+  -webkit-transition: all 0.15s linear;
+  transition: all 0.15s linear;
+}
+
+button:focus,
+button:hover,
+.button:focus,
+.button:hover,
+input[type='button']:focus,
+input[type='button']:hover,
+input[type='reset']:focus,
+input[type='reset']:hover,
+input[type='submit']:focus,
+input[type='submit']:hover {
+  text-decoration: none;
+}
+
+input[type='text']:focus,
+input[type='email']:focus,
+input[type='url']:focus,
+input[type='password']:focus,
+input[type='number']:focus,
+input[type='tel']:focus,
+input[type='range']:focus,
+input[type='date']:focus,
+input[type='month']:focus,
+input[type='week']:focus,
+input[type='time']:focus,
+input[type='datetime']:focus,
+input[type='datetime-local']:focus,
+input[type='color']:focus,
+textarea:focus {
+  outline: 0;
+}
+
+select {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  -webkit-transition: opacity 0.15s linear;
+  transition: opacity 0.15s linear;
+}
+
+textarea {
+  height: auto;
+  resize: none;
+}
+
+/* Lists ------------------------------------- */
+
+menu,
+ul,
+ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+dt,
+dd {
+  line-height: 1.5;
+}
+
+dt {
+  font-weight: 500;
+}
+
+dt + dd {
+  margin-top: 0.5rem;
+}
+
+dd + dt {
+  margin-top: 1.5rem;
+}
+
+/* Quotes ------------------------------------ */
+
+blockquote {
+  padding: 16px 20px;
+  margin: 24px 0;
+  background-color: var(--bg-light);
+  border-radius: var(--radius-sm);
+}
+
+blockquote::before,
+blockquote::after {
+  content: '';
+}
+
+cite {
+  color: inherit;
+  font-size: 85%;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+blockquote cite {
+  display: block;
+  margin: 32px 0 0 0;
+}
+
+blockquote p,
+blockquote > p:last-child {
+  margin-bottom: 32px;
+}
+
+blockquote p:last-child {
+  margin: 0;
+}
+
+blockquote em,
+blockquote i,
+blockquote cite {
+  font-style: normal;
+}
+
+/* Media ------------------------------------- */
+
+figure {
+  margin: 0;
+}
+
+img,
+embed,
+iframe,
+object,
+video {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+/*--------------------------------------------------------------
+/*	5. Size style
+--------------------------------------------------------------*/
+
+.w-8 {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.w-12 {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.w-16 {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.w-20 {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 0.6em;
+}
+
+.w-24 {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 0.7em;
+}
+
+.w-28 {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 0.8em;
+}
+
+.w-32 {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 0.85em;
+}
+
+.w-36 {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 0.875em;
+}
+
+.w-40 {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.w-48 {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.w-56 {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+.w-64 {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+.w-72 {
+  width: 72px !important;
+  height: 72px !important;
+}
+
+.w-80 {
+  width: 80px;
+  height: 80px;
+}
+
+.w-96 {
+  width: 96px;
+  height: 96px;
+}
+
+.w-128 {
+  width: 128px;
+  height: 128px;
+}
+
+.w-168 {
+  width: 168px;
+  height: 168px;
+}
+
+.w-192 {
+  width: 192px;
+}
+
+.w-xs {
+  width: 90px;
+}
+
+.w-auto {
+  width: auto;
+}
+
+.h-auto {
+  height: auto;
+}
+
+.hv {
+  height: 100vh;
+}
+
+.h-v {
+  min-height: 100vh;
+}
+
+.h-v-30 {
+  min-height: 30vh;
+}
+
+.h-v-33 {
+  min-height: 33vh;
+}
+
+.h-v-50 {
+  min-height: 50vh;
+}
+
+.h-v-66 {
+  min-height: 66vh;
+}
+
+.h-v-75 {
+  min-height: 75vh;
+}
+
+@media (max-width: 1199.98px) {
+  .w-auto-lg {
+    width: auto !important;
+  }
+
+  .w-100-lg {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .w-auto-md {
+    width: auto !important;
+  }
+
+  .w-100-md {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .w-auto-sm {
+    width: auto !important;
+  }
+
+  .w-100-sm {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .w-auto-xs {
+    width: auto !important;
+  }
+
+  .w-100-xs {
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .h-v-25 {
+    min-height: 25vh;
+  }
+}
+
+.overflow-y {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/*--------------------------------------------------------------
+/*	7. title Font Size style
+--------------------------------------------------------------*/
+
+.text-xx {
+  font-size: 0.6875rem !important;
+}
+
+.text-xs {
+  font-size: 0.75rem !important;
+}
+
+.text-sm {
+  font-size: 0.875rem !important;
+}
+
+.text-md {
+  font-size: 0.9375rem !important;
+}
+
+.text-lg {
+  font-size: 1.125rem !important;
+}
+
+.text-xl {
+  font-size: 1.625rem !important;
+}
+
+.text-xxl {
+  font-size: 2.625rem !important;
+}
+
+.text-40 {
+  font-size: 2.5rem !important;
+}
+
+.text-50 {
+  font-size: 3.125rem !important;
+}
+
+.text-64 {
+  font-size: 4rem !important;
+}
+
+@media (max-width: 767.98px) {
+  .text-xl {
+    font-size: 1.5rem !important;
+  }
+
+  .text-lg {
+    font-size: 1.125rem !important;
+  }
+
+  .text-md {
+    font-size: 0.9375rem !important;
+  }
+
+  .text-sm {
+    font-size: 0.8125rem !important;
+  }
+
+  .text-xs {
+    font-size: 0.6875rem !important;
+  }
+
+  .text-xx {
+    font-size: 0.625rem !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .text-xl {
+    font-size: 1.5rem !important;
+  }
+
+  .text-lg {
+    font-size: 1.0625rem !important;
+  }
+
+  .text-md {
+    font-size: 0.9375rem !important;
+  }
+
+  .text-sm {
+    font-size: 0.8125rem !important;
+  }
+
+  .text-xx {
+    font-size: 0.6875rem !important;
+  }
+}
+
+/*--------------------------------------------------------------
+/*	8. title Font Size style
+--------------------------------------------------------------*/
+
+.text-height-xs {
+  line-height: 1 !important;
+}
+
+.text-height-sm {
+  line-height: 1.2 !important;
+}
+
+.text-height-md {
+  line-height: 1.75 !important;
+}
+
+.text-height-lg {
+  line-height: 1.85 !important;
+}
+
+.text-height-xl {
+  line-height: 2 !important;
+}
+
+/* text space style ----------------------------- */
+
+.text-space-md {
+  letter-spacing: 5px;
+}
+
+.text-space-lg {
+  letter-spacing: 15px;
+}
+
+/* Icon style ----------------------------- */
+
+.iconfont {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: normal;
+}
+
+.text-sm .iconfont.text-md,
+.text-xs .iconfont.text-md,
+.text-xs .iconfont.text-sm,
+.text-xx .iconfont.text-sm {
+  position: relative;
+  top: -1px;
+}
+
+/*--------------------------------------------------------------
+/*	6. nice-dark-mode style
+--------------------------------------------------------------*/
+
+.nice-dark-mode code,
+.nice-dark-mode pre {
+  background: var(--night-bg-light);
+}
+
+/* Quotes ------------------------------------ */
+
+.nice-dark-mode blockquote {
+  background-color: var(--night-bg-light);
+}
