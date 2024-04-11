@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 
-import { ListCategories } from '@/components/category/list';
-import { QueryCategory } from '@/components/category/query';
+import { ListCategories, QueryCategory } from '@/components/page/category';
 import { categories, options, posts as allPosts } from '#site/content';
 
 export function generateStaticParams() {

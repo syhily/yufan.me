@@ -1,5 +1,6 @@
 'use client';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as Form from '@radix-ui/react-form';
 import React, { useState } from 'react';
 
 import { options } from '#site/content';
@@ -39,27 +40,35 @@ export function Search() {
               </div>
             </Dialog.Close>
             <div className="nice-popup-content">
-              <div className="text-center p-3 p-md-5">
-                <div className="mb-3 mb-md-4">
-                  <input
-                    type="text"
-                    className="form-control form-control-lg text-center"
-                    name="s"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="搜索并回车"
+              <Form.Root className="text-center p-3 p-md-5">
+                <Form.Field className="mb-3 mb-md-4" name="q">
+                  <Form.Message className="FormMessage" match="valueMissing">
+                    请输入查询的内容
+                  </Form.Message>
+                  <Form.Control asChild>
+                    <input
+                      className="form-control form-control-lg text-center"
+                      type="text"
+                      name="q"
+                      value={query}
+                      onChange={(event) => setQuery(event.target.value)}
+                      placeholder="搜索并回车"
+                      onKeyDown={enter(query)}
+                      required
+                    />
+                  </Form.Control>
+                </Form.Field>
+                <Form.Submit asChild>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-block btn-lg"
+                    onClick={search(query)}
                     onKeyDown={enter(query)}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-block btn-lg"
-                  onClick={search(query)}
-                  onKeyDown={enter(query)}
-                >
-                  搜索
-                </button>
-              </div>
+                  >
+                    搜索
+                  </button>
+                </Form.Submit>
+              </Form.Root>
             </div>
           </div>
         </Dialog.Content>
@@ -82,7 +91,7 @@ export function SearchBar() {
             placeholder="搜索…"
             value={query}
             onKeyDown={enter(query)}
-            name="s"
+            name="q"
           />
         </label>
         <button type="button" className="search-submit" value="搜索" onClick={search(query)} onKeyDown={enter(query)} />

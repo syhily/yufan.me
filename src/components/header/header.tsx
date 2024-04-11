@@ -1,16 +1,15 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { MouseEventHandler, useState } from 'react';
 
 import { Logo, LogoLarge } from '@/components/header/logo';
-import { Nav } from '@/components/header/nav';
 import { QRDialog } from '@/components/qrcode/qrocode';
 import { Search } from '@/components/search/search';
 import { options } from '#site/content';
 
 export default function Header() {
   const [show, setShow] = useState(false);
-  const links = options.socials.map((social) => {
+  const socials = options.socials.map((social) => {
     if (social.type === 'qrcode') {
       return (
         <QRDialog
@@ -49,9 +48,9 @@ export default function Header() {
               <Logo />
             </Link>
           </h1>
-          <Nav click={() => setShow(false)} />
+          <Navigation click={() => setShow(false)} />
           <div className="site-submenu">
-            {links}
+            {socials}
             <Search />
           </div>
         </div>
@@ -70,5 +69,21 @@ export default function Header() {
         </div>
       </div>
     </>
+  );
+}
+
+function Navigation({ click }: { click: MouseEventHandler }) {
+  const navigations = options.navigation.map((menu, i) => (
+    <li onClick={click} key={i} id={`menu-item-${i}`} className={`menu-item ${i == 0 ? 'menu-item-home}' : ''}`}>
+      <Link href={menu.link} target={menu.target}>
+        {menu.text}
+      </Link>
+    </li>
+  ));
+
+  return (
+    <div className="site-menu">
+      <ul>{navigations}</ul>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 
-import { ListPosts } from '@/components/post/list';
+import { ListPosts } from '@/components/page/post';
 import { options, posts, tags } from '#site/content';
 
 export async function generateMetadata({ params: { pagination } }: PostPaginationProps): Promise<Metadata> {

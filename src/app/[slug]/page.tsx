@@ -6,7 +6,7 @@ import React from 'react';
 
 import { ArtalkComment } from '@/components/comment/artalk';
 import { MDXContent } from '@/components/mdx/content';
-import { FriendLinks } from '@/components/post/links';
+import { FriendLinks } from '@/components/page/link';
 import { options, pages, posts } from '#site/content';
 
 function getPage(slug: string) {

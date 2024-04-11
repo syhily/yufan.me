@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { Literal, Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
-import { getImageMetadata, Image } from 'velite';
+import { getImageMetadata } from 'velite';
 
 export type ImageNode = Parent & {
   url: string;

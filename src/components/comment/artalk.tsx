@@ -21,15 +21,6 @@ export function ArtalkComment({ id, title }: Readonly<{ id: string; title: strin
       pageTitle: title,
       server: options.settings.comments.server,
       site: options.title,
-      pagination: {
-        pageSize: 10,
-        readMore: true,
-        autoLoad: false,
-      },
-      gravatar: {
-        mirror: 'https://cravatar.cn/avatar/',
-        params: 'd=mp&s=240',
-      },
     });
 
     return () => {

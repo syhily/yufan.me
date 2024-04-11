@@ -6,8 +6,8 @@ import React from 'react';
 
 import { ArtalkComment } from '@/components/comment/artalk';
 import { MDXContent } from '@/components/mdx/content';
-import { Like } from '@/components/post/like';
-import { Share } from '@/components/post/share';
+import { LikeButton } from '@/components/page/like';
+import { Share } from '@/components/page/share';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { formatShowDate } from '@/utils/formatter';
 import { options, Post, posts, tags } from '#site/content';
@@ -76,7 +76,7 @@ export default function PostComponent({ params: { slug } }: Readonly<SlugProps>)
                       <div className="nav-links"></div>
                     </nav>
                   </div>
-                  <Like />
+                  <LikeButton />
                   <Share post={post} />
                   {/* We are about to migrate the post's slug to new URL */}
                   <ArtalkComment id={post.slug} title={post.title} hidden={post.comments} />

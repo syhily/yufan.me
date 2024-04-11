@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 
-import { ListTags } from '@/components/tag/list';
-import { QueryTag } from '@/components/tag/query';
+import { ListTags, QueryTag } from '@/components/page/tag';
 import { options, posts as allPosts, tags } from '#site/content';
 
 export function generateStaticParams() {

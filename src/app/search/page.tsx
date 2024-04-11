@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import React from 'react';
 
-import { PostSquare } from '@/components/post/pagination';
+import { PostSquare } from '@/components/page/post';
 import { options, Post, posts as allPosts } from '#site/content';
 
 const indexes = Fuse.createIndex(['title', 'raw'], allPosts);
