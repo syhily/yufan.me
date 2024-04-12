@@ -27,7 +27,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params: { slug } }: SlugProps): Promise<Metadata> {
   const post = getPost(slug);
-  const cover = post.cover.src.startsWith('http') ? post.cover.src : join(options.website, post.cover.src);
+  const cover = `${options.website}/api/og?slug=${post.slug}`;
 
   return {
     title: post.title,

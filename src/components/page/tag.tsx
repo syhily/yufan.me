@@ -1,6 +1,6 @@
 import { Pagination } from '@/components/navigation/pagination';
 import { PostSquare } from '@/components/page/post';
-import { slicePosts } from '@/utils/list';
+import { slicePosts } from '@/utils/post';
 import { options, Post, Tag, tags } from '#site/content';
 
 export function ListTags({ tag, posts, pageNum }: { tag: Tag; posts: Post[]; pageNum: number }) {

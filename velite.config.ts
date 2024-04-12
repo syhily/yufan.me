@@ -32,7 +32,7 @@ const options = defineCollection({
   schema: s.object({
     title: s.string().max(99),
     website: s.string().url(),
-    description: s.string().max(999).optional(),
+    description: s.string().max(999),
     keywords: s.array(s.string()),
     author: s.object({ name: s.string(), email: s.string().email(), url: s.string().url() }),
     navigation: s.array(s.object({ text: s.string(), link: s.string(), target: s.string().optional() })),
@@ -175,6 +175,7 @@ export default defineConfig({
   output: {
     data: '.velite',
     clean: true,
+    assets: 'public',
   },
   collections: {
     options: options,

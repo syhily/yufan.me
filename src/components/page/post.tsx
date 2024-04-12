@@ -9,7 +9,7 @@ import { PinnedCategories, QueryCategory } from '@/components/page/category';
 import { LikeIcon, LikeIconSmall } from '@/components/page/like';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { formatShowDate } from '@/utils/formatter';
-import { slicePosts } from '@/utils/list';
+import { slicePosts } from '@/utils/post';
 import { options, Post, Tag } from '#site/content';
 
 export function ListPosts({ posts, tags, pageNum }: { posts: Post[]; tags: Tag[]; pageNum: number }) {

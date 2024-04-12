@@ -34,6 +34,7 @@
     "start": "next start -p 4321"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.51",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.0.3",
     "@vercel/analytics": "^1.2.2",

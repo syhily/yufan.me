@@ -55,11 +55,22 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  openGraph: {
+    title: options.title,
+    description: options.description,
+    type: 'article',
+    url: options.website,
+    images: [
+      {
+        url: `${options.website}/images/open-graph.png`,
+      },
+    ],
+  },
   twitter: {
-    title: '且听书吟',
+    title: options.title,
     card: 'summary_large_image',
     description: options.description,
-    images: '', // TODO Add a poster for website.
+    images: `${options.website}/images/open-graph.png`,
   },
   alternates: {
     types: {

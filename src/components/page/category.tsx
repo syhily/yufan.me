@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 import { Pagination } from '@/components/navigation/pagination';
 import { PostSquare } from '@/components/page/post';
-import { slicePosts } from '@/utils/list';
+import { slicePosts } from '@/utils/post';
 import { categories, Category, options, Post } from '#site/content';
 
 export function QueryCategory({ name, slug }: { name?: string; slug?: string }): Category | undefined {
