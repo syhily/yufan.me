@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import * as fs from 'node:fs';
 
 import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from '@napi-rs/canvas';
+import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
 import { options, Page, pages, Post, posts } from '#site/content';
@@ -66,10 +67,10 @@ async function generateImage(article: Article) {
   ctx.restore();
   const buffer = await canvas.encode('png');
 
-  return new ImageResponse(buffer);
+  return new ImageResp(buffer);
 }
 
-export class ImageResponse extends Response {
+class ImageResp extends Response {
   public static displayName = 'ImageResponse';
 
   constructor(buffer: Buffer) {
