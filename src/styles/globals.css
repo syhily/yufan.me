@@ -1142,8 +1142,8 @@ textarea.form-control {
 
 .media-content img {
   width: 100%;
-  height: auto;
-  min-height: stretch;
+  height: 100%;
+  object-fit: cover;
   display: block;
 }
 
