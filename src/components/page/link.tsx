@@ -28,7 +28,10 @@ function FriendCard({ website, description, homepage, poster }: Friend) {
     <div className="col-12 col-md-4" key={website}>
       <div className="list-item block">
         <div className="media media-3x1">
-          <div className="media-content " style={{ backgroundImage: `url('${poster.src}')` }}></div>
+          <div
+            className="media-content "
+            style={{ backgroundImage: `url('${poster.src}')`, backgroundSize: '100%' }}
+          ></div>
         </div>
         <div className="list-content">
           <div className="list-body">

@@ -65,6 +65,7 @@ function FeaturePost({ post }: { post: Post; first?: boolean }) {
           className={'media-content'}
           style={{
             backgroundImage: `url('${join(options.website, post.cover.src)}')`,
+            backgroundSize: 'auto 100%',
           }}
         >
           <div className="overlay"></div>
@@ -108,6 +109,7 @@ function PostCard({ post }: { post: Post }) {
           className="media-content"
           style={{
             backgroundImage: `url('${join(options.website, post.cover.src)}')`,
+            backgroundSize: 'auto 100%',
           }}
         />
         <div className="media-overlay overlay-top">
@@ -149,6 +151,7 @@ export function PostSquare({ post, first }: { post: Post; first: boolean }) {
             className="media-content"
             style={{
               backgroundImage: `url('${join(options.website, post.cover.src)}')`,
+              backgroundSize: 'auto 100%',
             }}
           >
             <div className="overlay"></div>

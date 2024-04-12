@@ -554,3 +554,7 @@
   slug: 'success'
 - name: 合肥
   slug: hefei
+- name: 算法
+  slug: algorithm
+- name: 面试
+  slug: interview

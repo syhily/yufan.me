@@ -14,6 +14,7 @@ function getPage(slug: string) {
   if (!page) {
     const post = posts.find((post) => post.slug === slug);
     if (post) {
+      // Keep the link of my old posts.
       return permanentRedirect(post.permalink);
     } else {
       return notFound();
