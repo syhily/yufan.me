@@ -1,4 +1,4 @@
-import { Navigation } from '@/components/navigation/navigation';
+import { Pagination } from '@/components/navigation/pagination';
 import { PostSquare } from '@/components/page/post';
 import { slicePosts } from '@/utils/list';
 import { options, Post, Tag, tags } from '#site/content';
@@ -14,7 +14,7 @@ export function ListTags({ tag, posts, pageNum }: { tag: Tag; posts: Post[]; pag
       </div>
       <div className="row g-2 g-md-3 g-xxl-4 list-grouped">{postCards}</div>
       <div className="mt-4 mt-lg-5">
-        <Navigation current={pageNum} total={totalPage} rootPath={tag.permalink} />
+        <Pagination current={pageNum} total={totalPage} rootPath={tag.permalink} />
       </div>
     </div>
   );

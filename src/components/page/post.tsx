@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
-import { Navigation } from '@/components/navigation/navigation';
+import { Pagination } from '@/components/navigation/pagination';
 import { PinnedCategories, QueryCategory } from '@/components/page/category';
 import { LikeIcon, LikeIconSmall } from '@/components/page/like';
 import { Sidebar } from '@/components/sidebar/sidebar';
@@ -91,7 +91,7 @@ export function PostPagination({ pageNum, posts }: { pageNum: number; posts: Pos
   return (
     <div className="content-wrapper content-wrapper col-12 col-xl-9">
       <PostCards posts={currentPosts} />
-      <Navigation current={pageNum} total={totalPage} rootPath={'/'} />
+      <Pagination current={pageNum} total={totalPage} rootPath={'/'} />
     </div>
   );
 }

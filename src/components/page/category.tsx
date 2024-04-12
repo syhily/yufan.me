@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Navigation } from '@/components/navigation/navigation';
+import { Pagination } from '@/components/navigation/pagination';
 import { PostSquare } from '@/components/page/post';
 import { slicePosts } from '@/utils/list';
 import { categories, Category, options, Post } from '#site/content';
@@ -22,7 +22,7 @@ export function ListCategories({ category, posts, pageNum }: { category: Categor
       </div>
       <div className="row g-2 g-md-3 g-xxl-4 list-grouped">{postCards}</div>
       <div className="mt-4 mt-lg-5">
-        <Navigation current={pageNum} total={totalPage} rootPath={category.permalink} />
+        <Pagination current={pageNum} total={totalPage} rootPath={category.permalink} />
       </div>
     </div>
   );

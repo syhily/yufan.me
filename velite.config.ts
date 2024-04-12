@@ -187,6 +187,9 @@ export default defineConfig({
   markdown: { rehypePlugins: [[rehypePrettyCode, { theme: 'solarized-light' }]] },
   prepare: (collections: any) => {
     const { categories, tags, posts, options, pages } = collections;
+    // Some service provider, like vercel will set this environment automatically.
+    // But you need to pay more attention on the SaaS platforms that didn't implicit set this for you.
+    // For instance, Zeabur.
     const publishedPosts: any[] = posts.filter((post: any) => process.env.NODE_ENV !== 'production' || post.published);
     const publishedPages: any[] = pages.filter((page: any) => process.env.NODE_ENV !== 'production' || page.published);
 
