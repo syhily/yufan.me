@@ -1,8 +1,6 @@
-import { join } from 'node:path';
-
 import React, { ComponentProps } from 'react';
 
-import { Friend, friends, options } from '#site/content';
+import { Friend, friends } from '#site/content';
 
 export function FriendLinks(props: ComponentProps<'div'>) {
   const list = friends.map((friend) => <FriendCard key={friend.website} {...friend} />);
@@ -33,7 +31,7 @@ function FriendCard({ website, description, homepage, poster }: Friend) {
           <div
             className="media-content "
             style={{
-              backgroundImage: `url('${join(options.website, poster.src)}')`,
+              backgroundImage: `url('${poster.src}')`,
               backgroundSize: 'cover',
             }}
           ></div>

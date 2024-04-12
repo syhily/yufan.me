@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
@@ -60,14 +61,15 @@ function FeaturePost({ post }: { post: Post; first?: boolean }) {
   return (
     <div className="list-item list-nice-overlay" key={post.slug}>
       <div className="media media-3x2">
-        <Link
-          href={post.permalink}
-          className={'media-content'}
-          style={{
-            backgroundImage: `url('${join(options.website, post.cover.src)}')`,
-            backgroundSize: 'cover',
-          }}
-        >
+        <Link href={post.permalink} className={'media-content'}>
+          <Image
+            src={post.cover.src}
+            alt={post.title}
+            placeholder="blur"
+            blurDataURL={post.cover.blurDataURL}
+            width={post.cover.width}
+            height={post.cover.height}
+          />
           <div className="overlay"></div>
         </Link>
       </div>
@@ -104,14 +106,16 @@ function PostCard({ post }: { post: Post }) {
   return (
     <div className="list-item block">
       <div className="media media-3x2 col-6 col-md-5">
-        <Link
-          href={post.permalink}
-          className="media-content"
-          style={{
-            backgroundImage: `url('${join(options.website, post.cover.src)}')`,
-            backgroundSize: 'cover',
-          }}
-        />
+        <Link href={post.permalink} className="media-content">
+          <Image
+            src={post.cover.src}
+            alt={post.title}
+            placeholder="blur"
+            blurDataURL={post.cover.blurDataURL}
+            width={post.cover.width}
+            height={post.cover.height}
+          />
+        </Link>
         <div className="media-overlay overlay-top">
           <Link
             className="d-none d-md-inline-block badge badge-md bg-white-overlay"
@@ -146,14 +150,15 @@ export function PostSquare({ post, first }: { post: Post; first: boolean }) {
     <div className={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
       <div className="list-item list-nice-overlay">
         <div className={`media ${first ? 'media-36x17' : ''}`}>
-          <Link
-            href={post.permalink}
-            className="media-content"
-            style={{
-              backgroundImage: `url('${join(options.website, post.cover.src)}')`,
-              backgroundSize: 'cover',
-            }}
-          >
+          <Link href={post.permalink} className="media-content">
+            <Image
+              src={post.cover.src}
+              alt={post.title}
+              placeholder="blur"
+              blurDataURL={post.cover.blurDataURL}
+              width={post.cover.width}
+              height={post.cover.height}
+            />
             <div className="overlay"></div>
           </Link>
         </div>
