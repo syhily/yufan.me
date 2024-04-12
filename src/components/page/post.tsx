@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import Link from 'next/link';
 import React from 'react';
 
@@ -62,7 +64,7 @@ function FeaturePost({ post }: { post: Post; first?: boolean }) {
           href={post.permalink}
           className={'media-content'}
           style={{
-            backgroundImage: `url('https://cat.yufan.me${post.cover.src}-upyun520/both/600x400/quality/100/unsharp/true/progressive/true')`,
+            backgroundImage: `url('${join(options.website, post.cover.src)}')`,
           }}
         >
           <div className="overlay"></div>
@@ -105,7 +107,7 @@ function PostCard({ post }: { post: Post }) {
           href={post.permalink}
           className="media-content"
           style={{
-            backgroundImage: `url('https://cat.yufan.me${post.cover.src}-upyun520/both/450x300/quality/100/unsharp/true/progressive/true')`,
+            backgroundImage: `url('${join(options.website, post.cover.src)}')`,
           }}
         />
         <div className="media-overlay overlay-top">
@@ -146,7 +148,7 @@ export function PostSquare({ post, first }: { post: Post; first: boolean }) {
             href={post.permalink}
             className="media-content"
             style={{
-              backgroundImage: `url('https://cat.yufan.me${post.cover.src}-upyun520/both/${first ? '600' : '300'}x300/quality/100/unsharp/true/progressive/true')`,
+              backgroundImage: `url('${join(options.website, post.cover.src)}')`,
             }}
           >
             <div className="overlay"></div>
