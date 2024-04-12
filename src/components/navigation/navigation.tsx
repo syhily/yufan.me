@@ -26,19 +26,6 @@ export function Navigation({ current, total, rootPath }: { current: number; tota
 function LargeNavigation({ current, total, rootPath }: { current: number; total: number; rootPath: string }) {
   const pages = [];
 
-  // Show the prev button.
-  if (current > 1) {
-    pages.push(
-      <Link
-        key={`prev-${current - 1}`}
-        className="prev page-numbers"
-        href={current === 2 ? rootPath : path.join(rootPath, `/page/${current - 1}`)}
-      >
-        <i className="iconfont icon-left"></i>
-      </Link>,
-    );
-  }
-
   // Trim left.
   if (current < 4) {
     for (let i = 0; i < current - 1; i++) {
@@ -70,19 +57,6 @@ function LargeNavigation({ current, total, rootPath }: { current: number; total:
       </span>,
     );
     pages.push(<NavigationItem key={total} index={total - 1} current={current} rootPath={rootPath} />);
-  }
-
-  if (current !== total) {
-    // Show the next button.
-    pages.push(
-      <Link
-        key={`next-${current + 1}`}
-        className="next page-numbers"
-        href={path.join(rootPath, `/page/${current + 1}`)}
-      >
-        <i className="iconfont icon-right"></i>
-      </Link>,
-    );
   }
 
   return <>{pages}</>;
