@@ -74,7 +74,7 @@ export default function PageComponent({ params: { slug } }: Readonly<SlugProps>)
             </div>
           </div>
           <FriendLinks hidden={!page.friend} />
-          <ArtalkComment id={page.slug} title={page.title} hidden={page.comments} />
+          <ArtalkComment permalink={options.website + page.permalink + '/'} title={page.title} hidden={page.comments} />
         </div>
       </div>
     </div>

@@ -28,9 +28,9 @@ export async function GET(req: NextRequest) {
 
 async function generateImage(article: Article) {
   // Load Font for CJK characters. The bellowing line should be used in Vercel.
-  // const font = await fetch('https://yufan.me/fonts/PuHuiTi-ExtraBold.otf');
-  const font = fs.readFileSync(process.cwd() + '/public/fonts/PuHuiTi-ExtraBold.otf');
-  GlobalFonts.register(font, 'PuHuiTi-ExtraBold');
+  const font = await fetch('https://yufan.me/fonts/PuHuiTi-ExtraBold.otf');
+  // const font = fs.readFileSync(process.cwd() + '/public/fonts/PuHuiTi-ExtraBold.otf');
+  GlobalFonts.register(Buffer.from(await font.arrayBuffer()), 'PuHuiTi-ExtraBold');
 
   // Generate cover.
   const coverImageUrl = options.website + (article === null ? '/images/default-cover.jpg' : article.cover.src);

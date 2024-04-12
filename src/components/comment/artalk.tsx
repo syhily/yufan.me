@@ -6,7 +6,10 @@ import React, { ComponentProps, useEffect, useRef } from 'react';
 
 import { options } from '#site/content';
 
-export function ArtalkComment({ id, title }: Readonly<{ id: string; title: string } & ComponentProps<'div'>>) {
+export function ArtalkComment({
+  permalink,
+  title,
+}: Readonly<{ permalink: string; title: string } & ComponentProps<'div'>>) {
   const artalkInstanceRef = useRef<Artalk | null>(null);
   const containerRef = React.createRef<HTMLDivElement>();
 
@@ -17,7 +20,7 @@ export function ArtalkComment({ id, title }: Readonly<{ id: string; title: strin
 
     artalkInstanceRef.current = Artalk.init({
       el: containerRef.current!,
-      pageKey: `${options.website}/${id}/`,
+      pageKey: permalink,
       pageTitle: title,
       server: options.settings.comments.server,
       site: options.title,
@@ -27,7 +30,7 @@ export function ArtalkComment({ id, title }: Readonly<{ id: string; title: strin
       // I don't know why this can't be added.
       // artalkInstanceRef.current?.destroy();
     };
-  }, [id, title, containerRef]);
+  }, [permalink, title, containerRef]);
 
   return (
     <div id="comments" className="comments py-5" ref={containerRef}>
