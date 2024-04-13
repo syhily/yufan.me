@@ -3,7 +3,6 @@ import '@/styles/reset.css';
 import '@/styles/globals.css';
 import '@/styles/iconfont/iconfont.css';
 
-import { Analytics } from '@vercel/analytics/react';
 import type { Metadata } from 'next';
 import React from 'react';
 
@@ -98,7 +97,6 @@ export default function RootLayout({
           </main>
           <GoTop />
         </div>
-        <Analytics />
       </body>
     </html>
   );
