@@ -8,12 +8,12 @@ import { QRDialog } from '@/components/qrcode/qrocode';
 import { options, Post } from '#site/content';
 
 export function Share({ post }: { post: Post }) {
-  const postURL = join(options.website, post.permalink);
+  const postURL = options.website + post.permalink;
   const qq = querystring.stringify({
-    query: `url=${postURL}&pics=${join(options.website, post.cover.src)}&summary=${post.summary ?? post.excerpt}`,
+    query: `url=${postURL}&pics=${options.website + post.cover.src}&summary=${post.summary ?? post.excerpt}`,
   });
   const weibo = querystring.stringify({
-    query: `url=${postURL}&type=button&language=zh_cn&pic=${join(options.website, post.cover.src)}&searchPic=true&title=【${post.title}】${post.summary ?? post.excerpt}`,
+    query: `url=${postURL}&type=button&language=zh_cn&pic=${options.website + post.cover.src}&searchPic=true&title=【${post.title}】${post.summary ?? post.excerpt}`,
   });
 
   return (

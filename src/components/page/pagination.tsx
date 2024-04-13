@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join } from 'node:path';
 
 import Link from 'next/link';
 
@@ -73,7 +73,7 @@ function PaginationDotItem() {
 
 function PaginationItem({ num, current, rootPath }: { num: number; current: number; rootPath: string }) {
   return current !== num ? (
-    <Link className={`page-numbers`} href={num === 1 ? rootPath : path.join(rootPath, `/page/${num}`)}>
+    <Link className={`page-numbers`} href={num === 1 ? rootPath : join(rootPath, `/page/${num}`)}>
       {num}
     </Link>
   ) : (
