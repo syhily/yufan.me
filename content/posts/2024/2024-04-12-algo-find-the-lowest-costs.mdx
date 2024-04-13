@@ -110,7 +110,7 @@ public int findMinimalRoutine(int[][] routines, Point customer) {
             return minimalPath;
         }
         minimalPath += 1;
-        start = result.next;
+        next = result.next;
     } while (next != null && !next.isEmpty());
 
     return 0;
