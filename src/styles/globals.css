@@ -2444,7 +2444,7 @@ a:hover .overlay {
   margin: 0 0 1.5rem;
 }
 
-.post-content p {
+.post-content p, .post-content center {
   margin: 0 0 1.25rem;
   font-size: 1rem;
 }

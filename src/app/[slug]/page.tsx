@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import React from 'react';

@@ -1,12 +1,10 @@
-import { join } from 'node:path';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 
-import { Pagination } from '@/components/navigation/pagination';
 import { PinnedCategories, QueryCategory } from '@/components/page/category';
 import { LikeIcon, LikeIconSmall } from '@/components/page/like';
+import { Pagination } from '@/components/page/pagination';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { formatShowDate } from '@/utils/formatter';
 import { slicePosts } from '@/utils/post';

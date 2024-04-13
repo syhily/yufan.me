@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { Pagination } from '@/components/navigation/pagination';
+import { Pagination } from '@/components/page/pagination';
 import { PostSquare } from '@/components/page/post';
 import { slicePosts } from '@/utils/post';
 import { categories, Category, options, Post } from '#site/content';

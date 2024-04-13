@@ -1,4 +1,4 @@
-import { Pagination } from '@/components/navigation/pagination';
+import { Pagination } from '@/components/page/pagination';
 import { PostSquare } from '@/components/page/post';
 import { slicePosts } from '@/utils/post';
 import { options, Post, Tag, tags } from '#site/content';

@@ -1,6 +1,5 @@
 import { join } from 'node:path';
 
-import Fuse from 'fuse.js';
 import rehypePrettyCode from 'rehype-pretty-code';
 import { defineCollection, defineConfig, s } from 'velite';
 
