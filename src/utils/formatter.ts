@@ -19,21 +19,21 @@ export function formatShowDate(date: Date | string) {
     return `今天`;
   }
   if (diff < oneWeek) {
-    return `${Math.floor(diff / oneDay)}天前`;
+    return `${Math.floor(diff / oneDay)} 天前`;
   }
   if (diff < oneMonth) {
-    return `${Math.floor(diff / oneWeek)}周前`;
+    return `${Math.floor(diff / oneWeek)} 周前`;
   }
   if (diff < oneYear) {
     const months = Math.floor(diff / oneMonth);
     if (months > 0) {
-      return `${months}月前`;
+      return `${months} 月前`;
     }
   }
 
   const years = Math.floor(diff / oneYear);
   if (years > 0 && years < 3) {
-    return `${years}年前`;
+    return `${years} 年前`;
   } else {
     // Format the post's date with time zone support.
     return DateTime.fromISO(date.toString())
