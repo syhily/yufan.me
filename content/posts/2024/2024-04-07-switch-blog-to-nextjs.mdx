@@ -2,7 +2,7 @@
 title: 弃用 WordPress 了，但我相当“后悔”
 slug: switch-blog-to-nextjs
 date: 2024-04-07 16:09:09
-updated: 2024-04-07 16:31:00
+updated: 2024-04-14 00:07:00
 tags:
   - 博客
 category: 编程
@@ -53,6 +53,10 @@ Logo 部分的字体，主要是基于 [M+A1](https://booth.pm/ja/items/2347968)
 博客以前最喜欢的音乐播放器是 Hermit-X，对应的作者荒野无灯已经神隐很久，获取网易音乐信息的 [Meting API](https://github.com/metowolf/Meting) 也没持续更新。而 APlayer 更是不知道 [DIYgod](https://diygod.cc) 什么时候能来“扫墓”，上次 APlayer 的诈尸还只是更新了个 License。所以在新博客环境只有 [Aplayer React](https://aplayer-react.js.org) 这个名为 APlayer 实则是借着其样式用 React 完全重写的播放器可用，其在 RSC 下有点小问题，但估计短时间内作者也没时间修复。（谁叫我是前端菜鸟呢）
 
 MDX 一开始是手动使用 `fs` 加载，使用 `grey-matter` 解析 `matter` 后再用 `next-mdx-remote` 渲染。但是鉴于自己太菜，很多页面的渲染都需要全量读取博文解析。后面改成了[推友推荐](https://twitter.com/ilovek8s/status/1776809454790676827)的 `contentlayer` 先渲染静态化，再进行加载。但瞅着 `contentlayer` 这半死不活的状态，未来大概率还是要弃。😭
+
+## Update 2024/04/14
+
+没错，一周后我又来屁颠屁颠地更新博客啦，一周过去后，我的博客也发生了不少变化。首先是搜索终于支持了，使用的是 fuse.js。前文提到的 Contentlayer 也被我废弃，换成了更好用的 Velite。
 
 ----
 

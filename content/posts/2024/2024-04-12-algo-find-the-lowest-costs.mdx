@@ -120,7 +120,7 @@ public SearchResult findNextPoints(int[][] routines, List<Point> currentPoints) 
     List<Point> resultPoints = new ArraryList<>(); 
 
     for (Point currentPoint : currentPoints) {
-        List<Point> nextPoints = findNextPoint(routines, currentPoint);    
+        List<Point> nextPoints = findNextPoints(routines, currentPoint);    
 
         for (Point nextPoint : nextPoints) {
             if (routines[nextPoint.x][nextPoint.y] == -1) {

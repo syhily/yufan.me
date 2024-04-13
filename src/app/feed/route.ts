@@ -47,7 +47,7 @@ const generateRssFeed = cache((posts: Post[], full: boolean) => {
       id: post.slug,
       link: post.permalink,
       description: post.summary ?? post.excerpt,
-      content: full ? post.raw : '',
+      content: full ? post.raw : post.excerpt,
       date: new Date(post.date),
     });
   });
