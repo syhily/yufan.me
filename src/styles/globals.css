@@ -3722,7 +3722,7 @@ blockquote {
   border-width: 0 0 0 4px;
   margin: 1.75rem 0;
   /*rtl:ignore*/
-  padding: 0.5rem 0 0.5rem 2rem;
+  padding: 1rem 2rem 1rem 2rem;
 }
 
 cite {

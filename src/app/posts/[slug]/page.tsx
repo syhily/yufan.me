@@ -78,12 +78,9 @@ export default function PostComponent({ params: { slug } }: Readonly<SlugProps>)
                   </div>
                   <LikeButton />
                   <Share post={post} />
-                  {/* We are about to migrate the post's slug to new URL */}
-                  <ArtalkComment
-                    permalink={options.website + post.permalink + '/'}
-                    title={post.title}
-                    hidden={post.comments}
-                  />
+                  {post.comments && (
+                    <ArtalkComment permalink={options.website + post.permalink + '/'} title={post.title} />
+                  )}
                 </div>
               </div>
             </div>

@@ -73,8 +73,14 @@ export default function PageComponent({ params: { slug } }: Readonly<SlugProps>)
               <MDXContent code={page.content} />
             </div>
           </div>
-          <FriendLinks hidden={!page.friend} />
-          <ArtalkComment permalink={options.website + page.permalink + '/'} title={page.title} hidden={page.comments} />
+          {page.friend && <FriendLinks />}
+          {page.comments && (
+            <ArtalkComment
+              permalink={options.website + page.permalink + '/'}
+              title={page.title}
+              hidden={page.comments}
+            />
+          )}
         </div>
       </div>
     </div>

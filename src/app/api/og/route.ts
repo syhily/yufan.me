@@ -1,8 +1,6 @@
 import { Buffer } from 'node:buffer';
-import * as fs from 'node:fs';
 
 import { Canvas, GlobalFonts, loadImage, SKRSContext2D } from '@napi-rs/canvas';
-import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
 import { options, Page, pages, Post, posts } from '#site/content';
@@ -139,8 +137,8 @@ function drawImageProp(
   y: number,
   w: number,
   h: number,
-  offsetX: number,
-  offsetY: number,
+  offsetX: any,
+  offsetY: any,
 ) {
   if (arguments.length === 2) {
     x = y = 0;
