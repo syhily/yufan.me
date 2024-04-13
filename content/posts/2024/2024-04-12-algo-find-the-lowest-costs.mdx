@@ -47,15 +47,15 @@ cover: /images/2024/04/2024041405050511.png
 
 这也使得这道题在弄懂原理后相当无趣，但考虑我这朋友确实经验赏浅，所以我还是给他继续讲下去，顺带着给了代码实现。这篇博客便是当时内容的摘录整理。
 
-<SVG url={'/images/recaps/algo-minimal-costs/step1.svg'} width={'400px'} title={'Step 1'} />
+<Image src={'/images/recaps/algo-minimal-costs/step1.svg'} width={400} height={400} alt={'Step 1'} />
 
 做任何算法题，第一步是理解题意，第二步是设想最简单的情况。上图就是题目中设想的最简单场景，顾客和维修点之间完全不可能有阻塞。顾客和维修点在一个 1 x 1 的格子的一条边上，这个时候他们间的最短距离为 1。
 
-<SVG url={'/images/recaps/algo-minimal-costs/step2.svg'} width={'400px'} title={'Step 2'} />
+<Image src={'/images/recaps/algo-minimal-costs/step2.svg'} width={400} height={400} alt={'Step 2'} />
 
 然后我们更进一步，如果他们在一个格子的对角线上呢？他们间的最短路径有两条，为 2。
 
-<SVG url={'/images/recaps/algo-minimal-costs/step3.svg'} width={'400px'} title={'Step 3'} />
+<Image src={'/images/recaps/algo-minimal-costs/step3.svg'} width={400} height={400} alt={'Step 3'} />
 
 结合初中的几何学知识，我们首先知道一个基本知识，两点之间，直线最短。
 

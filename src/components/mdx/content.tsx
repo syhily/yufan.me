@@ -24,20 +24,9 @@ async function MdxLink(props) {
   return <a target="_blank" rel="noopener noreferrer" {...props} />;
 }
 
-type SVGProps = {
-  url: string;
-  title: string;
-  width: string;
-};
-
-async function SVG(props: SVGProps) {
-  return <img src={props.url} alt={props.title} width={props.width} />;
-}
-
 const sharedComponents = {
   a: MdxLink,
   Image: Image,
-  SVG: SVG,
   NeteasePlayer: NeteasePlayer,
 };
 
