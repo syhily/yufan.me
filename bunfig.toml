@@ -1,0 +1,7 @@
+telemetry = false
+
+[install]
+frozenLockfile = false
+
+[install.lockfile]
+save = true

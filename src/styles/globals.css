@@ -3312,16 +3312,17 @@ a:hover .overlay {
     Like style in blog post
 --------------------------------------------------------------*/
 
-button.list-like {
+.list-like {
+  margin-left: 10px;
   color: var(--color-dark);
   background-color: transparent;
 }
 
-button.list-like .like-count {
+.list-like .like-count {
   padding-left: 3px;
 }
 
-button.list-like:hover {
+.list-like:hover {
   color: var(--color-muted);
 }
 

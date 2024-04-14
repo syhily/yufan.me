@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import React, { Suspense } from 'react';
 
 import { PinnedCategories, QueryCategory } from '@/components/page/category';
 import { LikeIcon, LikeIconSmall } from '@/components/page/like';
@@ -135,7 +135,9 @@ function PostCard({ post }: { post: Post }) {
         <div className="list-footer">
           <div className="d-flex flex-fill align-items-center text-muted text-sm">
             <div className="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
-            <LikeIcon post={post} />
+            <Suspense>
+              <LikeIcon post={post} />
+            </Suspense>
           </div>
         </div>
       </div>
@@ -166,7 +168,9 @@ export function PostSquare({ post, first }: { post: Post; first: boolean }) {
             <div className="list-meta font-number d-flex flex-fill text-muted text-sm">
               <span className="d-inline-block">{formatShowDate(post.date)}</span>
               <div className="flex-fill"></div>
-              <LikeIconSmall post={post} />
+              <Suspense>
+                <LikeIconSmall post={post} />
+              </Suspense>
             </div>
           </Link>
         </div>

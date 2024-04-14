@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import React from 'react';
+import React, { Suspense } from 'react';
 
 import { ArtalkComment } from '@/components/comment/artalk';
 import { MDXContent } from '@/components/mdx/content';
@@ -74,7 +74,9 @@ export default function PostComponent({ params: { slug } }: Readonly<SlugProps>)
                       <div className="nav-links"></div>
                     </nav>
                   </div>
-                  <LikeButton />
+                  <Suspense>
+                    <LikeButton post={post} />
+                  </Suspense>
                   <Share post={post} />
                   {post.comments && (
                     <ArtalkComment permalink={options.website + post.permalink + '/'} title={post.title} />

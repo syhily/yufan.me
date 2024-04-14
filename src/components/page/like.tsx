@@ -1,9 +1,11 @@
 import React from 'react';
 
+import { queryLikes, queryLikesAndViews } from '@/components/database/query';
 import { Post } from '#site/content';
 
-// TODO Like button
-export function LikeButton() {
+export async function LikeButton({ post }: { post: Post }) {
+  const likes = await queryLikes(post.permalink);
+
   return (
     <div className="post-action text-center mt-5">
       <button
@@ -12,27 +14,35 @@ export function LikeButton() {
         type={'button'}
       >
         <i className="text-lg iconfont icon-heart-fill me-1"></i>
-        <span className="like-count">0</span>
+        <span className="like-count">{likes}</span>
       </button>
     </div>
   );
 }
 
-// TODO The like button is WIP.
-export function LikeIcon({ post }: { post: Post }) {
+export async function LikeIcon({ post }: { post: Post }) {
+  const [likes, views] = await queryLikesAndViews(post.permalink);
+
   return (
-    <button className={`list-like d-inline-block` /* add current for showing clicked */}>
-      <i className="text-md iconfont icon-heart-fill"></i>
-      <span className="like-count">0</span>
-    </button>
+    <>
+      <div className={`list-like d-inline-block`}>
+        <i className="text-md iconfont icon-eye"></i>
+        <span className="like-count">{views}</span>
+      </div>
+      <button className={`list-like d-inline-block` /* add current for showing clicked */}>
+        <i className="text-md iconfont icon-heart-fill"></i>
+        <span className="like-count">{likes}</span>
+      </button>
+    </>
   );
 }
 
-// TODO Small like icon.
-export function LikeIconSmall({ post }: { post: Post }) {
+export async function LikeIconSmall({ post }: { post: Post }) {
+  const likes = await queryLikes(post.permalink);
+
   return (
     <div>
-      <i className="text-md iconfont icon-heart-fill"></i> <span className="like-count">0</span>
+      <i className="text-md iconfont icon-heart-fill"></i> <span className="like-count">{likes}</span>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export interface Comment {
   permalink: string;
 }
 
-export async function latestComments() {
+export async function latestComments(): Promise<Comment[]> {
   noStore();
 
   const commentTable = connectionConfig.prefix + 'comments';
@@ -37,7 +37,7 @@ export async function latestComments() {
   const authorTable = connectionConfig.prefix + 'users';
 
   const comments: Comment[] = [];
-  const [rows, fields] = await pool.query<RowDataPacket[]>(
+  const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT ${commentTable + '.id'}       as id,
             ${commentTable + '.page_key'} as href,
             ${pageTable + '.title'}       as title,
@@ -61,4 +61,22 @@ export async function latestComments() {
   });
 
   return comments;
+}
+
+export async function queryLikes(permalink: string): Promise<number> {
+  const pageKey = options.website + permalink + '/';
+  const pageTable = connectionConfig.prefix + 'pages';
+  const sql = 'SELECT vote_up FROM ' + pageTable + ' WHERE `key` = ? LIMIT 1;';
+  const [rows] = await pool.query<RowDataPacket[]>(sql, [pageKey]);
+
+  return rows.length > 0 ? rows[0]['vote_up'] : 0;
+}
+
+export async function queryLikesAndViews(permalink: string): Promise<[number, number]> {
+  const pageKey = options.website + permalink + '/';
+  const pageTable = connectionConfig.prefix + 'pages';
+  const sql = 'SELECT vote_up, pv FROM ' + pageTable + ' WHERE `key` = ? LIMIT 1;';
+  const [rows] = await pool.query<RowDataPacket[]>(sql, [pageKey]);
+
+  return rows.length > 0 ? [rows[0]['vote_up'], rows[0]['pv']] : [0, 0];
 }
