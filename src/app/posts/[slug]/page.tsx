@@ -4,7 +4,7 @@ import React, { Suspense } from 'react';
 
 import { ArtalkComment } from '@/components/comment/artalk';
 import { MDXContent } from '@/components/mdx/content';
-import { LikeButton } from '@/components/page/like';
+import { LikeButton } from '@/components/page/click';
 import { Share } from '@/components/page/share';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { formatShowDate } from '@/utils/formatter';
@@ -74,9 +74,7 @@ export default function PostComponent({ params: { slug } }: Readonly<SlugProps>)
                       <div className="nav-links"></div>
                     </nav>
                   </div>
-                  <Suspense>
-                    <LikeButton post={post} />
-                  </Suspense>
+                  <LikeButton post={post} />
                   <Share post={post} />
                   {post.comments && (
                     <ArtalkComment permalink={options.website + post.permalink + '/'} title={post.title} />

@@ -63,6 +63,15 @@ export async function latestComments(): Promise<Comment[]> {
   return comments;
 }
 
+export async function increaseLikes(permalink: string) {
+  const pageKey = options.website + permalink + '/';
+  const pageTable = connectionConfig.prefix + 'pages';
+  const sql = 'UPDATE ' + pageTable + ' SET vote_up = vote_up + 1 WHERE `key` = ? LIMIT 1;';
+
+  await pool.query(sql, [pageKey]);
+  return queryLikes(permalink);
+}
+
 export async function queryLikes(permalink: string): Promise<number> {
   const pageKey = options.website + permalink + '/';
   const pageTable = connectionConfig.prefix + 'pages';

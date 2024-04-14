@@ -3322,14 +3322,6 @@ a:hover .overlay {
   padding-left: 3px;
 }
 
-.list-like:hover {
-  color: var(--color-muted);
-}
-
-.list-like.current {
-  color: var(--color-danger);
-}
-
 /*--------------------------------------------------------------
     top search style
 --------------------------------------------------------------*/
