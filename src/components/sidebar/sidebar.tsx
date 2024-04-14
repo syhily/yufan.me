@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import Link from 'next/link';
-import React from 'react';
+import React, { Suspense } from 'react';
 
+import { latestComments } from '@/components/database/query';
 import { SearchBar } from '@/components/search/search';
 import { options, Post, Tag } from '#site/content';
 
@@ -12,7 +13,9 @@ export function Sidebar({ posts, tags }: { posts: Post[]; tags: Tag[] }) {
         {/* A set of useful sidebar tools. */}
         <SearchBar />
         <RandomPosts posts={posts} />
-        <RecentComments />
+        <Suspense fallback={<div></div>}>
+          <RecentComments />
+        </Suspense>
         <RandomTags tags={tags} />
       </div>
     </aside>
@@ -41,17 +44,24 @@ function RandomPosts({ posts }: { posts: Post[] }) {
   );
 }
 
-function RecentComments() {
-  const hidden = !options.settings.sidebar.comment;
+async function RecentComments() {
+  const commentSize = options.settings.sidebar.comment;
+  if (commentSize <= 0) {
+    return <></>;
+  }
+
+  const comments = (await latestComments()).map((comment) => (
+    <li className="recentcomments" key={comment.permalink}>
+      <span className="comment-author-link">{comment.author}</span> 发表在《
+      <Link href={comment.permalink}>{comment.title}</Link>
+      {'》'}
+    </li>
+  ));
+
   return (
-    <div id="recent-comments" className="widget widget_recent_comments" hidden={hidden}>
+    <div id="recent-comments" className="widget widget_recent_comments">
       <div className="widget-title">近期评论</div>
-      <ul id="recentcomments">
-        <li className="recentcomments">
-          <span className="comment-author-link">马草原</span> 发表在《<Link href="https://yufan.me/about">关于我</Link>
-          {'》'}
-        </li>
-      </ul>
+      <ul id="recentcomments">{comments}</ul>
     </div>
   );
 }

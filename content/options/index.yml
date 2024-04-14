@@ -82,7 +82,7 @@ settings:
     # Display the number of random posts. Set 0 or a negation number to disable it.
     post: 6
     # Display recent blog comments. Set 0 or a negative number to disable it.
-    comment: 0
+    comment: 6
     # Display the tag cloud. Set 0 or a negative number to disable it.
     tag: 20
   # Artalk configuration
