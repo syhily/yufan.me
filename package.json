@@ -70,5 +70,8 @@
     "typescript": "^5.4.5",
     "unist-util-visit": "^5.0.0",
     "velite": "0.1.0-beta.14"
+  },
+  "overrides": {
+    "artalk": "^2.8.3"
   }
 }
