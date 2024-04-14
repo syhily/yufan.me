@@ -5,3 +5,4 @@ frozenLockfile = false
 
 [install.lockfile]
 save = true
+print = "yarn"
