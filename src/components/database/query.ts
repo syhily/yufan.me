@@ -32,8 +32,6 @@ export interface Comment {
 export async function latestComments() {
   noStore();
 
-  console.log(connectionConfig);
-
   const commentTable = connectionConfig.prefix + 'comments';
   const pageTable = connectionConfig.prefix + 'pages';
   const authorTable = connectionConfig.prefix + 'users';
