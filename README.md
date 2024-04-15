@@ -12,7 +12,6 @@ you can referer the original weblog's source code in [legacy-hexo](https://githu
 
 ## Core Frameworks
 
-- [Bun](https://bun.sh): The build tool
 - [Next.js](https://nextjs.org): The static generator and core framework on React
 - [Radix UI](https://www.radix-ui.com): The UI framework
 - [Artalk](https://artalk.js.org): The self-hosted comment system
@@ -49,16 +48,6 @@ bun run dev
 
 This weblog use artalk as its backend comment service. But since artalk didn't provide the latest comments API.
 We decide to query it directly from MySQL database. So the comments and fav clicks are living in the same database. 
-
-### Bun Lockfile
-
-Since bun lock file is in binary format, if we want to get it managed by git,
-the following lines should be added to your global git config.
-
-```shell
-git config --global diff.lockb.textconv bun
-git config --global diff.lockb.binary true
-```
 
 ## HTTP Request Routes
 

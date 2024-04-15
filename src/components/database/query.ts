@@ -34,10 +34,7 @@ const column = (tab: string, col: string) => table(tab) + '.' + col;
 
 export async function latestComments(): Promise<Comment[]> {
   noStore();
-
-  const comments: Comment[] = [];
-  const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT ${column('comments', 'id')}       as id,
+  const sql = `SELECT ${column('comments', 'id')}       as id,
             ${column('comments', 'page_key')} as href,
             ${column('pages', 'title')}       as title,
             ${column('users', 'name')}        as author
@@ -45,8 +42,10 @@ export async function latestComments(): Promise<Comment[]> {
             LEFT JOIN ${table('pages')} ON ${column('comments', 'page_key')} = ${column('pages', '`key`')}
             LEFT JOIN ${table('users')} ON ${column('comments', 'user_id')} = ${column('users', 'id')}
      ORDER BY ${column('comments', 'created_at')} DESC
-     LIMIT ${options.settings.sidebar.comment};`,
-  );
+     LIMIT ${options.settings.sidebar.comment};`;
+
+  const comments: Comment[] = [];
+  const [rows] = await pool.query<RowDataPacket[]>(mysql.format(sql));
 
   // Construct comments.
   rows.forEach((result) => {
@@ -68,7 +67,7 @@ export async function increaseLikes(permalink: string) {
                SET vote_up = vote_up + 1
                WHERE ${column('pages', '`key`')} = ?;`;
 
-  await pool.query(sql, [pageKey]);
+  await pool.query(mysql.format(sql), [pageKey]);
   return queryLikes(permalink);
 }
 
@@ -80,7 +79,7 @@ export async function queryLikes(permalink: string): Promise<number> {
                FROM ${table('pages')}
                WHERE ${column('pages', '`key`')} = ?
                LIMIT 1;`;
-  const [rows] = await pool.query<RowDataPacket[]>(sql, [pageKey]);
+  const [rows] = await pool.query<RowDataPacket[]>(mysql.format(sql), [pageKey]);
 
   return rows.length > 0 ? rows[0]['vote_up'] : 0;
 }
@@ -93,7 +92,7 @@ export async function queryLikesAndViews(permalink: string): Promise<[number, nu
                FROM ${table('pages')}
                WHERE ${column('pages', '`key`')} = ?
                LIMIT 1`;
-  const [rows] = await pool.query<RowDataPacket[]>(sql, [pageKey]);
+  const [rows] = await pool.query<RowDataPacket[]>(mysql.format(sql), [pageKey]);
 
   return rows.length > 0 ? [rows[0]['vote_up'], rows[0]['pv']] : [0, 0];
 }
