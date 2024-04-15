@@ -1689,7 +1689,7 @@ a:hover .overlay {
   -ms-flex: 1 1 auto;
   flex: 1 1 auto;
   text-align: center;
-  height: 100vh;
+  height: 50vh;
 }
 
 .data-null h1 {

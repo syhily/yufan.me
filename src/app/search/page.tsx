@@ -42,11 +42,18 @@ export default async function SearchComponent({ searchParams }: SearchProps) {
 
   if (results.length == 0) {
     return (
-      <div className="data-null">
-        <div className="my-auto">
-          <i className="svg-404"></i>
-          <h1 className="font-number">404</h1>
-          <div>抱歉，没有你要找的内容...</div>
+      <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+        <div className="container">
+          <div className="mb-3 mb-lg-4">
+            <h1>{`“${query}” 查询结果`}</h1>
+          </div>
+          <div className="data-null">
+            <div className="my-auto">
+              <i className="svg-404"></i>
+              <h1 className="font-number">404</h1>
+              <div>抱歉，没有你要找的内容...</div>
+            </div>
+          </div>
         </div>
       </div>
     );

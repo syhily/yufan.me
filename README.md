@@ -57,6 +57,7 @@ You can change it as you personal needs.
 
 - `/` - List the lasted posts and pinged posts on top of it.
   - `/api/songs` - Meting API in JavaScript.
+  - `/api/likes` - Like button.
   - `/page/{number}` - List the posts by the page number.
   - `/cats/{slug}` - List all the posts in this category. Posts can belong to only one category.
     - `/cats/{slug}/page/{number}` - List the posts in the given category by the page number.
