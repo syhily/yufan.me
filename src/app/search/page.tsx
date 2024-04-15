@@ -40,8 +40,18 @@ export default async function SearchComponent({ searchParams }: SearchProps) {
   const search = await getHitPosts(query);
   const results = search.map((s) => s.item).slice(0, options.settings.pagination.search);
 
-  console.log(query);
-  console.log(results);
+  if (results.length == 0) {
+    return (
+      <div className="data-null">
+        <div className="my-auto">
+          <i className="svg-404"></i>
+          <h1 className="font-number">404</h1>
+          <div>抱歉，没有你要找的内容...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
       <ListQuery title={`“${query}” 查询结果`} posts={results} />
