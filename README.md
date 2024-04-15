@@ -161,7 +161,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 ## TODO Checklist
 
 - [ ] Slide share components integration.
-- [ ] Add cover for all my posts.
+- [ ] Add cover for all my posts. Remain **92** posts.
 
 ## License
 

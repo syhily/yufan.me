@@ -10,9 +10,6 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    serverComponentsExternalPackages: ["@napi-rs/canvas"],
-  },
 };
 
 const securityHeaders = [

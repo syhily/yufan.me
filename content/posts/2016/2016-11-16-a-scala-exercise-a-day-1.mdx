@@ -12,7 +12,7 @@ summary: 编写一段代码，将 a 设置为一个 n 个随机整数的数组�
 
 ![mocha ドラム水槽](/images/2020/09/2020090412291981.jpg)
 
-1、编写一段代码，将 a 设置为一个 n 个随机整数的数组，要求随机数介于 [0, n) 之间。
+1、编写一段代码，将 a 设置为一个 n 个随机整数的数组，要求随机数介于 `[0, n)` 之间。
 
 ```scala
 def randomArray(n: Int) : Array[Int] = {
@@ -20,7 +20,7 @@ def randomArray(n: Int) : Array[Int] = {
 }
 ```
 
-2、编写一个循环，将整数数组中相邻的元素置换。例如，Array(1, 2, 3, 4, 5) 经过置换之后变为 Array(2, 1, 4, 3, 5)。
+2、编写一个循环，将整数数组中相邻的元素置换。例如，`Array(1, 2, 3, 4, 5)` 经过置换之后变为 `Array(2, 1, 4, 3, 5)`。
 
 ```scala
 def transferArray(array: Array[Int]) : Array[Int] = {
@@ -33,7 +33,7 @@ def transferArray(array: Array[Int]) : Array[Int] = {
 }
 ```
 
-3、重复前一个练习，不过这次生成一个新的值交换过的数组。用 for/yield。
+3、重复前一个练习，不过这次生成一个新的值交换过的数组。用 `for/yield`。
 
 ```scala
 def transferArray(array: Array[Int]) : Array[Int] = {
@@ -55,7 +55,7 @@ def sortArray(array: Array[Int]) : Array[Int] = {
 }
 ```
 
-5、如何计算 Array[Double]的平均值？
+5、如何计算 `Array[Double]` 的平均值？
 
 ```scala
 def arrayAverage(array: Array[Double]) : Double = {
@@ -63,7 +63,7 @@ def arrayAverage(array: Array[Double]) : Double = {
 }
 ```
 
-6、如何重新组织 Array[Int] 的元素将它们以反序排列？对于 ArrayBuffer[Int] 你又会怎么做呢？
+6、如何重新组织 `Array[Int]` 的元素将它们以反序排列？对于 `ArrayBuffer[Int]` 你又会怎么做呢？
 
 ```scala
 def reverseAverage(array: Array[Int]) : Array[Int] = {
@@ -76,7 +76,7 @@ def reverseAverage(array: Array[Int]) : Array[Int] = {
 }
 ```
 
-对于 ArrayBuffer 如下
+对于 `ArrayBuffer` 如下
 
 ```scala
 def reverseAverage(array: ArrayBuffer[Int]) : ArrayBuffer[Int] = {
@@ -92,13 +92,13 @@ def distinctAverage(array: Array[Int]) : Array[Int] = {
 }
 ```
 
-8、创建一个由 java.util.TimeZone.getAvailableIDs返回的时区集合，判断条件是它们在美洲。去掉"America/"前缀并排序。
+8、创建一个由 `java.util.TimeZone.getAvailableIDs` 返回的时区集合，判断条件是它们在美洲。去掉 `"America/"` 前缀并排序。
 
 ```scala
 val sortedAmericanZone = java.util.TimeZone.getAvailableIDs.filter(_.startsWith("America")).map(_.replaceFirst("America/", "")).sorted
 ```
 
-9、引入 java.awt.datatransfer._ 并构建一个类型为 SystemFlavorMap 类型的对象： val flavors = SystemFlavorMap.getDefaultFlavorMap().asInstanceOf[SystemFlavorMap] 然后以 DataFlavor.imageFlavor 为参数调用 getNativesForFlavor 方法，以 Scala 缓冲保存返回值。
+9、引入 `java.awt.datatransfer._` 并构建一个类型为 `SystemFlavorMap` 类型的对象： `val flavors = SystemFlavorMap.getDefaultFlavorMap().asInstanceOf[SystemFlavorMap]` 然后以 `DataFlavor.imageFlavor` 为参数调用 `getNativesForFlavor` 方法，以 Scala 缓冲保存返回值。
 
 首先导入包
 
