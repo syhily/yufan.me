@@ -41,6 +41,7 @@ export async function latestComments(): Promise<Comment[]> {
      from ${table('comments')}
             LEFT JOIN ${table('pages')} ON ${column('comments', 'page_key')} = ${column('pages', '`key`')}
             LEFT JOIN ${table('users')} ON ${column('comments', 'user_id')} = ${column('users', 'id')}
+     WHERE ${column('comments', 'user_id')} NOT IN ${'(' + options.settings.comments.admins.join(', ') + ')'}
      ORDER BY ${column('comments', 'created_at')} DESC
      LIMIT ${options.settings.sidebar.comment};`;
 

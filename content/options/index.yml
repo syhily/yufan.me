@@ -87,4 +87,8 @@ settings:
     tag: 20
   # Artalk configuration
   comments:
+    # The artalk server endpoint
     server: https://comment.yufan.me
+    # The administrator user id.
+    admins:
+      - 3

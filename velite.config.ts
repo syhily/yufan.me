@@ -73,6 +73,7 @@ const options = defineCollection({
       }),
       comments: s.object({
         server: s.string().url().readonly(),
+        admins: s.array(s.number()).readonly(),
       }),
     }),
   }),
