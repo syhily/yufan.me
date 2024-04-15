@@ -35,13 +35,13 @@ You should modify the `.env.example` file and rename it to `.env.local` for your
 git clone https://github.com/syhily/yufan.me.git
 
 # Install the dependencies by using bun.
-bun install
+npm install
 
 # Check the newer dependencies.
-bun update
+npm update
 
 # Start local development with a live preview. The weblog is hosted on http://localhost:4321
-bun run dev
+npm run dev
 ```
 
 ### Artalk Integration
@@ -56,7 +56,6 @@ I just list here for comprehension.
 You can change it as you personal needs.
 
 - `/` - List the lasted posts and pinged posts on top of it.
-  - `/api/songs` - Meting API in JavaScript.
   - `/api/likes` - Like button.
   - `/page/{number}` - List the posts by the page number.
   - `/cats/{slug}` - List all the posts in this category. Posts can belong to only one category.
