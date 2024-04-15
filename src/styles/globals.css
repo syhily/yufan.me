@@ -1272,6 +1272,11 @@ textarea.form-control {
   background-color: #283248;
 }
 
+.nav-links .page-numbers.dots:hover {
+  color: #fff;
+  background-color: #283248;
+}
+
 .nav-links .page-numbers:hover,
 .nav-links .page-numbers.current,
 .nav-links .post-page-numbers:hover,
@@ -1503,7 +1508,13 @@ textarea.form-control {
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
-a.list-title:hover, #recent_posts a:hover, #tag_cloud a:hover {
+#recent_posts, #tag_cloud, #recent-comments {
+  a:hover {
+    color: var(--color-primary);
+  }
+}
+
+a.list-title:hover {
   color: var(--color-primary);
 }
 
