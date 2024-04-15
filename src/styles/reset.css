@@ -72,6 +72,7 @@
   --shadow-sm: 0 5px 30px 5px rgb(62 61 80 / 5%);
   --shadow-md: 0 10px 40px 5px rgb(62 61 80 / 6%);
   --shadow-lg: 0 10px 40px 5px rgb(62 61 80 / 10%);
+  --text-dark: #000;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -136,10 +137,12 @@ td {
 /* code -------------------------- */
 
 code {
-  font-size: 80%;
+  font-size: 90%;
   color: inherit;
-  padding: 4px 10px;
-  word-break: break-word;
+  padding: 5px 5px;
+  word-wrap: break-word;
+  word-break: break-all;
+  background-color: rgb(253, 246, 227);
 }
 
 pre {
@@ -149,10 +152,6 @@ pre {
   overflow: auto;
   word-wrap: normal;
   overflow-wrap: normal;
-}
-
-code {
-  counter-reset: line;
 }
 
 code > [data-line]::before {
