@@ -26,6 +26,7 @@ export const pool: mysql.Pool = mysql.createPool({
 export interface Comment {
   title: string;
   author: string;
+  authorLink: string;
   permalink: string;
 }
 
@@ -35,9 +36,10 @@ const column = (tab: string, col: string) => table(tab) + '.' + col;
 export async function latestComments(): Promise<Comment[]> {
   noStore();
   const sql = `SELECT ${column('comments', 'id')}       as id,
-            ${column('comments', 'page_key')} as href,
+            ${column('comments', 'page_key')} as website,
             ${column('pages', 'title')}       as title,
-            ${column('users', 'name')}        as author
+            ${column('users', 'name')}        as author,
+            ${column('users', 'link')}        as authorLink
      from ${table('comments')}
             LEFT JOIN ${table('pages')} ON ${column('comments', 'page_key')} = ${column('pages', '`key`')}
             LEFT JOIN ${table('users')} ON ${column('comments', 'user_id')} = ${column('users', 'id')}
@@ -54,8 +56,9 @@ export async function latestComments(): Promise<Comment[]> {
     comments.push({
       title: title.substring(0, title.indexOf(' - ')),
       author: result['author'],
+      authorLink: result['authorLink'],
       // https://yufan.me/posts/about-hefei/#atk-comment-7834
-      permalink: result['href'] + '#atk-comment-' + result['id'],
+      permalink: result['website'] + '#atk-comment-' + result['id'],
     });
   });
 

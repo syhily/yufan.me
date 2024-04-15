@@ -9,6 +9,8 @@ export type ImageNode = Parent & {
   url: string;
   alt: string;
   name: string;
+  width?: number;
+  height?: number;
   attributes: (Literal & { name: string })[];
 };
 
@@ -47,8 +49,8 @@ const transformNextImage = async (imageNode: ImageNode) => {
     (imageNode.attributes = [
       { type: 'mdxJsxAttribute', name: 'alt', value: imageNode.alt },
       { type: 'mdxJsxAttribute', name: 'src', value: imageNode.url },
-      { type: 'mdxJsxAttribute', name: 'width', value: metadata.width },
-      { type: 'mdxJsxAttribute', name: 'height', value: metadata.height },
+      { type: 'mdxJsxAttribute', name: 'width', value: imageNode.width ?? metadata.width },
+      { type: 'mdxJsxAttribute', name: 'height', value: imageNode.height ?? metadata.height },
       { type: 'mdxJsxAttribute', name: 'placeholder', value: 'blur' },
       { type: 'mdxJsxAttribute', name: 'blurDataURL', value: metadata.blurDataURL },
     ]);

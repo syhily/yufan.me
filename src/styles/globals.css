@@ -2639,6 +2639,12 @@ a:hover .overlay {
   text-align: center;
 }
 
+.post-content img {
+  display: flex;
+  margin: auto;
+  justify-content: center;
+}
+
 /*--------------------------------------------------------------
     top thumbnail style
 --------------------------------------------------------------*/

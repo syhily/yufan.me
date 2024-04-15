@@ -50,13 +50,23 @@ async function RecentComments() {
     return <></>;
   }
 
-  const comments = (await latestComments()).map((comment) => (
-    <li className="recentcomments" key={comment.permalink}>
-      <span className="comment-author-link">{comment.author}</span> 发表在《
-      <Link href={comment.permalink}>{comment.title}</Link>
-      {'》'}
-    </li>
-  ));
+  const comments = (await latestComments()).map((comment) => {
+    const author =
+      comment.authorLink === '' ? (
+        comment.author
+      ) : (
+        <Link href={comment.authorLink} target={'_blank'} rel={'nofollow'}>
+          {comment.author}
+        </Link>
+      );
+    return (
+      <li className="recentcomments" key={comment.permalink}>
+        <span className="comment-author-link">{author}</span> 发表在《
+        <Link href={comment.permalink}>{comment.title}</Link>
+        {'》'}
+      </li>
+    );
+  });
 
   return (
     <div id="recent-comments" className="widget widget_recent_comments">
