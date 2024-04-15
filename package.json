@@ -27,6 +27,7 @@
   },
   "scripts": {
     "watch": "velite dev",
+    "content": "velite",
     "build": "velite && next build",
     "dev": "velite && next dev -p 4321",
     "lint": "velite && next lint --fix",
@@ -36,7 +37,6 @@
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.0.3",
-    "aplayer-react": "^1.6.0",
     "artalk": "^2.8.3",
     "bootstrap": "^5.3.3",
     "feed": "^4.2.2",
@@ -49,8 +49,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-qr-code": "^2.0.12",
-    "rehype-pretty-code": "^0.13.1",
-    "swr": "^2.2.5"
+    "rehype-pretty-code": "^0.13.1"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.0",

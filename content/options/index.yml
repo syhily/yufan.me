@@ -53,9 +53,9 @@ settings:
     # You can add the posts id here.
     # We only show the first three feature posts.
     feature:
+      - the-story-of-time
       - the-streets-where-wind-lives
       - bathe
-      - those-words-my-love
     # The pinned category slugs.
     category:
       - article

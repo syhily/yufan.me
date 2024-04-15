@@ -1,6 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import useSWR from 'swr';
 
 import { Post } from '#site/content';
 
@@ -12,9 +11,7 @@ export function LikeButton({ post }: { post: Post }) {
   const [likes, setLikes] = useState(0);
   const [updated, setUpdated] = useState(false);
 
-  useSWR(post.permalink, fetcher, {
-    onSuccess: (data) => setLikes(data['likes']),
-  });
+  fetcher(post.permalink).then((data) => setLikes(data['likes']));
 
   async function updateLikes(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();

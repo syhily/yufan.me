@@ -1,1 +1,2 @@
-bun run lint
+npm run lint
+npm run content
