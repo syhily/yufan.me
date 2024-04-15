@@ -1,28 +1,34 @@
 'use client';
 import React, { useState } from 'react';
 
-import { Post } from '#site/content';
-
-const fetcher = (id: string) => fetch('/api/likes?permalink=' + id).then((res) => res.json());
-const updater = (id: string) =>
-  fetch('/api/likes', { method: 'POST', body: JSON.stringify({ permalink: id }) }).then((res) => res.json());
+import { options, Post } from '#site/content';
 
 export function LikeButton({ post }: { post: Post }) {
   const [likes, setLikes] = useState(0);
   const [updated, setUpdated] = useState(false);
 
-  fetcher(post.permalink).then((data) => setLikes(data['likes']));
+  fetch(options.website + '/api/likes?permalink=' + post.permalink)
+    .then((res) => res.json())
+    .then((data) => setLikes(data['likes']));
 
-  async function updateLikes(e: React.MouseEvent<HTMLButtonElement>) {
+  function updateLikes(e: React.MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
 
     if (updated) {
       return;
     }
 
-    const { likes } = await updater(post.permalink);
-    setLikes(likes);
     setUpdated(true);
+    setLikes(likes + 1);
+
+    fetch(options.website + '/api/likes', {
+      method: 'POST',
+      body: JSON.stringify({ permalink: post.permalink }),
+    })
+      .then((res) => res.json())
+      .then(({ likes }) => {
+        setLikes(likes);
+      });
   }
 
   return (
