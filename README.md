@@ -161,7 +161,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 - [ ] Better style for Artalk comments.
 - [ ] Slide share components integration.
-- [ ] Add cover for all my posts. Remain **92** posts.
+- [ ] Add cover for all my posts. Remain **90** posts.
 
 ## License
 
