@@ -1,7 +1,7 @@
 import { customAlphabet } from 'nanoid/non-secure';
 
 import { neteaseAnonymousToken } from '@/components/mdx/netease/config';
-import { eAPI, linuxAPI, weAPI } from '@/components/mdx/netease/crypto';
+import { eAPI } from '@/components/mdx/netease/crypto';
 
 const nanoid = customAlphabet('1234567890abcdef', 32);
 
@@ -738,12 +738,10 @@ export const request = async (method: string, url: string, data: any = {}, optio
   if (url.includes('music.163.com')) headers['Referer'] = 'https://music.163.com';
 
   let ip = cnIP() || '';
-  // console.log(ip)
   if (ip) {
     headers['X-Real-IP'] = ip;
     headers['X-Forwarded-For'] = ip;
   }
-  // headers['X-Real-IP'] = '118.88.88.88'
   if (typeof options.cookie === 'undefined') options.cookie = {};
 
   if (typeof options.cookie === 'object') {
@@ -753,7 +751,6 @@ export const request = async (method: string, url: string, data: any = {}, optio
       _ntes_nuid: nanoid(),
     };
     if (!options.cookie.MUSIC_U) {
-      // 游客
       if (!options.cookie.MUSIC_A) {
         options.cookie.MUSIC_A = neteaseAnonymousToken;
       }
@@ -767,49 +764,32 @@ export const request = async (method: string, url: string, data: any = {}, optio
     headers['Cookie'] = '__remember_me=true; NMTID=xxx';
   }
 
-  // console.log(options.cookie, headers['Cookie'])
-  if (options.crypto === 'weapi') {
-    let csrfToken = (headers['Cookie'] || '').match(/_csrf=([^(;|$)]+)/);
-    data.csrf_token = csrfToken ? csrfToken[1] : '';
-    data = weAPI(data);
-    url = url.replace(/\w*api/, 'weapi');
-  } else if (options.crypto === 'linuxapi') {
-    data = linuxAPI({
-      method: method,
-      url: url.replace(/\w*api/, 'api'),
-      params: data,
-    });
-    headers['User-Agent'] =
-      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36';
-    url = 'https://music.163.com/api/linux/forward';
-  } else if (options.crypto === 'eapi') {
-    const cookie = options.cookie || {};
-    const csrfToken = cookie['__csrf'] || '';
-    const header = {
-      osver: cookie.osver, //系统版本
-      deviceId: cookie.deviceId, //encrypt.base64.encode(imei + '\t02:00:00:00:00:00\t5106025eb79a5247\t70ffbaac7')
-      appver: cookie.appver || '8.7.01', // app版本
-      versioncode: cookie.versioncode || '140', //版本号
-      mobilename: cookie.mobilename, //设备model
-      buildver: cookie.buildver || Date.now().toString().substring(0, 10),
-      resolution: cookie.resolution || '1920x1080', //设备分辨率
-      __csrf: csrfToken,
-      os: cookie.os || 'android',
-      channel: cookie.channel,
-      requestId: `${Date.now()}_${Math.floor(Math.random() * 1000)
-        .toString()
-        .padStart(4, '0')} `,
-    };
-    if (cookie.MUSIC_U) Object.assign(header, { MUSIC_U: cookie.MUSIC_U });
-    if (cookie.MUSIC_A) Object.assign(header, { MUSIC_A: cookie.MUSIC_A });
+  const cookie = options.cookie || {};
+  const csrfToken = cookie['__csrf'] || '';
+  const header = {
+    osver: cookie.osver,
+    deviceId: cookie.deviceId,
+    appver: cookie.appver || '8.7.01',
+    versioncode: cookie.versioncode || '140',
+    mobilename: cookie.mobilename,
+    buildver: cookie.buildver || Date.now().toString().substring(0, 10),
+    resolution: cookie.resolution || '1920x1080',
+    __csrf: csrfToken,
+    os: cookie.os || 'android',
+    channel: cookie.channel,
+    requestId: `${Date.now()}_${Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(4, '0')} `,
+  };
+  if (cookie.MUSIC_U) Object.assign(header, { MUSIC_U: cookie.MUSIC_U });
+  if (cookie.MUSIC_A) Object.assign(header, { MUSIC_A: cookie.MUSIC_A });
 
-    headers['Cookie'] = Object.entries(header)
-      .map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value))
-      .join('; ');
-    data.header = header;
-    data = eAPI(options.url, data);
-    url = url.replace(/\w*api/, 'eapi');
-  }
+  headers['Cookie'] = Object.entries(header)
+    .map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value))
+    .join('; ');
+  data.header = header;
+  data = eAPI(options.url, data);
+  url = url.replace(/\w*api/, 'eapi');
 
   let settings = {
     method,
@@ -817,21 +797,16 @@ export const request = async (method: string, url: string, data: any = {}, optio
     body: new URLSearchParams(data).toString(),
   };
 
-  if (options.crypto === 'eapi') {
-    Object.assign(settings, { responseType: 'arraybuffer' });
-  }
+  Object.assign(settings, { responseType: 'arraybuffer' });
 
   let res,
     count = 0;
   do {
     res = await fetch(url, settings);
-    if (options.crypto === 'eapi') {
-      const _ = await res.arrayBuffer();
-      const enc = new TextDecoder();
-      res = JSON.parse(enc.decode(_));
-    } else {
-      res = await res.json();
-    }
+    const _ = await res.arrayBuffer();
+    const enc = new TextDecoder();
+    res = JSON.parse(enc.decode(_));
+
     count++;
     if (count > 1) {
       console.log(`Request ${count} times.`);
@@ -844,15 +819,4 @@ export const request = async (method: string, url: string, data: any = {}, optio
   } while (res.code == -460); // { code: -460, message: '网络太拥挤，请稍候再试！' }
 
   return res;
-};
-
-export const mapSong = (song: any) => {
-  const artists = (song.ar || song.artists) as any[];
-  return {
-    title: song.name,
-    author: artists.reduce((i, v) => (i ? i + ' / ' : i) + v.name, ''),
-    pic: song?.al?.picUrl || song.id,
-    url: song.id,
-    lrc: song.id,
-  };
 };

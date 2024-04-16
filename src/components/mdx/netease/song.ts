@@ -1,4 +1,4 @@
-import { mapSong, request } from '@/components/mdx/netease/util';
+import { request } from '@/components/mdx/netease/util';
 
 export const getSongUrl = async (id: string) => {
   const data = {
@@ -14,20 +14,4 @@ export const getSongUrl = async (id: string) => {
   });
   const url = res.data[0]?.url?.replace('http://', 'https://');
   return url || `https://music.163.com/song/media/outer/url?id=${id}.mp3`;
-};
-
-export const getSongInfo = async (id: string) => {
-  const ids = [id];
-  const data = {
-    c: '[' + ids.map((id) => '{"id":' + id + '}').join(',') + ']',
-  };
-  let res = await request('POST', `https://music.163.com/api/v3/song/detail`, data, {
-    crypto: 'weapi',
-  });
-
-  if (!res.songs || res.songs.length < 1) {
-    throw res;
-  }
-
-  return mapSong(res.songs[0]);
 };
