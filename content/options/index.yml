@@ -45,7 +45,7 @@ settings:
   icpNo: 皖ICP备2021002315号-2
   locale: zh-CN
   timeZone: Asia/Shanghai
-  timeFormat: yyyy-MM-dd HH:mm:ss
+  timeFormat: yyyy年MM月dd日
   post:
     # asc or desc
     sort: desc

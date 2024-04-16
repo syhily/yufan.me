@@ -193,7 +193,6 @@ export default defineConfig({
     // For instance, Zeabur.
     const publishedPosts: any[] = posts.filter((post: any) => process.env.NODE_ENV !== 'production' || post.published);
     const publishedPages: any[] = pages.filter((page: any) => process.env.NODE_ENV !== 'production' || page.published);
-    if (process.env.NODE_ENV !== 'production') options.website = 'http://localhost:4321';
 
     // Find missing categories, tags from posts.
     const missingCategories: string[] = publishedPosts

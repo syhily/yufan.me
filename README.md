@@ -159,6 +159,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
+- [ ] Better style for Artalk comments.
 - [ ] Slide share components integration.
 - [ ] Add cover for all my posts. Remain **92** posts.
 

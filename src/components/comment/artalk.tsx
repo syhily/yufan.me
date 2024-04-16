@@ -1,7 +1,7 @@
 'use client';
-import 'artalk/dist/Artalk.css';
+import 'artalk/dist/ArtalkLite.css';
 
-import Artalk from 'artalk';
+import Artalk from 'artalk/dist/ArtalkLite';
 import React, { ComponentProps, useEffect, useRef } from 'react';
 
 import { options } from '#site/content';
@@ -32,9 +32,5 @@ export function ArtalkComment({
     };
   }, [permalink, title, containerRef]);
 
-  return (
-    <div id="comments" className="comments py-5" ref={containerRef}>
-      评价加载中...
-    </div>
-  );
+  return <div id="comments" className="comments py-5" ref={containerRef}></div>;
 }
