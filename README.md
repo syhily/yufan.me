@@ -162,7 +162,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 ## TODO Checklist
 
 - [ ] Rewrite the blog posts in Astro.
-- [ ] Add cover for all my posts. Remain **84i** posts.
+- [ ] Add cover for all my posts. Remain **82** posts.
 - [ ] Better style for Artalk comments.
 - [ ] Slide share components integration.
 - [ ] Drop bootstrap, in favor of tailwind css.
