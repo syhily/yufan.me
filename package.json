@@ -37,7 +37,7 @@
   "dependencies": {
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.0.3",
-    "artalk": "^2.8.3",
+    "artalk": "^2.8.5",
     "bootstrap": "^5.3.3",
     "feed": "^4.2.2",
     "fuse.js": "^7.0.0",
