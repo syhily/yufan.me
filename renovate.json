@@ -3,5 +3,5 @@
   "extends": [
     "config:recommended"
   ],
-  "ignoreDeps": ["eslint", "artalk"]
+  "ignoreDeps": ["eslint"]
 }
