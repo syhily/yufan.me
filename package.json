@@ -52,7 +52,7 @@
     "rehype-pretty-code": "^0.13.1"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.0",
+    "@types/lodash": "^4.17.1",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.8",
     "@types/react": "^18.3.1",
