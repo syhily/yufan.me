@@ -67,6 +67,6 @@
     "prettier": "^3.2.5",
     "typescript": "^5.4.5",
     "unist-util-visit": "^5.0.0",
-    "velite": "0.1.0-beta.14"
+    "velite": "0.1.0-rc.3"
   }
 }
