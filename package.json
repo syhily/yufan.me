@@ -1,0 +1,32 @@
+{
+  "name": "",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*": [
+      "biome check --no-errors-on-unmatched --files-ignore-unknown=true",
+      "prettier --write --ignore-unknown"
+    ]
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.7.0",
+    "astro": "^4.8.4",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.7.3",
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5",
+    "prettier-plugin-astro": "^0.13.0"
+  }
+}
