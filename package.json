@@ -1,14 +1,15 @@
 {
   "name": "",
+  "version": "1.0.0",
   "type": "module",
-  "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro check && astro build",
-    "preview": "astro preview",
     "astro": "astro",
-    "prepare": "husky"
+    "build": "astro check && astro build",
+    "dev": "astro dev",
+    "lint": "biome check --apply --use-server . && prettier . --write",
+    "prepare": "husky",
+    "preview": "astro preview",
+    "start": "astro dev"
   },
   "lint-staged": {
     "**/*": [
@@ -18,12 +19,13 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.7.0",
-    "astro": "^4.8.4",
+    "astro": "^4.8.6",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.7.3",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@types/node": "^20.12.12",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
