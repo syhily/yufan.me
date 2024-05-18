@@ -12,7 +12,7 @@ you can referrer the original weblog's source code in [next branch](https://gith
 
 ## Core Frameworks
 
-- [Astro](https://astro.build): The core engine.
+- [Astro](https://astro.build): Core engine
 - [Artalk](https://artalk.js.org): The self-hosted comment system
 - [Fuse.js](https://www.fusejs.io): Search engine
 - [Postgres](https://zeabur.com/docs/marketplace/postgresql): The view counter and like button for all my posts

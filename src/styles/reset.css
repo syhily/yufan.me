@@ -54,7 +54,7 @@
   --night-bg-muted: #202023;
   --night-bg-body: #19191d;
   --night-bg-danger: #f7094c;
-  --night-bg-warmming: #f6d365;
+  --night-bg-warning: #f6d365;
   --night-bg-white: #101012;
   --night-border-primary: #008c95;
   --night-border-outline-primary: #ffd1d1;
@@ -233,7 +233,6 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
@@ -540,6 +539,7 @@ input[type='email'],
 input[type='url'] {
   -webkit-appearance: none;
   -moz-appearance: none;
+  appearance: none;
   -webkit-box-shadow: none;
   box-shadow: none;
   outline: 0;
@@ -558,10 +558,7 @@ input[type='color'],
 textarea {
   -webkit-appearance: none;
   -moz-appearance: none;
-}
-
-input[type='number'] {
-  -moz-appearance: textfield;
+  appearance: none;
 }
 
 input[type='number']::-webkit-outer-spin-button,
@@ -584,7 +581,7 @@ input:-ms-input-placeholder {
 
 input::-moz-placeholder {
   line-height: revert;
-  /* Reset to the value from the user-agent stylesheet. */
+  /* Reset to the value from the user-agent stylesheets. */
 }
 
 input[type='search']::-webkit-search-decoration,
@@ -600,6 +597,7 @@ button:hover,
 .button:focus,
 .button:hover {
   -webkit-appearance: none;
+  appearance: none;
   outline: none !important;
   -webkit-box-shadow: none !important;
   box-shadow: none !important;

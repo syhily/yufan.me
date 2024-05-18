@@ -1,6 +1,29 @@
 {
-  "name": "",
+  "name": "yufan.me",
   "version": "1.0.0",
+  "private": true,
+  "keywords": [
+    "blog",
+    "astro",
+    "yufan",
+    "ameho",
+    "syhily"
+  ],
+  "homepage": "https://yufan.me",
+  "bugs": {
+    "url": "https://github.com/syhily/yufan.me/issues",
+    "email": "syhily@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syhily/yufan.me.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Yufan Sheng",
+    "email": "syhily@gmail.com",
+    "url": "https://yufan.me"
+  },
   "type": "module",
   "scripts": {
     "astro": "astro",
@@ -19,12 +42,17 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.7.0",
+    "@astrojs/mdx": "^3.0.0",
+    "@astrojs/sitemap": "^3.1.4",
+    "@zeabur/astro-adapter": "^1.0.3",
     "astro": "^4.8.6",
+    "bootstrap": "^5.3.3",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.7.3",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@playform/compress": "0.0.4",
     "@types/node": "^20.12.12",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",

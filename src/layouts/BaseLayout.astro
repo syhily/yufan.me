@@ -1,0 +1,38 @@
+---
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '@/styles/fonts.css';
+import '@/styles/iconfont/iconfont.css';
+import '@/styles/reset.css';
+import '@/styles/globals.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="author" href="https://yufan.me" />
+    <meta name="author" content="雨帆" />
+    <meta name="keywords" content="雨帆,且听书吟,syhily,amehochan,yufan" />
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
+    <link rel="alternate" type="application/rss+xml" title="且听书吟" href="/feed" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
