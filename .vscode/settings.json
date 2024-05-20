@@ -20,6 +20,7 @@
     "biomejs",
     "Cynosura",
     "datetime",
+    "duoshuo",
     "Emde",
     "firis",
     "fmoran",
@@ -44,6 +45,7 @@
     "nian",
     "OPPO",
     "playform",
+    "psql",
     "pwsz",
     "qrcode",
     "Quan",
@@ -60,5 +62,17 @@
     "Yufan",
     "yyjn",
     "zeabur"
+  ],
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "DuoShuo",
+      "database": "duoshuo",
+      "username": "duoshuo",
+      "password": "Twgdh@2024"
+    }
   ]
 }

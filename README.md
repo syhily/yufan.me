@@ -19,19 +19,37 @@ you can referrer the original weblog's source code in [next branch](https://gith
 
 ## Local Development
 
-> This weblog is still under [development](#todo-checklist).
-> A lot of ideas and thoughts are still in my checklists.
-> You can fork and clone this project for your own perspective.
-> But you should use it at your own risk.
+This weblog is still under [development](#todo-checklist). A lot of ideas and thoughts are still in my checklists.
+You can fork and clone this project for your own perspective. But you should use it at your own risk.
+
+### Postgres Database
 
 This weblog uses the Postgres as the storage for post-views and fav button.
-The configuration isn't defined in the `.env` for security reason.
-You should modify the `.env.example` file and rename it to `.env.local` for your local development.
+The configuration isn't defined in the `.env` for security reasons.
+You should modify the `.env.example` file and rename it to `.env` for your local development.
+
+The Postgres database can be created by installing [Postgres.app](https://postgresapp.com).
+The default user name is `your system user name` and the password is empty.
+
+You can create and initialize the database and user through the commands below.
 
 ```shell
-# Clone this project.
-git clone https://github.com/syhily/yufan.me.git
+# Create a database.
+psql -c "CREATE DATABASE <db>"
 
+# Create a user.
+psql -c "CREATE USER <db_user> PASSWORD '<StrongPassword!>'"
+
+# Grant the connection.
+psql -c "GRANT CONNECT ON DATABASE <db> TO <db_user>"
+
+# Grant the database privilege.
+psql -c "GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>"
+```
+
+The project is developed by using the npm. You can execute the project locally by using the commands.
+
+```shell
 # Install the dependencies by using bun.
 npm install
 
@@ -67,8 +85,8 @@ You can change it as you personal needs.
 
 ## Writing
 
-All the posts should be placed in `content/posts` directory with MDX format.
-All the pages should be placed in `content/pages` directory with MDX format.
+All the posts should be placed in `src/content/posts` directory with MDX format.
+All the pages should be placed in `src/content/pages` directory with MDX format.
 You can add any scripts or other customizable features by leveraging the MDX.
 
 ### Front Matter
@@ -112,14 +130,14 @@ date: 2013/7/13 20:46:25
 
 ## Weblog Design
 
-Almost all the design resources are placed in the file [yufan.me.sketch](./docs/yufan.me.sketch).
+Almost all the design resources are placed in the file [yufan.me.sketch](docs/yufan.me.sketch).
 I mainly use the [Sketch](https://www.sketch.com) as my design tools.
 
 ### Logo
 
-The fonts used in weblog logo is [M+A1](https://booth.pm/ja/items/2347968) with [license](./licenses/LICENSE.m-plus),
-[UnGungseo](http://kldp.net/unfonts) with [license](./licenses/LICENSE.un-fonts),
-and [Iroha Mochi](https://modi.jpn.org/font_iroha-mochi.php) with [license](./licenses/LICENSE.iroha-mochi).
+The fonts used in weblog logo is [M+A1](https://booth.pm/ja/items/2347968) with [license](licenses/LICENSE.m-plus),
+[UnGungseo](https://kldp.net/unfonts) with [license](licenses/LICENSE.un-fonts),
+and [Iroha Mochi](https://modi.jpn.org/font_iroha-mochi.php) with [license](licenses/LICENSE.iroha-mochi).
 
 They are the fonts that can be used in business without any charge.
 
@@ -136,15 +154,15 @@ to get it worked everywhere.
 
 ### Article Fonts
 
-The [OPPOSans 3.0](https://www.coloros.com/article/A00000050/) is used for reading in my weblog.
+The [OPPOSans 3.0](https://www.coloros.com/article/A00000050) is used for reading in my weblog.
 It can be used in business scenarios without any modification.
 Since we can't provide 3rd-party download link by the license limitation,
 we have to reference this font by using OPPO's internal link.
-The license file is [here](./licenses/LICENSE.oppo-sans)
+The license file is [here](licenses/LICENSE.oppo-sans)
 
 ## Deploy the Weblog
 
-This weblog is deployed on the [zeabur](https://zeabur.com/) platform.
+This weblog is deployed on the [zeabur](https://zeabur.com) platform.
 You can check their documents and get your own weblog to be published without any budget at first.
 
 Or you can host on your own machine.
@@ -166,7 +184,8 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## License
 
-The source code of this blog is licensed under the [MIT](./LICENSE) license,
+The source code of this blog is licensed under the [MIT](LICENSE) license,
 feel to free to use it without any legal risks.
 
-The [content](./src/content) of this blog's posts is licensed under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
+The [content](src/content) of this blog's posts is licensed under the
+[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
