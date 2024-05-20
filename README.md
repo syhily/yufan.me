@@ -19,6 +19,7 @@ Currently, the blog has transitioned to Astro, which is located in the [Astro br
 
 ## Core Frameworks
 
+- [Node.js 20](https://nodejs.org): The Node.js 20 LTS
 - [Astro](https://astro.build): Core engine
 - [Artalk](https://artalk.js.org): The self-hosted comment system
 - [Fuse.js](https://www.fusejs.io): Search engine

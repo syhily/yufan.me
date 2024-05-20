@@ -1,3 +1,7 @@
 dist
+.zeabur
 node_modules
 public/images
+
+# The MDX files
+*.mdx

@@ -3,6 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
     "strictNullChecks": true,
     "paths": {
       "@/*": ["src/*"]
