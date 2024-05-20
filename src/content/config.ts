@@ -1,7 +1,5 @@
 import { defineCollection, z } from 'astro:content';
 
-const slugCache = new Set<string>();
-
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
 // We add the slug here for validating the YAML configuration.
@@ -11,19 +9,7 @@ const slug = (by: string, reserved: string[] = []) =>
     .min(3)
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug')
-    .refine((value) => !reserved.includes(value), 'Reserved slug')
-    .superRefine((value, { addIssue }) => {
-      const key = `${by}:${value}`;
-      if (slugCache.has(key)) {
-        addIssue({
-          fatal: true,
-          code: 'custom',
-          message: `duplicate slug '${value}' in category '${by}'`,
-        });
-      } else {
-        slugCache.add(key);
-      }
-    });
+    .refine((value) => !reserved.includes(value), 'Reserved slug');
 
 // Categories Collection
 const categoriesCollection = defineCollection({
@@ -33,7 +19,6 @@ const categoriesCollection = defineCollection({
     slug: slug('category'),
     cover: z.string(),
     description: z.string().max(999).optional(),
-    count: z.number().default(0),
   }),
 });
 
@@ -149,8 +134,6 @@ const tagsCollection = defineCollection({
     z.object({
       name: z.string().max(20),
       slug: slug('tag'),
-      description: z.string().max(999).optional(),
-      count: z.number().default(0),
     }),
   ),
 });

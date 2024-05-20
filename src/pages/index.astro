@@ -1,14 +1,9 @@
 ---
 import { getCollection, getEntry } from 'astro:content';
 
-import Layout from '../layouts/BaseLayout.astro';
+import { categories, friends, options, pages, posts, tags } from '@/content/schema';
 
-const categories = await getCollection('categories');
-const friends = await getCollection('friends');
-const options = await getCollection('options');
-const pages = await getCollection('pages');
-const posts = await getCollection('posts');
-const tags = await getCollection('tags');
+import Layout from '../layouts/BaseLayout.astro';
 ---
 
 <Layout title="且听书吟" description="且听书吟">
@@ -16,14 +11,14 @@ const tags = await getCollection('tags');
   {
     categories.map((cat) => (
       <>
-        <code>{JSON.stringify(cat.data)}</code>
+        <code>{JSON.stringify(cat)}</code>
         <br />
       </>
     ))
   }
   <h2>Friends</h2>
   {
-    friends[0].data.map((cat) => (
+    friends.map((cat) => (
       <>
         <code>{JSON.stringify(cat)}</code>
         <br />
@@ -32,18 +27,18 @@ const tags = await getCollection('tags');
   }
   <h2>Options</h2>
   {
-    options.map((cat) => (
+    (
       <>
-        <code>{JSON.stringify(cat.data)}</code>
+        <code>{JSON.stringify(options)}</code>
         <br />
       </>
-    ))
+    )
   }
   <h2>Pages</h2>
   {
     pages.map((cat) => (
       <>
-        <code>{JSON.stringify(cat.data)}</code>
+        <code>{JSON.stringify(cat)}</code>
         <br />
       </>
     ))
@@ -52,14 +47,14 @@ const tags = await getCollection('tags');
   {
     posts.map((cat) => (
       <>
-        <code>{JSON.stringify(cat.data)}</code>
+        <code>{JSON.stringify(cat)}</code>
         <br />
       </>
     ))
   }
   <h2>Tags</h2>
   {
-    tags[0].data.map((cat) => (
+    tags.map((cat) => (
       <>
         <code>{JSON.stringify(cat)}</code>
         <br />
