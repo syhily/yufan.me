@@ -81,7 +81,7 @@ if (missingTags.length > 0) {
 
 // Find the missing covers from posts.
 const missingCovers = posts
-  .filter((post) => post.cover === '/images/default-cover.jpg')
+  .filter((post) => post.cover.src === '/images/default-cover.jpg')
   .map((post) => ({ title: post.title, slug: post.slug }));
 if (!import.meta.env.PROD && missingCovers.length > 0) {
   // We only warn here for this is a known improvement.

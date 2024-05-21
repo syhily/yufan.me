@@ -1,5 +1,9 @@
 import { defineCollection, z } from 'astro:content';
 
+import { image } from '@/utils/images';
+
+const defaultCover = '/images/default-cover.jpg';
+
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
 // We add the slug here for validating the YAML configuration.
@@ -17,7 +21,7 @@ const categoriesCollection = defineCollection({
   schema: z.object({
     name: z.string().max(20),
     slug: slug('category'),
-    cover: z.string(),
+    cover: image(defaultCover),
     description: z.string().max(999).optional(),
   }),
 });
@@ -108,7 +112,7 @@ const postsCollection = defineCollection({
     tags: z.array(z.string()).optional().default([]),
     category: z.string(),
     summary: z.string().optional().default(''),
-    cover: z.string().optional().default('/images/default-cover.jpg'),
+    cover: image(defaultCover),
     published: z.boolean().optional().default(true),
   }),
 });
@@ -121,7 +125,7 @@ const pagesCollection = defineCollection({
     date: z.date(),
     updated: z.date().optional(),
     comments: z.boolean().optional().default(true),
-    cover: z.string().optional().default('/images/default-cover.jpg'),
+    cover: image(defaultCover),
     published: z.boolean().optional().default(true),
     friend: z.boolean().optional().default(false),
   }),
