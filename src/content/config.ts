@@ -1,6 +1,5 @@
+import { imageMetadata } from '@/utils/images';
 import { defineCollection, z } from 'astro:content';
-
-import { image } from '@/utils/images';
 
 const defaultCover = '/images/default-cover.jpg';
 
@@ -13,6 +12,13 @@ const slug = () =>
     .min(3)
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug');
+
+const image = (fallbackImage: string) =>
+  z
+    .string()
+    .optional()
+    .default(fallbackImage)
+    .transform(async (arg) => await imageMetadata(arg));
 
 // Categories Collection
 const categoriesCollection = defineCollection({

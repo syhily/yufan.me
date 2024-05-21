@@ -1,7 +1,5 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-
-import { z } from 'astro:content';
 import { getPlaiceholder } from 'plaiceholder';
 
 export interface Image {
@@ -27,13 +25,6 @@ export interface Image {
     backgroundRepeat: string;
   };
 }
-
-export const image = (fallbackImage: string) =>
-  z
-    .string()
-    .optional()
-    .default(fallbackImage)
-    .transform(async (arg) => await imageMetadata(arg));
 
 export const imageMetadata = async (publicPath: string): Promise<Image> => {
   const root = join(process.cwd(), 'public');
