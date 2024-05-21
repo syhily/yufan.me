@@ -1,0 +1,26 @@
+---
+import { options, posts, tags } from '@/content/schema';
+import PageLayout from '@/layouts/PostsLayout.astro';
+
+const { num } = Astro.params;
+
+if (!num) {
+  Astro.response.status = 500;
+  throw new Error('No such page num existed.');
+}
+
+const pageNum = Number.parseInt(num);
+if (pageNum <= 1) {
+  return Astro.redirect('/');
+}
+
+export async function getStaticPaths() {
+  const pageSize = options.settings.pagination.posts;
+  const total = Math.ceil(posts.length / pageSize);
+  const pages = Array.from({ length: total - 1 }, (v, i) => i + 2);
+
+  return pages.map((page) => ({ params: { num: `${page}` }, props: { posts: posts, tags: tags } }));
+}
+---
+
+<PageLayout {posts} {pageNum} {tags} />

@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 
 import { options } from '@/content/schema';
 
-export function formatShowDate(date: Date | string) {
+export function formatShowDate(date: Date) {
   const source = date ? +new Date(date) : +new Date();
   const now = +new Date();
   const diff = now - source > 0 ? now - source : 60 * 1000;
@@ -37,7 +37,7 @@ export function formatShowDate(date: Date | string) {
   }
 
   // Format the post's date with time zone support.
-  return DateTime.fromISO(date.toString())
+  return DateTime.fromJSDate(date)
     .setZone(options.settings.timeZone)
     .setLocale(options.settings.locale)
     .toFormat(options.settings.timeFormat);

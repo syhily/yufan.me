@@ -16,8 +16,8 @@ interface Props {
 const { posts, pageNum, tags } = Astro.props;
 
 // Redirest to the homepage.
-if (pageNum <= 1) {
-  Astro.redirect('/');
+if (pageNum < 1) {
+  return Astro.redirect('/');
 }
 ---
 
