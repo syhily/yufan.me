@@ -46,6 +46,7 @@
     "@astrojs/sitemap": "^3.1.4",
     "astro": "^4.8.6",
     "bootstrap": "^5.3.3",
+    "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.4.4"
   },

@@ -1,0 +1,39 @@
+---
+import PostSquare from '@/components/page/post/PostSquare.astro';
+import type { Post } from '@/content/schema';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface Props {
+  title: string;
+  posts: Post[];
+}
+
+const { title, posts } = Astro.props;
+---
+
+<BaseLayout {title}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>{title}</h1>
+      </div>
+      {
+        posts.length === 0 ? (
+          <div class="data-null">
+            <div class="my-auto">
+              <i class="svg-404" />
+              <h1 class="font-number">404</h1>
+              <div>抱歉，没有你要找的内容...</div>
+            </div>
+          </div>
+        ) : (
+          <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+            {posts.map((post, index) => (
+              <PostSquare post={post} first={index === 0} />
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

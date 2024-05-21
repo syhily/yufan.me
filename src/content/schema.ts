@@ -21,6 +21,7 @@ export type Post = (typeof postsCollection)[number]['data'] & {
   slug: string;
   permalink: string;
   render: () => Render['.mdx'];
+  raw: () => Promise<string>;
 };
 export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: number; permalink: string };
 
@@ -46,6 +47,10 @@ export const posts: Post[] = postsCollection
     render: async () => {
       const entry = await getEntryBySlug('posts', post.slug);
       return entry.render();
+    },
+    raw: async () => {
+      const entry = await getEntryBySlug('posts', post.slug);
+      return entry.body;
     },
     ...post.data,
   }))
