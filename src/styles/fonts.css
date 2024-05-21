@@ -4,24 +4,6 @@
 @font-face {
   font-family: 'OPPOSans';
   src:
-    url(https://db.quike.com.cn/_nuxt/fonts/OPPOSans-B.d74d1bd.woff2) format('woff2'),
-    url(https://db.quike.com.cn/_nuxt/fonts/OPPOSans-B.b8436d4.woff) format('woff');
-  font-weight: 700;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'OPPOSans';
-  src:
-    url(https://db.quike.com.cn/_nuxt/fonts/OPPOSans-R.468eaab.woff2) format('woff2'),
-    url(https://db.quike.com.cn/_nuxt/fonts/OPPOSans-R.c920f27.woff) format('woff');
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'OPPOSans';
-  src:
     url(https://lzcdn.dianpusoft.cn/fonts/OPPOSans/OPPOSans-S-M.woff2) format('woff2'),
     url(https://lzcdn.dianpusoft.cn/fonts/OPPOSans/OPPOSans-S-M.woff) format('woff');
   font-weight: 400;

@@ -1,5 +1,4 @@
 ---
-import Resolver from '@/components/netease/resolver';
 import 'aplayer/dist/APlayer.min.css';
 
 interface Props {
@@ -7,21 +6,11 @@ interface Props {
 }
 
 const { id } = Astro.props;
-const nm = new Resolver();
-const info = await nm.song(id);
-const url = await nm.url(id);
-
-console.log(JSON.stringify(info.songs[0]));
-console.log(JSON.stringify(url));
+// https://github.com/injahow/meting-api
+const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${id}`).then((response) => response.json());
 ---
 
-<div
-  id="aplayer"
-  data-name={info.songs[0].name}
-  data-artist={info.songs[0].ar[0].name}
-  data-url={url.data[0].url}
-  data-cover={info.songs[0].al.picUrl}
->
+<div id="aplayer" data-name={data[0].name} data-artist={data[0].artist} data-url={data[0].url} data-cover={data[0].pic}>
   网易云音乐加载 ing
 </div>
 <script is:inline src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script>

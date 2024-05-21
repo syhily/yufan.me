@@ -9,6 +9,7 @@ interface Props {
 
 const { tags } = Astro.props;
 const randomSize = options.settings.sidebar.tag;
+export const prerender = false;
 ---
 
 <div id="tag_cloud" class="widget widget_tag_cloud">
