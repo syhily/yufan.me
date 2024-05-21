@@ -128,3 +128,7 @@ export const getPage = (slug: string): Page | undefined => {
 export const getCategory = (name?: string, slug?: string): Category | undefined => {
   return categories.find((c) => c.name === name || c.slug === slug);
 };
+
+export const getTag = (name?: string, slug?: string): Tag | undefined => {
+  return tags.find((tag) => tag.name === name || tag.slug === slug);
+};

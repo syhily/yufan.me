@@ -1,3 +1,37 @@
 ---
-export async function getStaticPaths() {}
+import { options, posts, tags, type Post, type Tag } from '@/content/schema';
+import TagLayout from '@/layouts/posts/TagLayout.astro';
+
+interface Props {
+  tag: Tag;
+  posts: Post[];
+}
+
+const props = Astro.props;
+const { num } = Astro.params;
+const pageNum = Number.parseInt(num);
+if (pageNum <= 1) {
+  return Astro.redirect(props.tag.permalink);
+}
+
+export async function getStaticPaths() {
+  const filtered = (tag: Tag) => posts.filter((post) => post.tags.includes(tag.name));
+  return tags
+    .map((tag) => ({ params: { slug: tag.slug }, props: { tag: tag, posts: filtered(tag) } }))
+    .flatMap((page) => {
+      const pageSize = options.settings.pagination.tags;
+      const total = Math.ceil(page.props.posts.length / pageSize);
+      const paginations = Array.from({ length: total }, (v, i) => i + 1);
+
+      return paginations.map((pagination) => ({
+        props: { ...page.props },
+        params: {
+          num: `${pagination}`,
+          ...page.params,
+        },
+      }));
+    });
+}
 ---
+
+<TagLayout posts={props.posts} tag={props.tag} {pageNum} />

@@ -18,8 +18,8 @@ interface Props {
 
 const title =
   Astro.props.title === undefined
-    ? `${options.title} | ${options.description}`
-    : `${Astro.props.title} | ${options.title}`;
+    ? `${options.title} - ${options.description}`
+    : `${Astro.props.title} - ${options.title}`;
 const description = Astro.props.description || options.description;
 ---
 
