@@ -46,11 +46,13 @@
     "@astrojs/sitemap": "^3.1.4",
     "astro": "^4.8.6",
     "bootstrap": "^5.3.3",
+    "lodash": "^4.17.21",
     "luxon": "^3.4.4"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.7.3",
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.12",
     "@zeabur/astro-adapter": "^1.0.4",

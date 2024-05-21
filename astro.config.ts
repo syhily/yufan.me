@@ -10,6 +10,6 @@ const site = import.meta.env.PROD ? 'https://yufan.me' : 'http://localhost:4321'
 export default defineConfig({
   site: site,
   adapter: zeabur(),
-  output: 'server',
+  output: 'hybrid',
   integrations: [sitemap(), mdx()],
 });
