@@ -47,9 +47,9 @@ const friendsCollection = defineCollection({
 const optionsCollection = defineCollection({
   type: 'data',
   schema: z.object({
-    title: z.string().max(99),
+    title: z.string().max(40),
     website: z.string().url(),
-    description: z.string().max(999),
+    description: z.string().max(100),
     keywords: z.array(z.string()),
     author: z.object({ name: z.string(), email: z.string().email(), url: z.string().url() }),
     navigation: z.array(z.object({ text: z.string(), link: z.string(), target: z.string().optional() })),

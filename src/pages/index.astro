@@ -2,69 +2,13 @@
 import { getCollection, getEntry } from 'astro:content';
 
 import { categories, friends, options, pages, posts, tags } from '@/content/schema';
-
-import Layout from '../layouts/BaseLayout.astro';
+import Layout from '@/layouts/BaseLayout.astro';
 
 const { Content, headings } = await posts[2].render();
 ---
 
-<Layout title="且听书吟" description="且听书吟">
+<Layout>
   <h2>First Post</h2>
   <Content />
   <code>{JSON.stringify(headings)}</code>
-
-  <h2>Categories</h2>
-  {
-    categories.map((cat) => (
-      <>
-        <code>{JSON.stringify(cat)}</code>
-        <br />
-      </>
-    ))
-  }
-  <h2>Friends</h2>
-  {
-    friends.map((cat) => (
-      <>
-        <code>{JSON.stringify(cat)}</code>
-        <br />
-      </>
-    ))
-  }
-  <h2>Options</h2>
-  {
-    (
-      <>
-        <code>{JSON.stringify(options)}</code>
-        <br />
-      </>
-    )
-  }
-  <h2>Pages</h2>
-  {
-    pages.map((cat) => (
-      <>
-        <code>{JSON.stringify(cat)}</code>
-        <br />
-      </>
-    ))
-  }
-  <h2>Posts</h2>
-  {
-    posts.map((cat) => (
-      <>
-        <code>{JSON.stringify(cat)}</code>
-        <br />
-      </>
-    ))
-  }
-  <h2>Tags</h2>
-  {
-    tags.map((cat) => (
-      <>
-        <code>{JSON.stringify(cat)}</code>
-        <br />
-      </>
-    ))
-  }
 </Layout>
