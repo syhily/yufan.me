@@ -41,11 +41,9 @@
     ]
   },
   "dependencies": {
-    "@astrojs/check": "^0.7.0",
     "@astrojs/mdx": "^3.0.0",
     "@astrojs/node": "^8.2.5",
     "@astrojs/rss": "^4.0.6",
-    "@astrojs/sitemap": "^3.1.4",
     "aplayer": "^1.10.1",
     "astro": "^4.8.6",
     "bootstrap": "^5.3.3",
@@ -54,10 +52,13 @@
     "luxon": "^3.4.4"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.7.0",
+    "@astrojs/sitemap": "^3.1.4",
     "@biomejs/biome": "^1.7.3",
     "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.12",
+    "astro-robots-txt": "^1.0.0",
     "blurhash": "^2.0.5",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.4",

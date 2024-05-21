@@ -1,6 +1,7 @@
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
+import robots from 'astro-robots-txt';
 import { defineConfig } from 'astro/config';
 const site = import.meta.env.PROD ? 'https://blog.yufan.me' : 'http://localhost:4321';
 
@@ -8,7 +9,7 @@ const site = import.meta.env.PROD ? 'https://blog.yufan.me' : 'http://localhost:
 export default defineConfig({
   site: site,
   output: 'hybrid',
-  integrations: [sitemap(), mdx()],
+  integrations: [sitemap(), robots({ sitemap: `${site}/sitemap-index.xml` }), mdx()],
   adapter: node({
     mode: 'standalone',
   }),
