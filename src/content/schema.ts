@@ -124,3 +124,7 @@ export const getPost = (slug: string): Post | undefined => {
 export const getPage = (slug: string): Page | undefined => {
   return pages.find((page) => page.slug === slug);
 };
+
+export const getCategory = (name?: string, slug?: string): Category | undefined => {
+  return categories.find((c) => c.name === name || c.slug === slug);
+};

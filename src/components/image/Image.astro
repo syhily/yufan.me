@@ -1,0 +1,12 @@
+---
+import type { Image } from '@/utils/images';
+
+interface Props {
+  src: Image;
+  alt?: string;
+}
+
+const { src, alt } = Astro.props;
+---
+
+<img src={src.src} {alt} loading="lazy" width={src.width} height={src.height} style={src.style} />

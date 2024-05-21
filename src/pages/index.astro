@@ -1,24 +1,6 @@
 ---
-import { blurhashToImageCssString } from '@unpic/placeholder';
-import { getCollection, getEntry } from 'astro:content';
-
-import { categories, friends, options, pages, posts, tags } from '@/content/schema';
-import Layout from '@/layouts/BaseLayout.astro';
-
-const post = posts[2];
-const { Content, headings } = await post.render();
+import { posts, tags } from '@/content/schema';
+import PageLayout from '@/layouts/PostsLayout.astro';
 ---
 
-<Layout>
-  <h2>First Post</h2>
-  <Content />
-  <img
-    src={post.cover.src}
-    alt={post.title}
-    loading="lazy"
-    width={post.cover.width}
-    height={post.cover.height}
-    style={blurhashToImageCssString(post.cover.blurHash)}
-  />
-  <code>{JSON.stringify(headings)}</code>
-</Layout>
+<PageLayout pageNum={1} {posts} {tags} />

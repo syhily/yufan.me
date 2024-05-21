@@ -1,6 +1,7 @@
 ---
 import { blurhashToImageCssString } from '@unpic/placeholder';
 
+import Image from '@/components/image/Image.astro';
 import type { Post } from '@/content/schema';
 
 interface Props {
@@ -13,15 +14,8 @@ const { post, first } = Astro.props;
 
 <div class="list-item list-nice-overlay">
   <div class="media media-3x2">
-    <a href={post.permalink} class={'media-content'}>
-      <img
-        src={post.cover.src}
-        alt={post.title}
-        loading="lazy"
-        width={post.cover.width}
-        height={post.cover.height}
-        style={blurhashToImageCssString(post.cover.blurHash)}
-      />
+    <a href={post.permalink} class="media-content">
+      <Image src={post.cover} alt={post.title} />
       <div class="overlay"></div>
     </a>
   </div>
