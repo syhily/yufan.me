@@ -83,7 +83,7 @@ if (missingTags.length > 0) {
 const missingCovers = posts
   .filter((post) => post.cover === '/images/default-cover.jpg')
   .map((post) => ({ title: post.title, slug: post.slug }));
-if (process.env.NODE_ENV !== 'production' && missingCovers.length > 0) {
+if (!import.meta.env.PROD && missingCovers.length > 0) {
   // We only warn here for this is a known improvement.
   console.warn(`The following ${missingCovers.length} posts don't have a cover.`);
   console.warn(missingCovers);
