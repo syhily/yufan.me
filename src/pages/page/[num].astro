@@ -17,7 +17,7 @@ if (pageNum <= 1) {
 export async function getStaticPaths() {
   const pageSize = options.settings.pagination.posts;
   const total = Math.ceil(posts.length / pageSize);
-  const pages = Array.from({ length: total }, (v, i) => i + 1);
+  const pages = Array.from({ length: total }, (_, i) => i + 1);
 
   return pages.map((page) => ({ params: { num: `${page}` } }));
 }

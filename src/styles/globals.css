@@ -3576,3 +3576,7 @@ blockquote cite {
 blockquote p:last-child {
   margin: 0;
 }
+
+#aplayer {
+  max-width: 350px;
+}

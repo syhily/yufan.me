@@ -21,7 +21,7 @@ export async function getStaticPaths() {
     .flatMap((page) => {
       const pageSize = options.settings.pagination.tags;
       const total = Math.ceil(page.props.posts.length / pageSize);
-      const paginations = Array.from({ length: total }, (v, i) => i + 1);
+      const paginations = Array.from({ length: total }, (_, i) => i + 1);
 
       return paginations.map((pagination) => ({
         props: { ...page.props },

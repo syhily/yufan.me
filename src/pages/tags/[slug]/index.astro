@@ -11,7 +11,9 @@ const props = Astro.props;
 
 export async function getStaticPaths() {
   const filtered = (tag: Tag) => posts.filter((post) => post.tags.includes(tag.name));
-  return tags.map((tag) => ({ params: { slug: tag.slug }, props: { tag: tag, posts: filtered(tag) } }));
+  return tags
+    .map((tag) => ({ params: { slug: tag.slug }, props: { tag: tag, posts: filtered(tag) } }))
+    .filter((page) => page.props.posts.length > 0);
 }
 ---
 

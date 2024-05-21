@@ -44,6 +44,7 @@
     "@astrojs/check": "^0.7.0",
     "@astrojs/mdx": "^3.0.0",
     "@astrojs/sitemap": "^3.1.4",
+    "aplayer": "^1.10.1",
     "astro": "^4.8.6",
     "bootstrap": "^5.3.3",
     "fuse.js": "^7.0.0",

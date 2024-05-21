@@ -1,3 +1,10 @@
 ---
+import { categories, posts, type Category } from '@/content/schema';
+
+export async function getStaticPaths() {
+  const filtered = (cat: Category) => posts.filter((post) => post.category === cat.name);
+  return categories.map((cat) => ({ params: { slug: cat.slug }, props: { category: cat, posts: filtered(cat) } }));
+}
+
 return Astro.redirect('/');
 ---

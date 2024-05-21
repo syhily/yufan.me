@@ -4,10 +4,9 @@ import type { Post } from '@/content/schema';
 
 interface Props {
   post: Post;
-  first?: boolean;
 }
 
-const { post, first } = Astro.props;
+const { post } = Astro.props;
 ---
 
 <div class="list-item list-nice-overlay">

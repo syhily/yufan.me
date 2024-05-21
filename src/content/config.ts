@@ -7,20 +7,19 @@ const defaultCover = '/images/default-cover.jpg';
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
 // We add the slug here for validating the YAML configuration.
-const slug = (by: string, reserved: string[] = []) =>
+const slug = () =>
   z
     .string()
     .min(3)
     .max(200)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug')
-    .refine((value) => !reserved.includes(value), 'Reserved slug');
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug');
 
 // Categories Collection
 const categoriesCollection = defineCollection({
   type: 'data',
   schema: z.object({
     name: z.string().max(20),
-    slug: slug('category'),
+    slug: slug(),
     cover: image(defaultCover),
     description: z.string().max(999).optional(),
   }),
@@ -137,7 +136,7 @@ const tagsCollection = defineCollection({
   schema: z.array(
     z.object({
       name: z.string().max(20),
-      slug: slug('tag'),
+      slug: slug(),
     }),
   ),
 });

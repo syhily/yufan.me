@@ -8,7 +8,7 @@ interface Props {
 }
 
 const { current, total, rootPath } = Astro.props;
-const pages = Array.from({ length: total }, (v, i) => i + 1);
+const pages = Array.from({ length: total }, (_, i) => i + 1);
 ---
 
 {pages.map((page) => <PaginationItem pageNum={page} current={current} rootPath={rootPath} />)}

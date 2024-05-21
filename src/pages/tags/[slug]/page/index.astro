@@ -1,3 +1,10 @@
 ---
+import { posts, tags, type Tag } from '@/content/schema';
+
 return Astro.redirect('/');
+
+export async function getStaticPaths() {
+  const filtered = (tag: Tag) => posts.filter((post) => post.tags.includes(tag.name));
+  return tags.map((tag) => ({ params: { slug: tag.slug }, props: { tag: tag, posts: filtered(tag) } }));
+}
 ---

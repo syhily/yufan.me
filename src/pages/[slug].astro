@@ -6,11 +6,11 @@ interface Props {
   page?: Page;
 }
 
-const { slug } = Astro.params;
 const { page } = Astro.props;
+
 if (!page) {
   // This could be a post. Redirect to a post instead.
-  return Astro.redirect(`/posts/${slug}`);
+  return Astro.redirect(`/posts/${Astro.params.slug}`);
 }
 
 export async function getStaticPaths() {
