@@ -1,0 +1,36 @@
+---
+import ArtalkComment from '@/components/comment/ArtalkComment.astro';
+import FriendLinks from '@/components/page/friend/FriendLinks.astro';
+import { options, type Page } from '@/content/schema';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface Props {
+  page: Page;
+}
+
+const { page } = Astro.props;
+const { Content } = await page.render();
+---
+
+<BaseLayout title={page.title}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="post">
+        <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
+        <div class="post-content">
+          <div class="nc-light-gallery"><Content /></div>
+        </div>
+        {page.friend && <FriendLinks />}
+        {
+          page.comments && (
+            <ArtalkComment
+              permalink={options.website + page.permalink + '/'}
+              title={page.title}
+              hidden={page.comments}
+            />
+          )
+        }
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,28 @@
+---
+import FriendCard from '@/components/page/friend/FriendCard.astro';
+import { friends } from '@/content/schema';
+import _ from 'lodash';
+
+const list = _.shuffle(friends);
+---
+
+{
+  list.length > 0 ? (
+    <div class="list-bookmarks px-3 px-md-0">
+      <h2 class="text-muted mb-4 mb-md-3">
+        左邻右舍 <span class="text-primary text-sm mb-4 mb-md-3">排名不分前后</span>
+      </h2>
+      <div class="row g-md-4 list-grouped">
+        {list.map((friend) => (
+          <FriendCard {...friend} />
+        ))}
+      </div>
+    </div>
+  ) : (
+    <div class="data-null">
+      <div class="my-auto">
+        <div>还没有友链呢...😭</div>
+      </div>
+    </div>
+  )
+}
