@@ -1,3 +1,37 @@
 ---
-export async function getStaticPaths() {}
+import { categories, options, posts, type Category, type Post } from '@/content/schema';
+import CategoryLayout from '@/layouts/posts/CategoryLayout.astro';
+
+interface Props {
+  category: Category;
+  posts: Post[];
+}
+
+const props = Astro.props;
+const { num } = Astro.params;
+const pageNum = Number.parseInt(num);
+if (pageNum <= 1) {
+  return Astro.redirect(props.category.permalink);
+}
+
+export async function getStaticPaths() {
+  const filtered = (cat: Category) => posts.filter((post) => post.category === cat.name);
+  return categories
+    .map((cat) => ({ params: { slug: cat.slug }, props: { category: cat, posts: filtered(cat) } }))
+    .flatMap((page) => {
+      const pageSize = options.settings.pagination.category;
+      const total = Math.ceil(page.props.posts.length / pageSize);
+      const paginations = Array.from({ length: total }, (v, i) => i + 1);
+
+      return paginations.map((pagination) => ({
+        props: { ...page.props },
+        params: {
+          num: `${pagination}`,
+          ...page.params,
+        },
+      }));
+    });
+}
 ---
+
+<CategoryLayout posts={props.posts} category={props.category} {pageNum} />

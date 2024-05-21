@@ -1,3 +1,38 @@
 ---
-// TODO
+import Pagination from '@/components/page/pagination/Pagination.astro';
+import PostSquare from '@/components/page/post/PostSquare.astro';
+import { options, type Category, type Post } from '@/content/schema';
+import { slicePosts } from '@/utils/post';
+import BaseLayout from '../BaseLayout.astro';
+
+interface Props {
+  category: Category;
+  posts: Post[];
+  pageNum: number;
+}
+
+const { category, posts, pageNum } = Astro.props;
+const results = slicePosts(posts, pageNum, options.settings.pagination.category);
+if (!results) {
+  return Astro.redirect('/404');
+}
+
+const { currentPosts, totalPage } = results;
 ---
+
+<BaseLayout title={category.name}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>{category.name}</h1>
+        <div class="text-muted mt-1">{category.description}</div>
+      </div>
+      <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+        {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+      </div>
+      <div class="mt-4 mt-lg-5">
+        <Pagination current={pageNum} total={totalPage} rootPath={category.permalink} />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
