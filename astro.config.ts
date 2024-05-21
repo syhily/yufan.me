@@ -12,4 +12,10 @@ export default defineConfig({
   adapter: node({
     mode: 'standalone',
   }),
+  markdown: {
+    shikiConfig: {
+      theme: 'solarized-light',
+      wrap: false,
+    },
+  },
 });
