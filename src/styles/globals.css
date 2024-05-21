@@ -2222,6 +2222,7 @@ a:hover .overlay {
   padding: 1.75rem;
   border-radius: 9px;
   border-radius: var(--border-radius-md, 9px);
+  color: var(--color-dark);
 }
 
 .nice-tips-xl .nice-tips-content,
