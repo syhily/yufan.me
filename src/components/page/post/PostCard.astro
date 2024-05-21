@@ -1,0 +1,42 @@
+---
+import Image from '@/components/image/Image.astro';
+import LikeIcon from '@/components/like/LikeIcon.astro';
+import { getCategory, type Post } from '@/content/schema';
+import { formatShowDate } from '@/utils/formatter';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const category = getCategory(post.category, undefined);
+---
+
+<div class="list-item block">
+  <div class="media media-3x2 col-6 col-md-5">
+    <a href={post.permalink} class="media-content">
+      <Image src={post.cover} alt={post.title} />
+    </a>
+    <div class="media-overlay overlay-top">
+      <a class="d-none d-md-inline-block badge badge-md bg-white-overlay" href={category ? category.permalink : ''}>
+        {post.category}
+      </a>
+    </div>
+  </div>
+  <div class="list-content">
+    <div class="list-body">
+      <a href={post.permalink} class="list-title h5">
+        <div class="h-2x">{post.title}</div>
+      </a>
+      <div class="d-none d-md-block list-desc text-secondary text-md mt-3">
+        <div class="h-2x">{post.summary ?? ''}</div>
+      </div>
+    </div>
+    <div class="list-footer">
+      <div class="d-flex flex-fill align-items-center text-muted text-sm">
+        <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
+        <LikeIcon {post} />
+      </div>
+    </div>
+  </div>
+</div>
