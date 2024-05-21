@@ -1,0 +1,47 @@
+---
+import ArtalkComment from '@/components/comment/ArtalkComment.astro';
+import LikeButton from '@/components/like/LikeButton.astro';
+import Share from '@/components/like/Share.astro';
+import Sidebar from '@/components/sidebar/Sidebar.astro';
+import { options, posts, tags, type Post } from '@/content/schema';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { formatShowDate } from '@/utils/formatter';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+---
+
+<BaseLayout title={post.title}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="row">
+        <div class="content-wrapper col-12 col-xl-9">
+          <div class="post card card-md">
+            <div class="card-body">
+              <h1 class="post-title">{post.title}</h1>
+              <div class="post-meta text-sm text-muted mt-3 mb-4">
+                <time>{formatShowDate(post.date)}</time>
+              </div>
+              <div class="post-content">
+                <div class="nc-light-gallery">
+                  <Content />
+                </div>
+                <nav class="post-in-navigation navigation pagination font-number" role="navigation">
+                  <div class="nav-links"></div>
+                </nav>
+              </div>
+              <LikeButton {post} />
+              <Share {post} />
+              {post.comments && <ArtalkComment permalink={options.website + post.permalink + '/'} title={post.title} />}
+            </div>
+          </div>
+        </div>
+        <Sidebar {posts} {tags} />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

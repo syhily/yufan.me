@@ -1,6 +1,6 @@
 ---
 import { options, posts, tags } from '@/content/schema';
-import PageLayout from '@/layouts/PostsLayout.astro';
+import PostsLayout from '@/layouts/posts/PostsLayout.astro';
 
 const { num } = Astro.params;
 
@@ -23,4 +23,4 @@ export async function getStaticPaths() {
 }
 ---
 
-<PageLayout {posts} {pageNum} {tags} />
+<PostsLayout {posts} {pageNum} {tags} />

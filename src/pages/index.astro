@@ -1,6 +1,6 @@
 ---
 import { posts, tags } from '@/content/schema';
-import PageLayout from '@/layouts/PostsLayout.astro';
+import PostsLayout from '@/layouts/posts/PostsLayout.astro';
 ---
 
-<PageLayout pageNum={1} {posts} {tags} />
+<PostsLayout pageNum={1} {posts} {tags} />

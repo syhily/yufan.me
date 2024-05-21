@@ -1,0 +1,16 @@
+---
+import { posts, type Post } from '@/content/schema';
+import PostLayout from '@/layouts/PostLayout.astro';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+
+export async function getStaticPaths() {
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post: post } }));
+}
+---
+
+<PostLayout {post} />
