@@ -56,16 +56,19 @@ for (player of players) {
 }
 
 // Search Bar.
-document.querySelector('.search-sidebar').addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    event.stopPropagation();
+const searchSidebar = document.querySelector('.search-sidebar');
+if (searchSidebar) {
+  searchSidebar.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
 
-    const query = event.target.value;
-    event.target.value = '';
-    location.href = `/search?q=${encodeURIComponent(query)}`;
-  }
-});
+      const query = event.target.value;
+      event.target.value = '';
+      location.href = `/search?q=${encodeURIComponent(query)}`;
+    }
+  });
+}
 
 // Search dialog.
 const searchPopup = document.querySelector('.global-search-popup');
