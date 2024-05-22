@@ -183,13 +183,19 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
-- [ ] Rewrite the blog posts in Astro.
-- [ ] Use self developed duoshuo as the comments solution.
+- [ ] Add image lazy load support with blur background.
+- [ ] Add Open Graph for all my pages.
+- [ ] Add like icon with deduplication.
+- [ ] Artalk integration with custom stylesheet.
+- [ ] Add recent comments.
 - [ ] Add cover for all my posts. Remain **79** posts.
-- [ ] Better style for Artalk comments.
 - [ ] Slide share components integration.
-- [ ] Drop bootstrap, in favor of tailwind css.
+
+### Long Term Goals
+
 - [ ] Add han.js support for better typography.
+- [ ] Drop bootstrap, in favor of tailwind css.
+- [ ] Use self developed duoshuo as the comments solution.
 
 ## License
 
@@ -198,3 +204,8 @@ feel to free to use it without any legal risks.
 
 The [content](src/content) of this blog's posts is licensed under the
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
+
+### Third Party Codes
+
+Some codes in this project is copied from other project.
+I have add the comments in the file header and keep these license file in [licenses](licenses) directory.

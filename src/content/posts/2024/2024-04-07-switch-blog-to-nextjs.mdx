@@ -2,7 +2,7 @@
 title: 弃用 WordPress 了，但我相当“后悔”
 slug: switch-blog-to-nextjs
 date: 2024-04-07 16:09:09
-updated: 2024-04-14 00:07:00
+updated: 2024-05-22 18:12:00
 tags:
   - 博客
 category: 编程
@@ -57,6 +57,18 @@ MDX 一开始是手动使用 `fs` 加载，使用 `grey-matter` 解析 `matter` 
 ## Update 2024/04/14
 
 没错，一周后我又来屁颠屁颠地更新博客啦，一周过去后，我的博客也发生了不少变化。首先是搜索终于支持了，使用的是 fuse.js。前文提到的 Contentlayer 也被我废弃，换成了更好用的 Velite。
+
+## Update 2024/05/22
+
+今天，我把博客从 Next.js 迁移到了 Astro，重写了部分代码的实现，优化了部分设计。Next.js 版本的博客，内容管理和生成工具使用的是 Velite.js，它的设计很有想法，作者也很有经验。但是对应的 Next.js 与其集成后，却给我带来了很多解决不了的问题。首当其中的就是 Next.js 默认是 SSR，我在 MDX 中生成的内容，部分需要 inline 到 Client 端使用 JS 去动态执行，结果无法实现。其次就是 Astro 先天的在内容管理与编写上下了不少功夫。基于上述理由，我花了两天多一点的时间，就轻松把博客用 Astro 重写了。
+
+重写之后发现 Astro 其实还是比较不成熟，很多东西文档并不清楚，还是要看源码来理清其设计想法。比如 `Astro:content` 的设计原理和其使用的细节问题，再比如 `Astro:assert` 这个特定的 import.meta 的使用问题。整体上而言，很多细节问题其实是 Astro 变化太快，对应的文档还没有来得及讲清楚。但是最让我失望的是，Astro 的 SSR 并不完善，它的 inline CSS 和 JS 的实现，其实是靠 Vite 整合 Rollup 提供的能力。所以在 SSR 上，如果你在一个 Astro Component 里面 `is:inline` 去定义 JS，很有可能会遇到因为模块重用而导致的坑。
+
+另一个我很失望的缺陷就是 Astro 对于 MDX 的支持问题。当前的版本对于 MDX，还是无法实现预渲染来全文输出 RSS。当然，我知道这并非 Astro 自己的问题，主要和 MDX 的复杂和生态息息相关。
+
+迁移到 Astro 的同时，也将博客的 Comment 系统 Artalk 的数据库从 MySQL 切换成了 Postgres，对应的数据库查询相关的代码完全废弃重写，顺带着使用 DrizzleORM 来完成了相关的查询的编写。整体上的使用比想象中愉悦。
+
+~~希望这是我最后一次重写博客吧。~~
 
 ---
 

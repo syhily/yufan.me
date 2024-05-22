@@ -7,7 +7,7 @@
   "bracketSpacing": true,
   "astroAllowShorthand": true,
   "endOfLine": "lf",
-  "plugins": ["prettier-plugin-astro", "prettier-plugin-organize-imports", "prettier-plugin-astro-organize-imports"],
+  "plugins": ["prettier-plugin-astro", "prettier-plugin-organize-imports"],
   "overrides": [
     {
       "files": "**/*.astro",

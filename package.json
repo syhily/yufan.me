@@ -65,7 +65,6 @@
     "plaiceholder": "^3.0.0",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.13.0",
-    "prettier-plugin-astro-organize-imports": "^0.4.8",
     "prettier-plugin-organize-imports": "^3.2.4",
     "typescript": "^5.4.5"
   }
