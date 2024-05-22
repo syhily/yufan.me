@@ -1,4 +1,4 @@
-import { options, posts } from '@/content/schema';
+import { options, posts } from '@/helpers/schema';
 import rss from '@astrojs/rss';
 
 export const GET = async () => {

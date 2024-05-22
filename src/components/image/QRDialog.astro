@@ -38,19 +38,3 @@ const svg = new QRCode({ width: 196, height: 196, content: url }).svg();
     </div>
   </div>
 </div>
-
-<script is:inline>
-  document.querySelectorAll('.nice-dialog').forEach((dialog) => {
-    const popup = dialog.querySelector('.nice-popup');
-    dialog.addEventListener('click', (event) => {
-      event.stopPropagation();
-      popup.classList.toggle('nice-popup-open', true);
-    });
-
-    const close = dialog.querySelector('.nice-popup-close');
-    close.addEventListener('click', (event) => {
-      event.stopPropagation();
-      popup.classList.toggle('nice-popup-open', false);
-    });
-  });
-</script>

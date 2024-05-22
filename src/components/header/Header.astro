@@ -3,7 +3,7 @@ import Logo from '@/components/header/Logo.astro';
 import LogoLarge from '@/components/header/LogoLarge.astro';
 import QRDialog from '@/components/image/QRDialog.astro';
 import SearchDialog from '@/components/search/SearchDialog.astro';
-import { options } from '@/content/schema';
+import { options } from '@/helpers/schema';
 ---
 
 <header class="site-aside">
@@ -67,18 +67,3 @@ import { options } from '@/content/schema';
     </div>
   </div>
 </div>
-<script is:inline>
-  const menuBody = document.querySelector('.site-aside');
-
-  // Add the menu toggle as a global handler
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      menuBody.classList.toggle('in', false);
-    }
-  });
-  document.querySelector('.menu-toggler').addEventListener('click', () => menuBody.classList.toggle('in', true));
-  document.querySelector('.site-menu').addEventListener('click', () => menuBody.classList.toggle('in', false));
-  document.querySelector('.aside-overlay').addEventListener('click', () => menuBody.classList.toggle('in', false));
-</script>

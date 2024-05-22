@@ -1,4 +1,4 @@
-import { posts } from '@/content/schema';
+import { posts } from '@/helpers/schema';
 import Fuse from 'fuse.js';
 
 interface PostItem {

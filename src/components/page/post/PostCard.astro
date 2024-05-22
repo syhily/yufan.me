@@ -1,8 +1,8 @@
 ---
 import Image from '@/components/image/Image.astro';
 import LikeIcon from '@/components/like/LikeIcon.astro';
-import { getCategory, type Post } from '@/content/schema';
-import { formatShowDate } from '@/utils/formatter';
+import { formatShowDate } from '@/helpers/formatter';
+import { getCategory, type Post } from '@/helpers/schema';
 
 interface Props {
   post: Post;

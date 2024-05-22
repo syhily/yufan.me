@@ -1,9 +1,9 @@
 ---
 import Pagination from '@/components/page/pagination/Pagination.astro';
 import PostSquare from '@/components/page/post/PostSquare.astro';
-import { options, type Post, type Tag } from '@/content/schema';
+import { slicePosts } from '@/helpers/formatter';
+import { options, type Post, type Tag } from '@/helpers/schema';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { slicePosts } from '@/utils/post';
 
 interface Props {
   tag: Tag;

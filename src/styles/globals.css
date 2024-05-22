@@ -3578,6 +3578,6 @@ blockquote p:last-child {
   margin: 0;
 }
 
-#aplayer {
+.aplayer {
   max-width: 350px;
 }

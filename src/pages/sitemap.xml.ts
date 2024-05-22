@@ -1,4 +1,4 @@
-import { options, pages, posts } from '@/content/schema';
+import { options, pages, posts } from '@/helpers/schema';
 
 export async function GET() {
   const result = `

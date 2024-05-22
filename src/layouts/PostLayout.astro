@@ -3,9 +3,9 @@ import ArtalkComment from '@/components/comment/Artalk.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import Share from '@/components/like/Share.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
-import { options, posts, tags, type Post } from '@/content/schema';
+import { formatShowDate } from '@/helpers/formatter';
+import { options, posts, tags, type Post } from '@/helpers/schema';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { formatShowDate } from '@/utils/formatter';
 
 interface Props {
   post: Post;

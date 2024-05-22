@@ -1,4 +1,4 @@
-import { imageMetadata } from '@/utils/images';
+import { imageMetadata } from '@/helpers/images';
 import { defineCollection, z } from 'astro:content';
 
 const defaultCover = '/images/default-cover.jpg';

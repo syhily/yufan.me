@@ -31,16 +31,3 @@
     </div>
   </div>
 </div>
-
-<script is:inline>
-  const searchPopup = document.querySelector('.global-search-popup');
-  document.querySelector('.global-search').addEventListener('click', (event) => {
-    event.stopPropagation();
-    searchPopup.classList.toggle('nice-popup-open', true);
-  });
-
-  document.querySelector('.global-search-close').addEventListener('click', (event) => {
-    event.stopPropagation();
-    searchPopup.classList.toggle('nice-popup-open', false);
-  });
-</script>

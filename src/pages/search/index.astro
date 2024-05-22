@@ -1,6 +1,6 @@
 ---
-import { options, posts } from '@/content/schema';
-import { searchPosts } from '@/content/search';
+import { options, posts } from '@/helpers/schema';
+import { searchPosts } from '@/helpers/search';
 import SearchLayout from '@/layouts/posts/SearchLayout.astro';
 
 const query = Astro.url.searchParams.get('q') || '';
@@ -9,6 +9,7 @@ if (query === '') {
 }
 
 const title = `${query} 查询结果`;
+
 const searchResults = searchPosts(query)
   .map((slug) => posts.find((post) => post.slug === slug))
   .flatMap((post) => (post == null ? [] : [post]))

@@ -1,5 +1,5 @@
 ---
-import { options } from '@/content/schema';
+import { options } from '@/helpers/schema';
 ---
 
 <div id="search" class="widget widget_search" hidden={!options.settings.sidebar.search}>
@@ -10,16 +10,3 @@ import { options } from '@/content/schema';
     </label>
   </div>
 </div>
-
-<script is:inline>
-  document.querySelector('.search-sidebar').addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const query = event.target.value;
-      event.target.value = '';
-      location.href = '/search?q=' + encodeURIComponent(query);
-    }
-  });
-</script>

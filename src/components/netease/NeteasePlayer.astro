@@ -10,22 +10,12 @@ const { id } = Astro.props;
 const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${id}`).then((response) => response.json());
 ---
 
-<div id="aplayer" data-name={data[0].name} data-artist={data[0].artist} data-url={data[0].url} data-cover={data[0].pic}>
+<div
+  class="aplayer"
+  data-name={data[0].name}
+  data-artist={data[0].artist}
+  data-url={data[0].url}
+  data-cover={data[0].pic}
+>
   网易云音乐加载 ing
 </div>
-<script is:inline src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script>
-<script is:inline>
-  const tag = document.getElementById('aplayer');
-  new APlayer({
-    container: document.getElementById('aplayer'),
-    audio: [
-      {
-        name: tag.dataset.name,
-        artist: tag.dataset.artist,
-        url: tag.dataset.url,
-        cover: tag.dataset.cover,
-        theme: '#ebd0c2',
-      },
-    ],
-  });
-</script>
