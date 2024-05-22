@@ -65,7 +65,7 @@ const transformNextImage = async (imageNode: ImageNode) => {
 // https://astro.build/config
 export default defineConfig({
   site: site,
-  output: 'hybrid',
+  output: 'server',
   integrations: [sitemap(), robots({ sitemap: `${site}/sitemap-index.xml` }), mdx({ remarkPlugins: [lazyImage] })],
   adapter: node({
     mode: 'standalone',
