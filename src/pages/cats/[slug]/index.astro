@@ -1,5 +1,5 @@
 ---
-import { categories, posts, type Category, type Post } from '@/content/schema';
+import { getCategory, posts, type Category, type Post } from '@/content/schema';
 import CategoryLayout from '@/layouts/posts/CategoryLayout.astro';
 
 interface Props {
@@ -7,14 +7,14 @@ interface Props {
   posts: Post[];
 }
 
-const props = Astro.props;
+const { slug } = Astro.params;
+const category = getCategory(undefined, slug);
 
-export async function getStaticPaths() {
-  const filtered = (cat: Category) => posts.filter((post) => post.category === cat.name);
-  return categories
-    .map((cat) => ({ params: { slug: cat.slug }, props: { category: cat, posts: filtered(cat) } }))
-    .filter((page) => page.props.posts.length > 0);
+if (!category) {
+  return Astro.redirect('/404');
 }
+
+const filteredPosts = posts.filter((post) => post.category === category.name);
 ---
 
-<CategoryLayout posts={props.posts} category={props.category} pageNum={1} />
+<CategoryLayout posts={filteredPosts} {category} pageNum={1} />

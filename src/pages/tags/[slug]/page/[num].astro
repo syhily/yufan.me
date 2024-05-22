@@ -1,37 +1,26 @@
 ---
-import { options, posts, tags, type Post, type Tag } from '@/content/schema';
+import { getTag, options, posts } from '@/content/schema';
 import TagLayout from '@/layouts/posts/TagLayout.astro';
 
-interface Props {
-  tag: Tag;
-  posts: Post[];
+const { slug, num } = Astro.params;
+const tag = getTag(undefined, slug);
+
+if (!tag || !num) {
+  return Astro.redirect('/404');
 }
 
-const props = Astro.props;
-const { num } = Astro.params;
 const pageNum = Number.parseInt(num);
 if (pageNum <= 1) {
-  return Astro.redirect(props.tag.permalink);
+  return Astro.redirect(tag.permalink);
 }
 
-export async function getStaticPaths() {
-  const filtered = (tag: Tag) => posts.filter((post) => post.tags.includes(tag.name));
-  return tags
-    .map((tag) => ({ params: { slug: tag.slug }, props: { tag: tag, posts: filtered(tag) } }))
-    .flatMap((page) => {
-      const pageSize = options.settings.pagination.tags;
-      const total = Math.ceil(page.props.posts.length / pageSize);
-      const paginations = Array.from({ length: total }, (_, i) => i + 1);
+const filteredPosts = posts.filter((post) => post.tags.includes(tag.name));
+const pageSize = options.settings.pagination.tags;
+const total = Math.ceil(filteredPosts.length / pageSize);
 
-      return paginations.map((pagination) => ({
-        props: { ...page.props },
-        params: {
-          num: `${pagination}`,
-          ...page.params,
-        },
-      }));
-    });
+if (pageNum > total) {
+  return Astro.redirect('/404');
 }
 ---
 
-<TagLayout posts={props.posts} tag={props.tag} {pageNum} />
+<TagLayout posts={filteredPosts} {tag} {pageNum} />

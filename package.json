@@ -49,28 +49,24 @@
     "bootstrap": "^5.3.3",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
-    "luxon": "^3.4.4"
+    "luxon": "^3.4.4",
+    "plaiceholder": "^3.0.0",
+    "qrcode-svg": "^1.1.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.7.0",
-    "@astrojs/sitemap": "^3.1.4",
     "@biomejs/biome": "^1.7.3",
     "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.12",
     "@types/qrcode-svg": "^1.1.4",
-    "@types/unist": "^3.0.2",
     "astro-robots-txt": "^1.0.0",
-    "blurhash": "^2.0.5",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.4",
-    "plaiceholder": "^3.0.0",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.13.0",
     "prettier-plugin-astro-organize-imports": "^0.4.8",
     "prettier-plugin-organize-imports": "^3.2.4",
-    "qrcode-svg": "^1.1.0",
-    "typescript": "^5.4.5",
-    "unist-util-visit": "^5.0.0"
+    "typescript": "^5.4.5"
   }
 }

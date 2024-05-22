@@ -1,23 +1,21 @@
 ---
-import { pages, posts, type Page } from '@/content/schema';
+import { getPage, getPost } from '@/content/schema';
 import PageLayout from '@/layouts/PageLayout.astro';
 
-interface Props {
-  page?: Page;
+const { slug } = Astro.params;
+if (!slug) {
+  return Astro.redirect('/404');
 }
 
-const { page } = Astro.props;
-
+const page = getPage(slug);
 if (!page) {
+  const post = getPost(slug);
+  if (!post) {
+    return Astro.redirect('/404');
+  }
+
   // This could be a post. Redirect to a post instead.
-  return Astro.redirect(`/posts/${Astro.params.slug}`);
-}
-
-export async function getStaticPaths() {
-  const postPaths = posts.map((post) => ({ params: { slug: post.slug }, props: {} }));
-  const pagePaths = pages.map((page) => ({ params: { slug: page.slug }, props: { page: page } }));
-
-  return [...postPaths, ...pagePaths];
+  return Astro.redirect(post.permalink);
 }
 ---
 

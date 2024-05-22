@@ -1,37 +1,26 @@
 ---
-import { categories, options, posts, type Category, type Post } from '@/content/schema';
+import { getCategory, options, posts } from '@/content/schema';
 import CategoryLayout from '@/layouts/posts/CategoryLayout.astro';
 
-interface Props {
-  category: Category;
-  posts: Post[];
+const { slug, num } = Astro.params;
+const category = getCategory(undefined, slug);
+
+if (!category || !num) {
+  return Astro.redirect('/404');
 }
 
-const props = Astro.props;
-const { num } = Astro.params;
 const pageNum = Number.parseInt(num);
 if (pageNum <= 1) {
-  return Astro.redirect(props.category.permalink);
+  return Astro.redirect(category.permalink);
 }
 
-export async function getStaticPaths() {
-  const filtered = (cat: Category) => posts.filter((post) => post.category === cat.name);
-  return categories
-    .map((cat) => ({ params: { slug: cat.slug }, props: { category: cat, posts: filtered(cat) } }))
-    .flatMap((page) => {
-      const pageSize = options.settings.pagination.category;
-      const total = Math.ceil(page.props.posts.length / pageSize);
-      const paginations = Array.from({ length: total }, (_, i) => i + 1);
+const filteredPosts = posts.filter((post) => post.category === category.name);
+const pageSize = options.settings.pagination.category;
+const total = Math.ceil(filteredPosts.length / pageSize);
 
-      return paginations.map((pagination) => ({
-        props: { ...page.props },
-        params: {
-          num: `${pagination}`,
-          ...page.params,
-        },
-      }));
-    });
+if (pageNum > total) {
+  return Astro.redirect('/404');
 }
 ---
 
-<CategoryLayout posts={props.posts} category={props.category} {pageNum} />
+<CategoryLayout posts={filteredPosts} {category} {pageNum} />
