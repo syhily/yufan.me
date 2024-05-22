@@ -7,7 +7,7 @@ import type { Literal, Node, Parent } from 'unist';
 import { visit } from 'unist-util-visit';
 import { imageMetadata } from './src/utils/images';
 
-const site = import.meta.env.PROD ? 'https://blog.yufan.me' : 'http://localhost:4321';
+const site = import.meta.env.PROD ? 'https://yufan.me' : 'http://localhost:4321';
 
 export type ImageNode = Parent & {
   url: string;
