@@ -39,16 +39,16 @@ for (dialog of document.querySelectorAll('.nice-dialog')) {
 }
 
 // Netease music player.
-const players = document.querySelectorAll('.aplayer');
-for (player of players) {
+const ps = document.querySelectorAll('.aplayer');
+for (p of ps) {
   new APlayer({
-    container: player,
+    container: p,
     audio: [
       {
-        name: player.dataset.name,
-        artist: player.dataset.artist,
-        url: player.dataset.url,
-        cover: player.dataset.cover,
+        name: p.dataset.name,
+        artist: p.dataset.artist,
+        url: p.dataset.url,
+        cover: p.dataset.cover,
         theme: '#ebd0c2',
       },
     ],
