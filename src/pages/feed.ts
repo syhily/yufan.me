@@ -8,6 +8,7 @@ export const GET = async () => {
   return rss({
     title: options.title,
     description: options.description,
+    stylesheet: '/feed.xsl',
     site: options.website,
     items: posts.slice(0, options.settings.feed.size).map((post) => ({
       link: options.website + post.permalink,
