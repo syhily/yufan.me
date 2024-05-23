@@ -1,12 +1,6 @@
 // This file is copied from https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts
 // I just modified it for my personal needs.
 
-type BaseMeta = {
-  title: string;
-  description?: string;
-  canonicalUrl?: string;
-};
-
 type PageOgMeta = {
   title: string;
   description?: string;
@@ -72,15 +66,13 @@ export function getPageMeta({
   ogImageHeight?: number;
   siteOwnerTwitterHandle?: string;
   contentAuthorTwitterHandle?: string;
-}): { meta: BaseMeta; og: PageOgMeta; twitter: PageTwitterMeta } {
+}): { og: PageOgMeta; twitter: PageTwitterMeta } {
   if (!pageTitle) {
     throw Error('title is required for page SEO');
   }
   if (ogImageAbsoluteUrl) {
     ogImageAltText = !ogImageAltText ? `Preview image for ${pageTitle}` : ogImageAltText;
   }
-
-  const meta: BaseMeta = { title: pageTitle, description: description };
 
   const og: PageOgMeta = {
     title: pageTitle,
@@ -104,7 +96,6 @@ export function getPageMeta({
   };
 
   return {
-    meta,
     og,
     twitter,
   };
@@ -136,19 +127,13 @@ export function getBlogPostMeta({
   ogImageHeight?: number;
   siteOwnerTwitterHandle?: string;
   contentAuthorTwitterHandle?: string;
-}): { meta: BaseMeta; og: PostOgMeta; twitter: PostTwitterMeta } {
+}): { og: PostOgMeta; twitter: PostTwitterMeta } {
   if (!pageTitle) {
     throw Error('title is required for page SEO');
   }
   if (ogImageAbsoluteUrl && !ogImageAltText) {
     ogImageAltText = `Preview image for ${pageTitle}`;
   }
-
-  const meta: BaseMeta = {
-    title: pageTitle,
-    description: description,
-    canonicalUrl,
-  };
 
   const og: PostOgMeta = {
     title: pageTitle,
@@ -174,7 +159,6 @@ export function getBlogPostMeta({
   };
 
   return {
-    meta,
     og,
     twitter,
   };

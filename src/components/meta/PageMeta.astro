@@ -9,7 +9,7 @@ export interface Props {
 
 const { title, description } = Astro.props;
 
-const { meta, og, twitter } = getPageMeta({
+const { og, twitter } = getPageMeta({
   title: title || options.title,
   description: description || options.description,
   baseUrl: options.website,
@@ -22,13 +22,7 @@ const { meta, og, twitter } = getPageMeta({
 });
 ---
 
-<!-- Primary Meta Tags -->
-<title>{meta.title}</title>
-<meta name="title" content={meta.title} />
-{meta.description && <meta name="description" content={meta.description} />}
-
-<!-- Open Graph / Facebook -->
-{og.title && <meta property="og:title" content={og.title} />}
+<!-- Open Graph / Facebook -->{og.title && <meta property="og:title" content={og.title} />}
 {og.description && <meta property="og:description" content={og.description} />}
 {og.type && <meta property="og:type" content={og.type} />}
 {og.url && <meta property="og:url" content={og.url} />}

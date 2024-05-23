@@ -29,6 +29,7 @@ const description = Astro.props.description || options.description;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <meta name="title" content={title} />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
     <meta name="author" content={options.author.name} />
@@ -51,7 +52,7 @@ const description = Astro.props.description || options.description;
       </main>
       <GoTop />
     </div>
-    <script is:inline src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script>
+    <script is:inline src="https://cdn.staticfile.net/aplayer/1.10.1/APlayer.min.js"></script>
     <script is:inline src="/scripts/yufan.me.js?=v1.0.2"></script>
   </body>
 </html>

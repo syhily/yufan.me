@@ -16,7 +16,7 @@ export interface Props {
 const { pagePath, title, description, publishDate, ogImageAbsoluteUrl, ogImageAltText, ogImageWidth, ogImageHeight } =
   Astro.props;
 
-const { meta, og, twitter } = getBlogPostMeta({
+const { og, twitter } = getBlogPostMeta({
   title: title || options.title,
   description: description || options.description,
   pageUrl: pagePath ? new URL(pagePath, options.website).toString() : undefined,
@@ -31,11 +31,7 @@ const { meta, og, twitter } = getBlogPostMeta({
 });
 ---
 
-<!-- Primary Meta Tags -->
-<title>{meta.title}</title>
-<meta name="title" content={meta.title} />
-{meta.description && <meta name="description" content={meta.description} />}
-{meta.canonicalUrl && <link rel="canonical" href={meta.canonicalUrl} />}
+{og.url && <link rel="canonical" href={og.url} />}
 
 <!-- Open Graph / Facebook -->
 {og.title && <meta property="og:title" content={og.title} />}
