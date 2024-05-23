@@ -1,7 +1,7 @@
 import { imageMetadata } from '@/helpers/images';
 import { defineCollection, z } from 'astro:content';
 
-const defaultCover = '/images/default-cover.jpg';
+export const defaultCover = '/images/default-cover.jpg';
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.

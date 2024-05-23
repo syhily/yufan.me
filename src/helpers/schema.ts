@@ -1,3 +1,4 @@
+import { defaultCover } from '@/content/config.ts';
 import { getCollection, getEntryBySlug, type Render } from 'astro:content';
 
 // Import the collections from the astro content.
@@ -86,7 +87,7 @@ if (missingTags.length > 0) {
 
 // Find the missing covers from posts.
 const missingCovers = posts
-  .filter((post) => post.cover.src === '/images/default-cover.jpg')
+  .filter((post) => post.cover.src === defaultCover)
   .map((post) => ({ title: post.title, slug: post.slug }));
 if (!import.meta.env.PROD && missingCovers.length > 0) {
   // We only warn here for this is a known improvement.

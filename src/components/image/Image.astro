@@ -1,5 +1,6 @@
 ---
 import type { Image } from '@/helpers/images';
+import { blurStyle } from '../../helpers/images';
 
 interface Props {
   src: Image;
@@ -9,4 +10,4 @@ interface Props {
 const { src, alt } = Astro.props;
 ---
 
-<img src={src.src} {alt} loading="lazy" width={src.width} height={src.height} style={src.style} />
+<img src={src.src} {alt} loading="lazy" width={src.width} height={src.height} style={blurStyle(src)} />

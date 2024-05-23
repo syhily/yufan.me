@@ -183,7 +183,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
-- [ ] Add image lazy load support with blur background.
+- [x] Add image lazy load support with blur background.
 - [ ] Add Open Graph for all my pages.
 - [ ] Add like icon with deduplication.
 - [ ] Artalk integration with custom stylesheet.
