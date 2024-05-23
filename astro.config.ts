@@ -1,5 +1,5 @@
 import mdx from '@astrojs/mdx';
-import zeabur from '@zeabur/astro-adapter/serverless';
+import node from '@astrojs/node';
 import robots from 'astro-robots-txt';
 import { defineConfig } from 'astro/config';
 
@@ -11,15 +11,14 @@ export default defineConfig({
   site: site,
   output: 'server',
   integrations: [robots({ sitemap: `${site}/sitemap.xml` }), mdx()],
-  adapter: zeabur(),
+  adapter: node({
+    mode: 'standalone',
+  }),
   markdown: {
     gfm: true,
     shikiConfig: {
       theme: 'solarized-light',
       wrap: false,
     },
-  },
-  security: {
-    checkOrigin: true,
   },
 });

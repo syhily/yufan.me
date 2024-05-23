@@ -42,13 +42,14 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^3.0.1",
+    "@astrojs/node": "^8.2.5",
     "@astrojs/rss": "^4.0.6",
-    "@zeabur/astro-adapter": "^1.0.4",
-    "astro": "^4.9.0",
+    "astro": "^4.8.7",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.4.4",
-    "qrcode-svg": "^1.1.0"
+    "qrcode-svg": "^1.1.0",
+    "sanitize-html": "^2.13.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.7.0",
@@ -57,6 +58,7 @@
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.12",
     "@types/qrcode-svg": "^1.1.4",
+    "@types/sanitize-html": "^2.11.0",
     "aplayer": "^1.10.1",
     "astro-robots-txt": "^1.0.0",
     "bootstrap": "^5.3.3",
@@ -65,6 +67,7 @@
     "plaiceholder": "^3.0.0",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.13.0",
+    "prettier-plugin-astro-organize-imports": "^0.4.8",
     "prettier-plugin-organize-imports": "^3.2.4",
     "typescript": "^5.4.5"
   }
