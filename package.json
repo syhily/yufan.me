@@ -44,7 +44,7 @@
     "@astrojs/mdx": "^3.0.1",
     "@astrojs/rss": "^4.0.6",
     "@zeabur/astro-adapter": "^1.0.4",
-    "astro": "^4.8.7",
+    "astro": "^4.9.0",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.4.4",
