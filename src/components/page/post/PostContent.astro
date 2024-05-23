@@ -1,11 +1,7 @@
 ---
 import { posts } from '@/helpers/schema';
 
-interface Props {
-  slug: string;
-}
-
-const { slug } = Astro.props;
+const { slug } = Astro.params;
 const post = posts.find((post) => post.slug === slug);
 if (!post) {
   return Astro.redirect('/404');
