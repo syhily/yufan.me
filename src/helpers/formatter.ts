@@ -1,11 +1,11 @@
 import { options, type Post } from '@/helpers/schema';
 import { DateTime } from 'luxon';
 
-export function slicePosts(
+export const slicePosts = (
   posts: Post[],
   pageNum: number,
   pageSize: number,
-): { currentPosts: Post[]; totalPage: number } | undefined {
+): { currentPosts: Post[]; totalPage: number } | undefined => {
   const totalPage = Math.ceil(posts.length / pageSize);
   if (totalPage >= pageNum) {
     return {
@@ -16,9 +16,9 @@ export function slicePosts(
       totalPage,
     };
   }
-}
+};
 
-export function formatShowDate(date: Date) {
+export const formatShowDate = (date: Date) => {
   const source = date ? +new Date(date) : +new Date();
   const now = +new Date();
   const diff = now - source > 0 ? now - source : 60 * 1000;
@@ -57,4 +57,4 @@ export function formatShowDate(date: Date) {
     .setZone(options.settings.timeZone)
     .setLocale(options.settings.locale)
     .toFormat(options.settings.timeFormat);
-}
+};

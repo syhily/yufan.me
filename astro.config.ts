@@ -5,7 +5,7 @@ import robots from 'astro-robots-txt';
 import { defineConfig } from 'astro/config';
 import arraybuffer from 'vite-plugin-arraybuffer';
 
-// Dynamic switch the site.
+// Dynamic switch the site. This is hard coded.
 const site = import.meta.env.PROD ? 'https://yufan.me' : 'http://localhost:4321';
 
 // https://astro.build/config
@@ -35,5 +35,7 @@ export default defineConfig({
   },
   vite: {
     plugins: [arraybuffer()],
+    // Add this for avoiding the needless import optimize in Vite.
+    optimizeDeps: { exclude: ['@napi-rs/canvas'] },
   },
 });

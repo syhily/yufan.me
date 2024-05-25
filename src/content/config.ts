@@ -57,7 +57,10 @@ const optionsCollection = defineCollection({
   type: 'data',
   schema: z.object({
     title: z.string().max(40),
-    website: z.string().url(),
+    website: z
+      .string()
+      .url()
+      .transform((value) => (import.meta.env.DEV ? 'http://localhost:4321' : value)),
     description: z.string().max(100),
     keywords: z.array(z.string()),
     author: z.object({ name: z.string(), email: z.string().email(), url: z.string().url() }),
@@ -77,6 +80,7 @@ const optionsCollection = defineCollection({
       locale: z.string().optional().default('zh-CN'),
       timeZone: z.string().optional().default('Asia/Shanghai'),
       timeFormat: z.string().optional().default('yyyy-MM-dd HH:mm:ss'),
+      twitter: z.string(),
       post: z.object({
         sort: z.enum(['asc', 'desc']),
         feature: z.array(z.string()).optional(),

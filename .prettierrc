@@ -6,8 +6,9 @@
   "printWidth": 120,
   "bracketSpacing": true,
   "astroAllowShorthand": true,
+  "astroOrganizeImportsMode": "All",
   "endOfLine": "lf",
-  "plugins": ["prettier-plugin-astro", "prettier-plugin-organize-imports"],
+  "plugins": ["prettier-plugin-astro", "prettier-plugin-organize-imports", "prettier-plugin-astro-organize-imports"],
   "overrides": [
     {
       "files": "**/*.astro",

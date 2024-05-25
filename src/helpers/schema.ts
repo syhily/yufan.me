@@ -29,6 +29,7 @@ export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: nu
 // Translate the Astro content into the original content for dealing with different configuration types.
 export const friends: Friend[] = friendsCollection[0].data;
 export const options: Options = optionsCollection[0].data;
+// Override the website for local debugging
 export const pages: Page[] = pagesCollection
   .filter((page) => page.data.published || !import.meta.env.PROD)
   .map((page) => ({

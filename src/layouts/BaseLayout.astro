@@ -9,6 +9,7 @@ import '@/styles/globals.css';
 import Footer from '@/components/footer/Footer.astro';
 import GoTop from '@/components/footer/GoTop.astro';
 import Header from '@/components/header/Header.astro';
+import PageMeta from '@/components/meta/PageMeta.astro';
 import { options } from '@/helpers/schema';
 
 interface Props {
@@ -35,6 +36,9 @@ const description = Astro.props.description || options.description;
     <meta name="author" content={options.author.name} />
     <link rel="author" href={options.author.url} />
     <meta name="keywords" content={options.keywords.join(',')} />
+    <slot name="og">
+      <PageMeta {title} {description} />
+    </slot>
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
     <link rel="alternate" type="application/rss+xml" title="且听书吟" href="/feed" />
