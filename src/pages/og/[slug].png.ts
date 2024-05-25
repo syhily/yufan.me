@@ -1,11 +1,13 @@
 import { defaultOpenGraph, drawOpenGraph } from '@/helpers/og';
-import { getPage, getPost, options } from '@/helpers/schema';
+import { getPage, getPost, pages, posts } from '@/helpers/schema';
 import type { APIRoute } from 'astro';
 
 const fallback = () =>
   new Response(defaultOpenGraph, {
     headers: { 'Content-Type': 'image/png' },
   });
+
+export const prerender = true;
 
 export const GET: APIRoute = async ({ params }) => {
   const slug = params.slug;
@@ -36,10 +38,16 @@ export const GET: APIRoute = async ({ params }) => {
   }
 
   // Fetch the cover image as the background
-  const coverImageUrl = cover.startsWith('/') ? options.website + cover : cover;
-  const buffer = await drawOpenGraph({ title, summary, coverImageUrl });
+  const buffer = await drawOpenGraph({ title, summary, cover });
 
   return new Response(buffer, {
     headers: { 'Content-Type': 'image/png' },
   });
 };
+
+export async function getStaticPaths() {
+  return [
+    ...posts.map((post) => ({ params: { slug: post.slug } })),
+    ...pages.map((page) => ({ params: { slug: page.slug } })),
+  ];
+}

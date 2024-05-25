@@ -6,6 +6,8 @@
  */
 import { options } from '@/helpers/schema';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import font from '../asserts/og/NotoSansSC-Bold.ttf?arraybuffer';
 import logoDark from '../asserts/og/logo-dark.png?arraybuffer';
 
@@ -102,15 +104,28 @@ const drawImageProp = (
   ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h);
 };
 
+const fetchCover = async (cover: string): Promise<Buffer> => {
+  if (cover.startsWith('http')) {
+    return Buffer.from(await (await fetch(cover)).arrayBuffer());
+  }
+
+  const coverPath = join(process.cwd(), 'public', cover);
+  return await readFile(coverPath);
+};
+
 export { default as defaultOpenGraph } from '../asserts/og/open-graph.png?arraybuffer';
+
 export const openGraphWidth = 1200;
+
 export const openGraphHeight = 768;
+
 export interface OpenGraphProps {
   title: string;
   summary: string;
-  coverImageUrl: string;
+  cover: string;
 }
-export const drawOpenGraph = async ({ title, summary, coverImageUrl }: OpenGraphProps) => {
+
+export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps) => {
   // Register the font if it doesn't exist
   if (!GlobalFonts.has('NotoSansSC-Bold')) {
     const fontBuffer = Buffer.from(font);
@@ -118,9 +133,8 @@ export const drawOpenGraph = async ({ title, summary, coverImageUrl }: OpenGraph
   }
 
   // Fetch the cover image as the background
-  const coverBuffer = Buffer.from(await (await fetch(coverImageUrl)).arrayBuffer());
   const coverImage = new Image();
-  coverImage.src = coverBuffer;
+  coverImage.src = await fetchCover(cover);
 
   // Generate the logo image
   const logoImage = new Image();
