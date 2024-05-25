@@ -15,7 +15,8 @@ In 2017, I switched to Hexo and converted all my blog posts to Markdown;
 the code is available in the [Hexo branch](https://github.com/syhily/yufan.me/tree/hexo).
 By 2024, the blog had been rewritten using Next.js with App Router;
 you can find this version in the [Next branch](https://github.com/syhily/yufan.me/tree/next).
-Currently, the blog has transitioned to Astro, which is located in the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
+Currently, the blog has transitioned to Astro, which is located in
+the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
 
 ## Core Frameworks
 
@@ -215,6 +216,13 @@ Some codes in this project is copied from other project. I have add the comments
 
 The source codes used from third party projects are:
 
-- [seo.ts](src/helpers/seo.ts) from [flexdinesh/blogster](https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts) with [license](licenses/LICENSE.flexdinesh.txt).
-- [og.ts](src/helpers/og.ts) from [yuaanlin/yual.in](https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx) with [permission](licenses/LICENSE.yuaanlin.jpg).
-- [images.ts](src/helpers/images.ts) from [vercel/next.js](https://github.com/vercel/next.js/blob/canary/packages/next/src/shared/lib/image-blur-svg.ts) with [license](licenses/LICENSE.vercel.txt) and [zce/velite](https://github.com/zce/velite/blob/main/src/assets.ts) with [license](licenses/LICENSE.zce.txt)
+- [seo.ts](src/helpers/seo.ts)
+  from [flexdinesh/blogster](https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts)
+  with [license](licenses/LICENSE.flexdinesh.txt).
+- [og.ts](src/helpers/og.ts)
+  from [yuaanlin/yual.in](https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx)
+  with [permission](licenses/LICENSE.yuaanlin.jpg).
+- [images.ts](src/helpers/images.ts)
+  from [vercel/next.js](https://github.com/vercel/next.js/blob/canary/packages/next/src/shared/lib/image-blur-svg.ts)
+  with [license](licenses/LICENSE.vercel.txt) and [zce/velite](https://github.com/zce/velite/blob/main/src/assets.ts)
+  with [license](licenses/LICENSE.zce.txt)
