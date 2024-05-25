@@ -3,6 +3,7 @@ import node from '@astrojs/node';
 import compress from '@playform/compress';
 import robots from 'astro-robots-txt';
 import { defineConfig } from 'astro/config';
+import arraybuffer from 'vite-plugin-arraybuffer';
 
 // Dynamic switch the site.
 const site = import.meta.env.PROD ? 'https://yufan.me' : 'http://localhost:4321';
@@ -31,5 +32,8 @@ export default defineConfig({
       theme: 'solarized-light',
       wrap: false,
     },
+  },
+  vite: {
+    plugins: [arraybuffer()],
   },
 });
