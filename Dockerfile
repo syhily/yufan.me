@@ -13,6 +13,7 @@ RUN npm install
 
 FROM build-deps AS build
 COPY . .
+ENV ASTRO_TELEMETRY_DISABLED=1
 RUN npm run build
 
 FROM base AS runtime
