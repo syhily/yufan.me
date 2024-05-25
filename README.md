@@ -173,8 +173,7 @@ The license file is [here](licenses/LICENSE.oppo-sans)
 This weblog is deployed on the [zeabur](https://zeabur.com) platform.
 You can check their documents and get your own weblog to be published without any budget at first.
 
-Or you can host on your own machine.
-Use the [pm2](https://pm2.keymetrics.io) to have a long-running process without an exit.
+Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build a image and run it locally.
 
 The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
 You should host it on your own machine.
@@ -183,7 +182,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
-- [x] Add image lazy load support with blur background.
+- [ ] Add image lazy load support for articles.
 - [ ] Add Open Graph for all my pages.
 - [ ] Add like icon with deduplication.
 - [ ] Artalk integration with custom stylesheet.
