@@ -5,6 +5,7 @@ import { getPage, getPost, options } from '@/helpers/schema';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
 import type { APIRoute } from 'astro';
 import font from '../../asserts/og/NotoSansSC-Bold.ttf?arraybuffer';
+import logoDark from '../../asserts/og/logo-dark.png?arraybuffer';
 import defaultOpenGraph from '../../asserts/og/open-graph.png?arraybuffer';
 
 const fallback = () =>
@@ -137,10 +138,17 @@ export const GET: APIRoute = async ({ params }) => {
     cover = post.cover.src;
   }
 
+  // Fetch the cover image as the background
   const coverImageUrl = cover.startsWith('/') ? website() + cover : cover;
   const coverBuffer = Buffer.from(await (await fetch(coverImageUrl)).arrayBuffer());
   const coverImage = new Image();
   coverImage.src = coverBuffer;
+
+  // Generate the logo image
+  const logoImage = new Image();
+  logoImage.src = Buffer.from(logoDark);
+
+  // Mark sure the summary length is small enough to fit in
   const description = `${summary
     .replace(/<[^>]+>/g, '')
     .slice(0, 80)
@@ -166,6 +174,9 @@ export const GET: APIRoute = async ({ params }) => {
   ctx.fillStyle = '#e0c2bb';
   ctx.font = '800 64px NotoSansSC-Bold';
   printAt(ctx, options.title, 96, 180, 96, WIDTH, 64);
+
+  // Add website logo
+  ctx.drawImage(logoImage, 940, 120, 160, 160);
 
   // Add article title
   ctx.fillStyle = '#fff';
