@@ -29,6 +29,10 @@ export interface Image {
   blurHeight: number;
 }
 
+export const openGraphWidth = 1200;
+
+export const openGraphHeight = 768;
+
 // Copied and modified https://github.com/zce/velite/blob/main/src/assets.ts
 export const imageMetadata = async (publicPath: string): Promise<Image> => {
   if (!publicPath.startsWith('/')) {

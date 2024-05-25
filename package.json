@@ -44,7 +44,6 @@
     "@astrojs/mdx": "^3.0.1",
     "@astrojs/node": "^8.2.5",
     "@astrojs/rss": "^4.0.6",
-    "@napi-rs/canvas": "^0.1.52",
     "astro": "^4.9.1",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
@@ -56,6 +55,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.7.0",
     "@biomejs/biome": "^1.7.3",
+    "@napi-rs/canvas": "^0.1.52",
     "@playform/compress": "0.0.7",
     "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",

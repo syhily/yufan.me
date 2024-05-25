@@ -4,6 +4,7 @@
  * The original open source code don't have any license.
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
+import { openGraphHeight, openGraphWidth } from '@/helpers/images';
 import { options } from '@/helpers/schema';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { readFile } from 'node:fs/promises';
@@ -114,10 +115,6 @@ const fetchCover = async (cover: string): Promise<Buffer> => {
 };
 
 export { default as defaultOpenGraph } from '../asserts/og/open-graph.png?arraybuffer';
-
-export const openGraphWidth = 1200;
-
-export const openGraphHeight = 768;
 
 export interface OpenGraphProps {
   title: string;
