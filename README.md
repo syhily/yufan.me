@@ -141,16 +141,6 @@ date: 2013/7/13 20:46:25
 Almost all the design resources are placed in the file [yufan.me.sketch](docs/yufan.me.sketch).
 I mainly use the [Sketch](https://www.sketch.com) as my design tools.
 
-### Logo
-
-The fonts used in weblog logo is [M+A1](https://booth.pm/ja/items/2347968) with [license](licenses/LICENSE.m-plus),
-[UnGungseo](https://kldp.net/unfonts) with [license](licenses/LICENSE.un-fonts),
-and [Iroha Mochi](https://modi.jpn.org/font_iroha-mochi.php) with [license](licenses/LICENSE.iroha-mochi).
-
-They are the fonts that can be used in business without any charge.
-
-### Favicon
-
 The favicon is almost the same as the weblog logo. The main different is that we simplify the elements used in logo.
 Pick up the main park from the logo and change the dot color for readability in small icon.
 The background color is included in the exported favicon.
@@ -159,14 +149,6 @@ That is because we want to make sure it could be viewed clearly in any browser.
 The size of the favicon is following this
 [tutorial](https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs)
 to get it worked everywhere.
-
-### Article Fonts
-
-The [OPPOSans 3.0](https://www.coloros.com/article/A00000050) is used for reading in my weblog.
-It can be used in business scenarios without any modification.
-Since we can't provide 3rd-party download link by the license limitation,
-we have to reference this font by using OPPO's internal link.
-The license file is [here](licenses/LICENSE.oppo-sans)
 
 ## Deploy the Weblog
 
@@ -183,7 +165,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 ## TODO Checklist
 
 - [ ] Add image lazy load support for articles.
-- [ ] Add Open Graph for all my pages.
+- [x] Add Open Graph for all my pages.
 - [ ] Add like icon with deduplication.
 - [ ] Artalk integration with custom stylesheet.
 - [ ] Add recent comments.
@@ -204,7 +186,35 @@ feel to free to use it without any legal risks.
 The [content](src/content) of this blog's posts is licensed under the
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
 
-### Third Party Codes
+### Logo Fonts License
 
-Some codes in this project is copied from other project.
-I have add the comments in the file header and keep these license file in [licenses](licenses) directory.
+The fonts used in weblog logo is [M+A1](https://booth.pm/ja/items/2347968) with [license](licenses/LICENSE.m-plus.txt),
+[UnGungseo](https://kldp.net/unfonts) with [license](licenses/LICENSE.un-fonts.txt),
+and [Iroha Mochi](https://modi.jpn.org/font_iroha-mochi.php) with [license](licenses/LICENSE.iroha-mochi.txt).
+
+They are the fonts that can be used in business without any charge.
+
+### Article Font License
+
+The [OPPOSans 3.0](https://www.coloros.com/article/A00000050) is used for reading in my weblog.
+It can be used in business scenarios without any modification.
+Since we can't provide 3rd-party download link by the license limitation,
+we have to reference this font by using OPPO's internal link.
+The license file is [here](licenses/LICENSE.oppo-sans.txt)
+
+### Open Graph Font License
+
+The [Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC)
+is used for rendering the open graph image in my weblog.
+It can be used in business scenarios without any modification.
+The license file is [here](LICENSE.noto-sans-sc.txt)
+
+### Third Party Codes License
+
+Some codes in this project is copied from other project. I have add the comments in the files's header.
+
+The source codes used from third party projects are:
+
+- [seo.ts](src/helpers/seo.ts) from [flexdinesh/blogster](https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts) with [license](licenses/LICENSE.flexdinesh.txt).
+- [og.ts](src/helpers/og.ts) from [yuaanlin/yual.in](https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx) with [permission](licenses/LICENSE.yuaanlin.jpg).
+- [images.ts](src/helpers/images.ts) from [vercel/next.js](https://github.com/vercel/next.js/blob/canary/packages/next/src/shared/lib/image-blur-svg.ts) with [license](licenses/LICENSE.vercel.txt) and [zce/velite](https://github.com/zce/velite/blob/main/src/assets.ts) with [license](licenses/LICENSE.zce.txt)

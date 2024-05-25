@@ -1,5 +1,6 @@
 /**
- * Generate the open graph. It's highly inspired by the code from https://github.com/yuaanlin/yual.in
+ * Generate the open graph.
+ * It's highly inspired by the code from https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx
  * The original open source code don't have any license.
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
