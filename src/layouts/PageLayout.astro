@@ -26,11 +26,7 @@ const { Content } = await page.render();
         {page.friend && <FriendLinks />}
         {
           page.comments && (
-            <ArtalkComment
-              permalink={options.website + page.permalink + '/'}
-              title={page.title}
-              hidden={page.comments}
-            />
+            <ArtalkComment commentKey={options.publicWebsite + page.permalink + '/'} title={page.title} />
           )
         }
       </div>

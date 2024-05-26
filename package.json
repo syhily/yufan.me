@@ -62,6 +62,7 @@
     "@types/node": "^20.12.12",
     "@types/qrcode-svg": "^1.1.4",
     "aplayer": "^1.10.1",
+    "artalk": "^2.8.6",
     "astro-robots-txt": "^1.0.0",
     "bootstrap": "^5.3.3",
     "husky": "^9.0.11",

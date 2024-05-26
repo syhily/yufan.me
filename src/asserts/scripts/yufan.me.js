@@ -1,3 +1,6 @@
+import Aplayer from 'aplayer/dist/APlayer.min.js';
+import Artalk from 'artalk/dist/ArtalkLite';
+
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside');
 document.addEventListener('keydown', (event) => {
@@ -24,7 +27,7 @@ window.addEventListener('scroll', handleScrollUp);
 window.addEventListener('resize', handleScrollUp);
 
 // Dialog popup.
-for (dialog of document.querySelectorAll('.nice-dialog')) {
+for (const dialog of document.querySelectorAll('.nice-dialog')) {
   const popup = dialog.querySelector('.nice-popup');
   dialog.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -40,8 +43,8 @@ for (dialog of document.querySelectorAll('.nice-dialog')) {
 
 // Netease music player.
 const ps = document.querySelectorAll('.aplayer');
-for (p of ps) {
-  new APlayer({
+for (const p of ps) {
+  new Aplayer({
     container: p,
     audio: [
       {
@@ -81,3 +84,15 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
   event.stopPropagation();
   searchPopup.classList.toggle('nice-popup-open', false);
 });
+
+// Console.log
+const comment = document.getElementById('comments');
+if (typeof comment !== 'undefined') {
+  Artalk.init({
+    el: '#comments',
+    pageKey: comment.dataset.key,
+    pageTitle: comment.dataset.title,
+    server: comment.dataset.server,
+    site: comment.dataset.site,
+  });
+}

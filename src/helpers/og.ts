@@ -4,7 +4,7 @@
  * The original open source code don't have any license.
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
-import { openGraphHeight, openGraphWidth } from '@/helpers/images';
+import { openGraphHeight, openGraphWidth } from '@/helpers/images/types';
 import { options } from '@/helpers/schema';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { readFile } from 'node:fs/promises';

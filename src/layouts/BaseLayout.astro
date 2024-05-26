@@ -1,10 +1,10 @@
 ---
 // tslint:disable:ordered-imports
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '@/styles/fonts.css';
-import '@/styles/iconfont/iconfont.css';
-import '@/styles/reset.css';
-import '@/styles/globals.css';
+import '@/asserts/styles/fonts.css';
+import '@/asserts/styles/iconfont/iconfont.css';
+import '@/asserts/styles/reset.css';
+import '@/asserts/styles/globals.css';
 
 import Footer from '@/components/footer/Footer.astro';
 import GoTop from '@/components/footer/GoTop.astro';
@@ -56,7 +56,8 @@ const description = Astro.props.description || options.description;
       </main>
       <GoTop />
     </div>
-    <script is:inline src="https://cdn.staticfile.net/aplayer/1.10.1/APlayer.min.js"></script>
-    <script is:inline src="/scripts/yufan.me.js?=v1.0.2"></script>
+    <script>
+      import '../asserts/scripts/yufan.me.js';
+    </script>
   </body>
 </html>

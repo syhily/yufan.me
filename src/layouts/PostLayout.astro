@@ -46,7 +46,11 @@ const { Content } = await post.render();
               </div>
               <LikeButton {post} />
               <Share {post} />
-              {post.comments && <ArtalkComment permalink={options.website + post.permalink + '/'} title={post.title} />}
+              {
+                post.comments && (
+                  <ArtalkComment commentKey={options.publicWebsite + post.permalink + '/'} title={post.title} />
+                )
+              }
             </div>
           </div>
         </div>
