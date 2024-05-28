@@ -1,22 +1,4 @@
-import { bigint, bigserial, boolean, index, pgTable, text, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
-
-export const atk_sites = pgTable(
-  'atk_sites',
-  {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
-    name: varchar('name', { length: 255 }),
-    urls: text('urls'),
-  },
-  (table) => {
-    return {
-      idx_atk_sites_name: uniqueIndex('idx_atk_sites_name').on(table.name),
-      idx_atk_sites_deleted_at: index('idx_atk_sites_deleted_at').on(table.deleted_at),
-    };
-  },
-);
+import { bigint, bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 export const atk_pages = pgTable(
   'atk_pages',
@@ -74,51 +56,6 @@ export const atk_users = pgTable(
   },
 );
 
-export const atk_auth_identities = pgTable(
-  'atk_auth_identities',
-  {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
-    provider: text('provider'),
-    remote_uid: varchar('remote_uid', { length: 255 }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    user_id: bigint('user_id', { mode: 'number' }),
-    token: text('token'),
-    confirmed_at: timestamp('confirmed_at', { withTimezone: true, mode: 'string' }),
-    expires_at: timestamp('expires_at', { withTimezone: true, mode: 'string' }),
-  },
-  (table) => {
-    return {
-      idx_atk_auth_identities_remote_uid: index('idx_atk_auth_identities_remote_uid').on(table.remote_uid),
-      idx_atk_auth_identities_deleted_at: index('idx_atk_auth_identities_deleted_at').on(table.deleted_at),
-      idx_atk_auth_identities_user_id: index('idx_atk_auth_identities_user_id').on(table.user_id),
-    };
-  },
-);
-
-export const atk_user_email_verifies = pgTable(
-  'atk_user_email_verifies',
-  {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
-    email: varchar('email', { length: 255 }),
-    code: text('code'),
-    expires_at: timestamp('expires_at', { withTimezone: true, mode: 'string' }),
-    ip: text('ip'),
-    ua: text('ua'),
-  },
-  (table) => {
-    return {
-      idx_atk_user_email_verifies_email: index('idx_atk_user_email_verifies_email').on(table.email),
-      idx_atk_user_email_verifies_deleted_at: index('idx_atk_user_email_verifies_deleted_at').on(table.deleted_at),
-    };
-  },
-);
-
 export const atk_comments = pgTable(
   'atk_comments',
   {
@@ -154,58 +91,6 @@ export const atk_comments = pgTable(
       idx_atk_comments_site_name: index('idx_atk_comments_site_name').on(table.site_name),
       idx_atk_comments_page_key: index('idx_atk_comments_page_key').on(table.page_key),
       idx_atk_comments_deleted_at: index('idx_atk_comments_deleted_at').on(table.deleted_at),
-    };
-  },
-);
-
-export const atk_notifies = pgTable(
-  'atk_notifies',
-  {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    user_id: bigint('user_id', { mode: 'number' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    comment_id: bigint('comment_id', { mode: 'number' }),
-    is_read: boolean('is_read'),
-    read_at: timestamp('read_at', { withTimezone: true, mode: 'string' }),
-    is_emailed: boolean('is_emailed'),
-    email_at: timestamp('email_at', { withTimezone: true, mode: 'string' }),
-    key: varchar('key', { length: 255 }),
-  },
-  (table) => {
-    return {
-      idx_atk_notifies_user_id: index('idx_atk_notifies_user_id').on(table.user_id),
-      idx_atk_notifies_deleted_at: index('idx_atk_notifies_deleted_at').on(table.deleted_at),
-      idx_atk_notifies_key: index('idx_atk_notifies_key').on(table.key),
-      idx_atk_notifies_comment_id: index('idx_atk_notifies_comment_id').on(table.comment_id),
-    };
-  },
-);
-
-export const atk_votes = pgTable(
-  'atk_votes',
-  {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    target_id: bigint('target_id', { mode: 'number' }),
-    type: text('type'),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    user_id: bigint('user_id', { mode: 'number' }),
-    ua: text('ua'),
-    ip: text('ip'),
-  },
-  (table) => {
-    return {
-      idx_atk_votes_user_id: index('idx_atk_votes_user_id').on(table.user_id),
-      idx_atk_votes_type: index('idx_atk_votes_type').on(table.type),
-      idx_atk_votes_target_id: index('idx_atk_votes_target_id').on(table.target_id),
-      idx_atk_votes_deleted_at: index('idx_atk_votes_deleted_at').on(table.deleted_at),
     };
   },
 );

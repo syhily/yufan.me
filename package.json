@@ -68,8 +68,6 @@
     "aplayer": "^1.10.1",
     "artalk": "^2.8.6",
     "bootstrap": "^5.3.3",
-    "dotenv": "^16.4.5",
-    "drizzle-kit": "^0.21.4",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.5",
     "prettier": "^3.2.5",
