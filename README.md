@@ -173,7 +173,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 - [x] Add Open Graph for all my pages.
 - [ ] Add like icon with deduplication.
 - [ ] Artalk integration with custom stylesheet.
-- [ ] Add recent comments.
+- [x] Add recent comments.
 - [ ] Add cover for all my posts. Remain **79** posts.
 - [ ] Slide share components integration.
 

@@ -1,7 +1,7 @@
 import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_pages, atk_users } from '@/helpers/db/schema';
 import { options } from '@/helpers/schema';
-import { desc, eq, notInArray } from 'drizzle-orm';
+import { desc, eq, notInArray, sql } from 'drizzle-orm';
 
 export interface Comment {
   title: string;
@@ -40,38 +40,36 @@ export const latestComments = async (): Promise<Comment[]> => {
   });
 };
 
-// export async function increaseLikes(permalink: string) {
-//   const pageKey = options.website + permalink + '/';
-//   const sql = `UPDATE ${table('pages')}
-//                SET vote_up = vote_up + 1
-//                WHERE ${column('pages', '`key`')} = ?;`;
+export const increaseLikes = async (permalink: string): Promise<number> => {
+  const pageKey = `${options.website + permalink}/`;
+  await db
+    .update(atk_pages)
+    .set({
+      vote_up: sql`${atk_pages.vote_up} + 1`,
+    })
+    .where(eq(atk_pages.key, sql`${pageKey}`));
 
-//   await pool.query(mysql.format(sql), [pageKey]);
-//   return queryLikes(permalink);
-// }
+  return await queryLikes(permalink);
+};
 
-// export async function queryLikes(permalink: string): Promise<number> {
-//   noStore();
+export const queryLikes = async (permalink: string): Promise<number> => {
+  const pageKey = `${options.website + permalink}/`;
+  const results = await db
+    .select({ like: atk_pages.vote_up })
+    .from(atk_pages)
+    .where(eq(atk_pages.key, sql`${pageKey}`))
+    .limit(1);
 
-//   const pageKey = options.website + permalink + '/';
-//   const sql = `SELECT vote_up
-//                FROM ${table('pages')}
-//                WHERE ${column('pages', '`key`')} = ?
-//                LIMIT 1;`;
-//   const [rows] = await pool.query<RowDataPacket[]>(mysql.format(sql), [pageKey]);
+  return results.length > 0 ? results[0].like ?? 0 : 0;
+};
 
-//   return rows.length > 0 ? rows[0]['vote_up'] : 0;
-// }
+export const queryLikesAndViews = async (permalink: string): Promise<[number, number]> => {
+  const pageKey = `${options.website + permalink}/`;
+  const results = await db
+    .select({ like: atk_pages.vote_up, view: atk_pages.pv })
+    .from(atk_pages)
+    .where(eq(atk_pages.key, sql`${pageKey}`))
+    .limit(1);
 
-// export async function queryLikesAndViews(permalink: string): Promise<[number, number]> {
-//   noStore();
-
-//   const pageKey = options.website + permalink + '/';
-//   const sql = `SELECT vote_up, pv
-//                FROM ${table('pages')}
-//                WHERE ${column('pages', '`key`')} = ?
-//                LIMIT 1`;
-//   const [rows] = await pool.query<RowDataPacket[]>(mysql.format(sql), [pageKey]);
-
-//   return rows.length > 0 ? [rows[0]['vote_up'], rows[0]['pv']] : [0, 0];
-// }
+  return results.length > 0 ? [results[0].like ?? 0, results[0].view ?? 0] : [0, 0];
+};

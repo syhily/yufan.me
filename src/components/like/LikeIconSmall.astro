@@ -1,3 +1,16 @@
 ---
-// TODO
+import { queryLikes } from '@/helpers/db/query';
+import type { Post } from '@/helpers/schema';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const likes = await queryLikes(post.permalink);
 ---
+
+<div>
+  <i class="text-md iconfont icon-heart-fill"></i>
+  <span class="like-count">{likes}</span>
+</div>
