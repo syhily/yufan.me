@@ -59,7 +59,6 @@
     "@astrojs/check": "^0.7.0",
     "@biomejs/biome": "^1.7.3",
     "@napi-rs/canvas": "^0.1.52",
-    "@playform/compress": "0.0.10",
     "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.12",

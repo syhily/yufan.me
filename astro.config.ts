@@ -1,6 +1,5 @@
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
-import compress from '@playform/compress';
 import { defineConfig } from 'astro/config';
 import arraybuffer from 'vite-plugin-arraybuffer';
 
@@ -15,16 +14,7 @@ export default defineConfig({
   security: {
     checkOrigin: true,
   },
-  integrations: [
-    mdx(),
-    compress({
-      CSS: false,
-      HTML: false,
-      Image: true,
-      JavaScript: true,
-      SVG: true,
-    }),
-  ],
+  integrations: [mdx()],
   adapter: node({
     mode: 'standalone',
   }),
