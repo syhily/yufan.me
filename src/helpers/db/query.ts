@@ -1,7 +1,7 @@
 import { db } from '@/helpers/db/pool';
-import { atk_comments, atk_pages, atk_users } from '@/helpers/db/schema';
+import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
 import { options } from '@/helpers/schema';
-import { desc, eq, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, notInArray, sql } from 'drizzle-orm';
 
 export interface Comment {
   title: string;
@@ -42,8 +42,30 @@ export const latestComments = async (): Promise<Comment[]> => {
 
 const generateKey = (slug: string): string => `${options.website}/posts/${slug}/`;
 
-export const increaseLikes = async (slug: string): Promise<number> => {
+const makeToken = (length: number) => {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    counter += 1;
+  }
+  return result;
+};
+
+export const increaseLikes = async (slug: string): Promise<{ likes: number; token: string }> => {
   const pageKey = generateKey(slug);
+  const token = makeToken(250);
+  // Save the token
+  await db.insert(atk_likes).values({
+    token: token,
+    page_key: pageKey,
+    created_at: new Date(),
+    updated_at: new Date(),
+  });
+
+  // Bump the likes
   await db
     .update(atk_pages)
     .set({
@@ -51,7 +73,38 @@ export const increaseLikes = async (slug: string): Promise<number> => {
     })
     .where(eq(atk_pages.key, sql`${pageKey}`));
 
-  return await queryLikes(slug);
+  return { likes: await queryLikes(slug), token: token };
+};
+
+export const decreaseLikes = async (slug: string, token: string) => {
+  const pageKey = generateKey(slug);
+  const results = await db
+    .select({ id: atk_likes.id })
+    .from(atk_likes)
+    .where(and(eq(atk_likes.token, token), eq(atk_likes.page_key, pageKey), isNull(atk_likes.deleted_at)))
+    .limit(1);
+
+  // No need to dislike
+  if (results.length <= 0) {
+    return;
+  }
+
+  const id = results[0].id;
+  // Remove the token
+  await db
+    .update(atk_likes)
+    .set({
+      updated_at: new Date(),
+      deleted_at: new Date(),
+    })
+    .where(eq(atk_likes.id, id));
+  // Decrease the likes
+  await db
+    .update(atk_pages)
+    .set({
+      vote_up: sql`${atk_pages.vote_up} - 1`,
+    })
+    .where(eq(atk_pages.key, sql`${pageKey}`));
 };
 
 export const queryLikes = async (slug: string): Promise<number> => {

@@ -31,6 +31,19 @@ the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
 This weblog is still under [development](#todo-checklist). Many ideas and thoughts are in my checklists.
 You can fork and clone this project for your own use. But do so at your own risk.
 
+The project uses npm for development. Run it locally with these commands:
+
+```shell
+# Install the dependencies by using bun.
+npm install
+
+# Check the newer dependencies.
+npm update
+
+# Start local development with a live preview. The weblog is hosted on http://localhost:4321
+npm run dev
+```
+
 ### Postgres Database
 
 This blog uses Postgres to store post views and favorites. For security reasons,
@@ -60,41 +73,33 @@ GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
 GRANT ALL ON SCHEMA public TO <db_user>;
 ```
 
-The project uses npm for development. Run it locally with these commands:
+Most tables are created by the Artalk. [Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the tables.
 
-```shell
-# Install the dependencies by using bun.
-npm install
+The like table should be created manually. Execute the SQL below.
 
-# Check the newer dependencies.
-npm update
+```sql
+-- Sequence and defined type
+CREATE SEQUENCE IF NOT EXISTS atk_likes_id_seq;
 
-# Start local development with a live preview. The weblog is hosted on http://localhost:4321
-npm run dev
+-- Table Definition
+CREATE TABLE "public"."atk_likes" (
+  "id" int8 NOT NULL DEFAULT nextval('atk_likes_id_seq'::regclass),
+  "created_at" timestamptz,
+  "updated_at" timestamptz,
+  "deleted_at" timestamptz,
+  "token" varchar(255),
+  "page_key" varchar(255),
+  PRIMARY KEY ("id")
+);
+
+-- Create table index
+CREATE INDEX IF NOT EXISTS "idx_atk_likes_token" ON "public"."atk_likes" ("token");
 ```
 
 ### Comments Integration
 
 This weblog use artalk as its backend comment service. But since artalk didn't provide the latest comments API.
 We decide to query it directly from Postgres database. So the comments and fav clicks are living in the same database.
-
-## HTTP Request Routes
-
-This weblog HTTP request routes keeps the same as my original weblog.
-I just list here for comprehension.
-You can change it as you personal needs.
-
-- `/` - List the lasted posts and pinged posts on top of it.
-  - `/api/likes` - Like button.
-  - `/page/{number}` - List the posts by the page number.
-  - `/cats/{slug}` - List all the posts in this category. Posts can belong to only one category.
-    - `/cats/{slug}/page/{number}` - List the posts in the given category by the page number.
-  - `/tags/{slug}` - List the posts under this tag.
-    - `/tags/{slug}/page/{number}` - List the posts under this tag with page number.
-  - `/links` - A special endpoint for listing all the friends' website.
-  - `/feed` - The subscribing page for display the xml.
-  - `/posts/{slug}` - Shw the article.
-  - `/{slug}` - Show the page. The pages don't belong to any categories nor tags.
 
 ## Writing
 
@@ -219,10 +224,10 @@ The source codes used from third party projects are:
 
 - [seo.ts](src/helpers/seo.ts)
   from [flexdinesh/blogster](https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts)
-  with [license](licenses/LICENSE.flexdinesh.txt).
+  with [license](licenses/LICENSE.flexdinesh.txt)
 - [og.ts](src/helpers/og.ts)
   from [yuaanlin/yual.in](https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx)
-  with [permission](licenses/LICENSE.yuaanlin.jpg).
+  with [permission](licenses/LICENSE.yuaanlin.jpg)
 - [metadata.ts](src/helpers/images/metadata.ts)
   from [zce/velite](https://github.com/zce/velite/blob/main/src/assets.ts)
   with [license](licenses/LICENSE.zce.txt)

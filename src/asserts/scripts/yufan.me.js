@@ -100,10 +100,48 @@ if (typeof comment !== 'undefined' && comment !== null) {
 
 // Add like button for updating likes.
 const likeButton = document.querySelector('button.post-like');
+
+const increaseLikes = (count) => {
+  count.textContent = Number.parseInt(count.textContent) + 1;
+  fetch(`${window.location.href}/likes`, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: JSON.stringify({ action: 'increase' }),
+  })
+    .then((res) => res.json())
+    .then(({ likes, token }) => {
+      count.textContent = likes;
+      localStorage.setItem(window.location.href, token);
+    });
+};
+
+const decreaseLikes = (count) => {
+  const token = localStorage.getItem(window.location.href);
+  if (token === null || token === '') {
+    return;
+  }
+
+  count.textContent = Number.parseInt(count.textContent) - 1;
+  fetch(`${window.location.href}/likes`, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: JSON.stringify({ action: 'decrease', token: token }),
+  })
+    .then((res) => res.json())
+    .then(({ likes }) => {
+      count.textContent = likes;
+      localStorage.removeItem(window.location.href);
+    });
+};
+
 if (typeof likeButton !== 'undefined' && likeButton !== null) {
   // Change the like state if it has been liked.
-  const liked = localStorage.getItem(window.location.href);
-  if (liked !== null && liked === 'true') {
+  const token = localStorage.getItem(window.location.href);
+  if (token !== null && token !== '') {
     likeButton.classList.add('current');
   }
 
@@ -111,29 +149,19 @@ if (typeof likeButton !== 'undefined' && likeButton !== null) {
   likeButton.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    if (likeButton.classList.contains('current')) {
-      return;
-    }
+
     const count = likeButton.querySelector('.like-count');
     if (typeof count === 'undefined') {
       return;
     }
 
     // Increase the likes and set liked before submitting.
-    count.textContent = Number.parseInt(count.textContent) + 1;
-    likeButton.classList.add('current');
-
-    // Submit the like action.
-    fetch(`${window.location.href}/likes`, {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json; charset=UTF-8',
-      },
-    })
-      .then((res) => res.json())
-      .then(({ likes }) => {
-        count.textContent = likes;
-        localStorage.setItem(window.location.href, 'true');
-      });
+    if (likeButton.classList.contains('current')) {
+      likeButton.classList.remove('current');
+      decreaseLikes(count);
+    } else {
+      likeButton.classList.add('current');
+      increaseLikes(count);
+    }
   });
 }

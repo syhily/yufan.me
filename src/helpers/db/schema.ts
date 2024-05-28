@@ -4,9 +4,9 @@ export const atk_pages = pgTable(
   'atk_pages',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     key: varchar('key', { length: 255 }),
     title: text('title'),
     admin_only: boolean('admin_only'),
@@ -27,13 +27,30 @@ export const atk_pages = pgTable(
   },
 );
 
+export const atk_likes = pgTable(
+  'atk_likes',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    token: varchar('token', { length: 255 }),
+    page_key: varchar('page_key', { length: 255 }),
+  },
+  (table) => {
+    return {
+      idx_atk_likes_token: index('idx_atk_likes_token').on(table.token),
+    };
+  },
+);
+
 export const atk_users = pgTable(
   'atk_users',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     name: varchar('name', { length: 255 }),
     email: varchar('email', { length: 255 }),
     link: text('link'),
@@ -44,7 +61,7 @@ export const atk_users = pgTable(
     last_ua: text('last_ua'),
     is_admin: boolean('is_admin'),
     receive_email: boolean('receive_email').default(true),
-    token_valid_from: timestamp('token_valid_from', { withTimezone: true, mode: 'string' }),
+    token_valid_from: timestamp('token_valid_from', { withTimezone: true, mode: 'date' }),
     is_in_conf: boolean('is_in_conf'),
   },
   (table) => {
@@ -60,9 +77,9 @@ export const atk_comments = pgTable(
   'atk_comments',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
+    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
+    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     content: text('content'),
     page_key: varchar('page_key', { length: 255 }),
     site_name: varchar('site_name', { length: 255 }),
