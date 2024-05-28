@@ -170,10 +170,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 ## TODO Checklist
 
 - [ ] Add image lazy load support for articles.
-- [x] Add Open Graph for all my pages.
-- [ ] Add like icon with deduplication.
 - [ ] Artalk integration with custom stylesheet.
-- [x] Add recent comments.
 - [ ] Add cover for all my posts. Remain **79** posts.
 - [ ] Slide share components integration.
 

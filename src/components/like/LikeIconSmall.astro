@@ -7,7 +7,7 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const likes = await queryLikes(post.permalink);
+const likes = await queryLikes(post.slug);
 ---
 
 <div>

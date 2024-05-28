@@ -1,3 +1,18 @@
 ---
-// TODO
+import { queryLikes } from '@/helpers/db/query';
+import type { Post } from '@/helpers/schema';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const likes = await queryLikes(post.slug);
 ---
+
+<div class="post-action text-center mt-5">
+  <button class="post-like btn btn-secondary btn-lg btn-rounded" title="Do you like me?" type="button">
+    <i class="text-lg iconfont icon-heart-fill me-1"></i>
+    <span class="like-count">{likes}</span>
+  </button>
+</div>

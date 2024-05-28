@@ -60,7 +60,7 @@ for (const p of ps) {
 
 // Search Bar.
 const searchSidebar = document.querySelector('.search-sidebar');
-if (searchSidebar) {
+if (typeof searchSidebar !== 'undefined' && searchSidebar !== null) {
   searchSidebar.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -85,14 +85,55 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
   searchPopup.classList.toggle('nice-popup-open', false);
 });
 
-// Console.log
-const comment = document.getElementById('comments');
-if (typeof comment !== 'undefined') {
+// Loading the comments.
+const comment = document.querySelector('#comments');
+if (typeof comment !== 'undefined' && comment !== null) {
+  const { key, title, server, site } = comment.dataset;
   Artalk.init({
     el: '#comments',
-    pageKey: comment.dataset.key,
-    pageTitle: comment.dataset.title,
-    server: comment.dataset.server,
-    site: comment.dataset.site,
+    pageKey: key,
+    pageTitle: title,
+    server: server,
+    site: site,
+  });
+}
+
+// Add like button for updating likes.
+const likeButton = document.querySelector('button.post-like');
+if (typeof likeButton !== 'undefined' && likeButton !== null) {
+  // Change the like state if it has been liked.
+  const liked = localStorage.getItem(window.location.href);
+  if (liked !== null && liked === 'true') {
+    likeButton.classList.add('current');
+  }
+
+  // Add the click action.
+  likeButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (likeButton.classList.contains('current')) {
+      return;
+    }
+    const count = likeButton.querySelector('.like-count');
+    if (typeof count === 'undefined') {
+      return;
+    }
+
+    // Increase the likes and set liked before submitting.
+    count.textContent = Number.parseInt(count.textContent) + 1;
+    likeButton.classList.add('current');
+
+    // Submit the like action.
+    fetch(`${window.location.href}/likes`, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+      },
+    })
+      .then((res) => res.json())
+      .then(({ likes }) => {
+        count.textContent = likes;
+        localStorage.setItem(window.location.href, 'true');
+      });
   });
 }

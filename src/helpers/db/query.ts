@@ -40,8 +40,10 @@ export const latestComments = async (): Promise<Comment[]> => {
   });
 };
 
-export const increaseLikes = async (permalink: string): Promise<number> => {
-  const pageKey = `${options.website + permalink}/`;
+const generateKey = (slug: string): string => `${options.website}/posts/${slug}/`;
+
+export const increaseLikes = async (slug: string): Promise<number> => {
+  const pageKey = generateKey(slug);
   await db
     .update(atk_pages)
     .set({
@@ -49,11 +51,11 @@ export const increaseLikes = async (permalink: string): Promise<number> => {
     })
     .where(eq(atk_pages.key, sql`${pageKey}`));
 
-  return await queryLikes(permalink);
+  return await queryLikes(slug);
 };
 
-export const queryLikes = async (permalink: string): Promise<number> => {
-  const pageKey = `${options.website + permalink}/`;
+export const queryLikes = async (slug: string): Promise<number> => {
+  const pageKey = generateKey(slug);
   const results = await db
     .select({ like: atk_pages.vote_up })
     .from(atk_pages)
@@ -63,8 +65,8 @@ export const queryLikes = async (permalink: string): Promise<number> => {
   return results.length > 0 ? results[0].like ?? 0 : 0;
 };
 
-export const queryLikesAndViews = async (permalink: string): Promise<[number, number]> => {
-  const pageKey = `${options.website + permalink}/`;
+export const queryLikesAndViews = async (slug: string): Promise<[number, number]> => {
+  const pageKey = generateKey(slug);
   const results = await db
     .select({ like: atk_pages.vote_up, view: atk_pages.pv })
     .from(atk_pages)
