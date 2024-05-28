@@ -21,18 +21,18 @@ const cleanupContent = async (html: string) => {
 
               node.name = 'img';
               node.attributes = attributes;
-              node.attributes.src = options.website + src;
+              node.attributes.src = import.meta.env.SITE + src;
             }
           }
 
           // Make sure images are absolute, some readers are not smart enough to figure it out
           if (node.name === 'img' && node.attributes.src?.startsWith('/')) {
-            node.attributes.src = options.website + node.attributes.src;
+            node.attributes.src = import.meta.env.SITE + node.attributes.src;
           }
 
           // Make sure links are absolute, some readers are not smart enough to figure it out
           if (node.name === 'a' && node.attributes.href?.startsWith('/')) {
-            node.attributes.href = options.website + node.attributes.href;
+            node.attributes.href = import.meta.env.SITE + node.attributes.href;
           }
 
           // Remove favicon images, some readers don't know they should be inline and it ends up being a broken image
@@ -95,9 +95,9 @@ export const GET = async () => {
     title: options.title,
     description: options.description,
     stylesheet: '/feed.xsl',
-    site: options.website,
+    site: import.meta.env.SITE,
     items: posts.slice(0, options.settings.feed.size).map((post) => ({
-      link: options.website + post.permalink,
+      link: import.meta.env.SITE + post.permalink,
       title: post.title,
       pubDate: post.date,
       description: post.summary,

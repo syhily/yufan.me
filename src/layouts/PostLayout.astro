@@ -23,7 +23,7 @@ const { Content } = await post.render();
     description={post.summary}
     publishDate={post.date.toISOString()}
     requestPath={post.permalink}
-    ogImageUrl={`${options.website}/og/${post.slug}.png`}
+    ogImageUrl={`${import.meta.env.SITE}/og/${post.slug}.png`}
     ogImageAltText={post.title}
   />
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
@@ -48,7 +48,7 @@ const { Content } = await post.render();
               <Share {post} />
               {
                 post.comments && (
-                  <ArtalkComment commentKey={options.publicWebsite + post.permalink + '/'} title={post.title} />
+                  <ArtalkComment commentKey={options.website + post.permalink + '/'} title={post.title} />
                 )
               }
             </div>

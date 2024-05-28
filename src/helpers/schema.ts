@@ -124,6 +124,13 @@ if (invalidPinnedCategories.length > 0) {
   throw new Error(`The bellowing pinned categories are invalid:\n$${invalidPinnedCategories.join('\n')}`);
 }
 
+// Validate the options with the Astro configuration.
+if (import.meta.env.PROD && import.meta.env.SITE !== options.website) {
+  throw new Error(
+    `Invalid configuration in options.website: ${options.website} with astro site: ${import.meta.env.SITE}`,
+  );
+}
+
 export const getPost = (slug: string): Post | undefined => {
   return posts.find((post) => post.slug === slug);
 };

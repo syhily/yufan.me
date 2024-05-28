@@ -1,19 +1,21 @@
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
 import compress from '@playform/compress';
-import robots from 'astro-robots-txt';
 import { defineConfig } from 'astro/config';
 import arraybuffer from 'vite-plugin-arraybuffer';
 
 // Dynamic switch the site. This is hard coded.
-const site = import.meta.env.PROD ? 'https://yufan.me' : 'http://localhost:4321';
+const port = 4321;
+const site = import.meta.env.PROD ? 'https://yufan.me' : `http://localhost:${port}`;
 
 // https://astro.build/config
 export default defineConfig({
   site: site,
   output: 'server',
+  security: {
+    checkOrigin: true,
+  },
   integrations: [
-    robots({ sitemap: `${site}/sitemap.xml` }),
     mdx(),
     compress({
       CSS: false,
@@ -32,6 +34,14 @@ export default defineConfig({
       theme: 'solarized-light',
       wrap: false,
     },
+  },
+  server: {
+    host: true,
+    port: port,
+  },
+  devToolbar: {
+    // I don't need such toolbar.
+    enabled: false,
   },
   vite: {
     plugins: [arraybuffer()],

@@ -42,18 +42,22 @@ The default username is `your system username`, with no password.
 
 Create and initialize the database and user with these commands:
 
-```shell
-# Create a database.
-psql -c "CREATE DATABASE <db>"
+```sql
+-- Create a database.
+CREATE DATABASE <db>;
 
-# Create a user.
-psql -c "CREATE USER <db_user> PASSWORD '<StrongPassword!>'"
+-- Create a user.
+CREATE USER <db_user> PASSWORD '<strong_password>';
 
-# Grant the connection.
-psql -c "GRANT CONNECT ON DATABASE <db> TO <db_user>"
+-- Grant the connection.
+GRANT CONNECT ON DATABASE <db> TO <db_user>;
 
-# Grant the database privilege.
-psql -c "GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>"
+-- Grant the database privilege.
+GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
+
+-- If you are using Postgres 15 or above.
+-- Switch to the created database and execute SQL.
+GRANT ALL ON SCHEMA public TO <db_user>;
 ```
 
 The project uses npm for development. Run it locally with these commands:

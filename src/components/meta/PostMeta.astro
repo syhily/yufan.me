@@ -7,7 +7,7 @@ export interface Props {
   title?: string;
   description?: string;
   publishDate: string;
-  requestPath?: string;
+  requestPath: string;
   ogImageUrl?: string;
   ogImageAltText?: string;
 }
@@ -17,14 +17,14 @@ const { requestPath, title, description, publishDate, ogImageUrl, ogImageAltText
 const { og, twitter } = getBlogPostMeta({
   title: title || options.title,
   description: description || options.description,
-  pageUrl: requestPath ? new URL(requestPath, options.website).toString() : options.website,
+  pageUrl: requestPath.startsWith('http') ? requestPath : import.meta.env.SITE + requestPath,
   authorName: options.author.name,
   publishDate,
   ogImageAbsoluteUrl:
     typeof ogImageUrl === 'undefined'
-      ? `${options.website}/images/open-graph.png`
+      ? `${import.meta.env.SITE}/images/open-graph.png`
       : ogImageUrl.startsWith('/')
-        ? `${options.website}${ogImageUrl}`
+        ? `${import.meta.env.SITE}${ogImageUrl}`
         : ogImageUrl,
   ogImageAltText,
   ogImageWidth: openGraphWidth,

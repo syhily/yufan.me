@@ -14,12 +14,12 @@ const { title, description, ogImageUrl } = Astro.props;
 const { og, twitter } = getPageMeta({
   title: title || options.title,
   description: description || options.description,
-  baseUrl: options.website,
+  baseUrl: import.meta.env.SITE,
   ogImageAbsoluteUrl:
     ogImageUrl === undefined
-      ? `${options.website}/images/open-graph.png`
+      ? `${import.meta.env.SITE}/images/open-graph.png`
       : ogImageUrl.startsWith('/')
-        ? `${options.website}${ogImageUrl}`
+        ? `${import.meta.env.SITE}${ogImageUrl}`
         : ogImageUrl,
   ogImageAltText: title || options.title,
   ogImageWidth: openGraphWidth,

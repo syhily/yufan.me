@@ -4,7 +4,7 @@
   <xsl:template match="/">
     <html xmlns="http://www.w3.org/1999/xhtml">
       <head>
-        <title><xsl:value-of select="/rss/channel/title"/> 订阅</title>
+        <title>订阅 - <xsl:value-of select="/rss/channel/title"/></title>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
@@ -13,7 +13,7 @@
       <body>
         <div class="top inner">
           <p><strong>This is a web feed,</strong> also known as an RSS feed. <strong>Subscribe</strong> by copying the URL from the address bar into your newsreader. Visit <a href="https://aboutfeeds.com">About Feeds</a> to get started with newsreaders and subscribing. It's free.</p>
-          <p><strong>这是一个网络订阅，</strong>也称为 RSS 订阅。将地址栏中的 URL 复制到新闻阅读器中即可<strong>订阅</strong>。访问 <a href="https://aboutfeeds.com">关于订阅</a>以开始使用新闻阅读器和订阅。这是免费的。</p>
+          <p><strong>这是一个网络订阅，</strong>也称为 RSS 订阅。将地址栏中的 URL 复制到新闻阅读器中即可<strong>订阅</strong>。访问<a href="https://aboutfeeds.com">关于订阅</a>以开始使用新闻阅读器和订阅。并且是免费的。</p>
         </div>
         <div class="head inner">
           <a class="head_logo">
@@ -21,7 +21,7 @@
               <xsl:value-of select="/rss/channel/link"/>
             </xsl:attribute>
             <img>
-              <xsl:attribute name="src">/favicon.svg</xsl:attribute>
+              <xsl:attribute name="src">/logo.svg</xsl:attribute>
               <xsl:attribute name="title">
                 <xsl:value-of select="/rss/channel/title"/>
               </xsl:attribute>
@@ -34,7 +34,7 @@
               <xsl:attribute name="href">
                 <xsl:value-of select="/rss/channel/link"/>
               </xsl:attribute>
-              Visit Website &#x2192;
+              访问网站 &#x2192;
             </a>
           </div>
         </div>

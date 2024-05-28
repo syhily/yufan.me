@@ -10,7 +10,14 @@ interface Props {
 }
 
 const { url, name, title, icon, className } = Astro.props;
-const svg = new QRCode({ width: 196, height: 196, content: url }).svg();
+const svg = new QRCode({
+  width: 196,
+  height: 196,
+  content: url,
+  join: true,
+  xmlDeclaration: false,
+  container: 'svg-viewbox',
+}).svg();
 ---
 
 <div

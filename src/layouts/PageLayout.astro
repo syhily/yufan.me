@@ -14,7 +14,7 @@ const { Content } = await page.render();
 ---
 
 <BaseLayout title={page.title}>
-  <PageMeta slot="og" title={page.title} ogImageUrl={`${options.website}/og/${page.slug}.png`} />
+  <PageMeta slot="og" title={page.title} ogImageUrl={`${import.meta.env.SITE}/og/${page.slug}.png`} />
 
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
     <div class="container">
@@ -24,11 +24,7 @@ const { Content } = await page.render();
           <div class="nc-light-gallery"><Content /></div>
         </div>
         {page.friend && <FriendLinks />}
-        {
-          page.comments && (
-            <ArtalkComment commentKey={options.publicWebsite + page.permalink + '/'} title={page.title} />
-          )
-        }
+        {page.comments && <ArtalkComment commentKey={options.website + page.permalink + '/'} title={page.title} />}
       </div>
     </div>
   </div>
