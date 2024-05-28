@@ -32,6 +32,7 @@
     "lint": "biome check --apply --use-server . && prettier . --write",
     "prepare": "husky",
     "preview": "astro preview",
+    "schema:fetch": "drizzle-kit introspect",
     "start": "astro dev"
   },
   "lint-staged": {
@@ -45,9 +46,11 @@
     "@astrojs/node": "^8.2.5",
     "@astrojs/rss": "^4.0.6",
     "astro": "^4.9.2",
+    "drizzle-orm": "^0.30.10",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.4.4",
+    "pg": "^8.11.5",
     "qrcode-svg": "^1.1.0",
     "sharp": "^0.33.4",
     "ultrahtml": "^1.5.3"
@@ -60,10 +63,13 @@
     "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.12.12",
+    "@types/pg": "^8.11.6",
     "@types/qrcode-svg": "^1.1.4",
     "aplayer": "^1.10.1",
     "artalk": "^2.8.6",
     "bootstrap": "^5.3.3",
+    "dotenv": "^16.4.5",
+    "drizzle-kit": "^0.21.4",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.5",
     "prettier": "^3.2.5",

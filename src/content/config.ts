@@ -101,7 +101,7 @@ const optionsCollection = defineCollection({
       }),
       comments: z.object({
         server: z.string().url().readonly(),
-        admins: z.array(z.number()).readonly(),
+        admins: z.array(z.number()),
       }),
     }),
   }),
