@@ -174,9 +174,11 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
+- [ ] Check article grammar errors by using ChatGPT. Remain **170** posts.
+- [ ] Add music to the articles. Remain **170** posts.
+- [ ] Add cover for all my posts. Remain **79** posts.
 - [ ] Add image lazy load support for articles.
 - [ ] Artalk integration with custom stylesheet.
-- [ ] Add cover for all my posts. Remain **79** posts.
 - [ ] Slide share components integration.
 
 ### Long Term Goals

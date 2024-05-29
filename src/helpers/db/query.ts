@@ -1,5 +1,6 @@
 import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
+import { makeToken } from '@/helpers/nanoid';
 import { options } from '@/helpers/schema';
 import { and, desc, eq, isNull, notInArray, sql } from 'drizzle-orm';
 
@@ -41,18 +42,6 @@ export const latestComments = async (): Promise<Comment[]> => {
 };
 
 const generateKey = (slug: string): string => `${options.website}/posts/${slug}/`;
-
-const makeToken = (length: number) => {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-  let counter = 0;
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    counter += 1;
-  }
-  return result;
-};
 
 export const increaseLikes = async (slug: string): Promise<{ likes: number; token: string }> => {
   const pageKey = generateKey(slug);
