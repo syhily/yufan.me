@@ -3,6 +3,7 @@ import ArtalkComment from '@/components/comment/Artalk.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import Share from '@/components/like/Share.astro';
 import PostMeta from '@/components/meta/PostMeta.astro';
+import NeteasePlayer from '@/components/netease/NeteasePlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import { formatShowDate } from '@/helpers/formatter';
 import { options, posts, tags, type Post } from '@/helpers/schema';
@@ -38,7 +39,7 @@ const { Content } = await post.render();
               </div>
               <div class="post-content">
                 <div class="nc-light-gallery">
-                  <Content />
+                  <Content components={{ NeteasePlayer: NeteasePlayer }} />
                 </div>
                 <nav class="post-in-navigation navigation pagination font-number" role="navigation">
                   <div class="nav-links"></div>

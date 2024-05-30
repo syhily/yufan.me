@@ -1,4 +1,5 @@
 ---
+import UnstyledPlayer from '@/components/netease/UnstyledPlayer.astro';
 import { posts } from '@/helpers/schema';
 
 const { slug } = Astro.params;
@@ -10,4 +11,4 @@ if (!post) {
 const { Content } = await post.render();
 ---
 
-<Content />
+<Content components={{ NeteasePlayer: UnstyledPlayer }} />

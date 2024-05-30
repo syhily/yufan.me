@@ -1,6 +1,4 @@
 ---
-import 'aplayer/dist/APlayer.min.css';
-
 interface Props {
   id: string;
 }
@@ -19,11 +17,4 @@ const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${id}`, {}
   });
 ---
 
-<div
-  class="aplayer"
-  data-name={data[0].name}
-  data-artist={data[0].artist}
-  data-url={data[0].url}
-  data-cover={data[0].pic}
->
-</div>
+<audio controls src={data[0].url}></audio>

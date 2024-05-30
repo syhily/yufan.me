@@ -1,6 +1,7 @@
 ---
 import ArtalkComment from '@/components/comment/Artalk.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
+import NeteasePlayer from '@/components/netease/NeteasePlayer.astro';
 import FriendLinks from '@/components/page/friend/FriendLinks.astro';
 import { options, type Page } from '@/helpers/schema';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -21,7 +22,9 @@ const { Content } = await page.render();
       <div class="post">
         <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
         <div class="post-content">
-          <div class="nc-light-gallery"><Content /></div>
+          <div class="nc-light-gallery">
+            <Content components={{ NeteasePlayer: NeteasePlayer }} />
+          </div>
         </div>
         {page.friend && <FriendLinks />}
         {page.comments && <ArtalkComment commentKey={options.website + page.permalink + '/'} title={page.title} />}
