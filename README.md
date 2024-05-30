@@ -177,7 +177,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 - [ ] Check article grammar errors by using ChatGPT. Remain **165** posts.
 - [ ] Add music to the articles. Remain **165** posts.
 - [ ] Add cover for all my posts. Remain **79** posts.
-- [ ] Add image lazy load support for articles.
+- [ ] Add image lazy load support for articles. External the article inner links with different target.
 - [ ] Artalk integration with custom stylesheet.
 - [ ] Slide share components integration.
 
