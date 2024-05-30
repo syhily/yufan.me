@@ -1,20 +1,13 @@
 ---
+import { song } from '@/components/netease/resolver';
+
 interface Props {
   id: string;
 }
 
 const { id } = Astro.props;
 
-// Disable SSL verification.
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-// https://github.com/injahow/meting-api
-const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${id}`, {})
-  .then((response) => response.json())
-  .catch((e) => {
-    console.log(e);
-    return [{ name: '', artist: '', url: '', pic: '' }];
-  });
+const { url } = await song(id);
 ---
 
-<audio controls src={data[0].url}></audio>
+<audio controls src={url}></audio>

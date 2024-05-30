@@ -1,4 +1,5 @@
 ---
+import { song } from '@/components/netease/resolver';
 import 'aplayer/dist/APlayer.min.css';
 
 interface Props {
@@ -7,23 +8,7 @@ interface Props {
 
 const { id } = Astro.props;
 
-// Disable SSL verification.
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-// https://github.com/injahow/meting-api
-const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${id}`, {})
-  .then((response) => response.json())
-  .catch((e) => {
-    console.log(e);
-    return [{ name: '', artist: '', url: '', pic: '' }];
-  });
+const { name, artist, url, pic } = await song(id);
 ---
 
-<div
-  class="aplayer"
-  data-name={data[0].name}
-  data-artist={data[0].artist}
-  data-url={data[0].url}
-  data-cover={data[0].pic}
->
-</div>
+<div class="aplayer" data-name={name} data-artist={artist} data-url={url} data-cover={pic}>音乐正在加载中 ...</div>
