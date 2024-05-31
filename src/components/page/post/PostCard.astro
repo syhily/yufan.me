@@ -15,7 +15,7 @@ const category = getCategory(post.category, undefined);
 <div class="list-item block">
   <div class="media media-3x2 col-6 col-md-5">
     <a href={post.permalink} class="media-content">
-      <Image src={post.cover} alt={post.title} />
+      <Image {...post.cover} alt={post.title} />
     </a>
     <div class="media-overlay overlay-top">
       <a class="d-none d-md-inline-block badge badge-md bg-white-overlay" href={category ? category.permalink : ''}>

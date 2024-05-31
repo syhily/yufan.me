@@ -6,8 +6,8 @@ FROM base AS build
 COPY . .
 
 ENV ASTRO_TELEMETRY_DISABLED=1
-ENV NODE_ENV=development
-RUN npm install && npm run build
+RUN NODE_ENV=development npm install
+RUN npm run build
 
 FROM base AS runtime
 RUN npm install --omit=dev

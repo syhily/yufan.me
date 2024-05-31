@@ -1,4 +1,5 @@
 ---
+import Image from '@/components/image/Image.astro';
 import UnstyledPlayer from '@/components/netease/UnstyledPlayer.astro';
 import { posts } from '@/helpers/schema';
 
@@ -11,4 +12,4 @@ if (!post) {
 const { Content } = await post.render();
 ---
 
-<Content components={{ NeteasePlayer: UnstyledPlayer }} />
+<Content components={{ NeteasePlayer: UnstyledPlayer, Image: Image }} />

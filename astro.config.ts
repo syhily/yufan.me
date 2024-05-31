@@ -2,6 +2,7 @@ import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
 import { defineConfig } from 'astro/config';
 import arraybuffer from 'vite-plugin-arraybuffer';
+import { astroImage } from './remark-plugins/images';
 
 // Dynamic switch the site. This is hard coded.
 const port = 4321;
@@ -14,7 +15,11 @@ export default defineConfig({
   security: {
     checkOrigin: true,
   },
-  integrations: [mdx()],
+  integrations: [
+    mdx({
+      remarkPlugins: [astroImage],
+    }),
+  ],
   adapter: node({
     mode: 'standalone',
   }),

@@ -12,7 +12,7 @@ const { post } = Astro.props;
 <div class="list-item list-nice-overlay">
   <div class="media media-3x2">
     <a href={post.permalink} class="media-content">
-      <Image src={post.cover} alt={post.title} />
+      <Image {...post.cover} alt={post.title} />
       <div class="overlay"></div>
     </a>
   </div>

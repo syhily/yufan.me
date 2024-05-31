@@ -1,5 +1,6 @@
 ---
 import ArtalkComment from '@/components/comment/Artalk.astro';
+import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import Share from '@/components/like/Share.astro';
 import PostMeta from '@/components/meta/PostMeta.astro';
@@ -39,7 +40,7 @@ const { Content } = await post.render();
               </div>
               <div class="post-content">
                 <div class="nc-light-gallery">
-                  <Content components={{ NeteasePlayer: NeteasePlayer }} />
+                  <Content components={{ NeteasePlayer: NeteasePlayer, Image: Image }} />
                 </div>
                 <nav class="post-in-navigation navigation pagination font-number" role="navigation">
                   <div class="nav-links"></div>

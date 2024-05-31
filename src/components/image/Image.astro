@@ -1,13 +1,11 @@
 ---
-import { blurStyle } from '@/helpers/images/blur';
-import type { Image } from '@/helpers/images/types';
+import { blurStyle, type Image } from '@/helpers/images';
 
-interface Props {
-  src: Image;
-  alt?: string;
+interface Props extends Image {
+  alt: string;
 }
 
-const { src, alt } = Astro.props;
+const { alt, ...meta } = Astro.props;
 ---
 
-<img src={src.src} {alt} loading="lazy" width={src.width} height={src.height} style={blurStyle(src)} />
+<img src={meta.src} {alt} loading="lazy" width={meta.width} height={meta.height} style={blurStyle(meta)} />

@@ -180,7 +180,7 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 - [ ] Check article grammar errors by using ChatGPT. Remain **165** posts.
 - [ ] Add music to the articles. Remain **165** posts.
 - [ ] Add cover for all my posts. Remain **79** posts.
-- [ ] Add image lazy load support for articles. External the article inner links with different target.
+- [ ] External the article inner links with different target.
 - [ ] Artalk integration with custom stylesheet.
 - [ ] Slide share components integration.
 
@@ -233,9 +233,9 @@ The source codes used from third party projects are:
 - [og.ts](src/helpers/og.ts)
   from [yuaanlin/yual.in](https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx)
   with [permission](licenses/LICENSE.yuaanlin.jpg)
-- [metadata.ts](src/helpers/images/metadata.ts)
+- [images.ts](src/helpers/images.ts)
   from [zce/velite](https://github.com/zce/velite/blob/main/src/assets.ts)
   with [license](licenses/LICENSE.zce.txt)
-- [blur.ts](src/helpers/images/blur.ts)
+- [images.ts](src/helpers/images.ts)
   from [vercel/next.js](https://github.com/vercel/next.js/blob/canary/packages/next/src/shared/lib/image-blur-svg.ts)
   with [license](licenses/LICENSE.vercel.txt)

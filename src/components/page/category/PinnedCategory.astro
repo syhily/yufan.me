@@ -13,7 +13,7 @@ const { category } = Astro.props;
   <div class="list-item block">
     <div class="media media-3x1">
       <a href={category.permalink} class="media-content">
-        <Image src={category.cover} alt={category.name} />
+        <Image {...category.cover} alt={category.name} />
       </a>
     </div>
     <div class="list-content">
