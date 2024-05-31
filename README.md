@@ -37,6 +37,9 @@ The project uses npm for development. Run it locally with these commands:
 # Install the dependencies by using bun.
 npm install
 
+# Init git hooks.
+npx husky
+
 # Check the newer dependencies.
 npm update
 

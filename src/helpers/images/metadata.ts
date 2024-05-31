@@ -1,10 +1,12 @@
 import type { Image } from '@/helpers/images/types';
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-import sharp from 'sharp';
 
 // Copied and modified https://github.com/zce/velite/blob/main/src/assets.ts
 export const imageMetadata = async (publicPath: string): Promise<Image> => {
+  // Load for sharp on demand for avoiding the resolver issues in production.
+  const { default: sharp } = await import('sharp');
+
   if (!publicPath.startsWith('/')) {
     throw new Error('We only support image path in public direct. It should start with "/".');
   }

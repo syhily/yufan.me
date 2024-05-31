@@ -30,9 +30,7 @@
     "build": "rimraf dist && astro check && astro build",
     "dev": "astro dev",
     "lint": "biome check --apply --use-server . && prettier . --write",
-    "prepare": "husky",
     "preview": "astro preview",
-    "schema:fetch": "drizzle-kit introspect",
     "start": "astro dev"
   },
   "lint-staged": {
@@ -46,13 +44,12 @@
     "@astrojs/node": "^8.2.5",
     "@astrojs/rss": "^4.0.6",
     "astro": "^4.9.2",
-    "drizzle-orm": "^0.30.10",
+    "drizzle-orm": "^0.31.0",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.4.4",
     "pg": "^8.11.5",
     "qrcode-svg": "^1.1.0",
-    "sharp": "^0.33.4",
     "ultrahtml": "^1.5.3"
   },
   "devDependencies": {
@@ -67,13 +64,12 @@
     "aplayer": "^1.10.1",
     "artalk": "^2.8.6",
     "bootstrap": "^5.3.3",
-    "husky": "^9.0.11",
-    "lint-staged": "^15.2.5",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.14.0",
     "prettier-plugin-astro-organize-imports": "^0.4.8",
     "prettier-plugin-organize-imports": "^3.2.4",
     "rimraf": "^5.0.7",
+    "sharp": "^0.33.4",
     "typescript": "^5.4.5",
     "vite-plugin-arraybuffer": "^0.0.7"
   }
