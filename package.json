@@ -52,7 +52,6 @@
     "luxon": "^3.4.4",
     "pg": "^8.11.5",
     "qrcode-svg": "^1.1.0",
-    "sharp": "^0.33.4",
     "ultrahtml": "^1.5.3"
   },
   "devDependencies": {
@@ -74,6 +73,7 @@
     "prettier-plugin-astro-organize-imports": "^0.4.8",
     "prettier-plugin-organize-imports": "^3.2.4",
     "rimraf": "^5.0.7",
+    "sharp": "^0.33.4",
     "typescript": "^5.4.5",
     "vite-plugin-arraybuffer": "^0.0.7"
   }
