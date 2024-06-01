@@ -59,7 +59,7 @@
     "@napi-rs/canvas": "^0.1.52",
     "@types/lodash": "^4.17.4",
     "@types/luxon": "^3.4.2",
-    "@types/node": "^20.12.13",
+    "@types/node": "^20.13.0",
     "@types/pg": "^8.11.6",
     "@types/qrcode-svg": "^1.1.4",
     "@types/unist": "^3.0.2",
