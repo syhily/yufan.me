@@ -51,7 +51,7 @@ settings:
     # You can add the posts id here.
     # We only show the first three feature posts.
     feature:
-      - who-is-singing
+      - my-dear-kitty
       - one-hundred-days
       - sauvignon-blanc
     # The pinned category slugs.

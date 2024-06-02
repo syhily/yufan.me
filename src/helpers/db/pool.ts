@@ -23,8 +23,4 @@ const conn =
 // Cache the connection.
 globalForDb.conn = conn;
 
-export const db = drizzle(conn, {
-  // Enable the log in development
-  logger: !import.meta.env.PROD,
-  schema: schema,
-});
+export const db = drizzle(conn, { schema: schema });
