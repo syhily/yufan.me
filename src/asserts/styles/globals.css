@@ -3580,4 +3580,5 @@ blockquote p:last-child {
 
 .aplayer {
   max-width: 350px;
+  margin: 0 0 1.25rem;
 }

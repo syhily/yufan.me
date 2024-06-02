@@ -23,4 +23,4 @@ const conn =
 // Cache the connection.
 globalForDb.conn = conn;
 
-export const db = drizzle(conn, { schema: schema });
+export const db = drizzle(conn, { schema: schema, logger: false });
