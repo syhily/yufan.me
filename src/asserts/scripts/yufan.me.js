@@ -1,5 +1,6 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
 import Artalk from 'artalk/dist/ArtalkLite';
+import stickySidebar from './sticky-sidebar.js';
 
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside');
@@ -165,3 +166,6 @@ if (typeof likeButton !== 'undefined' && likeButton !== null) {
     }
   });
 }
+
+// Sticky Sidebar
+stickySidebar(document.querySelectorAll('.sidebar'));
