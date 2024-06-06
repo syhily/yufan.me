@@ -6,9 +6,6 @@ export type Song = {
 };
 
 export const song = async (id: string): Promise<Song> => {
-  // Disable SSL verification.
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
   // https://github.com/injahow/meting-api
   const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${id}`, {})
     .then((response) => response.json())

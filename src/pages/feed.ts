@@ -1,6 +1,8 @@
 import PostContent from '@/components/page/post/PostContent.astro';
-import { options, posts } from '@/helpers/schema';
+import { options, posts, type Post } from '@/helpers/schema';
+import { getContainerRenderer } from '@astrojs/mdx';
 import rss from '@astrojs/rss';
+import type { AstroRenderer, SSRLoadedRenderer } from 'astro';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { ELEMENT_NODE, TEXT_NODE, transform, walk, type TextNode } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
@@ -66,18 +68,31 @@ const cleanupContent = async (html: string) => {
   ]);
 };
 
-export const GET = async () => {
+// Copy from astro source code. I don't know why this virtual vite module didn't works.
+export async function loadRenderers(renderers: AstroRenderer[]) {
+  const loadedRenderers = await Promise.all(
+    renderers.map(async (renderer) => {
+      const mod = await import(/* @vite-ignore */ renderer.serverEntrypoint);
+      if (typeof mod.default !== 'undefined') {
+        return {
+          ...renderer,
+          ssr: mod.default,
+        } as SSRLoadedRenderer;
+      }
+      return undefined;
+    }),
+  );
+
+  return loadedRenderers.filter((r): r is SSRLoadedRenderer => Boolean(r));
+}
+
+const renderPostsContent = async (feedPosts: Post[]): Promise<Map<string, string>> => {
   const contents = new Map<string, string>();
+
   if (options.settings.feed.full) {
-    const container = await AstroContainer.create({
-      renderers: [
-        {
-          name: '@astrojs/mdx',
-          serverEntrypoint: 'astro/jsx/server.js',
-        },
-      ],
-    });
-    const promises = posts.slice(0, options.settings.feed.size).map(async (post) => ({
+    const renderers = await loadRenderers([getContainerRenderer()]);
+    const container = await AstroContainer.create({ renderers: renderers });
+    const promises = feedPosts.map(async (post) => ({
       key: post.slug,
       value: await container.renderToString(PostContent, {
         params: {
@@ -91,18 +106,25 @@ export const GET = async () => {
     }
   }
 
+  return contents;
+};
+
+export const GET = async () => {
+  const feedPosts = posts.length < options.settings.feed.size ? posts : posts.slice(0, options.settings.feed.size);
+  const contents = await renderPostsContent(feedPosts);
+
   return rss({
     title: options.title,
     description: options.description,
     stylesheet: '/feed.xsl',
     site: import.meta.env.SITE,
-    items: posts.slice(0, options.settings.feed.size).map((post) => ({
+    items: feedPosts.map((post) => ({
       link: import.meta.env.SITE + post.permalink,
       title: post.title,
       pubDate: post.date,
       description: post.summary,
       author: options.author.name,
-      content: options.settings.feed.full ? contents.get(post.slug) : undefined,
+      content: contents.get(post.slug) ?? post.summary,
       categories: [post.category, ...post.tags],
     })),
   });
