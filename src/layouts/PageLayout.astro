@@ -2,8 +2,8 @@
 import ArtalkComment from '@/components/comment/Artalk.astro';
 import Image from '@/components/image/Image.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
-import NeteasePlayer from '@/components/netease/NeteasePlayer.astro';
 import FriendLinks from '@/components/page/friend/FriendLinks.astro';
+import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import { options, type Page } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -25,7 +25,7 @@ const { Content } = await page.render();
         <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
         <div class="post-content">
           <div class="nc-light-gallery">
-            <Content components={{ NeteasePlayer: NeteasePlayer, Image: Image }} />
+            <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
           </div>
         </div>
         {page.friend && <FriendLinks />}

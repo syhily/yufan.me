@@ -211,8 +211,7 @@ They are the fonts that can be used in business without any charge.
 
 The [OPPOSans 3.0](https://www.coloros.com/article/A00000050) is used for reading in my weblog.
 It can be used in business scenarios without any modification.
-Since we can't provide 3rd-party download link by the license limitation,
-we have to reference this font by using OPPO's internal link.
+I just placed it under the [opposans](src/asserts/styles/opposans/) directory for better integration.
 The license file is [here](licenses/LICENSE.oppo-sans.txt)
 
 ### Open Graph Font License

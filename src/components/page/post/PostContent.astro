@@ -1,6 +1,6 @@
 ---
 import Image from '@/components/image/Image.astro';
-import UnstyledPlayer from '@/components/netease/UnstyledPlayer.astro';
+import UnstyledMusicPlayer from '@/components/player/UnstyledMusicPlayer.astro';
 import { posts } from '@/helpers/schema';
 
 const { slug } = Astro.params;
@@ -12,4 +12,4 @@ if (!post) {
 const { Content } = await post.render();
 ---
 
-<Content components={{ NeteasePlayer: UnstyledPlayer, Image: Image }} />
+<Content components={{ MusicPlayer: UnstyledMusicPlayer, Image: Image }} />
