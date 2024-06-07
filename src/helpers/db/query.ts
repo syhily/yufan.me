@@ -23,7 +23,7 @@ export const latestComments = async (): Promise<Comment[]> => {
     .from(atk_comments)
     .leftJoin(atk_pages, eq(atk_comments.page_key, atk_pages.key))
     .leftJoin(atk_users, eq(atk_comments.user_id, atk_users.id))
-    .where(notInArray(atk_comments.user_id, options.settings.comments.admins))
+    .where(and(notInArray(atk_comments.user_id, options.settings.comments.admins), eq(atk_comments.is_pending, false)))
     .orderBy(desc(atk_comments.created_at))
     .limit(options.settings.sidebar.comment);
 
