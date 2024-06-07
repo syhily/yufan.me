@@ -1,4 +1,7 @@
 import { pages, posts } from '@/helpers/schema';
+import { urlJoin } from '@/helpers/tools';
+
+export const prerender = true;
 
 export async function GET() {
   const result = `
@@ -7,12 +10,12 @@ export async function GET() {
   <url><loc>${import.meta.env.SITE}/</loc></url>
   ${posts
     .map((post) => {
-      return `<url><loc>${import.meta.env.SITE}${post.permalink}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`;
+      return `<url><loc>${urlJoin(import.meta.env.SITE, post.permalink)}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`;
     })
     .join('\n')}
     ${pages
       .map((page) => {
-        return `<url><loc>${import.meta.env.SITE}${page.permalink}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`;
+        return `<url><loc>${urlJoin(import.meta.env.SITE, page.permalink)}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`;
       })
       .join('\n')}
 </urlset>

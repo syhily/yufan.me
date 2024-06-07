@@ -5,6 +5,7 @@ import PageMeta from '@/components/meta/PageMeta.astro';
 import NeteasePlayer from '@/components/netease/NeteasePlayer.astro';
 import FriendLinks from '@/components/page/friend/FriendLinks.astro';
 import { options, type Page } from '@/helpers/schema';
+import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 
 interface Props {
@@ -16,7 +17,7 @@ const { Content } = await page.render();
 ---
 
 <BaseLayout title={page.title}>
-  <PageMeta slot="og" title={page.title} ogImageUrl={`${import.meta.env.SITE}/og/${page.slug}.png`} />
+  <PageMeta slot="og" title={page.title} ogImageUrl={urlJoin(import.meta.env.SITE, `/og/${page.slug}.png`)} />
 
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
     <div class="container">
@@ -28,7 +29,11 @@ const { Content } = await page.render();
           </div>
         </div>
         {page.friend && <FriendLinks />}
-        {page.comments && <ArtalkComment commentKey={options.website + page.permalink + '/'} title={page.title} />}
+        {
+          page.comments && (
+            <ArtalkComment commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />
+          )
+        }
       </div>
     </div>
   </div>

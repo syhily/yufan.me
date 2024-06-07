@@ -1,7 +1,7 @@
 import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
-import { makeToken } from '@/helpers/nanoid';
 import { options } from '@/helpers/schema';
+import { makeToken, urlJoin } from '@/helpers/tools';
 import { and, desc, eq, isNull, notInArray, sql } from 'drizzle-orm';
 
 export interface Comment {
@@ -41,7 +41,7 @@ export const latestComments = async (): Promise<Comment[]> => {
   });
 };
 
-const generateKey = (slug: string): string => `${options.website}/posts/${slug}/`;
+const generateKey = (slug: string): string => urlJoin(options.website, '/posts', slug, '/');
 
 export const increaseLikes = async (slug: string): Promise<{ likes: number; token: string }> => {
   const pageKey = generateKey(slug);

@@ -11,3 +11,9 @@ export const makeToken = (
   }
   return result;
 };
+
+export const urlJoin = (base: string, ...paths: string[]): string => {
+  return Array.from([base, ...paths])
+    .reduce((left, right) => left + (left.endsWith('/') || right.startsWith('/') ? '' : '/') + right)
+    .replace(/([^:]\/)\/+/g, '$1');
+};

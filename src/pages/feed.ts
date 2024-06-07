@@ -1,5 +1,6 @@
 import PostContent from '@/components/page/post/PostContent.astro';
 import { options, posts, type Post } from '@/helpers/schema';
+import { urlJoin } from '@/helpers/tools';
 import { getContainerRenderer } from '@astrojs/mdx';
 import rss from '@astrojs/rss';
 import type { AstroRenderer, SSRLoadedRenderer } from 'astro';
@@ -14,27 +15,14 @@ const cleanupContent = async (html: string) => {
     async (node) => {
       await walk(node, (node) => {
         if (node.type === ELEMENT_NODE) {
-          // Simplify picture elements to img elements, some feeds are struggling with it
-          if (node.name === 'picture') {
-            if (node.parent.type === ELEMENT_NODE && node.parent.name === 'a') {
-              const imgChildren = node.children.find((child) => child.type === ELEMENT_NODE && child.name === 'img');
-
-              const { src, srcset, sizes, onload, style, ...attributes } = imgChildren?.attributes || {};
-
-              node.name = 'img';
-              node.attributes = attributes;
-              node.attributes.src = import.meta.env.SITE + src;
-            }
-          }
-
           // Make sure images are absolute, some readers are not smart enough to figure it out
           if (node.name === 'img' && node.attributes.src?.startsWith('/')) {
-            node.attributes.src = import.meta.env.SITE + node.attributes.src;
+            node.attributes.src = urlJoin(import.meta.env.SITE, node.attributes.src);
           }
 
           // Make sure links are absolute, some readers are not smart enough to figure it out
           if (node.name === 'a' && node.attributes.href?.startsWith('/')) {
-            node.attributes.href = import.meta.env.SITE + node.attributes.href;
+            node.attributes.href = urlJoin(import.meta.env.SITE, node.attributes.href);
           }
 
           // Remove favicon images, some readers don't know they should be inline and it ends up being a broken image
@@ -119,7 +107,7 @@ export const GET = async () => {
     stylesheet: '/feed.xsl',
     site: import.meta.env.SITE,
     items: feedPosts.map((post) => ({
-      link: import.meta.env.SITE + post.permalink,
+      link: urlJoin(import.meta.env.SITE, post.permalink),
       title: post.title,
       pubDate: post.date,
       description: post.summary,
