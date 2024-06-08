@@ -51,9 +51,9 @@ settings:
     # You can add the posts id here.
     # We only show the first three feature posts.
     feature:
+      - my-darling
       - at-home
       - my-dear-kitty
-      - one-hundred-days
     # The pinned category slugs.
     category:
       - article
