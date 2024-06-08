@@ -52,7 +52,7 @@ settings:
     # We only show the first three feature posts.
     feature:
       - my-darling
-      - at-home
+      - happiness-caprice
       - my-dear-kitty
     # The pinned category slugs.
     category:
