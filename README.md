@@ -177,9 +177,9 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
-- [ ] Check article grammar errors by using ChatGPT. Remain **100** posts.
-- [ ] Add music to the articles. Remain **100** posts.
-- [ ] Add cover for all my posts. Remain **43** posts.
+- [ ] Check article grammar errors by using ChatGPT. Remain **90** posts.
+- [ ] Add music to the articles. Remain **90** posts.
+- [ ] Add cover for all my posts. Remain **33** posts.
 - [ ] Clean up the legacy links in the weblog comments.
 - [ ] External the article inner links with different target.
 - [ ] Artalk integration with custom stylesheet.

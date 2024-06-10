@@ -1,6 +1,6 @@
 {
   "name": "yufan.me",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "private": true,
   "keywords": [
     "blog",
@@ -56,7 +56,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.7.0",
     "@biomejs/biome": "^1.8.0",
-    "@napi-rs/canvas": "^0.1.52",
+    "@napi-rs/canvas": "^0.1.53",
     "@types/lodash": "^4.17.5",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.14.2",
@@ -64,7 +64,7 @@
     "@types/qrcode-svg": "^1.1.4",
     "@types/unist": "^3.0.2",
     "aplayer": "^1.10.1",
-    "artalk": "^2.8.6",
+    "artalk": "^2.8.7",
     "bootstrap": "^5.3.3",
     "prettier": "^3.3.1",
     "prettier-plugin-astro": "^0.14.0",
