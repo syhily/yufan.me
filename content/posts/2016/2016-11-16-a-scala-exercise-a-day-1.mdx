@@ -1,0 +1,116 @@
+---
+title: A scala exercise a day 1
+slug: a-scala-exercise-a-day-1
+date: 2016-11-16 10:44:41
+updated: 2020-09-04 12:44:34
+tags:
+  - Scala
+category: 编程
+cover: /images/2020/09/2020090412164155.jpg
+summary: 编写一段代码，将 a 设置为一个 n 个随机整数的数组，要求随机数介于 [0, n) 之间。
+---
+
+![mocha ドラム水槽](/images/2020/09/2020090412291981.jpg)
+
+1、编写一段代码，将 a 设置为一个 n 个随机整数的数组，要求随机数介于 `[0, n)` 之间。
+
+```scala
+def randomArray(n: Int) : Array[Int] = {
+  (for (i <- 0 until n) yield (math.random * n).toInt).toArray
+}
+```
+
+2、编写一个循环，将整数数组中相邻的元素置换。例如，`Array(1, 2, 3, 4, 5)` 经过置换之后变为 `Array(2, 1, 4, 3, 5)`。
+
+```scala
+def transferArray(array: Array[Int]) : Array[Int] = {
+  for (i <- array.indices if i % 2 == 1) {
+    val temp = array(i)
+    array(i) = array(i - 1)
+    array(i - 1) = temp
+  }
+  array
+}
+```
+
+3、重复前一个练习，不过这次生成一个新的值交换过的数组。用 `for/yield`。
+
+```scala
+def transferArray(array: Array[Int]) : Array[Int] = {
+  (for (i <- array.indices) yield {
+    i % 2 match {
+      case 1 => array(i - 1)
+      case 0 => if (i + 1 == array.length) array(i) else array(i + 1)
+    }
+  }).toArray
+}
+```
+
+4、给定一个整数数组，产出一个新的数组，包含元素组中的所有正值，以原有顺序排列，之后的元素是所有的零或负值，以原有顺序排列。
+
+```scala
+def sortArray(array: Array[Int]) : Array[Int] = {
+  val (left, right) = array.partition(_ > 0)
+  left ++ right
+}
+```
+
+5、如何计算 `Array[Double]` 的平均值？
+
+```scala
+def arrayAverage(array: Array[Double]) : Double = {
+  array.sum / array.length
+}
+```
+
+6、如何重新组织 `Array[Int]` 的元素将它们以反序排列？对于 `ArrayBuffer[Int]` 你又会怎么做呢？
+
+```scala
+def reverseAverage(array: Array[Int]) : Array[Int] = {
+  for (i <- array.indices if i < array.length / 2) {
+    val temp = array(i)
+    array(i) = array(array.length - i - 1)
+    array(array.length - i - 1) = temp
+  }
+  array
+}
+```
+
+对于 `ArrayBuffer` 如下
+
+```scala
+def reverseAverage(array: ArrayBuffer[Int]) : ArrayBuffer[Int] = {
+  array.reverse
+}
+```
+
+7、编写一段代码，产出数组中的所有值，去掉重复项。
+
+```scala
+def distinctAverage(array: Array[Int]) : Array[Int] = {
+  array.distinct
+}
+```
+
+8、创建一个由 `java.util.TimeZone.getAvailableIDs` 返回的时区集合，判断条件是它们在美洲。去掉 `"America/"` 前缀并排序。
+
+```scala
+val sortedAmericanZone = java.util.TimeZone.getAvailableIDs.filter(_.startsWith("America")).map(_.replaceFirst("America/", "")).sorted
+```
+
+9、引入 `java.awt.datatransfer._` 并构建一个类型为 `SystemFlavorMap` 类型的对象： `val flavors = SystemFlavorMap.getDefaultFlavorMap().asInstanceOf[SystemFlavorMap]` 然后以 `DataFlavor.imageFlavor` 为参数调用 `getNativesForFlavor` 方法，以 Scala 缓冲保存返回值。
+
+首先导入包
+
+```scala
+import java.awt.datatransfer._
+import scala.collection.JavaConversions._
+import scala.collection.mutable.Buffer
+```
+
+然后编码
+
+```scala
+val flavors = SystemFlavorMap.getDefaultFlavorMap().asInstanceOf[SystemFlavorMap]
+val flavor: Buffer[String] = flavors.getNativesForFlavor(DataFlavor.imageFlavor)
+```
