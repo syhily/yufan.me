@@ -1,0 +1,20 @@
+<figure class="avatar centered">
+    <img src="<%= theme.img.avatar %>">
+</figure>
+<section class="post-footer-date">
+    <p class="card-subtitle text-gray mb-0">Publish: <%= date(page.date, config.date_format) %>
+        <%  var posted = date(page.date, 'MMM DD, YYYY')
+            var edited = date(page.updated, 'MMM DD, YYYY')
+            if (posted !== edited) { %>
+            <br>Update: <%= date(page.updated, config.date_format) %>
+        <% } %>
+    </p>
+</section>
+<section class="post-footer-action">
+    <!-- Post Share -->
+    <%- partial('_partial/menu/post-share') %>
+    <!-- Post Qrcoe -->
+    <% if(theme.post.qrcode.enable === true) { %>
+        <%- partial('_partial/menu/post-qrcode') %>
+    <% } %>
+</section>

@@ -1,0 +1,14 @@
+<div class="dropdown dropdown-right float-right">
+<a class="btn btn-link btn-gray dropdown-toggle" tabindex="0"><i class="icon material-icons casino-icons">devices_other</i></a>
+<ul class="menu">
+    <li class="menu-item">
+        <% if(theme.post.qrcode.use === "plugin") { %>
+            <img src="<%- qrcode(url, {
+                margin: 2
+            }) %>">
+        <% } else if(theme.post.qrcode.use === "online") { %>
+            <img src="<% if(config.language === "zh-CN") { %>https://pan.baidu.com/share/qrcode?w=246&h=246&url=<%= page.permalink %><% } else { %>https://chart.googleapis.com/chart?cht=qr&chs=246x246&chl=<%= page.permalink %>&chld=M|2<% } %>">
+        <% } %>
+    </li>
+</ul>
+</div>

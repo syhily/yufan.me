@@ -1,0 +1,33 @@
+<!-- Import JS -->
+<script>lsloader.js("lazy_js_vender","<%= theme.static_resource_prefix %>/scripts/lazyload.min.js")</script>
+
+<!-- Comment -->
+<% if(theme.comment.use){ %>
+    <%- partial('_plugin/comment/' + theme.comment.use + '/common') %>
+ <% } %>
+
+<script type="text/javascript">
+    var myLazyLoad = new LazyLoad({
+        elements_selector: ".lazy"
+    });
+    // Start Queue
+    window.onload = function() {
+        setInterval(function(){
+            queue.execNext();
+        },200);
+    };
+</script>
+<script type="text/javascript">
+    var copyrightNow = new Date().getFullYear();
+    var textContent = document.querySelector('span[year]')
+    <% if (theme.footer.copyright_since) { %>
+        copyrightSince = <%= theme.footer.copyright_since %>;
+            if (copyrightSince === copyrightNow) {
+            textContent.textContent = copyrightNow
+        } else {
+            textContent.textContent = copyrightSince + ' - ' + copyrightNow
+        }
+    <% } else { %>
+        textContent.textContent = copyrightNow
+    <% } %>
+</script>

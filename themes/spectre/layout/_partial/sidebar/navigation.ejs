@@ -1,0 +1,73 @@
+    <!-- Homepage -->
+    <% if(theme.sidebar.homepage.use === true) { %>
+        <li class="nav-item">
+            <a href="<%= config.root %>">
+                <% if(theme.sidebar.homepage.icon) { %>
+                    <i class="icon material-icons sidebar-icons"><%= theme.sidebar.homepage.icon %></i>
+                <% } %>
+            <%= __('sidebar.homepage') %>
+            </a>
+        </li>
+        <% if(theme.sidebar.homepage.divider === true) { %>
+            <div class="divider"></div>
+        <% } %>
+    <% } %>
+
+    <!-- Archives -->
+    <% if(theme.sidebar.archives.use === true) { %>
+        <li class="nav-item">
+            <a href="<%= url_for('archives/') %>">
+                <% if(theme.sidebar.archives.icon) { %>
+                    <i class="icon material-icons sidebar-icons"><%= theme.sidebar.archives.icon %></i>
+                <% } %>
+            <%= __('sidebar.archive') %>
+            </a>
+        </li>
+        <% if(theme.sidebar.archives.divider === true) { %>
+            <div class="divider"></div>
+        <% } %>
+    <% } %>
+
+    <!-- Search -->
+    <!--<% if(theme.search.use) { %>
+        <li class="nav-item">
+            <a href="<%= theme.sidebar.search.link %>">
+                <% if(theme.sidebar.search.icon) { %>
+                    <i class="icon material-icons sidebar-icons"><%= theme.sidebar.search.icon %></i>
+                <% } %>
+            搜索
+            </a>
+        </li>
+        <% if(theme.sidebar.search.divider === true) { %>
+            <div class="divider"></div>
+        <% } %>
+    <% } %>-->
+
+    <!-- Pages  -->
+    <% for (var i in theme.sidebar.pages){ %>
+        <li class="nav-item">
+            <a href="<%= theme.sidebar.pages[i].link %>">
+                <% if(theme.sidebar.pages[i].icon){ %>
+                    <i class="icon material-icons sidebar-icons"><%= theme.sidebar.pages[i].icon %></i>
+                <% } %>
+                <%= i %>
+            </a>
+        </li>
+        <% if(theme.sidebar.pages[i].divider === true) { %>
+            <div class="divider"></div>
+        <% } %>
+    <% } %>
+
+    <!-- Article Number  -->
+    <% if(theme.sidebar.article_num.use === true) { %>
+        <li class="nav-item">
+            <a href="<%= url_for('archives/') %>" style="display: flex">
+                <%= __('sidebar.article_num') %>
+                <div style="flex-grow: 1;padding-left: 1rem!important"></div>
+                <span class="sidebar-badge"><%= site.posts.length %></span>
+            </a>
+        </li>
+        <% if(theme.sidebar.article_num.divider === true) { %>
+            <div class="divider"></div>
+        <% } %>
+    <% } %>

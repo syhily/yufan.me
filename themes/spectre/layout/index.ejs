@@ -1,0 +1,20 @@
+<% if( (page.current === 1) && (is_home()) ) { %>
+<div class="container container-header">
+    <div class="columns">
+        <%- partial('_partial/index/daily_pic') %>
+        <%- partial('_partial/index/author_info') %>
+    </div>
+</div>
+<% } %>
+
+<div class="container container-post-list">
+    <!-- Post List -->
+    <% page.posts.each(function(post) { %>
+        <% if(!((typeof hasposttop === 'function') && post.top)) { %>
+            <%- partial('_partial/post-entry', { post: post, index: true, pin: false }) %>
+        <% } %>
+    <% }); %>
+</div>
+<div class="container container-index-nav">
+    <%- partial('_partial/index-nav') %>
+</div>

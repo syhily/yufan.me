@@ -1,0 +1,11 @@
+<% if (page.total > 1) { %>
+    <!-- Index nav -->
+    <ul class="pagination">
+        <% if (page.prev){ %>
+            <li class="page-item page-prev"><a href="<%- url_for(page.prev_link) %>"><div class="page-item-title h5"><i class="icon material-icons casino-icons">arrow_back</i></div><div class="page-item-subtitle">上一页</div></a></li>
+        <% } %>
+        <% if (page.next){ %>
+            <li class="page-item page-next"><a href="<%- url_for(page.next_link) %>"><div class="page-item-title h5"><i class="icon material-icons casino-icons">arrow_forward</i></div><div class="page-item-subtitle">下一页</div></a></li>
+        <% } %>
+    </ul>
+<% } %>

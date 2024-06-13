@@ -1,0 +1,32 @@
+language: node_js
+
+node_js: stable
+
+env:
+  global:
+    - secure: "Mnfxu43BKbMVJn+PLdQkiT+g+pMUcMw4eRO0UaGftCFYRIvUcuoTmW9VkHTI/JJey09xNZ3IWlGwrPHz3dnDYQyWdy+TgzyzO2Us5ujZXLdHQJezLqNPNY2/mCeEpGedFsqtMfsfI2q6b3Ra0GepC1HrY3WgejoWoc4ZHEEGTvvJAWxpcFuK69Cif33xz/4uM3Ef36mfaHKwVp7WRzxpH5087XYqxF2WEdvHqOLniu2x4ETttJ8LwUcbJaow3m2AP2hzb81zVcIu5lfOPm3ayjOPp/v9pIrTuKtBeeRL8tDxxUOjMSZKZ0BAPo06hOnvYuoAFGXAHU40XM9stL+5t8TSnTxGsyrjlIJvzqQ+E1O9qqBwpfCB4nbxs8QdJZr0ssEdkuNrAyh1iYvnjelY1Jnhbkb7uQhbmdmhe2WyJuhhK6A7dsFiAKL+Et2NjhwYsr+HULvLlNEu/a50LyNUkLsZ+6+hB//fsifzAyo07gsN2kn3eiMnU9aZjmubPH1FsalyIgCiV4W0D4I7wmlK1y+XYlqqXFOAvkHlMuz+cT7o7QRRs13cO34CZ8FRofvcKJE6lfV/t/NfIzbnDInurIgW6eWO3md2lvafvMwc8qwvDcBlxjeauBJ00STpUYGRP2Ku5aLM4xAKlI/XO8Qtjbf7dWi+WHjGCa54CV99weU="
+
+cache:
+  apt: true
+  directories:
+   - node_modules
+
+branches:
+  only:
+   - master
+
+before_install:
+  - npm install hexo-cli -g
+
+install:
+  - npm install
+  - shell/util/set-up-ssh.sh --key "$encrypted_b9b50c5e0ab8_key" --iv "$encrypted_b9b50c5e0ab8_iv" --path-encrypted-key "id_rsa.enc"
+
+before_script:
+  - git config --global user.name ${GH_USER_NAME}
+  - git config --global user.email ${GH_USER_EMAIL}
+
+script:
+  - hexo algolia --chunk-size=5000 # The HEXO_ALGOLIA_INDEXING_KEY should be encrypted
+  - hexo generate
+  - hexo deploy

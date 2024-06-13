@@ -1,0 +1,23 @@
+<div class="post-nav px-2 bg-gray">
+<ul class="pagination">
+    <!-- Prev Nav -->
+    <% if (page.prev) { %>
+        <li class="page-item page-prev">
+            <a href="<%- url_for(page.prev.path) %>">
+                <div class="page-item-title h5"><i class="icon material-icons casino-icons">arrow_back</i></div>
+                <div class="page-item-subtitle"><%= page.prev.title %></div>
+            </a>
+        </li>
+    <% } %>
+
+    <!-- Next Nav -->
+    <% if (page.next) { %>
+        <li class="page-item page-next">
+            <a href="<%- url_for(page.next.path) %>">
+                <div class="page-item-title h5"><i class="icon material-icons casino-icons">arrow_forward</i></div>
+                <div class="page-item-subtitle"><%= page.next.title %></div>
+            </a>
+        </li>
+    <% } %>
+</ul>
+</div>

@@ -1,0 +1,129 @@
+<div class="container container-search">
+    <div class="search-input">
+        <div class="h5 mb-2">站内搜索</div>
+        <form class="input-group" autocomplete="off">
+            <input maxlength="80" type="search" id="search-field" name="s" class="form-input input-lg" placeholder="请输入关键字" required>
+            <button class="btn btn-primary input-group-btn btn-lg">搜索</button>
+        </form>
+    </div>
+    <div class="search-output">
+        <div id="search-result">
+            <span>在输入框中输入关键词，实时呈现搜索结果。搜索范围仅限文章。</span>
+            <br><br><br><br><br><br><br>
+        </div>
+    </div>
+</div>
+<script>
+    var searchFilePath = '<%= config.root + config.search.path %>';
+</script>
+<script>
+    /*String.prototype.queryUrl = function (e) {
+        var t = this.replace(/^[^?=]*\?/ig, "").split("#")[0],
+            n = {};
+        return t.replace(/(^|&)([^&=]+)=([^&]*)/g, function (e, t, r, i) {
+            try {
+                r = decodeURIComponent(r)
+            } catch (s) { }
+            try {
+                i = decodeURIComponent(i)
+            } catch (s) { }
+            r in n ? n[r] instanceof Array ? n[r].push(i) : n[r] = [n[r], i] : n[r] = /\[\]$/.test(r) ? [i] : i
+        }), e ? n[e] : n
+    };
+    var searchquery = location.search.queryUrl();*/
+    var res;
+    var searchFunc = function (searchFilePath) {
+        'use strict';
+        fetch(searchFilePath).then(function (res) {
+            return res.json();
+        }).then(function (datas) {
+            var $input = document.getElementById("search-field");
+            var $resultContent = document.getElementById("search-result");
+            $input.focus();
+            $input.addEventListener('input', searchResult);
+            function searchResult() {
+                var str = '';
+                var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+                $resultContent.innerHTML = '';
+                if (this.value.trim().length <= 0) {
+                    return;
+                }
+                // perform local searching
+                datas.forEach(function (data) {
+                    if (typeof data.title === "undefined") return
+                    if (typeof data.content === "undefined") return
+                    var isMatch = true;
+                    var content_index = [];
+                    var data_title = data.title.trim().toLowerCase();
+                    var data_content = data.content.trim().replace(/<[^>]+>/g, '').toLowerCase();
+                    var data_url = data.url;
+                    var index_title = -1;
+                    var index_content = -1;
+                    var first_occur = -1;
+                    // only match artiles with not empty titles and contents
+                    if (data_title !== '' && data_content !== '') {
+                        keywords.forEach(function (keyword, i) {
+                            index_title = data_title.indexOf(keyword);
+                            index_content = data_content.indexOf(keyword);
+                            if (index_title < 0 && index_content < 0) {
+                                isMatch = false;
+                            } else {
+                                if (index_content < 0) {
+                                    index_content = 0;
+                                }
+                                if (i === 0) {
+                                    first_occur = index_content;
+                                }
+                            }
+                        });
+                    }
+                    // show search results
+                    var position = 1;
+                    if (isMatch) {
+                        str += '<div class="tile"><div class="tile-content">';
+                        str += '<a href="' + data_url + '"><p class="tile-title mb-2">' + data_title + '</p></a>';
+                        var content = data.content.trim();
+                        if (first_occur >= 0) {
+                            // cut out characters
+                            var start = first_occur - 6;
+                            var end = first_occur + 12;
+                            if (start < 0) {
+                                start = 0;
+                            }
+                            if (start === 0) {
+                                end = 10;
+                            }
+                            if (end > content.length) {
+                                end = content.length - 10;
+                            }
+                            var match_content = content.substr(start, end);
+                            keywords.forEach(function (keyword) {
+                                var regS = new RegExp(keyword, 'gi');
+                                match_content = match_content.replace(regS, '<strong><mark>' + keyword + '</mark></strong>');
+                            })
+                            str += '<p class="tile-subtitle my-1 text-gray">' + match_content + '...</p>';
+                        }
+                        str += '</div></div>'
+                        str += '<div class="divider pt-1"></div>';
+                        position++;
+                    }/* else {
+                        str = '<span>没有找到任何结果，请更换关键字试试~</span>';
+                        str += '<br>';
+                        str += '<span>或者你可以去 Google 上试试：</span>'
+                        str += '<a href="https://www.google.com/search?&q=' + keywords + '%20site:<%= config.url %>" target="_blank">' + keywords + '&nbsp;site:<%= config.url %></a>'
+                        str += '<br><br><br><br><br><br>'
+                        position++;
+                    }*/
+                });
+                $resultContent.innerHTML = str;
+            }
+            var listener = {
+                function: searchResult,
+                event: 'input',
+                el: $input,
+                removed: false
+            }
+        })
+    }
+    searchFunc(searchFilePath)
+</script>

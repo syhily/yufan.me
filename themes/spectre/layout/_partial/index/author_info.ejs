@@ -1,0 +1,18 @@
+<div class="column col-xs-12 col-4 author_info">
+    <div class="card author_info_card">
+        <div class="card-header">
+            <img src="<%= theme.img.logo %>" alt="logo">
+        </div>
+        <div class="card-footer bg-gray">
+            <div class="card-title show-xs"><%= config.title %></div>
+            <div style="flex-grow: 1;"></div>
+            <% if(theme.search.use === true){ %>
+                <div class="float-right">
+                    <a class="btn btn-link btn-gray" href="<%= theme.search.link %>" tabindex="0"><i class="icon material-icons casino-icons">search</i></a>
+                </div>
+            <% } %>
+            <%- partial('_partial/menu/index-menu') %>
+            <%- partial('_partial/menu/index-share') %>
+        </div>
+    </div>
+</div>

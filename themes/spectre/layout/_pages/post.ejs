@@ -1,0 +1,50 @@
+<div class="container container-post">
+    <div class="card post-card col-mx-auto">
+        <% if(page.featureImage) { %>
+            <div class="card-image" style="background-image: url('<%= page.featureImage %>');"></div>
+        <% } else { %>
+            <div class="card-no-image"></div>
+        <% } %>
+        <div class="card-header">
+            <div class="card-header-title">
+                <div class="card-title h4"><%= page.title %></div>
+            </div>
+            <div class="divider"></div>
+            <div>
+                <!-- Category -->
+                <% if (page.categories && page.categories.length) { %>
+                    <%- list_categories(page.categories, {
+                        show_count: false,
+                        class: 'post-categories',
+                        style: 'list',
+                        separator: ''
+                    }) %>
+                <% } %>
+                <!-- Post Tags -->
+                <% if (page.tags && page.tags.length) { %>
+                    <%- list_tags(page.tags, {
+                        show_count: false,
+                        class: 'post-tags',
+                        style: 'list',
+                        separator: ''
+                    }) %>
+                <% } %>
+            </div>
+        </div>
+        <br>
+        <div id="post-content" class="card-body">
+            <%- page.content %>
+            <%- partial('_partial/post-license') %>
+        </div>
+        <div class="post-footer-info bg-gray">
+            <%- partial('_partial/post/footer-info') %>
+        </div>
+        <div class="divider m-0"></div>
+        <%- partial('_partial/post/nav') %>
+        <% if(theme.comment.use){ %>
+            <div class="card-footer">
+                <%- partial('_plugin/comment/' + theme.comment.use + '/main') %>
+            </div>
+        <% } %>
+    </div>
+</div>

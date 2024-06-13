@@ -1,0 +1,21 @@
+<footer class="centered">
+    <div class="footer-content">
+        <div class="footer-sns-list">
+            <%- partial('_partial/footer/left-sns-list') %>
+        </div>
+        <div class="footer-copyright">
+            <div>Copyright&nbsp;©&nbsp;<span year></span> <a href="<%= config.url %>"><%= config.title %></a></div>
+            <% if (theme.footer.footer_text) { %>
+                <%- theme.footer.footer_text %>
+            <% } %>
+        </div>
+        <div class="footer-develop">
+            <div>Powered by
+                <a href="https://hexo.io" rel="nofollow" target="_blank" class="footer-develop-a">Hexo</a>
+            </div>
+            <div>Theme -
+                <a href="https://github.com/neoFelhz/hexo-theme-spectre" target="_blank" class="footer-develop-a">Spectre</a>
+            </div>
+        </div>
+    </div>
+</footer>

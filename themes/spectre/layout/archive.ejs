@@ -1,0 +1,77 @@
+<div class="container container-timeline">
+    <div class="timeline">
+
+        <div class="timeline-item">
+            <div class="timeline-left">
+                <div class="timeline-icon"></div>
+            </div>
+            <div class="timeline-content">
+                <div class="tile">
+                    <div class="tile-content">
+                        <p class="tile-title">
+                            目前共计 <%= site.posts.length %> 篇文章
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <% var last = 0, year, yearArr = []; %>
+
+    <% page.posts.sort('date', -1).each(function(post){ %>
+        <% year = post.date.year(); %>
+        <% if (last != year){ %>
+            <% if (yearArr.length != 0){ %>
+            <% } %>
+            <% yearArr.push(year); %>
+            <% last = year; %>
+                <div class="timeline-item">
+                    <div class="timeline-left">
+                        <div class="timeline-icon icon-lg"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="tile">
+                            <div class="tile-content">
+                                <p class="tile-title">
+                                    <span class="h4"><%= year %></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-left">
+                        <a class="timeline-icon" href="<%- url_for(post.path) %>"></a>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="tile">
+                            <div class="tile-content">
+                                <p class="tile-subtitle text-gray mb-1"><%= date(post.date, config.date_format) %></p>
+                                <a href="<%- url_for(post.path) %>" style="color: #667189;"><p class="tile-title"><%= post.title %></p></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        <% } else { %>
+            <div class="timeline-item">
+                <div class="timeline-left">
+                    <a class="timeline-icon" href="<%- url_for(post.path) %>"></a>
+                </div>
+                <div class="timeline-content">
+                    <div class="tile">
+                        <div class="tile-content">
+                            <p class="tile-subtitle text-gray mb-1"><%= date(post.date, config.date_format) %></p>
+                            <a href="<%- url_for(post.path) %>" style="color: #667189;"><p class="tile-title"><%= post.title %></p></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    <% }) %>
+
+    </div>
+</div>
+
+<div class="container container-index-nav">
+    <%- partial('_partial/index-nav') %>
+</div>

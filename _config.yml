@@ -1,0 +1,166 @@
+# Hexo Configuration
+## Docs: https://hexo.io/docs/configuration.html
+## Source: https://github.com/hexojs/hexo/
+
+# Site
+title: 且听书吟
+subtitle: 我思 我说 我写
+description: 中国在住で、日本語勉強中なんです。
+author: 雨帆
+language: zh-Hans
+timezone:
+
+# URL
+## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
+url: https://yufan.me
+root: /
+permalink: :title/
+permalink_defaults:
+
+# Directory
+source_dir: source
+public_dir: public
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+code_dir:
+  - 'downloads/code'
+i18n_dir: :lang
+skip_render:
+  - README.md
+  - 404.html
+
+# Writing
+new_post_name: :year-:month-:day.md # File name of new posts
+default_layout: post
+titlecase: false # Transform title into titlecase
+external_link: true # Open external links in new tab
+filename_case: 1
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+highlight:
+  enable: false
+  line_number: false
+  auto_detect: false
+  tab_replace: false
+
+prism_plugin:
+  mode: 'preprocess'
+  theme: 'solarizedlight'
+  line_number: true
+
+# Category & Tag
+default_category: 文章
+category_map: categories
+tag_map: tags
+
+# Date / Time format
+## Hexo uses Moment.js to parse and display date
+## You can customize the date format as defined in
+## http://momentjs.com/docs/#/displaying/format/
+date_format: YYYY-MM-DD
+time_format: HH:mm:ss
+
+# Pagination
+## Set per_page to 0 to disable pagination
+per_page: 5
+pagination_dir: page
+
+# Extensions
+## Plugins: https://hexo.io/plugins/
+## Themes: https://hexo.io/themes/
+theme: spectre
+
+# Feed
+feed:
+  type: rss2
+  path: rss.xml
+  limit: 0
+  hub:
+  content: true
+
+# Search
+algolia:
+  applicationID: 'P7AW0XU2U9'
+  apiKey: 'f8c0b1b00e71ad9276f28a477a789759'
+  indexName: 'Hexo'
+
+# Number of index
+category_generator:
+  per_page: 15
+
+archive_generator:
+  per_page: 300
+  yearly: true
+  monthly: true
+  daily: false
+
+tag_generator:
+  per_page: 15
+
+# Minify the generated file
+hfc_useref:
+  enable: true
+  concat: true
+  exclude: 
+
+hfc_html:
+  enable: true
+
+hfc_css:
+  enable: true
+  exclude: 
+    - '*.min.css'
+
+hfc_js:
+  enable: true
+  mangle: true
+  output:
+  compress:
+  exclude: 
+    - '*.min.js'
+
+hfc_img:
+  enable: true
+  interlaced: false
+  multipass: false
+  optimizationLevel: 2
+  pngquant: false
+  progressive: false
+  webp: true
+  webpQuality: 75
+  gifslice: true
+  jpegtran: true
+  jpegrecompress: false
+  jpegrecompressQuality: 'medium'
+  optipng: true
+  svgo: true
+
+hfc_favicons:
+  enable: false
+
+# No SEO Link
+nofollow:
+  enable: true
+#  exclude:
+#    - exclude1.com
+
+aplayer:
+  meting: false
+  cdn: https://cat.yufan.me/asserts/spectre/scripts/APlayer.min.js
+  style_cdn: https://cat.yufan.me/asserts/spectre/styles/APlayer.min.css
+
+# Deployment
+## Docs: https://hexo.io/docs/deployment.html
+deploy:
+  type: git
+  repo:
+    github: git@github.com:syhily/yufan.me.git,gh-pages
+
+# Sitemap
+sitemap:
+  path: sitemap.xml
+  tag: false
+  category: false

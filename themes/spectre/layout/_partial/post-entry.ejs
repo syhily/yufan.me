@@ -1,0 +1,33 @@
+<% if(post.featureImage) { %>
+    <div class="card with-thumbnail">
+        <a href="<%= url_for(post.path) %>" class="card-image lazy" data-src="<%= post.featureImage %>!thumbnail"></a>
+<% } else { %>
+    <div class="card no-thumbnail">
+<% } %>
+    <div class="card-header">
+        <a class="card-title h5" href="<%= url_for(post.path) %>"><%= post.title %></a>
+        <div class="card-subtitle text-gray"><%= date(post.date, config.date_format) %></div>
+    </div>
+    <div class="card-body">
+        <p lang="zh-Hans">
+        <% if(post.excerpt) {%>
+            <%- post.excerpt %>
+        <% } else { %>
+            <%- strip_html(truncate(post.content,{length: theme.post.entry_excerpt })) %>
+        <% } %>
+    </p>
+    </div>
+    <div class="card-footer">
+        <div class="divider mt-0"></div>
+        <a href="<%= url_for(post.path) %>" class="btn btn-link float-left"><%= __('post.continue') %> >></a>
+        <% if (post.categories && post.categories.length) { %>
+            <!-- Category -->
+            <%- list_categories(post.categories, {
+                show_count: false,
+                class: 'btn float-right btn',
+                style: 'none'
+            }) %>
+        <% } %>
+    </div>
+</div>
+

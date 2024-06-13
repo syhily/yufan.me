@@ -1,0 +1,16 @@
+<% if (page.hide_license !== true && theme.post.license || page.license) { %>
+    <blockquote style="margin: 2em 0 0;padding: 0.5em 1em;border-left: 3px solid #F44336;background-color: #F5F5F5;list-style: none;">
+        <p>
+            <strong>本文作者：<%= config.author %></strong>
+            <br>
+            <strong>
+            <% if (page.license) { %>
+                <%- page.license %>
+            <% } else { %> 
+                <%- theme.post.license %>
+            <% } %></strong>
+            <br>
+            <strong><%- __('post.permalink') %></strong><a href="<%= page.permalink %>"><%= page.permalink %></a>
+        </p>
+    </blockquote>
+<% } %>

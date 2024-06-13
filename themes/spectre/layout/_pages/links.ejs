@@ -1,0 +1,25 @@
+<div class="container container-links">
+    <ul class="link-list">
+        <% if (site.data.links) { %>
+            <% for (var i in site.data.links) { %>
+                <li class="link-item">
+                <a href="<%= site.data.links[i].link %>" title="<%= i %>" target="_blank">
+                    <div class="card">
+                        <div class="tile">
+                            <div class="tile-avatar">
+                                <img src="<%= site.data.links[i].avatar %>" >
+                            </div>
+                            <div class="tile-content">
+                                <p class="tile-title mb-1 text-center h5"><%= i %></p>
+                                <p class="tile-subtitle mb-0 text-gray text-center">
+                                    <small><%- truncate(site.data.links[i].descr, 36) %></small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                </li>
+            <% } %>
+        <% } %>
+    </ul>
+</div>

@@ -1,0 +1,7 @@
+<% for (var i in theme.sidebar.footer) { %>
+<span class="sidebar-footer-image">
+    <a href="<%= theme.sidebar.footer[i].link %>" target="_blank" title="<%= i %>">
+        <img src="<%= theme.sidebar.footer[i].src %>" alt="<%= i %>">
+    </a>
+</span>
+<% } %>

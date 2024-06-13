@@ -1,0 +1,27 @@
+{
+  "name": "hexo-spectre",
+  "version": "0.1.1",
+  "description": "A modern, simple & elegant theme for Hexo",
+  "scripts": {
+    "test": "echo \"Error: no test specified\"",
+    "setup": "npm cache clean && npm install",
+    "lint": "npm run setup && bash lint.sh"
+  },
+  "author": "neoFelhz",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/neoFelhz/hexo-theme-spectre/issues"
+  },
+  "homepage": "https://github.com/neoFelhz/hexo-theme-spectre#readme",
+  "devDependencies": {
+    "ejs-lint": "^0.2.0",
+    "eslint": "^3.14.0",
+    "eslint-config-airbnb-base": "^11.0.1",
+    "eslint-plugin-import": "^2.2.0",
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^3.9.2",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^3.0.0",
+    "sass-lint": "^1.10.2"
+  }
+}

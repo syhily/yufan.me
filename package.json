@@ -1,0 +1,36 @@
+{
+  "name": "Yufan.Me",
+  "version": "1.0.0",
+  "private": true,
+  "hexo": {
+    "version": "3.7.1"
+  },
+  "scripts": {
+    "preview": "hexo clean; hexo server -o --config _config.preview.yml -l"
+  },
+  "dependencies": {
+    "hexo": "^3.8.0",
+    "hexo-admin": "^2.3.0",
+    "hexo-algolia": "^1.3.1",
+    "hexo-autonofollow": "^1.0.1",
+    "hexo-browsersync": "^0.3.0",
+    "hexo-deployer-git": "^0.3.1",
+    "hexo-filter-auto-spacing": "^0.2.1",
+    "hexo-filter-cleanup": "^1.1.0",
+    "hexo-generator-archive": "^0.1.5",
+    "hexo-generator-category": "^0.1.3",
+    "hexo-generator-feed": "^1.2.2",
+    "hexo-generator-index": "^0.2.0",
+    "hexo-generator-seo-friendly-sitemap": "0.0.22",
+    "hexo-generator-tag": "^0.2.0",
+    "hexo-helper-qrcode": "^1.0.2",
+    "hexo-prism-plugin": "^2.3.0",
+    "hexo-renderer-ejs": "^0.3.1",
+    "hexo-renderer-jade": "^0.4.1",
+    "hexo-renderer-marked": "^0.3.2",
+    "hexo-renderer-stylus": "^0.3.3",
+    "hexo-server": "^0.3.3",
+    "hexo-tag-aplayer": "^3.0.4",
+    "hexo-wordcount": "^6.0.1"
+  }
+}

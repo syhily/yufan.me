@@ -1,0 +1,61 @@
+<head>
+    <meta charset="utf-8">
+    <!--
+        © neoFelhz
+        GitHub: https://github.com/neoFelhz/hexo-theme-spectre
+        Version: <%= theme.verison %>
+    -->
+    <script>
+        window.materialVersion = "<%= theme.verison %>",
+        window.oldVersion = [
+            <% if(theme.old_verison) { %>
+                <% if(Array.isArray(theme.old_verison)) { %>
+                    "<%- theme.old_verison.join('\",\"') %>"
+                <% } else { %>
+                    "<%- theme.old_verison %>"
+                <% } %>
+            <% } %>
+        ]
+    </script>
+
+    <!-- DNS Prefetch -->
+    <%- partial('_partial/head/dns-prefetch') %>
+
+    <!-- Meta & Title & Info -->
+    <%- partial('_partial/head/meta') %>
+
+    <!-- Import File -->
+    <%- partial('_source/head') %>
+
+    <!-- Site Verification -->
+    <%- partial('_partial/head/site-verification') %>
+
+    <!-- RSS -->
+    <%- partial('_partial/head/rss') %>
+
+    <!-- The Open Graph & Twitter Card Protocol -->
+    <%- partial('_partial/head/open-graph') %>
+
+    <!-- Analytics -->
+    <% if(theme.analytics.google_site_id) { %>
+        <%- partial('_plugin/analytics/google') %>
+    <% } %>
+    <% if(theme.analytics.baidu_site_id) { %>
+        <%- partial('_plugin/analytics/baidu') %>
+    <% } %>
+    <% if(theme.analytics.cnzz_site_id) { %>
+        <%- partial('_plugin/analytics/cnzz') %>
+    <% } %>
+    <% if(theme.analytics.tencent_analytics_id) { %>
+        <%- partial('_plugin/analytics/tencent-analytics') %>
+    <% } %>
+
+    <!-- Canonical link -->
+    <link rel="canonical" href="<%= config.url + url_for(page.path).replace('index.html', '') %>">
+
+    <!-- Structured Data -->
+    <%- partial('_partial/head/structured-data') %>
+
+    <!-- Custom Head -->
+
+</head>
