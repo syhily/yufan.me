@@ -1,0 +1,24 @@
+---
+import { DateTime } from 'luxon';
+
+import { options } from '@/helpers/schema';
+
+function currentYear(): number {
+  return DateTime.now().setZone(options.settings.timeZone).year;
+}
+---
+
+<footer class="border-top border-light text-xs text-center py-4 py-xl-5">
+  Copyright © {options.settings.initialYear}-{currentYear()}{' '}
+  <a href={import.meta.env.SITE} title={options.title} rel="home">
+    {options.title}
+  </a>
+  <br />
+  {
+    options.settings.icpNo && (
+      <a href="https://beian.miit.gov.cn" rel="nofollow" target="_blank" title={'良民证'}>
+        {options.settings.icpNo}
+      </a>
+    )
+  }
+</footer>

@@ -1,0 +1,18 @@
+---
+import { posts, tags } from '@/helpers/schema';
+import PostsLayout from '@/layouts/posts/PostsLayout.astro';
+
+const { num } = Astro.params;
+
+if (!num) {
+  Astro.response.status = 500;
+  throw new Error('No such page num existed.');
+}
+
+const pageNum = Number.parseInt(num);
+if (pageNum <= 1) {
+  return Astro.redirect('/');
+}
+---
+
+<PostsLayout {posts} {pageNum} {tags} />

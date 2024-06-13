@@ -1,0 +1,40 @@
+---
+import ArtalkComment from '@/components/comment/Artalk.astro';
+import Image from '@/components/image/Image.astro';
+import PageMeta from '@/components/meta/PageMeta.astro';
+import FriendLinks from '@/components/page/friend/FriendLinks.astro';
+import MusicPlayer from '@/components/player/MusicPlayer.astro';
+import { options, type Page } from '@/helpers/schema';
+import { urlJoin } from '@/helpers/tools';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface Props {
+  page: Page;
+}
+
+const { page } = Astro.props;
+const { Content } = await page.render();
+---
+
+<BaseLayout title={page.title}>
+  <PageMeta slot="og" title={page.title} ogImageUrl={urlJoin(import.meta.env.SITE, `/og/${page.slug}.png`)} />
+
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="post">
+        <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
+        <div class="post-content">
+          <div class="nc-light-gallery">
+            <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
+          </div>
+        </div>
+        {page.friend && <FriendLinks />}
+        {
+          page.comments && (
+            <ArtalkComment commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />
+          )
+        }
+      </div>
+    </div>
+  </div>
+</BaseLayout>

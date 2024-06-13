@@ -1,0 +1,32 @@
+---
+import { latestComments } from '@/helpers/db/query';
+import { options } from '@/helpers/schema';
+
+const comments = await latestComments();
+---
+
+{
+  options.settings.sidebar.comment > 0 && (
+    <div id="recent-comments" class="widget widget_recent_comments">
+      <div class="widget-title">近期评论</div>
+      <ul id="recentcomments">
+        {comments.map((comment) => (
+          <li class="recentcomments">
+            <span class="comment-author-link">
+              {comment.authorLink === '' ? (
+                comment.author
+              ) : (
+                <a href={comment.authorLink} target="_blank" rel="nofollow">
+                  {comment.author}
+                </a>
+              )}
+            </span>
+            {'发表在《'}
+            <a href={comment.permalink}>{comment.title}</a>
+            {'》'}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

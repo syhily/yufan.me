@@ -1,0 +1,92 @@
+title: 且听书吟
+website: https://yufan.me
+description: 诗与梦想的远方
+keywords:
+  - 雨帆
+  - 且听书吟
+  - syhily
+  - amehochan
+  - yufan
+author:
+  name: 雨帆
+  email: syhily@gmail.com
+  url: https://yufan.me
+navigation:
+  - text: 首页
+    link: /
+  - text: 关于
+    link: /about
+  - text: 留言
+    link: /guestbook
+  - text: 友链
+    link: /links
+  - text: 笔记
+    link: https://note.yufan.me
+    target: _blank
+socials:
+  - name: GitHub
+    icon: icon-github-fill
+    type: link
+    link: https://github.com/syhily
+  - name: Twitter
+    icon: icon-twitter
+    type: link
+    link: https://twitter.com/amehochan
+  - name: Wechat
+    icon: icon-wechat
+    type: qrcode
+    title: 扫码加我微信好友
+    link: https://u.wechat.com/EBpmuKmrVz4YVFnoCJdnruA
+settings:
+  initialYear: 2011
+  icpNo: 皖ICP备2021002315号-2
+  locale: zh-CN
+  timeZone: Asia/Shanghai
+  timeFormat: yyyy年MM月dd日
+  twitter: amehochan
+  post:
+    # asc or desc
+    sort: desc
+    # This is the PINGED posts on top of your homepage.
+    # You can add the posts id here.
+    # We only show the first three feature posts.
+    feature:
+      - secret-of-boys-mind
+      - my-darling
+      - happiness-caprice
+    # The pinned category slugs.
+    category:
+      - article
+      - think
+      - gossip
+      - coding
+  pagination:
+    # Number of posts per home page.
+    posts: 5
+    # Number of posts per category page.
+    category: 7
+    # Number of posts per tag page.
+    tags: 7
+    # Number of posts in search results.
+    search: 7
+  feed:
+    # Whether to show the post's content.
+    full: true
+    # The counts of the latest post to show.
+    size: 10
+  sidebar:
+    # Display search bar.
+    search: true
+    # Display the number of random posts. Set 0 or a negation number to disable it.
+    post: 6
+    # Display recent blog comments. Set 0 or a negative number to disable it.
+    comment: 6
+    # Display the tag cloud. Set 0 or a negative number to disable it.
+    tag: 20
+  # Artalk configuration
+  comments:
+    # The artalk server endpoint
+    server: https://comment.yufan.me
+    # The administrator user id.
+    admins:
+      - 3

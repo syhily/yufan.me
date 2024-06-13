@@ -1,0 +1,35 @@
+---
+import Pagination from '@/components/page/pagination/Pagination.astro';
+import PostSquare from '@/components/page/post/PostSquare.astro';
+import { slicePosts } from '@/helpers/formatter';
+import { options, type Post, type Tag } from '@/helpers/schema';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface Props {
+  tag: Tag;
+  posts: Post[];
+  pageNum: number;
+}
+
+const { tag, posts, pageNum } = Astro.props;
+const results = slicePosts(posts, pageNum, options.settings.pagination.tags);
+if (!results) {
+  return Astro.redirect('/404');
+}
+
+const { currentPosts, totalPage } = results;
+---
+
+<BaseLayout title={`标签 “${tag.name}”`}>
+  <div class="container">
+    <div class="mb-3 mb-lg-4">
+      <h1>{tag.name}</h1>
+    </div>
+    <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+      {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+    </div>
+    <div class="mt-4 mt-lg-5">
+      <Pagination current={pageNum} total={totalPage} rootPath={tag.permalink} />
+    </div>
+  </div>
+</BaseLayout>

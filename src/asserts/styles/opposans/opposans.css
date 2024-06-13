@@ -1,0 +1,27 @@
+/**
+ * OPPO Sans Fonts
+ */
+@font-face {
+  font-family: 'OPPOSans';
+  src:
+    url(OPPOSans-Regular.woff2) format('woff2'),
+    url(OPPOSans-Regular.ttf) format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'OPPOSans';
+  src:
+    url(OPPOSans-Medium.woff2) format('woff2'),
+    url(OPPOSans-Medium.ttf) format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'OPPOSans';
+  src:
+    url(OPPOSans-Bold.woff2) format('woff2'),
+    url(OPPOSans-Bold.ttf) format('truetype');
+  font-weight: 800;
+  font-style: normal;
+}

@@ -1,0 +1,19 @@
+---
+import { options, posts } from '@/helpers/schema';
+import { searchPosts } from '@/helpers/search';
+import SearchLayout from '@/layouts/posts/SearchLayout.astro';
+
+const query = Astro.url.searchParams.get('q') || '';
+if (query === '') {
+  return Astro.redirect('/');
+}
+
+const title = `${query} 查询结果`;
+
+const searchResults = searchPosts(query)
+  .map((slug) => posts.find((post) => post.slug === slug))
+  .flatMap((post) => (post == null ? [] : [post]))
+  .slice(0, options.settings.pagination.search);
+---
+
+<SearchLayout {title} posts={searchResults} />

@@ -1,0 +1,15 @@
+---
+import Image from '@/components/image/Image.astro';
+import UnstyledMusicPlayer from '@/components/player/UnstyledMusicPlayer.astro';
+import { posts } from '@/helpers/schema';
+
+const { slug } = Astro.params;
+const post = posts.find((post) => post.slug === slug);
+if (!post) {
+  return Astro.redirect('/404');
+}
+
+const { Content } = await post.render();
+---
+
+<Content components={{ MusicPlayer: UnstyledMusicPlayer, Image: Image }} />

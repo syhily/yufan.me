@@ -1,0 +1,20 @@
+---
+import { queryLikesAndViews } from '@/helpers/db/query';
+import type { Post } from '@/helpers/schema';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const [likes, view] = await queryLikesAndViews(post.slug);
+---
+
+<div class="list-like d-inline-block">
+  <i class="text-md iconfont icon-eye"></i>
+  <span class="like-count">{view}</span>
+</div>
+<div class="list-like d-inline-block">
+  <i class="text-md iconfont icon-heart-fill"></i>
+  <span class="like-count">{likes}</span>
+</div>

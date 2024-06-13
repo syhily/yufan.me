@@ -1,0 +1,69 @@
+---
+import Logo from '@/components/header/Logo.astro';
+import LogoLarge from '@/components/header/LogoLarge.astro';
+import QRDialog from '@/components/image/QRDialog.astro';
+import SearchDialog from '@/components/search/SearchDialog.astro';
+import { options } from '@/helpers/schema';
+---
+
+<header class="site-aside">
+  <div class="aside-overlay"></div>
+  <div class="aside-inner bg-secondary">
+    <h1 class="navbar-brand">
+      <a href={'/'} title={options.title} class="d-block">
+        <Logo />
+      </a>
+    </h1>
+    <div class="site-menu">
+      <ul>
+        {
+          options.navigation.map((menu, i) => (
+            <li id={`menu-item-${i}`} class={`menu-item ${i === 0 ? 'menu-item-home}' : ''}`}>
+              <a href={menu.link} target={menu.target}>
+                {menu.text}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class="site-submenu">
+      {
+        options.socials.map((social) => {
+          if (social.type === 'qrcode') {
+            return (
+              <QRDialog url={social.link} name={social.name} title={social.title ?? social.name} icon={social.icon} />
+            );
+          } else {
+            return (
+              <a
+                href={social.link}
+                target={'_blank'}
+                title={social.title ?? social.name}
+                class="btn btn-dark btn-icon btn-circle button-social"
+              >
+                <span>
+                  <i class={`iconfont ${social.icon}`} />
+                </span>
+              </a>
+            );
+          }
+        })
+      }
+      <SearchDialog />
+    </div>
+  </div>
+</header>
+<div class="mobile-brand">
+  <div class="container">
+    <div class="d-flex flex-flex align-items-center">
+      <a href="/" title={options.title} class="d-block">
+        <LogoLarge />
+      </a>
+      <div class="flex-fill"></div>
+      <div class="menu-toggler text-xl">
+        <i class="d-block iconfont icon-menu"></i>
+      </div>
+    </div>
+  </div>
+</div>

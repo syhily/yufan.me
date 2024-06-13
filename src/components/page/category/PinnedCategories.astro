@@ -1,0 +1,13 @@
+---
+import PinnedCategory from '@/components/page/category/PinnedCategory.astro';
+import { getCategory, options } from '@/helpers/schema';
+
+const pinnedSlug = options.settings.post.category ?? [];
+const pinnedCategories = pinnedSlug
+  .map((slug) => getCategory(undefined, slug))
+  .flatMap((category) => (category !== undefined ? [category] : []));
+---
+
+<div class="row g-2 g-md-4 list-grouped mt-3 mt-md-4">
+  {pinnedCategories.map((category) => <PinnedCategory category={category} />)}
+</div>
