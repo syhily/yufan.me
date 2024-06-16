@@ -1,5 +1,4 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
-import Artalk from 'artalk/dist/ArtalkLite';
 import stickySidebar from './sticky-sidebar.js';
 
 // Menu toggle.
@@ -87,16 +86,112 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 });
 
 // Loading the comments.
-const comment = document.querySelector('#comments');
-if (typeof comment !== 'undefined' && comment !== null) {
-  const { key, title, server, site } = comment.dataset;
-  Artalk.init({
-    el: '#comments',
-    pageKey: key,
-    pageTitle: title,
-    server: server,
-    site: site,
+const comments = document.querySelector('#comments');
+if (typeof comments !== 'undefined' && comments !== null) {
+  const cancel = comments.querySelector('#cancel-comment-reply-link');
+  const replyForm = comments.querySelector('#respond');
+  const cancelReply = () => {
+    cancel.hidden = true;
+    replyForm.querySelector('input[name="rid"]').value = '0';
+    replyForm.querySelector('textarea[name="content"]').value = '';
+
+    // Move the form back to top.
+    const commentCount = comments.querySelector('.comment-total-count');
+    commentCount.after(replyForm);
+  };
+
+  // TODO: Load the commenter information from the cookie.
+
+  comments.addEventListener('focusout', (event) => {
+    if (event.target === document.querySelector('input[name="email"]')) {
+      event.stopPropagation();
+      const email = event.target.value;
+      if (email !== '' && email.includes('@')) {
+        // Replace the avatar after typing the email.
+        fetch(`/comments/avatar?email=${email}`)
+          .then((res) => res.text())
+          .then((link) => {
+            document.querySelector('#commentForm img.avatar').src = link;
+          })
+          .catch((e) => console.log(e));
+      } else {
+        document.querySelector('#commentForm img.avatar').src = '/images/default-avatar.png';
+      }
+    }
   });
+
+  comments.addEventListener('click', async (event) => {
+    // Loading more comments from server.
+    if (event.target === comments.querySelector('#comments-next-button')) {
+      const { size, offset, key } = event.target.dataset;
+      const html = await fetch(`/comments/list?key=${key}&offset=${offset}`)
+        .then((res) => res.text())
+        .catch((e) => {
+          console.log(e);
+          return '';
+        });
+      if (html === '') {
+        // Remove the load more button.
+        event.target.remove();
+      } else {
+        // Append the comments into the list.
+        event.target.dataset.offset = Number(offset) + Number(size);
+        comments.querySelector('.comment-list').insertAdjacentHTML('beforeend', html);
+      }
+    }
+
+    // Reply a comment.
+    if (event.target.matches('.comment-reply-link')) {
+      cancel.hidden = false;
+      replyForm.querySelector('input[name="rid"]').value = event.target.dataset.rid;
+
+      // Move form to the reply.
+      const commentItem = event.target.closest('li');
+      commentItem.after(replyForm);
+      replyForm.querySelector('#content').focus();
+    }
+
+    // Cancel reply comment.
+    if (event.target === cancel) {
+      cancelReply();
+    }
+  });
+
+  // Reply a comment.
+  comments.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const formData = new FormData(event.target);
+    const data = {};
+    for (const [key, value] of formData) {
+      data[key] = value;
+    }
+
+    const resp = await fetch('/comments/new', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => res.text())
+      .catch((e) => {
+        console.log(e);
+        return '<li>评论失败<li>';
+      });
+
+    if (data.rid !== '0') {
+      replyForm.insertAdjacentHTML('beforebegin', resp);
+    } else {
+      const list = comments.querySelector('.comment-list');
+      list.insertAdjacentHTML('afterbegin', resp);
+    }
+
+    cancelReply();
+  });
+
+  // TODO: Highlighting the selected comment.
 }
 
 // Add like button for updating likes.
@@ -104,7 +199,7 @@ const likeButton = document.querySelector('button.post-like');
 
 const increaseLikes = (count) => {
   count.textContent = Number.parseInt(count.textContent) + 1;
-  fetch(`${window.location.href}/likes`, {
+  fetch('/likes', {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8',
@@ -125,7 +220,7 @@ const decreaseLikes = (count) => {
   }
 
   count.textContent = Number.parseInt(count.textContent) - 1;
-  fetch(`${window.location.href}/likes`, {
+  fetch('/likes', {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8',

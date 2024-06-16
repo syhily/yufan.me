@@ -1,5 +1,5 @@
 ---
-import ArtalkComment from '@/components/comment/Artalk.astro';
+import Comments from '@/components/comment/Comments.astro';
 import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import Share from '@/components/like/Share.astro';
@@ -51,7 +51,7 @@ const { Content } = await post.render();
               <Share {post} />
               {
                 post.comments && (
-                  <ArtalkComment commentKey={urlJoin(options.website, post.permalink, '/')} title={post.title} />
+                  <Comments commentKey={urlJoin(options.website, post.permalink, '/')} title={post.title} />
                 )
               }
             </div>

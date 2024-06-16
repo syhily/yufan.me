@@ -11,10 +11,17 @@ interface Props {
 const { post } = Astro.props;
 const postURL = urlJoin(options.website, post.permalink);
 const qq = querystring.stringify({
-  query: `url=${postURL}&pics=${urlJoin(options.website, post.cover.src)}&summary=${post.summary}`,
+  url: postURL,
+  pics: urlJoin(options.website, post.cover.src),
+  summary: post.summary,
 });
 const weibo = querystring.stringify({
-  query: `url=${postURL}&type=button&language=zh_cn&pic=${urlJoin(options.website, post.cover.src)}&searchPic=true&title=【${post.title}】${post.summary}`,
+  url: postURL,
+  type: 'button',
+  language: 'zh_cn',
+  pic: urlJoin(options.website, post.cover.src),
+  searchPic: true,
+  title: `【${post.title}】${post.summary}`,
 });
 ---
 

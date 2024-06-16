@@ -43,6 +43,15 @@ export const latestComments = async (): Promise<Comment[]> => {
 
 const generateKey = (slug: string): string => urlJoin(options.website, '/posts', slug, '/');
 
+export const increaseViews = async (pageKey: string) => {
+  await db
+    .update(atk_pages)
+    .set({
+      pv: sql`${atk_pages.pv} + 1`,
+    })
+    .where(eq(atk_pages.key, sql`${pageKey}`));
+};
+
 export const increaseLikes = async (slug: string): Promise<{ likes: number; token: string }> => {
   const pageKey = generateKey(slug);
   const token = makeToken(250);

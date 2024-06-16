@@ -1,0 +1,80 @@
+---
+import { getConfig, loadComments } from '@/components/comment/artalk';
+import Comment from '@/components/comment/Comment.astro';
+
+// This is a component which loads comments and renders it on server-side.
+interface Props {
+  commentKey: string;
+  title: string;
+}
+
+const { commentKey, title } = Astro.props;
+const config = await getConfig();
+const comments = config != null ? await loadComments(commentKey, 0, config) : null;
+---
+
+<div id="comments" class="comments py-5">
+  {
+    comments != null && config != null ? (
+      <>
+        <div class="h5 mb-4 comment-total-count">
+          评论 <small class="font-theme text-sm">({comments.count})</small>
+        </div>
+        <div id="respond" class="comment-respond mb-3 mb-md-4">
+          <form method="post" action="/comments/new" id="commentForm" class="comment-form">
+            <div class="comment-from-avatar flex-avatar">
+              <img
+                alt="头像"
+                src="/images/default-avatar.png"
+                class="avatar avatar-40 photo avatar-default"
+                height="40"
+                width="40"
+                decoding="async"
+              />
+            </div>
+            <div class="comment-from-input flex-fill">
+              <div class="comment-form-text mb-3">
+                <textarea id="content" name="content" class="form-control" rows="3" required />
+              </div>
+              <div class="comment-form-info row g-2 g-md-3 mb-3">
+                <div class="col">
+                  <input class="form-control" placeholder="昵称" name="name" type="text" required="required" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <input class="form-control" name="email" placeholder="邮箱" type="email" required="required" />
+                </div>
+                <div class="col-12">
+                  <input hidden name="page_key" type="text" value={commentKey} />
+                  <input hidden name="rid" type="text" value="0" />
+                  <input class="form-control" placeholder="网址" name="link" type="url" />
+                </div>
+              </div>
+              <div class="form-submit text-end">
+                <input type="button" id="cancel-comment-reply-link" class="btn btn-light me-1" value="再想想" hidden />
+                <input name="submit" type="submit" id="submit" class="btn btn-primary" value="发表评论" />
+              </div>
+            </div>
+          </form>
+        </div>
+        <ul class="comment-list">
+          <Comment comments={comments} config={config} />
+        </ul>
+        {comments.roots_count > config.frontend_conf.pagination.pageSize && (
+          <div class="text-center mt-3 mt-md-4">
+            <button
+              id="comments-next-button"
+              data-key={commentKey}
+              data-size={config.frontend_conf.pagination.pageSize}
+              data-offset={config.frontend_conf.pagination.pageSize}
+              class="btn btn-light"
+            >
+              加载更多
+            </button>
+          </div>
+        )}
+      </>
+    ) : (
+      '评论加载失败 ❌'
+    )
+  }
+</div>

@@ -1,17 +1,13 @@
 import PostContent from '@/components/page/post/PostContent.astro';
+import { partialRender } from '@/helpers/container';
 import { options, posts, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
-import { getContainerRenderer } from '@astrojs/mdx';
 import rss from '@astrojs/rss';
-import type { AstroRenderer, SSRLoadedRenderer } from 'astro';
-import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { ELEMENT_NODE, TEXT_NODE, transform, walk, type TextNode } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
 
 const cleanupContent = async (html: string) => {
-  const content = html.startsWith('<!DOCTYPE html>') ? html.slice(15) : html;
-
-  return await transform(content, [
+  return await transform(html, [
     async (node) => {
       await walk(node, (node) => {
         if (node.type === ELEMENT_NODE) {
@@ -56,34 +52,14 @@ const cleanupContent = async (html: string) => {
   ]);
 };
 
-// Copy from astro source code. I don't know why this virtual vite module didn't works.
-export async function loadRenderers(renderers: AstroRenderer[]) {
-  const loadedRenderers = await Promise.all(
-    renderers.map(async (renderer) => {
-      const mod = await import(/* @vite-ignore */ renderer.serverEntrypoint);
-      if (typeof mod.default !== 'undefined') {
-        return {
-          ...renderer,
-          ssr: mod.default,
-        } as SSRLoadedRenderer;
-      }
-      return undefined;
-    }),
-  );
-
-  return loadedRenderers.filter((r): r is SSRLoadedRenderer => Boolean(r));
-}
-
 const renderPostsContent = async (feedPosts: Post[]): Promise<Map<string, string>> => {
   const contents = new Map<string, string>();
 
   if (options.settings.feed.full) {
-    const renderers = await loadRenderers([getContainerRenderer()]);
-    const container = await AstroContainer.create({ renderers: renderers });
     const promises = feedPosts.map(async (post) => ({
       key: post.slug,
-      value: await container.renderToString(PostContent, {
-        params: {
+      value: await partialRender(PostContent, {
+        props: {
           slug: post.slug,
         },
       }),

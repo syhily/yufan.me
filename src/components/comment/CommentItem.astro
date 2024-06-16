@@ -1,0 +1,67 @@
+---
+import type { CommentConfig, CommentItem } from '@/components/comment/types';
+import { formatLocalDate } from '@/helpers/formatter';
+import { urlJoin } from '@/helpers/tools';
+
+interface Props {
+  depth: number;
+  comment: CommentItem;
+  config: CommentConfig;
+  pending?: false;
+}
+
+const { comment, config, depth, pending } = Astro.props;
+---
+
+<li id={`atk-comment-${comment.id}`} class={`comment odd alt thread-odd thread-alt depth-${depth}`}>
+  <article id={`div-comment-${comment.id}`} class="comment-body">
+    <div class="comment-avatar flex-avatar">
+      <img
+        alt={comment.nick}
+        src={urlJoin(config.frontend_conf.gravatar.mirror, `${comment.email_encrypted}?s=80&d=mm&r=g`)}
+        class="avatar avatar-40 photo"
+        height="40"
+        width="40"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+    <div class="comment-inner">
+      <div class="comment-author fw-bold">
+        {
+          comment.link === '' ? (
+            comment.nick
+          ) : (
+            <a href={comment.link ?? '#'} rel="nofollow" target="_blank">
+              {comment.nick}
+            </a>
+          )
+        }
+      </div>
+      <div class="comment-content">
+        <Fragment set:html={comment.content} />
+        {pending && <p class="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>}
+      </div>
+      <div class="comment-footer text-xs text-muted">
+        <time class="me-2">{formatLocalDate(comment.date)}</time>
+        <span class="text-secondary comment-reply-link" data-rid={comment.id}>回复</span>
+      </div>
+    </div>
+  </article>
+  {
+    comment.children &&
+      (depth === 1 ? (
+        <ul class="children">
+          {comment.children.map((childComment) => (
+            <Astro.self comment={childComment} config={config} depth={depth + 1} />
+          ))}
+        </ul>
+      ) : (
+        <>
+          {comment.children.map((childComment) => (
+            <Astro.self comment={childComment} config={config} depth={depth + 1} />
+          ))}
+        </>
+      ))
+  }
+</li>
