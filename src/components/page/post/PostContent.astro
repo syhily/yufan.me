@@ -3,7 +3,11 @@ import Image from '@/components/image/Image.astro';
 import UnstyledMusicPlayer from '@/components/player/UnstyledMusicPlayer.astro';
 import { posts } from '@/helpers/schema';
 
-const { slug } = Astro.params;
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
 const post = posts.find((post) => post.slug === slug);
 if (!post) {
   return Astro.redirect('/404');

@@ -86,8 +86,47 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 });
 
 // Loading the comments.
-const comment = document.querySelector('#comments');
-if (typeof comment !== 'undefined' && comment !== null) {
+const comments = document.querySelector('#comments');
+if (typeof comments !== 'undefined' && comments !== null) {
+  comments.addEventListener('focusout', (event) => {
+    if (event.target === document.querySelector('#email')) {
+      event.stopPropagation();
+      const email = event.target.value;
+      if (email !== '' && email.includes('@')) {
+        // Replace the avatar after typing the email.
+        fetch(`/comments/avatar?email=${email}`)
+          .then((res) => res.text())
+          .then((link) => {
+            document.querySelector('#commentForm img.avatar').src = link;
+          })
+          .catch((e) => console.log(e));
+      }
+    }
+  });
+
+  comments.addEventListener('click', async (event) => {
+    // Loading more comments from server.
+    if (event.target === document.querySelector('#comments-next-button')) {
+      const { size, offset, key } = event.target.dataset;
+      const html = await fetch(`/comments/list?key=${key}&offset=${offset}`)
+        .then((res) => res.text())
+        .catch((e) => {
+          console.log(e);
+          return '';
+        });
+      if (html === '') {
+        // Remove the load more button.
+        event.target.remove();
+      } else {
+        // Append the comments into the list.
+        event.target.dataset.offset = Number(offset) + Number(size);
+        document.querySelector('.comment-list').insertAdjacentHTML('beforeend', html);
+      }
+    }
+
+    // TODO: Ajax comment and reply.
+  });
+  // TODO: Highlighting the selected comment.
 }
 
 // Add like button for updating likes.
