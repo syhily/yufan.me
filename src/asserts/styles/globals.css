@@ -1059,7 +1059,7 @@ textarea.form-control {
   position: relative;
   line-height: 1;
   white-space: nowrap;
-  font-weight: bold;
+  font-weight: 600;
   display: -ms-flexbox;
   display: -webkit-box;
   display: flex;
@@ -2610,7 +2610,7 @@ a:hover .overlay {
 
 .post-content > table th,
 .post-content div > table th {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .post-content > table th,
@@ -2643,7 +2643,7 @@ a:hover .overlay {
 
 .post-content caption {
   background: var(--bg-light);
-  font-weight: 500;
+  font-weight: 600;
   padding: 0.5em;
   text-align: center;
 }
@@ -2847,7 +2847,7 @@ a:hover .overlay {
 }
 
 .widget_recent_comments ul li span {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-dark);
   margin-right: 5px;
 }
@@ -3092,7 +3092,7 @@ a:hover .overlay {
 }
 
 .widget_calendar td#today {
-  font-weight: bold;
+  font-weight: 600;
   color: var(--color-primary);
 }
 
@@ -3592,7 +3592,7 @@ a:hover .overlay {
 }
 
 .comment_at {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-dark);
 }
 
@@ -3678,6 +3678,15 @@ a:hover .overlay {
   -webkit-box-flex: 0;
   -ms-flex: none;
   flex: none;
+}
+
+.comment-reply-link {
+  cursor: pointer;
+}
+
+.comment-reply-link:hover {
+  transition: all 500ms;
+  font-weight: 800;
 }
 
 @media only screen and (max-width: 767px) {

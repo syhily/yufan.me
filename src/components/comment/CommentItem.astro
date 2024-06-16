@@ -42,12 +42,7 @@ const { comment, config, depth } = Astro.props;
       </div>
       <div class="comment-footer text-xs text-muted">
         <time class="me-2">{formatLocalDate(comment.date)}</time>
-        <a
-          href="?replytocom=26574#respond"
-          class="text-secondary comment-reply-link"
-          rel="nofollow"
-          onclick="return addComment.moveForm( 'comment-26574','26574', 'respond','3008' ) ">回复</a
-        >
+        <span class="text-secondary comment-reply-link" data-rid={comment.id}>回复</span>
       </div>
     </div>
   </article>

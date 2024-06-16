@@ -1,7 +1,6 @@
 ---
 import { getConfig, loadComments } from '@/components/comment/artalk';
 import Comment from '@/components/comment/Comment.astro';
-import { urlJoin } from '@/helpers/tools';
 
 // This is a component which loads comments and renders it on server-side.
 interface Props {
@@ -22,12 +21,7 @@ const comments = config != null ? await loadComments(commentKey, 0, config) : nu
           评论 <small class="font-theme text-sm">({comments.count})</small>
         </div>
         <div id="respond" class="comment-respond mb-3 mb-md-4">
-          <form
-            method="post"
-            action={`${urlJoin(import.meta.env.SITE, '/comments/new')}`}
-            id="commentForm"
-            class="comment-form"
-          >
+          <form method="post" action="/comments/new" id="commentForm" class="comment-form">
             <div class="comment-from-avatar flex-avatar">
               <img
                 alt="头像"
@@ -40,33 +34,19 @@ const comments = config != null ? await loadComments(commentKey, 0, config) : nu
             </div>
             <div class="comment-from-input flex-fill">
               <div class="comment-form-text mb-3">
-                <textarea id="comment" name="comment" class="form-control" rows="3" />
+                <textarea id="content" name="content" class="form-control" rows="3" required />
               </div>
               <div class="comment-form-info row g-2 g-md-3 mb-3">
                 <div class="col">
-                  <input
-                    id="author"
-                    class="form-control"
-                    placeholder="昵称"
-                    name="author"
-                    type="text"
-                    value=""
-                    required="required"
-                  />
+                  <input class="form-control" placeholder="昵称" name="name" type="text" required="required" />
                 </div>
                 <div class="col-12 col-md-6">
-                  <input
-                    id="email"
-                    class="form-control"
-                    name="email"
-                    placeholder="邮箱"
-                    type="email"
-                    value=""
-                    required="required"
-                  />
+                  <input class="form-control" name="email" placeholder="邮箱" type="email" required="required" />
                 </div>
                 <div class="col-12">
-                  <input id="url" class="form-control" placeholder="网址" name="url" type="url" value="" />
+                  <input hidden name="page_key" type="text" value={commentKey} />
+                  <input hidden name="rid" type="text" />
+                  <input class="form-control" placeholder="网址" name="link" type="url" />
                 </div>
               </div>
               <div class="form-submit text-end">

@@ -89,7 +89,7 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 const comments = document.querySelector('#comments');
 if (typeof comments !== 'undefined' && comments !== null) {
   comments.addEventListener('focusout', (event) => {
-    if (event.target === document.querySelector('#email')) {
+    if (event.target === document.querySelector('input[name="email"]')) {
       event.stopPropagation();
       const email = event.target.value;
       if (email !== '' && email.includes('@')) {
@@ -100,6 +100,8 @@ if (typeof comments !== 'undefined' && comments !== null) {
             document.querySelector('#commentForm img.avatar').src = link;
           })
           .catch((e) => console.log(e));
+      } else {
+        document.querySelector('#commentForm img.avatar').src = '/images/default-avatar.png';
       }
     }
   });

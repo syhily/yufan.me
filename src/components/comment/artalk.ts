@@ -1,4 +1,12 @@
-import type { Comment, CommentConfig, CommentItem, Comments } from '@/components/comment/types';
+import type {
+  Comment,
+  CommentConfig,
+  CommentItem,
+  CommentReq,
+  CommentResp,
+  Comments,
+  ErrorResp,
+} from '@/components/comment/types';
 import { options } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import { getSecret } from 'astro:env/server';
@@ -37,6 +45,29 @@ export const loadComments = async (key: string, offset: number, config: CommentC
     });
 
   return data != null ? (data as Comments) : data;
+};
+
+export const createComment = async (req: CommentReq): Promise<ErrorResp | CommentResp> => {
+  const response = await fetch(urlJoin(server, '/api/v2/comments'), {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: JSON.stringify({ ...req, site_name: options.title }),
+  }).catch((e) => {
+    console.log(e);
+    return null;
+  });
+
+  if (response === null) {
+    return { msg: 'failed to create comment' };
+  }
+
+  if (!response.ok) {
+    return (await response.json()) as ErrorResp;
+  }
+
+  return (await response.json()) as CommentResp;
 };
 
 export const parseComments = async (comments: Comment[]): Promise<CommentItem[]> => {
