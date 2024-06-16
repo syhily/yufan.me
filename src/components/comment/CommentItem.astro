@@ -13,7 +13,7 @@ interface Props {
 const { comment, config, depth, pending } = Astro.props;
 ---
 
-<li id={`atk-comment-${comment.id}`} class={`comment odd alt thread-odd thread-alt depth-${depth}`}>
+<li id={`atk-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt" data-depth={depth}>
   <article id={`div-comment-${comment.id}`} class="comment-body">
     <div class="comment-avatar flex-avatar">
       <img

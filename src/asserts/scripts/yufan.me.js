@@ -92,12 +92,23 @@ if (typeof comments !== 'undefined' && comments !== null) {
   const replyForm = comments.querySelector('#respond');
   const cancelReply = () => {
     cancel.hidden = true;
-    replyForm.querySelector('input[name="rid"]').value = '0';
     replyForm.querySelector('textarea[name="content"]').value = '';
 
     // Move the form back to top.
     const commentCount = comments.querySelector('.comment-total-count');
     commentCount.after(replyForm);
+
+    // Get rid to clean up the children form.
+    const ridInput = replyForm.querySelector('input[name="rid"]');
+    const rid = ridInput.value;
+    ridInput.value = '0';
+    if (rid !== '0') {
+      console.log({ rid: rid });
+      const children = comments.querySelector(`#atk-comment-${rid}`).querySelector('.children');
+      if (children !== null && children.querySelectorAll('li').length === 0) {
+        children.remove();
+      }
+    }
   };
 
   // TODO: Load the commenter information from the cookie.
@@ -147,7 +158,17 @@ if (typeof comments !== 'undefined' && comments !== null) {
 
       // Move form to the reply.
       const commentItem = event.target.closest('li');
-      commentItem.after(replyForm);
+      if (commentItem.dataset.depth === '1') {
+        if (commentItem.querySelector('ul.children') === null) {
+          // Create this for better architecture.
+          commentItem.insertAdjacentHTML('beforeend', '<ul class="children"></ul>');
+        }
+        commentItem.querySelector('ul.children').appendChild(replyForm);
+      } else {
+        commentItem.after(replyForm);
+      }
+
+      // Focus the comment form.
       replyForm.querySelector('#content').focus();
     }
 
