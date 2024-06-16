@@ -23,6 +23,7 @@ export default defineConfig({
         POSTGRES_USERNAME: envField.string({ context: 'server', access: 'secret' }),
         POSTGRES_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
         POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
+        ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
       },
     },
   },

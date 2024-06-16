@@ -1,5 +1,5 @@
 ---
-import ArtalkComment from '@/components/comment/Artalk.astro';
+import Comments from '@/components/comment/Comments.astro';
 import Image from '@/components/image/Image.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import FriendLinks from '@/components/page/friend/FriendLinks.astro';
@@ -29,11 +29,7 @@ const { Content } = await page.render();
           </div>
         </div>
         {page.friend && <FriendLinks />}
-        {
-          page.comments && (
-            <ArtalkComment commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />
-          )
-        }
+        {page.comments && <Comments commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />}
       </div>
     </div>
   </div>

@@ -1,5 +1,4 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
-import Artalk from 'artalk/dist/ArtalkLite';
 import stickySidebar from './sticky-sidebar.js';
 
 // Menu toggle.
@@ -90,13 +89,7 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 const comment = document.querySelector('#comments');
 if (typeof comment !== 'undefined' && comment !== null) {
   const { key, title, server, site } = comment.dataset;
-  Artalk.init({
-    el: '#comments',
-    pageKey: key,
-    pageTitle: title,
-    server: server,
-    site: site,
-  });
+  // TODO Add dynamic loading feature.
 }
 
 // Add like button for updating likes.

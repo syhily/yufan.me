@@ -1,0 +1,18 @@
+---
+/**
+ * This module is a reuse component which can be used in ajax loading.
+ */
+import CommentItem from '@/components/comment/CommentItem.astro';
+import { parseComments } from '@/components/comment/artalk';
+import type { CommentConfig, Comments } from '@/components/comment/types';
+
+interface Props {
+  comments: Comments;
+  config: CommentConfig;
+}
+
+const { comments, config } = Astro.props;
+const parsedComments = await parseComments(comments.comments);
+---
+
+<>{parsedComments.map((item) => <CommentItem comment={item} config={config} child={false} />)}</>

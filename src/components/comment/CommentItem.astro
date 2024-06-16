@@ -1,0 +1,59 @@
+---
+import type { CommentConfig, CommentItem } from '@/components/comment/types';
+import { urlJoin } from '@/helpers/tools';
+
+interface Props {
+  child: boolean;
+  comment: CommentItem;
+  config: CommentConfig;
+}
+
+const { comment, config, child } = Astro.props;
+---
+
+<li id={`atk-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt depth-1">
+  <article id="div-comment-26574" class="comment-body">
+    <div class="comment-avatar flex-avatar">
+      <img
+        alt={comment.nick}
+        src={urlJoin(config.frontend_conf.gravatar.mirror, `${comment.email_encrypted}?s=80&d=mm&r=g`)}
+        class="avatar avatar-40 photo"
+        height="40"
+        width="40"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+    <div class="comment-inner">
+      <div class="comment-author fw-bold" set:html={comment.nick} />
+      <div class="comment-content">
+        <Fragment set:html={comment.content} />
+      </div>
+      <div class="comment-footer text-xs text-muted">
+        <time class="me-2">2022-03-01</time>
+        <a
+          href="?replytocom=26574#respond"
+          class="text-secondary comment-reply-link"
+          rel="nofollow"
+          onclick="return addComment.moveForm( 'comment-26574','26574', 'respond','3008' ) ">回复</a
+        >
+      </div>
+    </div>
+  </article>
+  {
+    comment.children &&
+      (!child ? (
+        <ul class="children">
+          {comment.children.map((childComment) => (
+            <Astro.self comment={childComment} config={config} child={true} />
+          ))}
+        </ul>
+      ) : (
+        <>
+          {comment.children.map((childComment) => (
+            <Astro.self comment={childComment} config={config} child={true} />
+          ))}
+        </>
+      ))
+  }
+</li>
