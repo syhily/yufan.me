@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ url }) => {
     return new Response('');
   }
 
-  const comments = await loadComments(key, Number(offset), config);
+  const comments = await loadComments(key, null, Number(offset), config);
   if (comments === null) {
     return new Response('');
   }

@@ -30,14 +30,25 @@ export const getConfig = async (): Promise<CommentConfig | null> => {
   return data != null ? (data as CommentConfig) : data;
 };
 
-export const loadComments = async (key: string, offset: number, config: CommentConfig): Promise<Comments | null> => {
-  const query = querystring.stringify({
+export const loadComments = async (
+  key: string,
+  title: string | null,
+  offset: number,
+  config: CommentConfig,
+): Promise<Comments | null> => {
+  let params: Record<string, string | number | boolean> = {
     limit: config.frontend_conf.pagination.pageSize,
     offset: offset,
     flat_mode: false,
     page_key: key,
     site_name: options.title,
-  });
+  };
+  if (title !== null) {
+    params = { ...params, title: title };
+  }
+  const query = querystring.stringify(params);
+
+  console.log(query);
   const data = await fetch(urlJoin(server, `/api/v2/comments?${query}`))
     .then((response) => response.json())
     .catch((e) => {

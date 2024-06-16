@@ -10,7 +10,7 @@ interface Props {
 
 const { commentKey, title } = Astro.props;
 const config = await getConfig();
-const comments = config != null ? await loadComments(commentKey, 0, config) : null;
+const comments = config != null ? await loadComments(commentKey, title, 0, config) : null;
 ---
 
 <div id="comments" class="comments py-5">
