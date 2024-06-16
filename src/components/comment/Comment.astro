@@ -15,4 +15,4 @@ const { comments, config } = Astro.props;
 const parsedComments = await parseComments(comments.comments);
 ---
 
-<>{parsedComments.map((item) => <CommentItem comment={item} config={config} child={false} />)}</>
+<>{parsedComments.map((item) => <CommentItem comment={item} config={config} depth={1} />)}</>
