@@ -88,6 +88,8 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 // Loading the comments.
 const comments = document.querySelector('#comments');
 if (typeof comments !== 'undefined' && comments !== null) {
+  // TODO: Load the commenter information from the cookie.
+
   comments.addEventListener('focusout', (event) => {
     if (event.target === document.querySelector('input[name="email"]')) {
       event.stopPropagation();
@@ -107,8 +109,11 @@ if (typeof comments !== 'undefined' && comments !== null) {
   });
 
   comments.addEventListener('click', async (event) => {
+    const cancel = comments.querySelector('#cancel-comment-reply-link');
+    const replyForm = comments.querySelector('#respond');
+
     // Loading more comments from server.
-    if (event.target === document.querySelector('#comments-next-button')) {
+    if (event.target === comments.querySelector('#comments-next-button')) {
       const { size, offset, key } = event.target.dataset;
       const html = await fetch(`/comments/list?key=${key}&offset=${offset}`)
         .then((res) => res.text())
@@ -122,12 +127,32 @@ if (typeof comments !== 'undefined' && comments !== null) {
       } else {
         // Append the comments into the list.
         event.target.dataset.offset = Number(offset) + Number(size);
-        document.querySelector('.comment-list').insertAdjacentHTML('beforeend', html);
+        comments.querySelector('.comment-list').insertAdjacentHTML('beforeend', html);
       }
     }
 
-    // TODO: Ajax comment and reply.
+    // Reply a comment.
+    if (event.target.matches('.comment-reply-link')) {
+      cancel.hidden = false;
+      replyForm.querySelector('input[name="rid"]').value = event.target.dataset.rid;
+
+      // Move form to the reply.
+      const commentItem = event.target.closest('li');
+      commentItem.after(replyForm);
+      replyForm.querySelector('#content').focus();
+    }
+
+    // Cancel reply comment.
+    if (event.target === cancel) {
+      cancel.hidden = true;
+      replyForm.querySelector('input[name="rid"]').value = '0';
+
+      // Move the form back to top.
+      const commentCount = comments.querySelector('.comment-total-count');
+      commentCount.after(replyForm);
+    }
   });
+
   // TODO: Highlighting the selected comment.
 }
 
