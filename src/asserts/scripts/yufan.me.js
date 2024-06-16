@@ -88,6 +88,18 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 // Loading the comments.
 const comments = document.querySelector('#comments');
 if (typeof comments !== 'undefined' && comments !== null) {
+  const cancel = comments.querySelector('#cancel-comment-reply-link');
+  const replyForm = comments.querySelector('#respond');
+  const cancelReply = () => {
+    cancel.hidden = true;
+    replyForm.querySelector('input[name="rid"]').value = '0';
+    replyForm.querySelector('textarea[name="content"]').value = '';
+
+    // Move the form back to top.
+    const commentCount = comments.querySelector('.comment-total-count');
+    commentCount.after(replyForm);
+  };
+
   // TODO: Load the commenter information from the cookie.
 
   comments.addEventListener('focusout', (event) => {
@@ -109,9 +121,6 @@ if (typeof comments !== 'undefined' && comments !== null) {
   });
 
   comments.addEventListener('click', async (event) => {
-    const cancel = comments.querySelector('#cancel-comment-reply-link');
-    const replyForm = comments.querySelector('#respond');
-
     // Loading more comments from server.
     if (event.target === comments.querySelector('#comments-next-button')) {
       const { size, offset, key } = event.target.dataset;
@@ -144,13 +153,42 @@ if (typeof comments !== 'undefined' && comments !== null) {
 
     // Cancel reply comment.
     if (event.target === cancel) {
-      cancel.hidden = true;
-      replyForm.querySelector('input[name="rid"]').value = '0';
-
-      // Move the form back to top.
-      const commentCount = comments.querySelector('.comment-total-count');
-      commentCount.after(replyForm);
+      cancelReply();
     }
+  });
+
+  // Reply a comment.
+  comments.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const formData = new FormData(event.target);
+    const data = {};
+    for (const [key, value] of formData) {
+      data[key] = value;
+    }
+
+    const resp = await fetch('/comments/new', {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => res.text())
+      .catch((e) => {
+        console.log(e);
+        return '<li>评论失败<li>';
+      });
+
+    if (data.rid !== '0') {
+      replyForm.insertAdjacentHTML('beforebegin', resp);
+    } else {
+      const list = comments.querySelector('.comment-list');
+      list.insertAdjacentHTML('afterbegin', resp);
+    }
+
+    cancelReply();
   });
 
   // TODO: Highlighting the selected comment.
@@ -161,7 +199,7 @@ const likeButton = document.querySelector('button.post-like');
 
 const increaseLikes = (count) => {
   count.textContent = Number.parseInt(count.textContent) + 1;
-  fetch(`${window.location.href}/likes`, {
+  fetch('/likes', {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8',
@@ -182,7 +220,7 @@ const decreaseLikes = (count) => {
   }
 
   count.textContent = Number.parseInt(count.textContent) - 1;
-  fetch(`${window.location.href}/likes`, {
+  fetch('/likes', {
     method: 'POST',
     headers: {
       'Content-type': 'application/json; charset=UTF-8',

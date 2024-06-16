@@ -57,7 +57,7 @@ export const createComment = async (req: CommentReq): Promise<ErrorResp | Commen
     headers: {
       'Content-type': 'application/json; charset=UTF-8',
     },
-    body: JSON.stringify({ ...req, site_name: options.title }),
+    body: JSON.stringify({ ...req, site_name: options.title, rid: req.rid ? Number(req.rid) : 0 }),
   }).catch((e) => {
     console.log(e);
     return null;
