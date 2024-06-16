@@ -88,8 +88,6 @@ document.querySelector('.global-search-close').addEventListener('click', (event)
 // Loading the comments.
 const comment = document.querySelector('#comments');
 if (typeof comment !== 'undefined' && comment !== null) {
-  const { key, title, server, site } = comment.dataset;
-  // TODO Add dynamic loading feature.
 }
 
 // Add like button for updating likes.

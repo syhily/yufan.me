@@ -64,7 +64,9 @@ const commentItems = (comment: Comment, childComments: _.Dictionary<Comment[]>):
 };
 
 const parseContent = async (content: string): Promise<string> => {
-  const parsed = await marked.parse(content);
+  // Support paragraph in blank line.
+  const escapedContent = content.replace(/\r\n/g, '\n').replace(/(?<!\n)\n(?!\n)/g, '<br />');
+  const parsed = await marked.parse(escapedContent);
   // Avoid the XSS attack.
   return transform(parsed, [
     sanitize({
@@ -92,6 +94,7 @@ const parseContent = async (content: string): Promise<string> => {
         'b',
         'font',
         'hr',
+        'br',
         'ul',
         'ol',
         'li',
