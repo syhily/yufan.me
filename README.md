@@ -179,7 +179,6 @@ For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 - [ ] Check article grammar errors by using ChatGPT. Remain **54** posts.
 - [ ] Add music to the articles. Remain **54** posts.
-- [ ] Clean up the legacy links in the weblog comments.
 - [ ] External the article inner links with different target.
 - [ ] Slide share components integration.
 

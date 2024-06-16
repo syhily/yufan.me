@@ -14,7 +14,7 @@ import { getSecret } from 'astro:env/server';
 import _ from 'lodash';
 import { marked } from 'marked';
 import * as querystring from 'node:querystring';
-import { transform } from 'ultrahtml';
+import { ELEMENT_NODE, transform, walk } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
 
 // Access the artalk in internal docker host when it was deployed on zeabur.
@@ -104,6 +104,18 @@ const parseContent = async (content: string): Promise<string> => {
   const parsed = await marked.parse(escapedContent);
   // Avoid the XSS attack.
   return transform(parsed, [
+    async (node) => {
+      await walk(node, (node) => {
+        if (node.type === ELEMENT_NODE) {
+          if (node.name === 'a' && !node.attributes.href?.startsWith('https://yufan.me')) {
+            node.attributes.target = '_blank';
+            node.attributes.rel = 'nofollow';
+          }
+        }
+      });
+
+      return node;
+    },
     sanitize({
       allowElements: [
         'h1',
@@ -135,7 +147,8 @@ const parseContent = async (content: string): Promise<string> => {
         'li',
       ],
       allowAttributes: {
-        img: ['src', 'width', 'height', 'rel', 'target'],
+        img: ['src', 'width', 'height'],
+        a: ['rel', 'target'],
       },
       allowComments: false,
     }),
