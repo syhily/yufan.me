@@ -153,6 +153,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
 
     // Reply a comment.
     if (event.target.matches('.comment-reply-link')) {
+      cancelReply();
       cancel.hidden = false;
       replyForm.querySelector('input[name="rid"]').value = event.target.dataset.rid;
 
