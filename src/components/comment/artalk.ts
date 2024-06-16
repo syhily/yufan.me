@@ -7,6 +7,7 @@ import type {
   Comments,
   ErrorResp,
 } from '@/components/comment/types';
+import { increaseViews } from '@/helpers/db/query';
 import { options } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import { getSecret } from 'astro:env/server';
@@ -43,6 +44,9 @@ export const loadComments = async (key: string, offset: number, config: CommentC
       console.log(e);
       return null;
     });
+
+  // Increase the PV.
+  await increaseViews(key);
 
   return data != null ? (data as Comments) : data;
 };
