@@ -134,6 +134,9 @@ const parseContent = async (content: string): Promise<string> => {
         'ol',
         'li',
       ],
+      allowAttributes: {
+        img: ['src', 'width', 'height', 'rel', 'target'],
+      },
       allowComments: false,
     }),
   ]);
