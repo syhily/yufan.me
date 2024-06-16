@@ -49,19 +49,21 @@ const { comment, config, depth, pending } = Astro.props;
     </div>
   </article>
   {
-    comment.children &&
-      (depth === 1 ? (
-        <ul class="children">
-          {comment.children.map((childComment) => (
-            <Astro.self comment={childComment} config={config} depth={depth + 1} />
-          ))}
-        </ul>
-      ) : (
-        <>
-          {comment.children.map((childComment) => (
-            <Astro.self comment={childComment} config={config} depth={depth + 1} />
-          ))}
-        </>
-      ))
+    comment.children && depth === 1 && (
+      <ul class="children">
+        {comment.children.map((childComment) => (
+          <Astro.self comment={childComment} config={config} depth={depth + 1} />
+        ))}
+      </ul>
+    )
   }
 </li>
+{
+  comment.children && depth !== 1 && (
+    <>
+      {comment.children.map((childComment) => (
+        <Astro.self comment={childComment} config={config} depth={depth + 1} />
+      ))}
+    </>
+  )
+}
