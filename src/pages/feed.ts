@@ -14,11 +14,28 @@ const cleanupContent = async (html: string) => {
           // Make sure images are absolute, some readers are not smart enough to figure it out
           if (node.name === 'img' && node.attributes.src?.startsWith('/')) {
             node.attributes.src = urlJoin(import.meta.env.SITE, node.attributes.src);
+            const { src, alt } = node.attributes;
+            node.attributes = { src, alt };
           }
 
           // Make sure links are absolute, some readers are not smart enough to figure it out
-          if (node.name === 'a' && node.attributes.href?.startsWith('/')) {
-            node.attributes.href = urlJoin(import.meta.env.SITE, node.attributes.href);
+          if (node.name === 'a') {
+            if (node.attributes.href?.startsWith('/')) {
+              node.attributes.href = urlJoin(import.meta.env.SITE, node.attributes.href);
+            }
+            const { href, title } = node.attributes;
+            const attributes: Record<string, string> = { href };
+            if (typeof title !== 'undefined') {
+              attributes.title = title;
+            }
+            node.attributes = attributes;
+
+            // Remove inner links.
+            if (href.startsWith('#')) {
+              const code = node as unknown as TextNode;
+              code.type = TEXT_NODE;
+              code.value = '';
+            }
           }
 
           // Remove favicon images, some readers don't know they should be inline and it ends up being a broken image
@@ -47,7 +64,12 @@ const cleanupContent = async (html: string) => {
         'data-astro-source-file': ['*'],
         'data-favicon': ['*'],
         'data-image-component': ['img'],
+        style: ['*'],
+        'data-language': ['*'],
+        'data-footnotes': ['*'],
       },
+      allowCustomElements: false,
+      allowComments: false,
     }),
   ]);
 };
@@ -87,7 +109,7 @@ export const GET = async () => {
       title: post.title,
       pubDate: post.date,
       description: post.summary,
-      author: options.author.name,
+      author: `${options.author.email} (${options.author.name})`,
       content: contents.get(post.slug) ?? post.summary,
       categories: [post.category, ...post.tags],
     })),

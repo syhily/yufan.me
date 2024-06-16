@@ -46,10 +46,7 @@ export const loadComments = async (
   if (title !== null) {
     params = { ...params, title: title };
   }
-  const query = querystring.stringify(params);
-
-  console.log(query);
-  const data = await fetch(urlJoin(server, `/api/v2/comments?${query}`))
+  const data = await fetch(urlJoin(server, `/api/v2/comments?${querystring.stringify(params)}`))
     .then((response) => response.json())
     .catch((e) => {
       console.log(e);
@@ -158,8 +155,11 @@ const parseContent = async (content: string): Promise<string> => {
         'li',
       ],
       allowAttributes: {
-        img: ['src', 'width', 'height'],
-        a: ['rel', 'target'],
+        src: ['img'],
+        width: ['img'],
+        height: ['img'],
+        rel: ['a'],
+        target: ['a'],
       },
       allowComments: false,
     }),

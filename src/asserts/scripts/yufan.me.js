@@ -103,7 +103,6 @@ if (typeof comments !== 'undefined' && comments !== null) {
     const rid = ridInput.value;
     ridInput.value = '0';
     if (rid !== '0') {
-      console.log({ rid: rid });
       const children = comments.querySelector(`#atk-comment-${rid}`).querySelector('.children');
       if (children !== null && children.querySelectorAll('li').length === 0) {
         children.remove();

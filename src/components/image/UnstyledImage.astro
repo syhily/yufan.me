@@ -1,0 +1,11 @@
+---
+import type { Image } from '@/helpers/images';
+
+interface Props extends Image {
+  alt: string;
+}
+
+const { alt, src } = Astro.props;
+---
+
+<img {src} {alt} />

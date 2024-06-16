@@ -5,7 +5,7 @@ interface Props extends Image {
   alt: string;
 }
 
-const { alt, ...meta } = Astro.props;
+const { alt, src, width, height } = Astro.props;
 ---
 
-<img src={meta.src} {alt} loading="lazy" width={meta.width} height={meta.height} style={blurStyle(meta)} />
+<img {src} {alt} loading="lazy" {width} {height} style={blurStyle(Astro.props)} />
