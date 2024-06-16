@@ -6,7 +6,7 @@ const mappings = new Map<string, string>(posts.map((post) => [urlJoin('/', post.
 
 export const onRequest = defineMiddleware(({ request: { method }, url: { pathname }, redirect }, next) => {
   // This is used for redirect my old blog posts to a new mapping.
-  const newTarget = mappings.get(pathname);
+  const newTarget = mappings.get(pathname.endsWith('/') ? pathname.substring(0, pathname.length - 1) : pathname);
   if (method === 'GET' && newTarget !== undefined) {
     return redirect(newTarget, 301);
   }
