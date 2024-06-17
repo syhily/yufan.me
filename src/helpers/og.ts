@@ -9,8 +9,8 @@ import { options } from '@/helpers/schema';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import font from '../asserts/og/NotoSansSC-Bold.ttf?arraybuffer';
-import logoDark from '../asserts/og/logo-dark.png?arraybuffer';
+import font from '../assets/og/NotoSansSC-Bold.ttf?arraybuffer';
+import logoDark from '../assets/og/logo-dark.png?arraybuffer';
 
 const getStringWidth = (text: string, fontSize: number) => {
   let result = 0;
@@ -114,7 +114,7 @@ const fetchCover = async (cover: string): Promise<Buffer> => {
   return await readFile(coverPath);
 };
 
-export { default as defaultOpenGraph } from '../asserts/og/open-graph.png?arraybuffer';
+export { default as defaultOpenGraph } from '../assets/og/open-graph.png?arraybuffer';
 
 export interface OpenGraphProps {
   title: string;
