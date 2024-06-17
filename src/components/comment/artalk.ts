@@ -10,7 +10,7 @@ import type {
 import { increaseViews } from '@/helpers/db/query';
 import { options } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
-import { getSecret } from 'astro:env/server';
+import { ARTALK_HOST } from 'astro:env/server';
 import _ from 'lodash';
 import { marked } from 'marked';
 import * as querystring from 'node:querystring';
@@ -18,7 +18,7 @@ import { ELEMENT_NODE, transform, walk } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
 
 // Access the artalk in internal docker host when it was deployed on zeabur.
-const server = import.meta.env.PROD ? `http://${getSecret('ARTALK_HOST')}:23366` : options.settings.comments.server;
+const server = import.meta.env.PROD ? `http://${ARTALK_HOST}:23366` : options.settings.comments.server;
 
 export const getConfig = async (): Promise<CommentConfig | null> => {
   const data = await fetch(urlJoin(server, '/api/v2/conf'))

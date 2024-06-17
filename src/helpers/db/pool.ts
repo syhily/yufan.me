@@ -1,5 +1,11 @@
 import * as schema from '@/helpers/db/schema';
-import { getSecret } from 'astro:env/server';
+import {
+  POSTGRES_DATABASE,
+  POSTGRES_HOST,
+  POSTGRES_PASSWORD,
+  POSTGRES_PORT,
+  POSTGRES_USERNAME,
+} from 'astro:env/server';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 
@@ -13,11 +19,11 @@ const globalForDb = globalThis as unknown as {
 const conn =
   globalForDb.conn ??
   new pg.Pool({
-    host: getSecret('POSTGRES_HOST'),
-    port: getSecret('POSTGRES_PORT'),
-    user: getSecret('POSTGRES_USERNAME'),
-    password: getSecret('POSTGRES_PASSWORD'),
-    database: getSecret('POSTGRES_DATABASE'),
+    host: POSTGRES_HOST,
+    port: POSTGRES_PORT,
+    user: POSTGRES_USERNAME,
+    password: POSTGRES_PASSWORD,
+    database: POSTGRES_DATABASE,
     keepAlive: true,
   });
 
