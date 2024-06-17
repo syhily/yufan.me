@@ -7,6 +7,7 @@ COPY . .
 
 ENV ASTRO_TELEMETRY_DISABLED=1
 RUN NODE_ENV=development npm install
+RUN npm i patch-package && npm exec patch-package
 RUN npm run build
 
 FROM base AS runtime

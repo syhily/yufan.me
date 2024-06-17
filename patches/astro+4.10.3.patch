@@ -1,0 +1,22 @@
+diff --git a/node_modules/astro/dist/content/types-generator.js b/node_modules/astro/dist/content/types-generator.js
+index af976bb..b03e214 100644
+--- a/node_modules/astro/dist/content/types-generator.js
++++ b/node_modules/astro/dist/content/types-generator.js
+@@ -351,8 +351,6 @@ async function writeContentFiles({
+   collection: ${collectionKey};
+   data: ${dataType}
+ };
+-`;
+-          dataTypesStr += `};
+ `;
+         }
+         if (settings.config.experimental.contentCollectionJsonSchema && collectionConfig?.schema) {
+@@ -382,6 +380,8 @@ async function writeContentFiles({
+             );
+           }
+         }
++        dataTypesStr += `};
++`;
+         break;
+     }
+   }
