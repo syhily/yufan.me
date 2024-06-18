@@ -44,7 +44,7 @@ const { comment, config, depth, pending } = Astro.props;
       </div>
       <div class="comment-footer text-xs text-muted">
         <time class="me-2">{formatLocalDate(comment.date)}</time>
-        <span class="text-secondary comment-reply-link" data-rid={comment.id}>回复</span>
+        <button class="text-secondary comment-reply-link" data-rid={comment.id}>回复</button>
       </div>
     </div>
   </article>

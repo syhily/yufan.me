@@ -1508,12 +1508,11 @@ textarea.form-control {
   color: rgba(255, 255, 255, 0.5) !important;
 }
 
-#recent_posts,
-#tag_cloud,
-#recent-comments {
-  a:hover {
-    color: var(--color-primary);
-  }
+#recent_posts a:hover,
+#tag_cloud a:hover,
+#recent-comments a:hover {
+  color: var(--color-primary);
+  text-shadow: var(--color-muted) 0.05em 0 0.05em;
 }
 
 a.list-title:hover {
@@ -3682,6 +3681,7 @@ a:hover .overlay {
 
 .comment-reply-link {
   cursor: pointer;
+  background-color: transparent;
 }
 
 .comment-reply-link:hover {
