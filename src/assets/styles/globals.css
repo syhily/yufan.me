@@ -1016,7 +1016,6 @@ border
 .form-control[readonly] {
   background-color: var(--bg-light);
   opacity: 1;
-  color: color;
 }
 
 textarea.form-control {
@@ -2718,20 +2717,31 @@ a:hover .overlay {
 }
 
 /*--------------------------------------------------------------
-    comment style
---------------------------------------------------------------*/
-
-/*--------------------------------------------------------------
     footer style
 --------------------------------------------------------------*/
 
-.footer,
 .footer a {
-  color: #e8e9ea;
+  color: var(--color-dark);
 }
 
 .footer a:hover {
-  color: #fff;
+  color: var(--color-primary);
+}
+
+.footer .line {
+  margin-top: 3px;
+  justify-content: center;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+  flex-wrap: wrap;
+}
+
+.astro-badge:hover stop:first-child {
+  stop-color: #3245ff;
+}
+.astro-badge:hover stop:last-child {
+  stop-color: #bc52ee;
 }
 
 /*--------------------------------------------------------------
