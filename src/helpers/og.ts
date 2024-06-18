@@ -135,13 +135,13 @@ export const defaultOpenGraph = async (): Promise<Buffer> => {
   return await fetchCover('/images/default-cover.jpg');
 };
 
-export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): Promise<Buffer> => {
-  // Register the font if it doesn't exist
-  if (!GlobalFonts.has('NotoSansSC-Bold')) {
-    const fontBuffer = await readFile(join(process.cwd(), 'src/assets/og/NotoSansSC-Bold.ttf'));
-    GlobalFonts.register(fontBuffer, 'NotoSansSC-Bold');
-  }
+// Register the font if it doesn't exist
+if (!GlobalFonts.has('NotoSansSC-Bold')) {
+  const fontBuffer = await readFile(join(process.cwd(), '/src/assets/og/NotoSansSC-Bold.ttf'));
+  GlobalFonts.register(fontBuffer, 'NotoSansSC-Bold');
+}
 
+export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): Promise<Buffer> => {
   // Fetch the cover image as the background
   const coverImage = new Image();
   coverImage.src = await fetchCover(cover);
