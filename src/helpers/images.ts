@@ -52,7 +52,6 @@ export const blurStyle = (image: Image) => ({
 
 // Copied and modified https://github.com/zce/velite/blob/main/src/assets.ts
 export const imageMetadata = async (publicPath: string): Promise<Image> => {
-  // Load for sharp on demand for avoiding the resolver issues in production.
   const { default: sharp } = await import('sharp');
 
   if (!publicPath.startsWith('/')) {

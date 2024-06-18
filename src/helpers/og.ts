@@ -10,7 +10,8 @@ import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas'
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import font from '../assets/og/NotoSansSC-Bold.ttf?arraybuffer';
-import logoDark from '../assets/og/logo-dark.png?arraybuffer';
+
+const darkLogo = 'data:image/svg+xml;base64,';
 
 const getStringWidth = (text: string, fontSize: number) => {
   let result = 0;
@@ -122,7 +123,7 @@ export interface OpenGraphProps {
   cover: string;
 }
 
-export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps) => {
+export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): Promise<Buffer> => {
   // Register the font if it doesn't exist
   if (!GlobalFonts.has('NotoSansSC-Bold')) {
     const fontBuffer = Buffer.from(font);
@@ -135,7 +136,7 @@ export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps) =
 
   // Generate the logo image
   const logoImage = new Image();
-  logoImage.src = Buffer.from(logoDark);
+  logoImage.src = Buffer.from(darkLogo, 'utf-8');
 
   // Mark sure the summary length is small enough to fit in
   const description = `${summary
@@ -171,5 +172,20 @@ export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps) =
 
   ctx.restore();
 
-  return await canvas.encode('png');
+  const encodedImage = await canvas.encode('png');
+  return await compressImage(encodedImage);
+};
+
+const compressImage = async (buf: Buffer): Promise<Buffer> => {
+  const { default: sharp } = await import('sharp');
+  return await sharp(buf)
+    .png({
+      compressionLevel: 9,
+      adaptiveFiltering: true,
+      force: true,
+      palette: true,
+      quality: 80,
+      progressive: true,
+    })
+    .toBuffer();
 };
