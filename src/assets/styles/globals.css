@@ -1398,6 +1398,14 @@ textarea.form-control {
   color: inherit;
 }
 
+.list-favicon {
+  background-size: cover;
+  display: inline-block;
+  margin-left: 8px;
+  width: 12px;
+  height: 12px;
+}
+
 @media (min-width: 1200px) and (max-width: 1399.98px) {
   .list-desc .h-2x {
     -webkit-line-clamp: 1;

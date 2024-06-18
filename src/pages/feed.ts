@@ -14,7 +14,7 @@ const cleanupContent = async (html: string) => {
         if (node.type === ELEMENT_NODE) {
           // Make sure images are absolute, some readers are not smart enough to figure it out
           if (node.name === 'img' && node.attributes.src?.startsWith('/')) {
-            node.attributes.src = urlJoin(import.meta.env.SITE, node.attributes.src);
+            node.attributes.src = urlJoin(options.assetsPrefix(), node.attributes.src);
             const { src, alt } = node.attributes;
             node.attributes = { src, alt };
           }

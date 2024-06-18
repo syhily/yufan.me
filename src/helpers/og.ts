@@ -132,7 +132,7 @@ export interface OpenGraphProps {
 }
 
 export const defaultOpenGraph = async (): Promise<Buffer> => {
-  return await fetchCover('/images/default-cover.jpg');
+  return await fetchCover('/images/open-graph.png');
 };
 
 // Register the font if it doesn't exist

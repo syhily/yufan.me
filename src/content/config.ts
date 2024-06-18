@@ -1,4 +1,6 @@
 import { imageMetadata } from '@/helpers/images';
+import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import { defineCollection, z } from 'astro:content';
 
 export const defaultCover = '/images/default-cover.jpg';
@@ -40,7 +42,9 @@ const friendsCollection = defineCollection({
         website: z.string().max(40),
         description: z.string().optional(),
         homepage: z.string().url(),
-        poster: z.string(),
+        poster: z
+          .string()
+          .transform((poster) => (poster.startsWith('/') ? urlJoin(options.assetsPrefix(), poster) : poster)),
         favicon: z.string().optional(),
       })
       .transform((data) => {
