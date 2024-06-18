@@ -1,7 +1,7 @@
 import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
-import { options } from '@/helpers/schema';
 import { makeToken, urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import { and, desc, eq, isNull, notInArray, sql } from 'drizzle-orm';
 
 export interface Comment {

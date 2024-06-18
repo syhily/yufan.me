@@ -1,7 +1,8 @@
 import PostContent from '@/components/page/post/PostContent.astro';
 import { partialRender } from '@/helpers/container';
-import { options, posts, type Post } from '@/helpers/schema';
+import { posts, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import rss from '@astrojs/rss';
 import { ELEMENT_NODE, TEXT_NODE, transform, walk, type TextNode } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';

@@ -1,4 +1,5 @@
-import { options, type Post } from '@/helpers/schema';
+import type { Post } from '@/helpers/schema';
+import options from '@/options';
 import { DateTime } from 'luxon';
 
 export const slicePosts = (

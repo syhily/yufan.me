@@ -5,7 +5,7 @@
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
 import { openGraphHeight, openGraphWidth } from '@/helpers/images';
-import { options } from '@/helpers/schema';
+import options from '@/options';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';

@@ -1,7 +1,7 @@
 ---
 import { DateTime } from 'luxon';
 
-import { options } from '@/helpers/schema';
+import options from '@/options';
 
 function currentYear(): number {
   return DateTime.now().setZone(options.settings.timeZone).year;

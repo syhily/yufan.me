@@ -52,61 +52,6 @@ const friendsCollection = defineCollection({
   ),
 });
 
-// Options Collection
-const optionsCollection = defineCollection({
-  type: 'data',
-  schema: z.object({
-    title: z.string().max(40),
-    website: z.string().url(),
-    description: z.string().max(100),
-    keywords: z.array(z.string()),
-    author: z.object({ name: z.string(), email: z.string().email(), url: z.string().url() }),
-    navigation: z.array(z.object({ text: z.string(), link: z.string(), target: z.string().optional() })),
-    socials: z.array(
-      z.object({
-        name: z.string(),
-        icon: z.string(),
-        type: z.enum(['link', 'qrcode']),
-        title: z.string().optional(),
-        link: z.string().url(),
-      }),
-    ),
-    settings: z.object({
-      initialYear: z.number().max(2024),
-      icpNo: z.string().optional(),
-      locale: z.string().optional().default('zh-CN'),
-      timeZone: z.string().optional().default('Asia/Shanghai'),
-      timeFormat: z.string().optional().default('yyyy-MM-dd HH:mm:ss'),
-      twitter: z.string(),
-      post: z.object({
-        sort: z.enum(['asc', 'desc']),
-        feature: z.array(z.string()).optional(),
-        category: z.array(z.string()).optional(),
-      }),
-      pagination: z.object({
-        posts: z.number().optional().default(5),
-        category: z.number().optional().default(7),
-        tags: z.number().optional().default(7),
-        search: z.number().optional().default(7),
-      }),
-      feed: z.object({
-        full: z.boolean().optional().default(true),
-        size: z.number().optional().default(20),
-      }),
-      sidebar: z.object({
-        search: z.boolean().default(false),
-        post: z.number().default(6),
-        comment: z.number().default(0),
-        tag: z.number().default(20),
-      }),
-      comments: z.object({
-        server: z.string().url().readonly(),
-        admins: z.array(z.number()),
-      }),
-    }),
-  }),
-});
-
 // Posts Collection
 const postsCollection = defineCollection({
   type: 'content',
@@ -151,7 +96,6 @@ const tagsCollection = defineCollection({
 export const collections = {
   categories: categoriesCollection,
   friends: friendsCollection,
-  options: optionsCollection,
   pages: pagesCollection,
   posts: postsCollection,
   tags: tagsCollection,

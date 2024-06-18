@@ -1,10 +1,10 @@
 import { defaultCover } from '@/content/config.ts';
+import options from '@/options';
 import { getCollection, getEntryBySlug, type Render } from 'astro:content';
 
 // Import the collections from the astro content.
 const categoriesCollection = await getCollection('categories');
 const friendsCollection = await getCollection('friends');
-const optionsCollection = await getCollection('options');
 const pagesCollection = await getCollection('pages');
 const postsCollection = await getCollection('posts');
 const tagsCollection = await getCollection('tags');
@@ -12,7 +12,6 @@ const tagsCollection = await getCollection('tags');
 // Redefine the types from the astro content.
 export type Category = (typeof categoriesCollection)[number]['data'] & { counts: number; permalink: string };
 export type Friend = (typeof friendsCollection)[number]['data'][number];
-export type Options = (typeof optionsCollection)[number]['data'];
 export type Page = (typeof pagesCollection)[number]['data'] & {
   slug: string;
   permalink: string;
@@ -28,7 +27,6 @@ export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: nu
 
 // Translate the Astro content into the original content for dealing with different configuration types.
 export const friends: Friend[] = friendsCollection[0].data;
-export const options: Options = optionsCollection[0].data;
 // Override the website for local debugging
 export const pages: Page[] = pagesCollection
   .filter((page) => page.data.published || !import.meta.env.PROD)

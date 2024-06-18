@@ -8,8 +8,8 @@ import type {
   ErrorResp,
 } from '@/components/comment/types';
 import { increaseViews } from '@/helpers/db/query';
-import { options } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import { ARTALK_HOST } from 'astro:env/server';
 import _ from 'lodash';
 import { marked } from 'marked';

@@ -1,6 +1,7 @@
 ---
 import PinnedCategory from '@/components/page/category/PinnedCategory.astro';
-import { getCategory, options } from '@/helpers/schema';
+import { getCategory } from '@/helpers/schema';
+import options from '@/options';
 
 const pinnedSlug = options.settings.post.category ?? [];
 const pinnedCategories = pinnedSlug

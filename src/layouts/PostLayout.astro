@@ -7,9 +7,10 @@ import PostMeta from '@/components/meta/PostMeta.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import { formatShowDate } from '@/helpers/formatter';
-import { options, posts, tags, type Post } from '@/helpers/schema';
+import { posts, tags, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import options from '@/options';
 
 interface Props {
   post: Post;
