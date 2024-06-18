@@ -1512,7 +1512,6 @@ textarea.form-control {
 #tag_cloud a:hover,
 #recent-comments a:hover {
   color: var(--color-primary);
-  text-shadow: var(--color-muted) 0.05em 0 0.05em;
 }
 
 a.list-title:hover {
@@ -3680,13 +3679,12 @@ a:hover .overlay {
 }
 
 .comment-reply-link {
-  cursor: pointer;
   background-color: transparent;
+  transition: all 0.3s linear;
 }
 
 .comment-reply-link:hover {
-  transition: all 500ms;
-  font-weight: 800;
+  color: var(--color-primary);
 }
 
 @media only screen and (max-width: 767px) {
