@@ -7,7 +7,7 @@ const Options = z
       .object({
         port: z.number(),
       })
-      .transform((local) => ({ ...local, website: `http://localhost${local.port}` })),
+      .transform((local) => ({ ...local, website: `http://localhost:${local.port}` })),
     title: z.string().max(40),
     website: z
       .string()
