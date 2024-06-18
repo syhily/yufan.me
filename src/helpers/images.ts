@@ -1,5 +1,7 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
+import options from '../../options';
+import { urlJoin } from './tools';
 
 export interface Image {
   /**
@@ -55,7 +57,7 @@ export const imageMetadata = async (publicPath: string): Promise<Image> => {
   const { default: sharp } = await import('sharp');
 
   if (!publicPath.startsWith('/')) {
-    throw new Error('We only support image path in public direct. It should start with "/".');
+    throw new Error('We only support image path in "public/images" directory. The path should start with "/images/".');
   }
 
   const root = join(process.cwd(), 'public');
@@ -71,5 +73,5 @@ export const imageMetadata = async (publicPath: string): Promise<Image> => {
   const blurImage = await img.resize(blurWidth, blurHeight).webp({ quality: 1 }).toBuffer();
   const blurDataURL = `data:image/webp;base64,${blurImage.toString('base64')}`;
 
-  return { src: publicPath, height, width, blurDataURL, blurWidth, blurHeight };
+  return { src: urlJoin(options.assetsPrefix(), publicPath), height, width, blurDataURL, blurWidth, blurHeight };
 };

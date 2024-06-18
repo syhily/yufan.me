@@ -7,9 +7,10 @@ import PostMeta from '@/components/meta/PostMeta.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import { formatShowDate } from '@/helpers/formatter';
-import { options, posts, tags, type Post } from '@/helpers/schema';
+import { posts, tags, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import options from '@/options';
 
 interface Props {
   post: Post;
@@ -26,8 +27,8 @@ const { Content } = await post.render();
     description={post.summary}
     publishDate={post.date.toISOString()}
     requestPath={post.permalink}
-    ogImageUrl={urlJoin(import.meta.env.SITE, `/og/${post.slug}.png`)}
-    ogImageAltText={post.title}
+    ogImageUrl={`/og/${post.slug}.png`}
+    ogImageAltText={`${post.title} - ${post.summary}`}
   />
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
     <div class="container">

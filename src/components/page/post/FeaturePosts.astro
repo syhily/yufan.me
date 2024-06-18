@@ -1,6 +1,7 @@
 ---
 import FeaturePost from '@/components/page/post/FeaturePost.astro';
-import { options, type Post } from '@/helpers/schema';
+import type { Post } from '@/helpers/schema';
+import options from '@/options';
 
 interface Props {
   posts: Post[];

@@ -1,7 +1,8 @@
 ---
-import { options, posts } from '@/helpers/schema';
+import { posts } from '@/helpers/schema';
 import { searchPosts } from '@/helpers/search';
 import SearchLayout from '@/layouts/posts/SearchLayout.astro';
+import options from '@/options';
 
 const query = Astro.url.searchParams.get('q') || '';
 if (query === '') {

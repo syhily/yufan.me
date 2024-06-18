@@ -1,10 +1,10 @@
 import { defaultCover } from '@/content/config.ts';
+import options from '@/options';
 import { getCollection, getEntryBySlug, type Render } from 'astro:content';
 
 // Import the collections from the astro content.
 const categoriesCollection = await getCollection('categories');
 const friendsCollection = await getCollection('friends');
-const optionsCollection = await getCollection('options');
 const pagesCollection = await getCollection('pages');
 const postsCollection = await getCollection('posts');
 const tagsCollection = await getCollection('tags');
@@ -12,7 +12,6 @@ const tagsCollection = await getCollection('tags');
 // Redefine the types from the astro content.
 export type Category = (typeof categoriesCollection)[number]['data'] & { counts: number; permalink: string };
 export type Friend = (typeof friendsCollection)[number]['data'][number];
-export type Options = (typeof optionsCollection)[number]['data'];
 export type Page = (typeof pagesCollection)[number]['data'] & {
   slug: string;
   permalink: string;
@@ -28,10 +27,9 @@ export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: nu
 
 // Translate the Astro content into the original content for dealing with different configuration types.
 export const friends: Friend[] = friendsCollection[0].data;
-export const options: Options = optionsCollection[0].data;
 // Override the website for local debugging
 export const pages: Page[] = pagesCollection
-  .filter((page) => page.data.published || !import.meta.env.PROD)
+  .filter((page) => page.data.published || !options.isProd())
   .map((page) => ({
     slug: page.slug,
     permalink: `/${page.slug}`,
@@ -42,7 +40,7 @@ export const pages: Page[] = pagesCollection
     ...page.data,
   }));
 export const posts: Post[] = postsCollection
-  .filter((post) => post.data.published || !import.meta.env.PROD)
+  .filter((post) => post.data.published || !options.isProd())
   .map((post) => ({
     slug: post.slug,
     permalink: `/posts/${post.slug}`,
@@ -90,7 +88,7 @@ if (missingTags.length > 0) {
 const missingCovers = posts
   .filter((post) => post.cover.src === defaultCover)
   .map((post) => ({ title: post.title, slug: post.slug }));
-if (!import.meta.env.PROD && missingCovers.length > 0) {
+if (!options.isProd() && missingCovers.length > 0) {
   // We only warn here for this is a known improvement.
   console.warn(`The following ${missingCovers.length} posts don't have a cover.`);
   console.warn(missingCovers);
@@ -122,13 +120,6 @@ const pinnedCategories: string[] = options.settings.post.category ?? [];
 const invalidPinnedCategories = pinnedCategories.filter((c) => categories.find((e) => e.name === c));
 if (invalidPinnedCategories.length > 0) {
   throw new Error(`The bellowing pinned categories are invalid:\n$${invalidPinnedCategories.join('\n')}`);
-}
-
-// Validate the options with the Astro configuration.
-if (import.meta.env.PROD && import.meta.env.SITE !== options.website) {
-  throw new Error(
-    `Invalid configuration in options.website: ${options.website} with astro site: ${import.meta.env.SITE}`,
-  );
 }
 
 export const getPost = (slug: string): Post | undefined => {

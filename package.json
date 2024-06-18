@@ -64,6 +64,7 @@
     "@types/pg": "^8.11.6",
     "@types/qrcode-svg": "^1.1.4",
     "@types/unist": "^3.0.2",
+    "@types/upyun": "^3.4.3",
     "aplayer": "^1.10.1",
     "bootstrap": "^5.3.3",
     "prettier": "^3.3.2",
@@ -74,6 +75,7 @@
     "rimraf": "^5.0.7",
     "sharp": "^0.33.4",
     "typescript": "^5.4.5",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.0.0",
+    "upyun": "^3.4.6"
   }
 }

@@ -1,8 +1,7 @@
 ---
 import { openGraphHeight, openGraphWidth } from '@/helpers/images';
-import { options } from '@/helpers/schema';
 import { getPageMeta } from '@/helpers/seo';
-import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 
 export interface Props {
   title?: string;
@@ -16,12 +15,7 @@ const { og, twitter } = getPageMeta({
   title: title || options.title,
   description: description || options.description,
   baseUrl: import.meta.env.SITE,
-  ogImageAbsoluteUrl:
-    ogImageUrl === undefined
-      ? urlJoin(import.meta.env.SITE, '/images/open-graph.png')
-      : ogImageUrl.startsWith('/')
-        ? urlJoin(import.meta.env.SITE, ogImageUrl)
-        : ogImageUrl,
+  ogImageUrl: ogImageUrl,
   ogImageAltText: title || options.title,
   ogImageWidth: openGraphWidth,
   ogImageHeight: openGraphHeight,

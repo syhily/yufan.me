@@ -1,7 +1,8 @@
 ---
 import QRDialog from '@/components/image/QRDialog.astro';
-import { options, type Post } from '@/helpers/schema';
+import type { Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import * as querystring from 'node:querystring';
 
 interface Props {

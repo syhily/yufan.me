@@ -4,9 +4,10 @@ import Image from '@/components/image/Image.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import FriendLinks from '@/components/page/friend/FriendLinks.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
-import { options, type Page } from '@/helpers/schema';
+import type { Page } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import options from '@/options';
 
 interface Props {
   page: Page;
@@ -17,7 +18,7 @@ const { Content } = await page.render();
 ---
 
 <BaseLayout title={page.title}>
-  <PageMeta slot="og" title={page.title} ogImageUrl={urlJoin(import.meta.env.SITE, `/og/${page.slug}.png`)} />
+  <PageMeta slot="og" title={page.title} ogImageUrl={`/og/${page.slug}.png`} />
 
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
     <div class="container">

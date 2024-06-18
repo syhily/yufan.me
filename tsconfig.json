@@ -8,8 +8,8 @@
     "module": "ESNext",
     "strictNullChecks": true,
     "paths": {
+      "@/options": ["./options.ts"],
       "@/*": ["src/*"]
-    },
-    "types": ["vite-plugin-arraybuffer/types"]
+    }
   }
 }

@@ -2,8 +2,9 @@
 import Pagination from '@/components/page/pagination/Pagination.astro';
 import PostSquare from '@/components/page/post/PostSquare.astro';
 import { slicePosts } from '@/helpers/formatter';
-import { options, type Category, type Post } from '@/helpers/schema';
+import type { Category, Post } from '@/helpers/schema';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import options from '@/options';
 
 interface Props {
   category: Category;

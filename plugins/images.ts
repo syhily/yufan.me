@@ -43,7 +43,7 @@ const transformAstroImage = async (imageNode: ImageNode) => {
   imageNode.name = 'Image';
   imageNode.attributes = [
     { type: 'mdxJsxAttribute', name: 'alt', value: imageNode.alt },
-    { type: 'mdxJsxAttribute', name: 'src', value: imageNode.url },
+    { type: 'mdxJsxAttribute', name: 'src', value: metadata.src },
     { type: 'mdxJsxAttribute', name: 'width', value: imageNode.width ?? metadata.width },
     { type: 'mdxJsxAttribute', name: 'height', value: imageNode.height ?? metadata.height },
     { type: 'mdxJsxAttribute', name: 'blurDataURL', value: metadata.blurDataURL },

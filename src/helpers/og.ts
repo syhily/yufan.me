@@ -5,7 +5,7 @@
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
 import { openGraphHeight, openGraphWidth } from '@/helpers/images';
-import { options } from '@/helpers/schema';
+import options from '@/options';
 import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -117,6 +117,11 @@ const drawImageProp = (
 };
 
 const fetchCover = async (cover: string): Promise<Buffer> => {
+  if (cover.startsWith(options.assetsPrefix())) {
+    const coverPath = join(process.cwd(), 'public', cover.substring(options.assetsPrefix().length));
+    return await readFile(coverPath);
+  }
+
   if (cover.startsWith('http')) {
     return Buffer.from(await (await fetch(cover)).arrayBuffer());
   }
@@ -132,7 +137,7 @@ export interface OpenGraphProps {
 }
 
 export const defaultOpenGraph = async (): Promise<Buffer> => {
-  return await fetchCover('/images/default-cover.jpg');
+  return await fetchCover('/images/open-graph.png');
 };
 
 // Register the font if it doesn't exist

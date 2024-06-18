@@ -1,6 +1,6 @@
 ---
 import { latestComments } from '@/helpers/db/query';
-import { options } from '@/helpers/schema';
+import options from '@/options';
 
 const comments = await latestComments();
 ---

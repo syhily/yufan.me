@@ -1,7 +1,8 @@
 import PostContent from '@/components/page/post/PostContent.astro';
 import { partialRender } from '@/helpers/container';
-import { options, posts, type Post } from '@/helpers/schema';
+import { posts, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import rss from '@astrojs/rss';
 import { ELEMENT_NODE, TEXT_NODE, transform, walk, type TextNode } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
@@ -13,7 +14,7 @@ const cleanupContent = async (html: string) => {
         if (node.type === ELEMENT_NODE) {
           // Make sure images are absolute, some readers are not smart enough to figure it out
           if (node.name === 'img' && node.attributes.src?.startsWith('/')) {
-            node.attributes.src = urlJoin(import.meta.env.SITE, node.attributes.src);
+            node.attributes.src = urlJoin(options.assetsPrefix(), node.attributes.src);
             const { src, alt } = node.attributes;
             node.attributes = { src, alt };
           }
