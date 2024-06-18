@@ -6,7 +6,8 @@ import { astroImage } from './plugins/images';
 
 // https://astro.build/config
 export default defineConfig({
-  site: import.meta.env.PROD ? options.website : options.local.website,
+  // This will override the import.meta.env.SITE. No need to introduce method.
+  site: options.isProd() ? options.website : options.local.website,
   output: 'server',
   security: {
     checkOrigin: true,
@@ -57,6 +58,7 @@ export default defineConfig({
   },
   build: {
     assets: 'cats',
-    assetsPrefix: import.meta.env.PROD ? options.settings.assetPrefix : options.local.website,
+    // This will override the import.meta.env.ASSETS_PREFIX. No need to introduce method.
+    assetsPrefix: options.isProd() ? options.settings.assetPrefix : options.local.website,
   },
 });
