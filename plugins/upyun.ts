@@ -1,6 +1,7 @@
 import type { AstroIntegration, AstroIntegrationLogger, RouteData } from 'astro';
 import fs from 'node:fs';
 import path from 'node:path';
+import { rimrafSync } from 'rimraf';
 import up from 'upyun';
 
 export type UpyunOption = {
@@ -48,7 +49,7 @@ export const upyun = (opt: UpyunOption): AstroIntegration => ({
       for (const dir of option.path) {
         logger.info(`Start to upload the ${dir} to upyun`);
         await uploadFile(logger, client, staticRootPath, dir);
-        fs.rmSync(path.join(staticRootPath, dir));
+        rimrafSync(path.join(staticRootPath, dir));
       }
     },
   },
@@ -79,6 +80,8 @@ const uploadFile = async (logger: AstroIntegrationLogger, client: up.Client, roo
       // Upload file.
       logger.info(`Try to upload file ${filePath} to upyun`);
       await client.putFile(filePath, fs.readFileSync(fullPath));
+    } else {
+      logger.info(`The file ${filePath} is existed on upyun. Skip by default.`);
     }
 
     return;
