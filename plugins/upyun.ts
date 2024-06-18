@@ -48,6 +48,7 @@ export const upyun = (opt: UpyunOption): AstroIntegration => ({
       for (const dir of option.path) {
         logger.info(`Start to upload the ${dir} to upyun`);
         await uploadFile(logger, client, staticRootPath, dir);
+        fs.rmSync(path.join(staticRootPath, dir));
       }
     },
   },
