@@ -1,16 +1,11 @@
 ---
-import { DateTime } from 'luxon';
-
 import options from '@/options';
-
-function currentYear(): number {
-  return DateTime.now().setZone(options.settings.timeZone).year;
-}
+import { DateTime } from 'luxon';
 ---
 
 <footer class="footer border-top border-light text-xs text-center py-4 py-xl-5">
   <div class="line">
-    <span>Copyright © {options.settings.initialYear}-{currentYear()}</span>
+    <span>Copyright © {options.settings.initialYear}-{DateTime.now().setZone(options.settings.timeZone).year}</span>
     <a href={import.meta.env.SITE} title={options.title} rel="home">
       {options.title}
     </a>

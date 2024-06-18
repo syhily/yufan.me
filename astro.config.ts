@@ -58,7 +58,6 @@ export default defineConfig({
   },
   build: {
     assets: 'cats',
-    // This will override the import.meta.env.ASSETS_PREFIX. No need to introduce method.
-    assetsPrefix: options.isProd() ? options.settings.assetPrefix : options.local.website,
+    assetsPrefix: options.assetsPrefix(),
   },
 });

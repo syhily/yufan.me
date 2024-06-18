@@ -9,7 +9,11 @@ const Options = z
       })
       .transform((local) => ({ ...local, website: `http://localhost${local.port}` })),
     title: z.string().max(40),
-    website: z.string().url(),
+    website: z
+      .string()
+      .url()
+      .refine((u) => !u.endsWith('/'))
+      .readonly(),
     description: z.string().max(100),
     keywords: z.array(z.string()),
     author: z.object({ name: z.string(), email: z.string().email(), url: z.string().url() }),
@@ -30,7 +34,11 @@ const Options = z
       timeZone: z.string().optional().default('Asia/Shanghai'),
       timeFormat: z.string().optional().default('yyyy-MM-dd HH:mm:ss'),
       twitter: z.string(),
-      assetPrefix: z.string().url().readonly(),
+      assetPrefix: z
+        .string()
+        .url()
+        .refine((u) => !u.endsWith('/'))
+        .readonly(),
       post: z.object({
         sort: z.enum(['asc', 'desc']),
         feature: z.array(z.string()).optional(),
@@ -58,14 +66,20 @@ const Options = z
       }),
     }),
   })
-  .transform((opts) => ({
-    ...opts,
-    // Monkey patch for the issue https://github.com/withastro/astro/issues/11282
-    // No need to fallback to the import.meta.env.PROD I think.
-    isProd: (): boolean => {
-      return import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production';
-    },
-  }));
+  .transform((opts) => {
+    const isProd = (): boolean => import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production';
+    const assetsPrefix = (): string => (isProd() ? opts.settings.assetPrefix : opts.local.website);
+    return {
+      ...opts,
+      // Monkey patch for the issue https://github.com/withastro/astro/issues/11282
+      // No need to fallback to the import.meta.env.PROD I think.
+      isProd,
+      // Given that the import.meta.env.ASSETS_PREFIX has two types.
+      // I have to use this uniform method instead.
+      assetsPrefix,
+      defaultOpenGraph: (): string => `${assetsPrefix()}/images/open-graph.png`,
+    };
+  });
 
 const options = {
   local: {
