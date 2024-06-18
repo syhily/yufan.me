@@ -1,6 +1,8 @@
 ---
 import { getConfig, loadComments } from '@/components/comment/artalk';
 import Comment from '@/components/comment/Comment.astro';
+import { urlJoin } from '@/helpers/tools';
+import options from '@/options';
 
 // This is a component which loads comments and renders it on server-side.
 interface Props {
@@ -25,7 +27,8 @@ const comments = config != null ? await loadComments(commentKey, title, 0, confi
             <div class="comment-from-avatar flex-avatar">
               <img
                 alt="头像"
-                src="/images/default-avatar.png"
+                src={urlJoin(options.assetsPrefix(), '/images/default-avatar.png')}
+                data-src={urlJoin(options.assetsPrefix(), '/images/default-avatar.png')}
                 class="avatar avatar-40 photo avatar-default"
                 height="40"
                 width="40"

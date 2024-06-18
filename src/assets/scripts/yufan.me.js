@@ -113,6 +113,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
   // TODO: Load the commenter information from the cookie.
 
   comments.addEventListener('focusout', (event) => {
+    const avatar = document.querySelector('#commentForm img.avatar');
     if (event.target === document.querySelector('input[name="email"]')) {
       event.stopPropagation();
       const email = event.target.value;
@@ -121,11 +122,11 @@ if (typeof comments !== 'undefined' && comments !== null) {
         fetch(`/comments/avatar?email=${email}`)
           .then((res) => res.text())
           .then((link) => {
-            document.querySelector('#commentForm img.avatar').src = link;
+            avatar.src = link;
           })
           .catch((e) => console.log(e));
       } else {
-        document.querySelector('#commentForm img.avatar').src = '/images/default-avatar.png';
+        avatar.src = avatar.dataset.src;
       }
     }
   });
