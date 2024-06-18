@@ -3,6 +3,7 @@ import node from '@astrojs/node';
 import { defineConfig, envField } from 'astro/config';
 import options from './options';
 import { astroImage } from './plugins/images';
+import { upyun } from './plugins/upyun';
 
 // https://astro.build/config
 export default defineConfig({
@@ -23,16 +24,15 @@ export default defineConfig({
         POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
         // Artalk Comment
         ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
-        // UPYUN Integration
-        UPYUN_BUCKET: envField.string({ context: 'server', access: 'secret' }),
-        UPYUN_OPERATOR: envField.string({ context: 'server', access: 'secret' }),
-        UPYUN_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
       },
     },
   },
   integrations: [
     mdx({
       remarkPlugins: [astroImage],
+    }),
+    upyun({
+      path: ['images', 'og', 'cats'],
     }),
   ],
   adapter: node({

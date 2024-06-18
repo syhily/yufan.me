@@ -117,6 +117,11 @@ const drawImageProp = (
 };
 
 const fetchCover = async (cover: string): Promise<Buffer> => {
+  if (cover.startsWith(options.assetsPrefix())) {
+    const coverPath = join(process.cwd(), 'public', cover.substring(options.assetsPrefix().length));
+    return await readFile(coverPath);
+  }
+
   if (cover.startsWith('http')) {
     return Buffer.from(await (await fetch(cover)).arrayBuffer());
   }
