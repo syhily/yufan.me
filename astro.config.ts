@@ -1,7 +1,6 @@
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
 import { defineConfig, envField } from 'astro/config';
-import arraybuffer from 'vite-plugin-arraybuffer';
 import { astroImage } from './remark-plugins/images';
 
 // Dynamic switch the site. This is hard coded.
@@ -51,7 +50,6 @@ export default defineConfig({
     enabled: false,
   },
   vite: {
-    plugins: [arraybuffer()],
     // Add this for avoiding the needless import optimize in Vite.
     optimizeDeps: { exclude: ['@napi-rs/canvas'] },
   },

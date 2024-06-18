@@ -2,8 +2,8 @@ import { defaultOpenGraph, drawOpenGraph } from '@/helpers/og';
 import { getPage, getPost, pages, posts } from '@/helpers/schema';
 import type { APIRoute } from 'astro';
 
-const fallback = () =>
-  new Response(defaultOpenGraph, {
+const fallback = async () =>
+  new Response(await defaultOpenGraph(), {
     headers: { 'Content-Type': 'image/png' },
   });
 
@@ -12,7 +12,7 @@ export const prerender = true;
 export const GET: APIRoute = async ({ params }) => {
   const slug = params.slug;
   if (!slug) {
-    return fallback();
+    return await fallback();
   }
 
   let title: string;
@@ -25,7 +25,7 @@ export const GET: APIRoute = async ({ params }) => {
     // Fallback to query from pages
     const page = getPage(slug);
     if (!page) {
-      return fallback();
+      return await fallback();
     }
 
     title = page.title;
