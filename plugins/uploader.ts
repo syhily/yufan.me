@@ -9,6 +9,8 @@ const S3Options = z
   .object({
     // The directories that you want to upload to S3.
     paths: z.array(z.string()).min(1),
+    // Whether to keep the original files after uploading.
+    keep: z.boolean().default(false),
     // The S3 region, set it if you use AWS S3 service.
     region: z.string().min(1).default('auto'),
     // The endpoint, set it if you use 3rd-party S3 service.
@@ -26,14 +28,16 @@ const S3Options = z
     extraOptions: z.record(z.string(), z.string()).default({}),
   })
   .strict()
-  .refine((opts) => (opts.region === 'auto' ? opts.endpoint !== undefined : true));
+  .superRefine((opts, { addIssue }) => {
+    if (opts.region === 'auto' && opts.endpoint === undefined) {
+      addIssue({ fatal: true, code: 'custom', message: 'either the region or the endpoint should be provided' });
+    }
+  });
 
-const parseOptions = (
-  opts: z.input<typeof S3Options>,
-  logger: AstroIntegrationLogger,
-): { options: Record<string, string>; paths: string[] } => {
+const parseOptions = (opts: z.input<typeof S3Options>, logger: AstroIntegrationLogger) => {
   try {
-    const { paths, bucket, root, accessKey, secretAccessKey, region, endpoint, extraOptions } = S3Options.parse(opts);
+    const { paths, bucket, root, accessKey, secretAccessKey, region, endpoint, extraOptions, keep } =
+      S3Options.parse(opts);
 
     // Create opendal operator.
     // The common configurations are listed here https://docs.rs/opendal/latest/opendal/services/struct.S3.html#configuration
@@ -49,7 +53,7 @@ const parseOptions = (
       options.endpoint = endpoint;
     }
 
-    return { options, paths };
+    return { options, paths, keep };
   } catch (err) {
     if (err instanceof z.ZodError) {
       logger.error(`Uploader options validation error, there are ${err.issues.length} errors:`);
@@ -66,14 +70,16 @@ export const uploader = (opts: z.input<typeof S3Options>): AstroIntegration => (
   name: 'S3 Uploader',
   hooks: {
     'astro:build:done': async ({ dir, logger }: { dir: URL; logger: AstroIntegrationLogger }) => {
-      const { options, paths } = parseOptions(opts, logger);
+      const { options, paths, keep } = parseOptions(opts, logger);
       const operator = new Operator('s3', options);
 
       logger.info(`Start to upload static files in dir ${paths} to S3 compatible backend.`);
 
       for (const current of paths) {
         await uploadFile(operator, logger, current, dir.pathname);
-        rimrafSync(path.join(dir.pathname, current));
+        if (!keep) {
+          rimrafSync(path.join(dir.pathname, current));
+        }
       }
 
       logger.info('Upload all the files successfully.');
