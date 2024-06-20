@@ -1,7 +1,7 @@
 ---
-import PinnedCategories from '@/components/page/category/PinnedCategories.astro';
 import FeaturePosts from '@/components/page/post/FeaturePosts.astro';
-import PostPagination from '@/components/page/post/PostPagination.astro';
+import PostCards from '@/components/page/post/PostCards.astro';
+import PinnedCategories from '@/components/page/post/PostCategory.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import type { Post, Tag } from '@/helpers/schema';
 
@@ -27,7 +27,7 @@ if (pageNum < 1) {
     <FeaturePosts {posts} />
     <div class="container">
       <div class="row">
-        <PostPagination {pageNum} {posts} />
+        <PostCards {pageNum} {posts} />
         <Sidebar {posts} {tags} />
       </div>
       <PinnedCategories />

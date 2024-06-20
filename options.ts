@@ -1,5 +1,7 @@
 import { z } from 'astro/zod';
 
+const isProd = (): boolean => import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production';
+
 // The type of the options, use zod for better validation.
 const Options = z
   .object({
@@ -65,9 +67,12 @@ const Options = z
         admins: z.array(z.number()),
       }),
     }),
+    thumbnail: z
+      .function()
+      .args(z.object({ src: z.string().min(1), width: z.number(), height: z.number() }))
+      .returns(z.string()),
   })
   .transform((opts) => {
-    const isProd = (): boolean => import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production';
     const assetsPrefix = (): string => (isProd() ? opts.settings.assetPrefix : opts.local.website);
     return {
       ...opts,
@@ -81,7 +86,7 @@ const Options = z
     };
   });
 
-const options = {
+const options: z.input<typeof Options> = {
   local: {
     port: 4321,
   },
@@ -171,6 +176,15 @@ const options = {
       server: 'https://comment.yufan.me',
       admins: [3],
     },
+  },
+  thumbnail: ({ src, width, height }) => {
+    if (isProd()) {
+      // Add upyun thumbnail support.
+      return `${src}!upyun520/both/${width}x${height}/quality/100/unsharp/true/progressive/true`;
+    }
+    // See https://docs.astro.build/en/reference/image-service-reference/#local-services
+    // Remember to add the localhost to you image service settings.
+    return `http://localhost:4321/_image?href=${src}&w=${width}&h=${height}&f=webp&q=100`;
   },
 };
 
