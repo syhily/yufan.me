@@ -4,6 +4,7 @@ import type { AstroIntegration, AstroIntegrationLogger } from 'astro';
 import { z } from 'astro/zod';
 import fs from 'node:fs';
 import path from 'node:path';
+import { rimrafSync } from 'rimraf';
 
 const S3Options = z.object({
   paths: z.array(z.string()).min(1),
@@ -54,6 +55,7 @@ export const uploader = (opts: z.input<typeof S3Options>): AstroIntegration => (
 
       for (const current of paths) {
         await uploadFile(client, logger, bucket, current, dir.pathname);
+        rimrafSync(path.join(dir.pathname, current));
       }
 
       logger.info('Upload all the files successfully.');
