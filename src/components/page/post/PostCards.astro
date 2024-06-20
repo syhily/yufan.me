@@ -1,12 +1,25 @@
 ---
-import PostCard from '@/components/page/post/PostCard.astro';
+import Pagination from '@/components/page/pagination/Pagination.astro';
+import { slicePosts } from '@/helpers/formatter';
 import type { Post } from '@/helpers/schema';
+import options from '@/options';
+import PostCard from './PostCard.astro';
 
 interface Props {
   posts: Post[];
+  pageNum: number;
 }
 
-const { posts } = Astro.props;
+const { pageNum, posts } = Astro.props;
+const results = slicePosts(posts, pageNum, options.settings.pagination.posts);
+if (!results) {
+  return Astro.redirect('/404');
+}
+
+const { currentPosts, totalPage } = results;
 ---
 
-<div class="list-grid">{posts.map((post) => <PostCard post={post} />)}</div>
+<div class="content-wrapper content-wrapper col-12 col-xl-9">
+  <div class="list-grid">{currentPosts.map((post) => <PostCard post={post} />)}</div>
+  <Pagination current={pageNum} total={totalPage} rootPath={'/'} />
+</div>

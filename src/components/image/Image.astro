@@ -1,5 +1,6 @@
 ---
 import { blurStyle, type Image } from '@/helpers/images';
+import options from '@/options';
 
 interface Props extends Image {
   alt: string;
@@ -8,4 +9,11 @@ interface Props extends Image {
 const { alt, src, width, height } = Astro.props;
 ---
 
-<img {src} {alt} loading="lazy" {width} {height} style={blurStyle(Astro.props)} />
+<img
+  src={options.thumbnail({ src, width, height })}
+  {alt}
+  loading="lazy"
+  {width}
+  {height}
+  style={blurStyle(Astro.props)}
+/>

@@ -13,6 +13,9 @@ export default defineConfig({
   security: {
     checkOrigin: true,
   },
+  image: {
+    domains: ['localhost', '127.0.0.1'],
+  },
   experimental: {
     env: {
       schema: {
