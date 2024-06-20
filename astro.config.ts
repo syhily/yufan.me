@@ -15,6 +15,7 @@ export default defineConfig({
   },
   image: {
     domains: ['localhost', '127.0.0.1'],
+    service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
   },
   experimental: {
     env: {
