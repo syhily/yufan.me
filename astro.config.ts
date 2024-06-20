@@ -3,7 +3,7 @@ import node from '@astrojs/node';
 import { defineConfig, envField } from 'astro/config';
 import options from './options';
 import { astroImage } from './plugins/images';
-import { upyun } from './plugins/upyun';
+import { uploader } from './plugins/uploader';
 
 // https://astro.build/config
 export default defineConfig({
@@ -31,8 +31,12 @@ export default defineConfig({
     mdx({
       remarkPlugins: [astroImage],
     }),
-    upyun({
-      path: ['images', 'og', 'cats'],
+    uploader({
+      paths: ['images', 'og', 'cats'],
+      endpoint: process.env.S3_ENDPOINT,
+      bucket: process.env.S3_BUCKET as string,
+      accessKey: process.env.S3_ACCESS_KEY as string,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
     }),
   ],
   adapter: node({
