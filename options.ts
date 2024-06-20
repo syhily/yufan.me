@@ -69,7 +69,7 @@ const Options = z
     }),
     thumbnail: z
       .function()
-      .args(z.object({ src: z.string().min(1), width: z.number(), height: z.number() }))
+      .args(z.object({ src: z.string().min(1), width: z.number().or(z.string()), height: z.number().or(z.string()) }))
       .returns(z.string()),
   })
   .transform((opts) => {

@@ -11,11 +11,11 @@ export interface Image {
   /**
    * image width
    */
-  width: number;
+  width: number | string;
   /**
    * image height
    */
-  height: number;
+  height: number | string;
   /**
    * blurDataURL of the image
    */
