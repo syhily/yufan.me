@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="1203px" height="1201px" viewBox="0 0 1203 1201" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>64x64</title>
+<svg width="400px" height="400px" viewBox="0 0 1203 1201" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <g id="64x64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
         <g id="Group" transform="translate(94, 96.5)" stroke="#979797" stroke-linecap="square">
             <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>

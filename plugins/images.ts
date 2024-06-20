@@ -13,33 +13,8 @@ type ImageNode = Parent & {
   attributes: (Literal & { name: string })[];
 };
 
-type MdxJsxAttribute = {
-  type: 'mdxJsxAttribute';
-  name: string;
-  value: string;
-};
-
-type MdxJsxFlowElement = Parent & {
-  name: string;
-  attributes: MdxJsxAttribute[];
-};
-
 export const astroImage = () => {
   return async (tree: Node) => {
-    // Find all the img node.
-    const imgs = selectAll('mdxJsxFlowElement', tree)
-      .map((node) => node as MdxJsxFlowElement)
-      .filter((node) => node.name === 'img');
-    for (const img of imgs) {
-      const srcAttribute = img.attributes.find((attribute) => attribute.name === 'src');
-      if (srcAttribute) {
-        const src = srcAttribute.value;
-        if (src.startsWith('/')) {
-          srcAttribute.value = urlJoin(options.assetsPrefix(), src);
-        }
-      }
-    }
-
     // Find all the image node.
     const imageNodes = selectAll('image', tree)
       .map((node) => node as ImageNode)
