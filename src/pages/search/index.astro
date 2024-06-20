@@ -13,7 +13,7 @@ const title = `${query} 查询结果`;
 
 const searchResults = searchPosts(query)
   .map((slug) => posts.find((post) => post.slug === slug))
-  .flatMap((post) => (post == null ? [] : [post]))
+  .filter((post) => post !== undefined)
   .slice(0, options.settings.pagination.search);
 ---
 

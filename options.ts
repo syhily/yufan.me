@@ -178,9 +178,12 @@ const options: z.input<typeof Options> = {
     },
   },
   thumbnail: ({ src, width, height }) => {
+    if (src.endsWith('.svg')) {
+      return src;
+    }
     if (isProd()) {
       // Add upyun thumbnail support.
-      return `${src}!upyun520/both/${width}x${height}/quality/100/unsharp/true/progressive/true`;
+      return `${src}!upyun520/both/${width}x${height}/format/webp/quality/100/unsharp/true/progressive/true`;
     }
     // See https://docs.astro.build/en/reference/image-service-reference/#local-services
     // Remember to add the localhost to you image service settings.
