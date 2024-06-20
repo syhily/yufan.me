@@ -116,3 +116,15 @@ export const GET = async () => {
     })),
   });
 };
+
+// The rss reader may prefetch by using HEAD method.
+export const HEAD = async () => {
+  return new Response('', {
+    headers: {
+      Host: import.meta.env.SITE,
+      'Content-Type': 'application/xml',
+      Accept: '*/*',
+      Connection: 'keep-alive',
+    },
+  });
+};
