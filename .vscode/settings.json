@@ -143,19 +143,8 @@
     "yyjn",
     "zeabur"
   ],
-  "sqltools.connections": [
-    {
-      "previewLimit": 50,
-      "server": "localhost",
-      "port": 5432,
-      "driver": "PostgreSQL",
-      "name": "DuoShuo",
-      "database": "duoshuo",
-      "username": "duoshuo",
-      "password": "Twgdh@2024"
-    }
-  ],
   "[mdx]": {
     "editor.defaultFormatter": "unifiedjs.vscode-mdx"
-  }
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
