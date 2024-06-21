@@ -1,8 +1,6 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
 import stickySidebar from './sticky-sidebar.js';
 
-const LOGO = '';
-
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside');
 document.addEventListener('keydown', (event) => {

@@ -1,8 +1,16 @@
+import {
+  HeadBucketCommand,
+  HeadObjectCommand,
+  NoSuchBucket,
+  NotFound,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import type { AstroIntegration, AstroIntegrationLogger } from 'astro';
 import { z } from 'astro/zod';
+import mime from 'mime';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Operator } from 'opendal';
 import { rimrafSync } from 'rimraf';
 
 const S3Options = z
@@ -23,9 +31,6 @@ const S3Options = z
     accessKey: z.string().min(1),
     // The secret access key.
     secretAccessKey: z.string().min(1),
-    // The extra options provided by opendal.
-    // All the methods in https://docs.rs/opendal/latest/opendal/services/struct.S3.html#implementations can be treated as an option.
-    extraOptions: z.record(z.string(), z.string()).default({}),
   })
   .strict()
   .superRefine((opts, { addIssue }) => {
@@ -34,26 +39,9 @@ const S3Options = z
     }
   });
 
-const parseOptions = (opts: z.input<typeof S3Options>, logger: AstroIntegrationLogger) => {
+const parseOptions = (opts: z.input<typeof S3Options>, logger: AstroIntegrationLogger): z.infer<typeof S3Options> => {
   try {
-    const { paths, bucket, root, accessKey, secretAccessKey, region, endpoint, extraOptions, keep } =
-      S3Options.parse(opts);
-
-    // Create opendal operator.
-    // The common configurations are listed here https://docs.rs/opendal/latest/opendal/services/struct.S3.html#configuration
-    const options: Record<string, string> = {
-      ...extraOptions,
-      root: root,
-      bucket: bucket,
-      region: region,
-      access_key_id: accessKey,
-      secret_access_key: secretAccessKey,
-    };
-    if (endpoint !== undefined) {
-      options.endpoint = endpoint;
-    }
-
-    return { options, paths, keep };
+    return S3Options.parse(opts);
   } catch (err) {
     if (err instanceof z.ZodError) {
       logger.error(`Uploader options validation error, there are ${err.issues.length} errors:`);
@@ -66,17 +54,74 @@ const parseOptions = (opts: z.input<typeof S3Options>, logger: AstroIntegrationL
   }
 };
 
+class Context {
+  private client: S3Client;
+  private bucket: string;
+  private root: string;
+
+  constructor(client: S3Client, bucket: string, root: string) {
+    this.client = client;
+    this.bucket = bucket;
+    this.root = root;
+  }
+
+  async isExist(key: string): Promise<boolean> {
+    const headCmd = new HeadObjectCommand({ Bucket: this.bucket, Key: path.posix.join(this.root, key) });
+    try {
+      await this.client.send(headCmd);
+      return true;
+    } catch (error) {
+      if (error instanceof NotFound) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  async write(key: string, body: Buffer) {
+    const contentType = mime.getType(key);
+    const putCmd = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: path.posix.join(this.root, key),
+      Body: body,
+      ContentType: contentType === null ? undefined : contentType,
+    });
+
+    await this.client.send(putCmd);
+  }
+}
+
 export const uploader = (opts: z.input<typeof S3Options>): AstroIntegration => ({
   name: 'S3 Uploader',
   hooks: {
     'astro:build:done': async ({ dir, logger }: { dir: URL; logger: AstroIntegrationLogger }) => {
-      const { options, paths, keep } = parseOptions(opts, logger);
-      const operator = new Operator('s3', options);
+      const { paths, keep, region, endpoint, bucket, root, accessKey, secretAccessKey } = parseOptions(opts, logger);
+      const client = new S3Client({
+        region: region,
+        endpoint: endpoint,
+        credentials: { accessKeyId: accessKey, secretAccessKey: secretAccessKey },
+        useGlobalEndpoint: endpoint !== undefined && endpoint !== '',
+      });
+
+      logger.info('Try to verify the S3 credentials.');
+
+      try {
+        await client.send(new HeadBucketCommand({ Bucket: bucket }));
+      } catch (err) {
+        // If the bucket is not existed.
+        if (err instanceof NoSuchBucket) {
+          logger.error(`The bucket ${bucket} isn't existed on the region: ${region} endpoint: ${endpoint}`);
+        } else {
+          logger.error(JSON.stringify(err));
+        }
+        throw err;
+      }
 
       logger.info(`Start to upload static files in dir ${paths} to S3 compatible backend.`);
 
+      const context = new Context(client, bucket, root);
       for (const current of paths) {
-        await uploadFile(operator, logger, current, dir.pathname);
+        await uploadFile(context, logger, current, dir.pathname);
         if (!keep) {
           rimrafSync(path.join(dir.pathname, current));
         }
@@ -92,35 +137,29 @@ const normalizePath = (current: string): string => {
   return current.includes(path.win32.sep) ? current.split(path.win32.sep).join(path.posix.sep) : current;
 };
 
-const uploadFile = async (operator: Operator, logger: AstroIntegrationLogger, current: string, root: string) => {
+const uploadFile = async (context: Context, logger: AstroIntegrationLogger, current: string, root: string) => {
   const filePath = path.join(root, current);
   const isFile = !fs.statSync(filePath).isDirectory();
   const uploadAction = async (key: string) => {
     logger.info(`Start to upload file: ${key}`);
     const body = fs.readFileSync(filePath);
-    await operator.write(key, body);
+    await context.write(key, body);
   };
 
   if (isFile) {
     const key = normalizePath(current);
-    try {
-      const meta = await operator.stat(key);
-      if (meta.isFile()) {
-        logger.info(`${key} exists on backend, skip.`);
-      } else {
-        await uploadAction(key);
-      }
-    } catch (error) {
+    if (await context.isExist(key)) {
+      logger.info(`${key} exists on backend, skip.`);
+    } else {
       await uploadAction(key);
     }
-    return;
-  }
-
-  // Reclusive upload files.
-  for (const next of fs.readdirSync(filePath)) {
-    if (next.startsWith('.')) {
-      continue;
+  } else {
+    // Reclusive upload files.
+    for (const next of fs.readdirSync(filePath)) {
+      if (next.startsWith('.')) {
+        continue;
+      }
+      await uploadFile(context, logger, path.join(current, next), root);
     }
-    await uploadFile(operator, logger, path.join(current, next), root);
   }
 };
