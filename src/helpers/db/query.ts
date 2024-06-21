@@ -32,11 +32,14 @@ export const latestComments = async (): Promise<Comment[]> => {
     if (trimTitle.includes(` - ${options.title}`)) {
       trimTitle = trimTitle.substring(0, trimTitle.indexOf(` - ${options.title}`));
     }
+
+    const link = !options.isProd() && page !== null ? page.replace(options.website, import.meta.env.SITE) : page;
+
     return {
       title: trimTitle,
       author: author ?? '',
       authorLink: authorLink ?? '',
-      permalink: `${page}#atk-comment-${id}`,
+      permalink: `${link}#atk-comment-${id}`,
     };
   });
 };

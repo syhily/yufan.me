@@ -3025,6 +3025,10 @@ a:hover .overlay {
   border-bottom: 1px solid var(--border-light);
 }
 
+.comment .active {
+  background-color: var(--bg-warning);
+}
+
 .comment:last-child {
   margin: 0;
   padding: 0;

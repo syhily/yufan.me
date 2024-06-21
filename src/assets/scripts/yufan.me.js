@@ -1,6 +1,8 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
 import stickySidebar from './sticky-sidebar.js';
 
+const LOGO = '';
+
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside');
 document.addEventListener('keydown', (event) => {
@@ -212,9 +214,40 @@ if (typeof comments !== 'undefined' && comments !== null) {
 
     cancelReply();
   });
-
-  // TODO: Highlighting the selected comment.
 }
+
+const scrollIntoView = (elem) => {
+  let top = 0;
+
+  const rect = elem.getBoundingClientRect();
+  const elemTop = rect.top + window.scrollY;
+  top = elemTop - (window.innerHeight / 2 - rect.height / 2);
+
+  const scrollOptions = {
+    top,
+    left: 0,
+    behavior: 'smooth',
+  };
+
+  window.scroll(scrollOptions);
+};
+
+const focusComment = () => {
+  // Highlighting the selected comment.
+  if (location.hash.startsWith('#atk-comment-')) {
+    for (const li of document.querySelectorAll('.comment-body')) {
+      li.classList.remove('active');
+    }
+
+    const li = document.querySelector(location.hash);
+    if (li !== null) {
+      scrollIntoView(li);
+      li.querySelector('.comment-body').classList.add('active');
+    }
+  }
+};
+window.addEventListener('hashchange', focusComment);
+window.addEventListener('load', focusComment);
 
 // Add like button for updating likes.
 const likeButton = document.querySelector('button.post-like');
