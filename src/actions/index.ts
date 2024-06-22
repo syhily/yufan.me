@@ -70,7 +70,10 @@ export const server = {
     handler: async (request) => {
       const resp = await createComment(request);
       if ('msg' in resp) {
-        throw CommentConnectError;
+        throw new ActionError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: resp.msg,
+        });
       }
 
       const config = await commentConfig();

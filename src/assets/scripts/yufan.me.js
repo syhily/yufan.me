@@ -1,5 +1,28 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
+import { actions, isInputError } from 'astro:actions';
 import stickySidebar from './sticky-sidebar.js';
+
+// Error Popup.
+const handleActionError = (error) => {
+  const errorMsg = isInputError(error)
+    ? error.issues.map((issue) => `<p>${issue.message}</p>`).join('\n')
+    : error.message;
+  const errorPopup = `<div class="nice-popup nice-popup-center error nice-popup-error nice-popup-open">
+  <div class="nice-popup-overlay"></div>
+  <div class="nice-popup-body">
+    <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+    <div class="nice-popup-content">
+      <div class="icon"></div>
+      <div class="text-center">
+        <p class="mt-1 mb-2">${errorMsg}</p>
+      </div>
+    </div>
+  </div>
+</div>`;
+  document.querySelector('body').insertAdjacentHTML('beforeend', errorPopup);
+  const popup = document.querySelector('.nice-popup-error');
+  popup.querySelector('.nice-popup-close').addEventListener('click', () => popup.remove());
+};
 
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside');
@@ -119,12 +142,12 @@ if (typeof comments !== 'undefined' && comments !== null) {
       const email = event.target.value;
       if (email !== '' && email.includes('@')) {
         // Replace the avatar after typing the email.
-        fetch(`/comments/avatar?email=${email}`)
-          .then((res) => res.text())
-          .then((link) => {
-            avatar.src = link;
-          })
-          .catch((e) => console.log(e));
+        actions.avatar.safe({ email }).then(({ data, error }) => {
+          if (error) {
+            return handleActionError(error);
+          }
+          avatar.src = data.avatar;
+        });
       } else {
         avatar.src = avatar.dataset.src;
       }
@@ -135,19 +158,19 @@ if (typeof comments !== 'undefined' && comments !== null) {
     // Loading more comments from server.
     if (event.target === comments.querySelector('#comments-next-button')) {
       const { size, offset, key } = event.target.dataset;
-      const html = await fetch(`/comments/list?key=${key}&offset=${offset}`)
-        .then((res) => res.text())
-        .catch((e) => {
-          console.log(e);
-          return '';
-        });
-      if (html === '') {
+      const { data, error } = await actions.comments.safe({ offset: Number(offset), page_key: key });
+      if (error) {
+        return handleActionError(error);
+      }
+
+      const { content } = data;
+      if (content === '') {
         // Remove the load more button.
         event.target.remove();
       } else {
         // Append the comments into the list.
         event.target.dataset.offset = Number(offset) + Number(size);
-        comments.querySelector('.comment-list').insertAdjacentHTML('beforeend', html);
+        comments.querySelector('.comment-list').insertAdjacentHTML('beforeend', content);
       }
     }
 
@@ -185,30 +208,25 @@ if (typeof comments !== 'undefined' && comments !== null) {
     event.stopPropagation();
 
     const formData = new FormData(event.target);
-    const data = {};
+    const request = {};
     for (const [key, value] of formData) {
-      data[key] = value;
+      request[key] = value;
     }
+    request.rid = request.rid === undefined ? 0 : Number(request.rid);
 
-    const resp = await fetch('/comments/new', {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json; charset=UTF-8',
-      },
-      body: JSON.stringify(data),
-    })
-      .then((res) => res.text())
-      .catch((e) => {
-        console.log(e);
-        return '<li>评论失败<li>';
-      });
+    actions.comment.safe(request).then(({ data, error }) => {
+      if (error) {
+        return handleActionError(error);
+      }
 
-    if (data.rid !== '0') {
-      replyForm.insertAdjacentHTML('beforebegin', resp);
-    } else {
-      const list = comments.querySelector('.comment-list');
-      list.insertAdjacentHTML('afterbegin', resp);
-    }
+      const { content } = data;
+      if (request.rid !== '0') {
+        replyForm.insertAdjacentHTML('beforebegin', content);
+      } else {
+        const list = comments.querySelector('.comment-list');
+        list.insertAdjacentHTML('afterbegin', content);
+      }
+    });
 
     cancelReply();
   });
@@ -230,8 +248,8 @@ const scrollIntoView = (elem) => {
   window.scroll(scrollOptions);
 };
 
+// Highlighting the selected comment.
 const focusComment = () => {
-  // Highlighting the selected comment.
   if (location.hash.startsWith('#atk-comment-')) {
     for (const li of document.querySelectorAll('.comment-body')) {
       li.classList.remove('active');
@@ -250,46 +268,38 @@ window.addEventListener('load', focusComment);
 // Add like button for updating likes.
 const likeButton = document.querySelector('button.post-like');
 
-const increaseLikes = (count) => {
+const increaseLikes = (count, permalink) => {
   count.textContent = Number.parseInt(count.textContent) + 1;
-  fetch('/likes', {
-    method: 'POST',
-    headers: {
-      'Content-type': 'application/json; charset=UTF-8',
-    },
-    body: JSON.stringify({ action: 'increase' }),
-  })
-    .then((res) => res.json())
-    .then(({ likes, token }) => {
-      count.textContent = likes;
-      localStorage.setItem(window.location.href, token);
-    });
+  actions.like.safe({ action: 'increase', key: permalink }).then(({ data, error }) => {
+    if (error) {
+      return handleActionError(error);
+    }
+    const { likes, token } = data;
+    count.textContent = likes;
+    localStorage.setItem(permalink, token);
+  });
 };
 
-const decreaseLikes = (count) => {
-  const token = localStorage.getItem(window.location.href);
+const decreaseLikes = (count, permalink) => {
+  const token = localStorage.getItem(permalink);
   if (token === null || token === '') {
     return;
   }
-
   count.textContent = Number.parseInt(count.textContent) - 1;
-  fetch('/likes', {
-    method: 'POST',
-    headers: {
-      'Content-type': 'application/json; charset=UTF-8',
-    },
-    body: JSON.stringify({ action: 'decrease', token: token }),
-  })
-    .then((res) => res.json())
-    .then(({ likes }) => {
-      count.textContent = likes;
-      localStorage.removeItem(window.location.href);
-    });
+  actions.like.safe({ action: 'decrease', key: permalink, token }).then(({ data, error }) => {
+    if (error) {
+      return handleActionError(error);
+    }
+    count.textContent = data.likes;
+    localStorage.removeItem(permalink);
+  });
 };
 
 if (typeof likeButton !== 'undefined' && likeButton !== null) {
+  const permalink = likeButton.dataset.permalink;
+
   // Change the like state if it has been liked.
-  const token = localStorage.getItem(window.location.href);
+  const token = localStorage.getItem(permalink);
   if (token !== null && token !== '') {
     likeButton.classList.add('current');
   }
@@ -307,10 +317,10 @@ if (typeof likeButton !== 'undefined' && likeButton !== null) {
     // Increase the likes and set liked before submitting.
     if (likeButton.classList.contains('current')) {
       likeButton.classList.remove('current');
-      decreaseLikes(count);
+      decreaseLikes(count, permalink);
     } else {
       likeButton.classList.add('current');
-      increaseLikes(count);
+      increaseLikes(count, permalink);
     }
   });
 }
