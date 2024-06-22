@@ -44,8 +44,6 @@ export const latestComments = async (): Promise<Comment[]> => {
   });
 };
 
-const generateKey = (slug: string): string => urlJoin(options.website, '/posts', slug, '/');
-
 export const increaseViews = async (pageKey: string) => {
   await db
     .update(atk_pages)
@@ -55,8 +53,10 @@ export const increaseViews = async (pageKey: string) => {
     .where(eq(atk_pages.key, sql`${pageKey}`));
 };
 
-export const increaseLikes = async (slug: string): Promise<{ likes: number; token: string }> => {
-  const pageKey = generateKey(slug);
+const generatePageKey = (permalink: string): string => urlJoin(options.website, permalink, '/');
+
+export const increaseLikes = async (permalink: string): Promise<{ likes: number; token: string }> => {
+  const pageKey = generatePageKey(permalink);
   const token = makeToken(250);
   // Save the token
   await db.insert(atk_likes).values({
@@ -74,11 +74,11 @@ export const increaseLikes = async (slug: string): Promise<{ likes: number; toke
     })
     .where(eq(atk_pages.key, sql`${pageKey}`));
 
-  return { likes: await queryLikes(slug), token: token };
+  return { likes: await queryLikes(permalink), token: token };
 };
 
-export const decreaseLikes = async (slug: string, token: string) => {
-  const pageKey = generateKey(slug);
+export const decreaseLikes = async (permalink: string, token: string) => {
+  const pageKey = generatePageKey(permalink);
   const results = await db
     .select({ id: atk_likes.id })
     .from(atk_likes)
@@ -108,8 +108,8 @@ export const decreaseLikes = async (slug: string, token: string) => {
     .where(eq(atk_pages.key, sql`${pageKey}`));
 };
 
-export const queryLikes = async (slug: string): Promise<number> => {
-  const pageKey = generateKey(slug);
+export const queryLikes = async (permalink: string): Promise<number> => {
+  const pageKey = generatePageKey(permalink);
   const results = await db
     .select({ like: atk_pages.vote_up })
     .from(atk_pages)
@@ -119,8 +119,8 @@ export const queryLikes = async (slug: string): Promise<number> => {
   return results.length > 0 ? results[0].like ?? 0 : 0;
 };
 
-export const queryLikesAndViews = async (slug: string): Promise<[number, number]> => {
-  const pageKey = generateKey(slug);
+export const queryLikesAndViews = async (permalink: string): Promise<[number, number]> => {
+  const pageKey = generatePageKey(permalink);
   const results = await db
     .select({ like: atk_pages.vote_up, view: atk_pages.pv })
     .from(atk_pages)

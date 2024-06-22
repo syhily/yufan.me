@@ -1,8 +1,9 @@
 ---
 import Comments from '@/components/comment/Comments.astro';
 import Image from '@/components/image/Image.astro';
+import LikeButton from '@/components/like/LikeButton.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
-import FriendLinks from '@/components/page/friend/FriendLinks.astro';
+import Friends from '@/components/page/friend/Friends.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import type { Page } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
@@ -29,7 +30,8 @@ const { Content } = await page.render();
             <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
           </div>
         </div>
-        {page.friend && <FriendLinks />}
+        {page.friend && <Friends />}
+        <LikeButton permalink={page.permalink} />
         {page.comments && <Comments commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />}
       </div>
     </div>

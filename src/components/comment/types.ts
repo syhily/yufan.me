@@ -1,28 +1,18 @@
+// The configuration in artalk.
 export interface CommentConfig {
-  frontend_conf: FrontendConf;
+  frontend_conf: {
+    flatMode: boolean;
+    gravatar: {
+      mirror: string;
+      params: string;
+    };
+    pagination: {
+      pageSize: number;
+    };
+  };
 }
 
-export interface FrontendConf {
-  flatMode: boolean;
-  gravatar: Gravatar;
-  pagination: Pagination;
-}
-
-export interface Gravatar {
-  mirror: string;
-  params: string;
-}
-
-export interface Pagination {
-  pageSize: number;
-}
-
-export interface Comments {
-  comments: Comment[];
-  count: number;
-  roots_count: number;
-}
-
+// The single comment.
 export interface Comment {
   id: number;
   content: string;
@@ -33,17 +23,19 @@ export interface Comment {
   rid: number;
 }
 
-export interface PV {
-  page_key: string;
-  page_title: string;
-  site_name: string;
-}
-
+// Grouping the comments into parent child structure.
 export interface CommentItem extends Comment {
   children?: CommentItem[];
 }
 
-// Create comment request
+// The comment list.
+export interface Comments {
+  comments: Comment[];
+  count: number;
+  roots_count: number;
+}
+
+// Create comment request.
 export interface CommentReq {
   page_key: string;
   name: string;
@@ -53,11 +45,12 @@ export interface CommentReq {
   rid?: number;
 }
 
-// Create comment response
+// Create comment response.
 export interface CommentResp extends Comment {
   is_pending: boolean;
 }
 
+// Error response in creating comment.
 export interface ErrorResp {
   msg: string;
 }

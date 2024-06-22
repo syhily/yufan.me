@@ -2,7 +2,7 @@
 import Comments from '@/components/comment/Comments.astro';
 import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
-import Share from '@/components/like/Share.astro';
+import LikeShare from '@/components/like/LikeShare.astro';
 import PostMeta from '@/components/meta/PostMeta.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
@@ -48,8 +48,8 @@ const { Content } = await post.render();
                   <div class="nav-links"></div>
                 </nav>
               </div>
-              <LikeButton {post} />
-              <Share {post} />
+              <LikeButton permalink={post.permalink} />
+              <LikeShare {post} />
               {
                 post.comments && (
                   <Comments commentKey={urlJoin(options.website, post.permalink, '/')} title={post.title} />
