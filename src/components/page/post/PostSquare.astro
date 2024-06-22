@@ -26,7 +26,7 @@ const { post, first } = Astro.props;
         <div class="list-meta font-number d-flex flex-fill text-muted text-sm">
           <span class="d-inline-block">{formatShowDate(post.date)}</span>
           <div class="flex-fill"></div>
-          <LikeIconSmall {post} />
+          <LikeIconSmall permalink={post.permalink} />
         </div>
       </a>
     </div>

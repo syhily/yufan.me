@@ -1,5 +1,5 @@
 ---
-import { getConfig, loadComments } from '@/components/comment/artalk';
+import { commentConfig, loadComments } from '@/components/comment/artalk';
 import Comment from '@/components/comment/Comment.astro';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
@@ -11,7 +11,7 @@ interface Props {
 }
 
 const { commentKey, title } = Astro.props;
-const config = await getConfig();
+const config = await commentConfig();
 const comments = config != null ? await loadComments(commentKey, title, 0, config) : null;
 ---
 

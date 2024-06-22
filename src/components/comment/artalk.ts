@@ -20,7 +20,7 @@ import sanitize from 'ultrahtml/transformers/sanitize';
 // Access the artalk in internal docker host when it was deployed on zeabur.
 const server = options.isProd() ? `http://${ARTALK_HOST}:23366` : options.settings.comments.server;
 
-export const getConfig = async (): Promise<CommentConfig | null> => {
+export const commentConfig = async (): Promise<CommentConfig | null> => {
   const data = await fetch(urlJoin(server, '/api/v2/conf'))
     .then((response) => response.json())
     .catch((e) => {
@@ -79,7 +79,11 @@ export const createComment = async (req: CommentReq): Promise<ErrorResp | Commen
     return (await response.json()) as ErrorResp;
   }
 
-  return (await response.json()) as CommentResp;
+  // Parse comment content.
+  const commentResp = (await response.json()) as CommentResp;
+  commentResp.content = await parseContent(commentResp.content);
+
+  return commentResp;
 };
 
 export const parseComments = async (comments: Comment[]): Promise<CommentItem[]> => {

@@ -18,6 +18,7 @@ export default defineConfig({
     service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
   },
   experimental: {
+    actions: true,
     env: {
       schema: {
         // Postgres Database

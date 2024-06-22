@@ -1,13 +1,12 @@
 ---
 import { queryLikesAndViews } from '@/helpers/db/query';
-import type { Post } from '@/helpers/schema';
 
 interface Props {
-  post: Post;
+  permalink: string;
 }
 
-const { post } = Astro.props;
-const [likes, view] = await queryLikesAndViews(post.slug);
+const { permalink } = Astro.props;
+const [likes, view] = await queryLikesAndViews(permalink);
 ---
 
 <div class="list-like d-inline-block">

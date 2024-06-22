@@ -2244,10 +2244,6 @@ a:hover .overlay {
 /*--------------------------------------------------------------
     error content
 --------------------------------------------------------------*/
-.nice-popup-error {
-  align-items: flex-start;
-}
-
 .nice-popup-error .nice-popup-content {
   display: flex;
   align-items: center;

@@ -558,9 +558,5 @@
   slug: algorithm
 - name: 面试
   slug: interview
-- name: 阿里
-  slug: alibaba
-- name: 腾讯
-  slug: tencent
 - name: 读书
   slug: reading
