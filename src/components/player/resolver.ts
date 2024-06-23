@@ -24,7 +24,7 @@ const song = async (props: MusicPlayerProps): Promise<Song> => {
     const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${netease}`)
       .then((response) => response.json())
       .catch((e) => {
-        console.log(e);
+        console.error(e);
         return [emptySong];
       });
 

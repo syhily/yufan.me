@@ -26,7 +26,7 @@ export const loadComments = async (key: string, title: string | null, offset: nu
   const data = await fetch(urlJoin(server, `/api/v2/comments?${querystring.stringify(params)}`))
     .then((response) => response.json())
     .catch((e) => {
-      console.log(e);
+      console.error(e);
       return null;
     });
 
@@ -44,7 +44,7 @@ export const createComment = async (req: CommentReq): Promise<ErrorResp | Commen
     },
     body: JSON.stringify({ ...req, site_name: options.title, rid: req.rid ? Number(req.rid) : 0 }),
   }).catch((e) => {
-    console.log(e);
+    console.error(e);
     return null;
   });
 

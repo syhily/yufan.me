@@ -16,7 +16,6 @@ const avatarImage = async (hash: string): Promise<Response> => {
     options.settings.comments.avatar.mirror,
     `${hash}.png?s=${options.settings.comments.avatar.size}&d=${defaultAvatar()}`,
   );
-  console.log(link);
   return new Response(Buffer.from(await (await fetch(link)).arrayBuffer()), {
     headers: { 'Content-Type': 'image/png' },
   });
