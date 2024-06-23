@@ -1,5 +1,5 @@
 ---
-import { commentConfig, loadComments } from '@/components/comment/artalk';
+import { loadComments } from '@/components/comment/artalk';
 import Comment from '@/components/comment/Comment.astro';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
@@ -11,13 +11,12 @@ interface Props {
 }
 
 const { commentKey, title } = Astro.props;
-const config = await commentConfig();
-const comments = config != null ? await loadComments(commentKey, title, 0, config) : null;
+const comments = await loadComments(commentKey, title, 0);
 ---
 
 <div id="comments" class="comments py-5">
   {
-    comments != null && config != null ? (
+    comments != null ? (
       <>
         <div class="h5 mb-4 comment-total-count">
           评论 <small class="font-theme text-sm">({comments.count})</small>
@@ -60,15 +59,15 @@ const comments = config != null ? await loadComments(commentKey, title, 0, confi
           </form>
         </div>
         <ul class="comment-list">
-          <Comment comments={comments} config={config} />
+          <Comment comments={comments} />
         </ul>
-        {comments.roots_count > config.frontend_conf.pagination.pageSize && (
+        {comments.roots_count > options.settings.comments.size && (
           <div class="text-center mt-3 mt-md-4">
             <button
               id="comments-next-button"
               data-key={commentKey}
-              data-size={config.frontend_conf.pagination.pageSize}
-              data-offset={config.frontend_conf.pagination.pageSize}
+              data-size={options.settings.comments.size}
+              data-offset={options.settings.comments.size}
               class="btn btn-light"
             >
               加载更多

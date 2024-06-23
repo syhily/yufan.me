@@ -58,7 +58,7 @@ The default username is `your system username`, with no password.
 
 Create and initialize the database and user with these commands:
 
-```sql
+```postgresql
 -- Create a database.
 CREATE DATABASE <db>;
 
@@ -76,23 +76,25 @@ GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
 GRANT ALL ON SCHEMA public TO <db_user>;
 ```
 
-Most tables are created by the Artalk. [Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the tables.
+Most tables are created by the Artalk. [Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the
+tables.
 
 The like table should be created manually. Execute the SQL below.
 
-```sql
+```postgresql
 -- Sequence and defined type
 CREATE SEQUENCE IF NOT EXISTS atk_likes_id_seq;
 
 -- Table Definition
-CREATE TABLE "public"."atk_likes" (
-  "id" int8 NOT NULL DEFAULT nextval('atk_likes_id_seq'::regclass),
-  "created_at" timestamptz,
-  "updated_at" timestamptz,
-  "deleted_at" timestamptz,
-  "token" varchar(255),
-  "page_key" varchar(255),
-  PRIMARY KEY ("id")
+CREATE TABLE "public"."atk_likes"
+(
+    "id"         int8 NOT NULL DEFAULT nextval('atk_likes_id_seq'::regclass),
+    "created_at" timestamptz,
+    "updated_at" timestamptz,
+    "deleted_at" timestamptz,
+    "token"      varchar(255),
+    "page_key"   varchar(255),
+    PRIMARY KEY ("id")
 );
 
 -- Create table index
@@ -101,8 +103,9 @@ CREATE INDEX IF NOT EXISTS "idx_atk_likes_token" ON "public"."atk_likes" ("token
 
 ### Comments Integration
 
-This weblog use artalk as its backend comment service. But since artalk didn't provide the latest comments API.
-We decide to query it directly from Postgres database. So the comments and fav clicks are living in the same database.
+This weblog uses artalk as its backend comment service. But since artalk didn't provide the latest comments API.
+We decide to query it directly from the Postgres database. So the comments and fav clicks are living in the same
+database.
 
 ## Writing
 
@@ -125,7 +128,7 @@ date: 2013/7/13 20:46:25
 ### Post Front Matter Settings
 
 | Setting     | Description                          | Required | Default              |
-| ----------- | ------------------------------------ | -------- | -------------------- |
+|-------------|--------------------------------------|----------|----------------------|
 | `id`        | ID (unique), used as the permalink   | true     | Filename             |
 | `title`     | Title                                | true     | Filename             |
 | `date`      | Published date                       | true     |                      |
@@ -140,7 +143,7 @@ date: 2013/7/13 20:46:25
 ### Pages Front Matter Settings
 
 | Setting     | Description                          | Required | Default        |
-| ----------- | ------------------------------------ | -------- | -------------- |
+|-------------|--------------------------------------|----------|----------------|
 | `id`        | ID (unique), used as the permalink   | true     | Filename       |
 | `title`     | Title                                | true     | Filename       |
 | `date`      | Published date                       | true     |                |
@@ -168,25 +171,27 @@ to get it worked everywhere.
 This weblog is deployed on the [zeabur](https://zeabur.com) platform.
 You can check their documents and get your own weblog to be published without any budget at first.
 
-Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build a image and run it locally.
+Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build an image and run it locally.
 
 The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
 You should host it on your own machine.
-But it can be modified and changed to any other comment solutions.
-For instance, the [giscus](https://giscus.app) is an opinionated choice.
 
 ## TODO Checklist
 
 - [ ] Check article grammar errors by using ChatGPT. Remain **54** posts.
 - [ ] Add music to the articles. Remain **54** posts.
-- [ ] External the article inner links with different target.
+- [ ] External article inner links with different targets.
 - [ ] Slide share components integration.
 
-### Long Term Goals
+### Comments TODO Checklist
+
+- [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
+- [ ] Use self-developed duoshuo as the comment's solution.
+
+### Long-Term Goals
 
 - [ ] Add han.js support for better typography.
 - [ ] Drop bootstrap, in favor of tailwind css.
-- [ ] Use self developed duoshuo as the comments solution.
 
 ## License
 
@@ -194,7 +199,7 @@ The source code of this blog is licensed under the [MIT](LICENSE) license,
 feel to free to use it without any legal risks.
 
 The [content](src/content) of this blog's posts is licensed under the
-[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) license.
+[CC BY-NC-SA 4.0](src/content/LICENSE) license.
 
 ### Logo Fonts License
 
@@ -204,23 +209,16 @@ and [Iroha Mochi](https://modi.jpn.org/font_iroha-mochi.php) with [license](lice
 
 They are the fonts that can be used in business without any charge.
 
-### Article Font License
-
-The [OPPOSans 3.0](https://www.coloros.com/article/A00000050) is used for reading in my weblog.
-It can be used in business scenarios without any modification.
-I just placed it under the [opposans](src/assets/styles/opposans/) directory for better integration.
-The license file is [here](licenses/LICENSE.oppo-sans.txt)
-
 ### Open Graph Font License
 
 The [Noto Sans Simplified Chinese](https://fonts.google.com/noto/specimen/Noto+Sans+SC)
 is used for rendering the open graph image in my weblog.
 It can be used in business scenarios without any modification.
-The license file is [here](LICENSE.noto-sans-sc.txt)
+The license file is [here](licenses/LICENSE.noto-sans-sc.txt)
 
 ### Third Party Codes License
 
-Some codes in this project is copied from other project. I have add the comments in the files's header.
+Some codes in this project are copied from other projects. I have added the comments in the files' header.
 
 The source codes used from third party projects are:
 

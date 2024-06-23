@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # Hide the SQL session
 *.session.sql
+
+# Blog Tools
+./tools

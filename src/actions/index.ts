@@ -1,13 +1,12 @@
 import Comment from '@/components/comment/Comment.astro';
 import CommentItem from '@/components/comment/CommentItem.astro';
-import { commentConfig, createComment, loadComments } from '@/components/comment/artalk';
+import { createComment, loadComments } from '@/components/comment/artalk';
 import { partialRender } from '@/helpers/container';
-import { decreaseLikes, increaseLikes, queryLikes } from '@/helpers/db/query';
+import { decreaseLikes, increaseLikes, queryLikes, queryUserId } from '@/helpers/db/query';
 import { pages, posts } from '@/helpers/schema';
-import { urlJoin } from '@/helpers/tools';
+import { encodedEmail, urlJoin } from '@/helpers/tools';
 import { z } from 'astro/zod';
 import { ActionError, defineAction } from 'astro:actions';
-import crypto from 'node:crypto';
 
 const keys = [...posts.map((post) => post.permalink), ...pages.map((page) => page.permalink)];
 const CommentConnectError = new ActionError({
@@ -48,13 +47,9 @@ export const server = {
     accept: 'json',
     input: z.object({ email: z.string().email() }),
     handler: async ({ email }) => {
-      const config = await commentConfig();
-      if (config === null) {
-        throw CommentConnectError;
-      }
-
-      const hash = crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex');
-      return { avatar: urlJoin(config.frontend_conf.gravatar.mirror, `${hash}?d=mm&s=80`) };
+      const id = await queryUserId(email);
+      const hash = id === null ? encodedEmail(email) : `${id}`;
+      return { avatar: urlJoin(import.meta.env.SITE, 'avatar', `${hash}.png`) };
     },
   }),
   comment: defineAction({
@@ -76,9 +71,8 @@ export const server = {
         });
       }
 
-      const config = await commentConfig();
       const content = await partialRender(CommentItem, {
-        props: { depth: resp.rid === 0 ? 1 : 2, comment: resp, pending: resp.is_pending, config: config },
+        props: { depth: resp.rid === 0 ? 1 : 2, comment: resp, pending: resp.is_pending },
       });
 
       return { content };
@@ -91,17 +85,12 @@ export const server = {
       offset: z.number(),
     }),
     handler: async ({ page_key, offset }) => {
-      const config = await commentConfig();
-      if (config === null) {
-        throw CommentConnectError;
-      }
-
-      const comments = await loadComments(page_key, null, Number(offset), config);
+      const comments = await loadComments(page_key, null, Number(offset));
       if (comments === null) {
         throw CommentConnectError;
       }
 
-      const content = await partialRender(Comment, { props: { comments: comments, config: config } });
+      const content = await partialRender(Comment, { props: { comments: comments } });
 
       return { content };
     },

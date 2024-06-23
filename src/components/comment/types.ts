@@ -1,23 +1,9 @@
-// The configuration in artalk.
-export interface CommentConfig {
-  frontend_conf: {
-    flatMode: boolean;
-    gravatar: {
-      mirror: string;
-      params: string;
-    };
-    pagination: {
-      pageSize: number;
-    };
-  };
-}
-
 // The single comment.
 export interface Comment {
   id: number;
   content: string;
   nick: string;
-  email_encrypted: string;
+  user_id: number;
   link: string;
   date: string;
   rid: number;

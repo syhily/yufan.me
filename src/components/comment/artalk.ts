@@ -1,12 +1,4 @@
-import type {
-  Comment,
-  CommentConfig,
-  CommentItem,
-  CommentReq,
-  CommentResp,
-  Comments,
-  ErrorResp,
-} from '@/components/comment/types';
+import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp } from '@/components/comment/types';
 import { increaseViews } from '@/helpers/db/query';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
@@ -20,24 +12,9 @@ import sanitize from 'ultrahtml/transformers/sanitize';
 // Access the artalk in internal docker host when it was deployed on zeabur.
 const server = options.isProd() ? `http://${ARTALK_HOST}:23366` : options.settings.comments.server;
 
-export const commentConfig = async (): Promise<CommentConfig | null> => {
-  const data = await fetch(urlJoin(server, '/api/v2/conf'))
-    .then((response) => response.json())
-    .catch((e) => {
-      console.log(e);
-      return null;
-    });
-  return data != null ? (data as CommentConfig) : data;
-};
-
-export const loadComments = async (
-  key: string,
-  title: string | null,
-  offset: number,
-  config: CommentConfig,
-): Promise<Comments | null> => {
+export const loadComments = async (key: string, title: string | null, offset: number): Promise<Comments | null> => {
   let params: Record<string, string | number | boolean> = {
-    limit: config.frontend_conf.pagination.pageSize,
+    limit: options.settings.comments.size,
     offset: offset,
     flat_mode: false,
     page_key: key,

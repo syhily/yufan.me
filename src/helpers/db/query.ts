@@ -11,6 +11,38 @@ export interface Comment {
   permalink: string;
 }
 
+export const queryEmail = async (id: number): Promise<string | null> => {
+  const results = await db
+    .select({
+      email: atk_users.email,
+    })
+    .from(atk_users)
+    .where(eq(atk_users.id, sql`${id}`))
+    .limit(1);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return results[0].email;
+};
+
+export const queryUserId = async (email: string): Promise<bigint | null> => {
+  const results = await db
+    .select({
+      id: atk_users.id,
+    })
+    .from(atk_users)
+    .where(eq(atk_users.email, sql`${email}`))
+    .limit(1);
+
+  if (results.length === 0) {
+    return null;
+  }
+
+  return results[0].id;
+};
+
 export const latestComments = async (): Promise<Comment[]> => {
   const results = await db
     .select({

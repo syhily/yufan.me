@@ -28,10 +28,10 @@ var (
 		},
 	}
 
-	width     = 1280
-	source    = ""
-	output    = executablePath()
-	localDate = time.Now().Format("20060102")
+	width            = 1280
+	source           = ""
+	output           = executablePath()
+	localDate        = time.Now().Format("20060102")
 	localDatePattern = regexp.MustCompile("^\\d{8}$")
 )
 

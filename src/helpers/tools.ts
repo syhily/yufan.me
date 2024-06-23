@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 export const makeToken = (
   length: number,
   characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
@@ -17,3 +19,6 @@ export const urlJoin = (base: string, ...paths: string[]): string => {
     .reduce((left, right) => left + (left.endsWith('/') || right.startsWith('/') ? '' : '/') + right)
     .replace(/([^:]\/)\/+/g, '$1');
 };
+
+export const encodedEmail = (email: string): string =>
+  crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex');
