@@ -4,6 +4,8 @@ go 1.22
 
 require (
 	github.com/disintegration/imaging v1.6.2
+	github.com/jmoiron/sqlx v1.4.0
+	github.com/lib/pq v1.10.9
 	github.com/spf13/cobra v1.8.1
 )
 
