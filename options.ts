@@ -66,7 +66,10 @@ const Options = z
         server: z.string().url().readonly(),
         admins: z.array(z.number()),
         size: z.number().default(10).readonly(),
-        avatar: z.string().url().readonly(),
+        avatar: z.object({
+          mirror: z.string().url().readonly(),
+          size: z.number(),
+        }),
       }),
     }),
     thumbnail: z
@@ -178,7 +181,10 @@ const options: z.input<typeof Options> = {
       server: 'https://comment.yufan.me',
       admins: [3],
       size: 10,
-      avatar: 'https://weavatar.com/avatar',
+      avatar: {
+        mirror: 'https://weavatar.com/avatar',
+        size: 80,
+      },
     },
   },
   thumbnail: ({ src, width, height }) => {

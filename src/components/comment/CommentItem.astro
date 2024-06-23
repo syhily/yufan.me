@@ -1,16 +1,15 @@
 ---
-import type { CommentConfig, CommentItem } from '@/components/comment/types';
+import type { CommentItem } from '@/components/comment/types';
 import { formatLocalDate } from '@/helpers/formatter';
 import { urlJoin } from '@/helpers/tools';
 
 interface Props {
   depth: number;
   comment: CommentItem;
-  config: CommentConfig;
   pending?: false;
 }
 
-const { comment, config, depth, pending } = Astro.props;
+const { comment, depth, pending } = Astro.props;
 ---
 
 <li id={`atk-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt" data-depth={depth}>
@@ -18,7 +17,7 @@ const { comment, config, depth, pending } = Astro.props;
     <div class="comment-avatar flex-avatar">
       <img
         alt={comment.nick}
-        src={urlJoin(config.frontend_conf.gravatar.mirror, `${comment.email_encrypted}?s=80&d=mm&r=g`)}
+        src={urlJoin(import.meta.env.SITE, 'avatar', `${comment.user_id}.png`)}
         class="avatar avatar-40 photo"
         height="40"
         width="40"
@@ -52,7 +51,7 @@ const { comment, config, depth, pending } = Astro.props;
     comment.children && depth === 1 && (
       <ul class="children">
         {comment.children.map((childComment) => (
-          <Astro.self comment={childComment} config={config} depth={depth + 1} />
+          <Astro.self comment={childComment} depth={depth + 1} />
         ))}
       </ul>
     )
@@ -62,7 +61,7 @@ const { comment, config, depth, pending } = Astro.props;
   comment.children && depth !== 1 && (
     <>
       {comment.children.map((childComment) => (
-        <Astro.self comment={childComment} config={config} depth={depth + 1} />
+        <Astro.self comment={childComment} depth={depth + 1} />
       ))}
     </>
   )

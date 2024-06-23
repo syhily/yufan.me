@@ -185,7 +185,6 @@ You should host it on your own machine.
 
 ### Comments TODO Checklist
 
-- [ ] Proxy the avatar link to better hide the Email.
 - [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
 - [ ] Use self-developed duoshuo as the comment's solution.
 
