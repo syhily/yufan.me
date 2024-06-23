@@ -2,7 +2,7 @@
 title: 弃用 WordPress 了，但我相当“后悔”
 slug: switch-blog-to-nextjs
 date: 2024-04-07 16:09:09
-updated: 2024-05-22 18:12:00
+updated: 2024-06-23 15:21:05
 tags:
   - 博客
 category: 编程
@@ -62,13 +62,47 @@ MDX 一开始是手动使用 `fs` 加载，使用 `grey-matter` 解析 `matter` 
 
 今天，我把博客从 Next.js 迁移到了 Astro，重写了部分代码的实现，优化了部分设计。Next.js 版本的博客，内容管理和生成工具使用的是 Velite.js，它的设计很有想法，作者也很有经验。但是对应的 Next.js 与其集成后，却给我带来了很多解决不了的问题。首当其中的就是 Next.js 默认是 SSR，我在 MDX 中生成的内容，部分需要 inline 到 Client 端使用 JS 去动态执行，结果无法实现。其次就是 Astro 先天的在内容管理与编写上下了不少功夫。基于上述理由，我花了两天多一点的时间，就轻松把博客用 Astro 重写了。
 
-重写之后发现 Astro 其实还是比较不成熟，很多东西文档并不清楚，还是要看源码来理清其设计想法。比如 `Astro:content` 的设计原理和其使用的细节问题，再比如 `Astro:assert` 这个特定的 import.meta 的使用问题。整体上而言，很多细节问题其实是 Astro 变化太快，对应的文档还没有来得及讲清楚。但是最让我失望的是，Astro 的 SSR 并不完善，它的 inline CSS 和 JS 的实现，其实是靠 Vite 整合 Rollup 提供的能力。所以在 SSR 上，如果你在一个 Astro Component 里面 `is:inline` 去定义 JS，很有可能会遇到因为模块重用而导致的坑。
+重写之后发现 Astro 其实还是比较不成熟，很多东西文档并不清楚，还是要看源码来理清其设计想法。比如 `Astro:content` 的设计原理和其使用的细节问题，再比如 `Astro:asset` 这个特定的 import.meta 的使用问题。整体上而言，很多细节问题其实是 Astro 变化太快，对应的文档还没有来得及讲清楚。但是最让我失望的是，Astro 的 SSR 并不完善，它的 inline CSS 和 JS 的实现，其实是靠 Vite 整合 Rollup 提供的能力。所以在 SSR 上，如果你在一个 Astro Component 里面 `is:inline` 去定义 JS，很有可能会遇到因为模块重用而导致的坑。
 
 另一个我很失望的缺陷就是 Astro 对于 MDX 的支持问题。当前的版本对于 MDX，还是无法实现预渲染来全文输出 RSS。当然，我知道这并非 Astro 自己的问题，主要和 MDX 的复杂和生态息息相关。
 
 迁移到 Astro 的同时，也将博客的 Comment 系统 Artalk 的数据库从 MySQL 切换成了 Postgres，对应的数据库查询相关的代码完全废弃重写，顺带着使用 DrizzleORM 来完成了相关的查询的编写。整体上的使用比想象中愉悦。
 
 ~~希望这是我最后一次重写博客吧。~~
+
+## Update 2024/06/23
+
+截止上次更新，又过去了一个月。这期间博客经历了大大小小的数次优化，比较值得开心的就是在 Astro 4.11.0 的发版记录上榜上有名，修改了一处小 BUG。网站比较值得提及的重大变化有如下四点。
+
+### Astro Container API 使用
+
+在一个月前我还在抱怨 Astro RSS 无法做到 MDX 渲染导致只能输出摘要，随后的 [Astro 4.9](https://astro.build/blog/astro-490/) 就更新了 Container API 能自定义渲染某个 Astro 的页面模块。虽然 Container API 的设计更像是为了动态编程方式渲染某个具体的样式模块，包括但不限于 React，Astro，Vue 和 Solid 等。但因为能引入 MDX 的内容，所以就近似实现了输出 MDX 全文的效果。同时，因为 MDX 在渲染时可以替换对应的 Component 实现，所以在 RSS 中还能优化渲染结果。
+
+Astro Container API 前前后后经过数次修改。在最新的 Astro 4.11 中可以说相对稳定下来，并且能在 Vercel 等 Serverless 平台部署不报错。如果有 RSS 全文输出类需求，可以考虑尝试。
+
+### Artalk 前端评论模块弃用
+
+Artalk 作为后端评论系统，其实没啥问题，并且有相当不错的安全机制和设计，但是其前端样式怎么定义都不是很好看。早在准备自己实现评论系统的时候，第一个想法就是基于 Artalk 的 Rest API 改成 SSR 的模式加载评论。目前经过数次修改，其评论样式和效果已经和以前使用的 WordPress 基本接近。
+
+在做评论系统的替换的同时，也在遗忘了很久的百度网盘的网站备份目录中找到了多说和 Disqus 的备份。经过修改和迁移，已经成功将多说的评论全部导入进 Artalk。而 Disqus 的备份，受限于欧盟的 GDPR 政策，已经不再提供评论者的 Email 信息，所以只能基于历史评论进行检索对比来确定用户信息进行导入。虽然已经尽了全力，但还是有部分评论被废弃。
+
+### Astro Actions 的使用
+
+因为博客的评论模块的替换，导入需要引入大量的 Rest 接口。结合以前有的喜欢按钮等接口，博客一共累计超过 4 个接口。以前都是散乱在 pages 目录里面，这次一并使用了 [Astro 4.8](https://astro.build/blog/astro-480/) 的 Actions 进行统一定义和管理，整体感受如下：
+
+1. Actions 和 tRPC 的使用体验基本相似，都是 Typed 的。
+2. 生成的 actions 可以用 import 的方式在前端的 JS 里面调用，Vite 会打包整合。
+3. 使用 Actions 可以统一包装错误管理，调用上更加灵活。
+
+### Astro CDN 功能的整合和实现
+
+Astro 在 [2.2](https://astro.build/blog/astro-220/) 引入了 CDN Support，其主要目的是对动态构建的 CSS、JS 和图片等内容，可以自定义它们的访问路径和 URL，Astro 会在最终构建的网站结果中予以替换对应的资源路径。但是 Astro 只实现前面说的内容，如果想要在生产环境能实现全套的 CDN 支持，还需要将构建出来的文件上传到对应的 CDN 服务提供商。如，上传到 UPYUN、七牛云、S3 等对象存储。
+
+在这里我选用了用了近 10 年之久的 UPYUN，第一版是使用 0.25 引入的 [Astro Integration API](https://astro.build/blog/astro-025/#new-astro-integrations) 来进行实现。Astro Integration API 是一个非常经典的观察者模式的设计，它对应了 Astro 构建的几个不同阶段，允许你定义不同阶段的特殊勾子，Astro 会在对应阶段调用你的自定义逻辑。对于我而言，我只需要在 `'astro:build:done'` 阶段读取所有想要上传的目录，进行上传即可。
+
+这期间对上传逻辑进行了多次重构，第一版使用 UPYUN Node.js SDK，但是这个 SDK 年久失修，使用的还是有安全问题的 axios 版本。对于已经习惯上 fetch 一把梭的我，有点生理不适。考虑到很多云存储都支持了 S3 协议，并且使用 S3 协议能更灵活地切换到不同的存储服务。在第二版使用了 Client S3 来进行实现，这里面遇到的唯一问题就是 ContentType 需要显式设置，而原先的 UPYUN Rest API 能根据文件名自动设置。
+
+第三版使用了基友 Tison 安利的 Apache OpenDAL™ 进行了重构，还是走的 S3 协议。Apache OpenDAL™ 是一个使用 Rust 编写的统一云存储层抽象接口，整体的代码质量和实现都很不错。但是 Node.js 部分的 Binding 使用 napi-rs 实现，对应的文档写得比较抽象，我是看 Rust 部分的文档反向推导 Node.js binding 该如何使用，期待文档的进一步完善。同时因为一些[已知问题](https://github.com/apache/opendal/issues/4782)，暂时还无法直接在生产环境使用。
 
 ---
 

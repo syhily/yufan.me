@@ -214,19 +214,19 @@ if (typeof comments !== 'undefined' && comments !== null) {
     }
     request.rid = request.rid === undefined ? 0 : Number(request.rid);
 
-    actions.comment.safe(request).then(({ data, error }) => {
-      if (error) {
-        return handleActionError(error);
-      }
+    const { data, error } = await actions.comment.safe(request);
 
-      const { content } = data;
-      if (request.rid !== '0') {
-        replyForm.insertAdjacentHTML('beforebegin', content);
-      } else {
-        const list = comments.querySelector('.comment-list');
-        list.insertAdjacentHTML('afterbegin', content);
-      }
-    });
+    if (error) {
+      return handleActionError(error);
+    }
+
+    const { content } = data;
+    if (request.rid !== 0) {
+      replyForm.insertAdjacentHTML('beforebegin', content);
+    } else {
+      const list = comments.querySelector('.comment-list');
+      list.insertAdjacentHTML('afterbegin', content);
+    }
 
     cancelReply();
   });

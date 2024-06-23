@@ -78,7 +78,7 @@ export const server = {
 
       const config = await commentConfig();
       const content = await partialRender(CommentItem, {
-        props: { depth: 2, comment: resp, pending: resp.is_pending, config: config },
+        props: { depth: resp.rid === 0 ? 1 : 2, comment: resp, pending: resp.is_pending, config: config },
       });
 
       return { content };
