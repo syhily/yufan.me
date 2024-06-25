@@ -180,7 +180,6 @@ You should host it on your own machine.
 
 - [ ] Check article grammar errors by using ChatGPT. Remain **54** posts.
 - [ ] Add music to the articles. Remain **54** posts.
-- [ ] External article inner links with different targets.
 - [ ] Slide share components integration.
 
 ### Comments TODO Checklist

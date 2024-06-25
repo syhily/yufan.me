@@ -72,6 +72,7 @@
     "prettier-plugin-astro": "^0.14.0",
     "prettier-plugin-astro-organize-imports": "^0.4.8",
     "prettier-plugin-organize-imports": "^3.2.4",
+    "rehype-external-links": "^3.0.0",
     "resize-sensor": "^0.0.6",
     "rimraf": "^5.0.7",
     "sharp": "^0.33.4",

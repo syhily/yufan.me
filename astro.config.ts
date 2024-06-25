@@ -1,6 +1,7 @@
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
 import { defineConfig, envField } from 'astro/config';
+import rehypeExternalLinks from 'rehype-external-links';
 import options from './options';
 import { astroImage } from './plugins/images';
 import { uploader } from './plugins/uploader';
@@ -35,6 +36,7 @@ export default defineConfig({
   integrations: [
     mdx({
       remarkPlugins: [astroImage],
+      rehypePlugins: [[rehypeExternalLinks, { rel: 'nofollow', target: '_blank' }]],
     }),
     uploader({
       paths: ['images', 'og', 'cats'],
