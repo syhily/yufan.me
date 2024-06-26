@@ -27,7 +27,10 @@ const avatarImage = async (
   }
 
   return new Response(Buffer.from(await resp.arrayBuffer()), {
-    headers: { 'Content-Type': 'image/png' },
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-control': 'max-age=604800',
+    },
   });
 };
 
