@@ -57,9 +57,9 @@
   "devDependencies": {
     "@astrojs/check": "^0.7.0",
     "@aws-sdk/client-s3": "^3.600.0",
-    "@biomejs/biome": "^1.8.2",
+    "@biomejs/biome": "^1.8.3",
     "@napi-rs/canvas": "^0.1.53",
-    "@types/lodash": "^4.17.5",
+    "@types/lodash": "^4.17.6",
     "@types/luxon": "^3.4.2",
     "@types/node": "^20.14.9",
     "@types/pg": "^8.11.6",

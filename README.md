@@ -176,19 +176,19 @@ Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build an 
 The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
 You should host it on your own machine.
 
-## TODO Checklist
+## Short-Term TODO Checklist
 
+- [ ] Move the S3 uploader as a separate npm package. Use OpenDAL.
+- [ ] Move comments into the new Astro content layer.
 - [ ] Check article grammar errors by using ChatGPT. Remain **54** posts.
 - [ ] Add music to the articles. Remain **54** posts.
+
+## Long-Term TODO Checklist
+
+- [ ] Use self-developed comment solution.
+  - [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
+  - [ ] Support login into the blog for managing the comments.
 - [ ] Slide share components integration.
-
-### Comments TODO Checklist
-
-- [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
-- [ ] Use self-developed duoshuo as the comment's solution.
-
-### Long-Term Goals
-
 - [ ] Add han.js support for better typography.
 - [ ] Drop bootstrap, in favor of tailwind css.
 
@@ -228,6 +228,7 @@ The source codes used from third party projects are:
   from [yuaanlin/yual.in](https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx)
   with [permission](licenses/LICENSE.yuaanlin.jpg)
 - [images.ts](src/helpers/images.ts)
+  and [config.ts](src/content/config.ts)
   from [zce/velite](https://github.com/zce/velite/blob/main/src/assets.ts)
   with [license](licenses/LICENSE.zce.txt)
 - [images.ts](src/helpers/images.ts)
