@@ -30,8 +30,11 @@ const Options = z
       }),
     ),
     settings: z.object({
-      initialYear: z.number().max(2024),
-      icpNo: z.string().optional(),
+      footer: z.object({
+        initialYear: z.number().max(2024),
+        icpNo: z.string().optional(),
+        astroBadge: z.boolean().default(true),
+      }),
       locale: z.string().optional().default('zh-CN'),
       timeZone: z.string().optional().default('Asia/Shanghai'),
       timeFormat: z.string().optional().default('yyyy-MM-dd HH:mm:ss'),
@@ -149,8 +152,11 @@ const options: z.input<typeof Options> = {
     },
   ],
   settings: {
-    initialYear: 2011,
-    icpNo: '皖ICP备2021002315号-2',
+    footer: {
+      initialYear: 2011,
+      icpNo: '皖ICP备2021002315号-2',
+      astroBadge: true,
+    },
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-MM-dd',
