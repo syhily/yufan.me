@@ -56,7 +56,6 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.7.0",
-    "@aws-sdk/client-s3": "^3.600.0",
     "@biomejs/biome": "^1.8.3",
     "@napi-rs/canvas": "^0.1.53",
     "@types/lodash": "^4.17.6",
@@ -66,8 +65,8 @@
     "@types/qrcode-svg": "^1.1.4",
     "@types/unist": "^3.0.2",
     "aplayer": "^1.10.1",
+    "astro-uploader": "^1.0.1",
     "bootstrap": "^5.3.3",
-    "mime": "^4.0.3",
     "prettier": "^3.3.2",
     "prettier-plugin-astro": "^0.14.0",
     "prettier-plugin-astro-organize-imports": "^0.4.9",

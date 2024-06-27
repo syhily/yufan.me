@@ -1,10 +1,10 @@
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
+import { uploader } from 'astro-uploader';
 import { defineConfig, envField } from 'astro/config';
 import rehypeExternalLinks from 'rehype-external-links';
 import options from './options';
 import { astroImage } from './plugins/images';
-import { uploader } from './plugins/uploader';
 
 // https://astro.build/config
 export default defineConfig({
