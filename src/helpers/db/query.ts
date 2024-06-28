@@ -2,7 +2,7 @@ import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
 import { makeToken, urlJoin } from '@/helpers/tools';
 import options from '@/options';
-import { and, desc, eq, isNull, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, not, sql } from 'drizzle-orm';
 
 export interface Comment {
   title: string;
@@ -53,9 +53,9 @@ export const latestComments = async (): Promise<Comment[]> => {
       authorLink: atk_users.link,
     })
     .from(atk_comments)
-    .leftJoin(atk_pages, eq(atk_comments.page_key, atk_pages.key))
-    .leftJoin(atk_users, eq(atk_comments.user_id, atk_users.id))
-    .where(and(notInArray(atk_comments.user_id, options.settings.comments.admins), eq(atk_comments.is_pending, false)))
+    .innerJoin(atk_pages, eq(atk_comments.page_key, atk_pages.key))
+    .innerJoin(atk_users, eq(atk_comments.user_id, atk_users.id))
+    .where(and(not(eq(atk_users.email, options.author.email)), eq(atk_comments.is_pending, false)))
     .orderBy(desc(atk_comments.created_at))
     .limit(options.settings.sidebar.comment);
 
