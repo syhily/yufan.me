@@ -28,7 +28,6 @@ the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
 
 ## Local Development
 
-This weblog is still under [development](#todo-checklist). Many ideas and thoughts are in my checklists.
 You can fork and clone this project for your own use. But do so at your own risk.
 
 The project uses npm for development. Run it locally with these commands:
@@ -107,6 +106,11 @@ This weblog uses artalk as its backend comment service. But since artalk didn't 
 We decide to query it directly from the Postgres database. So the comments and fav clicks are living in the same
 database.
 
+### S3 Compatible Storage Integration
+
+This blog will upload all the built resources at build stage. You can remove this feature by removing the
+`uploader` integration in `astro.config.ts`.
+
 ## Writing
 
 All the posts should be placed in `src/content/posts` directory with MDX format.
@@ -178,7 +182,6 @@ You should host it on your own machine.
 
 ## Short-Term TODO Checklist
 
-- [ ] Move the S3 uploader as a separate npm package. Use OpenDAL.
 - [ ] Move comments into the new Astro content layer.
 - [ ] Check article grammar errors by using ChatGPT. Remain **54** posts.
 - [ ] Add music to the articles. Remain **54** posts.
