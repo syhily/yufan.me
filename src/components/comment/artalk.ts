@@ -1,5 +1,4 @@
 import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp } from '@/components/comment/types';
-import { increaseViews } from '@/helpers/db/query';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
 import { ARTALK_HOST } from 'astro:env/server';
@@ -30,10 +29,21 @@ export const loadComments = async (key: string, title: string | null, offset: nu
       return null;
     });
 
-  // Increase the PV.
-  await increaseViews(key);
-
   return data != null ? (data as Comments) : data;
+};
+
+export const increaseViews = async (key: string, title: string) => {
+  await fetch(urlJoin(server, '/api/v2/pages/pv'), {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+    body: JSON.stringify({
+      page_key: key,
+      page_title: title,
+      site_name: options.title,
+    }),
+  });
 };
 
 export const createComment = async (req: CommentReq): Promise<ErrorResp | CommentResp> => {

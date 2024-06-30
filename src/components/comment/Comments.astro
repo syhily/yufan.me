@@ -1,5 +1,5 @@
 ---
-import { loadComments } from '@/components/comment/artalk';
+import { increaseViews, loadComments } from '@/components/comment/artalk';
 import Comment from '@/components/comment/Comment.astro';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
@@ -12,6 +12,9 @@ interface Props {
 
 const { commentKey, title } = Astro.props;
 const comments = await loadComments(commentKey, title, 0);
+
+// Increase the PV.
+await increaseViews(commentKey, title);
 ---
 
 <div id="comments" class="comments py-5">
