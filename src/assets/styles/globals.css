@@ -843,9 +843,6 @@
   box-shadow: none !important;
 }
 
-@media (max-width: 767.98px) {
-}
-
 .blur {
   -webkit-filter: blur(3px);
   filter: blur(3px);

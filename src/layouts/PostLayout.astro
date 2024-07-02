@@ -7,7 +7,7 @@ import PostMeta from '@/components/meta/PostMeta.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import { formatShowDate } from '@/helpers/formatter';
-import { posts, tags, type Post } from '@/helpers/schema';
+import { getTag, posts, tags, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import options from '@/options';
@@ -38,7 +38,20 @@ const { Content } = await post.render();
             <div class="card-body">
               <h1 class="post-title">{post.title}</h1>
               <div class="post-meta text-sm text-muted mt-3 mb-4">
-                <time>{formatShowDate(post.date)}</time>
+                <time class="">{formatShowDate(post.date)}</time>
+                {
+                  post.tags.length > 0 &&
+                    post.tags
+                      .map((tag) => getTag(tag, undefined))
+                      .filter((tag) => tag !== undefined)
+                      .map((tag) => (
+                        <>
+                          <a class="float-end ms-2 badge badge-light badge-pill" href={`/tags/${tag.slug}`}>
+                            {tag.name}
+                          </a>
+                        </>
+                      ))
+                }
               </div>
               <div class="post-content">
                 <div class="nc-light-gallery">
