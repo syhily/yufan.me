@@ -70,12 +70,12 @@
     "prettier": "^3.3.2",
     "prettier-plugin-astro": "^0.14.0",
     "prettier-plugin-astro-organize-imports": "^0.4.9",
-    "prettier-plugin-organize-imports": "^3.2.4",
+    "prettier-plugin-organize-imports": "^4.0.0",
     "rehype-external-links": "^3.0.0",
     "resize-sensor": "^0.0.6",
     "rimraf": "^5.0.7",
     "sharp": "^0.33.4",
-    "typescript": "^5.5.2",
+    "typescript": "^5.5.3",
     "unist-util-select": "^5.1.0"
   }
 }
