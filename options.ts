@@ -187,7 +187,7 @@ const options: z.input<typeof Options> = {
       size: 10,
       avatar: {
         mirror: 'https://weavatar.com/avatar',
-        size: 80,
+        size: 120,
       },
     },
   },

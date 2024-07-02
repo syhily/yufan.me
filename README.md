@@ -182,6 +182,9 @@ You should host it on your own machine.
 
 ## Short-Term TODO Checklist
 
+- [ ] Add clickable toc support for post.
+- [ ] Add last modified time component for post.
+- [ ] Add light box for images.
 - [ ] Move comments into the new Astro content layer.
 - [ ] Check article grammar errors by using ChatGPT. Remain **42** posts.
 - [ ] Add music to the articles. Remain **42** posts.

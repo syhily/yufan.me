@@ -18,7 +18,7 @@ const avatarImage = async (
   const defaultAvatarLink = defaultAvatar();
   const link = urlJoin(
     options.settings.comments.avatar.mirror,
-    `${hash}.png?s=${options.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
+    `${hash}?s=${options.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
   );
 
   const resp = await fetch(link, { redirect: 'manual', headers: { Referer: options.website } });
@@ -28,7 +28,7 @@ const avatarImage = async (
 
   return new Response(Buffer.from(await resp.arrayBuffer()), {
     headers: {
-      'Content-Type': 'image/png',
+      'Content-Type': 'image/webp',
       'Cache-control': 'max-age=604800',
     },
   });

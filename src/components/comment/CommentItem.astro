@@ -18,7 +18,7 @@ const { comment, depth, pending } = Astro.props;
     <div class="comment-avatar flex-avatar">
       <img
         alt={comment.nick}
-        src={urlJoin(import.meta.env.SITE, 'avatar', `${comment.user_id}.png`)}
+        src={urlJoin(import.meta.env.SITE, 'avatar', `${comment.user_id}.webp`)}
         class="avatar avatar-40 photo"
         height="40"
         width="40"
