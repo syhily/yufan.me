@@ -183,8 +183,8 @@ You should host it on your own machine.
 ## Short-Term TODO Checklist
 
 - [ ] Move comments into the new Astro content layer.
-- [ ] Check article grammar errors by using ChatGPT. Remain **54** posts.
-- [ ] Add music to the articles. Remain **54** posts.
+- [ ] Check article grammar errors by using ChatGPT. Remain **42** posts.
+- [ ] Add music to the articles. Remain **42** posts.
 
 ## Long-Term TODO Checklist
 

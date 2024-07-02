@@ -163,7 +163,7 @@ const options: z.input<typeof Options> = {
     assetPrefix: 'https://cat.yufan.me',
     post: {
       sort: 'desc',
-      feature: ['secret-of-boys-mind', 'my-darling', 'happiness-caprice'],
+      feature: ['we-are-stranger', 'secret-of-boys-mind', 'my-darling'],
       category: ['article', 'think', 'gossip', 'coding'],
     },
     pagination: {
