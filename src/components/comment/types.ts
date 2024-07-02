@@ -4,6 +4,7 @@ export interface Comment {
   content: string;
   nick: string;
   user_id: number;
+  email_encrypted: string;
   link: string;
   date: string;
   rid: number;

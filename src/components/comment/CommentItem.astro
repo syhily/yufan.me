@@ -1,7 +1,8 @@
 ---
 import type { CommentItem } from '@/components/comment/types';
 import { formatLocalDate } from '@/helpers/formatter';
-import { urlJoin } from '@/helpers/tools';
+import { encodedEmail, urlJoin } from '@/helpers/tools';
+import options from '@/options';
 
 interface Props {
   depth: number;
@@ -33,6 +34,13 @@ const { comment, depth, pending } = Astro.props;
           ) : (
             <a href={comment.link ?? '#'} rel="nofollow" target="_blank">
               {comment.nick}
+            </a>
+          )
+        }
+        {
+          encodedEmail(options.author.email) === comment.email_encrypted && (
+            <a class="badge badge-primary badge-pill" href={`mailto:${options.author.email}`}>
+              站长
             </a>
           )
         }
