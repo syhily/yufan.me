@@ -1,14 +1,31 @@
 ---
+import Pagination from '@/components/page/pagination/Pagination.astro';
 import PostSquare from '@/components/page/post/PostSquare.astro';
+import { slicePosts } from '@/helpers/formatter';
 import type { Post } from '@/helpers/schema';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import options from '@/options';
 
 interface Props {
   title: string;
+  query: string;
   posts: Post[];
+  pageNum: number;
 }
 
-const { title, posts } = Astro.props;
+const { title, posts, query, pageNum } = Astro.props;
+
+// Redirect to the homepage.
+if (pageNum < 1) {
+  return Astro.redirect('/');
+}
+
+const results = slicePosts(posts, pageNum, options.settings.pagination.search);
+if (!results) {
+  return Astro.redirect('/404');
+}
+
+const { currentPosts, totalPage } = results;
 ---
 
 <BaseLayout {title}>
@@ -18,7 +35,7 @@ const { title, posts } = Astro.props;
         <h1>{title}</h1>
       </div>
       {
-        posts.length === 0 ? (
+        currentPosts.length === 0 ? (
           <div class="data-null">
             <div class="my-auto">
               <h1 class="font-number">404</h1>
@@ -26,11 +43,18 @@ const { title, posts } = Astro.props;
             </div>
           </div>
         ) : (
-          <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-            {posts.map((post, index) => (
-              <PostSquare post={post} first={index === 0} />
-            ))}
-          </div>
+          <>
+            <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+              {currentPosts.map((post, index) => (
+                <PostSquare post={post} first={index === 0} />
+              ))}
+            </div>
+            {totalPage > 1 && (
+              <div class="mt-4 mt-lg-5">
+                <Pagination current={pageNum} total={totalPage} rootPath={`/search/${query}`} />
+              </div>
+            )}
+          </>
         )
       }
     </div>

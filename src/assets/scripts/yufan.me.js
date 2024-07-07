@@ -91,7 +91,7 @@ if (typeof searchSidebar !== 'undefined' && searchSidebar !== null) {
 
       const query = event.target.value;
       event.target.value = '';
-      location.href = `/search?q=${encodeURIComponent(query)}`;
+      location.href = `/search/${encodeURIComponent(query)}`;
     }
   });
 }
@@ -106,6 +106,15 @@ document.querySelector('.global-search').addEventListener('click', (event) => {
 document.querySelector('.global-search-close').addEventListener('click', (event) => {
   event.stopPropagation();
   searchPopup.classList.toggle('nice-popup-open', false);
+});
+
+searchPopup.querySelector('.search-dialog').addEventListener('submit', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const formData = new FormData(event.target);
+  const query = formData.get('q');
+  location.href = `/search/${encodeURIComponent(query)}`;
 });
 
 // Loading the comments.

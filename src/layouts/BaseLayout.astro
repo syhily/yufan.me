@@ -10,6 +10,7 @@ import '@/assets/styles/opposans.css';
 import Footer from '@/components/footer/Footer.astro';
 import Header from '@/components/header/Header.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
+import SearchDialog from '@/components/search/SearchDialog.astro';
 import options from '@/options';
 
 interface Props {
@@ -67,5 +68,6 @@ const description = Astro.props.description || options.description;
     <script>
       import '../assets/scripts/yufan.me.js';
     </script>
+    <SearchDialog />
   </body>
 </html>
