@@ -6,7 +6,7 @@ export const slicePosts = (
   posts: Post[],
   pageNum: number,
   pageSize: number,
-): { currentPosts: Post[]; totalPage: number } | undefined => {
+): { currentPosts: Post[]; totalPage: number } => {
   const totalPage = Math.ceil(posts.length / pageSize);
   if (totalPage >= pageNum) {
     return {
@@ -17,6 +17,7 @@ export const slicePosts = (
       totalPage,
     };
   }
+  return { currentPosts: [], totalPage: 0 };
 };
 
 export const formatShowDate = (date: Date) => {

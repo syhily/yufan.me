@@ -20,12 +20,7 @@ if (pageNum < 1) {
   return Astro.redirect('/');
 }
 
-const results = slicePosts(posts, pageNum, options.settings.pagination.search);
-if (!results) {
-  return Astro.redirect('/404');
-}
-
-const { currentPosts, totalPage } = results;
+const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.pagination.search);
 ---
 
 <BaseLayout {title}>

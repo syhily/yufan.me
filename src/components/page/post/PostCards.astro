@@ -13,7 +13,7 @@ interface Props {
 
 const { pageNum, posts } = Astro.props;
 const results = slicePosts(posts, pageNum, options.settings.pagination.posts);
-if (!results) {
+if (results.totalPage === 0) {
   return Astro.redirect('/404');
 }
 
