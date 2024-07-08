@@ -63,8 +63,5 @@ export const formatShowDate = (date: Date) => {
 
 export const formatLocalDate = (source: string) => {
   const date = new Date(source);
-  return DateTime.fromJSDate(date)
-    .setZone(options.settings.timeZone)
-    .setLocale(options.settings.locale)
-    .toFormat(options.settings.timeFormat);
+  return DateTime.fromJSDate(date).setLocale(options.settings.locale).toFormat(options.settings.timeFormat);
 };
