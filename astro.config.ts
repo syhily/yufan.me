@@ -31,6 +31,7 @@ export default defineConfig({
         // Artalk Comment
         ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
       },
+      validateSecrets: true,
     },
   },
   integrations: [
