@@ -1,0 +1,16 @@
+diff --git a/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js b/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js
+index 6eaac22..79eb1fc 100644
+--- a/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js
++++ b/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js
+@@ -2,6 +2,11 @@ import { App } from "astro/app";
+ import { applyPolyfills } from "astro/app/node";
+ import { ASTRO_LOCALS_HEADER } from "./adapter.js";
+ import { getRequest, setResponse } from "./request-transform.js";
++
++await import('astro/env/setup')
++  .then((mod) => mod.setGetEnv((key) => process.env[key]))
++  .catch(() => {});
++
+ applyPolyfills();
+ const createExports = (manifest) => {
+   const app = new App(manifest);

@@ -1,5 +1,5 @@
 import mdx from '@astrojs/mdx';
-import node from '@astrojs/node';
+import zeabur from '@zeabur/astro-adapter/serverless';
 import { uploader } from 'astro-uploader';
 import { defineConfig, envField } from 'astro/config';
 import rehypeExternalLinks from 'rehype-external-links';
@@ -47,9 +47,7 @@ export default defineConfig({
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
     }),
   ],
-  adapter: node({
-    mode: 'standalone',
-  }),
+  adapter: zeabur(),
   markdown: {
     gfm: true,
     shikiConfig: {
