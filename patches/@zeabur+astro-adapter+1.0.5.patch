@@ -1,12 +1,58 @@
+diff --git a/node_modules/@zeabur/astro-adapter/dist/serverless/adapter.js b/node_modules/@zeabur/astro-adapter/dist/serverless/adapter.js
+index c727bce..a2f379a 100644
+--- a/node_modules/@zeabur/astro-adapter/dist/serverless/adapter.js
++++ b/node_modules/@zeabur/astro-adapter/dist/serverless/adapter.js
+@@ -28,7 +28,8 @@ function getAdapter({
+         supportKind: "stable",
+         isSharpCompatible: true,
+         isSquooshCompatible: true
+-      }
++      },
++      envGetSecret: 'experimental',
+     }
+   };
+ }
+@@ -76,7 +77,10 @@ function vercelServerless({
+           },
+           vite: {
+             ssr: {
+-              external: ["@vercel/nft"]
++              external: [
++                "@vercel/nft",
++                ...((await shouldExternalizeAstroEnvSetup()) ? ['astro/env/setup'] : []),
++              ],
+             }
+           }
+         });
+@@ -188,6 +192,17 @@ async function createFunctionFolder({
+     type: "module"
+   });
+ }
++
++// TODO: remove once we don't use a TLA anymore
++async function shouldExternalizeAstroEnvSetup() {
++	try {
++		await import('astro/env/setup');
++		return false;
++	} catch {
++		return true;
++	}
++}
++
+ export {
+   ASTRO_LOCALS_HEADER,
+   VERCEL_EDGE_MIDDLEWARE_FILE,
 diff --git a/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js b/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js
-index 6eaac22..79eb1fc 100644
+index 6eaac22..7e5b275 100644
 --- a/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js
 +++ b/node_modules/@zeabur/astro-adapter/dist/serverless/entrypoint.js
-@@ -2,6 +2,11 @@ import { App } from "astro/app";
+@@ -2,6 +2,13 @@ import { App } from "astro/app";
  import { applyPolyfills } from "astro/app/node";
  import { ASTRO_LOCALS_HEADER } from "./adapter.js";
  import { getRequest, setResponse } from "./request-transform.js";
 +
++// Won't throw if the virtual module is not available because it's not supported in
++// the users's astro version or if astro:env is not enabled in the project
 +await import('astro/env/setup')
 +  .then((mod) => mod.setGetEnv((key) => process.env[key]))
 +  .catch(() => {});
