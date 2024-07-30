@@ -151,7 +151,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
       const email = event.target.value;
       if (email !== '' && email.includes('@')) {
         // Replace the avatar after typing the email.
-        actions.avatar.safe({ email }).then(({ data, error }) => {
+        actions.avatar({ email }).then(({ data, error }) => {
           if (error) {
             return handleActionError(error);
           }
@@ -167,7 +167,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
     // Loading more comments from server.
     if (event.target === comments.querySelector('#comments-next-button')) {
       const { size, offset, key } = event.target.dataset;
-      const { data, error } = await actions.comments.safe({ offset: Number(offset), page_key: key });
+      const { data, error } = await actions.comments({ offset: Number(offset), page_key: key });
       if (error) {
         return handleActionError(error);
       }
@@ -223,7 +223,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
     }
     request.rid = request.rid === undefined ? 0 : Number(request.rid);
 
-    const { data, error } = await actions.comment.safe(request);
+    const { data, error } = await actions.comment(request);
 
     if (error) {
       return handleActionError(error);
@@ -279,7 +279,7 @@ const likeButton = document.querySelector('button.post-like');
 
 const increaseLikes = (count, permalink) => {
   count.textContent = Number.parseInt(count.textContent) + 1;
-  actions.like.safe({ action: 'increase', key: permalink }).then(({ data, error }) => {
+  actions.like({ action: 'increase', key: permalink }).then(({ data, error }) => {
     if (error) {
       return handleActionError(error);
     }
@@ -295,7 +295,7 @@ const decreaseLikes = (count, permalink) => {
     return;
   }
   count.textContent = Number.parseInt(count.textContent) - 1;
-  actions.like.safe({ action: 'decrease', key: permalink, token }).then(({ data, error }) => {
+  actions.like({ action: 'decrease', key: permalink, token }).then(({ data, error }) => {
     if (error) {
       return handleActionError(error);
     }

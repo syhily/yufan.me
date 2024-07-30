@@ -4,7 +4,7 @@ import options from '@/options';
 import { ARTALK_HOST } from 'astro:env/server';
 import _ from 'lodash';
 import { marked } from 'marked';
-import * as querystring from 'node:querystring';
+import querystring from 'node:querystring';
 import { ELEMENT_NODE, transform, walk } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
 

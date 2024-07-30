@@ -111,3 +111,10 @@ export const atk_comments = pgTable(
     };
   },
 );
+
+export default {
+  atk_pages,
+  atk_likes,
+  atk_users,
+  atk_comments,
+};
