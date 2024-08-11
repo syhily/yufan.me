@@ -1,6 +1,6 @@
 import { defaultCover } from '@/content/config.ts';
 import options from '@/options';
-import { getCollection, getEntryBySlug, type Render } from 'astro:content';
+import { getCollection, getEntry, type Render } from 'astro:content';
 
 // Import the collections from the astro content.
 const categoriesCollection = await getCollection('categories');
@@ -34,7 +34,7 @@ export const pages: Page[] = pagesCollection
     slug: page.slug,
     permalink: `/${page.slug}`,
     render: async () => {
-      const entry = await getEntryBySlug('pages', page.slug);
+      const entry = await getEntry('pages', page.slug);
       return entry.render();
     },
     ...page.data,
@@ -45,11 +45,11 @@ export const posts: Post[] = postsCollection
     slug: post.slug,
     permalink: `/posts/${post.slug}`,
     render: async () => {
-      const entry = await getEntryBySlug('posts', post.slug);
+      const entry = await getEntry('posts', post.slug);
       return entry.render();
     },
     raw: async () => {
-      const entry = await getEntryBySlug('posts', post.slug);
+      const entry = await getEntry('posts', post.slug);
       return entry.body;
     },
     ...post.data,
