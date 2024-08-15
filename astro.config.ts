@@ -19,6 +19,8 @@ export default defineConfig({
     service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
   },
   experimental: {
+    contentLayer: true,
+    contentIntellisense: true,
     actions: true,
     env: {
       schema: {

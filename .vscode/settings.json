@@ -4,6 +4,7 @@
   "editor.codeActionsOnSave": {
     "quickfix.biome": "explicit"
   },
+  "astro.content-intellisense": true,
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -65,6 +66,7 @@
     "jian",
     "jiasm",
     "jing",
+    "jmoiron",
     "jungshik",
     "khalil",
     "khtml",
@@ -115,6 +117,7 @@
     "shinmun",
     "shmily",
     "skrs",
+    "sqlx",
     "syhily",
     "tabindex",
     "tagcloud",
