@@ -6,7 +6,7 @@
  */
 import { openGraphHeight, openGraphWidth } from '@/helpers/images';
 import options from '@/options';
-import { Canvas, GlobalFonts, Image, type SKRSContext2D } from '@napi-rs/canvas';
+import { Canvas, GlobalFonts, type Image, loadImage, type SKRSContext2D } from '@napi-rs/canvas';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -148,12 +148,10 @@ if (!GlobalFonts.has('NotoSansSC-Bold')) {
 
 export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): Promise<Buffer> => {
   // Fetch the cover image as the background
-  const coverImage = new Image();
-  coverImage.src = await fetchCover(cover);
+  const coverImage = await loadImage(await fetchCover(cover));
 
   // Generate the logo image
-  const logoImage = new Image();
-  logoImage.src = Buffer.from(darkLogo, 'utf-8');
+  const logoImage = await loadImage(Buffer.from(darkLogo, 'utf-8'));
 
   // Mark sure the summary length is small enough to fit in
   const description = `${summary
