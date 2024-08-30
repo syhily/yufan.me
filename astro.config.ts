@@ -21,7 +21,6 @@ export default defineConfig({
   experimental: {
     contentLayer: true,
     contentIntellisense: true,
-    actions: true,
     env: {
       schema: {
         // Postgres Database
