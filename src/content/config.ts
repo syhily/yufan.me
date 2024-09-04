@@ -64,6 +64,7 @@ const postsCollection = defineCollection({
     date: z.date(),
     updated: z.date().optional(),
     comments: z.boolean().optional().default(true),
+    alias: z.array(z.string()).optional().default([]),
     tags: z.array(z.string()).optional().default([]),
     category: z.string(),
     summary: z.string().optional().default(''),

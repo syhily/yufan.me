@@ -94,13 +94,21 @@ if (!options.isProd() && missingCovers.length > 0) {
   console.warn(missingCovers);
 }
 
-// Validate the posts and pages' slug. They should be unique globally.
+// Validate the posts and pages' slug and alias. They should be unique globally.
 const postsSlugs = new Set<string>();
 for (const post of posts) {
   if (postsSlugs.has(post.slug)) {
     throw new Error(`Duplicate post slug: ${post.slug}`);
   }
   postsSlugs.add(post.slug);
+
+  for (const alias of post.alias) {
+    if (postsSlugs.has(alias)) {
+      throw new Error(`Duplicate alias ${alias} in post ${post.slug}`);
+    }
+
+    postsSlugs.add(alias);
+  }
 }
 for (const page of pages) {
   if (postsSlugs.has(page.slug)) {
