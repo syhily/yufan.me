@@ -49,7 +49,7 @@ export const server = {
     handler: async ({ email }) => {
       const id = await queryUserId(email);
       const hash = id === null ? encodedEmail(email) : `${id}`;
-      return { avatar: urlJoin(import.meta.env.SITE, 'avatar', `${hash}.png`) };
+      return { avatar: urlJoin(import.meta.env.SITE, 'avatar', `${hash}.webp`) };
     },
   }),
   comment: defineAction({
