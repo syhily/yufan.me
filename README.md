@@ -1,5 +1,7 @@
-![yufan.me](docs/poster/github-poster.png#gh-light-mode-only)
-![yufan.me](docs/poster/github-poster-dark.png#gh-dark-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/poster/github-poster-dark.png">
+  <img alt="Yufan Blog Logo" src="docs/poster/github-poster.png">
+</picture>
 
 # Yufan Personal Weblog
 
