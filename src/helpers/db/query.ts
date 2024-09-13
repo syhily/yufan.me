@@ -139,7 +139,7 @@ export const queryLikes = async (permalink: string): Promise<number> => {
     .where(eq(atk_pages.key, sql`${pageKey}`))
     .limit(1);
 
-  return results.length > 0 ? results[0].like ?? 0 : 0;
+  return results.length > 0 ? (results[0].like ?? 0) : 0;
 };
 
 export const queryLikesAndViews = async (permalink: string): Promise<[number, number]> => {

@@ -30,7 +30,7 @@
     "astro": "astro",
     "build": "rimraf dist && rimraf .zeabur && astro check && astro build",
     "dev": "astro dev",
-    "lint": "biome check --write --use-server . && prettier . --write",
+    "lint": "biome check --write . && prettier . --write",
     "prepare": "npx husky",
     "preview": "astro preview",
     "start": "astro dev"
@@ -42,10 +42,10 @@
     ]
   },
   "dependencies": {
-    "@astrojs/mdx": "^3.1.5",
+    "@astrojs/mdx": "^3.1.6",
     "@astrojs/rss": "^4.0.7",
     "@zeabur/astro-adapter": "^1.0.6",
-    "astro": "^4.15.4",
+    "astro": "^4.15.5",
     "drizzle-orm": "^0.33.0",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
@@ -57,12 +57,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.3",
-    "@biomejs/biome": "^1.8.3",
+    "@biomejs/biome": "^1.9.0",
     "@napi-rs/canvas": "^0.1.55",
     "@types/lodash": "^4.17.7",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.5.4",
-    "@types/pg": "^8.11.8",
+    "@types/pg": "^8.11.9",
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
     "aplayer": "^1.10.1",

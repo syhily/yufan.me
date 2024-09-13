@@ -5,8 +5,8 @@ import { partialRender } from '@/helpers/container';
 import { decreaseLikes, increaseLikes, queryLikes, queryUserId } from '@/helpers/db/query';
 import { pages, posts } from '@/helpers/schema';
 import { encodedEmail, urlJoin } from '@/helpers/tools';
-import { z } from 'astro/zod';
 import { ActionError, defineAction } from 'astro:actions';
+import { z } from 'astro:schema';
 
 const keys = [...posts.map((post) => post.permalink), ...pages.map((page) => page.permalink)];
 const CommentConnectError = new ActionError({

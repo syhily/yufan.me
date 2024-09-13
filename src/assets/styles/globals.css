@@ -1302,7 +1302,7 @@ textarea.form-control {
   background-color: transparent;
   border-color: transparent;
   background-clip: padding-box;
-  border: 0;
+  border-width: 0;
   padding: 1.5rem 1.25rem;
 }
 
