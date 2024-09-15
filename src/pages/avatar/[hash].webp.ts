@@ -18,7 +18,7 @@ const avatarImage = async (
   const defaultAvatarLink = defaultAvatar();
   const link = urlJoin(
     options.settings.comments.avatar.mirror,
-    `${hash}?s=${options.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
+    `${hash}.webp?s=${options.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
   );
 
   const resp = await fetch(link, { redirect: 'manual', headers: { Referer: options.website } });

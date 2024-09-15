@@ -186,7 +186,7 @@ const options: z.input<typeof Options> = {
       server: 'https://comment.yufan.me',
       size: 10,
       avatar: {
-        mirror: 'https://gravatar.webp.se/avatar',
+        mirror: 'https://weavatar.com/avatar',
         size: 120,
       },
     },
