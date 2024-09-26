@@ -2427,6 +2427,26 @@ a:hover .overlay {
   margin: 2rem 0 2rem;
 }
 
+.post-content h1 a,
+.post-content h2 a,
+.post-content h3 a,
+.post-content h4 a,
+.post-content h5 a,
+.post-content h6 a {
+  margin-left: 0.8rem;
+  text-decoration: none;
+  color: var(--color-muted);
+}
+
+.post-content h1 a:hover,
+.post-content h2 a:hover,
+.post-content h3 a:hover,
+.post-content h4 a:hover,
+.post-content h5 a:hover,
+.post-content h6 a:hover {
+  color: var(--color-primary);
+}
+
 .post-content h2 {
   position: relative;
   padding: 0 0 0 1.5rem;
@@ -2511,12 +2531,6 @@ a:hover .overlay {
 .post-content dd > a,
 .post-content td a,
 .post-content th a,
-.post-content h1 a,
-.post-content h2 a,
-.post-content h3 a,
-.post-content h4 a,
-.post-content h5 a,
-.post-content h6 a,
 .post-content em a,
 .post-content strong a {
   -webkit-box-shadow: 0 -1px 0 0 var(--color-primary) inset;
@@ -2531,12 +2545,6 @@ a:hover .overlay {
 .post-content dd > a:hover,
 .post-content td a:hover,
 .post-content th a:hover,
-.post-content h1 a:hover,
-.post-content h2 a:hover,
-.post-content h3 a:hover,
-.post-content h4 a:hover,
-.post-content h5 a:hover,
-.post-content h6 a:hover,
 .post-content em a:hover,
 .post-content strong a:hover {
   opacity: 1;

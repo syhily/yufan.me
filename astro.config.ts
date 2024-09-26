@@ -2,7 +2,9 @@ import mdx from '@astrojs/mdx';
 import zeabur from '@zeabur/astro-adapter/serverless';
 import { uploader } from 'astro-uploader';
 import { defineConfig, envField } from 'astro/config';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeExternalLinks from 'rehype-external-links';
+import rehypeSlug from 'rehype-slug';
 import options from './options';
 import { astroImage } from './plugins/images';
 
@@ -38,7 +40,11 @@ export default defineConfig({
   integrations: [
     mdx({
       remarkPlugins: [astroImage],
-      rehypePlugins: [[rehypeExternalLinks, { rel: 'nofollow', target: '_blank' }]],
+      rehypePlugins: [
+        [rehypeExternalLinks, { rel: 'nofollow', target: '_blank' }],
+        rehypeSlug,
+        [rehypeAutolinkHeadings, { behavior: 'append', properties: {} }],
+      ],
     }),
     uploader({
       paths: ['images', 'og', 'cats'],

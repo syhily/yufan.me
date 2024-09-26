@@ -6,7 +6,8 @@
     url('iconfont.ttf?t=1629473213677') format('truetype');
 }
 
-.iconfont {
+.iconfont,
+.icon {
   font-family: 'iconfont' !important;
   font-style: normal;
   -webkit-font-smoothing: antialiased;

@@ -242,14 +242,14 @@ if (typeof comments !== 'undefined' && comments !== null) {
 }
 
 const scrollIntoView = (elem) => {
-  let top = 0;
+  if (elem === undefined || elem === null) {
+    return;
+  }
 
   const rect = elem.getBoundingClientRect();
   const elemTop = rect.top + window.scrollY;
-  top = elemTop - (window.innerHeight / 2 - rect.height / 2);
-
   const scrollOptions = {
-    top,
+    top: elemTop,
     left: 0,
     behavior: 'smooth',
   };
@@ -258,7 +258,7 @@ const scrollIntoView = (elem) => {
 };
 
 // Highlighting the selected comment.
-const focusComment = () => {
+const focusContent = () => {
   if (location.hash.startsWith('#atk-comment-')) {
     for (const li of document.querySelectorAll('.comment-body')) {
       li.classList.remove('active');
@@ -269,10 +269,25 @@ const focusComment = () => {
       scrollIntoView(li);
       li.querySelector('.comment-body').classList.add('active');
     }
+  } else {
+    // Try to find the ID on heading
+    if (location.hash.startsWith('#')) {
+      scrollIntoView(document.getElementById(decodeURIComponent(location.hash).substring(1)));
+    }
   }
 };
-window.addEventListener('hashchange', focusComment);
-window.addEventListener('load', focusComment);
+
+window.addEventListener('load', focusContent);
+
+// TOC Support
+for (const anchor of document.querySelectorAll('a[href^="#"]')) {
+  anchor.addEventListener('click', (e) => {
+    e.preventDefault();
+    const href = anchor.getAttribute('href');
+    location.hash = `${href}`;
+    scrollIntoView(document.querySelector(anchor.getAttribute('href')));
+  });
+}
 
 // Add like button for updating likes.
 const likeButton = document.querySelector('button.post-like');
