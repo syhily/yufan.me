@@ -1,4 +1,3 @@
-import { imageMetadata } from '@/helpers/images';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
 import { defineCollection, z } from 'astro:content';
@@ -15,12 +14,7 @@ const slug = () =>
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug');
 
-const image = (fallbackImage: string) =>
-  z
-    .string()
-    .optional()
-    .default(fallbackImage)
-    .transform(async (arg) => await imageMetadata(arg));
+const image = (fallbackImage: string) => z.string().optional().default(fallbackImage);
 
 // Categories Collection
 const categoriesCollection = defineCollection({

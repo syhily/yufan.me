@@ -1,4 +1,5 @@
 import { defaultCover } from '@/content/config.ts';
+import { imageMetadata, type Image } from '@/helpers/images';
 import options from '@/options';
 import { getCollection, getEntry, type Render } from 'astro:content';
 
@@ -10,16 +11,22 @@ const postsCollection = await getCollection('posts');
 const tagsCollection = await getCollection('tags');
 
 // Redefine the types from the astro content.
-export type Category = (typeof categoriesCollection)[number]['data'] & { counts: number; permalink: string };
+export type Category = Omit<(typeof categoriesCollection)[number]['data'], 'cover'> & {
+  counts: number;
+  permalink: string;
+  cover: Image;
+};
 export type Friend = (typeof friendsCollection)[number]['data'][number];
-export type Page = (typeof pagesCollection)[number]['data'] & {
+export type Page = Omit<(typeof pagesCollection)[number]['data'], 'cover'> & {
   slug: string;
   permalink: string;
+  cover: Image;
   render: () => Render['.mdx'];
 };
-export type Post = (typeof postsCollection)[number]['data'] & {
+export type Post = Omit<(typeof postsCollection)[number]['data'], 'cover'> & {
   slug: string;
   permalink: string;
+  cover: Image;
   render: () => Render['.mdx'];
   raw: () => Promise<string>;
 };
@@ -28,42 +35,52 @@ export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: nu
 // Translate the Astro content into the original content for dealing with different configuration types.
 export const friends: Friend[] = friendsCollection[0].data;
 // Override the website for local debugging
-export const pages: Page[] = pagesCollection
-  .filter((page) => page.data.published || !options.isProd())
-  .map((page) => ({
-    slug: page.slug,
-    permalink: `/${page.slug}`,
-    render: async () => {
-      const entry = await getEntry('pages', page.slug);
-      return entry.render();
-    },
-    ...page.data,
-  }));
-export const posts: Post[] = postsCollection
-  .filter((post) => post.data.published || !options.isProd())
-  .map((post) => ({
-    slug: post.slug,
-    permalink: `/posts/${post.slug}`,
-    render: async () => {
-      const entry = await getEntry('posts', post.slug);
-      return entry.render();
-    },
-    raw: async () => {
-      const entry = await getEntry('posts', post.slug);
-      return entry.body;
-    },
-    ...post.data,
-  }))
-  .sort((left: Post, right: Post) => {
-    const a = left.date.getTime();
-    const b = right.date.getTime();
-    return options.settings.post.sort === 'asc' ? a - b : b - a;
-  });
-export const categories: Category[] = categoriesCollection.map((cat) => ({
-  counts: posts.filter((post) => post.category === cat.data.name).length,
-  permalink: `/cats/${cat.data.slug}`,
-  ...cat.data,
-}));
+export const pages: Page[] = await Promise.all(
+  pagesCollection
+    .filter((page) => page.data.published || !options.isProd())
+    .map(async (page) => ({
+      slug: page.slug,
+      permalink: `/${page.slug}`,
+      render: async () => {
+        const entry = await getEntry('pages', page.slug);
+        return entry.render();
+      },
+      ...page.data,
+      cover: await imageMetadata(page.data.cover),
+    })),
+);
+export const posts: Post[] = (
+  await Promise.all(
+    postsCollection
+      .filter((post) => post.data.published || !options.isProd())
+      .map(async (post) => ({
+        slug: post.slug,
+        permalink: `/posts/${post.slug}`,
+        render: async () => {
+          const entry = await getEntry('posts', post.slug);
+          return entry.render();
+        },
+        raw: async () => {
+          const entry = await getEntry('posts', post.slug);
+          return entry.body;
+        },
+        ...post.data,
+        cover: await imageMetadata(post.data.cover),
+      })),
+  )
+).sort((left: Post, right: Post) => {
+  const a = left.date.getTime();
+  const b = right.date.getTime();
+  return options.settings.post.sort === 'asc' ? a - b : b - a;
+});
+export const categories: Category[] = await Promise.all(
+  categoriesCollection.map(async (cat) => ({
+    counts: posts.filter((post) => post.category === cat.data.name).length,
+    permalink: `/cats/${cat.data.slug}`,
+    ...cat.data,
+    cover: await imageMetadata(cat.data.cover),
+  })),
+);
 export const tags: Tag[] = tagsCollection[0].data.map((tag) => ({
   counts: posts.filter((post) => post.tags.includes(tag.name)).length,
   permalink: `/tags/${tag.slug}`,
