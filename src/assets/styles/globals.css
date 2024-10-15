@@ -2044,6 +2044,12 @@ a:hover .overlay {
   }
 }
 
+.not-by-ai {
+  display: block;
+  margin-bottom: 10px;
+  width: 120px;
+}
+
 .site-submenu {
   -ms-flex-negative: 0;
   flex-shrink: 0;
