@@ -2310,13 +2310,14 @@ a:hover .overlay {
 
 .nice-tips-close,
 .nice-popup-close {
-  position: absolute;
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   bottom: 0;
   left: 0;
   width: 100%;
   z-index: 99;
-  cursor: pointer;
-  text-align: center;
   transform: translateY(25%);
 }
 
