@@ -2,7 +2,7 @@ import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
 import { makeToken, urlJoin } from '@/helpers/tools';
 import options from '@/options';
-import { and, desc, eq, isNull, not, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, not, sql, type InferSelectModel } from 'drizzle-orm';
 
 export interface Comment {
   title: string;
@@ -10,6 +10,18 @@ export interface Comment {
   authorLink: string;
   permalink: string;
 }
+
+export const queryUser = async (email: string): Promise<InferSelectModel<typeof atk_users> | null> => {
+  const results = await db
+    .select()
+    .from(atk_users)
+    .where(eq(atk_users.email, sql`${email}`));
+  if (results.length === 0) {
+    return null;
+  }
+
+  return results[0];
+};
 
 export const queryEmail = async (id: number): Promise<string | null> => {
   const results = await db
@@ -151,4 +163,11 @@ export const queryLikesAndViews = async (permalink: string): Promise<[number, nu
     .limit(1);
 
   return results.length > 0 ? [results[0].like ?? 0, results[0].view ?? 0] : [0, 0];
+};
+
+export const increaseViews = async (key: string): Promise<void> => {
+  await db
+    .update(atk_pages)
+    .set({ pv: sql`${atk_pages.pv} + 1` })
+    .where(eq(atk_pages.key, sql`${key}`));
 };
