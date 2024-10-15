@@ -46,7 +46,7 @@ const Options = z
         .readonly(),
       post: z.object({
         sort: z.enum(['asc', 'desc']),
-        feature: z.array(z.string()).optional(),
+        feature: z.array(z.string()).min(3).optional(),
         category: z.array(z.string()).optional(),
       }),
       pagination: z.object({
@@ -163,7 +163,6 @@ const options: z.input<typeof Options> = {
     assetPrefix: 'https://cat.yufan.me',
     post: {
       sort: 'desc',
-      feature: ['we-are-stranger', 'secret-of-boys-mind', 'my-darling'],
       category: ['article', 'think', 'gossip', 'coding'],
     },
     pagination: {
