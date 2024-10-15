@@ -1399,6 +1399,7 @@ textarea.form-control {
 @media (min-width: 1200px) and (max-width: 1399.98px) {
   .list-desc .h-2x {
     -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 }
 
@@ -1638,6 +1639,7 @@ a:hover .overlay {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
@@ -1645,6 +1647,7 @@ a:hover .overlay {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
@@ -1652,6 +1655,7 @@ a:hover .overlay {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
@@ -1659,6 +1663,7 @@ a:hover .overlay {
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
@@ -2042,12 +2047,6 @@ a:hover .overlay {
     top: 8px;
     right: 0;
   }
-}
-
-.not-by-ai {
-  display: block;
-  margin-bottom: 10px;
-  width: 120px;
 }
 
 .site-submenu {
@@ -2687,11 +2686,26 @@ a:hover .overlay {
   flex-wrap: wrap;
 }
 
+/* Astro Badge */
 .astro-badge:hover stop:first-child {
   stop-color: #3245ff;
 }
 .astro-badge:hover stop:last-child {
   stop-color: #bc52ee;
+}
+
+/* Not By AI Badge */
+.not-by-ai {
+  display: block;
+  margin-bottom: 10px;
+  width: 120px;
+  --not-by-ai-background: var(--btn-secondary);
+  --not-by-ai-line: var(--color-light);
+}
+
+.not-by-ai:hover {
+  --not-by-ai-background: var(--color-light);
+  --not-by-ai-line: var(--btn-secondary);
 }
 
 /*--------------------------------------------------------------

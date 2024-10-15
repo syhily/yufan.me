@@ -137,13 +137,13 @@ const options: z.input<typeof Options> = {
       link: 'https://github.com/syhily',
     },
     {
-      name: 'Twitter',
-      icon: 'icon-twitter',
+      name: '知乎',
+      icon: 'icon-zhihu-square-fill',
       type: 'link',
-      link: 'https://twitter.com/amehochan',
+      link: 'https://www.zhihu.com/people/syhily',
     },
     {
-      name: 'Wechat',
+      name: '微信',
       icon: 'icon-wechat',
       type: 'qrcode',
       title: '扫码加我微信好友',
