@@ -164,10 +164,3 @@ export const queryLikesAndViews = async (permalink: string): Promise<[number, nu
 
   return results.length > 0 ? [results[0].like ?? 0, results[0].view ?? 0] : [0, 0];
 };
-
-export const increaseViews = async (key: string): Promise<void> => {
-  await db
-    .update(atk_pages)
-    .set({ pv: sql`${atk_pages.pv} + 1` })
-    .where(eq(atk_pages.key, sql`${key}`));
-};
