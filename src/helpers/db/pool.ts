@@ -7,27 +7,20 @@ import {
   POSTGRES_USERNAME,
 } from 'astro:env/server';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import pg from 'pg';
+import type { PoolConfig } from 'pg';
 
-/**
- * Cache the database connection in development. This avoids creating a new connection on every HMR update.
- */
-const globalForDb = globalThis as unknown as {
-  conn: pg.Pool | undefined;
-};
-
-const conn =
-  globalForDb.conn ??
-  new pg.Pool({
-    host: POSTGRES_HOST,
-    port: POSTGRES_PORT,
+export const db = drizzle({
+  connection: {
     user: POSTGRES_USERNAME,
     password: POSTGRES_PASSWORD,
+    host: POSTGRES_HOST,
+    port: POSTGRES_PORT,
     database: POSTGRES_DATABASE,
     keepAlive: true,
-  });
-
-// Cache the connection.
-globalForDb.conn = conn;
-
-export const db = drizzle(conn, { schema: schema, logger: false });
+    max: 10,
+    min: 1,
+    allowExitOnIdle: true,
+  } satisfies PoolConfig,
+  schema: schema,
+  logger: false,
+});
