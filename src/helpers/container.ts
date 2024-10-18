@@ -10,7 +10,5 @@ export const partialRender = async (
   component: AstroComponentFactory,
   options?: ContainerRenderOptions,
 ): Promise<string> => {
-  const html = await container.renderToString(component, options);
-  // Remove this doctype by default.
-  return html.startsWith('<!DOCTYPE html>') ? html.slice(15) : html;
+  return await container.renderToString(component, { ...options, partial: true });
 };
