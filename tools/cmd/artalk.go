@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/spf13/cobra"
-	"log"
-	"time"
 )
 
 var (
@@ -72,7 +73,7 @@ func mergeUsers() {
 		log.Fatal(err)
 	}
 
-	if duplicatedUsers != nil && len(duplicatedUsers) > 0 {
+	if len(duplicatedUsers) > 0 {
 		log.Printf("Find %d duplicated users.", len(duplicatedUsers))
 	} else {
 		log.Println("No duplicated users find, exit.")

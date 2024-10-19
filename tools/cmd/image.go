@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/disintegration/imaging"
-	"github.com/spf13/cobra"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"time"
+
+	"github.com/disintegration/imaging"
+	"github.com/spf13/cobra"
 )
 
 // imageCmd represents the image command
@@ -32,7 +33,7 @@ var (
 	source           = ""
 	output           = executablePath()
 	localDate        = time.Now().Format("20060102")
-	localDatePattern = regexp.MustCompile("^\\d{8}$")
+	localDatePattern = regexp.MustCompile(`^\d{8}$`)
 )
 
 func init() {
