@@ -19,7 +19,7 @@ const Options = z
     description: z.string().max(100),
     keywords: z.array(z.string()),
     author: z.object({ name: z.string(), email: z.string().email(), url: z.string().url() }),
-    navigation: z.array(z.object({ text: z.string(), link: z.string(), target: z.string().optional() })),
+    navigation: z.array(z.object({ text: z.string().trim(), link: z.string(), target: z.string().optional() })),
     socials: z.array(
       z.object({
         name: z.string(),

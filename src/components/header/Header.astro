@@ -18,7 +18,7 @@ import options from '@/options';
       <ul>
         {
           options.navigation.map((menu, i) => (
-            <li id={`menu-item-${i}`} class={`menu-item ${i === 0 ? 'menu-item-home}' : ''}`}>
+            <li id={`menu-item-${i}`} class={`menu-item${i === 0 ? ' menu-item-home' : ''}`}>
               <a href={menu.link} target={menu.target}>
                 {menu.text}
               </a>
