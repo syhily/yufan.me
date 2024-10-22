@@ -45,8 +45,8 @@
     "@astrojs/mdx": "^3.1.8",
     "@astrojs/rss": "^4.0.9",
     "@zeabur/astro-adapter": "^1.0.6",
-    "astro": "^4.16.6",
-    "drizzle-orm": "^0.35.2",
+    "astro": "^4.16.7",
+    "drizzle-orm": "^0.35.3",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
@@ -61,7 +61,7 @@
     "@napi-rs/canvas": "^0.1.58",
     "@types/lodash": "^4.17.12",
     "@types/luxon": "^3.4.2",
-    "@types/node": "^22.7.7",
+    "@types/node": "^22.7.8",
     "@types/pg": "^8.11.10",
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
@@ -83,6 +83,6 @@
   },
   "packageManager": "npm@10.9.0",
   "engines": {
-    "node": "22.9.0"
+    "node": "22.10.0"
   }
 }
