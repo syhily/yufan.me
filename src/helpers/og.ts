@@ -141,9 +141,9 @@ export const defaultOpenGraph = async (): Promise<Buffer> => {
 };
 
 // Register the font if it doesn't exist
-if (!GlobalFonts.has('NotoSansSC-Bold')) {
-  const fontBuffer = await readFile(join(process.cwd(), '/src/assets/og/NotoSansSC-Bold.ttf'));
-  GlobalFonts.register(fontBuffer, 'NotoSansSC-Bold');
+if (!GlobalFonts.has('OPPOSans')) {
+  const fontBuffer = await readFile(join(process.cwd(), '/src/assets/styles/opposans/opposans.ttf'));
+  GlobalFonts.register(fontBuffer, 'OPPOSans');
 }
 
 export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): Promise<Buffer> => {
@@ -169,7 +169,7 @@ export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): 
 
   // Add website title
   ctx.fillStyle = '#e0c2bb';
-  ctx.font = '800 64px NotoSansSC-Bold';
+  ctx.font = '800 64px OPPOSans';
   printAt(ctx, options.title, 96, 180, 96, openGraphWidth, 64);
 
   // Add website logo
@@ -177,11 +177,11 @@ export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): 
 
   // Add article title
   ctx.fillStyle = '#fff';
-  ctx.font = '800 48px NotoSansSC-Bold';
+  ctx.font = '800 48px OPPOSans';
   printAt(ctx, title, 96, openGraphHeight / 2 - 64, 96, openGraphWidth - 192, 64);
 
   // Add article summary
-  ctx.font = '800 36px NotoSansSC-Bold';
+  ctx.font = '800 36px OPPOSans';
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
   printAt(ctx, description, 96, openGraphHeight - 200, 48, openGraphWidth - 192, 36);
 
