@@ -1,8 +1,12 @@
+import { get_lyric } from './netease/lyric';
+import { get_song_info, get_song_url } from './netease/song';
+
 export type Song = {
   name: string;
   artist: string;
   url: string;
   pic: string;
+  lrc: string;
 };
 
 // The props for music player. We support both netease music and direct linked music.
@@ -11,25 +15,18 @@ export interface MusicPlayerProps {
   song?: Song;
 }
 
-const emptySong = { name: '', artist: '', url: '', pic: '' };
+const emptySong = { name: '', artist: '', url: '', pic: '', lrc: '' };
 
 const song = async (props: MusicPlayerProps): Promise<Song> => {
   const { netease, song } = props;
 
   if (netease) {
-    // Fix the UNABLE_TO_GET_ISSUER_CERT_LOCALLY issue for the mirror site.
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-    // https://github.com/injahow/meting-api
-    const data = await fetch(`https://api.injahow.cn/meting/?type=song&id=${netease}`)
-      .then((response) => response.json())
-      .catch((e) => {
-        console.error(e);
-        return [emptySong];
-      });
+    const info = await get_song_info(netease);
+    const url = await get_song_url(netease);
+    const lrc = await get_lyric(netease);
 
     // Check the return result.
-    return { name: data[0].name, artist: data[0].artist, url: data[0].url, pic: data[0].pic };
+    return { name: info[0].title, artist: info[0].author, url: url, pic: info[0].pic, lrc: lrc.lyric };
   }
 
   if (song) {
