@@ -75,7 +75,6 @@ for (const p of ps) {
         artist: p.dataset.artist,
         url: p.dataset.url,
         cover: p.dataset.cover,
-        lrc: p.dataset.lrc,
         theme: '#ebd0c2',
       },
     ],

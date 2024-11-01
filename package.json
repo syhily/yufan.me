@@ -42,11 +42,11 @@
     ]
   },
   "dependencies": {
-    "@astrojs/mdx": "^3.1.8",
+    "@astrojs/mdx": "^3.1.9",
     "@astrojs/rss": "^4.0.9",
     "@zeabur/astro-adapter": "^1.0.6",
-    "astro": "^4.16.7",
-    "drizzle-orm": "^0.35.3",
+    "astro": "^4.16.8",
+    "drizzle-orm": "^0.36.0",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
@@ -61,7 +61,7 @@
     "@napi-rs/canvas": "^0.1.59",
     "@types/lodash": "^4.17.13",
     "@types/luxon": "^3.4.2",
-    "@types/node": "^22.8.4",
+    "@types/node": "^22.8.6",
     "@types/pg": "^8.11.10",
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
