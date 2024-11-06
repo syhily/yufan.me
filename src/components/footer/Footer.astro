@@ -13,11 +13,23 @@ import { DateTime } from 'luxon';
     </a>
   </div>
   {
-    options.settings.footer.icpNo && (
+    (options.settings.footer.icpNo || options.settings.footer.moeIcpNo) && (
       <div class="line">
-        <a href="https://beian.miit.gov.cn" rel="nofollow" target="_blank" title="ICP 备案">
-          {options.settings.footer.icpNo}
-        </a>
+        {options.settings.footer.icpNo && (
+          <a href="https://beian.miit.gov.cn" rel="nofollow" target="_blank" title="ICP 备案">
+            {options.settings.footer.icpNo}
+          </a>
+        )}
+        {options.settings.footer.moeIcpNo && (
+          <a
+            href={`https://icp.gov.moe/?keyword=${options.website}`}
+            rel="nofollow"
+            target="_blank"
+            title="萌国 ICP 备案"
+          >
+            {options.settings.footer.moeIcpNo}
+          </a>
+        )}
       </div>
     )
   }
