@@ -2,6 +2,7 @@
 import FeaturePost from '@/components/page/post/FeaturePost.astro';
 import type { Post } from '@/helpers/schema';
 import options from '@/options';
+import { DateTime } from 'luxon';
 
 interface Props {
   posts: Post[];
@@ -16,8 +17,8 @@ const historicalPosts = (): Post[] => {
     return [];
   }
 
-  const now = new Date();
-  const radical = now.getMonth() + now.getDate();
+  const now = DateTime.now().setZone(options.settings.timeZone);
+  const radical = now.month + now.day;
 
   return [posts[offset + radical - 1], posts[offset + radical + 43 - 1], posts[offset + radical + 43 * 2 - 1]];
 };
