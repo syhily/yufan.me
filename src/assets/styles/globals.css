@@ -3254,15 +3254,3 @@ blockquote cite {
 blockquote p:last-child {
   margin: 0;
 }
-
-.aplayer {
-  max-width: 350px;
-  margin: 0 0 1.25rem;
-}
-
-@media (max-width: 767.98px) {
-  .aplayer {
-    max-width: 100%;
-    margin: 0 2rem 1.25rem;
-  }
-}

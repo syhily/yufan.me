@@ -1,6 +1,10 @@
+<!-- markdownlint-disable-file MD033 MD041 -->
+<!-- heading_line_length 200 -->
+<!-- code_block_line_length 200 -->
+<!-- line_length 200 -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="public/blog-poster-dark.png">
-  <img alt="Yufan Blog Logo" src="public/blog-poster.png">
+  <source media="(prefers-color-scheme: dark)" srcset="public/blog-poster-dark.png" />
+  <img alt="Yufan Blog Logo" src="public/blog-poster.png" />
 </picture>
 
 # Yufan Personal Weblog
@@ -12,7 +16,8 @@ which is built on [Astro](https://astro.build) and hosted on [zeabur](https://ze
 
 ## History
 
-The blog's source code has evolved through four stages. Initially, it was built on WordPress in 2011.
+The blog's source code has evolved through four stages.
+Initially, it was built on WordPress in 2011.
 In 2017, I switched to Hexo and converted all my blog posts to Markdown;
 the code is available in the [Hexo branch](https://github.com/syhily/yufan.me/tree/hexo).
 By 2024, the blog had been rewritten using Next.js with App Router;
@@ -26,7 +31,7 @@ the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
 - [Astro](https://astro.build): Core engine
 - [Artalk](https://artalk.js.org): The self-hosted comment system
 - [Fuse.js](https://www.fusejs.io): Search engine
-- [Postgres](https://zeabur.com/docs/marketplace/postgresql): The view counter and like button for all my posts
+- [Postgres](https://zeabur.com/docs/marketplace/postgresql): The dynamic parts
 
 ## Local Development
 
@@ -77,8 +82,8 @@ GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
 GRANT ALL ON SCHEMA public TO <db_user>;
 ```
 
-Most tables are created by the Artalk. [Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the
-tables.
+Most tables are created by the Artalk.
+[Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the tables.
 
 The like table should be created manually. Execute the SQL below.
 
@@ -104,14 +109,15 @@ CREATE INDEX IF NOT EXISTS "idx_atk_likes_token" ON "public"."atk_likes" ("token
 
 ### Comments Integration
 
-This weblog uses artalk as its backend comment service. But since artalk didn't provide the latest comments API.
-We decide to query it directly from the Postgres database. So the comments and fav clicks are living in the same
-database.
+This weblog uses artalk as its backend comment service.
+But since artalk didn't provide the latest comments API.
+We decide to query it directly from the Postgres database.
+So the comments and fav clicks are living in the same database.
 
 ### S3 Compatible Storage Integration
 
-This blog will upload all the built resources at build stage. You can remove this feature by removing the
-`uploader` integration in `astro.config.ts`.
+This blog will upload all the built resources at build stage.
+You can remove this feature by removing the `uploader` integration in `astro.config.ts`.
 
 ## Writing
 
@@ -121,7 +127,8 @@ You can add any scripts or other customizable features by leveraging the MDX.
 
 ### Front Matter
 
-Front-matter is a block of YAML at the beginning of the file that is used to configure settings for your writings.
+Front-matter is a block of YAML at the beginning of the file
+that is used to configure settings for your writings.
 Front-matter is terminated by three dashes when written in YAML.
 
 ```yaml
@@ -163,7 +170,8 @@ date: 2013/7/13 20:46:25
 Almost all the design resources are placed in the file [yufan.me.sketch](docs/yufan.me.sketch).
 I mainly use the [Sketch](https://www.sketch.com) as my design tools.
 
-The favicon is almost the same as the weblog logo. The main different is that we simplify the elements used in logo.
+The favicon is almost the same as the weblog logo.
+The main different is that we simplify the elements used in logo.
 Pick up the main park from the logo and change the dot color for readability in small icon.
 The background color is included in the exported favicon.
 That is because we want to make sure it could be viewed clearly in any browser.
@@ -226,10 +234,14 @@ The license file is [here](licenses/LICENSE.opposans.txt)
 
 ### Third Party Codes License
 
-Some codes in this project are copied from other projects. I have added the comments in the files' header.
+Some codes in this project are copied from other projects.
+I have added the comments in the files' header.
 
 The source codes used from third party projects are:
 
+- [player](src/components/player)
+  from [DIYgod/APlayer](https://github.com/DIYgod/APlayer)
+  with [license](licenses/LICENSE.DIYgod.txt)
 - [seo.ts](src/helpers/seo.ts)
   from [flexdinesh/blogster](https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts)
   with [license](licenses/LICENSE.flexdinesh.txt)

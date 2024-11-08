@@ -1,4 +1,3 @@
-import Aplayer from 'aplayer/dist/APlayer.min.js';
 import { actions, isInputError } from 'astro:actions';
 import stickySidebar from './sticky-sidebar.js';
 
@@ -61,23 +60,6 @@ for (const dialog of document.querySelectorAll('.nice-dialog')) {
   close.addEventListener('click', (event) => {
     event.stopPropagation();
     popup.classList.toggle('nice-popup-open', false);
-  });
-}
-
-// Netease music player.
-const ps = document.querySelectorAll('.aplayer');
-for (const p of ps) {
-  new Aplayer({
-    container: p,
-    audio: [
-      {
-        name: p.dataset.name,
-        artist: p.dataset.artist,
-        url: p.dataset.url,
-        cover: p.dataset.cover,
-        theme: '#ebd0c2',
-      },
-    ],
   });
 }
 
