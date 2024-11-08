@@ -1,4 +1,5 @@
 ---
+import '@/components/player/assets/styles/player.scss';
 import { resolveSong, type MusicPlayerProps } from '@/components/player/resolver';
 
 interface Props extends MusicPlayerProps {}
@@ -8,7 +9,7 @@ const { name, artist, url, pic } = await resolveSong(Astro.props);
 
 {
   url === '' ? (
-    <p>歌曲加载失败</p>
+    <p class="text-danger">歌曲加载失败</p>
   ) : (
     <div class="aplayer" data-name={name} data-artist={artist} data-url={url} data-cover={pic}>
       音乐正在加载中 ...

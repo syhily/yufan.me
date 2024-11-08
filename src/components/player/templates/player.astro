@@ -1,0 +1,68 @@
+---
+// This is generated from APlayer's player.art file.
+import Icon from '@/components/player/assets/icons';
+
+interface Props {
+  name: string;
+  artist: string;
+  url: string;
+  cover?: string;
+  theme?: string;
+}
+
+const { name, artist, url, cover } = Astro.props;
+let { theme } = Astro.props;
+if (theme === undefined) {
+  theme = '#ebd0c2';
+}
+---
+
+<div class="aplayer-body">
+  <div class="aplayer-pic" style={cover ? `background-image: url("${cover}");` : `background-color: ${theme};`}>
+    <div class="aplayer-button aplayer-play"><Fragment set:html={Icon.play} /></div>
+  </div>
+  <div class="aplayer-info">
+    <div class="aplayer-music">
+      <span class="aplayer-title">{name}</span>
+      <span class="aplayer-author">{artist}</span>
+    </div>
+    <div class="aplayer-controller">
+      <div class="aplayer-bar-wrap">
+        <div class="aplayer-bar">
+          <div class="aplayer-loaded" style="width: 0"></div>
+          <div class="aplayer-played" style={{ width: 0, background: theme }}>
+            <span class="aplayer-thumb" style={{ background: theme }}>
+              <span class="aplayer-loading-icon"><Fragment set:html={Icon.loading} /></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="aplayer-time">
+        <span class="aplayer-time-inner">
+          <span class="aplayer-ptime">00:00</span> / <span class="aplayer-dtime">00:00</span>
+        </span>
+        <span class="aplayer-icon aplayer-icon-back">
+          <Fragment set:html={Icon.skip} />
+        </span>
+        <span class="aplayer-icon aplayer-icon-play">
+          <Fragment set:html={Icon.play} />
+        </span>
+        <span class="aplayer-icon aplayer-icon-forward">
+          <Fragment set:html={Icon.skip} />
+        </span>
+        <div class="aplayer-volume-wrap">
+          <button type="button" class="aplayer-icon aplayer-icon-volume-down">
+            <Fragment set:html={Icon.volumeDown} />
+          </button>
+          <div class="aplayer-volume-bar-wrap">
+            <div class="aplayer-volume-bar">
+              <div class="aplayer-volume" style="height: 80%; background: {{ options.theme }};"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="aplayer-notice"></div>
+  <div class="aplayer-miniswitcher"><button class="aplayer-icon"><Fragment set:html={Icon.right} /></button></div>
+</div>

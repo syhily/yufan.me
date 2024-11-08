@@ -9,7 +9,7 @@ export type Song = {
 
 // The props for music player. We support both netease music and direct linked music.
 export interface MusicPlayerProps {
-  netease?: string;
+  netease?: number;
   song?: Song;
 }
 

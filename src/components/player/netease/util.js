@@ -1,8 +1,10 @@
 import { customAlphabet } from 'nanoid/non-secure';
-import { net_ease_anonymous_token } from './config.js';
 import encrypt from './crypto.js';
 
 const nanoid = customAlphabet('1234567890abcdef', 32);
+
+const net_ease_anonymous_token =
+  'de91e1f8119d32e01cc73efcb82c0a30c9137e8d4f88dbf5e3d7bf3f28998f21add2bc8204eeee5e56c0bbb8743574b46ca2c10c35dc172199bef9bf4d60ecdeab066bb4dc737d1c3324751bcc9aaf44c3061cd18d77b7a0';
 
 const chooseUserAgent = (ua = false) => {
   const userAgentList = {
@@ -21,7 +23,7 @@ const chooseUserAgent = (ua = false) => {
       'Mozilla/5.0 (Linux; U; Android 8.1.0; zh-cn; BKK-AL10 Build/HONORBKK-AL10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/66.0.3359.126 MQQBrowser/10.6 Mobile Safari/537.36',
     ],
     pc: [
-      // macOS 10.15.6  Firefox / Chrome / Safari
+      // macOS 10.15.6 Firefox / Chrome / Safari
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:80.0) Gecko/20100101 Firefox/80.0',
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.30 Safari/537.36',
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.2 Safari/605.1.15',
