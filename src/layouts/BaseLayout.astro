@@ -12,7 +12,6 @@ import Header from '@/components/header/Header.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import SearchDialog from '@/components/search/SearchDialog.astro';
 import options from '@/options';
-import { urlJoin } from '@/helpers/tools';
 
 interface Props {
   title?: string;
@@ -48,26 +47,6 @@ const description = Astro.props.description || options.description;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <script
-      type="application/ld+json"
-      set:html={JSON.stringify({
-        '@type': 'WebSite',
-        publisher: {
-          '@type': 'Organization',
-          name: options.title,
-          url: options.website,
-          logo: {
-            '@type': 'ImageObject',
-            url: urlJoin(options.website, '/logo.svg'),
-            width: 96,
-            height: 96,
-          },
-        },
-        url: options.website,
-        mainEntityOfPage: options.website,
-        description: options.description,
-      })}
-    />
   </head>
   <body class="home blog">
     <div class="site-layout">
