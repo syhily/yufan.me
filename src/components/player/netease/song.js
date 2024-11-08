@@ -1,6 +1,19 @@
-import { map_song_list, request } from './util.js';
+import { request } from '@/components/player/netease/request';
 
-export const get_song_url = async (id, cookie = '') => {
+const mapSongList = (song_list) => {
+  return song_list.songs.map((song) => {
+    const artists = song.ar || song.artists;
+    return {
+      title: song.name,
+      author: artists.reduce((i, v) => (i ? `${i} / ` : i) + v.name, ''),
+      pic: song?.al?.picUrl || song.id,
+      url: song.id,
+      lrc: song.id,
+    };
+  });
+};
+
+export const getSongUrl = async (id) => {
   const data = {
     ids: `[${id}]`,
     level: 'standard',
@@ -17,12 +30,12 @@ export const get_song_url = async (id, cookie = '') => {
   return url || `https://music.163.com/song/media/outer/url?id=${id}.mp3`;
 };
 
-export const get_song_info = async (id, cookie = '') => {
+export const getSongInfo = async (id) => {
   const ids = [id];
   const data = {
     c: `[${ids.map((id) => `{"id":${id}}`).join(',')}]`,
   };
-  let res = await request('POST', 'https://music.163.com/api/v3/song/detail', data, {
+  const res = await request('POST', 'https://music.163.com/api/v3/song/detail', data, {
     crypto: 'weapi',
   });
 
@@ -30,6 +43,5 @@ export const get_song_info = async (id, cookie = '') => {
     throw res;
   }
 
-  res = map_song_list(res);
-  return res;
+  return mapSongList(res);
 };

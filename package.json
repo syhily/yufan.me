@@ -54,6 +54,7 @@
     "nanoid": "^5.0.8",
     "pg": "^8.13.1",
     "qrcode-svg": "^1.1.0",
+    "sass": "^1.80.6",
     "ultrahtml": "^1.5.3"
   },
   "devDependencies": {
