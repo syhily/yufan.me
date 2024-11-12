@@ -8,7 +8,7 @@ const defaultAvatar = (): string => {
 };
 
 function isNumeric(str: string) {
-  return !Number.isNaN(str) && !Number.isNaN(Number.parseFloat(str));
+  return /^-?\d+$/.test(str);
 }
 
 const avatarImage = async (
@@ -42,7 +42,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
 
   // This is a existed user.
   if (isNumeric(hash)) {
-    const email = await queryEmail(Number(hash));
+    const email = await queryEmail(Number.parseInt(hash));
     if (email === null) {
       return redirect(defaultAvatar());
     }
