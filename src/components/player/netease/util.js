@@ -110,7 +110,7 @@ export const request = async (method, url, data, options) => {
       appver: cookie.appver || '8.7.01', // app版本
       versioncode: cookie.versioncode || '140', //版本号
       mobilename: cookie.mobilename, //设备model
-      buildver: cookie.buildver || Date.now().toString().substr(0, 10),
+      buildver: cookie.buildver || Date.now().toString().substring(0, 10),
       resolution: cookie.resolution || '1920x1080', //设备分辨率
       __csrf: csrfToken,
       os: cookie.os || 'android',

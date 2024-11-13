@@ -18,13 +18,11 @@ export const atk_pages = pgTable(
     // You can use { mode: "bigint" } if numbers are exceeding js number limitations
     pv: bigint('pv', { mode: 'number' }),
   },
-  (table) => {
-    return {
-      idx_atk_pages_site_name: index('idx_atk_pages_site_name').on(table.site_name),
-      idx_atk_pages_key: index('idx_atk_pages_key').on(table.key),
-      idx_atk_pages_deleted_at: index('idx_atk_pages_deleted_at').on(table.deleted_at),
-    };
-  },
+  (table) => [
+    index('idx_atk_pages_site_name').on(table.site_name),
+    index('idx_atk_pages_key').on(table.key),
+    index('idx_atk_pages_deleted_at').on(table.deleted_at),
+  ],
 );
 
 export const atk_likes = pgTable(
@@ -37,11 +35,7 @@ export const atk_likes = pgTable(
     token: varchar('token', { length: 255 }),
     page_key: varchar('page_key', { length: 255 }),
   },
-  (table) => {
-    return {
-      idx_atk_likes_token: index('idx_atk_likes_token').on(table.token),
-    };
-  },
+  (table) => [index('idx_atk_likes_token').on(table.token)],
 );
 
 export const atk_users = pgTable(
@@ -64,13 +58,11 @@ export const atk_users = pgTable(
     token_valid_from: timestamp('token_valid_from', { withTimezone: true, mode: 'date' }),
     is_in_conf: boolean('is_in_conf'),
   },
-  (table) => {
-    return {
-      idx_atk_users_email: index('idx_atk_users_email').on(table.email),
-      idx_atk_users_name: index('idx_atk_users_name').on(table.name),
-      idx_atk_users_deleted_at: index('idx_atk_users_deleted_at').on(table.deleted_at),
-    };
-  },
+  (table) => [
+    index('idx_atk_users_email').on(table.email),
+    index('idx_atk_users_name').on(table.name),
+    index('idx_atk_users_deleted_at').on(table.deleted_at),
+  ],
 );
 
 export const atk_comments = pgTable(
@@ -100,16 +92,14 @@ export const atk_comments = pgTable(
     // You can use { mode: "bigint" } if numbers are exceeding js number limitations
     root_id: bigint('root_id', { mode: 'number' }),
   },
-  (table) => {
-    return {
-      idx_atk_comments_root_id: index('idx_atk_comments_root_id').on(table.root_id),
-      idx_atk_comments_rid: index('idx_atk_comments_rid').on(table.rid),
-      idx_atk_comments_user_id: index('idx_atk_comments_user_id').on(table.user_id),
-      idx_atk_comments_site_name: index('idx_atk_comments_site_name').on(table.site_name),
-      idx_atk_comments_page_key: index('idx_atk_comments_page_key').on(table.page_key),
-      idx_atk_comments_deleted_at: index('idx_atk_comments_deleted_at').on(table.deleted_at),
-    };
-  },
+  (table) => [
+    index('idx_atk_comments_root_id').on(table.root_id),
+    index('idx_atk_comments_rid').on(table.rid),
+    index('idx_atk_comments_user_id').on(table.user_id),
+    index('idx_atk_comments_site_name').on(table.site_name),
+    index('idx_atk_comments_page_key').on(table.page_key),
+    index('idx_atk_comments_deleted_at').on(table.deleted_at),
+  ],
 );
 
 export default {

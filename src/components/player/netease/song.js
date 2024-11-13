@@ -1,6 +1,6 @@
 import { map_song_list, request } from './util.js';
 
-export const get_song_url = async (id, cookie = '') => {
+export const get_song_url = async (id) => {
   const data = {
     ids: `[${id}]`,
     level: 'standard',
@@ -17,7 +17,7 @@ export const get_song_url = async (id, cookie = '') => {
   return url || `https://music.163.com/song/media/outer/url?id=${id}.mp3`;
 };
 
-export const get_song_info = async (id, cookie = '') => {
+export const get_song_info = async (id) => {
   const ids = [id];
   const data = {
     c: `[${ids.map((id) => `{"id":${id}}`).join(',')}]`,

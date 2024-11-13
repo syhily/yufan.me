@@ -45,7 +45,7 @@
     "@astrojs/mdx": "^3.1.9",
     "@astrojs/rss": "^4.0.9",
     "@zeabur/astro-adapter": "^1.0.6",
-    "astro": "^4.16.10",
+    "astro": "^4.16.11",
     "drizzle-orm": "^0.36.1",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
@@ -58,7 +58,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@biomejs/biome": "^1.9.4",
-    "@napi-rs/canvas": "^0.1.60",
+    "@napi-rs/canvas": "^0.1.61",
     "@types/lodash": "^4.17.13",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.9.0",
@@ -83,6 +83,6 @@
   },
   "packageManager": "npm@10.9.0",
   "engines": {
-    "node": "23.1.0"
+    "node": "22.11.0"
   }
 }
