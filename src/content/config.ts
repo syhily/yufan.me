@@ -25,6 +25,25 @@ const image = (fallbackImage: string) =>
 // The default toc heading level.
 const defaultMinHeadingLevel = 2;
 const defaultMaxHeadingLevel = 3;
+const toc = () =>
+  z
+    .union([
+      z.object({
+        // The level to start including headings at in the table of contents. Default: 2.
+        minHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMinHeadingLevel),
+        // The level to stop including headings at in the table of contents. Default: 3.
+        maxHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMaxHeadingLevel),
+      }),
+      z
+        .boolean()
+        .transform((enabled) =>
+          enabled ? { minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel } : false,
+        ),
+    ])
+    .default(false)
+    .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
+      message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
+    });
 
 // Categories Collection
 const categoriesCollection = defineCollection({
@@ -74,24 +93,7 @@ const postsCollection = defineCollection({
     summary: z.string().optional().default(''),
     cover: image(defaultCover),
     published: z.boolean().optional().default(true),
-    toc: z
-      .union([
-        z.object({
-          // The level to start including headings at in the table of contents. Default: 2.
-          minHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMinHeadingLevel),
-          // The level to stop including headings at in the table of contents. Default: 3.
-          maxHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMaxHeadingLevel),
-        }),
-        z
-          .boolean()
-          .transform((enabled) =>
-            enabled ? { minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel } : false,
-          ),
-      ])
-      .default(false)
-      .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
-        message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
-      }),
+    toc: toc(),
   }),
 });
 
@@ -106,6 +108,7 @@ const pagesCollection = defineCollection({
     cover: image(defaultCover),
     published: z.boolean().optional().default(true),
     friend: z.boolean().optional().default(false),
+    toc: toc(),
   }),
 });
 

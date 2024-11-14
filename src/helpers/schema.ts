@@ -1,7 +1,7 @@
 import { defaultCover } from '@/content/config.ts';
 import { generateToC, type TocItem } from '@/helpers/toc';
 import options from '@/options';
-import { getCollection, getEntry, type Render } from 'astro:content';
+import { getCollection, type Render } from 'astro:content';
 
 // Import the collections from the astro content.
 const categoriesCollection = await getCollection('categories');
@@ -16,16 +16,16 @@ export type Category = (typeof categoriesCollection)[number]['data'] & {
   permalink: string;
 };
 export type Friend = (typeof friendsCollection)[number]['data'][number];
-export type Page = (typeof pagesCollection)[number]['data'] & {
+export type Page = Omit<(typeof pagesCollection)[number]['data'], 'toc'> & {
   slug: string;
   permalink: string;
   render: () => Render['.mdx'];
+  toc: () => Promise<Array<TocItem>>;
 };
 export type Post = Omit<(typeof postsCollection)[number]['data'], 'toc'> & {
   slug: string;
   permalink: string;
   render: () => Render['.mdx'];
-  raw: () => Promise<string>;
   toc: () => Promise<Array<TocItem>>;
 };
 export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: number; permalink: string };
@@ -38,33 +38,27 @@ export const pages: Page[] = pagesCollection
   .map((page) => ({
     slug: page.slug,
     permalink: `/${page.slug}`,
-    render: async () => {
-      const entry = await getEntry('pages', page.slug);
-      return entry.render();
-    },
+    render: page.render,
     ...page.data,
+    toc: async () => {
+      if (page.data.toc === false) {
+        return [];
+      }
+      return generateToC((await page.render()).headings, page.data.toc);
+    },
   }));
 export const posts: Post[] = postsCollection
   .filter((post) => post.data.published || !options.isProd())
   .map((post) => ({
     slug: post.slug,
     permalink: `/posts/${post.slug}`,
-    render: async () => {
-      const entry = await getEntry('posts', post.slug);
-      return entry.render();
-    },
-    raw: async () => {
-      const entry = await getEntry('posts', post.slug);
-      return entry.body;
-    },
+    render: post.render,
     ...post.data,
     toc: async () => {
       if (post.data.toc === false) {
         return [];
       }
-      const entry = await getEntry('posts', post.slug);
-      const render = await entry.render();
-      return generateToC(render.headings, post.data.toc);
+      return generateToC((await post.render()).headings, post.data.toc);
     },
   }))
   .sort((left: Post, right: Post) => {
