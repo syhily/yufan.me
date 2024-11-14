@@ -1,4 +1,5 @@
 import { defaultCover } from '@/content/config.ts';
+import { generateToC, type TocItem } from '@/helpers/toc';
 import options from '@/options';
 import { getCollection, getEntry, type Render } from 'astro:content';
 
@@ -20,11 +21,12 @@ export type Page = (typeof pagesCollection)[number]['data'] & {
   permalink: string;
   render: () => Render['.mdx'];
 };
-export type Post = (typeof postsCollection)[number]['data'] & {
+export type Post = Omit<(typeof postsCollection)[number]['data'], 'toc'> & {
   slug: string;
   permalink: string;
   render: () => Render['.mdx'];
   raw: () => Promise<string>;
+  toc: Array<TocItem>;
 };
 export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: number; permalink: string };
 
@@ -42,26 +44,30 @@ export const pages: Page[] = pagesCollection
     },
     ...page.data,
   }));
-export const posts: Post[] = postsCollection
-  .filter((post) => post.data.published || !options.isProd())
-  .map((post) => ({
-    slug: post.slug,
-    permalink: `/posts/${post.slug}`,
-    render: async () => {
-      const entry = await getEntry('posts', post.slug);
-      return entry.render();
-    },
-    raw: async () => {
-      const entry = await getEntry('posts', post.slug);
-      return entry.body;
-    },
-    ...post.data,
-  }))
-  .sort((left: Post, right: Post) => {
-    const a = left.date.getTime();
-    const b = right.date.getTime();
-    return options.settings.post.sort === 'asc' ? a - b : b - a;
-  });
+export const posts: Post[] = (
+  await Promise.all(
+    postsCollection
+      .filter((post) => post.data.published || !options.isProd())
+      .map(async (post) => ({
+        slug: post.slug,
+        permalink: `/posts/${post.slug}`,
+        render: async () => {
+          const entry = await getEntry('posts', post.slug);
+          return entry.render();
+        },
+        raw: async () => {
+          const entry = await getEntry('posts', post.slug);
+          return entry.body;
+        },
+        ...post.data,
+        toc: post.data.toc === false ? [] : generateToC((await post.render()).headings, post.data.toc),
+      })),
+  )
+).sort((left: Post, right: Post) => {
+  const a = left.date.getTime();
+  const b = right.date.getTime();
+  return options.settings.post.sort === 'asc' ? a - b : b - a;
+});
 export const categories: Category[] = categoriesCollection.map((cat) => ({
   counts: posts.filter((post) => post.category === cat.data.name).length,
   permalink: `/cats/${cat.data.slug}`,

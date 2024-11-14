@@ -22,6 +22,10 @@ const image = (fallbackImage: string) =>
     .default(fallbackImage)
     .transform((file) => imageMetadata(file));
 
+// The default toc heading level.
+const defaultMinHeadingLevel = 2;
+const defaultMaxHeadingLevel = 3;
+
 // Categories Collection
 const categoriesCollection = defineCollection({
   type: 'data',
@@ -70,6 +74,24 @@ const postsCollection = defineCollection({
     summary: z.string().optional().default(''),
     cover: image(defaultCover),
     published: z.boolean().optional().default(true),
+    toc: z
+      .union([
+        z.object({
+          // The level to start including headings at in the table of contents. Default: 2.
+          minHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMinHeadingLevel),
+          // The level to stop including headings at in the table of contents. Default: 3.
+          maxHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMaxHeadingLevel),
+        }),
+        z
+          .boolean()
+          .transform((enabled) =>
+            enabled ? { minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel } : false,
+          ),
+      ])
+      .default({ minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel })
+      .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
+        message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
+      }),
   }),
 });
 
