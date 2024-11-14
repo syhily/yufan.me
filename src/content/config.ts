@@ -23,22 +23,23 @@ const image = (fallbackImage: string) =>
     .transform((file) => imageMetadata(file));
 
 // The default toc heading level.
-const defaultMinHeadingLevel = 2;
-const defaultMaxHeadingLevel = 3;
 const toc = () =>
   z
     .union([
       z.object({
         // The level to start including headings at in the table of contents. Default: 2.
-        minHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMinHeadingLevel),
+        minHeadingLevel: z.number().int().min(1).max(6).optional().default(options.settings.toc.minHeadingLevel),
         // The level to stop including headings at in the table of contents. Default: 3.
-        maxHeadingLevel: z.number().int().min(1).max(6).optional().default(defaultMaxHeadingLevel),
+        maxHeadingLevel: z.number().int().min(1).max(6).optional().default(options.settings.toc.maxHeadingLevel),
       }),
-      z
-        .boolean()
-        .transform((enabled) =>
-          enabled ? { minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel } : false,
-        ),
+      z.boolean().transform((enabled) =>
+        enabled
+          ? {
+              minHeadingLevel: options.settings.toc.minHeadingLevel,
+              maxHeadingLevel: options.settings.toc.maxHeadingLevel,
+            }
+          : false,
+      ),
     ])
     .default(false)
     .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {

@@ -74,6 +74,10 @@ const Options = z
           size: z.number(),
         }),
       }),
+      toc: z.object({
+        minHeadingLevel: z.number().optional().default(2),
+        maxHeadingLevel: z.number().optional().default(3),
+      }),
     }),
     thumbnail: z
       .function()
@@ -92,7 +96,11 @@ const Options = z
       assetsPrefix,
       defaultOpenGraph: (): string => `${assetsPrefix()}/images/open-graph.png`,
     };
-  });
+  })
+  .refine(
+    (options) => options.settings.toc.minHeadingLevel <= options.settings.toc.maxHeadingLevel,
+    'Invalid toc setting, the minHeadingLevel should bellow the maxHeadingLevel',
+  );
 
 const options: z.input<typeof Options> = {
   local: {
@@ -190,6 +198,10 @@ const options: z.input<typeof Options> = {
         mirror: 'https://weavatar.com/avatar',
         size: 120,
       },
+    },
+    toc: {
+      minHeadingLevel: 2,
+      maxHeadingLevel: 3,
     },
   },
   thumbnail: ({ src, width, height }) => {
