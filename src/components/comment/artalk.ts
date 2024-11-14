@@ -30,7 +30,7 @@ export const loadComments = async (key: string, title: string | null, offset: nu
       return null;
     });
 
-  return data != null ? (data as Comments) : data;
+  return data !== null ? (data as Comments) : null;
 };
 
 export const increaseViews = async (key: string, title: string) => {

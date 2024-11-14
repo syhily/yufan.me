@@ -172,12 +172,15 @@ if (typeof comments !== 'undefined' && comments !== null) {
         return handleActionError(error);
       }
 
-      const { content } = data;
-      if (content === '') {
-        // Remove the load more button.
+      const { content, next } = data;
+
+      // Remove the load more button.
+      if (!next || content === '') {
         event.target.remove();
-      } else {
-        // Append the comments into the list.
+      }
+
+      // Append the comments into the list.
+      if (content !== '') {
         event.target.dataset.offset = Number(offset) + Number(size);
         comments.querySelector('.comment-list').insertAdjacentHTML('beforeend', content);
       }

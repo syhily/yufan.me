@@ -5,6 +5,7 @@ import { partialRender } from '@/helpers/container';
 import { decreaseLikes, increaseLikes, queryLikes, queryUserId } from '@/helpers/db/query';
 import { pages, posts } from '@/helpers/schema';
 import { encodedEmail, urlJoin } from '@/helpers/tools';
+import options from '@/options';
 import { ActionError, defineAction } from 'astro:actions';
 import { z } from 'astro:schema';
 
@@ -91,8 +92,9 @@ export const server = {
       }
 
       const content = await partialRender(Comment, { props: { comments: comments } });
+      const next = options.settings.comments.size + offset < comments.roots_count;
 
-      return { content };
+      return { content, next };
     },
   }),
 };

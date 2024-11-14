@@ -17,7 +17,7 @@ const comments = await loadComments(commentKey, title, 0);
 await increaseViews(commentKey, title);
 ---
 
-<div id="comments" class="comments py-5">
+<div id="comments" class="comments pt-5">
   {
     comments != null ? (
       <>
@@ -64,7 +64,7 @@ await increaseViews(commentKey, title);
         <ul class="comment-list">
           <Comment comments={comments} />
         </ul>
-        {comments.roots_count > options.settings.comments.size && (
+        {options.settings.comments.size < comments.roots_count && (
           <div class="text-center mt-3 mt-md-4">
             <button
               id="comments-next-button"

@@ -64,7 +64,7 @@ export const imageMetadata = async (publicPath: string): Promise<Image> => {
   const buffer = await fs.readFile(join(root, publicPath));
   const img = sharp(buffer);
   const { width, height } = await img.metadata();
-  if (width == null || height == null) {
+  if (typeof width === 'undefined' || typeof height === 'undefined') {
     throw new Error(`Invalid image path: ${publicPath}`);
   }
   const aspectRatio = width / height;
