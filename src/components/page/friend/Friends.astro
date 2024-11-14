@@ -26,15 +26,7 @@ const list = _.shuffle(friends);
               </div>
               <div class="list-content">
                 <div class="list-body">
-                  <div class="list-title h6 h-1x">
-                    {friend.website}
-                    <div
-                      class="list-favicon"
-                      style={{
-                        backgroundImage: `url('${friend.favicon}')`,
-                      }}
-                    />
-                  </div>
+                  <div class="list-title h6 h-1x">{friend.website}</div>
                   <div class="text-sm text-secondary h-2x mt-1">{friend.description ? friend.description : ' '}</div>
                 </div>
               </div>

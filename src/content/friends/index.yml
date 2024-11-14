@@ -6,7 +6,6 @@
   description: Trying to light up the dark
   homepage: https://cynosura.one
   poster: /images/links/cynosura.one.jpg
-  favicon: https://cynosura.one/img/favicon.ico
 - website: EEE.ME
   description: 途方に暮れて
   homepage: https://eee.me
@@ -22,7 +21,6 @@
   description: 这世界需要更多英雄
   homepage: https://blog.mboker.cn
   poster: /images/links/mboker.cn.jpg
-  favicon: data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text x=%22-0.125em%22 y=%22.9em%22 font-size=%2290%22>🌻</text></svg>
 - website: 品味苏州
   description: 吴侬软语、小桥流水的生活点滴
   homepage: https://pwsz.com
@@ -42,12 +40,11 @@
   description: 茶盐观瑟丶行者自若
   homepage: https://alexinea.com
   poster: /images/links/alexinea.com.jpg
-  favicon: https://alexinea.com/wp-content/uploads/2016/09/cropped-20160812.2-32x32.png
 - website: 贾顺名
   description: 全沾码农的一些笔记
   homepage: https://jiasm.github.io
   poster: /images/links/jiasm.github.io.jpg
-- website: 白丁轶事 - FMoran的自留地
+- website: 白丁轶事
   description: Everything should be hurry.
   homepage: https://fmoran.me
   poster: /images/links/fmoran.me.jpg
@@ -55,22 +52,18 @@
   description: 船长の部落格，记录有趣的事，分享技术经验。
   homepage: https://captainofphb.me
   poster: /images/links/captainofphb.me.jpg
-  favicon: https://captainofphb.me/favicon.svg
 - website: 小萌博客
   description: 互联网分享笔记
   homepage: https://blog.luoli.net
   poster: /images/links/luoli.net.jpg
-  favicon: https://blog.luoli.net/usr/themes/MUltraMoe/images/favicon.png
 - website: LongLuo's Life Notes
   description: 每一天都是奇迹
   homepage: https://www.longluo.me
   poster: /images/links/longluo.me.jpg
-  favicon: https://www.longluo.me/assets/logo/favicon-32x32.png
 - website: 佛爷小窝
   description: 一个基于内容分享，创作与灵感结合的折腾笔记博客。
   homepage: https://www.lafoyer.com
   poster: /images/links/lafoyer.com.jpg
-  favicon: https://www.boxmoe.com/file/100logo.png
 - website: 白熊阿丸的小屋
   description: 在这里可以看到一个真实的我，我会在这里书写我的一切
   homepage: https://bxaw.name

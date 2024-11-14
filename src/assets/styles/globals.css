@@ -1424,14 +1424,6 @@ textarea.form-control {
   padding: 0.75rem 1rem 1rem;
 }
 
-.list-bookmarks .list-favicon {
-  background-size: cover;
-  display: inline-block;
-  margin-left: 8px;
-  width: 12px;
-  height: 12px;
-}
-
 @media (max-width: 767.98px) {
   .list-bookmarks {
     margin: 2.5rem 0 0;
