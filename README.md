@@ -145,6 +145,7 @@ date: 2013/7/13 20:46:25
 | `summary`   | Post summary in plain text           | false    | First 140 characters |
 | `cover`     | The cover image                      | false    | `null`               |
 | `published` | Whether the post should be published | false    | `true`               |
+| `toc`       | Display the Table of Contents        | false    | `false`              |
 
 ### Pages Front Matter Settings
 
@@ -157,6 +158,7 @@ date: 2013/7/13 20:46:25
 | `comments`  | Enables comment feature for the post | false    | `true`         |
 | `cover`     | The cover image                      | false    | `null`         |
 | `published` | Whether the post should be published | false    | `true`         |
+| `toc`       | Display the Table of Contents        | false    | `false`        |
 
 ## Weblog Design
 

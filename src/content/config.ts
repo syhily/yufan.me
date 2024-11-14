@@ -88,7 +88,7 @@ const postsCollection = defineCollection({
             enabled ? { minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel } : false,
           ),
       ])
-      .default({ minHeadingLevel: defaultMinHeadingLevel, maxHeadingLevel: defaultMaxHeadingLevel })
+      .default(false)
       .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
         message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
       }),
