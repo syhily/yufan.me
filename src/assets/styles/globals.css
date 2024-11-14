@@ -3290,7 +3290,7 @@ blockquote p:last-child {
   transition: 0.5s ease all;
 }
 
-#wrap.display-menu-tree #post-menu {
+.display-menu-tree #post-menu {
   -webkit-transform: translateX(-18.125rem);
   -moz-transform: translateX(-18.125rem);
   -ms-transform: translateX(-18.125rem);
@@ -3558,8 +3558,8 @@ body.color-custom a.index-menu-link:hover {
 }
 
 @media screen and (min-width: 1000px) {
-  #wrap.display-menu-tree,
-  #wrap.display-menu-tree + #footer {
+  .display-menu-tree,
+  .display-menu-tree + #footer {
     width: -webkit-calc(100% - 17.5rem);
     width: calc(100% - 17.5rem);
   }
