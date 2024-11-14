@@ -135,7 +135,7 @@ date: 2013/7/13 20:46:25
 
 | Setting     | Description                          | Required | Default              |
 |-------------|--------------------------------------|----------|----------------------|
-| `id`        | ID (unique), used as the permalink   | true     | Filename             |
+| `slug`      | ID (unique), used as the permalink   | true     | Filename             |
 | `title`     | Title                                | true     | Filename             |
 | `date`      | Published date                       | true     |                      |
 | `updated`   | Updated date                         | false    | Published date       |
@@ -146,12 +146,13 @@ date: 2013/7/13 20:46:25
 | `cover`     | The cover image                      | false    | `null`               |
 | `published` | Whether the post should be published | false    | `true`               |
 | `toc`       | Display the Table of Contents        | false    | `false`              |
+| `alias`     | The alternatives slugs for post      | false    | `[]`                 |
 
 ### Pages Front Matter Settings
 
 | Setting     | Description                          | Required | Default        |
 |-------------|--------------------------------------|----------|----------------|
-| `id`        | ID (unique), used as the permalink   | true     | Filename       |
+| `slug`      | ID (unique), used as the permalink   | true     | Filename       |
 | `title`     | Title                                | true     | Filename       |
 | `date`      | Published date                       | true     |                |
 | `updated`   | Updated date                         | false    | Published date |
