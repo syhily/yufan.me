@@ -1,8 +1,7 @@
 ---
+import TocItems from '@/components/page/toc/TocItems.astro';
 import { generateToC, type TocOpts } from '@/helpers/toc';
 import type { MarkdownHeading } from 'astro';
-import './style.css';
-import TocItems from './TocItems.astro';
 
 interface Props {
   headings: MarkdownHeading[];
