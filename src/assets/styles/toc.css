@@ -1,6 +1,6 @@
 /* Table of Contents ----------------------------------- */
 
-#post-menu {
+.post-menu {
   position: fixed;
   display: table;
   top: 0;
@@ -20,7 +20,7 @@
   transition: 0.5s ease all;
 }
 
-.display-menu-tree #post-menu {
+.display-menu-tree .post-menu {
   -webkit-transform: translateX(-18.125rem);
   -moz-transform: translateX(-18.125rem);
   -ms-transform: translateX(-18.125rem);
@@ -28,41 +28,41 @@
   transform: translateX(-18.125rem);
 }
 
-#post-menu::-webkit-scrollbar {
+.post-menu::-webkit-scrollbar {
   height: 8px;
   width: 4px;
 }
 
-#post-menu::-webkit-scrollbar-button {
+.post-menu::-webkit-scrollbar-button {
   height: 0;
   width: 0;
 }
 
-#post-menu::-webkit-scrollbar-button:start:decrement,
-#post-menu::-webkit-scrollbar-button:end:increment {
+.post-menu::-webkit-scrollbar-button:start:decrement,
+.post-menu::-webkit-scrollbar-button:end:increment {
   display: block;
 }
 
-#post-menu::-webkit-scrollbar-button:vertical:start:increment,
-#post-menu::-webkit-scrollbar-button:vertical:end:decrement {
+.post-menu::-webkit-scrollbar-button:vertical:start:increment,
+.post-menu::-webkit-scrollbar-button:vertical:end:decrement {
   display: none;
 }
 
-#post-menu::-webkit-scrollbar-track:vertical,
-#post-menu::-webkit-scrollbar-track:horizontal {
+.post-menu::-webkit-scrollbar-track:vertical,
+.post-menu::-webkit-scrollbar-track:horizontal {
   background-clip: padding-box;
   background-color: #191919;
   border: 0 solid transparent;
 }
 
-#post-menu::-webkit-scrollbar-track:hover {
+.post-menu::-webkit-scrollbar-track:hover {
   background-color: #191919;
   -webkit-box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.1);
   -moz-box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.1);
   box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.1);
 }
 
-#post-menu::-webkit-scrollbar-track:active {
+.post-menu::-webkit-scrollbar-track:active {
   background-color: #191919;
   -webkit-box-shadow:
     inset 1px 0 0 rgba(0, 0, 0, 0.14),
@@ -75,7 +75,7 @@
     inset -1px -1px 0 rgba(0, 0, 0, 0.07);
 }
 
-#post-menu::-webkit-scrollbar-thumb {
+.post-menu::-webkit-scrollbar-thumb {
   background-clip: padding-box;
   background-color: rgba(255, 255, 255, 0.3);
   min-height: 40px;
@@ -92,26 +92,26 @@
     inset 0 -1px 0 rgba(0, 0, 0, 0.07);
 }
 
-#post-menu::-webkit-scrollbar-thumb:hover {
+.post-menu::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.4);
   -webkit-box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.25);
   -moz-box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.25);
   box-shadow: inset 1px 1px 1px rgba(0, 0, 0, 0.25);
 }
 
-#post-menu::-webkit-scrollbar-thumb:active {
+.post-menu::-webkit-scrollbar-thumb:active {
   background-color: rgba(255, 255, 255, 0.5);
   -webkit-box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.35);
   -moz-box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.35);
   box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.35);
 }
 
-#post-menu::-webkit-scrollbar-thumb:vertical,
-#post-menu::-webkit-scrollbar-thumb:horizontal {
+.post-menu::-webkit-scrollbar-thumb:vertical,
+.post-menu::-webkit-scrollbar-thumb:horizontal {
   border: 0 solid transparent;
 }
 
-a#toggle-menu-tree {
+.toggle-menu-tree {
   top: 0;
   bottom: 0;
   font-size: 1.375rem;
@@ -142,7 +142,7 @@ a#toggle-menu-tree {
   box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.117);
 }
 
-.display-menu-tree a#toggle-menu-tree {
+.display-menu-tree .toggle-menu-tree {
   background: #fafafa;
   padding-left: 0;
   width: 3.125rem;
@@ -157,7 +157,7 @@ a#toggle-menu-tree {
   transform: translateX(-17.5rem);
 }
 
-a#toggle-menu-tree i {
+.toggle-menu-tree i {
   -webkit-transition: 0.5s ease all;
   -moz-transition: 0.5s ease all;
   -ms-transition: 0.5s ease all;
@@ -165,7 +165,7 @@ a#toggle-menu-tree i {
   transition: 0.5s ease all;
 }
 
-.display-menu-tree a#toggle-menu-tree i {
+.display-menu-tree .toggle-menu-tree i {
   -webkit-transform: rotate(180deg);
   -moz-transform: rotate(180deg);
   -ms-transform: rotate(180deg);
@@ -173,7 +173,7 @@ a#toggle-menu-tree i {
   transform: rotate(180deg);
 }
 
-a#toggle-menu-tree:hover {
+.toggle-menu-tree:hover {
   background: #fafafa;
   -webkit-transform: translateX(-1.25rem);
   -moz-transform: translateX(-1.25rem);
@@ -182,25 +182,19 @@ a#toggle-menu-tree:hover {
   transform: translateX(-1.25rem);
 }
 
-a#toggle-menu-tree.show {
+.toggle-menu-tree.show {
   right: 0;
 }
 
-a#toggle-menu-tree.hide {
+.toggle-menu-tree.hide {
   right: -5.3125rem;
 }
 
-.display-menu-tree a#toggle-menu-tree.hide {
+.display-menu-tree .toggle-menu-tree.hide {
   right: 0;
 }
 
-@media screen and (max-width: 888px) {
-  a#toggle-menu-tree {
-    background-color: #fff;
-  }
-}
-
-#toc-wrap {
+.toc-wrap {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -211,7 +205,7 @@ a#toggle-menu-tree.hide {
   --webkit-overflow-scrolling: touch;
 }
 
-#toc-content {
+.toc-content {
   margin-right: 3rem;
   padding-top: 2.875rem;
   -webkit-transition: 0.5s ease all;
@@ -221,7 +215,7 @@ a#toggle-menu-tree.hide {
   transition: 0.5s ease all;
 }
 
-#post-menu-title {
+.post-menu-title {
   font-size: 1.5rem;
   text-align: left;
   line-height: 3.6rem;
@@ -254,15 +248,13 @@ a#toggle-menu-tree.hide {
   padding-left: 4rem;
 }
 
-.index-menu-item.current > a.index-menu-link,
-body.color-custom .index-menu-item.current > a.index-menu-link {
+.index-menu-item.current > a.index-menu-link {
   background: #f5f5f5;
   color: #1abc9c;
   font-weight: 700;
 }
 
-a.index-menu-link,
-body.color-custom a.index-menu-link {
+a.index-menu-link {
   color: #555;
   white-space: nowrap;
   overflow: hidden;
@@ -273,16 +265,7 @@ body.color-custom a.index-menu-link {
   display: block;
 }
 
-a.index-menu-link:hover,
-body.color-custom a.index-menu-link:hover {
+a.index-menu-link:hover {
   background: #efefef;
   color: #333;
-}
-
-@media screen and (min-width: 1000px) {
-  .display-menu-tree,
-  .display-menu-tree + #footer {
-    width: -webkit-calc(100% - 17.5rem);
-    width: calc(100% - 17.5rem);
-  }
 }
