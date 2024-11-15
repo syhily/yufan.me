@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="400px" viewBox="0 0 2402 1201" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g id="128x128" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(1296, 97.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <g id="Group" transform="translate(94, 96.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="600" cy="798" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="802" cy="600" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="600" cy="401" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="402" cy="599" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="602" cy="599" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1800" cy="799" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1802" cy="1008" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1602" cy="799" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1404" cy="599" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1611" cy="401" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1800" cy="204" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="2002" cy="799" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="2208" cy="606" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="2002" cy="401" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="2002" cy="601" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1800" cy="402" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1602" cy="600" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="1802" cy="600" r="19.5"></circle>
+        <polygon id="Star" fill="#FF0B0B" points="1002.5 1027.25 980.458053 1038.83814 984.66769 1014.29407 966.835381 996.911863 991.479027 993.330931 1002.5 971 1013.52097 993.330931 1038.16462 996.911863 1020.33231 1014.29407 1024.54195 1038.83814"></polygon>
+        <polygon id="Star" fill="#FF0B0B" points="2208.5 1027.25 2186.45805 1038.83814 2190.66769 1014.29407 2172.83538 996.911863 2197.47903 993.330931 2208.5 971 2219.52097 993.330931 2244.16462 996.911863 2226.33231 1014.29407 2230.54195 1038.83814"></polygon>
+    </g>
+</svg>

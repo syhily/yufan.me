@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="400px" viewBox="0 0 2215 1008" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="step6" transform="translate(0.5, 1)">
+            <g id="Group" stroke-linecap="square" transform="translate(1202, 1)" stroke="#979797">
+                <line x1="0" y1="102.5" x2="1006" y2="102.5" id="Line"></line>
+                <line x1="5.5" y1="303" x2="1011.5" y2="303" id="Line"></line>
+                <line x1="5.5" y1="504" x2="1011.5" y2="504" id="Line"></line>
+                <line x1="0.5" y1="705" x2="1006.5" y2="705" id="Line"></line>
+                <line x1="5.5" y1="906" x2="1011.5" y2="906" id="Line"></line>
+                <line x1="110" y1="5.5" x2="110" y2="1004.5" id="Line-2"></line>
+                <line x1="310.5" y1="6" x2="310.5" y2="1005" id="Line-2"></line>
+                <line x1="503.5" y1="0" x2="503.5" y2="999" id="Line-2"></line>
+                <line x1="705.5" y1="4" x2="705.5" y2="1003" id="Line-2"></line>
+                <line x1="907.5" y1="4" x2="907.5" y2="1003" id="Line-2"></line>
+            </g>
+            <g id="Group" stroke-linecap="square" stroke="#979797">
+                <line x1="0" y1="102.5" x2="1006" y2="102.5" id="Line"></line>
+                <line x1="5.5" y1="303" x2="1011.5" y2="303" id="Line"></line>
+                <line x1="5.5" y1="504" x2="1011.5" y2="504" id="Line"></line>
+                <line x1="0.5" y1="705" x2="1006.5" y2="705" id="Line"></line>
+                <line x1="5.5" y1="906" x2="1011.5" y2="906" id="Line"></line>
+                <line x1="110" y1="5.5" x2="110" y2="1004.5" id="Line-2"></line>
+                <line x1="310.5" y1="6" x2="310.5" y2="1005" id="Line-2"></line>
+                <line x1="503.5" y1="0" x2="503.5" y2="999" id="Line-2"></line>
+                <line x1="705.5" y1="4" x2="705.5" y2="1003" id="Line-2"></line>
+                <line x1="907.5" y1="4" x2="907.5" y2="1003" id="Line-2"></line>
+            </g>
+            <line x1="905.498111" y1="108.802083" x2="906.50189" y2="707.129289" id="y" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="2109.49433" y1="103.060662" x2="2109" y2="909.5" id="y" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="1309" y1="506.5" x2="1309.49055" y2="908.75858" id="y" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="109" y1="105.465686" x2="906" y2="102.5" id="x" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="1308.99622" y1="106.724265" x2="2105.99622" y2="103.758578" id="x" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="1308.99244" y1="504.982843" x2="1710" y2="506.5" id="x" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="1311.99244" y1="909.98284" x2="2108.99244" y2="907.01716" id="x" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <line x1="708.25" y1="705.25" x2="902.75" y2="704.75" id="x" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+            <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" fill-rule="nonzero" cx="707.5" cy="707" r="19.5"></circle>
+            <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" fill-rule="nonzero" cx="1707.5" cy="503" r="19.5"></circle>
+            <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" fill-rule="nonzero" cx="110.5" cy="103" r="19.5"></circle>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="110 315.75 94.423691 323.93895 97.398501 306.594475 84.797002 294.31105 102.211845 291.780525 110 276 117.788155 291.780525 135.202998 294.31105 122.601499 306.594475 125.576309 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="309 315.75 293.423691 323.93895 296.398501 306.594475 283.797002 294.31105 301.211845 291.780525 309 276 316.788155 291.780525 334.202998 294.31105 321.601499 306.594475 324.576309 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="708 515.75 692.423691 523.93895 695.398501 506.594475 682.797002 494.31105 700.211845 491.780525 708 476 715.788155 491.780525 733.202998 494.31105 720.601499 506.594475 723.576309 523.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1905 519.75 1889.42369 527.93895 1892.3985 510.594475 1879.797 498.31105 1897.21185 495.780525 1905 480 1912.78815 495.780525 1930.203 498.31105 1917.6015 510.594475 1920.57631 527.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1905 720.75 1889.42369 728.93895 1892.3985 711.594475 1879.797 699.31105 1897.21185 696.780525 1905 681 1912.78815 696.780525 1930.203 699.31105 1917.6015 711.594475 1920.57631 728.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1706 717.75 1690.42369 725.93895 1693.3985 708.594475 1680.797 696.31105 1698.21185 693.780525 1706 678 1713.78815 693.780525 1731.203 696.31105 1718.6015 708.594475 1721.57631 725.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1513 720.75 1497.42369 728.93895 1500.3985 711.594475 1487.797 699.31105 1505.21185 696.780525 1513 681 1520.78815 696.780525 1538.203 699.31105 1525.6015 711.594475 1528.57631 728.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="506 315.75 490.423691 323.93895 493.398501 306.594475 480.797002 294.31105 498.211845 291.780525 506 276 513.788155 291.780525 531.202998 294.31105 518.601499 306.594475 521.576309 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="705 315.75 689.423691 323.93895 692.398501 306.594475 679.797002 294.31105 697.211845 291.780525 705 276 712.788155 291.780525 730.202998 294.31105 717.601499 306.594475 720.576309 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1509 315.75 1493.42369 323.93895 1496.3985 306.594475 1483.797 294.31105 1501.21185 291.780525 1509 276 1516.78815 291.780525 1534.203 294.31105 1521.6015 306.594475 1524.57631 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1317 315.75 1301.42369 323.93895 1304.3985 306.594475 1291.797 294.31105 1309.21185 291.780525 1317 276 1324.78815 291.780525 1342.203 294.31105 1329.6015 306.594475 1332.57631 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1706 315.75 1690.42369 323.93895 1693.3985 306.594475 1680.797 294.31105 1698.21185 291.780525 1706 276 1713.78815 291.780525 1731.203 294.31105 1718.6015 306.594475 1721.57631 323.93895"></polygon>
+            <polygon id="Star" fill="#3FC0FD" fill-rule="nonzero" points="1905 315.75 1889.42369 323.93895 1892.3985 306.594475 1879.797 294.31105 1897.21185 291.780525 1905 276 1912.78815 291.780525 1930.203 294.31105 1917.6015 306.594475 1920.57631 323.93895"></polygon>
+            <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" fill-rule="nonzero" cx="1311.5" cy="109" r="19.5"></circle>
+        </g>
+    </g>
+</svg>

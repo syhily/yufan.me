@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="400px" viewBox="0 0 2402 1201" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g id="128x128" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(1296, 97.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <g id="Group" transform="translate(94, 96.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <path id="Line-3" d="M1409,603 L1409,771 L1423,771 L1406,805 L1389,771 L1403,771 L1403,603 L1409,603 Z" fill="#718EE5" fill-rule="nonzero"></path>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1801.5" cy="804.5" r="19.5"></circle>
+        <path id="Line-3" d="M1573.41584,383.669363 L1607.5,400.5 L1573.585,417.668942 L1573.514,403.669 L1406.51493,404.499963 L1403.51496,404.514888 L1403.48511,398.514962 L1406.48507,398.500037 L1573.485,397.669 L1573.41584,383.669363 Z" fill="#5FB88F" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1410,401 L1410,569 L1424,569 L1407,603 L1390,569 L1404,569 L1404,401 L1410,401 Z" fill="#718EE5" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1610.5,401.5 L1610.5,569.5 L1624.5,569.5 L1607.5,603.5 L1590.5,569.5 L1604.5,569.5 L1604.5,401.5 L1610.5,401.5 Z" fill="#718EE5" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1805.5,399.5 L1805.5,567.5 L1819.5,567.5 L1802.5,601.5 L1785.5,567.5 L1799.5,567.5 L1799.5,399.5 L1805.5,399.5 Z" fill="#718EE5" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1573.91584,584.169363 L1608,601 L1574.085,618.168942 L1574.014,604.169 L1407.01493,604.999963 L1404.01496,605.014888 L1403.98511,599.014962 L1406.98507,599.000037 L1573.985,598.169 L1573.91584,584.169363 Z" fill="#5FB88F" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1774.91584,584.169363 L1809,601 L1775.085,618.168942 L1775.014,604.169 L1608.01493,604.999963 L1605.01496,605.014888 L1604.98511,599.014962 L1607.98507,599.000037 L1774.985,598.169 L1774.91584,584.169363 Z" fill="#5FB88F" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1774.91584,786.169363 L1809,803 L1775.085,820.168942 L1775.014,806.169 L1608.01493,806.999963 L1605.01496,807.014888 L1604.98511,801.014962 L1607.98507,801.000037 L1774.985,800.169 L1774.91584,786.169363 Z" fill="#5FB88F" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1573.91584,786.169363 L1608,803 L1574.085,820.168942 L1574.014,806.169 L1407.01493,806.999963 L1404.01496,807.014888 L1403.98511,801.014962 L1406.98507,801.000037 L1573.985,800.169 L1573.91584,786.169363 Z" fill="#5FB88F" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1777.91584,385.169363 L1812,402 L1778.085,419.168942 L1778.014,405.169 L1611.01493,405.999963 L1608.01496,406.014888 L1607.98511,400.014962 L1610.98507,400.000037 L1777.985,399.169 L1777.91584,385.169363 Z" fill="#5FB88F" fill-rule="nonzero"></path>
+        <line x1="600.25" y1="400.75" x2="600.75" y2="804.25" id="y" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+        <line x1="202.75" y1="400.5" x2="204.25" y2="804.5" id="y" stroke="#003DFF" stroke-width="5" stroke-linecap="square"></line>
+        <line x1="203.5" y1="398.5" x2="600.5" y2="396.5" id="x" stroke="#FF0000" stroke-width="5" stroke-linecap="square"></line>
+        <path id="Line-3" d="M1610,603 L1610,771 L1624,771 L1607,805 L1590,771 L1604,771 L1604,603 L1610,603 Z" fill="#718EE5" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1805,601 L1805,769 L1819,769 L1802,803 L1785,769 L1799,769 L1799,601 L1805,601 Z" fill="#718EE5" fill-rule="nonzero"></path>
+        <line x1="204.75" y1="804.75" x2="602.25" y2="804.25" id="x" stroke="#003DFF" stroke-width="5" stroke-linecap="square"></line>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="602" cy="805" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="205" cy="397" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="1412" cy="399" r="19.5"></circle>
+    </g>
+</svg>

@@ -1,0 +1,81 @@
+---
+import Album from '@/components/album/Album.astro';
+import Comments from '@/components/comment/Comments.astro';
+import Image from '@/components/image/Image.astro';
+import LikeButton from '@/components/like/LikeButton.astro';
+import LikeShare from '@/components/like/LikeShare.astro';
+import PostMeta from '@/components/meta/PostMeta.astro';
+import TableOfContents from '@/components/page/toc/TableOfContents.astro';
+import Sidebar from '@/components/sidebar/Sidebar.astro';
+import { formatLocalDate } from '@/helpers/formatter';
+import { getTag, posts, tags, type Post } from '@/helpers/schema';
+import { urlJoin } from '@/helpers/tools';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import options from '@/options';
+import MusicPlayer from 'astro-netease-player/MusicPlayer.astro';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await post.render();
+---
+
+<BaseLayout title={post.title}>
+  <PostMeta
+    slot="og"
+    title={post.title}
+    description={post.summary}
+    publishDate={post.date.toISOString()}
+    requestPath={post.permalink}
+    ogImageUrl={`/images/og/${post.slug}.png`}
+    ogImageAltText={`${post.title} - ${post.summary}`}
+  />
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="row">
+        <div class="content-wrapper col-12 col-xl-9">
+          <div class="post card card-md">
+            <div class="card-body">
+              <h1 class="post-title">{post.title}</h1>
+              <div class="post-meta text-sm text-muted mt-3 mb-4">
+                <time class="">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
+                {
+                  post.tags.length > 0 &&
+                    post.tags
+                      .map((tag) => getTag(tag, undefined))
+                      .filter((tag) => tag !== undefined)
+                      .map((tag) => (
+                        <>
+                          <a class="float-end ms-2 badge badge-light badge-pill" href={`/tags/${tag.slug}`}>
+                            {tag.name}
+                          </a>
+                        </>
+                      ))
+                }
+              </div>
+              <TableOfContents {headings} toc={post.toc} />
+              <div class="post-content">
+                <div class="nc-light-gallery">
+                  <Content components={{ MusicPlayer: MusicPlayer, Image: Image, Album: Album }} />
+                </div>
+                <nav class="post-in-navigation navigation pagination font-number" role="navigation">
+                  <div class="nav-links"></div>
+                </nav>
+              </div>
+              <LikeButton permalink={post.permalink} />
+              <LikeShare {post} />
+              {
+                post.comments && (
+                  <Comments commentKey={urlJoin(options.website, post.permalink, '/')} title={post.title} />
+                )
+              }
+            </div>
+          </div>
+        </div>
+        <Sidebar {posts} {tags} />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

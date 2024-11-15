@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400px" height="400px" viewBox="0 0 1203 1201" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g id="64x64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(94, 96.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <line x1="203" y1="400.5" x2="202.5" y2="601" id="y" stroke="#003DFF" stroke-width="5" stroke-linecap="square"></line>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="205" cy="600" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="205" cy="397" r="19.5"></circle>
+    </g>
+</svg>

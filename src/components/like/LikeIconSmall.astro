@@ -1,0 +1,15 @@
+---
+import { queryLikes } from '@/helpers/db/query';
+
+interface Props {
+  permalink: string;
+}
+
+const { permalink } = Astro.props;
+const likes = await queryLikes(permalink);
+---
+
+<div>
+  <i class="text-md iconfont icon-heart-fill"></i>
+  <span class="like-count">{likes}</span>
+</div>

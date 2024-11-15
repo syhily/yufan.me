@@ -1,0 +1,71 @@
+---
+import Image from '@/components/image/Image.astro';
+import { formatLocalDate } from '@/helpers/formatter';
+import { getAlbum } from '@/helpers/schema';
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+const album = getAlbum(id);
+
+const calculateCroppedWidth = (width: number, height: number, first: boolean): number => {
+  // 300 * 300
+  if (!first) {
+    if (width < 300 || height < 300) {
+      return width;
+    }
+    return width > height ? Math.round((300.0 / height) * width) : 300;
+  }
+  // 600 * 300
+  if (width < 600 || height < 300) {
+    return width;
+  }
+  return width > height ? (600.0 / width > 300.0 / height ? 600 : Math.round((300.0 / height) * width)) : 600;
+};
+const calculateCroppedHeight = (width: number, height: number, croppedWidth: number): number =>
+  croppedWidth === width ? height : Math.round(((1.0 * croppedWidth) / width) * height);
+---
+
+{
+  album !== undefined && (
+    <Fragment>
+      {album.description && <Fragment set:html={album.description} />}
+      <div class="row g-2 g-md-3 g-xxl-4 list-grouped album">
+        {album.pictures.map((picture, index) => (
+          <div class={index === 0 ? 'col-12 col-md-8 col-xl-8' : 'col-6 col-md-4 col-xl-4'}>
+            <div class="list-item list-nice-overlay">
+              <div class={`media ${index === 0 ? 'media-36x17' : ''}`}>
+                <a
+                  href={picture.src}
+                  class="media-content album-picture"
+                  data-pswp-width={picture.width}
+                  data-pswp-height={picture.height}
+                  data-cropped="true"
+                >
+                  <Image
+                    {...picture}
+                    alt={picture.title || ''}
+                    width={calculateCroppedWidth(picture.width as number, picture.height as number, index === 0)}
+                    height={calculateCroppedHeight(
+                      picture.width as number,
+                      picture.height as number,
+                      calculateCroppedWidth(picture.width as number, picture.height as number, index === 0),
+                    )}
+                  />
+                  <div class="overlay" />
+                  <div class="album-picture-meta pswp-caption-content d-none">
+                    {picture.title && <h3>{picture.title}</h3>}
+                    {picture.date && <p>{formatLocalDate(picture.date, 'yyyy-MM-dd HH:mm')}</p>}
+                    {picture.description && <Fragment set:html={picture.description} />}
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Fragment>
+  )
+}
