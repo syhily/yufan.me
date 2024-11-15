@@ -1,0 +1,25 @@
+---
+import { join } from 'node:path'
+
+interface Props {
+  current: number
+  pageNum: number
+  rootPath: string
+}
+
+const { current, pageNum, rootPath } = Astro.props
+---
+
+{
+  current !== pageNum
+? (
+    <a class="page-numbers" href={pageNum === 1 ? rootPath : join(rootPath, `/page/${pageNum}`)}>
+      {pageNum}
+    </a>
+  )
+: (
+    <span aria-current="page" class="page-numbers current">
+      {pageNum}
+    </span>
+  )
+}

@@ -1,0 +1,12 @@
+---
+import options from '@/options'
+---
+
+<div id="search" class="widget widget-search" hidden={!options.settings.sidebar.search}>
+  <div class="search-form">
+    <label>
+      <span class="screen-reader-text">搜索：</span>
+      <input type="search" class="search-field search-sidebar" placeholder="输入然后回车…" name="q" />
+    </label>
+  </div>
+</div>

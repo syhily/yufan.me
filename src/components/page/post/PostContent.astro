@@ -1,0 +1,28 @@
+---
+import UnstyledMusicPlayer from 'astro-netease-player/UnstyledMusicPlayer.astro'
+import UnstyledAlbum from '@/components/mdx/album/UnstyledAlbum.astro'
+import UnstyledImage from '@/components/mdx/image/UnstyledImage.astro'
+import UnstyledSolution from '@/components/mdx/solutions/UnstyledSolution.astro'
+import { posts } from '@/helpers/content/schema'
+
+interface Props {
+  slug: string
+}
+
+const { slug } = Astro.props
+const post = posts.find(post => post.slug === slug)
+if (!post) {
+  return Astro.redirect('/404')
+}
+
+const { Content } = await post.render()
+---
+
+<Content
+  components={{
+    MusicPlayer: UnstyledMusicPlayer,
+    Image: UnstyledImage,
+    Album: UnstyledAlbum,
+    Solution: UnstyledSolution,
+  }}
+/>

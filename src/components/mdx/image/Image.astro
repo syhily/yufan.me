@@ -1,0 +1,30 @@
+---
+import type { Image } from '@/helpers/content/images'
+import { blurStyle } from '@/helpers/content/images'
+import { getImage } from '@/helpers/content/schema'
+import options from '@/options'
+
+interface Props extends Image {
+  alt: string
+}
+
+let { alt, src, width, height, blurDataURL, blurWidth, blurHeight } = Astro.props
+if (src.startsWith('/')) {
+  const image = getImage(src)
+  src = image.src
+  width = image.width
+  height = image.height
+  blurDataURL = image.blurDataURL
+  blurWidth = image.blurWidth
+  blurHeight = image.blurHeight
+}
+---
+
+<img
+  src={options.thumbnail({ src, width, height })}
+  {alt}
+  loading="lazy"
+  {width}
+  {height}
+  style={blurStyle({ src, width, height, blurDataURL, blurWidth, blurHeight })}
+/>

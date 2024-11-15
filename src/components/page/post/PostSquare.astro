@@ -1,0 +1,34 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import LikeIconSmall from '@/components/like/LikeIconSmall.astro'
+import Image from '@/components/mdx/image/Image.astro'
+import { formatShowDate } from '@/helpers/content/formatter'
+
+interface Props {
+  post: Post
+  first: boolean
+}
+
+const { post, first } = Astro.props
+---
+
+<div class={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
+  <div class="list-item list-nice-overlay">
+    <div class={`media ${first ? 'media-36x17' : ''}`}>
+      <a href={post.permalink} class="media-content">
+        <Image {...post.cover} alt={post.title} width={first ? 600 : 300} height={300} />
+        <div class="overlay"></div>
+      </a>
+    </div>
+    <div class="list-content">
+      <a href={post.permalink} class="list-body">
+        <div class="list-title h6 h-2x">{post.title}</div>
+        <div class="list-meta font-number d-flex flex-fill text-muted text-sm">
+          <span class="d-inline-block">{formatShowDate(post.date)}</span>
+          <div class="flex-fill"></div>
+          <LikeIconSmall permalink={post.permalink} />
+        </div>
+      </a>
+    </div>
+  </div>
+</div>

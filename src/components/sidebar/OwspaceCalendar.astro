@@ -1,0 +1,21 @@
+---
+import { DateTime } from 'luxon'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
+
+async function loadCalendarImage(): Promise<string> {
+  const now = DateTime.now().setZone(options.settings.timeZone).setLocale(options.settings.locale)
+  return urlJoin(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.jpg`)
+}
+
+const calendarImage = !options.settings.sidebar.calendar ? '' : await loadCalendarImage()
+---
+
+{
+  calendarImage !== '' && (
+    <div class="widget widget-owspace-calendar">
+      <div class="widget-title">单向历</div>
+      <img loading="lazy" src={calendarImage} />
+    </div>
+  )
+}

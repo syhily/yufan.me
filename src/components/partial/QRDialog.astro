@@ -1,0 +1,48 @@
+---
+import QRCode from 'qrcode-svg'
+
+interface Props {
+  url: string
+  name: string
+  title: string
+  icon: string
+  className?: string
+}
+
+const { url, name, title, icon, className } = Astro.props
+const svg = new QRCode({
+  width: 196,
+  height: 196,
+  content: url,
+  join: true,
+  xmlDeclaration: false,
+  container: 'svg-viewbox',
+}).svg()
+---
+
+<div
+  class={className
+    ? `nice-dialog ${className}`
+    : 'nice-dialog btn btn-dark btn-icon btn-circle single-popup button-social'}
+  title={name}
+>
+  <span>
+    <i class={`iconfont ${icon}`}></i>
+  </span>
+  <div class="nice-popup nice-popup-center nice-popup-sm">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-close">
+        <span class="svg-white"></span>
+        <span class="svg-dark"></span>
+      </div>
+      <div class="nice-popup-content">
+        <div class="text-center">
+          <h6>{title}</h6>
+          <p class="mt-1 mb-2">{name}</p>
+          <Fragment set:html={svg} />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

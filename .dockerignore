@@ -1,0 +1,9 @@
+node_modules
+dist
+.astro
+licenses
+drizzle
+docs
+.idea
+.vscode
+tools
