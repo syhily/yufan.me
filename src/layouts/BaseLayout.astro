@@ -1,0 +1,73 @@
+---
+// tslint:disable:ordered-imports
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '@/assets/styles/iconfont/iconfont.css';
+import 'aplayer/dist/APlayer.min.css';
+import '@/assets/styles/reset.css';
+import '@/assets/styles/globals.css';
+import '@/assets/styles/opposans/opposans.css';
+
+import Footer from '@/components/footer/Footer.astro';
+import Header from '@/components/header/Header.astro';
+import PageMeta from '@/components/meta/PageMeta.astro';
+import SearchDialog from '@/components/search/SearchDialog.astro';
+import options from '@/options';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const title =
+  Astro.props.title === undefined
+    ? `${options.title} - ${options.description}`
+    : `${Astro.props.title} - ${options.title}`;
+const description = Astro.props.description || options.description;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="author" content={options.author.name} />
+    <link rel="author" href={options.author.url} />
+    <meta name="keywords" content={options.keywords.join(',')} />
+    <slot name="og">
+      <PageMeta {title} {description} />
+    </slot>
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
+    <link rel="alternate" type="application/rss+xml" title="且听书吟" href="/feed" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body class="home blog">
+    <div class="site-layout">
+      <Header />
+      <main class="site-main">
+        <slot />
+        <Footer />
+      </main>
+      <ul class="site-fixed-widget">
+        <li class="fixed-gotop">
+          <div class="btn btn-light btn-icon btn-lg btn-rounded btn-gotop">
+            <span>
+              <i class="iconfont icon-arrowup"></i>
+            </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <script>
+      import '../assets/scripts/yufan.me.js';
+    </script>
+    <SearchDialog />
+  </body>
+</html>

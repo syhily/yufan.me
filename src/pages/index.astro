@@ -1,0 +1,6 @@
+---
+import { posts, tags } from '@/helpers/schema';
+import PostsLayout from '@/layouts/posts/PostsLayout.astro';
+---
+
+<PostsLayout pageNum={1} {posts} {tags} />

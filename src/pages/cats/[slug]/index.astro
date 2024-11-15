@@ -1,0 +1,20 @@
+---
+import { getCategory, posts, type Category, type Post } from '@/helpers/schema';
+import CategoryLayout from '@/layouts/posts/CategoryLayout.astro';
+
+interface Props {
+  category: Category;
+  posts: Post[];
+}
+
+const { slug } = Astro.params;
+const category = getCategory(undefined, slug);
+
+if (!category) {
+  return Astro.redirect('/404');
+}
+
+const filteredPosts = posts.filter((post) => post.category === category.name);
+---
+
+<CategoryLayout posts={filteredPosts} {category} pageNum={1} />

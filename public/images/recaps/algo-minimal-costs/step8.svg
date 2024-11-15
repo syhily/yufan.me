@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="400px" viewBox="0 0 2402 1201" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g id="128x128" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(1296, 97.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <g id="Group" transform="translate(94, 96.5)" stroke="#979797" stroke-linecap="square">
+            <line x1="0.5" y1="103" x2="1006.5" y2="103" id="Line"></line>
+            <line x1="6" y1="303.5" x2="1012" y2="303.5" id="Line"></line>
+            <line x1="6" y1="504.5" x2="1012" y2="504.5" id="Line"></line>
+            <line x1="1" y1="705.5" x2="1007" y2="705.5" id="Line"></line>
+            <line x1="6" y1="906.5" x2="1012" y2="906.5" id="Line"></line>
+            <line x1="110.5" y1="6" x2="110.5" y2="1005" id="Line-2"></line>
+            <line x1="311" y1="6.5" x2="311" y2="1005.5" id="Line-2"></line>
+            <line x1="504" y1="0.5" x2="504" y2="999.5" id="Line-2"></line>
+            <line x1="706" y1="4.5" x2="706" y2="1003.5" id="Line-2"></line>
+            <line x1="908" y1="4.5" x2="908" y2="1003.5" id="Line-2"></line>
+        </g>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="599" cy="797" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="601" cy="1006" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="401" cy="797" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="203" cy="597" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="410" cy="399" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="599" cy="202" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="801" cy="797" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1007" cy="604" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="801" cy="399" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="801" cy="599" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="599" cy="400" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="401" cy="598" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="601" cy="598" r="19.5"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="801" cy="202" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="1001" cy="400" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="401" cy="202" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="203" cy="399" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="1007" cy="803" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="801" cy="1006" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="203" cy="803" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="401" cy="1007" r="20"></circle>
+        <polygon id="Star" fill="#FF0B0B" points="1007.5 1025.25 985.458053 1036.83814 989.66769 1012.29407 971.835381 994.911863 996.479027 991.330931 1007.5 969 1018.52097 991.330931 1043.16462 994.911863 1025.33231 1012.29407 1029.54195 1036.83814"></polygon>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1800" cy="797" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1802" cy="1006" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1602" cy="797" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1404" cy="597" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1611" cy="399" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="1800" cy="202" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="2002" cy="797" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="2208" cy="604" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#60E382" cx="2002" cy="399" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="2002" cy="599" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1800" cy="400" r="19.5"></circle>
+        <circle id="Oval" stroke="#79A3F8" fill="#9BD0FD" cx="1602" cy="598" r="19.5"></circle>
+        <circle id="Oval" stroke="#FF8D8D" fill="#FD9B9B" cx="1802" cy="598" r="19.5"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="2002" cy="202" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="2202" cy="400" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="1602" cy="202" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="1404" cy="399" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="2208" cy="803" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="2002" cy="1006" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="1404" cy="803" r="20"></circle>
+        <circle id="Oval" fill="#FFD31C" cx="1602" cy="1007" r="20"></circle>
+        <polygon id="Star" fill="#FF0B0B" points="2208.5 1025.25 2186.45805 1036.83814 2190.66769 1012.29407 2172.83538 994.911863 2197.47903 991.330931 2208.5 969 2219.52097 991.330931 2244.16462 994.911863 2226.33231 1012.29407 2230.54195 1036.83814"></polygon>
+        <circle id="Oval" fill="#FFD31C" cx="2208" cy="803" r="20"></circle>
+        <path id="Line-3" d="M1972.28782,584.924819 L2001.49994,598.992575 L1972.71847,613.921622 L1972.54,601.923 L1799.03712,604.499724 L1796.5374,604.536849 L1796.46315,599.5374 L1798.96288,599.500276 L1972.465,596.923 L1972.28782,584.924819 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M1971.78782,584.424819 L2000.99994,598.492575 L1972.21847,613.421622 L1972.04,601.423 L1798.53712,603.999724 L1796.0374,604.036849 L1795.96315,599.0374 L1798.46288,599.000276 L1971.965,596.423 L1971.78782,584.424819 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M2174.78782,584.424819 L2203.99994,598.492575 L2175.21847,613.421622 L2175.04,601.423 L2001.53712,603.999724 L1999.0374,604.036849 L1998.96315,599.0374 L2001.46288,599.000276 L2174.965,596.423 L2174.78782,584.424819 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M2205.9943,594.994312 L2205.99999,597.494305 L2206.434,788.494 L2218.43504,788.467044 L2204.00114,817.499999 L2189.43512,788.533103 L2201.434,788.506 L2201.00001,597.505695 L2200.99431,595.005701 L2205.9943,594.994312 Z" fill="#979797" fill-rule="nonzero"></path>
+        <path id="Line-3" d="M2209.4943,804.494312 L2209.49999,806.994305 L2209.934,997.994 L2221.93504,997.967044 L2207.50114,1027 L2192.93512,998.033103 L2204.934,998.006 L2204.50001,807.005695 L2204.49431,804.505701 L2209.4943,804.494312 Z" fill="#979797" fill-rule="nonzero"></path>
+    </g>
+</svg>

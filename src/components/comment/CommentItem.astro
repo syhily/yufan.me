@@ -1,0 +1,76 @@
+---
+import type { CommentItem } from '@/components/comment/types';
+import { formatLocalDate } from '@/helpers/formatter';
+import { encodedEmail, urlJoin } from '@/helpers/tools';
+import options from '@/options';
+
+interface Props {
+  depth: number;
+  comment: CommentItem;
+  pending?: false;
+}
+
+const { comment, depth, pending } = Astro.props;
+---
+
+<li id={`atk-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt" data-depth={depth}>
+  <article id={`div-comment-${comment.id}`} class="comment-body">
+    <div class="comment-avatar flex-avatar">
+      <img
+        alt={comment.nick}
+        src={urlJoin(import.meta.env.SITE, 'avatar', `${comment.user_id}.webp`)}
+        class="avatar avatar-40 photo"
+        height="40"
+        width="40"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+    <div class="comment-inner">
+      <div class="comment-author fw-bold">
+        {
+          comment.link === '' ? (
+            comment.nick
+          ) : (
+            <a href={comment.link ?? '#'} rel="nofollow" target="_blank">
+              {comment.nick}
+            </a>
+          )
+        }
+        {
+          encodedEmail(options.author.email) === comment.email_encrypted && (
+            <a class="badge badge-primary badge-pill" href={`mailto:${options.author.email}`}>
+              站长
+            </a>
+          )
+        }
+      </div>
+      <div class="comment-content">
+        <Fragment set:html={comment.content} />
+        {pending && <p class="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>}
+      </div>
+      <div class="comment-footer text-xs text-muted">
+        <time class="me-2">{formatLocalDate(comment.date)}</time>
+        <button class="comment-reply-link" data-rid={comment.id}>回复</button>
+      </div>
+    </div>
+  </article>
+  {
+    comment.children && depth === 1 && (
+      <ul class="children">
+        {comment.children.map((childComment) => (
+          <Astro.self comment={childComment} depth={depth + 1} />
+        ))}
+      </ul>
+    )
+  }
+</li>
+{
+  comment.children && depth !== 1 && (
+    <>
+      {comment.children.map((childComment) => (
+        <Astro.self comment={childComment} depth={depth + 1} />
+      ))}
+    </>
+  )
+}
