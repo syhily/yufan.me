@@ -3487,6 +3487,11 @@ a.index-menu-link:hover {
   color: #333;
 }
 
+.post-menu-overlay {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /** Table of Contents ------------------------------------ Display */
 .display-menu-tree .post-menu {
   -webkit-transform: translateX(-18.125rem);
@@ -3494,6 +3499,7 @@ a.index-menu-link:hover {
   -ms-transform: translateX(-18.125rem);
   -o-transform: translateX(-18.125rem);
   transform: translateX(-18.125rem);
+  z-index: 1000;
 }
 
 .display-menu-tree .toggle-menu-tree {
@@ -3509,6 +3515,7 @@ a.index-menu-link:hover {
   -ms-transform: translateX(-17.5rem);
   -o-transform: translateX(-17.5rem);
   transform: translateX(-17.5rem);
+  z-index: 1500;
 }
 
 .display-menu-tree .toggle-menu-tree i {
@@ -3517,4 +3524,16 @@ a.index-menu-link:hover {
   -ms-transform: rotate(180deg);
   -o-transform: rotate(180deg);
   transform: rotate(180deg);
+}
+
+.display-menu-tree .post-menu-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background-color: rgba(8, 15, 25, 0.3);
+  visibility: visible;
+  pointer-events: initial;
+  z-index: 500;
 }

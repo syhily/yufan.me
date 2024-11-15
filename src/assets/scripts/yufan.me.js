@@ -292,6 +292,15 @@ for (const anchor of document.querySelectorAll('a[href^="#"]')) {
   });
 }
 
+const tocToggle = document.querySelector('.toggle-menu-tree');
+if (typeof tocToggle !== 'undefined' && tocToggle !== null) {
+  tocToggle.addEventListener('click', () => {
+    const body = document.querySelector('body');
+    const displayToc = !body.classList.contains('display-menu-tree');
+    body.classList.toggle('display-menu-tree', displayToc);
+  });
+}
+
 // Add like button for updating likes.
 const likeButton = document.querySelector('button.post-like');
 
