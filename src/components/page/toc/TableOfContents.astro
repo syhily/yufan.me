@@ -1,0 +1,167 @@
+---
+import { generateToC, type TocOpts } from '@/helpers/toc';
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+  toc: TocOpts | false;
+}
+
+const { headings, toc } = Astro.props;
+const items = generateToC(headings, toc);
+---
+
+{
+  items.length > 0 && (
+    <a class="toggle-menu-tree">
+      <i class="text-md iconfont icon-left" />
+    </a>
+  )
+}
+
+<style>
+  .toggle-menu-tree {
+    top: 0;
+    bottom: 0;
+    font-size: 1.375rem;
+    position: fixed;
+    right: 0;
+    margin-right: -5rem;
+    margin-bottom: auto;
+    margin-top: auto;
+    padding-left: 0.35rem;
+    color: #555;
+    width: 6.25rem;
+    height: 6.25rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    line-height: 6.25rem;
+    border-radius: 6.25rem;
+    border: 0.0625rem solid #f0f0f0;
+    opacity: 1;
+    font-family: -apple-system;
+    z-index: 890;
+    -webkit-transition: 0.5s ease all;
+    -moz-transition: 0.5s ease all;
+    -ms-transition: 0.5s ease all;
+    -o-transition: 0.5s ease all;
+    transition: 0.5s ease all;
+    -webkit-box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.117);
+    -moz-box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.117);
+    box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.117);
+  }
+
+  .toggle-menu-tree i {
+    -webkit-transition: 0.5s ease all;
+    -moz-transition: 0.5s ease all;
+    -ms-transition: 0.5s ease all;
+    -o-transition: 0.5s ease all;
+    transition: 0.5s ease all;
+  }
+
+  .toggle-menu-tree:hover {
+    background: #fafafa;
+    -webkit-transform: translateX(-1.25rem);
+    -moz-transform: translateX(-1.25rem);
+    -ms-transform: translateX(-1.25rem);
+    -o-transform: translateX(-1.25rem);
+    transform: translateX(-1.25rem);
+  }
+</style>
+
+<!-- <div id="post-menu">
+  <div id="toc-wrap">
+    <div id="toc-content">
+      <h2 id="post-menu-title">文章目录</h2>
+      <div class="index-menu">
+        <ul class="index-menu-list">
+          <li class="index-menu-item">
+            <a data-scroll class="index-menu-link" data-index="menu_index_1" title="一、中国古代的婚姻与“爱”的缺失"
+              ><span class="menu-content">一、中国古代的婚姻与“爱”的缺失</span></a
+            ><ul class="index-menu-list">
+              <li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_2" title="家族与繁殖的驱动"
+                  ><span class="menu-content">家族与繁殖的驱动</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_3" title="爱情的理想化与艺术创作"
+                  ><span class="menu-content">爱情的理想化与艺术创作</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_4" title="伦理道德与婚姻责任"
+                  ><span class="menu-content">伦理道德与婚姻责任</span></a
+                >
+              </li>
+            </ul>
+          </li><li class="index-menu-item">
+            <a data-scroll class="index-menu-link" data-index="menu_index_5" title="二、西方基督教对“爱”的定义与影响"
+              ><span class="menu-content">二、西方基督教对“爱”的定义与影响</span></a
+            ><ul class="index-menu-list">
+              <li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_6" title="Agape：无私之爱与道德义务"
+                  ><span class="menu-content">Agape：无私之爱与道德义务</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_7" title="基督教中爱与婚姻的关系"
+                  ><span class="menu-content">基督教中爱与婚姻的关系</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_8" title="无私的爱与婚姻中的牺牲"
+                  ><span class="menu-content">无私的爱与婚姻中的牺牲</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_9" title="基督教中的“爱”对西方婚姻的影响"
+                  ><span class="menu-content">基督教中的“爱”对西方婚姻的影响</span></a
+                >
+              </li>
+            </ul>
+          </li><li class="index-menu-item">
+            <a
+              data-scroll
+              class="index-menu-link"
+              data-index="menu_index_10"
+              title="三、现代中国婚姻的转型与西方文化影响"
+              ><span class="menu-content">三、现代中国婚姻的转型与西方文化影响</span></a
+            ><ul class="index-menu-list">
+              <li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_11" title="“情感需求”与“无私爱”的混淆"
+                  ><span class="menu-content">“情感需求”与“无私爱”的混淆</span></a
+                >
+              </li><li class="index-menu-item">
+                <a
+                  data-scroll
+                  class="index-menu-link"
+                  data-index="menu_index_12"
+                  title="基督教“爱”精神与中国婚姻中的“情感需求”"
+                  ><span class="menu-content">基督教“爱”精神与中国婚姻中的“情感需求”</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_13" title="从“我喜欢你”到“我愿意为你牺牲”"
+                  ><span class="menu-content">从“我喜欢你”到“我愿意为你牺牲”</span></a
+                >
+              </li>
+            </ul>
+          </li><li class="index-menu-item">
+            <a data-scroll class="index-menu-link" data-index="menu_index_14" title="四、从我个人经历出发，理解什么是爱"
+              ><span class="menu-content">四、从我个人经历出发，理解什么是爱</span></a
+            ><ul class="index-menu-list">
+              <li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_15" title="无私的爱并不遥远"
+                  ><span class="menu-content">无私的爱并不遥远</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_16" title="不要将爱廉价为情欲上的喜欢"
+                  ><span class="menu-content">不要将爱廉价为情欲上的喜欢</span></a
+                >
+              </li><li class="index-menu-item">
+                <a data-scroll class="index-menu-link" data-index="menu_index_17" title="真正的爱非常珍贵"
+                  ><span class="menu-content">真正的爱非常珍贵</span></a
+                >
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div> -->

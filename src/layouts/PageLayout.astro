@@ -4,6 +4,7 @@ import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import Friends from '@/components/page/friend/Friends.astro';
+import TableOfContents from '@/components/page/toc/TableOfContents.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import type { Page } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
@@ -15,7 +16,7 @@ interface Props {
 }
 
 const { page } = Astro.props;
-const { Content } = await page.render();
+const { Content, headings } = await page.render();
 ---
 
 <BaseLayout title={page.title}>
@@ -25,6 +26,7 @@ const { Content } = await page.render();
     <div class="container">
       <div class="post">
         <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
+        <TableOfContents {headings} toc={page.toc} />
         <div class="post-content">
           <div class="nc-light-gallery">
             <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />

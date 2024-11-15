@@ -1,5 +1,4 @@
 import { defaultCover } from '@/content/config.ts';
-import { generateToC, type TocItem } from '@/helpers/toc';
 import options from '@/options';
 import { getCollection, type Render } from 'astro:content';
 
@@ -16,17 +15,15 @@ export type Category = (typeof categoriesCollection)[number]['data'] & {
   permalink: string;
 };
 export type Friend = (typeof friendsCollection)[number]['data'][number];
-export type Page = Omit<(typeof pagesCollection)[number]['data'], 'toc'> & {
+export type Page = (typeof pagesCollection)[number]['data'] & {
   slug: string;
   permalink: string;
   render: () => Render['.mdx'];
-  toc: () => Promise<Array<TocItem>>;
 };
-export type Post = Omit<(typeof postsCollection)[number]['data'], 'toc'> & {
+export type Post = (typeof postsCollection)[number]['data'] & {
   slug: string;
   permalink: string;
   render: () => Render['.mdx'];
-  toc: () => Promise<Array<TocItem>>;
 };
 export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: number; permalink: string };
 
@@ -40,12 +37,6 @@ export const pages: Page[] = pagesCollection
     permalink: `/${page.slug}`,
     render: page.render,
     ...page.data,
-    toc: async () => {
-      if (page.data.toc === false) {
-        return [];
-      }
-      return generateToC((await page.render()).headings, page.data.toc);
-    },
   }));
 export const posts: Post[] = postsCollection
   .filter((post) => post.data.published || !options.isProd())
@@ -54,12 +45,6 @@ export const posts: Post[] = postsCollection
     permalink: `/posts/${post.slug}`,
     render: post.render,
     ...post.data,
-    toc: async () => {
-      if (post.data.toc === false) {
-        return [];
-      }
-      return generateToC((await post.render()).headings, post.data.toc);
-    },
   }))
   .sort((left: Post, right: Post) => {
     const a = left.date.getTime();

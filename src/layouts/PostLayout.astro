@@ -4,6 +4,7 @@ import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import LikeShare from '@/components/like/LikeShare.astro';
 import PostMeta from '@/components/meta/PostMeta.astro';
+import TableOfContents from '@/components/page/toc/TableOfContents.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import { formatShowDate } from '@/helpers/formatter';
@@ -17,7 +18,7 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { Content } = await post.render();
+const { Content, headings } = await post.render();
 ---
 
 <BaseLayout title={post.title}>
@@ -53,6 +54,7 @@ const { Content } = await post.render();
                       ))
                 }
               </div>
+              <TableOfContents {headings} toc={post.toc} />
               <div class="post-content">
                 <div class="nc-light-gallery">
                   <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
