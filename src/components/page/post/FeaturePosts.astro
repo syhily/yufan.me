@@ -20,7 +20,7 @@ const historicalPosts = (): Post[] => {
   const now = DateTime.now().setZone(options.settings.timeZone);
   const radical = now.month + now.day;
 
-  return [posts[offset + radical - 1], posts[offset + radical + 43 - 1], posts[offset + radical + 43 * 2 - 1]];
+  return [posts[offset + radical + 43 * 2 - 1], posts[offset + radical + 43 - 1], posts[offset + radical - 1]];
 };
 const featurePosts = options.settings.post.feature ?? [];
 
