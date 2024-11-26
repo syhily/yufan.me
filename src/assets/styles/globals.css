@@ -2740,11 +2740,11 @@ a:hover .overlay {
     search style
 --------------------------------------------------------------*/
 
-.widget_search label {
+.widget-search label {
   display: block;
 }
 
-.widget_search .search-field {
+.widget-search .search-field {
   position: relative;
   display: block;
   width: 100%;
@@ -2772,46 +2772,46 @@ a:hover .overlay {
     -webkit-box-shadow 0.15s ease-in-out;
 }
 
-.widget_search .search-field:hover,
-.widget_search .search-field:focus {
+.widget-search .search-field:hover,
+.widget-search .search-field:focus {
   border-color: var(--border-muted);
   -webkit-box-shadow: none;
   box-shadow: none;
   outline: 0;
 }
 
-.widget_search .screen-reader-text,
-.widget_search .search-submit {
+.widget-search .screen-reader-text,
+.widget-search .search-submit {
   display: none;
 }
 
 /*--------------------------------------------------------------
-    widget_recent_comments style
-    widget_recent_entries  style
+    widget-recent-comments style
+    widget-recent-entries  style
 --------------------------------------------------------------*/
 
-.widget_recent_entries ul,
-.widget_recent_comments ul {
+.widget-recent-entries ul,
+.widget-recent-comments ul {
   padding-left: 1.25rem;
 }
 
-.widget_recent_entries ul li,
-.widget_recent_comments ul li {
+.widget-recent-entries ul li,
+.widget-recent-comments ul li {
   margin-bottom: 0.75rem;
   list-style-type: circle;
   font-size: inherit;
 }
 
-.widget_recent_entries ul li a {
+.widget-recent-entries ul li a {
   display: block;
 }
 
-.widget_recent_entries ul li span {
+.widget-recent-entries ul li span {
   color: var(--color-muted);
   font-size: inherit;
 }
 
-.widget_recent_comments ul li span {
+.widget-recent-comments ul li span {
   font-weight: 600;
   color: var(--color-dark);
   margin-right: 5px;
@@ -2850,7 +2850,7 @@ a:hover .overlay {
 }
 
 /*--------------------------------------------------------------
-    widget_recent_comments style
+    widget-recent-comments style
 --------------------------------------------------------------*/
 
 .widget_nav_menu ul li {

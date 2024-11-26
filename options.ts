@@ -65,6 +65,7 @@ const Options = z
         post: z.number().default(6),
         comment: z.number().default(0),
         tag: z.number().default(20),
+        calendar: z.boolean().default(false),
       }),
       comments: z.object({
         server: z.string().url().readonly(),
@@ -187,9 +188,10 @@ const options: z.input<typeof Options> = {
     },
     sidebar: {
       search: true,
-      post: 6,
-      comment: 6,
-      tag: 20,
+      post: 5,
+      comment: 5,
+      tag: 10,
+      calendar: true,
     },
     comments: {
       server: 'https://comment.yufan.me',
