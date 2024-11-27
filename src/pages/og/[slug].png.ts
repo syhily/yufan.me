@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ params }) => {
     }
 
     title = page.title;
-    summary = '';
+    summary = page.summary;
     cover = page.cover.src;
   } else {
     title = post.title;

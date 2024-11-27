@@ -108,6 +108,7 @@ const pagesCollection = defineCollection({
     comments: z.boolean().optional().default(true),
     cover: image(defaultCover),
     published: z.boolean().optional().default(true),
+    summary: z.string().optional().default(''),
     friend: z.boolean().optional().default(false),
     toc: toc(),
   }),

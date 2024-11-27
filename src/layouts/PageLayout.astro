@@ -1,5 +1,6 @@
 ---
 import Comments from '@/components/comment/Comments.astro';
+import Footer from '@/components/footer/Footer.astro';
 import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
@@ -19,12 +20,12 @@ const { page } = Astro.props;
 const { Content, headings } = await page.render();
 ---
 
-<BaseLayout title={page.title}>
+<BaseLayout title={page.title} footer={false}>
   <PageMeta slot="og" title={page.title} ogImageUrl={`/og/${page.slug}.png`} />
 
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-    <div class="container">
-      <div class="post">
+  <div class="row gx-0">
+    <div class="col-lg-8 col-xl-7">
+      <div class="post p-3 p-md-5">
         <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
         <TableOfContents {headings} toc={page.toc} />
         <div class="post-content">
@@ -36,6 +37,10 @@ const { Content, headings } = await page.render();
         <LikeButton permalink={page.permalink} />
         {page.comments && <Comments commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />}
       </div>
+      <Footer />
+    </div>
+    <div class="col-lg-4 col-xl-5 d-none d-lg-block sticky-top hv">
+      <div class="bg-img hv" style={{ backgroundImage: `url('${page.cover.src}')` }}></div>
     </div>
   </div>
 </BaseLayout>

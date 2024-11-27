@@ -16,6 +16,7 @@ import options from '@/options';
 interface Props {
   title?: string;
   description?: string;
+  footer?: boolean;
 }
 
 const title =
@@ -23,6 +24,7 @@ const title =
     ? `${options.title} - ${options.description}`
     : `${Astro.props.title} - ${options.title}`;
 const description = Astro.props.description || options.description;
+const showFooter = Astro.props.footer || false;
 ---
 
 <!doctype html>
@@ -53,7 +55,7 @@ const description = Astro.props.description || options.description;
       <Header />
       <main class="site-main">
         <slot />
-        <Footer />
+        {showFooter && <Footer />}
       </main>
       <ul class="site-fixed-widget">
         <li class="fixed-gotop">
