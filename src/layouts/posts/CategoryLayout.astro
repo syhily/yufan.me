@@ -21,7 +21,9 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.
     <div class="container">
       <div class="mb-3 mb-lg-4">
         <h1>{category.name}</h1>
-        <div class="text-muted mt-1">{category.description}</div>
+        <div class="text-muted mt-1">
+          {category.description.split('\n').map((line) => (line !== '' ? <p>{line}</p> : ''))}
+        </div>
       </div>
       <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
         {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}

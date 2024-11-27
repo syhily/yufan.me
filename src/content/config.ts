@@ -53,7 +53,7 @@ const categoriesCollection = defineCollection({
     name: z.string().max(20),
     slug: slug(),
     cover: image(defaultCover),
-    description: z.string().max(999).optional(),
+    description: z.string().max(999).optional().default(''),
   }),
 });
 
