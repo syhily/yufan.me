@@ -50,7 +50,7 @@ const { comment, depth, pending } = Astro.props;
         {pending && <p class="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>}
       </div>
       <div class="comment-footer text-xs text-muted">
-        <time class="me-2">{formatLocalDate(comment.date)}</time>
+        <time class="me-2">{formatLocalDate(comment.date, 'yyyy-MM-dd HH:mm')}</time>
         <button class="comment-reply-link" data-rid={comment.id}>回复</button>
       </div>
     </div>

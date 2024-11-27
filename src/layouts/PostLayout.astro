@@ -7,7 +7,7 @@ import PostMeta from '@/components/meta/PostMeta.astro';
 import TableOfContents from '@/components/page/toc/TableOfContents.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
-import { formatShowDate } from '@/helpers/formatter';
+import { formatLocalDate } from '@/helpers/formatter';
 import { getTag, posts, tags, type Post } from '@/helpers/schema';
 import { urlJoin } from '@/helpers/tools';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -39,7 +39,7 @@ const { Content, headings } = await post.render();
             <div class="card-body">
               <h1 class="post-title">{post.title}</h1>
               <div class="post-meta text-sm text-muted mt-3 mb-4">
-                <time class="">{formatShowDate(post.date)}</time>
+                <time class="">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
                 {
                   post.tags.length > 0 &&
                     post.tags
