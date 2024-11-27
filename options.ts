@@ -48,7 +48,6 @@ const Options = z
       post: z.object({
         sort: z.enum(['asc', 'desc']),
         feature: z.array(z.string()).min(3).optional(),
-        category: z.array(z.string()).optional(),
       }),
       pagination: z.object({
         posts: z.number().optional().default(5),
@@ -122,6 +121,10 @@ const options: z.input<typeof Options> = {
       link: '/',
     },
     {
+      text: '分类',
+      link: '/categories',
+    },
+    {
       text: '关于',
       link: '/about',
     },
@@ -132,11 +135,6 @@ const options: z.input<typeof Options> = {
     {
       text: '友链',
       link: '/links',
-    },
-    {
-      text: '笔记',
-      link: 'https://note.yufan.me',
-      target: '_blank',
     },
   ],
   socials: [
@@ -174,7 +172,6 @@ const options: z.input<typeof Options> = {
     assetPrefix: 'https://cat.yufan.me',
     post: {
       sort: 'desc',
-      category: ['article', 'think', 'gossip', 'coding'],
     },
     pagination: {
       posts: 6,

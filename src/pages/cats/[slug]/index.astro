@@ -15,6 +15,10 @@ if (!category) {
 }
 
 const filteredPosts = posts.filter((post) => post.category === category.name);
+
+if (filteredPosts.length === 0) {
+  return Astro.rewrite('/404');
+}
 ---
 
 <CategoryLayout posts={filteredPosts} {category} pageNum={1} />

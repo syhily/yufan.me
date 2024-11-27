@@ -14,9 +14,6 @@ interface Props {
 
 const { category, posts, pageNum } = Astro.props;
 const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.pagination.category);
-if (totalPage === 0) {
-  return Astro.redirect('/404');
-}
 ---
 
 <BaseLayout title={category.name}>

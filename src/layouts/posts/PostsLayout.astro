@@ -1,7 +1,6 @@
 ---
 import FeaturePosts from '@/components/page/post/FeaturePosts.astro';
 import PostCards from '@/components/page/post/PostCards.astro';
-import PinnedCategories from '@/components/page/post/PostCategory.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
 import type { Post, Tag } from '@/helpers/schema';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -29,7 +28,6 @@ if (pageNum < 1) {
         <PostCards {pageNum} {posts} />
         <Sidebar {posts} {tags} />
       </div>
-      <PinnedCategories />
     </div>
   </div>
   <slot />

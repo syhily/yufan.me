@@ -120,13 +120,6 @@ if (invalidFeaturePosts.length > 0) {
   throw new Error(`The bellowing feature posts are invalid:\n$${invalidFeaturePosts.join('\n')}`);
 }
 
-// Validate pinned categories.
-const pinnedCategories: string[] = options.settings.post.category ?? [];
-const invalidPinnedCategories = pinnedCategories.filter((c) => categories.find((e) => e.name === c));
-if (invalidPinnedCategories.length > 0) {
-  throw new Error(`The bellowing pinned categories are invalid:\n$${invalidPinnedCategories.join('\n')}`);
-}
-
 export const getPost = (slug: string): Post | undefined => {
   return posts.find((post) => post.slug === slug);
 };
