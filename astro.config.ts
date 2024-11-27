@@ -32,7 +32,9 @@ export default defineConfig({
         POSTGRES_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
         POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
         // Artalk Comment
+        ARTALK_SCHEME: envField.string({ context: 'server', access: 'secret' }),
         ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
+        ARTALK_PORT: envField.number({ context: 'server', access: 'secret' }),
       },
       validateSecrets: true,
     },

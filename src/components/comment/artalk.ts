@@ -2,7 +2,7 @@ import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp
 import { queryUser } from '@/helpers/db/query';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
-import { ARTALK_HOST } from 'astro:env/server';
+import { ARTALK_HOST, ARTALK_PORT, ARTALK_SCHEME } from 'astro:env/server';
 import _ from 'lodash';
 import { marked } from 'marked';
 import querystring from 'node:querystring';
@@ -10,7 +10,7 @@ import { ELEMENT_NODE, transform, walk } from 'ultrahtml';
 import sanitize from 'ultrahtml/transformers/sanitize';
 
 // Access the artalk in internal docker host when it was deployed on zeabur.
-const server = options.isProd() ? `http://${ARTALK_HOST}:23366` : `https://${ARTALK_HOST}`;
+const server = `${ARTALK_SCHEME}://${ARTALK_HOST}:${ARTALK_PORT}`;
 
 export const loadComments = async (key: string, title: string | null, offset: number): Promise<Comments | null> => {
   let params: Record<string, string | number | boolean> = {
