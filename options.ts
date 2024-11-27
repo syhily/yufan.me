@@ -67,7 +67,6 @@ const Options = z
         calendar: z.boolean().default(false),
       }),
       comments: z.object({
-        server: z.string().url().readonly(),
         size: z.number().default(10).readonly(),
         avatar: z.object({
           mirror: z.string().url().readonly(),
@@ -191,7 +190,6 @@ const options: z.input<typeof Options> = {
       calendar: true,
     },
     comments: {
-      server: 'https://comment.yufan.me',
       size: 10,
       avatar: {
         mirror: 'https://weavatar.com/avatar',

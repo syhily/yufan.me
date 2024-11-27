@@ -30,7 +30,7 @@ const { Content, headings } = await page.render();
         <TableOfContents {headings} toc={page.toc} />
         <div class="post-content">
           <div class="nc-light-gallery">
-            <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
+            {page.comments && <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />}
           </div>
         </div>
         {page.friend && <Friends />}
