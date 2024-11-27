@@ -1,5 +1,6 @@
 import { defaultOpenGraph, drawOpenGraph } from '@/helpers/og';
 import { getPage, getPost, pages, posts } from '@/helpers/schema';
+import options from '@/options';
 import type { APIRoute } from 'astro';
 
 const fallback = async () =>
@@ -29,7 +30,7 @@ export const GET: APIRoute = async ({ params }) => {
     }
 
     title = page.title;
-    summary = page.summary;
+    summary = page.summary || options.description;
     cover = page.cover.src;
   } else {
     title = post.title;

@@ -20,8 +20,8 @@ const { page } = Astro.props;
 const { Content, headings } = await page.render();
 ---
 
-<BaseLayout title={page.title} footer={false}>
-  <PageMeta slot="og" title={page.title} ogImageUrl={`/og/${page.slug}.png`} />
+<BaseLayout title={page.title} description={page.summary} footer={false}>
+  <PageMeta slot="og" title={page.title} description={page.summary} ogImageUrl={`/og/${page.slug}.png`} />
 
   <div class="row gx-0">
     <div class="col-lg-8 col-xl-7">
