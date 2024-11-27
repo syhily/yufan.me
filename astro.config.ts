@@ -71,7 +71,7 @@ export default defineConfig({
   },
   vite: {
     // Add this for avoiding the needless import optimize in Vite.
-    optimizeDeps: { exclude: ['@napi-rs/canvas', 'opendal'] },
+    optimizeDeps: { exclude: ['@napi-rs/canvas', 'opendal', 'sharp'] },
   },
   build: {
     assets: 'cats',

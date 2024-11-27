@@ -14,7 +14,7 @@ const randomSize = options.settings.sidebar.tag;
 
 {
   randomSize > 0 && (
-    <div id="tag_cloud" class="widget widget-tag-cloud">
+    <div id="tag-cloud" class="widget widget-tag-cloud">
       <div class="widget-title">文章标签</div>
       <div class="tagcloud">
         {_.sampleSize(tags, randomSize).map((tag) => (

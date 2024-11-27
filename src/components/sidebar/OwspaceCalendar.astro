@@ -1,6 +1,7 @@
 ---
 import options from '@/options';
 import { DateTime } from 'luxon';
+import sharp from 'sharp';
 
 const loadCalendarImage = async (): Promise<string> => {
   const now = DateTime.now().setZone(options.settings.timeZone);
@@ -14,7 +15,11 @@ const loadCalendarImage = async (): Promise<string> => {
     return '';
   }
 
-  const encodedImage = Buffer.from(await response.arrayBuffer()).toString('base64');
+  const encodedImage = (
+    await sharp(await response.arrayBuffer())
+      .extract({ width: 1096, height: 1550, left: 90, top: 110 })
+      .toBuffer()
+  ).toString('base64');
   return `data:image/jpeg;base64,${encodedImage}`;
 };
 
@@ -24,6 +29,7 @@ const calendarImage = !options.settings.sidebar.calendar ? '' : await loadCalend
 {
   calendarImage !== '' && (
     <div class="widget widget-owspace-calendar">
+      <div class="widget-title">单向历</div>
       <img src={calendarImage} />
     </div>
   )

@@ -177,7 +177,7 @@ const options: z.input<typeof Options> = {
       category: ['article', 'think', 'gossip', 'coding'],
     },
     pagination: {
-      posts: 5,
+      posts: 6,
       category: 7,
       tags: 7,
       search: 7,
