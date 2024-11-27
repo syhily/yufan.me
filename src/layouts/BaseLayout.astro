@@ -24,7 +24,7 @@ const title =
     ? `${options.title} - ${options.description}`
     : `${Astro.props.title} - ${options.title}`;
 const description = Astro.props.description || options.description;
-const showFooter = Astro.props.footer || false;
+const showFooter = Astro.props.footer || true;
 ---
 
 <!doctype html>
