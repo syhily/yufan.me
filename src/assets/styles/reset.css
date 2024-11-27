@@ -94,6 +94,7 @@ body {
   border: none;
   margin: 0;
   padding: 0;
+  overscroll-behavior: none;
 }
 
 h1,
