@@ -108,6 +108,18 @@ This weblog uses artalk as its backend comment service. But since artalk didn't 
 We decide to query it directly from the Postgres database. So the comments and fav clicks are living in the same
 database.
 
+If you don't want the astro integration, change the switch in `options.ts` to `false`.
+
+```json
+{
+  settings: {
+    comments: {
+      enable: false,
+    }
+  }
+}
+```
+
 ### S3 Compatible Storage Integration
 
 This blog will upload all the built resources at build stage. You can remove this feature by removing the
@@ -135,8 +147,8 @@ date: 2013/7/13 20:46:25
 
 | Setting     | Description                          | Required | Default              |
 |-------------|--------------------------------------|----------|----------------------|
-| `slug`      | ID (unique), used as the permalink   | true     | Filename             |
-| `title`     | Title                                | true     | Filename             |
+| `slug`      | ID (unique), used as the permalink   | true     |                      |
+| `title`     | Title                                | true     |                      |
 | `date`      | Published date                       | true     |                      |
 | `updated`   | Updated date                         | false    | Published date       |
 | `comments`  | Enables comment feature for the post | false    | `true`               |
@@ -150,16 +162,17 @@ date: 2013/7/13 20:46:25
 
 ### Pages Front Matter Settings
 
-| Setting     | Description                          | Required | Default        |
-|-------------|--------------------------------------|----------|----------------|
-| `slug`      | ID (unique), used as the permalink   | true     | Filename       |
-| `title`     | Title                                | true     | Filename       |
-| `date`      | Published date                       | true     |                |
-| `updated`   | Updated date                         | false    | Published date |
-| `comments`  | Enables comment feature for the post | false    | `true`         |
-| `cover`     | The cover image                      | false    | `null`         |
-| `published` | Whether the post should be published | false    | `true`         |
-| `toc`       | Display the Table of Contents        | false    | `false`        |
+| Setting     | Description                          | Required | Default              |
+|-------------|--------------------------------------|----------|----------------------|
+| `slug`      | ID (unique), used as the permalink   | true     |                      |
+| `title`     | Title                                | true     |                      |
+| `date`      | Published date                       | true     |                      |
+| `updated`   | Updated date                         | false    | Published date       |
+| `comments`  | Enables comment feature for the page | false    | `true`               |
+| `summary`   | Page summary in plain text           | false    | First 140 characters |
+| `cover`     | The cover image                      | false    | `null`               |
+| `published` | Whether the page should be published | false    | `true`               |
+| `toc`       | Display the Table of Contents        | false    | `false`              |
 
 ## Weblog Design
 

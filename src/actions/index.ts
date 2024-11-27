@@ -15,7 +15,7 @@ const CommentConnectError = new ActionError({
   message: "couldn't connect to comment server",
 });
 
-export const server = {
+const normalActions = {
   like: defineAction({
     accept: 'json',
     input: z
@@ -53,6 +53,9 @@ export const server = {
       return { avatar: urlJoin(import.meta.env.SITE, 'avatar', `${hash}.webp`) };
     },
   }),
+};
+
+const commentActions = {
   comment: defineAction({
     accept: 'json',
     input: z.object({
@@ -98,3 +101,5 @@ export const server = {
     },
   }),
 };
+
+export const server = options.settings.comments.enable ? { ...normalActions, ...commentActions } : { ...normalActions };
