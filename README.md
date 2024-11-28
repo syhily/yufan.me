@@ -110,7 +110,7 @@ database.
 
 If you don't want the astro integration, change the switch in `options.ts` to `false`.
 
-```json
+```typescript
 {
   settings: {
     comments: {

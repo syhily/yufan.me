@@ -61,11 +61,13 @@ export const categories: Category[] = categoriesCollection.map((cat) => ({
   permalink: `/cats/${cat.data.slug}`,
   ...cat.data,
 }));
-export const tags: Tag[] = tagsCollection[0].data.map((tag) => ({
-  counts: posts.filter((post) => post.tags.includes(tag.name)).length,
-  permalink: `/tags/${tag.slug}`,
-  ...tag,
-}));
+export const tags: Tag[] = tagsCollection.flatMap((tags) => {
+  return tags.data.map((tag) => ({
+    counts: posts.filter((post) => post.tags.includes(tag.name)).length,
+    permalink: `/tags/${tag.slug}`,
+    ...tag,
+  }));
+});
 
 // Find the missing categories from posts.
 const missingCategories: string[] = posts
