@@ -22,3 +22,7 @@ export const urlJoin = (base: string, ...paths: string[]): string => {
 
 export const encodedEmail = (email: string): string =>
   crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex');
+
+export const isNumeric = (str: string): boolean => {
+  return /^-?\d+$/.test(str);
+};

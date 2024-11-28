@@ -1,15 +1,11 @@
 import { queryEmail } from '@/helpers/db/query';
-import { encodedEmail, urlJoin } from '@/helpers/tools';
+import { encodedEmail, isNumeric, urlJoin } from '@/helpers/tools';
 import options from '@/options';
 import type { APIRoute, ValidRedirectStatus } from 'astro';
 
 const defaultAvatar = (): string => {
   return urlJoin(options.assetsPrefix(), '/images/default-avatar.png');
 };
-
-function isNumeric(str: string) {
-  return /^-?\d+$/.test(str);
-}
 
 const avatarImage = async (
   hash: string,
@@ -29,7 +25,7 @@ const avatarImage = async (
   return new Response(Buffer.from(await resp.arrayBuffer()), {
     headers: {
       'Content-Type': 'image/webp',
-      'Cache-control': 'max-age=604800',
+      'Cache-Control': 'public, max-age=604800',
     },
   });
 };
