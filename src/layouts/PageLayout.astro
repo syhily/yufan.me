@@ -24,7 +24,7 @@ const { Content, headings } = await page.render();
   <PageMeta slot="og" title={page.title} description={page.summary} ogImageUrl={`/og/${page.slug}.png`} />
 
   <div class="row gx-0">
-    <div class="col-lg-8 col-xl-7">
+    <div class="col-lg-8 col-xl-8">
       <div class="post p-3 p-md-5">
         <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
         <TableOfContents {headings} toc={page.toc} />
@@ -39,7 +39,7 @@ const { Content, headings } = await page.render();
       </div>
       <Footer />
     </div>
-    <div class="col-lg-4 col-xl-5 d-none d-lg-block sticky-top hv">
+    <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
       <div class="bg-img hv" style={{ backgroundImage: `url('${page.cover.src}')` }}></div>
     </div>
   </div>

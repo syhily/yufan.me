@@ -45,7 +45,7 @@
     "@astrojs/mdx": "^3.1.9",
     "@astrojs/rss": "^4.0.9",
     "@zeabur/astro-adapter": "^1.0.6",
-    "astro": "^4.16.15",
+    "astro": "^4.16.16",
     "drizzle-orm": "^0.36.4",
     "fuse.js": "^7.0.0",
     "lodash": "^4.17.21",
