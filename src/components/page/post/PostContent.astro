@@ -1,5 +1,6 @@
 ---
 import UnstyledImage from '@/components/image/UnstyledImage.astro';
+import UnstyledModifiedTimeNotice from '@/components/notice/UnstyledModifiedTimeNotice.astro';
 import UnstyledMusicPlayer from '@/components/player/UnstyledMusicPlayer.astro';
 import { posts } from '@/helpers/schema';
 
@@ -16,4 +17,10 @@ if (!post) {
 const { Content } = await post.render();
 ---
 
-<Content components={{ MusicPlayer: UnstyledMusicPlayer, Image: UnstyledImage }} />
+<Content
+  components={{
+    MusicPlayer: UnstyledMusicPlayer,
+    Image: UnstyledImage,
+    ModifiedTimeNotice: UnstyledModifiedTimeNotice,
+  }}
+/>

@@ -4,6 +4,7 @@ import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import LikeShare from '@/components/like/LikeShare.astro';
 import PostMeta from '@/components/meta/PostMeta.astro';
+import ModifiedTimeNotice from '@/components/notice/ModifiedTimeNotice.astro';
 import TableOfContents from '@/components/page/toc/TableOfContents.astro';
 import MusicPlayer from '@/components/player/MusicPlayer.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
@@ -57,7 +58,13 @@ const { Content, headings } = await post.render();
               <TableOfContents {headings} toc={post.toc} />
               <div class="post-content">
                 <div class="nc-light-gallery">
-                  <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
+                  <Content
+                    components={{
+                      MusicPlayer: MusicPlayer,
+                      Image: Image,
+                      ModifiedTimeNotice: ModifiedTimeNotice,
+                    }}
+                  />
                 </div>
                 <nav class="post-in-navigation navigation pagination font-number" role="navigation">
                   <div class="nav-links"></div>

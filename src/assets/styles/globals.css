@@ -1347,6 +1347,25 @@ textarea.form-control {
   }
 }
 
+.card-notice {
+  background-color: var(--bg-light);
+}
+
+.card-notice .card-header {
+  background-color: var(--night-color-dark);
+  padding: 0.5rem 2rem;
+}
+
+.card-notice .card-header p {
+  font-weight: 700;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.card-notice .card-body p {
+  margin: 0;
+}
+
 /*--------------------------------------------------------------
     list style
 --------------------------------------------------------------*/

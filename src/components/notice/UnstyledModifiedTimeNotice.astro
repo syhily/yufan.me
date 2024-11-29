@@ -1,0 +1,23 @@
+---
+import { formatLocalDate } from '@/helpers/formatter';
+import options from '@/options';
+
+interface Props {
+  updated: string;
+}
+
+const { updated } = Astro.props;
+
+const updateTime = formatLocalDate(new Date(updated), 'yyyy-MM-dd HH:mm');
+---
+
+<blockquote>
+  <strong>文章时效性注意</strong>
+  <p>
+    此文最后一次修改于 {
+      updateTime
+    }，这与你阅读此文的时间可能有较大偏差。因为此类文章都有一定的的时效性，故在此只保证写此文时内容的正确性。如果您发现因为时间变化导致的偏差，欢迎给我<a
+      href={`mailto:${options.author.email}`}>发邮件</a
+    >。
+  </p>
+</blockquote>
