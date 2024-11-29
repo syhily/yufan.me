@@ -1,6 +1,7 @@
 import { defaultCover } from '@/content/config.ts';
 import options from '@/options';
 import { getCollection, getEntry, type Render } from 'astro:content';
+import { pinyin } from 'pinyin-pro';
 
 // Import the collections from the astro content.
 const categoriesCollection = await getCollection('categories');
@@ -80,7 +81,18 @@ if (missingCategories.length > 0) {
 // Find the missing tags from posts.
 const missingTags: string[] = posts.flatMap((post) => post.tags).filter((tag) => !tags.find((t) => t.name === tag));
 if (missingTags.length > 0) {
-  throw new Error(`The bellowing tags has not been configured:\n$${missingTags.join('\n')}`);
+  console.warn(`The bellowing tags has not been configured:\n${missingTags.join('\n')}`);
+  for (const missingTag of missingTags) {
+    const slug = pinyin(missingTag, { toneType: 'none', separator: '-', nonZh: 'consecutive', type: 'string' })
+      .replaceAll(' ', '-')
+      .toLowerCase();
+    tags.push({
+      name: missingTag,
+      slug: slug,
+      permalink: `/tags/${slug}`,
+      counts: posts.filter((post) => post.tags.includes(missingTag)).length,
+    });
+  }
 }
 
 // Find the missing covers from posts.
