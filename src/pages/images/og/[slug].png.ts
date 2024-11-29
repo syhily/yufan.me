@@ -2,13 +2,13 @@ import { defaultOpenGraph, drawOpenGraph } from '@/helpers/og';
 import { getPage, getPost, pages, posts } from '@/helpers/schema';
 import options from '@/options';
 import type { APIRoute } from 'astro';
-
 const fallback = async () =>
   new Response(await defaultOpenGraph(), {
     headers: { 'Content-Type': 'image/png' },
   });
 
-export const prerender = true;
+// This endpoint can be controlled by using environment variable.
+export const prerender = import.meta.env.BUILD_OPEN_GRAPH;
 
 export const GET: APIRoute = async ({ params }) => {
   const slug = params.slug;

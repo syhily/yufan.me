@@ -35,6 +35,8 @@ export default defineConfig({
         ARTALK_SCHEME: envField.string({ context: 'server', access: 'secret' }),
         ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
         ARTALK_PORT: envField.number({ context: 'server', access: 'secret' }),
+        // Build the Open Graph
+        BUILD_OPEN_GRAPH: envField.boolean({ context: 'server', access: 'public', default: true }),
       },
       validateSecrets: true,
     },
