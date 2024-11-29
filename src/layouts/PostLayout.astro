@@ -28,7 +28,7 @@ const { Content, headings } = await post.render();
     description={post.summary}
     publishDate={post.date.toISOString()}
     requestPath={post.permalink}
-    ogImageUrl={`/og/${post.slug}.png`}
+    ogImageUrl={`/images/og/${post.slug}.png`}
     ogImageAltText={`${post.title} - ${post.summary}`}
   />
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">

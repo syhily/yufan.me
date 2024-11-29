@@ -49,7 +49,7 @@ export default defineConfig({
       ],
     }),
     uploader({
-      paths: ['images', 'og', 'cats'],
+      paths: ['images', 'assets'],
       endpoint: process.env.S3_ENDPOINT,
       bucket: process.env.S3_BUCKET as string,
       accessKey: process.env.S3_ACCESS_KEY as string,
@@ -76,7 +76,7 @@ export default defineConfig({
     optimizeDeps: { exclude: ['@napi-rs/canvas', 'opendal', 'sharp'] },
   },
   build: {
-    assets: 'cats',
+    assets: 'assets',
     assetsPrefix: options.assetsPrefix(),
   },
 });
