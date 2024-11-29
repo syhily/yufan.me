@@ -7,6 +7,7 @@ import rehypeExternalLinks from 'rehype-external-links';
 import rehypeSlug from 'rehype-slug';
 import options from './options';
 import { astroImage } from './plugins/images';
+import { openGraph } from './plugins/open-graph';
 
 // https://astro.build/config
 export default defineConfig({
@@ -37,6 +38,8 @@ export default defineConfig({
         ARTALK_PORT: envField.number({ context: 'server', access: 'secret' }),
         // Build the Open Graph
         BUILD_OPEN_GRAPH: envField.boolean({ context: 'server', access: 'public', default: true }),
+        // Upload the files
+        UPLOAD_STATIC_FILES: envField.boolean({ context: 'server', access: 'public', default: false }),
       },
       validateSecrets: true,
     },
@@ -51,12 +54,19 @@ export default defineConfig({
       ],
     }),
     uploader({
-      paths: ['images', 'assets'],
+      enable:
+        process.env.BUILD_OPEN_GRAPH === undefined ||
+        process.env.BUILD_OPEN_GRAPH === 'true' ||
+        process.env.UPLOAD_STATIC_FILES === 'true',
+      paths: [{ path: 'images', recursive: true, keep: false, override: false }, 'assets'],
+      recursive: true,
+      keep: false,
       endpoint: process.env.S3_ENDPOINT,
       bucket: process.env.S3_BUCKET as string,
       accessKey: process.env.S3_ACCESS_KEY as string,
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
     }),
+    openGraph(),
   ],
   adapter: zeabur(),
   markdown: {

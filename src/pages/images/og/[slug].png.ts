@@ -7,9 +7,6 @@ const fallback = async () =>
     headers: { 'Content-Type': 'image/png' },
   });
 
-// This endpoint can be controlled by using environment variable.
-export const prerender = import.meta.env.BUILD_OPEN_GRAPH;
-
 export const GET: APIRoute = async ({ params }) => {
   const slug = params.slug;
   if (!slug) {
