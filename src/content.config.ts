@@ -3,6 +3,8 @@ import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
 import { glob } from 'astro/loaders';
 import { defineCollection, z } from 'astro:content';
+import { glob as Glob } from 'glob';
+import path from 'node:path';
 
 export const defaultCover = '/images/default-cover.jpg';
 
@@ -16,12 +18,7 @@ const slug = () =>
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug');
 
-const image = (fallbackImage: string) =>
-  z
-    .string()
-    .optional()
-    .default(fallbackImage)
-    .transform((file) => imageMetadata(file));
+const image = (fallbackImage: string) => z.string().optional().default(fallbackImage);
 
 // The default toc heading level.
 const toc = () =>
@@ -46,6 +43,27 @@ const toc = () =>
     .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
       message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
     });
+
+// Images Collection
+const imagesCollection = defineCollection({
+  loader: async () => {
+    const publicDirectory = path.join(process.cwd(), 'public');
+    const imagePaths = await Glob(path.join(publicDirectory, '**/*.{jpg,jpeg,gif,svg,png,webp}'));
+    const metas = imagePaths
+      .map((imagePath) => imagePath.substring(publicDirectory.length))
+      .map(async (imagePath) => ({ id: imagePath, ...(await imageMetadata(imagePath)) }));
+
+    return Promise.all(metas);
+  },
+  schema: z.object({
+    src: z.string(),
+    width: z.union([z.string(), z.number()]),
+    height: z.union([z.string(), z.number()]),
+    blurDataURL: z.string(),
+    blurWidth: z.number(),
+    blurHeight: z.number(),
+  }),
+});
 
 // Categories Collection
 const categoriesCollection = defineCollection({
@@ -132,4 +150,5 @@ export const collections = {
   pages: pagesCollection,
   posts: postsCollection,
   tags: tagsCollection,
+  images: imagesCollection,
 };

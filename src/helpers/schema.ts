@@ -1,9 +1,11 @@
 import { defaultCover } from '@/content.config';
+import type { Image } from '@/helpers/images';
 import options from '@/options';
 import { getCollection, getEntry, render, type RenderResult } from 'astro:content';
 import { pinyin } from 'pinyin-pro';
 
 // Import the collections from the astro content.
+const imagesCollection = await getCollection('images');
 const categoriesCollection = await getCollection('categories');
 const friendsCollection = await getCollection('friends');
 const pagesCollection = await getCollection('pages');
@@ -11,17 +13,20 @@ const postsCollection = await getCollection('posts');
 const tagsCollection = await getCollection('tags');
 
 // Redefine the types from the astro content.
-export type Category = (typeof categoriesCollection)[number]['data'] & {
+export type Category = Omit<(typeof categoriesCollection)[number]['data'], 'cover'> & {
+  cover: Image;
   counts: number;
   permalink: string;
 };
 export type Friend = (typeof friendsCollection)[number]['data'][number];
-export type Page = (typeof pagesCollection)[number]['data'] & {
+export type Page = Omit<(typeof pagesCollection)[number]['data'], 'cover'> & {
+  cover: Image;
   slug: string;
   permalink: string;
   render: () => Promise<RenderResult>;
 };
-export type Post = (typeof postsCollection)[number]['data'] & {
+export type Post = Omit<(typeof postsCollection)[number]['data'], 'cover'> & {
+  cover: Image;
   slug: string;
   permalink: string;
   render: () => Promise<RenderResult>;
@@ -33,36 +38,46 @@ export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: nu
 export const friends: Friend[] = friendsCollection.flatMap((friends) => friends.data);
 
 // Override the website for local debugging
-export const pages: Page[] = pagesCollection
-  .filter((page) => page.data.published || !options.isProd())
-  .map((page) => ({
-    slug: page.id,
-    permalink: `/${page.id}`,
-    render: async () => await render(await getEntry('pages', page.id)),
-    ...page.data,
-  }));
-export const posts: Post[] = postsCollection
-  .filter((post) => post.data.published || !options.isProd())
-  .map((post) => ({
-    slug: post.id,
-    permalink: `/posts/${post.id}`,
-    render: async () => await render(await getEntry('posts', post.id)),
-    raw: async () => {
-      const entry = await getEntry('posts', post.id);
-      return entry.body;
-    },
-    ...post.data,
-  }))
-  .sort((left: Post, right: Post) => {
-    const a = left.date.getTime();
-    const b = right.date.getTime();
-    return options.settings.post.sort === 'asc' ? a - b : b - a;
-  });
-export const categories: Category[] = categoriesCollection.map((cat) => ({
-  counts: posts.filter((post) => post.category === cat.data.name).length,
-  permalink: `/cats/${cat.data.slug}`,
-  ...cat.data,
-}));
+export const pages: Page[] = await Promise.all(
+  pagesCollection
+    .filter((page) => page.data.published || !options.isProd())
+    .map(async (page) => ({
+      ...page.data,
+      cover: (await getEntry('images', page.data.cover)).data,
+      slug: page.id,
+      permalink: `/${page.id}`,
+      render: async () => await render(await getEntry('pages', page.id)),
+    })),
+);
+export const posts: Post[] = (
+  await Promise.all(
+    postsCollection
+      .filter((post) => post.data.published || !options.isProd())
+      .map(async (post) => ({
+        ...post.data,
+        cover: (await getEntry('images', post.data.cover)).data,
+        slug: post.id,
+        permalink: `/posts/${post.id}`,
+        render: async () => await render(await getEntry('posts', post.id)),
+        raw: async () => {
+          const entry = await getEntry('posts', post.id);
+          return entry.body;
+        },
+      })),
+  )
+).sort((left: Post, right: Post) => {
+  const a = left.date.getTime();
+  const b = right.date.getTime();
+  return options.settings.post.sort === 'asc' ? a - b : b - a;
+});
+export const categories: Category[] = await Promise.all(
+  categoriesCollection.map(async (cat) => ({
+    ...cat.data,
+    cover: (await getEntry('images', cat.data.cover)).data,
+    counts: posts.filter((post) => post.category === cat.data.name).length,
+    permalink: `/cats/${cat.data.slug}`,
+  })),
+);
 export const tags: Tag[] = tagsCollection.flatMap((tags) => {
   return tags.data.map((tag) => ({
     counts: posts.filter((post) => post.tags.includes(tag.name)).length,

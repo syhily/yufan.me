@@ -1,12 +1,22 @@
 ---
 import { blurStyle, type Image } from '@/helpers/images';
 import options from '@/options';
+import { getEntry } from 'astro:content';
 
 interface Props extends Image {
   alt: string;
 }
 
-const { alt, src, width, height } = Astro.props;
+let { alt, src, width, height, blurDataURL, blurWidth, blurHeight } = Astro.props;
+if (src.startsWith('/')) {
+  const image = await getEntry('images', src);
+  src = image.data.src;
+  width = image.data.width;
+  height = image.data.height;
+  blurDataURL = image.data.blurDataURL;
+  blurWidth = image.data.blurWidth;
+  blurHeight = image.data.blurHeight;
+}
 ---
 
 <img
@@ -15,5 +25,5 @@ const { alt, src, width, height } = Astro.props;
   loading="lazy"
   {width}
   {height}
-  style={blurStyle(Astro.props)}
+  style={blurStyle({ src, width, height, blurDataURL, blurWidth, blurHeight })}
 />

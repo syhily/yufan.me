@@ -21,9 +21,6 @@ export default defineConfig({
     domains: ['localhost', '127.0.0.1'],
     service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
   },
-  experimental: {
-    contentIntellisense: true,
-  },
   env: {
     schema: {
       // Postgres Database

@@ -4,7 +4,7 @@
   "editor.codeActionsOnSave": {
     "quickfix.biome": "explicit"
   },
-  "astro.content-intellisense": true,
+  "astro.content-intellisense": false,
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },

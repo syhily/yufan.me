@@ -1,11 +1,16 @@
 ---
 import type { Image } from '@/helpers/images';
+import { getEntry } from 'astro:content';
 
 interface Props extends Image {
   alt: string;
 }
 
-const { alt, src } = Astro.props;
+let { alt, src } = Astro.props;
+if (src.startsWith('/')) {
+  const image = await getEntry('images', src);
+  src = image.data.src;
+}
 ---
 
 <img {src} {alt} />
