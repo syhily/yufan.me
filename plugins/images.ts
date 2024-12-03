@@ -13,6 +13,11 @@ type ImageNode = Parent & {
   attributes: (Literal & { name: string })[];
 };
 
+type LinkNode = Node & {
+  url: string;
+  children?: ImageNode[];
+};
+
 export const astroImage = () => {
   return async (tree: Node) => {
     // Find all the image node.
@@ -23,6 +28,17 @@ export const astroImage = () => {
 
     // Process image with blur metadata.
     await Promise.all(imageNodes);
+
+    // Find all the image link nodes and replace the relative links.
+    for (const node of selectAll('link', tree)) {
+      const link = node as LinkNode;
+      if (link.children !== undefined && link.children.length !== 0) {
+        const images = link.children.filter((child) => child.type === 'mdxJsxFlowElement' && child.name === 'Image');
+        if (images.length > 0) {
+          link.url = link.url.startsWith('/') ? urlJoin(options.assetsPrefix(), link.url) : link.url;
+        }
+      }
+    }
     return tree;
   };
 };

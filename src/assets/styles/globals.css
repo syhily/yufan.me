@@ -2466,6 +2466,10 @@ a:hover .overlay {
   margin: 0 0 1rem 1rem;
 }
 
+.post-content a img {
+  cursor: zoom-in;
+}
+
 @media (max-width: 767.98px) {
   .post-content h1,
   .post-content h2,

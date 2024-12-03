@@ -1,6 +1,41 @@
 import Aplayer from 'aplayer/dist/APlayer.min.js';
 import { actions, isInputError } from 'astro:actions';
+import PhotoSwipe from 'photoswipe';
+import PhotoSwipeDynamicCaption from 'photoswipe-dynamic-caption-plugin';
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import stickySidebar from './sticky-sidebar.js';
+
+// Lightbox support for post images.
+const imageLinks = Array.from(document.querySelectorAll('.post-content a')).filter((link) => {
+  const img = link.querySelector('img');
+  return typeof img !== 'undefined' && img !== null;
+});
+
+if (imageLinks.length > 0) {
+  // Append the required data attributes.
+  for (const imageLink of imageLinks) {
+    const image = imageLink.querySelector('img');
+    if (image.getAttribute('width') !== null) {
+      imageLink.dataset.pswpWidth = image.getAttribute('width');
+    }
+    if (image.getAttribute('height') !== null) {
+      imageLink.dataset.pswpHeight = image.getAttribute('height');
+    }
+  }
+
+  const lightbox = new PhotoSwipeLightbox({
+    gallery: imageLinks,
+    showHideAnimationType: 'zoom',
+    showAnimationDuration: 300,
+    hideAnimationDuration: 300,
+    pswpModule: () => PhotoSwipe,
+  });
+  new PhotoSwipeDynamicCaption(lightbox, {
+    captionContent: (slide) => slide.data.alt,
+  });
+
+  lightbox.init();
+}
 
 // Error Popup.
 const handleActionError = (error) => {
