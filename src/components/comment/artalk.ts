@@ -47,27 +47,59 @@ export const increaseViews = async (key: string, title: string) => {
   });
 };
 
-export const createComment = async (req: CommentReq): Promise<ErrorResp | CommentResp> => {
-  const user = await queryUser(req.email);
+export const createComment = async (
+  commentReq: CommentReq,
+  req: Request,
+  clientAddress: string,
+): Promise<ErrorResp | CommentResp> => {
+  const user = await queryUser(commentReq.email);
   if (user !== null && user.name !== null) {
     // Replace the comment user name for avoiding the duplicated users creation.
     // We may add the commenter account management in the future.
-    req.name = user.name;
+    commentReq.name = user.name;
+  }
+
+  // Query the existing comments for the user.
+  const historicalParams = new URLSearchParams({
+    email: commentReq.email,
+    page_key: commentReq.page_key,
+    site_name: options.title,
+    flat_mode: 'true',
+    limit: '5',
+    sort_by: 'date_desc',
+    type: 'all',
+  }).toString();
+  const historicalComments = await fetch(urlJoin(server, `/api/v2/comments?${historicalParams}`), {
+    method: 'GET',
+    headers: {
+      'Content-type': 'application/json; charset=UTF-8',
+    },
+  })
+    .then(async (resp) => (await resp.json()).comments as Comment[])
+    .catch((e) => {
+      console.error(e);
+      return Array<Comment>();
+    });
+
+  if (historicalComments.find((comment) => comment.content === commentReq.content)) {
+    return { msg: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。' };
   }
 
   const response = await fetch(urlJoin(server, '/api/v2/comments'), {
     method: 'POST',
     headers: {
+      'User-Agent': req.headers.get('User-Agent') || 'node',
+      'X-Forwarded-For': clientAddress,
       'Content-type': 'application/json; charset=UTF-8',
     },
-    body: JSON.stringify({ ...req, site_name: options.title, rid: req.rid ? Number(req.rid) : 0 }),
+    body: JSON.stringify({ ...commentReq, site_name: options.title, rid: commentReq.rid ? Number(commentReq.rid) : 0 }),
   }).catch((e) => {
     console.error(e);
     return null;
   });
 
   if (response === null) {
-    return { msg: 'failed to create comment' };
+    return { msg: '服务端异常，评论创建失败。' };
   }
 
   if (!response.ok) {

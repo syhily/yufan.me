@@ -60,7 +60,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@biomejs/biome": "^1.9.4",
-    "@napi-rs/canvas": "^0.1.64",
+    "@napi-rs/canvas": "^0.1.65",
     "@types/lodash": "^4.17.13",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.10.1",
@@ -68,7 +68,7 @@
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
     "aplayer": "^1.10.1",
-    "astro-uploader": "^1.2.1",
+    "astro-uploader": "^1.2.2",
     "bootstrap": "^5.3.3",
     "prettier": "^3.4.1",
     "prettier-plugin-astro": "^0.14.1",

@@ -2251,6 +2251,7 @@ a:hover .overlay {
   background-color: rgba(0, 0, 0, 0.9);
   transition: all 0.2s ease-in-out;
   transform: scale(0.8);
+  white-space: initial;
 }
 
 .nice-popup-error.error .icon {

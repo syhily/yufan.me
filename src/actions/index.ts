@@ -66,8 +66,8 @@ const commentActions = {
       content: z.string().min(1),
       rid: z.number().optional(),
     }),
-    handler: async (request) => {
-      const resp = await createComment(request);
+    handler: async (input, { request, clientAddress }) => {
+      const resp = await createComment(input, request, clientAddress);
       if ('msg' in resp) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
