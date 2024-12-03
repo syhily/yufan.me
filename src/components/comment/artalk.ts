@@ -55,6 +55,36 @@ export const createComment = async (req: CommentReq): Promise<ErrorResp | Commen
     req.name = user.name;
   }
 
+  // Query the existing comments for the user.
+  const historicalComments = await fetch(
+    urlJoin(server, '/api/v2/comments?') +
+      new URLSearchParams({
+        email: req.email,
+        page_key: req.page_key,
+        site_name: options.title,
+        flat_mode: 'true',
+        limit: '5',
+        sort_by: 'date_desc',
+        type: 'all',
+      }).toString(),
+    {
+      method: 'GET',
+      headers: {
+        'Content-type': 'application/json; charset=UTF-8',
+      },
+    },
+  )
+    .then(async (resp) => (await resp.json()).comments as Comment[])
+    .catch((e) => {
+      console.error(e);
+      return Array<Comment>();
+    });
+
+  console.log(historicalComments);
+  if (historicalComments.find((comment) => comment.content === req.content)) {
+    return { msg: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。' };
+  }
+
   const response = await fetch(urlJoin(server, '/api/v2/comments'), {
     method: 'POST',
     headers: {
