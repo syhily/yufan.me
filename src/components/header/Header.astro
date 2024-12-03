@@ -127,7 +127,11 @@ import options from '@/options';
                 class="btn btn-dark btn-icon btn-circle button-social"
               >
                 <span>
-                  <i class={`iconfont ${social.icon}`} />
+                  {!social.icon.startsWith('<svg') ? (
+                    <i class={`iconfont ${social.icon}`} />
+                  ) : (
+                    <Fragment set:html={social.icon} />
+                  )}
                 </span>
               </a>
             );

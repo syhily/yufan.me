@@ -548,6 +548,10 @@
   justify-content: center;
 }
 
+.btn-icon span svg {
+  margin: 28%;
+}
+
 .btn-icon:hover,
 .btn-icon:active,
 .btn-icon:focus {
@@ -577,39 +581,6 @@
   width: 2.75rem;
   height: 2.75rem;
   font-size: 1.325rem;
-}
-
-.btn-icon .icon-status {
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 1;
-}
-
-.icon-status {
-  display: block;
-  font-size: 11px;
-  line-height: 1;
-  min-width: 20px;
-  margin: 1px;
-  padding: 2px 3px;
-  border-radius: var(--radius-lg);
-  color: #fff;
-  background-color: var(--bg-danger);
-}
-
-.icon-status.status-top {
-  left: 0;
-  top: 0;
-}
-
-.icon-status.status-right {
-  left: auto;
-  top: 0;
-  right: 0;
-  -webkit-transform: translate(50%, -50%);
-  -ms-transform: translate(50%, -50%);
-  transform: translate(50%, -50%);
 }
 
 @media (max-width: 767.98px) {
