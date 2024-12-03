@@ -1,5 +1,5 @@
 import mdx from '@astrojs/mdx';
-import zeabur from '@zeabur/astro-adapter/serverless';
+import node from '@astrojs/node';
 import { uploader } from 'astro-uploader';
 import { defineConfig, envField } from 'astro/config';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -22,27 +22,26 @@ export default defineConfig({
     service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
   },
   experimental: {
-    contentLayer: true,
     contentIntellisense: true,
-    env: {
-      schema: {
-        // Postgres Database
-        POSTGRES_HOST: envField.string({ context: 'server', access: 'secret' }),
-        POSTGRES_PORT: envField.number({ context: 'server', access: 'secret' }),
-        POSTGRES_USERNAME: envField.string({ context: 'server', access: 'secret' }),
-        POSTGRES_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
-        POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
-        // Artalk Comment
-        ARTALK_SCHEME: envField.string({ context: 'server', access: 'secret' }),
-        ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
-        ARTALK_PORT: envField.number({ context: 'server', access: 'secret' }),
-        // Build the Open Graph
-        BUILD_OPEN_GRAPH: envField.boolean({ context: 'server', access: 'public', default: true }),
-        // Upload the files
-        UPLOAD_STATIC_FILES: envField.boolean({ context: 'server', access: 'public', default: false }),
-      },
-      validateSecrets: true,
+  },
+  env: {
+    schema: {
+      // Postgres Database
+      POSTGRES_HOST: envField.string({ context: 'server', access: 'secret' }),
+      POSTGRES_PORT: envField.number({ context: 'server', access: 'secret' }),
+      POSTGRES_USERNAME: envField.string({ context: 'server', access: 'secret' }),
+      POSTGRES_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
+      POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
+      // Artalk Comment
+      ARTALK_SCHEME: envField.string({ context: 'server', access: 'secret' }),
+      ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),
+      ARTALK_PORT: envField.number({ context: 'server', access: 'secret' }),
+      // Build the Open Graph
+      BUILD_OPEN_GRAPH: envField.boolean({ context: 'server', access: 'public', default: true }),
+      // Upload the files
+      UPLOAD_STATIC_FILES: envField.boolean({ context: 'server', access: 'public', default: false }),
     },
+    validateSecrets: true,
   },
   integrations: [
     mdx({
@@ -68,7 +67,9 @@ export default defineConfig({
     }),
     openGraph(),
   ],
-  adapter: zeabur(),
+  adapter: node({
+    mode: 'standalone',
+  }),
   markdown: {
     gfm: true,
     shikiConfig: {

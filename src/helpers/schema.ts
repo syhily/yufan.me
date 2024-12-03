@@ -1,6 +1,6 @@
-import { defaultCover } from '@/content/config.ts';
+import { defaultCover } from '@/content.config';
 import options from '@/options';
-import { getCollection, getEntry, type Render } from 'astro:content';
+import { getCollection, getEntry, render, type RenderResult } from 'astro:content';
 import { pinyin } from 'pinyin-pro';
 
 // Import the collections from the astro content.
@@ -19,35 +19,36 @@ export type Friend = (typeof friendsCollection)[number]['data'][number];
 export type Page = (typeof pagesCollection)[number]['data'] & {
   slug: string;
   permalink: string;
-  render: () => Render['.mdx'];
+  render: () => Promise<RenderResult>;
 };
 export type Post = (typeof postsCollection)[number]['data'] & {
   slug: string;
   permalink: string;
-  render: () => Render['.mdx'];
-  raw: () => Promise<string>;
+  render: () => Promise<RenderResult>;
+  raw: () => Promise<string | undefined>;
 };
 export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: number; permalink: string };
 
 // Translate the Astro content into the original content for dealing with different configuration types.
-export const friends: Friend[] = friendsCollection[0].data;
+export const friends: Friend[] = friendsCollection.flatMap((friends) => friends.data);
+
 // Override the website for local debugging
 export const pages: Page[] = pagesCollection
   .filter((page) => page.data.published || !options.isProd())
   .map((page) => ({
-    slug: page.slug,
-    permalink: `/${page.slug}`,
-    render: page.render,
+    slug: page.id,
+    permalink: `/${page.id}`,
+    render: async () => await render(await getEntry('pages', page.id)),
     ...page.data,
   }));
 export const posts: Post[] = postsCollection
   .filter((post) => post.data.published || !options.isProd())
   .map((post) => ({
-    slug: post.slug,
-    permalink: `/posts/${post.slug}`,
-    render: post.render,
+    slug: post.id,
+    permalink: `/posts/${post.id}`,
+    render: async () => await render(await getEntry('posts', post.id)),
     raw: async () => {
-      const entry = await getEntry('posts', post.slug);
+      const entry = await getEntry('posts', post.id);
       return entry.body;
     },
     ...post.data,

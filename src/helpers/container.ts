@@ -1,5 +1,5 @@
+import serverRenderer from '@astrojs/mdx/server.js';
 import { experimental_AstroContainer as AstroContainer, type ContainerRenderOptions } from 'astro/container';
-import serverRenderer from 'astro/jsx/server.js';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 
 const container = await AstroContainer.create();

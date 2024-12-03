@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
+import sharp from 'sharp';
 import options from '../../options';
 import { urlJoin } from './tools';
 
@@ -54,8 +55,6 @@ export const blurStyle = (image: Image) => ({
 
 // Copied and modified https://github.com/zce/velite/blob/main/src/assets.ts
 export const imageMetadata = async (publicPath: string): Promise<Image> => {
-  const { default: sharp } = await import('sharp');
-
   if (!publicPath.startsWith('/')) {
     throw new Error('We only support image path in "public/images" directory. The path should start with "/images/".');
   }

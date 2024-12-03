@@ -1,6 +1,7 @@
 import { imageMetadata } from '@/helpers/images';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
+import { glob } from 'astro/loaders';
 import { defineCollection, z } from 'astro:content';
 
 export const defaultCover = '/images/default-cover.jpg';
@@ -48,7 +49,7 @@ const toc = () =>
 
 // Categories Collection
 const categoriesCollection = defineCollection({
-  type: 'data',
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/categories' }),
   schema: z.object({
     name: z.string().max(20),
     slug: slug(),
@@ -59,7 +60,7 @@ const categoriesCollection = defineCollection({
 
 // Friends Collection
 const friendsCollection = defineCollection({
-  type: 'data',
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/friends' }),
   schema: z.array(
     z
       .object({
@@ -82,7 +83,7 @@ const friendsCollection = defineCollection({
 
 // Posts Collection
 const postsCollection = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**\/[^_]*.mdx', base: './src/content/posts' }),
   schema: z.object({
     title: z.string().max(99),
     date: z.date(),
@@ -100,7 +101,7 @@ const postsCollection = defineCollection({
 
 // Pages Collection
 const pagesCollection = defineCollection({
-  type: 'content',
+  loader: glob({ pattern: '**\/[^_]*.mdx', base: './src/content/pages' }),
   schema: z.object({
     title: z.string().max(99),
     date: z.date(),
@@ -116,7 +117,7 @@ const pagesCollection = defineCollection({
 
 // Tags Collection
 const tagsCollection = defineCollection({
-  type: 'data',
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/tags' }),
   schema: z.array(
     z.object({
       name: z.string().max(20),

@@ -196,7 +196,7 @@ to get it worked everywhere.
 This weblog is deployed on the [zeabur](https://zeabur.com) platform.
 You can check their documents and get your own weblog to be published without any budget at first.
 
-Or you can host on your own machine. Use [Dockerfile](./docs/Dockerfile) to build an image and run it locally.
+Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build an image and run it locally.
 
 The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
 You should host it on your own machine.
@@ -222,8 +222,8 @@ You should host it on your own machine.
 The source code of this blog is licensed under the [MIT](LICENSE) license,
 feel to free to use it without any legal risks.
 
-The [content](src/content) of this blog's posts is licensed under the
-[CC BY-NC-SA 4.0](src/content/LICENSE) license.
+The [content](content) of this blog's posts is licensed under the
+[CC BY-NC-SA 4.0](content/LICENSE) license.
 
 ### Logo Fonts License
 

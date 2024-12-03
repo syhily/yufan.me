@@ -4,7 +4,7 @@ import Fuse from 'fuse.js';
 interface PostItem {
   title: string;
   slug: string;
-  raw: string;
+  raw: string | undefined;
   tags: string[];
 }
 
