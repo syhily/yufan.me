@@ -67,7 +67,7 @@ export const createComment = async (req: CommentReq): Promise<ErrorResp | Commen
   });
 
   if (response === null) {
-    return { msg: 'failed to create comment' };
+    return { msg: '服务端异常，评论创建失败。' };
   }
 
   if (!response.ok) {

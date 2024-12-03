@@ -46,8 +46,8 @@ const { comment, depth, pending } = Astro.props;
         }
       </div>
       <div class="comment-content">
-        <Fragment set:html={comment.content} />
         {pending && <p class="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>}
+        <Fragment set:html={comment.content} />
       </div>
       <div class="comment-footer text-xs text-muted">
         <time class="me-2">{formatLocalDate(comment.date, 'yyyy-MM-dd HH:mm')}</time>
