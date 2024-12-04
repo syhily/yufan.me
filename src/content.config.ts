@@ -67,8 +67,7 @@ const imagesCollection = defineCollection({
 
 // Albums Collection
 const albumsCollection = defineCollection({
-  // TODO Change the ./src/content/album to ./src/content/albums
-  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/album' }),
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/albums' }),
   schema: z.object({
     slug: slug(),
     title: z.string().max(99),
