@@ -1,7 +1,7 @@
 import { defaultCover } from '@/content.config';
 import type { Image } from '@/helpers/images';
 import options from '@/options';
-import { getCollection, getEntry, render, type RenderResult } from 'astro:content';
+import { getCollection, render, type RenderResult } from 'astro:content';
 import { pinyin } from 'pinyin-pro';
 
 // Import the collections from the astro content.
@@ -18,7 +18,7 @@ export type Category = Omit<(typeof categoriesCollection)[number]['data'], 'cove
   counts: number;
   permalink: string;
 };
-export type Friend = (typeof friendsCollection)[number]['data'][number];
+export type Friend = (typeof friendsCollection)[number]['data'];
 export type Page = Omit<(typeof pagesCollection)[number]['data'], 'cover'> & {
   cover: Image;
   slug: string;
@@ -32,10 +32,20 @@ export type Post = Omit<(typeof postsCollection)[number]['data'], 'cover'> & {
   render: () => Promise<RenderResult>;
   raw: () => Promise<string | undefined>;
 };
-export type Tag = (typeof tagsCollection)[number]['data'][number] & { counts: number; permalink: string };
+export type Tag = (typeof tagsCollection)[number]['data'] & { counts: number; permalink: string };
+
+// Expose this help method for finding the images without null check.
+const images: Array<Image & { id: string }> = imagesCollection.map((image) => ({ id: image.id, ...image.data }));
+export const getImage = (src: string): Image => {
+  const image = images.find((image) => image.id === src);
+  if (image === undefined) {
+    throw new Error(`The image ${src} doesn't exist on public directory`);
+  }
+  return image;
+};
 
 // Translate the Astro content into the original content for dealing with different configuration types.
-export const friends: Friend[] = friendsCollection.flatMap((friends) => friends.data);
+export const friends: Friend[] = friendsCollection.map((friends) => friends.data);
 
 // Override the website for local debugging
 export const pages: Page[] = await Promise.all(
@@ -43,10 +53,10 @@ export const pages: Page[] = await Promise.all(
     .filter((page) => page.data.published || !options.isProd())
     .map(async (page) => ({
       ...page.data,
-      cover: (await getEntry('images', page.data.cover)).data,
+      cover: getImage(page.data.cover),
       slug: page.id,
       permalink: `/${page.id}`,
-      render: async () => await render(await getEntry('pages', page.id)),
+      render: async () => await render(page),
     })),
 );
 export const posts: Post[] = (
@@ -55,13 +65,12 @@ export const posts: Post[] = (
       .filter((post) => post.data.published || !options.isProd())
       .map(async (post) => ({
         ...post.data,
-        cover: (await getEntry('images', post.data.cover)).data,
+        cover: getImage(post.data.cover),
         slug: post.id,
         permalink: `/posts/${post.id}`,
-        render: async () => await render(await getEntry('posts', post.id)),
+        render: async () => await render(post),
         raw: async () => {
-          const entry = await getEntry('posts', post.id);
-          return entry.body;
+          return post.body;
         },
       })),
   )
@@ -73,18 +82,16 @@ export const posts: Post[] = (
 export const categories: Category[] = await Promise.all(
   categoriesCollection.map(async (cat) => ({
     ...cat.data,
-    cover: (await getEntry('images', cat.data.cover)).data,
+    cover: getImage(cat.data.cover),
     counts: posts.filter((post) => post.category === cat.data.name).length,
     permalink: `/cats/${cat.data.slug}`,
   })),
 );
-export const tags: Tag[] = tagsCollection.flatMap((tags) => {
-  return tags.data.map((tag) => ({
-    counts: posts.filter((post) => post.tags.includes(tag.name)).length,
-    permalink: `/tags/${tag.slug}`,
-    ...tag,
-  }));
-});
+export const tags: Tag[] = tagsCollection.map((tag) => ({
+  ...tag.data,
+  counts: posts.filter((post) => post.tags.includes(tag.data.name)).length,
+  permalink: `/tags/${tag.data.slug}`,
+}));
 
 // Find the missing categories from posts.
 const missingCategories: string[] = posts

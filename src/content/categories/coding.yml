@@ -1,7 +1,0 @@
-name: 编程
-slug: coding
-description: |-
-  冒泡排序，选择排序，插入排序，快速排序，堆排序，归并排序，希尔排序，桶排序，基数排序。
-  有向图，无向图，有环图，无环图，完全图，稠密图，稀疏图，拓扑图。
-  二叉树，红黑树，van Emde Boas树，最小生成树。
-cover: /images/categories/coding.jpg

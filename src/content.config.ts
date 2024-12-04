@@ -1,7 +1,7 @@
 import { imageMetadata } from '@/helpers/images';
 import { urlJoin } from '@/helpers/tools';
 import options from '@/options';
-import { glob } from 'astro/loaders';
+import { file, glob } from 'astro/loaders';
 import { defineCollection, z } from 'astro:content';
 import { glob as Glob } from 'glob';
 import path from 'node:path';
@@ -67,7 +67,7 @@ const imagesCollection = defineCollection({
 
 // Categories Collection
 const categoriesCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/categories' }),
+  loader: file('./src/content/metas/categories.yml'),
   schema: z.object({
     name: z.string().max(20),
     slug: slug(),
@@ -78,25 +78,24 @@ const categoriesCollection = defineCollection({
 
 // Friends Collection
 const friendsCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/friends' }),
-  schema: z.array(
-    z
-      .object({
-        website: z.string().max(40),
-        description: z.string().optional(),
-        homepage: z.string().url(),
-        poster: z
-          .string()
-          .transform((poster) => (poster.startsWith('/') ? urlJoin(options.assetsPrefix(), poster) : poster)),
-        favicon: z.string().optional(),
-      })
-      .transform((data) => {
-        if (data.favicon === undefined) {
-          data.favicon = `${data.homepage}/favicon.ico`;
-        }
-        return data;
-      }),
-  ),
+  loader: file('./src/content/metas/friends.yml'),
+  schema: z.object({
+    website: z.string().max(40),
+    description: z.string().optional(),
+    homepage: z.string().url(),
+    poster: z
+      .string()
+      .transform((poster) => (poster.startsWith('/') ? urlJoin(options.assetsPrefix(), poster) : poster)),
+  }),
+});
+
+// Tags Collection
+const tagsCollection = defineCollection({
+  loader: file('./src/content/metas/tags.yml'),
+  schema: z.object({
+    name: z.string().max(20),
+    slug: slug(),
+  }),
 });
 
 // Posts Collection
@@ -133,22 +132,11 @@ const pagesCollection = defineCollection({
   }),
 });
 
-// Tags Collection
-const tagsCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/tags' }),
-  schema: z.array(
-    z.object({
-      name: z.string().max(20),
-      slug: slug(),
-    }),
-  ),
-});
-
 export const collections = {
+  images: imagesCollection,
   categories: categoriesCollection,
   friends: friendsCollection,
-  pages: pagesCollection,
-  posts: postsCollection,
   tags: tagsCollection,
-  images: imagesCollection,
+  posts: postsCollection,
+  pages: pagesCollection,
 };
