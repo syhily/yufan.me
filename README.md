@@ -204,7 +204,7 @@ You should host it on your own machine.
 ## Short-Term TODO Checklist
 
 - [ ] Add last modified time component for post.
-- [ ] Add light box for images and album component.
+- [ ] Slide share components integration.
 - [ ] Check article grammar errors by using ChatGPT. Remain **42** posts.
 - [ ] Add music to the articles. Remain **42** posts.
 
@@ -213,7 +213,6 @@ You should host it on your own machine.
 - [ ] Use self-developed comment solution.
   - [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
   - [ ] Support login into the blog for managing the comments.
-- [ ] Slide share components integration.
 - [ ] Add han.js support for better typography.
 - [ ] Drop bootstrap, in favor of tailwind css.
 
@@ -260,3 +259,9 @@ The source codes used from third party projects are:
 - [images.ts](src/helpers/images.ts)
   from [vercel/next.js](https://github.com/vercel/next.js/blob/canary/packages/next/src/shared/lib/image-blur-svg.ts)
   with [license](licenses/LICENSE.vercel.txt)
+- [photoswipe-auto-hide-ui.js](src/assets/scripts/photoswipe/photoswipe-auto-hide-ui.js)
+  from [arnowelzel/photoswipe-auto-hide-ui](https://github.com/arnowelzel/photoswipe-auto-hide-ui)
+  with [license](licenses/LICENSE.arnowelzel.txt)
+- [photoswipe-slideshow.js](src/assets/scripts/photoswipe/photoswipe-slideshow.js)
+  from [junkfix/photoswipe-slideshow](https://github.com/junkfix/photoswipe-slideshow)
+  with [license](licenses/LICENSE.junkfix.txt)

@@ -73,6 +73,7 @@
     "bootstrap": "^5.3.3",
     "photoswipe": "^5.4.4",
     "photoswipe-dynamic-caption-plugin": "^1.2.7",
+    "photoswipe-video-plugin": "^1.0.2",
     "prettier": "^3.4.1",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-astro-organize-imports": "^0.4.11",
