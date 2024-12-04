@@ -20,15 +20,17 @@ if (totalPage === 0) {
 ---
 
 <BaseLayout title={`标签 “${tag.name}”`}>
-  <div class="container">
-    <div class="mb-3 mb-lg-4">
-      <h1>{tag.name}</h1>
-    </div>
-    <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-      {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
-    </div>
-    <div class="mt-4 mt-lg-5">
-      <Pagination current={pageNum} total={totalPage} rootPath={tag.permalink} />
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>{tag.name}</h1>
+      </div>
+      <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+        {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+      </div>
+      <div class="mt-4 mt-lg-5">
+        <Pagination current={pageNum} total={totalPage} rootPath={tag.permalink} />
+      </div>
     </div>
   </div>
 </BaseLayout>

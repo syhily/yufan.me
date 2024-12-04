@@ -2,11 +2,51 @@ import Aplayer from 'aplayer/dist/APlayer.min.js';
 import { actions, isInputError } from 'astro:actions';
 import PhotoSwipe from 'photoswipe';
 import PhotoSwipeDynamicCaption from 'photoswipe-dynamic-caption-plugin';
+import PhotoSwipeVideo from 'photoswipe-video-plugin';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
+import PhotoSwipeAutoHideUI from './photoswipe/photoswipe-auto-hide-ui.js';
+import PhotoSwipeSlideshow from './photoswipe/photoswipe-slideshow.js';
 import stickySidebar from './sticky-sidebar.js';
+
+PhotoSwipeAutoHideUI;
+
+// Slideshow for Album.
+for (const album of document.querySelectorAll('.post-content .album')) {
+  // Set up the main gallery lightbox.
+  const lightbox = new PhotoSwipeLightbox({
+    gallery: album,
+    pswpModule: PhotoSwipe,
+    children: 'a',
+    bgOpacity: 1,
+  });
+
+  // Add the dynamic description.
+  new PhotoSwipeDynamicCaption(lightbox, {
+    captionContent: '.pswp-caption-content',
+  });
+
+  // Add a slideshow to the PhotoSwipe gallery.
+  new PhotoSwipeSlideshow(lightbox, {
+    defaultDelayMs: 7000, // 7 seconds
+    restartOnSlideChange: true,
+    progressBarPosition: 'top',
+    autoHideProgressBar: false,
+  });
+
+  // Plugin to display video.
+  new PhotoSwipeVideo(lightbox, {});
+
+  // Hide the PhotoSwipe UI after some time of inactivity.
+  new PhotoSwipeAutoHideUI(lightbox, {});
+
+  lightbox.init();
+}
 
 // Lightbox support for post images.
 const imageLinks = Array.from(document.querySelectorAll('.post-content a')).filter((link) => {
+  if (link.classList.contains('album-picture')) {
+    return false;
+  }
   const img = link.querySelector('img');
   return typeof img !== 'undefined' && img !== null;
 });

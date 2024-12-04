@@ -1,4 +1,5 @@
 ---
+import Album from '@/components/album/Album.astro';
 import Comments from '@/components/comment/Comments.astro';
 import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
@@ -57,7 +58,7 @@ const { Content, headings } = await post.render();
               <TableOfContents {headings} toc={post.toc} />
               <div class="post-content">
                 <div class="nc-light-gallery">
-                  <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />
+                  <Content components={{ MusicPlayer: MusicPlayer, Image: Image, Album: Album }} />
                 </div>
                 <nav class="post-in-navigation navigation pagination font-number" role="navigation">
                   <div class="nav-links"></div>

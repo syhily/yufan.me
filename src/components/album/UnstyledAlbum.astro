@@ -1,0 +1,27 @@
+---
+import Image from '@/components/image/UnstyledImage.astro';
+import { getAlbum } from '@/helpers/schema';
+
+interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+const album = getAlbum(id);
+---
+
+{
+  album !== undefined && (
+    <Fragment>
+      <h2>{album.title}</h2>
+      {album.description && <Fragment set:html={album.description} />}
+      {album.pictures.map((picture) => (
+        <Fragment>
+          {picture.title && <h3>{picture.title}</h3>}
+          <Image alt={picture.title || ''} {...picture} />
+          {picture.description && <Fragment set:html={picture.description} />}
+        </Fragment>
+      ))}
+    </Fragment>
+  )
+}

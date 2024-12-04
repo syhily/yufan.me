@@ -566,3 +566,7 @@
   slug: off-plan
 - name: 性
   slug: sex
+- name: Flink
+  slug: flink
+- name: 北京
+  slug: beijing

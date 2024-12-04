@@ -1,4 +1,5 @@
 ---
+import Album from '@/components/album/Album.astro';
 import Comments from '@/components/comment/Comments.astro';
 import Footer from '@/components/footer/Footer.astro';
 import Image from '@/components/image/Image.astro';
@@ -30,7 +31,7 @@ const { Content, headings } = await page.render();
         <TableOfContents {headings} toc={page.toc} />
         <div class="post-content">
           <div class="nc-light-gallery">
-            {page.comments && <Content components={{ MusicPlayer: MusicPlayer, Image: Image }} />}
+            {page.comments && <Content components={{ MusicPlayer: MusicPlayer, Image: Image, Album: Album }} />}
           </div>
         </div>
         {page.friend && <Friends />}

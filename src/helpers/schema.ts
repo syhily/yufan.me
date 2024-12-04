@@ -174,6 +174,10 @@ if (invalidFeaturePosts.length > 0) {
   throw new Error(`The bellowing feature posts are invalid:\n$${invalidFeaturePosts.join('\n')}`);
 }
 
+export const getAlbum = (slug: string): Album | undefined => {
+  return albums.find((album) => album.slug === slug);
+};
+
 export const getPost = (slug: string): Post | undefined => {
   return posts.find((post) => post.slug === slug);
 };
