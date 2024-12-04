@@ -65,6 +65,26 @@ const imagesCollection = defineCollection({
   }),
 });
 
+// Albums Collection
+const albumsCollection = defineCollection({
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/albums' }),
+  schema: z.object({
+    slug: slug(),
+    title: z.string().max(99),
+    date: z.date(),
+    description: z.string().optional().default(''),
+    cover: image(defaultCover),
+    pictures: z
+      .object({
+        src: z.string(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        date: z.date(),
+      })
+      .array(),
+  }),
+});
+
 // Categories Collection
 const categoriesCollection = defineCollection({
   loader: file('./src/content/metas/categories.yml'),
@@ -106,8 +126,8 @@ const postsCollection = defineCollection({
     date: z.date(),
     updated: z.date().optional(),
     comments: z.boolean().optional().default(true),
-    alias: z.array(z.string()).optional().default([]),
-    tags: z.array(z.string()).optional().default([]),
+    alias: z.string().array().optional().default([]),
+    tags: z.string().array().optional().default([]),
     category: z.string(),
     summary: z.string().optional().default(''),
     cover: image(defaultCover),
@@ -134,6 +154,7 @@ const pagesCollection = defineCollection({
 
 export const collections = {
   images: imagesCollection,
+  albums: albumsCollection,
   categories: categoriesCollection,
   friends: friendsCollection,
   tags: tagsCollection,

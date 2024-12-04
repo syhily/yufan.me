@@ -51,7 +51,7 @@ class PhotoSwipeSlideshow {
         order: this.options.playPauseButtonOrder,
         isButton: true,
         html: '<svg aria-hidden="true" class="pswp__icn" viewBox="0 0 32 32"><use class="pswp__icn-shadow" xlink:href="#pswp__icn-play"/><use class="pswp__icn-shadow" xlink:href="#pswp__icn-stop"/><path id="pswp__icn-play" d="M9.5 6.4c-.7-.4-1.6-.4-2.3-0S6 7.5 6 8.2V23.9c0 .8.5 1.5 1.2 1.9s1.6.4 2.3-0l13.8-7.8a2.3 2.1 0 000-3.7z"/><path id="pswp__icn-stop" style="display:none" d="M6 9A3 3 90 019 6H23A3 3 90 0126 9V23a3 3 90 01-3 3H9A3 3 90 016 23z"/></svg>',
-        onClick: (event, el) => {
+        onClick: () => {
           this.setSlideshowState();
         },
       });
@@ -301,7 +301,7 @@ class PhotoSwipeSlideshow {
               this.wakeLockIsRunning = false;
             });
           })
-          .catch((e) => {}); // ignore errors if wake lock request fails.
+          .catch((e) => console.error(log));
       }
     }
 
