@@ -248,7 +248,7 @@ class PhotoSwipeSlideshow {
   // https://developer.mozilla.org/en-US/docs/Web/CSS/transition-timing-function
   getSlideTransition() {
     if (this.isVideoContent(pswp.currSlide.content)) {
-      // Match the transition of a video player's seekbar.
+      // Match the transition of a video player's seek bar.
       return 'linear';
     }
 
@@ -301,7 +301,7 @@ class PhotoSwipeSlideshow {
               this.wakeLockIsRunning = false;
             });
           })
-          .catch((e) => console.error(log));
+          .catch((e) => console.error(e));
       }
     }
 

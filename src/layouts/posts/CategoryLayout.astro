@@ -22,7 +22,7 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.
       <div class="mb-3 mb-lg-4">
         <h1>{category.name}</h1>
         <div class="text-muted mt-1">
-          {category.description.split('\n').map((line) => (line !== '' ? <p>{line}</p> : ''))}
+          <Fragment set:html={category.description} />
         </div>
       </div>
       <div class="row g-2 g-md-3 g-xxl-4 list-grouped">

@@ -3,20 +3,22 @@ import type { Image } from '@/helpers/images';
 import options from '@/options';
 import { getCollection, render, type RenderResult } from 'astro:content';
 import { pinyin } from 'pinyin-pro';
+import { parseContent } from './markdown';
 
 // Import the collections from the astro content.
 const imagesCollection = await getCollection('images');
-const categoriesCollection = await getCollection('categories');
+const albumsCollection = await getCollection('albums');
 const friendsCollection = await getCollection('friends');
 const pagesCollection = await getCollection('pages');
 const postsCollection = await getCollection('posts');
+const categoriesCollection = await getCollection('categories');
 const tagsCollection = await getCollection('tags');
 
 // Redefine the types from the astro content.
-export type Category = Omit<(typeof categoriesCollection)[number]['data'], 'cover'> & {
+export type Picture = Omit<(typeof albumsCollection)[number]['data']['pictures'][number], 'src'> & Image;
+export type Album = Omit<(typeof albumsCollection)[number]['data'], 'cover' | 'pictures'> & {
   cover: Image;
-  counts: number;
-  permalink: string;
+  pictures: Picture[];
 };
 export type Friend = (typeof friendsCollection)[number]['data'];
 export type Page = Omit<(typeof pagesCollection)[number]['data'], 'cover'> & {
@@ -32,9 +34,14 @@ export type Post = Omit<(typeof postsCollection)[number]['data'], 'cover'> & {
   render: () => Promise<RenderResult>;
   raw: () => Promise<string | undefined>;
 };
+export type Category = Omit<(typeof categoriesCollection)[number]['data'], 'cover'> & {
+  cover: Image;
+  counts: number;
+  permalink: string;
+};
 export type Tag = (typeof tagsCollection)[number]['data'] & { counts: number; permalink: string };
 
-// Expose this help method for finding the images without null check.
+// Translate the Astro content into the original content for dealing with different configuration types.
 const images: Array<Image & { id: string }> = imagesCollection.map((image) => ({ id: image.id, ...image.data }));
 export const getImage = (src: string): Image => {
   const image = images.find((image) => image.id === src);
@@ -43,50 +50,60 @@ export const getImage = (src: string): Image => {
   }
   return image;
 };
-
-// Translate the Astro content into the original content for dealing with different configuration types.
+export const albums: Album[] = albumsCollection.map((album) => ({
+  ...album.data,
+  description: album.data.description,
+  cover: getImage(album.data.cover),
+  pictures: album.data.pictures.map((picture) => ({ ...picture, ...getImage(picture.src) })),
+}));
+for (const album of albums) {
+  if (album.description !== undefined && album.description !== '') {
+    album.description = await parseContent(album.description);
+  }
+  for (const picture of album.pictures) {
+    if (picture.description !== undefined && picture.description !== '') {
+      picture.description = await parseContent(picture.description);
+    }
+  }
+}
 export const friends: Friend[] = friendsCollection.map((friends) => friends.data);
-
-// Override the website for local debugging
-export const pages: Page[] = await Promise.all(
-  pagesCollection
-    .filter((page) => page.data.published || !options.isProd())
-    .map(async (page) => ({
-      ...page.data,
-      cover: getImage(page.data.cover),
-      slug: page.id,
-      permalink: `/${page.id}`,
-      render: async () => await render(page),
-    })),
-);
-export const posts: Post[] = (
-  await Promise.all(
-    postsCollection
-      .filter((post) => post.data.published || !options.isProd())
-      .map(async (post) => ({
-        ...post.data,
-        cover: getImage(post.data.cover),
-        slug: post.id,
-        permalink: `/posts/${post.id}`,
-        render: async () => await render(post),
-        raw: async () => {
-          return post.body;
-        },
-      })),
-  )
-).sort((left: Post, right: Post) => {
-  const a = left.date.getTime();
-  const b = right.date.getTime();
-  return options.settings.post.sort === 'asc' ? a - b : b - a;
-});
-export const categories: Category[] = await Promise.all(
-  categoriesCollection.map(async (cat) => ({
-    ...cat.data,
-    cover: getImage(cat.data.cover),
-    counts: posts.filter((post) => post.category === cat.data.name).length,
-    permalink: `/cats/${cat.data.slug}`,
-  })),
-);
+export const pages: Page[] = pagesCollection
+  .filter((page) => page.data.published || !options.isProd())
+  .map((page) => ({
+    ...page.data,
+    cover: getImage(page.data.cover),
+    slug: page.id,
+    permalink: `/${page.id}`,
+    render: async () => await render(page),
+  }));
+export const posts: Post[] = postsCollection
+  .filter((post) => post.data.published || !options.isProd())
+  .map((post) => ({
+    ...post.data,
+    cover: getImage(post.data.cover),
+    slug: post.id,
+    permalink: `/posts/${post.id}`,
+    render: async () => await render(post),
+    raw: async () => {
+      return post.body;
+    },
+  }))
+  .sort((left: Post, right: Post) => {
+    const a = left.date.getTime();
+    const b = right.date.getTime();
+    return options.settings.post.sort === 'asc' ? a - b : b - a;
+  });
+export const categories: Category[] = categoriesCollection.map((cat) => ({
+  ...cat.data,
+  cover: getImage(cat.data.cover),
+  counts: posts.filter((post) => post.category === cat.data.name).length,
+  permalink: `/cats/${cat.data.slug}`,
+}));
+for (const category of categories) {
+  if (category.description !== '') {
+    category.description = await parseContent(category.description);
+  }
+}
 export const tags: Tag[] = tagsCollection.map((tag) => ({
   ...tag.data,
   counts: posts.filter((post) => post.tags.includes(tag.data.name)).length,

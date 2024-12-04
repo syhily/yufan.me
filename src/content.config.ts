@@ -67,18 +67,19 @@ const imagesCollection = defineCollection({
 
 // Albums Collection
 const albumsCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/albums' }),
+  // TODO Change the ./src/content/album to ./src/content/albums
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/album' }),
   schema: z.object({
     slug: slug(),
     title: z.string().max(99),
     date: z.date(),
-    description: z.string().optional().default(''),
+    description: z.string().optional().describe('In markdown format'),
     cover: image(defaultCover),
     pictures: z
       .object({
         src: z.string(),
         title: z.string().optional(),
-        description: z.string().optional(),
+        description: z.string().optional().describe('In markdown format'),
         date: z.date(),
       })
       .array(),
@@ -92,7 +93,7 @@ const categoriesCollection = defineCollection({
     name: z.string().max(20),
     slug: slug(),
     cover: image(defaultCover),
-    description: z.string().max(999).optional().default(''),
+    description: z.string().max(999).optional().default('').describe('In markdown format'),
   }),
 });
 
@@ -101,7 +102,7 @@ const friendsCollection = defineCollection({
   loader: file('./src/content/metas/friends.yml'),
   schema: z.object({
     website: z.string().max(40),
-    description: z.string().optional(),
+    description: z.string().optional().describe('One line string'),
     homepage: z.string().url(),
     poster: z
       .string()
