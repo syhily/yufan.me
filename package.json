@@ -42,12 +42,12 @@
     ]
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.0.6",
-    "@astrojs/node": "^9.0.1",
+    "@astrojs/mdx": "^4.0.8",
+    "@astrojs/node": "^9.0.2",
     "@astrojs/rss": "^4.0.11",
-    "astro": "^5.1.7",
-    "drizzle-orm": "^0.38.3",
-    "fuse.js": "^7.0.0",
+    "astro": "^5.2.4",
+    "drizzle-orm": "^0.39.1",
+    "fuse.js": "^7.1.0",
     "glob": "^11.0.1",
     "lodash": "^4.17.21",
     "luxon": "^3.5.0",
@@ -62,12 +62,12 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@biomejs/biome": "^1.9.4",
-    "@napi-rs/canvas": "^0.1.65",
-    "@shikijs/transformers": "^1.27.2",
-    "@types/lodash": "^4.17.14",
+    "@napi-rs/canvas": "^0.1.66",
+    "@shikijs/transformers": "^1.29.2",
+    "@types/lodash": "^4.17.15",
     "@types/luxon": "^3.4.2",
-    "@types/node": "^22.10.7",
-    "@types/pg": "^8.11.10",
+    "@types/node": "^22.13.1",
+    "@types/pg": "^8.11.11",
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
     "@vite-pwa/astro": "^0.5.0",
@@ -90,9 +90,9 @@
     "typescript": "^5.7.3",
     "unist-util-select": "^5.1.0"
   },
-  "packageManager": "npm@11.0.0",
+  "packageManager": "npm@11.1.0",
   "engines": {
-    "node": "22.13.0"
+    "node": "22.13.1"
   },
   "overrides": {
     "astro-uploader": {
