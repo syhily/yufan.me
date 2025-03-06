@@ -2,7 +2,7 @@ import { db } from '@/helpers/db/pool';
 import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
 import { makeToken, urlJoin } from '@/helpers/tools';
 import options from '@/options';
-import { and, desc, eq, inArray, isNull, not, sql, type InferSelectModel } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql, type InferSelectModel } from 'drizzle-orm';
 
 export interface Comment {
   title: string;
@@ -78,7 +78,7 @@ LIMIT     ${options.settings.sidebar.comment}`;
     .map((id) => BigInt(`${id}`));
 
   const results = await db
-    .select({
+    .selectDistinctOn([atk_comments.id], {
       id: atk_comments.id,
       page: atk_comments.page_key,
       title: atk_pages.title,
@@ -88,14 +88,8 @@ LIMIT     ${options.settings.sidebar.comment}`;
     .from(atk_comments)
     .innerJoin(atk_pages, eq(atk_comments.page_key, atk_pages.key))
     .innerJoin(atk_users, eq(atk_comments.user_id, atk_users.id))
-    .where(
-      and(
-        not(eq(atk_users.email, options.author.email)),
-        eq(atk_comments.is_pending, false),
-        inArray(atk_comments.id, latestDistinctComments),
-      ),
-    )
-    .orderBy(desc(atk_comments.created_at))
+    .where(inArray(atk_comments.id, latestDistinctComments))
+    .orderBy(desc(atk_comments.id))
     .limit(options.settings.sidebar.comment);
 
   return results.map(({ title, author, authorLink, page, id }) => {
