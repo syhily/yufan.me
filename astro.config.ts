@@ -26,6 +26,9 @@ export default defineConfig({
   security: {
     checkOrigin: true,
   },
+  experimental: {
+    preserveScriptOrder: true,
+  },
   image: {
     domains: ['localhost', '127.0.0.1'],
     service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
