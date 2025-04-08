@@ -574,3 +574,7 @@
   slug: elasticsearch
 - name: VectorDB
   slug: vectordb
+- name: 漫画
+  slug: manga
+- name: 读后感
+  slug: reading-notes
