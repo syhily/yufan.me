@@ -50,12 +50,12 @@
     "glob": "^11.0.1",
     "lodash": "^4.17.21",
     "luxon": "^3.6.1",
-    "marked": "^15.0.7",
+    "marked": "^15.0.8",
     "pg": "^8.14.1",
     "pinyin-pro": "^3.26.0",
     "qrcode-svg": "^1.1.0",
     "rehype-mathjax": "^7.1.0",
-    "sharp": "^0.34.0",
+    "sharp": "^0.34.1",
     "ultrahtml": "^1.6.0"
   },
   "devDependencies": {
