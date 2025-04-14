@@ -7,10 +7,10 @@ import {
   POSTGRES_USERNAME,
 } from 'astro:env/server';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import type { PoolConfig } from 'pg';
+import { Pool } from 'pg';
 
 export const db = drizzle({
-  connection: {
+  client: new Pool({
     user: POSTGRES_USERNAME,
     password: POSTGRES_PASSWORD,
     host: POSTGRES_HOST,
@@ -18,9 +18,8 @@ export const db = drizzle({
     database: POSTGRES_DATABASE,
     keepAlive: true,
     max: 10,
-    min: 1,
     allowExitOnIdle: true,
-  } satisfies PoolConfig,
+  }),
   schema: schema,
   logger: false,
 });

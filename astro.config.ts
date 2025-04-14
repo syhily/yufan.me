@@ -54,7 +54,9 @@ export default defineConfig({
   },
   integrations: [
     rootImages(),
-    AstroPWA(),
+    AstroPWA({
+      workbox: { navigateFallback: '/404' },
+    }),
     mdx({
       remarkPlugins: [astroImage, remarkMath],
       rehypePlugins: [

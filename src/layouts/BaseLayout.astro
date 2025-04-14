@@ -5,6 +5,7 @@ import Header from '@/components/header/Header.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import SearchDialog from '@/components/search/SearchDialog.astro';
 import options from '@/options';
+import { pwaInfo } from 'virtual:pwa-info';
 
 interface Props {
   title?: string;
@@ -42,6 +43,8 @@ const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <script src="@/assets/scripts/pwa.ts"></script>
+    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
   </head>
   <body class="home blog">
     <div class="site-layout">
