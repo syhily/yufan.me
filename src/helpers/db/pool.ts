@@ -7,10 +7,10 @@ import {
   POSTGRES_USERNAME,
 } from 'astro:env/server';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
+import pg from 'pg';
 
 export const db = drizzle({
-  client: new Pool({
+  client: new pg.Pool({
     user: POSTGRES_USERNAME,
     password: POSTGRES_PASSWORD,
     host: POSTGRES_HOST,
