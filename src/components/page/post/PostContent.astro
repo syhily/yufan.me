@@ -1,6 +1,7 @@
 ---
-import UnstyledAlbum from '@/components/album/UnstyledAlbum.astro';
-import UnstyledImage from '@/components/image/UnstyledImage.astro';
+import UnstyledAlbum from '@/components/mdx/album/UnstyledAlbum.astro';
+import UnstyledImage from '@/components/mdx/image/UnstyledImage.astro';
+import UnstyledSolution from '@/components/mdx/solutions/UnstyledSolution.astro';
 import { posts } from '@/helpers/schema';
 import UnstyledMusicPlayer from 'astro-netease-player/UnstyledMusicPlayer.astro';
 
@@ -17,4 +18,11 @@ if (!post) {
 const { Content } = await post.render();
 ---
 
-<Content components={{ MusicPlayer: UnstyledMusicPlayer, Image: UnstyledImage, Album: UnstyledAlbum }} />
+<Content
+  components={{
+    MusicPlayer: UnstyledMusicPlayer,
+    Image: UnstyledImage,
+    Album: UnstyledAlbum,
+    Solution: UnstyledSolution,
+  }}
+/>

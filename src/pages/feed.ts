@@ -98,7 +98,9 @@ const renderPostsContent = async (feedPosts: Post[]): Promise<Map<string, string
 };
 
 export const GET = async () => {
-  const feedPosts = posts.length < options.settings.feed.size ? posts : posts.slice(0, options.settings.feed.size);
+  const visiblePosts = posts.filter((post) => post.visible);
+  const feedPosts =
+    visiblePosts.length < options.settings.feed.size ? visiblePosts : visiblePosts.slice(0, options.settings.feed.size);
   const contents = await renderPostsContent(feedPosts);
 
   return rss({

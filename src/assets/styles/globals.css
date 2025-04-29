@@ -2383,6 +2383,7 @@ a:hover .overlay {
 .post-content {
   font-size: 0.9375rem;
   color: inherit;
+  -webkit-hyphens: auto;
   hyphens: auto;
   line-height: 1.875;
   margin: 0 0 1.5rem;
@@ -2615,6 +2616,41 @@ a:hover .overlay {
   display: flex;
   margin: auto;
   justify-content: center;
+}
+
+.post-content .solution {
+  padding: 1.2rem;
+  overflow: hidden;
+}
+
+.post-content .solution p {
+  font-size: 0.938rem;
+  margin: 0 0 1.05rem;
+}
+
+.post-content .solution .solution-begin {
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.post-content .solution p:first-of-type {
+  display: inline-block;
+}
+
+.post-content .solution p:last-of-type {
+  display: inline-block;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.post-content .solution .solution-qed {
+  float: right;
+  position: relative;
+  font-size: 1.2rem;
+  color: var(--color-secondary);
 }
 
 /*--------------------------------------------------------------

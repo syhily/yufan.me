@@ -45,7 +45,7 @@ export const GET: APIRoute = async ({ params }) => {
 
 export const getStaticPaths = async () => {
   return [
-    ...posts.map((post) => ({ params: { slug: post.slug } })),
-    ...pages.map((page) => ({ params: { slug: page.slug } })),
+    ...posts.filter((post) => !post.og).map((post) => ({ params: { slug: post.slug } })),
+    ...pages.filter((page) => !page.og).map((page) => ({ params: { slug: page.slug } })),
   ];
 };

@@ -1,9 +1,10 @@
 ---
-import Album from '@/components/album/Album.astro';
 import Comments from '@/components/comment/Comments.astro';
-import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
 import LikeShare from '@/components/like/LikeShare.astro';
+import Album from '@/components/mdx/album/Album.astro';
+import Image from '@/components/mdx/image/Image.astro';
+import Solution from '@/components/mdx/solutions/Solution.astro';
 import PostMeta from '@/components/meta/PostMeta.astro';
 import TableOfContents from '@/components/page/toc/TableOfContents.astro';
 import Sidebar from '@/components/sidebar/Sidebar.astro';
@@ -29,7 +30,7 @@ const { Content, headings } = await post.render();
     description={post.summary}
     publishDate={post.date.toISOString()}
     requestPath={post.permalink}
-    ogImageUrl={`/images/og/${post.slug}.png`}
+    ogImageUrl={post.og ? post.og : `/images/og/${post.slug}.png`}
     ogImageAltText={`${post.title} - ${post.summary}`}
   />
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
@@ -58,7 +59,14 @@ const { Content, headings } = await post.render();
               <TableOfContents {headings} toc={post.toc} />
               <div class="post-content">
                 <div class="nc-light-gallery">
-                  <Content components={{ MusicPlayer: MusicPlayer, Image: Image, Album: Album }} />
+                  <Content
+                    components={{
+                      MusicPlayer: MusicPlayer,
+                      Image: Image,
+                      Album: Album,
+                      Solution: Solution,
+                    }}
+                  />
                 </div>
                 <nav class="post-in-navigation navigation pagination font-number" role="navigation">
                   <div class="nav-links"></div>

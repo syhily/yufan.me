@@ -1,9 +1,10 @@
 ---
-import Album from '@/components/album/Album.astro';
 import Comments from '@/components/comment/Comments.astro';
 import Footer from '@/components/footer/Footer.astro';
-import Image from '@/components/image/Image.astro';
 import LikeButton from '@/components/like/LikeButton.astro';
+import Album from '@/components/mdx/album/Album.astro';
+import Image from '@/components/mdx/image/Image.astro';
+import Solution from '@/components/mdx/solutions/Solution.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import Friends from '@/components/page/friend/Friends.astro';
 import TableOfContents from '@/components/page/toc/TableOfContents.astro';
@@ -22,7 +23,12 @@ const { Content, headings } = await page.render();
 ---
 
 <BaseLayout title={page.title} description={page.summary} footer={false}>
-  <PageMeta slot="og" title={page.title} description={page.summary} ogImageUrl={`/images/og/${page.slug}.png`} />
+  <PageMeta
+    slot="og"
+    title={page.title}
+    description={page.summary}
+    ogImageUrl={page.og ? page.og : `/images/og/${page.slug}.png`}
+  />
 
   <div class="row gx-0">
     <div class="col-lg-8 col-xl-8">
@@ -31,7 +37,18 @@ const { Content, headings } = await page.render();
         <TableOfContents {headings} toc={page.toc} />
         <div class="post-content">
           <div class="nc-light-gallery">
-            {page.comments && <Content components={{ MusicPlayer: MusicPlayer, Image: Image, Album: Album }} />}
+            {
+              page.comments && (
+                <Content
+                  components={{
+                    MusicPlayer: MusicPlayer,
+                    Image: Image,
+                    Album: Album,
+                    Solution: Solution,
+                  }}
+                />
+              )
+            }
           </div>
         </div>
         {page.friend && <Friends />}

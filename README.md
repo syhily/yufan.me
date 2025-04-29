@@ -159,6 +159,7 @@ date: 2013/7/13 20:46:25
 | `category`  | Category                                  | true     | `null`               |
 | `summary`   | Post summary in plain text                | false    | First 140 characters |
 | `cover`     | The cover image                           | false    | `null`               |
+| `og`        | The open graph                            | false    | `null`               |
 | `published` | Whether the post should be published      | false    | `true`               |
 | `visible`   | Can the post be displayed on the homepage | false    | `true`               |
 | `toc`       | Display the Table of Contents             | false    | `false`              |
@@ -175,6 +176,7 @@ date: 2013/7/13 20:46:25
 | `comments`  | Enables comment feature for the page | false    | `true`               |
 | `summary`   | Page summary in plain text           | false    | First 140 characters |
 | `cover`     | The cover image                      | false    | `null`               |
+| `og`        | The open graph                       | false    | `null`               |
 | `published` | Whether the page should be published | false    | `true`               |
 | `toc`       | Display the Table of Contents        | false    | `false`              |
 
