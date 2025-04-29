@@ -148,20 +148,21 @@ date: 2013/7/13 20:46:25
 
 ### Post Front Matter Settings
 
-| Setting     | Description                          | Required | Default              |
-|-------------|--------------------------------------|----------|----------------------|
-| `slug`      | ID (unique), used as the permalink   | true     |                      |
-| `title`     | Title                                | true     |                      |
-| `date`      | Published date                       | true     |                      |
-| `updated`   | Updated date                         | false    | Published date       |
-| `comments`  | Enables comment feature for the post | false    | `true`               |
-| `tags`      | Tags                                 | false    | `null`               |
-| `category`  | Category                             | true     | `null`               |
-| `summary`   | Post summary in plain text           | false    | First 140 characters |
-| `cover`     | The cover image                      | false    | `null`               |
-| `published` | Whether the post should be published | false    | `true`               |
-| `toc`       | Display the Table of Contents        | false    | `false`              |
-| `alias`     | The alternatives slugs for post      | false    | `[]`                 |
+| Setting     | Description                               | Required | Default              |
+|-------------|-------------------------------------------|----------|----------------------|
+| `slug`      | ID (unique), used as the permalink        | true     |                      |
+| `title`     | Title                                     | true     |                      |
+| `date`      | Published date                            | true     |                      |
+| `updated`   | Updated date                              | false    | Published date       |
+| `comments`  | Enables comment feature for the post      | false    | `true`               |
+| `tags`      | Tags                                      | false    | `null`               |
+| `category`  | Category                                  | true     | `null`               |
+| `summary`   | Post summary in plain text                | false    | First 140 characters |
+| `cover`     | The cover image                           | false    | `null`               |
+| `published` | Whether the post should be published      | false    | `true`               |
+| `visible`   | Can the post be displayed on the homepage | false    | `true`               |
+| `toc`       | Display the Table of Contents             | false    | `false`              |
+| `alias`     | The alternatives slugs for post           | false    | `[]`                 |
 
 ### Pages Front Matter Settings
 

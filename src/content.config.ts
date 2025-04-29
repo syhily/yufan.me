@@ -132,6 +132,7 @@ const postsCollection = defineCollection({
     summary: z.string().optional().default(''),
     cover: image(defaultCover),
     published: z.boolean().optional().default(true),
+    visible: z.boolean().optional().default(true),
     toc: toc(),
   }),
 });

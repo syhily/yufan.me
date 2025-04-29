@@ -15,10 +15,11 @@ if (pageNum <= 1) {
   return Astro.redirect('/');
 }
 
-const total = Math.ceil(posts.length / options.settings.pagination.posts);
+const visiblePosts = posts.filter((post) => post.visible);
+const total = Math.ceil(visiblePosts.length / options.settings.pagination.posts);
 if (pageNum > total) {
   return Astro.redirect(`${total}`, 302);
 }
 ---
 
-<PostsLayout {posts} {pageNum} {tags} />
+<PostsLayout posts={visiblePosts} {pageNum} {tags} />
