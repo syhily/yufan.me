@@ -76,11 +76,6 @@
   description: 每一天都是奇迹
   homepage: https://www.longluo.me
   poster: /images/links/longluo.me.jpg
-- slug: lafoyer
-  website: 佛爷小窝
-  description: 一个基于内容分享，创作与灵感结合的折腾笔记博客。
-  homepage: https://www.lafoyer.com
-  poster: /images/links/lafoyer.com.jpg
 - slug: bxaw
   website: 白熊阿丸的小屋
   description: 在这里可以看到一个真实的我，我会在这里书写我的一切。
@@ -101,3 +96,8 @@
   description: 在数字的海洋中，寻找属于自己的星辰。
   homepage: https://suus.me
   poster: /images/links/suus.me.jpg
+- slug: liruifengv
+  website: liruifengv
+  description: Web 开发者，Astro 项目成员，开源爱好者。
+  homepage: https://liruifengv.com
+  poster: /images/links/liruifengv.com.jpg
