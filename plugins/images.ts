@@ -51,7 +51,6 @@ export const astroImage = () => {
       .map((imageNode) => {
         imageNode.type = 'mdxJsxFlowElement';
         imageNode.name = 'Image';
-
         imageNode.attributes = [
           { type: 'mdxJsxAttribute', name: 'alt', value: imageNode.alt },
           { type: 'mdxJsxAttribute', name: 'src', value: imageNode.url },
