@@ -28,6 +28,14 @@ export default defineConfig({
   },
   experimental: {
     preserveScriptOrder: true,
+    csp: {
+      styleDirective: {
+        resources: ['self', 'https://cat.yufan.me'],
+      },
+      scriptDirective: {
+        resources: ['self', 'https://cat.yufan.me'],
+      },
+    },
   },
   image: {
     domains: ['localhost', '127.0.0.1'],
