@@ -64,6 +64,9 @@ export default defineConfig({
     rootImages(),
     AstroPWA({
       workbox: { navigateFallback: '/404' },
+      manifest: {
+        background_color: '#404b69',
+      },
     }),
     mdx({
       remarkPlugins: [astroImage, remarkMath],

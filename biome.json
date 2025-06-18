@@ -16,5 +16,12 @@
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
   }
 }
