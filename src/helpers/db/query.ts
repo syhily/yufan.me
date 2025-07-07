@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { db } from '@/helpers/db/pool'
-import { comment, like, page, user } from '@/helpers/db/schema'
+import { like, page, user } from '@/helpers/db/schema'
 import { makeToken, urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
@@ -57,55 +57,8 @@ export async function queryUserId(email: string): Promise<string | null> {
 }
 
 export async function latestComments(): Promise<Comment[]> {
-  const latestDistinctCommentsQuery = sql`SELECT    id
-FROM      (
-          SELECT    id,
-                    user_id,
-                    created_at,
-                    ROW_NUMBER() OVER (
-                    PARTITION BY user_id
-                    ORDER BY  created_at DESC
-                    ) rn
-          FROM      comment
-          WHERE     user_id != 3
-          AND       is_pending = FALSE
-          ) AS most_recent
-WHERE     rn = 1
-ORDER BY  created_at DESC
-LIMIT     ${options.settings.sidebar.comment}`
-
-  const latestDistinctComments = (await db.execute(latestDistinctCommentsQuery)).rows.map(row => row.id).map(id => BigInt(`${id}`))
-
-  const results = await db
-    .selectDistinctOn([comment.id], {
-      id: comment.id,
-      page: comment.pageKey,
-      title: page.title,
-      author: user.name,
-      authorLink: user.website,
-    })
-    .from(comment)
-    .innerJoin(page, eq(comment.pageKey, page.key))
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(inArray(comment.id, latestDistinctComments))
-    .orderBy(desc(comment.id))
-    .limit(options.settings.sidebar.comment)
-
-  return results.map(({ title, author, authorLink, page, id }) => {
-    let trimTitle = title ?? ''
-    if (trimTitle.includes(` - ${options.title}`)) {
-      trimTitle = trimTitle.substring(0, trimTitle.indexOf(` - ${options.title}`))
-    }
-
-    const link = !options.isProd() && page !== null ? page.replace(options.website, import.meta.env.SITE) : page
-
-    return {
-      title: trimTitle,
-      author: author ?? '',
-      authorLink: authorLink ?? '',
-      permalink: `${link}#atk-comment-${id}`,
-    }
-  })
+  // TODO Use new implementation.
+  return []
 }
 
 const generatePageKey = (permalink: string): string => urlJoin(options.website, permalink, '/')
