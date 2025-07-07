@@ -36,7 +36,6 @@ const Options = z
         initialYear: z.number().max(2024),
         icpNo: z.string().optional(),
         moeIcpNo: z.string().optional(),
-        astroBadge: z.boolean().default(true),
       }),
       locale: z.string().optional().default('zh-CN'),
       timeZone: z.string().optional().default('Asia/Shanghai'),
@@ -164,8 +163,6 @@ const options: z.input<typeof Options> = {
     footer: {
       initialYear: 2011,
       icpNo: '皖ICP备2021002315号-2',
-      moeIcpNo: '萌ICP备20200318号',
-      astroBadge: true,
     },
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',

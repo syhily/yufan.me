@@ -30,13 +30,12 @@
     "astro": "astro",
     "build": "rimraf dist && astro check && astro build",
     "dev": "astro dev",
-    "lint": "biome check --write . && prettier . --write",
+    "lint": "prettier . --write",
     "prepare": "npx husky",
     "preview": "astro preview"
   },
   "lint-staged": {
     "**/*": [
-      "biome check --no-errors-on-unmatched --files-ignore-unknown=true",
       "prettier --write --ignore-unknown"
     ]
   },
@@ -61,7 +60,6 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "@biomejs/biome": "^2.0.6",
     "@napi-rs/canvas": "^0.1.73",
     "@shikijs/transformers": "^3.7.0",
     "@types/lodash": "^4.17.20",

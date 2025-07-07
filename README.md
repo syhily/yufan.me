@@ -12,21 +12,19 @@ which is built on [Astro](https://astro.build) and hosted on [zeabur](https://ze
 
 ## History
 
-The blog's source code has evolved through four stages. Initially, it was built on WordPress in 2011.
-In 2017, I switched to Hexo and converted all my blog posts to Markdown;
-the code is available in the [Hexo branch](https://github.com/syhily/yufan.me/tree/hexo).
-By 2024, the blog had been rewritten using Next.js with App Router;
-you can find this version in the [Next branch](https://github.com/syhily/yufan.me/tree/next).
-Currently, the blog has transitioned to Astro, which is located in
-the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
+The blog's source code has evolved through four stages.
+
+- Initially, it was built on WordPress in 2011.
+- In 2017, I switched to Hexo and converted all my blog posts to Markdown.
+- By 2024, the blog had been rewritten using Next.js with App Router.
+- Currently, the blog has transitioned to Astro.
 
 ## Core Frameworks
 
 - [Node.js](https://nodejs.org): The latest Node.js LTS
 - [Astro](https://astro.build): Core engine
-- [Artalk](https://artalk.js.org): The self-hosted comment system
-- [Fuse.js](https://www.fusejs.io): Search engine
-- [Postgres](https://zeabur.com/docs/marketplace/postgresql): The view counter and like button for all my posts
+- [Fuse.js](https://www.fusejs.io): Search indexer
+- [Postgres](https://zeabur.com/docs/marketplace/postgresql): Comments, likes and users
 
 ## Local Development
 
@@ -204,20 +202,12 @@ Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build an 
 The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
 You should host it on your own machine.
 
-## Short-Term TODO Checklist
+## TODOs
 
 - [ ] Add last modified time component for post.
 - [ ] Slide share components integration.
-- [ ] Check article grammar errors by using ChatGPT. Remain **42** posts.
+- [ ] Check article grammar errors by using AI. Remain **42** posts.
 - [ ] Add music to the articles. Remain **42** posts.
-
-## Long-Term TODO Checklist
-
-- [ ] Use self-developed comment solution.
-  - [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
-  - [ ] Support login into the blog for managing the comments.
-- [ ] Add han.js support for better typography.
-- [ ] Drop bootstrap, in favor of tailwind css.
 
 ## License
 
@@ -238,8 +228,7 @@ They are the fonts that can be used in business without any charge.
 ### Open Graph Font License
 
 The [OPPOSans 4.0](https://open.oppomobile.com/new/developmentDoc/info?id=13223)
-is used for rendering the open graph image in my weblog.
-The license file is [here](licenses/LICENSE.opposans.txt)
+is used for rendering the open graph image in my weblog with [license](licenses/LICENSE.opposans.txt)
 
 ### Third Party Codes License
 
