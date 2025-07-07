@@ -1,3 +1,3 @@
-import type { $Infer } from '@/helpers/auth/client';
+import type { $Infer } from '@/helpers/auth/client'
 
-export type ActiveSession = typeof $Infer.Session;
+export type ActiveSession = typeof $Infer.Session

@@ -1,16 +1,16 @@
 ---
-import type { CommentItem } from '@/components/comment/types';
-import { formatLocalDate } from '@/helpers/formatter';
-import { encodedEmail, urlJoin } from '@/helpers/tools';
-import options from '@/options';
+import type { CommentItem } from '@/components/comment/types'
+import { formatLocalDate } from '@/helpers/formatter'
+import { encodedEmail, urlJoin } from '@/helpers/tools'
+import options from '@/options'
 
 interface Props {
-  depth: number;
-  comment: CommentItem;
-  pending?: false;
+  depth: number
+  comment: CommentItem
+  pending?: false
 }
 
-const { comment, depth, pending } = Astro.props;
+const { comment, depth, pending } = Astro.props
 ---
 
 <li id={`atk-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt" data-depth={depth}>

@@ -1,30 +1,30 @@
 ---
-import { posts } from '@/helpers/schema';
-import { searchPosts } from '@/helpers/search';
-import SearchLayout from '@/layouts/posts/SearchLayout.astro';
-import options from '@/options';
+import { posts } from '@/helpers/schema'
+import { searchPosts } from '@/helpers/search'
+import SearchLayout from '@/layouts/posts/SearchLayout.astro'
+import options from '@/options'
 
-const { keyword, num } = Astro.params;
-const query = keyword || '';
+const { keyword, num } = Astro.params
+const query = keyword || ''
 if (query === '' || !num) {
-  return Astro.redirect('/');
+  return Astro.redirect('/')
 }
 
-const pageNum = Number.parseInt(num);
+const pageNum = Number.parseInt(num)
 if (pageNum <= 1) {
-  return Astro.redirect('/');
+  return Astro.redirect('/')
 }
 
-const title = `【${query}】搜索结果`;
+const title = `【${query}】搜索结果`
 
 const searchResults = searchPosts(query)
   .map((slug) => posts.find((post) => post.slug === slug))
-  .filter((post) => post !== undefined);
+  .filter((post) => post !== undefined)
 
-const total = Math.ceil(searchResults.length / options.settings.pagination.tags);
+const total = Math.ceil(searchResults.length / options.settings.pagination.tags)
 
 if (pageNum > total) {
-  return Astro.redirect(`${total}`, 302);
+  return Astro.redirect(`${total}`, 302)
 }
 ---
 

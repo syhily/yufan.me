@@ -103,24 +103,6 @@ CREATE TABLE "public"."atk_likes"
 CREATE INDEX IF NOT EXISTS "idx_atk_likes_token" ON "public"."atk_likes" ("token");
 ```
 
-### Comments Integration
-
-This weblog uses artalk as its backend comment service. But since artalk didn't provide the latest comments API.
-We decide to query it directly from the Postgres database. So the comments and fav clicks are living in the same
-database.
-
-If you don't want the astro integration, change the switch in `options.ts` to `false`.
-
-```typescript
-{
-  settings: {
-    comments: {
-      enable: false,
-    }
-  }
-}
-```
-
 ### S3 Compatible Storage Integration
 
 This blog will upload all the built resources at build stage. You can remove this feature by removing the
@@ -147,7 +129,7 @@ date: 2013/7/13 20:46:25
 ### Post Front Matter Settings
 
 | Setting     | Description                               | Required | Default              |
-|-------------|-------------------------------------------|----------|----------------------|
+| ----------- | ----------------------------------------- | -------- | -------------------- |
 | `slug`      | ID (unique), used as the permalink        | true     |                      |
 | `title`     | Title                                     | true     |                      |
 | `date`      | Published date                            | true     |                      |
@@ -166,7 +148,7 @@ date: 2013/7/13 20:46:25
 ### Pages Front Matter Settings
 
 | Setting     | Description                          | Required | Default              |
-|-------------|--------------------------------------|----------|----------------------|
+| ----------- | ------------------------------------ | -------- | -------------------- |
 | `slug`      | ID (unique), used as the permalink   | true     |                      |
 | `title`     | Title                                | true     |                      |
 | `date`      | Published date                       | true     |                      |

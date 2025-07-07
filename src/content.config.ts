@@ -1,28 +1,30 @@
-import { imageMetadata } from '@/helpers/images';
-import { urlJoin } from '@/helpers/tools';
-import options from '@/options';
-import { file, glob } from 'astro/loaders';
-import { defineCollection, z } from 'astro:content';
-import { glob as Glob } from 'glob';
-import path from 'node:path';
+import path from 'node:path'
+import process from 'node:process'
+import { file, glob } from 'astro/loaders'
+import { defineCollection, z } from 'astro:content'
+import { glob as Glob } from 'glob'
+import { imageMetadata } from '@/helpers/images'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
 
-export const defaultCover = '/images/default-cover.jpg';
+export const defaultCover = '/images/default-cover.jpg'
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
 // We add the slug here for validating the YAML configuration.
-const slug = () =>
-  z
+function slug() {
+  return z
     .string()
     .min(3)
     .max(200)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug');
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug')
+}
 
-const image = (fallbackImage: string) => z.string().optional().default(fallbackImage);
+const image = (fallbackImage: string) => z.string().optional().default(fallbackImage)
 
 // The default toc heading level.
-const toc = () =>
-  z
+function toc() {
+  return z
     .union([
       z.object({
         // The level to start including headings at in the table of contents. Default: 2.
@@ -30,7 +32,7 @@ const toc = () =>
         // The level to stop including headings at in the table of contents. Default: 3.
         maxHeadingLevel: z.number().int().min(1).max(6).optional().default(options.settings.toc.maxHeadingLevel),
       }),
-      z.boolean().transform((enabled) =>
+      z.boolean().transform(enabled =>
         enabled
           ? {
               minHeadingLevel: options.settings.toc.minHeadingLevel,
@@ -40,20 +42,21 @@ const toc = () =>
       ),
     ])
     .default(false)
-    .refine((toc) => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
+    .refine(toc => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
       message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
-    });
+    })
+}
 
 // Images Collection
 const imagesCollection = defineCollection({
   loader: async () => {
-    const publicDirectory = path.join(process.cwd(), 'images');
-    const imagePaths = await Glob(path.join(publicDirectory, '**/*.{jpg,jpeg,gif,svg,png,webp}'));
+    const publicDirectory = path.join(process.cwd(), 'images')
+    const imagePaths = await Glob(path.join(publicDirectory, '**/*.{jpg,jpeg,gif,svg,png,webp}'))
     const metas = imagePaths
-      .map((imagePath) => imagePath.substring(process.cwd().length))
-      .map(async (imagePath) => ({ id: imagePath, ...(await imageMetadata(imagePath)) }));
+      .map(imagePath => imagePath.substring(process.cwd().length))
+      .map(async imagePath => ({ id: imagePath, ...(await imageMetadata(imagePath)) }))
 
-    return Promise.all(metas);
+    return Promise.all(metas)
   },
   schema: z.object({
     src: z.string(),
@@ -63,7 +66,7 @@ const imagesCollection = defineCollection({
     blurWidth: z.number(),
     blurHeight: z.number(),
   }),
-});
+})
 
 // Albums Collection
 const albumsCollection = defineCollection({
@@ -83,7 +86,7 @@ const albumsCollection = defineCollection({
       })
       .array(),
   }),
-});
+})
 
 // Categories Collection
 const categoriesCollection = defineCollection({
@@ -94,7 +97,7 @@ const categoriesCollection = defineCollection({
     cover: image(defaultCover),
     description: z.string().max(999).optional().default('').describe('In markdown format'),
   }),
-});
+})
 
 // Friends Collection
 const friendsCollection = defineCollection({
@@ -105,9 +108,9 @@ const friendsCollection = defineCollection({
     homepage: z.string().url(),
     poster: z
       .string()
-      .transform((poster) => (poster.startsWith('/') ? urlJoin(options.assetsPrefix(), poster) : poster)),
+      .transform(poster => (poster.startsWith('/') ? urlJoin(options.assetsPrefix(), poster) : poster)),
   }),
-});
+})
 
 // Tags Collection
 const tagsCollection = defineCollection({
@@ -116,7 +119,7 @@ const tagsCollection = defineCollection({
     name: z.string().max(20),
     slug: slug(),
   }),
-});
+})
 
 // Posts Collection
 const postsCollection = defineCollection({
@@ -136,7 +139,7 @@ const postsCollection = defineCollection({
     visible: z.boolean().optional().default(true),
     toc: toc(),
   }),
-});
+})
 
 // Pages Collection
 const pagesCollection = defineCollection({
@@ -153,7 +156,7 @@ const pagesCollection = defineCollection({
     friend: z.boolean().optional().default(false),
     toc: toc(),
   }),
-});
+})
 
 export const collections = {
   images: imagesCollection,
@@ -163,4 +166,4 @@ export const collections = {
   tags: tagsCollection,
   posts: postsCollection,
   pages: pagesCollection,
-};
+}

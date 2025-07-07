@@ -1,9 +1,9 @@
-import { db } from '@/helpers/db/pool';
-import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } from 'astro:env/server';
-import { betterAuth } from 'better-auth';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { admin, haveIBeenPwned, magicLink } from 'better-auth/plugins';
-import { passkey } from 'better-auth/plugins/passkey';
+import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } from 'astro:env/server'
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { admin, haveIBeenPwned, magicLink } from 'better-auth/plugins'
+import { passkey } from 'better-auth/plugins/passkey'
+import { db } from '@/helpers/db/pool'
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -31,11 +31,11 @@ export const auth = betterAuth({
     magicLink({
       sendMagicLink: async ({ email, token, url }, _request) => {
         // TODO send email to user
-        console.log(email, token, url);
+        console.warn(email, token, url)
       },
     }),
   ],
   rateLimit: {
     enabled: true,
   },
-});
+})

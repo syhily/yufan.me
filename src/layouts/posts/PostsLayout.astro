@@ -1,21 +1,21 @@
 ---
-import FeaturePosts from '@/components/page/post/FeaturePosts.astro';
-import PostCards from '@/components/page/post/PostCards.astro';
-import Sidebar from '@/components/sidebar/Sidebar.astro';
-import type { Post, Tag } from '@/helpers/schema';
-import BaseLayout from '@/layouts/BaseLayout.astro';
+import FeaturePosts from '@/components/page/post/FeaturePosts.astro'
+import PostCards from '@/components/page/post/PostCards.astro'
+import Sidebar from '@/components/sidebar/Sidebar.astro'
+import type { Post, Tag } from '@/helpers/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
 
 interface Props {
-  posts: Post[];
-  pageNum: number;
-  tags: Tag[];
+  posts: Post[]
+  pageNum: number
+  tags: Tag[]
 }
 
-const { posts, pageNum, tags } = Astro.props;
+const { posts, pageNum, tags } = Astro.props
 
 // Redirect to the homepage.
 if (pageNum < 1) {
-  return Astro.redirect('/');
+  return Astro.redirect('/')
 }
 ---
 

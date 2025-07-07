@@ -1,15 +1,15 @@
 ---
-import { openGraphHeight, openGraphWidth } from '@/helpers/images';
-import { getPageMeta } from '@/helpers/seo';
-import options from '@/options';
+import { openGraphHeight, openGraphWidth } from '@/helpers/images'
+import { getPageMeta } from '@/helpers/seo'
+import options from '@/options'
 
 export interface Props {
-  title?: string;
-  description?: string;
-  ogImageUrl?: string;
+  title?: string
+  description?: string
+  ogImageUrl?: string
 }
 
-const { title, description, ogImageUrl } = Astro.props;
+const { title, description, ogImageUrl } = Astro.props
 
 const { og, twitter } = getPageMeta({
   title: title || options.title,
@@ -21,7 +21,7 @@ const { og, twitter } = getPageMeta({
   ogImageHeight: openGraphHeight,
   siteOwnerTwitterHandle: options.settings.twitter,
   contentAuthorTwitterHandle: options.settings.twitter,
-});
+})
 ---
 
 <Fragment>

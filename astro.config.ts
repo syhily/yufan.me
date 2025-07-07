@@ -1,22 +1,23 @@
-import mdx from '@astrojs/mdx';
-import node from '@astrojs/node';
+import process from 'node:process'
+import mdx from '@astrojs/mdx'
+import node from '@astrojs/node'
 import {
   transformerNotationDiff,
   transformerNotationErrorLevel,
   transformerNotationFocus,
   transformerNotationHighlight,
   transformerNotationWordHighlight,
-} from '@shikijs/transformers';
-import AstroPWA from '@vite-pwa/astro';
-import { uploader } from 'astro-uploader';
-import { defineConfig, envField } from 'astro/config';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings';
-import rehypeExternalLinks from 'rehype-external-links';
-import rehypeMathjax from 'rehype-mathjax';
-import rehypeSlug from 'rehype-slug';
-import remarkMath from 'remark-math';
-import options from './options';
-import { astroImage, openGraph, rootImages } from './plugins/images';
+} from '@shikijs/transformers'
+import AstroPWA from '@vite-pwa/astro'
+import { uploader } from 'astro-uploader'
+import { defineConfig, envField } from 'astro/config'
+import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import rehypeExternalLinks from 'rehype-external-links'
+import rehypeMathjax from 'rehype-mathjax'
+import rehypeSlug from 'rehype-slug'
+import remarkMath from 'remark-math'
+import options from './options'
+import { astroImage, openGraph, rootImages } from './plugins/images'
 
 // https://astro.build/config
 export default defineConfig({
@@ -78,9 +79,9 @@ export default defineConfig({
     }),
     uploader({
       enable:
-        process.env.BUILD_OPEN_GRAPH === undefined ||
-        process.env.BUILD_OPEN_GRAPH === 'true' ||
-        process.env.UPLOAD_STATIC_FILES === 'true',
+        process.env.BUILD_OPEN_GRAPH === undefined
+        || process.env.BUILD_OPEN_GRAPH === 'true'
+        || process.env.UPLOAD_STATIC_FILES === 'true',
       paths: [{ path: 'images', recursive: true, keep: false, override: false }, 'assets'],
       recursive: true,
       keep: false,
@@ -124,4 +125,4 @@ export default defineConfig({
     assets: 'assets',
     assetsPrefix: options.assetsPrefix(),
   },
-});
+})

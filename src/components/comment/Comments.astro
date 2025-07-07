@@ -1,21 +1,21 @@
 ---
-import { increaseViews, loadComments } from '@/components/comment/artalk';
-import Comment from '@/components/comment/Comment.astro';
-import { urlJoin } from '@/helpers/tools';
-import options from '@/options';
+import { increaseViews, loadComments } from '@/components/comment/artalk'
+import Comment from '@/components/comment/Comment.astro'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
 
 // This is a component which loads comments and renders it on server-side.
 interface Props {
-  commentKey: string;
-  title: string;
+  commentKey: string
+  title: string
 }
 
-const { commentKey, title } = Astro.props;
-const comments = options.settings.comments.enable ? await loadComments(commentKey, title, 0) : null;
+const { commentKey, title } = Astro.props
+const comments = options.settings.comments.enable ? await loadComments(commentKey, title, 0) : null
 
 // Increase the PV in production environment.
 if (options.settings.comments.enable && options.isProd()) {
-  await increaseViews(commentKey, title);
+  await increaseViews(commentKey, title)
 }
 ---
 

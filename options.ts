@@ -1,8 +1,9 @@
-import { z } from 'astro/zod';
+import process from 'node:process'
+import { z } from 'astro/zod'
 
-const isProd = (): boolean => import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production';
+const isProd = (): boolean => import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production'
 
-export type Navigation = z.infer<typeof Options>['navigation'];
+export type Navigation = z.infer<typeof Options>['navigation']
 
 // The type of the options, use zod for better validation.
 const Options = z
@@ -11,12 +12,12 @@ const Options = z
       .object({
         port: z.number(),
       })
-      .transform((local) => ({ ...local, website: `http://localhost:${local.port}` })),
+      .transform(local => ({ ...local, website: `http://localhost:${local.port}` })),
     title: z.string().max(40),
     website: z
       .string()
       .url()
-      .refine((u) => !u.endsWith('/'))
+      .refine(u => !u.endsWith('/'))
       .readonly(),
     description: z.string().max(100),
     keywords: z.array(z.string()),
@@ -44,7 +45,7 @@ const Options = z
       assetPrefix: z
         .string()
         .url()
-        .refine((u) => !u.endsWith('/'))
+        .refine(u => !u.endsWith('/'))
         .readonly(),
       post: z.object({
         sort: z.enum(['asc', 'desc']),
@@ -86,7 +87,7 @@ const Options = z
       .returns(z.string()),
   })
   .transform((opts) => {
-    const assetsPrefix = (): string => (isProd() ? opts.settings.assetPrefix : opts.local.website);
+    const assetsPrefix = (): string => (isProd() ? opts.settings.assetPrefix : opts.local.website)
     return {
       ...opts,
       // Monkey patch for the issue https://github.com/withastro/astro/issues/11282
@@ -96,12 +97,12 @@ const Options = z
       // I have to use this uniform method instead.
       assetsPrefix,
       defaultOpenGraph: (): string => `${assetsPrefix()}/images/open-graph.png`,
-    };
+    }
   })
   .refine(
-    (options) => options.settings.toc.minHeadingLevel <= options.settings.toc.maxHeadingLevel,
+    options => options.settings.toc.minHeadingLevel <= options.settings.toc.maxHeadingLevel,
     'Invalid toc setting, the minHeadingLevel should bellow the maxHeadingLevel',
-  );
+  )
 
 const options: z.input<typeof Options> = {
   local: {
@@ -204,16 +205,16 @@ const options: z.input<typeof Options> = {
   },
   thumbnail: ({ src, width, height }) => {
     if (src.endsWith('.svg')) {
-      return src;
+      return src
     }
     if (isProd()) {
       // Add upyun thumbnail support.
-      return `${src}!upyun520/both/${width}x${height}/format/webp/quality/100/unsharp/true/progressive/true`;
+      return `${src}!upyun520/both/${width}x${height}/format/webp/quality/100/unsharp/true/progressive/true`
     }
     // See https://docs.astro.build/en/reference/image-service-reference/#local-services
     // Remember to add the localhost to you image service settings.
-    return `http://localhost:4321/_image?href=${src}&w=${width}&h=${height}&f=webp&q=100`;
+    return `http://localhost:4321/_image?href=${src}&w=${width}&h=${height}&f=webp&q=100`
   },
-};
+}
 
-export default Options.parse(options);
+export default Options.parse(options)

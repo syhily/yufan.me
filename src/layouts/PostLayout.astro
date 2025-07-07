@@ -1,26 +1,26 @@
 ---
-import Comments from '@/components/comment/Comments.astro';
-import LikeButton from '@/components/like/LikeButton.astro';
-import LikeShare from '@/components/like/LikeShare.astro';
-import Album from '@/components/mdx/album/Album.astro';
-import Image from '@/components/mdx/image/Image.astro';
-import Solution from '@/components/mdx/solutions/Solution.astro';
-import PostMeta from '@/components/meta/PostMeta.astro';
-import TableOfContents from '@/components/page/toc/TableOfContents.astro';
-import Sidebar from '@/components/sidebar/Sidebar.astro';
-import { formatLocalDate } from '@/helpers/formatter';
-import { getTag, posts, tags, type Post } from '@/helpers/schema';
-import { urlJoin } from '@/helpers/tools';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import options from '@/options';
-import MusicPlayer from 'astro-netease-player/MusicPlayer.astro';
+import Comments from '@/components/comment/Comments.astro'
+import LikeButton from '@/components/like/LikeButton.astro'
+import LikeShare from '@/components/like/LikeShare.astro'
+import Album from '@/components/mdx/album/Album.astro'
+import Image from '@/components/mdx/image/Image.astro'
+import Solution from '@/components/mdx/solutions/Solution.astro'
+import PostMeta from '@/components/meta/PostMeta.astro'
+import TableOfContents from '@/components/page/toc/TableOfContents.astro'
+import Sidebar from '@/components/sidebar/Sidebar.astro'
+import { formatLocalDate } from '@/helpers/formatter'
+import { getTag, posts, tags, type Post } from '@/helpers/schema'
+import { urlJoin } from '@/helpers/tools'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import options from '@/options'
+import MusicPlayer from 'astro-netease-player/MusicPlayer.astro'
 
 interface Props {
-  post: Post;
+  post: Post
 }
 
-const { post } = Astro.props;
-const { Content, headings } = await post.render();
+const { post } = Astro.props
+const { Content, headings } = await post.render()
 ---
 
 <BaseLayout title={post.title}>

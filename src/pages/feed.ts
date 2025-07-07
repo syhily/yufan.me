@@ -1,21 +1,21 @@
-import { renderPostsContents } from '@/helpers/posts/render';
-import { posts } from '@/helpers/schema';
-import { urlJoin } from '@/helpers/tools';
-import options from '@/options';
-import rss from '@astrojs/rss';
+import rss from '@astrojs/rss'
+import { renderPostsContents } from '@/helpers/posts/render'
+import { posts } from '@/helpers/schema'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
 
-export const GET = async () => {
-  const visiblePosts = posts.filter((post) => post.visible);
-  const feedPosts =
-    visiblePosts.length < options.settings.feed.size ? visiblePosts : visiblePosts.slice(0, options.settings.feed.size);
-  const contents = await renderPostsContents(feedPosts);
+export async function GET() {
+  const visiblePosts = posts.filter(post => post.visible)
+  const feedPosts
+    = visiblePosts.length < options.settings.feed.size ? visiblePosts : visiblePosts.slice(0, options.settings.feed.size)
+  const contents = await renderPostsContents(feedPosts)
 
   return rss({
     title: options.title,
     description: options.description,
     stylesheet: '/feed.xsl',
     site: import.meta.env.SITE,
-    items: feedPosts.map((post) => ({
+    items: feedPosts.map(post => ({
       link: urlJoin(import.meta.env.SITE, post.permalink),
       title: post.title,
       pubDate: post.date,
@@ -24,17 +24,17 @@ export const GET = async () => {
       content: contents.get(post.slug) ?? post.summary,
       categories: [post.category, ...post.tags],
     })),
-  });
-};
+  })
+}
 
 // The rss reader may prefetch by using HEAD method.
-export const HEAD = async () => {
+export async function HEAD() {
   return new Response('', {
     headers: {
-      Host: import.meta.env.SITE,
+      'Host': import.meta.env.SITE,
       'Content-Type': 'application/xml',
-      Accept: '*/*',
-      Connection: 'keep-alive',
+      'Accept': '*/*',
+      'Connection': 'keep-alive',
     },
-  });
-};
+  })
+}

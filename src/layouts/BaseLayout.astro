@@ -1,26 +1,26 @@
 ---
-import '@/assets/styles/globals.css';
-import Footer from '@/components/footer/Footer.astro';
-import Header from '@/components/header/Header.astro';
-import PageMeta from '@/components/meta/PageMeta.astro';
-import SearchDialog from '@/components/search/SearchDialog.astro';
-import options, { type Navigation } from '@/options';
-import { pwaInfo } from 'virtual:pwa-info';
+import '@/assets/styles/globals.css'
+import Footer from '@/components/footer/Footer.astro'
+import Header from '@/components/header/Header.astro'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import SearchDialog from '@/components/search/SearchDialog.astro'
+import options, { type Navigation } from '@/options'
+import { pwaInfo } from 'virtual:pwa-info'
 
 interface Props {
-  title?: string;
-  description?: string;
-  navigation?: Navigation;
-  footer?: boolean;
+  title?: string
+  description?: string
+  navigation?: Navigation
+  footer?: boolean
 }
 
 const title =
   Astro.props.title === undefined
     ? `${options.title} - ${options.description}`
-    : `${Astro.props.title} - ${options.title}`;
-const description = Astro.props.description || options.description;
-const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
-const navigation = Astro.props.navigation || options.navigation;
+    : `${Astro.props.title} - ${options.title}`
+const description = Astro.props.description || options.description
+const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
+const navigation = Astro.props.navigation || options.navigation
 ---
 
 <!doctype html>
@@ -66,7 +66,7 @@ const navigation = Astro.props.navigation || options.navigation;
       </ul>
     </div>
     <script>
-      import '@/assets/scripts/globals.js';
+      import '@/assets/scripts/globals.js'
     </script>
     <SearchDialog />
   </body>
