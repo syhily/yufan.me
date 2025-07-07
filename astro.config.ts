@@ -42,6 +42,12 @@ export default defineConfig({
       POSTGRES_USERNAME: envField.string({ context: 'server', access: 'secret' }),
       POSTGRES_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
       POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
+      // Better Auth
+      BETTER_AUTH_SECRET: envField.string({ context: 'server', access: 'secret' }),
+      BETTER_AUTH_URL: envField.string({ context: 'server', access: 'secret' }),
+      // Github Application
+      GITHUB_CLIENT_ID: envField.string({ context: 'server', access: 'secret' }),
+      GITHUB_CLIENT_SECRET: envField.string({ context: 'server', access: 'secret' }),
       // Artalk Comment
       ARTALK_SCHEME: envField.string({ context: 'server', access: 'secret' }),
       ARTALK_HOST: envField.string({ context: 'server', access: 'secret' }),

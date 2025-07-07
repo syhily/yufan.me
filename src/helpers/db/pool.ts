@@ -1,4 +1,4 @@
-import schema from '@/helpers/db/schema';
+import * as schema from '@/helpers/db/schema';
 import {
   POSTGRES_DATABASE,
   POSTGRES_HOST,

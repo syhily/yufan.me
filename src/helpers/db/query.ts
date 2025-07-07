@@ -1,5 +1,5 @@
 import { db } from '@/helpers/db/pool';
-import { atk_comments, atk_likes, atk_pages, atk_users } from '@/helpers/db/schema';
+import { comment, like, page, user } from '@/helpers/db/schema';
 import { makeToken, urlJoin } from '@/helpers/tools';
 import options from '@/options';
 import { and, desc, eq, inArray, isNull, sql, type InferSelectModel } from 'drizzle-orm';
@@ -11,11 +11,11 @@ export interface Comment {
   permalink: string;
 }
 
-export const queryUser = async (email: string): Promise<InferSelectModel<typeof atk_users> | null> => {
+export const queryUser = async (email: string): Promise<InferSelectModel<typeof user> | null> => {
   const results = await db
     .select()
-    .from(atk_users)
-    .where(eq(atk_users.email, sql`${email}`));
+    .from(user)
+    .where(eq(user.email, sql`${email}`));
   if (results.length === 0) {
     return null;
   }
@@ -26,10 +26,10 @@ export const queryUser = async (email: string): Promise<InferSelectModel<typeof 
 export const queryEmail = async (id: number): Promise<string | null> => {
   const results = await db
     .select({
-      email: atk_users.email,
+      email: user.email,
     })
-    .from(atk_users)
-    .where(eq(atk_users.id, sql`${id}`))
+    .from(user)
+    .where(eq(user.id, sql`${id}`))
     .limit(1);
 
   if (results.length === 0) {
@@ -39,13 +39,13 @@ export const queryEmail = async (id: number): Promise<string | null> => {
   return results[0].email;
 };
 
-export const queryUserId = async (email: string): Promise<bigint | null> => {
+export const queryUserId = async (email: string): Promise<string | null> => {
   const results = await db
     .select({
-      id: atk_users.id,
+      id: user.id,
     })
-    .from(atk_users)
-    .where(eq(atk_users.email, sql`${email}`))
+    .from(user)
+    .where(eq(user.email, sql`${email}`))
     .limit(1);
 
   if (results.length === 0) {
@@ -65,7 +65,7 @@ FROM      (
                     PARTITION BY user_id
                     ORDER BY  created_at DESC
                     ) rn
-          FROM      atk_comments
+          FROM      comment
           WHERE     user_id != 3
           AND       is_pending = FALSE
           ) AS most_recent
@@ -78,18 +78,18 @@ LIMIT     ${options.settings.sidebar.comment}`;
     .map((id) => BigInt(`${id}`));
 
   const results = await db
-    .selectDistinctOn([atk_comments.id], {
-      id: atk_comments.id,
-      page: atk_comments.page_key,
-      title: atk_pages.title,
-      author: atk_users.name,
-      authorLink: atk_users.link,
+    .selectDistinctOn([comment.id], {
+      id: comment.id,
+      page: comment.pageKey,
+      title: page.title,
+      author: user.name,
+      authorLink: user.website,
     })
-    .from(atk_comments)
-    .innerJoin(atk_pages, eq(atk_comments.page_key, atk_pages.key))
-    .innerJoin(atk_users, eq(atk_comments.user_id, atk_users.id))
-    .where(inArray(atk_comments.id, latestDistinctComments))
-    .orderBy(desc(atk_comments.id))
+    .from(comment)
+    .innerJoin(page, eq(comment.pageKey, page.key))
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(inArray(comment.id, latestDistinctComments))
+    .orderBy(desc(comment.id))
     .limit(options.settings.sidebar.comment);
 
   return results.map(({ title, author, authorLink, page, id }) => {
@@ -111,34 +111,34 @@ LIMIT     ${options.settings.sidebar.comment}`;
 
 const generatePageKey = (permalink: string): string => urlJoin(options.website, permalink, '/');
 
-export const increaseLikes = async (permalink: string): Promise<{ likes: number; token: string }> => {
+export const increaseLikes = async (permalink: string): Promise<{ like: number; token: string }> => {
   const pageKey = generatePageKey(permalink);
   const token = makeToken(250);
   // Save the token
-  await db.insert(atk_likes).values({
+  await db.insert(like).values({
     token: token,
-    page_key: pageKey,
-    created_at: new Date(),
-    updated_at: new Date(),
+    pageKey: pageKey,
+    createdAt: new Date(),
+    updatedAt: new Date(),
   });
 
-  // Bump the likes
+  // Bump the like
   await db
-    .update(atk_pages)
+    .update(page)
     .set({
-      vote_up: sql`${atk_pages.vote_up} + 1`,
+      voteUp: sql`${page.voteUp} + 1`,
     })
-    .where(eq(atk_pages.key, sql`${pageKey}`));
+    .where(eq(page.key, sql`${pageKey}`));
 
-  return { likes: await queryLikes(permalink), token: token };
+  return { like: await queryLikes(permalink), token: token };
 };
 
 export const decreaseLikes = async (permalink: string, token: string) => {
   const pageKey = generatePageKey(permalink);
   const results = await db
-    .select({ id: atk_likes.id })
-    .from(atk_likes)
-    .where(and(eq(atk_likes.token, token), eq(atk_likes.page_key, pageKey), isNull(atk_likes.deleted_at)))
+    .select({ id: like.id })
+    .from(like)
+    .where(and(eq(like.token, token), eq(like.pageKey, pageKey), isNull(like.deletedAt)))
     .limit(1);
 
   // No need to dislike
@@ -149,27 +149,27 @@ export const decreaseLikes = async (permalink: string, token: string) => {
   const id = results[0].id;
   // Remove the token
   await db
-    .update(atk_likes)
+    .update(like)
     .set({
-      updated_at: new Date(),
-      deleted_at: new Date(),
+      updatedAt: new Date(),
+      deletedAt: new Date(),
     })
-    .where(eq(atk_likes.id, id));
-  // Decrease the likes
+    .where(eq(like.id, id));
+  // Decrease the like
   await db
-    .update(atk_pages)
+    .update(page)
     .set({
-      vote_up: sql`${atk_pages.vote_up} - 1`,
+      voteUp: sql`${page.voteUp} - 1`,
     })
-    .where(eq(atk_pages.key, sql`${pageKey}`));
+    .where(eq(page.key, sql`${pageKey}`));
 };
 
 export const queryLikes = async (permalink: string): Promise<number> => {
   const pageKey = generatePageKey(permalink);
   const results = await db
-    .select({ like: atk_pages.vote_up })
-    .from(atk_pages)
-    .where(eq(atk_pages.key, sql`${pageKey}`))
+    .select({ like: page.voteUp })
+    .from(page)
+    .where(eq(page.key, sql`${pageKey}`))
     .limit(1);
 
   return results.length > 0 ? (results[0].like ?? 0) : 0;
@@ -178,9 +178,9 @@ export const queryLikes = async (permalink: string): Promise<number> => {
 export const queryLikesAndViews = async (permalink: string): Promise<[number, number]> => {
   const pageKey = generatePageKey(permalink);
   const results = await db
-    .select({ like: atk_pages.vote_up, view: atk_pages.pv })
-    .from(atk_pages)
-    .where(eq(atk_pages.key, sql`${pageKey}`))
+    .select({ like: page.voteUp, view: page.pv })
+    .from(page)
+    .where(eq(page.key, sql`${pageKey}`))
     .limit(1);
 
   return results.length > 0 ? [results[0].like ?? 0, results[0].view ?? 0] : [0, 0];
