@@ -2717,28 +2717,6 @@ a:hover .overlay {
   flex-wrap: wrap;
 }
 
-/* Astro Badge */
-.astro-badge:hover stop:first-child {
-  stop-color: #3245ff;
-}
-.astro-badge:hover stop:last-child {
-  stop-color: #bc52ee;
-}
-
-/* Not By AI Badge */
-.not-by-ai {
-  display: block;
-  margin-bottom: 10px;
-  width: 120px;
-  --not-by-ai-background: var(--btn-secondary);
-  --not-by-ai-line: var(--color-light);
-}
-
-.not-by-ai:hover {
-  --not-by-ai-background: var(--color-light);
-  --not-by-ai-line: var(--btn-secondary);
-}
-
 /*--------------------------------------------------------------
     widget style
 --------------------------------------------------------------*/

@@ -1,0 +1,12 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  title?: string
+}
+const { title } = Astro.props
+
+// TODO Generate different menu according to the login status of the user.
+---
+
+<BaseLayout title={title || '网站管理'} />

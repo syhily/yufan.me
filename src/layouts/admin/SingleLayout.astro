@@ -1,0 +1,82 @@
+---
+import '@/assets/styles/globals.css'
+import '@/assets/styles/admin/single.css'
+import LogoDark from '@/components/header/LogoDark.astro'
+import LogoLarge from '@/components/header/LogoLarge.astro'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Footer from '@/components/footer/Footer.astro'
+import options from '@/options'
+import { urlJoin } from '@/helpers/tools'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const title =
+  Astro.props.title === undefined
+    ? `${options.title} - ${options.description}`
+    : `${Astro.props.title} - ${options.title}`
+const description = Astro.props.description || options.description
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="author" content={options.author.name} />
+    <link rel="author" href={options.author.url} />
+    <meta name="keywords" content={options.keywords.join(',')} />
+    <slot name="og">
+      <PageMeta {title} {description} />
+    </slot>
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
+    <link rel="alternate" type="application/rss+xml" title={options.title} href="/feed" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body class="admin single">
+    <div class="site-layout">
+      <div class="desktop-brand">
+        <LogoDark />
+      </div>
+      <div class="mobile-brand">
+        <div class="container">
+          <div class="d-flex flex-flex align-items-center">
+            <a href="/" title={options.title} class="d-block">
+              <LogoLarge />
+            </a>
+            <div class="flex-fill"></div>
+          </div>
+        </div>
+      </div>
+      <main class="site-main">
+        <div class="row gx-0">
+          <div class="col-lg-7 col-xl-7">
+            <div class="post p-3 p-md-5">
+              <div class="single-full">
+                <slot />
+              </div>
+            </div>
+            <Footer />
+          </div>
+          <div class="col-lg-5 col-xl-5 d-none d-lg-block sticky-top hv">
+            <div
+              class="bg-img hv"
+              style={{ backgroundImage: `url('${urlJoin(options.assetsPrefix(), '/images/admin/bg.jpg')}')` }}
+            >
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

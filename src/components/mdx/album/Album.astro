@@ -1,31 +1,31 @@
 ---
-import Image from '@/components/mdx/image/Image.astro';
-import { formatLocalDate } from '@/helpers/formatter';
-import { getAlbum } from '@/helpers/schema';
+import Image from '@/components/mdx/image/Image.astro'
+import { formatLocalDate } from '@/helpers/formatter'
+import { getAlbum } from '@/helpers/schema'
 
 interface Props {
-  id: string;
+  id: string
 }
 
-const { id } = Astro.props;
-const album = getAlbum(id);
+const { id } = Astro.props
+const album = getAlbum(id)
 
 const calculateCroppedWidth = (width: number, height: number, first: boolean): number => {
   // 300 * 300
   if (!first) {
     if (width < 300 || height < 300) {
-      return width;
+      return width
     }
-    return width > height ? Math.round((300.0 / height) * width) : 300;
+    return width > height ? Math.round((300.0 / height) * width) : 300
   }
   // 600 * 300
   if (width < 600 || height < 300) {
-    return width;
+    return width
   }
-  return width > height ? (600.0 / width > 300.0 / height ? 600 : Math.round((300.0 / height) * width)) : 600;
-};
+  return width > height ? (600.0 / width > 300.0 / height ? 600 : Math.round((300.0 / height) * width)) : 600
+}
 const calculateCroppedHeight = (width: number, height: number, croppedWidth: number): number =>
-  croppedWidth === width ? height : Math.round(((1.0 * croppedWidth) / width) * height);
+  croppedWidth === width ? height : Math.round(((1.0 * croppedWidth) / width) * height)
 ---
 
 {

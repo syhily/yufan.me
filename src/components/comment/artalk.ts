@@ -1,37 +1,37 @@
-import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp } from '@/components/comment/types';
-import { queryUser } from '@/helpers/db/query';
-import { parseContent } from '@/helpers/markdown';
-import { urlJoin } from '@/helpers/tools';
-import options from '@/options';
-import { ARTALK_HOST, ARTALK_PORT, ARTALK_SCHEME } from 'astro:env/server';
-import _ from 'lodash';
-import querystring from 'node:querystring';
+import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp } from '@/components/comment/types'
+import querystring from 'node:querystring'
+import { ARTALK_HOST, ARTALK_PORT, ARTALK_SCHEME } from 'astro:env/server'
+import _ from 'lodash'
+import { queryUser } from '@/helpers/db/query'
+import { parseContent } from '@/helpers/markdown'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
 
 // Access the artalk in internal docker host when it was deployed on zeabur.
-const server = `${ARTALK_SCHEME}://${ARTALK_HOST}:${ARTALK_PORT}`;
+const server = `${ARTALK_SCHEME}://${ARTALK_HOST}:${ARTALK_PORT}`
 
-export const loadComments = async (key: string, title: string | null, offset: number): Promise<Comments | null> => {
+export async function loadComments(key: string, title: string | null, offset: number): Promise<Comments | null> {
   let params: Record<string, string | number | boolean> = {
     limit: options.settings.comments.size,
-    offset: offset,
+    offset,
     flat_mode: false,
     page_key: key,
     site_name: options.title,
-  };
+  }
   if (title !== null) {
-    params = { ...params, title: title };
+    params = { ...params, title }
   }
   const data = await fetch(urlJoin(server, `/api/v2/comments?${querystring.stringify(params)}`))
-    .then((response) => response.json())
+    .then(response => response.json())
     .catch((e) => {
-      console.error(e);
-      return null;
-    });
+      console.error(e)
+      return null
+    })
 
-  return data !== null ? (data as Comments) : null;
-};
+  return data !== null ? (data as Comments) : null
+}
 
-export const increaseViews = async (key: string, title: string) => {
+export async function increaseViews(key: string, title: string) {
   await fetch(urlJoin(server, '/api/v2/pages/pv'), {
     method: 'POST',
     headers: {
@@ -42,19 +42,15 @@ export const increaseViews = async (key: string, title: string) => {
       page_title: title,
       site_name: options.title,
     }),
-  });
-};
+  })
+}
 
-export const createComment = async (
-  commentReq: CommentReq,
-  req: Request,
-  clientAddress: string,
-): Promise<ErrorResp | CommentResp> => {
-  const user = await queryUser(commentReq.email);
+export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string): Promise<ErrorResp | CommentResp> {
+  const user = await queryUser(commentReq.email)
   if (user !== null && user.name !== null) {
     // Replace the comment user name for avoiding the duplicated users creation.
     // We may add the commenter account management in the future.
-    commentReq.name = user.name;
+    commentReq.name = user.name
   }
 
   // Query the existing comments for the user.
@@ -66,21 +62,21 @@ export const createComment = async (
     limit: '5',
     sort_by: 'date_desc',
     type: 'all',
-  }).toString();
+  }).toString()
   const historicalComments = await fetch(urlJoin(server, `/api/v2/comments?${historicalParams}`), {
     method: 'GET',
     headers: {
       'Content-type': 'application/json; charset=UTF-8',
     },
   })
-    .then(async (resp) => (await resp.json()).comments as Comment[])
+    .then(async resp => (await resp.json()).comments as Comment[])
     .catch((e) => {
-      console.error(e);
-      return Array<Comment>();
-    });
+      console.error(e)
+      return new Array<Comment>()
+    })
 
-  if (historicalComments.find((comment) => comment.content === commentReq.content)) {
-    return { msg: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。' };
+  if (historicalComments.find(comment => comment.content === commentReq.content)) {
+    return { msg: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。' }
   }
 
   const response = await fetch(urlJoin(server, '/api/v2/comments'), {
@@ -92,45 +88,46 @@ export const createComment = async (
     },
     body: JSON.stringify({ ...commentReq, site_name: options.title, rid: commentReq.rid ? Number(commentReq.rid) : 0 }),
   }).catch((e) => {
-    console.error(e);
-    return null;
-  });
+    console.error(e)
+    return null
+  })
 
   if (response === null) {
-    return { msg: '服务端异常，评论创建失败。' };
+    return { msg: '服务端异常，评论创建失败。' }
   }
 
   if (!response.ok) {
-    return (await response.json()) as ErrorResp;
+    return (await response.json()) as ErrorResp
   }
 
   // Parse comment content.
-  const commentResp = (await response.json()) as CommentResp;
-  commentResp.content = await parseContent(commentResp.content);
+  const commentResp = (await response.json()) as CommentResp
+  commentResp.content = await parseContent(commentResp.content)
 
-  return commentResp;
-};
+  return commentResp
+}
 
-export const parseComments = async (comments: Comment[]): Promise<CommentItem[]> => {
+export async function parseComments(comments: Comment[]): Promise<CommentItem[]> {
   const parsedComments = await Promise.all(
-    comments.map(async (comment) => ({ ...comment, content: await parseContent(comment.content) })),
-  );
+    comments.map(async comment => ({ ...comment, content: await parseContent(comment.content) })),
+  )
   const childComments = _.groupBy(
-    parsedComments.filter((comment) => !rootCommentFilter(comment)),
-    (c) => c.rid,
-  );
+    parsedComments.filter(comment => !rootCommentFilter(comment)),
+    c => c.rid,
+  )
 
-  return parsedComments.filter(rootCommentFilter).map((comment) => commentItems(comment, childComments));
-};
+  return parsedComments.filter(rootCommentFilter).map(comment => commentItems(comment, childComments))
+}
 
-const rootCommentFilter = (comment: Comment): boolean =>
-  comment.rid === 0 || comment.rid === null || typeof comment.rid === 'undefined';
+function rootCommentFilter(comment: Comment): boolean {
+  return comment.rid === 0 || comment.rid === null || comment.rid === undefined
+}
 
-const commentItems = (comment: Comment, childComments: _.Dictionary<Comment[]>): CommentItem => {
-  const children = childComments[`${comment.id}`];
+function commentItems(comment: Comment, childComments: _.Dictionary<Comment[]>): CommentItem {
+  const children = childComments[`${comment.id}`]
   if (typeof children === 'undefined') {
-    return comment;
+    return comment
   }
 
-  return { ...comment, children: children.map((child) => commentItems(child, childComments)) };
-};
+  return { ...comment, children: children.map(child => commentItems(child, childComments)) }
+}

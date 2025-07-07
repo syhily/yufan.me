@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD001 MD033 MD041 -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/blog-poster-dark.png">
   <img alt="Yufan Blog Logo" src="public/blog-poster.png">
@@ -5,128 +6,33 @@
 
 # Yufan Personal Weblog
 
-This is a personal weblog for [Yufan Sheng](https://github.com/syhily)
-which is built on [Astro](https://astro.build) and hosted on [zeabur](https://zeabur.com).
-
-[![Deployed on Zeabur](https://zeabur.com/deployed-on-zeabur-dark.svg)](https://zeabur.com?referralCode=syhily&utm_source=syhily)
+This is the source code of [yufan.me](https://yufan.me).
 
 ## History
 
-The blog's source code has evolved through four stages. Initially, it was built on WordPress in 2011.
-In 2017, I switched to Hexo and converted all my blog posts to Markdown;
-the code is available in the [Hexo branch](https://github.com/syhily/yufan.me/tree/hexo).
-By 2024, the blog had been rewritten using Next.js with App Router;
-you can find this version in the [Next branch](https://github.com/syhily/yufan.me/tree/next).
-Currently, the blog has transitioned to Astro, which is located in
-the [Astro branch](https://github.com/syhily/yufan.me/tree/astro).
+The source code has evolved through four stages.
 
-## Core Frameworks
+- Initially, it was built on WordPress in 2011.
+- In 2017, the blog switched to Hexo and converted all the blog posts to Markdown.
+- By 2024, the blog had been rewritten using Next.js with App Router.
+- Currently, the blog has transitioned to Astro.
+
+## Core Components
 
 - [Node.js](https://nodejs.org): The latest Node.js LTS
 - [Astro](https://astro.build): Core engine
-- [Artalk](https://artalk.js.org): The self-hosted comment system
-- [Fuse.js](https://www.fusejs.io): Search engine
-- [Postgres](https://zeabur.com/docs/marketplace/postgresql): The view counter and like button for all my posts
+- [Postgres](https://zeabur.com/docs/marketplace/postgresql): Comments, likes and users
+- [Redis](https://zeabur.com/docs/marketplace/redis): User session store
+- [Zeabur](https://zeabur.com?referralCode=syhily&utm_source=syhily): Host service
 
 ## Local Development
 
 You can fork and clone this project for your own use. But do so at your own risk.
+The project uses Docker compose for development. Run it locally with these commands:
 
-The project uses npm for development. Run it locally with these commands:
-
-```shell
-# Install the dependencies by using bun.
-npm install
-
-# Init git hooks.
-npx husky
-
-# Check the newer dependencies.
-npm update
-
-# Start local development with a live preview. The weblog is hosted on http://localhost:4321
-npm run dev
-
-# Build the project
-BUILD_OPEN_GRAPH=true npm run build
+```bash
+docker compose up
 ```
-
-### Postgres Database
-
-This blog uses Postgres to store post views and favorites. For security reasons,
-the configuration isn't defined in the `.env` file.
-Modify the `.env.example` file and rename it to `.env` for local development.
-
-You can create a Postgres database by installing [Postgres.app](https://postgresapp.com).
-The default username is `your system username`, with no password.
-
-Create and initialize the database and user with these commands:
-
-```postgresql
--- Create a database.
-CREATE DATABASE <db>;
-
--- Create a user.
-CREATE USER <db_user> PASSWORD '<strong_password>';
-
--- Grant the connection.
-GRANT CONNECT ON DATABASE <db> TO <db_user>;
-
--- Grant the database privilege.
-GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
-
--- If you are using Postgres 15 or above.
--- Switch to the created database and execute SQL.
-GRANT ALL ON SCHEMA public TO <db_user>;
-```
-
-Most tables are created by the Artalk. [Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the
-tables.
-
-The like table should be created manually. Execute the SQL below.
-
-```postgresql
--- Sequence and defined type
-CREATE SEQUENCE IF NOT EXISTS atk_likes_id_seq;
-
--- Table Definition
-CREATE TABLE "public"."atk_likes"
-(
-    "id"         int8 NOT NULL DEFAULT nextval('atk_likes_id_seq'::regclass),
-    "created_at" timestamptz,
-    "updated_at" timestamptz,
-    "deleted_at" timestamptz,
-    "token"      varchar(255),
-    "page_key"   varchar(255),
-    PRIMARY KEY ("id")
-);
-
--- Create table index
-CREATE INDEX IF NOT EXISTS "idx_atk_likes_token" ON "public"."atk_likes" ("token");
-```
-
-### Comments Integration
-
-This weblog uses artalk as its backend comment service. But since artalk didn't provide the latest comments API.
-We decide to query it directly from the Postgres database. So the comments and fav clicks are living in the same
-database.
-
-If you don't want the astro integration, change the switch in `options.ts` to `false`.
-
-```typescript
-{
-  settings: {
-    comments: {
-      enable: false,
-    }
-  }
-}
-```
-
-### S3 Compatible Storage Integration
-
-This blog will upload all the built resources at build stage. You can remove this feature by removing the
-`uploader` integration in `astro.config.ts`.
 
 ## Writing
 
@@ -149,7 +55,7 @@ date: 2013/7/13 20:46:25
 ### Post Front Matter Settings
 
 | Setting     | Description                               | Required | Default              |
-|-------------|-------------------------------------------|----------|----------------------|
+| ----------- | ----------------------------------------- | -------- | -------------------- |
 | `slug`      | ID (unique), used as the permalink        | true     |                      |
 | `title`     | Title                                     | true     |                      |
 | `date`      | Published date                            | true     |                      |
@@ -168,7 +74,7 @@ date: 2013/7/13 20:46:25
 ### Pages Front Matter Settings
 
 | Setting     | Description                          | Required | Default              |
-|-------------|--------------------------------------|----------|----------------------|
+| ----------- | ------------------------------------ | -------- | -------------------- |
 | `slug`      | ID (unique), used as the permalink   | true     |                      |
 | `title`     | Title                                | true     |                      |
 | `date`      | Published date                       | true     |                      |
@@ -201,23 +107,12 @@ You can check their documents and get your own weblog to be published without an
 
 Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build an image and run it locally.
 
-The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
-You should host it on your own machine.
-
-## Short-Term TODO Checklist
+## TODOs
 
 - [ ] Add last modified time component for post.
 - [ ] Slide share components integration.
-- [ ] Check article grammar errors by using ChatGPT. Remain **42** posts.
+- [ ] Check article grammar errors by using AI. Remain **42** posts.
 - [ ] Add music to the articles. Remain **42** posts.
-
-## Long-Term TODO Checklist
-
-- [ ] Use self-developed comment solution.
-  - [ ] Support modification after commenting in 60 minutes even if you have refreshed the page.
-  - [ ] Support login into the blog for managing the comments.
-- [ ] Add han.js support for better typography.
-- [ ] Drop bootstrap, in favor of tailwind css.
 
 ## License
 
@@ -238,8 +133,7 @@ They are the fonts that can be used in business without any charge.
 ### Open Graph Font License
 
 The [OPPOSans 4.0](https://open.oppomobile.com/new/developmentDoc/info?id=13223)
-is used for rendering the open graph image in my weblog.
-The license file is [here](licenses/LICENSE.opposans.txt)
+is used for rendering the open graph image in my weblog with [license](licenses/LICENSE.opposans.txt)
 
 ### Third Party Codes License
 

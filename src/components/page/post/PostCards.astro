@@ -1,23 +1,23 @@
 ---
-import LikeIcon from '@/components/like/LikeIcon.astro';
-import Image from '@/components/mdx/image/Image.astro';
-import Pagination from '@/components/page/pagination/Pagination.astro';
-import { formatShowDate, slicePosts } from '@/helpers/formatter';
-import { getCategory, type Post } from '@/helpers/schema';
-import options from '@/options';
+import LikeIcon from '@/components/like/LikeIcon.astro'
+import Image from '@/components/mdx/image/Image.astro'
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import { formatShowDate, slicePosts } from '@/helpers/formatter'
+import { getCategory, type Post } from '@/helpers/schema'
+import options from '@/options'
 
 interface Props {
-  posts: Post[];
-  pageNum: number;
+  posts: Post[]
+  pageNum: number
 }
 
-const { pageNum, posts } = Astro.props;
-const results = slicePosts(posts, pageNum, options.settings.pagination.posts);
+const { pageNum, posts } = Astro.props
+const results = slicePosts(posts, pageNum, options.settings.pagination.posts)
 if (results.totalPage === 0) {
-  return Astro.redirect('/404');
+  return Astro.redirect('/404')
 }
 
-const { currentPosts, totalPage } = results;
+const { currentPosts, totalPage } = results
 ---
 
 <div class="content-wrapper content-wrapper col-12 col-xl-9">

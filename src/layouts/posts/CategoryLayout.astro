@@ -1,19 +1,19 @@
 ---
-import Pagination from '@/components/page/pagination/Pagination.astro';
-import PostSquare from '@/components/page/post/PostSquare.astro';
-import { slicePosts } from '@/helpers/formatter';
-import type { Category, Post } from '@/helpers/schema';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import options from '@/options';
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import PostSquare from '@/components/page/post/PostSquare.astro'
+import { slicePosts } from '@/helpers/formatter'
+import type { Category, Post } from '@/helpers/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import options from '@/options'
 
 interface Props {
-  category: Category;
-  posts: Post[];
-  pageNum: number;
+  category: Category
+  posts: Post[]
+  pageNum: number
 }
 
-const { category, posts, pageNum } = Astro.props;
-const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.pagination.category);
+const { category, posts, pageNum } = Astro.props
+const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.pagination.category)
 ---
 
 <BaseLayout title={category.name}>

@@ -1,23 +1,23 @@
 ---
-import { getCategory, posts, type Category, type Post } from '@/helpers/schema';
-import CategoryLayout from '@/layouts/posts/CategoryLayout.astro';
+import { getCategory, posts, type Category, type Post } from '@/helpers/schema'
+import CategoryLayout from '@/layouts/posts/CategoryLayout.astro'
 
 interface Props {
-  category: Category;
-  posts: Post[];
+  category: Category
+  posts: Post[]
 }
 
-const { slug } = Astro.params;
-const category = getCategory(undefined, slug);
+const { slug } = Astro.params
+const category = getCategory(undefined, slug)
 
 if (!category) {
-  return Astro.redirect('/404');
+  return Astro.redirect('/404')
 }
 
-const filteredPosts = posts.filter((post) => post.category === category.name);
+const filteredPosts = posts.filter((post) => post.category === category.name)
 
 if (filteredPosts.length === 0) {
-  return Astro.rewrite('/404');
+  return Astro.rewrite('/404')
 }
 ---
 

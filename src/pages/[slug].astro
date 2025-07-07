@@ -1,15 +1,15 @@
 ---
-import { getPage } from '@/helpers/schema';
-import PageLayout from '@/layouts/PageLayout.astro';
+import { getPage } from '@/helpers/schema'
+import PageLayout from '@/layouts/PageLayout.astro'
 
-const { slug } = Astro.params;
+const { slug } = Astro.params
 if (!slug) {
-  return Astro.redirect('/404');
+  return Astro.redirect('/404')
 }
 
-const page = getPage(slug);
+const page = getPage(slug)
 if (!page) {
-  return Astro.redirect('/404');
+  return Astro.redirect('/404')
 }
 ---
 

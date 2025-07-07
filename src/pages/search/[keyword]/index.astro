@@ -1,19 +1,19 @@
 ---
-import { posts } from '@/helpers/schema';
-import { searchPosts } from '@/helpers/search';
-import SearchLayout from '@/layouts/posts/SearchLayout.astro';
+import { posts } from '@/helpers/schema'
+import { searchPosts } from '@/helpers/search'
+import SearchLayout from '@/layouts/posts/SearchLayout.astro'
 
-const { keyword } = Astro.params;
-const query = keyword || '';
+const { keyword } = Astro.params
+const query = keyword || ''
 if (query === '') {
-  return Astro.redirect('/');
+  return Astro.redirect('/')
 }
 
-const title = `【${query}】搜索结果`;
+const title = `【${query}】搜索结果`
 
 const searchResults = searchPosts(query)
   .map((slug) => posts.find((post) => post.slug === slug))
-  .filter((post) => post !== undefined);
+  .filter((post) => post !== undefined)
 ---
 
 <SearchLayout {title} {query} pageNum={1} posts={searchResults} />

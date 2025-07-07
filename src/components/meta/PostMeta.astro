@@ -1,18 +1,18 @@
 ---
-import { openGraphHeight, openGraphWidth } from '@/helpers/images';
-import { getBlogPostMeta } from '@/helpers/seo';
-import options from '@/options';
+import { openGraphHeight, openGraphWidth } from '@/helpers/images'
+import { getBlogPostMeta } from '@/helpers/seo'
+import options from '@/options'
 
 export interface Props {
-  title?: string;
-  description?: string;
-  publishDate: string;
-  requestPath: string;
-  ogImageUrl?: string;
-  ogImageAltText: string;
+  title?: string
+  description?: string
+  publishDate: string
+  requestPath: string
+  ogImageUrl?: string
+  ogImageAltText: string
 }
 
-const { requestPath, title, description, publishDate, ogImageUrl, ogImageAltText } = Astro.props;
+const { requestPath, title, description, publishDate, ogImageUrl, ogImageAltText } = Astro.props
 
 const { og, twitter } = getBlogPostMeta({
   title: title || options.title,
@@ -26,7 +26,7 @@ const { og, twitter } = getBlogPostMeta({
   ogImageHeight: openGraphHeight,
   siteOwnerTwitterHandle: options.settings.twitter,
   contentAuthorTwitterHandle: options.settings.twitter,
-});
+})
 ---
 
 <Fragment>

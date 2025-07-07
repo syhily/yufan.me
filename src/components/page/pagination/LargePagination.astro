@@ -1,19 +1,19 @@
 ---
-import PaginationItem from '@/components/page/pagination/PaginationItem.astro';
+import PaginationItem from '@/components/page/pagination/PaginationItem.astro'
 
 interface Props {
-  current: number;
-  total: number;
-  rootPath: string;
+  current: number
+  total: number
+  rootPath: string
 }
 
-const { current, total, rootPath } = Astro.props;
+const { current, total, rootPath } = Astro.props
 const pages =
   current < 5
     ? [1, 2, 3, 4, 5]
     : current > total - 4
       ? [total - 4, total - 3, total - 2, total - 1, total]
-      : [current - 1, current, current + 1];
+      : [current - 1, current, current + 1]
 ---
 
 {
