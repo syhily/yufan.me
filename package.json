@@ -35,7 +35,7 @@
     "dev": "astro dev",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "prepare": "npx husky",
+    "prepare": "npx simple-git-hooks",
     "preview": "astro preview"
   },
   "dependencies": {
@@ -92,7 +92,14 @@
     "remark-math": "^6.0.0",
     "resize-sensor": "^0.0.6",
     "rimraf": "^6.0.1",
+    "simple-git-hooks": "^2.13.0",
     "typescript": "^5.8.3",
     "unist-util-select": "^5.1.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
   }
 }
