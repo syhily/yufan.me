@@ -2,6 +2,8 @@ import { z } from 'astro/zod';
 
 const isProd = (): boolean => import.meta.env.MODE === 'production' || process.env.NODE_ENV === 'production';
 
+export type Navigation = z.infer<typeof Options>['navigation'];
+
 // The type of the options, use zod for better validation.
 const Options = z
   .object({

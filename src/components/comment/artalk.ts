@@ -124,7 +124,7 @@ export const parseComments = async (comments: Comment[]): Promise<CommentItem[]>
 };
 
 const rootCommentFilter = (comment: Comment): boolean =>
-  comment.rid === 0 || comment.rid === null || typeof comment.rid === 'undefined';
+  comment.rid === 0 || comment.rid === null || comment.rid === undefined;
 
 const commentItems = (comment: Comment, childComments: _.Dictionary<Comment[]>): CommentItem => {
   const children = childComments[`${comment.id}`];

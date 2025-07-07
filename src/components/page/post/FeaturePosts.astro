@@ -29,7 +29,7 @@ const metas: Post[] =
     ? historicalPosts()
     : featurePosts
         .map((slug) => posts.find((post) => post.slug === slug))
-        .flatMap((post) => (typeof post === 'undefined' ? [] : [post]))
+        .filter((post) => post !== undefined)
         .slice(0, 3);
 ---
 

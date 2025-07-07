@@ -12,7 +12,7 @@ const allPosts = await Promise.all(
   posts.map(async (post) => ({
     title: post.title,
     slug: post.slug,
-    raw: await post.raw(),
+    raw: (await post.raw()) || post.summary,
     tags: post.tags,
   })),
 );

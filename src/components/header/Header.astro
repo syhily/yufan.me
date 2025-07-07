@@ -3,7 +3,13 @@ import QRDialog from '@/components/dialog/QRDialog.astro';
 import Logo from '@/components/header/Logo.astro';
 import LogoLarge from '@/components/header/LogoLarge.astro';
 import SearchIcon from '@/components/search/SearchIcon.astro';
-import options from '@/options';
+import options, { type Navigation } from '@/options';
+
+interface Props {
+  navigation: Navigation;
+}
+
+const { navigation } = Astro.props;
 ---
 
 <header class="site-aside">
@@ -17,7 +23,7 @@ import options from '@/options';
     <div class="site-menu">
       <ul>
         {
-          options.navigation.map((menu, i) => (
+          navigation.map((menu, i) => (
             <li id={`menu-item-${i}`} class={`menu-item${i === 0 ? ' menu-item-home' : ''}`}>
               <a href={menu.link} target={menu.target}>
                 {menu.text}

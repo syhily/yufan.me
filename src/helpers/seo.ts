@@ -65,7 +65,7 @@ export interface PostOgMeta {
 }
 
 const parseOgImageUrl = (ogImageUrl?: string): string =>
-  typeof ogImageUrl === 'undefined'
+  ogImageUrl === undefined
     ? options.defaultOpenGraph()
     : ogImageUrl.startsWith('/')
       ? urlJoin(options.assetsPrefix(), ogImageUrl)

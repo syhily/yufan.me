@@ -4,12 +4,13 @@ import Footer from '@/components/footer/Footer.astro';
 import Header from '@/components/header/Header.astro';
 import PageMeta from '@/components/meta/PageMeta.astro';
 import SearchDialog from '@/components/search/SearchDialog.astro';
-import options from '@/options';
+import options, { type Navigation } from '@/options';
 import { pwaInfo } from 'virtual:pwa-info';
 
 interface Props {
   title?: string;
   description?: string;
+  navigation?: Navigation;
   footer?: boolean;
 }
 
@@ -19,6 +20,7 @@ const title =
     : `${Astro.props.title} - ${options.title}`;
 const description = Astro.props.description || options.description;
 const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
+const navigation = Astro.props.navigation || options.navigation;
 ---
 
 <!doctype html>
@@ -48,7 +50,7 @@ const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
   </head>
   <body class="home blog">
     <div class="site-layout">
-      <Header />
+      <Header {navigation} />
       <main class="site-main">
         <slot />
         {showFooter && <Footer />}
