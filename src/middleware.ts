@@ -1,28 +1,47 @@
 import { defineMiddleware, sequence } from 'astro:middleware'
+import { hasAdmin } from '@/helpers/auth/query'
 import { posts } from '@/helpers/schema'
 import { urlJoin } from '@/helpers/tools'
 
-const AUTH_ENDPOINTS = {
-  login: '/admin/login',
-  logout: '/admin/logout',
+enum ADMIN_ENDPOINTS {
+  install = '/admin/install',
+  login = '/admin/login',
+  logout = '/admin/logout',
 }
 
-const adminAuthn = defineMiddleware(async ({ url: { pathname }, redirect, session }, next) => {
+function isAdminEndpoints(endpoint: string) {
+  return endpoint === ADMIN_ENDPOINTS.login
+    || endpoint === ADMIN_ENDPOINTS.logout
+    || endpoint === ADMIN_ENDPOINTS.install
+    || endpoint === `${ADMIN_ENDPOINTS.login}/`
+    || endpoint === `${ADMIN_ENDPOINTS.logout}/`
+    || endpoint === `${ADMIN_ENDPOINTS.install}/`
+}
+
+const freshInstall = defineMiddleware(async ({ url: { pathname }, redirect }, next) => {
+  const installed = await hasAdmin()
+  const accessInstall = pathname === ADMIN_ENDPOINTS.install || pathname === `${ADMIN_ENDPOINTS.install}/`
+  if (installed) {
+    return accessInstall ? redirect('/') : next()
+  }
+  else {
+    return accessInstall ? next() : redirect(ADMIN_ENDPOINTS.install)
+  }
+})
+
+const authentication = defineMiddleware(async ({ url: { pathname }, redirect, session }, next) => {
   if (session === undefined) {
     throw new Error('Astro session is required to be enabled')
   }
-  if (pathname === AUTH_ENDPOINTS.login
-    || pathname === AUTH_ENDPOINTS.logout
-    || pathname === `${AUTH_ENDPOINTS.login}/`
-    || pathname === `${AUTH_ENDPOINTS.logout}/`) {
-    // Bypass the login/logout actions. Support traveling slash in request path.
+  // Bypass the login/logout actions. Support traveling slash in request path.
+  if (isAdminEndpoints(pathname)) {
     return next()
   }
   if (pathname.startsWith('/admin/') || pathname === '/admin') {
     // Require user information in session.
     const user = await session.get('user')
     if (user === undefined) {
-      return redirect(AUTH_ENDPOINTS.login)
+      return redirect(ADMIN_ENDPOINTS.login)
     }
   }
   // return a Response or the result of calling `next()`
@@ -44,10 +63,7 @@ const postUrlMappings: Map<string, string> = posts.map(post => ({
     // Avoid admin endpoints
     if (source.startsWith('/admin/')
       || source === '/admin'
-      || source === AUTH_ENDPOINTS.login
-      || source === AUTH_ENDPOINTS.logout
-      || source === `${AUTH_ENDPOINTS.login}/`
-      || source === `${AUTH_ENDPOINTS.logout}/`) {
+      || isAdminEndpoints(source)) {
       throw new Error(`Preserved request path: ${source}`)
     }
     res.set(source, item.target)
@@ -66,4 +82,4 @@ const postUrlRedirect = defineMiddleware(({ request: { method }, url: { pathname
 })
 
 // Chained Middleware.
-export const onRequest = sequence(adminAuthn, postUrlRedirect)
+export const onRequest = sequence(freshInstall, authentication, postUrlRedirect)
