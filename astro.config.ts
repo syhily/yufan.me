@@ -82,18 +82,6 @@ export default defineConfig({
         context: 'server',
         access: 'secret',
       }),
-      // Better Auth
-      BETTER_AUTH_SECRET: envField.string({
-        context: 'server',
-        access: 'secret',
-      }),
-      BETTER_AUTH_URL: envField.string({ context: 'server', access: 'secret' }),
-      // Github Application
-      GITHUB_CLIENT_ID: envField.string({
-        context: 'server',
-        access: 'secret',
-      }),
-      GITHUB_CLIENT_SECRET: envField.string({ context: 'server', access: 'secret' }),
       // Session Store
       REDIS_HOST: envField.string({ context: 'server', access: 'secret' }),
       REDIS_PORT: envField.number({ context: 'server', access: 'secret' }),

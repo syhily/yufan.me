@@ -1,21 +1,14 @@
-import { ActionError, defineAction } from 'astro:actions'
-import { z } from 'astro:schema'
-import { createComment, loadComments } from '@/components/comment/artalk'
-import Comment from '@/components/comment/Comment.astro'
-import CommentItem from '@/components/comment/CommentItem.astro'
-import { partialRender } from '@/helpers/container'
+import { z } from 'astro/zod'
+import { defineAction } from 'astro:actions'
+import { authActions } from '@/actions/auth'
+import { commentActions } from '@/actions/comment'
 import { decreaseLikes, increaseLikes, queryLikes, queryUserId } from '@/helpers/db/query'
 import { pages, posts } from '@/helpers/schema'
 import { encodedEmail, urlJoin } from '@/helpers/tools'
-import options from '@/options'
 
 const keys = [...posts.map(post => post.permalink), ...pages.map(page => page.permalink)]
-const CommentConnectError = new ActionError({
-  code: 'INTERNAL_SERVER_ERROR',
-  message: 'couldn\'t connect to comment server',
-})
 
-const normalActions = {
+const commonActions = {
   like: defineAction({
     accept: 'json',
     input: z
@@ -55,51 +48,4 @@ const normalActions = {
   }),
 }
 
-const commentActions = {
-  comment: defineAction({
-    accept: 'json',
-    input: z.object({
-      page_key: z.string(),
-      name: z.string(),
-      email: z.string().email(),
-      link: z.string().optional(),
-      content: z.string().min(1),
-      rid: z.number().optional(),
-    }),
-    handler: async (input, { request, clientAddress }) => {
-      const resp = await createComment(input, request, clientAddress)
-      if ('msg' in resp) {
-        throw new ActionError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: resp.msg,
-        })
-      }
-
-      const content = await partialRender(CommentItem, {
-        props: { depth: resp.rid === 0 ? 1 : 2, comment: resp, pending: resp.is_pending },
-      })
-
-      return { content }
-    },
-  }),
-  comments: defineAction({
-    accept: 'json',
-    input: z.object({
-      page_key: z.string(),
-      offset: z.number(),
-    }),
-    handler: async ({ page_key, offset }) => {
-      const comments = await loadComments(page_key, null, Number(offset))
-      if (comments === null) {
-        throw CommentConnectError
-      }
-
-      const content = await partialRender(Comment, { props: { comments } })
-      const next = options.settings.comments.size + offset < comments.roots_count
-
-      return { content, next }
-    },
-  }),
-}
-
-export const server = { ...normalActions, ...commentActions }
+export const server = { ...commonActions, ...authActions, ...commentActions }
