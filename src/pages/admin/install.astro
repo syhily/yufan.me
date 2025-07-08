@@ -1,9 +1,15 @@
 ---
+import { actions } from 'astro:actions'
 import SingleLayout from '@/layouts/admin/SingleLayout.astro'
+
+const result = Astro.getActionResult(actions.registerAdmin)
+if (result && !result.error) {
+  return Astro.redirect('/')
+}
 ---
 
-<SingleLayout title="管理员账号设置">
-  <form method="post" action="#" id="installForm">
+<SingleLayout title="注册管理员账号">
+  <form method="post" action={actions.registerAdmin} id="installForm">
     <div class="flex-fill">
       <div class="row g-3 mb-5 px-5">
         <input class="form-control mb-2" placeholder="昵称" name="name" type="text" required="required" />

@@ -67,7 +67,7 @@ export const user = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     name: varchar('name', { length: 255 }),
-    email: varchar('email', { length: 255 }),
+    email: varchar('email', { length: 255 }).unique(),
     emailVerified: boolean('email_verified').default(false).notNull(),
     link: text('link'),
     password: text('password'),
@@ -75,7 +75,7 @@ export const user = pgTable(
     badgeColor: text('badge_color'),
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
-    isAdmin: boolean('is_admin'),
+    isAdmin: boolean('is_admin').default(false),
     receiveEmail: boolean('receive_email').default(true),
   },
   table => [

@@ -1,5 +1,7 @@
 import { z } from 'astro/zod'
-import { defineAction } from 'astro:actions'
+import { ActionError, defineAction } from 'astro:actions'
+import { hasAdmin } from '@/helpers/auth/query'
+import { createAdmin } from '@/helpers/auth/user'
 
 export const authActions = {
   registerAdmin: defineAction({
@@ -10,8 +12,21 @@ export const authActions = {
       password: z.string(),
     }),
     handler: async ({ name, email, password }) => {
-      // TODO Auth register.
-      console.error(name, email, password)
+      if (await hasAdmin()) {
+        throw new ActionError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'the installation is done',
+        })
+      }
+      const res = await createAdmin(name, email, password)
+      if (res !== null && res.length > 0) {
+        const { id, name, email } = res[0]
+        return { success: true, user: { id, name, email } }
+      }
+      throw new ActionError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'failed to create admin account',
+      })
     },
   }),
 }

@@ -4,13 +4,7 @@ import { createComment, loadComments } from '@/components/comment/artalk'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
 import { partialRender } from '@/helpers/container'
-
 import options from '@/options'
-
-const CommentConnectError = new ActionError({
-  code: 'INTERNAL_SERVER_ERROR',
-  message: 'couldn\'t connect to comment server',
-})
 
 export const commentActions = {
   comment: defineAction({
@@ -52,7 +46,10 @@ export const commentActions = {
     handler: async ({ page_key, offset }) => {
       const comments = await loadComments(page_key, null, Number(offset))
       if (comments === null) {
-        throw CommentConnectError
+        throw new ActionError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'couldn\'t connect to comment server',
+        })
       }
 
       const content = await partialRender(Comment, { props: { comments } })

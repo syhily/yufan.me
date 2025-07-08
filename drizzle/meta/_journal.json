@@ -6,7 +6,21 @@
       "idx": 0,
       "version": "7",
       "when": 1751992681159,
-      "tag": "0000_salty_wild_pack",
+      "tag": "0000_initial_table_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751995951300,
+      "tag": "0001_make_email_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751997660513,
+      "tag": "0002_ensure_user_admin_property",
       "breakpoints": true
     }
   ]
