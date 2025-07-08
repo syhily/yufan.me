@@ -28,73 +28,11 @@ The source code has evolved through four stages.
 ## Local Development
 
 You can fork and clone this project for your own use. But do so at your own risk.
+The project uses Docker compose for development. Run it locally with these commands:
 
-The project uses npm for development. Run it locally with these commands:
-
-```shell
-# Install the dependencies by using bun.
-npm install
-
-# Init git hooks.
-npx husky
-
-# Check the newer dependencies.
-npm update
-
-# Start local development with a live preview. The weblog is hosted on http://localhost:4321
-npm run dev
-
-# Build the project
-BUILD_OPEN_GRAPH=true npm run build
+```bash
+docker compose up
 ```
-
-### Prepare Configurations
-
-For security reasons, the database password and other sensitive configurations aren't provided in Git repo.
-You should create `.env` file in the root path and copy the content of `.env.example` file for local development.
-You can also set some configuration items through shell environment variables.
-
-Other normal configurations are defined in the [options.ts](./options.ts) file.
-
-### Prepare Postgres
-
-This blog uses Postgres to store post views, comments and favorites.
-
-You can create a Postgres database by installing [Postgres.app](https://postgresapp.com).
-The default username is `your system username`, with no password.
-
-Create and initialize the database and user with these commands:
-
-```postgresql
--- Create a database.
-CREATE DATABASE <db>;
-
--- Create a user.
-CREATE USER <db_user> PASSWORD '<strong_password>';
-
--- Grant the connection.
-GRANT CONNECT ON DATABASE <db> TO <db_user>;
-
--- Grant the database privilege.
-GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
-
--- If you are using Postgres 15 or above.
--- Switch to the created database and execute SQL.
-GRANT ALL ON SCHEMA public TO <db_user>;
-```
-
-The tables are created by using `drizzle-kit` for automatically migration support.
-But you can execute all the SQL files in the [drizzle](./drizzle/) directory according to the name order.
-
-### Prepare Redis
-
-This blog uses redis for storing the avatar cache and login user session.
-Remember to start a redis instance with password support.
-
-### S3 Compatible Storage Integration
-
-This blog will upload all the built resources at build stage. You can remove this feature by removing the
-`uploader` integration in `astro.config.ts`.
 
 ## Writing
 

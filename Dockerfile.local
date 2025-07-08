@@ -1,0 +1,24 @@
+FROM node:24-alpine AS base
+
+# Add files for local dev build
+WORKDIR /app
+ADD images images
+ADD plugins plugins
+ADD public public
+ADD src src
+ADD .env.docker .env
+ADD astro.config.ts astro.config.ts
+ADD options.ts options.ts
+ADD package-lock.json package-lock.json
+ADD package.json package.json
+ADD tsconfig.json tsconfig.json
+
+# Install dependencies
+ENV ASTRO_TELEMETRY_DISABLED=1
+RUN npm install
+ENV HOST=0.0.0.0
+ENV PORT=4321
+EXPOSE 4321
+
+#  Start dev server
+CMD npm run dev -- --host
