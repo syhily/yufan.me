@@ -2,6 +2,17 @@
 import SingleLayout from '@/layouts/admin/SingleLayout.astro'
 ---
 
-<SingleLayout title="网站初始化">
-  <h2>This is install page.</h2>
+<SingleLayout title="管理员账号设置">
+  <form method="post" action="#" id="installForm">
+    <div class="flex-fill">
+      <div class="row g-3 mb-5 px-5">
+        <input class="form-control mb-2" placeholder="昵称" name="name" type="text" required="required" />
+        <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
+        <input class="form-control mb-2" placeholder="密码" name="password" type="password" required="required" />
+      </div>
+      <div class="form-submit text-center">
+        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="注册管理员" />
+      </div>
+    </div>
+  </form>
 </SingleLayout>
