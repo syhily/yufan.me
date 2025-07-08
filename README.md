@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD001 MD033 MD041 -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/blog-poster-dark.png">
   <img alt="Yufan Blog Logo" src="public/blog-poster.png">
