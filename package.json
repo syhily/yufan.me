@@ -43,6 +43,7 @@
     "@astrojs/node": "^9.3.0",
     "@astrojs/rss": "^4.0.12",
     "astro": "^5.11.0",
+    "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.2",
     "fuse.js": "^7.1.0",
     "glob": "^11.0.3",

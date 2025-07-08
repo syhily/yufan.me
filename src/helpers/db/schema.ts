@@ -68,7 +68,6 @@ export const user = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     name: varchar('name', { length: 255 }),
     email: varchar('email', { length: 255 }),
-    image: text('image'),
     emailVerified: boolean('email_verified').default(false).notNull(),
     link: text('link'),
     password: text('password'),

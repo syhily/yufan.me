@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751898527562,
-      "tag": "0000_nifty_komodo",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751990996785,
-      "tag": "0001_cloudy_silk_fever",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751991432004,
-      "tag": "0002_freezing_lorna_dane",
+      "when": 1751992681159,
+      "tag": "0000_salty_wild_pack",
       "breakpoints": true
     }
   ]
