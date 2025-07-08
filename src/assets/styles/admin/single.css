@@ -3,8 +3,9 @@ body.admin.single {
 }
 
 .desktop-brand {
-  display: block;
-  margin: 40px 0 0 40px;
+  position: absolute;
+  left: 40px;
+  top: 40px;
 }
 
 .desktop-brand svg {
