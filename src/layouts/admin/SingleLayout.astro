@@ -1,17 +1,16 @@
 ---
 import '@/assets/styles/globals.css'
-import Footer from '@/components/footer/Footer.astro'
-import Header from '@/components/header/Header.astro'
+import '@/assets/styles/admin/single.css'
+import LogoDark from '@/components/header/LogoDark.astro'
+import LogoLarge from '@/components/header/LogoLarge.astro'
 import PageMeta from '@/components/meta/PageMeta.astro'
-import SearchDialog from '@/components/search/SearchDialog.astro'
-import options, { type Navigation } from '@/options'
-import { pwaInfo } from 'virtual:pwa-info'
+import Footer from '@/components/footer/Footer.astro'
+import options from '@/options'
+import { urlJoin } from '@/helpers/tools'
 
 interface Props {
   title?: string
   description?: string
-  navigation?: Navigation
-  footer?: boolean
 }
 
 const title =
@@ -19,8 +18,6 @@ const title =
     ? `${options.title} - ${options.description}`
     : `${Astro.props.title} - ${options.title}`
 const description = Astro.props.description || options.description
-const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
-const navigation = Astro.props.navigation || options.navigation
 ---
 
 <!doctype html>
@@ -45,29 +42,48 @@ const navigation = Astro.props.navigation || options.navigation
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <script src="@/assets/scripts/pwa.ts"></script>
-    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
   </head>
-  <body class="home blog">
+  <body class="admin single">
     <div class="site-layout">
-      <Header {navigation} />
-      <main class="site-main">
-        <slot />
-        {showFooter && <Footer />}
-      </main>
-      <ul class="site-fixed-widget">
-        <li class="fixed-gotop">
-          <div class="btn btn-light btn-icon btn-lg btn-rounded btn-gotop">
-            <span>
-              <i class="iconfont icon-arrowup"></i>
-            </span>
+      <div class="desktop-brand">
+        <div class="container">
+          <div class="d-flex flex-flex align-items-center">
+            <a href={'/'} title={options.title} class="d-block">
+              <LogoDark />
+            </a>
+            <div class="flex-fill"></div>
           </div>
-        </li>
-      </ul>
+        </div>
+      </div>
+      <div class="mobile-brand">
+        <div class="container">
+          <div class="d-flex flex-flex align-items-center">
+            <a href="/" title={options.title} class="d-block">
+              <LogoLarge />
+            </a>
+            <div class="flex-fill"></div>
+          </div>
+        </div>
+      </div>
+      <main class="site-main">
+        <div class="row gx-0">
+          <div class="col-lg-7 col-xl-7">
+            <div class="post p-3 p-md-5">
+              <div class="single-full">
+                <slot />
+              </div>
+            </div>
+            <Footer />
+          </div>
+          <div class="col-lg-5 col-xl-5 d-none d-lg-block sticky-top hv">
+            <div
+              class="bg-img hv"
+              style={{ backgroundImage: `url('${urlJoin(options.assetsPrefix(), '/images/admin/bg.jpg')}')` }}
+            >
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
-    <script>
-      import '@/assets/scripts/globals.js'
-    </script>
-    <SearchDialog />
   </body>
 </html>
