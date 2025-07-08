@@ -55,7 +55,6 @@ export default defineConfig({
       host: REDIS_HOST,
       tls: false as any,
       port: Number(REDIS_PORT),
-      path: 'astro-sessions',
       password: REDIS_PASSWORD,
     },
     ttl: 60 * 60,

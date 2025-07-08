@@ -11,6 +11,5 @@ const _storage = createStorage({
     port: REDIS_PORT,
     password: REDIS_PASSWORD,
     ttl: 60 * 60 * 24,
-    path: 'astro-caches',
   }),
 })
