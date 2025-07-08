@@ -16,7 +16,7 @@ The source code has evolved through four stages.
 - By 2024, the blog had been rewritten using Next.js with App Router.
 - Currently, the blog has transitioned to Astro.
 
-## Core Frameworks
+## Core Components
 
 - [Node.js](https://nodejs.org): The latest Node.js LTS
 - [Astro](https://astro.build): Core engine
@@ -47,11 +47,13 @@ npm run dev
 BUILD_OPEN_GRAPH=true npm run build
 ```
 
-### Prepare Security Configurations
+### Prepare Configurations
 
 For security reasons, the database password and other sensitive configurations aren't provided in Git repo.
 You should create `.env` file in the root path and copy the content of `.env.example` file for local development.
 You can also set some configuration items through shell environment variables.
+
+Other normal configurations are defined in the [options.ts](./options.ts) file.
 
 ### Prepare Postgres
 

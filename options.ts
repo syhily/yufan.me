@@ -69,7 +69,6 @@ const Options = z
         calendar: z.boolean().default(false),
       }),
       comments: z.object({
-        enable: z.boolean().optional().default(true),
         size: z.number().default(10).readonly(),
         avatar: z.object({
           mirror: z.string().url().readonly(),
@@ -191,7 +190,6 @@ const options: z.input<typeof Options> = {
       calendar: true,
     },
     comments: {
-      enable: true,
       size: 10,
       avatar: {
         mirror: 'https://gravatar.com/avatar',

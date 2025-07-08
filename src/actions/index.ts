@@ -102,4 +102,4 @@ const commentActions = {
   }),
 }
 
-export const server = options.settings.comments.enable ? { ...normalActions, ...commentActions } : { ...normalActions }
+export const server = { ...normalActions, ...commentActions }

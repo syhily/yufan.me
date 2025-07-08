@@ -1,5 +1,7 @@
 import type { ImageOutputFormat, ImageQualityPreset, LocalImageService } from 'astro'
+import type { FormatEnum, SharpOptions } from 'sharp'
 import { baseService } from 'astro/assets'
+import sharp from 'sharp'
 
 const qualityTable: Record<ImageQualityPreset, number> = {
   low: 25,
@@ -29,7 +31,7 @@ interface SharpImageServiceConfig {
   /**
    * The `limitInputPixels` option passed to Sharp. See https://sharp.pixelplumbing.com/api-constructor for more information
    */
-  limitInputPixels?: import('sharp').SharpOptions['limitInputPixels']
+  limitInputPixels?: SharpOptions['limitInputPixels']
 }
 
 const imageService: LocalImageService<SharpImageServiceConfig> = {
@@ -39,7 +41,6 @@ const imageService: LocalImageService<SharpImageServiceConfig> = {
   validateOptions: baseService.validateOptions,
   parseURL: baseService.parseURL,
   async transform(inputBuffer, transformOptions, config) {
-    const { default: sharp } = await import('sharp')
     const transform: BaseServiceTransform = transformOptions as BaseServiceTransform
 
     // Sharp has some support for SVGs, we could probably support this once Sharp is the default and only service.
@@ -69,18 +70,18 @@ const imageService: LocalImageService<SharpImageServiceConfig> = {
     }
 
     if (transform.format) {
-      let quality: number | string | undefined
+      let quality: number = qualityTable.mid
       if (transform.quality) {
         const parsedQuality = parseQuality(transform.quality)
         if (typeof parsedQuality === 'number') {
           quality = parsedQuality
         }
         else {
-          quality = transform.quality in qualityTable ? qualityTable[transform.quality] : undefined
+          quality = transform.quality in qualityTable ? qualityTable[transform.quality] : Number(transform.quality)
         }
       }
 
-      result.toFormat(transform.format as keyof import('sharp').FormatEnum, { quality })
+      result.toFormat(transform.format as keyof FormatEnum, { quality })
     }
 
     const { data, info } = await result.toBuffer({ resolveWithObject: true })

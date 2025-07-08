@@ -6,7 +6,7 @@ const comments = await latestComments()
 ---
 
 {
-  options.settings.comments.enable && options.settings.sidebar.comment > 0 && comments.length > 0 && (
+  options.settings.sidebar.comment > 0 && comments.length > 0 && (
     <div id="recent-comments" class="widget widget-recent-comments">
       <div class="widget-title">近期评论</div>
       <ul id="recent-comments">
