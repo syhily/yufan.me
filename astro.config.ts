@@ -45,7 +45,9 @@ export default defineConfig({
   },
   image: {
     domains: ['localhost', '127.0.0.1'],
-    service: !options.isProd() ? { entrypoint: './plugins/resize', config: {} } : undefined,
+    service: !options.isProd()
+      ? { entrypoint: './plugins/resize', config: {} }
+      : undefined,
   },
   session: {
     driver: 'redis',
@@ -68,26 +70,52 @@ export default defineConfig({
       // PostgreSQL
       POSTGRES_HOST: envField.string({ context: 'server', access: 'secret' }),
       POSTGRES_PORT: envField.number({ context: 'server', access: 'secret' }),
-      POSTGRES_USERNAME: envField.string({ context: 'server', access: 'secret' }),
-      POSTGRES_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
-      POSTGRES_DATABASE: envField.string({ context: 'server', access: 'secret' }),
+      POSTGRES_USERNAME: envField.string({
+        context: 'server',
+        access: 'secret',
+      }),
+      POSTGRES_PASSWORD: envField.string({
+        context: 'server',
+        access: 'secret',
+      }),
+      POSTGRES_DATABASE: envField.string({
+        context: 'server',
+        access: 'secret',
+      }),
       // Better Auth
-      BETTER_AUTH_SECRET: envField.string({ context: 'server', access: 'secret' }),
+      BETTER_AUTH_SECRET: envField.string({
+        context: 'server',
+        access: 'secret',
+      }),
       BETTER_AUTH_URL: envField.string({ context: 'server', access: 'secret' }),
       // Github Application
-      GITHUB_CLIENT_ID: envField.string({ context: 'server', access: 'secret' }),
+      GITHUB_CLIENT_ID: envField.string({
+        context: 'server',
+        access: 'secret',
+      }),
       GITHUB_CLIENT_SECRET: envField.string({ context: 'server', access: 'secret' }),
       // Session Store
       REDIS_HOST: envField.string({ context: 'server', access: 'secret' }),
       REDIS_PORT: envField.number({ context: 'server', access: 'secret' }),
       REDIS_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
       // Static Assets
-      BUILD_OPEN_GRAPH: envField.boolean({ context: 'server', access: 'public', default: true }),
-      UPLOAD_STATIC_FILES: envField.boolean({ context: 'server', access: 'public', default: false }),
+      BUILD_OPEN_GRAPH: envField.boolean({
+        context: 'server',
+        access: 'public',
+        default: true,
+      }),
+      UPLOAD_STATIC_FILES: envField.boolean({
+        context: 'server',
+        access: 'public',
+        default: false,
+      }),
       S3_ENDPOINT: envField.string({ context: 'server', access: 'secret' }),
       S3_BUCKET: envField.string({ context: 'server', access: 'secret' }),
       S3_ACCESS_KEY: envField.string({ context: 'server', access: 'secret' }),
-      S3_SECRET_ACCESS_KEY: envField.string({ context: 'server', access: 'secret' }),
+      S3_SECRET_ACCESS_KEY: envField.string({
+        context: 'server',
+        access: 'secret',
+      }),
     },
     validateSecrets: true,
   },
@@ -113,7 +141,10 @@ export default defineConfig({
         BUILD_OPEN_GRAPH === undefined
         || BUILD_OPEN_GRAPH === 'true'
         || UPLOAD_STATIC_FILES === 'true',
-      paths: [{ path: 'images', recursive: true, keep: false, override: false }, 'assets'],
+      paths: [
+        { path: 'images', recursive: true, keep: false, override: false },
+        'assets',
+      ],
       recursive: true,
       keep: false,
       endpoint: S3_ENDPOINT,
@@ -149,7 +180,13 @@ export default defineConfig({
   },
   vite: {
     // Add this for avoiding the needless import optimize in Vite.
-    optimizeDeps: { exclude: ['@napi-rs/canvas', 'opendal', 'sharp'] },
+    optimizeDeps: {
+      exclude: [
+        '@napi-rs/canvas',
+        'opendal',
+        'sharp',
+      ],
+    },
     assetsInclude: ['images/**/*'],
   },
   build: {

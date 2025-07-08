@@ -4,6 +4,9 @@ import { queryEmail } from '@/helpers/db/query'
 import { encodedEmail, isNumeric, urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
+// TODO Add lru-cache for avatar.
+// TODO Use types/node-schedule for cache hot load.
+
 function defaultAvatar(): string {
   return urlJoin(options.assetsPrefix(), '/images/default-avatar.png')
 }
@@ -12,7 +15,7 @@ async function avatarImage(hash: string, redirect: (path: string, status?: Valid
   const defaultAvatarLink = defaultAvatar()
   const link = urlJoin(
     options.settings.comments.avatar.mirror,
-    `${hash}.webp?s=${options.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
+    `${hash}?s=${options.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
   )
 
   const resp = await fetch(link, { redirect: 'manual', headers: { Referer: options.website } })
@@ -22,7 +25,7 @@ async function avatarImage(hash: string, redirect: (path: string, status?: Valid
 
   return new Response(Buffer.from(await resp.arrayBuffer()), {
     headers: {
-      'Content-Type': 'image/webp',
+      'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=604800',
     },
   })

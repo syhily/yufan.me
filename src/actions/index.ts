@@ -50,7 +50,7 @@ const normalActions = {
     handler: async ({ email }) => {
       const id = await queryUserId(email)
       const hash = id === null ? encodedEmail(email) : `${id}`
-      return { avatar: urlJoin(import.meta.env.SITE, 'images/avatar', `${hash}.webp`) }
+      return { avatar: urlJoin(import.meta.env.SITE, 'images/avatar', `${hash}.png`) }
     },
   }),
 }
