@@ -1,10 +1,15 @@
 ---
 import { actions } from 'astro:actions'
 import SingleLayout from '@/layouts/admin/SingleLayout.astro'
+import { ADMIN_ENDPOINTS } from '@/middleware'
 
 const result = Astro.getActionResult(actions.registerAdmin)
 if (result && !result.error) {
-  return Astro.redirect('/')
+  return Astro.redirect(ADMIN_ENDPOINTS.login)
+}
+ else {
+  console.error(result)
+  Astro.redirect('/')
 }
 ---
 

@@ -3,7 +3,7 @@ import { hasAdmin } from '@/helpers/auth/query'
 import { posts } from '@/helpers/schema'
 import { urlJoin } from '@/helpers/tools'
 
-enum ADMIN_ENDPOINTS {
+export enum ADMIN_ENDPOINTS {
   install = '/admin/install',
   login = '/admin/login',
   logout = '/admin/logout',

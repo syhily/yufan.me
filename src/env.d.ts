@@ -11,5 +11,8 @@ declare namespace App {
       website: string
       role: string
     }
+    csrf: {
+      token: string
+    }
   }
 }

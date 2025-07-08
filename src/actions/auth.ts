@@ -29,4 +29,15 @@ export const authActions = {
       })
     },
   }),
+  userLogin: defineAction({
+    accept: 'form',
+    input: z.object({
+      email: z.string(),
+      password: z.string(),
+    }),
+    handler: async ({ email, password }) => {
+      // TODO
+      console.error(email, password)
+    },
+  }),
 }
