@@ -5,17 +5,14 @@
 
 # Yufan Personal Weblog
 
-This is a personal weblog for [Yufan Sheng](https://github.com/syhily)
-which is built on [Astro](https://astro.build) and hosted on [zeabur](https://zeabur.com).
-
-[![Deployed on Zeabur](https://zeabur.com/deployed-on-zeabur-dark.svg)](https://zeabur.com?referralCode=syhily&utm_source=syhily)
+This is the source code of [yufan.me](https://yufan.me).
 
 ## History
 
-The blog's source code has evolved through four stages.
+The source code has evolved through four stages.
 
 - Initially, it was built on WordPress in 2011.
-- In 2017, I switched to Hexo and converted all my blog posts to Markdown.
+- In 2017, the blog switched to Hexo and converted all the blog posts to Markdown.
 - By 2024, the blog had been rewritten using Next.js with App Router.
 - Currently, the blog has transitioned to Astro.
 
@@ -23,9 +20,9 @@ The blog's source code has evolved through four stages.
 
 - [Node.js](https://nodejs.org): The latest Node.js LTS
 - [Astro](https://astro.build): Core engine
-- [Fuse.js](https://www.fusejs.io): Search indexer
 - [Postgres](https://zeabur.com/docs/marketplace/postgresql): Comments, likes and users
 - [Redis](https://zeabur.com/docs/marketplace/redis): User session store
+- [Zeabur](https://zeabur.com?referralCode=syhily&utm_source=syhily): Host service
 
 ## Local Development
 
@@ -50,11 +47,15 @@ npm run dev
 BUILD_OPEN_GRAPH=true npm run build
 ```
 
-### Postgres Database
+### Prepare Security Configurations
 
-This blog uses Postgres to store post views and favorites. For security reasons,
-the configuration isn't defined in the `.env` file.
-Modify the `.env.example` file and rename it to `.env` for local development.
+For security reasons, the database password and other sensitive configurations aren't provided in Git repo.
+You should create `.env` file in the root path and copy the content of `.env.example` file for local development.
+You can also set some configuration items through shell environment variables.
+
+### Prepare Postgres
+
+This blog uses Postgres to store post views, comments and favorites.
 
 You can create a Postgres database by installing [Postgres.app](https://postgresapp.com).
 The default username is `your system username`, with no password.
@@ -79,30 +80,13 @@ GRANT ALL PRIVILEGES ON DATABASE <db> TO <db_user>;
 GRANT ALL ON SCHEMA public TO <db_user>;
 ```
 
-Most tables are created by the Artalk. [Execute the Artalk](https://artalk.js.org/guide/deploy.html) to create the
-tables.
+The tables are created by using `drizzle-kit` for automatically migration support.
+But you can execute all the SQL files in the [drizzle](./drizzle/) directory according to the name order.
 
-The like table should be created manually. Execute the SQL below.
+### Prepare Redis
 
-```postgresql
--- Sequence and defined type
-CREATE SEQUENCE IF NOT EXISTS atk_likes_id_seq;
-
--- Table Definition
-CREATE TABLE "public"."atk_likes"
-(
-    "id"         int8 NOT NULL DEFAULT nextval('atk_likes_id_seq'::regclass),
-    "created_at" timestamptz,
-    "updated_at" timestamptz,
-    "deleted_at" timestamptz,
-    "token"      varchar(255),
-    "page_key"   varchar(255),
-    PRIMARY KEY ("id")
-);
-
--- Create table index
-CREATE INDEX IF NOT EXISTS "idx_atk_likes_token" ON "public"."atk_likes" ("token");
-```
+This blog uses redis for storing the avatar cache and login user session.
+Remember to start a redis instance with password support.
 
 ### S3 Compatible Storage Integration
 
@@ -181,9 +165,6 @@ This weblog is deployed on the [zeabur](https://zeabur.com) platform.
 You can check their documents and get your own weblog to be published without any budget at first.
 
 Or you can host on your own machine. Use [Dockerfile](./Dockerfile) to build an image and run it locally.
-
-The comment system is leverage the [Artalk](https://artalk.js.org), a self-hosted comment system.
-You should host it on your own machine.
 
 ## TODOs
 
