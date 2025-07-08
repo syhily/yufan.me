@@ -25,6 +25,7 @@ The blog's source code has evolved through four stages.
 - [Astro](https://astro.build): Core engine
 - [Fuse.js](https://www.fusejs.io): Search indexer
 - [Postgres](https://zeabur.com/docs/marketplace/postgresql): Comments, likes and users
+- [Redis](https://zeabur.com/docs/marketplace/redis): User session store
 
 ## Local Development
 
