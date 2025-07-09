@@ -425,8 +425,9 @@ function stickySidebarStickySidebar(target, opts) {
     try {
       width = object[0].getBoundingClientRect().width
     }
+    // eslint-disable-next-line unused-imports/no-unused-vars
     catch (err) {
-      console.error(err)
+      // No need to log
     }
 
     if (typeof width === 'undefined') {

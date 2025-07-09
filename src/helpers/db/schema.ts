@@ -4,8 +4,8 @@ export const page = pgTable(
   'page',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     key: varchar('key', { length: 255 }).unique().notNull(),
     title: text('title').notNull(),
@@ -33,8 +33,8 @@ export const comment = pgTable(
   'comment',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     content: text('content').default(''),
     pageKey: varchar('page_key', { length: 255 }).notNull(),
@@ -63,8 +63,8 @@ export const user = pgTable(
   'user',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
-    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     name: varchar('name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).unique().notNull(),
@@ -90,6 +90,6 @@ export const verification = pgTable('verification', {
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').$defaultFn(() => new Date()),
-  updatedAt: timestamp('updated_at').$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at').notNull().$defaultFn(() => new Date()),
 })

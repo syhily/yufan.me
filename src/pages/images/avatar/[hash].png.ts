@@ -19,7 +19,7 @@ async function avatarImage(hash: string, redirect: (path: string, status?: Valid
   )
 
   const resp = await fetch(link, { redirect: 'manual', headers: { Referer: options.website } })
-  if (resp.headers.get('location') === defaultAvatarLink) {
+  if (resp.status > 299 || resp.headers.get('location') === defaultAvatarLink) {
     return redirect(defaultAvatarLink, 302)
   }
 

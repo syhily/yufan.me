@@ -17,8 +17,8 @@ const { comment, depth, pending } = Astro.props
   <article id={`div-comment-${comment.id}`} class="comment-body">
     <div class="comment-avatar flex-avatar">
       <img
-        alt={comment.nick}
-        src={urlJoin(import.meta.env.SITE, 'images/avatar', `${comment.user_id}.png`)}
+        alt={comment.name}
+        src={urlJoin(import.meta.env.SITE, 'images/avatar', `${comment.userId}.png`)}
         class="avatar avatar-40 photo"
         height="40"
         width="40"
@@ -31,16 +31,16 @@ const { comment, depth, pending } = Astro.props
         {
           comment.link === ''
 ? (
-            comment.nick
+            comment.name
           )
 : (
             <a href={comment.link ?? '#'} rel="nofollow" target="_blank">
-              {comment.nick}
+              {comment.name}
             </a>
           )
         }
         {
-          encodedEmail(options.author.email) === comment.email_encrypted && (
+          encodedEmail(options.author.email) === comment.email && (
             <a class="badge badge-primary badge-pill" href={`mailto:${options.author.email}`}>
               站长
             </a>
@@ -52,7 +52,7 @@ const { comment, depth, pending } = Astro.props
         <Fragment set:html={comment.content} />
       </div>
       <div class="comment-footer text-xs text-muted">
-        <time class="me-2">{formatLocalDate(comment.date, 'yyyy-MM-dd HH:mm')}</time>
+        <time class="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
         <button class="comment-reply-link" data-rid={comment.id}>回复</button>
       </div>
     </div>

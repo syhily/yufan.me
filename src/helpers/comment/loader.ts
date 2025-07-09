@@ -1,4 +1,4 @@
-import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
+import type { CommentAndUser, CommentItem, CommentReq, CommentResp, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
 import type { NewPage, Page } from '@/helpers/db/types'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
@@ -77,18 +77,47 @@ export async function latestComments(): Promise<LatestComment[]> {
   })
 }
 
+const unionCommentSelect = {
+  id: comment.id,
+  createAt: comment.createdAt,
+  updatedAt: comment.updatedAt,
+  deleteAt: comment.deletedAt,
+  content: comment.content,
+  pageKey: comment.pageKey,
+  userId: comment.userId,
+  isVerified: comment.isVerified,
+  ua: comment.ua,
+  ip: comment.ip,
+  rid: comment.rid,
+  isCollapsed: comment.isCollapsed,
+  isPending: comment.isPending,
+  isPinned: comment.isPinned,
+  voteUp: comment.voteUp,
+  voteDown: comment.voteDown,
+  rootId: comment.rootId,
+  name: user.name,
+  email: user.email,
+  emailVerified: user.emailVerified,
+  link: user.link,
+  badgeName: user.badgeName,
+  badgeColor: user.badgeColor,
+}
+
 export async function loadComments(key: string, title: string | null, offset: number): Promise<Comments | null> {
   await upsertPage(key, title)
 
   const counts = (await db.select({ counts: count() }).from(comment).where(eq(comment.pageKey, key)))[0].counts
   const rootCounts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n))))[0].counts
-  const rootComments = await db.select()
+  const rootComments = await db.select(unionCommentSelect)
     .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
     .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n)))
     .limit(options.settings.comments.size)
+    .orderBy(desc(comment.createdAt))
     .offset(offset)
-  const childComments = await db.select()
+  const childComments = await db.select(unionCommentSelect)
     .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
     .where(and(eq(comment.pageKey, key), inArray(comment.rootId, rootComments.map(c => c.id))))
 
   return {
@@ -165,14 +194,14 @@ export async function createComment(commentReq: CommentReq, req: Request, client
 
   // Parse comment content.
   const commentResp = (await response.json()) as CommentResp
-  commentResp.content = await parseContent(commentResp.content || '该留言消息为空')
+  commentResp.content = await parseContent(commentResp.content || '该留言内容为空')
 
   return commentResp
 }
 
-export async function parseComments(comments: Comment[]): Promise<CommentItem[]> {
+export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {
   const parsedComments = await Promise.all(
-    comments.map(async comment => ({ ...comment, content: await parseContent(comment.content) })),
+    comments.map(async comment => ({ ...comment, content: await parseContent(comment.content || '该留言内容为空') })),
   )
   const childComments = _.groupBy(
     parsedComments.filter(comment => !rootCommentFilter(comment)),
@@ -182,13 +211,13 @@ export async function parseComments(comments: Comment[]): Promise<CommentItem[]>
   return parsedComments.filter(rootCommentFilter).map(comment => commentItems(comment, childComments))
 }
 
-function rootCommentFilter(comment: Comment): boolean {
+function rootCommentFilter(comment: CommentAndUser): boolean {
   return comment.rid === 0 || comment.rid === null || comment.rid === undefined
 }
 
-function commentItems(comment: Comment, childComments: _.Dictionary<Comment[]>): CommentItem {
+function commentItems(comment: CommentAndUser, childComments: _.Dictionary<CommentAndUser[]>): CommentItem {
   const children = childComments[`${comment.id}`]
-  if (typeof children === 'undefined') {
+  if (children === undefined) {
     return comment
   }
 
