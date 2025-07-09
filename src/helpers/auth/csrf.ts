@@ -2,7 +2,7 @@ import type { AstroSession } from 'astro'
 import { makeToken } from '@/helpers/tools'
 
 // The token is valid only in five minutes.
-const TOKEN_TTL = 60 * 5
+const TOKEN_TTL = 60 * 5 * 1000
 
 export function generateToken(session: AstroSession) {
   const token = makeToken(63)
@@ -18,7 +18,7 @@ export async function validateToken(session: AstroSession, token: string): Promi
   }
   session.delete('csrf')
   const now = (new Date()).getTime()
-  if (csrf.timestamp > TOKEN_TTL + now) {
+  if (csrf.timestamp + TOKEN_TTL < now) {
     return [false, 'The token is expired']
   }
   if (csrf.token === token) {
