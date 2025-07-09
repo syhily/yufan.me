@@ -1,7 +1,9 @@
 ---
-import SingleLayout from '@/layouts/admin/SingleLayout.astro'
+const session = Astro.session
+if (session === undefined) {
+  throw new Error('Please configure your astro session store')
+}
+session.delete('user')
+Astro.redirect('/')
 ---
-
-<SingleLayout title="用户登出">
-  <h2>This is logout page.</h2>
-</SingleLayout>
+<Fragment />
