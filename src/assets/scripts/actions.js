@@ -1,7 +1,7 @@
 import { isInputError } from 'astro:actions'
 
 function errorDialog(errorMsg) {
-  return `<div class="nice-popup nice-popup-center error nice-popup-error nice-popup-open">
+  return `<div class="nice-popup nice-popup-center sticky-top error nice-popup-error nice-popup-open">
   <div class="nice-popup-overlay"></div>
   <div class="nice-popup-body">
     <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
@@ -16,17 +16,22 @@ function errorDialog(errorMsg) {
 }
 
 // Manually display an error dialog
-export function showErrorDialog(errorMsg) {
+export function showErrorDialog(errorMsg, closeAction) {
   const errorPopup = errorDialog(errorMsg)
   document.querySelector('body').insertAdjacentHTML('beforeend', errorPopup)
   const popup = document.querySelector('.nice-popup-error')
-  popup.querySelector('.nice-popup-close').addEventListener('click', () => popup.remove())
+  popup.querySelector('.nice-popup-close').addEventListener('click', () => {
+    popup.remove()
+    if (closeAction) {
+      closeAction()
+    }
+  })
 }
 
 // Popup an error dialog for notifying user the root cause.
-export function handleActionError(error) {
+export function handleActionError(error, closeAction) {
   const errorMsg = isInputError(error)
     ? error.issues.map(issue => `<p>${issue.message}</p>`).join('\n')
     : error.message
-  showErrorDialog(errorMsg)
+  showErrorDialog(errorMsg, closeAction)
 }

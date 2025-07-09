@@ -1,8 +1,8 @@
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 import { validateToken } from '@/helpers/auth/csrf'
-import { hasAdmin } from '@/helpers/auth/query'
-import { createAdmin } from '@/helpers/auth/user'
+import { createAdmin, hasAdmin, verifyCredential } from '@/helpers/auth/user'
+import { exceedLimit, incrLimit } from '@/helpers/cache/redis'
 
 export const authActions = {
   registerAdmin: defineAction({
@@ -37,7 +37,7 @@ export const authActions = {
       password: z.string(),
       token: z.string(),
     }),
-    handler: async ({ email, password, token }, { session }) => {
+    handler: async ({ email, password, token }, { session, clientAddress }) => {
       if (session === undefined) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -51,8 +51,30 @@ export const authActions = {
           message: error,
         })
       }
-      // TODO Try to login into the system.
-      console.error(email, password)
+
+      if (await exceedLimit(clientAddress)) {
+        throw new ActionError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Too many failed in login, lock for 30 minutes',
+        })
+      }
+
+      const user = await verifyCredential(email, password)
+      if (typeof user === 'string') {
+        await incrLimit(clientAddress)
+        throw new ActionError({
+          code: 'FORBIDDEN',
+          message: user,
+        })
+      }
+
+      session.set('user', {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        website: user.link,
+        admin: user.isAdmin !== null && user.isAdmin,
+      })
     },
   }),
 }

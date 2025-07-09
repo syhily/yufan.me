@@ -46,7 +46,7 @@ if (loginForm !== null) {
 
     const { error } = await actions.userLogin({ token, email, password })
     if (error) {
-      return handleActionError(error)
+      return handleActionError(error, () => location.reload())
     }
     return location.href = '/'
   })

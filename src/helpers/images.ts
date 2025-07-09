@@ -2,8 +2,8 @@ import fs from 'node:fs/promises'
 import { join } from 'node:path'
 import process from 'node:process'
 import sharp from 'sharp'
-import options from '../../options'
-import { urlJoin } from './tools'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
 
 export interface Image {
   /**

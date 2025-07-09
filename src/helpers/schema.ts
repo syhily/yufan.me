@@ -4,8 +4,8 @@ import type { Image } from '@/helpers/images'
 import { getCollection, render } from 'astro:content'
 import { pinyin } from 'pinyin-pro'
 import { defaultCover } from '@/content.config'
+import { parseContent } from '@/helpers/markdown'
 import options from '@/options'
-import { parseContent } from './markdown'
 
 // Import the collections from the astro content.
 const imagesCollection = await getCollection('images')

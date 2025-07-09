@@ -2060,7 +2060,7 @@ a:hover .overlay {
   width: 100%;
   opacity: 0;
   visibility: hidden;
-  z-index: 999;
+  z-index: 1500;
   overflow-x: hidden;
   overflow-y: auto;
 }

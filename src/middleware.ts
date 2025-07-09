@@ -1,5 +1,5 @@
 import { defineMiddleware, sequence } from 'astro:middleware'
-import { hasAdmin } from '@/helpers/auth/query'
+import { hasAdmin } from '@/helpers/auth/user'
 import { posts } from '@/helpers/schema'
 import { urlJoin } from '@/helpers/tools'
 

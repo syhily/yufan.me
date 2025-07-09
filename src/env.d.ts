@@ -5,11 +5,11 @@
 declare namespace App {
   interface SessionData {
     user: {
-      id: string
+      id: bigint
       name: string
       email: string
-      website: string
-      role: string
+      website: string | null
+      admin: boolean
     }
     csrf: {
       token: string
