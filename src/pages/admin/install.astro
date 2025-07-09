@@ -1,18 +1,7 @@
 ---
 import { actions } from 'astro:actions'
 import SingleLayout from '@/layouts/admin/SingleLayout.astro'
-import { ADMIN_ENDPOINTS } from '@/middleware'
-
-const result = Astro.getActionResult(actions.registerAdmin)
-if (result && !result.error) {
-  return Astro.redirect(ADMIN_ENDPOINTS.login)
-}
- else {
-  console.error(result)
-  Astro.redirect('/')
-}
 ---
-
 <SingleLayout title="注册管理员账号">
   <form method="post" action={actions.registerAdmin} id="installForm">
     <div class="flex-fill">
@@ -27,3 +16,38 @@ if (result && !result.error) {
     </div>
   </form>
 </SingleLayout>
+
+<script>
+import { actions } from 'astro:actions'
+import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
+import { ADMIN_ENDPOINTS } from '@/middleware'
+
+const installForm = document.querySelector('form')
+if (installForm !== null) {
+  installForm.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const form = new FormData(installForm)
+
+    // Validate the form data
+    const name = form.get('name') as string
+    if (name === null) {
+      return showErrorDialog('The user name is required')
+    }
+    const email = form.get('email') as string
+    if (email === null) {
+      return showErrorDialog('The email is required')
+    }
+    const password = form.get('password') as string
+    if (password === null) {
+      return showErrorDialog('The password is required')
+    }
+
+    const { error } = await actions.registerAdmin({ name, email, password })
+    if (error) {
+      return handleActionError(error)
+    }
+    return location.href = ADMIN_ENDPOINTS.login
+  })
+}
+</script>

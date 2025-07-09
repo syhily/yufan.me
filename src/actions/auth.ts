@@ -6,7 +6,7 @@ import { createAdmin } from '@/helpers/auth/user'
 
 export const authActions = {
   registerAdmin: defineAction({
-    accept: 'form',
+    accept: 'json',
     input: z.object({
       name: z.string(),
       email: z.string(),
@@ -31,7 +31,7 @@ export const authActions = {
     },
   }),
   userLogin: defineAction({
-    accept: 'form',
+    accept: 'json',
     input: z.object({
       email: z.string(),
       password: z.string(),

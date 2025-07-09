@@ -18,7 +18,7 @@ export async function validateToken(session: AstroSession, token: string): Promi
   }
   session.delete('csrf')
   const now = (new Date()).getTime()
-  if (csrf.timestamp + TOKEN_TTL < now) {
+  if (csrf.timestamp > TOKEN_TTL + now) {
     return [false, 'The token is expired']
   }
   if (csrf.token === token) {

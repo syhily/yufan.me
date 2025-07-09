@@ -1,9 +1,10 @@
 /* eslint-disable no-new */
-import { actions, isInputError } from 'astro:actions'
+import { actions } from 'astro:actions'
 import PhotoSwipe from 'photoswipe'
 import PhotoSwipeDynamicCaption from 'photoswipe-dynamic-caption-plugin'
 import PhotoSwipeVideo from 'photoswipe-video-plugin'
 import PhotoSwipeLightbox from 'photoswipe/lightbox'
+import { handleActionError } from '@/assets/scripts/actions'
 import PhotoSwipeSlideshow from '@/assets/scripts/photoswipe-slideshow.js'
 import stickySidebar from '@/assets/scripts/sticky-sidebar.js'
 
@@ -71,28 +72,6 @@ if (imageLinks.length > 0) {
   })
 
   lightbox.init()
-}
-
-// Error Popup.
-function handleActionError(error) {
-  const errorMsg = isInputError(error)
-    ? error.issues.map(issue => `<p>${issue.message}</p>`).join('\n')
-    : error.message
-  const errorPopup = `<div class="nice-popup nice-popup-center error nice-popup-error nice-popup-open">
-  <div class="nice-popup-overlay"></div>
-  <div class="nice-popup-body">
-    <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
-    <div class="nice-popup-content">
-      <div class="icon"></div>
-      <div class="text-center">
-        <p class="mt-1 mb-2">${errorMsg}</p>
-      </div>
-    </div>
-  </div>
-</div>`
-  document.querySelector('body').insertAdjacentHTML('beforeend', errorPopup)
-  const popup = document.querySelector('.nice-popup-error')
-  popup.querySelector('.nice-popup-close').addEventListener('click', () => popup.remove())
 }
 
 // Menu toggle.
