@@ -1,21 +1,11 @@
+import type { Comment } from '@/helpers/db/types'
+
 // Used for sidebar
 export interface LatestComment {
   title: string
   author: string
   authorLink: string
   permalink: string
-}
-
-// The single comment.
-export interface Comment {
-  id: number
-  content: string
-  nick: string
-  user_id: number
-  email_encrypted: string
-  link: string
-  date: string
-  rid: number
 }
 
 // Grouping the comments into parent child structure.

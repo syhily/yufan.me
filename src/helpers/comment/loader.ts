@@ -1,7 +1,6 @@
 import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
 import type { NewPage, Page } from '@/helpers/db/types'
-import querystring from 'node:querystring'
-import { desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
 import { db } from '@/helpers/db/pool'
 import { queryUser } from '@/helpers/db/query'
@@ -80,24 +79,23 @@ export async function latestComments(): Promise<LatestComment[]> {
 
 export async function loadComments(key: string, title: string | null, offset: number): Promise<Comments | null> {
   await upsertPage(key, title)
-  let params: Record<string, string | number | boolean> = {
-    limit: options.settings.comments.size,
-    offset,
-    flat_mode: false,
-    page_key: key,
-    site_name: options.title,
-  }
-  if (title !== null) {
-    params = { ...params, title }
-  }
-  const data = await fetch(urlJoin(server, `/api/v2/comments?${querystring.stringify(params)}`))
-    .then(response => response.json())
-    .catch((e) => {
-      console.error(e)
-      return null
-    })
 
-  return data !== null ? (data as Comments) : null
+  const counts = (await db.select({ counts: count() }).from(comment).where(eq(comment.pageKey, key)))[0].counts
+  const rootCounts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n))))[0].counts
+  const rootComments = await db.select()
+    .from(comment)
+    .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n)))
+    .limit(options.settings.comments.size)
+    .offset(offset)
+  const childComments = await db.select()
+    .from(comment)
+    .where(and(eq(comment.pageKey, key), inArray(comment.rootId, rootComments.map(c => c.id))))
+
+  return {
+    count: counts,
+    roots_count: rootCounts,
+    comments: [...rootComments, ...childComments],
+  }
 }
 
 export async function increaseViews(key: string, title: string | null) {
@@ -167,7 +165,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
 
   // Parse comment content.
   const commentResp = (await response.json()) as CommentResp
-  commentResp.content = await parseContent(commentResp.content)
+  commentResp.content = await parseContent(commentResp.content || '该留言消息为空')
 
   return commentResp
 }

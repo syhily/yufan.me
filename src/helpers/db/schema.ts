@@ -48,7 +48,7 @@ export const comment = pgTable(
     isPinned: boolean('is_pinned').default(false),
     voteUp: bigint('vote_up', { mode: 'number' }),
     voteDown: bigint('vote_down', { mode: 'number' }),
-    rootId: bigint('root_id', { mode: 'number' }),
+    rootId: bigint('root_id', { mode: 'bigint' }),
   },
   table => [
     index('idx_comment_root_id').on(table.rootId),
