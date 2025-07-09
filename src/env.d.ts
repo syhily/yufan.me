@@ -13,6 +13,7 @@ declare namespace App {
     }
     csrf: {
       token: string
+      timestamp: number
     }
   }
 }

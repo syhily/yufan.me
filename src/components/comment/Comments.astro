@@ -21,7 +21,8 @@ if (options.isProd()) {
 
 <div id="comments" class="comments pt-5">
   {
-    comments != null ? (
+    comments != null
+? (
       <>
         <div class="h5 mb-4 comment-total-count">
           评论 <small class="font-theme text-sm">({comments.count})</small>
@@ -81,7 +82,8 @@ if (options.isProd()) {
           </div>
         )}
       </>
-    ) : (
+    )
+: (
       '评论加载失败 ❌'
     )
   }

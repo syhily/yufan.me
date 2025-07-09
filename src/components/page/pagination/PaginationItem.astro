@@ -11,11 +11,13 @@ const { current, pageNum, rootPath } = Astro.props
 ---
 
 {
-  current !== pageNum ? (
+  current !== pageNum
+? (
     <a class="page-numbers" href={pageNum === 1 ? rootPath : join(rootPath, `/page/${pageNum}`)}>
       {pageNum}
     </a>
-  ) : (
+  )
+: (
     <span aria-current="page" class="page-numbers current">
       {pageNum}
     </span>

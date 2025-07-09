@@ -1,11 +1,12 @@
 ---
-import '@/assets/styles/globals.css'
-import Footer from '@/components/footer/Footer.astro'
-import Header from '@/components/header/Header.astro'
-import PageMeta from '@/components/meta/PageMeta.astro'
-import SearchDialog from '@/components/search/SearchDialog.astro'
-import options, { type Navigation } from '@/options'
+import type { Navigation } from '@/options'
 import { pwaInfo } from 'virtual:pwa-info'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Footer from '@/components/partial/Footer.astro'
+import Header from '@/components/partial/Header.astro'
+import SearchDialog from '@/components/search/SearchDialog.astro'
+import options from '@/options'
+import '@/assets/styles/globals.css'
 
 interface Props {
   title?: string
@@ -14,8 +15,8 @@ interface Props {
   footer?: boolean
 }
 
-const title =
-  Astro.props.title === undefined
+const title
+  = Astro.props.title === undefined
     ? `${options.title} - ${options.description}`
     : `${Astro.props.title} - ${options.title}`
 const description = Astro.props.description || options.description

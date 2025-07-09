@@ -1,9 +1,9 @@
 ---
+import { DateTime } from 'luxon'
 import { urlJoin } from '@/helpers/tools'
 import options from '@/options'
-import { DateTime } from 'luxon'
 
-const loadCalendarImage = async (): Promise<string> => {
+async function loadCalendarImage(): Promise<string> {
   const now = DateTime.now().setZone(options.settings.timeZone).setLocale(options.settings.locale)
   return urlJoin(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.jpg`)
 }

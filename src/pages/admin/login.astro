@@ -1,5 +1,6 @@
 ---
 import { actions } from 'astro:actions'
+import Token from '@/components/partial/Token.astro'
 import SingleLayout from '@/layouts/admin/SingleLayout.astro'
 
 const result = Astro.getActionResult(actions.userLogin)
@@ -10,6 +11,7 @@ if (result && !result.error) {
 
 <SingleLayout title="用户登陆">
   <form method="post" action={actions.userLogin} id="loginForm">
+    <Token />
     <div class="flex-fill">
       <div class="row g-3 mb-5 px-5">
         <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />

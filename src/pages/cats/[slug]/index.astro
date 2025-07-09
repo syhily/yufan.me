@@ -1,5 +1,6 @@
 ---
-import { getCategory, posts, type Category, type Post } from '@/helpers/schema'
+import type { Category, Post } from '@/helpers/schema'
+import { getCategory, posts } from '@/helpers/schema'
 import CategoryLayout from '@/layouts/posts/CategoryLayout.astro'
 
 interface Props {
@@ -14,7 +15,7 @@ if (!category) {
   return Astro.redirect('/404')
 }
 
-const filteredPosts = posts.filter((post) => post.category === category.name)
+const filteredPosts = posts.filter(post => post.category === category.name)
 
 if (filteredPosts.length === 0) {
   return Astro.rewrite('/404')

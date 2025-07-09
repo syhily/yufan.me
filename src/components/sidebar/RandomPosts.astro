@@ -1,7 +1,7 @@
 ---
-import _ from 'lodash'
-
 import type { Post } from '@/helpers/schema'
+
+import _ from 'lodash'
 import options from '@/options'
 
 interface Props {
@@ -17,7 +17,7 @@ const randomSize = options.settings.sidebar.post
     <div id="recent-posts" class="widget widget-recent-entries">
       <div class="widget-title">随机文章</div>
       <ul class="line">
-        {_.sampleSize(posts, randomSize).map((post) => (
+        {_.sampleSize(posts, randomSize).map(post => (
           <li>
             <a href={post.permalink} title={post.title}>
               {post.title}

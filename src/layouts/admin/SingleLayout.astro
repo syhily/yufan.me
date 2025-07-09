@@ -1,20 +1,20 @@
 ---
+import LogoDark from '@/components/logo/LogoDark.astro'
+import LogoLarge from '@/components/logo/LogoLarge.astro'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Footer from '@/components/partial/Footer.astro'
+import { urlJoin } from '@/helpers/tools'
+import options from '@/options'
 import '@/assets/styles/globals.css'
 import '@/assets/styles/admin/single.css'
-import LogoDark from '@/components/header/LogoDark.astro'
-import LogoLarge from '@/components/header/LogoLarge.astro'
-import PageMeta from '@/components/meta/PageMeta.astro'
-import Footer from '@/components/footer/Footer.astro'
-import options from '@/options'
-import { urlJoin } from '@/helpers/tools'
 
 interface Props {
   title?: string
   description?: string
 }
 
-const title =
-  Astro.props.title === undefined
+const title
+  = Astro.props.title === undefined
     ? `${options.title} - ${options.description}`
     : `${Astro.props.title} - ${options.title}`
 const description = Astro.props.description || options.description

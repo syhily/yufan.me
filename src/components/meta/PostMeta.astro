@@ -20,7 +20,7 @@ const { og, twitter } = getBlogPostMeta({
   pageUrl: requestPath.startsWith('http') ? requestPath : import.meta.env.SITE + requestPath,
   authorName: options.author.name,
   publishDate,
-  ogImageUrl: ogImageUrl,
+  ogImageUrl,
   ogImageAltText,
   ogImageWidth: openGraphWidth,
   ogImageHeight: openGraphHeight,

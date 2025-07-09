@@ -18,8 +18,8 @@ if (pageNum <= 1) {
 const title = `【${query}】搜索结果`
 
 const searchResults = searchPosts(query)
-  .map((slug) => posts.find((post) => post.slug === slug))
-  .filter((post) => post !== undefined)
+  .map(slug => posts.find(post => post.slug === slug))
+  .filter(post => post !== undefined)
 
 const total = Math.ceil(searchResults.length / options.settings.pagination.tags)
 

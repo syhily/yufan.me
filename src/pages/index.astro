@@ -2,7 +2,7 @@
 import { posts, tags } from '@/helpers/schema'
 import PostsLayout from '@/layouts/posts/PostsLayout.astro'
 
-const visiblePosts = posts.filter((post) => post.visible)
+const visiblePosts = posts.filter(post => post.visible)
 ---
 
 <PostsLayout pageNum={1} posts={visiblePosts} {tags} />

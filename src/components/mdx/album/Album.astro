@@ -10,7 +10,7 @@ interface Props {
 const { id } = Astro.props
 const album = getAlbum(id)
 
-const calculateCroppedWidth = (width: number, height: number, first: boolean): number => {
+function calculateCroppedWidth(width: number, height: number, first: boolean): number {
   // 300 * 300
   if (!first) {
     if (width < 300 || height < 300) {
@@ -24,8 +24,9 @@ const calculateCroppedWidth = (width: number, height: number, first: boolean): n
   }
   return width > height ? (600.0 / width > 300.0 / height ? 600 : Math.round((300.0 / height) * width)) : 600
 }
-const calculateCroppedHeight = (width: number, height: number, croppedWidth: number): number =>
-  croppedWidth === width ? height : Math.round(((1.0 * croppedWidth) / width) * height)
+function calculateCroppedHeight(width: number, height: number, croppedWidth: number): number {
+  return croppedWidth === width ? height : Math.round(((1.0 * croppedWidth) / width) * height)
+}
 ---
 
 {

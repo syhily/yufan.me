@@ -12,8 +12,8 @@ if (query === '') {
 const title = `【${query}】搜索结果`
 
 const searchResults = searchPosts(query)
-  .map((slug) => posts.find((post) => post.slug === slug))
-  .filter((post) => post !== undefined)
+  .map(slug => posts.find(post => post.slug === slug))
+  .filter(post => post !== undefined)
 ---
 
 <SearchLayout {title} {query} pageNum={1} posts={searchResults} />

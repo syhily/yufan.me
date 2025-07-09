@@ -15,7 +15,7 @@ if (pageNum <= 1) {
   return Astro.redirect(category.permalink)
 }
 
-const filteredPosts = posts.filter((post) => post.category === category.name)
+const filteredPosts = posts.filter(post => post.category === category.name)
 const pageSize = options.settings.pagination.category
 const total = Math.ceil(filteredPosts.length / pageSize)
 

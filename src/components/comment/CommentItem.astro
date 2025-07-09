@@ -29,9 +29,11 @@ const { comment, depth, pending } = Astro.props
     <div class="comment-inner">
       <div class="comment-author fw-bold">
         {
-          comment.link === '' ? (
+          comment.link === ''
+? (
             comment.nick
-          ) : (
+          )
+: (
             <a href={comment.link ?? '#'} rel="nofollow" target="_blank">
               {comment.nick}
             </a>
@@ -58,7 +60,7 @@ const { comment, depth, pending } = Astro.props
   {
     comment.children && depth === 1 && (
       <ul class="children">
-        {comment.children.map((childComment) => (
+        {comment.children.map(childComment => (
           <Astro.self comment={childComment} depth={depth + 1} />
         ))}
       </ul>
@@ -68,7 +70,7 @@ const { comment, depth, pending } = Astro.props
 {
   comment.children && depth !== 1 && (
     <>
-      {comment.children.map((childComment) => (
+      {comment.children.map(childComment => (
         <Astro.self comment={childComment} depth={depth + 1} />
       ))}
     </>

@@ -1,9 +1,10 @@
 ---
-import QRDialog from '@/components/dialog/QRDialog.astro'
-import Logo from '@/components/header/Logo.astro'
-import LogoLarge from '@/components/header/LogoLarge.astro'
+import type { Navigation } from '@/options'
+import Logo from '@/components/logo/Logo.astro'
+import LogoLarge from '@/components/logo/LogoLarge.astro'
+import QRDialog from '@/components/partial/QRDialog.astro'
 import SearchIcon from '@/components/search/SearchIcon.astro'
-import options, { type Navigation } from '@/options'
+import options from '@/options'
 
 interface Props {
   navigation: Navigation
@@ -16,7 +17,7 @@ const { navigation } = Astro.props
   <div class="aside-overlay"></div>
   <div class="aside-inner bg-secondary">
     <h1 class="navbar-brand">
-      <a href={'/'} title={options.title} class="d-block">
+      <a href="/" title={options.title} class="d-block">
         <Logo />
       </a>
     </h1>
@@ -40,18 +41,21 @@ const { navigation } = Astro.props
             return (
               <QRDialog url={social.link} name={social.name} title={social.title ?? social.name} icon={social.icon} />
             )
-          } else {
+          }
+ else {
             return (
               <a
                 href={social.link}
-                target={'_blank'}
+                target="_blank"
                 title={social.title ?? social.name}
                 class="btn btn-dark btn-icon btn-circle button-social"
               >
                 <span>
-                  {!social.icon.startsWith('<svg') ? (
+                  {!social.icon.startsWith('<svg')
+? (
                     <i class={`iconfont ${social.icon}`} />
-                  ) : (
+                  )
+: (
                     <Fragment set:html={social.icon} />
                   )}
                 </span>

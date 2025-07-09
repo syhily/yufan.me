@@ -15,7 +15,7 @@ if (pageNum <= 1) {
   return Astro.redirect(tag.permalink)
 }
 
-const filteredPosts = posts.filter((post) => post.tags.includes(tag.name))
+const filteredPosts = posts.filter(post => post.tags.includes(tag.name))
 const pageSize = options.settings.pagination.tags
 const total = Math.ceil(filteredPosts.length / pageSize)
 

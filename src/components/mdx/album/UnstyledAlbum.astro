@@ -14,7 +14,7 @@ const album = getAlbum(id)
   album !== undefined && (
     <Fragment>
       {album.description && <Fragment set:html={album.description} />}
-      {album.pictures.map((picture) => (
+      {album.pictures.map(picture => (
         <Fragment>
           {picture.title && <h3>{picture.title}</h3>}
           <Image alt={picture.title || ''} {...picture} />

@@ -15,7 +15,7 @@ if (pageNum <= 1) {
   return Astro.redirect('/')
 }
 
-const visiblePosts = posts.filter((post) => post.visible)
+const visiblePosts = posts.filter(post => post.visible)
 const total = Math.ceil(visiblePosts.length / options.settings.pagination.posts)
 if (pageNum > total) {
   return Astro.redirect(`${total}`, 302)
