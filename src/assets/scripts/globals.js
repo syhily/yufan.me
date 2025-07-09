@@ -168,7 +168,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
     const rid = ridInput.value
     ridInput.value = '0'
     if (rid !== '0') {
-      const children = comments.querySelector(`#atk-comment-${rid}`).querySelector('.children')
+      const children = comments.querySelector(`#user-comment-${rid}`).querySelector('.children')
       if (children !== null && children.querySelectorAll('li').length === 0) {
         children.remove()
       }
@@ -298,7 +298,7 @@ function scrollIntoView(elem) {
 
 // Highlighting the selected comment.
 function focusContent() {
-  if (location.hash.startsWith('#atk-comment-')) {
+  if (location.hash.startsWith('#user-comment-')) {
     for (const li of document.querySelectorAll('.comment-body')) {
       li.classList.remove('active')
     }

@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1751992681159,
-      "tag": "0000_initial_table_schema",
+      "when": 1752053138776,
+      "tag": "0000_init_schema",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1751995951300,
-      "tag": "0001_make_email_unique",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751997660513,
-      "tag": "0002_ensure_user_admin_property",
+      "when": 1752053494554,
+      "tag": "0001_change_column_types.sql",
       "breakpoints": true
     }
   ]

@@ -5,13 +5,6 @@ import { like, page, user } from '@/helpers/db/schema'
 import { makeToken, urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
-export interface Comment {
-  title: string
-  author: string
-  authorLink: string
-  permalink: string
-}
-
 export async function queryUser(email: string): Promise<InferSelectModel<typeof user> | null> {
   const results = await db
     .select()
@@ -53,12 +46,7 @@ export async function queryUserId(email: string): Promise<string | null> {
     return null
   }
 
-  return results[0].id
-}
-
-export async function latestComments(): Promise<Comment[]> {
-  // TODO Use new implementation.
-  return []
+  return `${results[0].id}`
 }
 
 const generatePageKey = (permalink: string): string => urlJoin(options.website, permalink, '/')

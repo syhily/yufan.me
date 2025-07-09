@@ -1,5 +1,5 @@
 ---
-import { latestComments } from '@/helpers/db/query'
+import { latestComments } from '@/helpers/comment/loader'
 import options from '@/options'
 
 const comments = await latestComments()
@@ -13,15 +13,9 @@ const comments = await latestComments()
         {comments.map(comment => (
           <li class="recent-comments">
             <span class="comment-author-link">
-              {comment.authorLink === ''
-? (
-                comment.author
-              )
-: (
-                <a href={comment.authorLink} target="_blank" rel="nofollow">
+              <a href={comment.authorLink} target="_blank" rel="nofollow">
                   {comment.author}
                 </a>
-              )}
             </span>
             发表在《
             <a href={comment.permalink}>{comment.title}</a>

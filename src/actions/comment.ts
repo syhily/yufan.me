@@ -1,8 +1,8 @@
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
-import { createComment, loadComments } from '@/components/comment/artalk'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
+import { createComment, loadComments } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/container'
 import options from '@/options'
 

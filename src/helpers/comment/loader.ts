@@ -1,16 +1,85 @@
-import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp } from '@/components/comment/types'
+import type { Comment, CommentItem, CommentReq, CommentResp, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
+import type { NewPage, Page } from '@/helpers/db/types'
 import querystring from 'node:querystring'
-import { ARTALK_HOST, ARTALK_PORT, ARTALK_SCHEME } from 'astro:env/server'
+import { desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
+import { db } from '@/helpers/db/pool'
 import { queryUser } from '@/helpers/db/query'
+import { comment, page, user } from '@/helpers/db/schema'
 import { parseContent } from '@/helpers/markdown'
 import { urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
+async function upsertPage(key: string, title: string | null): Promise<Page> {
+  const res = await db.select().from(page).where(eq(page.key, key)).limit(1)
+  if (res.length > 0) {
+    const p = res[0]
+    if (p.title !== title && title !== null) {
+      // Update the page with the new title
+      p.title = title
+      await db.insert(page).values(p).returning()
+    }
+    return p
+  }
+  const np: NewPage = { title: title || '无标题', key, voteUp: 0, voteDown: 0, pv: 0 }
+  return (await db.insert(page).values(np).returning())[0]
+}
+
 // Access the artalk in internal docker host when it was deployed on zeabur.
-const server = `${ARTALK_SCHEME}://${ARTALK_HOST}:${ARTALK_PORT}`
+const server = ''
+
+export async function latestComments(): Promise<LatestComment[]> {
+  const admins = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
+  const userFilterQuery = admins.length > 0 ? sql`user_id NOT IN (${admins.map(admin => admin.id).join(', ')})` : sql`1 = 1`
+  const latestDistinctCommentsQuery = sql`SELECT    id
+  FROM      (
+            SELECT    id,
+                      user_id,
+                      created_at,
+                      ROW_NUMBER() OVER (
+                      PARTITION BY user_id
+                      ORDER BY  created_at DESC
+                      ) rn
+            FROM      comment
+            WHERE     ${userFilterQuery}
+            AND       is_pending = FALSE
+            ) AS most_recent
+  WHERE     rn = 1
+  ORDER BY  created_at DESC
+  LIMIT     ${options.settings.sidebar.comment}`
+  const latestDistinctComments = (await db.execute(latestDistinctCommentsQuery)).rows.map(row => row.id).map(id => BigInt(`${id}`))
+  const results = await db
+    .select({
+      id: comment.id,
+      page: comment.pageKey,
+      title: page.title,
+      author: user.name,
+      authorLink: user.link,
+    })
+    .from(comment)
+    .innerJoin(page, eq(comment.pageKey, page.key))
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(inArray(comment.id, latestDistinctComments))
+    .orderBy(desc(comment.id))
+    .limit(options.settings.sidebar.comment)
+
+  return results.map(({ title, author, authorLink, page, id }) => {
+    let trimTitle = title ?? ''
+    if (trimTitle.includes(` - ${options.title}`)) {
+      trimTitle = trimTitle.substring(0, trimTitle.indexOf(` - ${options.title}`))
+    }
+    const link = !options.isProd() && page !== null ? page.replace(options.website, import.meta.env.SITE) : page
+    return {
+      title: trimTitle,
+      author: author ?? '',
+      authorLink: authorLink ?? '',
+      permalink: `${link}#user-comment-${id}`,
+    }
+  })
+}
 
 export async function loadComments(key: string, title: string | null, offset: number): Promise<Comments | null> {
+  await upsertPage(key, title)
   let params: Record<string, string | number | boolean> = {
     limit: options.settings.comments.size,
     offset,
@@ -31,18 +100,14 @@ export async function loadComments(key: string, title: string | null, offset: nu
   return data !== null ? (data as Comments) : null
 }
 
-export async function increaseViews(key: string, title: string) {
-  await fetch(urlJoin(server, '/api/v2/pages/pv'), {
-    method: 'POST',
-    headers: {
-      'Content-type': 'application/json; charset=UTF-8',
-    },
-    body: JSON.stringify({
-      page_key: key,
-      page_title: title,
-      site_name: options.title,
-    }),
-  })
+export async function increaseViews(key: string, title: string | null) {
+  await upsertPage(key, title)
+  await db
+    .update(page)
+    .set({
+      voteUp: sql`${page.voteUp} + 1`,
+    })
+    .where(eq(page.key, sql`${key}`))
 }
 
 export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string): Promise<ErrorResp | CommentResp> {

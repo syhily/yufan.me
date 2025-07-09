@@ -5,7 +5,7 @@ CREATE TABLE "comment" (
 	"deleted_at" timestamp with time zone,
 	"content" text,
 	"page_key" varchar(255),
-	"user_id" text,
+	"user_id" bigint,
 	"is_verified" boolean DEFAULT false,
 	"ua" text,
 	"ip" text,
@@ -32,11 +32,12 @@ CREATE TABLE "page" (
 	"created_at" timestamp with time zone,
 	"updated_at" timestamp with time zone,
 	"deleted_at" timestamp with time zone,
-	"key" varchar(255),
-	"title" text,
+	"key" varchar(255) NOT NULL,
+	"title" text NOT NULL,
 	"vote_up" bigint,
 	"vote_down" bigint,
-	"pv" bigint
+	"pv" bigint,
+	CONSTRAINT "page_key_unique" UNIQUE("key")
 );
 --> statement-breakpoint
 CREATE TABLE "user" (
@@ -44,17 +45,18 @@ CREATE TABLE "user" (
 	"created_at" timestamp with time zone,
 	"updated_at" timestamp with time zone,
 	"deleted_at" timestamp with time zone,
-	"name" varchar(255),
-	"email" varchar(255),
+	"name" varchar(255) NOT NULL,
+	"email" varchar(255) NOT NULL,
 	"email_verified" boolean DEFAULT false NOT NULL,
 	"link" text,
-	"password" text,
+	"password" text NOT NULL,
 	"badge_name" text,
 	"badge_color" text,
 	"last_ip" text,
 	"last_ua" text,
-	"is_admin" boolean,
-	"receive_email" boolean DEFAULT true
+	"is_admin" boolean DEFAULT false,
+	"receive_email" boolean DEFAULT true,
+	CONSTRAINT "user_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "verification" (

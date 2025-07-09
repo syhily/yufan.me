@@ -2816,6 +2816,8 @@ a:hover .overlay {
   margin-bottom: 0.75rem;
   list-style-type: circle;
   font-size: inherit;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .widget-recent-entries ul li a {

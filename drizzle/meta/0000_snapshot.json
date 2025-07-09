@@ -1,5 +1,5 @@
 {
-  "id": "a823568b-aaa5-4f76-bc09-22294d95c137",
+  "id": "1e2a1617-36f7-4943-ab13-22cbd9adddc7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -46,7 +46,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -296,13 +296,13 @@
           "name": "key",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "title": {
           "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "vote_up": {
           "name": "vote_up",
@@ -357,7 +357,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "page_key_unique": {
+          "name": "page_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -394,13 +402,13 @@
           "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "email": {
           "name": "email",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "email_verified": {
           "name": "email_verified",
@@ -419,7 +427,7 @@
           "name": "password",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "badge_name": {
           "name": "badge_name",
@@ -449,7 +457,8 @@
           "name": "is_admin",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": false
         },
         "receive_email": {
           "name": "receive_email",
@@ -508,7 +517,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

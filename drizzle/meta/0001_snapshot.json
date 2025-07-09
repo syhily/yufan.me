@@ -1,6 +1,6 @@
 {
-  "id": "298d8b06-7093-4440-8ae9-e5fa098b65f1",
-  "prevId": "a823568b-aaa5-4f76-bc09-22294d95c137",
+  "id": "6a720727-7cb9-44a6-98c5-0f3ec97a5146",
+  "prevId": "1e2a1617-36f7-4943-ab13-22cbd9adddc7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -36,19 +36,20 @@
           "name": "content",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "''"
         },
         "page_key": {
           "name": "page_key",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "bigint",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "is_verified": {
           "name": "is_verified",
@@ -73,7 +74,8 @@
           "name": "rid",
           "type": "bigint",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": 0
         },
         "is_collapsed": {
           "name": "is_collapsed",
@@ -296,13 +298,13 @@
           "name": "key",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "title": {
           "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "vote_up": {
           "name": "vote_up",
@@ -357,7 +359,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "page_key_unique": {
+          "name": "page_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "key"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -394,13 +404,13 @@
           "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "email": {
           "name": "email",
           "type": "varchar(255)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "email_verified": {
           "name": "email_verified",
@@ -419,7 +429,7 @@
           "name": "password",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "badge_name": {
           "name": "badge_name",
@@ -449,7 +459,8 @@
           "name": "is_admin",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": false
         },
         "receive_email": {
           "name": "receive_email",

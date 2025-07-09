@@ -1,3 +1,11 @@
+// Used for sidebar
+export interface LatestComment {
+  title: string
+  author: string
+  authorLink: string
+  permalink: string
+}
+
 // The single comment.
 export interface Comment {
   id: number
