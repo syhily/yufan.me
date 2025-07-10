@@ -31,7 +31,8 @@ const freshInstall = defineMiddleware(async ({ url: { pathname }, redirect }, ne
 
 const authentication = defineMiddleware(async ({ url: { pathname }, redirect, session }, next) => {
   if (session === undefined) {
-    throw new Error('Astro session is required to be enabled')
+    console.warn('Astro session is required to be enabled')
+    return next()
   }
   // Bypass the login/logout actions. Support traveling slash in request path.
   if (isAdminEndpoints(pathname)) {
