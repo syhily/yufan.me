@@ -8,7 +8,6 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
-import AstroPWA from '@vite-pwa/astro'
 import { uploader } from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
@@ -108,12 +107,6 @@ export default defineConfig({
   },
   integrations: [
     rootImages(),
-    AstroPWA({
-      workbox: { navigateFallback: '/404' },
-      manifest: {
-        background_color: '#404b69',
-      },
-    }),
     mdx({
       remarkPlugins: [astroImage, remarkMath],
       rehypePlugins: [

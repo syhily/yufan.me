@@ -24,10 +24,12 @@ export const authActions = {
         const { id, name, email } = res[0]
         return { success: true, user: { id, name, email } }
       }
-      throw new ActionError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'failed to create admin account',
-      })
+      else {
+        throw new ActionError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'failed to create admin account',
+        })
+      }
     },
   }),
   userLogin: defineAction({

@@ -1,6 +1,5 @@
 ---
 import type { Navigation } from '@/options'
-import { pwaInfo } from 'virtual:pwa-info'
 import PageMeta from '@/components/meta/PageMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
 import Header from '@/components/partial/Header.astro'
@@ -46,8 +45,6 @@ const navigation = Astro.props.navigation || options.navigation
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <script src="@/assets/scripts/pwa.ts"></script>
-    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
   </head>
   <body class="home blog">
     <div class="site-layout">

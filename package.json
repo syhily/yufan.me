@@ -70,7 +70,6 @@
     "@types/pg": "^8.15.4",
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
-    "@vite-pwa/astro": "^1.1.0",
     "astro-eslint-parser": "^1.2.2",
     "astro-netease-player": "^1.0.2",
     "astro-uploader": "^1.2.5",
