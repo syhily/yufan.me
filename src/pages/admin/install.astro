@@ -20,7 +20,6 @@ import SingleLayout from '@/layouts/admin/SingleLayout.astro'
 <script>
 import { actions } from 'astro:actions'
 import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
-import { ADMIN_ENDPOINTS } from '@/middleware'
 
 const installForm = document.querySelector('form')
 if (installForm !== null) {
@@ -47,7 +46,7 @@ if (installForm !== null) {
     if (error) {
       return handleActionError(error)
     }
-    return location.href = ADMIN_ENDPOINTS.login
+    return location.href = '/admin/login'
   })
 }
 </script>

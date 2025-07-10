@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:24 AS base
 
 # Add files for local dev build
 WORKDIR /app
