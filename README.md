@@ -28,19 +28,24 @@ The source code has evolved through four stages.
 ## Local Development
 
 You can fork and clone this project for your own use. But do so at your own risk.
-The project uses Docker compose for development. Run it locally with command:
+The project uses Docker compose for starting the Postgres and Redis.
+Start them with command:
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
-If you want to start the Astro in VSCode and use Docker for database and cache.
-You can use the command below.
+The blog configuration is managed by `.env` file. Use the commands below for running the instance.
 
 ```bash
-cp .env.docker.local .env
-docker compose -f docker-compose-local.yml up
+cp .env.docker .env
+npm i
+npm run dev
 ```
+
+### Debugging with break points
+
+If you want to debug with the break points. Open VSCode and execute the development server in it.
 
 ## Writing
 

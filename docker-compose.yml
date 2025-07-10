@@ -1,8 +1,3 @@
-networks:
-  astro:
-    driver: bridge
-    driver_opts:
-      com.docker.network.bridge.host_binding_ipv4: 127.0.0.1
 services:
   database:
     container_name: astro-database
@@ -16,26 +11,13 @@ services:
       POSTGRES_DB: astro
       POSTGRES_USER: astro
       POSTGRES_PASSWORD: '@str0!SecRets'
-    networks:
-      - astro
+    ports:
+      - 5432:5432
   cache:
     container_name: astro-cache
     image: redis:8
     hostname: astro-cache
     restart: always
     command: /bin/sh -c 'redis-server --requirepass @str0!SecRets'
-    networks:
-      - astro
-  astro:
-    container_name: astro
-    image: syhily/yufan.me
-    build:
-      context: .
-      dockerfile: Dockerfile.local
     ports:
-      - 4321:4321
-    depends_on:
-      - database
-      - cache
-    networks:
-      - astro
+      - 6379:6379
