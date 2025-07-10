@@ -1,6 +1,6 @@
 import type { NewUser, User } from '@/helpers/db/types'
 import bcrypt from 'bcryptjs'
-import { count, eq } from 'drizzle-orm'
+import { count, eq, sql } from 'drizzle-orm'
 import { db } from '@/helpers/db/pool'
 import { user } from '@/helpers/db/schema'
 import options from '@/options'
@@ -11,6 +11,38 @@ import options from '@/options'
 export async function hasAdmin(): Promise<boolean> {
   const res = await db.select({ count: count() }).from(user).where(eq(user.isAdmin, true))
   return res.length > 0 && res[0].count > 0
+}
+
+export async function queryUserId(email: string): Promise<string | null> {
+  const results = await db
+    .select({
+      id: user.id,
+    })
+    .from(user)
+    .where(eq(user.email, sql`${email}`))
+    .limit(1)
+
+  if (results.length === 0) {
+    return null
+  }
+
+  return `${results[0].id}`
+}
+
+export async function queryEmail(id: number): Promise<string | null> {
+  const results = await db
+    .select({
+      email: user.email,
+    })
+    .from(user)
+    .where(eq(user.id, sql`${id}`))
+    .limit(1)
+
+  if (results.length === 0) {
+    return null
+  }
+
+  return results[0].email
 }
 
 export async function createAdmin(name: string, email: string, password: string) {

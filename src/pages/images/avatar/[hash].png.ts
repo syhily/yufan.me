@@ -1,6 +1,6 @@
 import type { APIRoute, ValidRedirectStatus } from 'astro'
 import { Buffer } from 'node:buffer'
-import { queryEmail } from '@/helpers/db/query'
+import { queryEmail } from '@/helpers/auth/user'
 import { encodedEmail, isNumeric, urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
