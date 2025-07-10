@@ -1,4 +1,5 @@
-import { buildTemplate } from '@/helpers/email/helper'
+import { buildTemplate } from '@/helpers/email/templates/helper'
+import options from '@/options'
 
 export function makeConfirmReplyNotificationTemplate(data: {
   confirm_url: string
@@ -149,7 +150,7 @@ export function makeConfirmReplyNotificationTemplate(data: {
   </table><table class="module" role="module" data-type="text" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;" data-muid="5fe38472-ec12-463f-b99d-288ff686e2cb" data-mc-module-version="2019-10-22">
     <tbody>
       <tr>
-        <td style="padding:18px 0px 18px 0px; line-height:22px; text-align:inherit;" height="100%" valign="top" bgcolor="" role="module-content"><div><div style="font-family: inherit; text-align: inherit"><span style="font-size: 18px"><strong>Cusdis</strong></span></div><div></div></div></td>
+        <td style="padding:18px 0px 18px 0px; line-height:22px; text-align:inherit;" height="100%" valign="top" bgcolor="" role="module-content"><div><div style="font-family: inherit; text-align: inherit"><span style="font-size: 18px"><strong>${options.title}</strong></span></div><div></div></div></td>
       </tr>
     </tbody>
   </table><table class="module" role="module" data-type="text" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;" data-muid="38f1c471-cddc-4db0-b03e-7a92cda48c5d" data-mc-module-version="2019-10-22">

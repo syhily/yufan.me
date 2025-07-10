@@ -1,4 +1,5 @@
-import { buildTemplate } from '@/helpers/email/helper'
+import { buildTemplate } from '@/helpers/email/templates/helper'
+import options from '@/options'
 
 export function makeNewCommentEmailTemplate(data: {
   page_slug: string
@@ -153,7 +154,7 @@ export function makeNewCommentEmailTemplate(data: {
   </table><table class="module" role="module" data-type="text" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;" data-muid="ee6c2917-f5a7-48b6-b467-6acf46adb3a1" data-mc-module-version="2019-10-22">
     <tbody>
       <tr>
-        <td style="padding:18px 0px 18px 0px; line-height:22px; text-align:inherit;" height="100%" valign="top" bgcolor="" role="module-content"><div><div style="font-family: inherit; text-align: inherit"><span style="font-size: 24px; font-family: &quot;arial black&quot;, helvetica, sans-serif">Cusdis</span></div><div></div></div></td>
+        <td style="padding:18px 0px 18px 0px; line-height:22px; text-align:inherit;" height="100%" valign="top" bgcolor="" role="module-content"><div><div style="font-family: inherit; text-align: inherit"><span style="font-size: 24px; font-family: &quot;arial black&quot;, helvetica, sans-serif">${options.title}</span></div><div></div></div></td>
       </tr>
     </tbody>
   </table><table class="module" role="module" data-type="text" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;" data-muid="52e3ced4-77a7-44c5-8b24-464c80574b80" data-mc-module-version="2019-10-22">
@@ -229,7 +230,7 @@ export function makeNewCommentEmailTemplate(data: {
     </table><table class="module" role="module" data-type="text" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;" data-muid="c47cdebf-a257-40e5-bf74-cd479dc48c83" data-mc-module-version="2019-10-22">
     <tbody>
       <tr>
-        <td style="padding:4px 0px 4px 0px; line-height:22px; text-align:inherit;" height="100%" valign="top" bgcolor="" role="module-content"><div><div style="font-family: inherit; text-align: inherit"><span style="font-size: 10px">Thanks for using </span><a href="https://cusdis.com"><span style="font-size: 10px">Cusdis</span></a><span style="font-size: 10px">.</span></div><div></div></div></td>
+        <td style="padding:4px 0px 4px 0px; line-height:22px; text-align:inherit;" height="100%" valign="top" bgcolor="" role="module-content"><div><div style="font-family: inherit; text-align: inherit"><span style="font-size: 10px">Thanks for registering </span><a href="${options.website}"><span style="font-size: 10px">${options.title}</span></a><span style="font-size: 10px">.</span></div><div></div></div></td>
       </tr>
     </tbody>
   </table><table class="module" role="module" data-type="spacer" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;" data-muid="8cf75138-7baa-421b-93d4-ccc3c7f324dd">
@@ -259,7 +260,7 @@ export function makeNewCommentEmailTemplate(data: {
         <td valign="top" style="padding:0px 0px 0px 0px; font-size:6px; line-height:10px;" align="left">
           <table align="left" style="-webkit-margin-start:auto;-webkit-margin-end:auto;">
             <tbody><tr align="left"><td style="padding: 0px 5px;" class="social-icon-column">
-      <a role="social-icon-link" href="https://twitter.com/cusdis_hq" target="_blank" alt="Twitter" title="Twitter" style="display:inline-block; background-color:#7AC4F7; height:21px; width:21px;">
+      <a role="social-icon-link" href="https://x.com/${options.settings.twitter}" target="_blank" alt="Twitter" title="Twitter" style="display:inline-block; background-color:#7AC4F7; height:21px; width:21px;">
         <img role="social-icon" alt="Twitter" title="Twitter" src="https://mc.sendgrid.com/assets/social/white/twitter.png" style="height:21px; width:21px;" height="21" width="21">
       </a>
     </td></tr></tbody>
