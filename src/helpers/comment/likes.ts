@@ -6,7 +6,7 @@ import options from '@/options'
 
 const generatePageKey = (permalink: string): string => urlJoin(options.website, permalink, '/')
 
-export async function increaseLikes(permalink: string): Promise<{ like: number, token: string }> {
+export async function increaseLikes(permalink: string): Promise<{ likes: number, token: string }> {
   const pageKey = generatePageKey(permalink)
   const token = makeToken(250)
   // Save the token
@@ -25,7 +25,7 @@ export async function increaseLikes(permalink: string): Promise<{ like: number, 
     })
     .where(eq(page.key, sql`${pageKey}`))
 
-  return { like: await queryLikes(permalink), token }
+  return { likes: await queryLikes(permalink), token }
 }
 
 export async function decreaseLikes(permalink: string, token: string) {

@@ -23,9 +23,7 @@ services:
     image: redis:8
     hostname: astro-cache
     restart: always
-    environment:
-      REDIS_PASSWORD: '@str0!SecRets'
-    command: /bin/sh -c 'redis-server --requirepass ${REDIS_PASSWORD}'
+    command: /bin/sh -c 'redis-server --requirepass @str0!SecRets'
     networks:
       - astro
   astro:
