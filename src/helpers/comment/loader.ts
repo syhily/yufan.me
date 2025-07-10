@@ -128,7 +128,7 @@ export async function increaseViews(key: string, title: string | null) {
   await db
     .update(page)
     .set({
-      voteUp: sql`${page.voteUp} + 1`,
+      pv: sql`${page.pv} + 1`,
     })
     .where(eq(page.key, sql`${key}`))
 }
