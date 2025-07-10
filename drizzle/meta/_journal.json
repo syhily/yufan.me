@@ -15,6 +15,13 @@
       "when": 1752053494554,
       "tag": "0001_change_column_types.sql",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752162846418,
+      "tag": "0002_add_column_limit",
+      "breakpoints": true
     }
   ]
 }
