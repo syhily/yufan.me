@@ -84,6 +84,13 @@ export default defineConfig({
       REDIS_HOST: envField.string({ context: 'server', access: 'secret' }),
       REDIS_PORT: envField.number({ context: 'server', access: 'secret' }),
       REDIS_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
+      // SMTP Service
+      SMTP_HOST: envField.string({ context: 'server', access: 'secret', optional: true }),
+      SMTP_PORT: envField.number({ context: 'server', access: 'secret', optional: true }),
+      SMTP_SECURE: envField.boolean({ context: 'server', access: 'secret', optional: true, default: true }),
+      SMTP_USER: envField.string({ context: 'server', access: 'secret', optional: true }),
+      SMTP_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
+      SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Static Assets
       BUILD_OPEN_GRAPH: envField.boolean({
         context: 'server',
