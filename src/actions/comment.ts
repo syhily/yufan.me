@@ -30,7 +30,7 @@ export const commentActions = {
         props: {
           depth: resp.rid === 0 ? 1 : 2,
           comment: resp,
-          pending: resp.is_pending,
+          pending: resp.isPending,
         },
       })
 
