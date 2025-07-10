@@ -5,9 +5,9 @@ import Comments from '@/components/comment/Comments.astro'
 import LikeButton from '@/components/like/LikeButton.astro'
 import Album from '@/components/mdx/album/Album.astro'
 import Image from '@/components/mdx/image/Image.astro'
+import Friends from '@/components/mdx/page/Friends.astro'
 import Solution from '@/components/mdx/solutions/Solution.astro'
 import PageMeta from '@/components/meta/PageMeta.astro'
-import Friends from '@/components/page/friend/Friends.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Footer from '@/components/partial/Footer.astro'
 import { urlJoin } from '@/helpers/tools'
@@ -45,13 +45,13 @@ const { Content, headings } = await page.render()
                     Image,
                     Album,
                     Solution,
+                    Friends,
                   }}
                 />
               )
             }
           </div>
         </div>
-        {page.friend && <Friends />}
         <LikeButton permalink={page.permalink} />
         {page.comments && <Comments commentKey={urlJoin(options.website, page.permalink, '/')} title={page.title} />}
       </div>

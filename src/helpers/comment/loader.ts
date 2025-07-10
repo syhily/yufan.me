@@ -3,12 +3,12 @@ import type { CommentAndUser, CommentItem, CommentReq, Comments, ErrorResp, Late
 import type { NewComment, NewPage, Page } from '@/helpers/db/types'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
+import { userSession } from '@/helpers/auth/session'
 import { createUser } from '@/helpers/auth/user'
 import { db } from '@/helpers/db/pool'
 import { comment, page, user } from '@/helpers/db/schema'
 import { parseContent } from '@/helpers/markdown'
 import options from '@/options'
-import { userSession } from '../auth/session'
 
 async function upsertPage(key: string, title: string | null): Promise<Page> {
   const res = await db.select().from(page).where(eq(page.key, key)).limit(1)

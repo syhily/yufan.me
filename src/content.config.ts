@@ -153,7 +153,6 @@ const pagesCollection = defineCollection({
     og: z.string().optional(),
     published: z.boolean().optional().default(true),
     summary: z.string().optional(),
-    friend: z.boolean().optional().default(false),
     toc: toc(),
   }),
 })
