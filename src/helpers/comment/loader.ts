@@ -150,9 +150,14 @@ export async function createComment(commentReq: CommentReq, req: Request, client
     }
   }
 
-  // Ensure the commenter is the same sa the login user.
+  // Ensure the commenter is the same sa the login user
   else if (loginUser !== undefined && loginUser.email !== u.email) {
     return { msg: '评论邮箱与登陆账号不相符。' }
+  }
+
+  // Ensure the registered user should login to comment
+  if (u.password !== undefined && u.password !== null && u.password !== '' && loginUser === undefined) {
+    return { msg: '该邮箱已经注册，请登录后再进行评论留言。' }
   }
 
   // Query the existing comments for the user for deduplication.
