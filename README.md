@@ -143,10 +143,15 @@ and [Iroha Mochi](https://modi.jpn.org/font_iroha-mochi.php) with [license](lice
 
 They are the fonts that can be used in business without any charge.
 
-### Open Graph Font License
+### Web Font License
 
 The [OPPOSans 4.0](https://open.oppomobile.com/new/developmentDoc/info?id=13223)
 is used for rendering the open graph image in my weblog with [license](licenses/LICENSE.opposans.txt)
+
+### Open Graph Font License
+
+The [NoteSans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)
+is used for rendering the open graph image in my weblog with [license](licenses/LICENSE.notosans.txt)
 
 ### Third Party Codes License
 

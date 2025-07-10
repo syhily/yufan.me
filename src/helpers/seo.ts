@@ -67,9 +67,9 @@ export interface PostOgMeta {
 function parseOgImageUrl(ogImageUrl?: string): string {
   return ogImageUrl === undefined
     ? options.defaultOpenGraph()
-    : ogImageUrl.startsWith('/')
-      ? urlJoin(options.assetsPrefix(), ogImageUrl)
-      : ogImageUrl
+    : !ogImageUrl.startsWith('http')
+        ? urlJoin(import.meta.env.SITE, ogImageUrl)
+        : ogImageUrl
 }
 
 export function getPageMeta({

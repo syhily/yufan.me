@@ -86,7 +86,6 @@ const Options = z
       .returns(z.string()),
   })
   .transform((opts) => {
-    const assetsPrefix = (): string => (isProd() ? opts.settings.assetPrefix : opts.local.website)
     return {
       ...opts,
       // Monkey patch for the issue https://github.com/withastro/astro/issues/11282
@@ -94,8 +93,8 @@ const Options = z
       isProd,
       // Given that the import.meta.env.ASSETS_PREFIX has two types.
       // I have to use this uniform method instead.
-      assetsPrefix,
-      defaultOpenGraph: (): string => `${assetsPrefix()}/images/open-graph.png`,
+      assetsPrefix: (): string => (isProd() ? opts.settings.assetPrefix : opts.local.website),
+      defaultOpenGraph: (): string => `${import.meta.env.SITE}/images/open-graph.png`,
     }
   })
   .refine(
