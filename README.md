@@ -38,7 +38,7 @@ If you want to start the Astro in VSCode and use Docker for database and cache.
 You can use the command below.
 
 ```bash
-cp .env.docker .env
+cp .env.docker.local .env
 docker compose -f docker-compose-local.yml up
 ```
 
