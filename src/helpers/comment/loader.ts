@@ -1,12 +1,11 @@
-import type { CommentAndUser, CommentItem, CommentReq, CommentResp, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
-import type { NewPage, Page } from '@/helpers/db/types'
+import type { CommentAndUser, CommentItem, CommentReq, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
+import type { NewComment, NewPage, Page } from '@/helpers/db/types'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
+import { createUser } from '@/helpers/auth/user'
 import { db } from '@/helpers/db/pool'
-import { queryUser } from '@/helpers/db/query'
 import { comment, page, user } from '@/helpers/db/schema'
 import { parseContent } from '@/helpers/markdown'
-import { urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
 async function upsertPage(key: string, title: string | null): Promise<Page> {
@@ -23,9 +22,6 @@ async function upsertPage(key: string, title: string | null): Promise<Page> {
   const np: NewPage = { title: title || '无标题', key, voteUp: 0, voteDown: 0, pv: 0 }
   return (await db.insert(page).values(np).returning())[0]
 }
-
-// Access the artalk in internal docker host when it was deployed on zeabur.
-const server = ''
 
 export async function latestComments(): Promise<LatestComment[]> {
   const admins = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
@@ -106,19 +102,19 @@ const unionCommentSelect = {
 export async function loadComments(key: string, title: string | null, offset: number): Promise<Comments | null> {
   await upsertPage(key, title)
 
-  const counts = (await db.select({ counts: count() }).from(comment).where(eq(comment.pageKey, key)))[0].counts
-  const rootCounts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n))))[0].counts
+  const counts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.isPending, false))))[0].counts
+  const rootCounts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.isPending, false), eq(comment.rootId, 0n))))[0].counts
   const rootComments = await db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n)))
+    .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n), eq(comment.isPending, false)))
     .limit(options.settings.comments.size)
     .orderBy(desc(comment.createdAt))
     .offset(offset)
   const childComments = await db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, key), inArray(comment.rootId, rootComments.map(c => c.id))))
+    .where(and(eq(comment.pageKey, key), eq(comment.isPending, false), inArray(comment.rootId, rootComments.map(c => c.id))))
 
   return {
     count: counts,
@@ -137,66 +133,90 @@ export async function increaseViews(key: string, title: string | null) {
     .where(eq(page.key, sql`${key}`))
 }
 
-export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string): Promise<ErrorResp | CommentResp> {
-  const user = await queryUser(commentReq.email)
-  if (user !== null && user.name !== null) {
-    // Replace the comment user name for avoiding the duplicated users creation.
-    // We may add the commenter account management in the future.
-    commentReq.name = user.name
+export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string): Promise<ErrorResp | CommentAndUser> {
+  // Upsert the comment user.
+  const u = await createUser(commentReq.name, commentReq.email, commentReq.link || '')
+  if (u === null) {
+    return { msg: '系统错误，用户创建失败。' }
   }
 
-  // Query the existing comments for the user.
-  const historicalParams = new URLSearchParams({
-    email: commentReq.email,
-    page_key: commentReq.page_key,
-    site_name: options.title,
-    flat_mode: 'true',
-    limit: '5',
-    sort_by: 'date_desc',
-    type: 'all',
-  }).toString()
-  const historicalComments = await fetch(urlJoin(server, `/api/v2/comments?${historicalParams}`), {
-    method: 'GET',
-    headers: {
-      'Content-type': 'application/json; charset=UTF-8',
-    },
-  })
-    .then(async resp => (await resp.json()).comments as Comment[])
-    .catch((e) => {
-      console.error(e)
-      return new Array<Comment>()
-    })
-
-  if (historicalComments.find(comment => comment.content === commentReq.content)) {
+  // Query the existing comments for the user for deduplication.
+  const historicalComments = await db.select()
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .limit(10)
+  if (historicalComments.find(c => c.comment.content === commentReq.content)) {
     return { msg: '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。' }
   }
 
-  const response = await fetch(urlJoin(server, '/api/v2/comments'), {
-    method: 'POST',
-    headers: {
-      'User-Agent': req.headers.get('User-Agent') || 'node',
-      'X-Forwarded-For': clientAddress,
-      'Content-type': 'application/json; charset=UTF-8',
-    },
-    body: JSON.stringify({ ...commentReq, site_name: options.title, rid: commentReq.rid ? Number(commentReq.rid) : 0 }),
-  }).catch((e) => {
-    console.error(e)
-    return null
-  })
+  // Update the comment user information
+  db.update(user).set({ lastUa: req.headers.get('User-Agent'), lastIp: clientAddress }).where(eq(user.id, u.id))
 
-  if (response === null) {
-    return { msg: '服务端异常，评论创建失败。' }
+  // Calculate comment architecture
+  let rootId = 0n
+  if (commentReq.rid !== undefined && commentReq.rid !== 0) {
+    const r = await db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.rid, commentReq.rid)).limit(1)
+    if (r.length > 0 && r[0].rootId !== null) {
+      rootId = r[0].rootId
+    }
   }
 
-  if (!response.ok) {
-    return (await response.json()) as ErrorResp
+  // Should I bypass the check.
+  const pendingStatus = await db.select({ count: count() }).from(comment).where(and(eq(comment.userId, u.id), eq(comment.isPending, false)))
+  const isPending = pendingStatus.length === 0 || pendingStatus[0].count === 0
+
+  // Insert the comment
+  const newComment: NewComment = {
+    content: commentReq.content,
+    pageKey: commentReq.page_key,
+    userId: u.id,
+    isVerified: u.emailVerified,
+    ua: req.headers.get('User-Agent'),
+    ip: clientAddress,
+    rid: commentReq.rid || 0,
+    isCollapsed: false,
+    isPending,
+    isPinned: false,
+    voteUp: 0,
+    voteDown: 0,
+    rootId,
+  }
+  const res = await db.insert(comment).values(newComment).returning()
+  if (res.length === 0) {
+    return { msg: '系统错误，评论创建失败。' }
   }
 
-  // Parse comment content.
-  const commentResp = (await response.json()) as CommentResp
-  commentResp.content = await parseContent(commentResp.content || '该留言内容为空')
+  // Parse comment content into HTML.
+  const cr = res[0]
 
-  return commentResp
+  cr.content = await parseContent(cr.content || '该留言内容为空')
+
+  // Return the comment
+  return {
+    id: cr.id,
+    createAt: cr.createdAt,
+    updatedAt: cr.updatedAt,
+    deleteAt: cr.deletedAt,
+    content: cr.content,
+    pageKey: cr.pageKey,
+    userId: cr.userId,
+    isVerified: cr.isVerified,
+    ua: cr.ua,
+    ip: cr.ip,
+    rid: cr.rid,
+    isCollapsed: cr.isCollapsed,
+    isPending: cr.isPending,
+    isPinned: cr.isPinned,
+    voteUp: cr.voteUp,
+    voteDown: cr.voteDown,
+    rootId: cr.rootId,
+    name: u.name,
+    email: u.email,
+    emailVerified: u.emailVerified,
+    link: u.link,
+    badgeName: u.badgeName,
+    badgeColor: u.badgeColor,
+  }
 }
 
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {

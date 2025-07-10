@@ -1,9 +1,25 @@
 import type { APIRoute } from 'astro'
+import { Buffer } from 'node:buffer'
+import { cacheBuffer, loadBuffer } from '@/helpers/cache/redis'
 
 async function loadCalendarImage(year: string, time: string): Promise<Response> {
   const link = `https://img.owspace.com/Public/uploads/Download/${year}/${time}.jpg`
-  return await fetch(link, {
-    referrer: '',
+  const cacheKey = `calendar-${year}-${time}`
+  const buffer = await loadBuffer(cacheKey)
+
+  if (buffer === null) {
+    const resp = await fetch(link, { referrer: '' })
+    if (resp.status < 300 && resp.status >= 200) {
+      cacheBuffer(cacheKey, Buffer.from(await resp.arrayBuffer()), 60 * 60 * 24)
+    }
+    return resp
+  }
+
+  return new Response(buffer, {
+    headers: {
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'public, max-age=604800',
+    },
   })
 }
 

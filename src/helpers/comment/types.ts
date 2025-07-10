@@ -57,11 +57,6 @@ export interface CommentReq {
   rid?: number
 }
 
-// Create comment response.
-export interface CommentResp extends CommentAndUser {
-  is_pending: boolean
-}
-
 // Error response in creating comment.
 export interface ErrorResp {
   msg: string

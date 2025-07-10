@@ -61,6 +61,26 @@ export async function createAdmin(name: string, email: string, password: string)
   return await db.insert(user).values(admin).returning()
 }
 
+export async function createUser(name: string, email: string, website: string): Promise<User | null> {
+  const existing = await db.select().from(user).where(eq(user.email, email)).limit(1)
+  if (existing.length > 0) {
+    return existing[0]
+  }
+  const u: NewUser = {
+    name,
+    email,
+    emailVerified: false,
+    link: website,
+    isAdmin: false,
+    password: '',
+    badgeName: '',
+    badgeColor: '',
+    receiveEmail: true,
+  }
+  const res = await db.insert(user).values(u).returning()
+  return res.length > 0 ? res[0] : null
+}
+
 export async function verifyCredential(email: string, password: string): Promise<string | User> {
   const res = await db.select().from(user).where(eq(user.email, email)).limit(1)
   if (res.length === 1) {
