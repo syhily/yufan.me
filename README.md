@@ -28,10 +28,18 @@ The source code has evolved through four stages.
 ## Local Development
 
 You can fork and clone this project for your own use. But do so at your own risk.
-The project uses Docker compose for development. Run it locally with these commands:
+The project uses Docker compose for development. Run it locally with command:
 
 ```bash
 docker compose up
+```
+
+If you want to start the Astro in VSCode and use Docker for database and cache.
+You can use the command below.
+
+```bash
+cp .env.docker .env
+docker compose -f docker-compose-local.yml up
 ```
 
 ## Writing
