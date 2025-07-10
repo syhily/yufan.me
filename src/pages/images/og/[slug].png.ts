@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro'
-import { defaultOpenGraph, drawOpenGraph } from '@/helpers/og'
-import { getPage, getPost, pages, posts } from '@/helpers/schema'
+import { Buffer } from 'node:buffer'
+import { cacheBuffer, loadBuffer } from '@/helpers/cache/redis'
+import { drawOpenGraph } from '@/helpers/og'
+import { getPage, getPost } from '@/helpers/schema'
+import defaultOpenGraph from '@/images/open-graph.png?arraybuffer'
 import options from '@/options'
 
 async function fallback() {
-  return new Response(await defaultOpenGraph(), {
+  return new Response(Buffer.from(defaultOpenGraph), {
     headers: { 'Content-Type': 'image/png' },
   })
 }
@@ -39,16 +42,13 @@ export const GET: APIRoute = async ({ params }) => {
   }
 
   // Fetch the cover image as the background
-  const buffer = await drawOpenGraph({ title, summary, cover })
+  let buffer = await loadBuffer(`open-graph-${cover}`)
+  if (buffer === null) {
+    buffer = await drawOpenGraph({ title, summary, cover })
+    cacheBuffer(`open-graph-${cover}`, buffer, 24 * 60 * 60)
+  }
 
   return new Response(buffer, {
     headers: { 'Content-Type': 'image/png' },
   })
-}
-
-export async function getStaticPaths() {
-  return [
-    ...posts.filter(post => !post.og).map(post => ({ params: { slug: post.slug } })),
-    ...pages.filter(page => !page.og).map(page => ({ params: { slug: page.slug } })),
-  ]
 }

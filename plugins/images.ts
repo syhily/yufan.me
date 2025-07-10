@@ -1,4 +1,4 @@
-import type { AstroIntegration, RouteOptions } from 'astro'
+import type { AstroIntegration } from 'astro'
 import type { Literal, Node, Parent } from 'unist'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -14,19 +14,6 @@ export function rootImages(): AstroIntegration {
     hooks: {
       'astro:build:generated': ({ dir }) => {
         fs.cpSync(path.join(process.cwd(), 'images'), path.join(url.fileURLToPath(dir), 'images'), { recursive: true })
-      },
-    },
-  }
-}
-
-export function openGraph(): AstroIntegration {
-  return {
-    name: 'Open Graph Generator',
-    hooks: {
-      'astro:route:setup': (options: { route: RouteOptions }) => {
-        if (options.route.component === 'src/pages/images/og/[slug].png.ts') {
-          options.route.prerender = process.env.BUILD_OPEN_GRAPH === undefined || process.env.BUILD_OPEN_GRAPH === 'true'
-        }
       },
     },
   }

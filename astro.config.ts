@@ -16,14 +16,15 @@ import rehypeMathjax from 'rehype-mathjax'
 import rehypeSlug from 'rehype-slug'
 import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
+import arraybuffer from 'vite-plugin-arraybuffer'
+import Font from 'vite-plugin-font'
 import options from './options'
-import { astroImage, openGraph, rootImages } from './plugins/images'
+import { astroImage, rootImages } from './plugins/images'
 
 const {
   REDIS_HOST,
   REDIS_PORT,
   REDIS_PASSWORD,
-  BUILD_OPEN_GRAPH,
   UPLOAD_STATIC_FILES,
   S3_ENDPOINT,
   S3_BUCKET,
@@ -92,11 +93,6 @@ export default defineConfig({
       SMTP_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Static Assets
-      BUILD_OPEN_GRAPH: envField.boolean({
-        context: 'server',
-        access: 'public',
-        default: true,
-      }),
       UPLOAD_STATIC_FILES: envField.boolean({
         context: 'server',
         access: 'public',
@@ -124,10 +120,7 @@ export default defineConfig({
       ],
     }),
     uploader({
-      enable:
-        BUILD_OPEN_GRAPH === undefined
-        || BUILD_OPEN_GRAPH === 'true'
-        || UPLOAD_STATIC_FILES === 'true',
+      enable: UPLOAD_STATIC_FILES === 'true',
       paths: [
         { path: 'images', recursive: true, keep: false, override: false },
         'assets',
@@ -139,7 +132,6 @@ export default defineConfig({
       accessKey: S3_ACCESS_KEY as string,
       secretAccessKey: S3_SECRET_ACCESS_KEY as string,
     }),
-    openGraph(),
   ],
   adapter: node({
     mode: 'standalone',
@@ -174,6 +166,7 @@ export default defineConfig({
         'sharp',
       ],
     },
+    plugins: [arraybuffer(), Font.vite()],
     assetsInclude: ['images/**/*'],
   },
   build: {

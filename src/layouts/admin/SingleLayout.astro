@@ -1,4 +1,5 @@
 ---
+import { css as OPPOSans } from '@/assets/fonts/opposans.ttf'
 import LogoDark from '@/components/logo/LogoDark.astro'
 import LogoLarge from '@/components/logo/LogoLarge.astro'
 import PageMeta from '@/components/meta/PageMeta.astro'
@@ -43,7 +44,7 @@ const description = Astro.props.description || options.description
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
-  <body class="admin single">
+  <body class="admin single" style={{ fontFamily: OPPOSans.family }}>
     <div class="site-layout">
       <div class="desktop-brand">
         <LogoDark />

@@ -6,9 +6,11 @@
     "baseUrl": ".",
     "module": "ESNext",
     "paths": {
-      "@/options": ["./options.ts"],
+      "@/options": ["options.ts"],
+      "@/images/*": ["images/*"],
       "@/*": ["src/*"]
     },
+    "types": ["vite-plugin-arraybuffer/types", "vite-plugin-font/src/font"],
     "strict": true,
     "strictNullChecks": true
   },

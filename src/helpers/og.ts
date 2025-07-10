@@ -1,9 +1,8 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import process from 'node:process'
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
+import NotoSansSC from '@/assets/fonts/NotoSansSC-Bold.ttf?arraybuffer'
+
 /**
  * Generate the open graph.
  * It's highly inspired by the code from https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx
@@ -113,40 +112,20 @@ function drawImageProp(ctx: SKRSContext2D, img: Image, x: number, y: number, w: 
   ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h)
 }
 
-async function fetchCover(cover: string): Promise<Buffer> {
-  if (cover.startsWith(options.assetsPrefix())) {
-    const coverPath = join(process.cwd(), cover.substring(options.assetsPrefix().length))
-    return await readFile(coverPath)
-  }
-
-  if (cover.startsWith('http')) {
-    return Buffer.from(await (await fetch(cover)).arrayBuffer())
-  }
-
-  const coverPath = join(process.cwd(), 'public', cover)
-  return await readFile(coverPath)
-}
-
 export interface OpenGraphProps {
   title: string
   summary: string
   cover: string
 }
 
-export async function defaultOpenGraph(): Promise<Buffer> {
-  return await fetchCover('/images/open-graph.png')
-}
-
 // Register the font if it doesn't exist
-if (!GlobalFonts.has('OPPOSans')) {
-  // eslint-disable-next-line antfu/no-top-level-await
-  const fontBuffer = await readFile(join(process.cwd(), '/src/assets/styles/opposans/opposans.ttf'))
-  GlobalFonts.register(fontBuffer, 'OPPOSans')
+if (!GlobalFonts.has('NotoSansSC')) {
+  GlobalFonts.register(Buffer.from(NotoSansSC), 'NotoSansSC')
 }
 
 export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
   // Fetch the cover image as the background
-  const coverImage = await loadImage(await fetchCover(cover))
+  const coverImage = await loadImage(cover)
 
   // Generate the logo image
   const logoImage = await loadImage(Buffer.from(darkLogo, 'utf-8'))
@@ -167,7 +146,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   // Add website title
   ctx.fillStyle = '#e0c2bb'
-  ctx.font = '800 64px OPPOSans'
+  ctx.font = '800 64px NotoSansSC'
   printAt(ctx, options.title, 96, 180, 96, openGraphWidth, 64)
 
   // Add website logo
@@ -175,11 +154,11 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   // Add article title
   ctx.fillStyle = '#fff'
-  ctx.font = '800 48px OPPOSans'
+  ctx.font = '800 48px NotoSansSC'
   printAt(ctx, title, 96, openGraphHeight / 2 - 64, 96, openGraphWidth - 192, 64)
 
   // Add article summary
-  ctx.font = '800 36px OPPOSans'
+  ctx.font = '800 36px NotoSansSC'
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   printAt(ctx, description, 96, openGraphHeight - 200, 48, openGraphWidth - 192, 36)
 

@@ -1,5 +1,6 @@
 ---
 import type { Navigation } from '@/options'
+import { css as OPPOSans } from '@/assets/fonts/opposans.ttf'
 import PageMeta from '@/components/meta/PageMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
 import Header from '@/components/partial/Header.astro'
@@ -46,7 +47,7 @@ const navigation = Astro.props.navigation || options.navigation
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
-  <body class="home blog">
+  <body class="home blog" style={{ fontFamily: OPPOSans.family }}>
     <div class="site-layout">
       <Header {navigation} />
       <main class="site-main">
