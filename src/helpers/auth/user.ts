@@ -13,6 +13,17 @@ export async function hasAdmin(): Promise<boolean> {
   return res.length > 0 && res[0].count > 0
 }
 
+export async function queryUser(email: string, password: string): Promise<null | User> {
+  const res = await db.select().from(user).where(eq(user.email, email)).limit(1)
+  if (res.length === 1) {
+    const user = res[0]
+    if (await bcrypt.compare(password, user.password)) {
+      return user
+    }
+  }
+  return null
+}
+
 export async function queryUserId(email: string): Promise<string | null> {
   const results = await db
     .select({
@@ -79,15 +90,4 @@ export async function createUser(name: string, email: string, website: string): 
   }
   const res = await db.insert(user).values(u).returning()
   return res.length > 0 ? res[0] : null
-}
-
-export async function verifyCredential(email: string, password: string): Promise<string | User> {
-  const res = await db.select().from(user).where(eq(user.email, email)).limit(1)
-  if (res.length === 1) {
-    const user = res[0]
-    if (await bcrypt.compare(password, user.password)) {
-      return user
-    }
-  }
-  return 'Invalid credential'
 }

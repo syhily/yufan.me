@@ -1,7 +1,8 @@
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 import { validateToken } from '@/helpers/auth/csrf'
-import { createAdmin, hasAdmin, verifyCredential } from '@/helpers/auth/user'
+import { login } from '@/helpers/auth/session'
+import { createAdmin, hasAdmin } from '@/helpers/auth/user'
 import { exceedLimit, incrLimit } from '@/helpers/cache/redis'
 
 export const authActions = {
@@ -39,7 +40,7 @@ export const authActions = {
       password: z.string(),
       token: z.string(),
     }),
-    handler: async ({ email, password, token }, { session, clientAddress }) => {
+    handler: async ({ email, password, token }, { session, clientAddress, request }) => {
       if (session === undefined) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -61,22 +62,14 @@ export const authActions = {
         })
       }
 
-      const user = await verifyCredential(email, password)
-      if (typeof user === 'string') {
+      const success = await login({ email, password, session, request, clientAddress })
+      if (!success) {
         await incrLimit(clientAddress)
         throw new ActionError({
           code: 'FORBIDDEN',
-          message: user,
+          message: 'Invalid login credential.',
         })
       }
-
-      session.set('user', {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        website: user.link,
-        admin: user.isAdmin !== null && user.isAdmin,
-      })
     },
   }),
 }

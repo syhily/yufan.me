@@ -1,3 +1,4 @@
+import type { AstroSession } from 'astro'
 import type { CommentAndUser, CommentItem, CommentReq, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
 import type { NewComment, NewPage, Page } from '@/helpers/db/types'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
@@ -7,6 +8,7 @@ import { db } from '@/helpers/db/pool'
 import { comment, page, user } from '@/helpers/db/schema'
 import { parseContent } from '@/helpers/markdown'
 import options from '@/options'
+import { userSession } from '../auth/session'
 
 async function upsertPage(key: string, title: string | null): Promise<Page> {
   const res = await db.select().from(page).where(eq(page.key, key)).limit(1)
@@ -133,11 +135,24 @@ export async function increaseViews(key: string, title: string | null) {
     .where(eq(page.key, sql`${key}`))
 }
 
-export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string): Promise<ErrorResp | CommentAndUser> {
+export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string, session: AstroSession): Promise<ErrorResp | CommentAndUser> {
   // Upsert the comment user.
   const u = await createUser(commentReq.name, commentReq.email, commentReq.link || '')
   if (u === null) {
     return { msg: '系统错误，用户创建失败。' }
+  }
+
+  // Block the comment from the Admin
+  const loginUser = await userSession(session)
+  if (u.isAdmin) {
+    if (loginUser === undefined) {
+      return { msg: '管理员账号需要登陆才能评论。' }
+    }
+  }
+
+  // Ensure the commenter is the same sa the login user.
+  else if (loginUser !== undefined && loginUser.email !== u.email) {
+    return { msg: '评论邮箱与登陆账号不相符。' }
   }
 
   // Query the existing comments for the user for deduplication.
@@ -150,7 +165,9 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   }
 
   // Update the comment user information
-  db.update(user).set({ lastUa: req.headers.get('User-Agent'), lastIp: clientAddress }).where(eq(user.id, u.id))
+  db.update(user)
+    .set({ lastUa: req.headers.get('User-Agent'), lastIp: clientAddress })
+    .where(eq(user.id, u.id))
 
   // Calculate comment architecture
   let rootId = 0n

@@ -1,9 +1,11 @@
 ---
+import { logout } from '@/helpers/auth/session'
+
 const session = Astro.session
 if (session === undefined) {
   throw new Error('Please configure your astro session store')
 }
-session.delete('user')
+logout(session)
 Astro.redirect('/')
 ---
 <Fragment />

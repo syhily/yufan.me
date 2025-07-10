@@ -1,5 +1,6 @@
 import { getActionContext } from 'astro:actions'
 import { defineMiddleware, sequence } from 'astro:middleware'
+import { userSession } from '@/helpers/auth/session'
 import { hasAdmin } from '@/helpers/auth/user'
 import { posts } from '@/helpers/schema'
 import { urlJoin } from '@/helpers/tools'
@@ -46,7 +47,7 @@ const authentication = defineMiddleware(async ({ url: { pathname }, redirect, se
   }
   if (pathname.startsWith('/admin/') || pathname === '/admin') {
     // Require user information in session.
-    const user = await session.get('user')
+    const user = userSession(session)
     if (user === undefined) {
       return redirect(ADMIN_ENDPOINTS.login)
     }

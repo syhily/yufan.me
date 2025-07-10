@@ -17,8 +17,11 @@ export const commentActions = {
       content: z.string().min(1),
       rid: z.number().optional(),
     }),
-    handler: async (input, { request, clientAddress }) => {
-      const resp = await createComment(input, request, clientAddress)
+    handler: async (input, { request, clientAddress, session }) => {
+      if (session === undefined) {
+        throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: 'The Astro session is not correctly configured.' })
+      }
+      const resp = await createComment(input, request, clientAddress, session)
       if ('msg' in resp) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
