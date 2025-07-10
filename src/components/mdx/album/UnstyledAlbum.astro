@@ -1,20 +1,20 @@
 ---
-import Image from '@/components/mdx/image/UnstyledImage.astro';
-import { getAlbum } from '@/helpers/schema';
+import Image from '@/components/mdx/image/UnstyledImage.astro'
+import { getAlbum } from '@/helpers/schema'
 
 interface Props {
-  id: string;
+  id: string
 }
 
-const { id } = Astro.props;
-const album = getAlbum(id);
+const { id } = Astro.props
+const album = getAlbum(id)
 ---
 
 {
   album !== undefined && (
     <Fragment>
       {album.description && <Fragment set:html={album.description} />}
-      {album.pictures.map((picture) => (
+      {album.pictures.map(picture => (
         <Fragment>
           {picture.title && <h3>{picture.title}</h3>}
           <Image alt={picture.title || ''} {...picture} />

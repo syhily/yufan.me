@@ -1,36 +1,36 @@
 ---
-import FeaturePost from '@/components/page/post/FeaturePost.astro';
-import type { Post } from '@/helpers/schema';
-import options from '@/options';
-import { DateTime } from 'luxon';
+import type { Post } from '@/helpers/schema'
+import { DateTime } from 'luxon'
+import FeaturePost from '@/components/page/post/FeaturePost.astro'
+import options from '@/options'
 
 interface Props {
-  posts: Post[];
+  posts: Post[]
 }
 
-const { posts } = Astro.props;
-const historicalPosts = (): Post[] => {
+const { posts } = Astro.props
+function historicalPosts(): Post[] {
   // Skip the first 6 pages.
-  const offset = options.settings.pagination.posts * 6;
+  const offset = options.settings.pagination.posts * 6
   if (posts.length - offset < 43 * 3 + 2) {
     // Can't generate historical posts.
-    return [];
+    return []
   }
 
-  const now = DateTime.now().setZone(options.settings.timeZone);
-  const radical = now.month + now.day;
+  const now = DateTime.now().setZone(options.settings.timeZone)
+  const radical = now.month + now.day
 
-  return [posts[offset + radical + 43 * 2 - 1], posts[offset + radical + 43 - 1], posts[offset + radical - 1]];
-};
-const featurePosts = options.settings.post.feature ?? [];
+  return [posts[offset + radical + 43 * 2 - 1], posts[offset + radical + 43 - 1], posts[offset + radical - 1]]
+}
+const featurePosts = options.settings.post.feature ?? []
 
-const metas: Post[] =
-  featurePosts.length < 3
+const metas: Post[]
+  = featurePosts.length < 3
     ? historicalPosts()
     : featurePosts
-        .map((slug) => posts.find((post) => post.slug === slug))
-        .flatMap((post) => (typeof post === 'undefined' ? [] : [post]))
-        .slice(0, 3);
+        .map(slug => posts.find(post => post.slug === slug))
+        .filter(post => post !== undefined)
+        .slice(0, 3)
 ---
 
 {

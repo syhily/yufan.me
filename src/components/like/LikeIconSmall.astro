@@ -1,12 +1,12 @@
 ---
-import { queryLikes } from '@/helpers/db/query';
+import { queryLikes } from '@/helpers/comment/likes'
 
 interface Props {
-  permalink: string;
+  permalink: string
 }
 
-const { permalink } = Astro.props;
-const likes = await queryLikes(permalink);
+const { permalink } = Astro.props
+const likes = await queryLikes(permalink)
 ---
 
 <div>

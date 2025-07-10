@@ -1,8 +1,24 @@
 {
   "name": "yufan.me",
+  "type": "module",
   "version": "3.0.0",
   "private": true,
   "description": "The personal blog for Yufan Sheng",
+  "author": {
+    "name": "Yufan Sheng",
+    "email": "syhily@gmail.com",
+    "url": "https://yufan.me"
+  },
+  "license": "MIT",
+  "homepage": "https://yufan.me",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syhily/yufan.me.git"
+  },
+  "bugs": {
+    "url": "https://github.com/syhily/yufan.me/issues",
+    "email": "syhily@gmail.com"
+  },
   "keywords": [
     "blog",
     "astro",
@@ -10,44 +26,28 @@
     "ameho",
     "syhily"
   ],
-  "homepage": "https://yufan.me",
-  "bugs": {
-    "url": "https://github.com/syhily/yufan.me/issues",
-    "email": "syhily@gmail.com"
+  "engines": {
+    "node": "24.3.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/syhily/yufan.me.git"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "Yufan Sheng",
-    "email": "syhily@gmail.com",
-    "url": "https://yufan.me"
-  },
-  "type": "module",
   "scripts": {
     "astro": "astro",
     "build": "rimraf dist && astro check && astro build",
     "dev": "astro dev",
-    "lint": "biome check --write . && prettier . --write",
-    "prepare": "npx husky",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "prepare": "npx simple-git-hooks",
     "preview": "astro preview"
-  },
-  "lint-staged": {
-    "**/*": [
-      "biome check --no-errors-on-unmatched --files-ignore-unknown=true",
-      "prettier --write --ignore-unknown"
-    ]
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
     "@astrojs/node": "^9.3.0",
     "@astrojs/rss": "^4.0.12",
     "astro": "^5.11.0",
+    "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.2",
     "fuse.js": "^7.1.0",
     "glob": "^11.0.3",
+    "ioredis": "^5.6.1",
     "lodash": "^4.17.21",
     "luxon": "^3.6.1",
     "marked": "^16.0.0",
@@ -56,11 +56,13 @@
     "qrcode-svg": "^1.1.0",
     "rehype-mathjax": "^7.1.0",
     "sharp": "^0.34.2",
-    "ultrahtml": "^1.6.0"
+    "ultrahtml": "^1.6.0",
+    "unstorage": "^1.16.0"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^4.16.2",
     "@astrojs/check": "^0.9.4",
-    "@biomejs/biome": "^2.0.6",
+    "@eslint-react/eslint-plugin": "^1.52.2",
     "@napi-rs/canvas": "^0.1.73",
     "@shikijs/transformers": "^3.7.0",
     "@types/lodash": "^4.17.20",
@@ -70,27 +72,32 @@
     "@types/qrcode-svg": "^1.1.5",
     "@types/unist": "^3.0.3",
     "@vite-pwa/astro": "^1.1.0",
+    "astro-eslint-parser": "^1.2.2",
     "astro-netease-player": "^1.0.2",
-    "astro-uploader": "^1.2.3",
+    "astro-uploader": "^1.2.5",
     "bootstrap": "^5.3.7",
+    "eslint": "^9.30.1",
+    "eslint-plugin-astro": "^1.3.1",
+    "eslint-plugin-format": "^1.0.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
     "photoswipe": "^5.4.4",
     "photoswipe-dynamic-caption-plugin": "^1.2.7",
     "photoswipe-video-plugin": "^1.0.2",
-    "prettier": "^3.6.2",
-    "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-astro-organize-imports": "^0.4.11",
-    "prettier-plugin-organize-imports": "^4.1.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-external-links": "^3.0.0",
     "rehype-slug": "^6.0.0",
     "remark-math": "^6.0.0",
     "resize-sensor": "^0.0.6",
     "rimraf": "^6.0.1",
+    "simple-git-hooks": "^2.13.0",
     "typescript": "^5.8.3",
     "unist-util-select": "^5.1.0"
   },
-  "packageManager": "npm@11.4.2",
-  "engines": {
-    "node": "22.14.0"
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
   }
 }

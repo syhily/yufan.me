@@ -1,25 +1,25 @@
 ---
-import Comments from '@/components/comment/Comments.astro';
-import Footer from '@/components/footer/Footer.astro';
-import LikeButton from '@/components/like/LikeButton.astro';
-import Album from '@/components/mdx/album/Album.astro';
-import Image from '@/components/mdx/image/Image.astro';
-import Solution from '@/components/mdx/solutions/Solution.astro';
-import PageMeta from '@/components/meta/PageMeta.astro';
-import Friends from '@/components/page/friend/Friends.astro';
-import TableOfContents from '@/components/page/toc/TableOfContents.astro';
-import type { Page } from '@/helpers/schema';
-import { urlJoin } from '@/helpers/tools';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import options from '@/options';
-import MusicPlayer from 'astro-netease-player/MusicPlayer.astro';
+import type { Page } from '@/helpers/schema'
+import MusicPlayer from 'astro-netease-player/MusicPlayer.astro'
+import Comments from '@/components/comment/Comments.astro'
+import LikeButton from '@/components/like/LikeButton.astro'
+import Album from '@/components/mdx/album/Album.astro'
+import Image from '@/components/mdx/image/Image.astro'
+import Solution from '@/components/mdx/solutions/Solution.astro'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Friends from '@/components/page/friend/Friends.astro'
+import TableOfContents from '@/components/page/toc/TableOfContents.astro'
+import Footer from '@/components/partial/Footer.astro'
+import { urlJoin } from '@/helpers/tools'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import options from '@/options'
 
 interface Props {
-  page: Page;
+  page: Page
 }
 
-const { page } = Astro.props;
-const { Content, headings } = await page.render();
+const { page } = Astro.props
+const { Content, headings } = await page.render()
 ---
 
 <BaseLayout title={page.title} description={page.summary} footer={false}>
@@ -41,10 +41,10 @@ const { Content, headings } = await page.render();
               page.comments && (
                 <Content
                   components={{
-                    MusicPlayer: MusicPlayer,
-                    Image: Image,
-                    Album: Album,
-                    Solution: Solution,
+                    MusicPlayer,
+                    Image,
+                    Album,
+                    Solution,
                   }}
                 />
               )

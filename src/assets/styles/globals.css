@@ -2060,7 +2060,7 @@ a:hover .overlay {
   width: 100%;
   opacity: 0;
   visibility: hidden;
-  z-index: 999;
+  z-index: 1500;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -2717,28 +2717,6 @@ a:hover .overlay {
   flex-wrap: wrap;
 }
 
-/* Astro Badge */
-.astro-badge:hover stop:first-child {
-  stop-color: #3245ff;
-}
-.astro-badge:hover stop:last-child {
-  stop-color: #bc52ee;
-}
-
-/* Not By AI Badge */
-.not-by-ai {
-  display: block;
-  margin-bottom: 10px;
-  width: 120px;
-  --not-by-ai-background: var(--btn-secondary);
-  --not-by-ai-line: var(--color-light);
-}
-
-.not-by-ai:hover {
-  --not-by-ai-background: var(--color-light);
-  --not-by-ai-line: var(--btn-secondary);
-}
-
 /*--------------------------------------------------------------
     widget style
 --------------------------------------------------------------*/
@@ -2838,6 +2816,8 @@ a:hover .overlay {
   margin-bottom: 0.75rem;
   list-style-type: circle;
   font-size: inherit;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .widget-recent-entries ul li a {

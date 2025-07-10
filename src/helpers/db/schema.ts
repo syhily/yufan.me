@@ -1,110 +1,95 @@
-import { bigint, bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { bigint, bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
-export const atk_pages = pgTable(
-  'atk_pages',
+export const page = pgTable(
+  'page',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    key: varchar('key', { length: 255 }),
-    title: text('title'),
-    admin_only: boolean('admin_only'),
-    site_name: varchar('site_name', { length: 255 }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    vote_up: bigint('vote_up', { mode: 'number' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    vote_down: bigint('vote_down', { mode: 'number' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    key: varchar('key', { length: 255 }).unique().notNull(),
+    title: text('title').notNull(),
+    voteUp: bigint('vote_up', { mode: 'number' }),
+    voteDown: bigint('vote_down', { mode: 'number' }),
     pv: bigint('pv', { mode: 'number' }),
   },
-  (table) => [
-    index('idx_atk_pages_site_name').on(table.site_name),
-    index('idx_atk_pages_key').on(table.key),
-    index('idx_atk_pages_deleted_at').on(table.deleted_at),
-  ],
-);
+  table => [index('idx_page_key').on(table.key), index('idx_page_deleted_at').on(table.deletedAt)],
+)
 
-export const atk_likes = pgTable(
-  'atk_likes',
+export const like = pgTable(
+  'like',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     token: varchar('token', { length: 255 }),
-    page_key: varchar('page_key', { length: 255 }),
+    pageKey: varchar('page_key', { length: 255 }),
   },
-  (table) => [index('idx_atk_likes_token').on(table.token)],
-);
+  table => [index('idx_like_token').on(table.token)],
+)
 
-export const atk_users = pgTable(
-  'atk_users',
+export const comment = pgTable(
+  'comment',
   {
     id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    name: varchar('name', { length: 255 }),
-    email: varchar('email', { length: 255 }),
-    link: text('link'),
-    password: text('password'),
-    badge_name: text('badge_name'),
-    badge_color: text('badge_color'),
-    last_ip: text('last_ip'),
-    last_ua: text('last_ua'),
-    is_admin: boolean('is_admin'),
-    receive_email: boolean('receive_email').default(true),
-    token_valid_from: timestamp('token_valid_from', { withTimezone: true, mode: 'date' }),
-    is_in_conf: boolean('is_in_conf'),
-  },
-  (table) => [
-    index('idx_atk_users_email').on(table.email),
-    index('idx_atk_users_name').on(table.name),
-    index('idx_atk_users_deleted_at').on(table.deleted_at),
-  ],
-);
-
-export const atk_comments = pgTable(
-  'atk_comments',
-  {
-    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
-    created_at: timestamp('created_at', { withTimezone: true, mode: 'date' }),
-    updated_at: timestamp('updated_at', { withTimezone: true, mode: 'date' }),
-    deleted_at: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    content: text('content'),
-    page_key: varchar('page_key', { length: 255 }),
-    site_name: varchar('site_name', { length: 255 }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    user_id: bigint('user_id', { mode: 'number' }),
-    is_verified: boolean('is_verified').default(false),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    content: text('content').default(''),
+    pageKey: varchar('page_key', { length: 255 }).notNull(),
+    userId: bigint('user_id', { mode: 'bigint' }).notNull(),
+    isVerified: boolean('is_verified').default(false),
     ua: text('ua'),
     ip: text('ip'),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    rid: bigint('rid', { mode: 'number' }),
-    is_collapsed: boolean('is_collapsed').default(false),
-    is_pending: boolean('is_pending').default(false),
-    is_pinned: boolean('is_pinned').default(false),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    vote_up: bigint('vote_up', { mode: 'number' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    vote_down: bigint('vote_down', { mode: 'number' }),
-    // You can use { mode: "bigint" } if numbers are exceeding js number limitations
-    root_id: bigint('root_id', { mode: 'number' }),
+    rid: bigint('rid', { mode: 'number' }).notNull().default(0),
+    isCollapsed: boolean('is_collapsed').default(false),
+    isPending: boolean('is_pending').default(false),
+    isPinned: boolean('is_pinned').default(false),
+    voteUp: bigint('vote_up', { mode: 'number' }),
+    voteDown: bigint('vote_down', { mode: 'number' }),
+    rootId: bigint('root_id', { mode: 'bigint' }),
   },
-  (table) => [
-    index('idx_atk_comments_root_id').on(table.root_id),
-    index('idx_atk_comments_rid').on(table.rid),
-    index('idx_atk_comments_user_id').on(table.user_id),
-    index('idx_atk_comments_site_name').on(table.site_name),
-    index('idx_atk_comments_page_key').on(table.page_key),
-    index('idx_atk_comments_deleted_at').on(table.deleted_at),
+  table => [
+    index('idx_comment_root_id').on(table.rootId),
+    index('idx_comment_rid').on(table.rid),
+    index('idx_comment_user_id').on(table.userId),
+    index('idx_comment_page_key').on(table.pageKey),
+    index('idx_comment_deleted_at').on(table.deletedAt),
   ],
-);
+)
 
-export default {
-  atk_pages,
-  atk_likes,
-  atk_users,
-  atk_comments,
-};
+export const user = pgTable(
+  'user',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().$defaultFn(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    email: varchar('email', { length: 255 }).unique().notNull(),
+    emailVerified: boolean('email_verified').default(false).notNull(),
+    link: text('link'),
+    password: text('password').notNull(),
+    badgeName: text('badge_name'),
+    badgeColor: text('badge_color'),
+    lastIp: text('last_ip'),
+    lastUa: text('last_ua'),
+    isAdmin: boolean('is_admin').default(false),
+    receiveEmail: boolean('receive_email').default(true),
+  },
+  table => [
+    index('idx_users_email').on(table.email),
+    index('idx_users_name').on(table.name),
+    index('idx_users_deleted_at').on(table.deletedAt),
+  ],
+)
+
+export const verification = pgTable('verification', {
+  id: text('id').primaryKey(),
+  identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp('updated_at').notNull().$defaultFn(() => new Date()),
+})

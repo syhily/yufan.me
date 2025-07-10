@@ -1,0 +1,9 @@
+---
+const session = Astro.session
+if (session === undefined) {
+  throw new Error('Please configure your astro session store')
+}
+session.delete('user')
+Astro.redirect('/')
+---
+<Fragment />

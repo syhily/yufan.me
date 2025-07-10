@@ -1,24 +1,24 @@
-import { marked } from 'marked';
-import { ELEMENT_NODE, transform, walk } from 'ultrahtml';
-import sanitize from 'ultrahtml/transformers/sanitize';
+import { marked } from 'marked'
+import { ELEMENT_NODE, transform, walk } from 'ultrahtml'
+import sanitize from 'ultrahtml/transformers/sanitize'
 
-export const parseContent = async (content: string): Promise<string> => {
+export async function parseContent(content: string): Promise<string> {
   // Support paragraph in blank line.
-  const escapedContent = content.replace(/\r\n/g, '\n').replace(/(?<!\n)\n(?!\n)/g, '<br />');
-  const parsed = await marked.parse(escapedContent);
+  const escapedContent = content.replace(/\r\n/g, '\n').replace(/(?<!\n)\n(?!\n)/g, '<br />')
+  const parsed = await marked.parse(escapedContent)
   // Avoid the XSS attack.
   return transform(parsed, [
     async (node) => {
       await walk(node, (node) => {
         if (node.type === ELEMENT_NODE) {
           if (node.name === 'a' && !node.attributes.href?.startsWith('https://yufan.me')) {
-            node.attributes.target = '_blank';
-            node.attributes.rel = 'nofollow';
+            node.attributes.target = '_blank'
+            node.attributes.rel = 'nofollow'
           }
         }
-      });
+      })
 
-      return node;
+      return node
     },
     sanitize({
       allowElements: [
@@ -59,5 +59,5 @@ export const parseContent = async (content: string): Promise<string> => {
       },
       allowComments: false,
     }),
-  ]);
-};
+  ])
+}

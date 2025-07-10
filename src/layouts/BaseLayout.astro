@@ -1,24 +1,27 @@
 ---
-import '@/assets/styles/globals.css';
-import Footer from '@/components/footer/Footer.astro';
-import Header from '@/components/header/Header.astro';
-import PageMeta from '@/components/meta/PageMeta.astro';
-import SearchDialog from '@/components/search/SearchDialog.astro';
-import options from '@/options';
-import { pwaInfo } from 'virtual:pwa-info';
+import type { Navigation } from '@/options'
+import { pwaInfo } from 'virtual:pwa-info'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Footer from '@/components/partial/Footer.astro'
+import Header from '@/components/partial/Header.astro'
+import SearchDialog from '@/components/search/SearchDialog.astro'
+import options from '@/options'
+import '@/assets/styles/globals.css'
 
 interface Props {
-  title?: string;
-  description?: string;
-  footer?: boolean;
+  title?: string
+  description?: string
+  navigation?: Navigation
+  footer?: boolean
 }
 
-const title =
-  Astro.props.title === undefined
+const title
+  = Astro.props.title === undefined
     ? `${options.title} - ${options.description}`
-    : `${Astro.props.title} - ${options.title}`;
-const description = Astro.props.description || options.description;
-const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
+    : `${Astro.props.title} - ${options.title}`
+const description = Astro.props.description || options.description
+const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
+const navigation = Astro.props.navigation || options.navigation
 ---
 
 <!doctype html>
@@ -38,7 +41,7 @@ const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
     </slot>
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
-    <link rel="alternate" type="application/rss+xml" title="且听书吟" href="/feed" />
+    <link rel="alternate" type="application/rss+xml" title={options.title} href="/feed" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -48,7 +51,7 @@ const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
   </head>
   <body class="home blog">
     <div class="site-layout">
-      <Header />
+      <Header {navigation} />
       <main class="site-main">
         <slot />
         {showFooter && <Footer />}
@@ -64,7 +67,7 @@ const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true;
       </ul>
     </div>
     <script>
-      import '@/assets/scripts/globals.js';
+      import '@/assets/scripts/globals.js'
     </script>
     <SearchDialog />
   </body>

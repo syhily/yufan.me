@@ -1,17 +1,17 @@
 ---
-import SearchBar from '@/components/search/SearchBar.astro';
-import OwspaceCalendar from '@/components/sidebar/OwspaceCalendar.astro';
-import RandomPosts from '@/components/sidebar/RandomPosts.astro';
-import RandomTags from '@/components/sidebar/RandomTags.astro';
-import RecentComments from '@/components/sidebar/RecentComments.astro';
-import type { Post, Tag } from '@/helpers/schema';
+import type { Post, Tag } from '@/helpers/schema'
+import SearchBar from '@/components/search/SearchBar.astro'
+import OwspaceCalendar from '@/components/sidebar/OwspaceCalendar.astro'
+import RandomPosts from '@/components/sidebar/RandomPosts.astro'
+import RandomTags from '@/components/sidebar/RandomTags.astro'
+import RecentComments from '@/components/sidebar/RecentComments.astro'
 
 interface Props {
-  posts: Post[];
-  tags: Tag[];
+  posts: Post[]
+  tags: Tag[]
 }
 
-const { posts, tags } = Astro.props;
+const { posts, tags } = Astro.props
 ---
 
 <aside class="sidebar col-12 col-xl-3 d-none d-xl-block">

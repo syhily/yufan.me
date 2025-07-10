@@ -1,25 +1,26 @@
 ---
-import PaginationItem from '@/components/page/pagination/PaginationItem.astro';
+import PaginationItem from '@/components/page/pagination/PaginationItem.astro'
 
 interface Props {
-  current: number;
-  total: number;
-  rootPath: string;
+  current: number
+  total: number
+  rootPath: string
 }
 
-const { current, total, rootPath } = Astro.props;
-const pages =
-  current < 5
+const { current, total, rootPath } = Astro.props
+const pages
+  = current < 5
     ? [1, 2, 3, 4, 5]
     : current > total - 4
       ? [total - 4, total - 3, total - 2, total - 1, total]
-      : [current - 1, current, current + 1];
+      : [current - 1, current, current + 1]
 ---
 
 {
-  current < 5 ? (
+  current < 5
+? (
     <>
-      {pages.map((page) => (
+      {pages.map(page => (
         <PaginationItem pageNum={page} current={current} rootPath={rootPath} />
       ))}
       <span class="page-numbers dots">
@@ -27,23 +28,26 @@ const pages =
       </span>
       <PaginationItem pageNum={total} current={current} rootPath={rootPath} />
     </>
-  ) : current > total - 4 ? (
+  )
+: current > total - 4
+? (
     <>
       <PaginationItem pageNum={1} current={current} rootPath={rootPath} />
       <span class="page-numbers dots">
         <i class="iconfont icon-ellipsis" />
       </span>
-      {pages.map((page) => (
+      {pages.map(page => (
         <PaginationItem pageNum={page} current={current} rootPath={rootPath} />
       ))}
     </>
-  ) : (
+  )
+: (
     <>
       <PaginationItem pageNum={1} current={current} rootPath={rootPath} />
       <span class="page-numbers dots">
         <i class="iconfont icon-ellipsis" />
       </span>
-      {pages.map((page) => (
+      {pages.map(page => (
         <PaginationItem pageNum={page} current={current} rootPath={rootPath} />
       ))}
       <span class="page-numbers dots">

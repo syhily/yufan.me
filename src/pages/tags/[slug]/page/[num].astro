@@ -1,26 +1,26 @@
 ---
-import { getTag, posts } from '@/helpers/schema';
-import TagLayout from '@/layouts/posts/TagLayout.astro';
-import options from '@/options';
+import { getTag, posts } from '@/helpers/schema'
+import TagLayout from '@/layouts/posts/TagLayout.astro'
+import options from '@/options'
 
-const { slug, num } = Astro.params;
-const tag = getTag(undefined, slug);
+const { slug, num } = Astro.params
+const tag = getTag(undefined, slug)
 
 if (!tag || !num) {
-  return Astro.redirect('/404');
+  return Astro.redirect('/404')
 }
 
-const pageNum = Number.parseInt(num);
+const pageNum = Number.parseInt(num)
 if (pageNum <= 1) {
-  return Astro.redirect(tag.permalink);
+  return Astro.redirect(tag.permalink)
 }
 
-const filteredPosts = posts.filter((post) => post.tags.includes(tag.name));
-const pageSize = options.settings.pagination.tags;
-const total = Math.ceil(filteredPosts.length / pageSize);
+const filteredPosts = posts.filter(post => post.tags.includes(tag.name))
+const pageSize = options.settings.pagination.tags
+const total = Math.ceil(filteredPosts.length / pageSize)
 
 if (pageNum > total) {
-  return Astro.redirect(`${total}`, 302);
+  return Astro.redirect(`${total}`, 302)
 }
 ---
 

@@ -1,21 +1,22 @@
 ---
-import { blurStyle, type Image } from '@/helpers/images';
-import { getImage } from '@/helpers/schema';
-import options from '@/options';
+import type { Image } from '@/helpers/images'
+import { blurStyle } from '@/helpers/images'
+import { getImage } from '@/helpers/schema'
+import options from '@/options'
 
 interface Props extends Image {
-  alt: string;
+  alt: string
 }
 
-let { alt, src, width, height, blurDataURL, blurWidth, blurHeight } = Astro.props;
+let { alt, src, width, height, blurDataURL, blurWidth, blurHeight } = Astro.props
 if (src.startsWith('/')) {
-  const image = getImage(src);
-  src = image.src;
-  width = image.width;
-  height = image.height;
-  blurDataURL = image.blurDataURL;
-  blurWidth = image.blurWidth;
-  blurHeight = image.blurHeight;
+  const image = getImage(src)
+  src = image.src
+  width = image.width
+  height = image.height
+  blurDataURL = image.blurDataURL
+  blurWidth = image.blurWidth
+  blurHeight = image.blurHeight
 }
 ---
 

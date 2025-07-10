@@ -1,26 +1,26 @@
 ---
-import Pagination from '@/components/page/pagination/Pagination.astro';
-import PostSquare from '@/components/page/post/PostSquare.astro';
-import { slicePosts } from '@/helpers/formatter';
-import type { Post } from '@/helpers/schema';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import options from '@/options';
+import type { Post } from '@/helpers/schema'
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import PostSquare from '@/components/page/post/PostSquare.astro'
+import { slicePosts } from '@/helpers/formatter'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import options from '@/options'
 
 interface Props {
-  title: string;
-  query: string;
-  posts: Post[];
-  pageNum: number;
+  title: string
+  query: string
+  posts: Post[]
+  pageNum: number
 }
 
-const { title, posts, query, pageNum } = Astro.props;
+const { title, posts, query, pageNum } = Astro.props
 
 // Redirect to the homepage.
 if (pageNum < 1) {
-  return Astro.redirect('/');
+  return Astro.redirect('/')
 }
 
-const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.pagination.search);
+const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.pagination.search)
 ---
 
 <BaseLayout {title}>
@@ -30,14 +30,16 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, options.settings.
         <h1>{title}</h1>
       </div>
       {
-        currentPosts.length === 0 ? (
+        currentPosts.length === 0
+? (
           <div class="data-null">
             <div class="my-auto">
               <h1 class="font-number">404</h1>
               <div>抱歉，没有你要找的内容...</div>
             </div>
           </div>
-        ) : (
+        )
+: (
           <>
             <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
               {currentPosts.map((post, index) => (

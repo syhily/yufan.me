@@ -1,26 +1,27 @@
 ---
-import Comments from '@/components/comment/Comments.astro';
-import LikeButton from '@/components/like/LikeButton.astro';
-import LikeShare from '@/components/like/LikeShare.astro';
-import Album from '@/components/mdx/album/Album.astro';
-import Image from '@/components/mdx/image/Image.astro';
-import Solution from '@/components/mdx/solutions/Solution.astro';
-import PostMeta from '@/components/meta/PostMeta.astro';
-import TableOfContents from '@/components/page/toc/TableOfContents.astro';
-import Sidebar from '@/components/sidebar/Sidebar.astro';
-import { formatLocalDate } from '@/helpers/formatter';
-import { getTag, posts, tags, type Post } from '@/helpers/schema';
-import { urlJoin } from '@/helpers/tools';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import options from '@/options';
-import MusicPlayer from 'astro-netease-player/MusicPlayer.astro';
+import type { Post } from '@/helpers/schema'
+import MusicPlayer from 'astro-netease-player/MusicPlayer.astro'
+import Comments from '@/components/comment/Comments.astro'
+import LikeButton from '@/components/like/LikeButton.astro'
+import LikeShare from '@/components/like/LikeShare.astro'
+import Album from '@/components/mdx/album/Album.astro'
+import Image from '@/components/mdx/image/Image.astro'
+import Solution from '@/components/mdx/solutions/Solution.astro'
+import PostMeta from '@/components/meta/PostMeta.astro'
+import TableOfContents from '@/components/page/toc/TableOfContents.astro'
+import Sidebar from '@/components/sidebar/Sidebar.astro'
+import { formatLocalDate } from '@/helpers/formatter'
+import { getTag, posts, tags } from '@/helpers/schema'
+import { urlJoin } from '@/helpers/tools'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import options from '@/options'
 
 interface Props {
-  post: Post;
+  post: Post
 }
 
-const { post } = Astro.props;
-const { Content, headings } = await post.render();
+const { post } = Astro.props
+const { Content, headings } = await post.render()
 ---
 
 <BaseLayout title={post.title}>
@@ -43,11 +44,11 @@ const { Content, headings } = await post.render();
               <div class="post-meta text-sm text-muted mt-3 mb-4">
                 <time class="">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
                 {
-                  post.tags.length > 0 &&
-                    post.tags
-                      .map((tag) => getTag(tag, undefined))
-                      .filter((tag) => tag !== undefined)
-                      .map((tag) => (
+                  post.tags.length > 0
+                  && post.tags
+                      .map(tag => getTag(tag, undefined))
+                      .filter(tag => tag !== undefined)
+                      .map(tag => (
                         <>
                           <a class="float-end ms-2 badge badge-light badge-pill" href={`/tags/${tag.slug}`}>
                             {tag.name}
@@ -61,10 +62,10 @@ const { Content, headings } = await post.render();
                 <div class="nc-light-gallery">
                   <Content
                     components={{
-                      MusicPlayer: MusicPlayer,
-                      Image: Image,
-                      Album: Album,
-                      Solution: Solution,
+                      MusicPlayer,
+                      Image,
+                      Album,
+                      Solution,
                     }}
                   />
                 </div>

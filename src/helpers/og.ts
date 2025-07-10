@@ -1,14 +1,17 @@
+import type { Image, SKRSContext2D } from '@napi-rs/canvas'
+import { Buffer } from 'node:buffer'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import process from 'node:process'
+import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 /**
  * Generate the open graph.
  * It's highly inspired by the code from https://github.com/yuaanlin/yual.in/blob/main/pages/og_image/%5Bslug%5D.tsx
  * The original open source code don't have any license.
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
-import { openGraphHeight, openGraphWidth } from '@/helpers/images';
-import options from '@/options';
-import { Canvas, GlobalFonts, type Image, loadImage, type SKRSContext2D } from '@napi-rs/canvas';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { openGraphHeight, openGraphWidth } from '@/helpers/images'
+import options from '@/options'
 
 const darkLogo = `<svg width="160px" height="160px" viewBox="0 0 300 300">
     <g id="logo-dark" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -21,178 +24,173 @@ const darkLogo = `<svg width="160px" height="160px" viewBox="0 0 300 300">
             <path d="M257.384704,207.041597 C256.606856,208.420495 257.018658,209.086169 258.528597,208.991073 C261.685741,208.753332 265.025909,208.468043 268.549099,208.135205 C270.013282,207.992561 270.379328,207.421983 269.601481,206.42347 C267.862764,204.141157 266.764626,203 266.261313,203 L260.999406,203 C259.947024,203 259.169177,203.52303 258.665864,204.521542 C258.254062,205.424958 257.796505,206.233278 257.384704,207.041597 Z M247,193.409091 C247,194.454545 247.559068,195 248.630616,195 L273.369384,195 C274.440932,195 275,194.454545 275,193.409091 L275,192.545455 C275,191.5 274.440932,191 273.369384,191 L248.630616,191 C247.559068,191 247,191.5 247,192.545455 L247,193.409091 Z M243.985144,224.66586 C243.477744,225.815981 242.785835,225.90799 241.909417,225.033898 L241.724908,224.803874 C240.986872,224.113801 240.802363,223.239709 241.217509,222.273608 C243.385489,216.845036 244.446416,210.082324 244.446416,201.939467 L244.446416,189.610169 C244.446416,188.552058 244.999943,188 246.06087,188 L277.56578,188 C278.626707,188 279.180234,188.552058 279.180234,189.610169 L279.180234,195.912833 C279.180234,196.970944 278.672834,197.476998 277.611907,197.476998 L249.520413,197.476998 C248.459487,197.476998 247.90596,198.029056 247.90596,199.087167 L247.90596,199.179177 C247.90596,200.237288 248.459487,200.789346 249.520413,200.789346 L278.626707,200.789346 C279.503124,200.789346 280.056651,201.157385 280.195033,201.939467 C280.425669,202.997579 279.872142,203.549637 278.626707,203.549637 L274.198491,203.549637 C272.353401,203.549637 272.076638,204.193705 273.3682,205.527845 C275.259418,207.506053 277.150635,209.484262 278.949597,211.46247 C279.687633,212.290557 279.595379,213.026634 278.718961,213.670702 L278.672834,213.716707 C277.796416,214.31477 277.012253,214.176755 276.320344,213.348668 C275.905199,212.88862 275.490054,212.428571 275.074909,211.968523 C274.336873,211.186441 273.414328,210.818402 272.353401,210.956416 C270.18542,211.186441 268.34033,211.37046 266.910386,211.508475 C265.849459,211.600484 265.295932,212.198547 265.295932,213.256659 L265.295932,214.130751 C265.295932,215.188862 265.849459,215.74092 266.910386,215.74092 L276.689362,215.74092 C277.56578,215.74092 278.07318,216.108959 278.211562,216.845036 C278.442198,217.903148 277.888671,218.455206 276.643235,218.455206 L266.864259,218.455206 C265.803332,218.455206 265.295932,219.007264 265.295932,220.065375 L265.295932,221.583535 C265.295932,222.641646 265.803332,223.193705 266.864259,223.193705 L279.364743,223.193705 C280.333415,223.193705 280.840815,223.561743 280.979196,224.343826 C281.117578,225.447942 280.564051,226 279.364743,226 L247.39856,226 C246.476015,225.953995 245.968615,225.539952 245.830233,224.757869 C245.645724,223.699758 246.153124,223.193705 247.39856,223.193705 L260.175808,223.193705 C261.236734,223.193705 261.790261,222.641646 261.790261,221.583535 L261.790261,220.065375 C261.790261,219.007264 261.236734,218.455206 260.175808,218.455206 L250.396831,218.455206 C249.520413,218.455206 249.013014,218.087167 248.874632,217.35109 C248.643996,216.292978 249.197523,215.74092 250.442958,215.74092 L260.221935,215.74092 C261.282862,215.74092 261.790261,215.188862 261.790261,214.130751 L261.790261,213.532688 C261.790261,212.474576 261.236734,211.968523 260.175808,212.014528 C256.762391,212.244552 253.579611,212.428571 250.627467,212.520581 C249.75105,212.566586 249.197523,212.198547 248.966886,211.416465 C248.73625,210.358354 249.24365,209.806295 250.489085,209.760291 C250.350704,209.760291 250.535213,209.760291 251.042612,209.714286 C252.195794,209.668281 253.026084,209.208232 253.533484,208.288136 C254.087011,207.368039 254.640538,206.401937 255.194065,205.389831 C255.885974,204.1477 255.516956,203.549637 254.133138,203.549637 L249.520413,203.549637 C248.459487,203.549637 247.952087,204.193705 247.90596,205.48184 C247.767578,212.88862 246.429888,219.283293 243.985144,224.66586 Z" id="font4" fill="#FFFFFF" fill-rule="nonzero"></path>
         </g>
     </g>
-</svg>`;
+</svg>`
 
-const getStringWidth = (text: string, fontSize: number) => {
-  let result = 0;
+function getStringWidth(text: string, fontSize: number) {
+  let result = 0
   for (let idx = 0; idx < text.length; idx++) {
     if (text.charCodeAt(idx) > 255) {
-      result += fontSize;
-    } else {
-      result += fontSize * 0.5;
+      result += fontSize
+    }
+    else {
+      result += fontSize * 0.5
     }
   }
-  return result;
-};
+  return result
+}
 
 // Print text on SKRSContext with wrapping
-const printAt = (
-  context: SKRSContext2D,
-  text: string,
-  x: number,
-  y: number,
-  lineHeight: number,
-  fitWidth: number,
-  fontSize: number,
-) => {
+function printAt(context: SKRSContext2D, text: string, x: number, y: number, lineHeight: number, fitWidth: number, fontSize: number) {
   // Avoid invalid fitWidth.
-  const width = fitWidth || 0;
+  const width = fitWidth || 0
 
   if (width <= 0) {
-    context.fillText(text, x, y);
-    return;
+    context.fillText(text, x, y)
+    return
   }
 
   for (let idx = 1; idx <= text.length; idx++) {
-    const str = text.substring(0, idx);
+    const str = text.substring(0, idx)
     if (getStringWidth(str, fontSize) > width) {
-      context.fillText(text.substring(0, idx - 1), x, y);
-      printAt(context, text.substring(idx - 1), x, y + lineHeight, lineHeight, width, fontSize);
-      return;
+      context.fillText(text.substring(0, idx - 1), x, y)
+      printAt(context, text.substring(idx - 1), x, y + lineHeight, lineHeight, width, fontSize)
+      return
     }
   }
-  context.fillText(text, x, y);
-};
+  context.fillText(text, x, y)
+}
 
 // Modified snippet from https://stackoverflow.com/questions/21961839/simulation-background-size-cover-in-canvas
-const drawImageProp = (
-  ctx: SKRSContext2D,
-  img: Image,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  offsetX: number,
-  offsetY: number,
-) => {
+function drawImageProp(ctx: SKRSContext2D, img: Image, x: number, y: number, w: number, h: number, offsetX: number, offsetY: number) {
   // keep bounds [0.0, 1.0]
-  let ox = offsetX;
-  if (offsetX < 0) ox = 0;
-  if (offsetX > 1) ox = 1;
-  let oy = offsetY;
-  if (offsetY < 0) oy = 0;
-  if (offsetY > 1) oy = 1;
+  let ox = offsetX
+  if (offsetX < 0)
+    ox = 0
+  if (offsetX > 1)
+    ox = 1
+  let oy = offsetY
+  if (offsetY < 0)
+    oy = 0
+  if (offsetY > 1)
+    oy = 1
 
-  const iw = img.width;
-  const ih = img.height;
-  const r = Math.min(w / iw, h / ih);
+  const iw = img.width
+  const ih = img.height
+  const r = Math.min(w / iw, h / ih)
 
   // new prop.width
-  let nw = iw * r;
+  let nw = iw * r
   // new prop.height
-  let nh = ih * r;
-  let ar = 1;
+  let nh = ih * r
+  let ar = 1
 
   // decide which gap to fill
-  if (nw < w) ar = w / nw;
-  if (Math.abs(ar - 1) < 1e-14 && nh < h) ar = h / nh; // updated
-  nw *= ar;
-  nh *= ar;
+  if (nw < w)
+    ar = w / nw
+  if (Math.abs(ar - 1) < 1e-14 && nh < h)
+    ar = h / nh // updated
+  nw *= ar
+  nh *= ar
 
   // calc source rectangle
-  let cw = iw / (nw / w);
-  let ch = ih / (nh / h);
+  let cw = iw / (nw / w)
+  let ch = ih / (nh / h)
 
-  let cx = (iw - cw) * ox;
-  let cy = (ih - ch) * oy;
+  let cx = (iw - cw) * ox
+  let cy = (ih - ch) * oy
 
   // make sure source rectangle is valid
-  if (cx < 0) cx = 0;
-  if (cy < 0) cy = 0;
-  if (cw > iw) cw = iw;
-  if (ch > ih) ch = ih;
+  if (cx < 0)
+    cx = 0
+  if (cy < 0)
+    cy = 0
+  if (cw > iw)
+    cw = iw
+  if (ch > ih)
+    ch = ih
 
   // fill image in dest. rectangle
-  ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h);
-};
+  ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h)
+}
 
-const fetchCover = async (cover: string): Promise<Buffer> => {
+async function fetchCover(cover: string): Promise<Buffer> {
   if (cover.startsWith(options.assetsPrefix())) {
-    const coverPath = join(process.cwd(), cover.substring(options.assetsPrefix().length));
-    return await readFile(coverPath);
+    const coverPath = join(process.cwd(), cover.substring(options.assetsPrefix().length))
+    return await readFile(coverPath)
   }
 
   if (cover.startsWith('http')) {
-    return Buffer.from(await (await fetch(cover)).arrayBuffer());
+    return Buffer.from(await (await fetch(cover)).arrayBuffer())
   }
 
-  const coverPath = join(process.cwd(), 'public', cover);
-  return await readFile(coverPath);
-};
-
-export interface OpenGraphProps {
-  title: string;
-  summary: string;
-  cover: string;
+  const coverPath = join(process.cwd(), 'public', cover)
+  return await readFile(coverPath)
 }
 
-export const defaultOpenGraph = async (): Promise<Buffer> => {
-  return await fetchCover('/images/open-graph.png');
-};
+export interface OpenGraphProps {
+  title: string
+  summary: string
+  cover: string
+}
+
+export async function defaultOpenGraph(): Promise<Buffer> {
+  return await fetchCover('/images/open-graph.png')
+}
 
 // Register the font if it doesn't exist
 if (!GlobalFonts.has('OPPOSans')) {
-  const fontBuffer = await readFile(join(process.cwd(), '/src/assets/styles/opposans/opposans.ttf'));
-  GlobalFonts.register(fontBuffer, 'OPPOSans');
+  // eslint-disable-next-line antfu/no-top-level-await
+  const fontBuffer = await readFile(join(process.cwd(), '/src/assets/styles/opposans/opposans.ttf'))
+  GlobalFonts.register(fontBuffer, 'OPPOSans')
 }
 
-export const drawOpenGraph = async ({ title, summary, cover }: OpenGraphProps): Promise<Buffer> => {
+export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
   // Fetch the cover image as the background
-  const coverImage = await loadImage(await fetchCover(cover));
+  const coverImage = await loadImage(await fetchCover(cover))
 
   // Generate the logo image
-  const logoImage = await loadImage(Buffer.from(darkLogo, 'utf-8'));
+  const logoImage = await loadImage(Buffer.from(darkLogo, 'utf-8'))
 
   // Mark sure the summary length is small enough to fit in
   const description = `${summary
     .replace(/<[^>]+>/g, '')
     .slice(0, 80)
-    .trim()} ...`;
+    .trim()} ...`
 
   // Start drawing the open graph
-  const canvas = new Canvas(openGraphWidth, openGraphHeight);
-  const ctx = canvas.getContext('2d');
-  drawImageProp(ctx, coverImage, 0, 0, openGraphWidth, openGraphHeight, 0.5, 0.5);
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(0, 0, openGraphWidth, openGraphHeight);
-  ctx.save();
+  const canvas = new Canvas(openGraphWidth, openGraphHeight)
+  const ctx = canvas.getContext('2d')
+  drawImageProp(ctx, coverImage, 0, 0, openGraphWidth, openGraphHeight, 0.5, 0.5)
+  ctx.fillStyle = 'rgba(0,0,0,0.6)'
+  ctx.fillRect(0, 0, openGraphWidth, openGraphHeight)
+  ctx.save()
 
   // Add website title
-  ctx.fillStyle = '#e0c2bb';
-  ctx.font = '800 64px OPPOSans';
-  printAt(ctx, options.title, 96, 180, 96, openGraphWidth, 64);
+  ctx.fillStyle = '#e0c2bb'
+  ctx.font = '800 64px OPPOSans'
+  printAt(ctx, options.title, 96, 180, 96, openGraphWidth, 64)
 
   // Add website logo
-  ctx.drawImage(logoImage, 940, 120, 160, 160);
+  ctx.drawImage(logoImage, 940, 120, 160, 160)
 
   // Add article title
-  ctx.fillStyle = '#fff';
-  ctx.font = '800 48px OPPOSans';
-  printAt(ctx, title, 96, openGraphHeight / 2 - 64, 96, openGraphWidth - 192, 64);
+  ctx.fillStyle = '#fff'
+  ctx.font = '800 48px OPPOSans'
+  printAt(ctx, title, 96, openGraphHeight / 2 - 64, 96, openGraphWidth - 192, 64)
 
   // Add article summary
-  ctx.font = '800 36px OPPOSans';
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  printAt(ctx, description, 96, openGraphHeight - 200, 48, openGraphWidth - 192, 36);
+  ctx.font = '800 36px OPPOSans'
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'
+  printAt(ctx, description, 96, openGraphHeight - 200, 48, openGraphWidth - 192, 36)
 
-  ctx.restore();
+  ctx.restore()
 
-  const encodedImage = await canvas.encode('png');
-  return await compressImage(encodedImage);
-};
+  const encodedImage = await canvas.encode('png')
+  return await compressImage(encodedImage)
+}
 
-const compressImage = async (buf: Buffer): Promise<Buffer> => {
-  const { default: sharp } = await import('sharp');
+async function compressImage(buf: Buffer): Promise<Buffer> {
+  const { default: sharp } = await import('sharp')
   return await sharp(buf)
     .png({
       compressionLevel: 9,
@@ -202,5 +200,5 @@ const compressImage = async (buf: Buffer): Promise<Buffer> => {
       quality: 75,
       progressive: true,
     })
-    .toBuffer();
-};
+    .toBuffer()
+}

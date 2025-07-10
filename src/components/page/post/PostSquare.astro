@@ -1,15 +1,15 @@
 ---
-import LikeIconSmall from '@/components/like/LikeIconSmall.astro';
-import Image from '@/components/mdx/image/Image.astro';
-import { formatShowDate } from '@/helpers/formatter';
-import type { Post } from '@/helpers/schema';
+import type { Post } from '@/helpers/schema'
+import LikeIconSmall from '@/components/like/LikeIconSmall.astro'
+import Image from '@/components/mdx/image/Image.astro'
+import { formatShowDate } from '@/helpers/formatter'
 
 interface Props {
-  post: Post;
-  first: boolean;
+  post: Post
+  first: boolean
 }
 
-const { post, first } = Astro.props;
+const { post, first } = Astro.props
 ---
 
 <div class={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>

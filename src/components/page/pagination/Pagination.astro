@@ -1,14 +1,14 @@
 ---
-import LargePagination from '@/components/page/pagination/LargePagination.astro';
-import SmallPagination from '@/components/page/pagination/SmallPagination.astro';
+import LargePagination from '@/components/page/pagination/LargePagination.astro'
+import SmallPagination from '@/components/page/pagination/SmallPagination.astro'
 
 interface Props {
-  current: number;
-  total: number;
-  rootPath: string;
+  current: number
+  total: number
+  rootPath: string
 }
 
-const { current, total, rootPath } = Astro.props;
+const { current, total, rootPath } = Astro.props
 ---
 
 {
@@ -16,9 +16,11 @@ const { current, total, rootPath } = Astro.props;
     <nav class="navigation pagination" aria-label="文章">
       <h2 class="screen-reader-text">文章导航</h2>
       <div class="nav-links">
-        {total <= 6 ? (
+        {total <= 6
+? (
           <SmallPagination current={current} total={total} rootPath={rootPath} />
-        ) : (
+        )
+: (
           <LargePagination current={current} total={total} rootPath={rootPath} />
         )}
       </div>

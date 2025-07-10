@@ -1,15 +1,16 @@
 ---
-import TocItems from '@/components/page/toc/TocItems.astro';
-import { generateToC, type TocOpts } from '@/helpers/toc';
-import type { MarkdownHeading } from 'astro';
+import type { MarkdownHeading } from 'astro'
+import type { TocOpts } from '@/helpers/toc'
+import TocItems from '@/components/page/toc/TocItems.astro'
+import { generateToC } from '@/helpers/toc'
 
 interface Props {
-  headings: MarkdownHeading[];
-  toc: TocOpts | false;
+  headings: MarkdownHeading[]
+  toc: TocOpts | false
 }
 
-const { headings, toc } = Astro.props;
-const items = generateToC(headings, toc);
+const { headings, toc } = Astro.props
+const items = generateToC(headings, toc)
 ---
 
 {
