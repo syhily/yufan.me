@@ -35,7 +35,6 @@
     "dev": "astro dev",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "prepare": "npx simple-git-hooks",
     "preview": "astro preview"
   },
   "dependencies": {
