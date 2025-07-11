@@ -10,7 +10,7 @@
       "@/images/*": ["images/*"],
       "@/*": ["src/*"]
     },
-    "types": ["vite-plugin-font/src/font"],
+    "types": ["vite-plugin-font/src/font", "vite-plugin-binary/types"],
     "strict": true,
     "strictNullChecks": true
   },
