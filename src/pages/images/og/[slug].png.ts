@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer'
 import { cacheBuffer, loadBuffer } from '@/helpers/cache/redis'
 import { drawOpenGraph } from '@/helpers/og'
 import { getPage, getPost } from '@/helpers/schema'
-import defaultOpenGraph from '@/images/open-graph.png?arraybuffer'
+import defaultOpenGraph from '@/images/open-graph.png?binary'
 import options from '@/options'
 
 async function fallback() {
