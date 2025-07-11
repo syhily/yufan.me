@@ -2,12 +2,49 @@ import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
+import { queryUserId } from '@/helpers/auth/user'
+import { decreaseLikes, increaseLikes, queryLikes } from '@/helpers/comment/likes'
 import { createComment, loadComments } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/container'
+import { pages, posts } from '@/helpers/schema'
+import { encodedEmail, urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
-export const commentActions = {
-  comment: defineAction({
+const keys = [...posts.map(post => post.permalink), ...pages.map(page => page.permalink)]
+
+export const comment = {
+  increaseLike: defineAction({
+    accept: 'json',
+    input: z
+      .object({
+        key: z.custom<string>(val => keys.includes(val)),
+      }),
+    handler: async (input) => {
+      return await increaseLikes(input.key)
+    },
+  }),
+  decreaseLike: defineAction({
+    accept: 'json',
+    input: z
+      .object({
+        key: z.custom<string>(val => keys.includes(val)),
+        token: z.string().min(1),
+      }),
+    handler: async (input) => {
+      await decreaseLikes(input.key, input.token)
+      return { likes: await queryLikes(input.key) }
+    },
+  }),
+  findAvatar: defineAction({
+    accept: 'json',
+    input: z.object({ email: z.string().email() }),
+    handler: async ({ email }) => {
+      const id = await queryUserId(email)
+      const hash = id === null ? encodedEmail(email) : `${id}`
+      return { avatar: urlJoin(import.meta.env.SITE, 'images/avatar', `${hash}.png`) }
+    },
+  }),
+  replyComment: defineAction({
     accept: 'json',
     input: z.object({
       page_key: z.string(),
@@ -40,7 +77,7 @@ export const commentActions = {
       return { content }
     },
   }),
-  comments: defineAction({
+  loadComments: defineAction({
     accept: 'json',
     input: z.object({
       page_key: z.string(),

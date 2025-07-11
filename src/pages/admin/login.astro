@@ -5,12 +5,12 @@ import SingleLayout from '@/layouts/admin/SingleLayout.astro'
 ---
 
 <SingleLayout title="用户登陆">
-  <form method="post" action={actions.userLogin} id="loginForm">
+  <form method="post" action={actions.auth.signIn} id="loginForm">
     <Token />
     <div class="flex-fill">
       <div class="row g-3 mb-5 px-5">
         <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
-        <input class="form-control mb-2" placeholder="密码" name="password" type="password" required="required" />
+        <input class="form-control mb-2" placeholder="密码" name="password" type="password" required="required" minlength="10" />
       </div>
       <div class="form-submit text-center">
         <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="登陆" />
@@ -44,7 +44,7 @@ if (loginForm !== null) {
       return showErrorDialog('The password is required')
     }
 
-    const { error } = await actions.userLogin({ token, email, password })
+    const { error } = await actions.auth.signIn({ token, email, password })
     if (error) {
       return handleActionError(error, () => location.reload())
     }

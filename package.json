@@ -68,7 +68,7 @@
     "@shikijs/transformers": "^3.7.0",
     "@types/lodash": "^4.17.20",
     "@types/luxon": "^3.6.2",
-    "@types/node": "^24.0.12",
+    "@types/node": "^24.0.13",
     "@types/nodemailer": "^6.4.17",
     "@types/pg": "^8.15.4",
     "@types/qrcode-svg": "^1.1.5",
