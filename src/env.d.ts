@@ -1,4 +1,5 @@
 /// <reference path="../.astro/types.d.ts" />
+/// <reference path="../plugins/binary/types.d.ts" />
 
 declare namespace App {
   interface SessionData {

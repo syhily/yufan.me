@@ -16,9 +16,9 @@ import rehypeMathjax from 'rehype-mathjax'
 import rehypeSlug from 'rehype-slug'
 import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
-import arraybuffer from 'vite-plugin-arraybuffer'
 import Font from 'vite-plugin-font'
 import options from './options'
+import binary from './plugins/binary'
 import { astroImage, rootImages } from './plugins/images'
 
 const {
@@ -166,7 +166,7 @@ export default defineConfig({
         'sharp',
       ],
     },
-    plugins: [arraybuffer(), Font.vite()],
+    plugins: [binary(), Font.vite()],
     assetsInclude: ['images/**/*'],
   },
   build: {

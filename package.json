@@ -37,7 +37,6 @@
     "lint:fix": "eslint --fix",
     "preview": "astro preview"
   },
-
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
     "@astrojs/node": "^9.3.0",
@@ -94,7 +93,6 @@
     "simple-git-hooks": "^2.13.0",
     "typescript": "^5.8.3",
     "unist-util-select": "^5.1.0",
-    "vite-plugin-arraybuffer": "^0.1.0",
     "vite-plugin-font": "^5.1.2"
   },
   "simple-git-hooks": {

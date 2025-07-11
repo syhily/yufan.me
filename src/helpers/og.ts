@@ -1,7 +1,7 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
-import NotoSansSC from '@/assets/fonts/NotoSansSC-Bold.ttf?arraybuffer'
+import NotoSansSC from '@/assets/fonts/notesans.ttf?binary'
 
 /**
  * Generate the open graph.
