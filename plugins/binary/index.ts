@@ -2,7 +2,9 @@ import type { PluginOption } from 'vite'
 import { promises } from 'node:fs'
 import encodeBinary from './encode'
 
-const decodeBinaryRaw = `const z85 = charsetToMap('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
+const decodeBinaryRaw = `import zlib from 'zlib'
+
+const z85 = charsetToMap('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
 const pow2 = 7225
 const pow3 = 614125
 const pow4 = 52200625
@@ -54,7 +56,7 @@ export default function decodeBinary(base85) {
     ints[i * 4 + j] = lastPart[j]
   }
 
-  return ints
+  return zlib.gunzipSync(ints)
 }
 `
 

@@ -1,3 +1,5 @@
+import zlib from 'node:zlib'
+
 const z85: Uint8Array = charsetToMap('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#')
 
 function charsetToMap(charset: string): Uint8Array {
@@ -9,6 +11,8 @@ function charsetToMap(charset: string): Uint8Array {
 }
 
 export default function encodeBinary(ui8a: Uint8Array): string {
+  ui8a = zlib.gzipSync(ui8a)
+
   const remain = ui8a.length % 4
   const last5Length = remain ? remain + 1 : 0
   const length = Math.ceil(ui8a.length * 5 / 4)
