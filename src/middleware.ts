@@ -22,11 +22,13 @@ function isAdminEndpoints(endpoint: string) {
 
 const freshInstall = defineMiddleware(async (context, next) => {
   const { url: { pathname }, redirect } = context
-  const installed = await hasAdmin()
   const { action } = getActionContext(context)
-  const accessInstall = pathname === ADMIN_ENDPOINTS.install
-    || pathname === `${ADMIN_ENDPOINTS.install}/`
-    || (action !== undefined && action.name === `registerAdmin/`)
+  if (action !== undefined) {
+    return next()
+  }
+
+  const installed = await hasAdmin()
+  const accessInstall = pathname === ADMIN_ENDPOINTS.install || pathname === `${ADMIN_ENDPOINTS.install}/`
 
   if (installed) {
     return accessInstall ? redirect('/') : next()

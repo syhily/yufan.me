@@ -47,7 +47,7 @@ const navigation = Astro.props.navigation || options.navigation
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
-  <body class="home blog" style={{ fontFamily: OPPOSans.family }}>
+  <body class="home blog" style={{ fontFamily: `'${OPPOSans.family}'` }}>
     <div class="site-layout">
       <Header {navigation} />
       <main class="site-main">

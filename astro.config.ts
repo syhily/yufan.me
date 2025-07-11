@@ -166,7 +166,7 @@ export default defineConfig({
         'sharp',
       ],
     },
-    plugins: [vitePluginBinary(), Font.vite()],
+    plugins: [vitePluginBinary({ gzip: true }), Font.vite()],
     assetsInclude: ['images/**/*'],
   },
   build: {
