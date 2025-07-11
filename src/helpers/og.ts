@@ -1,5 +1,6 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import { Buffer } from 'node:buffer'
+import { gunzipSync } from 'node:zlib'
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 import NotoSansSC from '@/assets/fonts/notesans.ttf?binary'
 
@@ -120,7 +121,7 @@ export interface OpenGraphProps {
 
 // Register the font if it doesn't exist
 if (!GlobalFonts.has('NotoSansSC')) {
-  GlobalFonts.register(Buffer.from(NotoSansSC), 'NotoSansSC')
+  GlobalFonts.register(gunzipSync(Buffer.from(NotoSansSC)), 'NotoSansSC')
 }
 
 export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {

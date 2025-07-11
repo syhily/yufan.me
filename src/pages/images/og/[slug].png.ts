@@ -1,13 +1,15 @@
 import type { APIRoute } from 'astro'
-import { Buffer } from 'node:buffer'
+import { gunzipSync } from 'node:zlib'
 import { cacheBuffer, loadBuffer } from '@/helpers/cache/redis'
 import { drawOpenGraph } from '@/helpers/og'
 import { getPage, getPost } from '@/helpers/schema'
 import defaultOpenGraph from '@/images/open-graph.png?binary'
 import options from '@/options'
 
+const fallbackOpenGraph = gunzipSync(defaultOpenGraph)
+
 async function fallback() {
-  return new Response(Buffer.from(defaultOpenGraph), {
+  return new Response(fallbackOpenGraph, {
     headers: { 'Content-Type': 'image/png' },
   })
 }
