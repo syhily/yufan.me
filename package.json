@@ -93,7 +93,7 @@
     "simple-git-hooks": "^2.13.0",
     "typescript": "^5.8.3",
     "unist-util-select": "^5.1.0",
-    "vite-plugin-binary": "^1.0.3",
+    "vite-plugin-binary": "^1.0.5",
     "vite-plugin-font": "^5.1.2"
   },
   "simple-git-hooks": {
