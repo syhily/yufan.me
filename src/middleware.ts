@@ -1,4 +1,3 @@
-import { getActionContext } from 'astro:actions'
 import { defineMiddleware, sequence } from 'astro:middleware'
 import { userSession } from '@/helpers/auth/session'
 import { hasAdmin } from '@/helpers/auth/user'
@@ -22,20 +21,14 @@ function isAdminEndpoints(endpoint: string) {
 
 const freshInstall = defineMiddleware(async (context, next) => {
   const { url: { pathname }, redirect } = context
-  const { action } = getActionContext(context)
-  if (action !== undefined) {
-    return next()
+
+  if (pathname === ADMIN_ENDPOINTS.install || pathname === `${ADMIN_ENDPOINTS.install}/`) {
+    if (await hasAdmin()) {
+      return redirect('/')
+    }
   }
 
-  const installed = await hasAdmin()
-  const accessInstall = pathname === ADMIN_ENDPOINTS.install || pathname === `${ADMIN_ENDPOINTS.install}/`
-
-  if (installed) {
-    return accessInstall ? redirect('/') : next()
-  }
-  else {
-    return accessInstall ? next() : redirect(ADMIN_ENDPOINTS.install)
-  }
+  return next()
 })
 
 const authentication = defineMiddleware(async ({ url: { pathname }, redirect, session }, next) => {
