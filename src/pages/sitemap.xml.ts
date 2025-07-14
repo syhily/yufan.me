@@ -1,4 +1,4 @@
-import { pages, posts } from '@/helpers/schema'
+import { pages, posts } from '@/helpers/content/schema'
 import { urlJoin } from '@/helpers/tools'
 
 export const prerender = true

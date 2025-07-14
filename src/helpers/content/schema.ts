@@ -1,10 +1,10 @@
 /* eslint-disable antfu/no-top-level-await */
 import type { RenderResult } from 'astro:content'
-import type { Image } from '@/helpers/images'
+import type { Image } from '@/helpers/content/images'
 import { getCollection, render } from 'astro:content'
 import { pinyin } from 'pinyin-pro'
 import { defaultCover } from '@/content.config'
-import { parseContent } from '@/helpers/markdown'
+import { parseContent } from '@/helpers/content/markdown'
 import options from '@/options'
 
 // Import the collections from the astro content.

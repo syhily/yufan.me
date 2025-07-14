@@ -50,7 +50,7 @@ export default defineConfig({
       : undefined,
   },
   session: {
-    driver: 'redis',
+    driver: 'memory',
     options: {
       host: REDIS_HOST,
       tls: false as any,

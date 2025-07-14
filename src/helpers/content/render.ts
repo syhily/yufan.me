@@ -1,11 +1,23 @@
+import type { ContainerRenderOptions } from 'astro/container'
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js'
 import type { TextNode } from 'ultrahtml'
-import type { Post } from '@/helpers/schema'
+import type { Post } from '@/helpers/content/schema'
+import serverRenderer from '@astrojs/mdx/server.js'
+import { experimental_AstroContainer as AstroContainer } from 'astro/container'
 import { ELEMENT_NODE, TEXT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
 import PostContent from '@/components/page/post/PostContent.astro'
-import { partialRender } from '@/helpers/container'
 import { urlJoin } from '@/helpers/tools'
 import options from '@/options'
+
+// eslint-disable-next-line antfu/no-top-level-await
+const container = await AstroContainer.create()
+container.addServerRenderer({ name: 'astro:jsx', renderer: serverRenderer })
+
+// We only want to make sure the container instance is singleton.
+export async function partialRender(component: AstroComponentFactory, options?: ContainerRenderOptions): Promise<string> {
+  return await container.renderToString(component, { ...options, partial: true })
+}
 
 async function cleanupContent(html: string) {
   return await transform(html, [

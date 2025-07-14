@@ -1,6 +1,6 @@
 import rss from '@astrojs/rss'
-import { renderPostsContents } from '@/helpers/posts/render'
-import { posts } from '@/helpers/schema'
+import { renderPostsContents } from '@/helpers/content/render'
+import { posts } from '@/helpers/content/schema'
 import { urlJoin } from '@/helpers/tools'
 import options from '@/options'
 

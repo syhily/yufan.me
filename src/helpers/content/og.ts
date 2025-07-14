@@ -10,7 +10,7 @@ import NotoSansSC from '@/assets/fonts/notesans.ttf?binary'
  * The original open source code don't have any license.
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
-import { openGraphHeight, openGraphWidth } from '@/helpers/images'
+import { openGraphHeight, openGraphWidth } from '@/helpers/content/images'
 import options from '@/options'
 
 const darkLogo = `<svg width="160px" height="160px" viewBox="0 0 300 300">

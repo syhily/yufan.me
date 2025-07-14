@@ -1,7 +1,7 @@
 import { defineMiddleware, sequence } from 'astro:middleware'
 import { userSession } from '@/helpers/auth/session'
 import { hasAdmin } from '@/helpers/auth/user'
-import { posts } from '@/helpers/schema'
+import { posts } from '@/helpers/content/schema'
 import { urlJoin } from '@/helpers/tools'
 
 export enum ADMIN_ENDPOINTS {

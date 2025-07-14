@@ -1,10 +1,10 @@
 ---
-import type { Post } from '@/helpers/schema'
+import type { Post } from '@/helpers/content/schema'
 import LikeIcon from '@/components/like/LikeIcon.astro'
 import Image from '@/components/mdx/image/Image.astro'
 import Pagination from '@/components/page/pagination/Pagination.astro'
-import { formatShowDate, slicePosts } from '@/helpers/formatter'
-import { getCategory } from '@/helpers/schema'
+import { formatShowDate, slicePosts } from '@/helpers/content/formatter'
+import { getCategory } from '@/helpers/content/schema'
 import options from '@/options'
 
 interface Props {

@@ -3,7 +3,7 @@ import process from 'node:process'
 import { file, glob } from 'astro/loaders'
 import { defineCollection, z } from 'astro:content'
 import { glob as Glob } from 'glob'
-import { imageMetadata } from '@/helpers/images'
+import { imageMetadata } from '@/helpers/content/images'
 import { urlJoin } from '@/helpers/tools'
 import options from '@/options'
 

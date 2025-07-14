@@ -1,4 +1,4 @@
-import type { Post } from '@/helpers/schema'
+import type { Post } from '@/helpers/content/schema'
 import { DateTime } from 'luxon'
 import options from '@/options'
 

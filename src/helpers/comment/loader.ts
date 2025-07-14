@@ -5,9 +5,9 @@ import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
 import { userSession } from '@/helpers/auth/session'
 import { createUser } from '@/helpers/auth/user'
+import { parseContent } from '@/helpers/content/markdown'
 import { db } from '@/helpers/db/pool'
 import { comment, page, user } from '@/helpers/db/schema'
-import { parseContent } from '@/helpers/markdown'
 import options from '@/options'
 
 async function upsertPage(key: string, title: string | null): Promise<Page> {
