@@ -149,7 +149,7 @@ const options: z.input<typeof Options> = {
       name: 'Follow',
       icon: 'icon-follow-rss',
       type: 'link',
-      link: 'https://app.follow.is/share/feeds/54772566650461214',
+      link: 'https://app.folo.is/share/feeds/54772566650461214',
     },
     {
       name: '微信',

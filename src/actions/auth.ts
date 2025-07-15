@@ -90,6 +90,7 @@ export const auth = {
       }
 
       const success = await login({ email, password, session, request, clientAddress })
+      loginLog({ email, clientAddress, request, success })
       if (!success) {
         await incrLimit(clientAddress)
         throw new ActionError({
@@ -97,7 +98,6 @@ export const auth = {
           message: 'Invalid login credential.',
         })
       }
-      loginLog({ email, clientAddress, request, success })
     },
   }),
 }
