@@ -13,11 +13,3 @@ services:
       POSTGRES_PASSWORD: '@str0!SecRets'
     ports:
       - 5432:5432
-  cache:
-    container_name: astro-cache
-    image: redis:8
-    hostname: astro-cache
-    restart: always
-    command: /bin/sh -c 'redis-server --requirepass @str0!SecRets'
-    ports:
-      - 6379:6379

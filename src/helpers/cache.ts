@@ -1,18 +1,10 @@
 import type { Buffer } from 'node:buffer'
-import { REDIS_HOST, REDIS_PASSWORD, REDIS_PORT } from 'astro:env/server'
 import { createStorage } from 'unstorage'
 
-import redisDriver from 'unstorage/drivers/redis'
+import memoryDriver from 'unstorage/drivers/memory'
 
 const storage = createStorage({
-  driver: redisDriver({
-    base: 'unstorage',
-    host: REDIS_HOST,
-    tls: false as any,
-    port: REDIS_PORT,
-    password: REDIS_PASSWORD,
-    ttl: 60 * 60 * 24,
-  }),
+  driver: memoryDriver(),
 })
 
 const LIMIT_TTL = 60 * 30

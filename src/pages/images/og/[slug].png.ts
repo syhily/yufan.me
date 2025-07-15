@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 import { gunzipSync } from 'node:zlib'
-import { cacheBuffer, loadBuffer } from '@/helpers/cache/redis'
+import { cacheBuffer, loadBuffer } from '@/helpers/cache'
 import { drawOpenGraph } from '@/helpers/content/og'
 import { getPage, getPost } from '@/helpers/content/schema'
 import defaultOpenGraph from '@/images/open-graph.png?binary'

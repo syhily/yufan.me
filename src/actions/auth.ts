@@ -3,7 +3,7 @@ import { ActionError, defineAction } from 'astro:actions'
 import { validateToken } from '@/helpers/auth/csrf'
 import { login } from '@/helpers/auth/session'
 import { createAdmin, hasAdmin } from '@/helpers/auth/user'
-import { exceedLimit, incrLimit } from '@/helpers/cache/redis'
+import { exceedLimit, incrLimit } from '@/helpers/cache'
 
 export const auth = {
   signUpAdmin: defineAction({

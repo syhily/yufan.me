@@ -22,7 +22,6 @@ The source code has evolved through four stages.
 - [Node.js](https://nodejs.org): The latest Node.js LTS
 - [Astro](https://astro.build): Core engine
 - [Postgres](https://zeabur.com/docs/marketplace/postgresql): Comments, likes and users
-- [Redis](https://zeabur.com/docs/marketplace/redis): User session store
 - [Zeabur](https://zeabur.com?referralCode=syhily&utm_source=syhily): Host service
 
 ## Local Development

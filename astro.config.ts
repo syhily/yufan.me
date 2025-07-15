@@ -22,9 +22,6 @@ import options from './options'
 import { astroImage, rootImages } from './plugins/images'
 
 const {
-  REDIS_HOST,
-  REDIS_PORT,
-  REDIS_PASSWORD,
   UPLOAD_STATIC_FILES,
   S3_ENDPOINT,
   S3_BUCKET,
@@ -51,12 +48,6 @@ export default defineConfig({
   },
   session: {
     driver: 'memory',
-    options: {
-      host: REDIS_HOST,
-      tls: false as any,
-      port: Number(REDIS_PORT),
-      password: REDIS_PASSWORD,
-    },
     ttl: 60 * 60,
     cookie: {
       name: 'yufan-me-session',

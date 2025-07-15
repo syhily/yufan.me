@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 import { Buffer } from 'node:buffer'
-import { cacheBuffer, loadBuffer } from '@/helpers/cache/redis'
+import { cacheBuffer, loadBuffer } from '@/helpers/cache'
 
 async function loadCalendarImage(year: string, time: string): Promise<Response> {
   const link = `https://img.owspace.com/Public/uploads/Download/${year}/${time}.jpg`

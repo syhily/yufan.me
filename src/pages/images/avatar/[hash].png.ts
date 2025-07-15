@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro'
 import { Buffer } from 'node:buffer'
 import { queryEmail } from '@/helpers/auth/user'
-import { AvatarStatus, cacheAvatar, loadAvatar } from '@/helpers/cache/redis'
+import { AvatarStatus, cacheAvatar, loadAvatar } from '@/helpers/cache'
 import { encodedEmail, isNumeric, urlJoin } from '@/helpers/tools'
 import options from '@/options'
 
