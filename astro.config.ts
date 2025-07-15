@@ -72,10 +72,6 @@ export default defineConfig({
         context: 'server',
         access: 'secret',
       }),
-      // Session Store
-      REDIS_HOST: envField.string({ context: 'server', access: 'secret' }),
-      REDIS_PORT: envField.number({ context: 'server', access: 'secret' }),
-      REDIS_PASSWORD: envField.string({ context: 'server', access: 'secret' }),
       // SMTP Service
       SMTP_HOST: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_PORT: envField.number({ context: 'server', access: 'secret', optional: true }),
