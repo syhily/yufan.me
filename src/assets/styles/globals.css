@@ -1,6 +1,6 @@
-@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap/dist/css/bootstrap.css';
 @import '@/assets/styles/reset.css';
-@import '@/assets/styles/iconfont/iconfont.css';
+@import '@/assets/styles/iconfont.css';
 @import 'photoswipe/style.css';
 @import 'photoswipe-dynamic-caption-plugin/photoswipe-dynamic-caption-plugin.css';
 

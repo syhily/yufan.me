@@ -153,7 +153,7 @@ export default defineConfig({
         'sharp',
       ],
     },
-    plugins: [vitePluginBinary({ gzip: true }), Font.vite()],
+    plugins: [vitePluginBinary({ gzip: true }), Font.vite({ include: [/src\/assets\/fonts\/opposans.ttf/] })],
     assetsInclude: ['images/**/*'],
   },
   build: {
