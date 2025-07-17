@@ -38,6 +38,7 @@ export default defineConfig({
     checkOrigin: true,
   },
   experimental: {
+    rawEnvValues: true,
     preserveScriptOrder: true,
   },
   image: {
