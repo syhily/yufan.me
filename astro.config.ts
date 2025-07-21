@@ -150,7 +150,6 @@ export default defineConfig({
     optimizeDeps: {
       exclude: [
         '@napi-rs/canvas',
-        'opendal',
         'sharp',
       ],
     },
