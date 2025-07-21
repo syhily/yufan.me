@@ -8,7 +8,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
-import { uploader } from 'astro-uploader'
+import uploader from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeExternalLinks from 'rehype-external-links'
@@ -113,8 +113,6 @@ export default defineConfig({
         { path: 'images', recursive: true, keep: false, override: false },
         'assets',
       ],
-      recursive: true,
-      keep: false,
       endpoint: S3_ENDPOINT,
       bucket: S3_BUCKET as string,
       accessKey: S3_ACCESS_KEY as string,
