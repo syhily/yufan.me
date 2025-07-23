@@ -42,7 +42,7 @@
     "@astrojs/node": "^9.3.0",
     "@astrojs/rss": "^4.0.12",
     "@napi-rs/canvas": "^0.1.74",
-    "astro": "^5.12.1",
+    "astro": "^5.12.2",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.3",
     "flexsearch": "^0.8.205",
@@ -60,12 +60,12 @@
     "unstorage": "^1.16.1"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^4.17.0",
+    "@antfu/eslint-config": "^4.18.0",
     "@astrojs/check": "^0.9.4",
     "@shikijs/transformers": "^3.8.1",
     "@types/lodash": "^4.17.20",
     "@types/luxon": "^3.6.2",
-    "@types/node": "^24.0.15",
+    "@types/node": "^24.1.0",
     "@types/nodemailer": "^6.4.17",
     "@types/pg": "^8.15.4",
     "@types/qrcode-svg": "^1.1.5",
