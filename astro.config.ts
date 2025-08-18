@@ -38,8 +38,8 @@ export default defineConfig({
     checkOrigin: true,
   },
   experimental: {
-    rawEnvValues: true,
     preserveScriptOrder: true,
+    staticImportMetaEnv: true,
   },
   image: {
     domains: ['localhost', '127.0.0.1'],
@@ -80,19 +80,6 @@ export default defineConfig({
       SMTP_USER: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
-      // Static Assets
-      UPLOAD_STATIC_FILES: envField.boolean({
-        context: 'server',
-        access: 'public',
-        default: false,
-      }),
-      S3_ENDPOINT: envField.string({ context: 'server', access: 'secret' }),
-      S3_BUCKET: envField.string({ context: 'server', access: 'secret' }),
-      S3_ACCESS_KEY: envField.string({ context: 'server', access: 'secret' }),
-      S3_SECRET_ACCESS_KEY: envField.string({
-        context: 'server',
-        access: 'secret',
-      }),
     },
     validateSecrets: true,
   },
@@ -114,9 +101,9 @@ export default defineConfig({
         'assets',
       ],
       endpoint: S3_ENDPOINT,
-      bucket: S3_BUCKET as string,
-      accessKey: S3_ACCESS_KEY as string,
-      secretAccessKey: S3_SECRET_ACCESS_KEY as string,
+      bucket: S3_BUCKET,
+      accessKey: S3_ACCESS_KEY,
+      secretAccessKey: S3_SECRET_ACCESS_KEY,
     }),
   ],
   adapter: node({

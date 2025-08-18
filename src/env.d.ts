@@ -16,3 +16,13 @@ declare namespace App {
     }
   }
 }
+
+namespace NodeJS {
+  interface ProcessEnv {
+    UPLOAD_STATIC_FILES: string
+    S3_ENDPOINT: string
+    S3_BUCKET: string
+    S3_ACCESS_KEY: string
+    S3_SECRET_ACCESS_KEY: string
+  }
+}

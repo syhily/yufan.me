@@ -38,7 +38,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
       return redirect(defaultAvatar())
     }
     else if (avatar.buffer !== null) {
-      return new Response(avatar.buffer, {
+      return new Response(new Uint8Array(avatar.buffer), {
         headers: {
           'Content-Type': 'image/png',
           'Cache-Control': 'public, max-age=604800',
@@ -64,7 +64,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
     cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
   }
 
-  return new Response(buffer, {
+  return new Response(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'image/png',
       'Cache-Control': 'public, max-age=604800',

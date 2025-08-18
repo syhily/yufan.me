@@ -9,7 +9,7 @@ import options from '@/options'
 const fallbackOpenGraph = gunzipSync(defaultOpenGraph)
 
 async function fallback() {
-  return new Response(fallbackOpenGraph, {
+  return new Response(new Uint8Array(fallbackOpenGraph), {
     headers: { 'Content-Type': 'image/png' },
   })
 }
@@ -50,7 +50,7 @@ export const GET: APIRoute = async ({ params }) => {
     cacheBuffer(`open-graph-${cover}`, buffer, 24 * 60 * 60)
   }
 
-  return new Response(buffer, {
+  return new Response(new Uint8Array(buffer), {
     headers: { 'Content-Type': 'image/png' },
   })
 }

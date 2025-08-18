@@ -15,7 +15,7 @@ async function loadCalendarImage(year: string, time: string): Promise<Response> 
     return resp
   }
 
-  return new Response(buffer, {
+  return new Response(new Uint8Array(buffer), {
     headers: {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=604800',
