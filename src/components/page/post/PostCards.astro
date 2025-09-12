@@ -1,0 +1,66 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import { Image } from 'astro:assets'
+import config from '@/blog.config'
+import LikeIcon from '@/components/like/LikeIcon.astro'
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import { formatShowDate, slicePosts } from '@/helpers/content/formatter'
+import { getCategory } from '@/helpers/content/schema'
+
+interface Props {
+  posts: Post[]
+  pageNum: number
+}
+
+const { pageNum, posts } = Astro.props
+const results = slicePosts(posts, pageNum, config.settings.pagination.posts)
+if (results.totalPage === 0) {
+  return Astro.redirect('/404')
+}
+
+const { currentPosts, totalPage } = results
+---
+
+<div class="content-wrapper content-wrapper col-12 col-xl-9">
+  <div class="list-grid">
+    {
+      currentPosts.map((post) => (
+        <div class="list-item block">
+          <div class="media media-3x2 col-6 col-md-5">
+            <a href={post.permalink} class="media-content">
+              <Image src={post.cover} alt={post.title} width={600} height={400} />
+            </a>
+            <div class="media-overlay overlay-top">
+              <a
+                class="d-none d-md-inline-block badge badge-md bg-white-overlay"
+                href={getCategory(post.category, undefined)?.permalink || ''}
+              >
+                {post.category}
+              </a>
+            </div>
+          </div>
+          <div class="list-content">
+            <div class="list-body">
+              <a href={post.permalink} class="list-title h5">
+                <div class="h-2x">
+                  {!post.published && <span style={{ color: 'var(--color-danger)' }}>【草稿】</span>}
+                  {post.title}
+                </div>
+              </a>
+              <div class="d-none d-md-block list-desc text-secondary text-md mt-3">
+                <div class="h-2x">{post.summary ?? ''}</div>
+              </div>
+            </div>
+            <div class="list-footer">
+              <div class="d-flex flex-fill align-items-center text-muted text-sm">
+                <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
+                <LikeIcon permalink={post.permalink} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <Pagination current={pageNum} total={totalPage} rootPath="/" />
+</div>

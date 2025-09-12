@@ -1,0 +1,170 @@
+---
+title: 一道无趣的面试编程题
+slug: algo-find-the-lowest-costs
+date: 2024-04-13 15:42:12
+updated: 2024-04-13 23:15:12
+tags:
+  - 算法
+  - 面试
+category: 编程
+summary: 最近经济大环境依旧没能从疫情中走出来，身边有不少小伙伴被裁员或者是公司倒闭失业。好友群里讨论最多的话题就是面试，自然少不了讨论面试题。
+cover: https://cat.yufan.me/images/2024/04/2024041405050511.jpg
+---
+
+![羨望](https://cat.yufan.me/images/2024/04/2024041513050511.jpg)
+
+最近经济大环境依旧没能从疫情中走出来，身边有不少小伙伴被裁员或者是公司倒闭失业。好友群里讨论最多的话题就是面试，自然少不了讨论面试题。昨天一位相识多年的好友向我求助，他当时正好在面试，需要现场编程。
+
+当时刚好不忙就看了一下题目，感觉很无趣，但还是耐着性子文字给他讲了讲，顺带着画了张简图，可是他还是没懂。原题如下：
+
+> 一个城市可以近似看成 n \* m 的网格图，A 公司有 k 个维修点，每个维修点有固定的坐标，城市里面有 h 个客户需要修理手机，客户有固定的坐标。维修员在地图上只能上下左右走，不能斜着走，每走一个格子需要 2 块钱的花费。每个维修点拥有无数个员工，每个员工可以被派去为一个客户服务。城市里面有 z 个地方在修理管道，这些地方是不能走的。可能有一些客户是被隔离的（上下左右都在修管道），这里是不需要派员工去修理手机了。A 公司为了节省财力，想找到最小的花费。
+>
+> **输入**：
+>
+> 第一行给出两个正整数 n, m （0 \< n \< 1000, 0 \< m \< 1000）。
+> 第二行给出 k（0 \< k \< 20）以及 k 个维修点的坐标。
+> 第三行给出 z（0 \< z \< 100）以及 z 个坐标。
+> 第四行给出 h（O \< h \< 100）以及 h 个坐标。
+> 保证客户，维修点以及修理管道都在 n \* m 的地图里面。
+>
+> **输出**：最小的花费。
+
+样例
+
+```java
+输入样例
+100 100
+411223344
+100
+3 99 99 88 88 7777
+
+输出样例
+1008
+```
+
+这道题乍一看，看起来很唬人字很多，又是还有拦路虎，要找最短路径啥的，但其实是一道阅读理解题。一般现场编程面试，主要看你现场的反应和理解力，算法或者数据结构的东西，反而涉及不会太多。
+
+这也使得这道题在弄懂原理后相当无趣，但考虑我这朋友确实经验尚浅，所以我还是给他继续讲下去，顺带着给了代码实现。这篇博客便是当时内容的摘录整理。
+
+![Step 1](https://cat.yufan.me/images/recaps/algo-minimal-costs/step1.svg)
+
+<center>
+	做任何算法题，第一步是理解题意，第二步是设想最简单的情况，再慢慢推导到复杂情况。首先，我们先不考虑存在阻塞的情况。最简单场景里，顾客和维修点在一个
+	1 x 1 的格子的一条边上，这个时候他们间的最短距离为 1。
+</center>
+
+![Step 2](https://cat.yufan.me/images/recaps/algo-minimal-costs/step2.svg)
+
+<center>然后我们更进一步，如果他们在一个格子的对角线上呢？他们间的最短路径有两条，为 2。</center>
+
+![Step 3](https://cat.yufan.me/images/recaps/algo-minimal-costs/step3.svg)
+
+<center>
+	结合初中的几何学知识，我们首先知道一个基本知识，两点之间，直线最短。所以，维修点和顾客在同一条直线上时，他们之间的距离就是直线距离。
+</center>
+
+![Step 4](https://cat.yufan.me/images/recaps/algo-minimal-costs/step4.svg)
+
+<center>然后我们再稍微复杂一点，此时顾客和维修点之间是田字格，最短路径就有三条，距离为 3。</center>
+
+![Step 5](https://cat.yufan.me/images/recaps/algo-minimal-costs/step5.svg)
+
+<center>
+	等到田字格的时候，相信聪明的你已经发现了规律。那就是顾客到维修点的最短距离，等于他们所形成的矩形的横纵两条边边长的总和。按照上面右侧图片所示的箭头所行走的距离都等于这个最短路径。
+</center>
+
+一般情况下，面试场景的编码题已经可以开始写了。对应的编程思路就是，从维修点出发，在与顾客构成的矩形边界里面，不断逼近，只要能走通那么我们之间就有了最短距离。再把不同维修点到顾客的最短距离排序，选出最小的距离来进行计算费用。
+
+![Step 6](https://cat.yufan.me/images/recaps/algo-minimal-costs/step6.svg)
+
+倘若以上面的推论作为最终编码的方式，虽然不能说完全错误，但是在当下这个面试很卷的时代，还是有可能被 PASS，为什么呢？因为我们还没有引入阻塞的概念。我们随便画两种阻塞的情况，并且假定这里都属于在当时条件下的最短路径，那么阁下又该如何应对？😆
+
+![头号玩家 电影截图](https://cat.yufan.me/images/2024/04/2024041510373084.jpg)
+
+某种意义上说，我们的确需要从头来审视这道题目。从前面的分析和题目中，我们得出两个结论。
+
+1. 最短的距离永远是尽量在水平和垂直距离上向目标靠近的走法。
+2. 用户每次前进，在没有阻塞的时候，其实可以最多可以往四个方向去走。
+
+以此为基础，我们就可以稍微来复习一下大学的算法知识了，贪心算法（贪婪算法）。贪心算法的定义网上随随便便都能找到，这里就不再复述，我们更多地是需要去思考在这个场景的贪心算法如何使用。
+
+![Step 7](https://cat.yufan.me/images/recaps/algo-minimal-costs/step7.svg)
+
+贪心算法的第一步，就是找寻从顾客开始，所有可能能行走方向距离为 1 的点有哪些（图中蓝色的点）。接着，我们可以以这些距离为 1 的点为基础，去找寻所有距离为 2 的点（图中绿色的点）。以此类推，直到所有的点都没有下一个可以行走的点了。而每计算一次距离为 N 的点的时候，都可以尝试看看里面是否有对应的维修点，如果有，那么终止检索，这个 N 便是最短距离。
+
+![Step 8](https://cat.yufan.me/images/recaps/algo-minimal-costs/step8.svg)
+
+如上图所示，在我们查找距离为 4 的点的时候，我们就能找到目标维修店，那么我们可以认定，起最短距离就是 4。
+
+下面就可以考虑编码了，倘若是在算法竞赛里面（这种题连算竞入门题都不算啦），首先需要考虑的是时空效率。我们首先定义一个二维数组，并在上面放上维修店，假定魔力数字 -1。然后放上所有阻塞的点，假定魔力数字为 -2。数组里面数字为 0 的地方代表没有走过的点，为 1 的值则代表走过的点。
+
+那么此检索最短路径的算法大概应该类似如下内容，类伪代码，不代表最终能运行品质：
+
+```java
+int[][] routines = new int[x][y];
+
+public record Point(int x, int y) {}
+
+public record SearchResult(boolean found, List<Point> next) {}
+
+public int findMinimalRoutine(int[][] routines, Point customer) {
+    List<Point> next = Collections.singleton(customer);
+    int minimalPath = 1;
+
+    do {
+        result = findNextPoints(routines, next);
+        if (result.found) {
+            return minimalPath;
+        }
+        minimalPath += 1;
+        next = result.next;
+    } while (next != null && !next.isEmpty());
+
+    return 0;
+}
+
+public SearchResult findNextPoints(int[][] routines, List<Point> currentPoints) {
+    List<Point> resultPoints = new ArraryList<>();
+
+    for (Point currentPoint : currentPoints) {
+        List<Point> nextPoints = findNextPoints(routines, currentPoint);
+
+        for (Point nextPoint : nextPoints) {
+            if (routines[nextPoint.x][nextPoint.y] == -1) {
+                return new SearchResult(true, Collections.emptyList());
+            }
+
+            routines[nextPoint.x][nextPoint.y] = 1;
+        }
+
+        resultPoints.addAll(nextPoints);
+    }
+
+    return new SearchResult(false, resultPoints);
+}
+
+public List<Point> findNextPoints(int[][] routines, Point point) {
+    List<Point> nextPoints = new ArraryList<>(4);
+
+    if (availablePoint(routines, point.x - 1, point.y)) {
+        nextPoints.add(new Point(point.x - 1, point.y));
+    }
+    if (availablePoint(routines, point.x, point.y - 1)) {
+        nextPoints.add(new Point(point.x, point.y - 1));
+    }
+    if (availablePoint(routines, point.x + 1, point.y)) {
+        nextPoints.add(new Point(point.x + 1, point.y));
+    }
+    if (availablePoint(routines, point.x, point.y + 1)) {
+        nextPoints.add(new Point(point.x, point.y + 1));
+    }
+
+    return nextPoints;
+}
+
+private boolean availablePoint(int[][] routines, int x, int y) {
+    return x >= 0 && x < routines.length && y >= 0 && y <= routines[0].length && (routines[x][y] == 0 || routines[x][y] == -1);
+}
+```
+
+![Fin](https://cat.yufan.me/images/2024/06/2024062101010412.jpg)

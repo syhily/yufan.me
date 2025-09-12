@@ -1,0 +1,50 @@
+---
+import SingleLayout from '@/layouts/admin/SingleLayout.astro'
+---
+
+<SingleLayout title="数据库管理">
+  <form method="post" action="/admin/api/db/import" enctype="multipart/form-data" method="post">
+    <div class="flex-fill">
+      <div class="row g-3 mb-4 px-4">
+        <input class="form-control mb-2" name="file" type="file" required accept=".sql,application/sql" />
+      </div>
+      <div class="form-submit g-3 text-center">
+        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="导入" />
+        <input
+          name="download"
+          type="button"
+          id="download"
+          class="btn btn-secondary col-4"
+          value="导出"
+          onclick="location.href='/admin/api/db/export'"
+        />
+      </div>
+    </div>
+  </form>
+  <p id="status"></p>
+</SingleLayout>
+
+<script>
+  const form = document.querySelector('form') as HTMLFormElement
+  const status = document.getElementById('status') as HTMLParagraphElement
+  function updateStatusMessage(message: string): void {
+    status.textContent = message
+  }
+  async function handleSubmit(event: SubmitEvent): Promise<void> {
+    event.preventDefault()
+    const formData = new FormData(form)
+    updateStatusMessage('⏳ Uploading file...')
+    await fetch('/admin/api/db/import', { method: 'POST', body: formData })
+      .catch((error) => {
+        console.error('Uploading files failed', error)
+        updateStatusMessage('❌ Uploading file failed.')
+      })
+      .then((response) => {
+        if (response && !response.ok) {
+          updateStatusMessage('❌ Network response was not OK.')
+        }
+        updateStatusMessage('✅ File uploaded successfully.')
+      })
+  }
+  form.addEventListener('submit', handleSubmit)
+</script>

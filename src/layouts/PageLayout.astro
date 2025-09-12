@@ -1,0 +1,62 @@
+---
+import type { Page } from '@/helpers/content/schema'
+import MusicPlayer from 'astro-netease-player/MusicPlayer.astro'
+import { Image } from 'astro:assets'
+import config from '@/blog.config'
+import Comments from '@/components/comment/Comments.astro'
+import LikeButton from '@/components/like/LikeButton.astro'
+import Friends from '@/components/mdx/page/Friends.astro'
+import Solution from '@/components/mdx/solutions/Solution.astro'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import TableOfContents from '@/components/page/toc/TableOfContents.astro'
+import Footer from '@/components/partial/Footer.astro'
+import { urlJoin } from '@/helpers/tools'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  page: Page
+}
+
+const { page } = Astro.props
+const { Content, headings } = await page.render()
+---
+
+<BaseLayout title={page.title} description={page.summary} footer={false}>
+  <PageMeta
+    slot="og"
+    title={page.title}
+    description={page.summary}
+    ogImageUrl={page.og ? page.og : `/images/og/${page.slug}.png`}
+  />
+
+  <div class="row gx-0">
+    <div class="col-lg-8 col-xl-8">
+      <div class="post p-3 p-md-5">
+        <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
+        <TableOfContents {headings} toc={page.toc} />
+        <div class="post-content">
+          <div class="nc-light-gallery">
+            {
+              page.comments && (
+                <Content
+                  components={{
+                    MusicPlayer,
+                    Image,
+                    Solution,
+                    Friends,
+                  }}
+                />
+              )
+            }
+          </div>
+        </div>
+        <LikeButton permalink={page.permalink} />
+        {page.comments && <Comments commentKey={urlJoin(config.website, page.permalink, '/')} title={page.title} />}
+      </div>
+      <Footer />
+    </div>
+    <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
+      <div class="bg-img hv" style={{ backgroundImage: `url('${page.cover}')` }}></div>
+    </div>
+  </div>
+</BaseLayout>
