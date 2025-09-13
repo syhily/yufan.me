@@ -1,8 +1,6 @@
 ---
 import type { BlogConfig } from '@/blog.config'
 import config from '@/blog.config'
-import Logo from '@/components/logo/Logo.astro'
-import LogoLarge from '@/components/logo/LogoLarge.astro'
 import QRDialog from '@/components/partial/QRDialog.astro'
 import SearchIcon from '@/components/search/SearchIcon.astro'
 
@@ -18,7 +16,7 @@ const { navigation } = Astro.props
   <div class="aside-inner bg-secondary">
     <h1 class="navbar-brand">
       <a href="/" title={config.title} class="d-block">
-        <Logo />
+        <img src="/logo-dark.svg" alt="且听书吟" />
       </a>
     </h1>
     <div class="site-menu">
@@ -69,7 +67,7 @@ const { navigation } = Astro.props
   <div class="container">
     <div class="d-flex flex-flex align-items-center">
       <a href="/" title={config.title} class="d-block">
-        <LogoLarge />
+        <img src="/logo-large.svg" alt="且听书吟" />
       </a>
       <div class="flex-fill"></div>
       <div class="menu-toggler text-xl">

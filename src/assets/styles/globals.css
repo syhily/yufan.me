@@ -1811,7 +1811,7 @@ a:hover .overlay {
   flex-shrink: 0;
 }
 
-.navbar-brand svg {
+.navbar-brand img {
   max-height: 60px;
 }
 
@@ -1821,7 +1821,7 @@ a:hover .overlay {
     padding: 10px 20px;
   }
 
-  .navbar-brand svg {
+  .navbar-brand img {
     max-height: 50px;
   }
 }
@@ -1832,7 +1832,7 @@ a:hover .overlay {
     padding: 15px 20px;
   }
 
-  .navbar-brand svg {
+  .navbar-brand img {
     max-height: 55px;
   }
 }
@@ -1850,7 +1850,7 @@ a:hover .overlay {
   border-bottom: 1px solid #ebf1f6;
 }
 
-.mobile-brand svg {
+.mobile-brand img {
   height: 50px;
 }
 
@@ -1863,7 +1863,7 @@ a:hover .overlay {
     display: block;
   }
 
-  .mobile-brand svg {
+  .mobile-brand img {
     max-height: 40px;
   }
 }
@@ -1873,7 +1873,7 @@ a:hover .overlay {
     display: block;
   }
 
-  .mobile-brand svg {
+  .mobile-brand img {
     max-height: 35px;
   }
 }
