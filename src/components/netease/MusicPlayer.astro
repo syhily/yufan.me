@@ -7,21 +7,52 @@ interface Props extends MusicPlayerProps {}
 const { name, artist, url, pic, lyric } = await resolveSong(Astro.props)
 ---
 
-{
-  url === '' ? (
-    <p>歌曲加载失败</p>
-  ) : (
-    <div class="aplayer" data-name={name} data-artist={artist} data-url={url} data-cover={pic} data-lyric={lyric}>
-      音乐正在加载中 ...
-    </div>
-  )
-}
+<div
+  class="aplayer"
+  data-id={Astro.props.netease}
+  data-name={name}
+  data-artist={artist}
+  data-url={url}
+  data-cover={pic}
+  data-lyric={lyric}
+>
+  音乐正在加载中 ...
+</div>
 
 <script>
   import APlayer from 'aplayer-ts'
 
+  const QUALITY_LEVELS = ['hires', 'lossless', 'exhigh', 'higher', 'standard']
+
+  async function getSongUrlThrough3rdParty(id: string, level: string): Promise<string> {
+    const response = await fetch(`https://api.toubiec.cn/wyapi/getMusicUrl.php?id=${id}&level=${level}`).catch(
+      () => null,
+    )
+    if (!response) {
+      return ''
+    }
+    const result = await response.json()
+    if (result.code === 200 && result.data) {
+      return result.data[0].url
+    }
+    return ''
+  }
+
   for (const p of document.querySelectorAll(`.aplayer`)) {
     const e = p as HTMLElement
+    let url = e.dataset.url || ''
+    if (url === '' && e.dataset.id) {
+      for (const level of QUALITY_LEVELS) {
+        url = await getSongUrlThrough3rdParty(e.dataset.id, level)
+        if (url !== '') {
+          break
+        }
+      }
+      if (url === '') {
+        url = `https://api.liuly.moe/meting-api/?type=url&id=${e.dataset.id}`
+      }
+    }
+
     APlayer().init({
       container: e,
       lrcType: 1,
@@ -29,7 +60,7 @@ const { name, artist, url, pic, lyric } = await resolveSong(Astro.props)
         {
           name: e.dataset.name,
           artist: e.dataset.artist,
-          url: e.dataset.url,
+          url,
           cover: e.dataset.cover,
           theme: '#6dd7de',
           lrc: e.dataset.lyric,

@@ -154,25 +154,12 @@ async function getSongUrl(id: string, level: string): Promise<string | null> {
   }
 }
 
-async function getSongUrlThrough3rdParty(id: string, level: string): Promise<string | null> {
-  const response = await fetch(`https://api.toubiec.cn/wyapi/getMusicUrl.php?id=${id}&level=${level}`)
-  const result = await response.json()
-  if (result.code === 200 && result.data) {
-    return result.data[0].url
-  }
-  return null
-}
-
 export async function getHighResSongUrl(id: string): Promise<string | null> {
   for (const level of QUALITY_LEVELS) {
     const url = await getSongUrl(id, level)
-    if (url)
+    if (url) {
       return url
-  }
-  for (const level of QUALITY_LEVELS) {
-    const url = await getSongUrlThrough3rdParty(id, level)
-    if (url)
-      return url
+    }
   }
   return null
 }
