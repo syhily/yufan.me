@@ -1,6 +1,5 @@
 ---
 import type { Post } from '@/helpers/content/schema'
-import MusicPlayer from 'astro-netease-player/MusicPlayer.astro'
 import { Image } from 'astro:assets'
 import config from '@/blog.config'
 import Comments from '@/components/comment/Comments.astro'
@@ -14,6 +13,7 @@ import { formatLocalDate } from '@/helpers/content/formatter'
 import { getTag, posts, tags } from '@/helpers/content/schema'
 import { urlJoin } from '@/helpers/tools'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import MusicPlayer from '@/components/netease/MusicPlayer.astro'
 
 interface Props {
   post: Post

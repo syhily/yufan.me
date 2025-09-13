@@ -1,6 +1,5 @@
 ---
 import type { Page } from '@/helpers/content/schema'
-import MusicPlayer from 'astro-netease-player/MusicPlayer.astro'
 import { Image } from 'astro:assets'
 import config from '@/blog.config'
 import Comments from '@/components/comment/Comments.astro'
@@ -12,6 +11,7 @@ import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Footer from '@/components/partial/Footer.astro'
 import { urlJoin } from '@/helpers/tools'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import MusicPlayer from '@/components/netease/MusicPlayer.astro'
 
 interface Props {
   page: Page
