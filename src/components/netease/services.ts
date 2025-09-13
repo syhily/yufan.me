@@ -9,7 +9,6 @@ const HEADERS = {
   'Origin': 'https://music.163.com',
   'Cookie': `NMTID=00Oggc6B-vI6Pa0XEr-p56LdZyLvRMAAAGZRGOh2A; _ntes_nuid=${randomBytes(16).toString('hex')}`,
 }
-const QUALITY_LEVELS = ['hires', 'lossless', 'exhigh', 'higher', 'standard']
 
 function aesEncrypt(buffer: Buffer | string, mode: string, key: string, iv: string) {
   const keyBuffer = Buffer.from(key).subarray(0, 16)
@@ -104,7 +103,7 @@ export async function getSongInfo(id: string): Promise<Song> {
   }
 }
 
-async function getSongUrl(id: string, level: string): Promise<string | null> {
+export async function getSongUrl(id: string, level: string): Promise<string | null> {
   try {
     const url = '/api/song/enhance/player/url/v1'
     const data = {
@@ -152,16 +151,6 @@ async function getSongUrl(id: string, level: string): Promise<string | null> {
     )
     return null
   }
-}
-
-export async function getHighResSongUrl(id: string): Promise<string | null> {
-  for (const level of QUALITY_LEVELS) {
-    const url = await getSongUrl(id, level)
-    if (url) {
-      return url
-    }
-  }
-  return null
 }
 
 export async function getLyrics(id: string): Promise<string | null> {

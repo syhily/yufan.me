@@ -1,4 +1,4 @@
-import { getHighResSongUrl, getLyrics, getSongInfo } from './services'
+import { getLyrics, getSongInfo, getSongUrl } from './services'
 
 export interface Song {
   name: string
@@ -17,7 +17,7 @@ async function song(props: MusicPlayerProps): Promise<Song> {
   const { netease } = props
 
   const info = await getSongInfo(netease)
-  const url = await getHighResSongUrl(netease)
+  const url = await getSongUrl(netease, 'standard')
   const lyric = await getLyrics(netease)
 
   // Check the return result.
