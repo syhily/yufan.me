@@ -1,4 +1,5 @@
 import { actions } from 'astro:actions'
+import QRCode from 'qrcode-svg'
 import { handleActionError } from '@/assets/scripts/actions'
 import stickySidebar from '@/assets/scripts/sticky-sidebar.js'
 
@@ -26,6 +27,19 @@ function handleScrollUp() {
 goTop.addEventListener('click', () => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' }))
 window.addEventListener('scroll', handleScrollUp)
 window.addEventListener('resize', handleScrollUp)
+
+// Render QRCode.
+for (const qr of document.querySelectorAll('.qrcode')) {
+  const svg = new QRCode({
+    width: 196,
+    height: 196,
+    content: qr.dataset.content,
+    join: true,
+    xmlDeclaration: false,
+    container: 'svg-viewbox',
+  }).svg()
+  qr.insertAdjacentHTML('beforeend', svg)
+}
 
 // Dialog popup.
 for (const dialog of document.querySelectorAll('.nice-dialog')) {

@@ -2216,6 +2216,19 @@ a:hover .overlay {
   }
 }
 
+.nice-popup-content h6 {
+  font-size: 20px;
+}
+
+.nice-popup-content p {
+  font-size: 16px;
+}
+
+.nice-popup-content .qrcode {
+  width: 210px;
+  height: 210px;
+}
+
 /*--------------------------------------------------------------
     error content
 --------------------------------------------------------------*/

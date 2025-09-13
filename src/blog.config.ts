@@ -44,7 +44,7 @@ const config: BlogConfig = {
       link: 'https://app.folo.is/share/feeds/54772566650461214',
     },
     {
-      name: '微信',
+      name: 'Yufan Sheng',
       icon: 'icon-wechat',
       type: 'qrcode',
       title: '扫码加我微信好友',

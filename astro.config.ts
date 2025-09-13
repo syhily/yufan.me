@@ -1,6 +1,7 @@
 import process from 'node:process'
 import mdx from '@astrojs/mdx'
 import node from '@astrojs/node'
+import rehypeMathML from '@daiji256/rehype-mathml'
 import {
   transformerNotationDiff,
   transformerNotationErrorLevel,
@@ -12,7 +13,6 @@ import uploader from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeExternalLinks from 'rehype-external-links'
-import rehypeMathjax from 'rehype-mathjax'
 import rehypeSlug from 'rehype-slug'
 import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
@@ -75,7 +75,7 @@ export default defineConfig({
         [rehypeExternalLinks, { rel: 'nofollow', target: '_blank' }],
         rehypeSlug,
         [rehypeAutolinkHeadings, { behavior: 'append', properties: {} }],
-        rehypeMathjax,
+        rehypeMathML,
       ],
     }),
     uploader({

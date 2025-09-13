@@ -1,6 +1,4 @@
 ---
-import QRCode from 'qrcode-svg'
-
 interface Props {
   url: string
   name: string
@@ -10,14 +8,6 @@ interface Props {
 }
 
 const { url, name, title, icon, className } = Astro.props
-const svg = new QRCode({
-  width: 196,
-  height: 196,
-  content: url,
-  join: true,
-  xmlDeclaration: false,
-  container: 'svg-viewbox',
-}).svg()
 ---
 
 <div
@@ -40,7 +30,7 @@ const svg = new QRCode({
         <div class="text-center">
           <h6>{title}</h6>
           <p class="mt-1 mb-2">{name}</p>
-          <Fragment set:html={svg} />
+          <div class="qrcode" data-content={url}></div>
         </div>
       </div>
     </div>
