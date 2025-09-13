@@ -22,8 +22,6 @@ const { name, artist, url, pic, lyric } = await resolveSong(Astro.props)
 <script>
   import APlayer from 'aplayer-ts'
 
-  const QUALITY_LEVELS = ['hires', 'lossless', 'exhigh', 'higher', 'standard']
-
   async function getSongUrlThrough3rdParty(id: string, level: string): Promise<string> {
     const response = await fetch(`https://api.toubiec.cn/wyapi/getMusicUrl.php?id=${id}&level=${level}`).catch(
       () => null,
@@ -42,12 +40,7 @@ const { name, artist, url, pic, lyric } = await resolveSong(Astro.props)
     const e = p as HTMLElement
     let url = e.dataset.url || ''
     if (url === '' && e.dataset.id) {
-      for (const level of QUALITY_LEVELS) {
-        url = await getSongUrlThrough3rdParty(e.dataset.id, level)
-        if (url !== '') {
-          break
-        }
-      }
+      url = await getSongUrlThrough3rdParty(e.dataset.id, 'standard')
       if (url === '') {
         url = `https://api.liuly.moe/meting-api/?type=url&id=${e.dataset.id}`
       }
