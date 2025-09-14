@@ -186,13 +186,7 @@ export async function getLyrics(id: string): Promise<string | null> {
       return null
     }
 
-    const lrc = result?.lrc?.lyric
-    if (!lrc) {
-      console.warn('No lyrics available for this song', id)
-      return null
-    }
-
-    return lrc
+    return result?.lrc?.lyric
   }
   catch (error) {
     console.error('Failed to get lyrics:', error instanceof Error ? error.message : 'Unknown error')
