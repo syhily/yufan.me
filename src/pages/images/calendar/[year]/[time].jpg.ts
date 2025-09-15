@@ -5,14 +5,17 @@ import { cacheBuffer, loadBuffer } from '@/helpers/cache'
 async function loadCalendarImage(year: string, time: string): Promise<Response> {
   const link = `https://img.owspace.com/Public/uploads/Download/${year}/${time}.jpg`
   const cacheKey = `calendar-${year}-${time}`
-  const buffer = await loadBuffer(cacheKey)
+  let buffer = await loadBuffer(cacheKey)
 
   if (buffer === null) {
     const resp = await fetch(link, { referrer: '' })
     if (resp.status < 300 && resp.status >= 200) {
-      await cacheBuffer(cacheKey, Buffer.from(await resp.arrayBuffer()), 60 * 60 * 24)
+      buffer = Buffer.from(await resp.arrayBuffer())
+      await cacheBuffer(cacheKey, buffer, 60 * 60 * 24)
     }
-    return resp
+    else {
+      return resp
+    }
   }
 
   return new Response(new Uint8Array(buffer), {
