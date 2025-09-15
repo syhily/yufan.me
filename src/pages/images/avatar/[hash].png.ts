@@ -47,18 +47,18 @@ export const GET: APIRoute = async ({ params, redirect }) => {
   // Loading logic.
   const email = isNumeric(hash) ? await queryEmail(Number.parseInt(hash)) : hash
   if (email === null) {
-    cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
+    await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
     return redirect(defaultAvatar())
   }
   const encoded = email.includes('@') ? encodedEmail(email) : email
   const buffer = await avatarImage(encoded)
 
   if (buffer === null) {
-    cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
+    await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
     return redirect(defaultAvatar())
   }
   else {
-    cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
+    await cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
   }
 
   return new Response(new Uint8Array(buffer), {

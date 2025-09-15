@@ -7,6 +7,7 @@ const storage = createStorage({
   driver: memoryDriver(),
 })
 
+// Seconds
 const LIMIT_TTL = 60 * 30
 
 export async function exceedLimit(ip: string) {
@@ -20,10 +21,10 @@ export async function incrLimit(ip: string) {
   const times = await storage.getItem<number>(key)
 
   if (times === null) {
-    storage.setItem(key, 1, { ttl: LIMIT_TTL /* seconds */ })
+    storage.setItem(key, 1, { ttl: LIMIT_TTL })
   }
   else {
-    storage.setItem(key, times + 1, { ttl: LIMIT_TTL /* seconds */ })
+    storage.setItem(key, times + 1, { ttl: LIMIT_TTL })
   }
 }
 

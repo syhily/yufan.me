@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ params }) => {
   let buffer = await loadBuffer(`open-graph-${cover}`)
   if (buffer === null) {
     buffer = await drawOpenGraph({ title, summary, cover })
-    cacheBuffer(`open-graph-${cover}`, buffer, 24 * 60 * 60)
+    await cacheBuffer(`open-graph-${cover}`, buffer, 24 * 60 * 60)
   }
 
   return new Response(new Uint8Array(buffer), {

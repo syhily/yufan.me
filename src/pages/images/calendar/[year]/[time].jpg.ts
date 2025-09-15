@@ -10,7 +10,7 @@ async function loadCalendarImage(year: string, time: string): Promise<Response> 
   if (buffer === null) {
     const resp = await fetch(link, { referrer: '' })
     if (resp.status < 300 && resp.status >= 200) {
-      cacheBuffer(cacheKey, Buffer.from(await resp.arrayBuffer()), 60 * 60 * 24)
+      await cacheBuffer(cacheKey, Buffer.from(await resp.arrayBuffer()), 60 * 60 * 24)
     }
     return resp
   }
