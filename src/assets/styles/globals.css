@@ -2508,6 +2508,11 @@ a:hover .overlay {
   cursor: zoom-in;
 }
 
+.medium-zoom-overlay,
+.medium-zoom-image--opened {
+  z-index: 1080;
+}
+
 @media (max-width: 767.98px) {
   .post-content h1,
   .post-content h2,

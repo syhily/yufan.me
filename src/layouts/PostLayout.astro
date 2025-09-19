@@ -11,7 +11,7 @@ import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Sidebar from '@/components/sidebar/Sidebar.astro'
 import { formatLocalDate } from '@/helpers/content/formatter'
 import { getTag, posts, tags } from '@/helpers/content/schema'
-import { urlJoin } from '@/helpers/tools'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import MusicPlayer from '@/components/netease/MusicPlayer.astro'
 
@@ -64,6 +64,7 @@ const { Content, headings } = await post.render()
                       MusicPlayer,
                       Image,
                       Solution,
+                      img: Image,
                     }}
                   />
                 </div>
@@ -75,7 +76,7 @@ const { Content, headings } = await post.render()
               <LikeShare {post} />
               {
                 post.comments && (
-                  <Comments commentKey={urlJoin(config.website, post.permalink, '/')} title={post.title} />
+                  <Comments commentKey={joinPaths(config.website, post.permalink, '/')} title={post.title} />
                 )
               }
             </div>

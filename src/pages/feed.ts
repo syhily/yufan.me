@@ -1,8 +1,8 @@
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import rss from '@astrojs/rss'
 import config from '@/blog.config'
 import { renderPostsContents } from '@/helpers/content/render'
 import { posts } from '@/helpers/content/schema'
-import { urlJoin } from '@/helpers/tools'
 
 export async function GET() {
   const visiblePosts = posts.filter(post => post.visible)
@@ -16,7 +16,7 @@ export async function GET() {
     stylesheet: '/feed.xsl',
     site: import.meta.env.SITE,
     items: feedPosts.map(post => ({
-      link: urlJoin(import.meta.env.SITE, post.permalink),
+      link: joinPaths(import.meta.env.SITE, post.permalink),
       title: post.title,
       pubDate: post.date,
       description: post.summary,

@@ -1,3 +1,4 @@
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 import config from '@/blog.config'
@@ -8,7 +9,7 @@ import { decreaseLikes, increaseLikes, queryLikes } from '@/helpers/comment/like
 import { createComment, loadComments } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/content/render'
 import { pages, posts } from '@/helpers/content/schema'
-import { encodedEmail, urlJoin } from '@/helpers/tools'
+import { encodedEmail } from '@/helpers/tools'
 
 const keys = [...posts.map(post => post.permalink), ...pages.map(page => page.permalink)]
 
@@ -41,7 +42,7 @@ export const comment = {
     handler: async ({ email }) => {
       const id = await queryUserId(email)
       const hash = id === null ? encodedEmail(email) : `${id}`
-      return { avatar: urlJoin(config.website, 'images/avatar', `${hash}.png`) }
+      return { avatar: joinPaths(config.website, 'images/avatar', `${hash}.png`) }
     },
   }),
   replyComment: defineAction({

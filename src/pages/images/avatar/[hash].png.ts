@@ -1,17 +1,18 @@
 import type { APIRoute } from 'astro'
 import { Buffer } from 'node:buffer'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import config from '@/blog.config'
 import { queryEmail } from '@/helpers/auth/user'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/helpers/cache'
-import { encodedEmail, isNumeric, urlJoin } from '@/helpers/tools'
+import { encodedEmail, isNumeric } from '@/helpers/tools'
 
 function defaultAvatar(): string {
-  return urlJoin(import.meta.env.SITE, '/images/default-avatar.png')
+  return joinPaths(import.meta.env.SITE, '/images/default-avatar.png')
 }
 
 async function avatarImage(hash: string): Promise<Buffer | null> {
   const defaultAvatarLink = defaultAvatar()
-  const link = urlJoin(
+  const link = joinPaths(
     config.settings.comments.avatar.mirror,
     `${hash}?s=${config.settings.comments.avatar.size}&d=${defaultAvatarLink}`,
   )

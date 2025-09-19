@@ -1,8 +1,8 @@
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import { defineMiddleware, sequence } from 'astro:middleware'
 import { userSession } from '@/helpers/auth/session'
 import { hasAdmin } from '@/helpers/auth/user'
 import { posts } from '@/helpers/content/schema'
-import { urlJoin } from '@/helpers/tools'
 
 export enum ADMIN_ENDPOINTS {
   install = '/admin/install',
@@ -53,8 +53,8 @@ const authentication = defineMiddleware(async ({ url: { pathname }, redirect, se
 
 const postUrlMappings: Map<string, string> = posts.map(post => ({
   sources: [
-    urlJoin('/', post.slug),
-    ...post.alias.flatMap(alias => [urlJoin('/', alias), urlJoin('/posts/', alias)]),
+    joinPaths('/', post.slug),
+    ...post.alias.flatMap(alias => [joinPaths('/', alias), joinPaths('/posts/', alias)]),
   ],
   target: post.permalink,
 })).reduce((res, item) => {

@@ -1,11 +1,11 @@
 ---
 import { DateTime } from 'luxon'
 import config from '@/blog.config'
-import { urlJoin } from '@/helpers/tools'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 
 async function loadCalendarImage(): Promise<string> {
   const now = DateTime.now().setZone(config.settings.timeZone).setLocale(config.settings.locale)
-  return urlJoin(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.jpg`)
+  return joinPaths(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.jpg`)
 }
 
 const calendarImage = !config.settings.sidebar.calendar ? '' : await loadCalendarImage()

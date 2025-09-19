@@ -1,4 +1,5 @@
 import { actions } from 'astro:actions'
+import mediumZoom from 'medium-zoom'
 import QRCode from 'qrcode-svg'
 import { handleActionError } from '@/assets/scripts/actions'
 import stickySidebar from '@/assets/scripts/sticky-sidebar.js'
@@ -15,6 +16,15 @@ document.addEventListener('keydown', (event) => {
 document.querySelector('.menu-toggler').addEventListener('click', () => menuBody.classList.toggle('in', true))
 document.querySelector('.site-menu').addEventListener('click', () => menuBody.classList.toggle('in', false))
 document.querySelector('.aside-overlay').addEventListener('click', () => menuBody.classList.toggle('in', false))
+
+// Medium zoom for images.
+const zoom = mediumZoom()
+document.addEventListener('DOMContentLoaded', () => {
+  zoom.attach('.post-content img', '.post-content svg')
+})
+document.body.addEventListener('DOMNodeInserted', (event) => {
+  zoom.attach(event.target)
+})
 
 // Go to top.
 const goTop = document.querySelector('.fixed-gotop')
@@ -116,8 +126,6 @@ if (typeof comments !== 'undefined' && comments !== null) {
       }
     }
   }
-
-  // TODO: Load the commenter information from the cookie.
 
   comments.addEventListener('focusout', (event) => {
     const avatar = document.querySelector('#commentForm img.avatar')

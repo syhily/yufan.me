@@ -2,7 +2,8 @@
 import type { CommentItem } from '@/helpers/comment/types'
 import config from '@/blog.config'
 import { formatLocalDate } from '@/helpers/content/formatter'
-import { encodedEmail, urlJoin } from '@/helpers/tools'
+import { encodedEmail } from '@/helpers/tools'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 
 interface Props {
   depth: number
@@ -18,7 +19,7 @@ const { comment, depth, pending } = Astro.props
     <div class="comment-avatar flex-avatar">
       <img
         alt={comment.name}
-        src={urlJoin(import.meta.env.SITE, 'images/avatar', `${comment.userId}.png`)}
+        src={joinPaths(import.meta.env.SITE, 'images/avatar', `${comment.userId}.png`)}
         class="avatar avatar-40 photo"
         height="40"
         width="40"

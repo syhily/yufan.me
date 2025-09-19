@@ -1,6 +1,6 @@
 // This file is copied from https://github.com/flexdinesh/blogster/blob/main/packages/shared/src/seo.ts
 // I just modified it for my personal needs.
-import { urlJoin } from '@/helpers/tools'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 
 export interface PageMeta {
   title: string
@@ -67,7 +67,7 @@ function parseOgImageUrl(ogImageUrl?: string): string {
   return ogImageUrl === undefined
     ? `${import.meta.env.SITE}/images/open-graph.png`
     : !ogImageUrl.startsWith('http')
-        ? urlJoin(import.meta.env.SITE, ogImageUrl)
+        ? joinPaths(import.meta.env.SITE, ogImageUrl)
         : ogImageUrl
 }
 

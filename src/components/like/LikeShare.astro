@@ -3,14 +3,14 @@ import type { Post } from '@/helpers/content/schema'
 import querystring from 'node:querystring'
 import config from '@/blog.config'
 import QRDialog from '@/components/partial/QRDialog.astro'
-import { urlJoin } from '@/helpers/tools'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 
 interface Props {
   post: Post
 }
 
 const { post } = Astro.props
-const postURL = urlJoin(config.website, post.permalink)
+const postURL = joinPaths(config.website, post.permalink)
 const qq = querystring.stringify({
   url: postURL,
   pics: post.cover,

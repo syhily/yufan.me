@@ -9,7 +9,7 @@ import Solution from '@/components/mdx/solutions/Solution.astro'
 import PageMeta from '@/components/meta/PageMeta.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Footer from '@/components/partial/Footer.astro'
-import { urlJoin } from '@/helpers/tools'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import MusicPlayer from '@/components/netease/MusicPlayer.astro'
 
@@ -44,6 +44,7 @@ const { Content, headings } = await page.render()
                     Image,
                     Solution,
                     Friends,
+                    img: Image,
                   }}
                 />
               )
@@ -51,7 +52,7 @@ const { Content, headings } = await page.render()
           </div>
         </div>
         <LikeButton permalink={page.permalink} />
-        {page.comments && <Comments commentKey={urlJoin(config.website, page.permalink, '/')} title={page.title} />}
+        {page.comments && <Comments commentKey={joinPaths(config.website, page.permalink, '/')} title={page.title} />}
       </div>
       <Footer />
     </div>

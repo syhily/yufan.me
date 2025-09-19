@@ -11,12 +11,6 @@ export function makeToken(length: number, characters = 'ABCDEFGHIJKLMNOPQRSTUVWX
   return result
 }
 
-export function urlJoin(base: string, ...paths: string[]): string {
-  return Array.from([base, ...paths])
-    .reduce((left, right) => left + (left.endsWith('/') || right.startsWith('/') ? '' : '/') + right)
-    .replace(/([^:]\/)\/+/g, '$1')
-}
-
 export function encodedEmail(email: string): string {
   return crypto.createHash('md5').update(email.trim().toLowerCase()).digest('hex')
 }

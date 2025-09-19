@@ -3,9 +3,9 @@ import { css as OPPOSans } from '@/assets/fonts/opposans.ttf'
 import config from '@/blog.config'
 import PageMeta from '@/components/meta/PageMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
-import { urlJoin } from '@/helpers/tools'
 import '@/assets/styles/globals.css'
 import '@/assets/styles/admin/single.css'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 
 interface Props {
   title?: string
@@ -68,7 +68,7 @@ const description = Astro.props.description || config.description
           <div class="col-lg-5 col-xl-5 d-none d-lg-block sticky-top hv">
             <div
               class="bg-img hv"
-              style={{ backgroundImage: `url('${urlJoin(import.meta.env.SITE, '/images/admin/bg.jpg')}')` }}
+              style={{ backgroundImage: `url('${joinPaths(import.meta.env.SITE, '/images/admin/bg.jpg')}')` }}
             >
             </div>
           </div>

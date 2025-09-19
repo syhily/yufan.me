@@ -18,6 +18,7 @@ import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
 import Font from 'vite-plugin-font'
+import config from './src/blog.config.js'
 
 const {
   UPLOAD_STATIC_FILES,
@@ -40,10 +41,10 @@ export default defineConfig({
     staticImportMetaEnv: true,
   },
   image: {
-    domains: ['cat.yufan.me', 'localhost', '127.0.0.1'],
-    service: {
-      entrypoint: './src/helpers/content/images',
-    },
+    domains: [config.settings.asset.host, 'localhost', '127.0.0.1'],
+    service: NODE_ENV !== 'production'
+      ? { entrypoint: './src/helpers/content/image/sharp' }
+      : { entrypoint: './src/helpers/content/image/upyun' },
   },
   session: {
     driver: 'memory',
@@ -122,6 +123,6 @@ export default defineConfig({
   },
   build: {
     assets: 'assets',
-    assetsPrefix: 'https://cat.yufan.me',
+    assetsPrefix: `${config.settings.asset.scheme}://${config.settings.asset.host}`,
   },
 })

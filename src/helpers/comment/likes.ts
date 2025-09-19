@@ -1,10 +1,11 @@
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import config from '@/blog.config'
 import defer * as pool from '@/helpers/db/pool'
 import { like, page } from '@/helpers/db/schema'
-import { makeToken, urlJoin } from '@/helpers/tools'
+import { makeToken } from '@/helpers/tools'
 
-const generatePageKey = (permalink: string): string => urlJoin(config.website, permalink, '/')
+const generatePageKey = (permalink: string): string => joinPaths(config.website, permalink, '/')
 
 export async function increaseLikes(permalink: string): Promise<{ likes: number, token: string }> {
   const pageKey = generatePageKey(permalink)

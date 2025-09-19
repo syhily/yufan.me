@@ -105,10 +105,26 @@ const pagesCollection = defineCollection({
   }),
 })
 
+const imageCollection = defineCollection({
+  loader: async () => {
+    const response = await fetch(`${config.settings.asset.scheme}://${config.settings.asset.host}${config.settings.asset.metadata}`)
+    const data = await response.json()
+    return data.map((item: { path: string, width: number, height: number, blurDataURL: string }) => ({ id: item.path, ...item }))
+  },
+  schema: z.object({
+    id: z.string(),
+    path: z.string(),
+    width: z.number().int().min(1),
+    height: z.number().int().min(1),
+    blurDataURL: z.string(),
+  }),
+})
+
 export const collections = {
   categories: categoriesCollection,
   friends: friendsCollection,
   tags: tagsCollection,
   posts: postsCollection,
   pages: pagesCollection,
+  images: imageCollection,
 }
