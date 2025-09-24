@@ -9,6 +9,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
+import rehypeMusicPlayer from 'astro-netease-player/rehype'
 import uploader from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
@@ -77,6 +78,7 @@ export default defineConfig({
         rehypeSlug,
         [rehypeAutolinkHeadings, { behavior: 'append', properties: {} }],
         rehypeMathML,
+        rehypeMusicPlayer,
       ],
     }),
     uploader({
