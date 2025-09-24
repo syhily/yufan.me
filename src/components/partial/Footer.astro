@@ -6,7 +6,7 @@ import config from '@/blog.config'
 <footer class="footer border-top border-light text-xs text-center py-4 py-xl-5">
   <div class="line">
     <span>
-      Copyright © {config.settings.footer.initialYear}-{DateTime.now().setZone(config.settings.timeZone).year}
+      {'Copyright © '}{config.settings.footer.initialYear}-{DateTime.now().setZone(config.settings.timeZone).year}
     </span>
     <a href={config.website} title={config.title} rel="home">
       {config.title}
