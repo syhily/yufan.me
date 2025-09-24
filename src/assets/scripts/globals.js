@@ -1,6 +1,6 @@
+import { qrcode } from '@lowlighter/qrcode'
 import { actions } from 'astro:actions'
 import mediumZoom from 'medium-zoom'
-import QRCode from 'qrcode-svg'
 import { handleActionError } from '@/assets/scripts/actions'
 import stickySidebar from '@/assets/scripts/sticky-sidebar.js'
 
@@ -40,14 +40,7 @@ window.addEventListener('resize', handleScrollUp)
 
 // Render QRCode.
 for (const qr of document.querySelectorAll('.qrcode')) {
-  const svg = new QRCode({
-    width: 196,
-    height: 196,
-    content: qr.dataset.content,
-    join: true,
-    xmlDeclaration: false,
-    container: 'svg-viewbox',
-  }).svg()
+  const svg = qrcode(qr.dataset.content, { output: 'svg' })
   qr.insertAdjacentHTML('beforeend', svg)
 }
 
