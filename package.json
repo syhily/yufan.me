@@ -36,13 +36,13 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.5",
-    "@astrojs/node": "^9.4.3",
+    "@astrojs/mdx": "^4.3.6",
+    "@astrojs/node": "^9.4.4",
     "@astrojs/rss": "^4.0.12",
-    "@electric-sql/pglite": "^0.3.8",
-    "@electric-sql/pglite-tools": "^0.2.13",
+    "@electric-sql/pglite": "^0.3.9",
+    "@electric-sql/pglite-tools": "^0.2.14",
     "@napi-rs/canvas": "^0.1.80",
-    "astro": "^5.13.9",
+    "astro": "^5.13.10",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.5",
     "flexsearch": "^0.8.212",

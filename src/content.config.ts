@@ -106,11 +106,7 @@ const pagesCollection = defineCollection({
 })
 
 const imageCollection = defineCollection({
-  loader: async () => {
-    const response = await fetch(`${config.settings.asset.scheme}://${config.settings.asset.host}${config.settings.asset.metadata}`)
-    const data = await response.json()
-    return data.map((item: { path: string, width: number, height: number, blurDataURL: string }) => ({ id: item.path, ...item }))
-  },
+  loader: file('./src/content/metas/images.json'),
   schema: z.object({
     id: z.string(),
     path: z.string(),
