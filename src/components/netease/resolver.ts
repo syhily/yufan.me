@@ -25,9 +25,9 @@ export async function resolveSong(props: MusicPlayerProps): Promise<Song> {
     // Check the return result.
     return {
       name: info.name,
-      artist: info.artists !== undefined ? info.artists[0].name : '',
+      artist: info.singer || '',
       url: url || '',
-      pic: info.album?.picUrl || '',
+      pic: info.picimg || '',
       lyric: lyric || '[00:00.00]无歌词',
     }
   }

@@ -1,98 +1,44 @@
-import { Buffer } from 'node:buffer'
-import { createCipheriv, createHash, randomBytes } from 'node:crypto'
-
-const EAPI_KEY = 'e82ckenh8dichen8'
-const HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 CloudMusic/2.5.1',
-  'Referer': 'https://music.163.com/',
-  'Origin': 'https://music.163.com',
-  'Cookie': `NMTID=00Oggc6B-vI6Pa0XEr-p56LdZyLvRMAAAGZRGOh2A; _ntes_nuid=${randomBytes(16).toString('hex')}`,
-}
-
-function aesEncrypt(buffer: Buffer | string, mode: string, key: string, iv: string) {
-  const keyBuffer = Buffer.from(key).subarray(0, 16)
-  const ivBuffer = Buffer.from(iv).subarray(0, 16)
-  const cipher = createCipheriv(`aes-128-${mode}`, keyBuffer, ivBuffer)
-  cipher.setAutoPadding(true)
-  const data = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
-  return Buffer.concat([cipher.update(data), cipher.final()])
-}
-
-function eapi(url: string, obj: any) {
-  const text = JSON.stringify(obj)
-  const message = `nobody${url}use${text}md5forencrypt`
-  const digest = createHash('md5').update(message).digest('hex')
-  const data = `${url}-36cd479b6b5-${text}-36cd479b6b5-${digest}`
-  return {
-    params: aesEncrypt(data, 'ecb', EAPI_KEY, '').toString('hex').toUpperCase(),
-  }
-}
-
 export interface Song {
   id: string
   name: string
-  artists?: Array<{
-    name: string
-  }>
-  album?: {
-    name: string
-    picUrl?: string
-  }
+  singer: string
+  album: string
   duration?: number
-  publishTime?: number
+  picimg: string
 }
 
-function toFormUrlEncoded(obj: Record<string, string>): string {
-  return Object.entries(obj)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-    .join('&')
+const headers = {
+  'accept': '*/*',
+  'accept-language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,ja;q=0.6,zh-TW;q=0.5',
+  'cache-control': 'no-cache',
+  'content-type': 'application/json',
+  'cookie': 'hasSeenWelcome=true',
+  'origin': 'https://wyapi.toubiec.cn',
+  'pragma': 'no-cache',
+  'priority': 'u=1, i',
+  'referer': 'https://wyapi.toubiec.cn/',
+  'sec-ch-ua': `"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"`,
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': `"macOS"`,
+  'sec-fetch-dest': 'empty',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-site': 'same-origin',
+  'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
 }
 
 export async function getSongInfo(id: string): Promise<Song> {
   try {
-    const url = '/api/v3/song/detail'
-    const data = {
-      c: JSON.stringify([{ id }]),
-      header: {
-        os: 'iOS',
-        appver: '2.5.1',
-        deviceId: randomBytes(8).toString('hex').toUpperCase(),
-      },
-    }
-
-    const { params } = eapi(url, data)
-    const response = await fetch('https://interface3.music.163.com/eapi/v3/song/detail', {
+    const response = await fetch('https://wyapi.toubiec.cn/api/music/detail', {
       method: 'POST',
-      headers: {
-        ...HEADERS,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'NeteaseMusic/2.5.1 (iPhone; iOS 16.6; Scale/3.00)',
-      },
-      body: toFormUrlEncoded({ params }),
+      headers,
+      body: JSON.stringify({ id: `${id}` }),
     })
-
     const result = await response.json()
-    const song = result?.songs?.[0]
+    const song = result?.data
     if (!song) {
       throw new Error(`Failed to get song ${id} info`)
     }
-
-    const artists = song.ar?.map((artist: any) => ({
-      name: artist.name || 'Unknown Artist',
-    })) || [{ name: 'Unknown Artist' }]
-
-    return {
-      id: song.id.toString(),
-      name: song.name,
-      artists,
-      album: {
-        name: song.al?.name || '',
-        picUrl: song.al?.picUrl,
-      },
-      duration: song.dt,
-      publishTime: song.publishTime,
-    }
+    return song
   }
   catch (error) {
     console.error(
@@ -105,27 +51,10 @@ export async function getSongInfo(id: string): Promise<Song> {
 
 export async function getSongUrl(id: string, level: string): Promise<string | null> {
   try {
-    const url = '/api/song/enhance/player/url/v1'
-    const data = {
-      ids: [id],
-      level,
-      encodeType: 'aac',
-      header: {
-        os: 'iOS',
-        appver: '2.5.1',
-        deviceId: randomBytes(8).toString('hex').toUpperCase(),
-      },
-    }
-
-    const { params } = eapi(url, data)
-    const response = await fetch('https://interface.music.163.com/eapi/song/enhance/player/url/v1', {
+    const response = await fetch('https://wyapi.toubiec.cn/api/music/url', {
       method: 'POST',
-      headers: {
-        ...HEADERS,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'NeteaseMusic/2.5.1 (iPhone; iOS 16.6; Scale/3.00)',
-      },
-      body: toFormUrlEncoded({ params }),
+      headers,
+      body: JSON.stringify({ id: `${id}`, level: 'standard' }),
     })
     const result = await response.json()
     if (result?.code !== 200) {
@@ -155,29 +84,10 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
 
 export async function getLyrics(id: string): Promise<string | null> {
   try {
-    const url = '/api/song/lyric/v1'
-    const data = {
-      id,
-      lv: 1,
-      kv: 1,
-      tv: -1,
-      header: {
-        os: 'iOS',
-        appver: '2.5.1',
-        deviceId: randomBytes(8).toString('hex').toUpperCase(),
-      },
-    }
-
-    const { params } = eapi(url, data)
-    const apiUrl = 'https://interface3.music.163.com/eapi/song/lyric/v1'
-    const response = await fetch(apiUrl, {
+    const response = await fetch('https://wyapi.toubiec.cn/api/music/lyric', {
       method: 'POST',
-      headers: {
-        ...HEADERS,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'NeteaseMusic/2.5.1 (iPhone; iOS 16.6; Scale/3.00)',
-      },
-      body: toFormUrlEncoded({ params }),
+      headers,
+      body: JSON.stringify({ id: `${id}` }),
     })
     const result = await response.json()
 
@@ -186,7 +96,7 @@ export async function getLyrics(id: string): Promise<string | null> {
       return null
     }
 
-    return result?.lrc?.lyric
+    return result?.data?.lrc || result?.data?.klyric || result?.data?.tlyric
   }
   catch (error) {
     console.error('Failed to get lyrics:', error instanceof Error ? error.message : 'Unknown error')
