@@ -1,5 +1,4 @@
 import * as api from './providers/api'
-import * as eapi from './providers/eapi'
 
 export interface Song {
   name: string
@@ -18,23 +17,7 @@ export interface MusicPlayerProps {
 
 export async function resolveSong(props: MusicPlayerProps): Promise<Song> {
   const { netease } = props
-  const result = { name: '', artist: '', pic: '', url: '', lyric: '',
-  }
-  try {
-    const info = await eapi.getSongInfo(netease)
-    result.name = info.name
-    result.artist = info.artist
-    result.pic = info.pic
-
-    const lyric = await eapi.getLyrics(netease)
-    result.lyric = lyric || '[00:00.00]无歌词'
-
-    const url = await eapi.getSongUrl(netease, 'standard')
-    result.url = url || ''
-  }
-  catch (err) {
-    console.error(err)
-  }
+  const result = { name: '', artist: '', pic: '', url: '', lyric: '' }
   try {
     if (result.name === '') {
       const info = await api.getSongInfo(netease)
