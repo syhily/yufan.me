@@ -1,4 +1,5 @@
-import { getLyrics, getSongInfo, getSongUrl } from './services'
+import * as api from './providers/api'
+import * as eapi from './providers/eapi'
 
 export interface Song {
   name: string
@@ -8,31 +9,52 @@ export interface Song {
   lyric: string
 }
 
+export type SongInfo = Pick<Song, 'name' | 'artist' | 'pic'>
+
 // The props for music player. We support both netease music and direct linked music.
 export interface MusicPlayerProps {
   netease: string
 }
 
 export async function resolveSong(props: MusicPlayerProps): Promise<Song> {
-  // Try-catch for avoiding the unexpected errors.
+  const { netease } = props
+  const result = { name: '', artist: '', pic: '', url: '', lyric: '',
+  }
   try {
-    const { netease } = props
+    const info = await eapi.getSongInfo(netease)
+    result.name = info.name
+    result.artist = info.artist
+    result.pic = info.pic
 
-    const info = await getSongInfo(netease)
-    const url = await getSongUrl(netease, 'standard')
-    const lyric = await getLyrics(netease)
+    const lyric = await eapi.getLyrics(netease)
+    result.lyric = lyric || '[00:00.00]无歌词'
 
-    // Check the return result.
-    return {
-      name: info.name,
-      artist: info.singer || '',
-      url: url || '',
-      pic: info.picimg || '',
-      lyric: lyric || '[00:00.00]无歌词',
-    }
+    const url = await eapi.getSongUrl(netease, 'standard')
+    result.url = url || ''
   }
   catch (error) {
-    console.error('Failed to resolve the song', error)
-    return { name: '', artist: '', url: '', pic: '', lyric: '' }
+    console.error(error)
+    try {
+      if (result.name === '') {
+        const info = await api.getSongInfo(netease)
+        result.name = info.name
+        result.artist = info.artist
+        result.pic = info.pic
+      }
+
+      if (result.lyric === '') {
+        const lyric = await eapi.getLyrics(netease)
+        result.lyric = lyric || '[00:00.00]无歌词'
+      }
+
+      if (result.url === '') {
+        const url = await api.getSongUrl(netease, 'standard')
+        result.url = url || ''
+      }
+    }
+    catch (error2) {
+      console.error(error2)
+    }
   }
+  return result
 }

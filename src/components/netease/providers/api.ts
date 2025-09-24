@@ -1,12 +1,6 @@
-export interface Song {
-  id: string
-  name: string
-  singer: string
-  album: string
-  duration?: number
-  picimg: string
-}
+import type { SongInfo } from '../resolver'
 
+// https://github.com/Suxiaoqinx/Netease_url
 const headers = {
   'accept': '*/*',
   'accept-language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7,ja;q=0.6,zh-TW;q=0.5',
@@ -26,7 +20,7 @@ const headers = {
   'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
 }
 
-export async function getSongInfo(id: string): Promise<Song> {
+export async function getSongInfo(id: string): Promise<SongInfo> {
   try {
     const response = await fetch('https://wyapi.toubiec.cn/api/music/detail', {
       method: 'POST',
@@ -38,7 +32,11 @@ export async function getSongInfo(id: string): Promise<Song> {
     if (!song) {
       throw new Error(`Failed to get song ${id} info`)
     }
-    return song
+    return {
+      name: song.name,
+      artist: song.singer || '',
+      pic: song.picimg || '',
+    }
   }
   catch (error) {
     console.error(
@@ -54,7 +52,7 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
     const response = await fetch('https://wyapi.toubiec.cn/api/music/url', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ id: `${id}`, level: 'standard' }),
+      body: JSON.stringify({ id: `${id}`, level }),
     })
     const result = await response.json()
     if (result?.code !== 200) {
