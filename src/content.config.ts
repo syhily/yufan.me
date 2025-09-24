@@ -108,8 +108,7 @@ const pagesCollection = defineCollection({
 const imageCollection = defineCollection({
   loader: file('./src/content/metas/images.json'),
   schema: z.object({
-    id: z.string(),
-    path: z.string(),
+    slug: z.string(),
     width: z.number().int().min(1),
     height: z.number().int().min(1),
     blurDataURL: z.string(),
