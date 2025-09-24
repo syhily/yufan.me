@@ -39,7 +39,7 @@ const service: ExternalImageService = {
     if (!isRemoteAllowed(imageSource, imageConfig)) {
       return imageSource
     }
-    return `${imageSource}!upyun520/both/${options.width}x${options.height}/format/webp/quality/${typeof options.quality === 'number' ? options.quality : 100}/unsharp/true/progressive/true`
+    return `${imageSource}?imageView2/1/w/${options.width}/h/${options.height}/format/avif/q/${typeof options.quality === 'number' ? options.quality : 100}/ignore-error/1`
   },
   getHTMLAttributes(options, _imageConfig) {
     const { src, format, quality, ...attributes } = options

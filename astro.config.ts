@@ -44,7 +44,7 @@ export default defineConfig({
     domains: [config.settings.asset.host, 'localhost', '127.0.0.1'],
     service: NODE_ENV !== 'production'
       ? { entrypoint: './src/helpers/content/image/sharp' }
-      : { entrypoint: './src/helpers/content/image/upyun' },
+      : { entrypoint: './src/helpers/content/image/qiniu' },
   },
   session: {
     driver: 'memory',

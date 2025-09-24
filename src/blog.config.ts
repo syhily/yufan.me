@@ -53,7 +53,7 @@ const config: BlogConfig = {
   ],
   settings: {
     asset: {
-      host: 'cat.yufan.me',
+      host: 'cdn.yufan.me',
       scheme: 'https',
       metadata: '/images/metadata.json',
     },

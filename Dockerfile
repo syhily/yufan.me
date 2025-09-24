@@ -6,7 +6,7 @@ FROM base AS build
 COPY . .
 
 ENV ASTRO_TELEMETRY_DISABLED=1
-RUN rm -rf src/content/metas/images.json && curl -fssL https://cat.yufan.me/images/metadata.json > src/content/metas/images.json
+RUN rm -rf src/content/metas/images.json && curl -fssL https://cdn.yufan.me/images/metadata.json > src/content/metas/images.json
 RUN NODE_ENV=development npm install
 RUN NODE_ENV=production npm run build
 

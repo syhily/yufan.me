@@ -11,10 +11,10 @@ toc:
   minHeadingLevel: 1
   maxHeadingLevel: 2
 summary: CSS 与 HTML 相结合地进行工作；HTML 整理出页面的结构，CSS 使它们看起来更加漂亮并且加入了细节上的交互。作为一个网站设计者你应该认真地学习这些语言。
-cover: https://cat.yufan.me/images/2013/04/2013042823510900.jpg
+cover: https://cdn.yufan.me/images/2013/04/2013042823510900.jpg
 ---
 
-![](https://cat.yufan.me/images/2013/04/2013042722324600.jpg)
+![](https://cdn.yufan.me/images/2013/04/2013042722324600.jpg)
 
 CSS 与 HTML 相结合地进行工作；HTML 整理出页面的结构，CSS 使它们看起来更加漂亮并且加入了细节上的交互。作为一个网站设计者你应该认真地学习这些语言。即使你并不需要自己来编程，理解它们如何工作将有助于你设计页面。
 
@@ -22,13 +22,13 @@ CSS 与 HTML 相结合地进行工作；HTML 整理出页面的结构，CSS 使�
 
 C.S.S. 代表层叠样式表（Cascading Style Sheets）；一种用于 HTML（或者 XML，以及一些其它结构化的格式语言）上的样式规则文档。多个样式规则可以对应一个 HTML 元素，在某种情况上来说就需要一种方式来确定哪个规则应该生效。单词 **Cascading**（层叠，朗文中译为瀑布似地落下）描述了从一般规则开始的渲染过程，直到遇到最确定的规则，然后此规则被选择来渲染它定义的元素。
 
-![包含在结构中的表现，好恶心](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-font-size.png)
+![包含在结构中的表现，好恶心](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-font-size.png)
 
 通过 CSS，表现（样式）可以同结构分离<sup>注1</sup>。它解决了合并在 HTML 中的样式规则的需求，这将控制页面更整齐、更[整洁](http://en.wikipedia.org/wiki/Don't_repeat_yourself)。
 
 CSS可以被网页游览器阅读。它们下载标记好的文档，然后在文档中渲染每个元素的样式。
 
-![css-best-browser](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-browser.png)
+![css-best-browser](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-browser.png)
 
 每个游览器根据样式规则的展现并不总是相同，并且游览器开发中同样有着各自的对于新的样式建议<sup>注2</sup>的实现。经常是游览器厂商们自己来实践CSS特性，以期他们的建议能够被用户接受。
 
@@ -38,29 +38,29 @@ CSS可以被网页游览器阅读。它们下载标记好的文档，然后在�
 
 CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选择器）、Declarations（声明）、Properties（属性）和 Values（值）<sup>注3</sup>
 
-![css-best-rule](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-rule.png)
+![css-best-rule](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-rule.png)
 
 这个CSS规则包含了所有我们刚刚提到的零零碎碎的组成。
 
-![css-best-selector-declaration](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-selector-declaration.png)
+![css-best-selector-declaration](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-selector-declaration.png)
 
 选择器对应着HTML标记内的元素，然后大括号内的声明确定了那些元素该被如何设计。一个规则内可以有多个声明，每个声明都由一个属性和一个相关联的值组成部分。
 
-![css-best-property-value](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-property-value.png)
+![css-best-property-value](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-property-value.png)
 
 你可以有很多方式来选择HTML元素，比如简单地通过类型选择器（**type selectors**）。
 
-![css-best-type-selector](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-type-selector.png)
+![css-best-type-selector](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-type-selector.png)
 
 > 上图将选择所有的图片并设置它们的内边距值为 0。
 
 然后我们还有类选择器（**class selectors**）来指定应用于那些有明确类名的元素。看一看下面这个标记和它对应的CSS。
 
-![css-best-class-selector-markup](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-class-selector-markup.png)
+![css-best-class-selector-markup](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-class-selector-markup.png)
 
 > 这是一个可以对应任何东西的锚链接。
 
-![css-best-class-selector](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-class-selector.png)
+![css-best-class-selector](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-class-selector.png)
 
 > 然后这个将会选择所有类（class）值为 highslight 的锚链接并使它们变为橙色。
 
@@ -73,11 +73,11 @@ CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选�
 
 - **Code Academy** 的 [CSS 介绍](http://www.codecademy.com/courses/web-beginner-en-TlhFi)是它们的网站基础课的一部分。如果你在掌握了此课程后有所收获。请继续学习，不用花钱，完成交互的测试可以获得即时的反馈和建议。
 
-![css-best-codeacademy](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-codeacademy.png)
+![css-best-codeacademy](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-codeacademy.png)
 
 - 如果你阅读完前面的大纲，那么你将会熟悉 **Tuts+ Premium** 的 [30 天学习 HTML 与 CSS](http://learncss.tutsplus.com/)。通过这份免费课程，Jeffrey Way 带你从完全的新手到掌握 HTML 和 CSS 的基础部分。
 
-![tutsplus](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/tutsplus.png)
+![tutsplus](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/tutsplus.png)
 
 - **Code School** 的 [CSS 越野赛](http://www.codeschool.com/courses/css-cross-country)提供与 Code Academy 相似的交互学习，但是想要完成全部课程的话你需要成为一名登记会员（当前为 25 美元每月）。
 
@@ -85,7 +85,7 @@ CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选�
 
 当 [Dave Shea](http://www.brightcreative.com/) 在 2003 年 5 月上线 [CSS 禅意花园](http://www.csszengarden.com/)的时候，他的目标是证明一个单独的 HTML 文档可以使用不同的样式表来进行无数种方式的设计。对于当时世界各地的设计师来说，这是一个美好的概念和指路明灯。
 
-![css-best-zen](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-zen.png)
+![css-best-zen](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-zen.png)
 
 为什么不自我尝试看一些类似的事情呢？选取简单的一段标记（Chris Coyier 的[无序列表导航](http://html-ipsum.com/)就是完美的选择）：
 
@@ -105,7 +105,7 @@ CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选�
 
 阅读一下这篇[社区工程：无序列表样式](http://webdesign.tutsplus.com/articles/workshops/community-project-style-an-unordered-list/)，这当中有将近 100 个读者提交了他们对一个简单的无序列表定义的样式。正如你从这些[结果](http://d3pr5r64n04s3o.cloudfront.net/workshops/012_community_project_ul/unordered_list/index.html)中所看到的，一点点想象将使 CSS 走得更远！
 
-![secret](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/secret.png)
+![secret](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/secret.png)
 
 > 秘密的门-作者：[Noel Delgado](http://pixelia.me/)
 
@@ -129,7 +129,7 @@ CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选�
 
 为什么不在像 [Github](http://github.com/) 或者 [CodePen](http://codepen.io/) 一类的社区编程站点上找到你心目中的大神？<sup>注4</sup>在这样的网络中最棒的事就是大家互相提的建议。如果你有一个 CSS 问题，某人在你之前遇到过的话将会乐意地搭一把手。
 
-![CodePen](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-codepen.png)
+![CodePen](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-codepen.png)
 
 > [CodePen](http://codepen.io/)
 
@@ -152,7 +152,7 @@ CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选�
 
 无论你是从头到尾地仔细阅读，还是简单地把它们作为需要时快速查找的手册，最棒的图书在阅读上是无可挑剔的。CSS 已经被无数次写成书籍，但是这些出版物是我所认为的精华：
 
-![css-best-css-book](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-css-book.png)
+![css-best-css-book](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-css-book.png)
 
 - [HTML and CSS Book](http://htmlandcssbook.com/) 是一本漂亮的有插图的针对完全新手的手册，尤其是书籍网站将所有的代码片段和实例可以被获取来实践。
 - [CSS: The Definitive Guide](http://www.amazon.com/CSS-Definitive-Guide-Eric-Meyer/dp/0596527330/ref=sr_1_1?s=books&ie=UTF8&qid=1366296089&sr=1-1&keywords=CSS%3A+The+Definitive+Guide)：作者是 CSS 教父——Eric Meyer。
@@ -169,7 +169,7 @@ CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选�
 
 学习 CSS 选择器也意味着开始掌握特性，哪个选择器将重载其它的选择器？
 
-![css-best-stormtrooper](https://cat.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-stormtrooper.png)
+![css-best-stormtrooper](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-stormtrooper.png)
 
 > 帝国风暴兵图标 作者：[Jory Raphael](http://dribbble.com/shots/951479-Stormtrooper-Icon)
 

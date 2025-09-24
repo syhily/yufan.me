@@ -10,10 +10,10 @@ summary: 如你所见，当你访问这篇文章的时候，我已经把写了 1
 toc:
   minHeadingLevel: 2
   maxHeadingLevel: 3
-cover: https://cat.yufan.me/images/2024/04/2024040719182310.jpg
+cover: https://cdn.yufan.me/images/2024/04/2024040719182310.jpg
 ---
 
-![あんよ - crossroads](https://cat.yufan.me/images/2024/04/2024040719182344.jpg)
+![あんよ - crossroads](https://cdn.yufan.me/images/2024/04/2024040719182344.jpg)
 
 <MusicPlayer netease={28468918} />
 
@@ -33,17 +33,17 @@ cover: https://cat.yufan.me/images/2024/04/2024040719182310.jpg
 
 ## Logo 设计
 
-![Blog Logo](https://cat.yufan.me/images/2024/04/2024040719297778.jpg)
+![Blog Logo](https://cdn.yufan.me/images/2024/04/2024040719297778.jpg)
 
 对我而言，技术牛逼与否并不是最重要的，最重要的是颜值。如果不好看，那就直接 pass。所以还没写博客，第一步，我就在考虑重新设计自己的博客 logo。对于之前用的 logo，其实问题并不大，主要的问题是矢量化。绘制这个 logo 的时候还是 6 年前，像素被限制在了 65px，在 PSD 底稿和对应字体都丢失的当下，想要放大适应视网膜屏幕等就显得有些困难。于是我借着这个机会，学习使用 [sketch](https://sketch.com) 来绘制矢量图形。这当中最大的绘制难点就是 logo 中那两个不规则的半圆环，我画了两个圆去叠加，然后合并后一点点拖拽曲线。才调整到和以前相似的形状。
 
-绘制“帆”字的时候已经稍微熟悉，就直接使用钢笔工具一个个锚点描边，再稍微调整曲线就好，但是没想到还是在和圆环合并上栽了大跟头。弄了半天才发现是路径曲线的闭合问题，这其中的曲折大概就像是以前在微博上看到的[这张长图](https://cat.yufan.me/images/2024/04/2024040719234718.jpg)所描绘的景象。不过万幸的是，最终圆满地达成了我想要的效果。
+绘制“帆”字的时候已经稍微熟悉，就直接使用钢笔工具一个个锚点描边，再稍微调整曲线就好，但是没想到还是在和圆环合并上栽了大跟头。弄了半天才发现是路径曲线的闭合问题，这其中的曲折大概就像是以前在微博上看到的[这张长图](https://cdn.yufan.me/images/2024/04/2024040719234718.jpg)所描绘的景象。不过万幸的是，最终圆满地达成了我想要的效果。
 
 在绘制 logo 的同时，我也一并绘制了黑白两种形态，为日后主题支持黑白模式准备，同时也绘制了 Github Poster 放在 `README.md` 上用于展示。这当中最有意思的事情，就是对以膨胀色与收缩色的概念的复习。以前自学设计的时候，觉得这东西很抽象。这次设计黑色 logo 的时候，发现明明是同样的大小，但是黑色的 logo 在屏幕上就是显得大上一圈。我不得不微调曲线，向内收缩一圈才在视觉的保持了 logo 的大小一致，相当有趣。
 
 ## 字体使用
 
-![OPPO Sans](https://cat.yufan.me/images/2024/04/2024040719182210.jpg)
+![OPPO Sans](https://cdn.yufan.me/images/2024/04/2024040719182210.jpg)
 
 字体选择上分为博客正文字体和图片字体。以前并不懂版权，不知道字体很多是需要授权才能在一些公开媒介上使用的，这次特意选择了商业免费可用的字体。
 
@@ -53,25 +53,25 @@ Logo 部分的字体，主要是基于 [M+A1](https://booth.pm/ja/items/2347968)
 
 ## 技术选型
 
-![Next.js](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/next.js.jpg)
+![Next.js](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/next.js.jpg)
 
 技术选型上这次有点激进，相比已经成熟很好用的 VitePress 等动静结合的生成工具，我义无反顾地选用了 Next.js 的 App Router，运行环境选用了更快的 Bun。至于其他方面，基本是照着 [leerob](https://leerob.io) 的博客进行仿写。所以文章格式不再是常见的 Markdown，而是能插入动态内容的 MDX。对于历史的评论，我还是舍不得丢弃，毕竟有 3000 多条。所以再三对比之下，我选择使用 [Artalk](https://artalk.js.org) 进行存储。有了多说的经历后，我也不敢使用任何第三方的 SaaS 服务存储评论，毕竟数据在自己手里才最安全。
 
 博客以前最喜欢的音乐播放器是 Hermit-X，对应的作者荒野无灯已经神隐很久，获取网易音乐信息的 [Meting API](https://github.com/metowolf/Meting) 也没持续更新。而 APlayer 更是不知道 [DIYgod](https://diygod.cc) 什么时候能来“扫墓”，上次 APlayer 的诈尸还只是更新了个 License。所以在新博客环境只有 [Aplayer React](https://aplayer-react.js.org) 这个名为 APlayer 实则是借着其样式用 React 完全重写的播放器可用，其在 RSC 下有点小问题，但估计短时间内作者也没时间修复。（谁叫我是前端菜鸟呢）
 
-![ContentLayer](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/contentlayer.jpg)
+![ContentLayer](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/contentlayer.jpg)
 
 MDX 一开始是手动使用 `fs` 加载，使用 `grey-matter` 解析 `matter` 后再用 `next-mdx-remote` 渲染。但是鉴于自己太菜，很多页面的渲染都需要全量读取博文解析。后面改成了[推友推荐](https://twitter.com/ilovek8s/status/1776809454790676827)的 `contentlayer` 先渲染静态化，再进行加载。但瞅着 `contentlayer` 这半死不活的状态，未来大概率还是要弃。😭
 
 ## Update 2024/04/14
 
-![ContentLayer](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/velite.jpg)
+![ContentLayer](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/velite.jpg)
 
 没错，一周后我又来屁颠屁颠地更新博客啦，一周过去后，我的博客也发生了不少变化。首先是搜索终于支持了，使用的是 fuse.js。前文提到的 Contentlayer 也被我废弃，换成了更好用的 Velite。
 
 ## Update 2024/05/22
 
-![ContentLayer](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/astro.jpg)
+![ContentLayer](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/astro.jpg)
 
 今天，我把博客从 Next.js 迁移到了 Astro，重写了部分代码的实现，优化了部分设计。Next.js 版本的博客，内容管理和生成工具使用的是 Velite.js，它的设计很有想法，作者也很有经验。但是对应的 Next.js 与其集成后，却给我带来了很多解决不了的问题。首当其中的就是 Next.js 默认是 SSR，我在 MDX 中生成的内容，部分需要 inline 到 Client 端使用 JS 去动态执行，结果无法实现。其次就是 Astro 先天的在内容管理与编写上下了不少功夫。基于上述理由，我花了两天多一点的时间，就轻松把博客用 Astro 重写了。
 
@@ -95,7 +95,7 @@ Astro Container API 前前后后经过数次修改。在最新的 Astro 4.11 中
 
 ### Artalk 前端评论模块弃用
 
-![ContentLayer](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/replace-artalk.jpg)
+![ContentLayer](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/replace-artalk.jpg)
 
 Artalk 作为后端评论系统，其实没啥问题，并且有相当不错的安全机制和设计，但是其前端样式怎么定义都不是很好看。早在准备自己实现评论系统的时候，第一个想法就是基于 Artalk 的 Rest API 改成 SSR 的模式加载评论。目前经过数次修改，其评论样式和效果已经和以前使用的 WordPress 基本接近。
 
@@ -103,7 +103,7 @@ Artalk 作为后端评论系统，其实没啥问题，并且有相当不错的�
 
 ### Astro Actions 的使用
 
-![ContentLayer](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/astro-actions.jpg)
+![ContentLayer](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/astro-actions.jpg)
 
 因为博客的评论模块的替换，导入需要引入大量的 Rest 接口。结合以前有的喜欢按钮等接口，博客一共累计超过 4 个接口。以前都是散乱在 pages 目录里面，这次一并使用了 [Astro 4.8](https://astro.build/blog/astro-480/) 的 Actions 进行统一定义和管理，整体感受如下：
 
@@ -113,7 +113,7 @@ Artalk 作为后端评论系统，其实没啥问题，并且有相当不错的�
 
 ### Astro CDN 功能的整合和实现
 
-![ContentLayer](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/astro-uploader.jpg)
+![ContentLayer](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/astro-uploader.jpg)
 
 Astro 在 [2.2](https://astro.build/blog/astro-220/) 引入了 CDN Support，其主要目的是对动态构建的 CSS、JS 和图片等内容，可以自定义它们的访问路径和 URL，Astro 会在最终构建的网站结果中予以替换对应的资源路径。但是 Astro 只实现前面说的内容，如果想要在生产环境能实现全套的 CDN 支持，还需要将构建出来的文件上传到对应的 CDN 服务提供商。如，上传到 UPYUN、七牛云、S3 等对象存储。
 
@@ -121,7 +121,7 @@ Astro 在 [2.2](https://astro.build/blog/astro-220/) 引入了 CDN Support，其
 
 这期间对上传逻辑进行了多次重构，第一版使用 UPYUN Node.js SDK，但是这个 SDK 年久失修，使用的还是有安全问题的 axios 版本。对于已经习惯上 fetch 一把梭的我，有点生理不适。考虑到很多云存储都支持了 S3 协议，并且使用 S3 协议能更灵活地切换到不同的存储服务。在第二版使用了 Client S3 来进行实现，这里面遇到的唯一问题就是 ContentType 需要显式设置，而原先的 UPYUN Rest API 能根据文件名自动设置。
 
-![OpenDAL™](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/opendal.png)
+![OpenDAL™](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/opendal.png)
 
 第三版使用了基友 Tison 安利的 Apache OpenDAL™ 进行了重构，还是走的 S3 协议。Apache OpenDAL™ 是一个使用 Rust 编写的统一云存储层抽象接口，整体的代码质量和实现都很不错。但是 Node.js 部分的 Binding 使用 napi-rs 实现，对应的文档写得比较抽象，我是看 Rust 部分的文档反向推导 Node.js binding 该如何使用，期待文档的进一步完善。同时因为一些[已知问题](https://github.com/apache/opendal/issues/4782)，暂时还无法直接在生产环境使用。
 
@@ -135,13 +135,13 @@ Astro 在 [2.2](https://astro.build/blog/astro-220/) 引入了 CDN Support，其
 
 ### 支持动态 OG 图片
 
-![Open Graph](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/open-graph.jpg)
+![Open Graph](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/open-graph.jpg)
 
 对于 OG 图片的支持，历时 3 个月才予以实现，最早的版本为选取文章的封面，后面改为使用 [@vercel/og](https://vercel.com/docs/functions/og-image-generation) 生成。博客切换为 Astro 时一并放弃了 React Server Component 方案，对应的 OG 生成暂时搁置。在仔细学习了基于 napi 的 `@napi-rs/canvas` 后，本博客的 OG 图片使用 Canvas 绘制，并在构建的时候静态生成放于对象存储上来减少字体加载、渲染等耗时。目前 OG 的样式经过多次微调，暂时满意。
 
 ### 使用 Zeabur Serverless Function 部署
 
-![Zeabur Astro](https://cat.yufan.me/images/recaps/switch-blog-to-nextjs/zeabur-astro.jpg)
+![Zeabur Astro](https://cdn.yufan.me/images/recaps/switch-blog-to-nextjs/zeabur-astro.jpg)
 
 Zeabur 因为有中国区，考虑网站面向的人群，我实在是无法割舍。之前因为使用 Astro Container API，对应的包构建为 Lambda 时会有依赖问题，所以一直使用 Docker 方式在 Zeabur 部署。经过和 Zeabur 的小伙伴合作，同时完成了 Zeabur 对 `astro/env` 的支持后，现在网站已经不再使用 Docker 方式，转而使用 Zeabur 提供的 Serverless 的方式运行。
 
@@ -158,4 +158,4 @@ Zeabur 因为有中国区，考虑网站面向的人群，我实在是无法割�
 
 至于博客载体，那都是浮云啦。
 
-![mocha@新刊委託中 - 親愛なるあなたへ](https://cat.yufan.me/images/2024/04/2024040719244778.jpg)
+![mocha@新刊委託中 - 親愛なるあなたへ](https://cdn.yufan.me/images/2024/04/2024040719244778.jpg)

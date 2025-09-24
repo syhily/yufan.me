@@ -8,11 +8,11 @@ tags:
   - 存储
 category: 编程
 toc: true
-cover: https://cat.yufan.me/images/2019/05/2019051818284917.jpg
+cover: https://cdn.yufan.me/images/2019/05/2019051818284917.jpg
 summary: Yandex.Metrica 是世界第二大的线上分析系统，Metrica 处理来自网站或者应用的数据流，将它解析成可分析的格式。
 ---
 
-![2017-10-03-metrica-600](https://cat.yufan.me/images/2019/05/2019051818284917.jpg)
+![2017-10-03-metrica-600](https://cdn.yufan.me/images/2019/05/2019051818284917.jpg)
 
 Yandex.Metrica 是世界[第二大](https://w3techs.com/technologies/overview/traffic_analysis/all)的线上分析系统，Metrica 处理来自网站或者应用的数据流，将它解析成可分析的格式。
 
@@ -70,7 +70,7 @@ InnoDB 引擎更适合用于主键范围检索，因为它使用聚集主键（�
 - 许多计算需要在 `SELECT` 查询之后编程去计算
 - 运维麻烦
 
-![2017-10-03-locality](https://cat.yufan.me/images/2019/05/2019050908220042.png)
+![2017-10-03-locality](https://cdn.yufan.me/images/2019/05/2019050908220042.png)
 
 图片：数据在磁盘上的存储区域（艺术渲染）
 
@@ -96,7 +96,7 @@ A fairly common data structure, LSM Tree, works well for this. This structure co
 
 This kind of data structures is used in HBase and Cassandra. Among embedded LSM-Tree data structures, LevelDB and RocksDB are implemented. Subsequently, RocksDB is used in MyRocks, MongoRocks, TiDB, CockroachDB and many others.
 
-![lsm-tree-600](https://cat.yufan.me/images/2019/05/2019050908223772.png)
+![lsm-tree-600](https://cdn.yufan.me/images/2019/05/2019050908223772.png)
 
 Metrage is also an LSM-Tree. Arbitrary data structures (fixed at compile time) can be used as "rows" in it. Every row is a key, value pair. A key is a structure with comparison operations for equality and inequality. The value is an arbitrary structure with operations to update (to add something) and merge (to aggregate or combine with another value). In short, it's a CRDT.
 
@@ -134,7 +134,7 @@ To mitigate this we had to keep for a while a separate storage for custom report
 
 Using OLAPServer, we developed an understanding of how well column-oriented DBMS's handle ad-hoc analytics tasks with non-aggregated data. If you can retrieve any report from non-aggregated data, then it begs the question of whether data even needs to be aggregated in advance, as we did with Metrage database.
 
-![column-oriented-600](https://cat.yufan.me/images/2019/05/2019050908233838.gif)
+![column-oriented-600](https://cdn.yufan.me/images/2019/05/2019050908233838.gif)
 
 On the one hand, pre-aggregating data can reduce the volume of data that is used at the moment when the report page is loading. On the other hand, though, aggregated data doesn't solve everything. Here are the reasons why:
 
