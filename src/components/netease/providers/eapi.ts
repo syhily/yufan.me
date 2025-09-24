@@ -1,13 +1,21 @@
 import type { SongInfo } from '../resolver'
+import type { UserAgentType } from './config'
 import { Buffer } from 'node:buffer'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
+import { chineseIPs, neteaseAnonymousToken, userAgents } from './config'
 
-const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
 const EAPI_KEY = 'e82ckenh8dichen8'
-const HEADERS = {
-  'User-Agent': USER_AGENT,
-  'Referer': 'https://music.163.com/',
-  'Origin': 'https://music.163.com',
+
+function chooseUserAgent(ua?: UserAgentType) {
+  const agents
+    = ua === undefined
+      ? [...userAgents.mobile, ...userAgents.pc]
+      : userAgents[ua]
+  return agents[Math.floor(Math.random() * agents.length)]
+}
+
+function randomChineseIP() {
+  return chineseIPs[Math.floor(Math.random() * chineseIPs.length)]
 }
 
 function aesEncrypt(buffer: Buffer | string, mode: string, key: string, iv: string) {
@@ -48,10 +56,16 @@ export async function getSongInfo(id: string): Promise<SongInfo> {
     }
 
     const { params } = eapi(url, data)
+    const ip = randomChineseIP()
     const response = await fetch('https://interface3.music.163.com/eapi/v3/song/detail', {
       method: 'POST',
       headers: {
-        ...HEADERS,
+        'Referer': 'https://music.163.com/',
+        'Origin': 'https://music.163.com',
+        'Cookie': `MUSIC_A=${neteaseAnonymousToken}; appver=8.7.01; versioncode=140; buildver=${Date.now().toString().substring(0, 10)}; resolution=1920x1080; os=android; requestId=${Date.now()}_${Math.floor(Math.random() * 1000).toString().padStart(4, '0')}`,
+        'X-Real-IP': ip,
+        'X-Forwarded-For': ip,
+        'User-Agent': chooseUserAgent(),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: toFormUrlEncoded({ params }),
@@ -97,10 +111,16 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
     }
 
     const { params } = eapi(url, data)
+    const ip = randomChineseIP()
     const response = await fetch('https://interface.music.163.com/eapi/song/enhance/player/url/v1', {
       method: 'POST',
       headers: {
-        ...HEADERS,
+        'Referer': 'https://music.163.com/',
+        'Origin': 'https://music.163.com',
+        'Cookie': `MUSIC_A=${neteaseAnonymousToken}; appver=8.7.01; versioncode=140; buildver=${Date.now().toString().substring(0, 10)}; resolution=1920x1080; os=android; requestId=${Date.now()}_${Math.floor(Math.random() * 1000).toString().padStart(4, '0')}`,
+        'X-Real-IP': ip,
+        'X-Forwarded-For': ip,
+        'User-Agent': chooseUserAgent(),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: toFormUrlEncoded({ params }),
@@ -148,10 +168,16 @@ export async function getLyrics(id: string): Promise<string | null> {
 
     const { params } = eapi(url, data)
     const apiUrl = 'https://interface3.music.163.com/eapi/song/lyric/v1'
+    const ip = randomChineseIP()
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        ...HEADERS,
+        'Referer': 'https://music.163.com/',
+        'Origin': 'https://music.163.com',
+        'Cookie': `MUSIC_A=${neteaseAnonymousToken}; appver=8.7.01; versioncode=140; buildver=${Date.now().toString().substring(0, 10)}; resolution=1920x1080; os=android; requestId=${Date.now()}_${Math.floor(Math.random() * 1000).toString().padStart(4, '0')}`,
+        'X-Real-IP': ip,
+        'X-Forwarded-For': ip,
+        'User-Agent': chooseUserAgent(),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: toFormUrlEncoded({ params }),
