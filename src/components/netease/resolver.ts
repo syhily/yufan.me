@@ -32,29 +32,29 @@ export async function resolveSong(props: MusicPlayerProps): Promise<Song> {
     const url = await eapi.getSongUrl(netease, 'standard')
     result.url = url || ''
   }
-  catch (error) {
-    console.error(error)
-    try {
-      if (result.name === '') {
-        const info = await api.getSongInfo(netease)
-        result.name = info.name
-        result.artist = info.artist
-        result.pic = info.pic
-      }
-
-      if (result.lyric === '') {
-        const lyric = await eapi.getLyrics(netease)
-        result.lyric = lyric || '[00:00.00]无歌词'
-      }
-
-      if (result.url === '') {
-        const url = await api.getSongUrl(netease, 'standard')
-        result.url = url || ''
-      }
+  catch (err) {
+    console.error(err)
+  }
+  try {
+    if (result.name === '') {
+      const info = await api.getSongInfo(netease)
+      result.name = info.name
+      result.artist = info.artist
+      result.pic = info.pic
     }
-    catch (error2) {
-      console.error(error2)
+
+    if (result.lyric === '') {
+      const lyric = await api.getLyrics(netease)
+      result.lyric = lyric || '[00:00.00]无歌词'
     }
+
+    if (result.url === '') {
+      const url = await api.getSongUrl(netease, 'standard')
+      result.url = url || ''
+    }
+  }
+  catch (err) {
+    console.error(err)
   }
   return result
 }
