@@ -28,7 +28,7 @@ export async function resolveSong(props: MusicPlayerProps): Promise<Song> {
     const lyric = await eapi.getLyrics(netease)
     result.lyric = lyric || '[00:00.00]无歌词'
 
-    const url = await eapi.getSongUrl(netease, 'standard')
+    const url = await api.getSongUrl(netease, 'standard')
     result.url = url || ''
   }
   catch (err) {
@@ -48,7 +48,7 @@ export async function resolveSong(props: MusicPlayerProps): Promise<Song> {
     }
 
     if (result.url === '') {
-      const url = await api.getSongUrl(netease, 'standard')
+      const url = await eapi.getSongUrl(netease, 'standard')
       result.url = url || ''
     }
   }
