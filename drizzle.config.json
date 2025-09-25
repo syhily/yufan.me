@@ -1,6 +1,0 @@
-{
-  "dialect": "postgresql",
-  "schema": "./src/helpers/db/schema.ts",
-  "out": "./drizzle",
-  "driver": "pglite"
-}

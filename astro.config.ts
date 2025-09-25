@@ -9,7 +9,6 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
-import rehypeMusicPlayer from 'astro-netease-player/rehype'
 import uploader from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
@@ -20,6 +19,7 @@ import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
 import Font from 'vite-plugin-font'
 import config from './src/blog.config.js'
+import rehypeMusicPlayer from './src/components/netease/rehype'
 
 const {
   UPLOAD_STATIC_FILES,
