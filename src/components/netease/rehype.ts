@@ -48,7 +48,7 @@ async function readSongInfo(id: string): Promise<SongWithoutURL | null | undefin
 async function writeSongInfo(id: string, info: SongWithoutURL): Promise<void> {
   const songInfoFile = join(songInfoDirectory, `${id}.yml`)
   const content = YAML.stringify(info)
-  await fs.writeFile(songInfoFile, content, { mode: 0o644, flag: 'a' })
+  await fs.writeFile(songInfoFile, content, { mode: 0o644, flag: 'w' })
 }
 
 const rehypeMusicPlayer: Plugin<[], Root> = () => {
