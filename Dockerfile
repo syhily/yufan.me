@@ -6,11 +6,11 @@ FROM base AS build
 COPY . .
 
 ENV ASTRO_TELEMETRY_DISABLED=1
-RUN NODE_ENV=development npm install
+RUN NODE_ENV=development npm ci
 RUN NODE_ENV=production npm run build
 
 FROM base AS runtime
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 ENV HOST=0.0.0.0
 ENV PORT=4321
