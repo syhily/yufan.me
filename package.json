@@ -42,7 +42,7 @@
     "@electric-sql/pglite": "^0.3.10",
     "@electric-sql/pglite-tools": "^0.2.15",
     "@napi-rs/canvas": "^0.1.80",
-    "astro": "^5.13.11",
+    "astro": "^5.14.1",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.5",
     "flexsearch": "^0.8.212",
