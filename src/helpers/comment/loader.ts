@@ -17,7 +17,7 @@ async function upsertPage(key: string, title: string | null): Promise<Page> {
     if (p.title !== title && title !== null) {
       // Update the page with the new title
       p.title = title
-      await pool.db.insert(page).values(p).returning()
+      await pool.db.update(page).set(p).where(eq(page.key, key)).returning()
     }
     return p
   }
