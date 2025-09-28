@@ -140,7 +140,7 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
       console.warn(`Couldn't get ${level} quality URL`)
       return null
     }
-    return songData.url
+    return songData.url.replace('http://', 'https://')
   }
   catch (error) {
     console.error(
