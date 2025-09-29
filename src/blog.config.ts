@@ -83,7 +83,6 @@ const config: BlogConfig = {
       post: 5,
       comment: 5,
       tag: 10,
-      calendar: true,
     },
     comments: {
       size: 10,
@@ -145,7 +144,6 @@ export interface BlogConfig {
       post: number
       comment: number
       tag: number
-      calendar: boolean
     }
     comments: {
       size: number
