@@ -19,7 +19,7 @@ import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
 import Font from 'vite-plugin-font'
 import config from './src/blog.config.js'
-import rehypeMusicPlayer from './src/components/netease/rehype'
+import rehypeMusicPlayer from './src/components/mdx/netease/rehype.js'
 
 const {
   UPLOAD_STATIC_FILES,
