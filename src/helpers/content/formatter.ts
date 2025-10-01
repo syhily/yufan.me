@@ -17,44 +17,33 @@ export function slicePosts(posts: Post[], pageNum: number, pageSize: number): { 
 }
 
 export function formatShowDate(date: Date) {
-  const source = date ? +new Date(date) : +new Date()
-  const now = +new Date()
-  const diff = now - source > 0 ? now - source : 60 * 1000
-  const oneSeconds = 1000
-  const oneMinute = oneSeconds * 60
-  const oneHour = oneMinute * 60
-  const oneDay = oneHour * 24
-  const oneWeek = oneDay * 7
-  const oneMonth = oneDay * 30
-  const oneYear = oneDay * 365
+  const source = DateTime.fromJSDate(date)
+    .setZone(config.settings.timeZone)
+    .setLocale(config.settings.locale)
 
-  // Formatter for different types of date.
-  if (diff < oneDay) {
+  const now = DateTime.now()
+    .setZone(config.settings.timeZone)
+    .setLocale(config.settings.locale)
+
+  if (source.year === now.year && source.month === now.month && source.day === now.day) {
     return '今天'
   }
-  if (diff < oneWeek) {
-    return `${Math.floor(diff / oneDay)} 天前`
-  }
-  if (diff < oneMonth) {
-    return `${Math.floor(diff / oneWeek)} 周前`
-  }
-  if (diff < oneYear) {
-    const months = Math.floor(diff / oneMonth)
-    if (months > 0) {
-      return `${months} 月前`
+
+  const delta = now.diff(source, ['years', 'months', 'weeks', 'days'])
+  if (delta.get('years') < 1) {
+    if (delta.get('months') === 0 && delta.get('weeks') === 0 && delta.get('days') < 7) {
+      return `${Math.floor(delta.get('days')) + 1} 天前`
+    }
+    if (delta.get('months') <= 1 && delta.get('weeks') <= 5) {
+      return `${Math.floor(delta.get('weeks')) + 1} 周前`
+    }
+    if (delta.get('months') < 5) {
+      return `${Math.floor(delta.get('months')) + 1} 月前`
     }
   }
 
-  const years = Math.floor(diff / oneYear)
-  if (years > 0 && years < 3) {
-    return `${years} 年前`
-  }
-
   // Format the post's date with time zone support.
-  return DateTime.fromJSDate(date)
-    .setZone(config.settings.timeZone)
-    .setLocale(config.settings.locale)
-    .toFormat(config.settings.timeFormat)
+  return source.toFormat(config.settings.timeFormat)
 }
 
 export function formatLocalDate(source: string | Date, format?: string) {
