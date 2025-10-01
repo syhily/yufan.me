@@ -41,6 +41,7 @@ export default defineConfig({
     preserveScriptOrder: true,
     staticImportMetaEnv: true,
   },
+  trailingSlash: 'never',
   image: {
     domains: [config.settings.asset.host, 'localhost', '127.0.0.1'],
     service: NODE_ENV !== 'production'

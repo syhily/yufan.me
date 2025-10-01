@@ -11,18 +11,13 @@ export enum ADMIN_ENDPOINTS {
 }
 
 function isAdminEndpoints(endpoint: string) {
-  return endpoint === ADMIN_ENDPOINTS.login
-    || endpoint === ADMIN_ENDPOINTS.logout
-    || endpoint === ADMIN_ENDPOINTS.install
-    || endpoint === `${ADMIN_ENDPOINTS.login}/`
-    || endpoint === `${ADMIN_ENDPOINTS.logout}/`
-    || endpoint === `${ADMIN_ENDPOINTS.install}/`
+  return Object.values<string>(ADMIN_ENDPOINTS).includes(endpoint)
 }
 
 const freshInstall = defineMiddleware(async (context, next) => {
   const { url: { pathname }, redirect } = context
 
-  if (pathname === ADMIN_ENDPOINTS.install || pathname === `${ADMIN_ENDPOINTS.install}/`) {
+  if (pathname === ADMIN_ENDPOINTS.install) {
     if (await hasAdmin()) {
       return redirect('/')
     }
