@@ -31,6 +31,7 @@ const service: ExternalImageService = {
       options.height = options.height || height
       if (blurhash) {
         options.style = {
+          ...options.style,
           'background-image': `url("${blurHashToDataURL(blurhash)}")`,
           'background-position': 'center',
           'background-size': 'cover',
