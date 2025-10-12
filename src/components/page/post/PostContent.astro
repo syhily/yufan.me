@@ -1,6 +1,7 @@
 ---
 import UnstyledSolution from '@/components/mdx/solutions/UnstyledSolution.astro'
 import UnstyledMusicPlayer from '@/components/mdx/netease/UnstyledMusicPlayer.astro'
+import UnstyledImage from '@/components/mdx/image/UnstyledImage.astro'
 import { posts } from '@/helpers/content/schema'
 
 interface Props {
@@ -20,5 +21,6 @@ const { Content } = await post.render()
   components={{
     MusicPlayer: UnstyledMusicPlayer,
     Solution: UnstyledSolution,
+    Image: UnstyledImage,
   }}
 />
