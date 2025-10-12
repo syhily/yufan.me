@@ -6,10 +6,7 @@
     "baseUrl": ".",
     "module": "ESNext",
     "paths": {
-      "@/*": ["src/*"],
-      "theia-sticky-sidebar/*": [
-        "node_modules/theia-sticky-sidebar/dist/*"
-      ]
+      "@/*": ["src/*"]
     },
     "types": ["vite-plugin-font/src/font", "vite-plugin-binary/types"],
     "strict": true,

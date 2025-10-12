@@ -1,8 +1,8 @@
 import { qrcode } from '@lowlighter/qrcode'
 import { actions } from 'astro:actions'
 import mediumZoom from 'medium-zoom'
-import { TheiaStickySidebar } from 'theia-sticky-sidebar/dist/theia-sticky-sidebar.es.js'
 import { handleActionError } from '@/assets/scripts/actions'
+import { TheiaStickySidebar } from '@/assets/scripts/theia-sticky-sidebar'
 
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside')
