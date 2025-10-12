@@ -1,8 +1,6 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { pages, posts } from '@/helpers/content/schema'
 
-export const prerender = true
-
 export async function GET() {
   const result = `
 <?xml version="1.0" encoding="UTF-8"?>
@@ -23,7 +21,10 @@ export async function GET() {
 
   return new Response(result, {
     headers: {
+      'Host': import.meta.env.SITE,
       'Content-Type': 'application/xml',
+      'Accept': '*/*',
+      'Connection': 'keep-alive',
     },
   })
 }

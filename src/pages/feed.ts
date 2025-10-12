@@ -4,8 +4,6 @@ import config from '@/blog.config'
 import { renderPostsContents } from '@/helpers/content/render'
 import { posts } from '@/helpers/content/schema'
 
-export const prerender = true
-
 export async function GET() {
   const visiblePosts = posts.filter(post => post.visible)
   const feedPosts
