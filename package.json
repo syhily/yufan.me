@@ -45,6 +45,7 @@
     "astro": "^5.14.4",
     "bcryptjs": "^3.0.2",
     "drizzle-orm": "^0.44.6",
+    "fast-blurhash": "^1.1.4",
     "flexsearch": "^0.8.212",
     "lodash": "^4.17.21",
     "luxon": "^3.7.2",

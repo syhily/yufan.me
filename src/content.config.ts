@@ -111,7 +111,7 @@ const imageCollection = defineCollection({
     slug: z.string(),
     width: z.number().int().min(1),
     height: z.number().int().min(1),
-    blurDataURL: z.string(),
+    blurhash: z.string(),
   }),
 })
 

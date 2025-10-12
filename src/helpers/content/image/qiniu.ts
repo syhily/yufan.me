@@ -1,14 +1,15 @@
 import type { ExternalImageService, ImageTransform } from 'astro'
 import { baseService } from 'astro/assets'
 import { inferRemoteSize, isESMImportedImage } from 'astro/assets/utils'
-import { getImageMetadata } from '../schema.js'
-import { isRemoteAllowed } from './assets.js'
+import { getImageMetadata } from '../schema'
+import { isRemoteAllowed } from './assets'
+import { blurHashToDataURL } from './blurhash'
 
-async function getImage(source: string, options: ImageTransform): Promise<{ width: number, height: number, background?: string }> {
+async function getImage(source: string, options: ImageTransform): Promise<{ width: number, height: number, blurhash?: string }> {
   const { width, height } = options
   const metadata = getImageMetadata(source)
   if (metadata) {
-    return { width: width || metadata.width, height: height || metadata.height, background: metadata.blurDataURL }
+    return { width: width || metadata.width, height: height || metadata.height, blurhash: metadata.blurhash }
   }
   if (!width || !height) {
     const { width, height } = await inferRemoteSize(source)
@@ -25,19 +26,12 @@ const service: ExternalImageService = {
       if (!isRemoteAllowed(imageSource, imageConfig)) {
         throw new Error(`Image source ${imageSource} is not allowed`)
       }
-      const { width, height, background } = await getImage(imageSource, options)
+      const { width, height, blurhash } = await getImage(imageSource, options)
       options.width = options.width || width
       options.height = options.height || height
-      if (background) {
-        const std = 20
-        const svgWidth = 8 * 40
-        const svgHeight = options.height / options.width * svgWidth
-        const viewBox
-          = svgWidth && svgHeight ? `viewBox='0 0 ${svgWidth} ${svgHeight}'` : ''
-        const svg = `%3Csvg xmlns='http://www.w3.org/2000/svg' ${viewBox}%3E%3Cfilter id='b' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='20'/%3E%3CfeColorMatrix values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 100 -1' result='s'/%3E%3CfeFlood x='0' y='0' width='100%25' height='100%25'/%3E%3CfeComposite operator='out' in='s'/%3E%3CfeComposite in2='SourceGraphic'/%3E%3CfeGaussianBlur stdDeviation='${std}'/%3E%3C/filter%3E%3Cimage width='100%25' height='100%25' x='0' y='0' preserveAspectRatio='none' style='filter: url(%23b);' href='${background}'/%3E%3C/svg%3E`
-
+      if (blurhash) {
         options.style = {
-          'background-image': `url("data:image/svg+xml;charset=utf-8,${svg}")`,
+          'background-image': `url("${blurHashToDataURL(blurhash)}")`,
           'background-position': 'center',
           'background-size': 'cover',
           'background-repeat': 'no-repeat',
