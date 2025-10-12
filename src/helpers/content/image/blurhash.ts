@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { decodeBlurHash as decode } from 'fast-blurhash'
 
-// This code is copied from https://gist.github.com/mattiaz9/53cb67040fa135cb395b1d015a200aff
+// This code is inspired by https://gist.github.com/mattiaz9/53cb67040fa135cb395b1d015a200aff
 
 export function blurHashToDataURL(hash: string): string {
   const pixels = decode(hash, 32, 32)
@@ -128,7 +128,7 @@ function generatePng(width: number, height: number, rgbaString: string) {
         + dwordAsString(height)
       // bit depth
         + String.fromCharCode(8)
-      // color type: 6=truecolor with alpha
+      // color type: 6=true color with alpha
         + String.fromCharCode(6)
       // compression method: 0=deflate, only allowed value
         + String.fromCharCode(0)
@@ -142,28 +142,24 @@ function generatePng(width: number, height: number, rgbaString: string) {
 
   // PNG creations
 
-  const IEND = createChunk(0, 'IEND', '')
-  const IHDR = createIHDR(width, height)
-
-  let scanlines = ''
-  let scanline
-
+  let scanLines = ''
   for (let y = 0; y < rgbaString.length; y += width * 4) {
-    scanline = NO_FILTER
+    let scanLine = NO_FILTER
     if (Array.isArray(rgbaString)) {
       for (let x = 0; x < width * 4; x++) {
-        scanline += String.fromCharCode(rgbaString[y + x] & 0xFF)
+        scanLine += String.fromCharCode(rgbaString[y + x] & 0xFF)
       }
     }
     else {
-      scanline += rgbaString.substr(y, width * 4)
+      scanLine += rgbaString.substring(y, y + width * 4)
     }
-    scanlines += scanline
+    scanLines += scanLine
   }
 
-  const compressedScanlines = DEFLATE_METHOD + inflateStore(scanlines) + dwordAsString(adler32(scanlines))
-  const IDAT = createChunk(compressedScanlines.length, 'IDAT', compressedScanlines)
+  const IHDR = createIHDR(width, height)
+  const compressedScanLines = DEFLATE_METHOD + inflateStore(scanLines) + dwordAsString(adler32(scanLines))
+  const IDAT = createChunk(compressedScanLines.length, 'IDAT', compressedScanLines)
+  const IEND = createChunk(0, 'IEND', '')
 
-  const pngString = SIGNATURE + IHDR + IDAT + IEND
-  return pngString
+  return SIGNATURE + IHDR + IDAT + IEND
 }
