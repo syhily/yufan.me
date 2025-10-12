@@ -76,7 +76,7 @@ const config: BlogConfig = {
     },
     feed: {
       full: true,
-      size: 100,
+      size: 300,
     },
     sidebar: {
       search: true,
