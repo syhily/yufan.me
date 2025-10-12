@@ -6,6 +6,8 @@
 
 # Yufan Personal Weblog
 
+[![Deployed on Zeabur](https://img.shields.io/badge/Host-zeabur-blue)](https://zeabur.com/referral?referralCode=syhily&utm_source=syhily) [![Folo](https://badge.folo.is/feed/54772566650461214?color=FF5C00&labelColor=black&style=flat-square)](https://app.folo.is/share/feeds/54772566650461214) ![Astro](https://astro.badg.es/v2/built-with-astro/tiny.svg)
+
 This is the source code of [yufan.me](https://yufan.me).
 
 ## History
@@ -16,13 +18,6 @@ The source code has evolved through four stages.
 - In 2017, the blog switched to Hexo and converted all the blog posts to Markdown.
 - By 2024, the blog had been rewritten using Next.js with App Router.
 - Currently, the blog has transitioned to Astro.
-
-## Core Components
-
-- [Node.js](https://nodejs.org): The latest Node.js LTS
-- [Astro](https://astro.build): Core engine
-- [PGlite](https://pglite.dev): Embedded Postgres
-- [Zeabur](https://zeabur.com?referralCode=syhily&utm_source=syhily): Host service
 
 ## Local Development
 
