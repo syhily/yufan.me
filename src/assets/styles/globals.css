@@ -3281,13 +3281,13 @@ blockquote p:last-child {
   margin: 0;
 }
 
-.aplayer {
+.aplayer.music-player {
   max-width: 350px;
   margin: 1.25rem 0 1.25rem;
 }
 
 @media (max-width: 767.98px) {
-  .aplayer {
+  .aplayer.music-player {
     max-width: 100%;
     margin: 0 2rem 1.25rem;
   }
