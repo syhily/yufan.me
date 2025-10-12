@@ -1,8 +1,8 @@
 import { qrcode } from '@lowlighter/qrcode'
 import { actions } from 'astro:actions'
 import mediumZoom from 'medium-zoom'
+import { TheiaStickySidebar } from 'theia-sticky-sidebar/dist/theia-sticky-sidebar.es.js'
 import { handleActionError } from '@/assets/scripts/actions'
-import stickySidebar from '@/assets/scripts/sticky-sidebar.js'
 
 // Menu toggle.
 const menuBody = document.querySelector('.site-aside')
@@ -343,4 +343,12 @@ if (typeof likeButton !== 'undefined' && likeButton !== null) {
 }
 
 // Sticky Sidebar
-stickySidebar(document.querySelectorAll('.sidebar'))
+// stickySidebar(document.querySelectorAll('.sidebar'))
+
+document.addEventListener('DOMContentLoaded', () => {
+  // eslint-disable-next-line no-new
+  new TheiaStickySidebar({
+    elements: '.sidebar',
+    additionalMarginTop: 30,
+  })
+})
