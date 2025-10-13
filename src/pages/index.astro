@@ -1,8 +1,6 @@
 ---
-import { posts, tags } from '@/helpers/content/schema'
+import { getPosts, tags } from '@/helpers/content/schema'
 import PostsLayout from '@/layouts/posts/PostsLayout.astro'
-
-const visiblePosts = posts.filter((post) => post.visible)
 ---
 
-<PostsLayout pageNum={1} posts={visiblePosts} {tags} />
+<PostsLayout pageNum={1} posts={getPosts({ hidden: false, schedule: false })} {tags} />

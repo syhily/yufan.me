@@ -1,6 +1,6 @@
 ---
 import config from '@/blog.config'
-import { posts, tags } from '@/helpers/content/schema'
+import { getPosts, tags } from '@/helpers/content/schema'
 import PostsLayout from '@/layouts/posts/PostsLayout.astro'
 
 const { num } = Astro.params
@@ -15,7 +15,7 @@ if (pageNum <= 1) {
   return Astro.redirect('/')
 }
 
-const visiblePosts = posts.filter((post) => post.visible)
+const visiblePosts = getPosts({ hidden: false, schedule: false })
 const total = Math.ceil(visiblePosts.length / config.settings.pagination.posts)
 if (pageNum > total) {
   return Astro.redirect(`${total}`, 302)

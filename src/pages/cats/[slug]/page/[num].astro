@@ -1,6 +1,6 @@
 ---
 import config from '@/blog.config'
-import { getCategory, posts } from '@/helpers/content/schema'
+import { getCategory, getPosts } from '@/helpers/content/schema'
 import CategoryLayout from '@/layouts/posts/CategoryLayout.astro'
 
 const { slug, num } = Astro.params
@@ -15,7 +15,7 @@ if (pageNum <= 1) {
   return Astro.redirect(category.permalink)
 }
 
-const filteredPosts = posts.filter((post) => post.category === category.name)
+const filteredPosts = getPosts({ hidden: true, schedule: false }).filter((post) => post.category === category.name)
 const pageSize = config.settings.pagination.category
 const total = Math.ceil(filteredPosts.length / pageSize)
 

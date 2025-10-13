@@ -44,7 +44,7 @@ export const pages: Page[] = pagesCollection
     permalink: `/${page.id}`,
     render: async () => await render(page),
   }))
-export const posts: Post[] = postsCollection
+const posts: Post[] = postsCollection
   .filter(post => post.data.published || !import.meta.env.PROD)
   .map(post => ({
     ...post.data,
@@ -139,6 +139,15 @@ const featurePosts: string[] = config.settings.post.feature ?? []
 const invalidFeaturePosts = featurePosts.filter(slug => !postsSlugs.has(slug))
 if (invalidFeaturePosts.length > 0) {
   throw new Error(`The bellowing feature posts are invalid:\n$${invalidFeaturePosts.join('\n')}`)
+}
+
+export interface PostOptions {
+  hidden: boolean
+  schedule: boolean
+}
+
+export function getPosts(options: PostOptions): Post[] {
+  return posts.filter(post => post.visible || options.hidden).filter(post => post.date <= new Date() || options.schedule)
 }
 
 export function getPost(slug: string): Post | undefined {

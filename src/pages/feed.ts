@@ -2,10 +2,10 @@ import { joinPaths } from '@astrojs/internal-helpers/path'
 import rss from '@astrojs/rss'
 import config from '@/blog.config'
 import { renderPostsContents } from '@/helpers/content/render'
-import { posts } from '@/helpers/content/schema'
+import { getPosts } from '@/helpers/content/schema'
 
 export async function GET() {
-  const visiblePosts = posts.filter(post => post.visible)
+  const visiblePosts = getPosts({ hidden: false, schedule: false })
   const feedPosts
     = visiblePosts.length < config.settings.feed.size ? visiblePosts : visiblePosts.slice(0, config.settings.feed.size)
   const contents = await renderPostsContents(feedPosts)

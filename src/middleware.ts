@@ -2,7 +2,7 @@ import { joinPaths } from '@astrojs/internal-helpers/path'
 import { defineMiddleware, sequence } from 'astro:middleware'
 import { userSession } from '@/helpers/auth/session'
 import { hasAdmin } from '@/helpers/auth/user'
-import { posts } from '@/helpers/content/schema'
+import { getPosts } from '@/helpers/content/schema'
 
 export enum ADMIN_ENDPOINTS {
   install = '/admin/install',
@@ -46,28 +46,30 @@ const authentication = defineMiddleware(async ({ url: { pathname }, redirect, se
   return next()
 })
 
-const postUrlMappings: Map<string, string> = posts.map(post => ({
-  sources: [
-    joinPaths('/', post.slug),
-    ...post.alias.flatMap(alias => [joinPaths('/', alias), joinPaths('/posts/', alias)]),
-  ],
-  target: post.permalink,
-})).reduce((res, item) => {
-  item.sources.forEach((source) => {
+const postUrlMappings: Map<string, string> = getPosts({ hidden: true, schedule: false })
+  .map(post => ({
+    sources: [
+      joinPaths('/', post.slug),
+      ...post.alias.flatMap(alias => [joinPaths('/', alias), joinPaths('/posts/', alias)]),
+    ],
+    target: post.permalink,
+  }))
+  .reduce((res, item) => {
+    item.sources.forEach((source) => {
     // Avoid duplicated alias
-    if (res.has(source)) {
-      throw new Error(`Duplicate request path ${source} in post alias slug`)
-    }
-    // Avoid admin endpoints
-    if (source.startsWith('/admin/')
-      || source === '/admin'
-      || isAdminEndpoints(source)) {
-      throw new Error(`Preserved request path: ${source}`)
-    }
-    res.set(source, item.target)
-  })
-  return res
-}, new Map<string, string>())
+      if (res.has(source)) {
+        throw new Error(`Duplicate request path ${source} in post alias slug`)
+      }
+      // Avoid admin endpoints
+      if (source.startsWith('/admin/')
+        || source === '/admin'
+        || isAdminEndpoints(source)) {
+        throw new Error(`Preserved request path: ${source}`)
+      }
+      res.set(source, item.target)
+    })
+    return res
+  }, new Map<string, string>())
 
 const postUrlRedirect = defineMiddleware(({ request: { method }, url: { pathname }, redirect }, next) => {
   // This is used for redirect my old blog posts to a new mapping.

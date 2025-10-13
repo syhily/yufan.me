@@ -8,10 +8,10 @@ import { queryUserId } from '@/helpers/auth/user'
 import { decreaseLikes, increaseLikes, queryLikes } from '@/helpers/comment/likes'
 import { createComment, loadComments } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/content/render'
-import { pages, posts } from '@/helpers/content/schema'
+import { getPosts, pages } from '@/helpers/content/schema'
 import { encodedEmail } from '@/helpers/tools'
 
-const keys = [...posts.map(post => post.permalink), ...pages.map(page => page.permalink)]
+const keys = [...getPosts({ hidden: true, schedule: true }).map(post => post.permalink), ...pages.map(page => page.permalink)]
 
 export const comment = {
   increaseLike: defineAction({

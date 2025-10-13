@@ -1,6 +1,6 @@
 import type { DocumentData } from 'flexsearch'
 import { Document } from 'flexsearch'
-import { posts } from '@/helpers/content/schema'
+import { getPosts } from '@/helpers/content/schema'
 
 interface PostItem extends DocumentData {
   title: string
@@ -18,7 +18,7 @@ const index = new Document<PostItem>({
   },
 })
 
-for (const post of posts) {
+for (const post of getPosts({ hidden: true, schedule: true })) {
   index.add({
     title: post.title,
     slug: post.slug,

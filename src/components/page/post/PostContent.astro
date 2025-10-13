@@ -2,14 +2,14 @@
 import UnstyledSolution from '@/components/mdx/solutions/UnstyledSolution.astro'
 import UnstyledMusicPlayer from '@/components/mdx/netease/UnstyledMusicPlayer.astro'
 import UnstyledImage from '@/components/mdx/image/UnstyledImage.astro'
-import { posts } from '@/helpers/content/schema'
+import { getPosts } from '@/helpers/content/schema'
 
 interface Props {
   slug: string
 }
 
 const { slug } = Astro.props
-const post = posts.find((post) => post.slug === slug)
+const post = getPosts({ hidden: true, schedule: true }).find((post) => post.slug === slug)
 if (!post) {
   return Astro.redirect('/404')
 }

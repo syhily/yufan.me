@@ -10,7 +10,7 @@ import PostMeta from '@/components/meta/PostMeta.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Sidebar from '@/components/sidebar/Sidebar.astro'
 import { formatLocalDate } from '@/helpers/content/formatter'
-import { getTag, posts, tags } from '@/helpers/content/schema'
+import { getPosts, getTag, tags } from '@/helpers/content/schema'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import MusicPlayer from '@/components/mdx/netease/MusicPlayer.astro'
@@ -82,7 +82,7 @@ const { Content, headings } = await post.render()
             </div>
           </div>
         </div>
-        <Sidebar {posts} {tags} />
+        <Sidebar posts={getPosts({ hidden: false, schedule: false })} {tags} />
       </div>
     </div>
   </div>
