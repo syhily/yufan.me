@@ -1,7 +1,8 @@
+import { Buffer } from 'node:buffer'
 import { file, glob } from 'astro/loaders'
 import { defineCollection, z } from 'astro:content'
+import { thumbHashToDataURL } from 'thumbhash'
 import config from '@/blog.config'
-import { blurHashToDataURL } from '@/helpers/content/image/blurhash'
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
@@ -112,7 +113,7 @@ const imageCollection = defineCollection({
     slug: z.string(),
     width: z.number().int().min(1),
     height: z.number().int().min(1),
-    blurhash: z.string().transform(hash => blurHashToDataURL(hash)),
+    blurhash: z.string().transform(hash => thumbHashToDataURL(Buffer.from(hash, 'base64'))),
   }),
 })
 

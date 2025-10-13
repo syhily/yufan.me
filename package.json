@@ -53,6 +53,7 @@
     "nodemailer": "^7.0.9",
     "pinyin-pro": "^3.27.0",
     "sharp": "^0.34.4",
+    "thumbhash": "^0.1.1",
     "ultrahtml": "^1.6.0",
     "unstorage": "^1.17.1"
   },
