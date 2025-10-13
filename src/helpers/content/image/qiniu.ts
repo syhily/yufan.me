@@ -3,7 +3,6 @@ import { baseService } from 'astro/assets'
 import { inferRemoteSize, isESMImportedImage } from 'astro/assets/utils'
 import { getImageMetadata } from '../schema'
 import { isRemoteAllowed } from './assets'
-import { blurHashToDataURL } from './blurhash'
 
 async function getImage(source: string, options: ImageTransform): Promise<{ width: number, height: number, blurhash?: string }> {
   const { width, height } = options
@@ -32,7 +31,7 @@ const service: ExternalImageService = {
       if (blurhash) {
         options.style = {
           ...options.style,
-          'background-image': `url("${blurHashToDataURL(blurhash)}")`,
+          'background-image': `url("${blurhash}")`,
           'background-position': 'center',
           'background-size': 'cover',
           'background-repeat': 'no-repeat',
