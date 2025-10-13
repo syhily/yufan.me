@@ -3,4 +3,4 @@ import { getPosts, tags } from '@/helpers/content/schema'
 import PostsLayout from '@/layouts/posts/PostsLayout.astro'
 ---
 
-<PostsLayout pageNum={1} posts={getPosts({ hidden: false, schedule: false })} {tags} />
+<PostsLayout pageNum={1} posts={getPosts({ hidden: false, schedule: import.meta.env.DEV })} {tags} />
