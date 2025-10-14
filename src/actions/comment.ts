@@ -73,7 +73,9 @@ export const comment = {
           depth: resp.rid === 0 ? 1 : 2,
           comment: resp,
           pending: resp.isPending,
+          session,
         },
+        request,
       })
 
       return { content }
@@ -117,7 +119,7 @@ export const comment = {
       page_key: z.string(),
       offset: z.number(),
     }),
-    handler: async ({ page_key, offset }, { session }) => {
+    handler: async ({ page_key, offset }, { session, request }) => {
       const comments = await loadComments(session, page_key, null, Number(offset))
       if (comments === null) {
         throw new ActionError({
@@ -126,7 +128,7 @@ export const comment = {
         })
       }
 
-      const content = await partialRender(Comment, { props: { comments } })
+      const content = await partialRender(Comment, { props: { comments, session }, request })
       const next
         = config.settings.comments.size + offset < comments.roots_count
 

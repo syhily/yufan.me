@@ -62,7 +62,7 @@ await increaseViews(commentKey, title)
           </form>
         </div>
         <ul class="comment-list">
-          <Comment comments={comments} />
+          <Comment comments={comments} session={Astro.session} />
         </ul>
         {config.settings.comments.size < comments.roots_count && (
           <div class="text-center mt-3 mt-md-4">

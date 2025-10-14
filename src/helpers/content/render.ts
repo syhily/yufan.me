@@ -3,15 +3,34 @@ import type { AstroComponentFactory } from 'astro/runtime/server/index.js'
 import type { TextNode } from 'ultrahtml'
 import type { Post } from '@/helpers/content/schema'
 import { joinPaths } from '@astrojs/internal-helpers/path'
-import serverRenderer from '@astrojs/mdx/server.js'
+import { getContainerRenderer as mdxContainerRenderer } from '@astrojs/mdx'
 import { experimental_AstroContainer as AstroContainer } from 'astro/container'
+import { loadRenderers } from 'astro:container'
+import { REDIS_URL } from 'astro:env/server'
 import { ELEMENT_NODE, TEXT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
 import config from '@/blog.config'
+
 import PostContent from '@/components/page/post/PostContent.astro'
 
-const container = await AstroContainer.create()
-container.addServerRenderer({ name: 'astro:jsx', renderer: serverRenderer })
+const renderers = await loadRenderers([mdxContainerRenderer()])
+const container = await AstroContainer.create({
+  astroConfig: {
+    session: {
+      driver: 'redis',
+      ttl: 60 * 60,
+      options: {
+        url: REDIS_URL,
+      },
+      cookie: {
+        name: 'yufan-me-session',
+        sameSite: 'lax',
+        secure: true,
+      },
+    },
+  },
+  renderers,
+})
 
 // We only want to make sure the container instance is singleton.
 export async function partialRender(component: AstroComponentFactory, options?: ContainerRenderOptions): Promise<string> {

@@ -27,6 +27,7 @@ const {
   S3_BUCKET,
   S3_ACCESS_KEY,
   S3_SECRET_ACCESS_KEY,
+  REDIS_URL,
   NODE_ENV,
 } = loadEnv(process.env.NODE_ENV!, process.cwd(), '')
 
@@ -49,11 +50,14 @@ export default defineConfig({
       : { entrypoint: './src/helpers/content/image/qiniu' },
   },
   session: {
-    driver: 'memory',
+    driver: 'redis',
     ttl: 60 * 60,
+    options: {
+      url: REDIS_URL,
+    },
     cookie: {
       name: 'yufan-me-session',
-      sameSite: 'strict',
+      sameSite: 'lax',
       secure: true,
     },
   },
@@ -68,6 +72,7 @@ export default defineConfig({
       SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Database
       DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
+      REDIS_URL: envField.string({ context: 'server', access: 'secret' }),
     },
     validateSecrets: true,
   },
