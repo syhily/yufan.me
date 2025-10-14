@@ -66,8 +66,8 @@ export default defineConfig({
       SMTP_USER: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
-      // Database Storage Path
-      DATABASE_STORAGE_PATH: envField.string({ context: 'server', access: 'secret', default: './data' }),
+      // Database
+      DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
     },
     validateSecrets: true,
   },

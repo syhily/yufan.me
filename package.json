@@ -39,11 +39,11 @@
     "@astrojs/mdx": "^4.3.7",
     "@astrojs/node": "^9.4.6",
     "@astrojs/rss": "^4.0.12",
-    "@electric-sql/pglite": "^0.3.10",
-    "@electric-sql/pglite-tools": "^0.2.15",
     "@napi-rs/canvas": "^0.1.80",
+    "@neondatabase/serverless": "^1.0.2",
     "astro": "^5.14.4",
     "bcryptjs": "^3.0.2",
+    "bufferutil": "^4.0.9",
     "drizzle-orm": "^0.44.6",
     "fast-blurhash": "^1.1.4",
     "flexsearch": "^0.8.212",
@@ -55,7 +55,8 @@
     "sharp": "^0.34.4",
     "thumbhash": "^0.1.1",
     "ultrahtml": "^1.6.0",
-    "unstorage": "^1.17.1"
+    "unstorage": "^1.17.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
@@ -68,6 +69,7 @@
     "@types/node": "^24.7.2",
     "@types/nodemailer": "^7.0.2",
     "@types/unist": "^3.0.3",
+    "@types/ws": "^8.18.1",
     "aplayer-ts": "^2.6.0",
     "astro-eslint-parser": "^1.2.2",
     "astro-uploader": "^1.3.3",
