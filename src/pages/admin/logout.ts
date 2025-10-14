@@ -6,5 +6,5 @@ export const GET: APIRoute = async ({ session, redirect }) => {
     throw new Error('Please configure your astro session store')
   }
   logout(session)
-  return redirect(`${import.meta.env.SITE}/admin/login`)
+  return redirect(import.meta.env.SITE)
 }

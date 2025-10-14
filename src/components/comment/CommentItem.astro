@@ -2,8 +2,8 @@
 import type { CommentItem } from '@/helpers/comment/types'
 import config from '@/blog.config'
 import { formatLocalDate } from '@/helpers/content/formatter'
-import { encodedEmail } from '@/helpers/tools'
 import { joinPaths } from '@astrojs/internal-helpers/path'
+import AdminBlock from '@/components/partial/AdminBlock.astro'
 
 interface Props {
   depth: number
@@ -39,20 +39,28 @@ const { comment, depth, pending } = Astro.props
           )
         }
         {
-          encodedEmail(config.author.email) === comment.email && (
-            <a class="badge badge-primary badge-pill" href={`mailto:${config.author.email}`}>
-              站长
-            </a>
+          config.author.email === comment.email && (
+            <div class="badge badge-primary badge-pill fw-bold text-wrap">站长</div>
           )
         }
       </div>
-      <div class="comment-content">
+      <div class="comment-content text-wrap text-break">
         {pending && <p class="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>}
         <Fragment set:html={comment.content} />
       </div>
       <div class="comment-footer text-xs text-muted">
         <time class="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
-        <button class="comment-reply-link" data-rid={comment.id}>回复</button>
+        <button class="comment-reply-link me-2" data-rid={comment.id}>回复</button>
+        <AdminBlock>
+          {
+            comment.isPending && (
+              <button class="comment-approve-link me-2" data-rid={comment.id}>
+                通过
+              </button>
+            )
+          }
+          <button class="comment-delete-link me-2" data-rid={comment.id}>删除</button>
+        </AdminBlock>
       </div>
     </div>
   </article>

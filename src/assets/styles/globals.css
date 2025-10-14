@@ -866,8 +866,7 @@
   background-color: var(--bg-warning);
 }
 
-.badge-light,
-.badge-primary:hover {
+.badge-light {
   color: var(--color-secondary);
   background-color: var(--btn-light);
 }
@@ -3192,9 +3191,19 @@ a:hover .overlay {
   flex: none;
 }
 
-.comment-reply-link {
+.comment-reply-link,
+.comment-approve-link,
+.comment-delete-link {
   background-color: transparent;
   transition: all 0.3s linear;
+}
+
+.comment-approve-link {
+  color: var(--color-warning);
+}
+
+.comment-delete-link {
+  color: var(--color-danger);
 }
 
 .comment-reply-link:hover {

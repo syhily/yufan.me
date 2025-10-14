@@ -50,3 +50,13 @@ export async function userSession(session: AstroSession) {
 export function logout(session: AstroSession) {
   session.destroy()
 }
+
+export async function isAdmin(session: AstroSession | undefined) {
+  if (session) {
+    const u = await userSession(session)
+    if (u) {
+      return u.admin
+    }
+  }
+  return false
+}

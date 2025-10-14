@@ -186,6 +186,30 @@ if (typeof comments !== 'undefined' && comments !== null) {
       replyForm.querySelector('#content').focus()
     }
 
+    // Approve a comment.
+    if (event.target.matches('.comment-approve-link')) {
+      const rid = event.target.dataset.rid
+      const { error } = await actions.comment.approve({ rid })
+      if (error) {
+        return handleActionError(error)
+      }
+      else {
+        event.target.remove()
+      }
+    }
+
+    // Delete a comment.
+    if (event.target.matches('.comment-delete-link')) {
+      const rid = event.target.dataset.rid
+      const { error } = await actions.comment.delete({ rid })
+      if (error) {
+        return handleActionError(error)
+      }
+      else {
+        event.target.closest('li').remove()
+      }
+    }
+
     // Cancel reply comment.
     if (event.target === cancel) {
       cancelReply()

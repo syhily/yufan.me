@@ -4,9 +4,10 @@ import { ActionError, defineAction } from 'astro:actions'
 import config from '@/blog.config'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
+import { isAdmin } from '@/helpers/auth/session'
 import { queryUserId } from '@/helpers/auth/user'
 import { decreaseLikes, increaseLikes, queryLikes } from '@/helpers/comment/likes'
-import { createComment, loadComments } from '@/helpers/comment/loader'
+import { approveComment, createComment, deleteComment, loadComments } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/content/render'
 import { getPosts, pages } from '@/helpers/content/schema'
 import { encodedEmail } from '@/helpers/tools'
@@ -78,14 +79,46 @@ export const comment = {
       return { content }
     },
   }),
+  approve: defineAction({
+    accept: 'json',
+    input: z.object({ rid: z.string() }),
+    handler: async ({ rid }, { session }) => {
+      const admin = await isAdmin(session)
+      if (!admin) {
+        throw new ActionError({
+          code: 'UNAUTHORIZED',
+          message: '系统错误，当前用户不是管理员。',
+        })
+      }
+      else {
+        await approveComment(rid)
+      }
+    },
+  }),
+  delete: defineAction({
+    accept: 'json',
+    input: z.object({ rid: z.string() }),
+    handler: async ({ rid }, { session }) => {
+      const admin = await isAdmin(session)
+      if (!admin) {
+        throw new ActionError({
+          code: 'UNAUTHORIZED',
+          message: '系统错误，当前用户不是管理员。',
+        })
+      }
+      else {
+        await deleteComment(rid)
+      }
+    },
+  }),
   loadComments: defineAction({
     accept: 'json',
     input: z.object({
       page_key: z.string(),
       offset: z.number(),
     }),
-    handler: async ({ page_key, offset }) => {
-      const comments = await loadComments(page_key, null, Number(offset))
+    handler: async ({ page_key, offset }, { session }) => {
+      const comments = await loadComments(session, page_key, null, Number(offset))
       if (comments === null) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',

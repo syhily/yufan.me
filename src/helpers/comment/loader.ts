@@ -4,7 +4,7 @@ import type { NewComment, NewPage, Page } from '@/helpers/db/types'
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import _ from 'lodash'
 import config from '@/blog.config'
-import { userSession } from '@/helpers/auth/session'
+import { isAdmin, userSession } from '@/helpers/auth/session'
 import { createUser } from '@/helpers/auth/user'
 import { parseContent } from '@/helpers/content/markdown'
 import defer * as pool from '@/helpers/db/pool'
@@ -23,6 +23,36 @@ async function upsertPage(key: string, title: string | null): Promise<Page> {
   }
   const np: NewPage = { title: title || '无标题', key, voteUp: 0, voteDown: 0, pv: 0 }
   return (await pool.db.insert(page).values(np).returning())[0]
+}
+
+export async function pendingComments(): Promise<LatestComment[]> {
+  const results = await pool.db
+    .select({
+      id: comment.id,
+      page: comment.pageKey,
+      title: page.title,
+      author: user.name,
+      authorLink: user.link,
+    })
+    .from(comment)
+    .innerJoin(page, eq(comment.pageKey, page.key))
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(eq(comment.isPending, true))
+    .orderBy(desc(comment.id))
+    .limit(config.settings.sidebar.comment)
+
+  return results.map(({ title, author, authorLink, page, id }) => {
+    let trimTitle = title ?? ''
+    if (trimTitle.includes(` - ${config.title}`)) {
+      trimTitle = trimTitle.substring(0, trimTitle.indexOf(` - ${config.title}`))
+    }
+    return {
+      title: trimTitle,
+      author: author ?? '',
+      authorLink: authorLink ?? '',
+      permalink: `${page}#user-comment-${id}`,
+    }
+  })
 }
 
 export async function latestComments(): Promise<LatestComment[]> {
@@ -100,22 +130,23 @@ const unionCommentSelect = {
   badgeColor: user.badgeColor,
 }
 
-export async function loadComments(key: string, title: string | null, offset: number): Promise<Comments | null> {
+export async function loadComments(session: AstroSession | undefined, key: string, title: string | null, offset: number): Promise<Comments | null> {
   await upsertPage(key, title)
+  const pendingArray = session ? await isAdmin(session) ? [false, true] : [false] : [false]
 
-  const counts = (await pool.db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.isPending, false))))[0].counts
-  const rootCounts = (await pool.db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), eq(comment.isPending, false), eq(comment.rootId, 0n))))[0].counts
+  const counts = (await pool.db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray))))[0].counts
+  const rootCounts = (await pool.db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), eq(comment.rootId, 0n))))[0].counts
   const rootComments = await pool.db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n), eq(comment.isPending, false)))
+    .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n), inArray(comment.isPending, pendingArray)))
     .limit(config.settings.comments.size)
     .orderBy(desc(comment.createdAt))
     .offset(offset)
   const childComments = await pool.db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, key), eq(comment.isPending, false), inArray(comment.rootId, rootComments.map(c => c.id))))
+    .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), inArray(comment.rootId, rootComments.map(c => c.id))))
 
   return {
     count: counts,
@@ -132,6 +163,14 @@ export async function increaseViews(key: string, title: string | null) {
       pv: sql`${page.pv} + 1`,
     })
     .where(eq(page.key, sql`${key}`))
+}
+
+export async function approveComment(rid: string) {
+  await pool.db.update(comment).set({ isPending: false }).where(eq(comment.id, BigInt(rid)))
+}
+
+export async function deleteComment(rid: string) {
+  await pool.db.delete(comment).where(eq(comment.id, BigInt(rid)))
 }
 
 export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string, session: AstroSession): Promise<ErrorResp | CommentAndUser> {

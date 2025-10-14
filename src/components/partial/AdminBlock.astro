@@ -1,0 +1,7 @@
+---
+import { isAdmin } from '@/helpers/auth/session'
+
+const admin = await isAdmin(Astro.session!)
+---
+
+{admin && <slot />}

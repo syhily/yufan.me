@@ -11,7 +11,7 @@ interface Props {
 }
 
 const { commentKey, title } = Astro.props
-const comments = await loadComments(commentKey, title, 0)
+const comments = await loadComments(Astro.session, commentKey, title, 0)
 
 // Increase the PV in production environment.
 await increaseViews(commentKey, title)

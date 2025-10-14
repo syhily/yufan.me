@@ -10,7 +10,7 @@ if (session === undefined) {
 }
 const user = await userSession(session)
 if (user !== undefined) {
-  return Astro.redirect('/admin')
+  return Astro.redirect(import.meta.env.SITE)
 }
 ---
 
@@ -65,7 +65,7 @@ if (user !== undefined) {
       if (error) {
         return handleActionError(error, () => location.reload())
       }
-      return (location.href = '/admin')
+      return (location.href = '/')
     })
   }
 </script>
