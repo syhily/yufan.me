@@ -14,16 +14,57 @@ const { postTitle, postLink, commentNeedApproval, commentContent, commentLink } 
 ---
 
 <EmailLayout receiver={config.author.name}>
-  您的网站《{config.title}》有了新留言<br />
-  留言文章《<a class="muted-color" href={postLink}>{postTitle}</a>》<br />
-  留言内容：<br />
-  <div
-    class="muted-box"
-    style=" padding:10px 15px;border-radius:8px;background:rgba(141, 141, 141, 0.05); line-height: 1.7;"
-  >
-    <Fragment set:html={commentContent} />
-  </div>
-  <br />
-  {commentNeedApproval && '该留言需要审核，'}您可以打开下方链接查看留言<br />
-  <a target="_blank" style="margin-top: 20px" href={commentLink}>{commentLink}</a><br />
+  <!-- 正文表格开始 -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 20px 0;">
+    <!-- 提示信息 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 10px;">
+        您的网站《{config.title}》有了新留言
+      </td>
+    </tr>
+
+    <!-- 留言文章 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 10px;">
+        留言文章：
+        <a href={postLink} style="color: #666666; text-decoration: none;">{postTitle}</a>
+      </td>
+    </tr>
+
+    <!-- 留言内容 -->
+    <tr>
+      <td style="padding-bottom: 15px;">
+        <table
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+          style="background: rgba(141,141,141,0.05); border-radius: 8px; padding: 10px 15px;"
+        >
+          <tr>
+            <td style="font-size: 14px; color: #333333; line-height: 1.7;">
+              <Fragment set:html={commentContent} />
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- 审核提示 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 10px;">
+        {commentNeedApproval && '该留言需要审核，'}您可以打开下方链接查看留言：
+      </td>
+    </tr>
+
+    <!-- 留言链接 -->
+    <tr>
+      <td style="padding-top: 10px;">
+        <a href={commentLink} target="_blank" style="font-size: 14px; color: #008c95; text-decoration: none;">
+          {commentLink}
+        </a>
+      </td>
+    </tr>
+  </table>
+  <!-- 正文表格结束 -->
 </EmailLayout>
