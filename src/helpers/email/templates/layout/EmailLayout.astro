@@ -1,0 +1,54 @@
+---
+import backgroundImage from '@/helpers/email/templates/layout/backgroundImage.svg?raw'
+import config from '@/blog.config'
+import { DateTime } from 'luxon'
+
+interface Props {
+  receiver: string
+}
+
+const { receiver } = Astro.props
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <div
+      style="display: flex; align-items: center; padding: 15px; color: #666666; font-size: 14px; line-height: 1.5; word-break: break-all;"
+    >
+      <div
+        style="overflow: hidden; width: 500px; margin: 0 auto; box-sizing: border-box; border: 1px solid #283149; box-shadow: 0px 0px 20px #cccccc; border-radius: 5px;"
+      >
+        <div>
+          <div
+            style=`background: url('data:image/svg+xml;base64,${Buffer.from(backgroundImage, 'utf8').toString('base64')}') no-repeat top center; width:500px; height:320px;`
+          >
+          </div>
+          <div
+            style="display: inline-block; margin-left: 20px; padding: 7px 20px; background: #008c95; color: #ffffff; text-align: center; box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3); border-radius: 3px; transform: translateY(-20px);"
+          >
+            亲爱的 {receiver} 同学
+          </div>
+        </div>
+        <div style="padding: 30px 20px;">
+          <div style="padding: 5px 15px; background: #f5f5f5; border-radius: 3px;"><slot /></div>
+          <div style="display: flex; flex-direction: column; align-items: center; margin-top: 50px;">
+            <a
+              style="padding: 7px 20px; background: #008c95; color: #ffffff; text-decoration: none; box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3); border-radius: 3px;"
+              href={config.website}
+              target="_blank">访问博客</a
+            >
+            <div style="margin-top: 30px; text-align: center; font-size: 12px;">
+              本邮件为系统自动发出，无法回复。<br />Copyright © {DateTime.now().setZone(config.settings.timeZone).year}
+              <a style="color: #666666; text-decoration: none;" href={config.website} target="_blank">{config.title}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

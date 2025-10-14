@@ -1,0 +1,37 @@
+---
+import EmailLayout from '@/helpers/email/templates/layout/EmailLayout.astro'
+
+interface Props {
+  receiver: string
+  postTitle: string
+  postLink: string
+  sourceContent: string
+  replyContent: string
+  replyLink: string
+}
+
+const { receiver, postTitle, postLink, sourceContent, replyContent, replyLink } = Astro.props
+---
+
+<EmailLayout {receiver}>
+  您好！{receiver}<br />
+  您在《<a class="muted-color" href={postLink}>{postTitle}</a>》中的留言，有了新回复<br />
+  您的留言：<br />
+  <div
+    class="muted-box"
+    style=" padding:10px 15px;border-radius:8px;background:rgba(141, 141, 141, 0.05); line-height: 1.7;"
+  >
+    <Fragment set:html={sourceContent} />
+  </div>
+  <br />
+  回复内容：<br />
+  <div
+    class="muted-box"
+    style=" padding:10px 15px;border-radius:8px;background:rgba(141, 141, 141, 0.05); line-height: 1.7;"
+  >
+    <Fragment set:html={replyContent} />
+  </div>
+  <br />
+  您可以打开下方链接查看留言<br />
+  <a target="_blank" style="margin-top: 20px" href={replyLink}>{replyLink}</a><br />
+</EmailLayout>

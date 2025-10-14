@@ -1,0 +1,28 @@
+---
+import EmailLayout from '@/helpers/email/templates/layout/EmailLayout.astro'
+
+interface Props {
+  receiver: string
+  postTitle: string
+  postLink: string
+  commentContent: string
+  commentLink: string
+}
+
+const { receiver, postTitle, postLink, commentContent, commentLink } = Astro.props
+---
+
+<EmailLayout {receiver}>
+  您好！{receiver}<br />
+  您在《<a class="muted-color" href={postLink}>{postTitle}</a>》中的留言，已经通过审核<br />
+  留言内容：<br />
+  <div
+    class="muted-box"
+    style=" padding:10px 15px;border-radius:8px;background:rgba(141, 141, 141, 0.05); line-height: 1.7;"
+  >
+    <Fragment set:html={commentContent} />
+  </div>
+  <br />
+  您可以打开下方链接查看留言<br />
+  <a target="_blank" style="margin-top: 20px" href={commentLink}>{commentLink}</a><br />
+</EmailLayout>

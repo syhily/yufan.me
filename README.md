@@ -107,13 +107,6 @@ You can check their documentation and deploy your own blog for free initially.
 Alternatively, you can self-host it.
 Use the provided [Dockerfile](./Dockerfile) to build an image and run it locally.
 
-## TODOs
-
-- [ ] Add a “last modified time” component for posts.
-- [ ] Integrate slide-sharing components.
-- [ ] Check article grammar with AI. (Remaining: **42** posts)
-- [ ] Add background music to articles. (Remaining: **42** posts)
-
 ## License
 
 The source code of this blog is licensed under the [MIT](LICENSE) license, feel free to use it without legal risk.

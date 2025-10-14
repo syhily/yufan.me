@@ -9,6 +9,7 @@ import { createUser } from '@/helpers/auth/user'
 import { parseContent } from '@/helpers/content/markdown'
 import defer * as pool from '@/helpers/db/pool'
 import { comment, page, user } from '@/helpers/db/schema'
+import { sendApprovedComment, sendNewComment, sendNewReply } from '@/helpers/email/sender'
 
 async function upsertPage(key: string, title: string | null): Promise<Page> {
   const res = await pool.db.select().from(page).where(eq(page.key, key)).limit(1)
@@ -167,6 +168,15 @@ export async function increaseViews(key: string, title: string | null) {
 
 export async function approveComment(rid: string) {
   await pool.db.update(comment).set({ isPending: false }).where(eq(comment.id, BigInt(rid)))
+  const c = await pool.db.select()
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .innerJoin(page, eq(comment.pageKey, page.key))
+    .where(eq(comment.id, BigInt(rid)))
+    .limit(1)
+  if (c.length > 0) {
+    sendApprovedComment(c[0].comment, c[0].user, c[0].page)
+  }
 }
 
 export async function deleteComment(rid: string) {
@@ -174,6 +184,12 @@ export async function deleteComment(rid: string) {
 }
 
 export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string, session: AstroSession): Promise<ErrorResp | CommentAndUser> {
+  // Check page key
+  const p = await pool.db.select().from(page).where(eq(page.key, commentReq.page_key))
+  if (p.length === 0) {
+    return { msg: '系统错误，评论的目标页面不存在。' }
+  }
+
   // Upsert the comment user.
   const u = await createUser(commentReq.name, commentReq.email, commentReq.link || '')
   if (u === null) {
@@ -251,8 +267,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
 
   cr.content = await parseContent(cr.content || '该留言内容为空')
 
-  // Return the comment
-  return {
+  const info = {
     id: cr.id,
     createAt: cr.createdAt,
     updatedAt: cr.updatedAt,
@@ -277,6 +292,24 @@ export async function createComment(commentReq: CommentReq, req: Request, client
     badgeName: u.badgeName,
     badgeColor: u.badgeColor,
   }
+
+  // Send the email.
+  if (info.email !== config.author.email) {
+    sendNewComment(info, p[0])
+  }
+  if (info.rid !== 0) {
+    const source = await pool.db.select()
+      .from(comment)
+      .innerJoin(user, eq(comment.userId, user.id))
+      .where(eq(comment.id, BigInt(info.rid)))
+      .limit(1)
+    if (source.length > 0) {
+      sendNewReply(source[0].user, source[0].comment, info, p[0])
+    }
+  }
+
+  // Return the comment
+  return info
 }
 
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {

@@ -1,0 +1,30 @@
+---
+import EmailLayout from '@/helpers/email/templates/layout/EmailLayout.astro'
+import config from '@/blog.config'
+
+interface Props {
+  postTitle: string
+  postLink: string
+  commentNeedApproval: boolean
+  commentContent: string
+  commentLink: string
+}
+
+const { postTitle, postLink, commentNeedApproval, commentContent, commentLink } = Astro.props
+---
+
+<EmailLayout receiver={config.author.name}>
+  {config.author.name} 您好！<br />
+  您的网站《{config.title}》有了新留言<br />
+  留言文章《<a class="muted-color" href={postLink}>{postTitle}</a>》<br />
+  留言内容：<br />
+  <div
+    class="muted-box"
+    style=" padding:10px 15px;border-radius:8px;background:rgba(141, 141, 141, 0.05); line-height: 1.7;"
+  >
+    <Fragment set:html={commentContent} />
+  </div>
+  <br />
+  {commentNeedApproval && '该留言需要审核，'}您可以打开下方链接查看留言<br />
+  <a target="_blank" style="margin-top: 20px" href={commentLink}>{commentLink}</a><br />
+</EmailLayout>
