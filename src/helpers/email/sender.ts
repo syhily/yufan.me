@@ -44,7 +44,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, page: Page) {
       },
     },
   )
-  internalSend(commentInfo.email, `你的网站【${config.title}】有了新评论`, html)
+  internalSend(config.author.email, `你的网站【${config.title}】有了新评论`, html)
 }
 
 // This email is sent only when the user's comment has a reply.

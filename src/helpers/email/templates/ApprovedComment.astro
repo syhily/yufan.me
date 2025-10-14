@@ -13,7 +13,6 @@ const { receiver, postTitle, postLink, commentContent, commentLink } = Astro.pro
 ---
 
 <EmailLayout {receiver}>
-  您好！{receiver}<br />
   您在《<a class="muted-color" href={postLink}>{postTitle}</a>》中的留言，已经通过审核<br />
   留言内容：<br />
   <div
