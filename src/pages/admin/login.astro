@@ -1,7 +1,7 @@
 ---
 import { actions } from 'astro:actions'
 import Token from '@/components/partial/Token.astro'
-import SingleLayout from '@/layouts/admin/SingleLayout.astro'
+import AdminLayout from '@/layouts/AdminLayout.astro'
 import { userSession } from '@/helpers/auth/session'
 
 const session = Astro.session
@@ -14,7 +14,7 @@ if (user !== undefined) {
 }
 ---
 
-<SingleLayout title="用户登陆">
+<AdminLayout title="用户登陆">
   <form method="post" action={actions.auth.signIn} id="loginForm">
     <Token />
     <div class="flex-fill">
@@ -34,7 +34,7 @@ if (user !== undefined) {
       </div>
     </div>
   </form>
-</SingleLayout>
+</AdminLayout>
 
 <script>
   import { actions } from 'astro:actions'

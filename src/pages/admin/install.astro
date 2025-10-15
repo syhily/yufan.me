@@ -1,9 +1,9 @@
 ---
 import { actions } from 'astro:actions'
-import SingleLayout from '@/layouts/admin/SingleLayout.astro'
+import AdminLayout from '@/layouts/AdminLayout.astro'
 ---
 
-<SingleLayout title="注册管理员账号">
+<AdminLayout title="注册管理员账号">
   <form method="post" action={actions.auth.signUpAdmin} id="installForm">
     <div class="flex-fill">
       <div class="row g-3 mb-5 px-5">
@@ -23,7 +23,7 @@ import SingleLayout from '@/layouts/admin/SingleLayout.astro'
       </div>
     </div>
   </form>
-</SingleLayout>
+</AdminLayout>
 
 <script>
   import { actions } from 'astro:actions'
