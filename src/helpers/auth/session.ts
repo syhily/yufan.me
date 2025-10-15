@@ -43,8 +43,8 @@ export async function login({
   return true
 }
 
-export async function userSession(session: AstroSession) {
-  return await session.get('user')
+export async function userSession(session: AstroSession | undefined) {
+  return await session?.get('user')
 }
 
 export function logout(session: AstroSession) {

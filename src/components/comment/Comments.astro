@@ -1,6 +1,7 @@
 ---
 import config from '@/blog.config'
 import Comment from '@/components/comment/Comment.astro'
+import { userSession } from '@/helpers/auth/session'
 import { increaseViews, loadComments } from '@/helpers/comment/loader'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 
@@ -15,6 +16,7 @@ const comments = await loadComments(Astro.session, commentKey, title, 0)
 
 // Increase the PV in production environment.
 await increaseViews(commentKey, title)
+const user = await userSession(Astro.session)
 ---
 
 <div id="comments" class="comments pt-5">
@@ -27,15 +29,27 @@ await increaseViews(commentKey, title)
         <div id="respond" class="comment-respond mb-3 mb-md-4">
           <form method="post" action="/comments/new" id="commentForm" class="comment-form">
             <div class="comment-from-avatar flex-avatar">
-              <img
-                alt="头像"
-                src={joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}
-                data-src={joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}
-                class="avatar avatar-40 photo avatar-default"
-                height="40"
-                width="40"
-                decoding="async"
-              />
+              {user?.admin ? (
+                <img
+                  alt="头像"
+                  src={joinPaths(import.meta.env.SITE, `/images/avatar/${user.id}.png`)}
+                  src={joinPaths(import.meta.env.SITE, `/images/avatar/${user.id}.png`)}
+                  class="avatar avatar-40 photo avatar-default"
+                  height="40"
+                  width="40"
+                  decoding="async"
+                />
+              ) : (
+                <img
+                  alt="头像"
+                  src={joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}
+                  data-src={joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}
+                  class="avatar avatar-40 photo avatar-default"
+                  height="40"
+                  width="40"
+                  decoding="async"
+                />
+              )}
             </div>
             <div class="comment-from-input flex-fill">
               <div class="comment-form-text mb-3">
@@ -43,15 +57,48 @@ await increaseViews(commentKey, title)
               </div>
               <div class="comment-form-info row g-2 g-md-3 mb-3">
                 <div class="col">
-                  <input class="form-control" placeholder="昵称" name="name" type="text" required="required" />
+                  {user?.admin ? (
+                    <input
+                      class="form-control"
+                      placeholder={user.name}
+                      name="name"
+                      type="text"
+                      readonly
+                      value={user.name}
+                    />
+                  ) : (
+                    <input class="form-control" placeholder="昵称" name="name" type="text" required />
+                  )}
                 </div>
                 <div class="col-12 col-md-6">
-                  <input class="form-control" name="email" placeholder="邮箱" type="email" required="required" />
+                  {user?.admin ? (
+                    <input
+                      class="form-control"
+                      name="email"
+                      placeholder={user.email}
+                      value={user.email}
+                      type="email"
+                      readonly
+                    />
+                  ) : (
+                    <input class="form-control" name="email" placeholder="邮箱" type="email" required />
+                  )}
                 </div>
                 <div class="col-12">
                   <input hidden name="page_key" type="text" value={commentKey} />
                   <input hidden name="rid" type="text" value="0" />
-                  <input class="form-control" placeholder="网址" name="link" type="url" />
+                  {user?.admin ? (
+                    <input
+                      class="form-control"
+                      placeholder={user.website}
+                      value={user.website}
+                      name="link"
+                      type="url"
+                      readonly
+                    />
+                  ) : (
+                    <input class="form-control" placeholder="网址" name="link" type="url" />
+                  )}
                 </div>
               </div>
               <div class="form-submit text-end">

@@ -60,7 +60,7 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^5.4.1",
+    "@antfu/eslint-config": "^6.0.0",
     "@astrojs/check": "^0.9.4",
     "@daiji256/rehype-mathml": "^1.2.1",
     "@lowlighter/qrcode": "^2.0.0",
