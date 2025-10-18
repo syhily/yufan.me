@@ -15,8 +15,10 @@ const { commentKey, title } = Astro.props
 const comments = await loadComments(Astro.session, commentKey, title, 0)
 
 // Increase the PV in production environment.
-await increaseViews(commentKey, title)
 const user = await userSession(Astro.session)
+if (user?.admin) {
+  await increaseViews(commentKey, title)
+}
 ---
 
 <div id="comments" class="comments pt-5">
