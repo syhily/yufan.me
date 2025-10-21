@@ -1,0 +1,40 @@
+- name: 文章
+  slug: article
+  description: |-
+    我在寻找一个声音，期待着它把书影里的音符唱给你们听。
+    记录一本书、一个作者、一部电影及其与生活之间丝丝缕缕的情。
+    我热爱书和电影，更热爱生活，希望我们都有着走不完的似水流年，说不完的逝水年华。
+  cover: https://cdn.yufan.me/images/categories/article.jpg
+- name: 杂谈
+  slug: gossip
+  description: |-
+    我读书不过为消遣，偶至有趣处，便欣然记下。不敢说集腋成裘，但聊作敝帚自珍。
+    有伟人说，科学的世界像是海洋，他像在海边玩耍的孩子，偶尔捡拾到几只贝壳，他就很高兴。
+    海洋的比喻也可用作浩瀚的文史，行走在文史的典籍里，偶尔捡到一些边角料，也同样令人兴奋。
+  cover: https://cdn.yufan.me/images/categories/gossip.jpg
+- name: 杂思
+  slug: think
+  description: |-
+    听一听素乐，品一品素茶，读一读素书，写一写素心。即使是清贫过一生，也安之若素。
+    只想在这滚滚红尘深处，留一抹清淡。只愿在这茫茫人海之中，寻一个会心。
+    爱读几句书，常听几支曲，闲品几盏茶，偶插几朵花。此生无所求，闲看花开落。
+  cover: https://cdn.yufan.me/images/categories/think.jpg
+- name: 编程
+  slug: coding
+  description: |-
+    冒泡排序，选择排序，插入排序，快速排序，堆排序，归并排序，希尔排序，桶排序，基数排序。
+    有向图，无向图，有环图，无环图，完全图，稠密图，稀疏图，拓扑图。
+    二叉树，红黑树，van Emde Boas树，最小生成树。
+  cover: https://cdn.yufan.me/images/categories/coding.jpg
+- name: 小说
+  slug: novel
+  description: |-
+    在这个世界里，没有朝霞的红，没有苔藓的绿，没有夜来香的黄，没有橡木的棕，也没有深海的蓝。
+    有的只是孩子们张惶不安地丈量世界，换来一声叹息。
+  cover: https://cdn.yufan.me/images/categories/novel.jpg
+- name: 笔记
+  slug: notes
+  description: |-
+    风萧萧，天寥寥。山隐隐，木叶凋。小楼坐定，理书罢了。
+    灯青茶酽花静声悄，添几行斜书歪字，懒寻甚金缕玉箫。
+  cover: https://cdn.yufan.me/images/categories/notes.jpg

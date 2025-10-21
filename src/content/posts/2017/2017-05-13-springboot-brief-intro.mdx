@@ -1,0 +1,236 @@
+---
+title: Spring Boot 简介
+slug: springboot-brief-intro
+date: 2017-05-13 12:51:59+08:00
+updated: 2020-03-01 18:05:31+08:00
+tags:
+  - Spring
+  - 演讲
+category: 编程
+cover: https://cdn.yufan.me/images/2019/05/2019050913525690.jpg
+summary: 第一次使用 Springboot 应该是15年年底，当时就被这种约定大于配置的设计惊呆了。那个时候才从上一家公司跳槽，用的是 Spring  3。
+---
+
+第一次使用 Springboot 应该是15年年底，当时就被这种约定大于配置的设计惊呆了。那个时候才从上一家公司跳槽，用的是 Spring 3。所以每次开发新项目的时候，配置起来都让我十分痛苦，也因此喜欢上了 Springboot 的种种便利。
+
+众观 Springboot 的发展，可以发现，其在简化开发上不断地进步。很多常见的组件框架也有了 Springboot 版本。我想，作为 Java 程序员，是时候进入 Springboot 的世界了。
+
+这里分享一份一年前，我在公司内部分享上用的 Slide，以期对于阅读此文的你有所帮助。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/01.jpg)
+
+大家好，今天由我来向大家简单介绍一下 Spring Boot 相关的内容，详细的与 Spring Boot 相关的知识将后面由吴一敏同学分享。
+
+首先自我介绍一下，我叫盛宇帆，15年年底加入 OneAPM，现在已经1年多了，目前主要负责和告警引擎相关的开发。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/02.jpg)
+
+Spring 官方的博客介绍 Spring： **Spring** is the **“glue”** in your application。我认为 Spring Boot 就是 A glue in Spring Framework。
+
+相信大家都经历过配置 Spring XML 的阶段，十分痛苦地去配置一个 Bean，后面 Spring 3发布之后，基本上很多配置都是通过注解加扫包去配置初始化。
+我常见到的一种配置方式，就是和 Spring 框架集成部分的配置，如数据库啊，Web 模板一类的，使用的是 XML，自己项目的 Service、Dao 等类，使用注解初始化。
+后面 Spring 4开始流行 @Configuation 注解的配置类初始化配置。
+
+然而，这样子还是十分麻烦，所以才有了 Spring Boot，它给我们最直观的感受，就是 简化了配置。一言一概之，约定大于配置。
+
+然而，仅有这些，并不能说明为何现在 Spring Boot 开始流行，说道 Spring Boot 的兴起，我想起前几天一个技术群的提问：为什么 Spring Boot 应用倾向于打 fat jar 直接启动，而传统的应用倾向于打 war 包从应用容器启动？
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/03.jpg)
+
+Java 应用部署于应用容器中，其实是受到 J2EE 的影响，也算是 Java Web 有别于其他 Web 快速开发语言的一大特色。一个大大的 war 压缩包，包含了全部的依赖，代码，静态资源，模板。
+
+在虚拟化流行之前，应用都是部署在物理机上的，为了节约成本，多 war 包部署在一个 Servlet 容器内。
+
+但是为了部署方便，如使用的框架有漏洞、项目 jar包的升级，我们会以解压 war 包的方式去部署。或者是打一个不包含依赖的空 war 包，指定容器的加载某个目录，这样所有的war项目公用一套公共依赖，减少内存。当然缺点很明显，容易造成容器污染。
+
+避免容器污染，多 war 部署变为多虚拟机单 war、单容器。
+
+DevOps 流行，应用和容器不再分离，embedded servlet containers开始流行 Spring Boot 在这个阶段应运而生。于是项目部署变为 fat jar + 虚拟机
+
+Docker的流行，开始推行不可变基础设施思想，实例（包括服务器、容器等各种软硬件）一旦创建之后便成为一种只读状态，不可对其进行任何更改。如果需要修改或升级某些实例，唯一的方式就是创建一批新的实例以替换。
+
+基于此，我们将配置文件外置剥离，由专门的配置中心下发配置文件。
+
+这也是我们为何要学习和使用 Spring Boot 的背景，我觉得这才是 Spring Boot 开始流行的主要原因。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/04.jpg)
+
+总的来说 Spring Boot 有以下几个特点。
+
+1. 配置简化，这个我印象最深刻的就是写 MyBatis 的时候，一堆东西要配置，一般大家都会用那个 Generator 去生成。而实际上 Spring Boot 推崇 jpa，如果只是简单的 CRUD，用 Spring Boot + JPA 的方式简单到只需要几行关于数据库的配置就好了。
+2. 自动配置机制，很多教程都称它为 Magic，基于项目的某些条件，自动初始化装配必要的 Bean，稍后会在后面的演示中详解。
+3. Starter 本质上就是 Spring 基于 Gradle 和 Maven 这两种构建工具定义的一组依赖，一般是按照功能或者框架划分。在有了自动配置的机制下，我们只需要依赖 Starter 指定的坐标，和非常简单的属性配置即可集成我们想要的框架。
+4. 嵌入的 Servlet 容器，主要是为了方便部署的。
+5. 主要是 `spring-boot-starter-actuator` 和 `spring-boot-starter-remote-shell` 的使用，当然，这里还可以使用 JMX 一类的做管理，大家可以参考文档。（2017年更新 remote shell 已经废弃）
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/05.jpg)
+
+首先，我们来用 Spring Boot 写一个 Hello World吧，这个是仿照 Spring 官方的示例代码改的，使用 Groovy，所以连 import 都省了。这里主要是为了演示一个最简单的 Spring Boot 应用，通过下面的这行命令我们就能把它启动了。
+
+```java
+@RestController
+class GreetingRestController {
+    @RequestMapping("/hi/{name}")
+    def hi(@PathVariable String name) {
+        [ greeting: "Hello, " + name + "!"]
+    }
+}
+```
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/06.jpg)
+
+现在，问题来了，刚才那个项目那么简单，那个，整个项目的启动过程中，到底发生了哪些魔法呢？
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/07.jpg)
+
+我们将 Groovy 的代码翻译为 Java版本，大概会看到，一个项目想要启用 Spring Boot，关键在于 `SpringApplication` 类和 `EnableAutoConfiguration` 注解的使用。
+
+SpringApplication 是 Spring Boot 提供的用于 Java main 方法的启动类。它的执行操作首先为：
+
+1. Create an appropriate ApplicationContext instance (depending on your classpath)
+2. Register a CommandLinePropertySource to expose command line arguments as Spring properties
+3. Refresh the application context, loading all singleton beans Trigger any CommandLineRunner beans
+
+然后 `EnableAutoConfiguration` 则为 Enable 类注解这里通过此注解，告诉 Spring Boot 开启自动装配的特性。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/08.jpg)
+
+除了 `EnableAutoConfiguration`，我们常常和它并列使用的还有 `ComponentScan` `Configuration` 注解。这三个注解合起来，有一个等价的注解，叫做 `SpringBootApplication`，一般在我们的项目开发中，喜欢在项目最外面的包下面创建包含 main 方法的程序启动类，然后这个类上标记为 @SpringBootApplication 这个注解，这样就等价于基于 main 方法类所在的 package 为 Spring 扫包的基础包路径，且开启自动化配置。
+
+自动化配置的实现，不得不说 Spring Boot 本质上是通过 Conditional 类注解来实现的。
+
+`@ConditionalOnClass` 表示对应的类在classpath目录下存在时，才会去执行注解所标示的自动配置类或者自动配置方法，与之对应的我们就@ConditionalOnMissingClass 注解，也就是找不到对应的类的时候。
+
+`@ConditionalOnBean` 和 `@ConditionalOnMissingBean` 则同样很容易按照字面意思理解。
+
+当然 `Conditional*` 注解不仅仅上面提到的这些，还有 `ConditionalOnExpression` 一类的。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/09.jpg)
+
+这个是我们从 Spring Boot 当中节选的一段代码，主要是为了演示自动化配置的具体实现。首先我们在项目配置里面标明 spring.jmx.enabled = true，ConditionalOnProperty 注解生效，然后 Spring 发现能找到 `MBeanExporter.class` 这个类，于是开始执行自动化配置的方法，因为这个时候项目中没有定义 `MBeanExporter` 这个 Bean，于是 `ConditionalOnMissingBean` 注解生效，Spring 开始读取配置属性，自动创建此 Bean 对象。
+
+同理，任何一个自动装配的实现，基本上就是组合这些条件注解。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/10.jpg)
+
+当然，如果能被 Spring Boot 官方直接支持的话是最吼的，目前被支持的肯定不止上面这些，我只是简单地列举了一些常见的项目。
+
+Spring Boot 官方之前发起过好几次投票，就是列举一些框架，然后大家投票选择哪些想要被官方支持的。上半年的时候，我还在里面看到了之前姜老师维护的 camel，然而似乎并没有被选中。MyBatis 目前虽然有 Spring Boot 版，但是是由 MyBatis 团队自行维护，至少我6月份尝试使用的时候，问题还是蛮多的。 (2017年之后的版本基本可用，主要是有了 Boot 版本的 VFS)
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/11.jpg)
+
+上面是我从 Spring Boot 1.3.6 中找到的 spring.factories 文件的截图。当然，基本上只要上面有的，都能得到不错的支持。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/12.jpg)
+
+前面我们简单介绍了自动配置的实现原理，基本上流程就是配置文件标明启用什么服务，然后找到对应的依赖（class），然后结合条件装配初始化 Bean。
+
+所以 Spring 就更进一步，按照功能模块，划分出一个个 Starter 模块。以 Maven 为例，基本上我们只需要将 Spring Boot 自己的那个 POM 文件设置为 parent，然后依赖中直接依赖所需的 Starter 坐标，即可依赖所有所需的 jar 包，剩下的的东西，仅有最基础的属性值配置。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/13.jpg)
+
+当然 Starter 也是一把双刃剑，比如我在项目里面依赖了 `spring-boot-starter-data-jpa` 之后在 IDEA 里面看到的依赖树，简直就是 jar 包狂魔，虽然我们需要 jpa，但是不一定需要全部这些包。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/14.jpg)
+
+这也就引出了我使用 Starter 的时候的几个困扰。比如项目需要以 spring-boot 的 pom 为 parent，这个就比较讨厌了，尤其是我前公司，所有的项目是同一内部的 parent，这样子可以管理大家的依赖。如果要用Spring Boot 的话，就会略有麻烦。可能就需要通过依赖 Spring Boot 的 pom 的方式，并不是很优雅。
+
+问题二是我在用 Spring Boot 时依赖 logstash 遇到的， logstash自己依赖了一个 logback-access 和那个版本的 Spring Boot 依赖的 logback 不一致，导致一直报一个 `java.lang.AssertionError`
+
+问题三就是我最近想用 Spring Boot 去读写 Kafka，结果我们用的 Kafka 版本比较老，最后只好自己配置，特别麻烦。很多老的组件，要么你得用老的 Spring Boot，要么你就得自己配置。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/15.jpg)
+
+比如我们基于 YAML 定义了上图这么一段配置，最简单的方式就是 `@Value` 注解，通知这货还支持 Spring El 表达式，做一些简单的处理判断。
+
+但是对于一个组件的配置，或者是项目自己的配置，更需要比较好的梳理，Spring Boot 便支持了所谓的 prefix 前缀的概念，我们可以把所需要的配置信息定义为一个配置类，在里面定义好必要的 Getter Setter 一类的东西。在初始化项目的时候使用 `@EnableConfigurationProperties` 注解即可实现配置参数注入到配置类里面。
+
+当然麻烦的地方在于如果配置文件定义的层级过深，配置类会变得极其复杂。建议这种情况下，尽可能简化层级。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/16.jpg)
+
+配置文件的加载，其实 Spring Boot 有一个非常复杂的流程，大家好奇的话可以看 Spring Boot 文档中的定义，大概有十几种情况。但是大部分情况下，我们用不了这么多，上面是我认为应该知道并且利用的几种情况，配置加载的顺序是由上往下。
+
+第一种情况，和 jar 包在同一目录下，一般是应用发布到生产，然后还想修改更新配置的情况。
+
+项目 resources 目录和 resources/config 下面的配置文件，就是我们在开发的时候会选取的存放配置的位置。
+
+当然配置文件的名称默认是 application，还可能根据你所启用的 Profile 加载不同名称的配置文件。
+
+由于配置文件的指定在 Spring Boot 中极其灵活，（官方可能把所有的情况都考虑到了）所以大家可以自己按需选择。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/17.jpg)
+
+测试当然也有 Starter，我们只需要依赖 `spring-boot-starter-test`，即可轻松写测试。常见的测试注解就是上面几个
+
+`@WebIntegrationTest` 注解相当于 `@IntegrationTest` + `@WebAppConfiguration` 注解结合使用，在 1.3 之前，主要是使用前面4个注解进行测试。
+
+1.4 之后，我们主要使用 `SpringBootTest` 注解做测试
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/18.jpg)
+
+最老的方式，你可能会使用 `@ContextConfiguration` 注释和 `SpringApplicationContextLoader` 的组合去写单元测试。
+
+当然，我们可以去掉 loader 的配置，使用方法2 的 `SpringApplicationConfiguration` 注解去测试
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/19.jpg)
+
+当想写一个集成测试的时候，可以使用 `IntegrationTest` 注解，和前面的不一样的是，前面两种方式不会初始化全部的 Bean，而 `IntegrationTest` 会和生产环境一样，完整初始化程序。但是它不会初始化 嵌入式的 Servlet 容器。
+
+当你需要嵌入式的 Servlet 容器做一些接口的集成测试的时候，就需要使用 `WebIntegrationTest` 注解
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/20.jpg)
+
+然而一个项目，基本上包含 `SpringApplication` 和 main 方法的类只有一个，所以在1.4 之后，我们连 App.class 都不需要给定，直接使用 `@SpringBootTest` 注解即可，更加优雅。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/21.jpg)
+
+这个就是我基于 Spring Boot 1.3 写的一个集成测试，当然它使用的是我们前面说的方法3。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/22.jpg)
+
+前面我们其实已经说到了 Spring Boot 的 `Profile` 可以让我们区分不同环境下加载的配置文件。比如开发环境，测试和线上，很多值都可以实现定制，而不需要重新打包项目。
+
+使用 Profile 的第二个场景就是不同的 Profile 需要初始化不同的bean，比如以 DataSource 为例，测试的时候，因为测试环境不一样，我们更期望 DataSource 能用 H2一类的嵌入式数据库模拟。开发和生产环境，就需要初始化一个 MySQL 的 DataSource。当然我说的这个场景不需要我们专门去配置，因为 Spring Boot 已经替我们考虑到了这种情况，在需要 DataSource，但是没有这个 Bean，切依赖了 H2的 Driver 的时候，Spring 会自动创建一个 H2 的 DataSource。
+
+还有一个我使用 Profile的场景就是 Swagger，它十分好用，尤其是开发的时候能基于注解自动生成 API Doc，和测试页面，然而，会存在的问题就是它有漏洞，我只希望在开发的时候启用 Swagger，这个时候就可以利用 Profile 来实现。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/23.jpg)
+
+Profile 可以启用一个或者多个，然而，也会导致一些问题，比如我们没有指定 Profile 的时候怎么办，或者我们有 profile 名为 mysql、cassadra。它们是相互 block 的，如何检查校验，避免冲突的 profile 同时启用呢？
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/24.jpg)
+
+这个是添加默认 Profile 的方式，原来我是尝试在 application 配置文件里面设置，但是不生效，最后我只好手动编码实现。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/25.jpg)
+
+这个方法是和 main 方法同级的一个方法，需要 Autowired Spring 的 Environment 接口，然后获取 Profile 的配置，即可自行实现判断逻辑。（期待后面 Profile 能更加完善，实现 Block 一类的属性）
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/26.jpg)
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/27.jpg)
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/28.jpg)
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/29.jpg)
+
+Spring Boot 官方推崇的部署方式是 jar，原因我们前面也分析过了，但是也会存在打包为 war 去部署的需求。这里我们只需要在和 Application.class 同级的路径下继承 SpringBootServletInitializer 类去定义一下 SpringApplicationBuilder 的配置即可，还是很轻松的。我这个截图的示例里面用了前面设置默认 Profile 的方法，重用了一下代码。
+
+有了这么一个类之后，我们就可以在 pom 里面设置项目打包为 war，它既能 java –jar去执行这个 war，也能直接丢到 Tomcat 一类的容器里面运行。
+
+我们在 17年的实践中发现，很多时候，非 Fatjar 也有一定的意义，于是有了下属的打包启动实践，大家可以去参考。
+
+https://gist.github.com/syhily/c66310c150653e8f92b9fa6693df8207
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/30.jpg)
+
+如果想要快速创建一个 Spring Boot 项目开发，有且不仅有上述几种方式。
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/31.jpg)
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/32.jpg)
+
+![](https://cdn.yufan.me/images/slide/spring-boot-intro/33.jpg)
+
+你可以点击 [这里](https://cdn.yufan.me/uploads/springboot-intro.pptx) 下载到本地浏览。

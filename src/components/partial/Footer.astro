@@ -1,0 +1,36 @@
+---
+import { DateTime } from 'luxon'
+import config from '@/blog.config'
+---
+
+<footer class="footer border-top border-light text-xs text-center py-4 py-xl-5">
+  <div class="line">
+    <span>
+      {'Copyright © '}{config.settings.footer.initialYear}-{DateTime.now().setZone(config.settings.timeZone).year}
+    </span>
+    <a href={config.website} title={config.title} rel="home">
+      {config.title}
+    </a>
+  </div>
+  {
+    (config.settings.footer.icpNo || config.settings.footer.moeIcpNo) && (
+      <div class="line">
+        {config.settings.footer.icpNo && (
+          <a href="https://beian.miit.gov.cn" rel="nofollow" target="_blank" title="ICP 备案">
+            {config.settings.footer.icpNo}
+          </a>
+        )}
+        {config.settings.footer.moeIcpNo && (
+          <a
+            href={`https://icp.gov.moe/?keyword=${config.website.replace(/^https?:\/\//, '')}`}
+            rel="nofollow"
+            target="_blank"
+            title="萌国 ICP 备案"
+          >
+            {config.settings.footer.moeIcpNo}
+          </a>
+        )}
+      </div>
+    )
+  }
+</footer>

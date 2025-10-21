@@ -1,0 +1,220 @@
+---
+title: 学习CSS的最佳途径
+slug: the-best-way-to-learn-css
+date: 2013-04-27 12:47:55+08:00
+updated: 2020-09-06 12:49:28+08:00
+tags:
+  - CSS
+  - HTML
+category: 编程
+toc:
+  minHeadingLevel: 1
+  maxHeadingLevel: 2
+summary: CSS 与 HTML 相结合地进行工作；HTML 整理出页面的结构，CSS 使它们看起来更加漂亮并且加入了细节上的交互。作为一个网站设计者你应该认真地学习这些语言。
+cover: https://cdn.yufan.me/images/2013/04/2013042823510900.jpg
+---
+
+![](https://cdn.yufan.me/images/2013/04/2013042722324600.jpg)
+
+CSS 与 HTML 相结合地进行工作；HTML 整理出页面的结构，CSS 使它们看起来更加漂亮并且加入了细节上的交互。作为一个网站设计者你应该认真地学习这些语言。即使你并不需要自己来编程，理解它们如何工作将有助于你设计页面。
+
+# 一、掌握基础：什么是CSS？
+
+C.S.S. 代表层叠样式表（Cascading Style Sheets）；一种用于 HTML（或者 XML，以及一些其它结构化的格式语言）上的样式规则文档。多个样式规则可以对应一个 HTML 元素，在某种情况上来说就需要一种方式来确定哪个规则应该生效。单词 **Cascading**（层叠，朗文中译为瀑布似地落下）描述了从一般规则开始的渲染过程，直到遇到最确定的规则，然后此规则被选择来渲染它定义的元素。
+
+![包含在结构中的表现，好恶心](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-font-size.png)
+
+通过 CSS，表现（样式）可以同结构分离<sup>注1</sup>。它解决了合并在 HTML 中的样式规则的需求，这将控制页面更整齐、更[整洁](http://en.wikipedia.org/wiki/Don't_repeat_yourself)。
+
+CSS可以被网页游览器阅读。它们下载标记好的文档，然后在文档中渲染每个元素的样式。
+
+![css-best-browser](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-browser.png)
+
+每个游览器根据样式规则的展现并不总是相同，并且游览器开发中同样有着各自的对于新的样式建议<sup>注2</sup>的实现。经常是游览器厂商们自己来实践CSS特性，以期他们的建议能够被用户接受。
+
+最后，由[万维网联盟](http://www.w3.org/)（W3C）来决定这些 CSS 特性是否标准。
+
+# 二、掌握基础：学习语法
+
+CSS 语法由一些基础的部分组成：Rules（规则）、Selectors（选择器）、Declarations（声明）、Properties（属性）和 Values（值）<sup>注3</sup>
+
+![css-best-rule](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-rule.png)
+
+这个CSS规则包含了所有我们刚刚提到的零零碎碎的组成。
+
+![css-best-selector-declaration](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-selector-declaration.png)
+
+选择器对应着HTML标记内的元素，然后大括号内的声明确定了那些元素该被如何设计。一个规则内可以有多个声明，每个声明都由一个属性和一个相关联的值组成部分。
+
+![css-best-property-value](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-property-value.png)
+
+你可以有很多方式来选择HTML元素，比如简单地通过类型选择器（**type selectors**）。
+
+![css-best-type-selector](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-type-selector.png)
+
+> 上图将选择所有的图片并设置它们的内边距值为 0。
+
+然后我们还有类选择器（**class selectors**）来指定应用于那些有明确类名的元素。看一看下面这个标记和它对应的CSS。
+
+![css-best-class-selector-markup](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-class-selector-markup.png)
+
+> 这是一个可以对应任何东西的锚链接。
+
+![css-best-class-selector](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-class-selector.png)
+
+> 然后这个将会选择所有类（class）值为 highslight 的锚链接并使它们变为橙色。
+
+**注意：** 与你可能知道的所相反的是，没有一个确定的东西可以称之为 CSS 类（CSS class）。只有 CSS 选择器和目标 HTML 类。你可以在[tantek.com](http://tantek.com/2012/353/b1/why-html-classes-css-class-selectors)和[456 Berea St](http://www.456bereastreet.com/archive/200902/its_class_not_css_class/)上阅读更多相关的解释。
+有数不胜数的合理的选择器供你学习，也有更多的属性等着你来掌握（看一看 W3C 上的[这个列表](http://www.w3.org/community/webed/wiki/CSS/Properties)）。后面我们将看到需要你学会许多选择器和属性才能解决的作业，尽可能多的掌握将使你成为一个更好的 CSS 码农！
+
+# 三、作业 1：学习一些初学者的课程
+
+现在你对于什么是 CSS 有了一个基本的理解，是时候开始正确地深入学习了。网上有大量的初学课程能助于你的学习，这里列举一组你绝对值得去尝试的课程。
+
+- **Code Academy** 的 [CSS 介绍](http://www.codecademy.com/courses/web-beginner-en-TlhFi)是它们的网站基础课的一部分。如果你在掌握了此课程后有所收获。请继续学习，不用花钱，完成交互的测试可以获得即时的反馈和建议。
+
+![css-best-codeacademy](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-codeacademy.png)
+
+- 如果你阅读完前面的大纲，那么你将会熟悉 **Tuts+ Premium** 的 [30 天学习 HTML 与 CSS](http://learncss.tutsplus.com/)。通过这份免费课程，Jeffrey Way 带你从完全的新手到掌握 HTML 和 CSS 的基础部分。
+
+![tutsplus](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/tutsplus.png)
+
+- **Code School** 的 [CSS 越野赛](http://www.codeschool.com/courses/css-cross-country)提供与 Code Academy 相似的交互学习，但是想要完成全部课程的话你需要成为一名登记会员（当前为 25 美元每月）。
+
+# 四、作业 2：多设计一些东西
+
+当 [Dave Shea](http://www.brightcreative.com/) 在 2003 年 5 月上线 [CSS 禅意花园](http://www.csszengarden.com/)的时候，他的目标是证明一个单独的 HTML 文档可以使用不同的样式表来进行无数种方式的设计。对于当时世界各地的设计师来说，这是一个美好的概念和指路明灯。
+
+![css-best-zen](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-zen.png)
+
+为什么不自我尝试看一些类似的事情呢？选取简单的一段标记（Chris Coyier 的[无序列表导航](http://html-ipsum.com/)就是完美的选择）：
+
+```javascript
+<nav>
+  <ul>
+    <li><a href="#nowhere" title="Lorum ipsum dolor sit amet">Lorem</a></li>
+    <li><a href="#nowhere" title="Aliquam tincidunt mauris eu risus">Aliquam</a></li>
+    <li><a href="#nowhere" title="Morbi in sem quis dui placerat ornare">Morbi</a></li>
+    <li><a href="#nowhere" title="Praesent dapibus, neque id cursus faucibus">Praesent</a></li>
+    <li><a href="#nowhere" title="Pellentesque fermentum dolor">Pellentesque</a></li>
+  </ul>
+</nav>
+```
+
+看看只通过改变样式，你可以实现多少种不同的效果。
+
+阅读一下这篇[社区工程：无序列表样式](http://webdesign.tutsplus.com/articles/workshops/community-project-style-an-unordered-list/)，这当中有将近 100 个读者提交了他们对一个简单的无序列表定义的样式。正如你从这些[结果](http://d3pr5r64n04s3o.cloudfront.net/workshops/012_community_project_ul/unordered_list/index.html)中所看到的，一点点想象将使 CSS 走得更远！
+
+![secret](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/secret.png)
+
+> 秘密的门-作者：[Noel Delgado](http://pixelia.me/)
+
+# 五、作业3：关注大师
+
+如果人们懂CSS，他们将讨论它——这是显而易见的。关注 CSS 名人们在做什么你将能学到很多。下面是一组你应该关注的 Twitter 用户：
+
+- [@chriscoyier](http://twitter.com/chriscoyier)
+- [@csswizardry](https://twitter.com/csswizardry)
+- [@smashingmag](https://twitter.com/smashingmag)
+- [@snookca](https://twitter.com/snookca)
+- [@MeyerWeb](http://twitter.com/MeyerWeb)
+- [@zeldman](https://twitter.com/zeldman)
+- [@simplebits](https://twitter.com/simplebits)
+- [@nettuts](https://twitter.com/nettuts)
+- [@wdtuts](https://twitter.com/wdtuts)
+
+你还可以订阅[css-weekly.com](http://css-weekly.com/)新闻通讯来收取每周一次的 CSS 打包邮件。
+
+## 额外方面
+
+为什么不在像 [Github](http://github.com/) 或者 [CodePen](http://codepen.io/) 一类的社区编程站点上找到你心目中的大神？<sup>注4</sup>在这样的网络中最棒的事就是大家互相提的建议。如果你有一个 CSS 问题，某人在你之前遇到过的话将会乐意地搭一把手。
+
+![CodePen](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-codepen.png)
+
+> [CodePen](http://codepen.io/)
+
+# 六、作业4：理解游览器的支持
+
+正如我们早些时候提到的那样，游览器们并不总是相同地演绎你的样式。当你为那些老版本的IE设计时这种不同的现象尤其明显，它们远远落后于以CSS样式被采用为单位的时间。（注：就是不支持新的 CSS 特性）现代游览器们（例如：Google Chrome、Mozilla Firefox、Apple Safari、Opera 甚至是 [IE 10](http://technet.microsoft.com/en-us/ie/jj898508.aspx)）拥有这更频繁的更新管理，以便减少老版本使用过久的可能性。
+
+正如我们所言，在不考虑它们的最新版如何的情况下每个游览器之间都有些许不同。有些CSS在一个游览器中将被完美支持，在另一个游览器中会有不同的展现。由于这些原因，关注游览器的区别是一个不错的建议。
+
+下面是一些有用的能资源，能够在你的学习过程中帮助你。
+
+- [BrowserStack](http://www.browserstack.com/) 是当今非常简单且最棒的跨游览器测试工具。使用它来看不同平台上的不同游览器们如何弄乱你的 CSS。
+- [How To Deal With Vendor Prefixes](http://css-tricks.com/how-to-deal-with-vendor-prefixes/) 作者 Chris Coyier 的关于游览器兼容基础的文章。
+- [跨游览器的 CSS 编程法则](http://coding.smashingmagazine.com/2010/06/07/the-principles-of-cross-browser-css-coding/)发表于杂志 Smashing 上的有关你在处理多种游览器中将会遇到的一些问题，比如 CSS。
+- [Can I Use…](http://caniuse.com/#cats=CSS) 是一个无价的网站，主要用于每个 CSS 属性在每个游览器中是否支持。
+- [Prefixr](http://prefixr.com/) 将你的 CSS 转换为跨平台友好的语法，如果你在使用的属性需要一个特别的由游览器指定的前缀，Prefixr 将会帮你一把。这种转换仅在你使用 CSS3 属性有意义。
+- [Prefixfree](http://leaverou.github.io/prefixfree/) 是一个和 Prefixr 类似的工具，它仅允许你使用未前缀化的 CSS 属性，通过在需要时添加当前游览器的前缀到任何 CSS 代码上来工作。
+
+# 七、作业5：阅读一本书
+
+无论你是从头到尾地仔细阅读，还是简单地把它们作为需要时快速查找的手册，最棒的图书在阅读上是无可挑剔的。CSS 已经被无数次写成书籍，但是这些出版物是我所认为的精华：
+
+![css-best-css-book](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-css-book.png)
+
+- [HTML and CSS Book](http://htmlandcssbook.com/) 是一本漂亮的有插图的针对完全新手的手册，尤其是书籍网站将所有的代码片段和实例可以被获取来实践。
+- [CSS: The Definitive Guide](http://www.amazon.com/CSS-Definitive-Guide-Eric-Meyer/dp/0596527330/ref=sr_1_1?s=books&ie=UTF8&qid=1366296089&sr=1-1&keywords=CSS%3A+The+Definitive+Guide)：作者是 CSS 教父——Eric Meyer。
+- [CSS: The Missing Manual](http://www.amazon.com/gp/product/0596802447/ref=as_li_ss_tl?ie=UTF8&tag=jcdicrte-20&linkCode=as2&camp=1789&creative=390957&creativeASIN=0596802447) 是有一定的年头了（在技术层面上），但依然被许多 CSS 基础方面的 Go-to 书籍作为参考。
+- [CSS3 For Web Designers](http://www.abookapart.com/products/css3-for-web-designers) 作者是 Dan Cederholm（在完成作业3后你将在 Twitter 上关注他，不是吗？）。此书是近期的 A Book Apart 出版书籍之一。不完全为新手准备，但即使如此还是推荐获取它的纸质书。
+- [CSS Essentials（电子书）](https://tutsplus.com/ebook/css-essentials/)来自于 Smashing 杂志。
+
+# 八、作业6：弄懂选择器和特性
+
+正如你所相信的那样，你的 CSS 词库将不断增长。你将能保证记住 CSS 属性并且使用多种方式选取元素。现在是时候提升档次来进行关于 CSS 选择器的严肃学习。
+
+- [你必须记住的 30 个 CSS 选择器](http://net.tutsplus.com/tutorials/html-css-techniques/the-30-css-selectors-you-must-memorize/)：来自 Nettuts+ 真实地覆盖你所学的内容。
+- [选择器年鉴](http://css-tricks.com/almanac/selectors/)：来自 CSS Tricks 用于加深理解。
+
+学习 CSS 选择器也意味着开始掌握特性，哪个选择器将重载其它的选择器？
+
+![css-best-stormtrooper](https://cdn.yufan.me/images/recaps/the-best-way-to-learn-css/css-best-stormtrooper.png)
+
+> 帝国风暴兵图标 作者：[Jory Raphael](http://dribbble.com/shots/951479-Stormtrooper-Icon)
+
+我应该在我的选择器里面使用以便提升代码执行效率的最低限度语法是什么？我总是推荐人们去一个地方学习特性的规则，那就是 Andy Clarke 的 [CSS: Specificity Wars](http://www.stuffandnonsense.co.uk/archives/css_specificity_wars.html)：一个能给人以联想的有关选择器如何由外置内影响彼此的可视化流程（黑色的是最强力的。<sup>注5</sup>）
+
+# 九、作业7：更进一步
+
+CSS 是一门涉猎甚广的规则。一旦你掌握了基础部分，将有着无数的大道等着你去探索。例如：
+
+## CSS3
+
+CSS3 还处于不断发展的过程中，新产生的特性正逐步被接受，其它的旧特性全部被游览器抛弃，有时候甚至语法都会变。通过 [CSS Gradients](http://www.colorzilla.com/gradient-editor/) 来掌握 CSS3，将会是另一个阻止你使用 Photoshop 的契机。当你可以用 CSS 处理图像时为什么还要使用分割好的图片呢？
+
+游览网站 [CSS3 Please](http://css3please.com/) 来了解当前所有正确的 CSS3 实现，此网站推荐去除那些不支持的游览器。同样，看一看 Tuts+ Premium 上的 [CSS3 Essentials](https://tutsplus.com/course/css3-essentials/)，这将能提升你的知识。
+
+## 媒体查询
+
+响应式页面设计允许你流体式页面布局改变。这取决于页面被如何获取。CSS3 媒体查询助力于这一过程中，根据不同的情况提供不同的 CSS 规则。阅读一下[相应式式页面设计：一本可视化的指导](http://net.tutsplus.com/tutorials/html-css-techniques/responsive-web-design-a-visual-guide/)来开始学习。
+
+## CSS 预处理器
+
+原来 CSS 可以变得更棒。一旦开始在现实世界的项目中使用 CSS，你将可能会得出相同的结论。维持巨大的 CSS 文件是困难的，重复是普遍的——那么为什么你不能使用一种变量存储十六进制的颜色值而不是一遍又一遍地重复输入？CSS 预处理器，例如：Sass、LESS 和 Stylus 解决了所有这些问题甚至更多。甚至无需强制重学一种相似的语言（如果你愿意的话只需坚持普通的 CSS）你就可以利用预处理器的强大。
+
+如果你有兴趣学习更多的东西的话，请查阅 [Get Into LESS](http://hub.tutsplus.com/categories/development/tutorials/webdesign-5216-get-into-less-the-programmable-stylesheet-language)、[Mastering SASS](http://hub.tutsplus.com/categories/development/sessions/net-19077-mastering-sass) 和 [Sass vs. LESS vs. Stylus: Preprocessor Shootout](http://net.tutsplus.com/tutorials/html-css-techniques/sass-vs-less-vs-stylus-a-preprocessor-shootout/)。
+
+## SMACSS
+
+[SMACSS](https://tutsplus.com/ebook/scalable-and-modular-architecture-for-css/)（CSS 可扩展模块化架构）是一种由 Jonathan Snook 开发的概念，旨在与 CSS 文件的尴尬的维护性做斗争。它没有教授一种新的语言，而是推荐一种能让你当前的 CSS 更有组织性的一种方式。
+
+编写模块化的 CSS 使你能将在别的项目中使用原有的大量的样式代码并扩展它，并且不会破坏你的其它风格，使特征管理处于最佳状态。
+
+# 十、结论
+
+毫无疑问拥有像 HTML 和 CSS 一类的技能将充实自我，你将成为一名更好的网站设计师。跟随着我们所列举出的两条学习流程大纲，你将能迅速进步。
+
+如果你有任何关于 CSS 的学习建议，大声在评论里面喊出来吧！
+
+# 注释
+
+1. 注1：[表现与结构分离](http://www.blueidea.com/tech/web/2004/2173.asp)
+2. 注2：“新的样式建议”译法参考了 [W3C 的工作流程](http://www.w3school.com.cn/w3c/w3c_process.asp)
+3. 注3：国内较好的 Web 设计社区有 [RunJS](http://runjs.cn/)、[GitCafe](https://gitcafe.com/)
+4. 注4：原文是 the dark forces，指的是作者将选择器分成几类，有一类是以黑色小人做演示。详细的以后会翻译对应文章。
+
+---
+
+原文：[The Best Way to Learn CSS](https://webdesign.tutsplus.com/the-best-way-to-learn-css--webdesign-11906t)
+译者：[雨帆](https://yufan.me)，转载时请保留译文链接和原文链接。

@@ -1,0 +1,26 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import { Image } from 'astro:assets'
+
+interface Props {
+  post: Post
+}
+
+const { post } = Astro.props
+---
+
+<div class="list-item list-nice-overlay">
+  <div class="media media-3x2">
+    <a href={post.permalink} class="media-content">
+      <Image src={post.cover} alt={post.title} width={750} height={500} />
+      <div class="overlay"></div>
+    </a>
+  </div>
+  <div class="list-content p-2 p-md-3">
+    <div class="list-body">
+      <a href={post.permalink} class="list-title h5 h-2x m-0">
+        {post.title}
+      </a>
+    </div>
+  </div>
+</div>

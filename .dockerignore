@@ -1,0 +1,6 @@
+.astro
+.vscode
+dist
+docs
+licenses
+node_modules

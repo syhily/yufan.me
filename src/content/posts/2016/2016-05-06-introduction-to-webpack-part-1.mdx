@@ -1,0 +1,193 @@
+---
+title: Webpack 介绍：第一部分
+slug: introduction-to-webpack-part-1
+date: 2016-05-05 18:15:29+08:00
+updated: 2020-09-04 19:31:49+08:00
+tags:
+  - 前端
+category: 编程
+toc: true
+cover: https://cdn.yufan.me/images/2020/09/2020090419260539.png
+summary: Webpack 是近段时间非常流行的前端流程处理工具，用于实时执行构建任务和预处理你的文件。
+---
+
+![せばすちゃ - 座って聴く東方文化帳　CDジャケットイラスト](https://cdn.yufan.me/images/2020/09/2020090419305167.jpg)
+
+Webpack 是近段时间非常流行的前端流程处理工具，用于实时执行构建任务和预处理你的文件。
+
+你也许会使用 [Grunt](http://gruntjs.com/) 或者 [Gulp](http://gulpjs.com/) 来做类似的事情。首先建立一个编译链，然后在上面定义从何处读取代码，将压缩处理好的 CSS 和 JavaScript 等静态资源输出到什么地方。
+
+这些工具都非常流行和好用，然而我却要向你安利另一种实现此类需求的方法，那就是使用 [Webpack](https://webpack.github.io/)。_新技能Get！_
+
+## 什么是 Webpack？
+
+![](https://cdn.yufan.me/images/2020/09/2020090419235130.png)
+
+Webpack 常被人们定义为“模块打包工具”（module bundler），它读取 JavaScript 模块，分析它们之间的依赖关系，然后用尽可能高效的方式将它们组织在一起，最后生成一个独立的 JS 文件。似乎看起来并没有什么牛逼的技术，像 [RequireJS](http://requirejs.org/) 在多少年前就能实现相似的功能了。
+
+当然，如果是这样子我就没必要安利你了，相比 RequireJS 之流它还是有自己的特色的。Webpack 能读取的不光是原生的 JavaScript 文件，模块加载器的设计使得它能支持更丰富的格式。
+
+例如，它能分析出你的 JavaScript 模块需要一个 CSS 文件，甚至能分析出这个 CSS 文件需要的图片资源。然后，处理过的资源文件只包含最精简的必须文件。不信？让我们现在来实战体验。
+
+## 安装
+
+首先必须要安装的是 [Node.js](https://nodejs.org/en/)，在这里我们假定你已经正确安装并且配置完毕。那么安装 Webpack 所需要做的事，就只剩下输入下面的这条命令：
+
+```bash
+npm install webpack -g
+```
+
+这条命令将全局安装 Webpack，并能在系统的任何路径下执行 `webpack` 命令。下面我们新建一个文件夹，在里面新建一个基本的 HTML 文件，名为`index.html`，内容如下：
+
+```html
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>Webpack fun</title>
+	</head>
+	<body>
+		<h2></h2>
+		<script src="bundle.js"></script>
+	</body>
+</html>
+```
+
+需要注意的是，这里定义的`bundle.js`暂时还不存在，稍后将由 Webpack 帮我们创建。另外，那个空的 H2 标签稍后我们将会使用到。
+
+接下来，在上面文件夹里创建两个 JS 文件，分别叫做：`main.js`、`say-hello.js`。`main.js`你可以理解为 main 方法，也就是我们代码主要的执行入口。`say-hello.js`是一个简单的模块，它接收一个人名和 DOM 元素，然后在这个 DOM 元素上显示一条包含人名的欢迎信息。
+
+```javascript
+// say-hello.js
+
+module.exports = function (name, element) {
+	element.textContent = 'Hello ' + name + '!';
+};
+```
+
+定义完 `say-hello.js` 这个模块后，我们在 `main.js` 里引用它，引用方法十分简单，只需要下面这两行代码：
+
+```javascript
+// main.js
+var sayHello = require('./say-hello');
+
+sayHello('Guybrush', document.querySelector('h2'));
+```
+
+如果现在我们打开前面创建的那个 HTML 文件，你们发现页面上没有显示任何内容。因为我们既没有引用`main.js`，也没有将其处理成浏览器可执行的代码。接下来，我们使用 Webpack 读取`main.js`。如果能成功分析它的依赖，将会创建一个名为`bundle.js`的文件，并能在浏览器中执行。
+
+回到命令行里执行 Webpack，只需简单输入如下命令：
+
+```bash
+webpack main.js bundle.js
+```
+
+第一个参数定义了 Webpack 分析依赖的起始文件。首先，它查看起始文件里是否定义了相关的依赖。如果有，它将读入依赖的文件，看看这个文件是否也有其他的依赖。通过这种方式，递归读取完整个程式依赖的全部文件。一旦阅读完毕，它将整个依赖打包为一个文件，名为 `bundle.js`。
+
+在这个例子里，当你按下回车后，你会看到类似下面的输出：
+
+```bash
+Hash: 3d7d7339a68244b03c68
+Version: webpack 1.12.12
+Time: 55ms
+    Asset     Size  Chunks             Chunk Names
+bundle.js  1.65 kB       0  [emitted]  main
+   [0] ./main.js 90 bytes {0} [built]
+   [1] ./say-hello.js 94 bytes {0} [built]
+```
+
+现在，打开`index.html`，浏览器将会显示`Hello Guybrush!`
+
+## 配置
+
+如果每次运行 Webpack 都要指定输入和输出文件的话就太让人讨厌了。当然，开发者早就替我们想好了。其实和 `Gulp`、`Grunt`类似，Webpack 需要在我们的项目根目录下创建一个名为`webpack.config.js`的文件，就可以简化大量重复的命令参数。
+
+在本例中，内容如下：
+
+```javascript
+module.exports = {
+	entry: './main.js',
+	output: {
+		filename: 'bundle.js',
+	},
+};
+```
+
+现在，我们只需要输入`webpack`这个命令，就能实现和之前一样的操作。
+
+## 开发服务器
+
+首先提个问题：每次你做了一些改动，如果都要手动去执行`webpack`命令来看结果的话，是不是特傻逼？要知道，`Gulp`在很早之前就支持定义`watch`这种监视文件修改的任务了。所以，Webpack也不例外，甚至它还更进一步，提供了一个基于Node.js Express框架的开发服务器。
+
+```bash
+npm install webpack-dev-server -g
+```
+
+首先运行上面的命令安装开发服务器，然后运行命令`webpack-dev-server`。这个命令将会启动一个简单的 Web 服务器，以命令执行的路径为静态资源根目录。下面我们打开浏览器，输入[http://localhost:8080/webpack-dev-server/](http://localhost:8080/webpack-dev-server/)。如果一切正常，你将看到类似下面的内容：
+
+![](https://cdn.yufan.me/images/2020/09/2020090419234660.jpg)
+
+现在，我们不仅有了一个超赞的轻量级 Web 服务器，我们还有了一个孜孜不倦地监听代码变更的观察者。如果 Webpack 发现我们修改了一个文件，它会自动运行 `webpack` 命令打包我们的代码并刷新页面。
+
+假想一下，我们可以双屏写代码，一个屏幕放浏览器，一个屏幕开编辑器。浏览器实时刷新结果，无需我们做任何配置和操作，是不是很酷？
+
+现在你可以自己感受一下：修改`main.js`里面传给`sayHello`方法的姓名参数，然后保存文件，看看浏览器里面的实时变化。
+
+## 加载器（Loaders）
+
+对于 Webpack 而言，最重要的特性就是[加载器](https://webpack.github.io/docs/loaders.html)。加载器和`Gulp` `Grunt`上的“任务”（tasks）类似。基本上都是读取文件，然后通过某种方式处理文件，最后打包为我们所需的代码。
+
+本文中，我们想在代码中用一些[ES2015](http://www.ecma-international.org/ecma-262/6.0/)的语法。因为 ES2015 是当前最新的 JavaScript 版本，所以并没有被所有的浏览器支持。可是淫家就想写最新的代码装逼怎么办？那只好先写，写完后将 ES2016 版本的代码转换为老的 ES5 代码。
+
+为了实现这个需求，我们需要使用当下最流行的 [Babel Loader](https://github.com/babel/babel-loader) 来进行转换。根据官网的教程，我们使用下面的命令进行安装：
+
+```bash
+npm install babel-loader babel-core babel-preset-es2015 --save-dev
+```
+
+这条命令不仅安装了 Babel 加载器，还包含了它支持 ES2015 时所需要的依赖。
+
+安装完加载器，我们需要告诉 Webpack 使用什么加载器，参考下面的实例更新 `webpack.config.js` 文件：
+
+```javascript
+module.exports = {
+	entry: './main.js',
+	output: {
+		filename: 'bundle.js',
+	},
+	module: {
+		loaders: [
+			{
+				test: /\.js$/,
+				exclude: /node_modules/,
+				loader: 'babel',
+				query: {
+					presets: ['es2015'],
+				},
+			},
+		],
+	},
+};
+```
+
+在这个配置示例里，我们需要注意几个地方。首先，`test: /\.js$/`这行是一个正则表达式，表示文件名满足此正则表达式的文件将会被此加载器处理。这里，我们的定义是全部的JS文件。类似的，`exclude: /node_modules/`则是告诉 Webpack 忽略`node_modules`文件夹。`loader`和`query`我觉得十分好理解，就是使用Babel loader加载器处理ES2015语法的文件。
+
+重启开发服务器，在命令行里按下`ctrl+c`，重新输入`webpack-dev-server`。现在我们来测试一下 ES6 的代码是否能被正确翻译呢？不如试试看将`sayHello`变量定义为一个常量。
+
+```javascript
+const sayHello = require('./say-hello');
+```
+
+保存后，Webpack应该自动重新编译我们的代码并刷新浏览器，你会发现代码正常执行，什么都没有变。我们用编辑器打开`bundle.js`文件，你会发现没有`const`这个单词。
+
+Webpack就是这么叼！
+
+## 第二部分预告
+
+在这篇教程的第二部分，我们将学习使用 Webpack 加载 CSS 和 图片文件，同时让你的网站为部署做好准备。
+
+## 相关链接
+
+1. [Introduction to Webpack: Part 1](http://code.tutsplus.com/tutorials/introduction-to-webpack-part-1--cms-25791)
+2. [详解前端模块化工具-Webpack](https://segmentfault.com/a/1190000003970448)
+3. [Webpack Made Simple: Building ES6 & LESS with autorefresh](http://jamesknelson.com/webpack-made-simple-build-es6-less-with-autorefresh-in-26-lines/)
