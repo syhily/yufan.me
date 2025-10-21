@@ -1,0 +1,60 @@
+---
+import { actions } from 'astro:actions'
+import AdminLayout from '@/layouts/AdminLayout.astro'
+---
+
+<AdminLayout title="注册管理员账号">
+  <form method="post" action={actions.auth.signUpAdmin} id="installForm">
+    <div class="flex-fill">
+      <div class="row g-3 mb-5 px-5">
+        <input class="form-control mb-2" placeholder="昵称" name="name" type="text" required="required" />
+        <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
+        <input
+          class="form-control mb-2"
+          placeholder="密码"
+          name="password"
+          type="password"
+          required="required"
+          minlength="10"
+        />
+      </div>
+      <div class="form-submit text-center">
+        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="注册管理员" />
+      </div>
+    </div>
+  </form>
+</AdminLayout>
+
+<script>
+  import { actions } from 'astro:actions'
+  import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
+
+  const installForm = document.querySelector('form')
+  if (installForm !== null) {
+    installForm.addEventListener('submit', async (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      const form = new FormData(installForm)
+
+      // Validate the form data
+      const name = form.get('name') as string
+      if (name === null) {
+        return showErrorDialog('The user name is required')
+      }
+      const email = form.get('email') as string
+      if (email === null) {
+        return showErrorDialog('The email is required')
+      }
+      const password = form.get('password') as string
+      if (password === null) {
+        return showErrorDialog('The password is required')
+      }
+
+      const { error } = await actions.auth.signUpAdmin({ name, email, password })
+      if (error) {
+        return handleActionError(error)
+      }
+      return (location.href = '/admin/login')
+    })
+  }
+</script>

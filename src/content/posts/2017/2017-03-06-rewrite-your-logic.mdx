@@ -1,0 +1,335 @@
+---
+title: 在编程中思考，简化你的判断逻辑
+slug: rewrite-your-logic
+date: 2017-03-06 12:31:33+08:00
+updated: 2019-05-18 18:24:08+08:00
+tags:
+  - 思考
+  - 编码
+  - 编程
+category: 编程
+cover: https://cdn.yufan.me/images/2019/05/2019051407531632.jpg
+summary: 之前看 Linus Toward 在去年的某次采访中说到的好代码坏代码，当中提到了逻辑的精简，能用更通用的逻辑减少 if else 的判断在某种程度上可以使你的代码变得更好。
+---
+
+![在编程中思考，简化你的判断逻辑](https://cdn.yufan.me/images/2019/05/2019051818210131.jpg)
+
+之前看 Linus Toward 在去年的[某次采访](https://www.youtube.com/watch?v=o8NPllzkFhE&feature=youtu.be&t=890)中说到的好代码坏代码，当中提到了逻辑的精简，能用更通用的逻辑减少 if else 的判断在某种程度上可以使你的代码变得更好。最近一段时间重构了部分老代码，也 Review 了不少代码，对此观点深有感触。
+
+很多时候，程序员接到的需求，产品巴不得你立刻就能搞定，有时候会给非常紧迫的时间点。这种情况下会带来的最直接问题，就是[“设计坏味”](http://www.ituring.com.cn/article/263057)。有整体的架构设计的不合理，也有代码逻辑的问题。尤其是对于边界条件的处理，因为需求的急，很多时候大家就会按照业务语言去写。
+
+比如，下面这个例子：
+
+某一报警系统产生了报警邮件，现在需要按照类型显示不同的内容。
+
+| 类型    | 报警选择对象 | 邮件中展示内容      |
+| ------- | ------------ | ------------------- |
+| Web事务 | 单条Web事务  | Tier，Web事务，节点 |
+| Web事务 | Tier         | Tier，节点          |
+| 节点    | 某一个节点   | 节点                |
+| 节点    | Tier         | Tier，节点          |
+
+如果按照业务的语言，我们可能写出如下的伪代码：
+
+```java
+if (Web事务&& 单条Web事务) {
+    return Tier,Web事务,节点;
+}
+if (Web事务&& Tier) {
+    return Tier,节点;
+}
+if (节点&& 某一个节点) {
+    return 节点;
+}
+if (节点&& Tier) {
+    return Tier,节点;
+}
+```
+
+可能你看到这里会立刻笑出来，哪有只写 `if` 不写 `else` 的。那好，也许你会写出这样的代码。
+
+```java
+if (Web事务) {
+    if (单条Web事务) {
+        return Tier,Web事务,节点;
+    } else if (Tier) {
+        return Tier,节点;
+    }
+} else if (节点) {
+    if (某一个节点) {
+        return 节点;
+    } else if (Tier) {
+        return Tier,节点;
+    }
+}
+```
+
+我相信，大部分人都能将判断逻辑写到这一层，但是，这就完了么？也许你会说完了，逻辑也正确，看起来也很清晰。然而，这远远不够。
+
+其实我们可以发现，在每种情况下，都会返回 `节点` 信息。只返回节点信息的只有一种情况，其他的情况下，基本都返回 `Tier` 信息。只有 `Web事务 && 单条Web事务` 的情况需要返回 `Web事务` 信息。所以，最后我们可以精简为两个判断。
+
+```java
+result = "节点";
+if (Web事务&& 单条Web事务) {
+    result = "Web事务" + result;
+}
+if (Web事务 || !某一个节点) {
+    result = "Tier" + result;
+}
+return result;
+```
+
+回到最初的命题，为何不要用业务的语言来编写判断逻辑呢？因为业务语言是给用户和产品看的，他们在描述上本身就不够精简。其次，业务的描述，很多时候，是定义边界，说明问题，而不是告诉你判断逻辑。
+
+所以，在写代码的时候，更多的时候要细化逻辑。这样，在维护修改时，才更为方便。下面我举另一个更具体的例子。
+
+这是我 Review Scala 代码的时候遇到的一个问题，首先我先用业务语言描述一下需求。需要判断某个规则的开闭状态，在一天的几点到几点间启用，且还可以额外设置是周一到周日的哪几天启用。
+
+于是我看到当时的同事，写一个方法 `isSuppressTime` ，会给两个参数，第一个参数为一个时间戳 `timestamp` ，第二个参数为一个 `List[Map[String, String]]` 。
+
+`Map[String, String]` 里面有4个值，分别是：
+
+1. startTime，从零点到某个具体开始时间的秒数，0~86399。
+2. endTime，从零点到某个具体结束时间的秒数，0~86399。
+3. isDaily，当时间戳在 startTime endTime 之间时，如果此项为 true，则返回 true。
+4. weekdays，周一到周日，1~7，以`,`间隔组成的字符串，如`1,4,5`。表示周一、周四、周五且时间戳在 startTime endTime 之间时返回 true
+
+最后他写出了如下的代码（Scala）：
+
+```scala
+def isSuppressTime(now: Long = System.currentTimeMillis(),
+                   suppressTimes: java.util.List[java.util.Map[String, String]] = rule.getSuppressTime): Boolean = {
+  if(suppressTimes == null)
+    return false
+  import scala.collection.JavaConversions._
+  suppressTimes.foreach(params => {
+    if (params != null && params.size > 0) {
+      val startTime = params.get("startTime")
+      val endTime = params.get("endTime")
+      val isDaily = params.get("isDaily")
+      val weekdays = params.get("weekday").split(",").toList
+
+      val zero = zeroTimestamp()
+      //今天零点零分零秒的毫秒数
+      val start = zero + startTime.toLong * 1000
+      val end = zero + endTime.toLong * 1000
+
+      if (start < = now&& end >= now) {
+        if (isDaily.toBoolean)
+          return true
+        val cal = Calendar.getInstance()
+        cal.setTimeInMillis(now)
+        var day = cal.get(Calendar.DAY_OF_WEEK)
+        if (day == 1)
+          day = 7
+        else
+          day = day - 1
+        val weekday = day.toString
+        if (weekdays.contains(weekday))
+          return true
+      }
+    }
+  })
+  return false
+}
+
+private def zeroTimestamp(): Long = {
+  val cal = Calendar.getInstance()
+  cal.set(Calendar.HOUR_OF_DAY, 0)
+  cal.set(Calendar.SECOND, 0)
+  cal.set(Calendar.MINUTE, 0)
+  cal.set(Calendar.MILLISECOND, 1)
+  cal.getTimeInMillis()
+}
+```
+
+这个代码看着很长，判断很多，而且还用了超级多陈旧的 API，使得它的性能也不好。而且这是一段 Scala 的代码，却用了较多的 `return` 和 `var` ，这两个都是 Scala 不提倡的。最关键的，明明是函数式的代码，他却写出了过程式的感觉。给后面的维护人员（我）带来了不少困扰。
+
+下面，我们来一点点优化这段代码（需要一点点 Java 功底），首先对于方法 `zeroTimestamp()` ，我第一眼看到的时候，是惊讶的，原作者用了一个比较旧的 `Calendar` 。对它最深刻的印象就是当年写 `SimpleDataFormat` 的时候，因为 `Calendar` 这货导致线程不安全。而每次创建 `SimpleDataFormat` 的开销比较大，最后不得不写了个 `ThreadLocal<simpledataformat>` 。
+
+而Java8以后，我们可以直接用 `java.time` 下面的类来改写 `zeroTimestamp()` ，这里只需要一行代码，如下：
+
+```scala
+private def zeroTimestamp(): Long = {
+  Timestamp.valueOf(LocalDate.now().atStartOfDay()).getTime
+}
+```
+
+回到 `isSuppressTime` 方法上来，我姑且不说他的设计多么麻烦，因为这是一个已经被广泛使用的方法，我能做到的就是在不改变签名的情况写来优化实现。
+
+首先，开头我们就看到
+
+```scala
+if(suppressTimes == null)
+  return false
+```
+
+这个空的判断和强制 `return` ，在 Java 里面， `null` 是一个很痛苦的事情，Scala 因为基于 JVM 也不例外，但是 Scala 和 Java 8 都分别有一个 `Option` 类（Java8是 `Optional` ），来做空值处理。
+
+所以，我们这里第一时间可以干掉这个判断，写成如下方式
+
+```scala
+Option[util.List[util.Map[String, String]]](suppressTimes).map(times => {
+  // ba la ba la
+}).getOrElse(false)
+```
+
+代码里面的 `times` 为方法中非空的 `suppressTimes` ，注释部分为核心的处理逻辑，这样我们避免了一个 `if` 判断，减少了一个 `return` 。
+
+而其实， `Option([A]).map([B] => Boolean).getOrElse(false)` 等价于 `Option` 的 `exists` 方法，最后完整的代码应该如下：
+
+```scala
+def isSuppressTime(now: Long = System.currentTimeMillis(),
+        suppressTimes: java.util.List[java.util.Map[String, String]]): Boolean = {
+  Option[util.List[util.Map[String, String]]](suppressTimes).exists(times => {
+    times.foreach(params => {
+      if (params != null&& params.size > 0) {
+        val startTime = params.get("startTime")
+        val endTime = params.get("endTime")
+        val isDaily = params.get("isDaily")
+        val weekdays = params.get("weekday").split(",").toList
+
+        val zero = zeroTimestamp()
+        //今天零点零分零秒的毫秒数
+        val start = zero + startTime.toLong * 1000
+        val end = zero + endTime.toLong * 1000
+
+        if (start < = now&& end >= now) {
+          if (isDaily.toBoolean)
+            return true
+          val cal = Calendar.getInstance()
+          cal.setTimeInMillis(now)
+          var day = cal.get(Calendar.DAY_OF_WEEK)
+          if (day == 1)
+            day = 7
+          else
+            day = day - 1
+          val weekday = day.toString
+          if (weekdays.contains(weekday))
+            return true
+        }
+      }
+    })
+    false
+  })
+}
+```
+
+在上面的例子里面，我们已经干掉了两个 `return` 和一个 `if` ，让它有一点 Functional 的感觉了。
+
+上面重构后代码中， `times` 的类型是 `util.List[util.Map[String, String]]` 。 `times.foreach(params => {})` 里的 `params` 对应的是 `util.Map[String, String]` 类型。所以，我们看到判断 `if (params != null && params.size > 0)` 时应该会发现，这就是一个list filter的过程嘛。 `.filter()` 之后不就是一个 `.map()` ，于是我们可以这么改：
+
+```scala
+Option[util.List[util.Map[String, String]]](suppressTimes).exists(times => {
+  times.filter(params => params != null&& !params.isEmpty).map(params => {
+    // ba la ba la
+  }).contains(true)
+})
+```
+
+当然 `.map(xxx => Boolean).contains(true)` 等价于 `.exists()` ，于是我们重构的方法如下：
+
+```scala
+def isSuppressTime(now: Long = System.currentTimeMillis(),
+        suppressTimes: java.util.List[java.util.Map[String, String]]): Boolean = {
+  Option[util.List[util.Map[String, String]]](suppressTimes).exists(times => {
+    times.filter(params => params != null&& !params.isEmpty).exists(params => {
+      val startTime = params.get("startTime")
+      val endTime = params.get("endTime")
+      val isDaily = params.get("isDaily")
+      val weekdays = params.get("weekday").split(",").toList
+
+      val zero = zeroTimestamp()
+      //今天零点零分零秒的毫秒数
+      val start = zero + startTime.toLong * 1000
+      val end = zero + endTime.toLong * 1000
+
+      if (start < = now&& end >= now) {
+        if (isDaily.toBoolean)
+          return true
+        val cal = Calendar.getInstance()
+        cal.setTimeInMillis(now)
+        var day = cal.get(Calendar.DAY_OF_WEEK)
+        if (day == 1)
+          day = 7
+        else
+          day = day - 1
+        val weekday = day.toString
+        if (weekdays.contains(weekday))
+          return true
+      }
+      false
+    })
+  })
+}
+```
+
+这次重构，我们又去掉了一层 if 判断，改为 filter 实现，减少了一次返回。到了这一步，我们会发现，下面需要实现的就是一个方法，对 `util.Map[String, String]` 去做处理，返回一个布尔值，于是我们精简方法的实现代码为两部分：
+
+```scala
+def isSuppressTime(now: Long = System.currentTimeMillis(),
+                   suppressTimes: java.util.List[java.util.Map[String, String]] = rule.getSuppressTime): Boolean = {
+  Option[util.List[util.Map[String, String]]](suppressTimes)
+    .exists(times => times.filter(params => params != null&& !params.isEmpty).exists(isValidateTimes(_, now)))
+}
+```
+
+这个为边界过滤的方法。
+
+```scala
+private def isValidateTimes(params: java.util.Map[String, String], now: Long): Boolean = {
+  val startTime = params.get("startTime")
+  val endTime = params.get("endTime")
+  val isDaily = params.get("isDaily")
+  val weekdays = params.get("weekday").split(",").toList
+
+  val zero = zeroTimestamp()
+  //今天零点零分零秒的毫秒数
+  val start = zero + startTime.toLong * 1000
+  val end = zero + endTime.toLong * 1000
+
+  if (start < = now&& end >= now) {
+    if (isDaily.toBoolean)
+      return true
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(now)
+    var day = cal.get(Calendar.DAY_OF_WEEK)
+    if (day == 1)
+      day = 7
+    else
+      day = day - 1
+    val weekday = day.toString
+    if (weekdays.contains(weekday))
+      return true
+  }
+  false
+}
+```
+
+这个为我们要重构的核心处理逻辑。我们优化整理它的判断条件，最后可以实现如下的完整代码：
+
+```scala
+def isSuppressTime(now: Long = System.currentTimeMillis(),
+                   suppressTimes: java.util.List[java.util.Map[String, String]] = rule.getSuppressTime): Boolean = {
+  Option[util.List[util.Map[String, String]]](suppressTimes)
+    .exists(times => times.filter(params => params != null&& !params.isEmpty)
+    .exists(isValidateTimes(_, now)))
+}
+
+private def isValidateTimes(params: java.util.Map[String, String], now: Long): Boolean = {
+  val zero = zeroTimestamp()
+  val start = zero + params.get("startTime").toLong * 1000
+  val end = zero + params.get("endTime").toLong * 1000
+  val isDaily = params.get("isDaily").toBoolean
+  val weekdays = params.get("weekday").split(",").toList
+  val weekday = LocalDate.now().getDayOfWeek.getValue.toString
+
+  (start < = now&& end >= now)&& (isDaily || weekdays.contains(weekday))
+}
+```
+
+这样，我们就实现了一个 `if` 都没有，一个 `return` 都没有的纯函数式写法。
+
+总的来说，代码谁都能写出来，但是把需求从文字或者是流程描述换成编码实现时就有了对程序员抽象逻辑能力的需求。如何组织抽象，就像是如何写作文，或者是 Kata（空手道里面的招数、套路），不要按照业务描述写 if else，而要尽可能简化找到一致性的简单逻辑描述。
+
+如果能将所有的特殊情况变为通用情况，简化逻辑判断，那么代码在后面的迭代中也会比较易于维护。

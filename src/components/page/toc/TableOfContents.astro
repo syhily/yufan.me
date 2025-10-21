@@ -1,0 +1,35 @@
+---
+import type { MarkdownHeading } from 'astro'
+import type { TocOpts } from '@/helpers/content/toc'
+import TocItems from '@/components/page/toc/TocItems.astro'
+import { generateToC } from '@/helpers/content/toc'
+
+interface Props {
+  headings: MarkdownHeading[]
+  toc: TocOpts | false
+}
+
+const { headings, toc } = Astro.props
+const items = generateToC(headings, toc)
+---
+
+{
+  items.length > 0 && (
+    <Fragment>
+      <a class="toggle-menu-tree">
+        <i class="text-md iconfont icon-left" />
+      </a>
+      <div class="post-menu">
+        <div class="toc-wrap">
+          <div class="toc-content">
+            <h2 class="post-menu-title">文章目录</h2>
+            <div class="index-menu">
+              <TocItems {items} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="post-menu-overlay" />
+    </Fragment>
+  )
+}

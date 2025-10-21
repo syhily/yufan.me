@@ -1,0 +1,202 @@
+---
+title: 如何更好地创建对象
+slug: the-better-way-to-make-objects
+date: 2015-03-09 13:27:15+08:00
+updated: 2020-09-06 13:29:04+08:00
+tags:
+  - Java
+category: 编程
+cover: https://cdn.yufan.me/images/2024/04/2024041520472600.jpg
+summary: 写Java一类的面相对象语言的程序员常常会遇到这么一个冷笑话：我今年都30了，还没找到对象，怎么办？简单啊，new 一个对象就好。
+---
+
+![Java](https://cdn.yufan.me/images/2024/04/2024041520494100.jpg)
+
+写 Java 一类的面相对象语言的程序员常常会遇到这么一个冷笑话：我今年都30了，还没找到对象，怎么办？简单啊，new 一个对象就好。
+
+当然这只是一个冷笑话，所谓的 new 一个对象，无非不就是调用这个类的构造方法去创建对象。乍一看也没什么问题，写个类 ABC，用的时候 `new ABC()` 就好了。那么，会想一下，我们读书的时候，老师一定会说一个类的构造方法可以允许传入参数，甚至根据传入参数的不同创建多个构造方法。
+
+学过面向对象的你一定会说，没错啊，就是这样，方法重载，签名校验。都是一个方法，Perfect！那么，我们设想下面这么一种情况：
+
+假如我们有一个 DTO 类 CredentialsAuthParam 作为对外接口的传入参数，作为一个 POJO 类，我们一般就是定义一堆属性，然后一堆 Getter、Setter，比如，我们可以这么定义：
+
+```java
+package me.yufan.dto;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
+import java.io.Serializable;
+
+public class CredentialsAuthParam implements Serializable {
+
+    private static final long serialVersionUID = -1L;
+
+    private String source;
+
+    private String validationCode;
+
+    private String operator;
+
+    private String remark;
+
+    public CredentialsAuthParam() {
+    }
+
+    public String getValidationCode() {
+        return validationCode;
+    }
+
+    public void setValidationCode(String validationCode) {
+        this.validationCode = validationCode;
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public void setOperator(String operator) {
+        this.operator = operator;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    @Override
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this,
+                ToStringStyle.SHORT_PREFIX_STYLE);
+    }
+}
+```
+
+看着很棒，多么简单，用 CredentialsAuthParam 的时候 new 一下，作为传入参数调用接口的方法就好。
+
+那么，如果我的对象要设置属性怎么办？一个个 Setter？为何不能在创建对象时创建呢？比如，构造方法里面指定参数？没错，然后我们就有了下面的一堆构造方法。
+
+```java
+public CredentialsAuthParam(String source, String validationCode) {
+    this.source = source;
+    this.validationCode = validationCode;
+}
+
+public CredentialsAuthParam(String source, String validationCod, String operator) {
+    this.source = source;
+    this.validationCode = validationCode;
+    this.operator = operator;
+}
+
+public CredentialsAuthParam(String source, String validationCod,
+                              String operator, String remark) {
+    this.source = source;
+    this.validationCode = validationCode;
+    this.operator = operator;
+    this.remark = remark;
+}
+```
+
+那么问题来了，参数这么多，又都是 String，创建一个对象多麻烦。又比如，我只想指定其中 3 个属性，又都是 String，但现在已经有了一个为 3 个 String 参数的构造方法。怎么办？
+
+Java 对方法重载的判断是按照签名的类型进行校验。所以方法参数顺序需要开发在使用时自己指定，也许我方法参数是：String source, String validationCode。但结果我因为复制粘贴不仔细变成了 `this.source = validationCode; this.validationCode = source;`（别笑，你忙着写垃圾代码的时候就会出错） 或者构造方法使用者弄混了两个参数的顺序。那么就会出事啦。
+
+其实如果你看过 Java 圣经 Effective Java 的话，一定会注意到里面说过构造器（Builder），多个参数的构造方法一定要考虑使用构造器。比如，我们可以这么写：
+
+```java
+package me.yufan.dto;
+
+public class CredentialsAuthParamBuilder {
+
+    private String source = "";
+    private String validationCode;
+    private String operator = "";
+    private String remark = "";
+
+    public CredentialsAuthParamBuilder setSource(String source) {
+        this.source = source;
+        return this;
+    }
+
+    public CredentialsAuthParamBuilder setValidationCode(String validationCode) {
+        this.validationCode = validationCode;
+        return this;
+    }
+
+    public CredentialsAuthParamBuilder setOperator(String operator) {
+        this.operator = operator;
+        return this;
+    }
+
+    public CredentialsAuthParamBuilder setRemark(String remark) {
+        this.remark = remark;
+        return this;
+    }
+
+    public CredentialsAuthParam createCredentialsAuthParam() {
+        return new CredentialsAuthParam(source, validationCode, operator, remark);
+    }
+}
+```
+
+然后将原来类的构造方法定义为 Protected，然后创建对象的时候只需要：
+
+```java
+new CredentialsRequestParamBuilder()
+.setRemark("remark")
+.createCredentialsRequestParam();
+```
+
+按照需求，设置几个属性就加几个 set 方法。
+
+接下来，我们说说单例模式：
+
+单例（Singleton），顾名思义，就是只被实例化一次的类。比如，我在 MVC 的拦截器中需要调用一个公共类，它里面存放的东西是大家共享的，我可以这么写：
+
+```java
+public class AuthorityInterceptorHelper {
+
+    private static AuthorityInterceptorHelper instance;
+
+    private AuthorityInterceptorHelper() {
+
+    }
+
+    public static AuthorityInterceptorHelper getInstance() {
+        if (instance == null) {
+            synchronized (AuthorityInterceptorHelper.class) {
+                if (instance == null) {
+                    instance = new AuthorityInterceptorHelper();
+                }
+            }
+        }
+        return instance;
+    }
+//    other code ...
+}
+```
+
+我首先要在内部定义一个自身的静态对象，然后将构造方法私有，`getInstance()` 会先去看静态对象存在否，不存在，先加锁，也许加锁期间其他方法先调用此方法创建对象，再看看对象是否存在，不存在，创建对象解锁。
+
+看起来没什么问题，代码严密，十分规范，大家都是这么写的。但是，单例了么？定义为私有的方法一定没法访问了么？反射呢？
+
+其实枚举类便可以轻松实现需求，我们只需如下写法：
+
+```java
+public enum AuthorityInterceptorHelper {
+
+    INSTANCE;
+
+//    other function ...
+}
+```

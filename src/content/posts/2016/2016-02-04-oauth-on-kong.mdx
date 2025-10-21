@@ -1,0 +1,229 @@
+---
+title: 基于 Kong 的 OAuth2.0 的使用
+slug: oauth-on-kong
+date: 2016-02-04 09:21:00+08:00
+updated: 2020-09-04 20:29:36+08:00
+tags:
+  - Kong
+category: 编程
+toc: true
+cover: https://cdn.yufan.me/images/2020/09/2020090420223787.jpg
+summary: 一个完整的 OAuth 2.0 认证需要好几步，然而，Kong只完成最后几步，实际使用时需要开发上层的服务。
+---
+
+![もりちか - フレンドリーな猫に出会って、写真を撮りたくなっている女の子](https://cdn.yufan.me/images/2020/09/2020090420290983.jpg)
+
+## 1. Kong OAuth 2.0 认证流程
+
+### 1.1 相关角色
+
+1. **第三方应用：** 实际想要访问API的应用，需要在Kong上注册，定义自己的访问口令和回调地址。
+2. **用户：** 实际的第三方应用的使用者，和API访问权限的授权主体。
+3. **认证服务：** 基于Kong搭建的认证服务，主要完成用户信息的部分，也就是登录和授权提示页面。它作为第三方应用和Kong之间的中间桥梁，因为Kong不直接接管这些信息。
+4. **Kong：** Api Gateway，完整API的认证和应用注册等，将请求向后端转发。
+5. **API 提供者：** 实际的API提供者，与Kong交互，外部无法直接访问。
+
+### 1.2 认证流程
+
+1. Client为第三方应用，当它想访问某些需要用户授权的用户信息。
+2. Client将用户跳转至 Kong 上的认证服务来认证应用。
+3. 如果认证服务发现用户未登录，那么将会跳转至登录界面。
+4. 在登录界面完成登录，将会跳转至认证服务的授权页面，显示第三方应用想要获取的用户信息，用户可以确定是否允许第三方应用访问。
+5. 用户确认，认证服务提交信息至Kong上完成注册认证流程，Kong返回认证口令和跳转地址给认证服务。
+6. 认证服务将用户跳转至 第三方应用 在 Kong 上定义的回调地址，传递认证口令。
+7. 第三方应用从回调地址读取认证口令，请求Kong，获取实际的信息访问口令。
+8. 应用通过每次请求传递附加上访问口令来调用API。
+
+## 2. Kong OAuth 2.0 问题，开发需求
+
+一个完整的 OAuth 2.0 认证需要好几步，然而，Kong只完成最后几步，实际使用时需要开发上层的服务。
+
+用户登录模块用户系统已经实现，登录方式为使用SDK传入Session ID获取用户登录信息，并不是很优雅。但是结合已有的登录服务，只需写一个登录界面，授权确认界面和与相关的交互服务。
+
+## 3. 交互信息，协议，格式
+
+### 3.1. 协议定义
+
+（1）、新增 API
+
+```bash
+# 请求
+$ curl -X POST http://127.0.0.1:8001/apis --data "name=httpbin" \
+--data "upstream_url=https://httpbin.org" \
+--data "request_host=yufan.me" \
+--data "preserve_host=true"
+```
+
+```json
+// 响应
+{
+	"upstream_url": "https://httpbin.org",
+	"id": "b00e2c79-a87a-4688-b16f-7b2034171b13",
+	"created_at": 1456299654000,
+	"preserve_host": true,
+	"name": "httpbin",
+	"request_host": "yufan.me"
+}
+```
+
+（2）、API 配置 oAuth 认证
+
+```bash
+$ curl -X POST http://127.0.0.1:8001/apis/b00e2c79-a87a-4688-b16f-7b2034171b13/plugins \
+--data "name=oauth2" \
+--data "config.scopes=email,phone,address" \
+--data "config.mandatory_scope=true"
+```
+
+```json
+{
+	"api_id": "b00e2c79-a87a-4688-b16f-7b2034171b13",
+	"id": "a21450ac-4aa6-459e-9678-21275fc15d6f",
+	"created_at": 1456299868000,
+	"enabled": true,
+	"name": "oauth2",
+	"config": {
+		"mandatory_scope": true,
+		"token_expiration": 7200,
+		"enable_implicit_grant": false,
+		"scopes": ["email", "phone", "address"],
+		"hide_credentials": false,
+		"enable_password_grant": false,
+		"accept_http_if_already_terminated": false,
+		"provision_key": "a36c23485d414ffb9eba7a85de0e7335",
+		"enable_client_credentials": false,
+		"enable_authorization_code": true
+	}
+}
+```
+
+（3）、添加开发者帐号
+
+```bash
+$ curl -X POST http://127.0.0.1:8001/consumers \
+--data "username=testuser123" \
+--data "custom_id=12345"
+```
+
+```json
+{
+	"custom_id": "12345",
+	"username": "testuser123",
+	"created_at": 1456299997000,
+	"id": "364381e9-acf7-424d-a87f-f4be80871ee2"
+}
+```
+
+（4）、添加应用
+
+```bash
+curl -X POST http://127.0.0.1:8001/consumers/364381e9-acf7-424d-a87f-f4be80871ee2/oauth2 \
+--data "name=My%20Test%20Application" \
+--data "redirect_uri=https://httpbin.org/get"
+```
+
+```json
+{
+	"consumer_id": "364381e9-acf7-424d-a87f-f4be80871ee2",
+	"client_id": "54b968c73da64b328ed92b05548179b6",
+	"id": "ce2906cb-3442-44c1-888e-848bafd0a442",
+	"name": "My Test Application",
+	"created_at": 1456300207000,
+	"redirect_uri": "https://httpbin.org/get",
+	"client_secret": "3b4537ac7c94492f81b251110e2d0f33"
+}
+```
+
+（5）、模拟用户授权，获取回调码
+
+```bash
+$ curl -X POST https://127.0.0.1:8443/oauth2/authorize \
+-H "Host: yufan.me" \
+--data "client_id=54b968c73da64b328ed92b05548179b6" \
+--data "response_type=code" \
+--data "scope=email" \
+--data "authenticated_userid=yufan" \
+--data "provision_key=a36c23485d414ffb9eba7a85de0e7335" \
+--insecure
+```
+
+```json
+{ "redirect_uri": "https://httpbin.org/get?code=f2987a670ab246a38b2a3e6d58713019" }
+```
+
+（6）、获取两码，完成初次认证
+
+```bash
+$ curl -X POST https://127.0.0.1:8443/oauth2/token \
+-H "Host: yufan.me" \
+--data "client_id=54b968c73da64b328ed92b05548179b6" \
+--data "client_secret=3b4537ac7c94492f81b251110e2d0f33" \
+--data "grant_type=authorization_code" \
+--data "code=f2987a670ab246a38b2a3e6d58713019" \
+--insecure
+```
+
+```json
+{
+	"refresh_token": "a42472728fd74075ac8db82a0cb50b44",
+	"token_type": "bearer",
+	"access_token": "c28b23745aa84c14a001a32476be3d6c",
+	"expires_in": 7200
+}
+```
+
+（7）、API 请求
+
+```bash
+$ curl -X POST https://127.0.0.1:8443/post \
+-H "Host: yufan.me" \
+--data "access_token=c28b23745aa84c14a001a32476be3d6c" \
+--insecure
+```
+
+```json
+{
+	"args": {},
+	"data": "",
+	"files": {},
+	"form": {
+		"access_token": "c28b23745aa84c14a001a32476be3d6c"
+	},
+	"headers": {
+		"Accept": "*/*",
+		"Content-Length": "45",
+		"Content-Type": "application/x-www-form-urlencoded",
+		"Host": "yufan.me",
+		"User-Agent": "curl/7.43.0",
+		"X-Authenticated-Scope": "email",
+		"X-Authenticated-Userid": "yufan",
+		"X-Consumer-Custom-Id": "12345",
+		"X-Consumer-Id": "364381e9-acf7-424d-a87f-f4be80871ee2",
+		"X-Consumer-Username": "testuser123"
+	},
+	"json": null,
+	"origin": "127.0.0.1, 61.148.202.186",
+	"url": "https://yufan.me/post"
+}
+```
+
+（8）、API Token 刷新
+
+```bash
+$  curl -X POST https://127.0.0.1:8443/oauth2/token \
+-H "Host: yufan.me" \
+--data "refresh_token=a42472728fd74075ac8db82a0cb50b44" \
+--data "client_id=54b968c73da64b328ed92b05548179b6" \
+--data "client_secret=3b4537ac7c94492f81b251110e2d0f33" \
+--data "grant_type=refresh_token" \
+--insecure
+```
+
+```json
+{
+	"refresh_token": "de64c9df218b4a0eb2a24af83cd93a56",
+	"token_type": "bearer",
+	"access_token": "98ff79467dd6450f95061da94bd81d02",
+	"expires_in": 7200
+}
+```

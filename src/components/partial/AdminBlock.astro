@@ -1,0 +1,12 @@
+---
+import { isAdmin } from '@/helpers/auth/session'
+import type { AstroSession } from 'astro'
+
+interface Props {
+  session: AstroSession | undefined
+}
+
+const admin = await isAdmin(Astro.props.session)
+---
+
+{admin && <slot />}

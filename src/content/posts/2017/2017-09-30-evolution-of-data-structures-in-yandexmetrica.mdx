@@ -1,0 +1,193 @@
+---
+title: Yandex.Metrica 的革命性的数据存储结构
+slug: evolution-of-data-structures-in-yandex-metrica
+date: 2017-09-30 02:51:53+08:00
+updated: 2019-05-18 18:29:19+08:00
+tags:
+  - 数据库
+  - 存储
+category: 编程
+toc: true
+cover: https://cdn.yufan.me/images/2019/05/2019051818284917.jpg
+summary: Yandex.Metrica 是世界第二大的线上分析系统，Metrica 处理来自网站或者应用的数据流，将它解析成可分析的格式。
+---
+
+![2017-10-03-metrica-600](https://cdn.yufan.me/images/2019/05/2019051818284917.jpg)
+
+Yandex.Metrica 是世界[第二大](https://w3techs.com/technologies/overview/traffic_analysis/all)的线上分析系统，Metrica 处理来自网站或者应用的数据流，将它解析成可分析的格式。
+
+Metrica 处理分析消息起来游刃有余，我们主要的技术挑战在于如何以最便于使用的格式来存储处理结果。在整个开发过程中，我们前后几次改变了存储方式。从最初的 MyISAM 表，到后面的 LSM 树，最后变成列式存储数据库 [ClickHouse](https://clickhouse.yandex/)。我将在本文中详解为何我们最后选择自己开发了 ClickHouse。
+
+Yandex.Metrica 从2008年公布至今已经平稳运行9年了，每次我们改变数据存储访问方式都是因为它不够高效。这当中有：数据写入性能不理想的原因；有存储不可靠的原因；有消耗过多计算资源的原因；或者仅仅是它不能按照我们的需求去扩展。
+
+旧的 Yandex.Metrica 网站有超过40多种固定报表类型（例如：访客地域报告）；几个内页分析工具（例如：点击图）；网站访客（帮助你详细分析单独访客行为）。当然，Yandex.Metrica 还提供单独的报表构造器。
+
+新的 Metrica 和 Appmetrica 系统允许你定制每种报表，而不是以前的“固定”类型查询。你可以增加新的**查询维度**（例如：搜索词条报告中，你可以增加访问页面进一步分析）、**分段**、**比较**（例如：所有的访客数据和旧金山的访客数据比较），改变你的**查询指标集**等。所以，新的系统依赖的数据存储方式和我们之前使用的完全不一样。
+
+## MyISAM
+
+在设计初期，Metrica 被设计为 Yandex.Direct 的分支之一，搜索广告服务。因为 Direct 使用 MySQL 的 MyISAM 引擎，所以 Metrica 开发初期同样沿用了相同的存储。2008 年至 2011 年，MyISAM 引擎被用于存储**“固定”**的分析报表。
+
+请让我以地域报表为例，介绍一下报表的数据结构。一份报表是对特定网站的数据汇总（更具体地说，是一个特定的Metrica计数标识），这代表着主键应该包含计数ID（`CounterID`）。因为用户可以选择任意报告周期，所以按照每个日期对方式存储数据毫无意义。因此，数据按照产生的日期去存储，然后通过查询的时间区间累积计算。综上所述，主键中包含日期。
+
+报告中的数据，要么按照地域维度展示为列表，要么按照国家、地域、城市等维度展示为一棵树。所以，需要在主键中存放地域ID（`RegionID`），这样可以在应用代码中将数据聚合成一棵树，而不是依赖数据库层面的计算。
+
+同时，我们需要计算平均会话周期。这意味着数据表中应该包含**会话总数**和**总的会话时长**。
+
+按照上述需求，数据表的结构应该是： `CounterID`, `Date`, `RegionID -> Visits`, `SumVisitTime`, ... 基于这种结构，我们在 `SELECT` 查询时，应该按照 `WHERE CounterID = AND Date BETWEEN min_date AND max_date` 的条件去查询结果。换言之，主键的范围是命中的。
+
+### 数据在磁盘上如何存储？ How is data actually stored on the disk?
+
+一张 MyISAM 引擎表由一个数据文件和一个索引文件组成。如果更新表的时候不删除数据且不改变长度，数据文件将按照插入的顺序存储每一行序列化的数据。索引（包含主键索引）是 B-树，叶子节点存储数据文件的位移。当我们读取一个索引中的范围数据时，首先从索引中查出一组满足查询条件的数据文件位移，然后按照查出来的位移依次去从数据文件中查找出实际的数据。
+
+以索引存储于RAM（MySQL 的键缓存或者是系统页缓存）而数据没有被缓存的实际场景举例。如果使用磁盘，读取数据的时间取决于需要读取的数据量以及需要完成多少次检索操作，检索的次数基于在磁盘上存储的区域数量。
+
+Metrica 事件基本按照它们生成的顺序接收处理，在收集端，数据从不同的计数器随机产生。换言之，数据存储时按照时间是连续的，但是按照生产者是不连续的。当写入至一张 MyISAM 表时，来自不同计数器的数据也是非常随机地存储的。这意味着生成报告的时候，需要几行数据，就可能需要执行同样次数的随机检索。
+
+一块经典的 7200 转的硬盘可以每秒钟执行 100 ~ 200 次的随机读取。一个磁盘矩阵，如果使用得当，可以按照比例地执行更多次随机读取。一块使用7年的 SSD 每秒钟可执行 30000 多次的随机读取，但是我们无法支付将数据存放于 SSD 的硬件成本。在目前的系统中，如果我们在一份报表中需要读取10000行数据，大概需要10秒钟，这是完全无法接受的一个时长。
+
+InnoDB 引擎更适合用于主键范围检索，因为它使用聚集主键（聚集索引？）。简单说，数据基于主键以有序的方式存储。但是 InnoDB 的写入速度慢到无法接受。如果你推荐 TokuDB，请继续阅读。
+
+我们采取了一些措施来让 MyISAM 引擎在主键范围检索时更快。
+
+**表排序** 因为数据需要立即更新，对表只做一次排序是远远不够的，但是每次写入都去做排序也不现实。虽然我们可以定期对旧数据做排序。
+
+**分区** 一张表可以划分成许多小的主键范围，这么做的目的是为了让同一分区的数据存储得更加连续，基于主键范围的检索能更快。此方法可参考在聚集主键的上手动实现。虽然这么做会导致插入速度明显下降，但是通过控制分区的数量，我们可以在插入速度和检索速度中找到可接受的数值。
+
+**按照数据的年龄分割** 单一分区的检索会非常慢，分区多了，插入速度也会变慢。当在这当中取一个中间分区数时，插入和检索速度都不是最快的。对于此问题的解决方案就是将数据分成几个单独的代。举例来说，第一代我们叫做可操作数据，这是数据写入时，分区（按时间）或者不分区的地方。第二代我们叫做归档数据，这是随着数据检索（按照计数ID）进行分区的地方。数据通过脚本从一个代转移到另一个代，但不会特别频繁（例如：一天一次），并能在所有的代上立刻检索。这的确解决了问题，但是也增加了许多复杂性。
+
+上面（还有一些别的未列举）就是 Yandex.Metrica 使用的优化策略。
+
+让我们总结一下这套方案的缺点：
+
+- 无法支撑数据在磁盘上连续存储
+- 在插入时表需要加锁
+- 复制十分慢，副本经常有延迟
+- 硬件故障后的数据一致性不能保证
+- 诸如独立用户数量的聚合查询很难计算和存储
+- 数据压缩很难实现并且不高效
+- 索引很大，并且不能在内存中完全存储
+- 许多计算需要在 `SELECT` 查询之后编程去计算
+- 运维麻烦
+
+![2017-10-03-locality](https://cdn.yufan.me/images/2019/05/2019050908220042.png)
+
+图片：数据在磁盘上的存储区域（艺术渲染）
+
+总而言之，MyISAM 引擎使用起来极不方便。每天的服务器磁盘阵列的负载都是满的（磁头一直在移动），这种情况下，磁盘故障频发。我们在服务器上使用了SAN存储，换言之，我们不得不频繁恢复RAID阵列。有时候，副本的延迟极高导致不得不删除重建，切换至复制主节点极其不便。
+
+尽管 MyISAM 缺点多多，到了 2011 年，我们已经基于它存储了超过 5800 亿的数据。在那之后，所有的数据被转换至 Metrage，因此释放了很多服务器资源。
+
+## Metrage and OLAPServer
+
+2010年后我们开始使用 Metrage 存储固定报表，假设你有下述场景：
+
+- 数据持续以小批次写入数据库
+- 写入流相对比较大（每秒至少几十万行）
+- 检索查询想多较少（每秒大概几千次查询）
+- 所有的检索命中主键范围（每次查询高达100多万行）
+- 每行数据相对较小（未压缩的数据大概100个字节）
+
+数据结构中的 LSM 树十分适合上述的业务需求，且比较常见。
+
+---
+
+A fairly common data structure, LSM Tree, works well for this. This structure consists of a comparatively small group of data "chunks" on the disk, each of which contains data sorted by primary key. New data is initially placed in some type of RAM data structure (MemTable) and then written to the disk in a new, sorted chunk. Periodically a few sorted chunks will be compacted into one larger one in the background. This way a relatively small set of chunks are maintained.
+
+This kind of data structures is used in HBase and Cassandra. Among embedded LSM-Tree data structures, LevelDB and RocksDB are implemented. Subsequently, RocksDB is used in MyRocks, MongoRocks, TiDB, CockroachDB and many others.
+
+![lsm-tree-600](https://cdn.yufan.me/images/2019/05/2019050908223772.png)
+
+Metrage is also an LSM-Tree. Arbitrary data structures (fixed at compile time) can be used as "rows" in it. Every row is a key, value pair. A key is a structure with comparison operations for equality and inequality. The value is an arbitrary structure with operations to update (to add something) and merge (to aggregate or combine with another value). In short, it's a CRDT.
+
+Both simple structures (integer tuples) and more complex ones (like hash tables for calculating the number of unique visitors or click-map structures) can serve as values. Using the update and merge operations, incremental data aggregation is constantly carried out at the following points:
+
+- during data insertion when forming new batches in RAM
+- during background merges
+- during read requests
+
+Metrage also contains the domain-specific logic we need that's performed during queries. For example, for region reports, the key in the table will contain the ID of the lowest region (city, village) and, if we need a country report, the country data will finish aggregating on the database server side.
+
+Here are the main advantages of this data structure:
+
+- Data is located pretty locally on the hard disk; reading the primary key range goes quickly.
+- Data is compressed in blocks. Because data is stored in an orderly manner, compression works pretty well when fast compression algorithms are used (in 2010 we used QuickLZ, since 2011 - LZ4).
+- Storing data sorted by primary key enables us to use a sparse index. A sparse index is an array of primary key values ​​for each Nth row (N-order of thousands). This index is maximally compact and always fits on the RAM.
+
+Since reading is not performed very often (even though lot of rows are read when it does) the increase in latency due to having many chunks and decompressing the data blocks does not matter. Reading extra rows because of the index sparsity also does not make a difference.
+
+Written chunks of data are not modified. This allows you to read and write without locking - a snapshot of data is taken for reading. Simple and uniform code is used, but we can easily implement all the necessary domain-specific logic.
+
+We had to write Metrage instead of amending an existing solution because there really wasn't one. LevelDB did not exist in 2010 and TokuDB was proprietary at the time.
+
+All systems that implement LSM-Tree were suitable for storing unstructured data and maps from BLOB to BLOB with slight variations. But to adapt this type of system to work with arbitrary CRDT would have taken much longer than to develop Metrage.
+
+Converting data from MySQL to Metrage was rather time consuming: while it only took about a week for the conversion program to work, the main part of it took about two months to work out.
+
+After transferring reports to Metrage, we immediately saw an increase in Metrica interface speed. We've been using Metrage for five years and it has proved to be a reliable solution. During that time, there were only a few minor failures. It's advantages are its simplicity and effectiveness, which made it a far better choice for storing data than MyISAM.
+
+As of 2015 we stored 3.37 trillion rows in Metrage and used 39 \* 2 servers for this. Then we have moved away from storing data in Metrage and deleted most of the tables. The system has its drawbacks; it really only works effectively with fixed reports. Metrage aggregates data and saves aggregated data. But in order to do this, you have to list all the ways in which you want to aggregate data ahead of time. So if we do this in 40 different ways, it means that Metrica will contain 40 types of reports and no more.
+
+To mitigate this we had to keep for a while a separate storage for custom report wizard, called OLAPServer. It is a simple and very limited implementation of a column-oriented database. It supports only one table set in compile time — a session table. Unlike Metrage, data is not updated in real-time, but rather a few times per day. The only data type supported is fixed-length numbers of 1-8 bytes, so it wasn’t suitable for reports with other kinds of data, for example URLs.
+
+## ClickHouse
+
+Using OLAPServer, we developed an understanding of how well column-oriented DBMS's handle ad-hoc analytics tasks with non-aggregated data. If you can retrieve any report from non-aggregated data, then it begs the question of whether data even needs to be aggregated in advance, as we did with Metrage database.
+
+![column-oriented-600](https://cdn.yufan.me/images/2019/05/2019050908233838.gif)
+
+On the one hand, pre-aggregating data can reduce the volume of data that is used at the moment when the report page is loading. On the other hand, though, aggregated data doesn't solve everything. Here are the reasons why:
+
+- you need to have a list of reports that your users need ahead of time
+- in other words, the user can't put together a custom report
+- when aggregating a lot of keys, the amount of data is not reduced and aggregation is useless
+- when there are a lot of reports, there are too many aggregation options (combinatorial explosion)
+- when aggregating high cardinality keys (for example, URLs) the amount of data does not decrease by much (by less than half)
+- due to this, the amount of data may not be reduced, but actually grow during aggregation
+- users won't view all the reports that we calculate for them (in other words, a lot of the calculations prove useless)
+- it's difficult to maintain logical consistency when storing a large number of different aggregations
+
+As you can see, if nothing is aggregated and we work with non-aggregated data, then it's possible that the volume of computations will even be reduced. But only working with non-aggregated data imposes very high demands on the effectiveness of the system that executes the queries.
+
+So if we aggregate the data in advance, then we should do it constantly (in real time), but asynchronously with respect to user queries. We should really just aggregate the data in real time; a large portion of the report being received should consist of prepared data.
+
+If data is not aggregated in advance, all the work has to be done at the moment the user request it (i.e. while they wait for the report page to load). This means that many billions of rows need to be processed in response to the user's query; the quicker this can be done, the better.
+
+For this you need a good column-oriented DBMS. The market didn’t have any column-oriented DBMS's that would handle internet-analytics tasks on the scale of Runet (the Russian internet) well enough and would not be prohibitively expensive to license.
+
+Recently, as an alternative to commercial column-oriented DBMS's, solutions for efficient ad-hoc analytics of data in distributed computing systems began appearing: Cloudera Impala, Spark SQL, Presto, and Apache Drill. Although such systems can work effectively with queries for internal analytical tasks, it is difficult to imagine them as the backend for the web interface of an analytical system accessible to external users.
+
+At Yandex, we developed and later [opensourced](https://github.com/yandex/ClickHouse/) our own column-oriented DBMS — ClickHouse. Let's review the basic requirements that we had in mind before we proceeded to development.
+
+Ability to work with large datasets. In current Yandex.Metrica for websites, ClickHouse is used to store all data for reports. As of September, 2017, the database is comprised of 25.1 trillion rows. It’s made up of non-aggregated data that is used to retrieve reports in real-time. Every row in the largest table contains over 500 columns.
+
+The system should scale linearly. ClickHouse allows you to increase the size of cluster by adding new servers as needed. For example, Yandex.Metrica's main cluster has increased from 60 to 426 servers in three years. In the aim of fault tolerance, our servers are spread across different data centers. ClickHouse can use all hardware resources to process a single query. This way more than 2 terabyte can be processed per second.
+
+High efficiency. We really focus on our database's high performance. Based on the results of internal tests, ClickHouse processes queries faster than any other system we could acquire. For example, ClickHouse works an average of 2.8-3.4 times faster on web analytics queries than one of top performing commercial column-oriented DBMS (let's call it DBMS-V).
+
+Functionality should be sufficient for Web analytics tools. The database supports the SQL language dialect, subqueries and JOINs (local and distributed). There are numerous SQL extensions: functions for web analytics, arrays and nested data structures, higher-order functions, aggregate functions for approximate calculations using sketching, etc.
+
+ClickHouse was initially developed by the Yandex.Metrica team. Furthermore, we were able to make the system flexible and extensible enough that it can be successfully used for different tasks. Although the database can run on large clusters, it can be installed on single server or even on a virtual machine.
+
+ClickHouse is well equipped for creating all kinds of analytical tools. Just consider: if the system can handle the challenges of Yandex.Metrica, you can be sure that ClickHouse will cope with other tasks with a lot of performance headroom to spare.
+ClickHouse works well as a time series database; at Yandex it is commonly used as the [backend for Graphite](https://github.com/yandex/graphouse/) instead of Ceres/Whisper. This lets us work with more than a trillion metrics on a single server.
+
+ClickHouse is used by analytics for internal tasks. Based on our experience at Yandex, ClickHouse performs at about three orders of magnitude higher than ancient methods of data processing (scripts on MapReduce). But this is not a simple quantitative difference. The fact of the matter is that by having such a high calculation speed, you can afford to employ radically different methods of problem solving.
+
+If an analyst has to make a report and they are competent at their job, they won't just go ahead and construct one report. Rather, they will start by retrieving dozens of other reports to better understand the nature of the data and test various hypotheses. It is often useful to look at data from different angles in order to posit and check new hypotheses, even if you don't have a clear goal.
+
+This is only possible if the data analysis speed allows you to conduct instant research. The faster queries are executed, the more hypotheses you can test. Working with ClickHouse, one even gets the sense that they are able to think faster.
+
+In traditional systems, data is like a dead weight, figuratively speaking. You can manipulate it, but it takes a lot of time and is inconvenient. If your data is in ClickHouse though, it is much more malleable: you can study it in different cross-sections and drill down to the individual rows of data.
+
+After one year of open source, ClickHouse is now used by hundreds of companies worldwide. For instance, [CloudFlare](https://blog.cloudflare.com/how-cloudflare-analyzes-1m-dns-queries-per-second/) is using ClickHouse for analytics of DNS traffic, ingesting about 75 billion events each day. Another example is [Vertamedia](https://www.dropbox.com/s/l0qx4feez3kokd9/Go%20July%20meetup.%20Go%20-%20ClickHouse%20-%20Grafana.pdf?dl=0) (a video SSP platform), which processes 200 billion events each day in ClickHouse with an ingestion rate of about 3 million rows per second.
+
+## Conclusions
+
+Yandex.Metrica has become the second largest web-analytics system in the world. The volume of data that Metrica takes in grew from 200 million events a day in 2009 to more than 25 billion in 2017. In order to provide users with a wide variety of options while still keeping up with the increasing workload, we've had to constantly modify our approach to data storage.
+
+Effective hardware utilization is very important to us. In our experience, when you have a large volume of data, it's better not to worry as much about how well the system scales and instead focus on how effectively each unit of hardware is used: each processor core, disk and SSD, RAM, and network. After all, if your system is already using hundreds of servers, and you have to work ten times more efficiently, it is unlikely that you can just proceed to install thousands of servers, no matter how scalable your system is.
+
+To maximize efficiency, it's important to customize your solution to meet the needs of specific type of workload. There is no data structure that copes well with completely different scenarios. For example, it's clear that key-value databases don't work for analytical queries. The greater the load on the system, the narrower the specialization required. One should not be afraid to use completely different data structures for different tasks.
+
+We were able to set things up so that [Yandex.Metrica](https://metrica.yandex.com/)'s hardware was relatively inexpensive. This has allowed us to offer the service free of charge to even very large sites and mobile apps, even larger than Yandex’s own, while competitors typically start asking for a paid subscription plan.
