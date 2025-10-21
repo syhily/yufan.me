@@ -58,50 +58,53 @@ if (user === undefined || !user.admin) {
                 <textarea id="content" name="content" class="form-control" rows="3" required />
               </div>
               <div class="comment-form-info row g-2 g-md-3 mb-3">
-                <div class="col">
-                  {user?.admin ? (
-                    <input
-                      class="form-control"
-                      placeholder={user.name}
-                      name="name"
-                      type="text"
-                      readonly
-                      value={user.name}
-                    />
-                  ) : (
+                {user?.admin ? (
+                  <input
+                    class="form-control"
+                    placeholder={user.name}
+                    name="name"
+                    type="text"
+                    readonly
+                    hidden
+                    value={user.name}
+                  />
+                ) : (
+                  <div class="col">
                     <input class="form-control" placeholder="昵称" name="name" type="text" required />
-                  )}
-                </div>
-                <div class="col-12 col-md-6">
-                  {user?.admin ? (
-                    <input
-                      class="form-control"
-                      name="email"
-                      placeholder={user.email}
-                      value={user.email}
-                      type="email"
-                      readonly
-                    />
-                  ) : (
+                  </div>
+                )}
+                {user?.admin ? (
+                  <input
+                    class="form-control"
+                    name="email"
+                    placeholder={user.email}
+                    value={user.email}
+                    type="email"
+                    readonly
+                    hidden
+                  />
+                ) : (
+                  <div class="col-12 col-md-6">
                     <input class="form-control" name="email" placeholder="邮箱" type="email" required />
-                  )}
-                </div>
-                <div class="col-12">
-                  <input hidden name="page_key" type="text" value={commentKey} />
-                  <input hidden name="rid" type="text" value="0" />
-                  {user?.admin ? (
-                    <input
-                      class="form-control"
-                      placeholder={user.website}
-                      value={user.website}
-                      name="link"
-                      type="url"
-                      readonly
-                    />
-                  ) : (
+                  </div>
+                )}
+                <input hidden name="page_key" type="text" value={commentKey} />
+                <input hidden name="rid" type="text" value="0" />
+                {user?.admin ? (
+                  <input
+                    class="form-control"
+                    placeholder={user.website}
+                    value={user.website}
+                    name="link"
+                    type="url"
+                    readonly
+                    hidden
+                  />
+                ) : (
+                  <div class="col-12">
                     <input class="form-control" placeholder="网址" name="link" type="url" />
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               <div class="form-submit text-end">
                 <input type="button" id="cancel-comment-reply-link" class="btn btn-light me-1" value="再想想" hidden />
