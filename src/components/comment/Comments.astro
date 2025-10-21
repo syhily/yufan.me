@@ -16,7 +16,7 @@ const comments = await loadComments(Astro.session, commentKey, title, 0)
 
 // Increase the PV in production environment.
 const user = await userSession(Astro.session)
-if (user?.admin) {
+if (user === undefined || !user.admin) {
   await increaseViews(commentKey, title)
 }
 ---
