@@ -28,7 +28,7 @@ const groupedPosts = _.groupBy(resolvedPosts, (post) => {
               <h2>{key}</h2>
             </div>
             <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-              {posts.map(post => <PostSquare post={post} first={false} />)}
+              {posts.map((post, i) => <PostSquare post={post} first={i === 0} />)}
             </div>
           </div>
         </div>
