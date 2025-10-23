@@ -20,3 +20,78 @@ const likes = await queryLikes(permalink)
     <span class="like-count">{likes}</span>
   </button>
 </div>
+
+<script>
+import { actions } from 'astro:actions'
+import { handleActionError } from '@/assets/scripts/actions'
+
+// Add like button for updating likes.
+const likeButton = document.querySelector<HTMLButtonElement>('button.post-like')
+
+function increaseLikes(count: HTMLElement, permalink: string): void {
+  count.textContent = (Number.parseInt(count.textContent || '0') + 1).toString()
+  actions.comment.increaseLike({ key: permalink }).then((result) => {
+    if (result.error) {
+      return handleActionError({
+        message: result.error.message || 'Failed to increase likes',
+      })
+    }
+    if (result.data) {
+      const { likes, token } = result.data
+      count.textContent = likes.toString()
+      localStorage.setItem(permalink, token)
+    }
+  })
+}
+
+function decreaseLikes(count: HTMLElement, permalink: string): void {
+  const token = localStorage.getItem(permalink)
+  if (token === null || token === '') {
+    return
+  }
+  count.textContent = (Number.parseInt(count.textContent || '0') - 1).toString()
+  actions.comment.decreaseLike({ key: permalink, token }).then((result) => {
+    if (result.error) {
+      return handleActionError({
+        message: result.error.message || 'Failed to decrease likes',
+      })
+    }
+    if (result.data) {
+      count.textContent = result.data.likes.toString()
+      localStorage.removeItem(permalink)
+    }
+  })
+}
+
+if (likeButton) {
+  const permalink = likeButton.dataset.permalink
+  if (permalink) {
+    // Change the like state if it has been liked.
+    const token = localStorage.getItem(permalink)
+    if (token !== null && token !== '') {
+      likeButton.classList.add('current')
+    }
+
+    // Add the click action.
+    likeButton.addEventListener('click', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const count = likeButton.querySelector<HTMLElement>('.like-count')
+      if (!count) {
+        return
+      }
+
+      // Increase the likes and set liked before submitting.
+      if (likeButton.classList.contains('current')) {
+        likeButton.classList.remove('current')
+        decreaseLikes(count, permalink)
+      }
+      else {
+        likeButton.classList.add('current')
+        increaseLikes(count, permalink)
+      }
+    })
+  }
+}
+</script>

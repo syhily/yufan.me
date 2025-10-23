@@ -46,7 +46,7 @@ const { navigation } = Astro.props
               <QRDialog url={social.link} name={social.name} title={social.title ?? social.name} icon={social.icon} />
             )
           }
- else {
+          else {
             return (
               <a
                 href={social.link}
@@ -56,10 +56,10 @@ const { navigation } = Astro.props
               >
                 <span>
                   {!social.icon.startsWith('<svg')
-? (
+                  ? (
                     <i class={`iconfont ${social.icon}`} />
                   )
-: (
+                  : (
                     <Fragment set:html={social.icon} />
                   )}
                 </span>
@@ -85,3 +85,18 @@ const { navigation } = Astro.props
     </div>
   </div>
 </div>
+
+<script>
+// Menu toggle.
+const menuBody = document.querySelector<HTMLElement>('.site-aside')
+document.addEventListener('keydown', (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && menuBody) {
+    event.preventDefault()
+    event.stopPropagation()
+    menuBody.classList.toggle('in', false)
+  }
+})
+document.querySelector<HTMLElement>('.menu-toggler')?.addEventListener('click', () => menuBody?.classList.toggle('in', true))
+document.querySelector<HTMLElement>('.site-menu')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
+document.querySelector<HTMLElement>('.aside-overlay')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
+</script>

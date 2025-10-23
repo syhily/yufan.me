@@ -10,3 +10,21 @@ import config from '@/blog.config'
     </label>
   </div>
 </div>
+
+<script>
+// Search Bar.
+const searchSidebar = document.querySelector<HTMLInputElement>('.search-sidebar')
+if (searchSidebar) {
+  searchSidebar.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const target = event.target as HTMLInputElement
+      const query = target.value
+      target.value = ''
+      location.href = `/search/${encodeURIComponent(query)}`
+    }
+  })
+}
+</script>
