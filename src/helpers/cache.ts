@@ -1,10 +1,11 @@
 import type { Buffer } from 'node:buffer'
+import { REDIS_URL } from 'astro:env/server'
 import { createStorage } from 'unstorage'
 
-import memoryDriver from 'unstorage/drivers/memory'
+import redisDriver from 'unstorage/drivers/redis'
 
-const storage = createStorage({
-  driver: memoryDriver(),
+export const storage = createStorage({
+  driver: redisDriver({ url: REDIS_URL }),
 })
 
 // Seconds
@@ -55,9 +56,9 @@ export async function loadAvatar(email: string): Promise<Avatar | null> {
 
 export async function cacheAvatar(args: { email: string, buffer: Buffer, status: AvatarStatus.HAVE_AVATAR } | { email: string, status: AvatarStatus.NO_AVATAR }) {
   const { email, status } = args
-  await storage.setItem<AvatarStatus>(`avatar-status-${email}`, status, { ttl: 60 * 60 * 24 })
+  await storage.setItem<AvatarStatus>(`avatar-status-${email}`, status, { ttl: 60 * 60 * 24 * 7 })
   if (status === AvatarStatus.HAVE_AVATAR) {
-    await storage.setItemRaw(`avatar-${email}`, args.buffer, { ttl: 25 * 60 * 60 })
+    await storage.setItemRaw(`avatar-${email}`, args.buffer, { ttl: 25 * 60 * 60 * 7 })
   }
 }
 
@@ -67,4 +68,17 @@ export async function loadBuffer(key: string): Promise<Buffer | null> {
 
 export async function cacheBuffer(key: string, buffer: Buffer, ttl: number) {
   await storage.setItemRaw(key, buffer, { ttl })
+}
+
+export async function loadMusicURL(netease: string, urlLoader: (id: string) => Promise<string | null>): Promise<string | null> {
+  const cacheKey = `netease-music-url-${netease}`
+  let url = await storage.getItem<string>(cacheKey)
+  if (url) {
+    return url
+  }
+  url = await urlLoader(netease)
+  if (url) {
+    await storage.setItem<string>(cacheKey, url, { ttl: 60 * 60 })
+  }
+  return url
 }

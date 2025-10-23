@@ -1,3 +1,4 @@
+import { loadMusicURL } from '@/helpers/cache'
 import * as eapi from './providers/eapi'
 
 export interface Song {
@@ -41,7 +42,7 @@ export async function resolveSongURL(props: MusicPlayerProps): Promise<string> {
   const { netease } = props
   let result = ''
   try {
-    const url = await eapi.getSongUrl(netease, 'standard')
+    const url = await loadMusicURL(netease, (id: string) => eapi.getSongUrl(id, 'standard'))
     result = url || ''
   }
   catch (err) {

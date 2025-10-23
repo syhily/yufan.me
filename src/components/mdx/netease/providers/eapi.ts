@@ -20,8 +20,13 @@ function randomChineseIP() {
 
 function aesEncrypt(buffer: Buffer | string, mode: string, key: string, iv: string) {
   const keyBuffer = Buffer.from(key).subarray(0, 16)
-  const ivBuffer = Buffer.from(iv).subarray(0, 16)
-  const cipher = createCipheriv(`aes-128-${mode}`, keyBuffer, ivBuffer)
+  // For ECB mode Node's crypto expects a null IV. Passing an empty/short buffer
+  // causes internal errors (AESCipherJob.onDone OperationError). Use null for
+  // ECB and a 16-byte buffer for other modes.
+  const ivBuffer = mode.toLowerCase() === 'ecb'
+    ? null
+    : Buffer.from(iv || '').subarray(0, 16)
+  const cipher = createCipheriv(`aes-128-${mode}`, keyBuffer, ivBuffer as any)
   cipher.setAutoPadding(true)
   const data = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer)
   return Buffer.concat([cipher.update(data), cipher.final()])
@@ -137,7 +142,7 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
 
     const songData = result?.data?.[0]
     if (!songData?.url) {
-      console.warn(`Couldn't get ${level} quality URL`)
+      console.warn(`Couldn't get ${level} quality URL for song ID ${id}`)
       return null
     }
     return songData.url.replace('http://', 'https://')
