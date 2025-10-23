@@ -19,7 +19,6 @@ if (pageNum < 1) {
 }
 ---
 
-<!-- This is the layout for listing all the blogs by using pagination. -->
 <BaseLayout title={pageNum > 1 ? `第 ${pageNum} 页` : undefined}>
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
     {pageNum === 1 && <FeaturePosts {posts} />}

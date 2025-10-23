@@ -73,6 +73,9 @@ export default defineConfig({
       // Database
       DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
       REDIS_URL: envField.string({ context: 'server', access: 'secret' }),
+      // Meilisearch
+      MEILISEARCH_URL: envField.string({ context: 'server', access: 'secret' }),
+      MEILISEARCH_API_KEY: envField.string({ context: 'server', access: 'secret' }),
     },
     validateSecrets: true,
   },

@@ -22,7 +22,6 @@ for (const post of getPosts({ hidden: true, schedule: true })) {
   index.add({
     title: post.title,
     slug: post.slug,
-
     raw: (await post.raw()) || post.summary,
     tags: post.tags,
   })

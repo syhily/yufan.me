@@ -48,6 +48,7 @@
     "lodash": "^4.17.21",
     "luxon": "^3.7.2",
     "marked": "^16.4.1",
+    "meilisearch": "^0.53.0",
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",
     "pinyin-pro": "^3.27.0",
