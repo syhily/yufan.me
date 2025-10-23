@@ -14,7 +14,7 @@ const index = new Document<PostItem>({
   tokenize: 'full',
   document: {
     id: 'slug',
-    index: ['raw', 'title', 'tags'],
+    index: ['title', 'tags'],
     tag: 'tags',
   },
 })
@@ -24,7 +24,7 @@ await Promise.all(getPosts({ hidden: true, schedule: true }).map(async (post) =>
   index.add({
     title: post.title,
     slug: post.slug,
-    raw: (await post.raw()) || post.summary,
+    raw: post.summary,
     tags: post.tags,
   })
 }))
