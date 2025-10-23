@@ -171,6 +171,9 @@ export async function getPostsWithMetadata(
   posts: Post[],
   options: LoadPostsWithMetadataOptions,
 ): Promise<PostWithMetadata[]> {
+  if (posts.length === 0) {
+    return []
+  }
   const metas = await queryMetadata(posts.map(post => post.permalink), options)
   return posts.map((post) => {
     const meta = metas.get(post.permalink) ?? { likes: 0, views: 0, comments: 0 }

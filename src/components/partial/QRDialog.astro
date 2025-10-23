@@ -25,7 +25,7 @@ const { url, name, title, icon, className } = Astro.props
 </div>
 
 <script>
-import { qrcode } from '@libs/qrcode'
+import { qrcode } from '@/assets/scripts/qrcode'
 
 // Create popup template based on props
 function createPopupTemplate(title: string, name: string, qrcode: string) {
@@ -72,7 +72,7 @@ document.querySelectorAll<HTMLElement>('.nice-dialog').forEach((dialog) => {
       }
 
       // Render QRCode
-      const svg = qrcode(url, { output: 'svg', border: 0 })
+      const svg = qrcode(url, { border: 2 })
 
       const tempDiv = document.createElement('div')
       tempDiv.innerHTML = createPopupTemplate(title, name, svg)

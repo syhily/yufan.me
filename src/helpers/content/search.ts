@@ -9,7 +9,7 @@ interface PostItem extends DocumentData {
   tags: string[]
 }
 
-const index = new Document<PostItem>({
+export const index = new Document<PostItem>({
   tokenize: 'full',
   document: {
     id: 'slug',
@@ -22,13 +22,25 @@ for (const post of getPosts({ hidden: true, schedule: true })) {
   index.add({
     title: post.title,
     slug: post.slug,
-
     raw: (await post.raw()) || post.summary,
     tags: post.tags,
   })
 }
 
-export function searchPosts(query: string): string[] {
+export async function searchPosts(
+  query: string,
+  limit: number,
+  offset: number = 0,
+): Promise<{
+  hits: string[]
+  page: number
+  totalPages: number
+}> {
   const ids = index.search(query).flatMap(({ result }) => result.map(id => id.toString()))
-  return [...new Set(ids)]
+  const totalHits = [...new Set(ids)]
+  return {
+    hits: totalHits.slice(offset, offset + limit),
+    page: Math.floor(offset / limit) + 1,
+    totalPages: Math.ceil(totalHits.length / limit),
+  }
 }
