@@ -1,5 +1,6 @@
 ---
 import type { BlogConfig } from '@/blog.config'
+import { ClientRouter } from 'astro:transitions'
 import { css as OPPOSans } from '@/assets/fonts/opposans.ttf'
 import config from '@/blog.config'
 import PageMeta from '@/components/meta/PageMeta.astro'
@@ -25,6 +26,7 @@ const navigation = Astro.props.navigation || config.navigation
 <!doctype html>
 <html lang="zh-CN">
   <head>
+    <ClientRouter />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>

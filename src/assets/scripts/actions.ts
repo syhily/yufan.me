@@ -1,6 +1,6 @@
 import { isInputError } from 'astro:actions'
 
-function errorDialog(errorMsg) {
+function errorDialog(errorMsg: string): string {
   return `<div class="nice-popup nice-popup-center sticky-top error nice-popup-error nice-popup-open">
   <div class="nice-popup-overlay"></div>
   <div class="nice-popup-body">
@@ -16,11 +16,11 @@ function errorDialog(errorMsg) {
 }
 
 // Manually display an error dialog
-export function showErrorDialog(errorMsg, closeAction) {
+export function showErrorDialog(errorMsg: string, closeAction?: () => void): void {
   const errorPopup = errorDialog(errorMsg)
-  document.querySelector('body').insertAdjacentHTML('beforeend', errorPopup)
-  const popup = document.querySelector('.nice-popup-error')
-  popup.querySelector('.nice-popup-close').addEventListener('click', () => {
+  document.querySelector('body')!.insertAdjacentHTML('beforeend', errorPopup)
+  const popup = document.querySelector('.nice-popup-error')!
+  popup.querySelector('.nice-popup-close')!.addEventListener('click', () => {
     popup.remove()
     if (closeAction) {
       closeAction()
@@ -29,9 +29,12 @@ export function showErrorDialog(errorMsg, closeAction) {
 }
 
 // Popup an error dialog for notifying user the root cause.
-export function handleActionError(error, closeAction) {
+export function handleActionError(
+  error: { message: string, issues?: { message: string }[] },
+  closeAction?: () => void,
+): void {
   const errorMsg = isInputError(error)
-    ? error.issues.map(issue => `<p>${issue.message}</p>`).join('\n')
+    ? error.issues!.map(issue => `<p>${issue.message}</p>`).join('\n')
     : error.message
   showErrorDialog(errorMsg, closeAction)
 }
