@@ -1,17 +1,18 @@
 ---
 import type { Page } from '@/helpers/content/schema'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import { Image } from 'astro:assets'
 import config from '@/blog.config'
 import Comments from '@/components/comment/Comments.astro'
 import LikeButton from '@/components/like/LikeButton.astro'
+import MusicPlayer from '@/components/mdx/netease/MusicPlayer.astro'
 import Friends from '@/components/mdx/page/Friends.astro'
 import Solution from '@/components/mdx/solutions/Solution.astro'
 import PageMeta from '@/components/meta/PageMeta.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Footer from '@/components/partial/Footer.astro'
-import { joinPaths } from '@astrojs/internal-helpers/path'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import MusicPlayer from '@/components/mdx/netease/MusicPlayer.astro'
+
 interface Props {
   page: Page
 }

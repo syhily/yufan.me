@@ -5,15 +5,14 @@ import PageMeta from '@/components/meta/PageMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
 import '@/assets/styles/globals.css'
 import '@/assets/styles/admin/single.css'
-import { joinPaths } from '@astrojs/internal-helpers/path'
 
 interface Props {
   title?: string
   description?: string
 }
 
-const title =
-  Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
+const title
+  = Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
 const description = Astro.props.description || config.description
 ---
 

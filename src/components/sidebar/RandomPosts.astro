@@ -17,7 +17,7 @@ const randomSize = config.settings.sidebar.post
     <div id="recent-posts" class="widget widget-recent-entries">
       <div class="widget-title">随机文章</div>
       <ul class="line">
-        {_.sampleSize(posts, randomSize).map((post) => (
+        {_.sampleSize(posts, randomSize).map(post => (
           <li>
             <a href={post.permalink} title={post.title}>
               {post.title}

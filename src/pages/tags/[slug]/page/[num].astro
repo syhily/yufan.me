@@ -1,6 +1,6 @@
 ---
 import config from '@/blog.config'
-import { getTag, getPosts } from '@/helpers/content/schema'
+import { getPosts, getTag } from '@/helpers/content/schema'
 import TagLayout from '@/layouts/posts/TagLayout.astro'
 
 const { slug, num } = Astro.params
@@ -15,7 +15,7 @@ if (pageNum <= 1) {
   return Astro.redirect(tag.permalink)
 }
 
-const filteredPosts = getPosts({ hidden: true, schedule: false }).filter((post) => post.tags.includes(tag.name))
+const filteredPosts = getPosts({ hidden: true, schedule: false }).filter(post => post.tags.includes(tag.name))
 const pageSize = config.settings.pagination.tags
 const total = Math.ceil(filteredPosts.length / pageSize)
 

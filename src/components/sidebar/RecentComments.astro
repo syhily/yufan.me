@@ -10,7 +10,7 @@ const comments = await latestComments()
     <div id="recent-comments" class="widget widget-recent-comments">
       <div class="widget-title">近期评论</div>
       <ul id="recent-comments">
-        {comments.map((comment) => (
+        {comments.map(comment => (
           <li class="recent-comments">
             <span class="comment-author-link">
               <a href={comment.authorLink} target="_blank" rel="nofollow">
@@ -19,7 +19,7 @@ const comments = await latestComments()
             </span>
             {' 发表在《'}
             <a href={comment.permalink}>{comment.title}</a>
-            {'》'}
+            》
           </li>
         ))}
       </ul>
