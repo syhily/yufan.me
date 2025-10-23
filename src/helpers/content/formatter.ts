@@ -1,8 +1,7 @@
-import type { Post } from '@/helpers/content/schema'
 import { DateTime } from 'luxon'
 import config from '@/blog.config'
 
-export function slicePosts(posts: Post[], pageNum: number, pageSize: number): { currentPosts: Post[], totalPage: number } {
+export function slicePosts<Type>(posts: Type[], pageNum: number, pageSize: number): { currentPosts: Type[], totalPage: number } {
   const totalPage = Math.ceil(posts.length / pageSize)
   if (totalPage >= pageNum) {
     return {

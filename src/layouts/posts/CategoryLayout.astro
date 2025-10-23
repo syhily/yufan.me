@@ -4,6 +4,7 @@ import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import PostSquare from '@/components/page/post/PostSquare.astro'
 import { slicePosts } from '@/helpers/content/formatter'
+import { getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 const { category, posts, pageNum } = Astro.props
 const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.pagination.category)
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
 ---
 
 <BaseLayout title={category.name}>
@@ -26,7 +28,7 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.p
         </div>
       </div>
       <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-        {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+        {resolvedPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
       </div>
       <div class="mt-4 mt-lg-5">
         <Pagination current={pageNum} total={totalPage} rootPath={category.permalink} />

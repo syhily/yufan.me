@@ -1,11 +1,10 @@
 ---
-import type { Post } from '@/helpers/content/schema'
+import type { PostWithMetadata } from '@/helpers/content/schema'
 import { Image } from 'astro:assets'
-import LikeIconSmall from '@/components/like/LikeIconSmall.astro'
 import { formatShowDate } from '@/helpers/content/formatter'
 
 interface Props {
-  post: Post
+  post: PostWithMetadata
   first: boolean
 }
 
@@ -26,7 +25,14 @@ const { post, first } = Astro.props
         <div class="list-meta font-number d-flex flex-fill text-muted text-sm">
           <span class="d-inline-block">{formatShowDate(post.date)}</span>
           <div class="flex-fill"></div>
-          <LikeIconSmall permalink={post.permalink} />
+          <div class="list-like-square d-inline-block">
+            <i class="text-md iconfont icon-eye"></i>
+            <span class="like-count">{post.meta.views}</span>
+          </div>
+          <div class="list-like-square d-inline-block">
+            <i class="text-md iconfont icon-heart-fill"></i>
+            <span class="like-count">{post.meta.likes}</span>
+          </div>
         </div>
       </a>
     </div>

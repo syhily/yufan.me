@@ -1,8 +1,8 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
-import { and, eq, isNull, sql } from 'drizzle-orm'
+import { and, count, eq, inArray, isNull, sql } from 'drizzle-orm'
 import config from '@/blog.config'
 import defer * as pool from '@/helpers/db/pool'
-import { like, page } from '@/helpers/db/schema'
+import { comment, like, page } from '@/helpers/db/schema'
 import { makeToken } from '@/helpers/tools'
 
 const generatePageKey = (permalink: string): string => joinPaths(config.website, permalink, '/')
@@ -69,6 +69,41 @@ export async function queryLikes(permalink: string): Promise<number> {
     .limit(1)
 
   return results.length > 0 ? (results[0].like ?? 0) : 0
+}
+
+export async function queryMetadata(
+  permalinks: string[],
+  options: { likes: boolean, views: boolean, comments: boolean },
+): Promise<Map<string, { likes: number, views: number, comments: number }>> {
+  const pageKeys = permalinks.map(permalink => generatePageKey(permalink))
+  const likesAndViews = await pool.db
+    .select({ key: page.key, like: page.voteUp, view: page.pv })
+    .from(page)
+    .where(inArray(page.key, pageKeys))
+
+  const commentsCounts = options.comments
+    ? await pool.db
+        .select({ pageKey: comment.pageKey, count: count() })
+        .from(comment)
+        .where(and(inArray(comment.pageKey, pageKeys), eq(comment.isPending, false), isNull(comment.deletedAt)))
+        .groupBy(comment.pageKey)
+    : []
+
+  const results = new Map()
+
+  for (const permalink of permalinks) {
+    const pageKey = generatePageKey(permalink)
+    const likesAndView = likesAndViews.find(item => item.key === pageKey)
+    const commentCount = options.comments ? commentsCounts.find(item => item.pageKey === pageKey) : undefined
+
+    results.set(permalink, {
+      likes: likesAndView ? (likesAndView.like ?? 0) : 0,
+      views: likesAndView ? (likesAndView.view ?? 0) : 0,
+      comments: commentCount ? (commentCount.count) : 0,
+    })
+  }
+
+  return results
 }
 
 export async function queryLikesAndViews(permalink: string): Promise<[number, number]> {

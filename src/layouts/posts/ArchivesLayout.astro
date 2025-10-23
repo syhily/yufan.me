@@ -1,7 +1,7 @@
 ---
 import _ from 'lodash'
 import PostSquare from '@/components/page/post/PostSquare.astro'
-import { getPosts } from '@/helpers/content/schema'
+import { getPosts, getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
 interface Props {
@@ -9,7 +9,10 @@ interface Props {
 }
 
 const { title } = Astro.props
-const groupedPosts = _.groupBy(getPosts({ hidden: false, schedule: false }), (post) => {
+
+const currentPosts = getPosts({ hidden: false, schedule: false })
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
+const groupedPosts = _.groupBy(resolvedPosts, (post) => {
   const date = new Date(post.date)
   return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月`
 })
@@ -25,7 +28,7 @@ const groupedPosts = _.groupBy(getPosts({ hidden: false, schedule: false }), (po
               <h2>{key}</h2>
             </div>
             <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-              {posts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+              {posts.map(post => <PostSquare post={post} first={false} />)}
             </div>
           </div>
         </div>

@@ -2,10 +2,9 @@
 import type { Post } from '@/helpers/content/schema'
 import { Image } from 'astro:assets'
 import config from '@/blog.config'
-import LikeIcon from '@/components/like/LikeIcon.astro'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import { formatShowDate, slicePosts } from '@/helpers/content/formatter'
-import { getCategory } from '@/helpers/content/schema'
+import { getCategory, getPostsWithMetadata } from '@/helpers/content/schema'
 
 interface Props {
   posts: Post[]
@@ -19,12 +18,13 @@ if (results.totalPage === 0) {
 }
 
 const { currentPosts, totalPage } = results
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: true })
 ---
 
 <div class="content-wrapper col-12 col-xl-9">
   <div class="list-grid">
     {
-      currentPosts.map(post => (
+      resolvedPosts.map(post => (
         <div class="list-item block">
           <div class="media media-3x2 col-6 col-md-5">
             <a href={post.permalink} class="media-content">
@@ -54,7 +54,18 @@ const { currentPosts, totalPage } = results
             <div class="list-footer">
               <div class="d-flex flex-fill align-items-center text-muted text-sm">
                 <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
-                <LikeIcon permalink={post.permalink} />
+                <div class="list-like d-inline-block">
+                  <i class="text-md iconfont icon-eye"></i>
+                  <span class="like-count">{post.meta.views}</span>
+                </div>
+                <div class="list-like d-inline-block">
+                  <i class="text-md iconfont icon-heart-fill"></i>
+                  <span class="like-count">{post.meta.likes}</span>
+                </div>
+                <div class="list-like d-inline-block">
+                  <i class="text-md iconfont icon-comment"></i>
+                  <span class="like-count">{post.meta.comments}</span>
+                </div>
               </div>
             </div>
           </div>

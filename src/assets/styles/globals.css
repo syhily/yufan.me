@@ -2988,6 +2988,11 @@ a:hover .overlay {
   background-color: transparent;
 }
 
+.list-like-square {
+  margin-left: 10px;
+  background-color: transparent;
+}
+
 .list-like .like-count {
   padding-left: 3px;
 }

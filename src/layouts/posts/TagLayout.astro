@@ -4,6 +4,7 @@ import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import PostSquare from '@/components/page/post/PostSquare.astro'
 import { slicePosts } from '@/helpers/content/formatter'
+import { getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
 interface Props {
@@ -17,6 +18,7 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.p
 if (totalPage === 0) {
   return Astro.redirect('/404')
 }
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
 ---
 
 <BaseLayout title={`标签 “${tag.name}”`}>
@@ -26,7 +28,7 @@ if (totalPage === 0) {
         <h1>{tag.name}</h1>
       </div>
       <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-        {currentPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+        {resolvedPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
       </div>
       <div class="mt-4 mt-lg-5">
         <Pagination current={pageNum} total={totalPage} rootPath={tag.permalink} />

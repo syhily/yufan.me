@@ -2,6 +2,7 @@ import type { RenderResult } from 'astro:content'
 import { getCollection, render } from 'astro:content'
 import { pinyin } from 'pinyin-pro'
 import config from '@/blog.config'
+import { queryMetadata } from '@/helpers/comment/likes'
 import { parseContent } from '@/helpers/content/markdown'
 
 // Import the collections from the astro content.
@@ -141,13 +142,40 @@ if (invalidFeaturePosts.length > 0) {
   throw new Error(`The bellowing feature posts are invalid:\n$${invalidFeaturePosts.join('\n')}`)
 }
 
-export interface PostOptions {
+export interface LoadPostsOptions {
   hidden: boolean
   schedule: boolean
 }
 
-export function getPosts(options: PostOptions): Post[] {
+export function getPosts(options: LoadPostsOptions): Post[] {
   return posts.filter(post => post.visible || options.hidden).filter(post => post.date <= new Date() || options.schedule)
+}
+
+export interface LoadPostsWithMetadataOptions {
+  likes: boolean
+  views: boolean
+  comments: boolean
+}
+
+export type PostWithMetadata = Post & {
+  meta: PostMetadata
+}
+
+export interface PostMetadata {
+  likes: number
+  views: number
+  comments: number
+}
+
+export async function getPostsWithMetadata(
+  posts: Post[],
+  options: LoadPostsWithMetadataOptions,
+): Promise<PostWithMetadata[]> {
+  const metas = await queryMetadata(posts.map(post => post.permalink), options)
+  return posts.map((post) => {
+    const meta = metas.get(post.permalink) ?? { likes: 0, views: 0, comments: 0 }
+    return { ...post, meta }
+  })
 }
 
 export function getPost(slug: string): Post | undefined {
