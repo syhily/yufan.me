@@ -75,6 +75,9 @@ export async function queryMetadata(
   permalinks: string[],
   options: { likes: boolean, views: boolean, comments: boolean },
 ): Promise<Map<string, { likes: number, views: number, comments: number }>> {
+  if (permalinks.length === 0) {
+    return new Map()
+  }
   const pageKeys = permalinks.map(permalink => generatePageKey(permalink))
   const likesAndViews = await pool.db
     .select({ key: page.key, like: page.voteUp, view: page.pv })

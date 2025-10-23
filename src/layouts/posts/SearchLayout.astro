@@ -1,9 +1,7 @@
 ---
 import type { Post } from '@/helpers/content/schema'
-import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import PostSquare from '@/components/page/post/PostSquare.astro'
-import { slicePosts } from '@/helpers/content/formatter'
 import { getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
@@ -11,18 +9,18 @@ interface Props {
   title: string
   query: string
   posts: Post[]
-  pageNum: number
+  page: number
+  totalPages: number
 }
 
-const { title, posts, query, pageNum } = Astro.props
+const { title, posts, query, page, totalPages } = Astro.props
 
 // Redirect to the homepage.
-if (pageNum < 1) {
+if (page < 1) {
   return Astro.redirect('/')
 }
 
-const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.pagination.search)
-const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
+const resolvedPosts = await getPostsWithMetadata(posts, { likes: true, views: true, comments: false })
 ---
 
 <BaseLayout {title}>
@@ -32,8 +30,8 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, vi
         <h1>{title}</h1>
       </div>
       {
-        currentPosts.length === 0
-? (
+        resolvedPosts.length === 0
+      ? (
           <div class="data-null">
             <div class="my-auto">
               <h1 class="font-number">404</h1>
@@ -41,16 +39,16 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, vi
             </div>
           </div>
         )
-: (
+      : (
           <>
             <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
               {resolvedPosts.map((post, index) => (
                 <PostSquare post={post} first={index === 0} />
               ))}
             </div>
-            {totalPage > 1 && (
+            {totalPages > 1 && (
               <div class="mt-4 mt-lg-5">
-                <Pagination current={pageNum} total={totalPage} rootPath={`/search/${query}`} />
+                <Pagination current={page} total={totalPages} rootPath={`/search/${query}`} />
               </div>
             )}
           </>

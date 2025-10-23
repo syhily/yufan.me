@@ -1,4 +1,3 @@
-// deno-lint-ignore-file single-var-declarator no-console
 /**
  * QR Code generator library.
  *
@@ -615,9 +614,6 @@ class QrCode {
     history.pop()
     history.unshift(xy)
   }
-
-  /** The minimum version number supported in the QR Code Model 2 standard. */
-  static readonly #VERSION_MIN = 1
 
   /** The maximum version number supported in the QR Code Model 2 standard. */
   static readonly #VERSION_MAX = 40
