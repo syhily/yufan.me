@@ -1,5 +1,10 @@
-import { loadMusicURL } from '@/helpers/cache'
+import { createStorage } from 'unstorage'
+import memoryDriver from 'unstorage/drivers/memory'
 import * as eapi from './providers/eapi'
+
+export const storage = createStorage({
+  driver: memoryDriver(),
+})
 
 export interface Song {
   netease: string
@@ -36,6 +41,19 @@ export async function resolveSongWithoutURL(props: MusicPlayerProps): Promise<So
     console.error(err)
   }
   return result
+}
+
+async function loadMusicURL(netease: string, urlLoader: (id: string) => Promise<string | null>): Promise<string | null> {
+  const cacheKey = `netease-music-url-${netease}`
+  let url = await storage.getItem<string>(cacheKey)
+  if (url) {
+    return url
+  }
+  url = await urlLoader(netease)
+  if (url) {
+    await storage.setItem<string>(cacheKey, url, { ttl: 60 * 60 })
+  }
+  return url
 }
 
 export async function resolveSongURL(props: MusicPlayerProps): Promise<string> {

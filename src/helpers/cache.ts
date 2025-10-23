@@ -62,23 +62,11 @@ export async function cacheAvatar(args: { email: string, buffer: Buffer, status:
   }
 }
 
-export async function loadBuffer(key: string): Promise<Buffer | null> {
-  return await storage.getItemRaw<Buffer>(key)
-}
-
-export async function cacheBuffer(key: string, buffer: Buffer, ttl: number) {
+export async function loadBuffer(key: string, loader: () => Promise<Buffer>, ttl: number): Promise<Buffer> {
+  if (await storage.hasItem(key)) {
+    return (await storage.getItemRaw<Buffer>(key))!
+  }
+  const buffer = await loader()
   await storage.setItemRaw(key, buffer, { ttl })
-}
-
-export async function loadMusicURL(netease: string, urlLoader: (id: string) => Promise<string | null>): Promise<string | null> {
-  const cacheKey = `netease-music-url-${netease}`
-  let url = await storage.getItem<string>(cacheKey)
-  if (url) {
-    return url
-  }
-  url = await urlLoader(netease)
-  if (url) {
-    await storage.setItem<string>(cacheKey, url, { ttl: 60 * 60 })
-  }
-  return url
+  return buffer
 }
