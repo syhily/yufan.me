@@ -163,6 +163,30 @@ if (typeof comments !== 'undefined' && comments !== null) {
     cancel.hidden = true;
     (replyForm.querySelector('textarea[name="content"]') as HTMLTextAreaElement).value = ''
 
+    // Remove the readonly replying-to prefix or overlay if present and restore padding
+    const replyingTo = replyForm.querySelector('.replying-to, .replying-to-overlay')
+    if (replyingTo) {
+      // If it's an overlay, restore textarea padding and remove event listeners
+      if (replyingTo.classList.contains('replying-to-overlay')) {
+        const formText = replyForm.querySelector<HTMLDivElement>('.comment-form-text')!
+        const textarea = formText.querySelector<HTMLTextAreaElement>('textarea[name="content"]')!
+        const orig = textarea.dataset._origPaddingTop || ''
+        textarea.style.paddingTop = orig
+        delete textarea.dataset._origPaddingTop
+
+        // Remove attached handlers
+        const onFocus = (textarea as any).__replyOverlayFocus
+        const onBlur = (textarea as any).__replyOverlayBlur
+        if (onFocus)
+          textarea.removeEventListener('focus', onFocus)
+        if (onBlur)
+          textarea.removeEventListener('blur', onBlur)
+        delete (textarea as any).__replyOverlayFocus
+        delete (textarea as any).__replyOverlayBlur
+      }
+      replyingTo.remove()
+    }
+
     // Move the form back to top.
     const commentCount = comments.querySelector('.comment-total-count')!
     commentCount.after(replyForm)
@@ -247,6 +271,93 @@ if (typeof comments !== 'undefined' && comments !== null) {
       }
       else {
         commentItem.after(replyForm)
+      }
+
+      // Extract the author name and content from the comment
+      let authorName = ''
+      let originalContent = ''
+      const authorEl = commentItem.querySelector('.comment-author') as HTMLElement | null
+      const contentEl = commentItem.querySelector('.comment-content') as HTMLElement | null
+
+      if (authorEl) {
+        const anchor = authorEl.querySelector('a') as HTMLAnchorElement | null
+        if (anchor && anchor.textContent) {
+          authorName = anchor.textContent.trim()
+        }
+        else {
+          const textNode = Array.from(authorEl.childNodes).find(n => n.nodeType === Node.TEXT_NODE && n.textContent && n.textContent.trim())
+          authorName = (textNode && textNode.textContent) ? textNode.textContent.trim() : (authorEl.textContent || '').trim()
+        }
+      }
+
+      if (contentEl) {
+        originalContent = contentEl.textContent?.trim() || ''
+      }
+
+      // Remove any existing prefix/overlay then insert new one
+      const existingPrefix = replyForm.querySelector('.replying-to, .replying-to-overlay')
+      if (existingPrefix)
+        existingPrefix.remove()
+      if (authorName) {
+        const formText = replyForm.querySelector<HTMLDivElement>('.comment-form-text')!
+        const textarea = formText.querySelector<HTMLTextAreaElement>('textarea[name="content"]')!
+
+        // Create an overlay element that floats inside the textarea area.
+        const overlay = document.createElement('div')
+        overlay.className = 'replying-to-overlay'
+
+        // Create spans for the name and content parts for better styling
+        const nameSpan = document.createElement('span')
+        nameSpan.className = 'replying-name'
+        nameSpan.textContent = `回复 @${authorName}`
+
+        const contentSpan = document.createElement('span')
+        contentSpan.className = 'replying-content'
+        contentSpan.textContent = originalContent ? `: ${originalContent}` : ''
+
+        overlay.appendChild(nameSpan)
+        overlay.appendChild(contentSpan)
+        Object.assign(overlay.style, {
+          position: 'absolute',
+          top: '0.4rem',
+          left: '0.75rem',
+          right: '0.75rem',
+          fontSize: '0.9rem',
+          color: 'rgba(108,117,125,0.9)',
+          pointerEvents: 'none',
+          background: 'transparent',
+          zIndex: '2',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: 'flex',
+          gap: '0.25rem',
+          alignItems: 'center',
+        })
+
+        // Ensure the container is positioned so the overlay can be absolutely positioned.
+        const formTextEl = formText as HTMLElement
+        if (!formTextEl.style.position)
+          formTextEl.style.position = 'relative'
+
+        // Remember and increase textarea paddingTop so content doesn't overlap the overlay.
+        const prevPaddingTop = textarea.style.paddingTop || window.getComputedStyle(textarea).paddingTop || ''
+        textarea.dataset._origPaddingTop = prevPaddingTop
+        textarea.style.paddingTop = '2rem'
+
+        // Store handlers for focus/blur effects
+        function onFocus() {
+          overlay.style.opacity = '0.6'
+        }
+        function onBlur() {
+          overlay.style.opacity = '1'
+        }
+        textarea.addEventListener('focus', onFocus)
+        textarea.addEventListener('blur', onBlur)
+        ;(textarea as any).__replyOverlayFocus = onFocus
+        ;(textarea as any).__replyOverlayBlur = onBlur
+
+        formText.appendChild(overlay)
       }
 
       // Focus the comment form.
