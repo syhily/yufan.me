@@ -52,7 +52,7 @@ const { Content, headings } = await page.render()
           </div>
         </div>
         <LikeButton permalink={page.permalink} />
-        {page.comments && <Comments commentKey={joinPaths(config.website, page.permalink, '/')} title={page.title} />}
+        {page.comments && <Comments server:defer commentKey={joinPaths(config.website, page.permalink, '/')} title={page.title} />}
       </div>
       <Footer />
     </div>

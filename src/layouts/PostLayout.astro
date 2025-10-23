@@ -76,7 +76,7 @@ const { Content, headings } = await post.render()
               <LikeShare {post} />
               {
                 post.comments && (
-                  <Comments commentKey={joinPaths(config.website, post.permalink, '/')} title={post.title} />
+                  <Comments server:defer commentKey={joinPaths(config.website, post.permalink, '/')} title={post.title} />
                 )
               }
             </div>
