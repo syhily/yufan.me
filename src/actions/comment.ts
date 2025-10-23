@@ -22,7 +22,7 @@ export const comment = {
         key: z.custom<string>(val => keys.includes(val)),
       }),
     handler: async (input) => {
-      return await increaseLikes(input.key)
+      return increaseLikes(input.key)
     },
   }),
   decreaseLike: defineAction({

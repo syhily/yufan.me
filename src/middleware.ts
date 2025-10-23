@@ -71,7 +71,7 @@ const postUrlMappings: Map<string, string> = getPosts({ hidden: true, schedule: 
     return res
   }, new Map<string, string>())
 
-const postUrlRedirect = defineMiddleware(({ request: { method }, url: { pathname }, redirect }, next) => {
+const postUrlRedirect = defineMiddleware(async ({ request: { method }, url: { pathname }, redirect }, next) => {
   // This is used for redirect my old blog posts to a new mapping.
   const newTarget = postUrlMappings.get(pathname.endsWith('/') ? pathname.substring(0, pathname.length - 1) : pathname)
   if (method === 'GET' && newTarget !== undefined) {

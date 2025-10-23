@@ -154,7 +154,7 @@ code {
   counter-increment: step 0;
 }
 
-code .line:not(:last-child)::before {
+code .line::before {
   content: counter(step);
   counter-increment: step;
   width: 1rem;

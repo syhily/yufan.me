@@ -16,7 +16,7 @@ async function fallback() {
 export const GET: APIRoute = async ({ params }) => {
   const slug = params.slug
   if (!slug) {
-    return await fallback()
+    return fallback()
   }
 
   let title: string
@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ params }) => {
     // Fallback to query from pages
     const page = getPage(slug)
     if (!page) {
-      return await fallback()
+      return fallback()
     }
 
     title = page.title

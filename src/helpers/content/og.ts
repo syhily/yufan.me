@@ -164,12 +164,12 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   ctx.restore()
 
   const encodedImage = await canvas.encode('png')
-  return await compressImage(encodedImage)
+  return compressImage(encodedImage)
 }
 
 async function compressImage(buf: Buffer): Promise<Buffer> {
   const { default: sharp } = await import('sharp')
-  return await sharp(buf)
+  return sharp(buf)
     .png({
       compressionLevel: 9,
       adaptiveFiltering: true,

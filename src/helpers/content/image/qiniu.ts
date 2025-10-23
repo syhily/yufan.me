@@ -39,7 +39,7 @@ const service: ExternalImageService = {
       }
     }
     if (typeof baseService.validateOptions === 'function') {
-      return await baseService.validateOptions(options, imageConfig)
+      return baseService.validateOptions(options, imageConfig)
     }
     throw new Error('baseService.validateOptions is not defined')
   },

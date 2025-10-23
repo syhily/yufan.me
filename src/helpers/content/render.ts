@@ -34,11 +34,11 @@ const container = await AstroContainer.create({
 
 // We only want to make sure the container instance is singleton.
 export async function partialRender(component: AstroComponentFactory, options?: ContainerRenderOptions): Promise<string> {
-  return await container.renderToString(component, { ...options, partial: true })
+  return container.renderToString(component, { ...options, partial: true })
 }
 
 async function cleanupContent(html: string) {
-  return await transform(html, [
+  return transform(html, [
     async (node) => {
       await walk(node, (node) => {
         if (node.type === ELEMENT_NODE) {

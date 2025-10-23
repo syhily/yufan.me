@@ -15,8 +15,8 @@ interface Props {
   footer?: boolean
 }
 
-const title =
-  Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
+const title
+  = Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
 const description = Astro.props.description || config.description
 const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
 const navigation = Astro.props.navigation || config.navigation
@@ -49,7 +49,8 @@ const navigation = Astro.props.navigation || config.navigation
       is:inline
       data-astro-rerun
       src="https://cloud.umami.is/script.js"
-      data-website-id="ce750a75-e9c3-40ca-99af-30b77cdff0c5"></script>
+      data-website-id="ce750a75-e9c3-40ca-99af-30b77cdff0c5"
+    ></script>
   </head>
   <body class="home blog" style={{ fontFamily: `'${OPPOSans.family}'` }}>
     <div class="site-layout">

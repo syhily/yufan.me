@@ -44,7 +44,7 @@ export async function login({
 }
 
 export async function userSession(session: AstroSession | undefined) {
-  return await session?.get('user')
+  return session?.get('user')
 }
 
 export function logout(session: AstroSession) {

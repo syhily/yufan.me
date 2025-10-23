@@ -45,7 +45,8 @@ const { navigation } = Astro.props
             return (
               <QRDialog url={social.link} name={social.name} title={social.title ?? social.name} icon={social.icon} />
             )
-          } else {
+          }
+ else {
             return (
               <a
                 href={social.link}
@@ -54,9 +55,11 @@ const { navigation } = Astro.props
                 class="btn btn-dark btn-icon btn-circle button-social"
               >
                 <span>
-                  {!social.icon.startsWith('<svg') ? (
+                  {!social.icon.startsWith('<svg')
+? (
                     <i class={`iconfont ${social.icon}`} />
-                  ) : (
+                  )
+: (
                     <Fragment set:html={social.icon} />
                   )}
                 </span>

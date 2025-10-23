@@ -1,7 +1,6 @@
 import type { Root } from 'hast'
 import type {
   MdxJsxAttribute,
-  MdxJsxAttributeValueExpression,
   MdxJsxFlowElement,
   MdxJsxTextElement,
 } from 'mdast-util-mdx-jsx'
@@ -78,10 +77,10 @@ const rehypeMusicPlayer: Plugin<[], Root> = () => {
       }
       else if (
         neteaseAttr.value
-        && (neteaseAttr.value as MdxJsxAttributeValueExpression).type
+        && (neteaseAttr.value).type
         === 'mdxJsxAttributeValueExpression'
       ) {
-        netease = String((neteaseAttr.value as MdxJsxAttributeValueExpression).value)
+        netease = String((neteaseAttr.value).value)
       }
 
       if (!netease) {
@@ -89,13 +88,13 @@ const rehypeMusicPlayer: Plugin<[], Root> = () => {
       }
 
       const p = Promise.resolve(readSongInfo(netease))
-        .then((meta) => {
+        .then(async (meta) => {
           if (meta) {
             return meta
           }
           return resolveSongWithoutURL({ netease })
         })
-        .then((meta) => {
+        .then(async (meta) => {
           if (!meta || meta.name === '') {
             console.error(`Failed to resolve netease song info ${netease}`)
             return

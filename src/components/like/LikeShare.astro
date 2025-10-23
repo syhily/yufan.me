@@ -1,9 +1,9 @@
 ---
 import type { Post } from '@/helpers/content/schema'
 import querystring from 'node:querystring'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import config from '@/blog.config'
 import QRDialog from '@/components/partial/QRDialog.astro'
-import { joinPaths } from '@astrojs/internal-helpers/path'
 
 interface Props {
   post: Post

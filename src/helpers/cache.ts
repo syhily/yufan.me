@@ -62,7 +62,7 @@ export async function cacheAvatar(args: { email: string, buffer: Buffer, status:
 }
 
 export async function loadBuffer(key: string): Promise<Buffer | null> {
-  return await storage.getItemRaw<Buffer>(key)
+  return storage.getItemRaw<Buffer>(key)
 }
 
 export async function cacheBuffer(key: string, buffer: Buffer, ttl: number) {

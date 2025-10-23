@@ -1,19 +1,19 @@
 ---
 import type { Post } from '@/helpers/content/schema'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 import { Image } from 'astro:assets'
 import config from '@/blog.config'
 import Comments from '@/components/comment/Comments.astro'
 import LikeButton from '@/components/like/LikeButton.astro'
 import LikeShare from '@/components/like/LikeShare.astro'
+import MusicPlayer from '@/components/mdx/netease/MusicPlayer.astro'
 import Solution from '@/components/mdx/solutions/Solution.astro'
 import PostMeta from '@/components/meta/PostMeta.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
 import Sidebar from '@/components/sidebar/Sidebar.astro'
 import { formatLocalDate } from '@/helpers/content/formatter'
 import { getPosts, getTag, tags } from '@/helpers/content/schema'
-import { joinPaths } from '@astrojs/internal-helpers/path'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import MusicPlayer from '@/components/mdx/netease/MusicPlayer.astro'
 
 interface Props {
   post: Post
@@ -43,11 +43,11 @@ const { Content, headings } = await post.render()
               <div class="post-meta text-sm text-muted mt-3 mb-4">
                 <time class="">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
                 {
-                  post.tags.length > 0 &&
-                    post.tags
-                      .map((tag) => getTag(tag, undefined))
-                      .filter((tag) => tag !== undefined)
-                      .map((tag) => (
+                  post.tags.length > 0
+                  && post.tags
+                      .map(tag => getTag(tag, undefined))
+                      .filter(tag => tag !== undefined)
+                      .map(tag => (
                         <>
                           <a class="float-end ms-2 badge badge-light badge-pill" href={`/tags/${tag.slug}`}>
                             {tag.name}

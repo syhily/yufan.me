@@ -30,14 +30,16 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.p
         <h1>{title}</h1>
       </div>
       {
-        currentPosts.length === 0 ? (
+        currentPosts.length === 0
+? (
           <div class="data-null">
             <div class="my-auto">
               <h1 class="font-number">404</h1>
               <div>抱歉，没有你要找的内容...</div>
             </div>
           </div>
-        ) : (
+        )
+: (
           <>
             <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
               {currentPosts.map((post, index) => (

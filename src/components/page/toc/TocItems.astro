@@ -10,7 +10,7 @@ const { items } = Astro.props
 
 <ul class="index-menu-list">
   {
-    items.map((item) => (
+    items.map(item => (
       <li class="index-menu-item">
         <a data-scroll class="index-menu-link" href={`#${item.slug}`} title={item.text}>
           <span class="menu-content">{item.text}</span>

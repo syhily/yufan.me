@@ -69,7 +69,7 @@ export async function createAdmin(name: string, email: string, password: string)
     badgeColor: '#008c95',
     receiveEmail: true,
   }
-  return await pool.db.insert(user).values(admin).returning()
+  return pool.db.insert(user).values(admin).returning()
 }
 
 export async function createUser(name: string, email: string, website: string): Promise<User | null> {

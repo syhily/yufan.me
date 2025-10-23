@@ -42,7 +42,7 @@ export const pages: Page[] = pagesCollection
     ...page.data,
     slug: page.id,
     permalink: `/${page.id}`,
-    render: async () => await render(page),
+    render: async () => render(page),
   }))
 const posts: Post[] = postsCollection
   .filter(post => post.data.published || !import.meta.env.PROD)
@@ -51,7 +51,7 @@ const posts: Post[] = postsCollection
     cover: post.data.cover ?? '',
     slug: post.id,
     permalink: `/posts/${post.id}`,
-    render: async () => await render(post),
+    render: async () => render(post),
     raw: async () => {
       return post.body
     },
