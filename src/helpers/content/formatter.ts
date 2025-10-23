@@ -25,25 +25,35 @@ export function formatShowDate(date: Date) {
     .setZone(config.settings.timeZone)
     .setLocale(config.settings.locale)
 
-  if (source.year === now.year && source.month === now.month && source.day === now.day) {
+  const oneSeconds = 1000
+  const oneMinute = oneSeconds * 60
+  const oneHour = oneMinute * 60
+  const oneDay = oneHour * 24
+  const oneWeek = oneDay * 7
+  const oneMonth = oneDay * 30
+
+  const delta = now.startOf('day').diff(source.startOf('day')).toMillis()
+
+  if (delta < oneDay) {
     return '今天'
   }
-
-  const delta = now.diff(source, ['years', 'months', 'weeks', 'days'])
-  if (delta.get('years') < 1) {
-    if (delta.get('months') === 0 && delta.get('weeks') === 0 && delta.get('days') < 7) {
-      return `${Math.floor(delta.get('days')) + 1} 天前`
-    }
-    if (delta.get('months') < 1 && delta.get('weeks') < 5) {
-      return `${Math.floor(delta.get('weeks')) + 1} 周前`
-    }
-    if (delta.get('months') < 7) {
-      return `${Math.floor(delta.get('months'))} 月前`
-    }
+  else if (delta < oneDay * 2) {
+    return '昨天'
   }
-
-  // Format the post's date with time zone support.
-  return source.toFormat(config.settings.timeFormat)
+  else if (delta < oneWeek) {
+    return `${Math.floor(delta / oneDay)} 天前`
+  }
+  else if (delta < oneMonth) {
+    return `${Math.floor(now.startOf('week').diff(source.startOf('week')).toMillis() / oneWeek)} 周前`
+  }
+  else if (delta < oneMonth * 7) {
+    const { months } = now.startOf('month').diff(source.startOf('month'), ['months']).toObject()
+    return `${months} 月前`
+  }
+  else {
+    // Format the post's date with time zone support.
+    return source.toFormat(config.settings.timeFormat)
+  }
 }
 
 export function formatLocalDate(source: string | Date, format?: string) {
