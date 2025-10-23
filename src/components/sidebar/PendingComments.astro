@@ -13,9 +13,13 @@ const comments = await pendingComments()
         comments.map(comment => (
           <li class="recent-comments">
             <span class="comment-author-link">
-              <a href={comment.authorLink} target="_blank" rel="nofollow">
-                {comment.author}
-              </a>
+              {comment.authorLink === ''
+              ? comment.author
+              : (
+                <a href={comment.authorLink} target="_blank" rel="nofollow">
+                  {comment.author}
+                </a>
+              )}
             </span>
             {' 发表在《'}
             <a href={comment.permalink}>{comment.title}</a>

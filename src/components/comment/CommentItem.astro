@@ -18,10 +18,18 @@ const { comment, depth, pending, session } = Astro.props
 
 <li id={`user-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt" data-depth={depth}>
   <article id={`div-comment-${comment.id}`} class="comment-body">
-    <div class="comment-avatar flex-avatar">
+    <div
+      class="comment-avatar flex-avatar"
+      style={{
+        backgroundImage: `url('${joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <img
         alt={comment.name}
         src={joinPaths(import.meta.env.SITE, 'images/avatar', `${comment.userId}.png`)}
+        onerror="this.style.display='none'"
         class="avatar avatar-40 photo"
         height="40"
         width="40"
@@ -33,10 +41,10 @@ const { comment, depth, pending, session } = Astro.props
       <div class="comment-author fw-bold">
         {
           comment.link === ''
-? (
+          ? (
             comment.name
           )
-: (
+          : (
             <a href={comment.link ?? '#'} rel="nofollow" target="_blank">
               {comment.name}
             </a>

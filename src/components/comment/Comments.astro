@@ -24,7 +24,7 @@ if (user === undefined || !user.admin) {
 <div id="comments" class="comments pt-5">
   {
     comments != null
-? (
+      ? (
       <>
         <div class="h5 mb-4 comment-total-count">
           评论 <small class="font-theme text-sm">({comments.count})</small>
@@ -33,7 +33,7 @@ if (user === undefined || !user.admin) {
           <form method="post" action="/comments/new" id="commentForm" class="comment-form">
             <div class="comment-from-avatar flex-avatar">
               {user?.admin
-? (
+              ? (
                 <img
                   alt="头像"
                   src={joinPaths(import.meta.env.SITE, `/images/avatar/${user.id}.png`)}
@@ -44,7 +44,7 @@ if (user === undefined || !user.admin) {
                   decoding="async"
                 />
               )
-: (
+              : (
                 <img
                   alt="头像"
                   src={joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}
@@ -62,7 +62,7 @@ if (user === undefined || !user.admin) {
               </div>
               <div class="comment-form-info row g-2 g-md-3 mb-3">
                 {user?.admin
-? (
+                ? (
                   <input
                     class="form-control"
                     placeholder={user.name}
@@ -73,13 +73,13 @@ if (user === undefined || !user.admin) {
                     value={user.name}
                   />
                 )
-: (
+                : (
                   <div class="col">
                     <input class="form-control" placeholder="昵称" name="name" type="text" required />
                   </div>
                 )}
                 {user?.admin
-? (
+                ? (
                   <input
                     class="form-control"
                     name="email"
@@ -90,7 +90,7 @@ if (user === undefined || !user.admin) {
                     hidden
                   />
                 )
-: (
+                : (
                   <div class="col-12 col-md-6">
                     <input class="form-control" name="email" placeholder="邮箱" type="email" required />
                   </div>
@@ -98,7 +98,7 @@ if (user === undefined || !user.admin) {
                 <input hidden name="page_key" type="text" value={commentKey} />
                 <input hidden name="rid" type="text" value="0" />
                 {user?.admin
-? (
+                ? (
                   <input
                     class="form-control"
                     placeholder={user.website}
@@ -109,7 +109,7 @@ if (user === undefined || !user.admin) {
                     hidden
                   />
                 )
-: (
+                : (
                   <div class="col-12">
                     <input class="form-control" placeholder="网址" name="link" type="url" />
                   </div>
@@ -141,7 +141,7 @@ if (user === undefined || !user.admin) {
         )}
       </>
     )
-: (
+    : (
       '评论加载失败 ❌'
     )
   }

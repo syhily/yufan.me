@@ -20,13 +20,13 @@ const groupedPosts = _.groupBy(resolvedPosts, (post) => {
 
 <BaseLayout {title}>
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>共 {resolvedPosts.length} 篇文章</h1>
+      </div>
+    </div>
     {groupedPosts
       && Object.entries(groupedPosts).map(([key, posts]) => (
-        <div class="container">
-          <div class="mb-3 mb-lg-4">
-            <h1>共 {resolvedPosts.length} 篇文章</h1>
-          </div>
-        </div>
         <div class="container">
           <div class="mb-5">
             <div class="mb-3 mb-lg-4">
