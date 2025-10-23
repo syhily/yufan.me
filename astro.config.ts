@@ -71,8 +71,8 @@ export default defineConfig({
       SMTP_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
       SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Database
-      DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
-      REDIS_URL: envField.string({ context: 'server', access: 'secret' }),
+      DATABASE_URL: envField.string({ context: 'server', access: 'secret', url: true }),
+      REDIS_URL: envField.string({ context: 'server', access: 'secret', url: true }),
       // Meilisearch
       MEILISEARCH_URL: envField.string({ context: 'server', access: 'secret' }),
       MEILISEARCH_API_KEY: envField.string({ context: 'server', access: 'secret' }),
