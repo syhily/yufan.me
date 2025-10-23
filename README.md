@@ -6,11 +6,9 @@
 
 # Yufan Personal Blog
 
-[![Folo](https://badge.folo.is/feed/54772566650461214?color=FF5C00&labelColor=black&style=flat-square)](https://app.folo.is/share/feeds/54772566650461214) ![Astro](https://astro.badg.es/v2/built-with-astro/tiny.svg)
+[![Folo](https://badge.folo.is/feed/54772566650461214?color=FF5C00&labelColor=black&style=flat-square)](https://app.folo.is/share/feeds/54772566650461214) ![Astro](https://astro.badg.es/v2/built-with-astro/tiny.svg) [![Deployed on Zeabur](./licenses/zeabur.svg)](https://zeabur.com/referral?referralCode=syhily&utm_source=syhily)
 
-This is the source code for [yufan.me](https://yufan.me). You can have your own blog like me by creating instance on zeabur.
-
-[![Deployed on Zeabur](https://zeabur.com/deployed-on-zeabur-dark.svg)](https://zeabur.com/referral?referralCode=syhily&utm_source=syhily)
+This is the source code for [yufan.me](https://yufan.me).
 
 ## History
 
