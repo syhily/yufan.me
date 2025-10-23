@@ -61,3 +61,11 @@ const { Content, headings } = await page.render()
     </div>
   </div>
 </BaseLayout>
+
+<script>
+import mediumZoom from 'medium-zoom'
+
+// Medium zoom for images.
+const zoom = mediumZoom()
+zoom.attach('.post-content img', '.post-content svg')
+</script>

@@ -26,3 +26,13 @@ const { posts, tags } = Astro.props
     <RandomTags {tags} />
   </div>
 </aside>
+
+<script>
+import { stickySidebar } from '@/assets/scripts/sidebar'
+
+// Sticky Sidebar
+stickySidebar({
+  elements: '.sidebar',
+  additionalMarginTop: 30,
+})
+</script>

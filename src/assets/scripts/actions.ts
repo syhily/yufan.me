@@ -38,3 +38,19 @@ export function handleActionError(
     : error.message
   showErrorDialog(errorMsg, closeAction)
 }
+
+export function scrollIntoView(elem: HTMLElement | null): void {
+  if (!elem) {
+    return
+  }
+
+  const rect = elem.getBoundingClientRect()
+  const elemTop = rect.top + window.scrollY
+  const scrollOptions: ScrollToOptions = {
+    top: elemTop,
+    left: 0,
+    behavior: 'smooth',
+  }
+
+  window.scroll(scrollOptions)
+}
