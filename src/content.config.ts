@@ -108,7 +108,7 @@ const pagesCollection = defineCollection({
 })
 
 const imageCollection = defineCollection({
-  loader: file('./src/content/metas/images.json'),
+  loader: file('./src/content/metas/images.yml'),
   schema: z.object({
     slug: z.string(),
     width: z.number().int().min(1),
