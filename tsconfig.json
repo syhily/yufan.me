@@ -10,7 +10,8 @@
     },
     "types": ["vite-plugin-font/src/font", "vite-plugin-binary/types"],
     "strict": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "verbatimModuleSyntax": true
   },
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"]

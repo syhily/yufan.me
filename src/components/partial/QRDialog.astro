@@ -28,7 +28,7 @@ const { url, name, title, icon, className } = Astro.props
 import { qrcode } from '@libs/qrcode'
 
 // Create popup template based on props
-function createPopupTemplate(title: string, name: string, url: string, qrcode: string) {
+function createPopupTemplate(title: string, name: string, qrcode: string) {
   return `
   <div class="nice-popup nice-popup-center nice-popup-sm">
     <div class="nice-popup-overlay"></div>
@@ -75,7 +75,7 @@ document.querySelectorAll<HTMLElement>('.nice-dialog').forEach((dialog) => {
       const svg = qrcode(url, { output: 'svg', border: 0 })
 
       const tempDiv = document.createElement('div')
-      tempDiv.innerHTML = createPopupTemplate(title, name, url, svg)
+      tempDiv.innerHTML = createPopupTemplate(title, name, svg)
       popup = tempDiv.firstElementChild as HTMLElement
       document.body.appendChild(popup)
 
