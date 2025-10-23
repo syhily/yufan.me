@@ -51,7 +51,6 @@
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",
     "pinyin-pro": "^3.27.0",
-    "redis": "^5.9.0",
     "sharp": "^0.34.4",
     "thumbhash": "^0.1.1",
     "ultrahtml": "^1.6.0",
