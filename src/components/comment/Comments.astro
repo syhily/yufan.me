@@ -146,3 +146,199 @@ if (user === undefined || !user.admin) {
     )
   }
 </div>
+
+<script>
+import { actions } from 'astro:actions'
+import { handleActionError } from '@/assets/scripts/actions'
+
+// Type helpers
+type Nullable<T> = T | null
+
+// Loading the comments.
+const comments = document.querySelector<HTMLDivElement>('#comments')
+if (typeof comments !== 'undefined' && comments !== null) {
+  const cancel = comments.querySelector<HTMLInputElement>('#cancel-comment-reply-link')!
+  const replyForm = comments.querySelector<HTMLDivElement>('#respond')!
+  const cancelReply = (): void => {
+    cancel.hidden = true;
+    (replyForm.querySelector('textarea[name="content"]') as HTMLTextAreaElement).value = ''
+
+    // Move the form back to top.
+    const commentCount = comments.querySelector('.comment-total-count')!
+    commentCount.after(replyForm)
+
+    // Get rid to clean up the children form.
+    const ridInput = replyForm.querySelector<HTMLInputElement>('input[name="rid"]')!
+    const rid = ridInput.value
+    ridInput.value = '0'
+    if (rid !== '0') {
+      const userComment = comments.querySelector(`#user-comment-${rid}`) as Nullable<HTMLLIElement>
+      if (userComment) {
+        const children = userComment.querySelector('.children') as Nullable<HTMLUListElement>
+        if (children !== null && children.querySelectorAll('li').length === 0) {
+          children.remove()
+        }
+      }
+    }
+  }
+
+  comments.addEventListener('focusout', (event: FocusEvent) => {
+    const avatar = document.querySelector<HTMLImageElement>('#commentForm img.avatar')
+    const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]')
+    if (event.target === emailInput && avatar && emailInput) {
+      event.stopPropagation()
+      const email = emailInput.value
+      if (email !== '' && email.includes('@')) {
+        // Replace the avatar after typing the email.
+        actions.comment.findAvatar({ email }).then(({ data, error }: any) => {
+          if (error) {
+            return handleActionError(error)
+          }
+          avatar.src = data.avatar
+        })
+      }
+      else {
+        avatar.src = avatar.dataset.src!
+      }
+    }
+  })
+
+  comments.addEventListener('click', async (event: MouseEvent) => {
+    const target = event.target as HTMLElement
+    // Loading more comments from server.
+    const nextButton = comments.querySelector('#comments-next-button')
+    if (target === nextButton) {
+      const { size, offset, key } = (target as HTMLButtonElement).dataset
+      if (typeof key === 'string' && typeof offset === 'string' && typeof size === 'string') {
+        const { data, error } = await actions.comment.loadComments({ offset: Number(offset), page_key: key })
+        if (error) {
+          return handleActionError(error)
+        }
+
+        const { content, next } = data
+
+        // Remove the load more button.
+        if (!next || content === '') {
+          target.remove()
+        }
+
+        // Append the comments into the list.
+        if (content !== '') {
+          (target as HTMLButtonElement).dataset.offset = String(Number(offset) + Number(size))
+          comments.querySelector('.comment-list')!.insertAdjacentHTML('beforeend', content)
+        }
+      }
+    }
+
+    // Reply a comment.
+    if (target.matches('.comment-reply-link')) {
+      cancelReply()
+      cancel.hidden = false;
+      (replyForm.querySelector('input[name="rid"]') as HTMLInputElement).value = (target as HTMLElement).dataset.rid!
+
+      // Move form to the reply.
+      const commentItem = target.closest('li') as HTMLLIElement
+      if (commentItem.dataset.depth === '1') {
+        if (commentItem.querySelector('ul.children') === null) {
+          // Create this for better architecture.
+          commentItem.insertAdjacentHTML('beforeend', '<ul class="children"></ul>')
+        }
+        commentItem.querySelector('ul.children')!.appendChild(replyForm)
+      }
+      else {
+        commentItem.after(replyForm)
+      }
+
+      // Focus the comment form.
+      (replyForm.querySelector('#content') as HTMLTextAreaElement).focus()
+    }
+
+    // Approve a comment.
+    if (target.matches('.comment-approve-link')) {
+      const rid = (target as HTMLElement).dataset.rid
+      if (typeof rid === 'string') {
+        const { error } = await actions.comment.approve({ rid })
+        if (error) {
+          return handleActionError(error)
+        }
+        else {
+          target.remove()
+        }
+      }
+    }
+
+    // Delete a comment.
+    if (target.matches('.comment-delete-link')) {
+      const rid = (target as HTMLElement).dataset.rid
+      if (typeof rid === 'string') {
+        const { error } = await actions.comment.delete({ rid })
+        if (error) {
+          return handleActionError(error)
+        }
+        else {
+          target.closest('li')!.remove()
+        }
+      }
+    }
+
+    // Cancel reply comment.
+    if (target === cancel) {
+      cancelReply()
+    }
+  })
+
+  // Reply a comment.
+  comments.addEventListener('submit', async (event: Event) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    const form = event.target as HTMLFormElement
+    const formData = new FormData(form)
+    // Build the request object with explicit types
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const page_key = formData.get('page_key') as string
+    const content = formData.get('content') as string
+    const link = formData.get('link') as string | null
+    const rid = formData.get('rid')
+    const request: {
+      name: string
+      email: string
+      page_key: string
+      content: string
+      link?: string
+      rid?: number
+    } = {
+      name,
+      email,
+      page_key,
+      content,
+    }
+    if (link)
+      request.link = link
+    if (rid !== undefined && rid !== null && rid !== '') {
+      request.rid = Number(rid)
+    }
+    else {
+      request.rid = 0
+    }
+
+    const { data, error } = await actions.comment.replyComment(request)
+
+    if (error) {
+      return handleActionError(error)
+    }
+
+    const { content: replyContent } = data
+    if (request.rid !== 0) {
+      replyForm.insertAdjacentHTML('beforebegin', replyContent)
+    }
+    else {
+      const list = comments.querySelector('.comment-list')!
+      list.insertAdjacentHTML('afterbegin', replyContent)
+    }
+
+    cancelReply()
+  })
+}
+</script>
