@@ -1371,7 +1371,7 @@ textarea.form-control {
 }
 
 @media (min-width: 1200px) and (max-width: 1399.98px) {
-  .list-desc .h-2x {
+  .list-desc .h-3x {
     -webkit-line-clamp: 1;
     line-clamp: 1;
   }

@@ -34,7 +34,7 @@ export function formatShowDate(date: Date) {
     if (delta.get('months') === 0 && delta.get('weeks') === 0 && delta.get('days') < 7) {
       return `${Math.floor(delta.get('days')) + 1} 天前`
     }
-    if (delta.get('months') <= 1 && delta.get('weeks') <= 5) {
+    if (delta.get('months') <= 1 && delta.get('weeks') < 5) {
       return `${Math.floor(delta.get('weeks')) + 1} 周前`
     }
     if (delta.get('months') < 5) {
