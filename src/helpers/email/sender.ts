@@ -11,22 +11,26 @@ import NewReply from '@/helpers/email/templates/NewReply.astro'
 
 export interface EmailMessage { to: string, subject: string, html: string }
 
+// Create the Transporter based on SMTP configuration.
+const transporter = (SMTP_HOST === undefined || SMTP_PORT === undefined || SMTP_USER === undefined || SMTP_PASSWORD === undefined)
+  ? undefined
+  : nodemailer.createTransport({
+      pool: true,
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASSWORD,
+      },
+    })
+
+// Send an email using the configured transporter.
 async function internalSend(to: string, subject: string, html: string) {
-  // Check SMTP configuration.
-  if (SMTP_HOST === undefined || SMTP_PORT === undefined || SMTP_USER === undefined || SMTP_PASSWORD === undefined) {
+  if (transporter === undefined) {
     console.error('No SMTP configuration, skip sending message.')
     return
   }
-  // Send mail.
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASSWORD,
-    },
-  })
   await transporter.sendMail({ to, from: SMTP_SENDER, subject, html })
 }
 
@@ -44,7 +48,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, page: Page) {
       },
     },
   )
-  internalSend(config.author.email, `你的网站【${config.title}】有了新评论`, html)
+  internalSend(config.author.email, `您的网站【${config.title}】有了新评论`, html)
 }
 
 // This email is sent only when the user's comment has a reply.
@@ -62,7 +66,7 @@ export async function sendNewReply(sourceUser: User, source: Comment, reply: Com
       },
     },
   )
-  internalSend(sourceUser.email, `你在【${config.title}】的留言有了新回复`, html)
+  internalSend(sourceUser.email, `您在【${config.title}】的留言有了新回复`, html)
 }
 
 // This email is sent only when the user's pending comment get approved.
@@ -79,5 +83,5 @@ export async function sendApprovedComment(comment: Comment, user: User, page: Pa
       },
     },
   )
-  internalSend(user.email, `你在【${config.title}】的留言已经通过审核`, html)
+  internalSend(user.email, `您在【${config.title}】的留言已经通过审核`, html)
 }

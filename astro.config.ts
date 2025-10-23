@@ -73,6 +73,8 @@ export default defineConfig({
       // Database
       DATABASE_URL: envField.string({ context: 'server', access: 'secret' }),
       REDIS_URL: envField.string({ context: 'server', access: 'secret' }),
+      // Authentication
+      ENCRYPTION_KEY: envField.string({ context: 'server', access: 'secret', length: 32 }),
     },
     validateSecrets: true,
   },
