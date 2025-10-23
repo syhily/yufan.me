@@ -114,7 +114,7 @@ export function stickySidebar(options: Partial<Options>) {
 
     const existingStylesheet = document.querySelector('#theia-sticky-sidebar-stylesheet')
     if (!existingStylesheet) {
-      document.head.insertAdjacentHTML('beforeend', '<style id="theia-sticky-sidebar-stylesheet">.theiaStickySidebar:after {content: ""; display: table; clear: both;}</style>')
+      document.head.insertAdjacentHTML('beforeend', '<style id="theia-sticky-sidebar-stylesheet">.stickySidebar:after {content: ""; display: table; clear: both;}</style>')
     }
 
     elements.forEach((element) => {
@@ -133,7 +133,7 @@ export function stickySidebar(options: Partial<Options>) {
         boxSizing: 'border-box',
       })
 
-      o.stickySidebar = o.sidebar.querySelector('.theiaStickySidebar') as HTMLElement
+      o.stickySidebar = o.sidebar.querySelector('.stickySidebar') as HTMLElement
       if (!o.stickySidebar) {
         const javaScriptMIMETypes = /(?:text|application)\/(?:x-)?(?:javascript|ecmascript)/i
         Array.from(o.sidebar.querySelectorAll('script')).forEach((script) => {
@@ -143,7 +143,7 @@ export function stickySidebar(options: Partial<Options>) {
         })
 
         o.stickySidebar = document.createElement('div')
-        o.stickySidebar.classList.add('theiaStickySidebar')
+        o.stickySidebar.classList.add('stickySidebar')
         o.stickySidebar.append(...o.sidebar.children)
         o.sidebar.append(o.stickySidebar)
       }
