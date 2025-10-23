@@ -18,6 +18,10 @@ const config: BlogConfig = {
       link: '/categories',
     },
     {
+      text: '归档',
+      link: '/archives',
+    },
+    {
       text: '关于',
       link: '/about',
     },
