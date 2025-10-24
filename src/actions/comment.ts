@@ -7,7 +7,7 @@ import CommentItem from '@/components/comment/CommentItem.astro'
 import { isAdmin } from '@/helpers/auth/session'
 import { queryUserId } from '@/helpers/auth/user'
 import { decreaseLikes, increaseLikes, queryLikes } from '@/helpers/comment/likes'
-import { approveComment, createComment, deleteComment, loadComments } from '@/helpers/comment/loader'
+import { approveComment, createComment, deleteComment, getCommentById, loadComments, updateComment } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/content/render'
 import { getPosts, pages } from '@/helpers/content/schema'
 import { encodedEmail } from '@/helpers/tools'
@@ -133,6 +133,49 @@ export const comment = {
         = config.settings.comments.size + offset < comments.roots_count
 
       return { content, next }
+    },
+  }),
+  // Get raw comment content (for admin editing)
+  getRaw: defineAction({
+    accept: 'json',
+    input: z.object({ rid: z.string() }),
+    handler: async ({ rid }, { session }) => {
+      const admin = await isAdmin(session)
+      if (!admin) {
+        throw new ActionError({ code: 'UNAUTHORIZED', message: '当前用户不是管理员。' })
+      }
+      const c = await getCommentById(rid)
+      if (!c) {
+        throw new ActionError({ code: 'NOT_FOUND', message: '评论不存在' })
+      }
+      return { content: c.content }
+    },
+  }),
+  // Edit an existing comment (admin only)
+  edit: defineAction({
+    accept: 'json',
+    input: z.object({ rid: z.string(), content: z.string().min(1) }),
+    handler: async ({ rid, content }, { session, request }) => {
+      const admin = await isAdmin(session)
+      if (!admin) {
+        throw new ActionError({ code: 'UNAUTHORIZED', message: '当前用户不是管理员。' })
+      }
+      const updated = await updateComment(rid, content)
+      if (!updated) {
+        throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: '更新评论失败' })
+      }
+
+      const html = await partialRender(CommentItem, {
+        props: {
+          depth: updated.rid === 0 ? 1 : 2,
+          comment: updated,
+          pending: updated.isPending,
+          session,
+        },
+        request,
+      })
+
+      return { content: html }
     },
   }),
 }

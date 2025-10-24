@@ -312,6 +312,36 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   return info
 }
 
+export async function getCommentById(rid: string) {
+  const r = await pool.db.select(unionCommentSelect)
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(eq(comment.id, BigInt(rid)))
+    .limit(1)
+  if (r.length === 0)
+    return null
+  return r[0]
+}
+
+export async function updateComment(rid: string, newContent: string) {
+  // Update raw content and updated timestamp
+  await pool.db.update(comment).set({ content: newContent }).where(eq(comment.id, BigInt(rid)))
+
+  const r = await pool.db.select(unionCommentSelect)
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(eq(comment.id, BigInt(rid)))
+    .limit(1)
+
+  if (r.length === 0)
+    return null
+
+  // Parse content into HTML for rendering
+  r[0].content = await parseContent(r[0].content || '该留言内容为空')
+
+  return r[0]
+}
+
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {
   const parsedComments = await Promise.all(
     comments.map(async comment => ({ ...comment, content: await parseContent(comment.content || '该留言内容为空') })),

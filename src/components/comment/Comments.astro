@@ -388,6 +388,89 @@ if (typeof comments !== 'undefined' && comments !== null) {
       (replyForm.querySelector('#content') as HTMLTextAreaElement).focus()
     }
 
+    // Edit a comment (admin only visible button)
+    if (target.matches('.comment-edit-link')) {
+      const rid = (target as HTMLElement).dataset.rid
+      if (typeof rid === 'string') {
+        const commentItem = target.closest('li') as HTMLLIElement
+        const contentEl = commentItem.querySelector('.comment-content') as HTMLElement | null
+        if (!contentEl)
+          return
+
+        // Prevent duplicate editors
+        if (commentItem.querySelector('.comment-edit-area'))
+          return
+
+        // Fetch raw content from server (admin only action)
+        const { data, error } = await actions.comment.getRaw({ rid })
+        if (error) {
+          return handleActionError(error)
+        }
+
+        const raw = (data && data.content) ? data.content : ''
+
+        // Build editor UI
+        const editWrapper = document.createElement('div')
+        editWrapper.className = 'comment-edit-area mt-2'
+
+        const ta = document.createElement('textarea')
+        ta.className = 'form-control comment-edit-textarea'
+        ta.rows = 4
+        ta.value = raw
+
+        const ctrl = document.createElement('div')
+        ctrl.className = 'mt-2 text-end'
+
+        const saveBtn = document.createElement('button')
+        saveBtn.type = 'button'
+        saveBtn.className = 'btn btn-primary me-2 comment-save-edit'
+        saveBtn.textContent = '保存'
+
+        const cancelBtn = document.createElement('button')
+        cancelBtn.type = 'button'
+        cancelBtn.className = 'btn btn-light comment-cancel-edit'
+        cancelBtn.textContent = '取消'
+
+        ctrl.appendChild(saveBtn)
+        ctrl.appendChild(cancelBtn)
+        editWrapper.appendChild(ta)
+        editWrapper.appendChild(ctrl)
+
+        contentEl.appendChild(editWrapper)
+
+        // Cancel handler
+        cancelBtn.addEventListener('click', () => {
+          editWrapper.remove()
+        })
+
+        // Save handler
+        saveBtn.addEventListener('click', async () => {
+          const originalText = saveBtn.textContent || '保存'
+          saveBtn.disabled = true
+          saveBtn.textContent = '保存中...'
+          try {
+            const { data: editData, error: editError } = await actions.comment.edit({ rid, content: ta.value })
+            if (editError) {
+              saveBtn.disabled = false
+              saveBtn.textContent = originalText
+              return handleActionError(editError)
+            }
+
+            if (editData && editData.content) {
+              // Replace the whole comment item with updated HTML
+              commentItem.insertAdjacentHTML('afterend', editData.content)
+              commentItem.remove()
+            }
+          }
+          catch (e) {
+            console.error(e)
+            saveBtn.disabled = false
+            saveBtn.textContent = originalText
+          }
+        })
+      }
+    }
+
     // Approve a comment.
     if (target.matches('.comment-approve-link')) {
       const rid = (target as HTMLElement).dataset.rid

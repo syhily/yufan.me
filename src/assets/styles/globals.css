@@ -3066,6 +3066,10 @@ a:hover .overlay {
     comment style
 --------------------------------------------------------------*/
 
+#comments .btn {
+  width: 7rem;
+}
+
 .comment-list .comment-respond {
   position: relative;
   margin: 0 0 2rem 0;
@@ -3196,9 +3200,7 @@ a:hover .overlay {
   flex: none;
 }
 
-.comment-reply-link,
-.comment-approve-link,
-.comment-delete-link {
+.comment-footer button {
   background-color: transparent;
   transition: all 0.3s linear;
 }
@@ -3207,6 +3209,7 @@ a:hover .overlay {
   color: var(--color-warning);
 }
 
+.comment-edit-link:hover,
 .comment-delete-link {
   color: var(--color-danger);
 }
