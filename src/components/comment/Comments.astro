@@ -232,25 +232,51 @@ if (typeof comments !== 'undefined' && comments !== null) {
     // Loading more comments from server.
     const nextButton = comments.querySelector('#comments-next-button')
     if (target === nextButton) {
-      const { size, offset, key } = (target as HTMLButtonElement).dataset
+      const btn = target as HTMLButtonElement
+      // Disable button immediately to prevent duplicate triggers and show loading state.
+      const originalText = btn.textContent || ''
+      btn.disabled = true
+      btn.textContent = '加载中...'
+
+      const { size, offset, key } = btn.dataset
       if (typeof key === 'string' && typeof offset === 'string' && typeof size === 'string') {
-        const { data, error } = await actions.comment.loadComments({ offset: Number(offset), page_key: key })
-        if (error) {
-          return handleActionError(error)
-        }
+        try {
+          const { data, error } = await actions.comment.loadComments({ offset: Number(offset), page_key: key })
+          if (error) {
+            // Restore button state on error before delegating to the handler.
+            btn.disabled = false
+            btn.textContent = originalText
+            return handleActionError(error)
+          }
 
-        const { content, next } = data
+          const { content, next } = data
 
-        // Remove the load more button.
-        if (!next || content === '') {
-          target.remove()
-        }
+          // Append the comments into the list.
+          if (content !== '') {
+            btn.dataset.offset = String(Number(offset) + Number(size))
+            comments.querySelector('.comment-list')!.insertAdjacentHTML('beforeend', content)
+          }
 
-        // Append the comments into the list.
-        if (content !== '') {
-          (target as HTMLButtonElement).dataset.offset = String(Number(offset) + Number(size))
-          comments.querySelector('.comment-list')!.insertAdjacentHTML('beforeend', content)
+          // Remove the load more button if no further pages, otherwise restore it.
+          if (!next || content === '') {
+            btn.remove()
+          }
+          else {
+            btn.disabled = false
+            btn.textContent = originalText
+          }
         }
+        catch (e) {
+          // Network or unexpected error: restore button and rethrow/log.
+          btn.disabled = false
+          btn.textContent = originalText
+          console.error(e)
+        }
+      }
+      else {
+        // If dataset is malformed, restore button state.
+        btn.disabled = false
+        btn.textContent = originalText
       }
     }
 
