@@ -358,6 +358,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
+          opacity: '0.6',
           display: 'flex',
           gap: '0.25rem',
           alignItems: 'center',
@@ -372,18 +373,6 @@ if (typeof comments !== 'undefined' && comments !== null) {
         const prevPaddingTop = textarea.style.paddingTop || window.getComputedStyle(textarea).paddingTop || ''
         textarea.dataset._origPaddingTop = prevPaddingTop
         textarea.style.paddingTop = '2rem'
-
-        // Store handlers for focus/blur effects
-        function onFocus() {
-          overlay.style.opacity = '0.6'
-        }
-        function onBlur() {
-          overlay.style.opacity = '1'
-        }
-        textarea.addEventListener('focus', onFocus)
-        textarea.addEventListener('blur', onBlur)
-        ;(textarea as any).__replyOverlayFocus = onFocus
-        ;(textarea as any).__replyOverlayBlur = onBlur
 
         formText.appendChild(overlay)
       }
