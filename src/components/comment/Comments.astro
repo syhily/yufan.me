@@ -369,12 +369,19 @@ if (typeof comments !== 'undefined' && comments !== null) {
         if (!formTextEl.style.position)
           formTextEl.style.position = 'relative'
 
-        // Remember and increase textarea paddingTop so content doesn't overlap the overlay.
+        // Remember original textarea paddingTop for later restore.
         const prevPaddingTop = textarea.style.paddingTop || window.getComputedStyle(textarea).paddingTop || ''
         textarea.dataset._origPaddingTop = prevPaddingTop
-        textarea.style.paddingTop = '2rem'
 
+        // Append overlay first so we can measure its height and set a padding gap
         formText.appendChild(overlay)
+
+        // Compute overlay height and add a small gap so the caret doesn't collide with overlay.
+        // Use getBoundingClientRect with fallback to offsetHeight.
+        const overlayRect = overlay.getBoundingClientRect()
+        const overlayHeight = (overlayRect && overlayRect.height) ? overlayRect.height : (overlay.offsetHeight || 0)
+        const gap = 10 // px gap between overlay bottom and caret
+        textarea.style.paddingTop = `${overlayHeight + gap}px`
       }
 
       // Focus the comment form.
