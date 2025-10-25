@@ -3066,10 +3066,6 @@ a:hover .overlay {
     comment style
 --------------------------------------------------------------*/
 
-#comments .btn {
-  width: 7rem;
-}
-
 .comment-list .comment-respond {
   position: relative;
   margin: 0 0 2rem 0;
