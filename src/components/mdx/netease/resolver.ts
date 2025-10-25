@@ -51,7 +51,7 @@ async function loadMusicURL(netease: string, urlLoader: (id: string) => Promise<
   }
   url = await urlLoader(netease)
   if (url) {
-    await storage.setItem<string>(cacheKey, url, { ttl: 60 * 60 })
+    await storage.setItem<string>(cacheKey, url, { ttl: 10 * 60 })
   }
   return url
 }
