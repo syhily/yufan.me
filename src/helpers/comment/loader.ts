@@ -235,6 +235,9 @@ export async function createComment(commentReq: CommentReq, req: Request, client
     if (r.length > 0 && r[0].rootId !== null) {
       rootId = r[0].rootId
     }
+    else {
+      rootId = BigInt(commentReq.rid)
+    }
   }
 
   // Should I bypass the check.
