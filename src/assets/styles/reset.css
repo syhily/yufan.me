@@ -76,6 +76,7 @@
   --shadow-md: 0 10px 40px 5px rgb(62 61 80 / 6%);
   --shadow-lg: 0 10px 40px 5px rgb(62 61 80 / 10%);
   --text-dark: #000;
+  text-autospace: normal;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -95,7 +96,6 @@ body {
   margin: 0;
   padding: 0;
   overscroll-behavior-y: none;
-  text-autospace: normal;
 }
 
 h1,
