@@ -48,6 +48,8 @@ export default defineConfig({
     service: NODE_ENV !== 'production'
       ? { entrypoint: './src/helpers/content/image/sharp' }
       : { entrypoint: './src/helpers/content/image/qiniu' },
+    layout: 'constrained',
+    responsiveStyles: true,
   },
   session: {
     driver: 'redis',

@@ -38,6 +38,23 @@ const service: ExternalImageService = {
         }
       }
     }
+
+    // Add widths on demand.
+    if (!options.widths || options.widths.length === 0) {
+      options.widths = [
+        500,
+        600,
+        640,
+        750,
+        828,
+        960,
+        1080,
+        1200,
+        1400,
+        1600,
+      ]
+    }
+
     if (typeof baseService.validateOptions === 'function') {
       return await baseService.validateOptions(options, imageConfig)
     }
@@ -49,14 +66,6 @@ const service: ExternalImageService = {
       return imageSource
     }
     return `${imageSource}?imageView2/1/w/${options.width}/h/${options.height}/format/avif/q/${typeof options.quality === 'number' ? options.quality : 100}/ignore-error/1`
-  },
-  getHTMLAttributes(options, _imageConfig) {
-    const { src, format, quality, ...attributes } = options
-    return {
-      ...attributes,
-      loading: 'lazy',
-      decoding: 'async',
-    }
   },
 }
 

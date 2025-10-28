@@ -36,6 +36,23 @@ const imageService: LocalImageService<SharpImageServiceConfig> = {
         options.height = options.height || height
       }
     }
+
+    // Add widths on demand.
+    if (!options.widths || options.widths.length === 0) {
+      options.widths = [
+        500,
+        600,
+        640,
+        750,
+        828,
+        960,
+        1080,
+        1200,
+        1400,
+        1600,
+      ]
+    }
+
     if (typeof baseService.validateOptions === 'function') {
       return await baseService.validateOptions(options, imageConfig)
     }
