@@ -20,7 +20,7 @@ async function getImage(source: string, options: ImageTransform): Promise<{ widt
 const service: ExternalImageService = {
   ...baseService,
   async validateOptions(options, imageConfig) {
-    if (!options.width || !options.height || !options.style) {
+    if (!options.width || !options.height || !options.style || !options.style['background-image']) {
       const imageSource = isESMImportedImage(options.src) ? options.src.src : options.src
       if (!isRemoteAllowed(imageSource, imageConfig)) {
         throw new Error(`Image source ${imageSource} is not allowed`)
@@ -30,7 +30,8 @@ const service: ExternalImageService = {
       options.height = options.height || height
       if (blurhash) {
         options.style = {
-          ...options.style,
+          '--fit': 'cover',
+          '--pos': 'center',
           'background-image': `url("${blurhash}")`,
           'background-position': 'center',
           'background-size': 'cover',
