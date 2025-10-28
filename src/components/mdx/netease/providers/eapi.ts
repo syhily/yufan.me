@@ -1,22 +1,13 @@
 import type { SongInfo } from '../resolver'
-import type { UserAgentType } from './config'
 import { Buffer } from 'node:buffer'
 import { createCipheriv, createHash, randomBytes } from 'node:crypto'
-import { chineseIPs, neteaseAnonymousToken, userAgents } from './config'
+import { generateUserAgents } from '@rahulxf/random-user-agent'
+import { getRandomChineseIp } from './ip'
+
+// An request token which is decoded from the Netease Android Player.
+const neteaseAnonymousToken = 'de91e1f8119d32e01cc73efcb82c0a30c9137e8d4f88dbf5e3d7bf3f28998f21add2bc8204eeee5e56c0bbb8743574b46ca2c10c35dc172199bef9bf4d60ecdeab066bb4dc737d1c3324751bcc9aaf44c3061cd18d77b7a0'
 
 const EAPI_KEY = 'e82ckenh8dichen8'
-
-function chooseUserAgent(ua?: UserAgentType) {
-  const agents
-    = ua === undefined
-      ? [...userAgents.mobile, ...userAgents.pc]
-      : userAgents[ua]
-  return agents[Math.floor(Math.random() * agents.length)]
-}
-
-function randomChineseIP() {
-  return chineseIPs[Math.floor(Math.random() * chineseIPs.length)]
-}
 
 function aesEncrypt(buffer: Buffer | string, mode: string, key: string, iv: string) {
   const keyBuffer = Buffer.from(key).subarray(0, 16)
@@ -61,7 +52,7 @@ export async function getSongInfo(id: string): Promise<SongInfo> {
     }
 
     const { params } = eapi(url, data)
-    const ip = randomChineseIP()
+    const ip = getRandomChineseIp()
     const response = await fetch('https://interface3.music.163.com/eapi/v3/song/detail', {
       method: 'POST',
       headers: {
@@ -70,7 +61,7 @@ export async function getSongInfo(id: string): Promise<SongInfo> {
         'Cookie': `MUSIC_A=${neteaseAnonymousToken}; appver=8.7.01; versioncode=140; buildver=${Date.now().toString().substring(0, 10)}; resolution=1920x1080; os=android; requestId=${Date.now()}_${Math.floor(Math.random() * 1000).toString().padStart(4, '0')}`,
         'X-Real-IP': ip,
         'X-Forwarded-For': ip,
-        'User-Agent': chooseUserAgent(),
+        'User-Agent': generateUserAgents(1)[0],
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: toFormUrlEncoded({ params }),
@@ -116,7 +107,7 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
     }
 
     const { params } = eapi(url, data)
-    const ip = randomChineseIP()
+    const ip = getRandomChineseIp()
     const response = await fetch('https://interface.music.163.com/eapi/song/enhance/player/url/v1', {
       method: 'POST',
       headers: {
@@ -125,7 +116,7 @@ export async function getSongUrl(id: string, level: string): Promise<string | nu
         'Cookie': `MUSIC_A=${neteaseAnonymousToken}; appver=8.7.01; versioncode=140; buildver=${Date.now().toString().substring(0, 10)}; resolution=1920x1080; os=android; requestId=${Date.now()}_${Math.floor(Math.random() * 1000).toString().padStart(4, '0')}`,
         'X-Real-IP': ip,
         'X-Forwarded-For': ip,
-        'User-Agent': chooseUserAgent(),
+        'User-Agent': generateUserAgents(1)[0],
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: toFormUrlEncoded({ params }),
@@ -173,7 +164,7 @@ export async function getLyrics(id: string): Promise<string | null> {
 
     const { params } = eapi(url, data)
     const apiUrl = 'https://interface3.music.163.com/eapi/song/lyric/v1'
-    const ip = randomChineseIP()
+    const ip = getRandomChineseIp()
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -182,7 +173,7 @@ export async function getLyrics(id: string): Promise<string | null> {
         'Cookie': `MUSIC_A=${neteaseAnonymousToken}; appver=8.7.01; versioncode=140; buildver=${Date.now().toString().substring(0, 10)}; resolution=1920x1080; os=android; requestId=${Date.now()}_${Math.floor(Math.random() * 1000).toString().padStart(4, '0')}`,
         'X-Real-IP': ip,
         'X-Forwarded-For': ip,
-        'User-Agent': chooseUserAgent(),
+        'User-Agent': generateUserAgents(1)[0],
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: toFormUrlEncoded({ params }),
