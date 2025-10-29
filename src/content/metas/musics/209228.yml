@@ -1,12 +1,13 @@
-netease: "209228"
+id: "209228"
 name: 旅行的意义
 artist: 陈绮贞
-pic: https://p1.music.126.net/abPGj52ZIZQiE_NY_1Vhdw==/109951165211177195.jpg
+album: 华丽的冒险
+pic: https://s3.yufan.me/musics/209228.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"陈绮贞","li":"http://p1.music.126.net/fPK0IO3wrFZ6du5p9xsRxw==/109951169959800223.jpg","or":"orpheus://nm/artist/home?id=7217&type=artist"}]}
-  {"t":800,"c":[{"tx":"作曲: "},{"tx":"陈绮贞","li":"http://p1.music.126.net/fPK0IO3wrFZ6du5p9xsRxw==/109951169959800223.jpg","or":"orpheus://nm/artist/home?id=7217&type=artist"}]}
-  {"t":1600,"c":[{"tx":"编曲: "},{"tx":"李雨寰","li":"http://p1.music.126.net/SbJLbDNc3BdNY-FOXs__fg==/681697209246905.jpg","or":"orpheus://nm/artist/home?id=3790&type=artist"}]}
-  {"t":2400,"c":[{"tx":"制作人: "},{"tx":"钟成虎","li":"http://p1.music.126.net/xd85IoK_1SclXx0pBc7e7g==/109951167596238970.jpg","or":"orpheus://nm/artist/home?id=30992158&type=artist"}]}
+  [00:00.00] 作词 : 陈绮贞
+  [00:00.80] 作曲 : 陈绮贞
+  [00:01.60] 编曲 : 李雨寰
+  [00:02.40] 制作人 : 钟成虎
   [00:03.20]编曲 Arrangement : 李雨寰 Yuhuan
   [00:03.62]
   [00:26.94]你看过了许多美景
@@ -67,3 +68,4 @@ lyric: |
   [03:43.55]Recording Assistant 录音助理：郭博文 Kou Po Wen & 王靖辅 Wang Ching Pu
   [03:43.76]Mix Assistant 混音助理：柯宗佑 Ke-Tsung-You & 戴建宇 Dai-Jian-Yu
   [03:43.92]
+url: https://s3.yufan.me/musics/209228.mp3

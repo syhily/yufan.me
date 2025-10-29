@@ -1,10 +1,11 @@
-netease: "34964460"
+id: "34964460"
 name: プレゼント
 artist: SEKAI NO OWARI
-pic: https://p1.music.126.net/J_CaVd3vEg2ksnyvAcraww==/109951169071880944.jpg
+album: SOS / プレゼント
+pic: https://s3.yufan.me/musics/34964460.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作曲: "},{"tx":"Nakajin"}]}
-  {"t":1000,"c":[{"tx":"作词: "},{"tx":"Saori"}]}
+  [00:00.00] 作曲 : Nakajin
+  [00:01.00] 作词 : Saori
   [00:21.84]「知らない」という言葉の意味
   [00:26.01]間違えていたんだ
   [00:30.16]知らない人のこと
@@ -65,3 +66,4 @@ lyric: |
   [04:16.78]大丈夫だよ
   [04:20.29]その言葉返せるように
   [04:24.52]強くなりたい
+url: https://s3.yufan.me/musics/34964460.mp3

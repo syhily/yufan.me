@@ -1,17 +1,18 @@
-netease: "109734"
+id: "109734"
 name: 凤凰花开的路口
 artist: 林志炫
-pic: https://p2.music.126.net/hguM0SlUfEnvSLw9t8EK5Q==/109951167366624491.jpg
+album: 绝对收藏林志炫
+pic: https://s3.yufan.me/musics/109734.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"楼南蔚","li":"http://p1.music.126.net/MKpXhyYrbFEKGvjTGiCtIw==/109951166344929358.jpg","or":"orpheus://nm/artist/home?id=28143254&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"陈熙 Josh Chen","li":"http://p1.music.126.net/-1CPmp51llft6j2Ix5f0TQ==/109951167527198536.jpg","or":"orpheus://nm/artist/home?id=2161&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"陈熙 Josh Chen","li":"http://p1.music.126.net/-1CPmp51llft6j2Ix5f0TQ==/109951167527198536.jpg","or":"orpheus://nm/artist/home?id=2161&type=artist"}]}
-  {"t":3000,"c":[{"tx":"钢琴: "},{"tx":"陈熙"}]}
-  {"t":4000,"c":[{"tx":"录音工程师: "},{"tx":"王家栋（台北）"}]}
-  {"t":5000,"c":[{"tx":"录音室: "},{"tx":"House of Terry Lin（台北）"}]}
-  {"t":6000,"c":[{"tx":"录音助理: "},{"tx":"朱敬然Andrew Chu"}]}
-  {"t":7000,"c":[{"tx":"OP: "},{"tx":"New Chinese Song Publishing Ltd."}]}
-  {"t":8000,"c":[{"tx":"SP: "},{"tx":"Sony Music Publishing（Pte）Ltd.Taiwan"}]}
+  [00:00.00] 作词 : 楼南蔚
+  [00:01.00] 作曲 : 陈熙 Josh Chen
+  [00:02.00] 编曲 : 陈熙 Josh Chen
+  [00:03.00] 钢琴 : 陈熙
+  [00:04.00] 录音工程师 : 王家栋（台北）
+  [00:05.00] 录音室 : House of Terry Lin（台北）
+  [00:06.00] 录音助理 : 朱敬然Andrew Chu
+  [00:07.00] OP : New Chinese Song Publishing Ltd.
+  [00:08.00] SP : Sony Music Publishing（Pte）Ltd.Taiwan
   [00:19.62]又到凤凰花朵开放的时候
   [00:28.49]想起某个好久不见老朋友
   [00:35.66]记忆跟着感觉慢慢变鲜活
@@ -47,3 +48,4 @@ lyric: |
   [03:29.93]脑海之中有一个凤凰花开的路口
   [03:37.79]有我最珍惜的朋友
   [03:44.90]给我最珍惜的朋友
+url: https://s3.yufan.me/musics/109734.mp3

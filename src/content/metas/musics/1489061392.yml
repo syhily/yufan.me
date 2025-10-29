@@ -1,10 +1,11 @@
-netease: "1489061392"
+id: "1489061392"
 name: 灰色的彩
 artist: 向瑾
-pic: https://p2.music.126.net/OKf_00EVt3TBgM8Z6xWOXg==/109951165406887132.jpg
+album: 灰色的彩
+pic: https://s3.yufan.me/musics/1489061392.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"向瑾","li":"http://p1.music.126.net/8Gth_0nwO1yk1EOJeburqg==/109951164202944751.jpg","or":"orpheus://nm/artist/home?id=32721265&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"向瑾","li":"http://p1.music.126.net/8Gth_0nwO1yk1EOJeburqg==/109951164202944751.jpg","or":"orpheus://nm/artist/home?id=32721265&type=artist"}]}
+  [00:00.000] 作词 : 向瑾
+  [00:01.000] 作曲 : 向瑾
   [00:16.189]你的名字叫灰色
   [00:19.439]却比彩虹还美丽
   [00:23.439]你穿过机器和人群
@@ -45,3 +46,4 @@ lyric: |
   [02:57.503]却划破了我的生活
   [03:01.003]我看见和你一样的自己
   [03:08.253]最后也变成了一只眼睛
+url: https://s3.yufan.me/musics/1489061392.mp3

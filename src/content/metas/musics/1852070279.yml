@@ -1,10 +1,11 @@
-netease: "1852070279"
+id: "1852070279"
 name: 恋
 artist: 多多poi
-pic: https://p2.music.126.net/gXB166CI0FjSxHAjGMUecA==/109951166076612936.jpg
+album: 恋
+pic: https://s3.yufan.me/musics/1852070279.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"星野源","li":"http://p1.music.126.net/NM9DyTfQtgk8wGSaMz1wzA==/109951165925775019.jpg","or":"orpheus://nm/artist/home?id=14242&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"星野源","li":"http://p1.music.126.net/NM9DyTfQtgk8wGSaMz1wzA==/109951165925775019.jpg","or":"orpheus://nm/artist/home?id=14242&type=artist"}]}
+  [00:00.00] 作词 : 星野源
+  [00:01.00] 作曲 : 星野源
   [00:13.05]営みの 街が暮れたら色めき
   [00:19.14]風たちは運ぶわ カラスと人々の群れ
   [00:25.39]意味なんか ないさ暮らしがあるだけ
@@ -34,3 +35,4 @@ lyric: |
   [03:21.20]頬の香り 夫婦を超えてゆけ
   [03:26.14]二人を超えてゆけ
   [03:29.31]一人を超えてゆけ
+url: https://s3.yufan.me/musics/1852070279.mp3

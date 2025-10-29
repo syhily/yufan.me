@@ -1,10 +1,11 @@
-netease: "31446197"
+id: "31446197"
 name: 雪風
 artist: スピッツ
-pic: https://p2.music.126.net/_i6Bla0358x_K9JZcMh-Zg==/2901611185941551.jpg
+album: 雪風
+pic: https://s3.yufan.me/musics/31446197.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"草野マサムネ","li":"http://p1.music.126.net/LhA6yJalswgnTje291wT3g==/109951169421661566.jpg","or":"orpheus://nm/artist/home?id=14055234&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"草野マサムネ","li":"http://p1.music.126.net/LhA6yJalswgnTje291wT3g==/109951169421661566.jpg","or":"orpheus://nm/artist/home?id=14055234&type=artist"}]}
+  [00:00.000] 作词 : 草野マサムネ
+  [00:01.000] 作曲 : 草野マサムネ
   [00:16.860]まばゆい白い世界は続いてた
   [00:21.820]また今日も巻き戻しの海を
   [00:27.170]エイになって泳ぐ
@@ -30,3 +31,4 @@ lyric: |
   [02:38.980]涙が乾いてパリパリの
   [02:44.110]冷たい光受け立ち上がれ
   [02:49.370]まだ歌っていけるかい？
+url: https://s3.yufan.me/musics/31446197.mp3

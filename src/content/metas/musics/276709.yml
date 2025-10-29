@@ -1,11 +1,12 @@
-netease: "276709"
+id: "276709"
 name: 野百合也有春天
 artist: 孟庭苇
-pic: https://p2.music.126.net/IWBpLvySrF10t8JTZUsweg==/109951169875272791.jpg
+album: 1990-1994 钻石金选集
+pic: https://s3.yufan.me/musics/276709.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"罗大佑","li":"http://p1.music.126.net/RG7o5BwKjIVK5-PHlPtlNA==/109951172024531494.jpg","or":"orpheus://nm/artist/home?id=3686&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"罗大佑","li":"http://p1.music.126.net/RG7o5BwKjIVK5-PHlPtlNA==/109951172024531494.jpg","or":"orpheus://nm/artist/home?id=3686&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"涂惠源","li":"http://p1.music.126.net/KHKHo-s73aXzjwok62ndtA==/109951166779308395.jpg","or":"orpheus://nm/artist/home?id=5292&type=artist"}]}
+  [00:00.000] 作词 : 罗大佑
+  [00:01.000] 作曲 : 罗大佑
+  [00:02.000] 编曲 : 涂惠源
   [00:19.500]仿佛如同一场梦
   [00:22.670]我们如此短暂的相逢
   [00:26.920]你像一阵春风轻轻柔柔吹入我心中
@@ -51,3 +52,4 @@ lyric: |
   [03:23.910]娇艳的水仙
   [03:27.400]别忘了山谷里寂寞的角落里
   [03:31.350]野百合也有春天
+url: https://s3.yufan.me/musics/276709.mp3

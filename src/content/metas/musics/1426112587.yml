@@ -1,10 +1,11 @@
-netease: "1426112587"
+id: "1426112587"
 name: 下雨天
 artist: 与少年他
-pic: https://p2.music.126.net/qRfggLX2Va3Wslqjr7FxSg==/109951164742550320.jpg
+album: 下雨天
+pic: https://s3.yufan.me/musics/1426112587.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作曲: "},{"tx":"AJ张杰","li":"http://p1.music.126.net/8JJ-WkizJAh3jtOB9P3Tlg==/109951164509738163.jpg","or":"orpheus://nm/artist/home?id=6713&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作词: "},{"tx":"梁心颐","li":"http://p1.music.126.net/FRVe8B2ztDTsu2vwJLGIdg==/109951166578282478.jpg","or":"orpheus://nm/artist/home?id=8677&type=artist"}]}
+  [00:00.000] 作曲 : AJ张杰
+  [00:01.000] 作词 : 梁心颐
   [00:06.960]编曲：李咏恩
   [00:10.673]
   [00:13.284]下雨天了怎么办 我好想你
@@ -74,3 +75,4 @@ lyric: |
   [98:59.710]本歌曲来自〖云上工作室〗
   [98:59.720]10亿现金激励，千亿流量扶持！
   [98:59.729]业务联系：yunmusic_2013@163.com
+url: https://s3.yufan.me/musics/1426112587.mp3

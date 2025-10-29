@@ -1,7 +1,8 @@
-netease: "22638663"
+id: "22638663"
 name: さよなら
 artist: 藤田麻衣子
-pic: https://p2.music.126.net/zt1TDLpEix6GMzSX18XKyQ==/840026883644387.jpg
+album: 二度目の恋
+pic: https://s3.yufan.me/musics/22638663.jpg
 lyric: |
   [00:01.010]今日私は一つの
   [00:06.360]覚悟を決めた
@@ -53,3 +54,4 @@ lyric: |
   [04:23.300]もう決めたの
   [04:26.150]後ろは向かない
   [04:29.280]本当にさよなら
+url: https://s3.yufan.me/musics/22638663.mp3

@@ -1,9 +1,10 @@
-netease: "1892046117"
+id: "1892046117"
 name: 彼岸花
 artist: 王润楠
-pic: https://p1.music.126.net/lXnYLIKiHMrSqFT2XbCZwA==/109951166382782585.jpg
+album: 时间梯
+pic: https://s3.yufan.me/musics/1892046117.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"无"}]}
+  [00:00.000] 作词 : 无
   [00:02.466]演唱：王润楠
   [00:03.467]原唱：王菲
   [00:04.467]作词：林夕
@@ -23,3 +24,4 @@ lyric: |
   [03:24.369]紧握着 我火把
   [03:34.888]他来 我对自己说
   [03:43.903]我不害怕 我很爱他
+url: https://s3.yufan.me/musics/1892046117.mp3

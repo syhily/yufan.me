@@ -1,11 +1,12 @@
-netease: "5252268"
+id: "5252268"
 name: 城里的月光
 artist: 许美静
-pic: https://p2.music.126.net/nf3Vm1TADSzhD4AJyzZBhA==/109951163376713931.jpg
+album: 超级星光Pk宝典2
+pic: https://s3.yufan.me/musics/5252268.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"陈佳明","li":"http://p1.music.126.net/4I6fn2Szp8B2S5rrknFeYg==/5972547162587791.jpg","or":"orpheus://nm/artist/home?id=2266&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"陈佳明","li":"http://p1.music.126.net/4I6fn2Szp8B2S5rrknFeYg==/5972547162587791.jpg","or":"orpheus://nm/artist/home?id=2266&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"吴庆隆","li":"http://p1.music.126.net/72sDHlXlWc-se3EVC5b89g==/109951166239618969.jpg","or":"orpheus://nm/artist/home?id=48831302&type=artist"}]}
+  [00:00.00] 作词 : 陈佳明
+  [00:01.00] 作曲 : 陈佳明
+  [00:02.00] 编曲 : 吴庆隆
   [00:18.20]......
   [00:22.01]每颗心上某一个地方
   [00:27.70]总有个记忆挥不散
@@ -51,3 +52,4 @@ lyric: |
   [04:41.39]若有一天能重逢
   [04:46.69]让幸福撒满整个夜晚
   [04:54.72]
+url: https://s3.yufan.me/musics/5252268.mp3

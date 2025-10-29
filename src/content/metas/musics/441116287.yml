@@ -1,11 +1,12 @@
-netease: "441116287"
+id: "441116287"
 name: 茜さす
 artist: Aimer
-pic: https://p1.music.126.net/K_VRoqy41-flGgIetP1uLg==/109951166691679916.jpg
+album: 茜さす/everlasting snow
+pic: https://s3.yufan.me/musics/441116287.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"Aimer","li":"http://p1.music.126.net/1aoMt5IJppqq-9naHvr7YA==/109951168377713009.jpg","or":"orpheus://nm/artist/home?id=16152&type=artist"}]}
-  {"t":100,"c":[{"tx":"作曲: "},{"tx":"釣俊輔","li":"http://p1.music.126.net/tc-uVogJUZ9IF8O6QR4KTw==/109951168879553207.jpg","or":"orpheus://nm/artist/home?id=30520701&type=artist"}]}
-  {"t":200,"c":[{"tx":"编曲: "},{"tx":"釣俊輔","li":"http://p1.music.126.net/tc-uVogJUZ9IF8O6QR4KTw==/109951168879553207.jpg","or":"orpheus://nm/artist/home?id=30520701&type=artist"},{"tx":"/"},{"tx":"玉井健二","li":"http://p1.music.126.net/k-9hUjD1R8r7AMf2ux7z5A==/109951169505046713.jpg","or":"orpheus://nm/artist/home?id=906133&type=artist"}]}
+  [00:00.000] 作词 : Aimer
+  [00:00.100] 作曲 : 釣俊輔
+  [00:00.200] 编曲 : 釣俊輔/玉井健二
   [00:00.300]
   [00:16.390]枯れ葉舞う町角を 駆け抜けてく乾いた風
   [00:30.100]伸びた影とイチョウ並木 季節を見てたかった
@@ -44,3 +45,4 @@ lyric: |
   [04:48.129]
   [04:49.500]出会い重ね 願いを知る
   [05:01.588]
+url: https://s3.yufan.me/musics/441116287.mp3

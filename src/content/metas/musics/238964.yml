@@ -1,11 +1,12 @@
-netease: "238964"
+id: "238964"
 name: 听！是谁在唱歌
 artist: 黄韵玲
-pic: https://p1.music.126.net/aRp5TtSyCAyU_Nz09H_oNA==/113249697674085.jpg
+album: 候鸟e人 电视原声带
+pic: https://s3.yufan.me/musics/238964.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"姚谦","li":"http://p1.music.126.net/aD8xCqiGywkzzanhU3Ypsg==/109951171420318241.jpg","or":"orpheus://nm/artist/home?id=6389&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"黄韵玲","li":"http://p1.music.126.net/HL-e6mGnRlEU6iYexps4sg==/218802813944442.jpg","or":"orpheus://nm/artist/home?id=7893&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"黄韵玲","li":"http://p1.music.126.net/HL-e6mGnRlEU6iYexps4sg==/218802813944442.jpg","or":"orpheus://nm/artist/home?id=7893&type=artist"}]}
+  [00:00.000] 作词 : 姚谦
+  [00:01.000] 作曲 : 黄韵玲
+  [00:02.000] 编曲 : 黄韵玲
   [00:15.429]好象呼吸一样 那么自然
   [00:19.519]不需要换算
   [00:22.929]所以我们相遇在这季节
@@ -54,3 +55,4 @@ lyric: |
   [03:05.749]对谁呼唤
   [03:11.659]仿佛候鸟一样飞过大地
   [03:15.859]穿越海洋
+url: https://s3.yufan.me/musics/238964.mp3

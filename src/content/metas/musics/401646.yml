@@ -1,10 +1,11 @@
-netease: "401646"
+id: "401646"
 name: 文学少女で“文学少女”
 artist: Audio Highs
-pic: https://p1.music.126.net/biZ3d5QWRyyFceEvqZitGg==/880708813848838.jpg
+album: 男子高校生の日常 VOL.1  スペシャルCD
+pic: https://s3.yufan.me/musics/401646.jpg
 lyric: |
   [00:12]風使う少年は
-  [00:24]青き瞳の奥　
+  [00:24]青き瞳の奥
   [00:30]悲しみたたえ
   [00:36]世界の何処か
   [00:42]かけた半分の月
@@ -20,3 +21,4 @@ lyric: |
   [02:26]ポテト半額だよ
   [02:28]おい、行こうぜ！
   [02:29]なんで！？
+url: https://s3.yufan.me/musics/401646.mp3

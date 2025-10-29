@@ -1,10 +1,11 @@
-netease: "408328757"
+id: "408328757"
 name: やさしさに包まれたなら
 artist: 坂本真綾
-pic: https://p2.music.126.net/4XhQa_lTJkNYxhohbfRqmg==/109951170423345738.jpg
+album: 「たまゆら」主題歌コレクション～卒業写真～
+pic: https://s3.yufan.me/musics/408328757.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"松任谷由実","li":"http://p1.music.126.net/LpNHJdMz00IaJuUlSEQ3hg==/109951172032300652.jpg","or":"orpheus://nm/artist/home?id=17047&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"松任谷由実","li":"http://p1.music.126.net/LpNHJdMz00IaJuUlSEQ3hg==/109951172032300652.jpg","or":"orpheus://nm/artist/home?id=17047&type=artist"}]}
+  [00:00.00] 作词 : 松任谷由実
+  [00:01.00] 作曲 : 松任谷由実
   [00:15.16]小さい顷は神さまがいて
   [00:24.55]不思议に梦をかなえてくれた
   [00:33.75]やさしい気持で目覚めた朝は
@@ -33,3 +34,4 @@ lyric: |
   [03:29.25]目にうつる全てのことは
   [03:37.05]メッセージ
   [03:43.80]
+url: https://s3.yufan.me/musics/408328757.mp3

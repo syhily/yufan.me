@@ -1,11 +1,12 @@
-netease: "777203"
+id: "777203"
 name: HANABI
 artist: Mr.Children
-pic: https://p1.music.126.net/XKIJFvGCgmW05B-5y9H5hA==/109951165946735500.jpg
+album: HANABI
+pic: https://s3.yufan.me/musics/777203.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"桜井和寿"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"桜井和寿"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"小林武史","li":"http://p1.music.126.net/uhjPx-cskTUXrxJgq8KxRg==/18741175697432031.jpg","or":"orpheus://nm/artist/home?id=14431&type=artist"},{"tx":"/"},{"tx":"Mr.Children"}]}
+  [00:00.000] 作词 : 桜井和寿
+  [00:01.000] 作曲 : 桜井和寿
+  [00:02.000] 编曲 : 小林武史/Mr.Children
   [00:19.490]どれくらいの値打ちがあるだろう?
   [00:24.230]僕が今生きているこの世界に
   [00:28.290]すべてが無意味だって思える
@@ -72,3 +73,4 @@ lyric: |
   [04:59.109]もう一回 もう一回
   [05:03.370]もう一回 もう一回
   [05:10.220]
+url: https://s3.yufan.me/musics/777203.mp3

@@ -1,10 +1,11 @@
-netease: "114024"
+id: "114024"
 name: 月半小夜曲
 artist: 李克勤
-pic: https://p1.music.126.net/qeoBT9qPrr07brwb6919eA==/106652627899527.jpg
+album: 一年半载
+pic: https://s3.yufan.me/musics/114024.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"向雪怀","li":"http://p1.music.126.net/doA3ht5x-wrPZOB4CoKUZg==/109951166317574962.jpg","or":"orpheus://nm/artist/home?id=27937391&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"河合奈保子"}]}
+  [00:00.000] 作词 : 向雪怀
+  [00:01.000] 作曲 : 河合奈保子
   [00:33.009]仍然倚在失眠夜望天边星宿
   [00:39.519]仍然听见小提琴如泣似诉再挑逗
   [00:46.500]为何只剩一弯月留在我的天空
@@ -31,3 +32,4 @@ lyric: |
   [03:18.848]提琴独奏独奏着明月半倚深秋
   [03:26.088]我的牵挂我的渴望  直至以后
   [03:36.038]....
+url: https://s3.yufan.me/musics/114024.mp3

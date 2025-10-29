@@ -1,10 +1,11 @@
-netease: "544175479"
+id: "544175479"
 name: See How Much I Love You
 artist: The Skelters
-pic: https://p1.music.126.net/h_5Vc_Bu4edjA-lVAkixHg==/109951163181862700.jpg
+album: Explain to Me
+pic: https://s3.yufan.me/musics/544175479.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"Angel"}]}
-  {"t":238,"c":[{"tx":"作曲: "},{"tx":"Angel"}]}
+  [00:00.000] 作词 : Angel
+  [00:00.238] 作曲 : Angel
   [00:00.476]See how much I love you -Skelters
   [00:11.324]From the first day I saw you
   [00:16.341]I felt something inside me
@@ -47,3 +48,4 @@ lyric: |
   [03:57.162]Baby I care about you
   [04:04.27]And try to understand me
   [04:06.876]Because I love you
+url: https://s3.yufan.me/musics/544175479.mp3

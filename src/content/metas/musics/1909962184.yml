@@ -1,9 +1,10 @@
-netease: "1909962184"
+id: "1909962184"
 name: 亲爱的你怎么不在身边
 artist: 孔晨羽
-pic: https://p2.music.126.net/DVbxoZn6ViW6_g39W2ALqg==/109951165246293465.jpg
+album: 凌晨几分
+pic: https://s3.yufan.me/musics/1909962184.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"编曲: "},{"tx":"无"}]}
+  [00:00.000] 编曲 : 无
   [00:03.149]╱亲爱的你怎么不在身边╱
   [00:08.662]╱原唱：江美琪╱
   [00:12.926]╱作词：邬裕康╱
@@ -61,3 +62,4 @@ lyric: |
   [04:00.948]
   [04:05.717]╱Cover By 孔晨羽╱
   [04:10.481]╱上海 Max Power Studio╱
+url: https://s3.yufan.me/musics/1909962184.mp3

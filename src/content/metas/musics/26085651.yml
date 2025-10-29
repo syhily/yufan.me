@@ -1,10 +1,11 @@
-netease: "26085651"
+id: "26085651"
 name: nostalgia
 artist: Lia
-pic: https://p2.music.126.net/v_RuSP-Pwc8nzmMkuf92jg==/109951170476619012.jpg
+album: Key+Lia Natukage / nostalgia
+pic: https://s3.yufan.me/musics/26085651.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"麻枝准","li":"http://p1.music.126.net/d84qmHlhsVqnnxr5AHEV4Q==/109951169809474488.jpg","or":"orpheus://nm/artist/home?id=14782&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"麻枝准","li":"http://p1.music.126.net/d84qmHlhsVqnnxr5AHEV4Q==/109951169809474488.jpg","or":"orpheus://nm/artist/home?id=14782&type=artist"}]}
+  [00:00.000] 作词 : 麻枝准
+  [00:01.000] 作曲 : 麻枝准
   [00:23.800]ひとりでも歩いてゆける
   [00:34.200]ひとりでも壊れてる夢を見つけて
   [00:45.000]僕は守るように いつか触れていた
@@ -27,3 +28,4 @@ lyric: |
   [05:24.000]
   [05:26.000]
   [05:28.000]
+url: https://s3.yufan.me/musics/26085651.mp3

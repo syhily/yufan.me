@@ -1,7 +1,8 @@
-netease: "105734"
+id: "105734"
 name: 白蛇.赏中秋
 artist: 蒋月泉
-pic: https://p1.music.126.net/zOWqDPfPQAw7FmqxJBkmIA==/97856534872880.jpg
+album: 蒋调唱腔选
+pic: https://s3.yufan.me/musics/105734.jpg
 lyric: |
   [00:13.200]许 仙：七里山塘景物新
   [00:42.020]    秋高气爽净无尘
@@ -40,3 +41,4 @@ lyric: |
   [08:14.330]许 仙：松长青
   [08:17.040]白素贞：但愿千秋百岁长相亲
   [08:31.950]许 仙：地久天长永不分
+url: https://s3.yufan.me/musics/105734.mp3

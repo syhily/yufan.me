@@ -1,11 +1,12 @@
-netease: "33469247"
+id: "33469247"
 name: 原風景
 artist: mamomo
-pic: https://p1.music.126.net/ct9bs4VXR1mrbVRsX9iboA==/3372202162443903.jpg
+album: 春へと続く丘 オリジナルサウンドトラック
+pic: https://s3.yufan.me/musics/33469247.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"mamomo"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"mamomo"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"mamomo"}]}
+  [00:00.00] 作词 : mamomo
+  [00:01.00] 作曲 : mamomo
+  [00:02.00] 编曲 : mamomo
   [00:25.38]月明かりに照らされ
   [00:29.58]向かう先は  見知らぬ町
   [00:36.68]白い息を吐き出し
@@ -43,3 +44,4 @@ lyric: |
   [04:23.747]帰ろう  ほら
   [04:29.738]町は  今日も…
   [04:34.348]
+url: https://s3.yufan.me/musics/33469247.mp3

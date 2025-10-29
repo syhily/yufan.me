@@ -1,10 +1,11 @@
-netease: "22711517"
+id: "22711517"
 name: 祈りの詩
 artist: savage genius
-pic: https://p2.music.126.net/pWtAhx54Z_SVNDr7Wl-aVg==/109951170423339696.jpg
+album: First Smile
+pic: https://s3.yufan.me/musics/22711517.jpg
 lyric: |
-  {"t":-1000,"c":[{"tx":"作词: "},{"tx":"ああ"}]}
-  {"t":-500,"c":[{"tx":"作曲: "},{"tx":"Takumi"}]}
+  [00:00.00] 作词 : ああ
+  [00:00.00] 作曲 : Takumi
   [00:00.00]savage genius — 祈りの詩
   [00:05.00]
   [00:06.75]傷が奏で出す 祈りの詩
@@ -52,3 +53,4 @@ lyric: |
   [03:11.08]息づく願いを 信じて
   [03:17.42]
   [03:33.00]END
+url: https://s3.yufan.me/musics/22711517.mp3

@@ -1,12 +1,13 @@
-netease: "287319"
+id: "287319"
 name: 遇见
 artist: 孙燕姿
-pic: https://p1.music.126.net/pQnsyev650dd7V2da-u7Sw==/109951169717940503.jpg
+album: The Moment
+pic: https://s3.yufan.me/musics/287319.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"易家扬","li":"http://p1.music.126.net/K0Fr7QiEqYI3ANBpnRrX0w==/109951166251132481.jpg","or":"orpheus://nm/artist/home?id=12176171&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"林一峰","li":"http://p1.music.126.net/3tpyOAe5ohBiwNVv3PTfMA==/5929666208888581.jpg","or":"orpheus://nm/artist/home?id=3687&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"Terence Teo","li":"http://p1.music.126.net/GtLrnA8LA27evLFnEHxErw==/109951166341123098.jpg","or":"orpheus://nm/artist/home?id=14388915&type=artist"}]}
-  {"t":3000,"c":[{"tx":"制作人: "},{"tx":"李偲菘","li":"http://p1.music.126.net/fQyXXcIMpzKx0bIEf5HF5Q==/18974272160634361.jpg","or":"orpheus://nm/artist/home?id=229058&type=artist"}]}
+  [00:00.00] 作词 : 易家扬
+  [00:01.00] 作曲 : 林一峰
+  [00:02.00] 编曲 : Terence Teo
+  [00:03.00] 制作人 : 李偲菘
   [00:25.07]听见冬天的离开
   [00:30.06]我在某年某月醒过来
   [00:35.39]我想我等我期待
@@ -45,3 +46,4 @@ lyric: |
   [03:00.69]是最美丽的意外
   [03:06.42]终有一天
   [03:08.55]我的谜底 会解开
+url: https://s3.yufan.me/musics/287319.mp3

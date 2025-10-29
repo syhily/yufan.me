@@ -1,11 +1,12 @@
-netease: "571336152"
+id: "571336152"
 name: 明日への扉
 artist: 高橋未奈美
-pic: https://p2.music.126.net/gOXKt-fll1FL1mN1JU1oZw==/109951165706041519.jpg
+album: 明日への扉
+pic: https://s3.yufan.me/musics/571336152.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"川嶋あい","li":"http://p1.music.126.net/MnwivEUWTR4ysWUgP1uuEg==/109951168688717729.jpg","or":"orpheus://nm/artist/home?id=16700&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"川嶋あい","li":"http://p1.music.126.net/MnwivEUWTR4ysWUgP1uuEg==/109951168688717729.jpg","or":"orpheus://nm/artist/home?id=16700&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"谷口尚久","li":"http://p1.music.126.net/5cnHG9ZOgC2c_f_wA5bpdA==/109951169490521504.jpg","or":"orpheus://nm/artist/home?id=29642181&type=artist"}]}
+  [00:00.00] 作词 : 川嶋あい
+  [00:01.00] 作曲 : 川嶋あい
+  [00:02.00] 编曲 : 谷口尚久
   [00:24.32]光る汗Tシャツ出会った恋
   [00:29.62]誰よりも輝く君を見て
   [00:35.07]初めての気持ちを見つけたよ
@@ -61,3 +62,4 @@ lyric: |
   [04:15.89]長すぎた旅のあと
   [04:19.00]誓った愛を育てよう
   [04:24.13]
+url: https://s3.yufan.me/musics/571336152.mp3

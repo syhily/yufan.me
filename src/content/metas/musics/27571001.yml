@@ -1,10 +1,11 @@
-netease: "27571001"
+id: "27571001"
 name: Letter Song
 artist: ヲタみん
-pic: https://p2.music.126.net/0XLP85MWPmu2LqnwUhgy_A==/109951169424855077.jpg
+album: Letter Song
+pic: https://s3.yufan.me/musics/27571001.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"doriko"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"doriko"}]}
+  [00:00.000] 作词 : doriko
+  [00:01.000] 作曲 : doriko
   [00:35.600]好きな人と歩いた場所も
   [00:43.110]その時見た景色も
   [00:50.870]振り返らず 今を駆け抜け
@@ -51,3 +52,4 @@ lyric: |
   [05:21.060]泣いた私がいるけど
   [05:24.860]その涙を優しく
   [05:28.810]思い出に変えてください
+url: https://s3.yufan.me/musics/27571001.mp3

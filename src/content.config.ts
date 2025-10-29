@@ -117,6 +117,19 @@ const imageCollection = defineCollection({
   }),
 })
 
+const musicCollection = defineCollection({
+  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/metas/musics' }),
+  schema: z.object({
+    id: z.string().regex(/\d+/),
+    name: z.string(),
+    artist: z.string(),
+    album: z.string(),
+    pic: z.string().url(),
+    lyric: z.string(),
+    url: z.string().url(),
+  }),
+})
+
 export const collections = {
   categories: categoriesCollection,
   friends: friendsCollection,
@@ -124,4 +137,5 @@ export const collections = {
   posts: postsCollection,
   pages: pagesCollection,
   images: imageCollection,
+  musics: musicCollection,
 }

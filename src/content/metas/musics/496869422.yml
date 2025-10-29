@@ -1,11 +1,13 @@
-netease: "496869422"
+id: "496869422"
 name: 打上花火
 artist: Daoko
-pic: https://p1.music.126.net/ZUCE_1Tl_hkbtamKmSNXEg==/109951163009282836.jpg
+album: 打上花火
+pic: https://s3.yufan.me/musics/496869422.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"米津玄師","li":"http://p1.music.126.net/iBE4CbZHrQaZZ9df1DMcEA==/109951169888981488.jpg","or":"orpheus://nm/artist/home?id=159300&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"米津玄師","li":"http://p1.music.126.net/iBE4CbZHrQaZZ9df1DMcEA==/109951169888981488.jpg","or":"orpheus://nm/artist/home?id=159300&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"米津玄師","li":"http://p1.music.126.net/iBE4CbZHrQaZZ9df1DMcEA==/109951169888981488.jpg","or":"orpheus://nm/artist/home?id=159300&type=artist"},{"tx":"/"},{"tx":"田中隼人","li":"http://p1.music.126.net/-nFi76W-JFwqPoS6LDvVaA==/109951169424503812.jpg","or":"orpheus://nm/artist/home?id=30346855&type=artist"}]}
+  [00:00.00] 作词 : 米津玄師
+  [00:01.00] 作曲 : 米津玄師
+  [00:02.00] 编曲 : 米津玄師/田中隼人
+  [00:03.00] 制作人 : 米津玄師
   [00:19.64]あの日見渡した渚を
   [00:24.50]今も思い出すんだ
   [00:29.50]砂の上に刻んだ言葉
@@ -54,3 +56,4 @@ lyric: |
   [03:32.27]きっとまだ 終わらない夏が
   [03:37.30]曖昧な心を 解かして繋いだ
   [03:41.94]この夜が 続いて欲しかった
+url: https://s3.yufan.me/musics/496869422.mp3

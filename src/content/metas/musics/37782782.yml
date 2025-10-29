@@ -1,11 +1,12 @@
-netease: "37782782"
+id: "37782782"
 name: 老屋
 artist: 明得苯
-pic: https://p1.music.126.net/XRveOcY6W-jqfnWDOiN4Ug==/18336555416935789.jpg
+album: 老屋
+pic: https://s3.yufan.me/musics/37782782.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"罗力洪"},{"tx":"/"},{"tx":"明得苯","li":"http://p1.music.126.net/cZkrrch9JR4ljikI0Zn_kw==/109951165755926369.jpg","or":"orpheus://nm/artist/home?id=1074062&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"罗力洪"},{"tx":"/"},{"tx":"明得苯","li":"http://p1.music.126.net/cZkrrch9JR4ljikI0Zn_kw==/109951165755926369.jpg","or":"orpheus://nm/artist/home?id=1074062&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"明得苯","li":"http://p1.music.126.net/cZkrrch9JR4ljikI0Zn_kw==/109951165755926369.jpg","or":"orpheus://nm/artist/home?id=1074062&type=artist"}]}
+  [00:00.000] 作词 : 罗力洪/明得苯
+  [00:01.000] 作曲 : 罗力洪/明得苯
+  [00:02.000] 编曲 : 明得苯
   [00:14.313]后期：白健平
   [00:18.316]又是冬花开的季节
   [00:21.769]没有了蝴蝶的飞舞
@@ -36,3 +37,4 @@ lyric: |
   [02:46.198]稻草人还拿着赶牛鞭
   [02:49.722]孩子们在撒野
   [02:52.859]老屋的门前
+url: https://s3.yufan.me/musics/37782782.mp3

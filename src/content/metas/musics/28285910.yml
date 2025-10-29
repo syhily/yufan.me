@@ -1,11 +1,12 @@
-netease: "28285910"
+id: "28285910"
 name: 岁月神偷
 artist: 金玟岐
-pic: https://p1.music.126.net/gWNsPDBbQCQXVNvMdnAH8A==/18815942487303143.jpg
+album: 完美世界
+pic: https://s3.yufan.me/musics/28285910.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"金玟岐","li":"http://p1.music.126.net/P4VSKGQ8cu-xOnidHCvtRQ==/109951165528990739.jpg","or":"orpheus://nm/artist/home?id=893259&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"金玟岐","li":"http://p1.music.126.net/P4VSKGQ8cu-xOnidHCvtRQ==/109951165528990739.jpg","or":"orpheus://nm/artist/home?id=893259&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"薛琳可","li":"http://p1.music.126.net/nZD7fdDlz6klDNMJNMbdEA==/109951166314696305.jpg","or":"orpheus://nm/artist/home?id=30935790&type=artist"}]}
+  [00:00.000] 作词 : 金玟岐
+  [00:01.000] 作曲 : 金玟岐
+  [00:02.000] 编曲 : 薛琳可
   [00:15.368]能够握紧的就别放了
   [00:19.148]能够拥抱的就别拉扯
   [00:23.331]时间着急的冲刷着
@@ -58,3 +59,4 @@ lyric: |
   [03:27.189]别怪我贪心只是不愿醒
   [03:31.183]因为你只为你愿和我一起
   [03:36.864]看云淡风轻
+url: https://s3.yufan.me/musics/28285910.mp3

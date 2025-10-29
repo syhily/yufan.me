@@ -1,10 +1,11 @@
-netease: "2156585059"
+id: "2156585059"
 name: 雨待ち風（风待雨）
 artist: Aimer
-pic: https://p2.music.126.net/5g5LY-UiVaHdqIm0OxiHUA==/109951169594966067.jpg
+album: 雨待ち風
+pic: https://s3.yufan.me/musics/2156585059.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"大橋卓弥","li":"http://p1.music.126.net/mLG9Vkd5k7iVQt-dVXkKBA==/109951169426856908.jpg","or":"orpheus://nm/artist/home?id=15122&type=artist"},{"tx":"/"},{"tx":"常田真太郎","li":"http://p1.music.126.net/P_0PhCWPdAiBY0o3JwkIwQ==/109951166722980561.jpg","or":"orpheus://nm/artist/home?id=28847260&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"大橋卓弥","li":"http://p1.music.126.net/mLG9Vkd5k7iVQt-dVXkKBA==/109951169426856908.jpg","or":"orpheus://nm/artist/home?id=15122&type=artist"},{"tx":"/"},{"tx":"常田真太郎","li":"http://p1.music.126.net/P_0PhCWPdAiBY0o3JwkIwQ==/109951166722980561.jpg","or":"orpheus://nm/artist/home?id=28847260&type=artist"}]}
+  [00:00.000] 作词 : 大橋卓弥/常田真太郎
+  [00:01.000] 作曲 : 大橋卓弥/常田真太郎
   [00:09.687] 遠く
   [00:15.288] どこまででも続いて行く空
   [00:23.443] 君を失くしてから
@@ -41,3 +42,4 @@ lyric: |
   [03:56.729] 声を張り上げて
   [04:00.289] 君の名前をもう一度 この空へ
   [04:11.299] 雨待ち風、ほほをなでていく
+url: https://s3.yufan.me/musics/2156585059.mp3

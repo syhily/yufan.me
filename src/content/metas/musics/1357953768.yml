@@ -1,11 +1,12 @@
-netease: "1357953768"
+id: "1357953768"
 name: だから僕は音楽を辞めた
 artist: ヨルシカ
-pic: https://p1.music.126.net/AVhYLte6khAcd3wOO65avw==/109951170245162530.jpg
+album: だから僕は音楽を辞めた
+pic: https://s3.yufan.me/musics/1357953768.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
-  {"t":100,"c":[{"tx":"作曲: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
-  {"t":200,"c":[{"tx":"编曲: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
+  [00:00.00] 作词 : n-buna
+  [00:00.10] 作曲 : n-buna
+  [00:00.20] 编曲 : n-buna
   [00:00.30]
   [00:01.080]考えたってわからないし
   [00:03.060]青空の下、君を待った
@@ -70,3 +71,4 @@ lyric: |
   [03:49.199]本当だ　本当なんだ　昔はそうだった
   [03:55.030]だから僕は
   [03:59.020]だから僕は音楽を辞めた
+url: https://s3.yufan.me/musics/1357953768.mp3

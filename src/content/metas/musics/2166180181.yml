@@ -1,12 +1,13 @@
-netease: "2166180181"
+id: "2166180181"
 name: 过客
-artist: 四熹丸子
-pic: https://p1.music.126.net/-4GQ3ebbhTb31VFgwgkS3Q==/109951169682791861.jpg
+artist: 徐化文（四熹丸子）
+album: 过客
+pic: https://s3.yufan.me/musics/2166180181.jpg
 lyric: |
-  {"t":-1000,"c":[{"tx":"作词: "},{"tx":"何教授","li":"http://p1.music.126.net/ZycJNU6w7SZ_6RhVaQ02DQ==/109951164844047812.jpg","or":"orpheus://nm/artist/home?id=12032246&type=artist"}]}
-  {"t":-750,"c":[{"tx":"作曲: "},{"tx":"何教授","li":"http://p1.music.126.net/ZycJNU6w7SZ_6RhVaQ02DQ==/109951164844047812.jpg","or":"orpheus://nm/artist/home?id=12032246&type=artist"}]}
-  {"t":-500,"c":[{"tx":"编曲: "},{"tx":"王白","li":"http://p1.music.126.net/U1d0QH6VJHX5ujzlRFVlzw==/109951165750993074.jpg","or":"orpheus://nm/artist/home?id=46921313&type=artist"}]}
-  {"t":-250,"c":[{"tx":"制作人: "},{"tx":"王白","li":"http://p1.music.126.net/U1d0QH6VJHX5ujzlRFVlzw==/109951165750993074.jpg","or":"orpheus://nm/artist/home?id=46921313&type=artist"}]}
+  [00:00.000] 作词 : 何教授
+  [00:00.000] 作曲 : 何教授
+  [00:00.000] 编曲 : 王白
+  [00:00.000] 制作人 : 王白
   [00:00.000]你是站台上 等待希望的乘客
   [00:05.296]你是旅途中 踏浪而来的歌
   [00:09.347]没人能看破，你的惶惑
@@ -58,3 +59,4 @@ lyric: |
   [03:18.193]混音/母带工程师 Mixing Engineer/Mastering：赛虎@野草音乐
   [03:18.843]渠道统筹Channel Coordinator：小风@野草音乐
   [03:19.619]OP：野草文化传媒weeds music
+url: https://s3.yufan.me/musics/2166180181.mp3

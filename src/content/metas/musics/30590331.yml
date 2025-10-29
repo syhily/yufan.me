@@ -1,10 +1,11 @@
-netease: "30590331"
+id: "30590331"
 name: 秋
 artist: FLOWER FLOWER
-pic: https://p1.music.126.net/FZ-WocHseUUXsWvj5f3H9Q==/109951169169580173.jpg
+album: 色
+pic: https://s3.yufan.me/musics/30590331.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"YUI","li":"http://p1.music.126.net/uRDbF4VnJ2ALHKkCxamN1A==/109951165708950765.jpg","or":"orpheus://nm/artist/home?id=18168&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"FLOWER FLOWER"}]}
+  [00:00.000] 作词 : YUI
+  [00:01.000] 作曲 : FLOWER FLOWER
   [00:20.090]暗い森 雫の音
   [00:29.880]澄ませば聞こえてくる
   [00:41.050]優しい風 吹き付けるのは
@@ -49,3 +50,4 @@ lyric: |
   [05:21.640]こんなにあたたかいよ
   [05:27.980]心に染みてく
   [05:40.410]
+url: https://s3.yufan.me/musics/30590331.mp3

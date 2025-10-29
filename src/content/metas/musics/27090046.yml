@@ -1,9 +1,10 @@
-netease: "27090046"
+id: "27090046"
 name: 时间煮雨
 artist: 郁可唯
-pic: https://p2.music.126.net/li785Fx8NEAR4Lhd79yAow==/4421136255303626.jpg
+album: 我为歌狂（第十二期）
+pic: https://s3.yufan.me/musics/27090046.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作曲: "},{"tx":"武部聡志","li":"http://p1.music.126.net/8SuA0eMUMy_lYcWAK1apQA==/109951165559661480.jpg","or":"orpheus://nm/artist/home?id=15589&type=artist"},{"tx":"/"},{"tx":"刘大江","li":"http://p1.music.126.net/FbHAgvFcYmJv04Rqz6EJ9w==/109951166317969104.jpg","or":"orpheus://nm/artist/home?id=30860774&type=artist"}]}
+  [00:00.000] 作曲 : 武部聡志/刘大江
   [00:23.550]风吹雨成花
   [00:29.100]时间追不上白马
   [00:34.690]你年少掌心的梦话
@@ -38,3 +39,4 @@ lyric: |
   [03:35.320]青草离离
   [03:40.960]明月夜送君千里
   [03:46.030]等来年 秋风起
+url: https://s3.yufan.me/musics/27090046.mp3

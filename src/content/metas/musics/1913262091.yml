@@ -1,12 +1,13 @@
-netease: "1913262091"
+id: "1913262091"
 name: 留香
 artist: 许嵩
-pic: https://p2.music.126.net/s7ya6briWXZ8uTBcsac2yA==/109951170065117631.jpg
+album: 留香
+pic: https://s3.yufan.me/musics/1913262091.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"Adam Lee","li":"http://p1.music.126.net/eAikPpbT_3iokiczSluVhw==/109951170064755442.jpg","or":"orpheus://nm/artist/home?id=470197&type=artist"},{"tx":"/"},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
-  {"t":3000,"c":[{"tx":"制作人: "},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
+  [00:00.00] 作词 : 许嵩
+  [00:01.00] 作曲 : 许嵩
+  [00:02.00] 编曲 : Adam Lee/许嵩
+  [00:03.00] 制作人 : 许嵩
   [00:13.73]开车进地下车库最可怕的事是什么？
   [00:19.50]是电台正放着惊艳的歌信号却渐弱
   [00:24.76]我好想倒车听完
@@ -59,11 +60,12 @@ lyric: |
   [03:42.80]我劝告了风
   [03:45.56]晚点
   [03:50.51]送它走
-  {"t":242901,"c":[{"tx":"和声编写: "},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
-  {"t":243526,"c":[{"tx":"和音: "},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
-  {"t":244151,"c":[{"tx":"录音师: "},{"tx":"许嵩","li":"http://p1.music.126.net/FLHG9Ou-sIq9F6dPe7SuNw==/109951169440811453.jpg","or":"orpheus://nm/artist/home?id=5771&type=artist"}]}
-  {"t":244776,"c":[{"tx":"录音室: "},{"tx":"Vae Studio"}]}
-  {"t":245401,"c":[{"tx":"混音师: "},{"tx":"Richard Furch"}]}
-  {"t":246026,"c":[{"tx":"混音室: "},{"tx":"mixHaus StudioS"}]}
-  {"t":246651,"c":[{"tx":"发行: "},{"tx":"银河方舟StarNation"}]}
-  {"t":247276,"c":[{"tx":"出品: "},{"tx":"海蝶音乐"},{"tx":"/"},{"tx":"银河方舟StarNation"}]}
+  [04:02.90] 和声编写 : 许嵩
+  [04:03.52] 和音 : 许嵩
+  [04:04.15] 录音师 : 许嵩
+  [04:04.77] 录音室 : Vae Studio
+  [04:05.40] 混音师 : Richard Furch
+  [04:06.02] 混音室 : mixHaus StudioS
+  [04:06.65] 发行 : 银河方舟StarNation
+  [04:07.27] 出品 : 海蝶音乐/银河方舟StarNation
+url: https://s3.yufan.me/musics/1913262091.mp3

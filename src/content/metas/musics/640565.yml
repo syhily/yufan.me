@@ -1,10 +1,11 @@
-netease: "640565"
+id: "640565"
 name: Life Is Like A Boat
 artist: Rie fu
-pic: https://p2.music.126.net/S2U-jVMYiJQfXVEaZnpANg==/4420036743668385.jpg
+album: Life Is Like A Boat
+pic: https://s3.yufan.me/musics/640565.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"Rie fu","li":"http://p1.music.126.net/xukK-A5fcj-4smFadYS5RA==/109951170188107241.jpg","or":"orpheus://nm/artist/home?id=17599&type=artist"}]}
-  {"t":600,"c":[{"tx":"作曲: "},{"tx":"Rie fu","li":"http://p1.music.126.net/xukK-A5fcj-4smFadYS5RA==/109951170188107241.jpg","or":"orpheus://nm/artist/home?id=17599&type=artist"}]}
+  [00:00.000] 作词 : Rie fu
+  [00:00.600] 作曲 : Rie fu
   [00:01.200]Nobody knows who I really am,
   [00:05.620]I never felt this empty before.
   [00:10.300]And if I ever need someone to come along,
@@ -56,3 +57,4 @@ lyric: |
   [04:37.590]私たちを襲うけど
   [04:42.400]それも素敵な旅ね
   [04:47.280]どれも素敵な旅ね
+url: https://s3.yufan.me/musics/640565.mp3

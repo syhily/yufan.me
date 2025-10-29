@@ -1,12 +1,13 @@
-netease: "30373825"
+id: "30373825"
 name: 「新世紀エヴァンゲリオン」~FLY ME TO THE MOON
 artist: CLAIRE
-pic: https://p1.music.126.net/xCk0Y3GB3h3ennpo3WuC_Q==/7863707161991707.jpg
+album: スターチャイルドSELECTION音楽編 (TV作品集)
+pic: https://s3.yufan.me/musics/30373825.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"Bart Howard"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"Bart Howard"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"大森俊之","li":"http://p1.music.126.net/Bs7nQ2U_L8E64Mgv6u2Gew==/109951169038328156.jpg","or":"orpheus://nm/artist/home?id=15149&type=artist"}]}
-  {"t":3000,"c":[{"tx":"制作人: "},{"tx":"大森俊之","li":"http://p1.music.126.net/Bs7nQ2U_L8E64Mgv6u2Gew==/109951169038328156.jpg","or":"orpheus://nm/artist/home?id=15149&type=artist"}]}
+  [00:00.00] 作词 : Bart Howard
+  [00:01.00] 作曲 : Bart Howard
+  [00:02.00] 编曲 : 大森俊之
+  [00:03.00] 制作人 : 大森俊之
   [00:25:00]Fly me to the moon
   [00:29:00]And let me play among the stars
   [00:34:00]Let me see what spring is like
@@ -34,3 +35,4 @@ lyric: |
   [02:52:00]In other words,Please be true
   [03:00:00]In other words,
   [03:03:30]I love you
+url: https://s3.yufan.me/musics/30373825.mp3

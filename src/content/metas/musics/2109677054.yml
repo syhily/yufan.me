@@ -1,7 +1,8 @@
-netease: "2109677054"
+id: "2109677054"
 name: 不想长大
 artist: 肖杰
-pic: https://p1.music.126.net/mndru_3IcnasO_pX1bgANg==/109951169172370997.jpg
+album: 不想长大
+pic: https://s3.yufan.me/musics/2109677054.jpg
 lyric: |
   [00:18.36]不想长大 oh爸爸妈妈
   [00:23.01]早点回家我想你们啦
@@ -40,3 +41,4 @@ lyric: |
   [02:50.82]早点回家我想你们啦
   [02:55.14]嘻嘻哈哈就在我们家
   [02:59.88]不想长大我不想长大
+url: https://s3.yufan.me/musics/2109677054.mp3

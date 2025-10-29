@@ -1,12 +1,13 @@
-netease: "2611597012"
+id: "2611597012"
 name: ざらめ
 artist: あいみょん
-pic: https://p1.music.126.net/NOhV-IQjBlFajZtrYrRohQ==/109951169818913699.jpg
+album: ざらめ
+pic: https://s3.yufan.me/musics/2611597012.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"あいみょん","li":"http://p1.music.126.net/p0Go_tc5q8aszV__WIeHKQ==/109951170562527281.jpg","or":"orpheus://nm/artist/home?id=1053279&type=artist"}]}
-  {"t":294,"c":[{"tx":"作曲: "},{"tx":"あいみょん","li":"http://p1.music.126.net/p0Go_tc5q8aszV__WIeHKQ==/109951170562527281.jpg","or":"orpheus://nm/artist/home?id=1053279&type=artist"}]}
-  {"t":588,"c":[{"tx":"编曲: "},{"tx":"Tomi Yo","li":"http://p1.music.126.net/-3o4c9zpykPlhS5hOL9N7w==/109951169219951606.jpg","or":"orpheus://nm/artist/home?id=30730324&type=artist"}]}
-  {"t":882,"c":[{"tx":"制作人: "},{"tx":"Tomi Yo","li":"http://p1.music.126.net/-3o4c9zpykPlhS5hOL9N7w==/109951169219951606.jpg","or":"orpheus://nm/artist/home?id=30730324&type=artist"}]}
+  [00:00.000] 作词 : あいみょん
+  [00:00.294] 作曲 : あいみょん
+  [00:00.588] 编曲 : Tomi Yo
+  [00:00.882] 制作人 : Tomi Yo
   [00:01.178] この胸に刺さった
   [00:06.054] 無名の刃を抜く術は何処
   [00:12.059] そろそろ こうしてちゃ
@@ -52,12 +53,13 @@ lyric: |
   [04:08.251]
   [04:17.311] この胸に残った鉛の屑は
   [04:26.176] いつか溶けるだろうか
-  {"t":277464,"c":[{"tx":"录音助理: "},{"tx":"Kyuya Nishimoto"}]}
-  {"t":278019,"c":[{"tx":"原声吉他: "},{"tx":"aimyon"}]}
-  {"t":278574,"c":[{"tx":"鼓: "},{"tx":"Yoshihiro Kawamura"}]}
-  {"t":279129,"c":[{"tx":"人声: "},{"tx":"aimyon"}]}
-  {"t":279684,"c":[{"tx":"管风琴: "},{"tx":"Tomi Yo","li":"http://p1.music.126.net/-3o4c9zpykPlhS5hOL9N7w==/109951169219951606.jpg","or":"orpheus://nm/artist/home?id=30730324&type=artist"}]}
-  {"t":280239,"c":[{"tx":"电吉他: "},{"tx":"Yoshiyuki Yatsuhashi"}]}
-  {"t":280794,"c":[{"tx":"贝斯: "},{"tx":"Shige Murata"}]}
-  {"t":281349,"c":[{"tx":"母带工程师: "},{"tx":"Kentaro Kimura"}]}
-  {"t":281904,"c":[{"tx":"混音工程师: "},{"tx":"Tadashi Nakamura"}]}
+  [04:37.464] 录音助理 : Kyuya Nishimoto
+  [04:38.019] 原声吉他 : aimyon
+  [04:38.574] 鼓 : Yoshihiro Kawamura
+  [04:39.129] 人声 : aimyon
+  [04:39.684] 管风琴 : Tomi Yo
+  [04:40.239] 电吉他 : Yoshiyuki Yatsuhashi
+  [04:40.794] 贝斯 : Shige Murata
+  [04:41.349] 母带工程师 : Kentaro Kimura
+  [04:41.904] 混音工程师 : Tadashi Nakamura
+url: https://s3.yufan.me/musics/2611597012.mp3

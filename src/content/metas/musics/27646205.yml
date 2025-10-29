@@ -1,12 +1,13 @@
-netease: "27646205"
+id: "27646205"
 name: 安和桥
 artist: 宋冬野
-pic: https://p1.music.126.net/GcRunGm02vZBicYmIN6GXw==/109951163200249252.jpg
+album: 安和桥北
+pic: https://s3.yufan.me/musics/27646205.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"宋冬野","li":"http://p1.music.126.net/E0naLXtRIBuB_f6RvlBscg==/109951162811539164.jpg","or":"orpheus://nm/artist/home?id=5073&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"宋冬野","li":"http://p1.music.126.net/E0naLXtRIBuB_f6RvlBscg==/109951162811539164.jpg","or":"orpheus://nm/artist/home?id=5073&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"韦伟","li":"http://p1.music.126.net/9qs_Ya2_u3i5KIpVfoYndA==/18690598162274786.jpg","or":"orpheus://nm/artist/home?id=12212027&type=artist"}]}
-  {"t":3000,"c":[{"tx":"制作人: "},{"tx":"宋冬野","li":"http://p1.music.126.net/E0naLXtRIBuB_f6RvlBscg==/109951162811539164.jpg","or":"orpheus://nm/artist/home?id=5073&type=artist"}]}
+  [00:00.000] 作词 : 宋冬野
+  [00:01.000] 作曲 : 宋冬野
+  [00:02.000] 编曲 : 韦伟
+  [00:03.000] 制作人 : 宋冬野
   [00:37.196]让我再看你一遍
   [00:39.294]从南到北
   [00:44.176]像是被五环路蒙住的双眼
@@ -41,3 +42,4 @@ lyric: |
   [03:18.895]我知道 这个世界
   [03:22.598]每天都有太多遗憾
   [03:26.153]所以你好 再见
+url: https://s3.yufan.me/musics/27646205.mp3

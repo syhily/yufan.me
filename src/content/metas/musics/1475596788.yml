@@ -1,10 +1,11 @@
-netease: "1475596788"
+id: "1475596788"
 name: 起风了
 artist: 周深
-pic: https://p2.music.126.net/LpFu9pWQ3tzldjhkLwh4Vw==/109951165291444752.jpg
+album: 起风了
+pic: https://s3.yufan.me/musics/1475596788.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作曲: "},{"tx":"高橋優","li":"http://p1.music.126.net/3YInUp8burLt-vgqcDJk0w==/109951168673916355.jpg","or":"orpheus://nm/artist/home?id=159892&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作词: "},{"tx":"米果"}]}
+  [00:00.000] 作曲 : 高橋優
+  [00:01.000] 作词 : 米果
   [00:24.969]这一路上走走停停
   [00:28.070]顺着少年漂流的痕迹
   [00:31.219]迈出车站的前一刻
@@ -63,3 +64,4 @@ lyric: |
   [04:13.929]连同指尖弹出的盛夏
   [04:17.163]心之所动 就随风去了
   [04:22.577]以爱之名 你还愿意吗
+url: https://s3.yufan.me/musics/1475596788.mp3

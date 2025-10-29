@@ -1,10 +1,11 @@
-netease: "1899950648"
+id: "1899950648"
 name: はじめのいっぽ
 artist: このきち
-pic: https://p1.music.126.net/Ip39i2f8JWKmffuZRHF5og==/109951166680471133.jpg
+album: はじめのいっぽ
+pic: https://s3.yufan.me/musics/1899950648.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"YU-KI"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"g-iwanari"}]}
+  [00:00.00] 作词 : YU-KI
+  [00:01.00] 作曲 : g-iwanari
   [00:10.18]さぁ 堂々と胸を張って
   [00:12.78]いこう あの憧れ目指して
   [00:15.19]Step up Step up
@@ -91,3 +92,4 @@ lyric: |
   [03:53.45]今 この１分１秒も
   [03:55.71]君と 夢を見たい
   [03:58.23]思い立った その瞬間がスタート
+url: https://s3.yufan.me/musics/1899950648.mp3

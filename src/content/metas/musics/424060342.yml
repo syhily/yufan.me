@@ -1,10 +1,11 @@
-netease: "424060342"
+id: "424060342"
 name: 花降らし
 artist: ぱじ
-pic: https://p1.music.126.net/FZX7XAjsmEPGyVOqm4H7aQ==/109951166361039007.jpg
+album: 最新热歌慢摇112
+pic: https://s3.yufan.me/musics/424060342.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
-  {"t":75,"c":[{"tx":"作曲: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
+  [00:00.00] 作词 : n-buna
+  [00:00.07] 作曲 : n-buna
   [00:00.15]花びらが宙に浮いた
   [00:02.54]舞った一足のサンダル
   [00:05.10]身体ごと宙に浮いて
@@ -59,3 +60,4 @@ lyric: |
   [04:09.20]式日を背に
   [04:12.16]一人俯いてるだけ
   [04:14.20]ただそれだけだ
+url: https://s3.yufan.me/musics/424060342.mp3

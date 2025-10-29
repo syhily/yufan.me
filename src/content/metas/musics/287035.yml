@@ -1,11 +1,12 @@
-netease: "287035"
+id: "287035"
 name: 遇见
 artist: 孙燕姿
-pic: https://p1.music.126.net/UQo40hhzMpnP3bFvqIu16w==/109951166191908812.jpg
+album: My Story, Your Song 经典全纪录 (主打精华版)
+pic: https://s3.yufan.me/musics/287035.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"易家扬","li":"http://p1.music.126.net/K0Fr7QiEqYI3ANBpnRrX0w==/109951166251132481.jpg","or":"orpheus://nm/artist/home?id=12176171&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"林一峰","li":"http://p1.music.126.net/3tpyOAe5ohBiwNVv3PTfMA==/5929666208888581.jpg","or":"orpheus://nm/artist/home?id=3687&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"Terence Teo","li":"http://p1.music.126.net/GtLrnA8LA27evLFnEHxErw==/109951166341123098.jpg","or":"orpheus://nm/artist/home?id=14388915&type=artist"}]}
+  [00:00.000] 作词 : 易家扬
+  [00:01.000] 作曲 : 林一峰
+  [00:02.000] 编曲 : Terence Teo
   [00:24.898]听见 冬天的离开
   [00:29.697]我在某年某月 醒过来
   [00:34.768]我想 我等 我期待
@@ -31,3 +32,4 @@ lyric: |
   [02:53.689]我看着路 梦的入口有点窄
   [02:58.748]我遇见你是最美丽的意外
   [03:05.888]总有一天 我的谜底会揭开
+url: https://s3.yufan.me/musics/287035.mp3

@@ -1,11 +1,12 @@
-netease: "1485319473"
+id: "1485319473"
 name: 風を食む
 artist: ヨルシカ
-pic: https://p2.music.126.net/Jh-7TNNm9BhJZejuRx6_EQ==/109951165373693055.jpg
+album: 風を食む
+pic: https://s3.yufan.me/musics/1485319473.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"编曲: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作词: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
-  {"t":2000,"c":[{"tx":"作曲: "},{"tx":"n-buna","li":"http://p1.music.126.net/MA51IuYMedDwqF_eNR9p_A==/6639950720410458.jpg","or":"orpheus://nm/artist/home?id=981185&type=artist"}]}
+  [00:00.000] 编曲 : n-buna
+  [00:01.000] 作词 : n-buna
+  [00:02.000] 作曲 : n-buna
   [00:13.753]明日はきっと天気で　悪いことなんてないね
   [00:18.664]タイムカードを押して僕は朝、目を開いた
   [00:24.150]僕らは今日も買ってる　足りないものしかなくて
@@ -50,3 +51,4 @@ lyric: |
   [03:35.758]貴方の歌だけが聞こえる
   [03:40.774]今、口遊む貴方だけ
   [03:53.156]貴方だけ
+url: https://s3.yufan.me/musics/1485319473.mp3

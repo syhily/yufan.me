@@ -1,10 +1,11 @@
-netease: "281530"
+id: "281530"
 name: 我想有个家
 artist: 潘美辰
-pic: https://p2.music.126.net/BVn1Va18OBvaBXbRZuYwmw==/34084860462273.jpg
+album: 最真情怀
+pic: https://s3.yufan.me/musics/281530.jpg
 lyric: |
-  {"t":-1000,"c":[{"tx":"作词: "},{"tx":"潘美辰","li":"http://p1.music.126.net/iRPfDvVEm5DGtRmpoqBBvg==/109951169219986762.jpg","or":"orpheus://nm/artist/home?id=9104&type=artist"}]}
-  {"t":-500,"c":[{"tx":"作曲: "},{"tx":"潘美辰","li":"http://p1.music.126.net/iRPfDvVEm5DGtRmpoqBBvg==/109951169219986762.jpg","or":"orpheus://nm/artist/home?id=9104&type=artist"}]}
+  [00:00.00] 作词 : 潘美辰
+  [00:00.00] 作曲 : 潘美辰
   [00:00.00]我想有个家
   [00:13.00]
   [02:52.00][00:24.00]
@@ -70,3 +71,4 @@ lyric: |
   [04:44.00]不同的心灵
   [04:46.00]让我拥有一个家
   [04:53.00]end
+url: https://s3.yufan.me/musics/281530.mp3

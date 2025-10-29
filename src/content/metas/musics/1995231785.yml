@@ -1,5 +1,10 @@
-netease: "1995231785"
+id: "1995231785"
 name: 海辺を歩く
 artist: 二乘
-pic: https://p2.music.126.net/WkRa7sVRxqnNmHH1uTq4BQ==/109951168027700918.jpg
-lyric: "[00:00.00]无歌词"
+album: 海边散步
+pic: https://s3.yufan.me/musics/1995231785.jpg
+lyric: |
+  [00:00.00] 作曲 : 二乘
+  [00:01.00] 编曲 : 二乘
+  [00:05.00]纯音乐，请欣赏
+url: https://s3.yufan.me/musics/1995231785.mp3

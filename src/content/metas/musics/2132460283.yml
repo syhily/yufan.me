@@ -1,11 +1,12 @@
-netease: "2132460283"
+id: "2132460283"
 name: タイムマシン
 artist: SEKAI NO OWARI
-pic: https://p2.music.126.net/jvRG62emL3S8gxYcvEmk0A==/109951169386924788.jpg
+album: タイムマシン
+pic: https://s3.yufan.me/musics/2132460283.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"Fukase"}]}
-  {"t":449,"c":[{"tx":"作曲: "},{"tx":"Saori"}]}
-  {"t":898,"c":[{"tx":"编曲: "},{"tx":"SEKAI NO OWARI"}]}
+  [00:00.000] 作词 : Fukase
+  [00:00.449] 作曲 : Saori
+  [00:00.898] 编曲 : SEKAI NO OWARI
   [00:01.347] タイムマシンに乗って
   [00:03.901] チクタクチクタク
   [00:06.453] 君といた記憶を消し去るために
@@ -59,3 +60,4 @@ lyric: |
   [03:38.517] 前も見れないけど
   [03:41.137] 上も向けないけど
   [03:47.022] 僕を見つめていこう
+url: https://s3.yufan.me/musics/2132460283.mp3

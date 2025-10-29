@@ -1,10 +1,11 @@
-netease: "1295704234"
+id: "1295704234"
 name: A Day in the Life
 artist: The Beatles
-pic: https://p1.music.126.net/64GSOQm5A4xT4PF-rlwhjA==/109951163419817115.jpg
+album: 'Only #s One / 10'
+pic: https://s3.yufan.me/musics/1295704234.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"John Lennon / Paul McCartney"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"John Lennon / Paul McCartney"}]}
+  [00:00.000] 作词 : John Lennon / Paul McCartney
+  [00:01.000] 作曲 : John Lennon / Paul McCartney
   [00:12.984]I read the news today,oh boy
   [00:19.153]About a lucky man who made the grade
   [00:25.218]And though the news was rather sad
@@ -41,3 +42,4 @@ lyric: |
   [03:38.633]Now they know how many holes it takes to fill the Albert Hall.
   [03:44.474]I'd love to turn you on
   [03:53.170]
+url: https://s3.yufan.me/musics/1295704234.mp3

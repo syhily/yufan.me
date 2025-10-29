@@ -1,10 +1,11 @@
-netease: "2013048243"
+id: "2013048243"
 name: 僕のこと (Orchestra ver.)
 artist: Mrs. GREEN APPLE
-pic: https://p2.music.126.net/I30nDlEKmgzVSi5keSjFfA==/109951168220735892.jpg
+album: 僕のこと (Orchestra ver.)
+pic: https://s3.yufan.me/musics/2013048243.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"大森元貴","li":"http://p1.music.126.net/R8MA5yS2NFpdDOGJFIszgQ==/109951169219939843.jpg","or":"orpheus://nm/artist/home?id=32303122&type=artist"}]}
-  {"t":332,"c":[{"tx":"作曲: "},{"tx":"大森元貴","li":"http://p1.music.126.net/R8MA5yS2NFpdDOGJFIszgQ==/109951169219939843.jpg","or":"orpheus://nm/artist/home?id=32303122&type=artist"}]}
+  [00:00.000] 作词 : 大森元貴
+  [00:00.332] 作曲 : 大森元貴
   [00:00.664]僕と君とでは何が違う？
   [00:06.473]おんなじ生き物さ　分かってる
   [00:12.119]でもね、僕は何かに怯えている
@@ -71,3 +72,4 @@ lyric: |
   [05:03.655]それぞれ見てきた景色がある
   [05:09.213]僕は僕として、いまを生きてゆく
   [05:15.604]とても愛しい事だ
+url: https://s3.yufan.me/musics/2013048243.mp3

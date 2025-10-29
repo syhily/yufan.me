@@ -1,10 +1,11 @@
-netease: "26361010"
+id: "26361010"
 name: 光阴的故事
 artist: 黄晓明
-pic: https://p1.music.126.net/3K6W80SyZ0ZIy3btLRlZMw==/7820826208648668.jpg
+album: 光阴的故事
+pic: https://s3.yufan.me/musics/26361010.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"罗大佑","li":"http://p1.music.126.net/RG7o5BwKjIVK5-PHlPtlNA==/109951172024531494.jpg","or":"orpheus://nm/artist/home?id=3686&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"罗大佑","li":"http://p1.music.126.net/RG7o5BwKjIVK5-PHlPtlNA==/109951172024531494.jpg","or":"orpheus://nm/artist/home?id=3686&type=artist"}]}
+  [00:00.000] 作词 : 罗大佑
+  [00:01.000] 作曲 : 罗大佑
   [00:14.380]春天的花开秋天的风
   [00:17.550]以及冬天的落阳
   [00:21.630]忧郁的青春年少的我
@@ -49,3 +50,4 @@ lyric: |
   [03:01.460]就在那多愁善感而初次
   [03:05.120]回忆的青春
   [03:08.500]
+url: https://s3.yufan.me/musics/26361010.mp3

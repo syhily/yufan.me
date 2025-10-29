@@ -1,10 +1,11 @@
-netease: "1389742858"
+id: "1389742858"
 name: 蓝色土耳其
 artist: emo王怪兽
-pic: https://p1.music.126.net/ZPl-U2KLYNfbjap9sipSTw==/109951164296333856.jpg
+album: 初来乍到
+pic: https://s3.yufan.me/musics/1389742858.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"陈信荣"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"周传雄","li":"http://p1.music.126.net/Vgsy_xFFUT1wo6wk0DQXqA==/109951165816623226.jpg","or":"orpheus://nm/artist/home?id=6652&type=artist"}]}
+  [00:00.000] 作词 : 陈信荣
+  [00:01.000] 作曲 : 周传雄
   [00:16.415]歌名：蓝色土耳其
   [00:17.165]演唱：周传雄
   [00:17.919]词：陈信荣
@@ -53,3 +54,4 @@ lyric: |
   [04:04.826]逃避着 我的宿命
   [04:10.822]俳徊在 你的淡淡哀愁灰色眼眸里
   [04:27.575]我愿相信 爱有奇迹
+url: https://s3.yufan.me/musics/1389742858.mp3

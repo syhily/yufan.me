@@ -1,7 +1,8 @@
-netease: "1310906134"
+id: "1310906134"
 name: One more time, One more chance
 artist: 藤田麻衣子
-pic: https://p2.music.126.net/PsjvMDEqD0Gjonl3kW4KIg==/109951163557712658.jpg
+album: 惚れ歌
+pic: https://s3.yufan.me/musics/1310906134.jpg
 lyric: |
   [00:16.13]これ以上何を失えば
   [00:19.87]心は許されるの
@@ -72,3 +73,4 @@ lyric: |
   [04:46.42]欲しいものなどもう何もない
   [04:50.39]君のほかに大切なものなど
   [05:00.14]
+url: https://s3.yufan.me/musics/1310906134.mp3

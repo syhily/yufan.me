@@ -1,7 +1,8 @@
-netease: "4872578"
+id: "4872578"
 name: 致我们终将逝去的青春
 artist: 张瑶
-pic: https://p1.music.126.net/rEQ6Yr5U1-uPzaVzlY1row==/106652627911463.jpg
+album: 致我们终将逝去的青春 原声音乐作品集
+pic: https://s3.yufan.me/musics/4872578.jpg
 lyric: |
   [00:24.400]我总是很小心
   [00:27.610]害怕把爱惊醒
@@ -34,3 +35,4 @@ lyric: |
   [03:59.150]有一个人总会陪着你走不会再离开
   [04:10.970]这世界有一个人
   [04:13.540]总会陪着你走不会再离开
+url: https://s3.yufan.me/musics/4872578.mp3

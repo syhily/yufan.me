@@ -1,11 +1,12 @@
-netease: "2020156552"
+id: "2020156552"
 name: 水中花
 artist: 李吉安Gian
-pic: https://p1.music.126.net/cpx7eC5FqmZ1dAhZL45G-g==/109951168286434193.jpg
+album: 水中花郁可唯，水中花谭咏麟，水中花李健
+pic: https://s3.yufan.me/musics/2020156552.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"贰佰有伍","li":"http://p1.music.126.net/slU4_xjrTMniETpXsheOWw==/109951168261810566.jpg","or":"orpheus://nm/artist/home?id=55488417&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"贰佰有伍","li":"http://p1.music.126.net/slU4_xjrTMniETpXsheOWw==/109951168261810566.jpg","or":"orpheus://nm/artist/home?id=55488417&type=artist"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"贰佰有伍","li":"http://p1.music.126.net/slU4_xjrTMniETpXsheOWw==/109951168261810566.jpg","or":"orpheus://nm/artist/home?id=55488417&type=artist"}]}
+  [00:00.000] 作词 : 贰佰有伍
+  [00:01.000] 作曲 : 贰佰有伍
+  [00:02.000] 编曲 : 贰佰有伍
   [00:15.810]凄雨冷风中
   [00:18.750]多少繁华如梦
   [00:22.440]曾经万紫千红
@@ -53,3 +54,4 @@ lyric: |
   [03:06.120]飘呀飘呀
   [03:09.900]飘呀飘呀
   [03:14.520]飘呀飘呀
+url: https://s3.yufan.me/musics/2020156552.mp3

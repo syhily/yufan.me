@@ -1,10 +1,11 @@
-netease: "1387913820"
+id: "1387913820"
 name: 操场
 artist: Annie Hall（贺柳）
-pic: https://p2.music.126.net/6rRthdDrBQ6ZGcWeGQvj3w==/109951164780042114.jpg
+album: 《毕业の季》
+pic: https://s3.yufan.me/musics/1387913820.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"Annie Hall（贺柳）","li":"http://p1.music.126.net/GeXCLEdk8GXUNLwzy451Nw==/109951165525649631.jpg","or":"orpheus://nm/artist/home?id=12120183&type=artist"}]}
-  {"t":635,"c":[{"tx":"作曲: "},{"tx":"Annie Hall（贺柳）","li":"http://p1.music.126.net/GeXCLEdk8GXUNLwzy451Nw==/109951165525649631.jpg","or":"orpheus://nm/artist/home?id=12120183&type=artist"}]}
+  [00:00.00] 作词 : Annie Hall（贺柳）
+  [00:00.63] 作曲 : Annie Hall（贺柳）
   [00:01.27]作词：贺柳
   [00:03.26]作曲：贺柳
   [00:04.28]演唱：贺柳
@@ -56,3 +57,4 @@ lyric: |
   [03:39.67]我们用心走过每座桥
   [03:46.97]桥下有人在笑
   [03:50.85]再见别忘了说 你好
+url: https://s3.yufan.me/musics/1387913820.mp3

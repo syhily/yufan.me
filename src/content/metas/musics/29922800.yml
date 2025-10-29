@@ -1,7 +1,8 @@
-netease: "29922800"
+id: "29922800"
 name: 思念是一种病
 artist: iCsuo
-pic: https://p1.music.126.net/cpoUinrExafBHL5Nv5iDHQ==/109951166361218466.jpg
+album: 热门华语256
+pic: https://s3.yufan.me/musics/29922800.jpg
 lyric: |
   [00:11.15]当你在穿山越岭的另一边
   [00:15.51]我在孤独的路上没有尽头
@@ -62,3 +63,4 @@ lyric: |
   [03:37.85]却未曾感觉你在心口的鼻息
   [03:43.16]Oh 思念是一种病
   [03:48.47]Oh 思念是一种病 一种病
+url: https://s3.yufan.me/musics/29922800.mp3

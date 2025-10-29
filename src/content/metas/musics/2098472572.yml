@@ -1,10 +1,11 @@
-netease: "2098472572"
+id: "2098472572"
 name: メタフィクション
-artist: "*Luna"
-pic: https://p1.music.126.net/tshpmKH8Mdy3SZeSxn6m3g==/109951169045275756.jpg
+artist: '*Luna'
+album: Bed Time Story
+pic: https://s3.yufan.me/musics/2098472572.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"*Luna","li":"http://p1.music.126.net/cqFPvcihkA474yyfCnhqYg==/109951170828346613.jpg","or":"orpheus://nm/artist/home?id=12323325&type=artist"}]}
-  {"t":401,"c":[{"tx":"作曲: "},{"tx":"*Luna","li":"http://p1.music.126.net/cqFPvcihkA474yyfCnhqYg==/109951170828346613.jpg","or":"orpheus://nm/artist/home?id=12323325&type=artist"}]}
+  [00:00.000] 作词 : *Luna
+  [00:00.401] 作曲 : *Luna
   [00:00.803] 「あの日のこと消してしまえたらいいな」
   [00:04.031] 冗談めいた風に言った　君は真面目な顔して
   [00:10.362] 『それじゃ困っちゃうな』って言った
@@ -67,3 +68,4 @@ lyric: |
   [03:40.303] 大嫌いなまま大事に抱いていて
   [03:44.237] 早く拾いに来て　さぁ　全部聞かせてよ
   [04:00.324]
+url: https://s3.yufan.me/musics/2098472572.mp3

@@ -1,7 +1,8 @@
-netease: "22705507"
+id: "22705507"
 name: ハロ/ハワユ
 artist: 鹿乃
-pic: https://p2.music.126.net/PentWqKZkVD5-tKPlmulKA==/649811372038021.jpg
+album: ばんび~の
+pic: https://s3.yufan.me/musics/22705507.jpg
 lyric: |
   [00:11.310]ハロ
   [00:12.540]窓を開けて 小さく呟いた
@@ -89,3 +90,4 @@ lyric: |
   [04:34.700]
   [04:37.780]
   [04:41.490]
+url: https://s3.yufan.me/musics/22705507.mp3

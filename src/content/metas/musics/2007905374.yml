@@ -1,7 +1,8 @@
-netease: "2007905374"
+id: "2007905374"
 name: 咱们结婚吧
 artist: 1个球
-pic: https://p1.music.126.net/7Of0-Eo_YfK5pXhD3zBlSA==/109951168160229373.jpg
+album: 咱们结婚吧
+pic: https://s3.yufan.me/musics/2007905374.jpg
 lyric: |
   [00:00.74]作词:Jane欢欢、张维
   [00:02.64]作曲:高磊
@@ -37,3 +38,4 @@ lyric: |
   [02:33.30]给你幸福的家
   [02:37.02]我愿把一切都放下
   [02:41.72]给你幸福的家
+url: https://s3.yufan.me/musics/2007905374.mp3

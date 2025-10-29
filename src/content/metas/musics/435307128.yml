@@ -1,10 +1,11 @@
-netease: "435307128"
+id: "435307128"
 name: 青春修炼手册
 artist: karin
-pic: https://p2.music.126.net/UC6jtnHmOALaTF9zzH-yzg==/17714231835505872.jpg
+album: 2015年翻唱作品选集
+pic: https://s3.yufan.me/musics/435307128.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"王韵韵","li":"http://p1.music.126.net/tDKWzLtlLRlFrP8X4NpB-w==/109951164940338594.jpg","or":"orpheus://nm/artist/home?id=13497599&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"刘佳","li":"http://p1.music.126.net/xnVl4J_5CAK3Qh4lqx2svw==/14447582788977356.jpg","or":"orpheus://nm/artist/home?id=4188&type=artist"}]}
+  [00:00.00] 作词 : 王韵韵
+  [00:01.00] 作曲 : 刘佳
   [00:04.20]
   [00:04.24]跟着我 左手
   [00:06.55]右手 一个慢动作
@@ -86,3 +87,4 @@ lyric: |
   [03:52.48]青春有太多 未知的猜测
   [03:56.21]成长的烦恼算什么
   [03:59.42]
+url: https://s3.yufan.me/musics/435307128.mp3

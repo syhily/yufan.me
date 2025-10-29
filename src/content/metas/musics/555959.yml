@@ -1,11 +1,12 @@
-netease: "555959"
+id: "555959"
 name: 扉をあけて
 artist: ANZA
-pic: https://p1.music.126.net/qMLWYAebeZ5r0lMBGkbDBw==/109951171846477542.jpg
+album: 扉をあけて
+pic: https://s3.yufan.me/musics/555959.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"きくこ"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"広瀬香美"}]}
-  {"t":2000,"c":[{"tx":"编曲: "},{"tx":"亀田誠治","li":"http://p1.music.126.net/YSm7dF-1O9ajdSK2e2_9xw==/109951169792944033.jpg","or":"orpheus://nm/artist/home?id=14099521&type=artist"}]}
+  [00:00.000] 作词 : きくこ
+  [00:01.000] 作曲 : 広瀬香美
+  [00:02.000] 编曲 : 亀田誠治
   [00:06.920]It's all right 大丈夫 ダイジョウブ だいじょうぶ
   [00:11.440]奇跡だって起こせる
   [00:15.700]Here we go 行こうよ 行こうよ 行こうよ 翼拡げ
@@ -30,3 +31,4 @@ lyric: |
   [03:47.300]Here we go 行こうよ 行こうよ 行こうよ 翼拡げ
   [03:54.400]きっと 何かが 何かが どこかで 出会える日を待ってる
   [04:03.030]DO! DO! DO! DREAMING! DREAMING! そして扉がひらくよ…
+url: https://s3.yufan.me/musics/555959.mp3

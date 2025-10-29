@@ -1,11 +1,12 @@
-netease: "139392"
+id: "139392"
 name: 那些花儿(吉他版)
 artist: 朴树
-pic: https://p2.music.126.net/w4ve3fd97ql6f34biizbGg==/109951171437356440.jpg
+album: 我去2000年
+pic: https://s3.yufan.me/musics/139392.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"编曲: "},{"tx":"张亚东","li":"http://p1.music.126.net/Kg1UI5gt5ITP12rPEBZjKQ==/240793046499909.jpg","or":"orpheus://nm/artist/home?id=6475&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作词: "},{"tx":"朴树","li":"http://p1.music.126.net/0oR6SCYToM_XrmkM6BEEPA==/109951168527018363.jpg","or":"orpheus://nm/artist/home?id=4721&type=artist"},{"tx":"/"},{"tx":"付翀","li":"http://p1.music.126.net/u82JviMp-K06wHAT-u3Djg==/109951168518739676.jpg","or":"orpheus://nm/artist/home?id=56193890&type=artist"}]}
-  {"t":2000,"c":[{"tx":"作曲: "},{"tx":"朴树","li":"http://p1.music.126.net/0oR6SCYToM_XrmkM6BEEPA==/109951168527018363.jpg","or":"orpheus://nm/artist/home?id=4721&type=artist"}]}
+  [00:00.000] 编曲 : 张亚东
+  [00:01.000] 作词 : 朴树/付翀
+  [00:02.000] 作曲 : 朴树
   [00:16.798]那片笑声让我想起我的那些花儿
   [00:25.399]在我生命每个角落静静为我开着
   [00:32.999]我曾以为我会永远守在她身旁
@@ -33,3 +34,4 @@ lyric: |
   [03:47.658]她们已经被风吹走散落在天涯
   [03:51.527]她们都老了吧她们在哪里呀
   [04:00.688]我们就这样各自奔天涯
+url: https://s3.yufan.me/musics/139392.mp3

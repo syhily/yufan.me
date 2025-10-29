@@ -1,7 +1,8 @@
-netease: "1964055957"
+id: "1964055957"
 name: 梅雨季
 artist: Lilycheer
-pic: https://p2.music.126.net/XtycwNoUV1CStOOVloq1Lw==/109951167671731140.jpg
+album: 梅雨季
+pic: https://s3.yufan.me/musics/1964055957.jpg
 lyric: |
   [00:03.971]作词：张震岳
   [00:07.145]作曲；张震岳
@@ -35,3 +36,4 @@ lyric: |
   [01:28.603]不见人剩回忆
   [01:32.361]当一切都没改变的时候
   [01:35.307]我原来真的爱过你
+url: https://s3.yufan.me/musics/1964055957.mp3

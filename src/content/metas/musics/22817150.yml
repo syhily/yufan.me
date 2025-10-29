@@ -1,10 +1,11 @@
-netease: "22817150"
+id: "22817150"
 name: secret base 〜君がくれたもの〜 (10 years after Ver.)
 artist: 茅野愛衣
-pic: https://p1.music.126.net/5wwBs-qDLHEKobpR730H7A==/3311729023116773.jpg
+album: ZONEトリビュート～君がくれたもの～
+pic: https://s3.yufan.me/musics/22817150.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"町田紀彦","li":"http://p1.music.126.net/165_yz7HEV-H34oQxB_1Gg==/109951169787291379.jpg","or":"orpheus://nm/artist/home?id=29342404&type=artist"}]}
-  {"t":45,"c":[{"tx":"作曲: "},{"tx":"町田紀彦","li":"http://p1.music.126.net/165_yz7HEV-H34oQxB_1Gg==/109951169787291379.jpg","or":"orpheus://nm/artist/home?id=29342404&type=artist"}]}
+  [00:00.000] 作词 : 町田紀彦
+  [00:00.045] 作曲 : 町田紀彦
   [00:00.090]君(きみ)と夏(なつ)の終(お)わり  将来(しょうらい)の夢(ゆめ)
   [00:03.230]大(おお)きな希望(きぼう) 忘(わす)れない
   [00:06.410]10年後(じゅうねんご)の8月(はちがつ)
@@ -54,3 +55,4 @@ lyric: |
   [04:27.690]涙(なみだ)をこらえて 笑顔(えがお)でざよなら せつないよね
   [04:34.990]最高(さいこう)の思(おも)い出(で)を…
   [04:42.140]最高(さいこう)の思(おも)い出(で)を…
+url: https://s3.yufan.me/musics/22817150.mp3

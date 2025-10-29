@@ -1,10 +1,11 @@
-netease: "1950516520"
+id: "1950516520"
 name: Rain
 artist: 秦基博
-pic: https://p1.music.126.net/1vNRZi6JhHzcyV95MF43CQ==/109951167969895471.jpg
+album: TOKYO - RAINING -
+pic: https://s3.yufan.me/musics/1950516520.jpg
 lyric: |
-  {"t":0,"c":[{"tx":"作词: "},{"tx":"大江千里","li":"http://p1.music.126.net/sbREoVLedRfunyIwxBRGQg==/710284511569275.jpg","or":"orpheus://nm/artist/home?id=15151&type=artist"}]}
-  {"t":1000,"c":[{"tx":"作曲: "},{"tx":"大江千里","li":"http://p1.music.126.net/sbREoVLedRfunyIwxBRGQg==/710284511569275.jpg","or":"orpheus://nm/artist/home?id=15151&type=artist"}]}
+  [00:00.00] 作词 : 大江千里
+  [00:01.00] 作曲 : 大江千里
   [00:14.92]言葉にできず凍えたままで
   [00:20.04]人前ではやさしく生きていた
   [00:24.65]しわよせで こんなふうに雑に
@@ -60,3 +61,4 @@ lyric: |
   [04:12.16]行かないで 行かないで
   [04:14.48]そう言うよ
   [04:18.74]
+url: https://s3.yufan.me/musics/1950516520.mp3

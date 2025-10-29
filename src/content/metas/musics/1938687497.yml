@@ -1,7 +1,8 @@
-netease: "1938687497"
+id: "1938687497"
 name: 候鸟
 artist: 一盒热蛋挞
-pic: https://p1.music.126.net/6vYiErcBNFVm-mdKnZyEfg==/109951167300355686.jpg
+album: 候鸟
+pic: https://s3.yufan.me/musics/1938687497.jpg
 lyric: |
   [00:14.820]如果四季轮回爱上漂泊
   [00:21.990]如果湖水清澈倒映着我
@@ -38,3 +39,4 @@ lyric: |
   [03:16.110]在梦想到达的时刻
   [03:20.850]分享眼泪
   [03:26.850]我眺望这世界的北相约再会
+url: https://s3.yufan.me/musics/1938687497.mp3
