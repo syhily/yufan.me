@@ -40,11 +40,10 @@ const { Content, headings } = await page.render()
               page.comments && (
                 <Content
                   components={{
-                    MusicPlayer,
-                    Image,
-                    Solution,
-                    Friends,
                     img: Image,
+                    Friends,
+                    MusicPlayer,
+                    Solution,
                   }}
                 />
               )

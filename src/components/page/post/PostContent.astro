@@ -1,5 +1,4 @@
 ---
-import UnstyledImage from '@/components/mdx/image/UnstyledImage.astro'
 import UnstyledMusicPlayer from '@/components/mdx/music/UnstyledMusicPlayer.astro'
 import UnstyledSolution from '@/components/mdx/solutions/UnstyledSolution.astro'
 import { getPosts } from '@/helpers/content/schema'
@@ -21,6 +20,5 @@ const { Content } = await post.render()
   components={{
     MusicPlayer: UnstyledMusicPlayer,
     Solution: UnstyledSolution,
-    Image: UnstyledImage,
   }}
 />
