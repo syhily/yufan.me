@@ -231,8 +231,8 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   // Calculate comment architecture
   let rootId = 0n
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
-    const r = await pool.db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.rid, commentReq.rid)).limit(1)
-    if (r.length > 0 && r[0].rootId !== null) {
+    const r = await pool.db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.id, BigInt(commentReq.rid))).limit(1)
+    if (r.length > 0 && r[0].rootId !== null && r[0].rootId !== 0n) {
       rootId = r[0].rootId
     }
     else {
