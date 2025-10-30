@@ -44,9 +44,7 @@ export default defineConfig({
   trailingSlash: 'never',
   image: {
     domains: [config.settings.asset.host, 'localhost', '127.0.0.1'],
-    service: NODE_ENV !== 'production'
-      ? { entrypoint: './src/helpers/content/image/sharp' }
-      : { entrypoint: './src/helpers/content/image/qiniu' },
+    service: { entrypoint: './src/helpers/content/image/qiniu' },
     layout: 'constrained',
     responsiveStyles: true,
   },

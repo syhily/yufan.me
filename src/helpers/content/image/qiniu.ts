@@ -30,8 +30,6 @@ const service: ExternalImageService = {
       options.height = options.height || height
       if (blurhash) {
         options.style = {
-          '--fit': 'cover',
-          '--pos': 'center',
           'background-image': `url("${blurhash}")`,
           'background-position': 'center',
           'background-size': 'cover',
@@ -54,6 +52,15 @@ const service: ExternalImageService = {
         1400,
         1600,
       ]
+    }
+
+    // Add sizes for images in article.
+    if (!options.fit) {
+      options.fit = 'fill'
+    }
+
+    if (!options.sizes) {
+      options.sizes = `(max-width: 767.98px) 100vw, (max-width: 1200px) 80vw, (max-width: 1600px) 60vw, 70vw`
     }
 
     if (typeof baseService.validateOptions === 'function') {
