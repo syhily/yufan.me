@@ -1886,7 +1886,7 @@ a:hover .overlay {
   -ms-flex: 1 1 auto;
   flex: 1 1 auto;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .site-menu > ul {
