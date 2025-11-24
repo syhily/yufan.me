@@ -91,6 +91,9 @@
     "yaml": "^2.8.1"
   },
   "overrides": {
+    "@daiji256/rehype-mathml": {
+      "temml": "0.12.1"
+    },
     "esbuild": "^0.25.9",
     "esm-loader": "tsx@^4.20.4"
   },
