@@ -2402,7 +2402,8 @@ a:hover .overlay {
 
 .post-content p,
 .post-content img,
-.post-content center {
+.post-content center,
+.post-content math {
   margin: 0 0 1.25rem;
   font-size: 1.05rem;
 }
@@ -2536,7 +2537,8 @@ a:hover .overlay {
   }
 
   .post-content p,
-  .post-content center {
+  .post-content center,
+  .post-content math {
     font-size: 1rem;
   }
 
@@ -2653,6 +2655,10 @@ a:hover .overlay {
   margin: 0 0 1.05rem;
 }
 
+.post-content .solution math {
+  margin: 0 0 0.95rem;
+}
+
 .post-content .solution .solution-begin {
   font-weight: 800;
   font-size: 1.2rem;
@@ -2665,7 +2671,8 @@ a:hover .overlay {
   display: inline-block;
 }
 
-.post-content .solution p:last-of-type {
+.post-content .solution p:last-of-type,
+.post-content .solution math:last-of-type {
   display: inline-block;
   margin-bottom: 0;
   padding-bottom: 0;
