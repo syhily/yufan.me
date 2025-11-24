@@ -194,7 +194,7 @@ export default function uploader({ apiKey, paths, endpoint }: { apiKey: string, 
             rootPath: dir.pathname,
             filePath: path,
             recursive: true,
-            keep: false,
+            keep: true,
             override: false,
           }
         })

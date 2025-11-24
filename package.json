@@ -64,7 +64,7 @@
     "@astrojs/check": "^0.9.5",
     "@daiji256/rehype-mathml": "^1.2.1",
     "@expo-google-fonts/noto-sans-sc": "^0.4.2",
-    "@types/lodash": "^4.17.20",
+    "@types/lodash": "^4.17.21",
     "@types/luxon": "^3.7.1",
     "@types/node": "^24.10.1",
     "@types/nodemailer": "^7.0.4",
