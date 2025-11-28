@@ -3034,6 +3034,18 @@
   width: 2480
   height: 2162
   blurhash: GsUNHoJrebt/qIdpZnhmeHiHeX9YP30=
+- slug: /images/2025/11/2025112811314200.jpg
+  width: 2400
+  height: 1529
+  blurhash: EvcJDIQIpmiJd3iHeHaVUHcDhQ==
+- slug: /images/2025/11/2025112811483800.jpg
+  width: 2400
+  height: 1544
+  blurhash: mPcJFIJSdYePWHd4mZdfg+cEaA==
+- slug: /images/2025/11/2025112811503900.jpg
+  width: 2400
+  height: 1538
+  blurhash: XbYNBIKXeJh/eHeId4ipgJcISA==
 - slug: /images/admin/bg.jpg
   width: 1600
   height: 2071
@@ -3753,7 +3765,7 @@
 - slug: /images/recaps/vector-db-research/elasticsearch-nodes.png
   width: 1063
   height: 506
-  blurhash: OwiGAoAPuXV5hoAgswSImggIh4iHiHg=
+  blurhash: OwiGAoAPuXV5hoAgswSImggIh4h3h3g=
 - slug: /images/recaps/vector-db-research/fetch-flow-in-elasticsearch.png
   width: 750
   height: 337
