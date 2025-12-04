@@ -1,7 +1,7 @@
 import type { DateTime } from 'luxon'
 import type { Buffer } from 'node:buffer'
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
-import { Lunar, Solar } from 'lunar-typescript'
+import { Solar } from 'lunar-typescript'
 import { compressImage, oppoSerif } from '@/helpers/images/assets'
 
 const WIDTH = 600
@@ -33,8 +33,7 @@ function getWeekdayLabel(date: DateTime) {
 function getLunarLabel(date: DateTime) {
   const solar = Solar.fromYmd(date.year, date.month, date.day)
   const lunar = solar.getLunar()
-  // 格式：农历腊月初十 甲辰年丁丑月戊寅日
-  return `农历 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}  ${lunar.getYearInGanZhi()}年 ${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日`
+  return `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`
 }
 
 function getDailyAuspiciousLabel(date: DateTime) {
@@ -45,21 +44,60 @@ function getDailyAuspiciousLabel(date: DateTime) {
 }
 
 function wrapText(ctx: any, text: string, maxWidth: number) {
-  const words = text.split('')
+  const parts = text.split(/(\s+)/)
   const lines: string[] = []
   let line = ''
-  for (const ch of words) {
-    const test = line + ch
-    if (ctx.measureText(test).width > maxWidth && line !== '') {
-      lines.push(line)
-      line = ch
+
+  for (const part of parts) {
+    if (/^\s+$/.test(part)) {
+      const test = line + part
+      if (ctx.measureText(test).width <= maxWidth) {
+        line = test
+      }
+      else if (line !== '') {
+        lines.push(line)
+        line = ''
+      }
     }
     else {
-      line = test
+      const wordWidth = ctx.measureText(part).width
+
+      if (wordWidth > maxWidth) {
+        if (line !== '') {
+          lines.push(line)
+          line = ''
+        }
+        for (const ch of part) {
+          const test = line + ch
+          if (ctx.measureText(test).width > maxWidth && line !== '') {
+            lines.push(line)
+            line = ch
+          }
+          else {
+            line = test
+          }
+        }
+      }
+      else {
+        const test = line === '' ? part : `${line} ${part}`
+        if (ctx.measureText(test).width <= maxWidth) {
+          line = test
+        }
+        else if (line !== '') {
+          lines.push(line)
+          line = part
+        }
+        else {
+          line = part
+        }
+      }
     }
   }
-  if (line)
+
+  if (line) {
     lines.push(line)
+  }
+
   return lines
 }
 
@@ -83,7 +121,7 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
 
   ctx.fillStyle = '#000000'
   ctx.textBaseline = 'middle'
-  ctx.font = '20px OPPOSerif'
+  ctx.font = '28px OPPOSerif'
   ctx.textAlign = 'left'
 
   ctx.fillText(monthText, 36, 50)
@@ -106,7 +144,7 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
   const dayY = 320
   ctx.fillText(String(date.day), WIDTH / 2, dayY)
 
-  ctx.font = '48px OPPOSerif'
+  ctx.font = '50px OPPOSerif'
   const auspiciousY = dayY + 220
   ctx.fillText(dailyAuspicious, WIDTH / 2, auspiciousY)
 
@@ -122,11 +160,11 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
-  ctx.font = '26px OPPOSerif'
+  ctx.font = '36px OPPOSerif'
   const quoteText = `${quoteData.content}`
   const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
   let y = quoteY
-  const lineHeight = 32
+  const lineHeight = 56
 
   for (const line of quoteLines) {
     ctx.fillText(line, 36, y)
@@ -134,9 +172,9 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
   }
 
   y += 30
-  ctx.font = '18px OPPOSerif'
+  ctx.font = '24px OPPOSerif'
   const authorText = quoteData.author || ''
-  ctx.fillText(authorText, 36, y)
+  ctx.fillText(authorText, 36, HEIGHT - 50)
 
   const encodedImage = await canvas.encode('png')
   return await compressImage(encodedImage)
