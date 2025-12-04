@@ -173,8 +173,9 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
 
   y += 30
   ctx.font = '24px OPPOSerif'
+  ctx.textAlign = 'right'
   const authorText = quoteData.author || ''
-  ctx.fillText(authorText, 36, HEIGHT - 50)
+  ctx.fillText(authorText, WIDTH - 36, HEIGHT - 50)
 
   const encodedImage = await canvas.encode('png')
   return await compressImage(encodedImage)

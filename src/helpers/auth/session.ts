@@ -1,4 +1,5 @@
 import type { AstroSession } from 'astro'
+import { ActionError } from 'astro:actions'
 import { eq } from 'drizzle-orm'
 import { queryUser } from '@/helpers/auth/user'
 import * as pool from '@/helpers/db/pool'
@@ -70,7 +71,6 @@ export async function isAdmin(session: AstroSession | undefined) {
 export async function requireAdmin(session: AstroSession | undefined, errorMessage = '当前用户不是管理员。'): Promise<void> {
   const admin = await isAdmin(session)
   if (!admin) {
-    const { ActionError } = await import('astro:actions')
     throw new ActionError({
       code: 'UNAUTHORIZED',
       message: errorMessage,

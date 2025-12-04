@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { gunzipSync } from 'node:zlib'
+import sharp from 'sharp'
 import OPPOSans from '@/assets/fonts/oppo/opposans.ttf?binary'
 import OPPOSerif from '@/assets/fonts/oppo/opposerif.ttf?binary'
 import LogoDark from '~/logo-dark.svg?binary'
@@ -9,24 +10,29 @@ function decompress(buffer: Uint8Array): Buffer {
   return gunzipSync(Buffer.from(buffer))
 }
 
+// Cache it instead of decompressing it every time.
+const OPPOSansBuffer = decompress(OPPOSans)
+const OPPOSerifBuffer = decompress(OPPOSerif)
+const LogoDarkBuffer = decompress(LogoDark)
+const LogoLightBuffer = decompress(LogoLight)
+
 export function logoDark(): Buffer {
-  return decompress(LogoDark)
+  return LogoDarkBuffer
 }
 
 export function logoLight(): Buffer {
-  return decompress(LogoLight)
+  return LogoLightBuffer
 }
 
 export function oppoSans(): Buffer {
-  return decompress(OPPOSans)
+  return OPPOSansBuffer
 }
 
 export function oppoSerif(): Buffer {
-  return decompress(OPPOSerif)
+  return OPPOSerifBuffer
 }
 
 export async function compressImage(buf: Buffer): Promise<Buffer> {
-  const { default: sharp } = await import('sharp')
   return await sharp(buf)
     .png({
       compressionLevel: 9,
