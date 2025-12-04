@@ -82,6 +82,7 @@ const config: BlogConfig = {
       size: 20,
     },
     sidebar: {
+      calendar: true,
       search: true,
       post: 5,
       comment: 5,
@@ -142,6 +143,7 @@ export interface BlogConfig {
       size: number
     }
     sidebar: {
+      calendar: boolean
       search: boolean
       post: number
       comment: number

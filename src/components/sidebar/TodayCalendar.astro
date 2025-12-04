@@ -1,0 +1,21 @@
+---
+import { joinPaths } from '@astrojs/internal-helpers/path'
+import { DateTime } from 'luxon'
+import config from '@/blog.config'
+
+function loadCalendarImage(): string {
+  const now = DateTime.now().setZone(config.settings.timeZone).setLocale(config.settings.locale)
+  return joinPaths(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.png`)
+}
+
+const calendarImage = !config.settings.sidebar.calendar ? '' : loadCalendarImage();
+---
+
+{
+  calendarImage !== '' && (
+    <div class="widget widget-owspace-calendar">
+      <div class="widget-title">单向历</div>
+      <img loading="lazy" decoding="async" src={calendarImage} />
+    </div>
+  )
+}

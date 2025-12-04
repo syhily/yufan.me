@@ -2,7 +2,7 @@ import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 import config from '@/blog.config'
-import { logoDark, oppoSans } from '@/helpers/images/assets'
+import { compressImage, logoDark, oppoSans } from '@/helpers/images/assets'
 
 /**
  * Generate the open graph.
@@ -132,8 +132,8 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   // Add website title
   ctx.fillStyle = '#e0c2bb'
-  ctx.font = '800 64px OPPOSans'
-  printAt(ctx, config.title, 96, 180, 96, config.settings.og.width, 64)
+  ctx.font = '900 70px OPPOSans'
+  printAt(ctx, config.title, 96, 180, 96, config.settings.og.width, 70)
 
   // Add website logo
   ctx.drawImage(logoImage, 940, 120, 160, 160)
@@ -152,18 +152,4 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   const encodedImage = await canvas.encode('png')
   return await compressImage(encodedImage)
-}
-
-async function compressImage(buf: Buffer): Promise<Buffer> {
-  const { default: sharp } = await import('sharp')
-  return await sharp(buf)
-    .png({
-      compressionLevel: 9,
-      adaptiveFiltering: true,
-      force: true,
-      palette: true,
-      quality: 75,
-      progressive: true,
-    })
-    .toBuffer()
 }

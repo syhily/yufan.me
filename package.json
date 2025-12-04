@@ -47,6 +47,7 @@
     "flexsearch": "^0.8.212",
     "ioredis": "^5.8.2",
     "lodash": "^4.17.21",
+    "lunar-typescript": "^1.8.6",
     "luxon": "^3.7.2",
     "marked": "^17.0.1",
     "marked-shiki": "^1.2.1",

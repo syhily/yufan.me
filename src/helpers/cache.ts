@@ -62,7 +62,7 @@ export async function cacheAvatar(args: { email: string, buffer: Buffer, status:
 }
 
 export async function loadBuffer(key: string, loader: () => Promise<Buffer>, ttl: number): Promise<Buffer> {
-  if (await storage.hasItem(key)) {
+  if (import.meta.env.PROD && await storage.hasItem(key)) {
     return (await storage.getItemRaw<Buffer>(key))!
   }
   const buffer = await loader()
