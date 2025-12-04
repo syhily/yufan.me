@@ -1,7 +1,7 @@
 import type { DateTime } from 'luxon'
 import type { Buffer } from 'node:buffer'
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
-import { Lunar } from 'lunar-typescript'
+import { Lunar, Solar } from 'lunar-typescript'
 import { compressImage, oppoSerif } from '@/helpers/images/assets'
 
 const WIDTH = 600
@@ -31,13 +31,15 @@ function getWeekdayLabel(date: DateTime) {
 }
 
 function getLunarLabel(date: DateTime) {
-  const lunar = Lunar.fromYmd(date.year, date.month, date.day)
+  const solar = Solar.fromYmd(date.year, date.month, date.day)
+  const lunar = solar.getLunar()
   // 格式：农历腊月初十 甲辰年丁丑月戊寅日
   return `农历 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}  ${lunar.getYearInGanZhi()}年 ${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日`
 }
 
 function getDailyAuspiciousLabel(date: DateTime) {
-  const lunar = Lunar.fromYmd(date.year, date.month, date.day)
+  const solar = Solar.fromYmd(date.year, date.month, date.day)
+  const lunar = solar.getLunar()
   const auspicious = lunar.getDayYi()
   return `宜${auspicious[Math.floor(date.day % auspicious.length)]}`
 }
