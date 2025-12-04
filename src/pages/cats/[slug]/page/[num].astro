@@ -1,0 +1,27 @@
+---
+import config from '@/blog.config'
+import { getCategory, getPosts } from '@/helpers/content/schema'
+import CategoryLayout from '@/layouts/posts/CategoryLayout.astro'
+
+const { slug, num } = Astro.params
+const category = getCategory(undefined, slug)
+
+if (!category || !num) {
+  return Astro.redirect('/404')
+}
+
+const pageNum = Number.parseInt(num)
+if (pageNum <= 1) {
+  return Astro.redirect(category.permalink)
+}
+
+const filteredPosts = getPosts({ hidden: true, schedule: false }).filter(post => post.category === category.name)
+const pageSize = config.settings.pagination.category
+const total = Math.ceil(filteredPosts.length / pageSize)
+
+if (pageNum > total) {
+  return Astro.redirect(`${total}`, 302)
+}
+---
+
+<CategoryLayout posts={filteredPosts} {category} {pageNum} />

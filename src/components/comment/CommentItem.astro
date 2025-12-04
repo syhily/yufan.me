@@ -1,0 +1,98 @@
+---
+import type { AstroSession } from 'astro'
+import type { CommentItem } from '@/helpers/comment/types'
+import { joinPaths } from '@astrojs/internal-helpers/path'
+import config from '@/blog.config'
+import AdminBlock from '@/components/partial/AdminBlock.astro'
+import { formatLocalDate } from '@/helpers/content/formatter'
+
+interface Props {
+  depth: number
+  comment: CommentItem
+  pending?: false
+  session: AstroSession | undefined
+}
+
+const { comment, depth, pending, session } = Astro.props
+---
+
+<li id={`user-comment-${comment.id}`} class="comment odd alt thread-odd thread-alt" data-depth={depth}>
+  <article id={`div-comment-${comment.id}`} class="comment-body">
+    <div
+      class="comment-avatar flex-avatar"
+      style={{
+        backgroundImage: `url('${joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <img
+        alt={comment.name}
+        src={joinPaths(import.meta.env.SITE, 'images/avatar', `${comment.userId}.png`)}
+        onerror="this.style.display='none'"
+        class="avatar avatar-40 photo"
+        height="40"
+        width="40"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+    <div class="comment-inner">
+      <div class="comment-author fw-bold">
+        {
+          comment.link === '' || comment.link === null
+          ? (
+            comment.name
+          )
+          : (
+            <a href={comment.link} rel="nofollow" target="_blank">
+              {comment.name}
+            </a>
+          )
+        }
+        {
+          config.author.email === comment.email && (
+            <div class="badge badge-primary badge-pill fw-bold text-wrap">站长</div>
+          )
+        }
+      </div>
+      <div class="comment-content text-wrap text-break">
+        {pending && <p class="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>}
+        <Fragment set:html={comment.content} />
+      </div>
+      <div class="comment-footer text-xs text-muted">
+        <time class="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
+        <button class="comment-reply-link me-2" data-rid={comment.id}>回复</button>
+        <AdminBlock {session}>
+          <button class="comment-edit-link me-2" data-rid={comment.id}>编辑</button>
+          {
+            comment.isPending && (
+              <button class="comment-approve-link me-2" data-rid={comment.id}>
+                通过
+              </button>
+            )
+          }
+          <button class="comment-delete-link me-2" data-rid={comment.id}>删除</button>
+        </AdminBlock>
+      </div>
+    </div>
+  </article>
+  {
+    comment.children && depth === 1 && (
+      <ul class="children">
+        {comment.children.map(childComment => (
+          <Astro.self comment={childComment} depth={depth + 1} {session} />
+        ))}
+      </ul>
+    )
+  }
+</li>
+{
+  comment.children && depth !== 1 && (
+    <>
+      {comment.children.map(childComment => (
+        <Astro.self comment={childComment} depth={depth + 1} {session} />
+      ))}
+    </>
+  )
+}

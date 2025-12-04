@@ -1,0 +1,58 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import { DateTime } from 'luxon'
+import config from '@/blog.config'
+import FeaturePost from '@/components/page/post/FeaturePost.astro'
+
+interface Props {
+  posts: Post[]
+}
+
+const { posts } = Astro.props
+function historicalPosts(): Post[] {
+  // Skip the first 6 pages.
+  const offset = config.settings.pagination.posts * 10
+  if (posts.length - offset < 43 * 3 + 2) {
+    // Can't generate historical posts.
+    return []
+  }
+
+  const now = DateTime.now().setZone(config.settings.timeZone)
+  const radical = now.month + now.day
+
+  return [posts[offset + radical + 43 * 2 - 1], posts[offset + radical + 43 - 1], posts[offset + radical - 1]]
+}
+const featurePosts = config.settings.post.feature ?? []
+
+const metas: Post[]
+  = featurePosts.length < 3
+    ? historicalPosts()
+    : featurePosts
+        .map(slug => posts.find(post => post.slug === slug))
+        .filter(post => post !== undefined)
+        .slice(0, 3)
+---
+
+{
+  metas.length === 3 && (
+    <div class="list-top-pushes mb-3 mb-md-4 mb-lg-5">
+      <div class="container">
+        <div class="row gx-2 gx-md-3 list-grouped">
+          <div class="col-lg-8">
+            <FeaturePost post={metas[0]} />
+          </div>
+          <div class="col-lg-4 d-flex flex-column mt-2 mt-md-3 mt-lg-0">
+            <div class="row g-2 g-md-3">
+              <div class="col-6 col-lg-12">
+                <FeaturePost post={metas[1]} />
+              </div>
+              <div class="col-6 col-lg-12">
+                <FeaturePost post={metas[2]} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

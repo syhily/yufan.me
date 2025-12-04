@@ -1,0 +1,15 @@
+---
+import { getPosts, getTag } from '@/helpers/content/schema'
+import TagLayout from '@/layouts/posts/TagLayout.astro'
+
+const { slug } = Astro.params
+const tag = getTag(undefined, slug)
+
+if (!tag) {
+  return Astro.redirect('/404')
+}
+
+const filteredPosts = getPosts({ hidden: true, schedule: false }).filter(post => post.tags.includes(tag.name))
+---
+
+<TagLayout posts={filteredPosts} {tag} pageNum={1} />

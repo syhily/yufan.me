@@ -1,0 +1,7 @@
+---
+import { getPosts, tags } from '@/helpers/content/schema'
+import PostsLayout from '@/layouts/posts/PostsLayout.astro'
+import '@/helpers/content/search.ts'
+---
+
+<PostsLayout pageNum={1} posts={getPosts({ hidden: false, schedule: import.meta.env.DEV })} {tags} />

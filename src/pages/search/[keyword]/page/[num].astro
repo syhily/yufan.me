@@ -1,0 +1,28 @@
+---
+import config from '@/blog.config'
+import { getPosts } from '@/helpers/content/schema'
+import { searchPosts } from '@/helpers/content/search'
+import SearchLayout from '@/layouts/posts/SearchLayout.astro'
+
+const { keyword, num } = Astro.params
+const query = keyword || ''
+if (query === '' || !num) {
+  return Astro.redirect('/')
+}
+
+const pageNum = Number.parseInt(num)
+if (pageNum <= 1) {
+  return Astro.redirect('/')
+}
+
+const title = `【${query}】搜索结果`
+
+const { hits, page, totalPages } = await searchPosts(query, config.settings.pagination.search, (pageNum - 1) * config.settings.pagination.search)
+if (hits.length === 0 && pageNum > 1) {
+  return Astro.redirect('/', 302)
+}
+const posts = hits.map(slug => getPosts({ hidden: true, schedule: false }).find(post => post.slug === slug))
+  .filter(post => post !== undefined)
+---
+
+<SearchLayout {title} {query} {page} {totalPages} {posts} />

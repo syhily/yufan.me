@@ -1,0 +1,54 @@
+---
+import { Image } from 'astro:assets'
+import { categories } from '@/helpers/content/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  title: string
+}
+
+const { title } = Astro.props
+---
+
+<BaseLayout {title}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <h1 class="post-title mb-3 mb-xl-4">{title}</h1>
+      <div class="row g-2 g-md-4 list-grouped mt-3 mt-md-4">
+        {
+          categories
+            .sort((a, b) => b.counts - a.counts)
+            .map(category => (
+              <div class="col-md-6">
+                <div class="list-item block">
+                  <div class="media media-3x1">
+                    <a href={category.permalink} class="media-content">
+                      <Image src={category.cover} alt={category.name} width={600} height={200} />
+                    </a>
+                  </div>
+                  <div class="list-content">
+                    <div class="list-body">
+                      <a href={category.permalink} class="list-title h5">
+                        {category.name}
+                      </a>
+                      <div class="list-subtitle d-none d-md-block text-md text-secondary mt-2">
+                        <div class="h-1x">
+                          <Fragment set:html={category.description} />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="list-footer mt-2">
+                      <div class="text-muted text-sm">
+                        <span class="d-inline-block">{`${category.counts} 篇文章`}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+        }
+      </div>
+    </div>
+  </div>
+  <slot />
+</BaseLayout>

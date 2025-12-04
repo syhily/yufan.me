@@ -1,0 +1,48 @@
+---
+import { getEntry } from 'astro:content'
+import 'aplayer-ts/src/css/base.css'
+
+interface Props {
+  id: string
+}
+
+const entry = await getEntry('musics', Astro.props.id)
+const { name, artist, pic, lyric, url } = entry === undefined ? { name: '', artist: '', url: '', pic: '', lyric: '' } : entry.data
+---
+
+{
+  name !== '' && artist !== '' && url !== '' && pic !== '' && lyric !== '' && (
+    <div
+      class="music-player aplayer"
+      data-id={Astro.props.id}
+      data-name={name}
+      data-artist={artist}
+      data-url={url}
+      data-cover={pic}
+      data-lyric={lyric}
+    >
+      音乐正在加载中 ...
+    </div>
+  )
+}
+
+<script>
+  import APlayer from 'aplayer-ts'
+
+  for (const p of document.querySelectorAll(`.aplayer`)) {
+    const e = p as HTMLElement
+    APlayer().init({
+      container: e,
+      lrcType: 1,
+      loop: 'none',
+      audio: {
+        name: e.dataset.name,
+        artist: e.dataset.artist,
+        url: e.dataset.url,
+        cover: e.dataset.cover,
+        theme: '#008c95',
+        lrc: e.dataset.lyric,
+      },
+    })
+  }
+</script>

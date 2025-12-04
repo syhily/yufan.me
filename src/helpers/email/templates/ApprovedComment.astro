@@ -1,0 +1,64 @@
+---
+import EmailLayout from '@/helpers/email/templates/layout/EmailLayout.astro'
+
+interface Props {
+  receiver: string
+  postTitle: string
+  postLink: string
+  commentContent: string
+  commentLink: string
+}
+
+const { receiver, postTitle, postLink, commentContent, commentLink } = Astro.props
+---
+
+<EmailLayout {receiver}>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0; padding:0;">
+    <tr>
+      <td>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 20px;">
+          <!-- 消息标题 -->
+          <tr>
+            <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 15px;">
+              您在《
+              <a href={postLink} style="color:#666666; text-decoration:none;">{postTitle}</a>
+              》中的留言，已经通过审核
+            </td>
+          </tr>
+          <!-- 留言内容 -->
+          <tr>
+            <td style="padding-bottom: 15px;">
+              <table
+                width="100%"
+                cellpadding="0"
+                cellspacing="0"
+                border="0"
+                style="background: rgba(141,141,141,0.05); border-radius: 8px; padding: 10px 15px;"
+              >
+                <tr>
+                  <td style="font-size: 14px; color: #333333; line-height: 1.7;">
+                    <Fragment set:html={commentContent} />
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- 查看留言链接 -->
+          <tr>
+            <td style="font-size: 14px; color: #333333; line-height: 1.5;"> 您可以打开下方链接查看留言： </td>
+          </tr>
+          <tr>
+            <td style="padding-top: 10px;">
+              <a
+                href={commentLink}
+                target="_blank"
+                style="font-size:14px; color:#008c95; text-decoration:none;"
+              >{commentLink}</a
+              >
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</EmailLayout>

@@ -1,0 +1,102 @@
+---
+import type { BlogConfig } from '@/blog.config'
+import config from '@/blog.config'
+import AdminBlock from '@/components/partial/AdminBlock.astro'
+import QRDialog from '@/components/partial/QRDialog.astro'
+import SearchIcon from '@/components/search/SearchIcon.astro'
+
+interface Props {
+  navigation: BlogConfig['navigation']
+}
+
+const { navigation } = Astro.props
+---
+
+<header class="site-aside">
+  <div class="aside-overlay"></div>
+  <div class="aside-inner bg-secondary">
+    <h1 class="navbar-brand">
+      <a href="/" title={config.title} class="d-block">
+        <img src="/logo-dark.svg" alt="且听书吟" />
+      </a>
+    </h1>
+    <div class="site-menu">
+      <ul>
+        {
+          navigation.map((menu, i) => (
+            <li id={`menu-item-${i}`} class={`menu-item${i === 0 ? ' menu-item-home' : ''}`}>
+              <a href={menu.link} target={menu.target}>
+                {menu.text}
+              </a>
+            </li>
+          ))
+        }
+        <AdminBlock session={Astro.session}>
+          <li id={`menu-item-${navigation.length}`} class="menu-item">
+            <a href="/admin/logout">登出</a>
+          </li>
+        </AdminBlock>
+      </ul>
+    </div>
+    <div class="site-submenu">
+      {
+        config.socials.map((social) => {
+          if (social.type === 'qrcode') {
+            return (
+              <QRDialog url={social.link} name={social.name} title={social.title ?? social.name} icon={social.icon} />
+            )
+          }
+          else {
+            return (
+              <a
+                href={social.link}
+                target="_blank"
+                title={social.title ?? social.name}
+                class="btn btn-dark btn-icon btn-circle button-social"
+              >
+                <span>
+                  {!social.icon.startsWith('<svg')
+                  ? (
+                    <i class={`iconfont ${social.icon}`} />
+                  )
+                  : (
+                    <Fragment set:html={social.icon} />
+                  )}
+                </span>
+              </a>
+            )
+          }
+        })
+      }
+      <SearchIcon />
+    </div>
+  </div>
+</header>
+<div class="mobile-brand">
+  <div class="container">
+    <div class="d-flex flex-flex align-items-center">
+      <a href="/" title={config.title} class="d-block">
+        <img src="/logo-large.svg" alt="且听书吟" />
+      </a>
+      <div class="flex-fill"></div>
+      <div class="menu-toggler text-xl">
+        <i class="d-block iconfont icon-menu"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Menu toggle.
+const menuBody = document.querySelector<HTMLElement>('.site-aside')
+document.addEventListener('keydown', (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && menuBody) {
+    event.preventDefault()
+    event.stopPropagation()
+    menuBody.classList.toggle('in', false)
+  }
+})
+document.querySelector<HTMLElement>('.menu-toggler')?.addEventListener('click', () => menuBody?.classList.toggle('in', true))
+document.querySelector<HTMLElement>('.site-menu')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
+document.querySelector<HTMLElement>('.aside-overlay')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
+</script>

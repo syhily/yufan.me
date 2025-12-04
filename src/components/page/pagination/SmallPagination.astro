@@ -1,0 +1,14 @@
+---
+import PaginationItem from '@/components/page/pagination/PaginationItem.astro'
+
+interface Props {
+  current: number
+  total: number
+  rootPath: string
+}
+
+const { current, total, rootPath } = Astro.props
+const pages = Array.from({ length: total }, (_, i) => i + 1)
+---
+
+{pages.map(page => <PaginationItem pageNum={page} current={current} rootPath={rootPath} />)}

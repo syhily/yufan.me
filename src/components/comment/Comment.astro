@@ -1,0 +1,19 @@
+---
+import type { AstroSession } from 'astro'
+/**
+ * This module is a reuse component which can be used in ajax loading.
+ */
+import type { Comments } from '@/helpers/comment/types'
+import CommentItem from '@/components/comment/CommentItem.astro'
+import { parseComments } from '@/helpers/comment/loader'
+
+interface Props {
+  comments: Comments
+  session: AstroSession | undefined
+}
+
+const { comments, session } = Astro.props
+const parsedComments = await parseComments(comments.comments)
+---
+
+{parsedComments.map(item => <CommentItem comment={item} depth={1} {session} />)}

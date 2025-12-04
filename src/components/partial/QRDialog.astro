@@ -1,0 +1,110 @@
+---
+interface Props {
+  url: string
+  name: string
+  title: string
+  icon: string
+  className?: string
+}
+
+const { url, name, title, icon, className } = Astro.props
+---
+
+<div
+  class={className
+    ? `nice-dialog ${className}`
+    : 'nice-dialog btn btn-dark btn-icon btn-circle single-popup button-social'}
+  title={name}
+  data-title={title}
+  data-name={name}
+  data-url={url}
+>
+  <span>
+    <i class={`iconfont ${icon}`}></i>
+  </span>
+</div>
+
+<script>
+import { qrcode } from '@/assets/scripts/qrcode'
+
+// Create popup template based on props
+function createPopupTemplate(title: string, name: string, qrcode: string) {
+  return `
+  <div class="nice-popup nice-popup-center nice-popup-sm">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-close">
+        <span class="svg-white"></span>
+        <span class="svg-dark"></span>
+      </div>
+      <div class="nice-popup-content">
+        <div class="text-center">
+          <h6>${title}</h6>
+          <p class="mt-1 mb-2">${name}</p>
+          <div class="qrcode d-flex justify-content-center align-items-center p-2">${qrcode}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+`.trim()
+}
+
+// Handle each dialog instance
+document.querySelectorAll<HTMLElement>('.nice-dialog').forEach((dialog) => {
+  let popup: HTMLElement | null = null
+
+  const hidePopup = () => {
+    popup?.classList.remove('nice-popup-open')
+    setTimeout(() => {
+      if (popup && !popup.classList.contains('nice-popup-open')) {
+        popup.remove()
+        popup = null
+      }
+    }, 300)
+  }
+
+  const showPopup = () => {
+    if (!popup) {
+      // Create popup if it doesn't exist
+      const { title, name, url } = dialog.dataset
+      if (!title || !name || !url) {
+        return
+      }
+
+      // Render QRCode
+      const svg = qrcode(url, { border: 2 })
+
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = createPopupTemplate(title, name, svg)
+      popup = tempDiv.firstElementChild as HTMLElement
+      document.body.appendChild(popup)
+
+      // Attach close handler
+      popup.querySelector('.nice-popup-close')?.addEventListener('click', (event) => {
+        event.stopPropagation()
+        hidePopup()
+      })
+    }
+
+    requestAnimationFrame(() => {
+      popup?.classList.add('nice-popup-open')
+    })
+  }
+  // Show popup on click
+  dialog.addEventListener('click', (event) => {
+    event.stopPropagation()
+    showPopup()
+  })
+
+  // Close popup when clicking outside
+  document.addEventListener('click', (event) => {
+    if (
+      popup
+      && !popup.contains(event.target as Node)
+      && !dialog.contains(event.target as Node)
+    ) {
+      hidePopup()
+    }
+  })
+})
+</script>

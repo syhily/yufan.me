@@ -1,0 +1,62 @@
+---
+import type { MarkdownHeading } from 'astro'
+import type { TocOpts } from '@/helpers/content/toc'
+import TocItems from '@/components/page/toc/TocItems.astro'
+import { generateToC } from '@/helpers/content/toc'
+
+interface Props {
+  headings: MarkdownHeading[]
+  toc: TocOpts | false
+}
+
+const { headings, toc } = Astro.props
+const items = generateToC(headings, toc)
+---
+
+{
+  items.length > 0 && (
+    <Fragment>
+      <a class="toggle-menu-tree">
+        <i class="text-md iconfont icon-left" />
+      </a>
+      <div class="post-menu">
+        <div class="toc-wrap">
+          <div class="toc-content">
+            <h2 class="post-menu-title">文章目录</h2>
+            <div class="index-menu">
+              <TocItems {items} />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="post-menu-overlay" />
+    </Fragment>
+  )
+}
+
+<script>
+import { scrollIntoView } from '@/assets/scripts/actions'
+
+// TOC Support
+for (const anchor of document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')) {
+  anchor.addEventListener('click', (e) => {
+    e.preventDefault()
+    const href = anchor.getAttribute('href')
+    if (href) {
+      location.hash = href
+      scrollIntoView(document.querySelector<HTMLElement>(href))
+    }
+  })
+}
+
+const tocToggle = document.querySelector<HTMLElement>('.toggle-menu-tree')
+if (tocToggle) {
+  tocToggle.addEventListener('click', () => {
+    const body = document.querySelector<HTMLElement>('body')
+    if (body) {
+      const displayToc = !body.classList.contains('display-menu-tree')
+      body.classList.toggle('display-menu-tree', displayToc)
+    }
+  })
+}
+</script>

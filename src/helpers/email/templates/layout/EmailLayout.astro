@@ -1,0 +1,81 @@
+---
+import { DateTime } from 'luxon'
+import config from '@/blog.config'
+
+interface Props {
+  receiver: string
+}
+
+const { receiver } = Astro.props
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5; padding: 20px 0;">
+      <tr>
+        <td align="center">
+          <table
+            width="500"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="background-color: #ffffff; border: 1px solid #283149; box-shadow: 0 0 20px #cccccc; border-radius: 5px;"
+          >
+            <!-- 渐变背景带亮色斜条 -->
+            <tr>
+              <td style="padding:0;">
+                <div
+                  style="width:100%; height:200px; border-radius:5px 5px 0 0; background-color: #283148; background-blend-mode: overlay; overflow: hidden; position: relative;"
+                >
+                  <img
+                    src="https://yufan.me/images/blog-poster-dark.png"
+                    style="width:100%; height:100%; object-fit:cover; display:block;"
+                  />
+                </div>
+              </td>
+            </tr>
+            <!-- 收件人 -->
+            <tr>
+              <td align="center" style="padding: 10px 0;">
+                <div
+                  style="display: inline-block; padding: 7px 20px; background: #008c95; color: #ffffff; text-align: center; box-shadow: 3px 3px 5px rgba(0,0,0,0.3); border-radius: 3px;"
+                >
+                  亲爱的 {receiver} 同学
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 20px;">
+                <div style="padding: 10px 15px; background: #f5f5f5; border-radius: 3px;">
+                  <slot />
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding: 20px;">
+                <a
+                  href={config.website}
+                  target="_blank"
+                  style="display:inline-block; padding: 10px 20px; background:#008c95; color:#ffffff; text-decoration:none; border-radius:3px; box-shadow:3px 3px 5px rgba(0,0,0,0.3);"
+                >访问博客</a
+                >
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding: 20px; font-size: 12px; color: #666666;">
+                本邮件为系统自动发出，无法回复。<br />
+                &copy; {DateTime.now().setZone(config.settings.timeZone).year}
+                <a href={config.website} style="color:#666666; text-decoration:none;" target="_blank">{config.title}</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

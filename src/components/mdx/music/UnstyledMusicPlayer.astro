@@ -1,0 +1,16 @@
+---
+import { getEntry } from 'astro:content'
+import 'aplayer-ts/src/css/base.css'
+
+interface Props {
+  id: string
+}
+
+const entry = await getEntry('musics', Astro.props.id)
+const { url } = entry === undefined ? { url: '' } : entry.data
+---
+
+{
+  url !== '' && <audio controls src={url} />
+}
+

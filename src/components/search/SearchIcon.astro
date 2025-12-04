@@ -1,0 +1,95 @@
+<div class="global-search btn btn-dark btn-icon btn-circle site-search-toggler button-social" title="搜索">
+  <span>
+    <i class="iconfont icon-search"></i>
+  </span>
+</div>
+
+<script>
+const searchPopupTemplate = `
+<div class="global-search-popup nice-popup nice-popup-center nice-popup-md">
+  <div class="nice-popup-overlay"></div>
+  <div class="nice-popup-body">
+    <div class="global-search-close nice-popup-close">
+      <span class="svg-white"></span>
+      <span class="svg-dark"></span>
+    </div>
+    <div class="nice-popup-content">
+      <form class="search-dialog text-center p-3 p-md-5" action="/search">
+        <div class="mb-3 mb-md-4">
+          <input
+            class="form-control form-control-lg text-center"
+            type="text"
+            name="q"
+            placeholder="搜索并回车"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">搜索</button>
+      </form>
+    </div>
+  </div>
+</div>`.trim()
+
+// Handle search functionality with view transitions support
+let searchPopup: HTMLElement | null = null
+
+function hideSearchPopup() {
+  searchPopup?.classList.remove('nice-popup-open')
+  setTimeout(() => {
+    if (searchPopup && !searchPopup.classList.contains('nice-popup-open')) {
+      searchPopup.remove()
+      searchPopup = null
+    }
+  }, 300)
+}
+
+function showSearchPopup() {
+  // Create popup if it doesn't exist
+  if (!searchPopup) {
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = searchPopupTemplate
+    searchPopup = tempDiv.firstElementChild as HTMLElement
+    document.body.appendChild(searchPopup)
+
+    // Attach close handler
+    searchPopup.querySelector('.global-search-close')?.addEventListener('click', (event) => {
+      event.stopPropagation()
+      hideSearchPopup()
+    })
+
+    // Attach form submit handler
+    searchPopup.querySelector<HTMLFormElement>('.search-dialog')?.addEventListener('submit', (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const formData = new FormData(event.target as HTMLFormElement)
+      const query = formData.get('q')
+      if (query) {
+        location.href = `/search/${encodeURIComponent(query.toString())}`
+      }
+    })
+  }
+
+  // Show the popup
+  requestAnimationFrame(() => {
+    searchPopup?.classList.add('nice-popup-open')
+  })
+}
+
+// Attach click handler to search icon
+document.querySelector<HTMLElement>('.global-search')?.addEventListener('click', (event) => {
+  event.stopPropagation()
+  showSearchPopup()
+})
+
+// Close popup when clicking outside
+document.addEventListener('click', (event) => {
+  if (
+    searchPopup
+    && !searchPopup.contains(event.target as Node)
+    && !(event.target as HTMLElement).closest('.global-search')
+  ) {
+    hideSearchPopup()
+  }
+})
+</script>

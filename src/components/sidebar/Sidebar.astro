@@ -1,0 +1,38 @@
+---
+import type { Post, Tag } from '@/helpers/content/schema'
+import AdminBlock from '@/components/partial/AdminBlock.astro'
+import SearchBar from '@/components/search/SearchBar.astro'
+import PendingComments from '@/components/sidebar/PendingComments.astro'
+import RandomPosts from '@/components/sidebar/RandomPosts.astro'
+import RandomTags from '@/components/sidebar/RandomTags.astro'
+import RecentComments from '@/components/sidebar/RecentComments.astro'
+
+interface Props {
+  posts: Post[]
+  tags: Tag[]
+}
+
+const { posts, tags } = Astro.props
+---
+
+<aside class="sidebar col-12 col-xl-3 d-none d-xl-block">
+  <div class="sidebar-inner block">
+    <SearchBar />
+    <AdminBlock session={Astro.session}>
+      <PendingComments />
+    </AdminBlock>
+    <RandomPosts {posts} />
+    <RecentComments />
+    <RandomTags {tags} />
+  </div>
+</aside>
+
+<script>
+import { stickySidebar } from '@/assets/scripts/sidebar'
+
+// Sticky Sidebar
+stickySidebar({
+  elements: '.sidebar',
+  additionalMarginTop: 30,
+})
+</script>
