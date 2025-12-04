@@ -44,60 +44,21 @@ function getDailyAuspiciousLabel(date: DateTime) {
 }
 
 function wrapText(ctx: any, text: string, maxWidth: number) {
-  const parts = text.split(/(\s+)/)
+  const words = text.split('')
   const lines: string[] = []
   let line = ''
-
-  for (const part of parts) {
-    if (/^\s+$/.test(part)) {
-      const test = line + part
-      if (ctx.measureText(test).width <= maxWidth) {
-        line = test
-      }
-      else if (line !== '') {
-        lines.push(line)
-        line = ''
-      }
+  for (const ch of words) {
+    const test = line + ch
+    if (ctx.measureText(test).width > maxWidth && line !== '') {
+      lines.push(line)
+      line = ch
     }
     else {
-      const wordWidth = ctx.measureText(part).width
-
-      if (wordWidth > maxWidth) {
-        if (line !== '') {
-          lines.push(line)
-          line = ''
-        }
-        for (const ch of part) {
-          const test = line + ch
-          if (ctx.measureText(test).width > maxWidth && line !== '') {
-            lines.push(line)
-            line = ch
-          }
-          else {
-            line = test
-          }
-        }
-      }
-      else {
-        const test = line === '' ? part : `${line} ${part}`
-        if (ctx.measureText(test).width <= maxWidth) {
-          line = test
-        }
-        else if (line !== '') {
-          lines.push(line)
-          line = part
-        }
-        else {
-          line = part
-        }
-      }
+      line = test
     }
   }
-
-  if (line) {
+  if (line)
     lines.push(line)
-  }
-
   return lines
 }
 
@@ -161,7 +122,7 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.font = '36px OPPOSerif'
-  const quoteText = `${quoteData.content}`
+  const quoteText = `${quoteData.translation}`
   const quoteLines = wrapText(ctx, quoteText, maxTextWidth)
   let y = quoteY
   const lineHeight = 56
