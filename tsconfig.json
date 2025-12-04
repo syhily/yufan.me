@@ -6,7 +6,8 @@
     "baseUrl": ".",
     "module": "ESNext",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "~/*": ["public/*"]
     },
     "types": ["vite-plugin-binary/types"],
     "strict": true,

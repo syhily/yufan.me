@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro'
 import config from '@/blog.config'
 import { loadBuffer } from '@/helpers/cache'
-import { drawOpenGraph } from '@/helpers/content/og'
 import { getPage, getPost } from '@/helpers/content/schema'
+import { drawOpenGraph } from '@/helpers/images/og'
 
 async function fallback() {
   return new Response(null, {

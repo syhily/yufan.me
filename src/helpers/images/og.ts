@@ -1,10 +1,8 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
-import { Buffer } from 'node:buffer'
-import { gunzipSync } from 'node:zlib'
-import NotoSansSC from '@expo-google-fonts/noto-sans-sc/700Bold/NotoSansSC_700Bold.ttf?binary'
+import type { Buffer } from 'node:buffer'
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 import config from '@/blog.config'
-import darkLogo from '../../../public/logo-dark.svg?raw'
+import { logoDark, oppoSans } from '@/helpers/images/assets'
 
 /**
  * Generate the open graph.
@@ -107,8 +105,8 @@ export interface OpenGraphProps {
 }
 
 // Register the font if it doesn't exist
-if (!GlobalFonts.has('NotoSansSC')) {
-  GlobalFonts.register(gunzipSync(Buffer.from(NotoSansSC)), 'NotoSansSC')
+if (!GlobalFonts.has('OPPOSans')) {
+  GlobalFonts.register(oppoSans(), 'OPPOSans')
 }
 
 export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
@@ -116,7 +114,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const coverImage = await loadImage(cover)
 
   // Generate the logo image
-  const logoImage = await loadImage(Buffer.from(darkLogo, 'utf-8'))
+  const logoImage = await loadImage(logoDark())
 
   // Mark sure the summary length is small enough to fit in
   const description = `${summary
@@ -134,7 +132,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   // Add website title
   ctx.fillStyle = '#e0c2bb'
-  ctx.font = '800 64px NotoSansSC'
+  ctx.font = '800 64px OPPOSans'
   printAt(ctx, config.title, 96, 180, 96, config.settings.og.width, 64)
 
   // Add website logo
@@ -142,11 +140,11 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
 
   // Add article title
   ctx.fillStyle = '#fff'
-  ctx.font = '800 48px NotoSansSC'
+  ctx.font = '800 48px OPPOSans'
   printAt(ctx, title, 96, config.settings.og.height / 2 - 64, 96, config.settings.og.width - 192, 64)
 
   // Add article summary
-  ctx.font = '800 36px NotoSansSC'
+  ctx.font = '600 36px OPPOSans'
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   printAt(ctx, description, 96, config.settings.og.height - 200, 48, config.settings.og.width - 192, 36)
 

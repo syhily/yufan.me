@@ -1,11 +1,16 @@
-FROM node:25 AS base
+FROM node:25-alpine AS base
 WORKDIR /app
 COPY package.json package-lock.json ./
 
 FROM base AS build
 COPY . .
-
 ENV ASTRO_TELEMETRY_DISABLED=1
+RUN apk update && apk add --no-cache \
+        build-base \
+        git \
+        git-lfs
+RUN git lfs install
+RUN git lfs pull
 RUN SHARP_IGNORE_GLOBAL_LIBVIPS=true NODE_ENV=development npm ci
 RUN NODE_ENV=production npm run build
 
