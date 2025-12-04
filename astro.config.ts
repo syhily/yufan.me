@@ -40,7 +40,7 @@ export default defineConfig({
   trailingSlash: 'never',
   image: {
     domains: [config.settings.asset.host],
-    service: { entrypoint: './src/helpers/content/image/assetry' },
+    service: { entrypoint: './src/helpers/content/assetry' },
   },
   session: {
     driver: 'redis',

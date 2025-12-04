@@ -1,11 +1,6 @@
 @font-face {
   font-family: 'iconfont';
-  src: url('../fonts/iconfont/iconfont.eot?zflxep');
-  src:
-    url('../fonts/iconfont/iconfont.eot?zflxep#iefix') format('embedded-opentype'),
-    url('../fonts/iconfont/iconfont.ttf?zflxep') format('truetype'),
-    url('../fonts/iconfont/iconfont.woff?zflxep') format('woff'),
-    url('../fonts/iconfont/iconfont.svg?zflxep#iconfont') format('svg');
+  src: url('./iconfont.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -15,7 +10,6 @@
 .icon {
   /* use !important to prevent issues with browser extensions that change fonts */
   font-family: 'iconfont' !important;
-  speak: never;
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
