@@ -57,8 +57,15 @@ function wrapText(ctx: any, text: string, maxWidth: number) {
       line = test
     }
   }
-  if (line)
-    lines.push(line)
+  if (line) {
+    if (line.length > 1) {
+      lines.push(line)
+    }
+    else {
+      lines[lines.length - 1] += line
+    }
+  }
+
   return lines
 }
 
