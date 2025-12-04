@@ -39,7 +39,7 @@ function getLunarLabel(date: DateTime) {
 function getDailyAuspiciousLabel(date: DateTime) {
   const lunar = Lunar.fromYmd(date.year, date.month, date.day)
   const auspicious = lunar.getDayYi()
-  return `宜${auspicious[0]}`
+  return `宜${auspicious[Math.floor(date.day % auspicious.length)]}`
 }
 
 function wrapText(ctx: any, text: string, maxWidth: number) {
