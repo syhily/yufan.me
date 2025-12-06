@@ -29,7 +29,6 @@
   "scripts": {
     "astro": "astro",
     "build": "astro build",
-    "generate:db": "drizzle-kit generate",
     "dev": "astro dev",
     "lint": "astro check && eslint",
     "lint:fix": "eslint --fix",
@@ -39,11 +38,11 @@
     "@astrojs/mdx": "^4.3.12",
     "@astrojs/node": "^9.5.1",
     "@astrojs/rss": "^4.0.14",
-    "@napi-rs/canvas": "^0.1.83",
+    "@napi-rs/canvas": "^0.1.84",
     "@shikijs/transformers": "^3.19.0",
-    "astro": "^5.16.3",
+    "astro": "^5.16.4",
     "bcryptjs": "^3.0.3",
-    "drizzle-orm": "^0.44.7",
+    "drizzle-orm": "^0.45.0",
     "flexsearch": "^0.8.212",
     "ioredis": "^5.8.2",
     "lodash": "^4.17.21",
@@ -61,7 +60,7 @@
     "unstorage": "^1.17.3"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.3.0",
+    "@antfu/eslint-config": "^6.4.2",
     "@astrojs/check": "^0.9.6",
     "@daiji256/rehype-mathml": "^1.2.1",
     "@types/lodash": "^4.17.21",
@@ -72,10 +71,9 @@
     "aplayer-ts": "^2.6.0",
     "astro-eslint-parser": "^1.2.2",
     "bootstrap": "^5.3.8",
-    "drizzle-kit": "^0.31.7",
     "eslint": "^9.39.1",
     "eslint-plugin-astro": "^1.5.0",
-    "eslint-plugin-format": "^1.0.2",
+    "eslint-plugin-format": "^1.1.0",
     "jiti": "^2.6.1",
     "medium-zoom": "^1.1.0",
     "prettier": "^3.7.4",
@@ -92,9 +90,7 @@
   "overrides": {
     "@daiji256/rehype-mathml": {
       "temml": "0.12.1"
-    },
-    "esbuild": "^0.25.9",
-    "esm-loader": "tsx@^4.20.4"
+    }
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"
