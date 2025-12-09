@@ -34,6 +34,7 @@ export function oppoSerif(): Buffer {
 
 export async function compressImage(buf: Buffer): Promise<Buffer> {
   return await sharp(buf)
+    .flatten({ background: { r: 255, g: 255, b: 255 } })
     .png({
       compressionLevel: 9,
       adaptiveFiltering: true,

@@ -4,6 +4,7 @@ import { joinPaths } from '@astrojs/internal-helpers/path'
 import config from '@/blog.config'
 import { queryEmail } from '@/helpers/auth/user'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/helpers/cache'
+import { compressImage } from '@/helpers/images/assets'
 import { encodedEmail, isNumeric } from '@/helpers/tools'
 
 function defaultAvatar(): string {
@@ -20,7 +21,7 @@ async function avatarImage(hash: string): Promise<Buffer | null> {
   if (resp.status > 299 || resp.headers.get('location') === defaultAvatarLink) {
     return null
   }
-  return Buffer.from(await resp.arrayBuffer())
+  return compressImage(Buffer.from(await resp.arrayBuffer()))
 }
 
 export const GET: APIRoute = async ({ params, redirect }) => {
@@ -31,7 +32,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
 
   // Read from cache.
   const avatar = await loadAvatar(hash)
-  if (avatar != null) {
+  if (avatar !== null) {
     if (avatar.status === AvatarStatus.NO_AVATAR) {
       return redirect(defaultAvatar())
     }
