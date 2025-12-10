@@ -35,14 +35,14 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.12",
+    "@astrojs/mdx": "^4.3.13",
     "@astrojs/node": "^9.5.1",
     "@astrojs/rss": "^4.0.14",
     "@napi-rs/canvas": "^0.1.84",
     "@shikijs/transformers": "^3.19.0",
-    "astro": "^5.16.4",
+    "astro": "^5.16.5",
     "bcryptjs": "^3.0.3",
-    "drizzle-orm": "^0.45.0",
+    "drizzle-orm": "^0.45.1",
     "flexsearch": "^0.8.212",
     "ioredis": "^5.8.2",
     "lodash": "^4.17.21",
@@ -60,7 +60,7 @@
     "unstorage": "^1.17.3"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.5.1",
+    "@antfu/eslint-config": "^6.6.1",
     "@astrojs/check": "^0.9.6",
     "@daiji256/rehype-mathml": "^1.2.1",
     "@types/lodash": "^4.17.21",
