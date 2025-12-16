@@ -1,4 +1,4 @@
-import config from '@/blog.config'
+import { assetConfig } from '@/blog.config'
 
 export interface MusicMeta {
   id: string
@@ -12,7 +12,7 @@ export interface MusicMeta {
 
 export async function loadMusic(id: string): Promise<MusicMeta | null> {
   try {
-    const resp = await fetch(`${config.settings.asset.scheme}://${config.settings.asset.host}/musics/${id}.json`)
+    const resp = await fetch(`${assetConfig.scheme}://${assetConfig.host}/musics/${id}.json`)
     if (resp.ok) {
       return await resp.json() as MusicMeta
     }

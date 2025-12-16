@@ -106,6 +106,8 @@ const config: BlogConfig = {
   },
 }
 
+export const assetConfig = config.settings.asset
+
 export interface BlogConfig {
   title: string
   description: string
