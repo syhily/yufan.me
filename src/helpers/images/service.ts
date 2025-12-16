@@ -1,8 +1,9 @@
 import type { AstroConfig, ExternalImageService, ImageTransform, RemotePattern } from 'astro'
+import { Buffer } from 'node:buffer'
 import { isRemotePath } from '@astrojs/internal-helpers/path'
 import { baseService } from 'astro/assets'
 import { inferRemoteSize, isESMImportedImage } from 'astro/assets/utils'
-import { getImageMetadata } from '@/helpers/content/schema'
+import { thumbHashToDataURL } from 'thumbhash'
 
 function matchHostname(url: URL, hostname?: string, allowWildcard?: boolean) {
   if (!hostname) {
@@ -83,11 +84,46 @@ function isRemoteAllowed(
   )
 }
 
+interface ImageMetadata {
+  width: number
+  height: number
+  blurhash: string
+}
+
+const globalForImage = globalThis as unknown as {
+  imageMetadataCache: Record<string, ImageMetadata> | undefined
+}
+if (globalForImage.imageMetadataCache === undefined) {
+  globalForImage.imageMetadataCache = {}
+}
+const imageMetadataCache = globalForImage.imageMetadataCache
+
+async function getImageMetadata(source: string): Promise<ImageMetadata | null> {
+  if (imageMetadataCache[source]) {
+    return imageMetadataCache[source]
+  }
+
+  try {
+    const response = await fetch(`${source.slice(0, source.lastIndexOf('.'))}.json`)
+    if (!response.ok) {
+      return null
+    }
+    const metadata = await response.json() as ImageMetadata
+    if (metadata.blurhash !== '') {
+      imageMetadataCache[source] = metadata
+    }
+    return metadata
+  }
+  catch {
+    return null
+  }
+}
+
 async function getImage(source: string, options: ImageTransform): Promise<{ width: number, height: number, blurhash?: string }> {
   const { width, height } = options
-  const metadata = getImageMetadata(source)
+  const metadata = await getImageMetadata(source)
   if (metadata) {
-    return { width: width || metadata.width, height: height || metadata.height, blurhash: metadata.blurhash }
+    return { width: width || metadata.width, height: height || metadata.height, blurhash: thumbHashToDataURL(Buffer.from(metadata.blurhash, 'base64')) }
   }
   if (!width || !height) {
     const { width, height } = await inferRemoteSize(source)
@@ -132,7 +168,7 @@ const service: ExternalImageService = {
     if (!isRemoteAllowed(imageSource, imageConfig)) {
       return imageSource
     }
-    return `${imageSource}?resize/w=${options.width},h=${options.height},m=crop/format/t=webp,q=${typeof options.quality === 'number' ? options.quality : 100}`
+    return `${imageSource}!upyun520/both/${options.width}x${options.height}/format/webp/quality/${typeof options.quality === 'number' ? options.quality : 100}/unsharp/true/progressive/true`
   },
 }
 

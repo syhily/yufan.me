@@ -6,28 +6,28 @@
  * -------------------------- */
 @font-face {
   font-family: 'Hack';
-  src: url('https://asset.yufan.me/fonts/hack/hack-regular.woff2?sha=3114f1256') format('woff2');
+  src: url('https://cat.yufan.me/fonts/hack/hack-regular.woff2?sha=3114f1256') format('woff2');
   font-weight: 400;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Hack';
-  src: url('https://asset.yufan.me/fonts/hack/hack-bold.woff2?sha=3114f1256') format('woff2');
+  src: url('https://cat.yufan.me/fonts/hack/hack-bold.woff2?sha=3114f1256') format('woff2');
   font-weight: 700;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Hack';
-  src: url('https://asset.yufan.me/fonts/hack/hack-italic.woff2?sha=3114f1256') format('woff2');
+  src: url('https://cat.yufan.me/fonts/hack/hack-italic.woff2?sha=3114f1256') format('woff2');
   font-weight: 400;
   font-style: italic;
 }
 
 @font-face {
   font-family: 'Hack';
-  src: url('https://asset.yufan.me/fonts/hack/hack-bolditalic.woff2?sha=3114f1256') format('woff2');
+  src: url('https://cat.yufan.me/fonts/hack/hack-bolditalic.woff2?sha=3114f1256') format('woff2');
   font-weight: 700;
   font-style: italic;
 }

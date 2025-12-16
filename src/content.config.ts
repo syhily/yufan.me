@@ -1,7 +1,5 @@
-import { Buffer } from 'node:buffer'
 import { file, glob } from 'astro/loaders'
 import { defineCollection, z } from 'astro:content'
-import { thumbHashToDataURL } from 'thumbhash'
 import config from '@/blog.config'
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
@@ -107,35 +105,10 @@ const pagesCollection = defineCollection({
   }),
 })
 
-const imageCollection = defineCollection({
-  loader: file('./src/content/metas/images.yml'),
-  schema: z.object({
-    slug: z.string(),
-    width: z.number().int().min(1),
-    height: z.number().int().min(1),
-    blurhash: z.string().transform(hash => thumbHashToDataURL(Buffer.from(hash, 'base64'))),
-  }),
-})
-
-const musicCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.yml', base: './src/content/metas/musics' }),
-  schema: z.object({
-    id: z.string().regex(/\d+/),
-    name: z.string(),
-    artist: z.string(),
-    album: z.string(),
-    pic: z.string().url(),
-    lyric: z.string(),
-    url: z.string().url(),
-  }),
-})
-
 export const collections = {
   categories: categoriesCollection,
   friends: friendsCollection,
   tags: tagsCollection,
   posts: postsCollection,
   pages: pagesCollection,
-  images: imageCollection,
-  musics: musicCollection,
 }

@@ -1,48 +1,36 @@
 ---
-import { getEntry } from 'astro:content'
 import 'aplayer-ts/src/css/base.css'
 
 interface Props {
   id: string
 }
-
-const entry = await getEntry('musics', Astro.props.id)
-const { name, artist, pic, lyric, url } = entry === undefined ? { name: '', artist: '', url: '', pic: '', lyric: '' } : entry.data
 ---
-
-{
-  name !== '' && artist !== '' && url !== '' && pic !== '' && lyric !== '' && (
-    <div
-      class="music-player aplayer"
-      data-id={Astro.props.id}
-      data-name={name}
-      data-artist={artist}
-      data-url={url}
-      data-cover={pic}
-      data-lyric={lyric}
-    >
-      音乐正在加载中 ...
-    </div>
-  )
-}
+<div class="music-player aplayer" data-id={Astro.props.id}></div>
 
 <script>
-  import APlayer from 'aplayer-ts'
+import APlayer from 'aplayer-ts'
+import { loadMusic } from '@/components/mdx/music/loader'
 
-  for (const p of document.querySelectorAll(`.aplayer`)) {
-    const e = p as HTMLElement
-    APlayer().init({
-      container: e,
-      lrcType: 1,
-      loop: 'none',
-      audio: {
-        name: e.dataset.name,
-        artist: e.dataset.artist,
-        url: e.dataset.url,
-        cover: e.dataset.cover,
-        theme: '#008c95',
-        lrc: e.dataset.lyric,
-      },
-    })
+for (const p of document.querySelectorAll<HTMLTableElement>(`.aplayer`)) {
+  if (p.dataset.id === undefined) {
+    continue
   }
+  const meta = await loadMusic(p.dataset.id)
+  if (meta === null) {
+    continue
+  }
+  APlayer().init({
+    container: p,
+    lrcType: 1,
+    loop: 'none',
+    audio: {
+      name: meta.name,
+      artist: meta.artist,
+      url: meta.url,
+      cover: meta.pic,
+      theme: '#008c95',
+      lrc: meta.lyric,
+    },
+  })
+}
 </script>

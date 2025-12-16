@@ -1,13 +1,12 @@
 ---
-import { getEntry } from 'astro:content'
+import { loadMusic } from '@/components/mdx/music/loader'
 import 'aplayer-ts/src/css/base.css'
 
 interface Props {
   id: string
 }
-
-const entry = await getEntry('musics', Astro.props.id)
-const { url } = entry === undefined ? { url: '' } : entry.data
+const meta = await loadMusic(Astro.props.id)
+const url = meta === null ? '' : meta.url
 ---
 
 {

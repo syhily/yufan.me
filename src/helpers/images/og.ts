@@ -10,7 +10,6 @@ import { compressImage, logoDark, oppoSans } from '@/helpers/images/assets'
  * The original open source code don't have any license.
  * But I have get the approvement to use them here by asking the author https://twitter.com/yuaanlin.
  */
-
 function getStringWidth(text: string, fontSize: number) {
   let result = 0
   for (let idx = 0; idx < text.length; idx++) {

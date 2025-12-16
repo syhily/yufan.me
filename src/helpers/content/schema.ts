@@ -11,7 +11,6 @@ const pagesCollection = await getCollection('pages')
 const postsCollection = await getCollection('posts')
 const categoriesCollection = await getCollection('categories')
 const tagsCollection = await getCollection('tags')
-const imageCollection = await getCollection('images')
 
 // Redefine the types from the astro content.
 export type Friend = (typeof friendsCollection)[number]['data']
@@ -34,7 +33,6 @@ export type Category = Omit<(typeof categoriesCollection)[number]['data'], 'cove
   permalink: string
 }
 export type Tag = (typeof tagsCollection)[number]['data'] & { counts: number, permalink: string }
-export type Image = Omit<(typeof imageCollection)[number]['data'], 'id'>
 
 export const friends: Friend[] = friendsCollection.map(friends => friends.data)
 export const pages: Page[] = pagesCollection
@@ -195,11 +193,4 @@ export function getCategory(name?: string, slug?: string): Category | undefined 
 
 export function getTag(name?: string, slug?: string): Tag | undefined {
   return tags.find(tag => tag.name === name || tag.slug === slug)
-}
-
-// Query the image metadata from the image collection.
-const imageUrlPrefix = `${config.settings.asset.scheme}://${config.settings.asset.host}`
-export function getImageMetadata(source: string): Image | undefined {
-  const requestPath = source.startsWith(imageUrlPrefix) ? source.substring(imageUrlPrefix.length) : source
-  return imageCollection.find(img => img.id === requestPath)?.data
 }

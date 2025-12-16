@@ -11,10 +11,10 @@ toc:
   maxHeadingLevel: 4
 category: 笔记
 summary: This article explains through relevant technical research whether splitting data on Elasticsearch will affect query results in AI search scenarios.
-cover: https://asset.yufan.me/images/2025/01/2025011601423200.jpg
+cover: https://cat.yufan.me/images/2025/01/2025011601423200.jpg
 ---
 
-![](https://asset.yufan.me/images/2025/01/2025011601423200.jpg)
+![](https://cat.yufan.me/images/2025/01/2025011601423200.jpg)
 
 ## Background
 
@@ -36,7 +36,7 @@ In the application scenarios of Elasticsearch, the storage of large amounts of d
 
 #### Elasticsearch Architecture
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/elasticsearch-nodes.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/elasticsearch-nodes.png)
 
 Elasticsearch architecture is straightforward. Each node in a cluster can handle requests and redirect them to the appropriate data nodes for searching. We use blue-green deployment for scaling up or down, which enhances stability requirements.
 
@@ -44,17 +44,17 @@ Elasticsearch architecture is straightforward. Each node in a cluster can handle
 
 #### Multiple Milvus Architecture
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/multiple-milvus-architecture.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/multiple-milvus-architecture.png)
 
 The Milvus Lite is the core search engine part with the embedded storage for local prototype verification. It's written in Python and can be integrated into any AI python project.
 
 The Milvus standalone is based on Docker compose with a milvus instance, a MinIO instance and an etcd instance. The Milvus Distributed is used in Cloud and production with all the required modules. In the most case, we are talking about the Milvus Distributed in this report.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/different-milvus-clusters.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/different-milvus-clusters.png)
 
 #### Milvus Distributed Architecture
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/milvus-distributed-architecture.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/milvus-distributed-architecture.png)
 
 Milvus has a shared storage massively parallel processing (MPP) architecture, with storage and computing resources independent of one another. The data and the control plane are disaggregated, and its architecture comprises four layers: access layer, coordinator services, worker nodes, and storage. Each layer is independent of the others for better disaster recovery and scalability.
 
@@ -109,7 +109,7 @@ Even in a minimal standalone Milvus deployment. We need an OSS service like Mini
 
 #### Index Flow in Elasticsearch
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/index-flow-in-elasticsearch.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/index-flow-in-elasticsearch.png)
 
 In this diagram, we can see how a new document is stored by Elasticsearch. As soon as it “arrives”, it is committed to a transaction log called “translog” and to a memory buffer. The translog is how Elasticsearch can recover data that was only in memory in case of a crash.
 
@@ -117,13 +117,13 @@ All the documents in the memory buffer will generate a single in-memory Lucene s
 
 Depending on different triggers, eventually, all of those segments are merged into a single segment and saved to disk and the translog is cleared.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/elasticsearch-index-request-flow.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/elasticsearch-index-request-flow.png)
 
 This diagram shows the whole routine for a simple index request.
 
 #### Data Writing Flow in Milvus
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/data-writing-flow-in-milvus.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/data-writing-flow-in-milvus.png)
 
 The picture above shows all the modules used in data writing. All the data writing requests are triggered in the SDK. The SDK send the request through the Load Balancer to the proxy node. The number of the proxy node instances could be varied. The Proxy node cached data and request the segment information for writing the data into the message storage.
 
@@ -131,29 +131,29 @@ Message storage is mainly a Pulsar based platform for persistence the data. It i
 
 The data node consumes the data through message storage and flush it into the object storage finally.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/milvus-data-writing-overview.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/milvus-data-writing-overview.png)
 
 ### Data model in Vector
 
 #### Data Model Elasticsearch
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/data-model-elasticsearch.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/data-model-elasticsearch.png)
 
 As we can see from the diagram, Elasticsearch shards each Lucene index across the available nodes. A shard can be a primary shard or replica shard. Each shard is a Lucene Index, each one of those indexes can have multiple segments, each segment is an complete HNSW graph.
 
 #### Data Model in Milvus
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/data-model-in-milvus.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/data-model-in-milvus.png)
 
 Milvus provides users with the largest concept called Collection, which can be mapped to a table in a traditional database and is equivalent to an Index in Elasticsearch. Each Collection is divided into multiple Shards, with two Shards by default. The number of Shards depends on how much data you need to write and how many nodes you want to distribute the writing across for processing.
 
 Each Shard contains many Partitions, which have their own data attributes. A Shard itself is divided based on the hash of the primary key, while Partitions are often divided based on fields or Partition Tags that you specify. Common ways of partitioning include dividing by the date of data entry, by user gender, or by user age. One major advantage of using Partitions during queries is that if you add a Partition tag, it can help filter out a lot of data.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/milvus-shard.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/milvus-shard.png)
 
 Shard is more about helping you expand write operations, while Partition helps improve read performance during read operations. Each Partition within a Shard corresponds to many small Segments. A Segment is the smallest unit of scheduling in our entire system and is divided into Growing Segments and Sealed Segments. A Growing Segment is subscribed by the Query Node, where users continuously write data until it becomes large enough; once it reaches the default limit of 512MB, writing is prohibited, turning it into a Sealed Segment, upon which some vector indexes are built for the Sealed Segment.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/milvus-segments.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/milvus-segments.png)
 
 A stored procedure is organized by segments and uses a columnar storage method, where each primary key, column, and vector is stored in a separate file.
 
@@ -220,7 +220,7 @@ As for Elasticsearch, the dense vector on HNSW is the only solution. The default
 
 #### Query Flow in Elasticsearch
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/query-flow-in-elasticsearch.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/query-flow-in-elasticsearch.png)
 
 The query phase above consists of the following three steps:
 
@@ -228,7 +228,7 @@ The query phase above consists of the following three steps:
 2. **Node 3** forwards the search request to a primary or replica copy of every shard in the index. Each shard executes the query locally and adds the results into a local sorted priority queue of size **from + size**.
 3. Each shard returns the doc IDs and sort values of all the docs in its priority queue to the coordinating node, **Node 3**, which merges these values into its own priority queue to produce a globally sorted list of results.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/fetch-flow-in-elasticsearch.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/fetch-flow-in-elasticsearch.png)
 
 The distributed fetch phase consists of the following steps:
 
@@ -236,11 +236,11 @@ The distributed fetch phase consists of the following steps:
 2. Each shard loads the documents and enriches them, if required, and then returns the documents to the coordinating node.
 3. Once all documents have been fetched, the coordinating node returns the results to the client.
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/elasticsearch-knn-flow.jpg)
+![](https://cat.yufan.me/images/recaps/vector-db-research/elasticsearch-knn-flow.jpg)
 
 #### Query Flow in Milvus
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/query-flow-in-milvus.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/query-flow-in-milvus.png)
 
 In the reading path, query requests are broadcast through DqRequestChannel, and query results are aggregated to the proxy via gRPC.
 
@@ -281,7 +281,7 @@ IDF (inverse document frequency) weight of the query term $$q$$, where $$N$$ is 
 
 ### Why TF-IDF (BM25) as the main calculation
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/tf-idf-explain.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/tf-idf-explain.png)
 
 A term that appears in many documents does not provide as much information about the relevance of a document. Using a logarithmic scale ensures that as the document frequency of a term increases, its influence on the BM25 score grows **more slowly**. Without a logarithmic function, common terms would disproportionately affect the score.
 
@@ -297,7 +297,7 @@ The only difference between multiple indexes or shard based BM25 calculation is 
 
 ### Sparse-BM25 in Milvus
 
-![](https://asset.yufan.me/images/recaps/vector-db-research/sparse-bm25-in-milvus.png)
+![](https://cat.yufan.me/images/recaps/vector-db-research/sparse-bm25-in-milvus.png)
 
 Starting from version 2.4, Milvus supports sparse vectors, and from version 2.5, it provides BM25 retrieval capabilities based on sparse vectors. With the built-in Sparse-BM25, Milvus offers native support for lexical retrieval. The specific features include:
 

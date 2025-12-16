@@ -9,6 +9,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
+import uploader from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeExternalLinks from 'rehype-external-links'
@@ -18,12 +19,14 @@ import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
 import config from './src/blog.config'
-import uploader from './src/helpers/assetry'
 
 const {
   REDIS_URL,
   NODE_ENV,
-  ASSETRY_API_KEY,
+  S3_ENDPOINT,
+  S3_BUCKET,
+  S3_ACCESS_KEY,
+  S3_SECRET_ACCESS_KEY,
 } = loadEnv(process.env.NODE_ENV!, process.cwd(), '')
 
 // https://astro.build/config
@@ -40,7 +43,7 @@ export default defineConfig({
   trailingSlash: 'never',
   image: {
     domains: [config.settings.asset.host],
-    service: { entrypoint: './src/helpers/content/assetry' },
+    service: { entrypoint: './src/helpers/images/service' },
   },
   session: {
     driver: 'redis',
@@ -66,7 +69,6 @@ export default defineConfig({
       // Database
       DATABASE_URL: envField.string({ context: 'server', access: 'secret', url: true }),
       REDIS_URL: envField.string({ context: 'server', access: 'secret', url: true }),
-      ASSETRY_API_KEY: envField.string({ context: 'server', access: 'secret' }),
     },
     validateSecrets: true,
   },
@@ -82,9 +84,12 @@ export default defineConfig({
       ],
     }),
     uploader({
-      apiKey: ASSETRY_API_KEY,
+      enable: true,
       paths: ['assets'],
-      endpoint: `${config.settings.asset.scheme}://${config.settings.asset.host}`,
+      endpoint: S3_ENDPOINT,
+      bucket: S3_BUCKET,
+      accessKey: S3_ACCESS_KEY,
+      secretAccessKey: S3_SECRET_ACCESS_KEY,
     }),
   ],
   adapter: node({

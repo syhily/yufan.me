@@ -8,17 +8,17 @@ tags:
   - 代码
   - 总结
 category: 编程
-cover: https://asset.yufan.me/images/2019/05/2019050908152192.jpg
+cover: https://cat.yufan.me/images/2019/05/2019050908152192.jpg
 summary: 掐指一算，从 OneAPM 离职也快一个月了，在 OneAPM 工作的种种，仿佛还像是在昨天。细数两年的工作经历，我很庆幸在恰当的时间点和这么一群有激情有活力的人共事。那么，是时候总结一下我在 OneAPM 做的牛（cai）逼（ji）事情了。
 ---
 
-![南小鸟](https://asset.yufan.me/images/2019/05/2019051818253816.jpg)
+![南小鸟](https://cat.yufan.me/images/2019/05/2019051818253816.jpg)
 
 掐指一算，从 OneAPM 离职也快一个月了，在 OneAPM 工作的种种，仿佛还像是在昨天。细数两年的工作经历，我很庆幸在恰当的时间点和这么一群有激情有活力的人共事。那么，是时候总结一下我在 OneAPM 做的牛（cai）逼（ji）事情了。
 
-[PPT 下载](https://asset.yufan.me/uploads/two-years-in-oneapm.pdf)
+[PPT 下载](https://cat.yufan.me/uploads/two-years-in-oneapm.pdf)
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/01.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/01.jpg)
 
 大家好，今天由我来分享一下，我在上家公司做的 Ai 和 告警 相关的一些内容。
 
@@ -29,12 +29,12 @@ summary: 掐指一算，从 OneAPM 离职也快一个月了，在 OneAPM 工作�
 
 这次分享，一是我对以前2年工作的整理和思考，二也是和大家交流学习。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/02.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/02.jpg)
 
 对于 Ai，我不属于它的主要研发，我只是在上面剥离开发了现有的告警系统。所以我就讲讲我接触过的架构部分的演进。本身，就功能部分，其实没有东西。
 我在说告警的时候会说的比较细一些。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/03.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/03.jpg)
 
 我是15年年底入职OneAPM，17年9月初离职加入咱们这个团队。这期间Ai伴随着业务的需求，也进行了三次大的技术架构演进。最明显的，就是每次演进中，Ai对应的存储在不断变化。同时，比较巧的是，每次架构变化的同时，我们的数据结构也略有不同，并且学习的国外竞品也不大一样。
 
@@ -42,7 +42,7 @@ summary: 掐指一算，从 OneAPM 离职也快一个月了，在 OneAPM 工作�
 
 但是，我这里主要想分享的，就是我们在业务和数据量不断增长的同时的架构设计变化，以及最后如何实现灵活部署，一套代码适配各种环境。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/04.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/04.jpg)
 
 OneAPM 在 2013 年开始涉足 APM 市场，当时在13年做了我们的第一代产品 Si ，它是那种庞大的单体应用，功能也十分单一。
 
@@ -54,7 +54,7 @@ OneAPM 在 2013 年开始涉足 APM 市场，当时在13年做了我们的第一
 
 2017 年的时候，我们开始梳理各个业务系统、组件，将它们全部拆分，公共组件服务化、Boot化，打通了各个系统。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/05.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/05.jpg)
 
 这是2014年初期的第一次封闭开发后的架构，当时正好大数据Hadoop之类的比较火，所以初期的架构我们完全是基于它来做的。我们的前端应用分为 Data Collector 数据收集端，Data Viewer 数据展示层。探针端走 Nginx 将数据上传至DC来进行分析处理，页面访问通过DV获取各种数据。
 Data Viewer 初期是直接读取 HBase 的，后面进行简化，部分热数据（最近5分钟调用统计），缓存于 Redis。
@@ -65,7 +65,7 @@ Consumer 主要是处理翻译探针的 Metric 数据，将其翻译为具体的
 
 这套架构部署到 SaaS 之后，我们的市场部就开始推广，当时的日活蛮高，几十万独立 IP。瞬间，我们就遇到了第一个直接问题——HBase 存在写入瓶颈，HBase在大量数据持续写入的场景下，经常OOM，十分痛苦。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/06.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/06.jpg)
 
 我们开始分析问题，首先，写入上，我们拆成了如图所示的三大部分，而不是之前的单一 HBase。
 
@@ -73,7 +73,7 @@ Consumer 主要是处理翻译探针的 Metric 数据，将其翻译为具体的
 
 这个时候的 Consumer 开始负责一定量的计算，会分出多个 Worker 在 Kafka 上进行一些处理，再将数据写入 Kafka，HBase 改为消费 Kafka 的数据。（这么做的目的，就是为了在线上拆分出不同的 Consumer 分机器部署，因为 SaaS 上的数据量，连 Consumer 都开始出现瓶颈。）
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/07.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/07.jpg)
 
 在这个时候，我们引入了 Camel 这个中间件，用它将 Kafka 的操作，MySQL 的操作，还有和 Redis 的部分操作都转为使用 Camel 操作。在我介绍为什么使用 Camel 之前，我想先简单介绍一下它。（下一页PPT）
 
@@ -85,13 +85,13 @@ Consumer 主要是处理翻译探针的 Metric 数据，将其翻译为具体的
 
 而且，上面的功能，基本都是写Camel DSL，而无需修改业务代码。核心就是一个词——解耦。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/08.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/08.jpg)
 
 Camel 用官方的话来说，就是基于 Enterprise Integration Patterns 的 Integration Framework。在我看来，Camel 在不同的常见中间件上实现集成，Camel 自身定义好链路调用 DSL（URL Scheme 和 Java、Scala、Spring XML 的实现），还有核心的企业级集成模式的设计思想，组成了 Camel 这个框架。
 
 我们通过定义类似右侧的数据调用路由，将Kafka等各类中间件完全抽象出来，应用程序的逻辑转为，将数据存入Camel Producer，或者从 Camel Router 中注册 Endpoint 获取数据，处理转入另一个数据 Endpoint。（回到前面的架构图）
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/09.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/09.jpg)
 
 当然我们在开发过程中也设计了很多很有意思的小工具，Mock Agent 便是其中之一。
 
@@ -103,7 +103,7 @@ Camel 用官方的话来说，就是基于 Enterprise Integration Patterns 的 I
 
 当然，这也是我们尝试开发的第一个 DSL。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/10.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/10.jpg)
 
 主要是我们无法避免写入热点问题，即使基于 Row Key 进行了写入优化，大数据量的写入也常常把 HBase 搞挂。
 
@@ -111,7 +111,7 @@ Camel 用官方的话来说，就是基于 Enterprise Integration Patterns 的 I
 
 基于 HBase 的查询时延也越来越高，甚至某种程度上，已经不大能支撑新的数据量。当时最高峰的时候，阿里云机器数量高达 20 台。所以，是时候考虑引入新的数据库了。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/11.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/11.jpg)
 
 这个时候，来自 IBM 研究院的刘麒赟向我们推荐了Druid，并在我们后面的实践中取代了 HBase 作为主要的 Metric 存储。
 
@@ -127,7 +127,7 @@ Deep Storage 一般是 HDFS 或者是 NFS，我们在查询的时候，数据来
 
 Broker Nodes 只提供对外的查询，它不保存任何数据，只会对部分热点数据做缓存。它会从 Realtime 节点中查询到还在内存未写入 Deep Storage 的数据，并从 Historical 节点插入已经写入 Deep Storage 的数据，然后聚合合并返回给用户。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/12.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/12.jpg)
 
 所以，我们可以看到数据写入和查询遵循上面的数据流图，这里我们没有把协调节点画出。
 
@@ -138,7 +138,7 @@ Broker Nodes 只提供对外的查询，它不保存任何数据，只会对部�
 2. Dimension：维度数据，也就是这条数据的一些元信息。
 3. Metric：指标数据，这类数据将在 Druid 上进行聚合和计算，并会按照一定的维度聚合存储到实际文件中。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/13.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/13.jpg)
 
 除了上述说的查询方式 OLAP 的数据其实有几大特性很关键：
 
@@ -150,7 +150,7 @@ Broker Nodes 只提供对外的查询，它不保存任何数据，只会对部�
 
 对于 Druid 而言，它支持的查询有且不仅有上面的四种方式。但是，我们进行梳理后发现，OneAPM的所有业务查询场景，都可以基于上述四种查询方式组合出来。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/14.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/14.jpg)
 
 于是在基于 Druid 开发的时候我们遇到的第一个问题就是 Druid 的查询方式是 HTTP，返回结果基本是 JSON。我们用 Druid 比较早，那个时候的 Druid 还不像现在这样子，支持 SQL 插件。
 
@@ -160,7 +160,7 @@ Broker Nodes 只提供对外的查询，它不保存任何数据，只会对部�
 
 当然这种实现不是没有代价的，我的压测的同事和我抱怨过，这种方式相比纯 JSON 的方式，性能下降了 50%。我觉得，这里我们当时这么设计的首要考虑，是在于简化开发难度，SQL对每个程序员都是最熟悉的，其次，我们还有一层考虑就是未来更容易适配别的存储平台，比如 ES（当时其实在15年中旬的时候也列入我们的技术选型）。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/15.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/15.jpg)
 
 Druid 另一个比较大的问题就是，它实在是太吃硬件了。记得之前和今日头条的广告部门研发聊天，聊到的第一个问题就是 Druid 的部署需要 SSD。
 
@@ -172,7 +172,7 @@ Druid 另一个比较大的问题就是，它实在是太吃硬件了。记得�
 
 针对上面两个问题，我们的最终解决方案，就是数据不是写一份。而是写了多份，我们按照业务的查询间隔设置了3~4种不同的聚合表（SaaS和企业级的不同）。查询的时候按照间隔路由到不同的 Druid 数据表查询。某种程度上规避了磁盘 IO 瓶颈和查询瓶颈。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/16.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/16.jpg)
 
 在充分调研和实践后，有了上面的新架构图。3.0 到 4.0 的变化主要在HBase存储的替换，数据流向的梳理。
 
@@ -180,7 +180,7 @@ Druid 另一个比较大的问题就是，它实在是太吃硬件了。记得�
 
 探针上传的数据，分为三大类，Trace、Metrics、Analytic Event。Trace 就是一次完整的调用链记录，Metrics 就是系统和应用的一些指标数据。Analytic 数据使我们在探针中对于一些慢 Trace 数据的详细信息抓取。最终所有的 Metrics 数据都写入 Druid，因为我们要按照不同的查询间隔和时间点去分析展示图表。Traces 和事物类信息直接存储 MySQL，它对应的详细信息还需要从 Druid 查询。对于慢 Trace 一类的分析数据，因为比较大，切实时变化，我们存入到 Redis 内。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/17.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/17.jpg)
 
 但是，Druid 一类的东西从来都不是一个开箱即用的产品。我们前面在进行数据多写入优化，还有一些类似 SelectOne 查询的时候，越来越发现，为了兼容 Druid 的数据结构，我们的研发需要定制很多非业务类的代码。
 
@@ -190,13 +190,13 @@ Druid 另一个比较大的问题就是，它实在是太吃硬件了。记得�
 
 因为架构有一定的传承性。所以它和 Druid 类似，我们只支持 Kafka 的方式写入 Metric 数据，HTTP JSON 的方式暴露查询接口。基于它我们改造 Druid SQL，适配了现有的存储。它的诞生，第一点，解决了我们之前对于数据双写甚至多写的查询问题。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/18.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/18.jpg)
 
 我们在要求业务接入金子塔的时候，需要它提供上述的数据格式定义。然后我们会按照前面定义的聚合粒度表，自动在 Backend 数据库创建不同的粒度表。
 
 金字塔存储引擎的诞生，其实主要是为了 ClickHouse 服务的，接下来，请允许我先介绍一下 ClickHouse。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/19.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/19.jpg)
 
 从某种角度而言，Druid 的架构，查询特性，性能等各项指标都十分满足我们的需求。无论是 SaaS，还是在 PICC 的部署实施结果都十分让人满意。
 
@@ -211,7 +211,7 @@ Druid 另一个比较大的问题就是，它实在是太吃硬件了。记得�
 
 [ClickHouse 架构解析](/posts/evolution-of-data-structures-in-yandexmetrica)
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/20.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/20.jpg)
 
 在介绍 ClickHouse 之前，我觉得有必要分享一下常见的两种数据存储结构。
 
@@ -229,7 +229,7 @@ Druid 另一个比较大的问题就是，它实在是太吃硬件了。记得�
 
 昨天汤总说道 Schema On Read，觉得很好，我当时回复说，要在 HDFS 上动手脚。其实本质上就可以基于 LSM-Tree 以类似 Druid 的方式做。但是还是得有时间这个指标，查询得有时间的范畴，基于这几个特点才有可能实现无 Schema 写入。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/21.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/21.jpg)
 
 Druid 的特点是数据需要预聚合，然后按照聚合粒度去查询。而 ClickHouse 属于一种列式存储数据库，在查询 SQL 上，他和传统的关系型数据库十分类似（SQL引擎直接是基于MySQL的静态库编译的）它对数据的存储索引进行优化，按照 MergeEngine 的定义去写入，所以你会发现它的查询，就和上面的图一样，是连续的数据。
 
@@ -237,13 +237,13 @@ Druid 的特点是数据需要预聚合，然后按照聚合粒度去查询。�
 
 对于 ClickHouse，OneAPM 乃至国内，最多只实现用起来，但是真正意义上的开发扩展，暂时没有。因为 ClickHouse 无法实现我们的聚合需求，金字塔也为此扩展了聚合功能。和 Druid 一样，在 ClickHouse 上创建多种粒度聚合库，然后存储。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/22.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/22.jpg)
 
 这个阶段的架构，就已经实现了我们最初的目标，将所有的中间件解耦，我们没有直接使用 Kafka 原生的 High Level API，而是基于 Low Level API开发了 Doko MQ。目的是为了实现不同版本 Kafka 的兼容，因为我们现在还有用户在使用 0.8 的 Kafka 版本。Doko MQ 只是一层外部的封装，Backend 不一定是 Kafka，考虑到有对外去做 POC 需求，我们还原生支持 Redis 做MQ，这些都在 Doko 上实现。
 
 存储部分，除了特定的数据还需要专门去操作 MySQL，大部分直接操作我们开发的金字塔存储，它的底层可以适配 Druid 和 ClickHouse，来应对 SaaS 和企业级不同数据量部署的需要。对外去做 POC 的时候，还支持 MySQL InnoDB 的方式，但是聚合一类的查询，需要耗费大量的资源。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/23.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/23.jpg)
 
 部署与交付是周一按照汤总的要求临时加的，可能 PPT 准备的不是很充分，还请大家多多包涵。
 
@@ -261,7 +261,7 @@ Docker的流行，开始推行不可变基础设施思想，实例（包括服�
 
 基于此，我们将配置文件外置剥离，由专门的配置中心下发配置文件。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/24.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/24.jpg)
 
 最初的时候，Docker 只属于我们的预研项目，当时 Docker 由刘斌（他也是很多中文 Docker 书的译者）引入，公司所有的应用都实现了容器化。这一阶段，我们所有的应用都单独维护了一套独立的 Docker 配置文件，通过 Maven 打包的方式指定 Profile 的方式，然后部署到专门的测试环境。换句话说，Docker 只是作为我们当时的一种测试手段，本身可有可无。
 
@@ -273,7 +273,7 @@ Docker的流行，开始推行不可变基础设施思想，实例（包括服�
 
 后面，在告警系统的立项开发过程中，因为要和各个系统的集成测试需要，我们慢慢改写出 docker-compose 的方式，废弃掉额外的 SkyDNS。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/25.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/25.jpg)
 
 Mesos 计划的夭折，主要原因是我们当时应用还没有准备好，我们的应用主要还都是单体应用各个系统间没有打通。于是在 16年我们解决主要的存储问题之后，就开始着力考虑应用集成的问题。
 
@@ -281,27 +281,27 @@ Mesos 计划的夭折，主要原因是我们当时应用还没有准备好，�
 
 在应用层面，我们按照上图所示，将所有的应用进行服务化拆分，分成不同的组件开发维护，并开发了注册中心等组件。RPC 这边，我们没有使用 HTTP，而是和很多公司一样包装了 Thrift。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/26.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/26.jpg)
 
 我们基于前面的服务拆分，每个应用在开发的时候，都是上述5大模块。中间核心的中间件组件，业务系统均无需操心。在交付的时候，也属于类似公共资源，按照用户的数据量业务特点弹性选择。
 
 最小化部署主要是为了给单独购买我们的某一产品的用户部署所采用的。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/27.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/27.jpg)
 
 但是我们已经受够了一个项目维护多套代码的苦楚，我们希望一套代码能兼容 SaaS、企业级，减少开发中的分支管理。于是我们拆分后的另一大好处就体现了，它很容易结合投产未使用的 Mesos 在 SaaS 上实现部署。
 
 为了打通各个产品，我们在原有的前后端分离的基础上，还将展示层也做了合并，最后实现一体化访问。后端因为实现了服务化，所有的应用都是动态 Mesos 扩容。CEP 等核心计算组件也能真正意义上和各个产品打通，而不是各做各的。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/28.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/28.jpg)
 
 到了这里，我的第一阶段就算是讲完了，大家有问题么？
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/29.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/29.jpg)
 
 告警系统的开发，我们和 Ai 一样，经历了几个阶段，版本迭代的时间点也基本一致。整个开发过程中，我们最核心的问题其实不在于告警功能本身，而是其衍生的产品设计和开发设计。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/30.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/30.jpg)
 
 和 Ai 一样，初期的告警实现特别简单。当时来自 IBM 研究院的吴海珊加入 OneAPM 团队，带来了 Cassandra 存储，我们当时用的比较早，是 2014 年 2.0 版本的 Cassandra，我们在充分压测之后，对它的数据存储和读写性能十分满意，基于它开发了初版告警（草案）。
 
@@ -309,37 +309,37 @@ Mesos 计划的夭折，主要原因是我们当时应用还没有准备好，�
 
 所以你会发现初版的告警，从设计上就存在严重的 Cassandra 读写压力和高可用问题。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/31.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/31.jpg)
 
 你会发现，每从业务线推送一条指标数据，我们至少要读写两次 Cassandra。和同时期的 Ai 架构相比，Ai 对 HBase 只有写入瓶颈，但读取，因为量不高，反而没有瓶颈。（回上页）
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/32.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/32.jpg)
 
 这里是我们和 Ai HBase的对比总结。我们初版的设计和 Ai 一样都需要全量地存储指标数据，而且 Cassandra 的存储分片本身是基于 Partition Key 的方式，数据必须基于 Partition Key 去查询，我们对于计算指标，按照 业务系统、应用 ID、时间 作为 Partition Key 去存储。很意外的是几乎和 HBase 同时出现了读写瓶颈。而且比较尴尬的地方也和 Ai 类似，因为 Partition Key 的定义，完全无法解决写入热点问题。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/33.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/33.jpg)
 
 所以我们首先想到的是，对于当前的告警架构进行优化，我们有了上述的新架构设计。但是在评审的时候，我们发现，我们做的正是一个典型的分布式流式处理框架都会做的事情，这些与业务逻辑关系不大的完全可以借助现有技术实现。
 
 由于这个时期（15年）公司整体投产大数据，我们自然把眼光也投入了当时流行的大数据计算平台。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/34.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/34.jpg)
 
 首先，对于初版的架构，我们需要保留的是原有的计算数据结构和 Kafka 的写入方式，对于核心的告警计算应用需要去改造。
 
 我们需要实现的是基于**单条数据**的实时流式计算。需要能分布式水平扩展。能按照规则分组路由，避免热点问题。需要有比较好的编程接口。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/35.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/35.jpg)
 
 首先我们考察的便是 Spark，Spark 最大的问题是需要我们人为指定计算的时间窗口，计算的数据也是批量的那种而非单条，这和告警的业务需求本身就不匹配。
 
 因为当时我们想设计的告警计算是实时的，而非定时。Spark Streaming 在后面还因为执行模式进一步被我们淘汰。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/36.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/36.jpg)
 
 Strom 各方面其实都蛮符合我们需求的，它也能实现所谓的单条实时计算。但是，它的计算节点不持有计算状态，某些时候的窗口数据，是需要有类似 Redis 一类的外部存储的。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/37.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/37.jpg)
 
 **Flink优势：**
 
@@ -351,11 +351,11 @@ Spark 有的功能 Flink 基本都有，流式计算比 Spark 支持要好。
 
 这里，我需要重点说一下 pipeline 模式。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/38.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/38.jpg)
 
 Staged execution 就如它的名字一样，数据处理分为不同的阶段，只有一批数据一个阶段完全处理完了，才会去执行下一个阶段。典型例子就是 Spark Streaming
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/39.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/39.jpg)
 
 Pipeline 则是把执行串行在了一起，只有有计算资源空闲，就会去执行下一个的操作。在外部表象是只有一个阶段。
 
@@ -367,11 +367,11 @@ Pipeline 则是把执行串行在了一起，只有有计算资源空闲，就�
 
 stage的弊端是不能提前计算，必须等数据都来了才能开始计算(operateor等数据，空耗时间)。pipeline的优势是数据等着下一个operateor有空闲就立马开始计算(数据等operateor ，不让operateor闲着，时间是有重叠的)
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/40.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/40.jpg)
 
 综合前面的调研分析，我们有了上面这张表格。对于我们而言，其实在前面的分析中 Flink 就已经被我们考虑了，尤其是它还有能与 Hadoop 体系很好地整合这种加分项。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/41.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/41.jpg)
 
 综合前面的分析，我们最终选择 Flink 来计算告警，因为：
 
@@ -388,11 +388,11 @@ stage的弊端是不能提前计算，必须等数据都来了才能开始计算
 
 缓存区主要是计算数据队列的缓存和应用告警状态的缓存。存储区第一块是从原有架构继承的 Cassandra。离线存储是考虑给别的大数据平台共享数据使用的。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/42.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/42.jpg)
 
 这里画的是 Standalone 的部署方式，也是我们在本地开发测试的架构，在生产上，我们采用了 Flink on YARN 的部署模式。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/43.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/43.jpg)
 
 对于 Flink 的任务调度，我们以左下角的一个简单操作为例，它是一个 source(4) -> map(4) -> reduce(3)，其调度在 Flink 中如图所示，会分成几个不同的 TaskManager 来操作，每个 TaskMananger 中有多个执行单元，但呈管道式。将外部网状的处理流程变为独立的线性处理任务。
 
@@ -406,11 +406,11 @@ stage的弊端是不能提前计算，必须等数据都来了才能开始计算
 4. 生产上统一到 Yarn 上之后，我们可以在一个集群上公用一份数据，根据不同场景使用不同的计算引擎做他适合做的事情。比如，暴露数据给 Spark 团队使用。
 5. Akka 集群化研究，我们原有的 Akka 开发经验，不能浪费。对于企业交付，还是需要有一个小而美的程序架构。Akka 那个时候是 2.3 版本，提供了 Akka Cluster，重新被我们纳入研究范畴。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/44.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/44.jpg)
 
 我们遇到的第一个问题，就是多数据源，生产上提供计算数据源的可能不仅仅是 Ai 一个产品，还有别的产品。我们研究后发现，Fink 原生支持多数据源。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/45.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/45.jpg)
 
 说到Rule的问题，我们逃不开一个问题：Rule管理模块到底应不应该拆出来。
 
@@ -437,23 +437,23 @@ Job内存里自己缓存一份 Rule，并提供更新机制。
 
 所以 Rule 的更新只有三种场景：初始化时不做预加载缓存，第一次使用Rule时查数据库并缓存，收到内置Event时更新缓存。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/46.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/46.jpg)
 
 No Events 检测主要的问题是 Flink 是实时数据计算，他是来一条数据计算一次。无事件本身的的特点就是没有数据推送过来，无法触发计算。
 
 这个问题其实已经非常好解决了，我们在告警计算的流程里已经更新每个Rule对应event的最后达到时间到Redis了。我们可以单起一个批处理job简单运算一次即可，逻辑非简单，我测了一下16000个Rule，5个并发度，可以在5s内计算一次。注：带注释才用了不到120行java代码，稍加改进即可在生产上使用。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/47.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/47.jpg)
 
 最终，我们在解决上述问题之后在阿里云上实现了上述的告警计算平台。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/48.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/48.jpg)
 
 从某种角度而言 Flink 版本是第一个在 SaaS 上投产的系统，然而，它并不完美，有着上述这些问题。
 
 从某种角度而言，Flink 计算告警有些大材小用，我们需要更轻量的架构。（这里中断，展示一下我们的告警系统。）
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/49.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/49.jpg)
 
 在 Flink 版本开发3个月后，我们开始着手开发新的企业级告警平台。因为现有的 Flink 版本，因为很多原因无法对外交付。
 
@@ -463,7 +463,7 @@ No Events 检测主要的问题是 Flink 是实时数据计算，他是来一条
 
 我们在定义好规则模板之后，便开始由解析计算引擎 -> 处理队列引擎 -> 分布式管理平台 -> 操作接口的顺序 开发了现有的告警引擎。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/50.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/50.jpg)
 
 首先是基于规则 DSL 的解析计算引擎。之前的 Mock Agent，我们使用的是 Scala 原生提供的语法分析组合子设计的。Druid SQL 使用的是 Antlr4，先解析出基本的 AST 语法树，然后转义为 Druid JSON 查询模型，最后序列化为查询 JSON。
 
@@ -473,7 +473,7 @@ No Events 检测主要的问题是 Flink 是实时数据计算，他是来一条
 
 我们基于解析出来的规则对象，在 Engine 层对计算的事件队列和当前事件结合起来，就产生了实际想要的计算结果。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/51.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/51.jpg)
 
 Engine 就相当于最小粒度的计算单元，但是，它缺少一些上下文管理。我们需要事件队列管理，规则和计算数据的关联，才能真正意义上调用 Engine 去计算。
 
@@ -485,7 +485,7 @@ RuntimeContext 就和它的名称一样，表示运行时上下文，每个Runti
 
 一个 RuntimeContext 示例可能对应多个 EventChannel，一个 EventChannel 也可能对应多个 RuntimeContext，二者基于一个唯一的 key 关联起来。我们修改规则的时候，需要修改对应的 RuntimeContext。事件来了要计算的时候，是直接 sink 到 EventChannel 中。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/52.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/52.jpg)
 
 Runtime 相当于 Flink 里面最小的计算任务，有着自己的状态，能解析 SQL 并进行运算。
 
@@ -497,13 +497,13 @@ Runtime 相当于 Flink 里面最小的计算任务，有着自己的状态，�
 
 每个 Akka 节点都分为 EvenStreamActor、RuleActor 两类核心处理计算单元，EventStreamActor 除了管理 EventChannel 之外，还会将数据分发到别的 Akka 节点，做二次计算。RuleActor 管理 RuntimeContext，其下包含 Persist Actor 将告警事件和应用实时状态持久化到金字塔存储，Alert Actor 将告警数据写入至 Doko MQ 用于接入系统执行告警行为（如短信、邮件、WebHook 等）。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/53.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/53.jpg)
 
 Jetty模块本身用于暴露接口对外提供规则、事件、数据源管理。和 Flink 版本一样，我们遇到了一个问题就是如何在所有的 Akka 集群上更新告警规则。
 
 后面我们的实现策略和 Flink 的版本一样，规则在 Cassandra 上更新完毕后，会以特定的更新消息写入 Kafka 中。这个时期，所有的告警规则配置，使用用户，告警数据源的配置，都保存在 Cassandra 中。因为 Partition Key 的创建不大合理，也给我们在做检索，分页等操作时，尤其是告警事件的筛选，带来了极大的麻烦。这也直接导致我们在 3.0 版本里面将所有的配置数据存于 MySQL，告警事件改为使用金字塔存储。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/54.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/54.jpg)
 
 基于计算引擎，我们抽象出三大逻辑模块，告警计算和管理模块、告警策略管理模块、推送行为管理模块。
 
@@ -512,33 +512,33 @@ Jetty模块本身用于暴露接口对外提供规则、事件、数据源管理
 3. 推送行为模块，其实就是配置支持哪些通知用户的方式，在 2.0 里面只有发邮件、执行 Shell，3.0 之后支持 Web Hook 和短信。
 4. 策略模块，就是关联某个规则应该用那些现存的通知配置。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/55.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/55.jpg)
 
 2.0 版本的告警系统主要是 CEP 计算引擎模块，所以在部署上，他是集成在各个业务系统上的。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/56.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/56.jpg)
 
 2.0 的时候，告警系统只产生三类事件，普通事件、警告事件、严重事件。我们调研之后发现，其实用户在意的不是这类事件，而是这三类事件相互转换之后产生的事件。
 
 于是我们重新定义了告警事件。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/57.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/57.jpg)
 
 所以我们将告警引擎产生的事件分为两大类：HealthStatusEvent、HealthRuleVolatation 事件。
 
 前者就是图上的三个圈，也就是前面的正常、警告、严重。（做鼠标指点状）应用状态从“普通”到“严重”会产生“开启严重”事件。应用状态从“警告”到“普通”会产生“关闭警告”事件，应用状态持续在“警告”或者“严重”会产生持续类事件。我们对于告警的触发配置转为这种状态转换的事件。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/58.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/58.jpg)
 
 有了前面的设计之后，我们遇到了第一个问题，如何在现行的 Akka 应用上设计一个告警事件状态机。我们想了很多方式，后面我们发现，自己完全想岔了。
 
 之前开发的 Engine 模块结合 Runtime 模块完全可以解决这个问题，我们只需要按照之前定义的 8 个事件转换状态定义 8条 SQL，配置三个子 RuntimeContext 即可解决这个问题。比如开启警告事件，它的 SQL 定义如上。也就是之前一个告警事件如果为空或者为NORMAL事件，当前这条事件为警告事件，则生成开启告警事件。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/59.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/59.jpg)
 
 我们对于不同时间段应用的期望运行情况可能是不一样的，比如一天当中的几个小时，一星期中的几天或者一年当中的几个月。举个例子来说，淘宝应用在周末两天可能会存在较多的交易从而产生高于平时的吞吐量。一个工资支付应用可能相较于一个月中的其他事件，会在月初和月末产生较大的流量。一个客户管理的应用在周一的营业时间相较于周末来说会有较大的工作负荷压力。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/60.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/60.jpg)
 
 我们在 2.0 的版本开始受制于 Cassandra。
 
@@ -550,13 +550,13 @@ Jetty模块本身用于暴露接口对外提供规则、事件、数据源管理
 
 所以我们进行了变更，用 MySQL 去存储除告警事件之外的数据。告警事件因为有了金字塔模块，所以我们直接写入 Kafka 即可。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/61.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/61.jpg)
 
 为了应对 2.0 版本的接入麻烦，因为构造 SQL、告警通知行为等在 2.0 版本都是外包给业务线自己做的，我们只是打造了一个小而美的 CEP 引擎。所以只有主要的产品 Ai 接入了我们系统。为此，我们把 Ai 中开发的和告警相对于的代码剥离，专门打造了 CEP 上层的告警系统，并要求业务方提供了应用、指标等 API。自行消费处理 Kafka 中的告警事件，触发行为。
 
 其次，做的一个很大改动就是适配了各个业务线的探针数据，直接接受全量数据。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/62.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/62.jpg)
 
 4.0 阶段的告警其实并没有开发，当时主要协作的另一位同事在6月离职，我在8月底完成 3.0 的工作后也离职，但是设计在年初就完成了。
 
@@ -564,7 +564,7 @@ Jetty模块本身用于暴露接口对外提供规则、事件、数据源管理
 
 同样，我们希望这个单独开发的 CEP 应用，也能变成 Reactive 化。对应的我们将上下行的 Kafka 分别抽象为 Source 和 Sink 层，它们可以使用 Restful API 动态创建，而非现在写死在数据库内。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/63.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/63.jpg)
 
 基于这一思想，我们大概有上述的技术架构（图可能不是很清晰）。
 
@@ -588,9 +588,9 @@ Jetty模块本身用于暴露接口对外提供规则、事件、数据源管理
 对于RuleDispatcher down掉重启的这段时间内，因为RuleDispatcher分发过RuleId到各个节点的EventDispatcher，因此各个节点事件分发暂时不会受到影响。
 在Akka集群里每一个Kafka conumser，对于一个EventDipatcher，负责把事件分发对感兴趣对RuleActor（根据每个RuleId对应感兴趣对告警对象）。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/64.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/64.jpg)
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/65.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/65.jpg)
 
 常见的聚类算法有三类：基于空间划分的、基于层次聚类的和基于密度聚类的方法。聚类算法一般要求数据具有多个维度，从而能够满足对海量样本进行距离（相似性）度量，从而将数据划分为多个类别。其中维度特征一般分为CPU利用率、磁盘利用率、I/O使用情况、内存利用率、网络吞吐量等。
 
@@ -609,7 +609,7 @@ Jetty模块本身用于暴露接口对外提供规则、事件、数据源管理
 基于空间划分的、基于层次聚类的和基于密度聚类的方法。如 K-means，DBSCAN 等。K-Means 方法是通过对整个数据集计算聚类中心并多次迭代（时间复杂度降为O(n*K*Iterations*attributes)），而Incremental K-Means方法是每加入一个数据项时，更新类别中心，时间复杂度为O(K*n)，所以其对初始化中心不敏感，且能很快收敛。
 时间复杂度一般在 O(nlogn) 到 O(n^2)
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/66.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/66.jpg)
 
 之前看 Openresty 的作者章亦春在 QCon 上的分享，他谈到的最有意思的一个观点就是面向 DSL 编程方式。将复杂的业务语义以通用 DSL 方式表达，而非传统的重复编码。诚然，DSL 不是万金油，但是 OneAPM 的告警和 Ai 数据分析，很大程度上受益于各类 DSL 工具的开发。通过抽象出类 SQL 的语法，才有了非常可靠的扩展性。
 
@@ -619,6 +619,6 @@ Akka 的使用，我目前还只停留在表面，但是它提供的 Actor 模�
 
 Antlr4 的学习，符号化与 SQL 生成。在编写 DSL 的时候，最大的感受就是解析与语言生成，它们正好是两个相反的过程。一个是将语言符号化解析成树，另一个是基于类似的定义生成语言。这一正一反的过程，在我们适配旧的告警规则配置数据的时候，感受颇深，十分奇妙。
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/67.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/67.jpg)
 
-![](https://asset.yufan.me/images/slide/two-year-in-oneapm/68.jpg)
+![](https://cat.yufan.me/images/slide/two-year-in-oneapm/68.jpg)
