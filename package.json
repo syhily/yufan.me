@@ -62,7 +62,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^6.7.3",
     "@astrojs/check": "^0.9.6",
-    "@daiji256/rehype-mathml": "^1.2.1",
+    "@daiji256/rehype-mathml": "^1.2.2",
     "@types/lodash": "^4.17.21",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25.0.3",
@@ -87,11 +87,6 @@
     "typescript": "^5.9.3",
     "vite-plugin-binary": "^1.0.5",
     "yaml": "^2.8.2"
-  },
-  "overrides": {
-    "@daiji256/rehype-mathml": {
-      "temml": "0.12.1"
-    }
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"
