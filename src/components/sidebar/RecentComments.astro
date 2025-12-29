@@ -8,7 +8,7 @@ const comments = await latestComments()
 {
   config.settings.sidebar.comment > 0 && comments.length > 0 && (
     <div id="recent-comments" class="widget widget-recent-comments">
-      <div class="widget-title" title="欲寄彩笺兼尺素，山长水阔知何处？">雁过留声</div>
+      <div class="widget-title" data-tippy-content="欲寄彩笺兼尺素，山长水阔知何处？">雁过留声</div>
       <ul id="recent-comments">
         {comments.map(comment => (
           <li class="recent-comments">

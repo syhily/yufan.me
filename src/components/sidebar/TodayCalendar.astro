@@ -14,7 +14,7 @@ const calendarImage = !config.settings.sidebar.calendar ? '' : loadCalendarImage
 {
   calendarImage !== '' && (
     <div class="widget widget-owspace-calendar">
-      <div class="widget-title" title="时光只解催人老，不信多情，长恨离亭，泪滴春衫酒易醒。">时光只言</div>
+      <div class="widget-title" data-tippy-content="时光只解催人老，不信多情，长恨离亭，泪滴春衫酒易醒。">时光只言</div>
       <img loading="lazy" decoding="async" src={calendarImage} width="600px" height="880px" />
     </div>
   )

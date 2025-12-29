@@ -84,6 +84,7 @@
     "rehype-title-figure": "^0.1.2",
     "remark-math": "^6.0.0",
     "simple-git-hooks": "^2.13.1",
+    "tippy.js": "^6.3.7",
     "typescript": "^5.9.3",
     "vite-plugin-binary": "^1.0.5",
     "yaml": "^2.8.2"

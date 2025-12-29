@@ -14,7 +14,7 @@ const randomSize = config.settings.sidebar.post
 {
   randomSize > 0 && (
     <div id="recent-posts" class="widget widget-recent-entries">
-      <div class="widget-title" title="年年岁岁花相似，岁岁年年人不同。">流年拾忆</div>
+      <div class="widget-title" data-tippy-content="年年岁岁花相似，岁岁年年人不同。">流年拾忆</div>
       <ul class="line">
         {_.sampleSize(posts, randomSize).map(post => (
           <li>
