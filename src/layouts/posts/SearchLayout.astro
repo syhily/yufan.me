@@ -1,0 +1,59 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import PostSquare from '@/components/page/post/PostSquare.astro'
+import { getPostsWithMetadata } from '@/helpers/content/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  title: string
+  query: string
+  posts: Post[]
+  page: number
+  totalPages: number
+}
+
+const { title, posts, query, page, totalPages } = Astro.props
+
+// Redirect to the homepage.
+if (page < 1) {
+  return Astro.redirect('/')
+}
+
+const resolvedPosts = await getPostsWithMetadata(posts, { likes: true, views: true, comments: false })
+---
+
+<BaseLayout {title}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>{title}</h1>
+      </div>
+      {
+        resolvedPosts.length === 0
+      ? (
+          <div class="data-null">
+            <div class="my-auto">
+              <h1 class="font-number">404</h1>
+              <div>抱歉，没有你要找的内容...</div>
+            </div>
+          </div>
+        )
+      : (
+          <>
+            <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+              {resolvedPosts.map((post, index) => (
+                <PostSquare post={post} first={index === 0} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div class="mt-4 mt-lg-5">
+                <Pagination current={page} total={totalPages} rootPath={`/search/${query}`} />
+              </div>
+            )}
+          </>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

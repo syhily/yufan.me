@@ -1,0 +1,35 @@
+---
+import { pendingComments } from '@/helpers/comment/loader'
+
+const comments = await pendingComments()
+---
+
+<div id="recent-comments" class="widget widget-recent-comments">
+  <div class="widget-title">待审评论</div>
+  <ul id="recent-comments">
+    {
+      comments.length > 0
+? (
+        comments.map(comment => (
+          <li class="recent-comments">
+            <span class="comment-author-link">
+              {comment.authorLink === ''
+              ? comment.author
+              : (
+                <a href={comment.authorLink} target="_blank" rel="nofollow">
+                  {comment.author}
+                </a>
+              )}
+            </span>
+            {' 发表在《'}
+            <a href={comment.permalink}>{comment.title}</a>
+            》
+          </li>
+        ))
+      )
+: (
+        <div>无待审评论</div>
+      )
+    }
+  </ul>
+</div>

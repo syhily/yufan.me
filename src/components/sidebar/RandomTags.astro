@@ -1,0 +1,27 @@
+---
+import type { Tag } from '@/helpers/content/schema'
+import _ from 'lodash'
+import config from '@/blog.config'
+
+interface Props {
+  tags: Tag[]
+}
+
+const { tags } = Astro.props
+const randomSize = config.settings.sidebar.tag
+---
+
+{
+  randomSize > 0 && (
+    <div id="tag-cloud" class="widget widget-tag-cloud">
+      <div class="widget-title">文章标签</div>
+      <div class="tagcloud">
+        {_.sampleSize(tags, randomSize).map(tag => (
+          <a href={tag.permalink} class="tag-cloud-link" title={`${tag.name} (${tag.counts} 篇文章)`}>
+            {tag.name}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}

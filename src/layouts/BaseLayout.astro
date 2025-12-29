@@ -1,0 +1,105 @@
+---
+import type { BlogConfig } from '@/blog.config'
+import config from '@/blog.config'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Footer from '@/components/partial/Footer.astro'
+import Header from '@/components/partial/Header.astro'
+import '@/assets/styles/globals.css'
+import '@/assets/fonts/hack.css'
+import '@/assets/fonts/opposans.css'
+import '@/assets/fonts/opposerif.css'
+
+interface Props {
+  title?: string
+  description?: string
+  navigation?: BlogConfig['navigation']
+  footer?: boolean
+}
+
+const title
+  = Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
+const description = Astro.props.description || config.description
+const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
+const navigation = Astro.props.navigation || config.navigation
+---
+
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="author" content={config.author.name} />
+    <link rel="author" href={config.author.url} />
+    <meta name="keywords" content={config.keywords.join(',')} />
+    <slot name="og">
+      <PageMeta {title} {description} />
+    </slot>
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
+    <link rel="alternate" type="application/rss+xml" title={config.title} href="/feed" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body class="home blog">
+    <div class="site-layout">
+      <Header {navigation} />
+      <main class="site-main">
+        <slot />
+        {showFooter && <Footer />}
+      </main>
+      <ul class="site-fixed-widget">
+        <li class="fixed-gotop">
+          <div class="btn btn-light btn-icon btn-lg btn-rounded btn-gotop">
+            <span>
+              <i class="iconfont icon-arrowup"></i>
+            </span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </body>
+</html>
+
+<script>
+import { scrollIntoView } from '@/assets/scripts/actions'
+
+// Highlighting the selected comment.
+function focusContent(): void {
+  if (location.hash.startsWith('#user-comment-')) {
+    for (const li of document.querySelectorAll<HTMLElement>('.comment-body')) {
+      li.classList.remove('active')
+    }
+
+    const li = document.querySelector<HTMLElement>(location.hash)
+    if (li) {
+      scrollIntoView(li)
+      li.querySelector<HTMLElement>('.comment-body')?.classList.add('active')
+    }
+  }
+  else {
+    // Try to find the ID on heading
+    if (location.hash.startsWith('#')) {
+      const id = decodeURIComponent(location.hash).substring(1)
+      scrollIntoView(document.getElementById(id))
+    }
+  }
+}
+window.addEventListener('load', focusContent)
+
+// Go to top.
+const goTop = document.querySelector<HTMLElement>('.fixed-gotop')
+function handleScrollUp(): void {
+  window.requestAnimationFrame(() => {
+    goTop?.classList.toggle('current', window.scrollY > 300)
+  })
+}
+goTop?.addEventListener('click', () => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' }))
+window.addEventListener('scroll', handleScrollUp)
+window.addEventListener('resize', handleScrollUp)
+</script>

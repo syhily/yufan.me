@@ -1,0 +1,29 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import _ from 'lodash'
+import config from '@/blog.config'
+
+interface Props {
+  posts: Post[]
+}
+
+const { posts } = Astro.props
+const randomSize = config.settings.sidebar.post
+---
+
+{
+  randomSize > 0 && (
+    <div id="recent-posts" class="widget widget-recent-entries">
+      <div class="widget-title">随机文章</div>
+      <ul class="line">
+        {_.sampleSize(posts, randomSize).map(post => (
+          <li>
+            <a href={post.permalink} title={post.title}>
+              {post.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

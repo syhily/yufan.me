@@ -1,0 +1,43 @@
+---
+import _ from 'lodash'
+import PostSquare from '@/components/page/post/PostSquare.astro'
+import { getPosts, getPostsWithMetadata } from '@/helpers/content/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  title: string
+}
+
+const { title } = Astro.props
+
+const currentPosts = getPosts({ hidden: false, schedule: false })
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
+const groupedPosts = _.groupBy(resolvedPosts, (post) => {
+  const date = new Date(post.date)
+  return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月`
+})
+---
+
+<BaseLayout {title}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>共 {resolvedPosts.length} 篇文章</h1>
+      </div>
+    </div>
+    {groupedPosts
+      && Object.entries(groupedPosts).map(([key, posts]) => (
+        <div class="container">
+          <div class="mb-5">
+            <div class="mb-3 mb-lg-4">
+              <h2>{key}</h2>
+              <div class="text-muted mt-1">本月累计 {posts.length} 篇</div>
+            </div>
+            <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+              {posts.map((post, i) => <PostSquare post={post} first={i === 0} />)}
+            </div>
+          </div>
+        </div>
+    ))}
+  </div>
+</BaseLayout>

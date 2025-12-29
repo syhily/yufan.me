@@ -1,0 +1,22 @@
+---
+import type { TocItem } from '@/helpers/content/toc'
+
+interface Props {
+  items: TocItem[]
+}
+
+const { items } = Astro.props
+---
+
+<ul class="index-menu-list">
+  {
+    items.map(item => (
+      <li class="index-menu-item">
+        <a data-scroll class="index-menu-link" href={`#${item.slug}`} title={item.text}>
+          <span class="menu-content">{item.text}</span>
+        </a>
+        {item.children.length > 0 && <Astro.self items={item.children} />}
+      </li>
+    ))
+  }
+</ul>

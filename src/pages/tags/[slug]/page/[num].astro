@@ -1,0 +1,27 @@
+---
+import config from '@/blog.config'
+import { getPosts, getTag } from '@/helpers/content/schema'
+import TagLayout from '@/layouts/posts/TagLayout.astro'
+
+const { slug, num } = Astro.params
+const tag = getTag(undefined, slug)
+
+if (!tag || !num) {
+  return Astro.redirect('/404')
+}
+
+const pageNum = Number.parseInt(num)
+if (pageNum <= 1) {
+  return Astro.redirect(tag.permalink)
+}
+
+const filteredPosts = getPosts({ hidden: true, schedule: false }).filter(post => post.tags.includes(tag.name))
+const pageSize = config.settings.pagination.tags
+const total = Math.ceil(filteredPosts.length / pageSize)
+
+if (pageNum > total) {
+  return Astro.redirect(`${total}`, 302)
+}
+---
+
+<TagLayout posts={filteredPosts} {tag} {pageNum} />

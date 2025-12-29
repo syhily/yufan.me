@@ -1,0 +1,77 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import { Image } from 'astro:assets'
+import config from '@/blog.config'
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import { formatShowDate, slicePosts } from '@/helpers/content/formatter'
+import { getCategory, getPostsWithMetadata } from '@/helpers/content/schema'
+
+interface Props {
+  posts: Post[]
+  pageNum: number
+}
+
+const { pageNum, posts } = Astro.props
+const results = slicePosts(posts, pageNum, config.settings.pagination.posts)
+if (results.totalPage === 0) {
+  return Astro.redirect('/404')
+}
+
+const { currentPosts, totalPage } = results
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: true })
+---
+
+<div class="content-wrapper col-12 col-xl-9">
+  <div class="list-grid">
+    {
+      resolvedPosts.map(post => (
+        <div class="list-item block">
+          <div class="media media-3x2 col-6 col-md-5">
+            <a href={post.permalink} class="media-content">
+              <Image src={post.cover} alt={post.title} width={600} height={400} />
+            </a>
+            <div class="media-overlay overlay-top">
+              <a
+                class="d-none d-md-inline-block badge badge-md bg-white-overlay"
+                href={getCategory(post.category, undefined)?.permalink || ''}
+              >
+                {post.category}
+              </a>
+            </div>
+          </div>
+          <div class="list-content">
+            <div class="list-body">
+              <a href={post.permalink} class="list-title h5">
+                <div class="h-2x">
+                  {!post.published && <span style={{ color: 'var(--color-danger)' }}>【草稿】</span>}
+                  {post.title}
+                </div>
+              </a>
+              <div class="d-none d-md-block list-desc text-secondary text-md mt-3">
+                <div class="h-3x">{post.summary ?? ''}</div>
+              </div>
+            </div>
+            <div class="list-footer">
+              <div class="d-flex flex-fill align-items-center text-muted text-sm">
+                <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
+                <div class="list-like d-inline-block">
+                  <i class="text-md iconfont icon-eye"></i>
+                  <span class="like-count">{post.meta.views}</span>
+                </div>
+                <div class="list-like d-inline-block">
+                  <i class="text-md iconfont icon-heart-fill"></i>
+                  <span class="like-count">{post.meta.likes}</span>
+                </div>
+                <div class="list-like d-inline-block">
+                  <i class="text-md iconfont icon-comment"></i>
+                  <span class="like-count">{post.meta.comments}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+  <Pagination current={pageNum} total={totalPage} rootPath="/" />
+</div>

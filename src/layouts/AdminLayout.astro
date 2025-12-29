@@ -1,0 +1,74 @@
+---
+import config from '@/blog.config'
+import PageMeta from '@/components/meta/PageMeta.astro'
+import Footer from '@/components/partial/Footer.astro'
+import '@/assets/styles/globals.css'
+import '@/assets/fonts/opposans.css'
+import '@/assets/styles/admin/single.css'
+
+interface Props {
+  title?: string
+  description?: string
+}
+
+const title
+  = Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
+const description = Astro.props.description || config.description
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="author" content={config.author.name} />
+    <link rel="author" href={config.author.url} />
+    <meta name="keywords" content={config.keywords.join(',')} />
+    <slot name="og">
+      <PageMeta {title} {description} />
+    </slot>
+    <meta name="robots" content="index, follow" />
+    <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
+    <link rel="alternate" type="application/rss+xml" title={config.title} href="/feed" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+  </head>
+  <body class="admin single">
+    <div class="site-layout">
+      <div class="desktop-brand">
+        <img src="/logo.svg" alt="且听书吟" />
+      </div>
+      <div class="mobile-brand">
+        <div class="container">
+          <div class="d-flex flex-flex align-items-center">
+            <a href="/" title={config.title} class="d-block">
+              <img src="/logo-large.svg" alt="且听书吟" />
+            </a>
+            <div class="flex-fill"></div>
+          </div>
+        </div>
+      </div>
+      <main class="site-main">
+        <div class="row gx-0">
+          <div class="col-lg-7 col-xl-7">
+            <div class="post p-3 p-md-5">
+              <div class="single-full">
+                <slot />
+              </div>
+            </div>
+            <Footer />
+          </div>
+          <div class="col-lg-5 col-xl-5 d-none d-lg-block sticky-top hv">
+            <div class="bg-img hv" style={{ backgroundImage: `url('${config.settings.asset.scheme}://${config.settings.asset.host}/images/admin/bg.jpg')` }}></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,71 @@
+---
+import { actions } from 'astro:actions'
+import Token from '@/components/partial/Token.astro'
+import { userSession } from '@/helpers/auth/session'
+import AdminLayout from '@/layouts/AdminLayout.astro'
+
+const session = Astro.session
+if (session === undefined) {
+  throw new Error('Please configure your astro session store')
+}
+const user = await userSession(session)
+if (user !== undefined) {
+  return Astro.redirect(import.meta.env.SITE)
+}
+---
+
+<AdminLayout title="用户登陆">
+  <form method="post" action={actions.auth.signIn} id="loginForm">
+    <Token />
+    <div class="flex-fill">
+      <div class="row g-3 mb-5 px-5">
+        <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
+        <input
+          class="form-control mb-2"
+          placeholder="密码"
+          name="password"
+          type="password"
+          required="required"
+          minlength="10"
+        />
+      </div>
+      <div class="form-submit text-center">
+        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="登陆" />
+      </div>
+    </div>
+  </form>
+</AdminLayout>
+
+<script>
+  import { actions } from 'astro:actions'
+  import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
+
+  const loginForm = document.querySelector('form')
+  if (loginForm !== null) {
+    loginForm.addEventListener('submit', async (event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      const form = new FormData(loginForm)
+
+      // Validate the form data
+      const token = form.get('token') as string
+      if (token === null) {
+        return showErrorDialog('Invalid access, please refresh the page')
+      }
+      const email = form.get('email') as string
+      if (email === null) {
+        return showErrorDialog('The email is required')
+      }
+      const password = form.get('password') as string
+      if (password === null) {
+        return showErrorDialog('The password is required')
+      }
+
+      const { error } = await actions.auth.signIn({ token, email, password })
+      if (error) {
+        return handleActionError(error, () => location.reload())
+      }
+      return (location.href = '/')
+    })
+  }
+</script>

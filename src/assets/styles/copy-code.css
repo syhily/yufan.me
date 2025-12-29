@@ -1,0 +1,58 @@
+/* --- Code block styling (Bootstrap-compatible) --- */
+.code-header {
+  user-select: none;
+  margin-bottom: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-light);
+  padding: 0.5rem 1rem;
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+}
+
+.language-label {
+  user-select: none;
+  pointer-events: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #212529;
+}
+
+.copy-code {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #212529;
+  background: none;
+  border: none;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+
+.copy-code:hover {
+  transform: scale(1.05);
+  color: #008c95;
+}
+
+/* --- Code block container (pre/code) --- */
+pre {
+  position: relative;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important; /* Bootstrap's default spacing unit */
+  border-radius: 0 0 0.375rem 0.375rem;
+  overflow-x: auto;
+}
+
+pre > code {
+  padding-top: 0 !important;
+  display: block;
+}
+
+/* --- Remove top border when preceded by header --- */
+.code-header + pre {
+  margin-top: 0 !important;
+  border-top: none !important;
+}

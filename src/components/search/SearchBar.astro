@@ -1,0 +1,30 @@
+---
+import config from '@/blog.config'
+---
+
+<div id="search" class="widget widget-search" hidden={!config.settings.sidebar.search}>
+  <div class="search-form">
+    <label>
+      <span class="screen-reader-text">搜索：</span>
+      <input type="search" class="search-field search-sidebar" placeholder="输入然后回车…" name="q" />
+    </label>
+  </div>
+</div>
+
+<script>
+// Search Bar.
+const searchSidebar = document.querySelector<HTMLInputElement>('.search-sidebar')
+if (searchSidebar) {
+  searchSidebar.addEventListener('keydown', (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.stopPropagation()
+
+      const target = event.target as HTMLInputElement
+      const query = target.value
+      target.value = ''
+      location.href = `/search/${encodeURIComponent(query)}`
+    }
+  })
+}
+</script>
