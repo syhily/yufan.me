@@ -14,7 +14,7 @@ const randomSize = config.settings.sidebar.tag
 {
   randomSize > 0 && (
     <div id="tag-cloud" class="widget widget-tag-cloud">
-      <div class="widget-title">文章标签</div>
+      <div class="widget-title" title="欲寄彩笺兼尺素，山长水阔知何处。">文踪墨迹</div>
       <div class="tagcloud">
         {_.sampleSize(tags, randomSize).map(tag => (
           <a href={tag.permalink} class="tag-cloud-link" title={`${tag.name} (${tag.counts} 篇文章)`}>
