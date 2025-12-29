@@ -2510,6 +2510,25 @@ a:hover .overlay {
   cursor: zoom-in;
 }
 
+.post-content .data-footnote-backref,
+.post-content .data-footnote-backref:hover {
+  box-shadow: none;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+}
+
+.post-content sup a {
+  color: var(--btn-primary);
+  font-size: 0.8em;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.post-content sup a:hover {
+  color: var(--btn-secondary);
+  cursor: pointer;
+}
+
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;

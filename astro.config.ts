@@ -118,6 +118,12 @@ export default defineConfig({
         }),
       ],
     },
+    remarkRehype: {
+      footnoteLabelTagName: 'h2',
+      footnoteLabelProperties: { className: ['footnotes'] },
+      footnoteLabel: '尾声札记',
+      footnoteBackContent: '↩️',
+    },
   },
   server: {
     port: 4321,
