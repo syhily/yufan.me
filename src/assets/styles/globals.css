@@ -2529,6 +2529,11 @@ a:hover .overlay {
   cursor: pointer;
 }
 
+.post-content .pdf-viewer {
+  height: 500px;
+  margin: 0 0 1.25rem;
+}
+
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;
