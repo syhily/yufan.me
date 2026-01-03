@@ -7,6 +7,7 @@ import Comments from '@/components/comment/Comments.astro'
 import LikeButton from '@/components/like/LikeButton.astro'
 import LikeShare from '@/components/like/LikeShare.astro'
 import MusicPlayer from '@/components/mdx/music/MusicPlayer.astro'
+import PDFViewer from '@/components/mdx/pdf/PDFViewer.astro'
 import Solution from '@/components/mdx/solutions/Solution.astro'
 import PostMeta from '@/components/meta/PostMeta.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
@@ -62,7 +63,7 @@ const { Content, headings } = await post.render()
               </div>
               <TableOfContents {headings} toc={post.toc} />
               <div class="post-content">
-                <Content components={{ img: Image, MusicPlayer, Solution }} />
+                <Content components={{ img: Image, MusicPlayer, Solution, PDFViewer }} />
               </div>
               <LikeButton permalink={post.permalink} />
               <LikeShare {post} />

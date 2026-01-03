@@ -1,0 +1,30 @@
+---
+interface Props {
+    title: string
+    src: string
+}
+
+const { title, src } = Astro.props
+---
+<style>
+    .pdf-viewer {
+        height: 500px;
+    }
+</style>
+
+<div class="pdf-viewer" data-src={src} data-title={title}></div>
+
+<script>
+import EmbedPDF from '@embedpdf/snippet'
+
+document.querySelectorAll('.pdf-viewer').forEach((container) => {
+  if (container instanceof HTMLElement) {
+    EmbedPDF.init({
+      type: 'container',
+      target: container,
+      src: container.dataset.src,
+      theme: { preference: 'system' },
+    })
+  }
+})
+</script>

@@ -1,0 +1,9 @@
+---
+interface Props {
+    title: string
+    src: string
+}
+
+const { title, src } = Astro.props
+---
+<p><a href={src} target="_blank" rel="nofollow">{title}</a></p>
