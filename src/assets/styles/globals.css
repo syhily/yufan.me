@@ -2512,9 +2512,9 @@ a:hover .overlay {
 
 .post-content .data-footnote-backref,
 .post-content .data-footnote-backref:hover {
-  box-shadow: none;
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
+  box-shadow: none;
 }
 
 .post-content sup a {

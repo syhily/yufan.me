@@ -9,7 +9,7 @@ const { title, src } = Astro.props
 <div class="pdf-viewer" data-src={src} data-title={title}></div>
 
 <script>
-import EmbedPDF from '@embedpdf/snippet'
+import EmbedPDF, { ZoomMode } from '@embedpdf/snippet'
 
 document.querySelectorAll('.pdf-viewer').forEach((container) => {
   if (container instanceof HTMLElement) {
@@ -18,6 +18,9 @@ document.querySelectorAll('.pdf-viewer').forEach((container) => {
       target: container,
       src: container.dataset.src,
       theme: { preference: 'system' },
+      zoom: {
+        defaultZoomLevel: ZoomMode.FitWidth,
+      },
     })
   }
 })
