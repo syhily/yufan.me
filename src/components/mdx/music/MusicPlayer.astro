@@ -1,36 +1,6 @@
 ---
-import 'aplayer-ts/src/css/base.css'
-
 interface Props {
   id: string
 }
 ---
 <div class="music-player aplayer" data-id={Astro.props.id}></div>
-
-<script>
-import APlayer from 'aplayer-ts'
-import { loadMusic } from '@/components/mdx/music/loader'
-
-for (const p of document.querySelectorAll<HTMLTableElement>(`.aplayer`)) {
-  if (p.dataset.id === undefined) {
-    continue
-  }
-  const meta = await loadMusic(p.dataset.id)
-  if (meta === null) {
-    continue
-  }
-  APlayer().init({
-    container: p,
-    lrcType: 1,
-    loop: 'none',
-    audio: {
-      name: meta.name,
-      artist: meta.artist,
-      url: meta.url,
-      cover: meta.pic,
-      theme: '#008c95',
-      lrc: meta.lyric,
-    },
-  })
-}
-</script>

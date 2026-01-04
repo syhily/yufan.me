@@ -63,7 +63,6 @@
     "@antfu/eslint-config": "^6.7.3",
     "@astrojs/check": "^0.9.6",
     "@daiji256/rehype-mathml": "^1.2.2",
-    "@embedpdf/snippet": "^2.1.1",
     "@types/lodash": "^4.17.21",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25.0.3",

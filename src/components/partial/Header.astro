@@ -85,18 +85,3 @@ const { navigation } = Astro.props
     </div>
   </div>
 </div>
-
-<script>
-// Menu toggle.
-const menuBody = document.querySelector<HTMLElement>('.site-aside')
-document.addEventListener('keydown', (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && menuBody) {
-    event.preventDefault()
-    event.stopPropagation()
-    menuBody.classList.toggle('in', false)
-  }
-})
-document.querySelector<HTMLElement>('.menu-toggler')?.addEventListener('click', () => menuBody?.classList.toggle('in', true))
-document.querySelector<HTMLElement>('.site-menu')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
-document.querySelector<HTMLElement>('.aside-overlay')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
-</script>

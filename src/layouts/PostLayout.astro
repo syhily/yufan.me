@@ -7,7 +7,6 @@ import Comments from '@/components/comment/Comments.astro'
 import LikeButton from '@/components/like/LikeButton.astro'
 import LikeShare from '@/components/like/LikeShare.astro'
 import MusicPlayer from '@/components/mdx/music/MusicPlayer.astro'
-import PDFViewer from '@/components/mdx/pdf/PDFViewer.astro'
 import Solution from '@/components/mdx/solutions/Solution.astro'
 import PostMeta from '@/components/meta/PostMeta.astro'
 import TableOfContents from '@/components/page/toc/TableOfContents.astro'
@@ -15,10 +14,6 @@ import Sidebar from '@/components/sidebar/Sidebar.astro'
 import { formatLocalDate } from '@/helpers/content/formatter'
 import { getPosts, getTag, tags } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
-import '@/assets/fonts/temml/temml.css'
-import '@/assets/styles/copy-code.css'
-import 'tippy.js/dist/tippy.css'
-import 'tippy.js/themes/light.css'
 
 interface Props {
   post: Post
@@ -63,7 +58,7 @@ const { Content, headings } = await post.render()
               </div>
               <TableOfContents {headings} toc={post.toc} />
               <div class="post-content">
-                <Content components={{ img: Image, MusicPlayer, Solution, PDFViewer }} />
+                <Content components={{ img: Image, MusicPlayer, Solution }} />
               </div>
               <LikeButton permalink={post.permalink} />
               <LikeShare {post} />
@@ -80,32 +75,3 @@ const { Content, headings } = await post.render()
     </div>
   </div>
 </BaseLayout>
-
-<script>
-import mediumZoom from 'medium-zoom'
-import tippy from 'tippy.js'
-import { attachCopyButtons } from '@/assets/scripts/copy-code'
-
-// Medium zoom for images.
-const zoom = mediumZoom()
-zoom.attach('.post-content img', '.post-content svg')
-
-// Code copy button.
-attachCopyButtons()
-
-// Footnotes.
-document.querySelectorAll('sup a[id^="user-content-fnref-"]')
-  .forEach((link) => {
-    const href = link.getAttribute('href')
-    const footnote = document.querySelector(`${href} p`)
-    if (footnote) {
-      tippy(link, {
-        content: footnote.innerHTML,
-        allowHTML: true,
-        theme: 'light',
-        placement: 'top',
-        animation: 'fade',
-      })
-    }
-  })
-</script>

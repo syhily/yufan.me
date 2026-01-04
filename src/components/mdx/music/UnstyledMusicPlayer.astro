@@ -1,6 +1,5 @@
 ---
 import { loadMusic } from '@/components/mdx/music/loader'
-import 'aplayer-ts/src/css/base.css'
 
 interface Props {
   id: string
@@ -12,4 +11,3 @@ const url = meta === null ? '' : meta.url
 {
   url !== '' && <audio controls src={url} />
 }
-

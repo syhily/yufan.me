@@ -7,8 +7,6 @@ import RandomPosts from '@/components/sidebar/RandomPosts.astro'
 import RandomTags from '@/components/sidebar/RandomTags.astro'
 import RecentComments from '@/components/sidebar/RecentComments.astro'
 import TodayCalendar from '@/components/sidebar/TodayCalendar.astro'
-import 'tippy.js/dist/tippy.css'
-import 'tippy.js/themes/light.css'
 
 interface Props {
   posts: Post[]
@@ -30,21 +28,3 @@ const { posts, tags } = Astro.props
     <TodayCalendar />
   </div>
 </aside>
-
-<script>
-import tippy from 'tippy.js'
-import { stickySidebar } from '@/assets/scripts/sidebar'
-
-// Sticky Sidebar
-stickySidebar({
-  elements: '.sidebar',
-  additionalMarginTop: 30,
-})
-
-// Tooltips
-tippy('.sidebar .widget-title', {
-  theme: 'light',
-  placement: 'left',
-  animation: 'fade',
-})
-</script>

@@ -1,6 +1,14 @@
 @import 'bootstrap/dist/css/bootstrap.css';
 @import '@/assets/styles/reset.css';
 @import '@/assets/fonts/iconfont/iconfont.css';
+@import '@/assets/fonts/hack.css';
+@import '@/assets/fonts/opposans.css';
+@import '@/assets/fonts/opposerif.css';
+@import '@/assets/fonts/temml/temml.css';
+@import 'aplayer-ts/src/css/base.css';
+@import 'medium-zoom/dist/style.css';
+@import 'tippy.js/dist/tippy.css';
+@import 'tippy.js/themes/light.css';
 
 @media (min-width: 1200px) {
   .content-wrapper {
@@ -2529,11 +2537,6 @@ a:hover .overlay {
   cursor: pointer;
 }
 
-.post-content .pdf-viewer {
-  height: 500px;
-  margin: 0 0 1.25rem;
-}
-
 .medium-zoom-overlay,
 .medium-zoom-image--opened {
   z-index: 1080;
@@ -2707,6 +2710,66 @@ a:hover .overlay {
   position: relative;
   font-size: 1.2rem;
   color: var(--color-secondary);
+}
+
+/* Post Code block styling ------------------- */
+.post-content .code-header {
+  -webkit-user-select: none;
+  user-select: none;
+  margin-bottom: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-light);
+  padding: 0.5rem 1rem;
+  border-top-left-radius: 0.375rem;
+  border-top-right-radius: 0.375rem;
+}
+
+.post-content .language-label {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #212529;
+}
+
+.post-content .copy-code {
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #212529;
+  background: none;
+  border: none;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+
+.post-content .copy-code:hover {
+  transform: scale(1.05);
+  color: #008c95;
+}
+
+.post-content pre {
+  position: relative;
+  margin-top: 0 !important;
+  margin-bottom: 1rem !important;
+  border-radius: 0 0 0.375rem 0.375rem;
+  overflow-x: auto;
+}
+
+.post-content pre > code {
+  padding-top: 0 !important;
+  display: block;
+}
+
+.post-content .code-header + pre {
+  margin-top: 0 !important;
+  border-top: none !important;
 }
 
 /*--------------------------------------------------------------
