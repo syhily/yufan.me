@@ -3688,17 +3688,3 @@ a.index-menu-link:hover {
   pointer-events: initial;
   z-index: 500;
 }
-
-/* PhotoSwipe Slideshow */
-.pswp__button--playpause-button {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  margin-left: 6px;
-}
-
-.pswp__progress-bar {
-  position: fixed;
-  bottom: 0;
-  top: auto !important;
-}

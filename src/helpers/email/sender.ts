@@ -1,7 +1,7 @@
 import type { CommentAndUser } from '@/helpers/comment/types'
 import type { Comment, Page, User } from '@/helpers/db/types'
-import { SMTP_HOST, SMTP_PASSWORD, SMTP_PORT, SMTP_SECURE, SMTP_SENDER, SMTP_USER } from 'astro:env/server'
-import nodemailer from 'nodemailer'
+import { MAILGUN_API_KEY, MAILGUN_DOMAIN, MAILGUN_SENDER } from 'astro:env/server'
+import Mailgun from 'mailgun.js'
 import config from '@/blog.config'
 import { parseContent } from '@/helpers/content/markdown'
 import { partialRender } from '@/helpers/content/render'
@@ -11,27 +11,18 @@ import NewReply from '@/helpers/email/templates/NewReply.astro'
 
 export interface EmailMessage { to: string, subject: string, html: string }
 
-// Create the Transporter based on SMTP configuration.
-const transporter = (SMTP_HOST === undefined || SMTP_PORT === undefined || SMTP_USER === undefined || SMTP_PASSWORD === undefined)
+const mailgun = new Mailgun(FormData)
+const client = (MAILGUN_API_KEY === undefined || MAILGUN_SENDER === undefined || MAILGUN_DOMAIN === undefined)
   ? undefined
-  : nodemailer.createTransport({
-      pool: true,
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_SECURE,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASSWORD,
-      },
-    })
+  : mailgun.client({ username: 'api', key: MAILGUN_API_KEY, useFetch: true })
 
 // Send an email using the configured transporter.
 async function internalSend(to: string, subject: string, html: string) {
-  if (transporter === undefined) {
+  if (client === undefined) {
     console.error('No SMTP configuration, skip sending message.')
     return
   }
-  await transporter.sendMail({ to, from: SMTP_SENDER, subject, html })
+  await client.messages.create(MAILGUN_DOMAIN!, { to, from: MAILGUN_SENDER!, subject, html })
 }
 
 // This email is sent for notifying the administrator that his website has a new comment.

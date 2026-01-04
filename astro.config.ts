@@ -60,12 +60,9 @@ export default defineConfig({
   env: {
     schema: {
       // SMTP Service
-      SMTP_HOST: envField.string({ context: 'server', access: 'secret', optional: true }),
-      SMTP_PORT: envField.number({ context: 'server', access: 'secret', optional: true }),
-      SMTP_SECURE: envField.boolean({ context: 'server', access: 'secret', optional: true, default: true }),
-      SMTP_USER: envField.string({ context: 'server', access: 'secret', optional: true }),
-      SMTP_PASSWORD: envField.string({ context: 'server', access: 'secret', optional: true }),
-      SMTP_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
+      MAILGUN_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      MAILGUN_DOMAIN: envField.string({ context: 'server', access: 'secret', optional: true }),
+      MAILGUN_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Database
       DATABASE_URL: envField.string({ context: 'server', access: 'secret', url: true }),
       REDIS_URL: envField.string({ context: 'server', access: 'secret', url: true }),
