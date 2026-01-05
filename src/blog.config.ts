@@ -42,10 +42,10 @@ const config: BlogConfig = {
       link: 'https://github.com/syhily',
     },
     {
-      name: 'Follow',
-      icon: 'icon-follow-rss',
+      name: 'Twitter',
+      icon: 'icon-twitter',
       type: 'link',
-      link: 'https://app.folo.is/share/feeds/54772566650461214',
+      link: 'https://x.com/syhily',
     },
     {
       name: 'Yufan Sheng',
@@ -67,7 +67,6 @@ const config: BlogConfig = {
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-MM-dd',
-    facebook: 'syhily',
     twitter: 'syhily',
     post: {
       sort: 'desc',
@@ -131,7 +130,6 @@ export interface BlogConfig {
     timeZone: string
     timeFormat: string
     twitter: string
-    facebook: string
     post: {
       sort: 'asc' | 'desc'
       feature?: string[]
