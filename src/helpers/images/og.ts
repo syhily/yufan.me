@@ -116,10 +116,10 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const logoImage = await loadImage(logoDark())
 
   // Mark sure the summary length is small enough to fit in
-  const description = `${summary
-    .replace(/<[^>]+>/g, '')
-    .slice(0, 80)
-    .trim()} ...`
+  let description = `${summary.replace(/<[^>]+>/g, '').trim()}`
+  if (description.length > 80) {
+    description = `${description.slice(0, 80)} ...`
+  }
 
   // Start drawing the open graph
   const canvas = new Canvas(config.settings.og.width, config.settings.og.height)
