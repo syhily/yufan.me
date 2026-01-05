@@ -19,7 +19,7 @@
   poster: https://cat.yufan.me/images/links/kn007.net.jpg
 - slug: xinsenz
   website: Xinsenz茶话
-  description: 树下呷茶，酒好花新。
+  description: 树下呷茶，酒好花新
   homepage: https://xinsenz.com
   poster: https://cat.yufan.me/images/links/xinsenz.com.jpg
 - slug: mboker
@@ -38,12 +38,12 @@
   poster: https://cat.yufan.me/images/links/yefengs.com.jpg
 - slug: laojieli
   website: 老街里
-  description: 一名风光摄影者兼文艺叙述人，以镜头捕捉瞬间，用文字绘织故事。
+  description: 一名风光摄影者兼文艺叙述人，以镜头捕捉瞬间，用文字绘织故事
   homepage: https://laojieli.cn
   poster: https://cat.yufan.me/images/links/laojieli.cn.jpg
 - slug: yyjn
   website: 呢喃
-  description: 喜于情，爱于心，言于表。
+  description: 喜于情，爱于心，言于表
   homepage: https://ninan.me
   poster: https://cat.yufan.me/images/links/yyjn.org.jpg
 - slug: alexinea
@@ -58,12 +58,12 @@
   poster: https://cat.yufan.me/images/links/jiasm.github.io.jpg
 - slug: fmoran
   website: 白丁轶事
-  description: Everything should be hurry.
+  description: Everything should be hurry
   homepage: https://moranfong.com
   poster: https://cat.yufan.me/images/links/fmoran.me.jpg
 - slug: captainofphb
   website: 船长の部落格
-  description: 船长の部落格，记录有趣的事，分享技术经验。
+  description: 船长の部落格，记录有趣的事，分享技术经验
   homepage: https://captainofphb.me
   poster: https://cat.yufan.me/images/links/captainofphb.me.jpg
 - slug: luoli
@@ -78,7 +78,7 @@
   poster: https://cat.yufan.me/images/links/longluo.me.jpg
 - slug: bxaw
   website: 白熊阿丸的小屋
-  description: 在这里可以看到一个真实的我，我会在这里书写我的一切。
+  description: 在这里可以看到一个真实的我，我会在这里书写我的一切
   homepage: https://bxaw.name
   poster: https://cat.yufan.me/images/links/blog.bxaw.name.jpg
 - slug: jiangcl
@@ -88,17 +88,17 @@
   poster: https://cat.yufan.me/images/links/jiangcl.com.jpg
 - slug: twofei
   website: 陪她去流浪
-  description: 桃子，疯疯癫癫的男孩子。
+  description: 桃子，疯疯癫癫的男孩子
   homepage: https://blog.twofei.com
   poster: https://cat.yufan.me/images/links/blog.twofei.com.jpg
 - slug: suus
   website: 蘇 SU
-  description: 在数字的海洋中，寻找属于自己的星辰。
+  description: 在数字的海洋中，寻找属于自己的星辰
   homepage: https://suus.me
   poster: https://cat.yufan.me/images/links/suus.me.jpg
 - slug: liruifengv
   website: liruifengv
-  description: Web 开发者，Astro 项目成员，开源爱好者。
+  description: Web 开发者，Astro 项目成员，开源爱好者
   homepage: https://liruifengv.com
   poster: https://cat.yufan.me/images/links/liruifengv.com.jpg
 - slug: nihaha
@@ -113,7 +113,7 @@
   poster: https://cat.yufan.me/images/links/wangdaodao.com.jpg
 - slug: godruoyi
   website: 连波的闲谈杂鱼
-  description: 我大部分的快乐，都是来自于生活的夹缝。
+  description: 我大部分的快乐，都是来自于生活的夹缝
   homepage: https://godruoyi.com
   poster: https://cat.yufan.me/images/links/godruoyi.com.jpg
 - slug: xiju
@@ -123,12 +123,12 @@
   poster: https://cat.yufan.me/images/links/xiju.me.jpg
 - slug: zishu
   website: 子舒的博客
-  description: 想留下点什么，证明我来过，一个热爱生活的程序员。
+  description: 想留下点什么，证明我来过，一个热爱生活的程序员
   homepage: https://zishu.me
   poster: https://cat.yufan.me/images/links/zishu.me.jpg
 - slug: miantiao
   website: 面条
-  description: 前端切图仔🧑🏻‍💻，后端三脚猫🤷🏻‍♂️，运维挖坑人🤦🏻‍♂️，AI 门外汉🧐。
+  description: 前端切图仔🧑🏻‍💻，后端三脚猫🤷🏻‍♂️，运维挖坑人🤦🏻‍♂️，AI 门外汉🧐
   homepage: https://miantiao.me
   poster: https://cat.yufan.me/images/links/miantiao.me.png
 - slug: xiaoten
@@ -139,5 +139,10 @@
 - slug: iseeklife
   website: iSeekLife
   description: 文旅探寻者的诗意栖居地
-  homepage: https://www.iseeklife.com/
+  homepage: https://www.iseeklife.com
   poster: https://cat.yufan.me/images/links/iseeklife.com.jpg
+- slug: zindex
+  website: Z-INDEX
+  description: hi，今日饮点咩呀
+  homepage: https://z-index.me
+  poster: https://cat.yufan.me/images/links/z-index.me.jpg
