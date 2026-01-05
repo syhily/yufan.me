@@ -1,4 +1,5 @@
 ---
+import type { Page } from '@/helpers/content/schema'
 import config from '@/blog.config'
 import { getPageMeta } from '@/helpers/seo'
 
@@ -6,14 +7,15 @@ export interface Props {
   title?: string
   description?: string
   ogImageUrl?: string
+  article?: Page
 }
 
-const { title, description, ogImageUrl } = Astro.props
+const { title, description, ogImageUrl, article } = Astro.props
 
 const { og, twitter } = getPageMeta({
   title: title || config.title,
   description: description || config.description,
-  baseUrl: import.meta.env.SITE,
+  pageUrl: import.meta.env.SITE,
   ogImageUrl,
   ogImageAltText: title || config.title,
   ogImageWidth: config.settings.og.width,
@@ -26,12 +28,26 @@ const { og, twitter } = getPageMeta({
 <Fragment>
   {og.title && <meta property="og:title" content={og.title} />}
   {og.description && <meta property="og:description" content={og.description} />}
-  {og.type && <meta property="og:type" content={og.type} />}
   {og.url && <meta property="og:url" content={og.url} />}
   {og.image && <meta property="og:image" content={og.image} />}
   {og.imageAlt && <meta property="og:image:alt" content={og.imageAlt} />}
   {og.imageWidth && <meta property="og:image:width" content={og.imageWidth} />}
   {og.imageHeight && <meta property="og:image:height" content={og.imageHeight} />}
+  <meta property="og:locale" content={config.settings.locale} />
+  <Fragment>{
+    article
+  ? (
+    <Fragment>
+      <meta property="og:type" content="article" />
+      <Fragment>{article.updated && <meta property="article:modified_time" content={article.updated.toISOString()} />}</Fragment>
+      <Fragment>{article.date && <meta property="article:published_time" content={article.date.toISOString()} />}</Fragment>
+      <meta property="article:author" content={config.author.name} />
+      <meta property="article:section" content="页面" />
+    </Fragment>
+  )
+  : <meta property="og:type" content="website" />
+  }
+  </Fragment>
   {twitter.title && <meta property="twitter:title" content={twitter.title} />}
   {twitter.description && <meta property="twitter:description" content={twitter.description} />}
   {twitter.site && <meta property="twitter:site" content={twitter.site} />}
@@ -40,3 +56,4 @@ const { og, twitter } = getPageMeta({
   {twitter.image && <meta property="twitter:image" content={twitter.image} />}
   {twitter.imageAlt && <meta property="twitter:image:alt" content={twitter.imageAlt} />}
 </Fragment>
+<script type="application/ld+json" is:inline set:text="" />

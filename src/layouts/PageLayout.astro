@@ -27,6 +27,7 @@ const { Content, headings } = await page.render()
     title={page.title}
     description={page.summary}
     ogImageUrl={page.og ? page.og : `/images/og/${page.slug}.png`}
+    article={page}
   />
 
   <div class="row gx-0">

@@ -28,10 +28,10 @@ const { Content, headings } = await post.render()
     slot="og"
     title={post.title}
     description={post.summary}
-    publishDate={post.date.toISOString()}
     requestPath={post.permalink}
     ogImageUrl={post.og ? post.og : `/images/og/${post.slug}.png`}
-    ogImageAltText={`${post.title} - ${post.summary}`}
+    ogImageAltText={post.title}
+    article={post}
   />
   <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
     <div class="container">

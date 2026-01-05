@@ -67,7 +67,8 @@ const config: BlogConfig = {
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-MM-dd',
-    twitter: 'amehochan',
+    facebook: 'syhily',
+    twitter: 'syhily',
     post: {
       sort: 'desc',
     },
@@ -130,6 +131,7 @@ export interface BlogConfig {
     timeZone: string
     timeFormat: string
     twitter: string
+    facebook: string
     post: {
       sort: 'asc' | 'desc'
       feature?: string[]
