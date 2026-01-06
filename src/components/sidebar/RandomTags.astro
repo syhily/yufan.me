@@ -9,6 +9,7 @@ interface Props {
 
 const { tags } = Astro.props
 const randomSize = config.settings.sidebar.tag
+const topTags = tags.sort((a, b) => b.counts - a.counts).slice(0, randomSize * 2)
 ---
 
 {
@@ -16,7 +17,7 @@ const randomSize = config.settings.sidebar.tag
     <div id="tag-cloud" class="widget widget-tag-cloud">
       <div class="widget-title" data-tippy-content="流水落花春去也，天上人间。">文踪墨迹</div>
       <div class="tagcloud">
-        {_.sampleSize(tags, randomSize).map(tag => (
+        {_.sampleSize(topTags, randomSize).map(tag => (
           <a href={tag.permalink} class="tag-cloud-link" title={`${tag.name} (${tag.counts} 篇文章)`}>
             {tag.name}
           </a>
