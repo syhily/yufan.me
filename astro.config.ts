@@ -133,6 +133,7 @@ export default defineConfig({
       exclude: [
         '@napi-rs/canvas',
         'sharp',
+        'php-wasm',
       ],
     },
     plugins: [

@@ -61,11 +61,7 @@ function renderComments(comments: Comment[]): void {
   const commentsHtml = comments.map((comment) => {
     const statusBadge = comment.isPending
       ? '<span class="badge badge-warning">待审核</span>'
-      : '<span class="badge badge-success">已审核</span>'
-
-    const verifiedBadge = comment.isVerified
-      ? '<span class="badge badge-primary">已验证</span>'
-      : ''
+      : '<span class="badge badge-primary">已审核</span>'
 
     return `
         <div class="card mb-3 comment-item" data-comment-id="${comment.id}">
@@ -87,7 +83,6 @@ function renderComments(comments: Comment[]): void {
                       ${comment.link ? `<a href="${escapeHtml(comment.link)}" target="_blank" rel="nofollow" class="text-muted small"><i class="iconfont icon-link"></i></a>` : ''}
                       ${comment.badgeName ? `<span class="badge" style="background-color: ${comment.badgeColor || '#008c95'}">${escapeHtml(comment.badgeName)}</span>` : ''}
                       ${statusBadge}
-                      ${verifiedBadge}
                     </div>
                     <div class="text-muted small">
                       <span>${escapeHtml(comment.email)}</span>

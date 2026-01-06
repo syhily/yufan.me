@@ -76,6 +76,7 @@
     "eslint-plugin-format": "^1.1.0",
     "jiti": "^2.6.1",
     "medium-zoom": "^1.1.0",
+    "php-wasm": "^0.0.9-alpha-32",
     "prettier": "^3.7.4",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-external-links": "^3.0.0",

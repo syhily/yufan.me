@@ -83,5 +83,19 @@ const postUrlRedirect = defineMiddleware(({ request: { method }, url: { pathname
   return next()
 })
 
+const apacheHoneypot = defineMiddleware(async (_, next) => {
+  const response = await next()
+  const headers = new Headers(response.headers)
+  headers.set('Server', 'Apache/2.4.58')
+  headers.set('X-Powered-By', 'PHP/8.0.30')
+  headers.set('Date', new Date().toUTCString())
+  headers.set('Accept-Ranges', 'bytes')
+
+  return new Response(response.body, {
+    ...response,
+    headers,
+  })
+})
+
 // Chained Middleware.
-export const onRequest = sequence(freshInstall, authentication, postUrlRedirect)
+export const onRequest = sequence(freshInstall, authentication, postUrlRedirect, apacheHoneypot)

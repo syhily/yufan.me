@@ -34,6 +34,9 @@ const { navigation } = Astro.props
         }
         <AdminBlock session={Astro.session}>
           <li id={`menu-item-${navigation.length}`} class="menu-item">
+            <a href="/wp-admin/">评论</a>
+          </li>
+          <li id={`menu-item-${navigation.length + 1}`} class="menu-item">
             <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: Astro.url.toString() })}`}>登出</a>
           </li>
         </AdminBlock>
