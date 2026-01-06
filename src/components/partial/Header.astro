@@ -1,5 +1,6 @@
 ---
 import type { BlogConfig } from '@/blog.config'
+import querystring from 'node:querystring'
 import config from '@/blog.config'
 import AdminBlock from '@/components/partial/AdminBlock.astro'
 import QRDialog from '@/components/partial/QRDialog.astro'
@@ -33,7 +34,7 @@ const { navigation } = Astro.props
         }
         <AdminBlock session={Astro.session}>
           <li id={`menu-item-${navigation.length}`} class="menu-item">
-            <a href="/admin/logout">登出</a>
+            <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: Astro.url.toString() })}`}>登出</a>
           </li>
         </AdminBlock>
       </ul>

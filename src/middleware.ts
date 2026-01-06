@@ -1,3 +1,4 @@
+import querystring from 'node:querystring'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { defineMiddleware, sequence } from 'astro:middleware'
 import { userSession } from '@/helpers/auth/session'
@@ -5,9 +6,8 @@ import { hasAdmin } from '@/helpers/auth/user'
 import { getPosts } from '@/helpers/content/schema'
 
 export enum ADMIN_ENDPOINTS {
-  install = '/admin/install',
-  login = '/admin/login',
-  logout = '/admin/logout',
+  install = '/wp-admin/install.php',
+  login = '/wp-login.php',
 }
 
 function isAdminEndpoints(endpoint: string) {
@@ -26,20 +26,22 @@ const freshInstall = defineMiddleware(async (context, next) => {
   return next()
 })
 
-const authentication = defineMiddleware(async ({ url: { pathname }, redirect, session }, next) => {
+const authentication = defineMiddleware(async ({ url, redirect, session }, next) => {
   if (session === undefined) {
     console.warn('Astro session is required to be enabled')
     return next()
   }
+
+  const { pathname } = url
   // Bypass the login/logout actions. Support traveling slash in request path.
   if (isAdminEndpoints(pathname)) {
     return next()
   }
-  if (pathname.startsWith('/admin/') || pathname === '/admin') {
+  if (pathname.startsWith('/wp-admin/') || pathname === '/wp-admin') {
     // Require user information in session.
     const user = await userSession(session)
     if (user === undefined) {
-      return redirect(ADMIN_ENDPOINTS.login)
+      return redirect(`${ADMIN_ENDPOINTS.login}?${querystring.stringify({ redirect_to: url.toString() })}`)
     }
   }
   // return a Response or the result of calling `next()`
@@ -61,8 +63,8 @@ const postUrlMappings: Map<string, string> = getPosts({ hidden: true, schedule: 
         throw new Error(`Duplicate request path ${source} in post alias slug`)
       }
       // Avoid admin endpoints
-      if (source.startsWith('/admin/')
-        || source === '/admin'
+      if (source.startsWith('/wp-admin/')
+        || source === '/wp-admin'
         || isAdminEndpoints(source)) {
         throw new Error(`Preserved request path: ${source}`)
       }

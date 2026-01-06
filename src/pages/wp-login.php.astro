@@ -1,16 +1,28 @@
 ---
 import { actions } from 'astro:actions'
 import Token from '@/components/partial/Token.astro'
-import { userSession } from '@/helpers/auth/session'
+import { logout, userSession } from '@/helpers/auth/session'
 import AdminLayout from '@/layouts/AdminLayout.astro'
 
-const session = Astro.session
-if (session === undefined) {
+// Check Astro session
+if (Astro.session === undefined) {
   throw new Error('Please configure your astro session store')
 }
-const user = await userSession(session)
+
+// Redirect
+const redirect = Astro.url.searchParams.get('redirect_to') || import.meta.env.SITE
+
+// Support logout
+const action = Astro.url.searchParams.get('action')
+if (action === 'logout') {
+  logout(Astro.session)
+  return Astro.redirect(redirect)
+}
+
+// Support login
+const user = await userSession(Astro.session)
 if (user !== undefined) {
-  return Astro.redirect(import.meta.env.SITE)
+  return Astro.redirect(redirect)
 }
 ---
 

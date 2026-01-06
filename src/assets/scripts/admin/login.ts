@@ -26,6 +26,9 @@ if (loginForm !== null) {
     if (error) {
       return handleActionError(error, () => location.reload())
     }
-    return (location.href = '/')
+
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirect = urlParams.get('redirect_to') || '/'
+    return (location.href = redirect)
   })
 }

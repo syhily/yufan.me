@@ -40,7 +40,7 @@ export default defineConfig({
     preserveScriptOrder: true,
     staticImportMetaEnv: true,
   },
-  trailingSlash: 'never',
+  trailingSlash: 'ignore',
   image: {
     domains: [config.settings.asset.host],
     service: { entrypoint: './src/helpers/images/service' },
