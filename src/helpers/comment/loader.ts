@@ -376,10 +376,11 @@ export async function loadAllComments(offset: number, limit: number): Promise<Ad
     .offset(offset)
 
   return {
-    comments: comments.map(c => ({
+    comments: await Promise.all(comments.map(async c => ({
       ...c,
+      content: await parseContent(c.content || '该留言内容为空'),
       pageTitle: c.pageTitle,
-    })),
+    }))),
     total,
     hasMore: offset + limit < total,
   }

@@ -61,7 +61,7 @@ function renderComments(comments: Comment[]): void {
   const commentsHtml = comments.map((comment) => {
     const statusBadge = comment.isPending
       ? '<span class="badge badge-warning">待审核</span>'
-      : '<span class="badge badge-primary">已审核</span>'
+      : '<span class="badge badge-light">已审核</span>'
 
     return `
         <div class="card mb-3 comment-item" data-comment-id="${comment.id}">
@@ -407,7 +407,7 @@ function showSuccessMessage(message: string): void {
       popup.classList.remove('nice-popup-open')
       setTimeout(() => popup.remove(), 300)
     }
-  }, 2000)
+  }, 800)
 }
 
 // 编辑评论表单提交

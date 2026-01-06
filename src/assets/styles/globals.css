@@ -2589,6 +2589,7 @@ a:hover .overlay {
 
 /* Font Families ----------------------------- */
 
+.comment-content a,
 .post-content p > a,
 .post-content li > a,
 .post-content dd > a,
@@ -2603,6 +2604,7 @@ a:hover .overlay {
   transition: 0.3s ease-in;
 }
 
+.comment-content a:hover,
 .post-content p > a:hover,
 .post-content li > a:hover,
 .post-content dd > a:hover,
