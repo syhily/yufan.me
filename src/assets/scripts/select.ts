@@ -51,14 +51,7 @@ class SearchableSelect {
 
     const selectedOption = this.options.find(o => o.value === this.selectedValue)
     const selectedText = selectedOption?.text || '请选择'
-    this.button.innerHTML = `
-      <span class="searchable-select-text">${this.escapeHtml(selectedText)}</span>
-      <span class="searchable-select-arrow">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 11L3 6h10z"/>
-        </svg>
-      </span>
-    `
+    this.button.innerHTML = `<span class="searchable-select-text">${this.escapeHtml(selectedText)}</span>`
 
     // 创建下拉框
     this.dropdown = document.createElement('div')
