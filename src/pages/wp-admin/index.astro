@@ -3,6 +3,7 @@ import config from '@/blog.config'
 import Footer from '@/components/partial/Footer.astro'
 import { requireAdmin, userSession } from '@/helpers/auth/session'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import '@/assets/styles/select.css'
 
 if (Astro.session === undefined) {
   throw new Error('Please configure your astro session store')
@@ -39,6 +40,18 @@ const currentUser = await userSession(session)
                         <option value="all">全部</option>
                         <option value="pending">待审核</option>
                         <option value="approved">已审核</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">筛选文章</label>
+                      <select class="form-select" id="filter-page">
+                        <option value="">全部文章</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">筛选评论人员</label>
+                      <select class="form-select" id="filter-author">
+                        <option value="">全部人员</option>
                       </select>
                     </div>
                     <div class="col-md-6">

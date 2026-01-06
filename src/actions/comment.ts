@@ -169,16 +169,31 @@ export const comment = {
       return { content: html }
     },
   }),
+  // Get filter options for admin panel
+  getFilterOptions: defineAction({
+    accept: 'json',
+    input: z.void(),
+    handler: async (_, { session }) => {
+      await requireAdmin(session)
+      const { getPageOptions, getCommentAuthors } = await import('@/helpers/comment/loader')
+      const pages = await getPageOptions()
+      const authors = await getCommentAuthors()
+      return { pages, authors }
+    },
+  }),
   // Load all comments with pagination (admin only)
   loadAll: defineAction({
     accept: 'json',
     input: z.object({
       offset: z.number().min(0),
       limit: z.number().min(1).max(100),
+      pageKey: z.string().optional(),
+      userId: z.string().optional(),
     }),
-    handler: async ({ offset, limit }, { session }) => {
+    handler: async ({ offset, limit, pageKey, userId }, { session }) => {
       await requireAdmin(session)
-      return await loadAllComments(offset, limit)
+      const userIdBigint = userId ? BigInt(userId) : undefined
+      return await loadAllComments(offset, limit, pageKey, userIdBigint)
     },
   }),
 }

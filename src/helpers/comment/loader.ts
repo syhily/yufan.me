@@ -359,8 +359,52 @@ export interface AdminCommentsResult {
   hasMore: boolean
 }
 
-export async function loadAllComments(offset: number, limit: number): Promise<AdminCommentsResult> {
-  const total = (await pool.db.select({ counts: count() }).from(comment).where(isNull(comment.deletedAt)))[0].counts
+// 获取所有文章列表（用于筛选）
+export async function getPageOptions(): Promise<Array<{ key: string, title: string }>> {
+  const pages = await pool.db
+    .select({ key: page.key, title: page.title })
+    .from(page)
+    .where(isNull(page.deletedAt))
+    .orderBy(desc(page.id))
+
+  return pages
+}
+
+// 获取所有评论人员列表（用于筛选）
+export async function getCommentAuthors(): Promise<Array<{ id: bigint, name: string }>> {
+  const authors = await pool.db
+    .selectDistinct({ id: user.id, name: user.name })
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(isNull(comment.deletedAt))
+    .orderBy(user.id)
+
+  return authors
+}
+
+// 修改 loadAllComments 函数签名以支持筛选
+export async function loadAllComments(
+  offset: number,
+  limit: number,
+  filterPageKey?: string,
+  filterUserId?: bigint,
+): Promise<AdminCommentsResult> {
+  const conditions = [isNull(comment.deletedAt)]
+
+  if (filterPageKey) {
+    conditions.push(eq(comment.pageKey, filterPageKey))
+  }
+
+  if (filterUserId) {
+    conditions.push(eq(comment.userId, filterUserId))
+  }
+
+  const total = (
+    await pool.db
+      .select({ counts: count() })
+      .from(comment)
+      .where(and(...conditions))
+  )[0].counts
 
   const comments = await pool.db
     .select({
@@ -370,17 +414,19 @@ export async function loadAllComments(offset: number, limit: number): Promise<Ad
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .leftJoin(page, eq(comment.pageKey, page.key))
-    .where(isNull(comment.deletedAt))
+    .where(and(...conditions))
     .orderBy(desc(comment.createdAt))
     .limit(limit)
     .offset(offset)
 
   return {
-    comments: await Promise.all(comments.map(async c => ({
-      ...c,
-      content: await parseContent(c.content || '该留言内容为空'),
-      pageTitle: c.pageTitle,
-    }))),
+    comments: await Promise.all(
+      comments.map(async c => ({
+        ...c,
+        content: await parseContent(c.content || '该留言内容为空'),
+        pageTitle: c.pageTitle,
+      })),
+    ),
     total,
     hasMore: offset + limit < total,
   }

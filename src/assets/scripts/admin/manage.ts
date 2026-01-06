@@ -1,5 +1,6 @@
 import { actions } from 'astro:actions'
 import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
+import SearchableSelect from '@/assets/scripts/select'
 
 interface Comment {
   id: string
@@ -25,6 +26,8 @@ interface Comment {
 let currentPage = 0
 let pageSize = 10
 let filterStatus = 'all'
+let filterPage = ''
+let filterAuthor = ''
 let totalComments = 0
 
 const commentsContainer = document.getElementById('comments-container')!
@@ -251,7 +254,12 @@ async function loadComments(): Promise<void> {
       `
 
     const offset = currentPage * pageSize
-    const { data, error } = await actions.comment.loadAll({ offset, limit: pageSize })
+    const { data, error } = await actions.comment.loadAll({
+      offset,
+      limit: pageSize,
+      pageKey: filterPage || undefined,
+      userId: filterAuthor || undefined,
+    })
 
     if (error) {
       return handleActionError(error)
@@ -545,6 +553,66 @@ function setupModalClose(): void {
   })
 }
 
+// 初始化 - 先加载筛选选项，再加载评论
+async function initializePage(): Promise<void> {
+  try {
+    const { data, error } = await actions.comment.getFilterOptions()
+
+    if (error) {
+      console.error('加载筛选选项失败:', error)
+      return
+    }
+
+    if (!data) {
+      console.error('无法获取筛选选项')
+      return
+    }
+
+    // 为文章和人员下拉框添加选项
+    const pageSelectElement = document.getElementById('filter-page') as HTMLSelectElement
+    const authorSelectElement = document.getElementById('filter-author') as HTMLSelectElement
+
+    // 添加文章选项
+    data.pages.forEach((p) => {
+      const option = document.createElement('option')
+      option.value = p.key
+      option.textContent = p.title || '无标题'
+      pageSelectElement.appendChild(option)
+    })
+
+    // 添加评论人员选项
+    data.authors.forEach((a) => {
+      const option = document.createElement('option')
+      option.value = String(a.id)
+      option.textContent = a.name
+      authorSelectElement.appendChild(option)
+    })
+
+    // 初始化搜索下拉框
+    void new SearchableSelect(pageSelectElement)
+    void new SearchableSelect(authorSelectElement)
+
+    // 绑定筛选事件
+    pageSelectElement.addEventListener('change', () => {
+      filterPage = pageSelectElement.value
+      currentPage = 0
+      loadComments()
+    })
+
+    authorSelectElement.addEventListener('change', () => {
+      filterAuthor = authorSelectElement.value
+      currentPage = 0
+      loadComments()
+    })
+
+    // 加载评论
+    loadComments()
+  }
+  catch (err) {
+    console.error('初始化失败:', err)
+  }
+}
+
 // 初始化
 setupModalClose()
-loadComments()
+initializePage()
