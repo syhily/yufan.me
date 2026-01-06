@@ -80,7 +80,7 @@ function renderComments(comments: Comment[]): void {
                 </div>
               </div>
               <div class="flex-grow-1">
-                <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-2 gap-2">
                   <div>
                     <div class="d-flex align-items-center gap-2 mb-1">
                       <strong>${escapeHtml(comment.name)}</strong>
@@ -95,7 +95,7 @@ function renderComments(comments: Comment[]): void {
                       ${comment.pageTitle ? `<span class="ms-2">来自: ${escapeHtml(comment.pageTitle)}</span>` : ''}
                     </div>
                   </div>
-                  <div class="d-flex gap-2">
+                  <div class="d-flex flex-wrap gap-2">
                     <button class="btn btn-sm btn-primary edit-comment-btn" data-comment-id="${comment.id}">
                       <i class="iconfont icon-edit"></i> 编辑
                     </button>
