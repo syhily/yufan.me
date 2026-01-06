@@ -9,20 +9,17 @@ if (Astro.session === undefined) {
   throw new Error('Please configure your astro session store')
 }
 
-// Redirect
-const redirect = Astro.url.searchParams.get('redirect_to') || import.meta.env.SITE
-
 // Support logout
 const action = Astro.url.searchParams.get('action')
 if (action === 'logout') {
   logout(Astro.session)
-  return Astro.redirect(redirect)
+  return Astro.redirect(Astro.url.searchParams.get('redirect_to') || import.meta.env.SITE)
 }
 
 // Support login
 const user = await userSession(Astro.session)
 if (user !== undefined) {
-  return Astro.redirect(redirect)
+  return Astro.redirect(Astro.url.searchParams.get('redirect_to') || import.meta.env.SITE)
 }
 ---
 

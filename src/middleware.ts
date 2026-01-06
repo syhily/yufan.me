@@ -86,8 +86,8 @@ const postUrlRedirect = defineMiddleware(({ request: { method }, url: { pathname
 const apacheHoneypot = defineMiddleware(async (_, next) => {
   const response = await next()
   const headers = new Headers(response.headers)
-  headers.set('Server', 'Apache/2.4.58')
-  headers.set('X-Powered-By', 'PHP/8.0.30')
+  headers.set('Server', 'Apache/2.0.64')
+  headers.set('X-Powered-By', 'PHP/5.3.29')
   headers.set('Date', new Date().toUTCString())
   headers.set('Accept-Ranges', 'bytes')
 
