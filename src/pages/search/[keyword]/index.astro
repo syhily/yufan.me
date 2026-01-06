@@ -13,8 +13,9 @@ if (query === '') {
 const title = `【${query}】搜索结果`
 
 const { hits, page, totalPages } = await searchPosts(query, config.settings.pagination.search)
-const posts = hits.map(slug => getPosts({ hidden: true, schedule: false }).find(post => post.slug === slug))
-  .filter(post => post !== undefined)
+const posts = hits
+  .map((slug) => getPosts({ hidden: true, schedule: false }).find((post) => post.slug === slug))
+  .filter((post) => post !== undefined)
 ---
 
 <SearchLayout {title} {query} {page} {totalPages} {posts} />

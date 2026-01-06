@@ -43,11 +43,11 @@ const { Content, headings } = await post.render()
               <div class="post-meta text-sm text-muted mt-3 mb-4">
                 <time class="">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
                 {
-                  post.tags.length > 0
-                  && post.tags
-                      .map(tag => getTag(tag, undefined))
-                      .filter(tag => tag !== undefined)
-                      .map(tag => (
+                  post.tags.length > 0 &&
+                    post.tags
+                      .map((tag) => getTag(tag, undefined))
+                      .filter((tag) => tag !== undefined)
+                      .map((tag) => (
                         <>
                           <a class="float-end ms-2 badge badge-light badge-pill" href={`/tags/${tag.slug}`}>
                             {tag.name}

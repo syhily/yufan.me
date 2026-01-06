@@ -37,7 +37,9 @@ const { navigation } = Astro.props
             <a href="/wp-admin/">评论</a>
           </li>
           <li id={`menu-item-${navigation.length + 1}`} class="menu-item">
-            <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: Astro.url.toString() })}`}>登出</a>
+            <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: Astro.url.toString() })}`}
+              >登出</a
+            >
           </li>
         </AdminBlock>
       </ul>
@@ -49,8 +51,7 @@ const { navigation } = Astro.props
             return (
               <QRDialog url={social.link} name={social.name} title={social.title ?? social.name} icon={social.icon} />
             )
-          }
-          else {
+          } else {
             return (
               <a
                 href={social.link}
@@ -59,11 +60,9 @@ const { navigation } = Astro.props
                 class="btn btn-dark btn-icon btn-circle button-social"
               >
                 <span>
-                  {!social.icon.startsWith('<svg')
-                  ? (
+                  {!social.icon.startsWith('<svg') ? (
                     <i class={`iconfont ${social.icon}`} />
-                  )
-                  : (
+                  ) : (
                     <Fragment set:html={social.icon} />
                   )}
                 </span>

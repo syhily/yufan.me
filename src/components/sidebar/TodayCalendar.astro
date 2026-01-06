@@ -8,13 +8,15 @@ function loadCalendarImage(): string {
   return joinPaths(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.png`)
 }
 
-const calendarImage = !config.settings.sidebar.calendar ? '' : loadCalendarImage();
+const calendarImage = !config.settings.sidebar.calendar ? '' : loadCalendarImage()
 ---
 
 {
   calendarImage !== '' && (
     <div class="widget widget-owspace-calendar">
-      <div class="widget-title" data-tippy-content="时光只解催人老，不信多情，长恨离亭。">时光只言</div>
+      <div class="widget-title" data-tippy-content="时光只解催人老，不信多情，长恨离亭。">
+        时光只言
+      </div>
       <img loading="lazy" decoding="async" src={calendarImage} width="600px" height="880px" />
     </div>
   )

@@ -8,6 +8,4 @@ const meta = await loadMusic(Astro.props.id)
 const url = meta === null ? '' : meta.url
 ---
 
-{
-  url !== '' && <audio controls src={url} />
-}
+{url !== '' && <audio controls src={url} />}

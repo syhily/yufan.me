@@ -85,7 +85,13 @@ const currentUser = await userSession(session)
       <Footer />
     </div>
     <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
-      <div class="bg-img hv" style={{ backgroundImage: `url('${config.settings.asset.scheme}://${config.settings.asset.host}/images/admin/bg.jpg')` }}></div>
+      <div
+        class="bg-img hv"
+        style={{
+          backgroundImage: `url('${config.settings.asset.scheme}://${config.settings.asset.host}/images/admin/bg.jpg')`,
+        }}
+      >
+      </div>
     </div>
   </div>
 

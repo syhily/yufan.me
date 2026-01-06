@@ -30,16 +30,14 @@ const resolvedPosts = await getPostsWithMetadata(posts, { likes: true, views: tr
         <h1>{title}</h1>
       </div>
       {
-        resolvedPosts.length === 0
-      ? (
+        resolvedPosts.length === 0 ? (
           <div class="data-null">
             <div class="my-auto">
               <h1 class="font-number">404</h1>
               <div>抱歉，没有你要找的内容...</div>
             </div>
           </div>
-        )
-      : (
+        ) : (
           <>
             <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
               {resolvedPosts.map((post, index) => (

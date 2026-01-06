@@ -16,4 +16,4 @@ const { comments, session } = Astro.props
 const parsedComments = await parseComments(comments.comments)
 ---
 
-{parsedComments.map(item => <CommentItem comment={item} depth={1} {session} />)}
+{parsedComments.map((item) => <CommentItem comment={item} depth={1} {session} />)}

@@ -16,11 +16,9 @@ const { current, total, rootPath } = Astro.props
     <nav class="navigation pagination" aria-label="文章">
       <h2 class="screen-reader-text">文章导航</h2>
       <div class="nav-links">
-        {total <= 6
-? (
+        {total <= 6 ? (
           <SmallPagination current={current} total={total} rootPath={rootPath} />
-        )
-: (
+        ) : (
           <LargePagination current={current} total={total} rootPath={rootPath} />
         )}
       </div>

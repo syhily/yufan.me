@@ -24,12 +24,12 @@ function historicalPosts(): Post[] {
 }
 const featurePosts = config.settings.post.feature ?? []
 
-const metas: Post[]
-  = featurePosts.length < 3
+const metas: Post[] =
+  featurePosts.length < 3
     ? historicalPosts()
     : featurePosts
-        .map(slug => posts.find(post => post.slug === slug))
-        .filter(post => post !== undefined)
+        .map((slug) => posts.find((post) => post.slug === slug))
+        .filter((post) => post !== undefined)
         .slice(0, 3)
 ---
 

@@ -13,8 +13,8 @@ interface Props {
   footer?: boolean
 }
 
-const title
-  = Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
+const title =
+  Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
 const description = Astro.props.description || config.description
 const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
 const navigation = Astro.props.navigation || config.navigation

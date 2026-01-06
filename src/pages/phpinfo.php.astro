@@ -1,29 +1,93 @@
 ---
-const unixSeconds = Math.floor(Date.now() / 1000);
+const unixSeconds = Math.floor(Date.now() / 1000)
 ---
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
+
+<!doctype html>
 <html>
   <head>
     <style type="text/css">
-      body {background-color: #ffffff; color: #000000;}
-      body, td, th, h1, h2 {font-family: sans-serif;}
-      pre {margin: 0px; font-family: monospace;}
-      a:link {color: #000099; text-decoration: none; background-color: #ffffff;}
-      a:hover {text-decoration: underline;}
-      table {border-collapse: collapse;}
-      .center {text-align: center;}
-      .center table { margin-left: auto; margin-right: auto; text-align: left;}
-      .center th { text-align: center !important; }
-      td, th { border: 1px solid #000000; font-size: 75%; vertical-align: baseline;}
-      h1 {font-size: 150%;}
-      h2 {font-size: 125%;}
-      .p {text-align: left;}
-      .e {background-color: #ccccff; font-weight: bold; color: #000000;}
-      .h {background-color: #9999cc; font-weight: bold; color: #000000;}
-      .v {background-color: #cccccc; color: #000000;}
-      .vr {background-color: #cccccc; text-align: right; color: #000000;}
-      img {float: right; border: 0px;}
-      hr {width: 600px; background-color: #cccccc; border: 0px; height: 1px; color: #000000;}
+      body {
+        background-color: #ffffff;
+        color: #000000;
+      }
+      body,
+      td,
+      th,
+      h1,
+      h2 {
+        font-family: sans-serif;
+      }
+      pre {
+        margin: 0px;
+        font-family: monospace;
+      }
+      a:link {
+        color: #000099;
+        text-decoration: none;
+        background-color: #ffffff;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      .center {
+        text-align: center;
+      }
+      .center table {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+      }
+      .center th {
+        text-align: center !important;
+      }
+      td,
+      th {
+        border: 1px solid #000000;
+        font-size: 75%;
+        vertical-align: baseline;
+      }
+      h1 {
+        font-size: 150%;
+      }
+      h2 {
+        font-size: 125%;
+      }
+      .p {
+        text-align: left;
+      }
+      .e {
+        background-color: #ccccff;
+        font-weight: bold;
+        color: #000000;
+      }
+      .h {
+        background-color: #9999cc;
+        font-weight: bold;
+        color: #000000;
+      }
+      .v {
+        background-color: #cccccc;
+        color: #000000;
+      }
+      .vr {
+        background-color: #cccccc;
+        text-align: right;
+        color: #000000;
+      }
+      img {
+        float: right;
+        border: 0px;
+      }
+      hr {
+        width: 600px;
+        background-color: #cccccc;
+        border: 0px;
+        height: 1px;
+        color: #000000;
+      }
     </style>
     <title>phpinfo()</title>
     <meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE" />
@@ -41,7 +105,9 @@ const unixSeconds = Math.floor(Date.now() / 1000);
       <table border="0" cellpadding="3" width="600">
         <tr>
           <td class="e">System </td>
-          <td class="v">Linux php53 6.8.0-65-generic #68~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Jul 15 18:06:34 UTC 2 x86_64 </td>
+          <td class="v"
+            >Linux php53 6.8.0-65-generic #68~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue Jul 15 18:06:34 UTC 2 x86_64
+          </td>
         </tr>
         <tr>
           <td class="e">Build Date </td>
@@ -49,7 +115,27 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Configure Command </td>
-          <td class="v" is:raw> &#039;../configure&#039;  &#039;--includedir=${prefix}/include&#039; &#039;--mandir=${prefix}/share/man&#039; &#039;--infodir=${prefix}/share/info&#039; &#039;--disable-option-checking&#039; &#039;--disable-silent-rules&#039; &#039;--libdir=${prefix}/lib/x86_64-linux-gnu&#039; &#039;--libexecdir=${prefix}/lib/x86_64-linux-gnu&#039; &#039;--disable-maintainer-mode&#039; &#039;--disable-dependency-tracking&#039; &#039;--prefix=/usr&#039; &#039;--with-apxs2=/usr/bin/apxs2&#039; &#039;--enable-cli&#039; &#039;--disable-cgi&#039; &#039;--disable-phpdbg&#039; &#039;--with-config-file-path=/etc/php/5.3/apache2&#039; &#039;--with-config-file-scan-dir=/etc/php/5.3/apache2/conf.d&#039; &#039;--build=x86_64-linux-gnu&#039; &#039;--host=x86_64-linux-gnu&#039; &#039;--cache-file=/usr/src/php-src/config.cache&#039; &#039;--libdir=/usr/lib/php&#039; &#039;--libexecdir=/usr/lib/php&#039; &#039;--datadir=/usr/share/php/5.3&#039; &#039;--program-suffix=5.3&#039; &#039;--sysconfdir=/etc&#039; &#039;--localstatedir=/var&#039; &#039;--mandir=/usr/share/man&#039; &#039;--with-libdir=lib/x86_64-linux-gnu&#039; &#039;--disable-all&#039; &#039;--disable-debug&#039; &#039;--disable-rpath&#039; &#039;--disable-static&#039; &#039;--enable-dtrace&#039; &#039;--with-pic&#039; &#039;--with-layout=GNU&#039; &#039;--enable-xml&#039; &#039;--with-pear=/usr/share/php&#039; &#039;--enable-filter&#039; &#039;--with-openssl=/usr&#039; &#039;--with-pcre-regex=/usr&#039; &#039;--enable-hash&#039; &#039;--with-mhash=/usr&#039; &#039;--enable-libxml&#039; &#039;--enable-session&#039; &#039;--with-system-tzdata&#039; &#039;--with-zlib=/usr&#039; &#039;--with-zlib-dir=/usr&#039; &#039;--enable-gd-native-ttf&#039; &#039;--with-freetype-dir=/usr&#039; </td>
+          <td class="v" is:raw>
+            &#039;../configure&#039; &#039;--includedir=${prefix}/include&#039; &#039;--mandir=${prefix}/share/man&#039;
+            &#039;--infodir=${prefix}/share/info&#039; &#039;--disable-option-checking&#039;
+            &#039;--disable-silent-rules&#039; &#039;--libdir=${prefix}/lib/x86_64-linux-gnu&#039;
+            &#039;--libexecdir=${prefix}/lib/x86_64-linux-gnu&#039; &#039;--disable-maintainer-mode&#039;
+            &#039;--disable-dependency-tracking&#039; &#039;--prefix=/usr&#039; &#039;--with-apxs2=/usr/bin/apxs2&#039;
+            &#039;--enable-cli&#039; &#039;--disable-cgi&#039; &#039;--disable-phpdbg&#039;
+            &#039;--with-config-file-path=/etc/php/5.3/apache2&#039;
+            &#039;--with-config-file-scan-dir=/etc/php/5.3/apache2/conf.d&#039; &#039;--build=x86_64-linux-gnu&#039;
+            &#039;--host=x86_64-linux-gnu&#039; &#039;--cache-file=/usr/src/php-src/config.cache&#039;
+            &#039;--libdir=/usr/lib/php&#039; &#039;--libexecdir=/usr/lib/php&#039;
+            &#039;--datadir=/usr/share/php/5.3&#039; &#039;--program-suffix=5.3&#039; &#039;--sysconfdir=/etc&#039;
+            &#039;--localstatedir=/var&#039; &#039;--mandir=/usr/share/man&#039;
+            &#039;--with-libdir=lib/x86_64-linux-gnu&#039; &#039;--disable-all&#039; &#039;--disable-debug&#039;
+            &#039;--disable-rpath&#039; &#039;--disable-static&#039; &#039;--enable-dtrace&#039; &#039;--with-pic&#039;
+            &#039;--with-layout=GNU&#039; &#039;--enable-xml&#039; &#039;--with-pear=/usr/share/php&#039;
+            &#039;--enable-filter&#039; &#039;--with-openssl=/usr&#039; &#039;--with-pcre-regex=/usr&#039;
+            &#039;--enable-hash&#039; &#039;--with-mhash=/usr&#039; &#039;--enable-libxml&#039;
+            &#039;--enable-session&#039; &#039;--with-system-tzdata&#039; &#039;--with-zlib=/usr&#039;
+            &#039;--with-zlib-dir=/usr&#039; &#039;--enable-gd-native-ttf&#039; &#039;--with-freetype-dir=/usr&#039;
+          </td>
         </tr>
         <tr>
           <td class="e">Server API </td>
@@ -73,76 +159,42 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Additional .ini files parsed </td>
-          <td class="v">/etc/php/5.3/apache2/conf.d/0mbstring.ini,
-            /etc/php/5.3/apache2/conf.d/0mysqlnd+mysqli.ini,
-            /etc/php/5.3/apache2/conf.d/apcu.ini,
-            /etc/php/5.3/apache2/conf.d/bcmath.ini,
-            /etc/php/5.3/apache2/conf.d/big_int.ini,
-            /etc/php/5.3/apache2/conf.d/bz2.ini,
-            /etc/php/5.3/apache2/conf.d/calendar.ini,
-            /etc/php/5.3/apache2/conf.d/ctype.ini,
-            /etc/php/5.3/apache2/conf.d/curl.ini,
-            /etc/php/5.3/apache2/conf.d/dbase.ini,
-            /etc/php/5.3/apache2/conf.d/dbx.ini,
-            /etc/php/5.3/apache2/conf.d/dom.ini,
-            /etc/php/5.3/apache2/conf.d/enchant.ini,
-            /etc/php/5.3/apache2/conf.d/exif.ini,
-            /etc/php/5.3/apache2/conf.d/fileinfo.ini,
-            /etc/php/5.3/apache2/conf.d/ftp.ini,
-            /etc/php/5.3/apache2/conf.d/gd.ini,
-            /etc/php/5.3/apache2/conf.d/geoip.ini,
-            /etc/php/5.3/apache2/conf.d/gettext.ini,
-            /etc/php/5.3/apache2/conf.d/gmp.ini,
-            /etc/php/5.3/apache2/conf.d/ibase.ini,
-            /etc/php/5.3/apache2/conf.d/iconv.ini,
-            /etc/php/5.3/apache2/conf.d/ifx.ini,
-            /etc/php/5.3/apache2/conf.d/imagick.ini,
-            /etc/php/5.3/apache2/conf.d/imap.ini,
-            /etc/php/5.3/apache2/conf.d/ingres.ini,
-            /etc/php/5.3/apache2/conf.d/interbase.ini,
-            /etc/php/5.3/apache2/conf.d/intl.ini,
-            /etc/php/5.3/apache2/conf.d/ioncube.ini,
-            /etc/php/5.3/apache2/conf.d/json.ini,
-            /etc/php/5.3/apache2/conf.d/ldap.ini,
-            /etc/php/5.3/apache2/conf.d/mcrypt.ini,
-            /etc/php/5.3/apache2/conf.d/memcache.ini,
-            /etc/php/5.3/apache2/conf.d/msql.ini,
-            /etc/php/5.3/apache2/conf.d/mssql.ini,
-            /etc/php/5.3/apache2/conf.d/mysql.ini,
-            /etc/php/5.3/apache2/conf.d/mysqli-default_socket.ini,
-            /etc/php/5.3/apache2/conf.d/odbc.ini,
-            /etc/php/5.3/apache2/conf.d/opcache.ini,
-            /etc/php/5.3/apache2/conf.d/pdo_dblib.ini,
-            /etc/php/5.3/apache2/conf.d/pdo_firebird.ini,
-            /etc/php/5.3/apache2/conf.d/pdo_mysql.ini,
-            /etc/php/5.3/apache2/conf.d/pdo_odbc.ini,
-            /etc/php/5.3/apache2/conf.d/pdo_pgsql.ini,
-            /etc/php/5.3/apache2/conf.d/pdo_sqlite.ini,
-            /etc/php/5.3/apache2/conf.d/pfpro.ini,
-            /etc/php/5.3/apache2/conf.d/pgsql.ini,
-            /etc/php/5.3/apache2/conf.d/phar.ini,
-            /etc/php/5.3/apache2/conf.d/posix.ini,
-            /etc/php/5.3/apache2/conf.d/pspell.ini,
-            /etc/php/5.3/apache2/conf.d/rar.ini,
-            /etc/php/5.3/apache2/conf.d/realpath-turbo.ini,
-            /etc/php/5.3/apache2/conf.d/session.ini,
-            /etc/php/5.3/apache2/conf.d/simplexml.ini,
-            /etc/php/5.3/apache2/conf.d/soap.ini,
-            /etc/php/5.3/apache2/conf.d/sockets.ini,
-            /etc/php/5.3/apache2/conf.d/sql.ini,
-            /etc/php/5.3/apache2/conf.d/sqlite3.ini,
-            /etc/php/5.3/apache2/conf.d/sybase.ini,
-            /etc/php/5.3/apache2/conf.d/sybct.ini,
-            /etc/php/5.3/apache2/conf.d/tidy.ini,
-            /etc/php/5.3/apache2/conf.d/tokenizer.ini,
-            /etc/php/5.3/apache2/conf.d/uploadprogress.ini,
-            /etc/php/5.3/apache2/conf.d/url_rewriter.ini,
-            /etc/php/5.3/apache2/conf.d/xcache.ini,
-            /etc/php/5.3/apache2/conf.d/xmlreader.ini,
-            /etc/php/5.3/apache2/conf.d/xmlrpc.ini,
-            /etc/php/5.3/apache2/conf.d/xmlwriter.ini,
-            /etc/php/5.3/apache2/conf.d/xsl.ini,
-            /etc/php/5.3/apache2/conf.d/zip.ini
+          <td class="v"
+            >/etc/php/5.3/apache2/conf.d/0mbstring.ini, /etc/php/5.3/apache2/conf.d/0mysqlnd+mysqli.ini,
+            /etc/php/5.3/apache2/conf.d/apcu.ini, /etc/php/5.3/apache2/conf.d/bcmath.ini,
+            /etc/php/5.3/apache2/conf.d/big_int.ini, /etc/php/5.3/apache2/conf.d/bz2.ini,
+            /etc/php/5.3/apache2/conf.d/calendar.ini, /etc/php/5.3/apache2/conf.d/ctype.ini,
+            /etc/php/5.3/apache2/conf.d/curl.ini, /etc/php/5.3/apache2/conf.d/dbase.ini,
+            /etc/php/5.3/apache2/conf.d/dbx.ini, /etc/php/5.3/apache2/conf.d/dom.ini,
+            /etc/php/5.3/apache2/conf.d/enchant.ini, /etc/php/5.3/apache2/conf.d/exif.ini,
+            /etc/php/5.3/apache2/conf.d/fileinfo.ini, /etc/php/5.3/apache2/conf.d/ftp.ini,
+            /etc/php/5.3/apache2/conf.d/gd.ini, /etc/php/5.3/apache2/conf.d/geoip.ini,
+            /etc/php/5.3/apache2/conf.d/gettext.ini, /etc/php/5.3/apache2/conf.d/gmp.ini,
+            /etc/php/5.3/apache2/conf.d/ibase.ini, /etc/php/5.3/apache2/conf.d/iconv.ini,
+            /etc/php/5.3/apache2/conf.d/ifx.ini, /etc/php/5.3/apache2/conf.d/imagick.ini,
+            /etc/php/5.3/apache2/conf.d/imap.ini, /etc/php/5.3/apache2/conf.d/ingres.ini,
+            /etc/php/5.3/apache2/conf.d/interbase.ini, /etc/php/5.3/apache2/conf.d/intl.ini,
+            /etc/php/5.3/apache2/conf.d/ioncube.ini, /etc/php/5.3/apache2/conf.d/json.ini,
+            /etc/php/5.3/apache2/conf.d/ldap.ini, /etc/php/5.3/apache2/conf.d/mcrypt.ini,
+            /etc/php/5.3/apache2/conf.d/memcache.ini, /etc/php/5.3/apache2/conf.d/msql.ini,
+            /etc/php/5.3/apache2/conf.d/mssql.ini, /etc/php/5.3/apache2/conf.d/mysql.ini,
+            /etc/php/5.3/apache2/conf.d/mysqli-default_socket.ini, /etc/php/5.3/apache2/conf.d/odbc.ini,
+            /etc/php/5.3/apache2/conf.d/opcache.ini, /etc/php/5.3/apache2/conf.d/pdo_dblib.ini,
+            /etc/php/5.3/apache2/conf.d/pdo_firebird.ini, /etc/php/5.3/apache2/conf.d/pdo_mysql.ini,
+            /etc/php/5.3/apache2/conf.d/pdo_odbc.ini, /etc/php/5.3/apache2/conf.d/pdo_pgsql.ini,
+            /etc/php/5.3/apache2/conf.d/pdo_sqlite.ini, /etc/php/5.3/apache2/conf.d/pfpro.ini,
+            /etc/php/5.3/apache2/conf.d/pgsql.ini, /etc/php/5.3/apache2/conf.d/phar.ini,
+            /etc/php/5.3/apache2/conf.d/posix.ini, /etc/php/5.3/apache2/conf.d/pspell.ini,
+            /etc/php/5.3/apache2/conf.d/rar.ini, /etc/php/5.3/apache2/conf.d/realpath-turbo.ini,
+            /etc/php/5.3/apache2/conf.d/session.ini, /etc/php/5.3/apache2/conf.d/simplexml.ini,
+            /etc/php/5.3/apache2/conf.d/soap.ini, /etc/php/5.3/apache2/conf.d/sockets.ini,
+            /etc/php/5.3/apache2/conf.d/sql.ini, /etc/php/5.3/apache2/conf.d/sqlite3.ini,
+            /etc/php/5.3/apache2/conf.d/sybase.ini, /etc/php/5.3/apache2/conf.d/sybct.ini,
+            /etc/php/5.3/apache2/conf.d/tidy.ini, /etc/php/5.3/apache2/conf.d/tokenizer.ini,
+            /etc/php/5.3/apache2/conf.d/uploadprogress.ini, /etc/php/5.3/apache2/conf.d/url_rewriter.ini,
+            /etc/php/5.3/apache2/conf.d/xcache.ini, /etc/php/5.3/apache2/conf.d/xmlreader.ini,
+            /etc/php/5.3/apache2/conf.d/xmlrpc.ini, /etc/php/5.3/apache2/conf.d/xmlwriter.ini,
+            /etc/php/5.3/apache2/conf.d/xsl.ini, /etc/php/5.3/apache2/conf.d/zip.ini
           </td>
         </tr>
         <tr>
@@ -187,7 +239,9 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Registered PHP Streams </td>
-          <td class="v">https, ftps, compress.zlib, php, file, glob, data, http, ftp, compress.bzip2, phar, rar, zip   </td>
+          <td class="v"
+            >https, ftps, compress.zlib, php, file, glob, data, http, ftp, compress.bzip2, phar, rar, zip
+          </td>
         </tr>
         <tr>
           <td class="e">Registered Stream Socket Transports </td>
@@ -195,14 +249,21 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Registered Stream Filters </td>
-          <td class="v">zlib.*, string.rot13, string.toupper, string.tolower, string.strip_tags, convert.*, consumed, dechunk, bzip2.*, convert.iconv.*, mcrypt.*, mdecrypt.* </td>
+          <td class="v"
+            >zlib.*, string.rot13, string.toupper, string.tolower, string.strip_tags, convert.*, consumed, dechunk,
+            bzip2.*, convert.iconv.*, mcrypt.*, mdecrypt.*
+          </td>
         </tr>
       </table>
       <br />
       <table border="0" cellpadding="3" width="600">
         <tr class="v">
           <td>
-            This program makes use of the Zend Scripting Language Engine:<br />Zend&nbsp;Engine&nbsp;v2.3.0,&nbsp;Copyright&nbsp;(c)&nbsp;1998-2014&nbsp;Zend&nbsp;Technologies<br />&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;XCache&nbsp;v3.2.0,&nbsp;Copyright&nbsp;(c)&nbsp;2005-2014,&nbsp;by&nbsp;mOo<br />&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;XCache&nbsp;Cacher&nbsp;v3.2.0,&nbsp;Copyright&nbsp;(c)&nbsp;2005-2014,&nbsp;by&nbsp;mOo<br />
+            This program makes use of the Zend Scripting Language Engine:<br
+            />Zend&nbsp;Engine&nbsp;v2.3.0,&nbsp;Copyright&nbsp;(c)&nbsp;1998-2014&nbsp;Zend&nbsp;Technologies<br
+            />&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;XCache&nbsp;v3.2.0,&nbsp;Copyright&nbsp;(c)&nbsp;2005-2014,&nbsp;by&nbsp;mOo<br
+            />&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;XCache&nbsp;Cacher&nbsp;v3.2.0,&nbsp;Copyright&nbsp;(c)&nbsp;2005-2014,&nbsp;by&nbsp;mOo<br
+            />
           </td>
         </tr>
       </table>
@@ -249,7 +310,21 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Loaded Modules </td>
-          <td class="v">core mod_so mod_watchdog http_core mod_log_config mod_logio mod_version mod_unixd prefork mod_rewrite mod_access_compat mod_actions mod_alias mod_allowmethods mod_auth_basic mod_auth_digest mod_auth_form mod_authn_anon mod_authn_core mod_authn_dbd mod_authn_dbm mod_authn_file mod_authn_socache mod_authz_core mod_authz_dbd mod_authz_dbm mod_authz_groupfile mod_authz_host mod_authz_owner mod_authz_user mod_autoindex mod_buffer mod_cache mod_cache_disk mod_cache_socache mod_dav mod_dav_fs mod_dbd mod_deflate mod_dir mod_dumpio mod_env mod_expires mod_ext_filter mod_fakessl mod_file_cache mod_filter mod_geoip mod_ignorepython mod_include mod_info mod_lbmethod_bybusyness mod_lbmethod_byrequests mod_lbmethod_bytraffic mod_lbmethod_heartbeat mod_log_debug mod_macro mod_mime mod_negotiation mod_php5 mod_proxy mod_proxy_ajp mod_proxy_balancer mod_proxy_connect mod_proxy_express mod_proxy_fcgi mod_proxy_ftp mod_proxy_http mod_proxy_scgi mod_proxy_wstunnel mod_ratelimit mod_remoteip mod_reqtimeout mod_request mod_rpaf mod_ruid mod_sed mod_session mod_session_cookie mod_session_dbd mod_setenvif mod_slotmem_shm mod_socache_dbm mod_socache_memcache mod_socache_shmcb mod_speling mod_status mod_substitute mod_unique_id mod_userdir mod_vhost_alias mod_vhost_cdb mod_vhost_rusage </td>
+          <td class="v"
+            >core mod_so mod_watchdog http_core mod_log_config mod_logio mod_version mod_unixd prefork mod_rewrite
+            mod_access_compat mod_actions mod_alias mod_allowmethods mod_auth_basic mod_auth_digest mod_auth_form
+            mod_authn_anon mod_authn_core mod_authn_dbd mod_authn_dbm mod_authn_file mod_authn_socache mod_authz_core
+            mod_authz_dbd mod_authz_dbm mod_authz_groupfile mod_authz_host mod_authz_owner mod_authz_user mod_autoindex
+            mod_buffer mod_cache mod_cache_disk mod_cache_socache mod_dav mod_dav_fs mod_dbd mod_deflate mod_dir
+            mod_dumpio mod_env mod_expires mod_ext_filter mod_fakessl mod_file_cache mod_filter mod_geoip
+            mod_ignorepython mod_include mod_info mod_lbmethod_bybusyness mod_lbmethod_byrequests mod_lbmethod_bytraffic
+            mod_lbmethod_heartbeat mod_log_debug mod_macro mod_mime mod_negotiation mod_php5 mod_proxy mod_proxy_ajp
+            mod_proxy_balancer mod_proxy_connect mod_proxy_express mod_proxy_fcgi mod_proxy_ftp mod_proxy_http
+            mod_proxy_scgi mod_proxy_wstunnel mod_ratelimit mod_remoteip mod_reqtimeout mod_request mod_rpaf mod_ruid
+            mod_sed mod_session mod_session_cookie mod_session_dbd mod_setenvif mod_slotmem_shm mod_socache_dbm
+            mod_socache_memcache mod_socache_shmcb mod_speling mod_status mod_substitute mod_unique_id mod_userdir
+            mod_vhost_alias mod_vhost_cdb mod_vhost_rusage
+          </td>
         </tr>
       </table>
       <br />
@@ -336,7 +411,10 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">HTTP_SEC_CH_UA </td>
-          <td class="v">&quot;Google Chrome&quot;;v=&quot;143&quot;, &quot;Chromium&quot;;v=&quot;143&quot;, &quot;Not A(Brand&quot;;v=&quot;24&quot; </td>
+          <td class="v"
+            >&quot;Google Chrome&quot;;v=&quot;143&quot;, &quot;Chromium&quot;;v=&quot;143&quot;, &quot;Not
+            A(Brand&quot;;v=&quot;24&quot;
+          </td>
         </tr>
         <tr>
           <td class="e">HTTP_SEC_CH_UA_MOBILE </td>
@@ -356,11 +434,16 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">HTTP_USER_AGENT </td>
-          <td class="v">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 </td>
+          <td class="v"
+            >Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0
+            Safari/537.36
+          </td>
         </tr>
         <tr>
           <td class="e">HTTP_ACCEPT </td>
-          <td class="v">text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7 </td>
+          <td class="v"
+            >text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+          </td>
         </tr>
         <tr>
           <td class="e">HTTP_SEC_FETCH_SITE </td>
@@ -543,7 +626,10 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">sec-ch-ua </td>
-          <td class="v">&quot;Google Chrome&quot;;v=&quot;143&quot;, &quot;Chromium&quot;;v=&quot;143&quot;, &quot;Not A(Brand&quot;;v=&quot;24&quot; </td>
+          <td class="v"
+            >&quot;Google Chrome&quot;;v=&quot;143&quot;, &quot;Chromium&quot;;v=&quot;143&quot;, &quot;Not
+            A(Brand&quot;;v=&quot;24&quot;
+          </td>
         </tr>
         <tr>
           <td class="e">sec-ch-ua-mobile </td>
@@ -563,11 +649,16 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">user-agent </td>
-          <td class="v">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 </td>
+          <td class="v"
+            >Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0
+            Safari/537.36
+          </td>
         </tr>
         <tr>
           <td class="e">accept </td>
-          <td class="v">text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7 </td>
+          <td class="v"
+            >text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+          </td>
         </tr>
         <tr>
           <td class="e">sec-fetch-site </td>
@@ -991,7 +1082,9 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">open_basedir</td>
-          <td class="v">/nfsmnt/:/data/:/usr/local/sbin:/etc/:/usr/sbin:/usr/share/php:/usr/bin/:/apachetmp:/tmp/:/var/tmp/:/dev/urandom:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/:/usr/local/bin/:/etc/ssl/certs/ca-certificates.crt:/usr/lib/php:/usr/php53/bin/</td>
+          <td class="v"
+            >/nfsmnt/:/data/:/usr/local/sbin:/etc/:/usr/sbin:/usr/share/php:/usr/bin/:/apachetmp:/tmp/:/var/tmp/:/dev/urandom:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/:/usr/local/bin/:/etc/ssl/certs/ca-certificates.crt:/usr/lib/php:/usr/php53/bin/</td
+          >
           <td class="v"><i>no value</i></td>
         </tr>
         <tr>
@@ -1250,7 +1343,10 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Protocols </td>
-          <td class="v">dict, file, ftp, ftps, gopher, gophers, http, https, imap, imaps, ldap, ldaps, mqtt, pop3, pop3s, rtmp, rtsp, scp, sftp, smb, smbs, smtp, smtps, telnet, tftp </td>
+          <td class="v"
+            >dict, file, ftp, ftps, gopher, gophers, http, https, imap, imaps, ldap, ldaps, mqtt, pop3, pop3s, rtmp,
+            rtsp, scp, sftp, smb, smbs, smtp, smtps, telnet, tftp
+          </td>
         </tr>
         <tr>
           <td class="e">Host </td>
@@ -1651,7 +1747,12 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Hashing Engines </td>
-          <td class="v">md2 md4 md5 sha1 sha224 sha256 sha384 sha512 ripemd128 ripemd160 ripemd256 ripemd320 whirlpool tiger128,3 tiger160,3 tiger192,3 tiger128,4 tiger160,4 tiger192,4 snefru snefru256 gost adler32 crc32 crc32b salsa10 salsa20 haval128,3 haval160,3 haval192,3 haval224,3 haval256,3 haval128,4 haval160,4 haval192,4 haval224,4 haval256,4 haval128,5 haval160,5 haval192,5 haval224,5 haval256,5  </td>
+          <td class="v"
+            >md2 md4 md5 sha1 sha224 sha256 sha384 sha512 ripemd128 ripemd160 ripemd256 ripemd320 whirlpool tiger128,3
+            tiger160,3 tiger192,3 tiger128,4 tiger160,4 tiger192,4 snefru snefru256 gost adler32 crc32 crc32b salsa10
+            salsa20 haval128,3 haval160,3 haval192,3 haval224,3 haval256,3 haval128,4 haval160,4 haval192,4 haval224,4
+            haval256,4 haval128,5 haval160,5 haval192,5 haval224,5 haval256,5
+          </td>
         </tr>
       </table>
       <br />
@@ -1725,12 +1826,27 @@ const unixSeconds = Math.floor(Date.now() / 1000);
           <td class="v">2021-01-25 </td>
         </tr>
         <tr>
-          <td class="e">ImageMagick number of supported formats:  </td>
+          <td class="e">ImageMagick number of supported formats: </td>
           <td class="v">247 </td>
         </tr>
         <tr>
           <td class="e">ImageMagick supported formats </td>
-          <td class="v">3FR, 3G2, 3GP, AAI, AI, APNG, ART, ARW, AVI, AVIF, AVS, BGR, BGRA, BGRO, BIE, BMP, BMP2, BMP3, BRF, CAL, CALS, CANVAS, CAPTION, CIN, CIP, CLIP, CMYK, CMYKA, CR2, CR3, CRW, CUR, CUT, DATA, DCM, DCR, DCX, DDS, DFONT, DJVU, DNG, DOT, DPX, DXT1, DXT5, EPDF, EPI, EPS, EPS2, EPS3, EPSF, EPSI, EPT, EPT2, EPT3, ERF, EXR, FAX, FILE, FITS, FRACTAL, FTP, FTS, G3, G4, GIF, GIF87, GRADIENT, GRAY, GRAYA, GROUP4, GV, H, HALD, HDR, HEIC, HISTOGRAM, HRZ, HTM, HTML, HTTP, HTTPS, ICB, ICO, ICON, IIQ, INFO, INLINE, IPL, ISOBRL, ISOBRL6, J2C, J2K, JBG, JBIG, JNG, JNX, JP2, JPC, JPE, JPEG, JPG, JPM, JPS, JPT, JSON, K25, KDC, LABEL, M2V, M4V, MAC, MAGICK, MAP, MASK, MAT, MATTE, MEF, MIFF, MKV, MNG, MONO, MOV, MP4, MPC, MPG, MRW, MSL, MSVG, MTV, MVG, NEF, NRW, NULL, ORF, OTB, OTF, PAL, PALM, PAM, PANGO, PATTERN, PBM, PCD, PCDS, PCL, PCT, PCX, PDB, PDF, PDFA, PEF, PES, PFA, PFB, PFM, PGM, PGX, PICON, PICT, PIX, PJPEG, PLASMA, PNG, PNG00, PNG24, PNG32, PNG48, PNG64, PNG8, PNM, POCKETMOD, PPM, PREVIEW, PS, PS2, PS3, PSB, PSD, PTIF, PWP, RADIAL-GRADIENT, RAF, RAS, RAW, RGB, RGBA, RGBO, RGF, RLA, RLE, RMF, RW2, SCR, SCT, SFW, SGI, SHTML, SIX, SIXEL, SPARSE-COLOR, SR2, SRF, STEGANO, SUN, SVG, SVGZ, TEXT, TGA, THUMBNAIL, TIFF, TIFF64, TILE, TIM, TTC, TTF, TXT, UBRL, UBRL6, UIL, UYVY, VDA, VICAR, VID, VIDEO, VIFF, VIPS, VST, WBMP, WEBM, WEBP, WMF, WMV, WMZ, WPG, X, X3F, XBM, XC, XCF, XPM, XPS, XV, XWD, YCbCr, YCbCrA, YUV </td>
+          <td class="v"
+            >3FR, 3G2, 3GP, AAI, AI, APNG, ART, ARW, AVI, AVIF, AVS, BGR, BGRA, BGRO, BIE, BMP, BMP2, BMP3, BRF, CAL,
+            CALS, CANVAS, CAPTION, CIN, CIP, CLIP, CMYK, CMYKA, CR2, CR3, CRW, CUR, CUT, DATA, DCM, DCR, DCX, DDS,
+            DFONT, DJVU, DNG, DOT, DPX, DXT1, DXT5, EPDF, EPI, EPS, EPS2, EPS3, EPSF, EPSI, EPT, EPT2, EPT3, ERF, EXR,
+            FAX, FILE, FITS, FRACTAL, FTP, FTS, G3, G4, GIF, GIF87, GRADIENT, GRAY, GRAYA, GROUP4, GV, H, HALD, HDR,
+            HEIC, HISTOGRAM, HRZ, HTM, HTML, HTTP, HTTPS, ICB, ICO, ICON, IIQ, INFO, INLINE, IPL, ISOBRL, ISOBRL6, J2C,
+            J2K, JBG, JBIG, JNG, JNX, JP2, JPC, JPE, JPEG, JPG, JPM, JPS, JPT, JSON, K25, KDC, LABEL, M2V, M4V, MAC,
+            MAGICK, MAP, MASK, MAT, MATTE, MEF, MIFF, MKV, MNG, MONO, MOV, MP4, MPC, MPG, MRW, MSL, MSVG, MTV, MVG, NEF,
+            NRW, NULL, ORF, OTB, OTF, PAL, PALM, PAM, PANGO, PATTERN, PBM, PCD, PCDS, PCL, PCT, PCX, PDB, PDF, PDFA,
+            PEF, PES, PFA, PFB, PFM, PGM, PGX, PICON, PICT, PIX, PJPEG, PLASMA, PNG, PNG00, PNG24, PNG32, PNG48, PNG64,
+            PNG8, PNM, POCKETMOD, PPM, PREVIEW, PS, PS2, PS3, PSB, PSD, PTIF, PWP, RADIAL-GRADIENT, RAF, RAS, RAW, RGB,
+            RGBA, RGBO, RGF, RLA, RLE, RMF, RW2, SCR, SCT, SFW, SGI, SHTML, SIX, SIXEL, SPARSE-COLOR, SR2, SRF, STEGANO,
+            SUN, SVG, SVGZ, TEXT, TGA, THUMBNAIL, TIFF, TIFF64, TILE, TIM, TTC, TTF, TXT, UBRL, UBRL6, UIL, UYVY, VDA,
+            VICAR, VID, VIDEO, VIFF, VIPS, VST, WBMP, WEBM, WEBP, WMF, WMV, WMZ, WPG, X, X3F, XBM, XC, XCF, XPM, XPS,
+            XV, XWD, YCbCr, YCbCrA, YUV
+          </td>
         </tr>
       </table>
       <br />
@@ -2000,7 +2116,10 @@ const unixSeconds = Math.floor(Date.now() / 1000);
       <br />
       <table border="0" cellpadding="3" width="600">
         <tr class="h">
-          <th>mbstring extension makes use of "streamable kanji code filter and converter", which is distributed under the GNU Lesser General Public License version 2.1.</th>
+          <th
+            >mbstring extension makes use of "streamable kanji code filter and converter", which is distributed under
+            the GNU Lesser General Public License version 2.1.</th
+          >
         </tr>
       </table>
       <br />
@@ -2097,11 +2216,14 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Supported ciphers </td>
-          <td class="v">cast-128 gost rijndael-128 twofish arcfour cast-256 loki97 rijndael-192 saferplus wake blowfish-compat des rijndael-256 serpent xtea blowfish enigma rc2 tripledes  </td>
+          <td class="v"
+            >cast-128 gost rijndael-128 twofish arcfour cast-256 loki97 rijndael-192 saferplus wake blowfish-compat des
+            rijndael-256 serpent xtea blowfish enigma rc2 tripledes
+          </td>
         </tr>
         <tr>
           <td class="e">Supported modes </td>
-          <td class="v">cbc cfb ctr ecb ncfb nofb ofb stream  </td>
+          <td class="v">cbc cfb ctr ecb ncfb nofb ofb stream </td>
         </tr>
       </table>
       <br />
@@ -2242,8 +2364,12 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">memcache.session_save_path</td>
-          <td class="v">tcp://10.20.5.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.6.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.7.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1</td>
-          <td class="v">tcp://10.20.5.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.6.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.7.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1</td>
+          <td class="v"
+            >tcp://10.20.5.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.6.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.7.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1</td
+          >
+          <td class="v"
+            >tcp://10.20.5.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.6.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1,tcp://10.20.7.1:11211?persistent=0&amp;weight=1&amp;timeout=0.1&amp;retry_interval=-1</td
+          >
         </tr>
       </table>
       <br />
@@ -3469,7 +3595,7 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Revision </td>
-          <td class="v"> $Id$  </td>
+          <td class="v"> $Id$ </td>
         </tr>
       </table>
       <br />
@@ -3598,7 +3724,8 @@ const unixSeconds = Math.floor(Date.now() / 1000);
       <table border="0" cellpadding="3" width="600">
         <tr class="v">
           <td>
-            Phar based on pear/PHP_Archive, original concept by Davey Shafik.<br />Phar fully realized by Gregory Beaver and Marcus Boerger.<br />Portions of tar implementation Copyright (c) 2003-2009 Tim Kientzle.
+            Phar based on pear/PHP_Archive, original concept by Davey Shafik.<br />Phar fully realized by Gregory Beaver
+            and Marcus Boerger.<br />Portions of tar implementation Copyright (c) 2003-2009 Tim Kientzle.
           </td>
         </tr>
       </table>
@@ -3695,8 +3822,12 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">realpath_turbo.open_basedir</td>
-          <td class="v">/nfsmnt/:/data/:/usr/local/sbin:/etc/:/usr/sbin:/usr/share/php:/usr/bin/:/apachetmp:/tmp/:/var/tmp/:/dev/urandom:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/:/usr/local/bin/:/etc/ssl/certs/ca-certificates.crt:/usr/lib/php:/usr/php53/bin/</td>
-          <td class="v">/nfsmnt/:/data/:/usr/local/sbin:/etc/:/usr/sbin:/usr/share/php:/usr/bin/:/apachetmp:/tmp/:/var/tmp/:/dev/urandom:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/:/usr/local/bin/:/etc/ssl/certs/ca-certificates.crt:/usr/lib/php:/usr/php53/bin/</td>
+          <td class="v"
+            >/nfsmnt/:/data/:/usr/local/sbin:/etc/:/usr/sbin:/usr/share/php:/usr/bin/:/apachetmp:/tmp/:/var/tmp/:/dev/urandom:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/:/usr/local/bin/:/etc/ssl/certs/ca-certificates.crt:/usr/lib/php:/usr/php53/bin/</td
+          >
+          <td class="v"
+            >/nfsmnt/:/data/:/usr/local/sbin:/etc/:/usr/sbin:/usr/share/php:/usr/bin/:/apachetmp:/tmp/:/var/tmp/:/dev/urandom:/usr/lib/x86_64-linux-gnu/ImageMagick-6.9.11/bin-q16/:/usr/local/bin/:/etc/ssl/certs/ca-certificates.crt:/usr/lib/php:/usr/php53/bin/</td
+          >
         </tr>
       </table>
       <br />
@@ -3720,11 +3851,11 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Registered save handlers </td>
-          <td class="v">files user memcache  </td>
+          <td class="v">files user memcache </td>
         </tr>
         <tr>
           <td class="e">Registered serializer handlers </td>
-          <td class="v">php php_binary  </td>
+          <td class="v">php php_binary </td>
         </tr>
       </table>
       <br />
@@ -3942,7 +4073,17 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Classes </td>
-          <td class="v">AppendIterator, ArrayIterator, ArrayObject, BadFunctionCallException, BadMethodCallException, CachingIterator, DirectoryIterator, DomainException, EmptyIterator, FilesystemIterator, FilterIterator, GlobIterator, InfiniteIterator, InvalidArgumentException, IteratorIterator, LengthException, LimitIterator, LogicException, MultipleIterator, NoRewindIterator, OutOfBoundsException, OutOfRangeException, OverflowException, ParentIterator, RangeException, RecursiveArrayIterator, RecursiveCachingIterator, RecursiveDirectoryIterator, RecursiveFilterIterator, RecursiveIteratorIterator, RecursiveRegexIterator, RecursiveTreeIterator, RegexIterator, RuntimeException, SplDoublyLinkedList, SplFileInfo, SplFileObject, SplFixedArray, SplHeap, SplMinHeap, SplMaxHeap, SplObjectStorage, SplPriorityQueue, SplQueue, SplStack, SplTempFileObject, UnderflowException, UnexpectedValueException </td>
+          <td class="v"
+            >AppendIterator, ArrayIterator, ArrayObject, BadFunctionCallException, BadMethodCallException,
+            CachingIterator, DirectoryIterator, DomainException, EmptyIterator, FilesystemIterator, FilterIterator,
+            GlobIterator, InfiniteIterator, InvalidArgumentException, IteratorIterator, LengthException, LimitIterator,
+            LogicException, MultipleIterator, NoRewindIterator, OutOfBoundsException, OutOfRangeException,
+            OverflowException, ParentIterator, RangeException, RecursiveArrayIterator, RecursiveCachingIterator,
+            RecursiveDirectoryIterator, RecursiveFilterIterator, RecursiveIteratorIterator, RecursiveRegexIterator,
+            RecursiveTreeIterator, RegexIterator, RuntimeException, SplDoublyLinkedList, SplFileInfo, SplFileObject,
+            SplFixedArray, SplHeap, SplMinHeap, SplMaxHeap, SplObjectStorage, SplPriorityQueue, SplQueue, SplStack,
+            SplTempFileObject, UnderflowException, UnexpectedValueException
+          </td>
         </tr>
       </table>
       <br />
@@ -4161,7 +4302,7 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">Page Request Time </td>
-          <td class="v">{(new Date()).toISOString()} </td>
+          <td class="v">{new Date().toISOString()} </td>
         </tr>
         <tr>
           <td class="e">Cache Init Time </td>
@@ -4472,7 +4613,9 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">GDFONTPATH </td>
-          <td class="v">.:/usr/X11R6/lib/X11/fonts/TrueType:/usr/X11R6/lib/X11/fonts/truetype:/usr/X11R6/lib/X11/fonts/TTF:/usr/share/fonts/TrueType:/usr/share/fonts/truetype:/usr/openwin/lib/X11/fonts/TrueType:/usr/X11R6/lib/X11/fonts/Type1:/usr/lib/X11/fonts/Type1:/usr/openwin/lib/X11/fonts/Type1 </td>
+          <td class="v"
+            >.:/usr/X11R6/lib/X11/fonts/TrueType:/usr/X11R6/lib/X11/fonts/truetype:/usr/X11R6/lib/X11/fonts/TTF:/usr/share/fonts/TrueType:/usr/share/fonts/truetype:/usr/openwin/lib/X11/fonts/TrueType:/usr/X11R6/lib/X11/fonts/Type1:/usr/lib/X11/fonts/Type1:/usr/openwin/lib/X11/fonts/Type1
+          </td>
         </tr>
         <tr>
           <td class="e">JOURNAL_STREAM </td>
@@ -4564,7 +4707,10 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">_SERVER["HTTP_SEC_CH_UA"]</td>
-          <td class="v">&quot;Google Chrome&quot;;v=&quot;143&quot;, &quot;Chromium&quot;;v=&quot;143&quot;, &quot;Not A(Brand&quot;;v=&quot;24&quot;</td>
+          <td class="v"
+            >&quot;Google Chrome&quot;;v=&quot;143&quot;, &quot;Chromium&quot;;v=&quot;143&quot;, &quot;Not
+            A(Brand&quot;;v=&quot;24&quot;</td
+          >
         </tr>
         <tr>
           <td class="e">_SERVER["HTTP_SEC_CH_UA_MOBILE"]</td>
@@ -4584,11 +4730,16 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         </tr>
         <tr>
           <td class="e">_SERVER["HTTP_USER_AGENT"]</td>
-          <td class="v">Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36</td>
+          <td class="v"
+            >Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0
+            Safari/537.36</td
+          >
         </tr>
         <tr>
           <td class="e">_SERVER["HTTP_ACCEPT"]</td>
-          <td class="v">text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7</td>
+          <td class="v"
+            >text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7</td
+          >
         </tr>
         <tr>
           <td class="e">_SERVER["HTTP_SEC_FETCH_SITE"]</td>
@@ -4754,10 +4905,17 @@ const unixSeconds = Math.floor(Date.now() / 1000);
         <tr class="v">
           <td>
             <p>
-              This program is free software; you can redistribute it and/or modify it under the terms of the PHP License as published by the PHP Group and included in the distribution in the file:  LICENSE
+              This program is free software; you can redistribute it and/or modify it under the terms of the PHP License
+              as published by the PHP Group and included in the distribution in the file: LICENSE
             </p>
-            <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.</p>
-            <p>If you did not receive a copy of the PHP license, or have any questions about PHP licensing, please contact license@php.net.</p>
+            <p>
+              This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+              implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+            </p>
+            <p>
+              If you did not receive a copy of the PHP license, or have any questions about PHP licensing, please
+              contact license@php.net.
+            </p>
           </td>
         </tr>
       </table>

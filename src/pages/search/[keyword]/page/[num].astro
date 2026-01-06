@@ -17,12 +17,17 @@ if (pageNum <= 1) {
 
 const title = `【${query}】搜索结果`
 
-const { hits, page, totalPages } = await searchPosts(query, config.settings.pagination.search, (pageNum - 1) * config.settings.pagination.search)
+const { hits, page, totalPages } = await searchPosts(
+  query,
+  config.settings.pagination.search,
+  (pageNum - 1) * config.settings.pagination.search,
+)
 if (hits.length === 0 && pageNum > 1) {
   return Astro.redirect('/', 302)
 }
-const posts = hits.map(slug => getPosts({ hidden: true, schedule: false }).find(post => post.slug === slug))
-  .filter(post => post !== undefined)
+const posts = hits
+  .map((slug) => getPosts({ hidden: true, schedule: false }).find((post) => post.slug === slug))
+  .filter((post) => post !== undefined)
 ---
 
 <SearchLayout {title} {query} {page} {totalPages} {posts} />

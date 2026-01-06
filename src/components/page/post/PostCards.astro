@@ -24,7 +24,7 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, vi
 <div class="content-wrapper col-12 col-xl-9">
   <div class="list-grid">
     {
-      resolvedPosts.map(post => (
+      resolvedPosts.map((post) => (
         <div class="list-item block">
           <div class="media media-3x2 col-6 col-md-5">
             <a href={post.permalink} class="media-content">
@@ -55,15 +55,15 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, vi
               <div class="d-flex flex-fill align-items-center text-muted text-sm">
                 <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
                 <div class="list-like d-inline-block">
-                  <i class="text-md iconfont icon-eye"></i>
+                  <i class="text-md iconfont icon-eye" />
                   <span class="like-count">{post.meta.views}</span>
                 </div>
                 <div class="list-like d-inline-block">
-                  <i class="text-md iconfont icon-heart-fill"></i>
+                  <i class="text-md iconfont icon-heart-fill" />
                   <span class="like-count">{post.meta.likes}</span>
                 </div>
                 <div class="list-like d-inline-block">
-                  <i class="text-md iconfont icon-comment"></i>
+                  <i class="text-md iconfont icon-comment" />
                   <span class="like-count">{post.meta.comments}</span>
                 </div>
               </div>

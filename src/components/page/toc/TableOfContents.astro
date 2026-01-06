@@ -12,11 +12,11 @@ interface Props {
 
 const { headings, toc } = Astro.props
 const generateTocConfig = toc
-? {
-  maxHeadingLevel: config.settings.toc.maxHeadingLevel,
-  minHeadingLevel: config.settings.toc.minHeadingLevel,
- } satisfies TocOpts
-: false
+  ? ({
+      maxHeadingLevel: config.settings.toc.maxHeadingLevel,
+      minHeadingLevel: config.settings.toc.minHeadingLevel,
+    } satisfies TocOpts)
+  : false
 const items = generateToC(headings, generateTocConfig)
 ---
 
