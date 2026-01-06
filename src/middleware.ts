@@ -92,7 +92,8 @@ const apacheHoneypot = defineMiddleware(async (_, next) => {
   headers.set('Accept-Ranges', 'bytes')
 
   return new Response(response.body, {
-    ...response,
+    status: response.status,
+    statusText: response.statusText,
     headers,
   })
 })
