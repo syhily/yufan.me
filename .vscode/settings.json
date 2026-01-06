@@ -251,9 +251,6 @@
     "zindex",
     "zishu"
   ],
-  "[mdx]": {
-    "editor.defaultFormatter": "unifiedjs.vscode-mdx"
-  },
   "typescript.tsdk": "node_modules/typescript/lib",
   "prettier.enable": false,
   "editor.formatOnSave": false,
@@ -297,5 +294,22 @@
     "pcss",
     "postcss"
   ],
-  "typescript.experimental.useTsgo": false
+  "typescript.experimental.useTsgo": true,
+  "[markdown]": {
+    "editor.fontSize": 14,
+    "editor.lineHeight": 26,
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 64,
+    "editor.lineNumbers": "off",
+    "editor.quickSuggestions": false,
+    "editor.minimap.enabled": false
+  },
+  "[mdx]": {
+    "editor.fontSize": 14,
+    "editor.lineHeight": 26,
+    "editor.wordWrap": "wordWrapColumn",
+    "editor.wordWrapColumn": 160,
+    "editor.lineNumbers": "off",
+    "editor.minimap.enabled": false
+  }
 }

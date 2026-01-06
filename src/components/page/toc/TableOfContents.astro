@@ -1,16 +1,23 @@
 ---
 import type { MarkdownHeading } from 'astro'
 import type { TocOpts } from '@/helpers/content/toc'
+import config from '@/blog.config'
 import TocItems from '@/components/page/toc/TocItems.astro'
 import { generateToC } from '@/helpers/content/toc'
 
 interface Props {
   headings: MarkdownHeading[]
-  toc: TocOpts | false
+  toc: boolean
 }
 
 const { headings, toc } = Astro.props
-const items = generateToC(headings, toc)
+const generateTocConfig = toc
+? {
+  maxHeadingLevel: config.settings.toc.maxHeadingLevel,
+  minHeadingLevel: config.settings.toc.minHeadingLevel,
+ } satisfies TocOpts
+: false
+const items = generateToC(headings, generateTocConfig)
 ---
 
 {

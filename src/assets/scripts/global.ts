@@ -78,7 +78,6 @@ function createPopupTemplate(title: string, name: string, qrcode: string) {
     <div class="nice-popup-body">
       <div class="nice-popup-close">
         <span class="svg-white"></span>
-        <span class="svg-dark"></span>
       </div>
       <div class="nice-popup-content">
         <div class="text-center">

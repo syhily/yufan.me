@@ -1,6 +1,5 @@
 import { file, glob } from 'astro/loaders'
 import { defineCollection, z } from 'astro:content'
-import config from '@/blog.config'
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
@@ -11,31 +10,6 @@ function slug() {
     .min(3)
     .max(200)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug')
-}
-
-// The default toc heading level.
-function toc() {
-  return z
-    .union([
-      z.object({
-        // The level to start including headings at in the table of contents. Default: 2.
-        minHeadingLevel: z.number().int().min(1).max(6).optional().default(config.settings.toc.minHeadingLevel),
-        // The level to stop including headings at in the table of contents. Default: 3.
-        maxHeadingLevel: z.number().int().min(1).max(6).optional().default(config.settings.toc.maxHeadingLevel),
-      }),
-      z.boolean().transform(enabled =>
-        enabled
-          ? {
-              minHeadingLevel: config.settings.toc.minHeadingLevel,
-              maxHeadingLevel: config.settings.toc.maxHeadingLevel,
-            }
-          : false,
-      ),
-    ])
-    .default(false)
-    .refine(toc => (toc ? toc.minHeadingLevel <= toc.maxHeadingLevel : true), {
-      message: 'minHeadingLevel must be less than or equal to maxHeadingLevel',
-    })
 }
 
 // Categories Collection
@@ -85,7 +59,7 @@ const postsCollection = defineCollection({
     og: z.string().optional(),
     published: z.boolean().optional().default(true),
     visible: z.boolean().optional().default(true),
-    toc: toc(),
+    toc: z.boolean().optional().default(false),
   }),
 })
 
@@ -101,7 +75,7 @@ const pagesCollection = defineCollection({
     og: z.string().optional(),
     published: z.boolean().optional().default(true),
     summary: z.string().optional(),
-    toc: toc(),
+    toc: z.boolean().optional().default(false),
   }),
 })
 

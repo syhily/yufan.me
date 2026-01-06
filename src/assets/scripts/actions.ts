@@ -4,7 +4,7 @@ function errorDialog(errorMsg: string): string {
   return `<div class="nice-popup nice-popup-center sticky-top error nice-popup-error nice-popup-open">
   <div class="nice-popup-overlay"></div>
   <div class="nice-popup-body">
-    <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+    <div class="nice-popup-close"><span class="svg-dark"></span></div>
     <div class="nice-popup-content">
       <div class="icon"></div>
       <div class="text-center">
