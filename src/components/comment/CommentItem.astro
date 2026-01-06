@@ -2,7 +2,6 @@
 import type { AstroSession } from 'astro'
 import type { CommentItem } from '@/helpers/comment/types'
 import { joinPaths } from '@astrojs/internal-helpers/path'
-import config from '@/blog.config'
 import AdminBlock from '@/components/partial/AdminBlock.astro'
 import { formatLocalDate } from '@/helpers/content/formatter'
 
@@ -51,8 +50,8 @@ const { comment, depth, pending, session } = Astro.props
           )
         }
         {
-          config.author.email === comment.email && (
-            <div class="badge badge-primary badge-pill fw-bold text-wrap">站长</div>
+          comment.badgeName && (
+            <div class="badge badge-pill fw-bold text-wrap" style={{ backgroundColor: comment.badgeColor || '#008c95' }}>{comment.badgeName}</div>
           )
         }
       </div>

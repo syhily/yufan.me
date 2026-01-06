@@ -84,14 +84,14 @@ function renderComments(comments: Comment[]): void {
                     <div class="d-flex align-items-center gap-2 mb-1">
                       <strong>${escapeHtml(comment.name)}</strong>
                       ${comment.link ? `<a href="${escapeHtml(comment.link)}" target="_blank" rel="nofollow" class="text-muted small"><i class="iconfont icon-link"></i></a>` : ''}
-                      ${comment.badgeName ? `<span class="badge" style="background-color: ${comment.badgeColor || '#008c95'}">${escapeHtml(comment.badgeName)}</span>` : ''}
+                      ${comment.badgeName ? `<span class="badge badge-pill fw-bold text-wrap" style="background-color: ${comment.badgeColor || '#008c95'}">${escapeHtml(comment.badgeName)}</span>` : ''}
                       ${statusBadge}
                     </div>
                     <div class="text-muted small">
                       <span>${escapeHtml(comment.email)}</span>
                       <span class="ms-2">${formatDate(comment.createAt)}</span>
-                      ${comment.pageTitle ? `<span class="ms-2">来自: ${escapeHtml(comment.pageTitle)}</span>` : ''}
                     </div>
+                    ${comment.pageTitle ? `<div class="text-muted small"><span class="mt-2">来自: ${escapeHtml(comment.pageTitle)}</span></div>` : ''}
                   </div>
                   <div class="d-flex flex-wrap gap-2">
                     <button class="btn btn-sm btn-primary edit-comment-btn" data-comment-id="${comment.id}">
