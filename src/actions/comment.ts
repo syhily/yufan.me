@@ -7,7 +7,7 @@ import CommentItem from '@/components/comment/CommentItem.astro'
 import { requireAdmin } from '@/helpers/auth/session'
 import { queryUserId } from '@/helpers/auth/user'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/helpers/comment/likes'
-import { approveComment, createComment, deleteComment, getCommentById, loadComments, updateComment } from '@/helpers/comment/loader'
+import { approveComment, createComment, deleteComment, getCommentById, loadAllComments, loadComments, updateComment } from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/content/render'
 import { getPosts, pages } from '@/helpers/content/schema'
 import { ErrorMessages } from '@/helpers/errors'
@@ -167,6 +167,18 @@ export const comment = {
       })
 
       return { content: html }
+    },
+  }),
+  // Load all comments with pagination (admin only)
+  loadAll: defineAction({
+    accept: 'json',
+    input: z.object({
+      offset: z.number().min(0),
+      limit: z.number().min(1).max(100),
+    }),
+    handler: async ({ offset, limit }, { session }) => {
+      await requireAdmin(session)
+      return await loadAllComments(offset, limit)
     },
   }),
 }

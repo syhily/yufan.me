@@ -1,9 +1,12 @@
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
+import { eq } from 'drizzle-orm'
 import { validateToken } from '@/helpers/auth/csrf'
-import { login } from '@/helpers/auth/session'
+import { login, requireAdmin } from '@/helpers/auth/session'
 import { createAdmin, createUserWithPassword, hasAdmin } from '@/helpers/auth/user'
 import { exceedLimit, incrLimit } from '@/helpers/cache'
+import * as pool from '@/helpers/db/pool'
+import { user } from '@/helpers/db/schema'
 import { ErrorMessages } from '@/helpers/errors'
 
 function loginLog({ email, clientAddress, request, success }: { email: string, clientAddress: string, request: Request, success: boolean }): void {
@@ -149,6 +152,54 @@ export const auth = {
           message: ErrorMessages.INVALID_CREDENTIALS,
         })
       }
+    },
+  }),
+  // Update user information (admin only)
+  updateUser: defineAction({
+    accept: 'json',
+    input: z.object({
+      userId: z.string(),
+      name: z.string().min(1).optional(),
+      email: z.string().email().optional(),
+      link: z.string().optional(),
+      badgeName: z.string().optional(),
+      badgeColor: z.string().optional(),
+    }),
+    handler: async ({ userId, name, email, link, badgeName, badgeColor }, { session }) => {
+      await requireAdmin(session)
+      const updateData: Partial<typeof user.$inferInsert> = {}
+      if (name !== undefined)
+        updateData.name = name
+      if (email !== undefined)
+        updateData.email = email
+      if (link !== undefined)
+        updateData.link = link
+      if (badgeName !== undefined)
+        updateData.badgeName = badgeName
+      if (badgeColor !== undefined)
+        updateData.badgeColor = badgeColor
+
+      if (Object.keys(updateData).length === 0) {
+        throw new ActionError({
+          code: 'BAD_REQUEST',
+          message: '至少需要提供一个更新字段',
+        })
+      }
+
+      const updated = await pool.db
+        .update(user)
+        .set(updateData)
+        .where(eq(user.id, BigInt(userId)))
+        .returning()
+
+      if (updated.length === 0) {
+        throw new ActionError({
+          code: 'NOT_FOUND',
+          message: '用户不存在',
+        })
+      }
+
+      return { success: true, user: updated[0] }
     },
   }),
 }

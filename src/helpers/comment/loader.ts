@@ -1,7 +1,7 @@
 import type { AstroSession } from 'astro'
 import type { CommentAndUser, CommentItem, CommentReq, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
 import type { NewComment, NewPage, Page } from '@/helpers/db/types'
-import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import _ from 'lodash'
 import config from '@/blog.config'
 import { isAdmin, userSession } from '@/helpers/auth/session'
@@ -346,6 +346,43 @@ export async function updateComment(rid: string, newContent: string) {
   r[0].content = await parseContent(r[0].content || '该留言内容为空')
 
   return r[0]
+}
+
+// Load all comments with pagination for admin
+export interface AdminComment extends CommentAndUser {
+  pageTitle: string | null
+}
+
+export interface AdminCommentsResult {
+  comments: AdminComment[]
+  total: number
+  hasMore: boolean
+}
+
+export async function loadAllComments(offset: number, limit: number): Promise<AdminCommentsResult> {
+  const total = (await pool.db.select({ counts: count() }).from(comment).where(isNull(comment.deletedAt)))[0].counts
+
+  const comments = await pool.db
+    .select({
+      ...unionCommentSelect,
+      pageTitle: page.title,
+    })
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .leftJoin(page, eq(comment.pageKey, page.key))
+    .where(isNull(comment.deletedAt))
+    .orderBy(desc(comment.createdAt))
+    .limit(limit)
+    .offset(offset)
+
+  return {
+    comments: comments.map(c => ({
+      ...c,
+      pageTitle: c.pageTitle,
+    })),
+    total,
+    hasMore: offset + limit < total,
+  }
 }
 
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {

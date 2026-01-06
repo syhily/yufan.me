@@ -1,11 +1,688 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Navigator</title>
-</head>
-<body>
-  <h2>It Works!</h2>
-</body>
-</html>
+---
+import { requireAdmin, userSession } from '@/helpers/auth/session'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+if (Astro.session === undefined) {
+  throw new Error('Please configure your astro session store')
+}
+
+const session = Astro.session
+await requireAdmin(session, '需要管理员权限才能访问此页面')
+const currentUser = await userSession(session)
+---
+
+<BaseLayout title="评论管理" footer={false}>
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1 class="h3 mb-0">评论管理</h1>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" id="refresh-btn">
+              <i class="iconfont icon-refresh"></i> 刷新
+            </button>
+          </div>
+        </div>
+
+        <!-- 筛选和搜索 -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">筛选状态</label>
+                <select class="form-select" id="filter-status">
+                  <option value="all">全部</option>
+                  <option value="pending">待审核</option>
+                  <option value="approved">已审核</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">每页显示</label>
+                <select class="form-select" id="page-size">
+                  <option value="10">10 条</option>
+                  <option value="20" selected>20 条</option>
+                  <option value="50">50 条</option>
+                  <option value="100">100 条</option>
+                </select>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-primary w-100" id="apply-filter">
+                  应用筛选
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 评论列表 -->
+        <div id="comments-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">加载中...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分页 -->
+        <nav aria-label="评论分页" id="pagination-container" class="mt-4">
+          <!-- 分页将由 JavaScript 动态生成 -->
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑评论模态框 -->
+  <div class="nice-popup" id="edit-comment-modal">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+      <div class="nice-popup-content">
+        <h6>编辑评论</h6>
+        <form id="edit-comment-form">
+          <input type="hidden" id="edit-comment-id" />
+          <div class="mb-3">
+            <label class="form-label">评论内容</label>
+            <textarea class="form-control" id="edit-comment-content" rows="8" required></textarea>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑用户信息模态框 -->
+  <div class="nice-popup" id="edit-user-modal">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+      <div class="nice-popup-content">
+        <h6>编辑用户信息</h6>
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-user-id" />
+          <div class="mb-3">
+            <label class="form-label">用户名</label>
+            <input type="text" class="form-control" id="edit-user-name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">邮箱</label>
+            <input type="email" class="form-control" id="edit-user-email" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">网站链接</label>
+            <input type="url" class="form-control" id="edit-user-link" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">徽章名称</label>
+            <input type="text" class="form-control" id="edit-user-badge-name" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">徽章颜色</label>
+            <input type="color" class="form-control form-control-color" id="edit-user-badge-color" />
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
+            <button type="submit" class="btn btn-primary">保存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 回复评论模态框 -->
+  <div class="nice-popup" id="reply-comment-modal">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+      <div class="nice-popup-content">
+        <h6>回复评论</h6>
+        <form id="reply-comment-form">
+          <input type="hidden" id="reply-comment-id" />
+          <input type="hidden" id="reply-page-key" />
+          <div class="mb-3">
+            <label class="form-label">回复内容</label>
+            <textarea class="form-control" id="reply-comment-content" rows="8" required></textarea>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
+            <button type="submit" class="btn btn-primary">发送回复</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 隐藏的管理员用户信息 -->
+  <input type="hidden" id="admin-user-name" data-value={currentUser?.name || ''} />
+  <input type="hidden" id="admin-user-email" data-value={currentUser?.email || ''} />
+</BaseLayout>
+
+<script>
+import { actions } from 'astro:actions'
+import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
+
+interface Comment {
+  id: string
+  createAt: string
+  updatedAt: string
+  content: string
+  pageKey: string
+  pageTitle: string | null
+  userId: string
+  name: string
+  email: string
+  link: string | null
+  badgeName: string | null
+  badgeColor: string | null
+  isPending: boolean
+  isVerified: boolean
+  ua: string | null
+  ip: string | null
+  rid: number
+  rootId: string | null
+}
+
+let currentPage = 0
+let pageSize = 20
+let filterStatus = 'all'
+let totalComments = 0
+
+const commentsContainer = document.getElementById('comments-container')!
+const paginationContainer = document.getElementById('pagination-container')!
+const refreshBtn = document.getElementById('refresh-btn')!
+const applyFilterBtn = document.getElementById('apply-filter')!
+const filterStatusSelect = document.getElementById('filter-status') as HTMLSelectElement
+const pageSizeSelect = document.getElementById('page-size') as HTMLSelectElement
+
+// 格式化日期
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+// 渲染评论列表
+function renderComments(comments: Comment[]): void {
+  if (comments.length === 0) {
+    commentsContainer.innerHTML = `
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <p class="text-muted mb-0">暂无评论</p>
+          </div>
+        </div>
+      `
+    return
+  }
+
+  const commentsHtml = comments.map((comment) => {
+    const statusBadge = comment.isPending
+      ? '<span class="badge badge-warning">待审核</span>'
+      : '<span class="badge badge-success">已审核</span>'
+
+    const verifiedBadge = comment.isVerified
+      ? '<span class="badge badge-primary">已验证</span>'
+      : ''
+
+    return `
+        <div class="card mb-3 comment-item" data-comment-id="${comment.id}">
+          <div class="card-body">
+            <div class="d-flex gap-3">
+              <div class="flex-shrink-0">
+                <div class="flex-avatar" style="width: 50px; height: 50px; background-size: cover; background-position: center; background-image: url('/images/default-avatar.png');">
+                  <img src="/images/avatar/${comment.userId}.png"
+                       alt="${comment.name}"
+                       onerror="this.style.display='none'"
+                       style="width: 100%; height: 100%; border-radius: 50px; object-fit: cover;" />
+                </div>
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                      <strong>${escapeHtml(comment.name)}</strong>
+                      ${comment.link ? `<a href="${escapeHtml(comment.link)}" target="_blank" rel="nofollow" class="text-muted small"><i class="iconfont icon-link"></i></a>` : ''}
+                      ${comment.badgeName ? `<span class="badge" style="background-color: ${comment.badgeColor || '#008c95'}">${escapeHtml(comment.badgeName)}</span>` : ''}
+                      ${statusBadge}
+                      ${verifiedBadge}
+                    </div>
+                    <div class="text-muted small">
+                      <span>${escapeHtml(comment.email)}</span>
+                      <span class="ms-2">${formatDate(comment.createAt)}</span>
+                      ${comment.pageTitle ? `<span class="ms-2">来自: ${escapeHtml(comment.pageTitle)}</span>` : ''}
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary edit-comment-btn" data-comment-id="${comment.id}">
+                      <i class="iconfont icon-edit"></i> 编辑
+                    </button>
+                    <button class="btn btn-sm btn-outline-info edit-user-btn" data-user-id="${comment.userId}" data-user-name="${escapeHtml(comment.name)}" data-user-email="${escapeHtml(comment.email)}" data-user-link="${escapeHtml(comment.link || '')}" data-badge-name="${escapeHtml(comment.badgeName || '')}" data-badge-color="${escapeHtml(comment.badgeColor || '')}">
+                      <i class="iconfont icon-user"></i> 用户
+                    </button>
+                    ${comment.isPending
+                      ? `
+                      <button class="btn btn-sm btn-outline-success approve-comment-btn" data-comment-id="${comment.id}">
+                        <i class="iconfont icon-check"></i> 审核
+                      </button>
+                    `
+                      : ''}
+                    <button class="btn btn-sm btn-outline-primary reply-comment-btn" data-comment-id="${comment.id}" data-page-key="${escapeHtml(comment.pageKey)}">
+                      <i class="iconfont icon-reply"></i> 回复
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-comment-btn" data-comment-id="${comment.id}">
+                      <i class="iconfont icon-delete"></i> 删除
+                    </button>
+                  </div>
+                </div>
+                <div class="comment-content mb-2" style="line-height: 1.6;">
+                  ${comment.content}
+                </div>
+                ${comment.ua || comment.ip
+                  ? `
+                  <div class="text-muted small">
+                    ${comment.ua ? `<span>UA: ${escapeHtml(comment.ua.substring(0, 50))}${comment.ua.length > 50 ? '...' : ''}</span>` : ''}
+                    ${comment.ip ? `<span class="ms-2">IP: ${escapeHtml(comment.ip)}</span>` : ''}
+                  </div>
+                `
+                  : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+  }).join('')
+
+  commentsContainer.innerHTML = commentsHtml
+
+  // 绑定事件
+  bindCommentEvents()
+}
+
+// 转义 HTML
+function escapeHtml(text: string): string {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+// 渲染分页
+function renderPagination(): void {
+  const totalPages = Math.ceil(totalComments / pageSize)
+  if (totalPages <= 1) {
+    paginationContainer.innerHTML = ''
+    return
+  }
+
+  let paginationHtml = '<ul class="pagination justify-content-center">'
+
+  // 上一页
+  paginationHtml += `
+      <li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="${currentPage - 1}">上一页</a>
+      </li>
+    `
+
+  // 页码
+  const maxVisiblePages = 7
+  let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2))
+  const endPage = Math.min(totalPages - 1, startPage + maxVisiblePages - 1)
+
+  if (endPage - startPage < maxVisiblePages - 1) {
+    startPage = Math.max(0, endPage - maxVisiblePages + 1)
+  }
+
+  if (startPage > 0) {
+    paginationHtml += '<li class="page-item"><a class="page-link" href="#" data-page="0">1</a></li>'
+    if (startPage > 1) {
+      paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>'
+    }
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    paginationHtml += `
+        <li class="page-item ${i === currentPage ? 'active' : ''}">
+          <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+        </li>
+      `
+  }
+
+  if (endPage < totalPages - 1) {
+    if (endPage < totalPages - 2) {
+      paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>'
+    }
+    paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages - 1}">${totalPages}</a></li>`
+  }
+
+  // 下一页
+  paginationHtml += `
+      <li class="page-item ${currentPage >= totalPages - 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" data-page="${currentPage + 1}">下一页</a>
+      </li>
+    `
+
+  paginationHtml += '</ul>'
+  paginationContainer.innerHTML = paginationHtml
+
+  // 绑定分页事件
+  paginationContainer.querySelectorAll('.page-link').forEach((link) => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault()
+      const page = Number.parseInt((e.target as HTMLElement).dataset.page || '0')
+      if (page >= 0 && page < totalPages) {
+        currentPage = page
+        loadComments()
+      }
+    })
+  })
+}
+
+// 加载评论
+async function loadComments(): Promise<void> {
+  try {
+    commentsContainer.innerHTML = `
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+          </div>
+        </div>
+      `
+
+    const offset = currentPage * pageSize
+    const { data, error } = await actions.comment.loadAll({ offset, limit: pageSize })
+
+    if (error) {
+      return handleActionError(error)
+    }
+
+    if (!data) {
+      return showErrorDialog('加载评论失败')
+    }
+
+    const allComments = data.comments.map(c => ({
+      ...c,
+      id: String(c.id),
+      userId: String(c.userId),
+      rootId: c.rootId ? String(c.rootId) : null,
+      createAt: c.createAt instanceof Date ? c.createAt.toISOString() : String(c.createAt),
+      updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
+    })) as unknown as Comment[]
+
+    totalComments = data.total
+
+    // 应用状态筛选
+    let comments = allComments
+    if (filterStatus === 'pending') {
+      comments = allComments.filter(c => c.isPending)
+    }
+    else if (filterStatus === 'approved') {
+      comments = allComments.filter(c => !c.isPending)
+    }
+
+    renderComments(comments)
+    renderPagination()
+  }
+  catch (err) {
+    console.error('加载评论失败:', err)
+    showErrorDialog('加载评论失败，请刷新页面重试')
+  }
+}
+
+// 绑定评论操作事件
+function bindCommentEvents(): void {
+  // 编辑评论
+  document.querySelectorAll('.edit-comment-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const commentId = (btn as HTMLElement).dataset.commentId!
+      const { data, error } = await actions.comment.getRaw({ rid: commentId })
+
+      if (error) {
+        return handleActionError(error)
+      }
+
+      const editModal = document.getElementById('edit-comment-modal')!
+        ;(document.getElementById('edit-comment-id') as HTMLInputElement).value = commentId
+      ;(document.getElementById('edit-comment-content') as HTMLTextAreaElement).value = data?.content || ''
+      editModal.classList.add('nice-popup-open')
+    })
+  })
+
+  // 审核评论
+  document.querySelectorAll('.approve-comment-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      // eslint-disable-next-line no-alert
+      if (!window.confirm('确定要审核通过这条评论吗？'))
+        return
+
+      const commentId = (btn as HTMLElement).dataset.commentId!
+      const { error } = await actions.comment.approve({ rid: commentId })
+
+      if (error) {
+        return handleActionError(error)
+      }
+
+      showSuccessMessage('评论已审核通过')
+      loadComments()
+    })
+  })
+
+  // 删除评论
+  document.querySelectorAll('.delete-comment-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      // eslint-disable-next-line no-alert
+      if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！'))
+        return
+
+      const commentId = (btn as HTMLElement).dataset.commentId!
+      const { error } = await actions.comment.delete({ rid: commentId })
+
+      if (error) {
+        return handleActionError(error)
+      }
+
+      showSuccessMessage('评论已删除')
+      loadComments()
+    })
+  })
+
+  // 编辑用户信息
+  document.querySelectorAll('.edit-user-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const userId = (btn as HTMLElement).dataset.userId!
+      const userName = (btn as HTMLElement).dataset.userName!
+      const userEmail = (btn as HTMLElement).dataset.userEmail!
+      const userLink = (btn as HTMLElement).dataset.userLink || ''
+      const badgeName = (btn as HTMLElement).dataset.badgeName || ''
+      const badgeColor = (btn as HTMLElement).dataset.badgeColor || '#008c95'
+
+      const editUserModal = document.getElementById('edit-user-modal')!
+        ;(document.getElementById('edit-user-id') as HTMLInputElement).value = userId
+      ;(document.getElementById('edit-user-name') as HTMLInputElement).value = userName
+      ;(document.getElementById('edit-user-email') as HTMLInputElement).value = userEmail
+      ;(document.getElementById('edit-user-link') as HTMLInputElement).value = userLink
+      ;(document.getElementById('edit-user-badge-name') as HTMLInputElement).value = badgeName
+      ;(document.getElementById('edit-user-badge-color') as HTMLInputElement).value = badgeColor
+      editUserModal.classList.add('nice-popup-open')
+    })
+  })
+
+  // 回复评论
+  document.querySelectorAll('.reply-comment-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const commentId = (btn as HTMLElement).dataset.commentId!
+      const pageKey = (btn as HTMLElement).dataset.pageKey!
+
+      const replyModal = document.getElementById('reply-comment-modal')!
+        ;(document.getElementById('reply-comment-id') as HTMLInputElement).value = commentId
+      ;(document.getElementById('reply-page-key') as HTMLInputElement).value = pageKey
+      ;(document.getElementById('reply-comment-content') as HTMLTextAreaElement).value = ''
+      replyModal.classList.add('nice-popup-open')
+    })
+  })
+}
+
+// 显示成功消息
+function showSuccessMessage(message: string): void {
+  const successPopup = `
+      <div class="nice-popup nice-popup-center sticky-top success nice-popup-error nice-popup-open">
+        <div class="nice-popup-overlay"></div>
+        <div class="nice-popup-body">
+          <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+          <div class="nice-popup-content">
+            <div class="icon success"></div>
+            <div class="text-center">
+              <p class="mt-1 mb-2">${escapeHtml(message)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  document.body.insertAdjacentHTML('beforeend', successPopup)
+
+  setTimeout(() => {
+    const popup = document.querySelector('.nice-popup-error.nice-popup-open')
+    if (popup) {
+      popup.classList.remove('nice-popup-open')
+      setTimeout(() => popup.remove(), 300)
+    }
+  }, 2000)
+}
+
+// 编辑评论表单提交
+document.getElementById('edit-comment-form')!.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const commentId = (document.getElementById('edit-comment-id') as HTMLInputElement).value
+  const content = (document.getElementById('edit-comment-content') as HTMLTextAreaElement).value.trim()
+
+  if (!content) {
+    return showErrorDialog('评论内容不能为空')
+  }
+
+  const { error } = await actions.comment.edit({ rid: commentId, content })
+
+  if (error) {
+    return handleActionError(error)
+  }
+
+  document.getElementById('edit-comment-modal')!.classList.remove('nice-popup-open')
+  showSuccessMessage('评论已更新')
+  loadComments()
+})
+
+// 编辑用户表单提交
+document.getElementById('edit-user-form')!.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const userId = (document.getElementById('edit-user-id') as HTMLInputElement).value
+  const name = (document.getElementById('edit-user-name') as HTMLInputElement).value
+  const email = (document.getElementById('edit-user-email') as HTMLInputElement).value
+  const link = (document.getElementById('edit-user-link') as HTMLInputElement).value
+  const badgeName = (document.getElementById('edit-user-badge-name') as HTMLInputElement).value
+  const badgeColor = (document.getElementById('edit-user-badge-color') as HTMLInputElement).value
+
+  const updateData: any = { userId, name, email }
+  if (link)
+    updateData.link = link
+  if (badgeName)
+    updateData.badgeName = badgeName
+  if (badgeColor)
+    updateData.badgeColor = badgeColor
+
+  const { error } = await actions.auth.updateUser(updateData)
+
+  if (error) {
+    return handleActionError(error)
+  }
+
+  document.getElementById('edit-user-modal')!.classList.remove('nice-popup-open')
+  showSuccessMessage('用户信息已更新')
+  loadComments()
+})
+
+// 回复评论表单提交
+document.getElementById('reply-comment-form')!.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const commentId = (document.getElementById('reply-comment-id') as HTMLInputElement).value
+  const pageKey = (document.getElementById('reply-page-key') as HTMLInputElement).value
+  const content = (document.getElementById('reply-comment-content') as HTMLTextAreaElement).value.trim()
+
+  if (!content) {
+    return showErrorDialog('回复内容不能为空')
+  }
+
+  // 获取当前登录用户信息
+  const userNameInput = document.getElementById('admin-user-name') as HTMLInputElement
+  const userEmailInput = document.getElementById('admin-user-email') as HTMLInputElement
+
+  if (!userNameInput || !userEmailInput) {
+    return showErrorDialog('无法获取用户信息，请刷新页面重试')
+  }
+
+  const userName = userNameInput.dataset.value || '管理员'
+  const userEmail = userEmailInput.dataset.value || ''
+
+  if (!userEmail) {
+    return showErrorDialog('无法获取用户邮箱，请刷新页面重试')
+  }
+
+  // 使用管理员信息回复
+  const { error } = await actions.comment.replyComment({
+    page_key: pageKey,
+    name: userName,
+    email: userEmail,
+    content,
+    rid: Number.parseInt(commentId, 10),
+  })
+
+  if (error) {
+    return handleActionError(error)
+  }
+
+  document.getElementById('reply-comment-modal')!.classList.remove('nice-popup-open')
+  showSuccessMessage('回复已发送')
+  loadComments()
+})
+
+// 刷新按钮
+refreshBtn.addEventListener('click', () => {
+  currentPage = 0
+  loadComments()
+})
+
+// 应用筛选
+applyFilterBtn.addEventListener('click', () => {
+  filterStatus = filterStatusSelect.value
+  pageSize = Number.parseInt(pageSizeSelect.value, 10)
+  currentPage = 0
+  loadComments()
+})
+
+// 关闭模态框功能
+function setupModalClose(): void {
+  document.querySelectorAll('.nice-popup-close, .close-modal-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const modal = btn.closest('.nice-popup')
+      if (modal) {
+        modal.classList.remove('nice-popup-open')
+      }
+    })
+  })
+
+  document.querySelectorAll('.nice-popup-overlay').forEach((overlay) => {
+    overlay.addEventListener('click', () => {
+      const modal = overlay.closest('.nice-popup')
+      if (modal) {
+        modal.classList.remove('nice-popup-open')
+      }
+    })
+  })
+}
+
+// 初始化
+setupModalClose()
+loadComments()
+</script>
