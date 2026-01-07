@@ -410,7 +410,7 @@ function showSuccessMessage(message: string): void {
   document.body.insertAdjacentHTML('beforeend', successPopup)
 
   setTimeout(() => {
-    const popup = document.querySelector('.nice-popup-error.nice-popup-open')
+    const popup = document.querySelector('.nice-popup.nice-popup-open')
     if (popup) {
       popup.classList.remove('nice-popup-open')
       setTimeout(() => popup.remove(), 300)
