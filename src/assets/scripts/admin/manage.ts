@@ -394,10 +394,10 @@ function bindCommentEvents(): void {
 // 显示成功消息
 function showSuccessMessage(message: string): void {
   const successPopup = `
-      <div class="nice-popup nice-popup-center sticky-top success nice-popup-error nice-popup-open">
+      <div class="nice-popup nice-popup-center sticky-top success nice-popup-open">
         <div class="nice-popup-overlay"></div>
         <div class="nice-popup-body">
-          <div class="nice-popup-close"><span class="svg-white"></span> <span class="svg-dark"></span></div>
+          <div class="nice-popup-close"><span class="svg-white"></span></div>
           <div class="nice-popup-content">
             <div class="icon success"></div>
             <div class="text-center">
