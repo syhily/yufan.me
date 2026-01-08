@@ -222,7 +222,6 @@ const searchPopupTemplate = `
   <div class="nice-popup-body">
     <div class="global-search-close nice-popup-close">
       <span class="svg-white"></span>
-      <span class="svg-dark"></span>
     </div>
     <div class="nice-popup-content">
       <form class="search-dialog text-center p-3 p-md-5" action="/search">
