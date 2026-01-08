@@ -8,7 +8,7 @@ const output = await php.runStream({
   code: tz,
   method: Astro.request.method as HTTPMethod,
   headers: Object.fromEntries(Astro.request.headers.entries()),
-  body: await Astro.request.text(),
+  body: await Astro.request.bytes(),
 })
 ---
 
