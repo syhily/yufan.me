@@ -20,10 +20,10 @@ if (pageNum < 1) {
 ---
 
 <BaseLayout title={pageNum > 1 ? `第 ${pageNum} 页` : undefined}>
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+  <div class="lg:px-2 2xl:px-5 py-3 md:py-4 2xl:py-5">
     {pageNum === 1 && <FeaturePosts {posts} />}
-    <div class="container">
-      <div class="row">
+    <div class="container mx-auto px-4">
+      <div class="flex flex-wrap">
         <PostCards {pageNum} {posts} />
         <Sidebar {posts} {tags} />
       </div>

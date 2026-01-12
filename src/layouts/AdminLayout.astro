@@ -2,6 +2,7 @@
 import config from '@/blog.config'
 import PageMeta from '@/components/meta/PageMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
+import '@/assets/styles/tailwind.css'
 import '@/assets/styles/globals.css'
 import '@/assets/styles/admin.css'
 
@@ -44,26 +45,26 @@ const description = Astro.props.description || config.description
         <img src="/logo.svg" alt="且听书吟" />
       </div>
       <div class="mobile-brand">
-        <div class="container">
-          <div class="d-flex flex-flex align-items-center">
-            <a href="/" title={config.title} class="d-block">
+        <div class="container mx-auto px-4">
+          <div class="flex items-center">
+            <a href="/" title={config.title} class="block">
               <img src="/logo-large.svg" alt="且听书吟" />
             </a>
-            <div class="flex-fill"></div>
+            <div class="flex-1"></div>
           </div>
         </div>
       </div>
       <main class="site-main">
-        <div class="row gx-0">
-          <div class="col-lg-7 col-xl-7">
-            <div class="post p-3 p-md-5">
+        <div class="flex flex-wrap">
+          <div class="w-full lg:w-7/12 xl:w-7/12">
+            <div class="post p-3 md:p-5">
               <div class="single-full">
                 <slot />
               </div>
             </div>
             <Footer />
           </div>
-          <div class="col-lg-5 col-xl-5 d-none d-lg-block sticky-top hv">
+          <div class="w-full lg:w-5/12 xl:w-5/12 hidden lg:block sticky top-0 hv">
             <div
               class="bg-img hv"
               style={{

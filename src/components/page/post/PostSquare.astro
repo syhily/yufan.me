@@ -11,7 +11,7 @@ interface Props {
 const { post, first } = Astro.props
 ---
 
-<div class={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
+<div class={first ? 'w-full md:w-8/12 xl:w-6/12' : 'w-6/12 md:w-4/12 xl:w-3/12'}>
   <div class="list-item list-nice-overlay">
     <div class={`media ${first ? 'media-36x17' : ''}`}>
       <a href={post.permalink} class="media-content">
@@ -22,14 +22,14 @@ const { post, first } = Astro.props
     <div class="list-content">
       <a href={post.permalink} class="list-body">
         <div class="list-title h6 h-2x">{post.title}</div>
-        <div class="list-meta font-number d-flex flex-fill text-muted text-sm">
-          <span class="d-inline-block">{formatShowDate(post.date)}</span>
-          <div class="flex-fill"></div>
-          <div class="list-like-square d-inline-block">
+        <div class="list-meta font-number flex flex-1 text-muted text-sm">
+          <span class="inline-block">{formatShowDate(post.date)}</span>
+          <div class="flex-1"></div>
+          <div class="list-like-square inline-block">
             <i class="text-md iconfont icon-eye"></i>
             <span class="like-count">{post.meta.views}</span>
           </div>
-          <div class="list-like-square d-inline-block">
+          <div class="list-like-square inline-block">
             <i class="text-md iconfont icon-heart-fill"></i>
             <span class="like-count">{post.meta.likes}</span>
           </div>

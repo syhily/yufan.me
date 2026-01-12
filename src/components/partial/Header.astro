@@ -17,7 +17,7 @@ const { navigation } = Astro.props
   <div class="aside-overlay"></div>
   <div class="aside-inner bg-secondary">
     <h1 class="navbar-brand">
-      <a href="/" title={config.title} class="d-block">
+      <a href="/" title={config.title} class="block">
         <img src="/logo-dark.svg" alt="且听书吟" />
       </a>
     </h1>
@@ -76,14 +76,14 @@ const { navigation } = Astro.props
   </div>
 </header>
 <div class="mobile-brand">
-  <div class="container">
-    <div class="d-flex flex-flex align-items-center">
-      <a href="/" title={config.title} class="d-block">
+  <div class="container mx-auto px-4">
+    <div class="flex items-center">
+      <a href="/" title={config.title} class="block">
         <img src="/logo-large.svg" alt="且听书吟" />
       </a>
-      <div class="flex-fill"></div>
+      <div class="flex-1"></div>
       <div class="menu-toggler text-xl">
-        <i class="d-block iconfont icon-menu"></i>
+        <i class="block iconfont icon-menu"></i>
       </div>
     </div>
   </div>

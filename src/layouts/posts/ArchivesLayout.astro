@@ -19,22 +19,22 @@ const groupedPosts = _.groupBy(resolvedPosts, (post) => {
 ---
 
 <BaseLayout {title}>
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-    <div class="container">
-      <div class="mb-3 mb-lg-4">
+  <div class="lg:px-2 2xl:px-5 py-3 md:py-4 2xl:py-5">
+    <div class="container mx-auto px-4">
+      <div class="mb-3 lg:mb-4">
         <h1>共 {resolvedPosts.length} 篇文章</h1>
       </div>
     </div>
     {
       groupedPosts &&
         Object.entries(groupedPosts).map(([key, posts]) => (
-          <div class="container">
+          <div class="container mx-auto px-4">
             <div class="mb-5">
-              <div class="mb-3 mb-lg-4">
+              <div class="mb-3 lg:mb-4">
                 <h2>{key}</h2>
                 <div class="text-muted mt-1">本月累计 {posts.length} 篇</div>
               </div>
-              <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+              <div class="flex flex-wrap gap-2 md:gap-3 2xl:gap-4 list-grouped">
                 {posts.map((post, i) => (
                   <PostSquare post={post} first={i === 0} />
                 ))}

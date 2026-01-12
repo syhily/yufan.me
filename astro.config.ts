@@ -9,6 +9,7 @@ import {
   transformerNotationHighlight,
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
+import tailwindcss from '@tailwindcss/vite'
 import uploader from 'astro-uploader'
 import { defineConfig, envField } from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
@@ -136,6 +137,7 @@ export default defineConfig({
       ],
     },
     plugins: [
+      tailwindcss(),
       vitePluginBinary({ gzip: true }),
     ],
     build: {

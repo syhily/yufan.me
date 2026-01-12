@@ -35,20 +35,16 @@ const metas: Post[] =
 
 {
   metas.length === 3 && (
-    <div class="list-top-pushes mb-3 mb-md-4 mb-lg-5">
-      <div class="container">
-        <div class="row gx-2 gx-md-3 list-grouped">
-          <div class="col-lg-8">
+    <div class="list-top-pushes mb-3 md:mb-4 lg:mb-5">
+      <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-2 md:gap-3 list-grouped">
+          <div class="lg:col-span-8">
             <FeaturePost post={metas[0]} />
           </div>
-          <div class="col-lg-4 d-flex flex-column mt-2 mt-md-3 mt-lg-0">
-            <div class="row g-2 g-md-3">
-              <div class="col-6 col-lg-12">
-                <FeaturePost post={metas[1]} />
-              </div>
-              <div class="col-6 col-lg-12">
-                <FeaturePost post={metas[2]} />
-              </div>
+          <div class="lg:col-span-4">
+            <div class="grid grid-cols-2 lg:grid-cols-1 gap-2 md:gap-3 w-full">
+              <FeaturePost post={metas[1]} />
+              <FeaturePost post={metas[2]} />
             </div>
           </div>
         </div>

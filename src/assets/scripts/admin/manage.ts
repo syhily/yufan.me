@@ -69,8 +69,8 @@ function renderComments(comments: Comment[]): void {
     return `
         <div class="card mb-3 comment-item" data-comment-id="${comment.id}">
           <div class="card-body">
-            <div class="d-flex gap-3">
-              <div class="flex-shrink-0">
+            <div class="flex gap-3">
+              <div class="shrink-0">
                 <div class="flex-avatar" style="width: 50px; height: 50px; background-size: cover; background-position: center; background-image: url('/images/default-avatar.png');">
                   <img src="/images/avatar/${comment.userId}.png"
                        alt="${comment.name}"
@@ -78,22 +78,22 @@ function renderComments(comments: Comment[]): void {
                        style="width: 100%; height: 100%; border-radius: 50px; object-fit: cover;" />
                 </div>
               </div>
-              <div class="flex-grow-1">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-2 gap-2">
+              <div class="grow">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-2 gap-2">
                   <div>
-                    <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="flex items-center gap-2 mb-1">
                       <strong>${escapeHtml(comment.name)}</strong>
-                      ${comment.link ? `<a href="${escapeHtml(comment.link)}" target="_blank" rel="nofollow" class="text-muted small"><i class="iconfont icon-link"></i></a>` : ''}
-                      ${comment.badgeName ? `<span class="badge badge-pill fw-bold text-wrap" style="background-color: ${comment.badgeColor || '#008c95'}">${escapeHtml(comment.badgeName)}</span>` : ''}
+                      ${comment.link ? `<a href="${escapeHtml(comment.link)}" target="_blank" rel="nofollow" class="text-muted text-sm"><i class="iconfont icon-link"></i></a>` : ''}
+                      ${comment.badgeName ? `<span class="badge badge-pill font-bold text-wrap" style="background-color: ${comment.badgeColor || '#008c95'}">${escapeHtml(comment.badgeName)}</span>` : ''}
                       ${statusBadge}
                     </div>
-                    <div class="text-muted small">
+                    <div class="text-muted text-sm">
                       <span>${escapeHtml(comment.email)}</span>
-                      <span class="ms-2">${formatDate(comment.createAt)}</span>
+                      <span class="ml-2">${formatDate(comment.createAt)}</span>
                     </div>
-                    ${comment.pageTitle ? `<div class="text-muted small"><span class="mt-2">来自: ${escapeHtml(comment.pageTitle)}</span></div>` : ''}
+                    ${comment.pageTitle ? `<div class="text-muted text-sm"><span class="mt-2">来自: ${escapeHtml(comment.pageTitle)}</span></div>` : ''}
                   </div>
-                  <div class="d-flex flex-wrap gap-2">
+                  <div class="flex flex-wrap gap-2">
                     <button class="btn btn-sm btn-primary edit-comment-btn" data-comment-id="${comment.id}">
                       <i class="iconfont icon-edit"></i> 编辑
                     </button>
@@ -120,9 +120,9 @@ function renderComments(comments: Comment[]): void {
                 </div>
                 ${comment.ua || comment.ip
                   ? `
-                  <div class="text-muted small">
+                  <div class="text-muted text-sm">
                     ${comment.ua ? `<span>UA: ${escapeHtml(comment.ua.substring(0, 50))}${comment.ua.length > 50 ? '...' : ''}</span>` : ''}
-                    ${comment.ip ? `<span class="ms-2">IP: ${escapeHtml(comment.ip)}</span>` : ''}
+                    ${comment.ip ? `<span class="ml-2">IP: ${escapeHtml(comment.ip)}</span>` : ''}
                   </div>
                 `
                   : ''}
@@ -248,7 +248,7 @@ async function loadComments(): Promise<void> {
     commentsContainer.innerHTML = `
         <div class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">加载中...</span>
+            <span class="sr-only">加载中...</span>
           </div>
         </div>
       `

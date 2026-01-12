@@ -1,86 +1,5 @@
-/*--------------------------------------------------------------
-    color variables
---------------------------------------------------------------*/
-:root {
-  --color-primary: #008c95;
-  --color-dark: #151b2b;
-  --color-secondary: #404b69;
-  --color-muted: #8a92a9;
-  --color-light: #e8e9ea;
-  --color-danger: #f7094c;
-  --color-warning: #ff8338;
-  --color-body: #151924;
-  --btn-primary: #008c95;
-  --btn-dark: #151b2b;
-  --btn-secondary: #20283b;
-  --btn-danger: #f7094c;
-  --btn-light: #eceef1;
-  --btn-success: #41d589;
-  --bg-primary: #008c95;
-  --bg-dark: #151b2b;
-  --bg-secondary: #283149;
-  --bg-danger: #ff625e;
-  --bg-warning: #ffe9d5;
-  --bg-light: #f6f6f7;
-  --bg-muted: #ededf1;
-  --bg-white: #fff;
-  --bg-body: #fbfbfd;
-  --border-primary: #008c95;
-  --border-dark: #2b2a2a;
-  --border-secondary: #283149;
-  --border-danger: #f7094c;
-  --border-muted: #d4ddec;
-  --border-light: #eff3fa;
-  --border-white: #fff;
-  --btn-outline-primary: #fff0f0;
-  --btn-outline-danger: #ffe8e8;
-  --border-outline-primary: #ffd1d1;
-  --border-outline-danger: #ffe8e8;
-  --night-color-primary: #008c95;
-  --night-color-dark: #d7d7d7;
-  --night-color-secondary: #8c8c91;
-  --night-color-muted: #8a8a8a;
-  --night-color-light: #6a6a6a;
-  --night-color-danger: #f7094c;
-  --night-color-body: #e4e4e5;
-  --night-btn-primary: #008c95;
-  --night-btn-outline-primary: #ffd1d1;
-  --night-btn-dark: #1e1e21;
-  --night-btn-secondary: #252628;
-  --night-btn-light: #414147;
-  --night-btn-danger: #f7094c;
-  --night-btn-success: #41d589;
-  --night-bg-primary: #008c95;
-  --night-bg-dark: #141417;
-  --night-bg-secondary: #2f3035;
-  --night-bg-light: #232327;
-  --night-bg-muted: #202023;
-  --night-bg-body: #19191d;
-  --night-bg-danger: #f7094c;
-  --night-bg-warning: #f6d365;
-  --night-bg-white: #101012;
-  --night-border-primary: #008c95;
-  --night-border-outline-primary: #ffd1d1;
-  --night-border-dark: #141417;
-  --night-border-secondary: #2f3035;
-  --night-border-muted: #37373c;
-  --night-border-light: #3f4041;
-  --night-border-danger: #f7094c;
-  --night-border-white: #101012;
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --shadow-xs: 0 10px 40px 5px rgb(62 61 80 / 2%);
-  --shadow-sm: 0 5px 30px 5px rgb(62 61 80 / 5%);
-  --shadow-md: 0 10px 40px 5px rgb(62 61 80 / 6%);
-  --shadow-lg: 0 10px 40px 5px rgb(62 61 80 / 10%);
-  --text-dark: #000;
-  text-autospace: normal;
-}
-
 /* -------------------------------------------------------------------------- */
-/* 0. CSS Reset
+/* 0. CSS Reset (Partial - Variables moved to tailwind.css)
 /* -------------------------------------------------------------------------- */
 
 *,
@@ -193,7 +112,7 @@ th,
 td {
   background: transparent;
   padding: 6px 12px;
-  border: 0.0625rem solid var(--border-light);
+  border: 0.0625rem solid var(--color-border-light);
   text-align: initial;
 }
 
@@ -211,28 +130,9 @@ table caption {
 /* -------------------------------------------------------------------------- */
 
 body {
-  font-family:
-    'OPPO Sans 4.0',
-    'PingFang SC',
-    'Lantinghei SC',
-    'Microsoft YaHei',
-    'Source Han Sans CN',
-    -apple-system,
-    BlinkMacSystemFont,
-    'HanHei SC',
-    'Helvetica Neue',
-    'Open Sans',
-    Arial,
-    'Hiragino Sans GB',
-    STHeiti,
-    'WenQuanYi Micro Hei',
-    SimSun,
-    sans-serif,
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol';
+  font-family: var(--font-sans);
   font-size: 0.9375rem;
-  background-color: var(--bg-body);
+  background-color: var(--color-bg-body);
   color: var(--color-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -525,7 +425,7 @@ h6 small {
 
 input,
 textarea {
-  border-color: var(--border-light);
+  border-color: var(--color-border-light);
   color: var(--text-dark);
 }
 
@@ -689,7 +589,7 @@ dd + dt {
 blockquote {
   padding: 16px 20px;
   margin: 24px 0;
-  background-color: var(--bg-light);
+  background-color: var(--color-bg-light);
   border-radius: var(--radius-sm);
 }
 
@@ -1083,13 +983,13 @@ img {
 
 .nice-dark-mode code,
 .nice-dark-mode pre {
-  background: var(--night-bg-light);
+  background: var(--color-dark-bg-light);
 }
 
 /* Quotes ------------------------------------ */
 
 .nice-dark-mode blockquote {
-  background-color: var(--night-bg-light);
+  background-color: var(--color-dark-bg-light);
 }
 
 /*--------------------------------------------------------------

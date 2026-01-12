@@ -15,15 +15,15 @@ const currentUser = await userSession(session)
 ---
 
 <BaseLayout title="评论管理" footer={false}>
-  <div class="row gx-0">
-    <div class="col-lg-8 col-xl-8">
-      <div class="post p-3 p-md-5">
-        <div class="container-fluid py-4">
-          <div class="row">
-            <div class="col-12">
-              <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="flex flex-wrap">
+    <div class="w-full lg:w-8/12 xl:w-8/12">
+      <div class="post p-3 md:p-5">
+        <div class="w-full py-4">
+          <div class="flex flex-wrap">
+            <div class="w-full">
+              <div class="flex justify-between items-center mb-4">
                 <h1 class="h3 mb-0">评论管理</h1>
-                <div class="d-flex gap-2">
+                <div class="flex gap-2">
                   <button type="button" class="btn btn-primary" id="refresh-btn">
                     <i class="iconfont icon-refresh"></i> 刷新
                   </button>
@@ -33,8 +33,8 @@ const currentUser = await userSession(session)
               <!-- 筛选和搜索 -->
               <div class="card mb-4">
                 <div class="card-body">
-                  <div class="row g-3">
-                    <div class="col-md-6">
+                  <div class="flex flex-wrap gap-3">
+                    <div class="w-full md:w-6/12">
                       <label class="form-label">筛选状态</label>
                       <select class="form-select" id="filter-status">
                         <option value="all">全部</option>
@@ -42,19 +42,19 @@ const currentUser = await userSession(session)
                         <option value="approved">已审核</option>
                       </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="w-full md:w-6/12">
                       <label class="form-label">筛选文章</label>
                       <select class="form-select" id="filter-page">
                         <option value="">全部文章</option>
                       </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="w-full md:w-6/12">
                       <label class="form-label">筛选评论人员</label>
                       <select class="form-select" id="filter-author">
                         <option value="">全部人员</option>
                       </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="w-full md:w-6/12">
                       <label class="form-label">每页显示</label>
                       <select class="form-select" id="page-size">
                         <option value="10" selected>10 条</option>
@@ -84,7 +84,7 @@ const currentUser = await userSession(session)
       </div>
       <Footer />
     </div>
-    <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
+    <div class="w-full lg:w-4/12 xl:w-4/12 hidden lg:block sticky top-0 hv">
       <div
         class="bg-img hv"
         style={{
@@ -107,7 +107,7 @@ const currentUser = await userSession(session)
             <label class="form-label">评论内容</label>
             <textarea class="form-control" id="edit-comment-content" rows="8" required></textarea>
           </div>
-          <div class="d-flex justify-content-end gap-2">
+          <div class="flex justify-end gap-2">
             <button type="submit" class="btn btn-primary">保存</button>
             <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
           </div>
@@ -144,7 +144,7 @@ const currentUser = await userSession(session)
             <label class="form-label">徽章颜色</label>
             <input type="color" class="form-control form-control-color" id="edit-user-badge-color" />
           </div>
-          <div class="d-flex justify-content-end gap-2">
+          <div class="flex justify-end gap-2">
             <button type="submit" class="btn btn-primary">保存</button>
             <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
           </div>
@@ -166,7 +166,7 @@ const currentUser = await userSession(session)
             <label class="form-label">回复内容</label>
             <textarea class="form-control" id="reply-comment-content" rows="8" required></textarea>
           </div>
-          <div class="d-flex justify-content-end gap-2">
+          <div class="flex justify-end gap-2">
             <button type="submit" class="btn btn-primary">发送回复</button>
             <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
           </div>

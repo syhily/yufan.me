@@ -16,7 +16,7 @@ interface Props {
 const { posts, tags } = Astro.props
 ---
 
-<aside class="sidebar col-12 col-xl-3 d-none d-xl-block">
+<aside class="sidebar w-full min-[1200px]:w-3/12 hidden min-[1200px]:block">
   <div class="sidebar-inner block">
     <SearchBar />
     <AdminBlock session={Astro.session}>

@@ -1,0 +1,391 @@
+@import 'tailwindcss';
+
+/* ===== Dark Mode Configuration ===== */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ===== Custom Utilities for Bootstrap Component Migration ===== */
+
+/* Button Base */
+@utility btn {
+  display: inline-block;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  user-select: none;
+  border: 1px solid transparent;
+  padding: 0.5rem 1.625rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  border-radius: var(--radius-xs);
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+/* Button Variants */
+@utility btn-primary {
+  color: #fff;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+@utility btn-secondary {
+  color: #fff;
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+@utility btn-light {
+  color: var(--color-dark);
+  background-color: var(--color-light);
+  border-color: var(--color-light);
+}
+
+@utility btn-dark {
+  color: #fff;
+  background-color: var(--color-dark);
+  border-color: var(--color-dark);
+}
+
+@utility btn-link {
+  color: var(--color-muted);
+  text-decoration: none;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+@utility btn-link:hover {
+  color: var(--color-dark);
+  background-color: var(--color-light);
+  border-color: var(--color-light);
+  text-decoration: none;
+}
+
+@utility btn-text {
+  color: var(--color-muted);
+  background-color: transparent;
+  border-color: transparent;
+}
+
+@utility btn-text:hover {
+  color: var(--color-secondary);
+  background-color: transparent;
+  border-color: transparent;
+  text-decoration: none;
+}
+
+/* Button Outline Variants */
+@utility btn-outline-success {
+  color: #41d589;
+  background-color: transparent;
+  border-color: #41d589;
+}
+
+@utility btn-outline-danger {
+  color: var(--color-danger);
+  background-color: transparent;
+  border-color: var(--color-danger);
+}
+
+@utility btn-outline-primary {
+  color: var(--color-primary);
+  background-color: transparent;
+  border-color: var(--color-primary);
+}
+
+/* Button Outline Hover States */
+.btn-outline-success:hover {
+  color: #fff;
+  background-color: #41d589;
+  border-color: #41d589;
+}
+
+.btn-outline-danger:hover {
+  color: #fff;
+  background-color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.btn-outline-primary:hover {
+  color: #fff;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Badge Warning Variant */
+@utility badge-warning {
+  color: #000;
+  background-color: var(--color-warning);
+}
+
+@utility badge-primary {
+  color: #fff;
+  background-color: var(--color-primary);
+}
+
+@utility badge-secondary {
+  color: #fff;
+  background-color: var(--color-secondary);
+}
+
+@utility badge-dark {
+  color: #fff;
+  background-color: var(--color-dark);
+}
+
+@utility badge-danger {
+  color: var(--color-danger);
+  background-color: var(--btn-outline-danger);
+}
+
+@utility badge-sticky {
+  color: #fff;
+  border-width: 0;
+  background-color: var(--color-primary);
+}
+
+/* Button Sizes */
+@utility btn-lg {
+  padding: 0.625rem 2rem;
+  font-size: 1rem;
+}
+
+@utility btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+@utility btn-xs {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+}
+
+/* Button Shapes */
+@utility btn-rounded {
+  border-radius: 50rem;
+}
+
+@utility btn-icon {
+  padding: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@utility btn-circle {
+  border-radius: 50%;
+}
+
+/* Card */
+@utility card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: var(--color-bg-card);
+  background-clip: border-box;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+@utility card-body {
+  flex: 1 1 auto;
+  padding: 1rem;
+}
+
+@utility card-md {
+  border-radius: var(--radius-lg);
+}
+
+@utility card-header {
+  padding: 1.25rem 1rem 0;
+  border-radius: 0;
+  background-color: transparent;
+  border-bottom: 0;
+}
+
+@utility card-footer {
+  padding: 1.5rem 1.25rem;
+  background-color: transparent;
+  border-top: 0;
+}
+
+/* Badge */
+@utility badge {
+  display: inline-block;
+  padding: 0.25em 0.5em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--radius-xs);
+}
+
+@utility badge-md {
+  padding: 0.35em 0.65em;
+  font-size: 0.85em;
+}
+
+@utility badge-light {
+  color: var(--color-dark);
+  background-color: var(--color-light);
+}
+
+@utility badge-pill {
+  border-radius: 50rem;
+}
+
+/* Form Controls */
+@utility form-control {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-body);
+  background-color: var(--color-bg-card);
+  background-clip: padding-box;
+  border: 1px solid var(--color-border-muted);
+  appearance: none;
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+@utility form-select {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-body);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-muted);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+  appearance: none;
+}
+
+@utility form-control-lg {
+  height: calc(42px + 2px);
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+}
+
+@utility form-label {
+  margin-bottom: 0.5rem;
+  display: inline-block;
+}
+
+/* Screen Reader Only (replaces Bootstrap visually-hidden) */
+@utility sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Spinner (for loading states) */
+@utility spinner-border {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: text-bottom;
+  border: 0.25em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@theme {
+  /* Custom Colors - generates utilities like text-primary, bg-primary */
+  --color-primary: #008c95;
+  --color-dark: #151b2b;
+  --color-secondary: #404b69;
+  --color-muted: #8a92a9;
+  --color-light: #e8e9ea;
+  --color-danger: #f7094c;
+  --color-warning: #ff8338;
+  --color-body: #151924;
+
+  /* Custom background colors - generates bg-body, bg-card etc */
+  --color-bg-body: #fbfbfd;
+  --color-bg-light: #f6f6f7;
+  --color-bg-muted: #ededf1;
+  --color-bg-card: #fff;
+  --color-bg-secondary: #283149;
+
+  /* Border colors */
+  --color-border-light: #eff3fa;
+  --color-border-muted: #d4ddec;
+  --color-border-primary: #008c95;
+  --color-border-secondary: #283149;
+  --color-border-danger: #f7094c;
+  --color-border-dark: #2b2a2a;
+  --color-border-white: #fff;
+
+  --btn-outline-primary: #fff0f0;
+  --btn-outline-danger: #ffe8e8;
+  --border-outline-primary: #ffd1d1;
+  --border-outline-danger: #ffe8e8;
+
+  /* Border radius - generates rounded-xs, rounded-sm etc */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Shadows - generates shadow-xs, shadow-sm etc */
+  --shadow-xs: 0 10px 40px 5px rgb(62 61 80 / 2%);
+  --shadow-sm: 0 5px 30px 5px rgb(62 61 80 / 5%);
+  --shadow-md: 0 10px 40px 5px rgb(62 61 80 / 6%);
+  --shadow-lg: 0 10px 40px 5px rgb(62 61 80 / 10%);
+
+  /* Fonts - generates font-sans, font-serif, font-mono */
+  --font-sans: 'OPPO Sans 4.0', 'PingFang SC', 'Lantinghei SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'OPPO Serif SC', serif;
+  --font-mono: 'Hack', Consolas, Monaco, 'Andale Mono', monospace;
+
+  /* Dark mode colors - use with dark: variant */
+  --color-dark-primary: #008c95;
+  --color-dark-body: #e4e4e5;
+  --color-dark-secondary: #8c8c91;
+  --color-dark-muted: #8a8a8a;
+  --color-dark-light: #6a6a6a;
+
+  /* Dark mode backgrounds */
+  --color-dark-bg-body: #19191d;
+  --color-dark-bg-light: #232327;
+  --color-dark-bg-muted: #202023;
+  --color-dark-bg-card: #1e1e21;
+  --color-dark-bg-secondary: #2f3035;
+
+  /* Dark mode borders */
+  --color-dark-border-light: #3f4041;
+  --color-dark-border-muted: #37373c;
+
+  --night-btn-outline-primary: #ffd1d1;
+  --night-btn-danger: #f7094c;
+  --night-btn-success: #41d589;
+}

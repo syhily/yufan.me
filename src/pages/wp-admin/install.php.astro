@@ -5,8 +5,8 @@ import AdminLayout from '@/layouts/AdminLayout.astro'
 
 <AdminLayout title="注册管理员账号">
   <form method="post" action={actions.auth.signUpAdmin} id="installForm">
-    <div class="flex-fill">
-      <div class="row g-3 mb-5 px-5">
+    <div class="flex-1">
+      <div class="flex flex-col gap-3 mb-5 px-5">
         <input class="form-control mb-2" placeholder="昵称" name="name" type="text" required="required" />
         <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
         <input
@@ -19,7 +19,7 @@ import AdminLayout from '@/layouts/AdminLayout.astro'
         />
       </div>
       <div class="form-submit text-center">
-        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="注册管理员" />
+        <input name="submit" type="submit" id="submit" class="btn btn-primary w-4/12" value="注册管理员" />
       </div>
     </div>
   </form>

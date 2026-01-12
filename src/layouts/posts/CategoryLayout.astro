@@ -19,18 +19,18 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, vi
 ---
 
 <BaseLayout title={category.name}>
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-    <div class="container">
-      <div class="mb-3 mb-lg-4">
+  <div class="lg:px-2 2xl:px-5 py-3 md:py-4 2xl:py-5">
+    <div class="container mx-auto px-4">
+      <div class="mb-3 lg:mb-4">
         <h1>{category.name}</h1>
         <div class="text-muted mt-1">
           <Fragment set:html={category.description} />
         </div>
       </div>
-      <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+      <div class="flex flex-wrap gap-2 md:gap-3 2xl:gap-4 list-grouped">
         {resolvedPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
       </div>
-      <div class="mt-4 mt-lg-5">
+      <div class="mt-4 lg:mt-5">
         <Pagination current={pageNum} total={totalPage} rootPath={category.permalink} />
       </div>
     </div>

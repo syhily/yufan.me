@@ -63,18 +63,18 @@ const { comment, depth, pending, session } = Astro.props
         <Fragment set:html={comment.content} />
       </div>
       <div class="comment-footer text-xs text-muted">
-        <time class="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
-        <button class="comment-reply-link me-2" data-rid={comment.id}>回复</button>
+        <time class="mr-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
+        <button class="comment-reply-link mr-2" data-rid={comment.id}>回复</button>
         <AdminBlock {session}>
-          <button class="comment-edit-link me-2" data-rid={comment.id}>编辑</button>
+          <button class="comment-edit-link mr-2" data-rid={comment.id}>编辑</button>
           {
             comment.isPending && (
-              <button class="comment-approve-link me-2" data-rid={comment.id}>
+              <button class="comment-approve-link mr-2" data-rid={comment.id}>
                 通过
               </button>
             )
           }
-          <button class="comment-delete-link me-2" data-rid={comment.id}>删除</button>
+          <button class="comment-delete-link mr-2" data-rid={comment.id}>删除</button>
         </AdminBlock>
       </div>
     </div>

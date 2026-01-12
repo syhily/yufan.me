@@ -8,13 +8,13 @@ const list = _.shuffle(friends)
 
 {
   list.length > 0 ? (
-    <div class="list-bookmarks px-3 px-md-0">
-      <h2 class="text-muted mb-4 mb-md-3">
-        左邻右舍 <span class="text-primary text-sm mb-4 mb-md-3">排名不分前后</span>
+    <div class="list-bookmarks px-3 md:px-0">
+      <h2 class="text-muted mb-4 md:mb-3">
+        左邻右舍 <span class="text-primary text-sm mb-4 md:mb-3">排名不分前后</span>
       </h2>
-      <div class="row g-3 g-md-4 list-grouped">
+      <div class="flex flex-wrap gap-3 md:gap-4 list-grouped">
         {list.map((friend) => (
-          <div class="col-12 col-md-4">
+          <div class="w-full md:w-4/12">
             <div class="list-item block">
               <div class="media media-3x1">
                 <div class="media-content">

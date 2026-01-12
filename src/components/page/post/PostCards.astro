@@ -21,18 +21,18 @@ const { currentPosts, totalPage } = results
 const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: true })
 ---
 
-<div class="content-wrapper col-12 col-xl-9">
+<div class="content-wrapper w-full min-[1200px]:w-9/12">
   <div class="list-grid">
     {
       resolvedPosts.map((post) => (
         <div class="list-item block">
-          <div class="media media-3x2 col-6 col-md-5">
+          <div class="media media-3x2 w-6/12 md:w-5/12">
             <a href={post.permalink} class="media-content">
               <Image src={post.cover} alt={post.title} width={600} height={400} />
             </a>
             <div class="media-overlay overlay-top">
               <a
-                class="d-none d-md-inline-block badge badge-md bg-white-overlay"
+                class="hidden md:inline-block badge badge-md bg-white-overlay"
                 href={getCategory(post.category, undefined)?.permalink || ''}
               >
                 {post.category}
@@ -47,22 +47,22 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, vi
                   {post.title}
                 </div>
               </a>
-              <div class="d-none d-md-block list-desc text-secondary text-md mt-3">
+              <div class="hidden md:block list-desc text-secondary text-md mt-3">
                 <div class="h-3x">{post.summary ?? ''}</div>
               </div>
             </div>
             <div class="list-footer">
-              <div class="d-flex flex-fill align-items-center text-muted text-sm">
-                <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
-                <div class="list-like d-inline-block">
+              <div class="flex flex-1 items-center text-muted text-sm">
+                <div class="flex-1 hidden md:block">{formatShowDate(post.date)}</div>
+                <div class="list-like inline-block">
                   <i class="text-md iconfont icon-eye" />
                   <span class="like-count">{post.meta.views}</span>
                 </div>
-                <div class="list-like d-inline-block">
+                <div class="list-like inline-block">
                   <i class="text-md iconfont icon-heart-fill" />
                   <span class="like-count">{post.meta.likes}</span>
                 </div>
-                <div class="list-like d-inline-block">
+                <div class="list-like inline-block">
                   <i class="text-md iconfont icon-comment" />
                   <span class="like-count">{post.meta.comments}</span>
                 </div>

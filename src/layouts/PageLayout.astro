@@ -30,10 +30,10 @@ const { Content, headings } = await page.render()
     article={page}
   />
 
-  <div class="row gx-0">
-    <div class="col-lg-8 col-xl-8">
-      <div class="post p-3 p-md-5">
-        <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
+  <div class="flex flex-wrap">
+    <div class="w-full lg:w-8/12 xl:w-8/12">
+      <div class="post p-3 md:p-5">
+        <h1 class="post-title mb-3 xl:mb-4">{page.title}</h1>
         <TableOfContents {headings} toc={page.toc} />
         <div class="post-content">
           <Content components={{ img: Image, Friends, MusicPlayer, Solution }} />
@@ -43,7 +43,7 @@ const { Content, headings } = await page.render()
       </div>
       <Footer />
     </div>
-    <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
+    <div class="w-full lg:w-4/12 xl:w-4/12 hidden lg:block sticky top-0 hv">
       <div class="bg-img hv" style={{ backgroundImage: `url('${page.cover}')` }}></div>
     </div>
   </div>

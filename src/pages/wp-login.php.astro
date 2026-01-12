@@ -26,8 +26,8 @@ if (user !== undefined) {
 <AdminLayout title="用户登陆">
   <form method="post" action={actions.auth.signIn} id="loginForm">
     <Token />
-    <div class="flex-fill">
-      <div class="row g-3 mb-5 px-5">
+    <div class="flex-1">
+      <div class="flex flex-col gap-3 mb-5 px-5">
         <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
         <input
           class="form-control mb-2"
@@ -39,7 +39,7 @@ if (user !== undefined) {
         />
       </div>
       <div class="form-submit text-center">
-        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="登陆" />
+        <input name="submit" type="submit" id="submit" class="btn btn-primary w-4/12" value="登陆" />
       </div>
     </div>
   </form>
