@@ -1,0 +1,185 @@
+---
+import config from '@/blog.config'
+import Footer from '@/components/partial/Footer.astro'
+import { requireAdmin, userSession } from '@/helpers/auth/session'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import '@/assets/styles/select.css'
+
+if (Astro.session === undefined) {
+  throw new Error('Please configure your astro session store')
+}
+
+const session = Astro.session
+await requireAdmin(session, '需要管理员权限才能访问此页面')
+const currentUser = await userSession(session)
+---
+
+<BaseLayout title="评论管理" footer={false}>
+  <div class="row gx-0">
+    <div class="col-lg-8 col-xl-8">
+      <div class="post p-3 p-md-5">
+        <div class="container-fluid py-4">
+          <div class="row">
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">评论管理</h1>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-primary" id="refresh-btn">
+                    <i class="iconfont icon-refresh"></i> 刷新
+                  </button>
+                </div>
+              </div>
+
+              <!-- 筛选和搜索 -->
+              <div class="card mb-4">
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">筛选状态</label>
+                      <select class="form-select" id="filter-status">
+                        <option value="all">全部</option>
+                        <option value="pending">待审核</option>
+                        <option value="approved">已审核</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">筛选文章</label>
+                      <select class="form-select" id="filter-page">
+                        <option value="">全部文章</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">筛选评论人员</label>
+                      <select class="form-select" id="filter-author">
+                        <option value="">全部人员</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">每页显示</label>
+                      <select class="form-select" id="page-size">
+                        <option value="10" selected>10 条</option>
+                        <option value="20">20 条</option>
+                        <option value="50">50 条</option>
+                        <option value="100">100 条</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 评论列表 -->
+              <div id="comments-container">
+                <div class="text-center py-5">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 分页 -->
+              <div id="pagination-container" class="mt-4"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+    <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
+      <div
+        class="bg-img hv"
+        style={{
+          backgroundImage: `url('${config.settings.asset.scheme}://${config.settings.asset.host}/images/admin/bg.jpg')`,
+        }}
+      >
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑评论模态框 -->
+  <div class="nice-popup" id="edit-comment-modal">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-content">
+        <h6>编辑评论</h6>
+        <form id="edit-comment-form">
+          <input type="hidden" id="edit-comment-id" />
+          <div class="mb-3">
+            <label class="form-label">评论内容</label>
+            <textarea class="form-control" id="edit-comment-content" rows="8" required></textarea>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑用户信息模态框 -->
+  <div class="nice-popup" id="edit-user-modal">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-content">
+        <h6>编辑用户信息</h6>
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-user-id" />
+          <div class="mb-3">
+            <label class="form-label">用户名</label>
+            <input type="text" class="form-control" id="edit-user-name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">邮箱</label>
+            <input type="email" class="form-control" id="edit-user-email" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">网站链接</label>
+            <input type="url" class="form-control" id="edit-user-link" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">徽章名称</label>
+            <input type="text" class="form-control" id="edit-user-badge-name" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">徽章颜色</label>
+            <input type="color" class="form-control form-control-color" id="edit-user-badge-color" />
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 回复评论模态框 -->
+  <div class="nice-popup" id="reply-comment-modal">
+    <div class="nice-popup-overlay"></div>
+    <div class="nice-popup-body">
+      <div class="nice-popup-content">
+        <h6>回复评论</h6>
+        <form id="reply-comment-form">
+          <input type="hidden" id="reply-comment-id" />
+          <input type="hidden" id="reply-page-key" />
+          <div class="mb-3">
+            <label class="form-label">回复内容</label>
+            <textarea class="form-control" id="reply-comment-content" rows="8" required></textarea>
+          </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-primary">发送回复</button>
+            <button type="button" class="btn btn-secondary close-modal-btn">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 隐藏的管理员用户信息 -->
+  <input type="hidden" id="admin-user-name" data-value={currentUser?.name || ''} />
+  <input type="hidden" id="admin-user-email" data-value={currentUser?.email || ''} />
+</BaseLayout>
+
+<script>
+  import '@/assets/scripts/admin/manage'
+</script>

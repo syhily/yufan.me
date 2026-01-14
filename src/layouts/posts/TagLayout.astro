@@ -1,0 +1,38 @@
+---
+import type { Post, Tag } from '@/helpers/content/schema'
+import config from '@/blog.config'
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import PostSquare from '@/components/page/post/PostSquare.astro'
+import { slicePosts } from '@/helpers/content/formatter'
+import { getPostsWithMetadata } from '@/helpers/content/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  tag: Tag
+  posts: Post[]
+  pageNum: number
+}
+
+const { tag, posts, pageNum } = Astro.props
+const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.pagination.tags)
+if (totalPage === 0) {
+  return Astro.redirect('/404')
+}
+const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
+---
+
+<BaseLayout title={`标签 “${tag.name}”`}>
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>{tag.name}</h1>
+      </div>
+      <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+        {resolvedPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
+      </div>
+      <div class="mt-4 mt-lg-5">
+        <Pagination current={pageNum} total={totalPage} rootPath={tag.permalink} />
+      </div>
+    </div>
+  </div>
+</BaseLayout>

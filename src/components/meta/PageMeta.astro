@@ -1,0 +1,57 @@
+---
+import type { Page } from '@/helpers/content/schema'
+import config from '@/blog.config'
+import { getPageMeta } from '@/helpers/seo'
+
+export interface Props {
+  title?: string
+  description?: string
+  ogImageUrl?: string
+  article?: Page
+}
+
+const { title, description, ogImageUrl, article } = Astro.props
+
+const { og, twitter } = getPageMeta({
+  title: title || config.title,
+  description: description || config.description,
+  pageUrl: import.meta.env.SITE,
+  ogImageUrl,
+  ogImageAltText: title || config.title,
+  ogImageWidth: config.settings.og.width,
+  ogImageHeight: config.settings.og.height,
+  siteOwnerTwitterHandle: config.settings.twitter,
+  contentAuthorTwitterHandle: config.settings.twitter,
+})
+---
+
+<>
+  {og.title && <meta property="og:title" content={og.title} />}
+  {og.description && <meta property="og:description" content={og.description} />}
+  {og.url && <meta property="og:url" content={og.url} />}
+  {og.image && <meta property="og:image" content={og.image} />}
+  {og.imageAlt && <meta property="og:image:alt" content={og.imageAlt} />}
+  {og.imageWidth && <meta property="og:image:width" content={og.imageWidth} />}
+  {og.imageHeight && <meta property="og:image:height" content={og.imageHeight} />}
+  <meta property="og:locale" content={config.settings.locale} />
+  {
+    article ? (
+      <>
+        <meta property="og:type" content="article" />
+        <>{article.updated && <meta property="article:modified_time" content={article.updated.toISOString()} />}</>
+        <>{article.date && <meta property="article:published_time" content={article.date.toISOString()} />}</>
+        <meta property="article:author" content={config.author.name} />
+        <meta property="article:section" content="页面" />
+      </>
+    ) : (
+      <meta property="og:type" content="website" />
+    )
+  }
+</>
+{twitter.title && <meta property="twitter:title" content={twitter.title} />}
+{twitter.description && <meta property="twitter:description" content={twitter.description} />}
+{twitter.site && <meta property="twitter:site" content={twitter.site} />}
+{twitter.creator && <meta property="twitter:creator" content={twitter.creator} />}
+<meta property="twitter:card" content="summary_large_image" />
+{twitter.image && <meta property="twitter:image" content={twitter.image} />}
+{twitter.imageAlt && <meta property="twitter:image:alt" content={twitter.imageAlt} />}

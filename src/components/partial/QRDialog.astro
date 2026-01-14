@@ -1,0 +1,25 @@
+---
+interface Props {
+  url: string
+  name: string
+  title: string
+  icon: string
+  className?: string
+}
+
+const { url, name, title, icon, className } = Astro.props
+---
+
+<div
+  class={className
+    ? `nice-dialog ${className}`
+    : 'nice-dialog btn btn-dark btn-icon btn-circle single-popup button-social'}
+  title={name}
+  data-title={title}
+  data-name={name}
+  data-url={url}
+>
+  <span>
+    <i class={`iconfont ${icon}`}></i>
+  </span>
+</div>

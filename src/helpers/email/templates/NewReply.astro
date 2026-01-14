@@ -1,0 +1,85 @@
+---
+import EmailLayout from '@/helpers/email/templates/layout/EmailLayout.astro'
+
+interface Props {
+  receiver: string
+  postTitle: string
+  postLink: string
+  sourceContent: string
+  replyContent: string
+  replyLink: string
+}
+
+const { receiver, postTitle, postLink, sourceContent, replyContent, replyLink } = Astro.props
+---
+
+<EmailLayout {receiver}>
+  <!-- 正文表格开始 -->
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 20px 0;">
+    <!-- 消息提示 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 10px;">
+        您在《
+        <a href={postLink} style="color:#666666; text-decoration:none;">{postTitle}</a>
+        》中的留言，有了新回复
+      </td>
+    </tr>
+
+    <!-- 您的留言 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 5px;"> 您的留言： </td>
+    </tr>
+    <tr>
+      <td style="padding-bottom: 15px;">
+        <table
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+          style="background: rgba(141,141,141,0.05); border-radius: 8px; padding: 10px 15px;"
+        >
+          <tr>
+            <td style="font-size: 14px; color: #333333; line-height: 1.7;">
+              <Fragment set:html={sourceContent} />
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- 回复内容 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5; padding-bottom: 5px;"> 回复内容： </td>
+    </tr>
+    <tr>
+      <td style="padding-bottom: 15px;">
+        <table
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
+          style="background: rgba(141,141,141,0.05); border-radius: 8px; padding: 10px 15px;"
+        >
+          <tr>
+            <td style="font-size: 14px; color: #333333; line-height: 1.7;">
+              <Fragment set:html={replyContent} />
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- 查看链接 -->
+    <tr>
+      <td style="font-size: 14px; color: #333333; line-height: 1.5;"> 您可以打开下方链接查看留言： </td>
+    </tr>
+    <tr>
+      <td style="padding-top: 10px;">
+        <a href={replyLink} target="_blank" style="font-size: 14px; color:#008c95; text-decoration: none;">
+          {replyLink}
+        </a>
+      </td>
+    </tr>
+  </table>
+  <!-- 正文表格结束 -->
+</EmailLayout>

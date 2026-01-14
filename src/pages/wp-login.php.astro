@@ -1,0 +1,50 @@
+---
+import { actions } from 'astro:actions'
+import Token from '@/components/partial/Token.astro'
+import { logout, userSession } from '@/helpers/auth/session'
+import AdminLayout from '@/layouts/AdminLayout.astro'
+
+// Check Astro session
+if (Astro.session === undefined) {
+  throw new Error('Please configure your astro session store')
+}
+
+// Support logout
+const action = Astro.url.searchParams.get('action')
+if (action === 'logout') {
+  logout(Astro.session)
+  return Astro.redirect(Astro.url.searchParams.get('redirect_to') || import.meta.env.SITE)
+}
+
+// Support login
+const user = await userSession(Astro.session)
+if (user !== undefined) {
+  return Astro.redirect(Astro.url.searchParams.get('redirect_to') || import.meta.env.SITE)
+}
+---
+
+<AdminLayout title="用户登陆">
+  <form method="post" action={actions.auth.signIn} id="loginForm">
+    <Token />
+    <div class="flex-fill">
+      <div class="row g-3 mb-5 px-5">
+        <input class="form-control mb-2" placeholder="邮箱" name="email" type="email" required="required" />
+        <input
+          class="form-control mb-2"
+          placeholder="密码"
+          name="password"
+          type="password"
+          required="required"
+          minlength="10"
+        />
+      </div>
+      <div class="form-submit text-center">
+        <input name="submit" type="submit" id="submit" class="btn btn-primary col-4" value="登陆" />
+      </div>
+    </div>
+  </form>
+</AdminLayout>
+
+<script>
+  import '@/assets/scripts/admin/login'
+</script>

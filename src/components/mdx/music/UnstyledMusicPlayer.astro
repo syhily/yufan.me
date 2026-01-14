@@ -1,0 +1,11 @@
+---
+import { loadMusic } from '@/components/mdx/music/loader'
+
+interface Props {
+  id: string
+}
+const meta = await loadMusic(Astro.props.id)
+const url = meta === null ? '' : meta.url
+---
+
+{url !== '' && <audio controls src={url} />}

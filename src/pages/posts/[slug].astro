@@ -1,0 +1,16 @@
+---
+import { getPost } from '@/helpers/content/schema'
+import PostLayout from '@/layouts/PostLayout.astro'
+
+const { slug } = Astro.params
+if (!slug) {
+  return Astro.redirect('/404')
+}
+
+const post = getPost(slug)
+if (!post) {
+  return Astro.redirect('/404')
+}
+---
+
+<PostLayout {post} />

@@ -1,0 +1,333 @@
+{
+  "$schema": "https://frontmatter.codes/frontmatter.schema.json",
+  "frontMatter.framework.id": "astro",
+  "frontMatter.preview.host": "http://localhost:4321",
+  "frontMatter.global.timezone": "Asia/Shanghai",
+  "frontMatter.taxonomy.alignFilename": true,
+  "frontMatter.git.requiresCommitMessage": [
+    "main"
+  ],
+  "frontMatter.content.publicFolder": "[[workspace]]/public",
+  "frontMatter.content.pageFolders": [
+    {
+      "title": "Page",
+      "path": "[[workspace]]/src/content/pages",
+      "excludeSubdir": true,
+      "previewPath": "",
+      "contentTypes": [
+        "Page"
+      ]
+    },
+    {
+      "title": "Note",
+      "path": "[[workspace]]/src/content/posts/notes",
+      "excludeSubdir": false,
+      "previewPath": "posts",
+      "contentTypes": [
+        "Post"
+      ]
+    },
+    {
+      "title": "Post",
+      "path": "[[workspace]]/src/content/posts",
+      "excludeSubdir": false,
+      "filePrefix": "{{date|yyyy}}/{{date|yyyy}}-{{date|MM}}-{{date|dd}}",
+      "previewPath": "posts",
+      "contentTypes": [
+        "Post"
+      ]
+    }
+  ],
+  "frontMatter.content.draftField": {
+    "name": "published",
+    "type": "boolean",
+    "invert": true
+  },
+  "frontMatter.taxonomy.contentTypes": [
+    {
+      "name": "Post",
+      "clearEmpty": true,
+      "fileType": "mdx",
+      "pageBundle": false,
+      "slugTemplate": "{{title}}",
+      "fields": [
+        {
+          "name": "title",
+          "title": "Title",
+          "type": "string",
+          "single": true,
+          "required": true
+        },
+        {
+          "name": "slug",
+          "title": "Slug",
+          "type": "string",
+          "editable": true,
+          "required": true,
+          "description": "Unique ID, used as the permalink"
+        },
+        {
+          "name": "date",
+          "title": "Publish Date",
+          "type": "datetime",
+          "default": "{{now}}",
+          "isPublishDate": true,
+          "dateFormat": "yyyy-MM-dd HH:mm:ssXXX",
+          "required": true
+        },
+        {
+          "name": "updated",
+          "title": "Last Updated",
+          "isModifiedDate": true,
+          "dateFormat": "yyyy-MM-dd HH:mm:ssXXX",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "category",
+          "title": "Category",
+          "type": "categories",
+          "singleValueAsString": true,
+          "taxonomyLimit": 1,
+          "required": true
+        },
+        {
+          "name": "tags",
+          "title": "Tags",
+          "type": "tags"
+        },
+        {
+          "name": "summary",
+          "title": "Summary",
+          "type": "string",
+          "description": "Plain text summary, defaults to first 140 characters"
+        },
+        {
+          "name": "cover",
+          "title": "Cover Image",
+          "type": "image",
+          "isPreviewImage": true
+        },
+        {
+          "name": "og",
+          "title": "Open Graph Image",
+          "type": "image"
+        },
+        {
+          "name": "comments",
+          "title": "Enable Comments",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "name": "published",
+          "title": "Published",
+          "type": "draft",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "visible",
+          "title": "Visible in Feeds",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "name": "toc",
+          "title": "Show Table of Contents",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "name": "alias",
+          "title": "Alias Slugs",
+          "type": "list",
+          "default": []
+        }
+      ]
+    },
+    {
+      "name": "Page",
+      "pageBundle": false,
+      "clearEmpty": true,
+      "fields": [
+        {
+          "name": "slug",
+          "title": "Slug",
+          "type": "string",
+          "editable": true,
+          "required": true,
+          "description": "Unique ID, used as the permalink"
+        },
+        {
+          "name": "date",
+          "title": "Publish Date",
+          "type": "datetime",
+          "default": "{{now}}",
+          "isPublishDate": true,
+          "dateFormat": "yyyy-MM-dd HH:mm:ssXXX",
+          "required": true
+        },
+        {
+          "name": "updated",
+          "title": "Last Updated",
+          "isModifiedDate": true,
+          "dateFormat": "yyyy-MM-dd HH:mm:ssXXX",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "comments",
+          "title": "Enable Comments",
+          "type": "boolean",
+          "default": true
+        },
+        {
+          "name": "published",
+          "title": "Published",
+          "type": "draft",
+          "required": false,
+          "default": true
+        },
+        {
+          "name": "cover",
+          "title": "Cover Image",
+          "type": "image",
+          "isPreviewImage": true
+        },
+        {
+          "name": "og",
+          "title": "Open Graph Image",
+          "type": "image"
+        },
+        {
+          "name": "title",
+          "title": "Title",
+          "type": "string",
+          "single": true,
+          "required": true
+        },
+        {
+          "name": "summary",
+          "title": "Summary",
+          "type": "string",
+          "description": "Plain text summary, defaults to first 140 characters"
+        },
+        {
+          "name": "toc",
+          "title": "Show Table of Contents",
+          "type": "boolean",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "frontMatter.website.host": "https://yufan.me",
+  "frontMatter.data.files": [
+    {
+      "id": "friends",
+      "title": "Friends",
+      "file": "[[workspace]]/src/content/metas/friends.yml",
+      "labelField": "website",
+      "fileType": "yaml",
+      "singleEntry": false,
+      "schema": {
+        "title": "Friends",
+        "type": "object",
+        "required": [
+          "slug",
+          "website",
+          "homepage",
+          "poster"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Unique ID"
+          },
+          "website": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "homepage": {
+            "type": "string",
+            "title": "URL Address"
+          },
+          "poster": {
+            "type": "string",
+            "title": "Poster"
+          }
+        }
+      }
+    },
+    {
+      "id": "categories",
+      "title": "Categories",
+      "file": "[[workspace]]/src/content/metas/categories.yml",
+      "labelField": "name",
+      "fileType": "yaml",
+      "singleEntry": false,
+      "schema": {
+        "title": "Categories",
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "description"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Unique ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "multiline": true
+          }
+        }
+      }
+    },
+    {
+      "id": "tags",
+      "title": "Tags",
+      "file": "[[workspace]]/src/content/metas/tags.yml",
+      "labelField": "name",
+      "fileType": "yaml",
+      "singleEntry": false,
+      "schema": {
+        "title": "Tags",
+        "type": "object",
+        "required": [
+          "slug",
+          "name"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug",
+            "description": "Unique ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        }
+      }
+    }
+  ],
+  "frontMatter.dashboard.openOnStart": true,
+  "frontMatter.git.enabled": true,
+  "frontMatter.panel.openOnSupportedFile": true,
+  "frontMatter.git.commitMessage": "feat: update blog posts"
+}

@@ -1,0 +1,61 @@
+---
+import type { Post } from '@/helpers/content/schema'
+import config from '@/blog.config'
+import { getPageMeta } from '@/helpers/seo'
+
+export interface Props {
+  title?: string
+  description?: string
+  requestPath: string
+  ogImageUrl?: string
+  ogImageAltText: string
+  article?: Post
+}
+
+const { requestPath, title, description, ogImageUrl, ogImageAltText, article } = Astro.props
+
+const { og, twitter } = getPageMeta({
+  title: title || config.title,
+  description: description || config.description,
+  pageUrl: requestPath.startsWith('http') ? requestPath : import.meta.env.SITE + requestPath,
+  ogImageUrl,
+  ogImageAltText,
+  ogImageWidth: config.settings.og.width,
+  ogImageHeight: config.settings.og.height,
+  siteOwnerTwitterHandle: config.settings.twitter,
+  contentAuthorTwitterHandle: config.settings.twitter,
+})
+---
+
+<>
+  {og.url && <link rel="canonical" href={og.url} />}
+  {og.title && <meta property="og:title" content={og.title} />}
+  {og.description && <meta property="og:description" content={og.description} />}
+  <meta property="og:type" content="article" />
+  {og.url && <meta property="og:url" content={og.url} />}
+  {og.image && <meta property="og:image" content={og.image} />}
+  {og.imageAlt && <meta property="og:image:alt" content={og.imageAlt} />}
+  {og.imageWidth && <meta property="og:image:width" content={og.imageWidth} />}
+  {og.imageHeight && <meta property="og:image:height" content={og.imageHeight} />}
+  <meta property="og:locale" content={config.settings.locale} />
+  {
+    article && (
+      <>
+        {article.updated && <meta property="article:modified_time" content={article.updated.toISOString()} />}
+        {article.date && <meta property="article:published_time" content={article.date.toISOString()} />}
+        {article.tags.map((tag) => (
+          <meta property="article:tag" content={tag} />
+        ))}
+        <meta property="article:author" content={config.author.name} />
+        <meta property="article:section" content={article.category} />
+      </>
+    )
+  }
+  {twitter.title && <meta property="twitter:title" content={twitter.title} />}
+  {twitter.description && <meta property="twitter:description" content={twitter.description} />}
+  {twitter.site && <meta property="twitter:site" content={twitter.site} />}
+  {twitter.creator && <meta property="twitter:creator" content={twitter.creator} />}
+  <meta property="twitter:card" content="summary_large_image" />
+  {twitter.image && <meta property="twitter:image" content={twitter.image} />}
+  {twitter.imageAlt && <meta property="twitter:image:alt" content={twitter.imageAlt} />}
+</>
