@@ -40,7 +40,7 @@
     "@astrojs/rss": "^4.0.15",
     "@napi-rs/canvas": "^0.1.88",
     "@shikijs/transformers": "^3.21.0",
-    "astro": "^5.16.11",
+    "astro": "^5.16.12",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "flexsearch": "^0.8.212",
