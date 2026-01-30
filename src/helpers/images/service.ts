@@ -73,6 +73,9 @@ function isRemoteAllowed(
     remotePatterns = [],
   }: Partial<Pick<AstroConfig['image'], 'domains' | 'remotePatterns'>>,
 ): boolean {
+  if (src.startsWith('data:')) {
+    return false
+  }
   if (!isRemotePath(src)) {
     return false
   }
@@ -137,18 +140,20 @@ const service: ExternalImageService = {
   async validateOptions(options, imageConfig) {
     if (!options.width || !options.height || !options.style || !options.style['background-image']) {
       const imageSource = isESMImportedImage(options.src) ? options.src.src : options.src
-      if (!isRemoteAllowed(imageSource, imageConfig)) {
-        throw new Error(`Image source ${imageSource} is not allowed`)
-      }
-      const { width, height, blurhash } = await getImage(imageSource, options)
-      options.width = options.width || width
-      options.height = options.height || height
-      if (blurhash) {
-        options.style = {
-          'background-image': `url("${blurhash}")`,
-          'background-position': 'center',
-          'background-size': 'cover',
-          'background-repeat': 'no-repeat',
+      if (!imageSource.startsWith('data:')) {
+        if (!isRemoteAllowed(imageSource, imageConfig)) {
+          throw new Error(`Image source ${imageSource} is not allowed`)
+        }
+        const { width, height, blurhash } = await getImage(imageSource, options)
+        options.width = options.width || width
+        options.height = options.height || height
+        if (blurhash) {
+          options.style = {
+            'background-image': `url("${blurhash}")`,
+            'background-position': 'center',
+            'background-size': 'cover',
+            'background-repeat': 'no-repeat',
+          }
         }
       }
     }

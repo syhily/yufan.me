@@ -19,6 +19,7 @@ import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
 import config from './src/blog.config'
+import rehypeMermaid from './src/helpers/content/mermaid'
 
 const {
   REDIS_URL,
@@ -73,6 +74,11 @@ export default defineConfig({
     mdx({
       remarkPlugins: [remarkMath],
       rehypePlugins: [
+        [rehypeMermaid, {
+          strategy: 'inline-svg',
+          theme: 'solarized-light',
+          renderOptions: { transparent: true },
+        }],
         [rehypeTitleFigure],
         [rehypeExternalLinks, { rel: 'nofollow', target: '_blank' }],
         rehypeSlug,
@@ -94,6 +100,10 @@ export default defineConfig({
   }),
   markdown: {
     gfm: true,
+    syntaxHighlight: {
+      type: 'shiki',
+      excludeLangs: ['math', 'mermaid'],
+    },
     shikiConfig: {
       theme: 'solarized-light',
       wrap: false,

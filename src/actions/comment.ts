@@ -7,7 +7,17 @@ import CommentItem from '@/components/comment/CommentItem.astro'
 import { requireAdmin } from '@/helpers/auth/session'
 import { queryUserId } from '@/helpers/auth/user'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/helpers/comment/likes'
-import { approveComment, createComment, deleteComment, getCommentById, loadAllComments, loadComments, updateComment } from '@/helpers/comment/loader'
+import {
+  approveComment,
+  createComment,
+  deleteComment,
+  getCommentAuthors,
+  getCommentById,
+  getPageOptions,
+  loadAllComments,
+  loadComments,
+  updateComment,
+} from '@/helpers/comment/loader'
 import { partialRender } from '@/helpers/content/render'
 import { getPosts, pages } from '@/helpers/content/schema'
 import { ErrorMessages } from '@/helpers/errors'
@@ -175,7 +185,6 @@ export const comment = {
     input: z.void(),
     handler: async (_, { session }) => {
       await requireAdmin(session)
-      const { getPageOptions, getCommentAuthors } = await import('@/helpers/comment/loader')
       const pages = await getPageOptions()
       const authors = await getCommentAuthors()
       return { pages, authors }

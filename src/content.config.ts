@@ -45,7 +45,11 @@ const tagsCollection = defineCollection({
 
 // Posts Collection
 const postsCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.mdx', base: './src/content/posts' }),
+  loader: glob({
+    pattern: '**\/[^_]*.mdx',
+    base: './src/content/posts',
+    retainBody: false,
+  }),
   schema: z.object({
     title: z.string().max(99),
     date: z.date(),
@@ -65,7 +69,11 @@ const postsCollection = defineCollection({
 
 // Pages Collection
 const pagesCollection = defineCollection({
-  loader: glob({ pattern: '**\/[^_]*.mdx', base: './src/content/pages' }),
+  loader: glob({
+    pattern: '**\/[^_]*.mdx',
+    base: './src/content/pages',
+    retainBody: false,
+  }),
   schema: z.object({
     title: z.string().max(99),
     date: z.date(),
