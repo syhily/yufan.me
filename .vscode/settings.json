@@ -252,6 +252,10 @@
     "zindex",
     "zishu"
   ],
+  "cSpell.ignorePaths": [
+    "**/*.mdx",
+    "package.json"
+  ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "prettier.enable": false,
   "editor.formatOnSave": false,
