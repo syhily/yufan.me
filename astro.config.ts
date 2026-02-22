@@ -36,6 +36,7 @@ export default defineConfig({
   output: 'server',
   security: {
     checkOrigin: true,
+    actionBodySizeLimit: 16 * 1024 * 1024,
   },
   experimental: {
     preserveScriptOrder: true,
