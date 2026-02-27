@@ -41,7 +41,7 @@ const authentication = defineMiddleware(async ({ url, redirect, session }, next)
     // Require user information in session.
     const user = await userSession(session)
     if (user === undefined) {
-      return redirect(`${ADMIN_ENDPOINTS.login}?${querystring.stringify({ redirect_to: url.toString() })}`)
+      return redirect(`${ADMIN_ENDPOINTS.login}?${querystring.stringify({ redirect_to: `${import.meta.env.SITE}/wp-admin/` })}`)
     }
   }
   // return a Response or the result of calling `next()`

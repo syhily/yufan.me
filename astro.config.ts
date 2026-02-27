@@ -35,7 +35,7 @@ export default defineConfig({
   site: NODE_ENV === 'production' ? 'https://yufan.me' : 'http://localhost:4321',
   output: 'server',
   security: {
-    checkOrigin: true,
+    checkOrigin: false,
     actionBodySizeLimit: 16 * 1024 * 1024,
   },
   experimental: {
