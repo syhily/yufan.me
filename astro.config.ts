@@ -9,7 +9,12 @@ import {
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
 import uploader from 'astro-uploader'
-import { defineConfig, envField } from 'astro/config'
+import {
+  defineConfig,
+  envField,
+  memoryCache,
+  sessionDrivers
+} from 'astro/config'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeExternalLinks from 'rehype-external-links'
 import rehypeMathjax from 'rehype-mathjax'
@@ -39,8 +44,11 @@ export default defineConfig({
     actionBodySizeLimit: 16 * 1024 * 1024,
   },
   experimental: {
-    preserveScriptOrder: true,
-    staticImportMetaEnv: true,
+    cache: { provider: memoryCache() },
+    rustCompiler: true,
+    queuedRendering: {
+      enabled: true,
+    },
   },
   trailingSlash: 'ignore',
   image: {
@@ -48,16 +56,9 @@ export default defineConfig({
     service: { entrypoint: './src/helpers/images/service' },
   },
   session: {
-    driver: 'redis',
-    ttl: 60 * 60,
-    options: {
+    driver: sessionDrivers.redis({
       url: REDIS_URL,
-    },
-    cookie: {
-      name: 'yufan-me-session',
-      sameSite: 'lax',
-      secure: true,
-    },
+    }),
   },
   env: {
     schema: {
@@ -140,12 +141,6 @@ export default defineConfig({
     enabled: false,
   },
   vite: {
-    optimizeDeps: {
-      exclude: [
-        '@napi-rs/canvas',
-        'sharp',
-      ],
-    },
     plugins: [
       vitePluginBinary({ gzip: true }),
     ],

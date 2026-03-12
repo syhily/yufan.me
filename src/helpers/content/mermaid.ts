@@ -8,7 +8,7 @@ import type { Plugin } from 'unified'
 import type { VFile } from 'vfile'
 
 import { Buffer } from 'node:buffer'
-import { renderMermaid, THEMES } from 'beautiful-mermaid'
+import { renderMermaidSVGAsync, THEMES } from 'beautiful-mermaid'
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
 import { toText } from 'hast-util-to-text'
 import svgToDataURI from 'mini-svg-data-uri'
@@ -396,7 +396,7 @@ const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
 
     const renderPromises = instances.map(async (instance) => {
       try {
-        const svg = await renderMermaid(instance.diagram, renderOptions)
+        const svg = await renderMermaidSVGAsync(instance.diagram, renderOptions)
         const dimensions = extractSvgDimensions(svg)
         const result: RenderResult = {
           svg,

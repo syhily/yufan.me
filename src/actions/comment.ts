@@ -30,7 +30,7 @@ export const comment = {
     accept: 'json',
     input: z
       .object({
-        key: z.custom<string>(val => keys.includes(val)),
+        key: z.enum(keys),
       }),
     handler: async (input) => {
       return await increaseLikes(input.key)
@@ -40,7 +40,7 @@ export const comment = {
     accept: 'json',
     input: z
       .object({
-        key: z.custom<string>(val => keys.includes(val)),
+        key: z.enum(keys),
         token: z.string().min(1),
       }),
     handler: async (input) => {
@@ -52,7 +52,7 @@ export const comment = {
     accept: 'json',
     input: z
       .object({
-        key: z.custom<string>(val => keys.includes(val)),
+        key: z.enum(keys),
         token: z.string().min(1),
       }),
     handler: async (input) => {
@@ -62,7 +62,7 @@ export const comment = {
   }),
   findAvatar: defineAction({
     accept: 'json',
-    input: z.object({ email: z.string().email() }),
+    input: z.object({ email: z.email() }),
     handler: async ({ email }) => {
       const id = await queryUserId(email)
       const hash = id === null ? encodedEmail(email) : `${id}`
@@ -74,7 +74,7 @@ export const comment = {
     input: z.object({
       page_key: z.string(),
       name: z.string(),
-      email: z.string().email(),
+      email: z.email(),
       link: z.string().optional(),
       content: z.string().min(1),
       rid: z.number().optional(),

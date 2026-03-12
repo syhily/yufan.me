@@ -6,30 +6,13 @@ import { joinPaths } from '@astrojs/internal-helpers/path'
 import { getContainerRenderer } from '@astrojs/mdx'
 import { experimental_AstroContainer as AstroContainer } from 'astro/container'
 import { loadRenderers } from 'astro:container'
-import { REDIS_URL } from 'astro:env/server'
 import { ELEMENT_NODE, TEXT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
 import config from '@/blog.config'
 import PostContent from '@/components/page/post/PostContent.astro'
 
 const renderers = await loadRenderers([getContainerRenderer()])
-const container = await AstroContainer.create({
-  astroConfig: {
-    session: {
-      driver: 'redis',
-      ttl: 60 * 60,
-      options: {
-        url: REDIS_URL,
-      },
-      cookie: {
-        name: 'yufan-me-session',
-        sameSite: 'lax',
-        secure: true,
-      },
-    },
-  },
-  renderers,
-})
+const container = await AstroContainer.create({ renderers })
 
 // We only want to make sure the container instance is singleton.
 export async function partialRender(component: AstroComponentFactory, options?: ContainerRenderOptions): Promise<string> {

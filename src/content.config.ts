@@ -1,5 +1,6 @@
 import { file, glob } from 'astro/loaders'
-import { defineCollection, z } from 'astro:content'
+import { defineCollection } from 'astro:content'
+import { z } from 'astro/zod'
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
@@ -18,7 +19,7 @@ const categoriesCollection = defineCollection({
   schema: z.object({
     name: z.string().max(20),
     slug: slug(),
-    cover: z.string().url(),
+    cover: z.url(),
     description: z.string().max(999).optional().default('').describe('In markdown format'),
   }),
 })
@@ -29,8 +30,8 @@ const friendsCollection = defineCollection({
   schema: z.object({
     website: z.string().max(40),
     description: z.string().optional().describe('One line string'),
-    homepage: z.string().url(),
-    poster: z.string().url(),
+    homepage: z.url(),
+    poster: z.url(),
   }),
 })
 
@@ -59,7 +60,7 @@ const postsCollection = defineCollection({
     tags: z.string().array().optional().default([]),
     category: z.string(),
     summary: z.string().optional().default(''),
-    cover: z.string().url().optional(),
+    cover: z.url().optional(),
     og: z.string().optional(),
     published: z.boolean().optional().default(true),
     visible: z.boolean().optional().default(true),
@@ -79,7 +80,7 @@ const pagesCollection = defineCollection({
     date: z.date(),
     updated: z.date().optional(),
     comments: z.boolean().optional().default(true),
-    cover: z.string().url(),
+    cover: z.url(),
     og: z.string().optional(),
     published: z.boolean().optional().default(true),
     summary: z.string().optional(),

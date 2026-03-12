@@ -23,7 +23,7 @@ export const auth = {
     accept: 'json',
     input: z.object({
       name: z.string().min(1),
-      email: z.string().email().min(1),
+      email: z.email().min(1),
       password: z.string().min(10),
     }),
     handler: async ({ name, email, password }) => {
@@ -50,7 +50,7 @@ export const auth = {
     accept: 'json',
     input: z.object({
       name: z.string().min(1),
-      email: z.string().email().min(1),
+      email: z.email().min(1),
       password: z.string().min(10),
       confirmPassword: z.string().min(10),
       token: z.string(),
@@ -114,7 +114,7 @@ export const auth = {
   signIn: defineAction({
     accept: 'json',
     input: z.object({
-      email: z.string().email(),
+      email: z.email(),
       password: z.string().min(10),
       token: z.string(),
     }),
@@ -160,7 +160,7 @@ export const auth = {
     input: z.object({
       userId: z.string(),
       name: z.string().min(1).optional(),
-      email: z.string().email().optional(),
+      email: z.email().optional(),
       link: z.string().optional(),
       badgeName: z.string().optional(),
       badgeColor: z.string().optional(),
