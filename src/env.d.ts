@@ -1,9 +1,16 @@
 /// <reference path="../.astro/types.d.ts" />
+/// <reference types="astro/client" />
 
 declare module 'unstorage/drivers/redis' {
   import type { Driver } from 'unstorage'
 
   export default function redisDriver(options?: any): Driver
+}
+
+declare module '*.astro' {
+  import { AstroComponentFactory } from 'astro/runtime/server';
+  const Component: AstroComponentFactory;
+  export default Component;
 }
 
 declare namespace App {

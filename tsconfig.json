@@ -8,7 +8,7 @@
       "@/*": ["./src/*"],
       "~/*": ["./public/*"]
     },
-    "types": ["vite-plugin-binary/types"],
+    "types": ["vite-plugin-binary/types", "astro/client"],
     "strict": true,
     "strictNullChecks": true,
     "verbatimModuleSyntax": true
