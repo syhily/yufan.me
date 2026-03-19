@@ -33,12 +33,12 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.1",
+    "@astrojs/mdx": "^5.0.2",
     "@astrojs/node": "^10.0.2",
     "@astrojs/rss": "^4.0.17",
     "@napi-rs/canvas": "^0.1.97",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.0.5",
+    "astro": "^6.0.6",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "flexsearch": "^0.8.212",
