@@ -31,3 +31,5 @@ pnpm-debug.log*
 .husky/
 
 .history/
+
+.cursor/
