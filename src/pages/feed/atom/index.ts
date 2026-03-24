@@ -1,7 +1,7 @@
-import { FEED } from '@/pages/feed/source';
+import { atom } from '@/pages/feed/source';
 
 export async function GET() {
-  return new Response(FEED.atom1(), {
+  return new Response(atom, {
     headers: { "Content-Type": "application/atom+xml" },
   });
 }

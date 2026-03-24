@@ -75,8 +75,12 @@ async function generateFeeds() {
     feed.addCategory(category.name)
   })
 
-  return feed
+  return {
+    rss: feed.rss2(),
+  // Hotfix the adding the xml:lang attribute to the atom feed
+    atom: feed.atom1().replace('<feed xmlns="http://www.w3.org/2005/Atom">', '<feed xml:lang="zh-CN" xmlns="http://www.w3.org/2005/Atom">'),
+  }
 }
 
 // Cached for avoiding generating feeds multiple times
-export const FEED = await generateFeeds()
+export const { rss, atom } = await generateFeeds()

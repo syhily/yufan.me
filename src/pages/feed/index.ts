@@ -1,7 +1,7 @@
-import { FEED } from '@/pages/feed/source';
+import { rss } from '@/pages/feed/source';
 
 export async function GET() {
-  return new Response(FEED.rss2(), {
+  return new Response(rss, {
     headers: { "Content-Type": "application/xml" },
   });
 }
