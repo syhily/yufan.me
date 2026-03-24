@@ -65,7 +65,7 @@ async function generateFeeds() {
         },
       ],
       date: post.date,
-      image: post.cover,
+      image: `${import.meta.env.SITE}/images/og/${post.slug}.png`,
       category: categories,
     })
   })
