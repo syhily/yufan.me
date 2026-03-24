@@ -41,6 +41,7 @@
     "astro": "^6.0.8",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
+    "feed": "^5.2.0",
     "flexsearch": "^0.8.212",
     "ioredis": "^5.10.1",
     "lodash": "^4.17.23",
