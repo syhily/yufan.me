@@ -171,7 +171,6 @@ All of these fonts are free for commercial use.
 
 - [OPPOSans 4.0](https://open.oppomobile.com/new/developmentDoc/info?id=13223)([license](licenses/LICENSE.opposans.txt))
 - [OPPOSerif](https://open.oppomobile.com/new/developmentDoc/info?id=13223)([license](licenses/LICENSE.opposans.txt))
-- [Hack](https://github.com/source-foundry/Hack)([license](licenses/LICENSE.hack.txt))
 
 ### Open Graph Font License
 
