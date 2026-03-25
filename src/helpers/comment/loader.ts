@@ -7,28 +7,28 @@ import config from '@/blog.config'
 import { isAdmin, userSession } from '@/helpers/auth/session'
 import { createUser } from '@/helpers/auth/user'
 import { parseContent } from '@/helpers/content/markdown'
-import * as pool from '@/helpers/db/pool'
+import { db } from '@/helpers/db/pool'
 import { comment, page, user } from '@/helpers/db/schema'
 import { sendApprovedComment, sendNewComment, sendNewReply } from '@/helpers/email/sender'
 import { ErrorMessages } from '@/helpers/errors'
 
 async function upsertPage(key: string, title: string | null): Promise<Page> {
-  const res = await pool.db.select().from(page).where(eq(page.key, key)).limit(1)
+  const res = await db.select().from(page).where(eq(page.key, key)).limit(1)
   if (res.length > 0) {
     const p = res[0]
     if (p.title !== title && title !== null) {
       // Update the page with the new title
       p.title = title
-      await pool.db.update(page).set(p).where(eq(page.key, key)).returning()
+      await db.update(page).set(p).where(eq(page.key, key)).returning()
     }
     return p
   }
   const np: NewPage = { title: title || '无标题', key, voteUp: 0, voteDown: 0, pv: 0 }
-  return (await pool.db.insert(page).values(np).returning())[0]
+  return (await db.insert(page).values(np).returning())[0]
 }
 
 export async function pendingComments(): Promise<LatestComment[]> {
-  const results = await pool.db
+  const results = await db
     .select({
       id: comment.id,
       page: comment.pageKey,
@@ -58,7 +58,7 @@ export async function pendingComments(): Promise<LatestComment[]> {
 }
 
 export async function latestComments(): Promise<LatestComment[]> {
-  const admins = await pool.db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
+  const admins = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
   const userFilterQuery = admins.length > 0 ? sql`user_id NOT IN (${admins.map(admin => admin.id).join(', ')})` : sql`1 = 1`
   const latestDistinctCommentsQuery = sql`SELECT    id
   FROM      (
@@ -76,8 +76,10 @@ export async function latestComments(): Promise<LatestComment[]> {
   WHERE     rn = 1
   ORDER BY  created_at DESC
   LIMIT     ${config.settings.sidebar.comment}`
-  const latestDistinctComments = (await pool.db.execute(latestDistinctCommentsQuery)).rows.map(row => row.id).map(id => BigInt(`${id}`))
-  const results = await pool.db
+  const latestDistinctComments = (await db.execute(latestDistinctCommentsQuery)).rows
+    .map((row: { id: unknown }) => row.id)
+    .map((id: unknown) => BigInt(String(id)))
+  const results = await db
     .select({
       id: comment.id,
       page: comment.pageKey,
@@ -136,16 +138,16 @@ export async function loadComments(session: AstroSession | undefined, key: strin
   await upsertPage(key, title)
   const pendingArray = session ? await isAdmin(session) ? [false, true] : [false] : [false]
 
-  const counts = (await pool.db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray))))[0].counts
-  const rootCounts = (await pool.db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), eq(comment.rootId, 0n))))[0].counts
-  const rootComments = await pool.db.select(unionCommentSelect)
+  const counts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray))))[0].counts
+  const rootCounts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), eq(comment.rootId, 0n))))[0].counts
+  const rootComments = await db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n), inArray(comment.isPending, pendingArray)))
     .limit(config.settings.comments.size)
     .orderBy(desc(comment.createdAt))
     .offset(offset)
-  const childComments = await pool.db.select(unionCommentSelect)
+  const childComments = await db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), inArray(comment.rootId, rootComments.map(c => c.id))))
@@ -160,7 +162,7 @@ export async function loadComments(session: AstroSession | undefined, key: strin
 export async function increaseViews(key: string, title: string | null) {
   await upsertPage(key, title)
   if (import.meta.env.PROD) {
-    await pool.db
+    await db
       .update(page)
       .set({
         pv: sql`${page.pv} + 1`,
@@ -170,8 +172,8 @@ export async function increaseViews(key: string, title: string | null) {
 }
 
 export async function approveComment(rid: string) {
-  await pool.db.update(comment).set({ isPending: false }).where(eq(comment.id, BigInt(rid)))
-  const c = await pool.db.select()
+  await db.update(comment).set({ isPending: false }).where(eq(comment.id, BigInt(rid)))
+  const c = await db.select()
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .innerJoin(page, eq(comment.pageKey, page.key))
@@ -183,12 +185,12 @@ export async function approveComment(rid: string) {
 }
 
 export async function deleteComment(rid: string) {
-  await pool.db.delete(comment).where(eq(comment.id, BigInt(rid)))
+  await db.delete(comment).where(eq(comment.id, BigInt(rid)))
 }
 
 export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string, session: AstroSession): Promise<ErrorResp | CommentAndUser> {
   // Check page key
-  const p = await pool.db.select().from(page).where(eq(page.key, commentReq.page_key))
+  const p = await db.select().from(page).where(eq(page.key, commentReq.page_key))
   if (p.length === 0) {
     return { msg: ErrorMessages.COMMENT_PAGE_NOT_FOUND }
   }
@@ -218,7 +220,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   }
 
   // Query the existing comments for the user for deduplication.
-  const historicalComments = await pool.db.select()
+  const historicalComments = await db.select()
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .limit(10)
@@ -227,14 +229,14 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   }
 
   // Update the comment user information
-  await pool.db.update(user)
+  await db.update(user)
     .set({ lastUa: req.headers.get('User-Agent'), lastIp: clientAddress })
     .where(eq(user.id, u.id))
 
   // Calculate comment architecture
   let rootId = 0n
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
-    const r = await pool.db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.id, BigInt(commentReq.rid))).limit(1)
+    const r = await db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.id, BigInt(commentReq.rid))).limit(1)
     if (r.length > 0 && r[0].rootId !== null && r[0].rootId !== 0n) {
       rootId = r[0].rootId
     }
@@ -244,7 +246,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   }
 
   // Should I bypass the check.
-  const pendingStatus = await pool.db.select({ count: count() }).from(comment).where(and(eq(comment.userId, u.id), eq(comment.isPending, false)))
+  const pendingStatus = await db.select({ count: count() }).from(comment).where(and(eq(comment.userId, u.id), eq(comment.isPending, false)))
   const isPending = pendingStatus.length === 0 || pendingStatus[0].count === 0
 
   // Insert the comment
@@ -263,7 +265,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
     voteDown: 0,
     rootId,
   }
-  const res = await pool.db.insert(comment).values(newComment).returning()
+  const res = await db.insert(comment).values(newComment).returning()
   if (res.length === 0) {
     return { msg: ErrorMessages.COMMENT_CREATE_FAILED }
   }
@@ -304,7 +306,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
     sendNewComment(info, p[0])
   }
   if (info.rid !== 0) {
-    const source = await pool.db.select()
+    const source = await db.select()
       .from(comment)
       .innerJoin(user, eq(comment.userId, user.id))
       .where(eq(comment.id, BigInt(info.rid)))
@@ -319,7 +321,7 @@ export async function createComment(commentReq: CommentReq, req: Request, client
 }
 
 export async function getCommentById(rid: string) {
-  const r = await pool.db.select(unionCommentSelect)
+  const r = await db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(eq(comment.id, BigInt(rid)))
@@ -331,9 +333,9 @@ export async function getCommentById(rid: string) {
 
 export async function updateComment(rid: string, newContent: string) {
   // Update raw content and updated timestamp
-  await pool.db.update(comment).set({ content: newContent }).where(eq(comment.id, BigInt(rid)))
+  await db.update(comment).set({ content: newContent }).where(eq(comment.id, BigInt(rid)))
 
-  const r = await pool.db.select(unionCommentSelect)
+  const r = await db.select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(eq(comment.id, BigInt(rid)))
@@ -361,7 +363,7 @@ export interface AdminCommentsResult {
 
 // 获取所有文章列表（用于筛选）
 export async function getPageOptions(): Promise<Array<{ key: string, title: string }>> {
-  const pages = await pool.db
+  const pages = await db
     .select({ key: page.key, title: page.title })
     .from(page)
     .where(isNull(page.deletedAt))
@@ -372,7 +374,7 @@ export async function getPageOptions(): Promise<Array<{ key: string, title: stri
 
 // 获取所有评论人员列表（用于筛选）
 export async function getCommentAuthors(): Promise<Array<{ id: bigint, name: string }>> {
-  const authors = await pool.db
+  const authors = await db
     .selectDistinct({ id: user.id, name: user.name })
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
@@ -400,13 +402,13 @@ export async function loadAllComments(
   }
 
   const total = (
-    await pool.db
+    await db
       .select({ counts: count() })
       .from(comment)
       .where(and(...conditions))
   )[0].counts
 
-  const comments = await pool.db
+  const comments = await db
     .select({
       ...unionCommentSelect,
       pageTitle: page.title,
