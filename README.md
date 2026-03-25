@@ -169,8 +169,9 @@ All of these fonts are free for commercial use.
 
 ### Web Font License
 
-- [OPPOSans 4.0](https://open.oppomobile.com/new/developmentDoc/info?id=13223)([license](licenses/LICENSE.opposans.txt))
-- [OPPOSerif](https://open.oppomobile.com/new/developmentDoc/info?id=13223)([license](licenses/LICENSE.opposans.txt))
+- [OPPOSans 4.0](https://open.oppomobile.com/new/developmentDoc/info?id=13223) ([license](licenses/LICENSE.opposans.txt))
+- [OPPOSerif](https://open.oppomobile.com/new/developmentDoc/info?id=13223) ([license](licenses/LICENSE.opposans.txt))
+- [Iosevka](https://github.com/be5invis/Iosevka) ([license](linceses/LICENSE.iosevka.txt))
 
 ### Open Graph Font License
 

@@ -1,6 +1,8 @@
 @import 'bootstrap/dist/css/bootstrap.css';
 @import '@/assets/styles/reset.css';
 @import '@/assets/fonts/iconfont/iconfont.css';
+@import '@fontsource/iosevka/500.css';
+@import '@fontsource/iosevka/500-italic.css';
 @import '@/assets/fonts/opposans.css';
 @import '@/assets/fonts/opposerif.css';
 @import 'aplayer-ts/src/css/base.css';
@@ -2212,6 +2214,7 @@ a:hover .overlay {
 
 /* Post Code block styling ------------------- */
 .post-content .code-header {
+  font-family: 'Iosevka', monospace;
   -webkit-user-select: none;
   user-select: none;
   margin-bottom: 0 !important;
@@ -2225,6 +2228,7 @@ a:hover .overlay {
 }
 
 .post-content .language-label {
+  font-family: 'Iosevka', monospace;
   -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
@@ -2234,6 +2238,7 @@ a:hover .overlay {
 }
 
 .post-content .copy-code {
+  font-family: 'Iosevka', monospace;
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
@@ -2253,6 +2258,7 @@ a:hover .overlay {
 }
 
 .post-content pre {
+  font-family: 'Iosevka', monospace;
   position: relative;
   margin-top: 0 !important;
   margin-bottom: 1rem !important;
@@ -2261,11 +2267,13 @@ a:hover .overlay {
 }
 
 .post-content pre > code {
+  font-family: 'Iosevka', monospace;
   padding-top: 0 !important;
   display: block;
 }
 
 .post-content .code-header + pre {
+  font-family: 'Iosevka', monospace;
   margin-top: 0 !important;
   border-top: none !important;
 }
