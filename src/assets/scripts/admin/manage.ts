@@ -1,4 +1,5 @@
 import { actions } from 'astro:actions'
+
 import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
 import SearchableSelect from '@/assets/scripts/select'
 
@@ -61,12 +62,13 @@ function renderComments(comments: Comment[]): void {
     return
   }
 
-  const commentsHtml = comments.map((comment) => {
-    const statusBadge = comment.isPending
-      ? '<span class="badge badge-warning">待审核</span>'
-      : '<span class="badge badge-light">已审核</span>'
+  const commentsHtml = comments
+    .map((comment) => {
+      const statusBadge = comment.isPending
+        ? '<span class="badge badge-warning">待审核</span>'
+        : '<span class="badge badge-light">已审核</span>'
 
-    return `
+      return `
         <div class="card mb-3 comment-item" data-comment-id="${comment.id}">
           <div class="card-body">
             <div class="d-flex gap-3">
@@ -100,13 +102,15 @@ function renderComments(comments: Comment[]): void {
                     <button class="btn btn-sm btn-primary edit-user-btn" data-user-id="${comment.userId}" data-user-name="${escapeHtml(comment.name)}" data-user-email="${escapeHtml(comment.email)}" data-user-link="${escapeHtml(comment.link || '')}" data-badge-name="${escapeHtml(comment.badgeName || '')}" data-badge-color="${escapeHtml(comment.badgeColor || '')}">
                       <i class="iconfont icon-user"></i> 用户
                     </button>
-                    ${comment.isPending
-                      ? `
+                    ${
+                      comment.isPending
+                        ? `
                       <button class="btn btn-sm btn-outline-success approve-comment-btn" data-comment-id="${comment.id}">
                         <i class="iconfont icon-check"></i> 审核
                       </button>
                     `
-                      : ''}
+                        : ''
+                    }
                     <button class="btn btn-sm btn-primary reply-comment-btn" data-comment-id="${comment.id}" data-page-key="${escapeHtml(comment.pageKey)}">
                       <i class="iconfont icon-reply"></i> 回复
                     </button>
@@ -118,20 +122,23 @@ function renderComments(comments: Comment[]): void {
                 <div class="comment-content mb-2" style="line-height: 1.6;">
                   ${comment.content}
                 </div>
-                ${comment.ua || comment.ip
-                  ? `
+                ${
+                  comment.ua || comment.ip
+                    ? `
                   <div class="text-muted small">
                     ${comment.ua ? `<span>UA: ${escapeHtml(comment.ua.substring(0, 50))}${comment.ua.length > 50 ? '...' : ''}</span>` : ''}
                     ${comment.ip ? `<span class="ms-2">IP: ${escapeHtml(comment.ip)}</span>` : ''}
                   </div>
                 `
-                  : ''}
+                    : ''
+                }
               </div>
             </div>
           </div>
         </div>
       `
-  }).join('')
+    })
+    .join('')
 
   commentsContainer.innerHTML = commentsHtml
 
@@ -167,16 +174,14 @@ function renderPagination(): void {
     for (let i = 1; i <= totalPages; i++) {
       if (i === currentPageNum) {
         paginationHtml += `<span aria-current="page" class="page-numbers current">${i}</span>`
-      }
-      else {
+      } else {
         paginationHtml += `<a class="page-numbers" href="#" data-page="${i - 1}">${i}</a>`
       }
     }
-  }
-  else {
+  } else {
     // 大分页：使用省略号
-    const pages
-      = currentPageNum < 5
+    const pages =
+      currentPageNum < 5
         ? [1, 2, 3, 4, 5]
         : currentPageNum > totalPages - 4
           ? [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages]
@@ -187,36 +192,31 @@ function renderPagination(): void {
       for (const page of pages) {
         if (page === currentPageNum) {
           paginationHtml += `<span aria-current="page" class="page-numbers current">${page}</span>`
-        }
-        else {
+        } else {
           paginationHtml += `<a class="page-numbers" href="#" data-page="${page - 1}">${page}</a>`
         }
       }
       paginationHtml += '<span class="page-numbers dots"><i class="iconfont icon-ellipsis"></i></span>'
       paginationHtml += `<a class="page-numbers" href="#" data-page="${totalPages - 1}">${totalPages}</a>`
-    }
-    else if (currentPageNum > totalPages - 4) {
+    } else if (currentPageNum > totalPages - 4) {
       // 显示第一页 + 省略号 + 后5页
       paginationHtml += '<a class="page-numbers" href="#" data-page="0">1</a>'
       paginationHtml += '<span class="page-numbers dots"><i class="iconfont icon-ellipsis"></i></span>'
       for (const page of pages) {
         if (page === currentPageNum) {
           paginationHtml += `<span aria-current="page" class="page-numbers current">${page}</span>`
-        }
-        else {
+        } else {
           paginationHtml += `<a class="page-numbers" href="#" data-page="${page - 1}">${page}</a>`
         }
       }
-    }
-    else {
+    } else {
       // 显示第一页 + 省略号 + 当前页前后 + 省略号 + 最后一页
       paginationHtml += '<a class="page-numbers" href="#" data-page="0">1</a>'
       paginationHtml += '<span class="page-numbers dots"><i class="iconfont icon-ellipsis"></i></span>'
       for (const page of pages) {
         if (page === currentPageNum) {
           paginationHtml += `<span aria-current="page" class="page-numbers current">${page}</span>`
-        }
-        else {
+        } else {
           paginationHtml += `<a class="page-numbers" href="#" data-page="${page - 1}">${page}</a>`
         }
       }
@@ -269,7 +269,7 @@ async function loadComments(): Promise<void> {
       return showErrorDialog('加载评论失败')
     }
 
-    const allComments = data.comments.map(c => ({
+    const allComments = data.comments.map((c) => ({
       ...c,
       id: String(c.id),
       userId: String(c.userId),
@@ -283,16 +283,14 @@ async function loadComments(): Promise<void> {
     // 应用状态筛选
     let comments = allComments
     if (filterStatus === 'pending') {
-      comments = allComments.filter(c => c.isPending)
-    }
-    else if (filterStatus === 'approved') {
-      comments = allComments.filter(c => !c.isPending)
+      comments = allComments.filter((c) => c.isPending)
+    } else if (filterStatus === 'approved') {
+      comments = allComments.filter((c) => !c.isPending)
     }
 
     renderComments(comments)
     renderPagination()
-  }
-  catch (err) {
+  } catch (err) {
     console.error('加载评论失败:', err)
     showErrorDialog('加载评论失败，请刷新页面重试')
   }
@@ -311,7 +309,7 @@ function bindCommentEvents(): void {
       }
 
       const editModal = document.getElementById('edit-comment-modal')!
-        ;(document.getElementById('edit-comment-id') as HTMLInputElement).value = commentId
+      ;(document.getElementById('edit-comment-id') as HTMLInputElement).value = commentId
       ;(document.getElementById('edit-comment-content') as HTMLTextAreaElement).value = data?.content || ''
       editModal.classList.add('nice-popup-open')
     })
@@ -321,8 +319,7 @@ function bindCommentEvents(): void {
   document.querySelectorAll('.approve-comment-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       // eslint-disable-next-line no-alert
-      if (!window.confirm('确定要审核通过这条评论吗？'))
-        return
+      if (!window.confirm('确定要审核通过这条评论吗？')) return
 
       const commentId = (btn as HTMLElement).dataset.commentId!
       const { error } = await actions.comment.approve({ rid: commentId })
@@ -340,8 +337,7 @@ function bindCommentEvents(): void {
   document.querySelectorAll('.delete-comment-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       // eslint-disable-next-line no-alert
-      if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！'))
-        return
+      if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！')) return
 
       const commentId = (btn as HTMLElement).dataset.commentId!
       const { error } = await actions.comment.delete({ rid: commentId })
@@ -366,7 +362,7 @@ function bindCommentEvents(): void {
       const badgeColor = (btn as HTMLElement).dataset.badgeColor || '#008c95'
 
       const editUserModal = document.getElementById('edit-user-modal')!
-        ;(document.getElementById('edit-user-id') as HTMLInputElement).value = userId
+      ;(document.getElementById('edit-user-id') as HTMLInputElement).value = userId
       ;(document.getElementById('edit-user-name') as HTMLInputElement).value = userName
       ;(document.getElementById('edit-user-email') as HTMLInputElement).value = userEmail
       ;(document.getElementById('edit-user-link') as HTMLInputElement).value = userLink
@@ -383,7 +379,7 @@ function bindCommentEvents(): void {
       const pageKey = (btn as HTMLElement).dataset.pageKey!
 
       const replyModal = document.getElementById('reply-comment-modal')!
-        ;(document.getElementById('reply-comment-id') as HTMLInputElement).value = commentId
+      ;(document.getElementById('reply-comment-id') as HTMLInputElement).value = commentId
       ;(document.getElementById('reply-page-key') as HTMLInputElement).value = pageKey
       ;(document.getElementById('reply-comment-content') as HTMLTextAreaElement).value = ''
       replyModal.classList.add('nice-popup-open')
@@ -450,12 +446,9 @@ document.getElementById('edit-user-form')!.addEventListener('submit', async (e) 
   const badgeColor = (document.getElementById('edit-user-badge-color') as HTMLInputElement).value
 
   const updateData: any = { userId, name, email }
-  if (link)
-    updateData.link = link
-  if (badgeName)
-    updateData.badgeName = badgeName
-  if (badgeColor)
-    updateData.badgeColor = badgeColor
+  if (link) updateData.link = link
+  if (badgeName) updateData.badgeName = badgeName
+  if (badgeColor) updateData.badgeColor = badgeColor
 
   const { error } = await actions.auth.updateUser(updateData)
 
@@ -607,8 +600,7 @@ async function initializePage(): Promise<void> {
 
     // 加载评论
     loadComments()
-  }
-  catch (err) {
+  } catch (err) {
     console.error('初始化失败:', err)
   }
 }

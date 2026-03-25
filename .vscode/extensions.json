@@ -1,8 +1,4 @@
 {
-  "recommendations": [
-    "astro-build.astro-vscode",
-    "dbaeumer.vscode-eslint",
-    "eliostruyf.vscode-front-matter"
-  ],
+  "recommendations": ["astro-build.astro-vscode", "oxc.oxc-vscode", "oxc.oxc-vscode", "eliostruyf.vscode-front-matter"],
   "unwantedRecommendations": []
 }

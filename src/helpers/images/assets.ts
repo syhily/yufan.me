@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { gunzipSync } from 'node:zlib'
 import sharp from 'sharp'
+
 import OPPOSans from '@/assets/fonts/oppo/opposans.ttf?binary'
 import OPPOSerif from '@/assets/fonts/oppo/opposerif.ttf?binary'
 import LogoDark from '~/logo-dark.svg?binary'

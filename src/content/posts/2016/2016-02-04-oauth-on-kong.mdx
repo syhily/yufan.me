@@ -58,12 +58,12 @@ $ curl -X POST http://127.0.0.1:8001/apis --data "name=httpbin" \
 ```json
 // 响应
 {
-	"upstream_url": "https://httpbin.org",
-	"id": "b00e2c79-a87a-4688-b16f-7b2034171b13",
-	"created_at": 1456299654000,
-	"preserve_host": true,
-	"name": "httpbin",
-	"request_host": "yufan.me"
+  "upstream_url": "https://httpbin.org",
+  "id": "b00e2c79-a87a-4688-b16f-7b2034171b13",
+  "created_at": 1456299654000,
+  "preserve_host": true,
+  "name": "httpbin",
+  "request_host": "yufan.me"
 }
 ```
 
@@ -78,23 +78,23 @@ $ curl -X POST http://127.0.0.1:8001/apis/b00e2c79-a87a-4688-b16f-7b2034171b13/p
 
 ```json
 {
-	"api_id": "b00e2c79-a87a-4688-b16f-7b2034171b13",
-	"id": "a21450ac-4aa6-459e-9678-21275fc15d6f",
-	"created_at": 1456299868000,
-	"enabled": true,
-	"name": "oauth2",
-	"config": {
-		"mandatory_scope": true,
-		"token_expiration": 7200,
-		"enable_implicit_grant": false,
-		"scopes": ["email", "phone", "address"],
-		"hide_credentials": false,
-		"enable_password_grant": false,
-		"accept_http_if_already_terminated": false,
-		"provision_key": "a36c23485d414ffb9eba7a85de0e7335",
-		"enable_client_credentials": false,
-		"enable_authorization_code": true
-	}
+  "api_id": "b00e2c79-a87a-4688-b16f-7b2034171b13",
+  "id": "a21450ac-4aa6-459e-9678-21275fc15d6f",
+  "created_at": 1456299868000,
+  "enabled": true,
+  "name": "oauth2",
+  "config": {
+    "mandatory_scope": true,
+    "token_expiration": 7200,
+    "enable_implicit_grant": false,
+    "scopes": ["email", "phone", "address"],
+    "hide_credentials": false,
+    "enable_password_grant": false,
+    "accept_http_if_already_terminated": false,
+    "provision_key": "a36c23485d414ffb9eba7a85de0e7335",
+    "enable_client_credentials": false,
+    "enable_authorization_code": true
+  }
 }
 ```
 
@@ -108,10 +108,10 @@ $ curl -X POST http://127.0.0.1:8001/consumers \
 
 ```json
 {
-	"custom_id": "12345",
-	"username": "testuser123",
-	"created_at": 1456299997000,
-	"id": "364381e9-acf7-424d-a87f-f4be80871ee2"
+  "custom_id": "12345",
+  "username": "testuser123",
+  "created_at": 1456299997000,
+  "id": "364381e9-acf7-424d-a87f-f4be80871ee2"
 }
 ```
 
@@ -125,13 +125,13 @@ curl -X POST http://127.0.0.1:8001/consumers/364381e9-acf7-424d-a87f-f4be80871ee
 
 ```json
 {
-	"consumer_id": "364381e9-acf7-424d-a87f-f4be80871ee2",
-	"client_id": "54b968c73da64b328ed92b05548179b6",
-	"id": "ce2906cb-3442-44c1-888e-848bafd0a442",
-	"name": "My Test Application",
-	"created_at": 1456300207000,
-	"redirect_uri": "https://httpbin.org/get",
-	"client_secret": "3b4537ac7c94492f81b251110e2d0f33"
+  "consumer_id": "364381e9-acf7-424d-a87f-f4be80871ee2",
+  "client_id": "54b968c73da64b328ed92b05548179b6",
+  "id": "ce2906cb-3442-44c1-888e-848bafd0a442",
+  "name": "My Test Application",
+  "created_at": 1456300207000,
+  "redirect_uri": "https://httpbin.org/get",
+  "client_secret": "3b4537ac7c94492f81b251110e2d0f33"
 }
 ```
 
@@ -166,10 +166,10 @@ $ curl -X POST https://127.0.0.1:8443/oauth2/token \
 
 ```json
 {
-	"refresh_token": "a42472728fd74075ac8db82a0cb50b44",
-	"token_type": "bearer",
-	"access_token": "c28b23745aa84c14a001a32476be3d6c",
-	"expires_in": 7200
+  "refresh_token": "a42472728fd74075ac8db82a0cb50b44",
+  "token_type": "bearer",
+  "access_token": "c28b23745aa84c14a001a32476be3d6c",
+  "expires_in": 7200
 }
 ```
 
@@ -184,27 +184,27 @@ $ curl -X POST https://127.0.0.1:8443/post \
 
 ```json
 {
-	"args": {},
-	"data": "",
-	"files": {},
-	"form": {
-		"access_token": "c28b23745aa84c14a001a32476be3d6c"
-	},
-	"headers": {
-		"Accept": "*/*",
-		"Content-Length": "45",
-		"Content-Type": "application/x-www-form-urlencoded",
-		"Host": "yufan.me",
-		"User-Agent": "curl/7.43.0",
-		"X-Authenticated-Scope": "email",
-		"X-Authenticated-Userid": "yufan",
-		"X-Consumer-Custom-Id": "12345",
-		"X-Consumer-Id": "364381e9-acf7-424d-a87f-f4be80871ee2",
-		"X-Consumer-Username": "testuser123"
-	},
-	"json": null,
-	"origin": "127.0.0.1, 61.148.202.186",
-	"url": "https://yufan.me/post"
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "access_token": "c28b23745aa84c14a001a32476be3d6c"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "45",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "yufan.me",
+    "User-Agent": "curl/7.43.0",
+    "X-Authenticated-Scope": "email",
+    "X-Authenticated-Userid": "yufan",
+    "X-Consumer-Custom-Id": "12345",
+    "X-Consumer-Id": "364381e9-acf7-424d-a87f-f4be80871ee2",
+    "X-Consumer-Username": "testuser123"
+  },
+  "json": null,
+  "origin": "127.0.0.1, 61.148.202.186",
+  "url": "https://yufan.me/post"
 }
 ```
 
@@ -222,9 +222,9 @@ $  curl -X POST https://127.0.0.1:8443/oauth2/token \
 
 ```json
 {
-	"refresh_token": "de64c9df218b4a0eb2a24af83cd93a56",
-	"token_type": "bearer",
-	"access_token": "98ff79467dd6450f95061da94bd81d02",
-	"expires_in": 7200
+  "refresh_token": "de64c9df218b4a0eb2a24af83cd93a56",
+  "token_type": "bearer",
+  "access_token": "98ff79467dd6450f95061da94bd81d02",
+  "expires_in": 7200
 }
 ```

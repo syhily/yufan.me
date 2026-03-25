@@ -50,8 +50,8 @@ published: true
 ![Step 1](https://cat.yufan.me/images/recaps/algo-minimal-costs/step1.svg)
 
 <center>
-	做任何算法题，第一步是理解题意，第二步是设想最简单的情况，再慢慢推导到复杂情况。首先，我们先不考虑存在阻塞的情况。最简单场景里，顾客和维修点在一个
-	1 x 1 的格子的一条边上，这个时候他们间的最短距离为 1。
+  做任何算法题，第一步是理解题意，第二步是设想最简单的情况，再慢慢推导到复杂情况。首先，我们先不考虑存在阻塞的情况。最简单场景里，顾客和维修点在一个
+  1 x 1 的格子的一条边上，这个时候他们间的最短距离为 1。
 </center>
 
 ![Step 2](https://cat.yufan.me/images/recaps/algo-minimal-costs/step2.svg)
@@ -61,7 +61,7 @@ published: true
 ![Step 3](https://cat.yufan.me/images/recaps/algo-minimal-costs/step3.svg)
 
 <center>
-	结合初中的几何学知识，我们首先知道一个基本知识，两点之间，直线最短。所以，维修点和顾客在同一条直线上时，他们之间的距离就是直线距离。
+  结合初中的几何学知识，我们首先知道一个基本知识，两点之间，直线最短。所以，维修点和顾客在同一条直线上时，他们之间的距离就是直线距离。
 </center>
 
 ![Step 4](https://cat.yufan.me/images/recaps/algo-minimal-costs/step4.svg)
@@ -71,7 +71,7 @@ published: true
 ![Step 5](https://cat.yufan.me/images/recaps/algo-minimal-costs/step5.svg)
 
 <center>
-	等到田字格的时候，相信聪明的你已经发现了规律。那就是顾客到维修点的最短距离，等于他们所形成的矩形的横纵两条边边长的总和。按照上面右侧图片所示的箭头所行走的距离都等于这个最短路径。
+  等到田字格的时候，相信聪明的你已经发现了规律。那就是顾客到维修点的最短距离，等于他们所形成的矩形的横纵两条边边长的总和。按照上面右侧图片所示的箭头所行走的距离都等于这个最短路径。
 </center>
 
 一般情况下，面试场景的编码题已经可以开始写了。对应的编程思路就是，从维修点出发，在与顾客构成的矩形边界里面，不断逼近，只要能走通那么我们之间就有了最短距离。再把不同维修点到顾客的最短距离排序，选出最小的距离来进行计算费用。

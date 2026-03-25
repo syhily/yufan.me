@@ -1,6 +1,7 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
+
 import config from '@/blog.config'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
@@ -23,26 +24,27 @@ import { getPosts, pages } from '@/helpers/content/schema'
 import { ErrorMessages } from '@/helpers/errors'
 import { encodedEmail } from '@/helpers/tools'
 
-const keys = [...getPosts({ hidden: true, schedule: true }).map(post => post.permalink), ...pages.map(page => page.permalink)]
+const keys = [
+  ...getPosts({ hidden: true, schedule: true }).map((post) => post.permalink),
+  ...pages.map((page) => page.permalink),
+]
 
 export const comment = {
   increaseLike: defineAction({
     accept: 'json',
-    input: z
-      .object({
-        key: z.enum(keys),
-      }),
+    input: z.object({
+      key: z.enum(keys),
+    }),
     handler: async (input) => {
       return await increaseLikes(input.key)
     },
   }),
   decreaseLike: defineAction({
     accept: 'json',
-    input: z
-      .object({
-        key: z.enum(keys),
-        token: z.string().min(1),
-      }),
+    input: z.object({
+      key: z.enum(keys),
+      token: z.string().min(1),
+    }),
     handler: async (input) => {
       await decreaseLikes(input.key, input.token)
       return { likes: await queryLikes(input.key) }
@@ -50,11 +52,10 @@ export const comment = {
   }),
   validateLikeToken: defineAction({
     accept: 'json',
-    input: z
-      .object({
-        key: z.enum(keys),
-        token: z.string().min(1),
-      }),
+    input: z.object({
+      key: z.enum(keys),
+      token: z.string().min(1),
+    }),
     handler: async (input) => {
       const isValid = await validateLikeToken(input.key, input.token)
       return { valid: isValid }
@@ -81,7 +82,10 @@ export const comment = {
     }),
     handler: async (input, { request, clientAddress, session }) => {
       if (session === undefined) {
-        throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: ErrorMessages.SESSION_NOT_CONFIGURED })
+        throw new ActionError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: ErrorMessages.SESSION_NOT_CONFIGURED,
+        })
       }
       const resp = await createComment(input, request, clientAddress, session)
       if ('msg' in resp) {
@@ -136,8 +140,7 @@ export const comment = {
       }
 
       const content = await partialRender(Comment, { props: { comments, session }, request })
-      const next
-        = config.settings.comments.size + offset < comments.roots_count
+      const next = config.settings.comments.size + offset < comments.roots_count
 
       return { content, next }
     },
@@ -163,7 +166,10 @@ export const comment = {
       await requireAdmin(session)
       const updated = await updateComment(rid, content)
       if (!updated) {
-        throw new ActionError({ code: 'INTERNAL_SERVER_ERROR', message: ErrorMessages.COMMENT_UPDATE_FAILED })
+        throw new ActionError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: ErrorMessages.COMMENT_UPDATE_FAILED,
+        })
       }
 
       const html = await partialRender(CommentItem, {

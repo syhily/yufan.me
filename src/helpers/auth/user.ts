@@ -1,6 +1,8 @@
-import type { NewUser, User } from '@/helpers/db/types'
 import bcrypt from 'bcryptjs'
 import { count, eq, sql } from 'drizzle-orm'
+
+import type { NewUser, User } from '@/helpers/db/types'
+
 import config from '@/blog.config'
 import * as pool from '@/helpers/db/pool'
 import { user } from '@/helpers/db/schema'
@@ -100,7 +102,12 @@ export async function createUser(name: string, email: string, website: string): 
  * @param website - User website (optional)
  * @returns Created user or null if email already exists
  */
-export async function createUserWithPassword(name: string, email: string, password: string, website = ''): Promise<User | null> {
+export async function createUserWithPassword(
+  name: string,
+  email: string,
+  password: string,
+  website = '',
+): Promise<User | null> {
   // Check if email already exists
   const existing = await pool.db.select().from(user).where(eq(user.email, email)).limit(1)
   if (existing.length > 0) {

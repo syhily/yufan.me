@@ -1,6 +1,7 @@
 import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 import { eq } from 'drizzle-orm'
+
 import { validateToken } from '@/helpers/auth/csrf'
 import { login, requireAdmin } from '@/helpers/auth/session'
 import { createAdmin, createUserWithPassword, hasAdmin } from '@/helpers/auth/user'
@@ -9,12 +10,29 @@ import * as pool from '@/helpers/db/pool'
 import { user } from '@/helpers/db/schema'
 import { ErrorMessages } from '@/helpers/errors'
 
-function loginLog({ email, clientAddress, request, success }: { email: string, clientAddress: string, request: Request, success: boolean }): void {
+function loginLog({
+  email,
+  clientAddress,
+  request,
+  success,
+}: {
+  email: string
+  clientAddress: string
+  request: Request
+  success: boolean
+}): void {
   if (success) {
-    console.warn(`Successfully login into the ${import.meta.env.SITE}`, { email, clientAddress, userAgent: request.headers.get('User-Agent') })
-  }
-  else {
-    console.error(`Failed to login into the ${import.meta.env.SITE}`, { email, clientAddress, userAgent: request.headers.get('User-Agent') })
+    console.warn(`Successfully login into the ${import.meta.env.SITE}`, {
+      email,
+      clientAddress,
+      userAgent: request.headers.get('User-Agent'),
+    })
+  } else {
+    console.error(`Failed to login into the ${import.meta.env.SITE}`, {
+      email,
+      clientAddress,
+      userAgent: request.headers.get('User-Agent'),
+    })
   }
 }
 
@@ -37,8 +55,7 @@ export const auth = {
       if (res !== null && res.length > 0) {
         const { id, name, email } = res[0]
         return { success: true, user: { id, name, email } }
-      }
-      else {
+      } else {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
           message: ErrorMessages.ADMIN_CREATE_FAILED,
@@ -168,16 +185,11 @@ export const auth = {
     handler: async ({ userId, name, email, link, badgeName, badgeColor }, { session }) => {
       await requireAdmin(session)
       const updateData: Partial<typeof user.$inferInsert> = {}
-      if (name !== undefined)
-        updateData.name = name
-      if (email !== undefined)
-        updateData.email = email
-      if (link !== undefined)
-        updateData.link = link
-      if (badgeName !== undefined)
-        updateData.badgeName = badgeName
-      if (badgeColor !== undefined)
-        updateData.badgeColor = badgeColor
+      if (name !== undefined) updateData.name = name
+      if (email !== undefined) updateData.email = email
+      if (link !== undefined) updateData.link = link
+      if (badgeName !== undefined) updateData.badgeName = badgeName
+      if (badgeColor !== undefined) updateData.badgeColor = badgeColor
 
       if (Object.keys(updateData).length === 0) {
         throw new ActionError({

@@ -156,12 +156,9 @@ export function attachCopyButtons(): void {
   const codeBlocks = document.querySelectorAll<HTMLPreElement>('pre')
 
   codeBlocks.forEach((block) => {
-    const language
-      = block.getAttribute('data-language')?.toLowerCase() ?? 'text'
+    const language = block.getAttribute('data-language')?.toLowerCase() ?? 'text'
 
-    const displayLang
-      = LANGUAGE_MAP[language]
-        ?? (language.charAt(0).toUpperCase() + language.slice(1))
+    const displayLang = LANGUAGE_MAP[language] ?? language.charAt(0).toUpperCase() + language.slice(1)
 
     const wrapper = document.createElement('div')
     wrapper.style.position = 'relative'
@@ -184,19 +181,18 @@ export function attachCopyButtons(): void {
   /** Helper: Create header bar DOM */
   function createHeader(language: string, buttonLabel: string): HTMLDivElement {
     const header = document.createElement('div')
-    header.className
-      = 'code-header flex items-center justify-between bg-skin-card border-b border-skin-border px-4 py-2 rounded-t-md'
+    header.className =
+      'code-header flex items-center justify-between bg-skin-card border-b border-skin-border px-4 py-2 rounded-t-md'
 
     const label = document.createElement('span')
-    label.className
-      = 'language-label text-sm text-skin-base font-medium select-none pointer-events-none'
+    label.className = 'language-label text-sm text-skin-base font-medium select-none pointer-events-none'
     label.textContent = language
     label.setAttribute('aria-label', `Code language: ${language}`)
     label.setAttribute('role', 'note')
 
     const button = document.createElement('button')
-    button.className
-      = 'copy-code text-sm text-skin-base hover:text-skin-accent transition-colors font-medium select-none cursor-pointer'
+    button.className =
+      'copy-code text-sm text-skin-base hover:text-skin-accent transition-colors font-medium select-none cursor-pointer'
     button.textContent = buttonLabel
     button.title = `Copy ${language} code`
     button.setAttribute('aria-label', `Copy ${language} code to clipboard`)
@@ -206,10 +202,7 @@ export function attachCopyButtons(): void {
   }
 
   /** Helper: Copy code text */
-  async function handleCopy(
-    block: HTMLPreElement,
-    button: HTMLButtonElement,
-  ): Promise<void> {
+  async function handleCopy(block: HTMLPreElement, button: HTMLButtonElement): Promise<void> {
     const text = block.querySelector('code')?.textContent ?? ''
     await navigator.clipboard.writeText(text)
 

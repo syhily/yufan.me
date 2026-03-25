@@ -1,4 +1,3 @@
-import process from 'node:process'
 import mdx from '@astrojs/mdx'
 import node from '@astrojs/node'
 import {
@@ -9,12 +8,8 @@ import {
   transformerNotationWordHighlight,
 } from '@shikijs/transformers'
 import uploader from 'astro-uploader'
-import {
-  defineConfig,
-  envField,
-  memoryCache,
-  sessionDrivers
-} from 'astro/config'
+import { defineConfig, envField, memoryCache, sessionDrivers } from 'astro/config'
+import process from 'node:process'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeExternalLinks from 'rehype-external-links'
 import rehypeMathjax from 'rehype-mathjax'
@@ -23,17 +18,15 @@ import rehypeTitleFigure from 'rehype-title-figure'
 import remarkMath from 'remark-math'
 import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
+
 import config from './src/blog.config'
 import rehypeMermaid from './src/helpers/content/mermaid'
 
-const {
-  REDIS_URL,
-  NODE_ENV,
-  S3_ENDPOINT,
-  S3_BUCKET,
-  S3_ACCESS_KEY,
-  S3_SECRET_ACCESS_KEY,
-} = loadEnv(process.env.NODE_ENV!, process.cwd(), '')
+const { REDIS_URL, NODE_ENV, S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY } = loadEnv(
+  process.env.NODE_ENV!,
+  process.cwd(),
+  '',
+)
 
 // https://astro.build/config
 export default defineConfig({
@@ -76,11 +69,14 @@ export default defineConfig({
     mdx({
       remarkPlugins: [remarkMath],
       rehypePlugins: [
-        [rehypeMermaid, {
-          strategy: 'inline-svg',
-          theme: 'solarized-light',
-          renderOptions: { transparent: true },
-        }],
+        [
+          rehypeMermaid,
+          {
+            strategy: 'inline-svg',
+            theme: 'solarized-light',
+            renderOptions: { transparent: true },
+          },
+        ],
         [rehypeTitleFigure],
         [rehypeExternalLinks, { rel: 'nofollow', target: '_blank' }],
         rehypeSlug,
@@ -141,9 +137,7 @@ export default defineConfig({
     enabled: false,
   },
   vite: {
-    plugins: [
-      vitePluginBinary({ gzip: true }),
-    ],
+    plugins: [vitePluginBinary({ gzip: true })],
     build: {
       emptyOutDir: true,
     },

@@ -1,4 +1,5 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
+
 import { getPosts, pages } from '@/helpers/content/schema'
 
 export async function GET() {
@@ -21,10 +22,10 @@ export async function GET() {
 
   return new Response(result, {
     headers: {
-      'Host': import.meta.env.SITE,
+      Host: import.meta.env.SITE,
       'Content-Type': 'application/xml',
-      'Accept': '*/*',
-      'Connection': 'keep-alive',
+      Accept: '*/*',
+      Connection: 'keep-alive',
     },
   })
 }

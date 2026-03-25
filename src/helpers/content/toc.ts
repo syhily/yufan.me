@@ -28,8 +28,7 @@ function injectChild(items: TocItem[], item: TocItem): void {
   const lastItem = items.at(-1)
   if (!lastItem || lastItem.depth >= item.depth) {
     items.push(item)
-  }
-  else {
+  } else {
     injectChild(lastItem.children, item)
   }
 }

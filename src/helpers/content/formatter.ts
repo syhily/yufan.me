@@ -1,7 +1,12 @@
 import { DateTime } from 'luxon'
+
 import config from '@/blog.config'
 
-export function slicePosts<Type>(posts: Type[], pageNum: number, pageSize: number): { currentPosts: Type[], totalPage: number } {
+export function slicePosts<Type>(
+  posts: Type[],
+  pageNum: number,
+  pageSize: number,
+): { currentPosts: Type[]; totalPage: number } {
   const totalPage = Math.ceil(posts.length / pageSize)
   if (totalPage >= pageNum) {
     return {
@@ -16,13 +21,9 @@ export function slicePosts<Type>(posts: Type[], pageNum: number, pageSize: numbe
 }
 
 export function formatShowDate(date: Date) {
-  const source = DateTime.fromJSDate(date)
-    .setZone(config.settings.timeZone)
-    .setLocale(config.settings.locale)
+  const source = DateTime.fromJSDate(date).setZone(config.settings.timeZone).setLocale(config.settings.locale)
 
-  const now = DateTime.now()
-    .setZone(config.settings.timeZone)
-    .setLocale(config.settings.locale)
+  const now = DateTime.now().setZone(config.settings.timeZone).setLocale(config.settings.locale)
 
   const oneSeconds = 1000
   const oneMinute = oneSeconds * 60
@@ -35,21 +36,16 @@ export function formatShowDate(date: Date) {
 
   if (delta < oneDay) {
     return '今天'
-  }
-  else if (delta < oneDay * 2) {
+  } else if (delta < oneDay * 2) {
     return '昨天'
-  }
-  else if (delta < oneWeek) {
+  } else if (delta < oneWeek) {
     return `${Math.floor(delta / oneDay)} 天前`
-  }
-  else if (delta < oneMonth) {
+  } else if (delta < oneMonth) {
     return `${Math.floor(now.startOf('week').diff(source.startOf('week')).toMillis() / oneWeek)} 周前`
-  }
-  else if (delta < oneMonth * 7) {
+  } else if (delta < oneMonth * 7) {
     const { months } = now.startOf('month').diff(source.startOf('month'), ['months']).toObject()
     return `${months} 月前`
-  }
-  else {
+  } else {
     // Format the post's date with time zone support.
     return source.toFormat(config.settings.timeFormat)
   }

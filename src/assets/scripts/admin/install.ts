@@ -1,4 +1,5 @@
 import { actions } from 'astro:actions'
+
 import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
 
 const installForm = document.querySelector('form')

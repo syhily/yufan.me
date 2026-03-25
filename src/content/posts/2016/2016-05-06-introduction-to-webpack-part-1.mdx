@@ -43,14 +43,14 @@ npm install webpack -g
 ```html
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<title>Webpack fun</title>
-	</head>
-	<body>
-		<h2></h2>
-		<script src="bundle.js"></script>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Webpack fun</title>
+  </head>
+  <body>
+    <h2></h2>
+    <script src="bundle.js"></script>
+  </body>
 </html>
 ```
 
@@ -62,7 +62,7 @@ npm install webpack -g
 // say-hello.js
 
 module.exports = function (name, element) {
-	element.textContent = 'Hello ' + name + '!';
+  element.textContent = "Hello " + name + "!";
 };
 ```
 
@@ -70,9 +70,9 @@ module.exports = function (name, element) {
 
 ```javascript
 // main.js
-var sayHello = require('./say-hello');
+var sayHello = require("./say-hello");
 
-sayHello('Guybrush', document.querySelector('h2'));
+sayHello("Guybrush", document.querySelector("h2"));
 ```
 
 如果现在我们打开前面创建的那个 HTML 文件，你们发现页面上没有显示任何内容。因为我们既没有引用`main.js`，也没有将其处理成浏览器可执行的代码。接下来，我们使用 Webpack 读取`main.js`。如果能成功分析它的依赖，将会创建一个名为`bundle.js`的文件，并能在浏览器中执行。
@@ -107,10 +107,10 @@ bundle.js  1.65 kB       0  [emitted]  main
 
 ```javascript
 module.exports = {
-	entry: './main.js',
-	output: {
-		filename: 'bundle.js',
-	},
+  entry: "./main.js",
+  output: {
+    filename: "bundle.js",
+  },
 };
 ```
 
@@ -152,22 +152,22 @@ npm install babel-loader babel-core babel-preset-es2015 --save-dev
 
 ```javascript
 module.exports = {
-	entry: './main.js',
-	output: {
-		filename: 'bundle.js',
-	},
-	module: {
-		loaders: [
-			{
-				test: /\.js$/,
-				exclude: /node_modules/,
-				loader: 'babel',
-				query: {
-					presets: ['es2015'],
-				},
-			},
-		],
-	},
+  entry: "./main.js",
+  output: {
+    filename: "bundle.js",
+  },
+  module: {
+    loaders: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: "babel",
+        query: {
+          presets: ["es2015"],
+        },
+      },
+    ],
+  },
 };
 ```
 
@@ -176,7 +176,7 @@ module.exports = {
 重启开发服务器，在命令行里按下`ctrl+c`，重新输入`webpack-dev-server`。现在我们来测试一下 ES6 的代码是否能被正确翻译呢？不如试试看将`sayHello`变量定义为一个常量。
 
 ```javascript
-const sayHello = require('./say-hello');
+const sayHello = require("./say-hello");
 ```
 
 保存后，Webpack应该自动重新编译我们的代码并刷新浏览器，你会发现代码正常执行，什么都没有变。我们用编辑器打开`bundle.js`文件，你会发现没有`const`这个单词。

@@ -4,9 +4,7 @@
   "frontMatter.preview.host": "http://localhost:4321",
   "frontMatter.global.timezone": "Asia/Shanghai",
   "frontMatter.taxonomy.alignFilename": true,
-  "frontMatter.git.requiresCommitMessage": [
-    "main"
-  ],
+  "frontMatter.git.requiresCommitMessage": ["main"],
   "frontMatter.content.publicFolder": "[[workspace]]/public",
   "frontMatter.content.pageFolders": [
     {
@@ -14,18 +12,14 @@
       "path": "[[workspace]]/src/content/pages",
       "excludeSubdir": true,
       "previewPath": "",
-      "contentTypes": [
-        "Page"
-      ]
+      "contentTypes": ["Page"]
     },
     {
       "title": "Note",
       "path": "[[workspace]]/src/content/posts/notes",
       "excludeSubdir": false,
       "previewPath": "posts",
-      "contentTypes": [
-        "Post"
-      ]
+      "contentTypes": ["Post"]
     },
     {
       "title": "Post",
@@ -33,9 +27,7 @@
       "excludeSubdir": false,
       "filePrefix": "{{date|yyyy}}/{{date|yyyy}}-{{date|MM}}-{{date|dd}}",
       "previewPath": "posts",
-      "contentTypes": [
-        "Post"
-      ]
+      "contentTypes": ["Post"]
     }
   ],
   "frontMatter.content.draftField": {
@@ -234,12 +226,7 @@
       "schema": {
         "title": "Friends",
         "type": "object",
-        "required": [
-          "slug",
-          "website",
-          "homepage",
-          "poster"
-        ],
+        "required": ["slug", "website", "homepage", "poster"],
         "properties": {
           "slug": {
             "type": "string",
@@ -275,11 +262,7 @@
       "schema": {
         "title": "Categories",
         "type": "object",
-        "required": [
-          "slug",
-          "name",
-          "description"
-        ],
+        "required": ["slug", "name", "description"],
         "properties": {
           "slug": {
             "type": "string",
@@ -308,10 +291,7 @@
       "schema": {
         "title": "Tags",
         "type": "object",
-        "required": [
-          "slug",
-          "name"
-        ],
+        "required": ["slug", "name"],
         "properties": {
           "slug": {
             "type": "string",

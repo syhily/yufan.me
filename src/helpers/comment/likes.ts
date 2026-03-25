@@ -1,6 +1,7 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { and, count, eq, inArray, isNull, lt, sql } from 'drizzle-orm'
 import { DateTime } from 'luxon'
+
 import config from '@/blog.config'
 import * as pool from '@/helpers/db/pool'
 import { comment, like, page } from '@/helpers/db/schema'
@@ -8,7 +9,7 @@ import { makeToken } from '@/helpers/tools'
 
 const generatePageKey = (permalink: string): string => joinPaths(config.website, permalink, '/')
 
-export async function increaseLikes(permalink: string): Promise<{ likes: number, token: string }> {
+export async function increaseLikes(permalink: string): Promise<{ likes: number; token: string }> {
   const pageKey = generatePageKey(permalink)
   const token = makeToken(250)
   // Save the token
@@ -74,12 +75,12 @@ export async function queryLikes(permalink: string): Promise<number> {
 
 export async function queryMetadata(
   permalinks: string[],
-  options: { likes: boolean, views: boolean, comments: boolean },
-): Promise<Map<string, { likes: number, views: number, comments: number }>> {
+  options: { likes: boolean; views: boolean; comments: boolean },
+): Promise<Map<string, { likes: number; views: number; comments: number }>> {
   if (permalinks.length === 0) {
     return new Map()
   }
-  const pageKeys = permalinks.map(permalink => generatePageKey(permalink))
+  const pageKeys = permalinks.map((permalink) => generatePageKey(permalink))
   const likesAndViews = await pool.db
     .select({ key: page.key, like: page.voteUp, view: page.pv })
     .from(page)
@@ -97,13 +98,13 @@ export async function queryMetadata(
 
   for (const permalink of permalinks) {
     const pageKey = generatePageKey(permalink)
-    const likesAndView = likesAndViews.find(item => item.key === pageKey)
-    const commentCount = options.comments ? commentsCounts.find(item => item.pageKey === pageKey) : undefined
+    const likesAndView = likesAndViews.find((item) => item.key === pageKey)
+    const commentCount = options.comments ? commentsCounts.find((item) => item.pageKey === pageKey) : undefined
 
     results.set(permalink, {
       likes: likesAndView ? (likesAndView.like ?? 0) : 0,
       views: likesAndView ? (likesAndView.view ?? 0) : 0,
-      comments: commentCount ? (commentCount.count) : 0,
+      comments: commentCount ? commentCount.count : 0,
     })
   }
 
@@ -131,15 +132,10 @@ export async function queryLikesAndViews(permalink: string): Promise<[number, nu
 export async function validateLikeToken(permalink: string, token: string): Promise<boolean> {
   const pageKey = generatePageKey(permalink)
   // Calculate 30 days ago at midnight (00:00:00) using luxon
-  const thirtyDaysAgo = DateTime.now()
-    .minus({ days: 30 })
-    .startOf('day')
-    .toJSDate()
+  const thirtyDaysAgo = DateTime.now().minus({ days: 30 }).startOf('day').toJSDate()
 
   // First, physically delete all tokens older than 30 days
-  await pool.db
-    .delete(like)
-    .where(lt(like.createdAt, thirtyDaysAgo))
+  await pool.db.delete(like).where(lt(like.createdAt, thirtyDaysAgo))
 
   // Then, query the specific token
   const results = await pool.db

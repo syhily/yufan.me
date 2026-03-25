@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro'
-import { Buffer } from 'node:buffer'
+
 import { joinPaths } from '@astrojs/internal-helpers/path'
+import { Buffer } from 'node:buffer'
+
 import config from '@/blog.config'
 import { queryEmail } from '@/helpers/auth/user'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/helpers/cache'
@@ -17,7 +19,10 @@ async function avatarImage(hash: string): Promise<Buffer | null> {
     config.settings.comments.avatar.mirror,
     `${hash}?s=${config.settings.comments.avatar.size}&d=${encodeURIComponent(defaultAvatarLink)}`,
   )
-  const resp = await fetch(link, { redirect: 'manual', headers: { Referer: import.meta.env.SITE, Accept: 'image/png' } })
+  const resp = await fetch(link, {
+    redirect: 'manual',
+    headers: { Referer: import.meta.env.SITE, Accept: 'image/png' },
+  })
   if (resp.status > 299 || resp.headers.get('location') === defaultAvatarLink) {
     return null
   }
@@ -35,8 +40,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
   if (avatar !== null) {
     if (avatar.status === AvatarStatus.NO_AVATAR) {
       return redirect(defaultAvatar())
-    }
-    else if (avatar.buffer !== null) {
+    } else if (avatar.buffer !== null) {
       return new Response(new Uint8Array(avatar.buffer), {
         headers: {
           'Content-Type': 'image/png',
@@ -58,8 +62,7 @@ export const GET: APIRoute = async ({ params, redirect }) => {
   if (buffer === null) {
     await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
     return redirect(defaultAvatar())
-  }
-  else {
+  } else {
     await cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
   }
 

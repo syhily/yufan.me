@@ -1,6 +1,7 @@
-import querystring from 'node:querystring'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { defineMiddleware, sequence } from 'astro:middleware'
+import querystring from 'node:querystring'
+
 import { userSession } from '@/helpers/auth/session'
 import { hasAdmin } from '@/helpers/auth/user'
 import { getPosts } from '@/helpers/content/schema'
@@ -15,7 +16,10 @@ function isAdminEndpoints(endpoint: string) {
 }
 
 const freshInstall = defineMiddleware(async (context, next) => {
-  const { url: { pathname }, redirect } = context
+  const {
+    url: { pathname },
+    redirect,
+  } = context
 
   if (pathname === ADMIN_ENDPOINTS.install) {
     if (await hasAdmin()) {
@@ -41,7 +45,9 @@ const authentication = defineMiddleware(async ({ url, redirect, session }, next)
     // Require user information in session.
     const user = await userSession(session)
     if (user === undefined) {
-      return redirect(`${ADMIN_ENDPOINTS.login}?${querystring.stringify({ redirect_to: `${import.meta.env.SITE}/wp-admin/` })}`)
+      return redirect(
+        `${ADMIN_ENDPOINTS.login}?${querystring.stringify({ redirect_to: `${import.meta.env.SITE}/wp-admin/` })}`,
+      )
     }
   }
   // return a Response or the result of calling `next()`
@@ -49,23 +55,21 @@ const authentication = defineMiddleware(async ({ url, redirect, session }, next)
 })
 
 const postUrlMappings: Map<string, string> = getPosts({ hidden: true, schedule: false })
-  .map(post => ({
+  .map((post) => ({
     sources: [
       joinPaths('/', post.slug),
-      ...post.alias.flatMap(alias => [joinPaths('/', alias), joinPaths('/posts/', alias)]),
+      ...post.alias.flatMap((alias) => [joinPaths('/', alias), joinPaths('/posts/', alias)]),
     ],
     target: post.permalink,
   }))
   .reduce((res, item) => {
     item.sources.forEach((source) => {
-    // Avoid duplicated alias
+      // Avoid duplicated alias
       if (res.has(source)) {
         throw new Error(`Duplicate request path ${source} in post alias slug`)
       }
       // Avoid admin endpoints
-      if (source.startsWith('/wp-admin/')
-        || source === '/wp-admin'
-        || isAdminEndpoints(source)) {
+      if (source.startsWith('/wp-admin/') || source === '/wp-admin' || isAdminEndpoints(source)) {
         throw new Error(`Preserved request path: ${source}`)
       }
       res.set(source, item.target)

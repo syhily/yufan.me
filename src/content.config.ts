@@ -1,6 +1,6 @@
 import { file, glob } from 'astro/loaders'
-import { defineCollection } from 'astro:content'
 import { z } from 'astro/zod'
+import { defineCollection } from 'astro:content'
 
 // Copied and modified from https://github.com/zce/velite/blob/main/src/schemas/slug.ts
 // The slug is internally supported by Astro with 'content' type.
@@ -47,7 +47,7 @@ const tagsCollection = defineCollection({
 // Posts Collection
 const postsCollection = defineCollection({
   loader: glob({
-    pattern: '**\/[^_]*.mdx',
+    pattern: '**/[^_]*.mdx',
     base: './src/content/posts',
     retainBody: false,
   }),
@@ -71,7 +71,7 @@ const postsCollection = defineCollection({
 // Pages Collection
 const pagesCollection = defineCollection({
   loader: glob({
-    pattern: '**\/[^_]*.mdx',
+    pattern: '**/[^_]*.mdx',
     base: './src/content/pages',
     retainBody: false,
   }),

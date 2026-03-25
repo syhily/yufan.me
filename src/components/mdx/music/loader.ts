@@ -14,11 +14,10 @@ export async function loadMusic(id: string): Promise<MusicMeta | null> {
   try {
     const resp = await fetch(`${assetConfig.scheme}://${assetConfig.host}/musics/${id}.json`)
     if (resp.ok) {
-      return await resp.json() as MusicMeta
+      return (await resp.json()) as MusicMeta
     }
     return null
-  }
-  catch {
+  } catch {
     return null
   }
 }

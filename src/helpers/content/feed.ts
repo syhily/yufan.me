@@ -1,8 +1,9 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
+import { Feed } from 'feed'
+
 import config from '@/blog.config'
 import { renderPostsContents } from '@/helpers/content/render'
 import { categories, getCategory, getPosts, getTag } from '@/helpers/content/schema'
-import { Feed } from "feed";
 
 export interface FeedOptions {
   hidden?: boolean
@@ -18,8 +19,12 @@ export async function generateFeeds(options: FeedOptions = {}) {
     throw new Error('Category and tag cannot be specified at the same time')
   }
   const visiblePosts = getPosts({ hidden, schedule })
-    .filter(post => category === undefined || getCategory(post.category)?.slug === category || post.category === category)
-    .filter(post => tag === undefined || post.tags.map(tag => getTag(tag)?.slug).includes(tag) || post.tags.includes(tag))
+    .filter(
+      (post) => category === undefined || getCategory(post.category)?.slug === category || post.category === category,
+    )
+    .filter(
+      (post) => tag === undefined || post.tags.map((tag) => getTag(tag)?.slug).includes(tag) || post.tags.includes(tag),
+    )
   const feedPosts = visiblePosts.length < size ? visiblePosts : visiblePosts.slice(0, size)
   const contents = await renderPostsContents(feedPosts)
 
@@ -29,12 +34,12 @@ export async function generateFeeds(options: FeedOptions = {}) {
     description: config.description,
     id: config.website,
     link: config.website,
-    language: "zh-CN",
+    language: 'zh-CN',
     image: `${import.meta.env.SITE}/logo.svg`,
     favicon: `${import.meta.env.SITE}/favicon.svg`,
     copyright: `All rights reserved ${config.settings.footer.initialYear}, ${config.author.name}`,
     updated: new Date(),
-    generator: "WordPress 3.2.1",
+    generator: 'WordPress 3.2.1',
     feedLinks: {
       rss: `${import.meta.env.SITE}${category ? `/cats/${category}` : ''}${tag ? `/tags/${tag}` : ''}/feed`,
       atom: `${import.meta.env.SITE}${category ? `/cats/${category}` : ''}${tag ? `/tags/${tag}` : ''}/feed/atom/`,
@@ -48,9 +53,11 @@ export async function generateFeeds(options: FeedOptions = {}) {
   })
 
   // Add all the posts to the feed
-  feedPosts.forEach(post => {
-    const categories = post.tags.map(tag => getTag(tag)).filter(tag => tag !== undefined)
-      .map(tag => ({
+  feedPosts.forEach((post) => {
+    const categories = post.tags
+      .map((tag) => getTag(tag))
+      .filter((tag) => tag !== undefined)
+      .map((tag) => ({
         name: tag.name,
         domain: joinPaths(import.meta.env.SITE, `/tags/${tag.slug}`),
         scheme: 'https',
@@ -85,13 +92,18 @@ export async function generateFeeds(options: FeedOptions = {}) {
   })
 
   // Add available categories to the feed
-  categories.forEach(category => {
+  categories.forEach((category) => {
     feed.addCategory(category.name)
   })
 
   return {
     rss: feed.rss2(),
     // Hotfix the adding the xml:lang attribute to the atom feed
-    atom: feed.atom1().replace('<feed xmlns="http://www.w3.org/2005/Atom">', '<feed xml:lang="zh-CN" xmlns="http://www.w3.org/2005/Atom">'),
+    atom: feed
+      .atom1()
+      .replace(
+        '<feed xmlns="http://www.w3.org/2005/Atom">',
+        '<feed xml:lang="zh-CN" xmlns="http://www.w3.org/2005/Atom">',
+      ),
   }
 }

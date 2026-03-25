@@ -36,8 +36,8 @@ function parseOgImageUrl(ogImageUrl?: string): string {
   return ogImageUrl === undefined
     ? `${import.meta.env.SITE}/images/open-graph.png`
     : !ogImageUrl.startsWith('http')
-        ? joinPaths(import.meta.env.SITE, ogImageUrl)
-        : ogImageUrl
+      ? joinPaths(import.meta.env.SITE, ogImageUrl)
+      : ogImageUrl
 }
 
 function ensureTwitterHandle(handle?: string): string | undefined {
@@ -57,7 +57,7 @@ export function getPageMeta({
   ogImageHeight,
   siteOwnerTwitterHandle,
   contentAuthorTwitterHandle,
-}: PageMeta): { og: PageOgMeta, twitter: TwitterOgMeta } {
+}: PageMeta): { og: PageOgMeta; twitter: TwitterOgMeta } {
   if (!title) {
     throw new Error('title is required for page SEO')
   }

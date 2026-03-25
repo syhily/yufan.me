@@ -1,7 +1,9 @@
 import type { DateTime } from 'luxon'
 import type { Buffer } from 'node:buffer'
+
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
 import { Solar } from 'lunar-typescript'
+
 import { compressImage, oppoSerif } from '@/helpers/images/assets'
 
 const WIDTH = 600
@@ -17,7 +19,7 @@ async function fetchDailyQuote(date: DateTime) {
   if (!res.ok) {
     throw new Error(`API 请求失败: ${res.status}`)
   }
-  return res.json() as Promise<{ content: string, translation: string, author: string }>
+  return res.json() as Promise<{ content: string; translation: string; author: string }>
 }
 
 function getMonthLabel(date: DateTime) {
@@ -52,16 +54,14 @@ function wrapText(ctx: any, text: string, maxWidth: number) {
     if (ctx.measureText(test).width > maxWidth && line !== '') {
       lines.push(line)
       line = ch
-    }
-    else {
+    } else {
       line = test
     }
   }
   if (line) {
     if (line.length > 1) {
       lines.push(line)
-    }
-    else {
+    } else {
       lines[lines.length - 1] += line
     }
   }

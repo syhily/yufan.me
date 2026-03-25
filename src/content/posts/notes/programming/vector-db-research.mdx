@@ -57,51 +57,68 @@ The Milvus standalone is based on Docker compose with a milvus instance, a MinIO
 
 Milvus has a shared storage massively parallel processing (MPP) architecture, with storage and computing resources independent of one another. The data and the control plane are disaggregated, and its architecture comprises four layers: access layer, coordinator services, worker nodes, and storage. Each layer is independent of the others for better disaster recovery and scalability.
 
-* **Access Layer**: This layer serves as the endpoint for the users. Composed of stateless proxies, the access layer validates client requests before returning the final results to the client. The proxy uses load-balancing components like Nginx and NodePort to provide a unified service address.
-* **Coordinator Service**: This layer serves as the system’s brain, assigning tasks to worker nodes. The coordinator service layer performs critical operations, including data management, load balancing, data declaration, cluster topology management, and timestamp generation.
-* **Worker Nodes**: The worker nodes follow the instructions from the coordinator service layer and execute data manipulation language (DML) commands. Due to the separation of computing and storage, these nodes are stateless in nature. When deployed on Kubernetes, the worker nodes facilitate disaster recovery and system scale-out.
-* **Storage**: Responsible for data persistence, the storage layer consists of meta storage, log broker, and object storage. Meta storage stores snapshots of metadata, such as message consumption checkpoints and node status. On the other hand, object storage stores snapshots of index files, logs, and intermediate query results. The log broker functions as a pub-sub system supporting data playback and recovery.
+- **Access Layer**: This layer serves as the endpoint for the users. Composed of stateless proxies, the access layer validates client requests before returning the final results to the client. The proxy uses load-balancing components like Nginx and NodePort to provide a unified service address.
+- **Coordinator Service**: This layer serves as the system’s brain, assigning tasks to worker nodes. The coordinator service layer performs critical operations, including data management, load balancing, data declaration, cluster topology management, and timestamp generation.
+- **Worker Nodes**: The worker nodes follow the instructions from the coordinator service layer and execute data manipulation language (DML) commands. Due to the separation of computing and storage, these nodes are stateless in nature. When deployed on Kubernetes, the worker nodes facilitate disaster recovery and system scale-out.
+- **Storage**: Responsible for data persistence, the storage layer consists of meta storage, log broker, and object storage. Meta storage stores snapshots of metadata, such as message consumption checkpoints and node status. On the other hand, object storage stores snapshots of index files, logs, and intermediate query results. The log broker functions as a pub-sub system supporting data playback and recovery.
 
 Even in a minimal standalone Milvus deployment. We need an OSS service like Minio or S3, A etcd standalone cluster and a milvus instance. It's quite complex architecture and mainly deployed and used on K8S.
 
 #### Summary
 
 <table>
-    <tr>
-        <td></td>
-        <td>Elasticsearch</td>
-        <td>Milvus</td>
-    </tr>
-    <tr>
-        <td>Complexity</td>
-        <td>Simple, only master nodes and data nodes.</td>
-        <td>Complex, require OSS, etcd and different types of milvus nodes.<br />But can be deployed by using Amazon EKS.</td>
-    </tr>
-    <tr>
-        <td>Potential Bottleneck</td>
-        <td>As the increase of the number of Elasticsearch cluster. We may need more replicas to balance the query for avoiding hot zone.</td>
-        <td>Etcd requires high performance disk for better serving metadata. It could be a bottleneck when the query increases.<br />Files on object storage need to be pulled to the local disk and eventually loaded into memory for querying. If this process switches frequently, the performance may not necessarily be good.</td>
-    </tr>
-    <tr>
-        <td>Scaling</td>
-        <td>Require blue-green deployment to get the online cluster to be scaled</td>
-        <td>Easy to scale on k8s. The compute node instance number can be changed on demand.</td>
-    </tr>
-    <tr>
-        <td>Storage</td>
-        <td>Every data node&#39;s hard disk. Require to add new data node to increase the storage. S3 is only used as the backup storage.</td>
-        <td>OSS based. S3 can be used for storage all the metrics.</td>
-    </tr>
-    <tr>
-        <td>AA Switch</td>
-        <td>Require two identical Elasticsearch cluster.</td>
-        <td>No need to AA switch. Just reload the query nodes or add more query nodes.</td>
-    </tr>
-    <tr>
-        <td>Upgrade</td>
-        <td>Same as the scaling.</td>
-        <td>Use helm command on k8s cluster.</td>
-    </tr>
+  <tr>
+    <td></td>
+    <td>Elasticsearch</td>
+    <td>Milvus</td>
+  </tr>
+  <tr>
+    <td>Complexity</td>
+    <td>Simple, only master nodes and data nodes.</td>
+    <td>
+      Complex, require OSS, etcd and different types of milvus nodes.
+      <br />
+      But can be deployed by using Amazon EKS.
+    </td>
+  </tr>
+  <tr>
+    <td>Potential Bottleneck</td>
+    <td>
+      As the increase of the number of Elasticsearch cluster. We may need more replicas to balance
+      the query for avoiding hot zone.
+    </td>
+    <td>
+      Etcd requires high performance disk for better serving metadata. It could be a bottleneck when
+      the query increases.
+      <br />
+      Files on object storage need to be pulled to the local disk and eventually loaded into memory
+      for querying. If this process switches frequently, the performance may not necessarily be
+      good.
+    </td>
+  </tr>
+  <tr>
+    <td>Scaling</td>
+    <td>Require blue-green deployment to get the online cluster to be scaled</td>
+    <td>Easy to scale on k8s. The compute node instance number can be changed on demand.</td>
+  </tr>
+  <tr>
+    <td>Storage</td>
+    <td>
+      Every data node&#39;s hard disk. Require to add new data node to increase the storage. S3 is
+      only used as the backup storage.
+    </td>
+    <td>OSS based. S3 can be used for storage all the metrics.</td>
+  </tr>
+  <tr>
+    <td>AA Switch</td>
+    <td>Require two identical Elasticsearch cluster.</td>
+    <td>No need to AA switch. Just reload the query nodes or add more query nodes.</td>
+  </tr>
+  <tr>
+    <td>Upgrade</td>
+    <td>Same as the scaling.</td>
+    <td>Use helm command on k8s cluster.</td>
+  </tr>
 </table>
 
 ### Data Writing Flow
@@ -165,56 +182,108 @@ Both Elasticsearch and Milvus require memory to load vector files and perform qu
 As for Elasticsearch, the dense vector on HNSW is the only solution. The default dimension is float. But Elasticsearch provides the optimized HNSW for reducing the size or increase the performance. To use a quantized index, you can set your index type to `int8_hnsw`, `int4_hnsw`, or `bbq_hnsw`.
 
 <table>
-    <tr>
-        <td>Supported index</td>
-        <td>Classification</td>
-        <td>Scenario</td>
-    </tr>
-    <tr>
-        <td>FLAT</td>
-        <td>N/A</td>
-        <td><ul><li>Relatively small dataset</li><li>Requires a 100% recall rate</li></ul></td>
-    </tr>
-    <tr>
-        <td>IVF_FLAT</td>
-        <td>N/A</td>
-        <td><ul><li>High-speed query</li><li>Requires a recall rate as high as possible</li></ul></td>
-    </tr>
-    <tr>
-        <td>IVF_SQ8</td>
-        <td>Quantization-based index</td>
-        <td><ul><li>Very high-speed query</li><li>Limited memory resources</li><li>Accepts minor compromise in recall rate</li></ul></td>
-    </tr>
-    <tr>
-        <td>IVF_PQ</td>
-        <td>Quantization-based index</td>
-        <td><ul><li>High-speed query</li><li>Limited memory resources</li><li>Accepts minor compromise in recall rate</li></ul></td>
-    </tr>
-    <tr>
-        <td>HNSW</td>
-        <td>Graph-based index</td>
-        <td><ul><li>Very high-speed query</li><li>Requires a recall rate as high as possible</li><li>Large memory resources</li></ul></td>
-    </tr>
-    <tr>
-        <td>HNSW_SQ</td>
-        <td>Quantization-based index</td>
-        <td><ul><li>Very high-speed query</li><li>Limited memory resources</li><li>Accepts minor compromise in recall rate</li></ul></td>
-    </tr>
-    <tr>
-        <td>HNSW_PQ</td>
-        <td>Quantization-based index</td>
-        <td><ul><li>Medium speed query</li><li>Very limited memory resources</li><li>Accepts minor compromise in recall rate</li></ul></td>
-    </tr>
-    <tr>
-        <td>HNSW_PRQ</td>
-        <td>Quantization-based index</td>
-        <td><ul><li>Medium speed query</li><li>Very limited memory resources</li><li>Accepts minor compromise in recall rate</li></ul></td>
-    </tr>
-    <tr>
-        <td>SCANN</td>
-        <td>Quantization-based index</td>
-        <td><ul><li>Very high-speed query</li><li>Requires a recall rate as high as possible</li><li>Large memory resources</li></ul></td>
-    </tr>
+  <tr>
+    <td>Supported index</td>
+    <td>Classification</td>
+    <td>Scenario</td>
+  </tr>
+  <tr>
+    <td>FLAT</td>
+    <td>N/A</td>
+    <td>
+      <ul>
+        <li>Relatively small dataset</li>
+        <li>Requires a 100% recall rate</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>IVF_FLAT</td>
+    <td>N/A</td>
+    <td>
+      <ul>
+        <li>High-speed query</li>
+        <li>Requires a recall rate as high as possible</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>IVF_SQ8</td>
+    <td>Quantization-based index</td>
+    <td>
+      <ul>
+        <li>Very high-speed query</li>
+        <li>Limited memory resources</li>
+        <li>Accepts minor compromise in recall rate</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>IVF_PQ</td>
+    <td>Quantization-based index</td>
+    <td>
+      <ul>
+        <li>High-speed query</li>
+        <li>Limited memory resources</li>
+        <li>Accepts minor compromise in recall rate</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>HNSW</td>
+    <td>Graph-based index</td>
+    <td>
+      <ul>
+        <li>Very high-speed query</li>
+        <li>Requires a recall rate as high as possible</li>
+        <li>Large memory resources</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>HNSW_SQ</td>
+    <td>Quantization-based index</td>
+    <td>
+      <ul>
+        <li>Very high-speed query</li>
+        <li>Limited memory resources</li>
+        <li>Accepts minor compromise in recall rate</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>HNSW_PQ</td>
+    <td>Quantization-based index</td>
+    <td>
+      <ul>
+        <li>Medium speed query</li>
+        <li>Very limited memory resources</li>
+        <li>Accepts minor compromise in recall rate</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>HNSW_PRQ</td>
+    <td>Quantization-based index</td>
+    <td>
+      <ul>
+        <li>Medium speed query</li>
+        <li>Very limited memory resources</li>
+        <li>Accepts minor compromise in recall rate</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>SCANN</td>
+    <td>Quantization-based index</td>
+    <td>
+      <ul>
+        <li>Very high-speed query</li>
+        <li>Requires a recall rate as high as possible</li>
+        <li>Large memory resources</li>
+      </ul>
+    </td>
+  </tr>
 </table>
 
 #### Query Flow in Elasticsearch

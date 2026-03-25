@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro'
+
 import config from '@/blog.config'
 import { loadBuffer } from '@/helpers/cache'
 import { getPage, getPost } from '@/helpers/content/schema'
@@ -35,15 +36,18 @@ export const GET: APIRoute = async ({ params }) => {
     title = page.title
     summary = page.summary || config.description
     cover = page.cover
-  }
-  else {
+  } else {
     title = post.title
     summary = post.summary
     cover = post.cover
   }
 
   // Fetch the cover image as the background
-  const buffer = await loadBuffer(`open-graph-${cover}`, () => drawOpenGraph({ title, summary, cover }), 24 * 60 * 60 * 7)
+  const buffer = await loadBuffer(
+    `open-graph-${cover}`,
+    () => drawOpenGraph({ title, summary, cover }),
+    24 * 60 * 60 * 7,
+  )
   return new Response(new Uint8Array(buffer), {
     headers: { 'Content-Type': 'image/png' },
   })

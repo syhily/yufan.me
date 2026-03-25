@@ -2,6 +2,7 @@ import APlayer from 'aplayer-ts'
 import { actions } from 'astro:actions'
 import mediumZoom from 'medium-zoom/dist/pure'
 import tippy from 'tippy.js'
+
 import { handleActionError, scrollIntoView } from '@/assets/scripts/actions'
 import { qrcode } from '@/assets/scripts/qrcode'
 import { stickySidebar } from '@/assets/scripts/sidebar'
@@ -23,8 +24,7 @@ function focusContent(): void {
       scrollIntoView(li)
       li.querySelector<HTMLElement>('.comment-body')?.classList.add('active')
     }
-  }
-  else {
+  } else {
     // Try to find the ID on heading
     if (location.hash.startsWith('#')) {
       const id = decodeURIComponent(location.hash).substring(1)
@@ -55,20 +55,19 @@ zoom.attach('.post-content img', '.post-content svg')
 attachCopyButtons()
 
 // Footnotes.
-document.querySelectorAll('sup a[id^="user-content-fnref-"]')
-  .forEach((link) => {
-    const href = link.getAttribute('href')
-    const footnote = document.querySelector(`${href} p`)
-    if (footnote) {
-      tippy(link, {
-        content: footnote.innerHTML,
-        allowHTML: true,
-        theme: 'light',
-        placement: 'top',
-        animation: 'fade',
-      })
-    }
-  })
+document.querySelectorAll('sup a[id^="user-content-fnref-"]').forEach((link) => {
+  const href = link.getAttribute('href')
+  const footnote = document.querySelector(`${href} p`)
+  if (footnote) {
+    tippy(link, {
+      content: footnote.innerHTML,
+      allowHTML: true,
+      theme: 'light',
+      placement: 'top',
+      animation: 'fade',
+    })
+  }
+})
 
 // Create popup template based on props
 function createPopupTemplate(title: string, name: string, qrcode: string) {
@@ -140,11 +139,7 @@ document.querySelectorAll<HTMLElement>('.nice-dialog').forEach((dialog) => {
 
   // Close popup when clicking outside
   document.addEventListener('click', (event) => {
-    if (
-      popup
-      && !popup.contains(event.target as Node)
-      && !dialog.contains(event.target as Node)
-    ) {
+    if (popup && !popup.contains(event.target as Node) && !dialog.contains(event.target as Node)) {
       hidePopup()
     }
   })
@@ -195,9 +190,15 @@ document.addEventListener('keydown', (event: KeyboardEvent) => {
     menuBody.classList.toggle('in', false)
   }
 })
-document.querySelector<HTMLElement>('.menu-toggler')?.addEventListener('click', () => menuBody?.classList.toggle('in', true))
-document.querySelector<HTMLElement>('.site-menu')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
-document.querySelector<HTMLElement>('.aside-overlay')?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
+document
+  .querySelector<HTMLElement>('.menu-toggler')
+  ?.addEventListener('click', () => menuBody?.classList.toggle('in', true))
+document
+  .querySelector<HTMLElement>('.site-menu')
+  ?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
+document
+  .querySelector<HTMLElement>('.aside-overlay')
+  ?.addEventListener('click', () => menuBody?.classList.toggle('in', false))
 
 // Search Bar.
 const searchSidebar = document.querySelector<HTMLInputElement>('.search-sidebar')
@@ -295,9 +296,9 @@ document.querySelector<HTMLElement>('.global-search')?.addEventListener('click',
 // Close popup when clicking outside
 document.addEventListener('click', (event) => {
   if (
-    searchPopup
-    && !searchPopup.contains(event.target as Node)
-    && !(event.target as HTMLElement).closest('.global-search')
+    searchPopup &&
+    !searchPopup.contains(event.target as Node) &&
+    !(event.target as HTMLElement).closest('.global-search')
   ) {
     hideSearchPopup()
   }
@@ -309,8 +310,8 @@ if (typeof comments !== 'undefined' && comments !== null) {
   const cancel = comments.querySelector<HTMLInputElement>('#cancel-comment-reply-link')!
   const replyForm = comments.querySelector<HTMLDivElement>('#respond')!
   const cancelReply = (): void => {
-    cancel.hidden = true;
-    (replyForm.querySelector('textarea[name="content"]') as HTMLTextAreaElement).value = ''
+    cancel.hidden = true
+    ;(replyForm.querySelector('textarea[name="content"]') as HTMLTextAreaElement).value = ''
 
     // Remove the readonly replying-to prefix or overlay if present and restore padding
     const replyingTo = replyForm.querySelector('.replying-to, .replying-to-overlay')
@@ -326,10 +327,8 @@ if (typeof comments !== 'undefined' && comments !== null) {
         // Remove attached handlers
         const onFocus = (textarea as any).__replyOverlayFocus
         const onBlur = (textarea as any).__replyOverlayBlur
-        if (onFocus)
-          textarea.removeEventListener('focus', onFocus)
-        if (onBlur)
-          textarea.removeEventListener('blur', onBlur)
+        if (onFocus) textarea.removeEventListener('focus', onFocus)
+        if (onBlur) textarea.removeEventListener('blur', onBlur)
         delete (textarea as any).__replyOverlayFocus
         delete (textarea as any).__replyOverlayBlur
       }
@@ -369,8 +368,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
           }
           avatar.src = data.avatar
         })
-      }
-      else {
+      } else {
         avatar.src = avatar.dataset.src!
       }
     }
@@ -390,7 +388,10 @@ if (typeof comments !== 'undefined' && comments !== null) {
       const { size, offset, key } = btn.dataset
       if (typeof key === 'string' && typeof offset === 'string' && typeof size === 'string') {
         try {
-          const { data, error } = await actions.comment.loadComments({ offset: Number(offset), page_key: key })
+          const { data, error } = await actions.comment.loadComments({
+            offset: Number(offset),
+            page_key: key,
+          })
           if (error) {
             // Restore button state on error before delegating to the handler.
             btn.disabled = false
@@ -409,20 +410,17 @@ if (typeof comments !== 'undefined' && comments !== null) {
           // Remove the load more button if no further pages, otherwise restore it.
           if (!next || content === '') {
             btn.remove()
-          }
-          else {
+          } else {
             btn.disabled = false
             btn.textContent = originalText
           }
-        }
-        catch (e) {
+        } catch (e) {
           // Network or unexpected error: restore button and rethrow/log.
           btn.disabled = false
           btn.textContent = originalText
           console.error(e)
         }
-      }
-      else {
+      } else {
         // If dataset is malformed, restore button state.
         btn.disabled = false
         btn.textContent = originalText
@@ -432,8 +430,8 @@ if (typeof comments !== 'undefined' && comments !== null) {
     // Reply a comment.
     if (target.matches('.comment-reply-link')) {
       cancelReply()
-      cancel.hidden = false;
-      (replyForm.querySelector('input[name="rid"]') as HTMLInputElement).value = (target as HTMLElement).dataset.rid!
+      cancel.hidden = false
+      ;(replyForm.querySelector('input[name="rid"]') as HTMLInputElement).value = (target as HTMLElement).dataset.rid!
 
       // Move form to the reply.
       const commentItem = target.closest('li') as HTMLLIElement
@@ -443,8 +441,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
           commentItem.insertAdjacentHTML('beforeend', '<ul class="children"></ul>')
         }
         commentItem.querySelector('ul.children')!.appendChild(replyForm)
-      }
-      else {
+      } else {
         commentItem.after(replyForm)
       }
 
@@ -458,10 +455,12 @@ if (typeof comments !== 'undefined' && comments !== null) {
         const anchor = authorEl.querySelector('a') as HTMLAnchorElement | null
         if (anchor && anchor.textContent) {
           authorName = anchor.textContent.trim()
-        }
-        else {
-          const textNode = Array.from(authorEl.childNodes).find(n => n.nodeType === Node.TEXT_NODE && n.textContent && n.textContent.trim())
-          authorName = (textNode && textNode.textContent) ? textNode.textContent.trim() : (authorEl.textContent || '').trim()
+        } else {
+          const textNode = Array.from(authorEl.childNodes).find(
+            (n) => n.nodeType === Node.TEXT_NODE && n.textContent && n.textContent.trim(),
+          )
+          authorName =
+            textNode && textNode.textContent ? textNode.textContent.trim() : (authorEl.textContent || '').trim()
         }
       }
 
@@ -471,8 +470,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
 
       // Remove any existing prefix/overlay then insert new one
       const existingPrefix = replyForm.querySelector('.replying-to, .replying-to-overlay')
-      if (existingPrefix)
-        existingPrefix.remove()
+      if (existingPrefix) existingPrefix.remove()
       if (authorName) {
         const formText = replyForm.querySelector<HTMLDivElement>('.comment-form-text')!
         const textarea = formText.querySelector<HTMLTextAreaElement>('textarea[name="content"]')!
@@ -515,8 +513,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
 
         // Ensure the container is positioned so the overlay can be absolutely positioned.
         const formTextEl = formText as HTMLElement
-        if (!formTextEl.style.position)
-          formTextEl.style.position = 'relative'
+        if (!formTextEl.style.position) formTextEl.style.position = 'relative'
 
         // Remember original textarea paddingTop for later restore.
         const prevPaddingTop = textarea.style.paddingTop || window.getComputedStyle(textarea).paddingTop || ''
@@ -528,13 +525,13 @@ if (typeof comments !== 'undefined' && comments !== null) {
         // Compute overlay height and add a small gap so the caret doesn't collide with overlay.
         // Use getBoundingClientRect with fallback to offsetHeight.
         const overlayRect = overlay.getBoundingClientRect()
-        const overlayHeight = (overlayRect && overlayRect.height) ? overlayRect.height : (overlay.offsetHeight || 0)
+        const overlayHeight = overlayRect && overlayRect.height ? overlayRect.height : overlay.offsetHeight || 0
         const gap = 10 // px gap between overlay bottom and caret
         textarea.style.paddingTop = `${overlayHeight + gap}px`
       }
 
       // Focus the comment form.
-      (replyForm.querySelector('#content') as HTMLTextAreaElement).focus()
+      ;(replyForm.querySelector('#content') as HTMLTextAreaElement).focus()
     }
 
     // Edit a comment (admin only visible button)
@@ -543,12 +540,10 @@ if (typeof comments !== 'undefined' && comments !== null) {
       if (typeof rid === 'string') {
         const commentItem = target.closest('li') as HTMLLIElement
         const contentEl = commentItem.querySelector('.comment-content') as HTMLElement | null
-        if (!contentEl)
-          return
+        if (!contentEl) return
 
         // Prevent duplicate editors
-        if (commentItem.querySelector('.comment-edit-area'))
-          return
+        if (commentItem.querySelector('.comment-edit-area')) return
 
         // Fetch raw content from server (admin only action)
         const { data, error } = await actions.comment.getRaw({ rid })
@@ -556,7 +551,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
           return handleActionError(error)
         }
 
-        const raw = (data && data.content) ? data.content : ''
+        const raw = data && data.content ? data.content : ''
 
         // Build editor UI
         const editWrapper = document.createElement('div')
@@ -598,7 +593,10 @@ if (typeof comments !== 'undefined' && comments !== null) {
           saveBtn.disabled = true
           saveBtn.textContent = '保存中...'
           try {
-            const { data: editData, error: editError } = await actions.comment.edit({ rid, content: ta.value })
+            const { data: editData, error: editError } = await actions.comment.edit({
+              rid,
+              content: ta.value,
+            })
             if (editError) {
               saveBtn.disabled = false
               saveBtn.textContent = originalText
@@ -610,8 +608,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
               commentItem.insertAdjacentHTML('afterend', editData.content)
               commentItem.remove()
             }
-          }
-          catch (e) {
+          } catch (e) {
             console.error(e)
             saveBtn.disabled = false
             saveBtn.textContent = originalText
@@ -627,8 +624,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
         const { error } = await actions.comment.approve({ rid })
         if (error) {
           return handleActionError(error)
-        }
-        else {
+        } else {
           target.remove()
         }
       }
@@ -641,8 +637,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
         const { error } = await actions.comment.delete({ rid })
         if (error) {
           return handleActionError(error)
-        }
-        else {
+        } else {
           target.closest('li')!.remove()
         }
       }
@@ -681,12 +676,10 @@ if (typeof comments !== 'undefined' && comments !== null) {
       page_key,
       content,
     }
-    if (link)
-      request.link = link
+    if (link) request.link = link
     if (rid !== undefined && rid !== null && rid !== '') {
       request.rid = Number(rid)
-    }
-    else {
+    } else {
       request.rid = 0
     }
 
@@ -699,8 +692,7 @@ if (typeof comments !== 'undefined' && comments !== null) {
     const { content: replyContent } = data
     if (request.rid !== 0) {
       replyForm.insertAdjacentHTML('beforebegin', replyContent)
-    }
-    else {
+    } else {
       const list = comments.querySelector('.comment-list')!
       list.insertAdjacentHTML('afterbegin', replyContent)
     }
@@ -781,8 +773,7 @@ if (likeButton) {
         if (result.data && result.data.valid) {
           // Token is valid, set the liked state
           likeButton.classList.add('current')
-        }
-        else {
+        } else {
           // Token is invalid or validation failed, clear it
           localStorage.removeItem(permalink)
           likeButton.classList.remove('current')
@@ -811,13 +802,11 @@ if (likeButton) {
         if (likeButton.classList.contains('current')) {
           likeButton.classList.remove('current')
           await decreaseLikes(count, permalink)
-        }
-        else {
+        } else {
           likeButton.classList.add('current')
           await increaseLikes(count, permalink)
         }
-      }
-      finally {
+      } finally {
         likeButton.classList.remove('lock')
       }
     })

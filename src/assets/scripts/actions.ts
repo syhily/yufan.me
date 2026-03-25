@@ -30,11 +30,11 @@ export function showErrorDialog(errorMsg: string, closeAction?: () => void): voi
 
 // Popup an error dialog for notifying user the root cause.
 export function handleActionError(
-  error: { message: string, issues?: { message: string }[] },
+  error: { message: string; issues?: { message: string }[] },
   closeAction?: () => void,
 ): void {
   const errorMsg = isInputError(error)
-    ? error.issues!.map(issue => `<p>${issue.message}</p>`).join('\n')
+    ? error.issues!.map((issue) => `<p>${issue.message}</p>`).join('\n')
     : error.message
   showErrorDialog(errorMsg, closeAction)
 }

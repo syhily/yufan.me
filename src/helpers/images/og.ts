@@ -1,6 +1,8 @@
 import type { Image, SKRSContext2D } from '@napi-rs/canvas'
 import type { Buffer } from 'node:buffer'
+
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
+
 import config from '@/blog.config'
 import { compressImage, logoDark, oppoSans } from '@/helpers/images/assets'
 
@@ -15,8 +17,7 @@ function getStringWidth(text: string, fontSize: number) {
   for (let idx = 0; idx < text.length; idx++) {
     if (text.charCodeAt(idx) > 255) {
       result += fontSize
-    }
-    else {
+    } else {
       result += fontSize * 0.5
     }
   }
@@ -24,7 +25,15 @@ function getStringWidth(text: string, fontSize: number) {
 }
 
 // Print text on SKRSContext with wrapping
-function printAt(context: SKRSContext2D, text: string, x: number, y: number, lineHeight: number, fitWidth: number, fontSize: number) {
+function printAt(
+  context: SKRSContext2D,
+  text: string,
+  x: number,
+  y: number,
+  lineHeight: number,
+  fitWidth: number,
+  fontSize: number,
+) {
   // Avoid invalid fitWidth.
   const width = fitWidth || 0
 
@@ -45,18 +54,23 @@ function printAt(context: SKRSContext2D, text: string, x: number, y: number, lin
 }
 
 // Modified snippet from https://stackoverflow.com/questions/21961839/simulation-background-size-cover-in-canvas
-function drawImageProp(ctx: SKRSContext2D, img: Image, x: number, y: number, w: number, h: number, offsetX: number, offsetY: number) {
+function drawImageProp(
+  ctx: SKRSContext2D,
+  img: Image,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  offsetX: number,
+  offsetY: number,
+) {
   // keep bounds [0.0, 1.0]
   let ox = offsetX
-  if (offsetX < 0)
-    ox = 0
-  if (offsetX > 1)
-    ox = 1
+  if (offsetX < 0) ox = 0
+  if (offsetX > 1) ox = 1
   let oy = offsetY
-  if (offsetY < 0)
-    oy = 0
-  if (offsetY > 1)
-    oy = 1
+  if (offsetY < 0) oy = 0
+  if (offsetY > 1) oy = 1
 
   const iw = img.width
   const ih = img.height
@@ -69,10 +83,8 @@ function drawImageProp(ctx: SKRSContext2D, img: Image, x: number, y: number, w: 
   let ar = 1
 
   // decide which gap to fill
-  if (nw < w)
-    ar = w / nw
-  if (Math.abs(ar - 1) < 1e-14 && nh < h)
-    ar = h / nh // updated
+  if (nw < w) ar = w / nw
+  if (Math.abs(ar - 1) < 1e-14 && nh < h) ar = h / nh // updated
   nw *= ar
   nh *= ar
 
@@ -84,14 +96,10 @@ function drawImageProp(ctx: SKRSContext2D, img: Image, x: number, y: number, w: 
   let cy = (ih - ch) * oy
 
   // make sure source rectangle is valid
-  if (cx < 0)
-    cx = 0
-  if (cy < 0)
-    cy = 0
-  if (cw > iw)
-    cw = iw
-  if (ch > ih)
-    ch = ih
+  if (cx < 0) cx = 0
+  if (cy < 0) cy = 0
+  if (cw > iw) cw = iw
+  if (ch > ih) ch = ih
 
   // fill image in dest. rectangle
   ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h)

@@ -83,11 +83,9 @@ export function stickySidebar(options: Partial<Options>) {
   let elements: Array<HTMLElement>
   if ((opts.elements as any) instanceof HTMLElement) {
     elements = [opts.elements as unknown as HTMLElement]
-  }
-  else if (Array.isArray(opts.elements)) {
+  } else if (Array.isArray(opts.elements)) {
     elements = opts.elements as unknown as Array<HTMLElement>
-  }
-  else {
+  } else {
     elements = Array.from(document.querySelectorAll(opts.elements as string))
   }
 
@@ -115,10 +113,8 @@ export function stickySidebar(options: Partial<Options>) {
   }
 
   function tryInit() {
-    if (initialized)
-      return true
-    if (document.body.getBoundingClientRect().width < opts.minWidth)
-      return false
+    if (initialized) return true
+    if (document.body.getBoundingClientRect().width < opts.minWidth) return false
     init()
     return true
   }
@@ -132,8 +128,7 @@ export function stickySidebar(options: Partial<Options>) {
       window.removeEventListener('resize', o.onScroll)
       try {
         o.resizeObserver.disconnect()
-      }
-      catch {
+      } catch {
         // ignore errors during disconnect
       }
     })
@@ -144,7 +139,10 @@ export function stickySidebar(options: Partial<Options>) {
 
     const existingStylesheet = document.querySelector('#theia-sticky-sidebar-stylesheet')
     if (!existingStylesheet) {
-      document.head.insertAdjacentHTML('beforeend', '<style id="theia-sticky-sidebar-stylesheet">.stickySidebar:after {content: ""; display: table; clear: both;}</style>')
+      document.head.insertAdjacentHTML(
+        'beforeend',
+        '<style id="theia-sticky-sidebar-stylesheet">.stickySidebar:after {content: ""; display: table; clear: both;}</style>',
+      )
     }
 
     elements.forEach((element) => {
@@ -192,16 +190,14 @@ export function stickySidebar(options: Partial<Options>) {
       if (collapsedTopHeight === 0) {
         o.stickySidebar.style.paddingTop = '0px'
         o.stickySidebarPaddingTop = 0
-      }
-      else {
+      } else {
         o.stickySidebarPaddingTop = 1
       }
 
       if (collapsedBottomHeight === 0) {
         o.stickySidebar.style.paddingBottom = '0px'
         o.stickySidebarPaddingBottom = 0
-      }
-      else {
+      } else {
         o.stickySidebarPaddingBottom = 1
       }
 
@@ -218,8 +214,7 @@ export function stickySidebar(options: Partial<Options>) {
               o.queuedForAnimationFrame = false
             })
           }
-        }
-        else {
+        } else {
           handleScroll(o)
         }
       }
@@ -240,7 +235,9 @@ export function stickySidebar(options: Partial<Options>) {
 
   function getOuterWidth(element: HTMLElement): number {
     const style = getComputedStyle(element)
-    return element.getBoundingClientRect().width + Number.parseFloat(style.marginLeft) + Number.parseFloat(style.marginRight)
+    return (
+      element.getBoundingClientRect().width + Number.parseFloat(style.marginLeft) + Number.parseFloat(style.marginRight)
+    )
   }
 
   function isVisible(element: HTMLElement) {
@@ -266,15 +263,15 @@ export function stickySidebar(options: Partial<Options>) {
   }
 
   function handleScroll(o: StickySidebar) {
-    if (!isVisible(o.stickySidebar))
-      return
+    if (!isVisible(o.stickySidebar)) return
     if (document.body.getBoundingClientRect().width < o.options.minWidth) {
       resetSidebar(o)
       return
     }
 
     if (o.options.disableOnResponsiveLayouts) {
-      const sidebarWidth = getComputedStyle(o.sidebar).float === 'none' ? getOuterWidth(o.sidebar) : o.sidebar.offsetWidth
+      const sidebarWidth =
+        getComputedStyle(o.sidebar).float === 'none' ? getOuterWidth(o.sidebar) : o.sidebar.offsetWidth
       if (sidebarWidth + 50 > o.container.getBoundingClientRect().width) {
         resetSidebar(o)
         return
@@ -294,11 +291,10 @@ export function stickySidebar(options: Partial<Options>) {
       const windowOffsetTop = opts.additionalMarginTop
       let windowOffsetBottom
 
-      const sidebarSmallerThanWindow = (o.stickySidebar.offsetHeight + offsetTop + offsetBottom) < window.innerHeight
+      const sidebarSmallerThanWindow = o.stickySidebar.offsetHeight + offsetTop + offsetBottom < window.innerHeight
       if (sidebarSmallerThanWindow) {
         windowOffsetBottom = windowOffsetTop + o.stickySidebar.offsetHeight
-      }
-      else {
+      } else {
         windowOffsetBottom = window.innerHeight - o.marginBottom - o.paddingBottom - opts.additionalMarginBottom
       }
 
@@ -324,8 +320,7 @@ export function stickySidebar(options: Partial<Options>) {
 
       if (scrollTopDiff > 0) {
         top = Math.min(top, windowOffsetTop)
-      }
-      else {
+      } else {
         top = Math.max(top, windowOffsetBottom - o.stickySidebar.offsetHeight)
       }
 
@@ -336,14 +331,11 @@ export function stickySidebar(options: Partial<Options>) {
 
       if (!sidebarSameHeightAsContainer && top === windowOffsetTop) {
         position = 'fixed'
-      }
-      else if (!sidebarSameHeightAsContainer && top === windowOffsetBottom - o.stickySidebar.offsetHeight) {
+      } else if (!sidebarSameHeightAsContainer && top === windowOffsetBottom - o.stickySidebar.offsetHeight) {
         position = 'fixed'
-      }
-      else if (scrollTop + top - sidebarOffset.top - o.paddingTop <= opts.additionalMarginTop) {
+      } else if (scrollTop + top - sidebarOffset.top - o.paddingTop <= opts.additionalMarginTop) {
         position = 'static'
-      }
-      else {
+      } else {
         position = 'absolute'
       }
     }
@@ -356,8 +348,7 @@ export function stickySidebar(options: Partial<Options>) {
         left: `${getOffset(o.sidebar).left + Number.parseFloat(getComputedStyle(o.sidebar).paddingLeft) - window.scrollX}px`,
         top: '0px',
       })
-    }
-    else if (position === 'absolute') {
+    } else if (position === 'absolute') {
       const css: Partial<CSSStyleDeclaration> = {}
       if (getComputedStyle(o.stickySidebar).position !== 'absolute') {
         css.position = 'absolute'
@@ -367,8 +358,7 @@ export function stickySidebar(options: Partial<Options>) {
       css.width = `${o.stickySidebar.getBoundingClientRect().width}px`
       css.left = ''
       Object.assign(o.stickySidebar.style, css)
-    }
-    else if (position === 'static') {
+    } else if (position === 'static') {
       resetSidebar(o)
     }
 
@@ -388,7 +378,7 @@ export function stickySidebar(options: Partial<Options>) {
   return { unbind }
 }
 
-export function getOffset(element: HTMLElement): { top: number, left: number } {
+export function getOffset(element: HTMLElement): { top: number; left: number } {
   const rect = element.getBoundingClientRect()
   return {
     top: rect.top + window.scrollY - document.documentElement.clientTop,

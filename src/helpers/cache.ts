@@ -1,4 +1,5 @@
 import type { Buffer } from 'node:buffer'
+
 import { REDIS_URL } from 'astro:env/server'
 import { createStorage } from 'unstorage'
 import redisDriver from 'unstorage/drivers/redis'
@@ -22,8 +23,7 @@ export async function incrLimit(ip: string) {
 
   if (times === null) {
     storage.setItem(key, 1, { ttl: LIMIT_TTL })
-  }
-  else {
+  } else {
     storage.setItem(key, times + 1, { ttl: LIMIT_TTL })
   }
 }
@@ -53,7 +53,11 @@ export async function loadAvatar(email: string): Promise<Avatar | null> {
   return { status, buffer }
 }
 
-export async function cacheAvatar(args: { email: string, buffer: Buffer, status: AvatarStatus.HAVE_AVATAR } | { email: string, status: AvatarStatus.NO_AVATAR }) {
+export async function cacheAvatar(
+  args:
+    | { email: string; buffer: Buffer; status: AvatarStatus.HAVE_AVATAR }
+    | { email: string; status: AvatarStatus.NO_AVATAR },
+) {
   const { email, status } = args
   await storage.setItem<AvatarStatus>(`avatar-status-${email}`, status, { ttl: 60 * 60 * 24 * 7 })
   if (status === AvatarStatus.HAVE_AVATAR) {
@@ -62,7 +66,7 @@ export async function cacheAvatar(args: { email: string, buffer: Buffer, status:
 }
 
 export async function loadBuffer(key: string, loader: () => Promise<Buffer>, ttl: number): Promise<Buffer> {
-  if (import.meta.env.PROD && await storage.hasItem(key)) {
+  if (import.meta.env.PROD && (await storage.hasItem(key))) {
     return (await storage.getItemRaw<Buffer>(key))!
   }
   const buffer = await loader()

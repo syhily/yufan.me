@@ -1,13 +1,16 @@
 import type { ContainerRenderOptions } from 'astro/container'
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js'
 import type { TextNode } from 'ultrahtml'
-import type { Post } from '@/helpers/content/schema'
+
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { getContainerRenderer } from '@astrojs/mdx'
 import { experimental_AstroContainer as AstroContainer } from 'astro/container'
 import { loadRenderers } from 'astro:container'
 import { ELEMENT_NODE, TEXT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
+
+import type { Post } from '@/helpers/content/schema'
+
 import config from '@/blog.config'
 import PostContent from '@/components/page/post/PostContent.astro'
 
@@ -15,7 +18,10 @@ const renderers = await loadRenderers([getContainerRenderer()])
 const container = await AstroContainer.create({ renderers })
 
 // We only want to make sure the container instance is singleton.
-export async function partialRender(component: AstroComponentFactory, options?: ContainerRenderOptions): Promise<string> {
+export async function partialRender(
+  component: AstroComponentFactory,
+  options?: ContainerRenderOptions,
+): Promise<string> {
   return await container.renderToString(component, { ...options, partial: true })
 }
 
@@ -72,13 +78,13 @@ async function cleanupContent(html: string) {
     sanitize({
       dropElements: ['style'],
       dropAttributes: {
-        'class': ['*'],
+        class: ['*'],
         'data-astro-source': ['*'],
         'data-astro-source-loc': ['*'],
         'data-astro-source-file': ['*'],
         'data-favicon': ['*'],
         'data-image-component': ['img'],
-        'style': ['*'],
+        style: ['*'],
         'data-language': ['*'],
         'data-footnotes': ['*'],
       },
@@ -92,7 +98,7 @@ export async function renderPostsContents(feedPosts: Post[]): Promise<Map<string
   const contents = new Map<string, string>()
 
   if (config.settings.feed.full) {
-    const promises = feedPosts.map(async post => ({
+    const promises = feedPosts.map(async (post) => ({
       key: post.slug,
       value: await partialRender(PostContent, {
         props: {

@@ -1,5 +1,5 @@
-/// <reference path="../.astro/types.d.ts" />
-/// <reference types="astro/client" />
+import '../.astro/types.d.ts'
+import 'astro/client'
 
 declare module 'unstorage/drivers/redis' {
   import type { Driver } from 'unstorage'
@@ -8,9 +8,9 @@ declare module 'unstorage/drivers/redis' {
 }
 
 declare module '*.astro' {
-  import { AstroComponentFactory } from 'astro/runtime/server';
-  const Component: AstroComponentFactory;
-  export default Component;
+  import { AstroComponentFactory } from 'astro/runtime/server'
+  const Component: AstroComponentFactory
+  export default Component
 }
 
 declare namespace App {

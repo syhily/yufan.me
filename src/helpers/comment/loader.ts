@@ -1,8 +1,18 @@
 import type { AstroSession } from 'astro'
-import type { CommentAndUser, CommentItem, CommentReq, Comments, ErrorResp, LatestComment } from '@/helpers/comment/types'
-import type { NewComment, NewPage, Page } from '@/helpers/db/types'
+
 import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import _ from 'lodash'
+
+import type {
+  CommentAndUser,
+  CommentItem,
+  CommentReq,
+  Comments,
+  ErrorResp,
+  LatestComment,
+} from '@/helpers/comment/types'
+import type { NewComment, NewPage, Page } from '@/helpers/db/types'
+
 import config from '@/blog.config'
 import { isAdmin, userSession } from '@/helpers/auth/session'
 import { createUser } from '@/helpers/auth/user'
@@ -59,7 +69,8 @@ export async function pendingComments(): Promise<LatestComment[]> {
 
 export async function latestComments(): Promise<LatestComment[]> {
   const admins = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
-  const userFilterQuery = admins.length > 0 ? sql`user_id NOT IN (${admins.map(admin => admin.id).join(', ')})` : sql`1 = 1`
+  const userFilterQuery =
+    admins.length > 0 ? sql`user_id NOT IN (${admins.map((admin) => admin.id).join(', ')})` : sql`1 = 1`
   const latestDistinctCommentsQuery = sql`SELECT    id
   FROM      (
             SELECT    id,
@@ -134,23 +145,49 @@ const unionCommentSelect = {
   badgeColor: user.badgeColor,
 }
 
-export async function loadComments(session: AstroSession | undefined, key: string, title: string | null, offset: number): Promise<Comments | null> {
+export async function loadComments(
+  session: AstroSession | undefined,
+  key: string,
+  title: string | null,
+  offset: number,
+): Promise<Comments | null> {
   await upsertPage(key, title)
-  const pendingArray = session ? await isAdmin(session) ? [false, true] : [false] : [false]
+  const pendingArray = session ? ((await isAdmin(session)) ? [false, true] : [false]) : [false]
 
-  const counts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray))))[0].counts
-  const rootCounts = (await db.select({ counts: count() }).from(comment).where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), eq(comment.rootId, 0n))))[0].counts
-  const rootComments = await db.select(unionCommentSelect)
+  const counts = (
+    await db
+      .select({ counts: count() })
+      .from(comment)
+      .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray)))
+  )[0].counts
+  const rootCounts = (
+    await db
+      .select({ counts: count() })
+      .from(comment)
+      .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), eq(comment.rootId, 0n)))
+  )[0].counts
+  const rootComments = await db
+    .select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n), inArray(comment.isPending, pendingArray)))
     .limit(config.settings.comments.size)
     .orderBy(desc(comment.createdAt))
     .offset(offset)
-  const childComments = await db.select(unionCommentSelect)
+  const childComments = await db
+    .select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), inArray(comment.rootId, rootComments.map(c => c.id))))
+    .where(
+      and(
+        eq(comment.pageKey, key),
+        inArray(comment.isPending, pendingArray),
+        inArray(
+          comment.rootId,
+          rootComments.map((c) => c.id),
+        ),
+      ),
+    )
 
   return {
     count: counts,
@@ -172,8 +209,12 @@ export async function increaseViews(key: string, title: string | null) {
 }
 
 export async function approveComment(rid: string) {
-  await db.update(comment).set({ isPending: false }).where(eq(comment.id, BigInt(rid)))
-  const c = await db.select()
+  await db
+    .update(comment)
+    .set({ isPending: false })
+    .where(eq(comment.id, BigInt(rid)))
+  const c = await db
+    .select()
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .innerJoin(page, eq(comment.pageKey, page.key))
@@ -188,7 +229,12 @@ export async function deleteComment(rid: string) {
   await db.delete(comment).where(eq(comment.id, BigInt(rid)))
 }
 
-export async function createComment(commentReq: CommentReq, req: Request, clientAddress: string, session: AstroSession): Promise<ErrorResp | CommentAndUser> {
+export async function createComment(
+  commentReq: CommentReq,
+  req: Request,
+  clientAddress: string,
+  session: AstroSession,
+): Promise<ErrorResp | CommentAndUser> {
   // Check page key
   const p = await db.select().from(page).where(eq(page.key, commentReq.page_key))
   if (p.length === 0) {
@@ -220,33 +266,37 @@ export async function createComment(commentReq: CommentReq, req: Request, client
   }
 
   // Query the existing comments for the user for deduplication.
-  const historicalComments = await db.select()
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .limit(10)
-  if (historicalComments.find(c => c.comment.content === commentReq.content)) {
+  const historicalComments = await db.select().from(comment).innerJoin(user, eq(comment.userId, user.id)).limit(10)
+  if (historicalComments.find((c) => c.comment.content === commentReq.content)) {
     return { msg: ErrorMessages.COMMENT_DUPLICATE }
   }
 
   // Update the comment user information
-  await db.update(user)
+  await db
+    .update(user)
     .set({ lastUa: req.headers.get('User-Agent'), lastIp: clientAddress })
     .where(eq(user.id, u.id))
 
   // Calculate comment architecture
   let rootId = 0n
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
-    const r = await db.select({ rootId: comment.rootId }).from(comment).where(eq(comment.id, BigInt(commentReq.rid))).limit(1)
+    const r = await db
+      .select({ rootId: comment.rootId })
+      .from(comment)
+      .where(eq(comment.id, BigInt(commentReq.rid)))
+      .limit(1)
     if (r.length > 0 && r[0].rootId !== null && r[0].rootId !== 0n) {
       rootId = r[0].rootId
-    }
-    else {
+    } else {
       rootId = BigInt(commentReq.rid)
     }
   }
 
   // Should I bypass the check.
-  const pendingStatus = await db.select({ count: count() }).from(comment).where(and(eq(comment.userId, u.id), eq(comment.isPending, false)))
+  const pendingStatus = await db
+    .select({ count: count() })
+    .from(comment)
+    .where(and(eq(comment.userId, u.id), eq(comment.isPending, false)))
   const isPending = pendingStatus.length === 0 || pendingStatus[0].count === 0
 
   // Insert the comment
@@ -306,7 +356,8 @@ export async function createComment(commentReq: CommentReq, req: Request, client
     sendNewComment(info, p[0])
   }
   if (info.rid !== 0) {
-    const source = await db.select()
+    const source = await db
+      .select()
       .from(comment)
       .innerJoin(user, eq(comment.userId, user.id))
       .where(eq(comment.id, BigInt(info.rid)))
@@ -321,28 +372,31 @@ export async function createComment(commentReq: CommentReq, req: Request, client
 }
 
 export async function getCommentById(rid: string) {
-  const r = await db.select(unionCommentSelect)
+  const r = await db
+    .select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(eq(comment.id, BigInt(rid)))
     .limit(1)
-  if (r.length === 0)
-    return null
+  if (r.length === 0) return null
   return r[0]
 }
 
 export async function updateComment(rid: string, newContent: string) {
   // Update raw content and updated timestamp
-  await db.update(comment).set({ content: newContent }).where(eq(comment.id, BigInt(rid)))
+  await db
+    .update(comment)
+    .set({ content: newContent })
+    .where(eq(comment.id, BigInt(rid)))
 
-  const r = await db.select(unionCommentSelect)
+  const r = await db
+    .select(unionCommentSelect)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
     .where(eq(comment.id, BigInt(rid)))
     .limit(1)
 
-  if (r.length === 0)
-    return null
+  if (r.length === 0) return null
 
   // Parse content into HTML for rendering
   r[0].content = await parseContent(r[0].content || '该留言内容为空')
@@ -362,7 +416,7 @@ export interface AdminCommentsResult {
 }
 
 // 获取所有文章列表（用于筛选）
-export async function getPageOptions(): Promise<Array<{ key: string, title: string }>> {
+export async function getPageOptions(): Promise<Array<{ key: string; title: string }>> {
   const pages = await db
     .select({ key: page.key, title: page.title })
     .from(page)
@@ -373,7 +427,7 @@ export async function getPageOptions(): Promise<Array<{ key: string, title: stri
 }
 
 // 获取所有评论人员列表（用于筛选）
-export async function getCommentAuthors(): Promise<Array<{ id: bigint, name: string }>> {
+export async function getCommentAuthors(): Promise<Array<{ id: bigint; name: string }>> {
   const authors = await db
     .selectDistinct({ id: user.id, name: user.name })
     .from(comment)
@@ -423,7 +477,7 @@ export async function loadAllComments(
 
   return {
     comments: await Promise.all(
-      comments.map(async c => ({
+      comments.map(async (c) => ({
         ...c,
         content: await parseContent(c.content || '该留言内容为空'),
         pageTitle: c.pageTitle,
@@ -436,14 +490,17 @@ export async function loadAllComments(
 
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {
   const parsedComments = await Promise.all(
-    comments.map(async comment => ({ ...comment, content: await parseContent(comment.content || '该留言内容为空') })),
+    comments.map(async (comment) => ({
+      ...comment,
+      content: await parseContent(comment.content || '该留言内容为空'),
+    })),
   )
   const childComments = _.groupBy(
-    parsedComments.filter(comment => !rootCommentFilter(comment)),
-    c => c.rid,
+    parsedComments.filter((comment) => !rootCommentFilter(comment)),
+    (c) => c.rid,
   )
 
-  return parsedComments.filter(rootCommentFilter).map(comment => commentItems(comment, childComments))
+  return parsedComments.filter(rootCommentFilter).map((comment) => commentItems(comment, childComments))
 }
 
 function rootCommentFilter(comment: CommentAndUser): boolean {
@@ -456,5 +513,5 @@ function commentItems(comment: CommentAndUser, childComments: _.Dictionary<Comme
     return comment
   }
 
-  return { ...comment, children: children.map(child => commentItems(child, childComments)) }
+  return { ...comment, children: children.map((child) => commentItems(child, childComments)) }
 }

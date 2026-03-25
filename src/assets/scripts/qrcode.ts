@@ -144,7 +144,9 @@ class QrCode {
    */
   static from(content: string | URL, { ecl = 'MEDIUM' }: Pick<options, 'ecl'> = {}) {
     const data = content instanceof URL ? content.href : content
-    return QrCode.#encode(Segment.from(data), { ecl: ecl as keyof typeof QrCode.ERROR_CORRECTION_LEVEL })
+    return QrCode.#encode(Segment.from(data), {
+      ecl: ecl as keyof typeof QrCode.ERROR_CORRECTION_LEVEL,
+    })
   }
 
   /**
@@ -159,12 +161,13 @@ class QrCode {
     const ECL = QrCode.ERROR_CORRECTION_LEVEL[ecl]
     let version = 1
     let databits = 0
-    for (;; version++) {
-      const capacity = 8 * (Math.floor(QrCode.#DATA_BITS[version] / 8) - ECL.ECC_PER_BLOCK[version] * ECL.ECC_BLOCKS[version])
+    for (; ; version++) {
+      const capacity =
+        8 * (Math.floor(QrCode.#DATA_BITS[version] / 8) - ECL.ECC_PER_BLOCK[version] * ECL.ECC_BLOCKS[version])
       let used = 0
       for (const segment of segments) {
         const width = segment.width(version)
-        if (segment.length >= (1 << width)) {
+        if (segment.length >= 1 << width) {
           used = Infinity
         }
         used += 4 + width + segment.data.length
@@ -181,7 +184,10 @@ class QrCode {
     // Increase the error correction level while the data still fits in the current version number
     for (const level of ['MEDIUM', 'QUARTILE', 'HIGH'] as const) {
       const ECL = QrCode.ERROR_CORRECTION_LEVEL[level]
-      if (databits <= 8 * (Math.floor(QrCode.#DATA_BITS[version] / 8) - ECL.ECC_PER_BLOCK[version] * ECL.ECC_BLOCKS[version])) {
+      if (
+        databits <=
+        8 * (Math.floor(QrCode.#DATA_BITS[version] / 8) - ECL.ECC_PER_BLOCK[version] * ECL.ECC_BLOCKS[version])
+      ) {
         ecl = level
       }
     }
@@ -195,12 +201,13 @@ class QrCode {
     }
 
     // Add terminator and pad up to a byte if applicable
-    const capacity = 8 * (Math.floor(QrCode.#DATA_BITS[version] / 8) - ECL.ECC_PER_BLOCK[version] * ECL.ECC_BLOCKS[version])
+    const capacity =
+      8 * (Math.floor(QrCode.#DATA_BITS[version] / 8) - ECL.ECC_PER_BLOCK[version] * ECL.ECC_BLOCKS[version])
     append({ bits, length: Math.min(4, capacity - bits.length), value: 0 })
-    append({ bits, length: (8 - bits.length % 8) % 8, value: 0 })
+    append({ bits, length: (8 - (bits.length % 8)) % 8, value: 0 })
 
     // Pad with alternating bytes until data capacity is reached
-    for (let padding = 0xEC; bits.length < capacity; padding ^= 0xEC ^ 0x11) {
+    for (let padding = 0xec; bits.length < capacity; padding ^= 0xec ^ 0x11) {
       append({ bits, length: 8, value: padding })
     }
 
@@ -209,7 +216,7 @@ class QrCode {
     while (data.length * 8 < bits.length) {
       data.push(0)
     }
-    bits.forEach((b, i) => data[i >>> 3] |= b << (7 - (i & 7)))
+    bits.forEach((b, i) => (data[i >>> 3] |= b << (7 - (i & 7))))
 
     // Create the QR Code object
     const mode = ['', 'numeric', 'alphanumeric', '', 'bytes'][segments[0]?.mode.id] ?? ''
@@ -218,7 +225,21 @@ class QrCode {
   }
 
   /** Constructor. */
-  private constructor({ version, ecl, data, mode, length, databits }: { version: number, ecl: keyof typeof QrCode.ERROR_CORRECTION_LEVEL, data: Readonly<number[]>, mode: string, length: number, databits: number }) {
+  private constructor({
+    version,
+    ecl,
+    data,
+    mode,
+    length,
+    databits,
+  }: {
+    version: number
+    ecl: keyof typeof QrCode.ERROR_CORRECTION_LEVEL
+    data: Readonly<number[]>
+    mode: string
+    length: number
+    databits: number
+  }) {
     this.version = version
     this.size = this.version * 4 + 17
     this.ecl = ecl
@@ -249,7 +270,7 @@ class QrCode {
   }
 
   /** Sets the color of a module and marks it as a function module. */
-  #set({ x, y, color }: { x: number, y: number, color: boolean }) {
+  #set({ x, y, color }: { x: number; y: number; color: boolean }) {
     this.#modules[y][x] = color
     this.#functions[y][x] = true
   }
@@ -259,8 +280,8 @@ class QrCode {
    * The top left corner has the coordinates (x=0, y=0).
    * If the given coordinates are out of bounds, then false (light) is returned.
    */
-  get({ x, y }: { x: number, y: number }) {
-    return (x >= 0) && (x < this.size) && (y >= 0) && (y < this.size) && (this.#modules[y][x])
+  get({ x, y }: { x: number; y: number }) {
+    return x >= 0 && x < this.size && y >= 0 && y < this.size && this.#modules[y][x]
   }
 
   /** Describes how a segment's data bits are interpreted. */
@@ -320,7 +341,13 @@ class QrCode {
     const alignments = QrCode.#ALIGNEMENTS[this.version]
     for (let i = 0; i < alignments.length; i++) {
       for (let j = 0; j < alignments.length; j++) {
-        if (!(((i === 0) && (j === 0)) || ((i === 0) && (j === alignments.length - 1)) || ((i === alignments.length - 1) && (j === 0)))) {
+        if (
+          !(
+            (i === 0 && j === 0) ||
+            (i === 0 && j === alignments.length - 1) ||
+            (i === alignments.length - 1 && j === 0)
+          )
+        ) {
           this.#drawAlignment({ x: alignments[i], y: alignments[j] })
         }
       }
@@ -332,21 +359,21 @@ class QrCode {
   }
 
   /** Draws a 9*9 finder pattern including the border separator with the center module at (x, y). */
-  #drawFinder({ x: ox, y: oy }: { x: number, y: number }) {
+  #drawFinder({ x: ox, y: oy }: { x: number; y: number }) {
     for (let dy = -4; dy <= 4; dy++) {
       for (let dx = -4; dx <= 4; dx++) {
         const d = Math.max(Math.abs(dx), Math.abs(dy))
         const x = ox + dx
         const y = oy + dy
-        if ((x >= 0) && (x < this.size) && (y >= 0) && (y < this.size)) {
-          this.#set({ x, y, color: (d !== 2) && (d !== 4) })
+        if (x >= 0 && x < this.size && y >= 0 && y < this.size) {
+          this.#set({ x, y, color: d !== 2 && d !== 4 })
         }
       }
     }
   }
 
   /** Draws a 5*5 alignment pattern with the center module at (x, y). */
-  #drawAlignment({ x, y }: { x: number, y: number }) {
+  #drawAlignment({ x, y }: { x: number; y: number }) {
     for (let dy = -2; dy <= 2; dy++) {
       for (let dx = -2; dx <= 2; dx++) {
         this.#set({ x: x + dx, y: y + dy, color: Math.max(Math.abs(dx), Math.abs(dy)) !== 1 })
@@ -357,12 +384,12 @@ class QrCode {
   /** Draws two copies of the format bits (with its own error correction code) based on the given mask and this object's error correction level field. */
   #drawFormat({ mask = 0 } = {}) {
     // Calculate error correction code and pack bits
-    const data = this.#ecl.format << 3 | mask
+    const data = (this.#ecl.format << 3) | mask
     let rem = data
     for (let i = 0; i < 10; i++) {
       rem = (rem << 1) ^ ((rem >>> 9) * 0x537)
     }
-    const bits = (data << 10 | rem) ^ 0x5412
+    const bits = ((data << 10) | rem) ^ 0x5412
 
     // Draw first copy
     for (let i = 0; i <= 5; i++) {
@@ -394,14 +421,14 @@ class QrCode {
     // Calculate error correction code and pack bits
     let rem = this.version
     for (let i = 0; i < 12; i++) {
-      rem = (rem << 1) ^ ((rem >>> 11) * 0x1F25)
+      rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25)
     }
-    const bits = this.version << 12 | rem
+    const bits = (this.version << 12) | rem
 
     // Draw copies
     for (let i = 0; i < 18; i++) {
       const color = bit(bits, i)
-      const a = this.size - 11 + i % 3
+      const a = this.size - 11 + (i % 3)
       const b = Math.floor(i / 3)
       this.#set({ x: a, y: b, color })
       this.#set({ x: b, y: a, color })
@@ -413,9 +440,15 @@ class QrCode {
    */
   #interleave(data: Readonly<number[]>) {
     // Calculate parameter numbers
-    const ecc = { blocks: this.#ecl.ECC_BLOCKS[this.version], length: this.#ecl.ECC_PER_BLOCK[this.version] }
+    const ecc = {
+      blocks: this.#ecl.ECC_BLOCKS[this.version],
+      length: this.#ecl.ECC_PER_BLOCK[this.version],
+    }
     const codewords = Math.floor(QrCode.#DATA_BITS[this.version] / 8)
-    const short = { blocks: ecc.blocks - codewords % ecc.blocks, length: Math.floor(codewords / ecc.blocks) }
+    const short = {
+      blocks: ecc.blocks - (codewords % ecc.blocks),
+      length: Math.floor(codewords / ecc.blocks),
+    }
 
     // Split data into blocks and append ECC to each block
     const blocks = [] as number[][]
@@ -434,7 +467,7 @@ class QrCode {
     const result = [] as number[]
     for (let i = 0; i < blocks[0].length; i++) {
       blocks.forEach((block, j) => {
-        if ((i !== short.length - ecc.length) || (j >= short.blocks)) {
+        if (i !== short.length - ecc.length || j >= short.blocks) {
           result.push(block[i])
         }
       })
@@ -455,7 +488,7 @@ class QrCode {
         for (let j = 0; j < 2; j++) {
           const x = h - j
           const y = !((h + 1) & 2) ? this.size - 1 - v : v
-          if ((!this.#functions[y][x]) && (i < data.length * 8)) {
+          if (!this.#functions[y][x] && i < data.length * 8) {
             this.#modules[y][x] = bit(data[i >>> 3], 7 - (i & 7))
             i++
           }
@@ -490,16 +523,16 @@ class QrCode {
             invert = !((Math.floor(x / 3) + Math.floor(y / 2)) % 2)
             break
           case 5:
-            invert = !(x * y % 2 + x * y % 3)
+            invert = !(((x * y) % 2) + ((x * y) % 3))
             break
           case 6:
-            invert = !((x * y % 2 + x * y % 3) % 2)
+            invert = !((((x * y) % 2) + ((x * y) % 3)) % 2)
             break
           case 7:
-            invert = !(((x + y) % 2 + x * y % 3) % 2)
+            invert = !((((x + y) % 2) + ((x * y) % 3)) % 2)
             break
         }
-        if (invert && (!this.#functions[y][x])) {
+        if (invert && !this.#functions[y][x]) {
           this.#modules[y][x] = !this.#modules[y][x]
         }
       }
@@ -523,12 +556,10 @@ class QrCode {
           xy++
           if (xy === 5) {
             result += QrCode.#PENALTY[0]
-          }
-          else if (xy > 5) {
+          } else if (xy > 5) {
             result++
           }
-        }
-        else {
+        } else {
           this.#penaltyRegister({ xy, history })
           if (!color) {
             result += this.#penaltyPatterns({ history }) * QrCode.#PENALTY[2]
@@ -550,12 +581,10 @@ class QrCode {
           xy++
           if (xy === 5) {
             result += QrCode.#PENALTY[0]
-          }
-          else if (xy > 5) {
+          } else if (xy > 5) {
             result++
           }
-        }
-        else {
+        } else {
           this.#penaltyRegister({ xy, history })
           if (!color) {
             result += this.#penaltyPatterns({ history }) * QrCode.#PENALTY[2]
@@ -571,7 +600,11 @@ class QrCode {
     for (let y = 0; y < this.size - 1; y++) {
       for (let x = 0; x < this.size - 1; x++) {
         const color = this.#modules[y][x]
-        if ((color === this.#modules[y][x + 1]) && (color === this.#modules[y + 1][x]) && (color === this.#modules[y + 1][x + 1])) {
+        if (
+          color === this.#modules[y][x + 1] &&
+          color === this.#modules[y + 1][x] &&
+          color === this.#modules[y + 1][x + 1]
+        ) {
           result += QrCode.#PENALTY[1]
         }
       }
@@ -591,12 +624,15 @@ class QrCode {
   /** Can only be called immediately after a light run is added, and returns either 0, 1, or 2. */
   #penaltyPatterns({ history }: { history: number[] }) {
     const n = history[1]
-    const core = (n > 0) && (history[2] === n) && (history[3] === n * 3) && (history[4] === n) && (history[5] === n)
-    return ((core && (history[0] >= n * 4) && (history[6] >= n)) ? 1 : 0) + ((core && (history[6] >= n * 4) && (history[0] >= n)) ? 1 : 0)
+    const core = n > 0 && history[2] === n && history[3] === n * 3 && history[4] === n && history[5] === n
+    return (
+      (core && history[0] >= n * 4 && history[6] >= n ? 1 : 0) +
+      (core && history[6] >= n * 4 && history[0] >= n ? 1 : 0)
+    )
   }
 
   /** Must be called at the end of a line (row or column) of modules. */
-  #penaltyCount({ xy, color, history }: { xy: number, color: boolean, history: number[] }) {
+  #penaltyCount({ xy, color, history }: { xy: number; color: boolean; history: number[] }) {
     if (color) {
       this.#penaltyRegister({ xy, history })
       xy = 0
@@ -607,7 +643,7 @@ class QrCode {
   }
 
   /** Pushes the given value to the front and drops the last value. */
-  #penaltyRegister({ xy, history }: { xy: number, history: number[] }) {
+  #penaltyRegister({ xy, history }: { xy: number; history: number[] }) {
     if (history[0] === 0) {
       xy += this.size
     }
@@ -629,24 +665,360 @@ class QrCode {
    */
   static readonly ERROR_CORRECTION_LEVEL = {
     LOW: {
-      ECC_PER_BLOCK: [Number.NaN, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-      ECC_BLOCKS: [Number.NaN, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
+      ECC_PER_BLOCK: [
+        Number.NaN,
+        7,
+        10,
+        15,
+        20,
+        26,
+        18,
+        20,
+        24,
+        30,
+        18,
+        20,
+        24,
+        26,
+        30,
+        22,
+        24,
+        28,
+        30,
+        28,
+        28,
+        28,
+        28,
+        30,
+        30,
+        26,
+        28,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+      ],
+      ECC_BLOCKS: [
+        Number.NaN,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        4,
+        4,
+        4,
+        4,
+        4,
+        6,
+        6,
+        6,
+        6,
+        7,
+        8,
+        8,
+        9,
+        9,
+        10,
+        12,
+        12,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+      ],
 
       format: 1,
     },
     MEDIUM: {
-      ECC_PER_BLOCK: [Number.NaN, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
-      ECC_BLOCKS: [Number.NaN, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49],
+      ECC_PER_BLOCK: [
+        Number.NaN,
+        10,
+        16,
+        26,
+        18,
+        24,
+        16,
+        18,
+        22,
+        22,
+        26,
+        30,
+        22,
+        22,
+        24,
+        24,
+        28,
+        28,
+        26,
+        26,
+        26,
+        26,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+      ],
+      ECC_BLOCKS: [
+        Number.NaN,
+        1,
+        1,
+        1,
+        2,
+        2,
+        4,
+        4,
+        4,
+        5,
+        5,
+        5,
+        8,
+        9,
+        9,
+        10,
+        10,
+        11,
+        13,
+        14,
+        16,
+        17,
+        17,
+        18,
+        20,
+        21,
+        23,
+        25,
+        26,
+        28,
+        29,
+        31,
+        33,
+        35,
+        37,
+        38,
+        40,
+        43,
+        45,
+        47,
+        49,
+      ],
       format: 0,
     },
     QUARTILE: {
-      ECC_PER_BLOCK: [Number.NaN, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24, 20, 30, 24, 28, 28, 26, 30, 28, 30, 30, 30, 30, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-      ECC_BLOCKS: [Number.NaN, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8, 8, 10, 12, 16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29, 34, 34, 35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68],
+      ECC_PER_BLOCK: [
+        Number.NaN,
+        13,
+        22,
+        18,
+        26,
+        18,
+        24,
+        18,
+        22,
+        20,
+        24,
+        28,
+        26,
+        24,
+        20,
+        30,
+        24,
+        28,
+        28,
+        26,
+        30,
+        28,
+        30,
+        30,
+        30,
+        30,
+        28,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+      ],
+      ECC_BLOCKS: [
+        Number.NaN,
+        1,
+        1,
+        2,
+        2,
+        4,
+        4,
+        6,
+        6,
+        8,
+        8,
+        8,
+        10,
+        12,
+        16,
+        12,
+        17,
+        16,
+        18,
+        21,
+        20,
+        23,
+        23,
+        25,
+        27,
+        29,
+        34,
+        34,
+        35,
+        38,
+        40,
+        43,
+        45,
+        48,
+        51,
+        53,
+        56,
+        59,
+        62,
+        65,
+        68,
+      ],
       format: 3,
     },
     HIGH: {
-      ECC_PER_BLOCK: [Number.NaN, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-      ECC_BLOCKS: [Number.NaN, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81],
+      ECC_PER_BLOCK: [
+        Number.NaN,
+        17,
+        28,
+        22,
+        16,
+        22,
+        28,
+        26,
+        26,
+        24,
+        28,
+        24,
+        28,
+        22,
+        24,
+        24,
+        30,
+        28,
+        28,
+        26,
+        28,
+        30,
+        24,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+        30,
+      ],
+      ECC_BLOCKS: [
+        Number.NaN,
+        1,
+        1,
+        2,
+        4,
+        4,
+        4,
+        5,
+        6,
+        8,
+        8,
+        11,
+        11,
+        16,
+        16,
+        18,
+        16,
+        19,
+        21,
+        25,
+        25,
+        25,
+        34,
+        30,
+        32,
+        35,
+        37,
+        40,
+        42,
+        45,
+        48,
+        51,
+        54,
+        57,
+        60,
+        63,
+        66,
+        70,
+        74,
+        77,
+        81,
+      ],
       format: 2,
     },
   }
@@ -761,7 +1133,7 @@ class Segment {
   /** Returns a segment representing the given string of decimal digits encoded in numeric mode. */
   static #numeric(content: string) {
     const bits = [] as number[]
-    for (let i = 0; i < content.length;) {
+    for (let i = 0; i < content.length; ) {
       const n = Math.min(content.length - i, 3)
       append({ bits, length: n * 3 + 1, value: Number.parseInt(content.substring(i, i + n), 10) })
       i += n
@@ -778,7 +1150,11 @@ class Segment {
     const bits = [] as number[]
     let i
     for (i = 0; i + 2 <= content.length; i += 2) {
-      append({ bits, length: 11, value: charset.indexOf(content.charAt(i)) * 45 + charset.indexOf(content.charAt(i + 1)) })
+      append({
+        bits,
+        length: 11,
+        value: charset.indexOf(content.charAt(i)) * 45 + charset.indexOf(content.charAt(i + 1)),
+      })
     }
     if (i < content.length) {
       append({ bits, length: 6, value: charset.indexOf(content.charAt(i)) })
@@ -826,7 +1202,15 @@ class Segment {
   }
 
   /** Constructor. */
-  constructor({ mode, length, bits }: { mode: { id: number, widths: [number, number, number] }, length: number, bits: number[] }) {
+  constructor({
+    mode,
+    length,
+    bits,
+  }: {
+    mode: { id: number; widths: [number, number, number] }
+    length: number
+    bits: number[]
+  }) {
     this.mode = mode
     this.length = length
     this.#bits = bits.slice()
@@ -880,11 +1264,11 @@ function divisorReedSolomon(degree: number) {
  * Returns the Reed-Solomon error correction codeword for the given data and divisor polynomials.
  */
 function remainderReedSolomon(data: Readonly<number[]>, divisor: Readonly<number[]>) {
-  const result: number[] = divisor.map(_ => 0)
+  const result: number[] = divisor.map((_) => 0)
   for (const n of data) {
     const factor = n ^ result.shift()!
     result.push(0)
-    divisor.forEach((coefficient, i) => result[i] ^= productReedSolomon(coefficient, factor))
+    divisor.forEach((coefficient, i) => (result[i] ^= productReedSolomon(coefficient, factor)))
   }
   return result
 }
@@ -896,7 +1280,7 @@ function remainderReedSolomon(data: Readonly<number[]>, divisor: Readonly<number
 function productReedSolomon(a: number, b: number) {
   let r = 0
   for (let i = 7; i >= 0; i--) {
-    r = (r << 1) ^ ((r >>> 7) * 0x11D)
+    r = (r << 1) ^ ((r >>> 7) * 0x11d)
     r ^= ((b >>> i) & 1) * a
   }
   return r
@@ -913,7 +1297,7 @@ function bit(x: number, i: number): boolean {
  * Appends the given number of low-order bits of the given value to the given buffer.
  * Requires 0 <= len <= 31 and 0 <= val < 2^len.
  */
-function append({ bits, length, value }: { bits: number[], length: number, value: number }) {
+function append({ bits, length, value }: { bits: number[]; length: number; value: number }) {
   for (let i = length - 1; i >= 0; i--) {
     bits.push((value >>> i) & 1)
   }

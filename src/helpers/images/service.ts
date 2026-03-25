@@ -1,8 +1,9 @@
 import type { AstroConfig, ExternalImageService, ImageTransform, RemotePattern } from 'astro'
-import { Buffer } from 'node:buffer'
+
 import { isRemotePath } from '@astrojs/internal-helpers/path'
 import { baseService } from 'astro/assets'
 import { inferRemoteSize, isESMImportedImage } from 'astro/assets/utils'
+import { Buffer } from 'node:buffer'
 import { thumbHashToDataURL } from 'thumbhash'
 
 function matchHostname(url: URL, hostname?: string, allowWildcard?: boolean) {
@@ -18,10 +19,7 @@ function matchHostname(url: URL, hostname?: string, allowWildcard?: boolean) {
   }
   if (hostname.startsWith('*.')) {
     const slicedHostname = hostname.slice(1) // * length
-    const additionalSubdomains = url.hostname
-      .replace(slicedHostname, '')
-      .split('.')
-      .filter(Boolean)
+    const additionalSubdomains = url.hostname.replace(slicedHostname, '').split('.').filter(Boolean)
     return additionalSubdomains.length === 1
   }
   return false
@@ -48,10 +46,7 @@ function matchPathname(url: URL, pathname?: string, allowWildcard?: boolean) {
   }
   if (pathname.endsWith('/*')) {
     const slicedPathname = pathname.slice(0, -1) // * length
-    const additionalPathChunks = url.pathname
-      .replace(slicedPathname, '')
-      .split('/')
-      .filter(Boolean)
+    const additionalPathChunks = url.pathname.replace(slicedPathname, '').split('/').filter(Boolean)
     return additionalPathChunks.length === 1
   }
   return false
@@ -59,19 +54,16 @@ function matchPathname(url: URL, pathname?: string, allowWildcard?: boolean) {
 
 function matchPattern(url: URL, remotePattern: RemotePattern) {
   return (
-    matchProtocol(url, remotePattern.protocol)
-    && matchHostname(url, remotePattern.hostname, true)
-    && matchPort(url, remotePattern.port)
-    && matchPathname(url, remotePattern.pathname, true)
+    matchProtocol(url, remotePattern.protocol) &&
+    matchHostname(url, remotePattern.hostname, true) &&
+    matchPort(url, remotePattern.port) &&
+    matchPathname(url, remotePattern.pathname, true)
   )
 }
 
 function isRemoteAllowed(
   src: string,
-  {
-    domains = [],
-    remotePatterns = [],
-  }: Partial<Pick<AstroConfig['image'], 'domains' | 'remotePatterns'>>,
+  { domains = [], remotePatterns = [] }: Partial<Pick<AstroConfig['image'], 'domains' | 'remotePatterns'>>,
 ): boolean {
   if (src.startsWith('data:')) {
     return false
@@ -82,8 +74,8 @@ function isRemoteAllowed(
 
   const url = new URL(src)
   return (
-    domains.some(domain => matchHostname(url, domain))
-    || remotePatterns.some(remotePattern => matchPattern(url, remotePattern))
+    domains.some((domain) => matchHostname(url, domain)) ||
+    remotePatterns.some((remotePattern) => matchPattern(url, remotePattern))
   )
 }
 
@@ -111,22 +103,28 @@ async function getImageMetadata(source: string): Promise<ImageMetadata | null> {
     if (!response.ok) {
       return null
     }
-    const metadata = await response.json() as ImageMetadata
+    const metadata = (await response.json()) as ImageMetadata
     if (metadata.blurhash !== '') {
       imageMetadataCache[source] = metadata
     }
     return metadata
-  }
-  catch {
+  } catch {
     return null
   }
 }
 
-async function getImage(source: string, options: ImageTransform): Promise<{ width: number, height: number, blurhash?: string }> {
+async function getImage(
+  source: string,
+  options: ImageTransform,
+): Promise<{ width: number; height: number; blurhash?: string }> {
   const { width, height } = options
   const metadata = await getImageMetadata(source)
   if (metadata) {
-    return { width: width || metadata.width, height: height || metadata.height, blurhash: thumbHashToDataURL(Buffer.from(metadata.blurhash, 'base64')) }
+    return {
+      width: width || metadata.width,
+      height: height || metadata.height,
+      blurhash: thumbHashToDataURL(Buffer.from(metadata.blurhash, 'base64')),
+    }
   }
   if (!width || !height) {
     const { width, height } = await inferRemoteSize(source)

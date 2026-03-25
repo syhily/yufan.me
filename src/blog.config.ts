@@ -113,9 +113,9 @@ export interface BlogConfig {
   description: string
   website: string
   keywords: string[]
-  author: { name: string, email: string, url: string }
-  navigation: { text: string, link: string, target?: string }[]
-  socials: { name: string, icon: string, type: 'link' | 'qrcode', title?: string, link: string }[]
+  author: { name: string; email: string; url: string }
+  navigation: { text: string; link: string; target?: string }[]
+  socials: { name: string; icon: string; type: 'link' | 'qrcode'; title?: string; link: string }[]
   settings: {
     asset: {
       host: string

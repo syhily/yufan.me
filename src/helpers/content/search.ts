@@ -1,5 +1,7 @@
 import type { DocumentData } from 'flexsearch'
+
 import { Document } from 'flexsearch'
+
 import { getPosts } from '@/helpers/content/schema'
 
 interface PostItem extends DocumentData {
@@ -20,14 +22,16 @@ const index = new Document<PostItem>({
 })
 
 // Start indexing posts
-await Promise.all(getPosts({ hidden: true, schedule: true }).map(async (post) => {
-  index.add({
-    title: post.title,
-    slug: post.slug,
-    raw: post.summary,
-    tags: post.tags,
-  })
-}))
+await Promise.all(
+  getPosts({ hidden: true, schedule: true }).map(async (post) => {
+    index.add({
+      title: post.title,
+      slug: post.slug,
+      raw: post.summary,
+      tags: post.tags,
+    })
+  }),
+)
 
 export async function searchPosts(
   query: string,
@@ -38,7 +42,7 @@ export async function searchPosts(
   page: number
   totalPages: number
 }> {
-  const ids = index.search(query).flatMap(({ result }) => result.map(id => id.toString()))
+  const ids = index.search(query).flatMap(({ result }) => result.map((id) => id.toString()))
   const totalHits = [...new Set(ids)]
   return {
     hits: totalHits.slice(offset, offset + limit),

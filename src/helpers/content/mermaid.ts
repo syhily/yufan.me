@@ -1,17 +1,13 @@
-import type {
-  RenderOptions as BeautifulMermaidRenderOptions,
-  DiagramColors,
-  ThemeName,
-} from 'beautiful-mermaid'
+import type { RenderOptions as BeautifulMermaidRenderOptions, DiagramColors, ThemeName } from 'beautiful-mermaid'
 import type { Element, ElementContent, Root } from 'hast'
 import type { Plugin } from 'unified'
 import type { VFile } from 'vfile'
 
-import { Buffer } from 'node:buffer'
 import { renderMermaidSVGAsync, THEMES } from 'beautiful-mermaid'
 import { fromHtmlIsomorphic } from 'hast-util-from-html-isomorphic'
 import { toText } from 'hast-util-to-text'
 import svgToDataURI from 'mini-svg-data-uri'
+import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { parse } from 'space-separated-tokens'
 import { visitParents } from 'unist-util-visit-parents'
@@ -73,11 +69,9 @@ function isMermaidElement(element: Element, strategy: Strategy): boolean {
       return false
     }
     mermaidClassName = 'mermaid'
-  }
-  else if (element.tagName === 'code') {
+  } else if (element.tagName === 'code') {
     mermaidClassName = 'language-mermaid'
-  }
-  else {
+  } else {
     return false
   }
 
@@ -101,7 +95,7 @@ function isMermaidElement(element: Element, strategy: Strategy): boolean {
  * @returns
  *   An object with width and height, or undefined if not found.
  */
-function extractSvgDimensions(svg: string): { width: number, height: number } | undefined {
+function extractSvgDimensions(svg: string): { width: number; height: number } | undefined {
   const widthMatch = svg.match(/width="(\d+)"/)
   const heightMatch = svg.match(/height="(\d+)"/)
   if (widthMatch && heightMatch) {
@@ -129,9 +123,7 @@ function extractSvgDimensions(svg: string): { width: number, height: number } | 
  *   A base64 PNG data URI.
  */
 async function svgToPngDataURI(svg: string): Promise<string> {
-  const pngBuffer = await sharp(Buffer.from(svg))
-    .png()
-    .toBuffer()
+  const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer()
   return `data:image/png;base64,${pngBuffer.toString('base64')}`
 }
 
@@ -169,14 +161,9 @@ interface RenderResult {
  * @returns
  *   An `<img>` element containing the diagram.
  */
-async function toImageElement(
-  result: RenderResult,
-  strategy: Strategy,
-): Promise<Element> {
+async function toImageElement(result: RenderResult, strategy: Strategy): Promise<Element> {
   const isPng = strategy === 'img-png'
-  const src = isPng
-    ? (result.png || await svgToPngDataURI(result.svg))
-    : svgToDataURIString(result.svg)
+  const src = isPng ? result.png || (await svgToPngDataURI(result.svg)) : svgToDataURIString(result.svg)
 
   return {
     type: 'element',
@@ -236,9 +223,7 @@ function handleError(
  * @returns
  *   Render options for beautiful-mermaid.
  */
-function getRenderOptions(
-  options: RehypeMermaidOptions | undefined,
-): BeautifulMermaidRenderOptions {
+function getRenderOptions(options: RehypeMermaidOptions | undefined): BeautifulMermaidRenderOptions {
   const baseOptions: BeautifulMermaidRenderOptions = {
     ...options?.renderOptions,
   }
@@ -252,8 +237,7 @@ function getRenderOptions(
   let theme: DiagramColors | undefined
   if (options?.theme && THEMES[options.theme]) {
     theme = THEMES[options.theme]
-  }
-  else {
+  } else {
     // Fallback to default light themes
     theme = THEMES.light || THEMES['github-light'] || THEMES.default
   }
@@ -353,13 +337,11 @@ const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
             if (nonWhitespacePattern.test(child.value)) {
               return
             }
-          }
-          else if (child !== node) {
+          } else if (child !== node) {
             return
           }
         }
-      }
-      else {
+      } else {
         inclusiveAncestors = [...inclusiveAncestors, node]
       }
 
@@ -409,8 +391,7 @@ const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
         }
 
         return { status: 'fulfilled' as const, value: result }
-      }
-      catch (error) {
+      } catch (error) {
         return {
           status: 'rejected' as const,
           reason: error instanceof Error ? error : new Error(String(error)),
@@ -426,12 +407,9 @@ const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
 
       if (result.status === 'rejected') {
         replacement = handleError(result.reason, instance, file, options)
-      }
-      else if (strategy === 'inline-svg') {
-        replacement = fromHtmlIsomorphic(result.value.svg, { fragment: true })
-          .children[0] as Element
-      }
-      else {
+      } else if (strategy === 'inline-svg') {
+        replacement = fromHtmlIsomorphic(result.value.svg, { fragment: true }).children[0] as Element
+      } else {
         replacement = await toImageElement(result.value, strategy)
       }
 
@@ -441,8 +419,7 @@ const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
       const nodeIndex = parent.children.indexOf(node)
       if (replacement) {
         parent.children[nodeIndex] = replacement
-      }
-      else {
+      } else {
         parent.children.splice(nodeIndex, 1)
       }
     }

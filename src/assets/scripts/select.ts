@@ -10,7 +10,7 @@ class SearchableSelect {
   private optionsList!: HTMLElement
   private selectedValue: string = ''
   private isOpen: boolean = false
-  private options: Array<{ value: string, text: string, disabled?: boolean }> = []
+  private options: Array<{ value: string; text: string; disabled?: boolean }> = []
 
   constructor(selectElement: HTMLSelectElement) {
     this.selectElement = selectElement
@@ -30,7 +30,7 @@ class SearchableSelect {
   }
 
   private extractOptions(): void {
-    this.options = Array.from(this.selectElement.options).map(option => ({
+    this.options = Array.from(this.selectElement.options).map((option) => ({
       value: option.value,
       text: option.text,
       disabled: option.disabled,
@@ -49,7 +49,7 @@ class SearchableSelect {
     this.button.setAttribute('aria-haspopup', 'listbox')
     this.button.setAttribute('aria-expanded', 'false')
 
-    const selectedOption = this.options.find(o => o.value === this.selectedValue)
+    const selectedOption = this.options.find((o) => o.value === this.selectedValue)
     const selectedText = selectedOption?.text || '请选择'
     this.button.innerHTML = `<span class="searchable-select-text">${this.escapeHtml(selectedText)}</span>`
 
@@ -88,9 +88,7 @@ class SearchableSelect {
     this.optionsList.innerHTML = ''
 
     const filterLower = filter.toLowerCase()
-    const filteredOptions = this.options.filter(
-      option => !filter || option.text.toLowerCase().includes(filterLower),
-    )
+    const filteredOptions = this.options.filter((option) => !filter || option.text.toLowerCase().includes(filterLower))
 
     if (filteredOptions.length === 0) {
       const emptyDiv = document.createElement('div')
@@ -127,7 +125,7 @@ class SearchableSelect {
     this.selectedValue = value
     this.selectElement.value = value
 
-    const selectedOption = this.options.find(o => o.value === value)
+    const selectedOption = this.options.find((o) => o.value === value)
     const selectedText = selectedOption?.text || '请选择'
     const textSpan = this.button.querySelector('.searchable-select-text') as HTMLElement | null
     if (textSpan) {
@@ -170,7 +168,11 @@ class SearchableSelect {
     // 点击按钮打开/关闭下拉框
     this.button.addEventListener('click', (e: MouseEvent) => {
       e.preventDefault()
-      this.isOpen ? this.close() : this.open()
+      if (this.isOpen) {
+        this.close()
+      } else {
+        this.open()
+      }
     })
 
     // 搜索框输入
@@ -190,9 +192,12 @@ class SearchableSelect {
     this.button.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
-        this.isOpen ? this.close() : this.open()
-      }
-      else if (e.key === 'Escape') {
+        if (this.isOpen) {
+          this.close()
+        } else {
+          this.open()
+        }
+      } else if (e.key === 'Escape') {
         this.close()
       }
     })
@@ -211,7 +216,7 @@ class SearchableSelect {
 
   // 公共方法：设置值
   setValue(value: string): void {
-    const option = this.options.find(o => o.value === value)
+    const option = this.options.find((o) => o.value === value)
     if (option) {
       this.selectOption(value)
     }
