@@ -1,8 +1,9 @@
-import { rss } from '@/pages/feed/source';
+import { generateFeeds } from '@/helpers/content/feed';
 
 export async function GET() {
-  return new Response(rss, {
-    headers: { "Content-Type": "application/xml" },
+  const feed = await generateFeeds();
+  return new Response(feed.rss, {
+    headers: { "Content-Type": "application/xml; charset=utf-8" },
   });
 }
 
@@ -11,7 +12,7 @@ export async function HEAD() {
   return new Response('', {
     headers: {
       'Host': import.meta.env.SITE,
-      'Content-Type': 'application/xml',
+      'Content-Type': 'application/xml; charset=utf-8',
       'Accept': '*/*',
       'Connection': 'keep-alive',
     },

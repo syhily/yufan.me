@@ -1,7 +1,7 @@
 import { generateFeeds } from '@/helpers/content/feed';
 
-export async function GET() {
-  const feed = await generateFeeds();
+export async function GET({ params }: { params: { slug: string } }) {
+  const feed = await generateFeeds({ tag: params.slug });
   return new Response(feed.atom, {
     headers: { "Content-Type": "application/atom+xml; charset=utf-8" },
   });

@@ -37,7 +37,7 @@ const {
 
 // https://astro.build/config
 export default defineConfig({
-  site: NODE_ENV === 'production' ? 'https://yufan.me' : 'http://localhost:4321',
+  site: NODE_ENV === 'production' ? config.website : 'http://localhost:4321',
   output: 'server',
   security: {
     checkOrigin: false,
@@ -63,9 +63,9 @@ export default defineConfig({
   env: {
     schema: {
       // SMTP Service
-      MAILGUN_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
-      MAILGUN_DOMAIN: envField.string({ context: 'server', access: 'secret', optional: true }),
-      MAILGUN_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
+      ZEABUR_MAIL_HOST: envField.string({ context: 'server', access: 'secret', optional: true }),
+      ZEABUR_MAIL_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      ZEABUR_MAIL_SENDER: envField.string({ context: 'server', access: 'secret', optional: true }),
       // Database
       DATABASE_URL: envField.string({ context: 'server', access: 'secret', url: true }),
       REDIS_URL: envField.string({ context: 'server', access: 'secret', url: true }),

@@ -1,7 +1,6 @@
 import type { CommentAndUser } from '@/helpers/comment/types'
 import type { Comment, Page, User } from '@/helpers/db/types'
-import { MAILGUN_API_KEY, MAILGUN_DOMAIN, MAILGUN_SENDER } from 'astro:env/server'
-import Mailgun from 'mailgun.js'
+import { ZEABUR_MAIL_HOST, ZEABUR_MAIL_API_KEY, ZEABUR_MAIL_SENDER } from 'astro:env/server'
 import config from '@/blog.config'
 import { parseContent } from '@/helpers/content/markdown'
 import { partialRender } from '@/helpers/content/render'
@@ -11,18 +10,33 @@ import NewReply from '@/helpers/email/templates/NewReply.astro'
 
 export interface EmailMessage { to: string, subject: string, html: string }
 
-const mailgun = new Mailgun(FormData)
-const client = (MAILGUN_API_KEY === undefined || MAILGUN_SENDER === undefined || MAILGUN_DOMAIN === undefined)
-  ? undefined
-  : mailgun.client({ username: 'api', key: MAILGUN_API_KEY, useFetch: true })
+const ZEABUR_MAIL_BASE_URL = `https://${ZEABUR_MAIL_HOST}/api/v1/zsend`
 
 // Send an email using the configured transporter.
 async function internalSend(to: string, subject: string, html: string) {
-  if (client === undefined) {
-    console.error('No SMTP configuration, skip sending message.')
+  if (ZEABUR_MAIL_API_KEY === undefined || ZEABUR_MAIL_API_KEY === '') {
+    console.error('No Zeabur mail API key configured, skip sending message.')
     return
   }
-  await client.messages.create(MAILGUN_DOMAIN!, { to, from: MAILGUN_SENDER!, subject, html })
+
+  const response = await fetch(`${ZEABUR_MAIL_BASE_URL}/emails`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${ZEABUR_MAIL_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: ZEABUR_MAIL_SENDER,
+      to: [to],
+      subject,
+      html,
+    }),
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    console.error(`Failed to send email via Zeabur: ${response.status} ${response.statusText} ${body}`)
+  }
 }
 
 // This email is sent for notifying the administrator that his website has a new comment.
@@ -39,7 +53,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, page: Page) {
       },
     },
   )
-  internalSend(config.author.email, `您的网站【${config.title}】有了新评论`, html)
+  await internalSend(config.author.email, `您的网站【${config.title}】有了新评论`, html)
 }
 
 // This email is sent only when the user's comment has a reply.
@@ -57,7 +71,7 @@ export async function sendNewReply(sourceUser: User, source: Comment, reply: Com
       },
     },
   )
-  internalSend(sourceUser.email, `您在【${config.title}】的留言有了新回复`, html)
+  await internalSend(sourceUser.email, `您在【${config.title}】的留言有了新回复`, html)
 }
 
 // This email is sent only when the user's pending comment get approved.
@@ -74,5 +88,5 @@ export async function sendApprovedComment(comment: Comment, user: User, page: Pa
       },
     },
   )
-  internalSend(user.email, `您在【${config.title}】的留言已经通过审核`, html)
+  await internalSend(user.email, `您在【${config.title}】的留言已经通过审核`, html)
 }
