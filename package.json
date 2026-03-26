@@ -38,11 +38,11 @@
     "prepare": "npx husky"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.2",
-    "@astrojs/node": "^10.0.3",
+    "@astrojs/mdx": "^5.0.3",
+    "@astrojs/node": "^10.0.4",
     "@napi-rs/canvas": "^0.1.97",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.0.8",
+    "astro": "^6.1.0",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "feed": "^5.2.0",

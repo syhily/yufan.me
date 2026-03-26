@@ -33,7 +33,22 @@ export default defineConfig({
   site: NODE_ENV === 'production' ? config.website : 'http://localhost:4321',
   output: 'server',
   security: {
-    checkOrigin: false,
+    checkOrigin: true,
+    allowedDomains:
+      NODE_ENV === 'production'
+        ? [
+            {
+              hostname: `**.${config.website}`,
+              protocol: 'https',
+              port: '443',
+            },
+            {
+              hostname: config.website,
+              protocol: 'https',
+              port: '443',
+            },
+          ]
+        : [{}],
     actionBodySizeLimit: 16 * 1024 * 1024,
   },
   experimental: {
