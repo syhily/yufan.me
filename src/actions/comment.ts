@@ -188,7 +188,7 @@ export const comment = {
   // Get filter options for admin panel
   getFilterOptions: defineAction({
     accept: 'json',
-    input: z.void(),
+    input: z.object({}),
     handler: async (_, { session }) => {
       await requireAdmin(session)
       const pages = await getPageOptions()

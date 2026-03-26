@@ -549,7 +549,7 @@ function setupModalClose(): void {
 // 初始化 - 先加载筛选选项，再加载评论
 async function initializePage(): Promise<void> {
   try {
-    const { data, error } = await actions.comment.getFilterOptions()
+    const { data, error } = await actions.comment.getFilterOptions({})
 
     if (error) {
       console.error('加载筛选选项失败:', error)
