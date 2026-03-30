@@ -42,9 +42,9 @@
     "@astrojs/node": "^10.0.4",
     "@napi-rs/canvas": "^0.1.97",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.1.0",
+    "astro": "^6.1.1",
     "bcryptjs": "^3.0.3",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "feed": "^5.2.0",
     "flexsearch": "^0.8.212",
     "ioredis": "^5.10.1",
@@ -59,7 +59,7 @@
     "shiki": "^4.0.2",
     "thumbhash": "^0.1.1",
     "ultrahtml": "^1.6.0",
-    "unstorage": "^1.17.4"
+    "unstorage": "^1.17.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
@@ -92,5 +92,8 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint"
   },
-  "packageManager": "npm@11.12.0"
+  "overrides": {
+    "yaml": "^2.8.3"
+  },
+  "packageManager": "npm@11.12.1"
 }
