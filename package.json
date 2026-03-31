@@ -42,7 +42,7 @@
     "@astrojs/node": "^10.0.4",
     "@napi-rs/canvas": "^0.1.97",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.1.1",
+    "astro": "^6.1.2",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "feed": "^5.2.0",
