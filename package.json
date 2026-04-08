@@ -32,6 +32,8 @@
     "dev": "astro dev",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
+    "fmt:astro": "prettier --write \"**/*.astro\"",
+    "fmt:astro:check": "prettier --check \"**/*.astro\"",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "preview": "astro preview",
@@ -42,7 +44,7 @@
     "@astrojs/node": "^10.0.4",
     "@napi-rs/canvas": "^0.1.97",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.1.4",
+    "astro": "^6.1.5",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "feed": "^5.2.0",
@@ -77,6 +79,9 @@
     "mini-svg-data-uri": "^1.4.4",
     "oxfmt": "^0.44.0",
     "oxlint": "^1.59.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-astro-organize-imports": "^0.4.12",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-external-links": "^3.0.0",
     "rehype-mathjax": "^7.1.0",
@@ -89,7 +94,8 @@
     "vite-plugin-binary": "^1.0.5"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint"
+    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint",
+    "**/*.astro": "prettier --write"
   },
   "overrides": {
     "@xmldom/xmldom": "^0.9.9",

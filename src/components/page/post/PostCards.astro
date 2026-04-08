@@ -1,10 +1,10 @@
 ---
-import type { Post } from '@/helpers/content/schema'
-import { Image } from 'astro:assets'
 import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import { formatShowDate, slicePosts } from '@/helpers/content/formatter'
+import type { Post } from '@/helpers/content/schema'
 import { getCategory, getPostsWithMetadata } from '@/helpers/content/schema'
+import { Image } from 'astro:assets'
 
 interface Props {
   posts: Post[]
@@ -18,7 +18,11 @@ if (results.totalPage === 0) {
 }
 
 const { currentPosts, totalPage } = results
-const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: true })
+const resolvedPosts = await getPostsWithMetadata(currentPosts, {
+  likes: true,
+  views: true,
+  comments: true,
+})
 ---
 
 <div class="content-wrapper col-12 col-xl-9">

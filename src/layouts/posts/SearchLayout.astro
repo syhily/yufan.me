@@ -20,7 +20,11 @@ if (page < 1) {
   return Astro.redirect('/')
 }
 
-const resolvedPosts = await getPostsWithMetadata(posts, { likes: true, views: true, comments: false })
+const resolvedPosts = await getPostsWithMetadata(posts, {
+  likes: true,
+  views: true,
+  comments: false,
+})
 ---
 
 <BaseLayout {title}>

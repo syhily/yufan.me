@@ -4,9 +4,11 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[astro]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
   },
   "prettier.documentSelectors": ["**/*.astro"],
+  "prettier.prettierPath": "./node_modules/prettier",
   "cSpell.words": [
     "adoc",
     "alexinea",

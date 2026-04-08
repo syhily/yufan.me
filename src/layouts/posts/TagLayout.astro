@@ -1,9 +1,9 @@
 ---
-import type { Post, Tag } from '@/helpers/content/schema'
 import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import PostSquare from '@/components/page/post/PostSquare.astro'
 import { slicePosts } from '@/helpers/content/formatter'
+import type { Post, Tag } from '@/helpers/content/schema'
 import { getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
@@ -18,7 +18,11 @@ const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.p
 if (totalPage === 0) {
   return Astro.redirect('/404')
 }
-const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
+const resolvedPosts = await getPostsWithMetadata(currentPosts, {
+  likes: true,
+  views: true,
+  comments: false,
+})
 ---
 
 <BaseLayout title={`标签 “${tag.name}”`}>

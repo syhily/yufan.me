@@ -1,9 +1,9 @@
 ---
-import type { Category, Post } from '@/helpers/content/schema'
 import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import PostSquare from '@/components/page/post/PostSquare.astro'
 import { slicePosts } from '@/helpers/content/formatter'
+import type { Category, Post } from '@/helpers/content/schema'
 import { getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
@@ -15,7 +15,11 @@ interface Props {
 
 const { category, posts, pageNum } = Astro.props
 const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.pagination.category)
-const resolvedPosts = await getPostsWithMetadata(currentPosts, { likes: true, views: true, comments: false })
+const resolvedPosts = await getPostsWithMetadata(currentPosts, {
+  likes: true,
+  views: true,
+  comments: false,
+})
 ---
 
 <BaseLayout title={category.name}>

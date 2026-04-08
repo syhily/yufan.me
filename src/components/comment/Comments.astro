@@ -1,9 +1,9 @@
 ---
-import { joinPaths } from '@astrojs/internal-helpers/path'
 import config from '@/blog.config'
 import Comment from '@/components/comment/Comment.astro'
 import { userSession } from '@/helpers/auth/session'
 import { increaseViews, loadComments } from '@/helpers/comment/loader'
+import { joinPaths } from '@astrojs/internal-helpers/path'
 
 // This is a component which loads comments and renders it on server-side.
 interface Props {
