@@ -1,8 +1,5 @@
 {
-  "astro.content-intellisense": false,
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  },
+  "astro.content-intellisense": true,
   "[astro]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
@@ -56,7 +53,7 @@
     "embedpdf",
     "emde",
     "eparams",
-    "EPUB",
+    "epub",
     "ethantw",
     "firis",
     "flexdinesh",
@@ -69,7 +66,7 @@
     "fontsource",
     "forencrypt",
     "giscus",
-    "Godalming",
+    "godalming",
     "godruoyi",
     "gogogo",
     "googlebot",
@@ -89,12 +86,12 @@
     "iend",
     "ihdr",
     "initdb",
-    "Iosevka",
+    "iosevka",
     "iroha",
     "iseeklife",
     "isodate",
     "jamo",
-    "JEFC",
+    "jefc",
     "jian",
     "jiangcl",
     "jiasm",
@@ -115,7 +112,7 @@
     "lastmod",
     "lazyload",
     "libvips",
-    "Linguaphone",
+    "linguaphone",
     "linuxapi",
     "liruifeng",
     "liruifengv",
@@ -143,7 +140,7 @@
     "mochi",
     "napi",
     "neondatabase",
-    "NEPCS",
+    "nepcs",
     "netease",
     "neue",
     "nextval",
@@ -155,9 +152,9 @@
     "nopd",
     "notesans",
     "noto",
-    "NPEFC",
+    "npefc",
     "npmignore",
-    "NSEFC",
+    "nsefc",
     "ntes",
     "nuid",
     "opendal",
@@ -167,9 +164,10 @@
     "owspace",
     "oxfmt",
     "oxlint",
-    "Padolsey",
+    "padolsey",
     "pandiyan",
-    "PEFC",
+    "pcss",
+    "pefc",
     "penheulim",
     "pglite",
     "photoswipe",
@@ -197,7 +195,7 @@
     "sauvignon",
     "scalafmt",
     "scann",
-    "SEFC",
+    "sefc",
     "sheng",
     "shiki",
     "shikijs",
@@ -222,6 +220,7 @@
     "toolsmp",
     "translog",
     "tsconfigs",
+    "tsgo",
     "tview",
     "twofei",
     "ultrahtml",
@@ -261,7 +260,7 @@
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "cSpell.ignorePaths": ["**/*.mdx", "package.json"],
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
   "prettier.enable": false,
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "always"
@@ -303,5 +302,5 @@
     "pcss",
     "postcss"
   ],
-  "typescript.experimental.useTsgo": true
+  "js/ts.experimental.useTsgo": true
 }

@@ -15,15 +15,15 @@
     "url": "https://github.com/syhily/yufan.me/issues",
     "email": "syhily@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syhily/yufan.me.git"
+  },
   "license": "MIT",
   "author": {
     "name": "Yufan Sheng",
     "email": "syhily@gmail.com",
     "url": "https://yufan.me"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/syhily/yufan.me.git"
   },
   "type": "module",
   "scripts": {
@@ -31,13 +31,21 @@
     "build": "astro build",
     "dev": "astro dev",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
     "fmt:astro": "prettier --write \"**/*.astro\"",
     "fmt:astro:check": "prettier --check \"**/*.astro\"",
+    "fmt:check": "oxfmt --check",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "preview": "astro preview",
-    "prepare": "npx husky"
+    "prepare": "npx husky",
+    "preview": "astro preview"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint",
+    "**/*.astro": "prettier --write"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "^0.9.9",
+    "yaml": "^2.8.3"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.3",
@@ -92,14 +100,6 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-binary": "^1.0.5"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint",
-    "**/*.astro": "prettier --write"
-  },
-  "overrides": {
-    "@xmldom/xmldom": "^0.9.9",
-    "yaml": "^2.8.3"
   },
   "packageManager": "npm@11.12.1"
 }
