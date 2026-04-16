@@ -41,10 +41,10 @@
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.3",
-    "@astrojs/node": "^10.0.4",
-    "@napi-rs/canvas": "^0.1.97",
+    "@astrojs/node": "^10.0.5",
+    "@napi-rs/canvas": "^0.1.98",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.1.6",
+    "astro": "^6.1.7",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "feed": "^5.2.0",
@@ -65,7 +65,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
-    "@astrojs/compiler-rs": "^0.1.6",
+    "@astrojs/compiler-rs": "^0.1.7",
     "@fontsource/iosevka": "^5.2.5",
     "@types/lodash": "^4.17.24",
     "@types/luxon": "^3.7.1",
