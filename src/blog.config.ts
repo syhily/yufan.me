@@ -45,7 +45,7 @@ const config: BlogConfig = {
       name: 'Twitter',
       icon: 'icon-twitter',
       type: 'link',
-      link: 'https://x.com/syhily',
+      link: 'https://x.com/amehochan',
     },
     {
       name: 'Yufan Sheng',
