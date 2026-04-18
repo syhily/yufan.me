@@ -6,6 +6,8 @@ import { inferRemoteSize, isESMImportedImage } from 'astro/assets/utils'
 import { Buffer } from 'node:buffer'
 import { thumbHashToDataURL } from 'thumbhash'
 
+import { storage } from '@/helpers/cache'
+
 function matchHostname(url: URL, hostname?: string, allowWildcard?: boolean) {
   if (!hostname) {
     return true
@@ -85,17 +87,14 @@ interface ImageMetadata {
   blurhash: string
 }
 
-const globalForImage = globalThis as unknown as {
-  imageMetadataCache: Record<string, ImageMetadata> | undefined
-}
-if (globalForImage.imageMetadataCache === undefined) {
-  globalForImage.imageMetadataCache = {}
-}
-const imageMetadataCache = globalForImage.imageMetadataCache
+const IMAGE_METADATA_TTL = 60 * 60 * 24 * 7
 
 async function getImageMetadata(source: string): Promise<ImageMetadata | null> {
-  if (imageMetadataCache[source]) {
-    return imageMetadataCache[source]
+  if (import.meta.env.PROD) {
+    const cached = await storage.getItem<ImageMetadata>(`image-metadata-${source}`)
+    if (cached) {
+      return cached
+    }
   }
 
   try {
@@ -104,8 +103,8 @@ async function getImageMetadata(source: string): Promise<ImageMetadata | null> {
       return null
     }
     const metadata = (await response.json()) as ImageMetadata
-    if (metadata.blurhash !== '') {
-      imageMetadataCache[source] = metadata
+    if (import.meta.env.PROD && metadata.blurhash !== '') {
+      await storage.setItem(`image-metadata-${source}`, metadata, { ttl: IMAGE_METADATA_TTL })
     }
     return metadata
   } catch {
