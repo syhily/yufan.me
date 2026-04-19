@@ -37,7 +37,7 @@ const { navigation } = Astro.props
             <a href="/wp-admin/">评论</a>
           </li>
           <li id={`menu-item-${navigation.length + 1}`} class="menu-item">
-            <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: Astro.url.toString() })}`}
+            <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: Astro.url.pathname })}`}
               >登出</a
             >
           </li>

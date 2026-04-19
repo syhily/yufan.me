@@ -30,6 +30,7 @@ const { REDIS_URL, NODE_ENV, S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_AC
 
 // https://astro.build/config
 export default defineConfig({
+  base: '/',
   site: NODE_ENV === 'production' ? config.website : 'http://localhost:4321',
   output: 'server',
   security: {
