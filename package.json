@@ -15,15 +15,15 @@
     "url": "https://github.com/syhily/yufan.me/issues",
     "email": "syhily@gmail.com"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/syhily/yufan.me.git"
-  },
   "license": "MIT",
   "author": {
     "name": "Yufan Sheng",
     "email": "syhily@gmail.com",
     "url": "https://yufan.me"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/syhily/yufan.me.git"
   },
   "type": "module",
   "scripts": {
@@ -39,14 +39,6 @@
     "prepare": "npx husky",
     "preview": "astro preview"
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint",
-    "**/*.astro": "prettier --write"
-  },
-  "overrides": {
-    "@xmldom/xmldom": "^0.9.9",
-    "yaml": "^2.8.3"
-  },
   "dependencies": {
     "@astrojs/mdx": "^5.0.3",
     "@astrojs/node": "^10.0.5",
@@ -55,7 +47,7 @@
     "astro": "^6.1.8",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
-    "feed": "^5.2.0",
+    "feed": "^5.2.1",
     "flexsearch": "^0.8.212",
     "ioredis": "^5.10.1",
     "lodash": "^4.18.1",
@@ -73,7 +65,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
-    "@astrojs/compiler-rs": "^0.1.7",
+    "@astrojs/compiler-rs": "^0.1.8",
     "@fontsource/iosevka": "^5.2.5",
     "@types/lodash": "^4.17.24",
     "@types/luxon": "^3.7.1",
@@ -85,8 +77,8 @@
     "hast-util-from-html-isomorphic": "^2.0.0",
     "medium-zoom": "^1.1.0",
     "mini-svg-data-uri": "^1.4.4",
-    "oxfmt": "^0.45.0",
-    "oxlint": "^1.60.0",
+    "oxfmt": "^0.46.0",
+    "oxlint": "^1.61.0",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-astro-organize-imports": "^0.4.12",
@@ -100,6 +92,14 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-binary": "^1.0.5"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "^0.9.9",
+    "yaml": "^2.8.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint",
+    "**/*.astro": "prettier --write"
   },
   "packageManager": "npm@11.12.1"
 }
