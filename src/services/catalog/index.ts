@@ -152,6 +152,22 @@ const TAG_MODULES = import.meta.glob<string>('/src/content/metas/tags.yaml', {
   query: '?raw',
 })
 
+function findPostModule(slug: string): PostModule | undefined {
+  return Object.values(POST_MODULES).find((post) => post.frontmatter.slug === slug)
+}
+
+function findPageModule(slug: string): PageModule | undefined {
+  return Object.values(PAGE_MODULES).find((page) => page.frontmatter.slug === slug)
+}
+
+export function getPostBody(slug: string): MDXContent | undefined {
+  return findPostModule(slug)?.default
+}
+
+export function getPageBody(slug: string): MDXContent | undefined {
+  return findPageModule(slug)?.default
+}
+
 function headingText(title: ReactNode): string {
   if (typeof title === 'string') return title
   if (typeof title === 'number') return `${title}`

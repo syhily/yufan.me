@@ -3,7 +3,10 @@ import { FRIENDS } from '@/services/catalog/static'
 import { shuffle } from '@/shared/tools'
 
 export function Friends() {
-  const list = shuffle([...FRIENDS])
+  const list = shuffle(
+    [...FRIENDS],
+    `friends:${FRIENDS.map((friend) => `${friend.website}:${friend.homepage}`).join('|')}`,
+  )
 
   if (list.length === 0) {
     return (

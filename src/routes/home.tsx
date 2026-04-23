@@ -34,6 +34,7 @@ export default function HomeRoute({ loaderData }: { loaderData: Awaited<ReturnTy
         totalPage={loaderData.totalPage}
         categoryLinks={loaderData.categoryLinks}
         tags={loaderData.tags}
+        featureSeed={loaderData.featureSeed}
         admin={loaderData.admin}
         recentComments={loaderData.recentComments}
         pendingComments={loaderData.pendingComments}

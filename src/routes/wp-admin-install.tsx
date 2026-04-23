@@ -1,13 +1,10 @@
+import { useEffect } from 'react'
 import { redirect, useActionData } from 'react-router'
 
 import { InstallForm } from '@/components/admin/InstallForm'
 import { AdminLayoutBody } from '@/layouts/AdminLayout'
 import { signUpAdminSchema } from '@/schemas/auth'
 import { routeMeta } from '@/services/seo/meta'
-
-if (typeof window !== 'undefined') {
-  void import('@/assets/scripts/admin/install')
-}
 
 export async function loader() {
   const { hasAdmin } = await import('@/db/query/user.server')
@@ -64,6 +61,9 @@ export function meta() {
 
 export default function AdminInstallRoute() {
   const actionData = useActionData() as { error?: string } | undefined
+  useEffect(() => {
+    void import('@/assets/scripts/admin/install')
+  }, [])
 
   return (
     <AdminLayoutBody>

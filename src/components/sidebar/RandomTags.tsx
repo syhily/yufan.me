@@ -14,6 +14,7 @@ export function RandomTags({ tags }: RandomTagsProps) {
     .slice()
     .sort((a, b) => b.counts - a.counts)
     .slice(0, randomSize * 2)
+  const seed = `sidebar-tags:${topTags.map((tag) => tag.slug).join('|')}`
 
   return (
     <div id="tag-cloud" className="widget widget-tag-cloud">
@@ -21,7 +22,7 @@ export function RandomTags({ tags }: RandomTagsProps) {
         文踪墨迹
       </div>
       <div className="tagcloud">
-        {sampleSize(topTags, randomSize).map((tag) => (
+        {sampleSize(topTags, randomSize, seed).map((tag) => (
           <a
             key={tag.slug}
             href={tag.permalink}

@@ -3,6 +3,7 @@ import { MusicPlayer } from '@/components/mdx/music/MusicPlayer'
 import { Solution } from '@/components/mdx/solutions/Solution'
 import { PostDetailBody } from '@/components/page/post/PostDetailBody'
 import { BaseLayout } from '@/layouts/BaseLayout'
+import { getPostBody } from '@/services/catalog/schema'
 import { routeMeta } from '@/services/seo/meta'
 import { joinUrl } from '@/shared/urls'
 
@@ -49,7 +50,10 @@ export function meta({ loaderData }: { loaderData: Awaited<ReturnType<typeof loa
 }
 
 export default function PostDetailRoute({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
-  const Body = loaderData.post.body
+  const Body = getPostBody(loaderData.post.slug)
+  if (!Body) {
+    throw new Error(`Missing MDX body for post: ${loaderData.post.slug}`)
+  }
 
   return (
     <BaseLayout admin={loaderData.admin} currentPath={loaderData.currentPath}>

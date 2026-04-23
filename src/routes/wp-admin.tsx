@@ -1,13 +1,10 @@
+import { useEffect } from 'react'
 import { redirect } from 'react-router'
 
 import { AdminCommentsPage } from '@/components/admin/AdminCommentsPage'
 import { BaseLayout } from '@/layouts/BaseLayout'
 import { routeMeta } from '@/services/seo/meta'
 import '@/assets/styles/select.css'
-
-if (typeof window !== 'undefined') {
-  void import('@/assets/scripts/admin/manage')
-}
 
 export async function loader({ request }: { request: Request }) {
   const { getRequestSession, isAdmin, userSession } = await import('@/services/auth/session.server')
@@ -27,6 +24,10 @@ export function meta() {
 }
 
 export default function AdminRoute({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
+  useEffect(() => {
+    void import('@/assets/scripts/admin/manage')
+  }, [])
+
   return (
     <BaseLayout admin currentPath="/wp-admin" footer={false}>
       <AdminCommentsPage

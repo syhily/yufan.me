@@ -15,6 +15,7 @@ export interface HomeLayoutBodyProps {
   totalPage: number
   categoryLinks: Record<string, string>
   tags: Tag[]
+  featureSeed: string
   admin: boolean
   recentComments: LatestComment[]
   pendingComments: LatestComment[]
@@ -31,6 +32,7 @@ export function HomeLayoutBody({
   totalPage,
   categoryLinks,
   tags,
+  featureSeed,
   admin,
   recentComments,
   pendingComments,
@@ -38,7 +40,7 @@ export function HomeLayoutBody({
 }: HomeLayoutBodyProps) {
   return (
     <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-      {pageNum === 1 && <FeaturePosts posts={posts} />}
+      {pageNum === 1 && <FeaturePosts posts={posts} seed={featureSeed} />}
       <div className="container">
         <div className="row">
           <PostCards pageNum={pageNum} posts={resolvedPosts} totalPage={totalPage} categoryLinks={categoryLinks} />

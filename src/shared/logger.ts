@@ -12,7 +12,17 @@ type Level = 'debug' | 'info' | 'warn' | 'error'
 
 const LEVEL_ORDER: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 }
 
-const minLevel: Level = (process.env.LOG_LEVEL as Level) ?? (import.meta.env.PROD ? 'info' : 'debug')
+function isLevel(value: string | undefined): value is Level {
+  return value === 'debug' || value === 'info' || value === 'warn' || value === 'error'
+}
+
+function readMinLevel(): Level {
+  const fallback = import.meta.env.PROD ? 'info' : 'debug'
+  if (typeof process === 'undefined') return fallback
+  return isLevel(process.env.LOG_LEVEL) ? process.env.LOG_LEVEL : fallback
+}
+
+const minLevel: Level = readMinLevel()
 
 // Field names that hold L3 (direct identifier) data. Values logged under
 // these keys are wrapped in `{E}…{/E}` markers in the emitted JSON string.

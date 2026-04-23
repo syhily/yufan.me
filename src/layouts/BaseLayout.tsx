@@ -1,13 +1,9 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 import { Icon } from '@/assets/icons/Icon'
 import config, { type BlogConfig } from '@/blog.config'
 import { Footer } from '@/components/partial/Footer'
 import { Header } from '@/components/partial/Header'
-
-if (typeof window !== 'undefined') {
-  void import('@/assets/scripts/global')
-}
 
 export interface BaseLayoutProps {
   navigation?: BlogConfig['navigation']
@@ -19,9 +15,12 @@ export interface BaseLayoutProps {
 }
 
 // Body-chrome wrapper: header + main region + fixed widgets. The wrapping
-// `<html>`, `<head>`, and `<body>` live in `BaseLayout.astro`, which owns the
-// global CSS / client-script side-effects that only Astro can express.
+// `<html>`, `<head>`, and `<body>` live in React Router's `src/root.tsx`.
 export function BaseLayout({ navigation, footer, admin, currentPath, children }: BaseLayoutProps) {
+  useEffect(() => {
+    void import('@/assets/scripts/global')
+  }, [])
+
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || config.navigation
 

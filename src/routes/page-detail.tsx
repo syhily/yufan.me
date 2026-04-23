@@ -4,6 +4,7 @@ import { Friends } from '@/components/mdx/page/Friends'
 import { Solution } from '@/components/mdx/solutions/Solution'
 import { PageDetailBody } from '@/components/page/post/PageDetailBody'
 import { BaseLayout } from '@/layouts/BaseLayout'
+import { getPageBody } from '@/services/catalog/schema'
 import { routeMeta } from '@/services/seo/meta'
 import { joinUrl } from '@/shared/urls'
 
@@ -44,7 +45,10 @@ export function meta({ loaderData }: { loaderData: Awaited<ReturnType<typeof loa
 }
 
 export default function PageDetailRoute({ loaderData }: { loaderData: Awaited<ReturnType<typeof loader>> }) {
-  const Body = loaderData.page.body
+  const Body = getPageBody(loaderData.page.slug)
+  if (!Body) {
+    throw new Error(`Missing MDX body for page: ${loaderData.page.slug}`)
+  }
 
   return (
     <BaseLayout admin={loaderData.admin} currentPath={loaderData.currentPath} footer={false}>

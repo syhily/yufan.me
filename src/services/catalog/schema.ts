@@ -44,6 +44,8 @@ export async function getPost(slug: string): Promise<Post | undefined> {
   return (await catalog()).getPost(slug)
 }
 
+export { getPageBody, getPostBody } from '@/services/catalog'
+
 export async function getPage(slug: string): Promise<Page | undefined> {
   return (await catalog()).getPage(slug)
 }

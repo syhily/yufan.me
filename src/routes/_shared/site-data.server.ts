@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon'
+
 import type { BlogSession } from '@/services/auth/session.server'
 import type { Post } from '@/services/catalog/schema'
 
@@ -41,7 +43,8 @@ export async function loadHomeListing(posts: Post[], pageNum: number) {
   )
 
   const tags = await getTags()
-  return { resolvedPosts, totalPage, categoryLinks, tags }
+  const featureSeed = DateTime.now().setZone(config.settings.timeZone).toFormat('yyyy-MM-dd')
+  return { resolvedPosts, totalPage, categoryLinks, tags, featureSeed }
 }
 
 export async function loadPostListing(

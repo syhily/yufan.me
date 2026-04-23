@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { redirect, useActionData } from 'react-router'
 
 import config from '@/blog.config'
@@ -6,10 +7,6 @@ import { AdminLayoutBody } from '@/layouts/AdminLayout'
 import { signInSchema } from '@/schemas/auth'
 import { routeMeta } from '@/services/seo/meta'
 import { getClientAddress } from '@/shared/request'
-
-if (typeof window !== 'undefined') {
-  void import('@/assets/scripts/admin/login')
-}
 
 export async function loader({ request }: { request: Request }) {
   const { destroySession, getRequestSession, userSession } = await import('@/services/auth/session.server')
@@ -68,6 +65,9 @@ export function meta() {
 
 export default function LoginRoute() {
   const actionData = useActionData() as { error?: string } | undefined
+  useEffect(() => {
+    void import('@/assets/scripts/admin/login')
+  }, [])
 
   return (
     <AdminLayoutBody>

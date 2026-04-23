@@ -65,6 +65,7 @@ export default function HomePageRoute({ loaderData }: { loaderData: Awaited<Retu
         totalPage={loaderData.totalPage}
         categoryLinks={loaderData.categoryLinks}
         tags={loaderData.tags}
+        featureSeed={loaderData.featureSeed}
         admin={loaderData.admin}
         recentComments={loaderData.recentComments}
         pendingComments={loaderData.pendingComments}

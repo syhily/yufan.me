@@ -10,13 +10,14 @@ export interface RandomPostsProps {
 export function RandomPosts({ posts }: RandomPostsProps) {
   const randomSize = config.settings.sidebar.post
   if (randomSize <= 0) return null
+  const seed = `sidebar-posts:${posts.map((post) => post.slug).join('|')}`
   return (
     <div id="recent-posts" className="widget widget-recent-entries">
       <div className="widget-title" data-tippy-content="年年岁岁花相似，岁岁年年人不同。">
         流年拾忆
       </div>
       <ul className="line">
-        {sampleSize(posts, randomSize).map((post) => (
+        {sampleSize(posts, randomSize, seed).map((post) => (
           <li key={post.slug}>
             <a href={post.permalink} title={post.title}>
               {post.title}
