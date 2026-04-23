@@ -1,11 +1,9 @@
 import type { AstroSession } from 'astro'
 
 import { ActionError } from 'astro:actions'
-import { eq } from 'drizzle-orm'
 
+import * as userRepo from '@/data/repositories/user'
 import { queryUser } from '@/helpers/auth/user'
-import * as pool from '@/helpers/db/pool'
-import { user } from '@/helpers/db/schema'
 
 export async function login({
   email,
@@ -35,13 +33,7 @@ export async function login({
   })
 
   // Update the user information.
-  await pool.db
-    .update(user)
-    .set({
-      lastIp: clientAddress,
-      lastUa: request.headers.get('User-Agent'),
-    })
-    .where(eq(user.id, u.id))
+  await userRepo.updateLastLogin(u.id, clientAddress, request.headers.get('User-Agent'))
 
   return true
 }

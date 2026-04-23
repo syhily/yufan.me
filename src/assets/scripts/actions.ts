@@ -1,31 +1,22 @@
 import { isInputError } from 'astro:actions'
 
-function errorDialog(errorMsg: string): string {
-  return `<div class="nice-popup nice-popup-center sticky-top error nice-popup-error nice-popup-open">
-  <div class="nice-popup-overlay"></div>
-  <div class="nice-popup-body">
-    <div class="nice-popup-close"><span class="svg-dark"></span></div>
-    <div class="nice-popup-content">
-      <div class="icon"></div>
-      <div class="text-center">
-        <p class="mt-1 mb-2">${errorMsg}</p>
-      </div>
-    </div>
-  </div>
-</div>`
+import { buildToastPopup, hidePopup } from '@/assets/scripts/features/popup'
+
+// Manually display an error dialog.
+export function showErrorDialog(errorMsg: string, closeAction?: () => void): void {
+  const popup = buildToastPopup(errorMsg, 'error')
+  document.body.appendChild(popup)
+  popup.querySelector<HTMLElement>('.nice-popup-close')?.addEventListener('click', () => {
+    hidePopup(popup)
+    closeAction?.()
+  })
 }
 
-// Manually display an error dialog
-export function showErrorDialog(errorMsg: string, closeAction?: () => void): void {
-  const errorPopup = errorDialog(errorMsg)
-  document.querySelector('body')!.insertAdjacentHTML('beforeend', errorPopup)
-  const popup = document.querySelector('.nice-popup-error')!
-  popup.querySelector('.nice-popup-close')!.addEventListener('click', () => {
-    popup.remove()
-    if (closeAction) {
-      closeAction()
-    }
-  })
+// Display a transient success toast (auto-dismiss).
+export function showSuccessDialog(message: string, durationMs = 800): void {
+  const popup = buildToastPopup(message, 'success')
+  document.body.appendChild(popup)
+  setTimeout(() => hidePopup(popup), durationMs)
 }
 
 // Popup an error dialog for notifying user the root cause.

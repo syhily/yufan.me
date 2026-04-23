@@ -1,148 +1,48 @@
 import type { AstroSession } from 'astro'
 
-import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import _ from 'lodash'
 
-import type {
-  CommentAndUser,
-  CommentItem,
-  CommentReq,
-  Comments,
-  ErrorResp,
-  LatestComment,
-} from '@/helpers/comment/types'
-import type { NewComment, NewPage, Page } from '@/helpers/db/types'
+import type { NewComment } from '@/data/db'
+import type { CommentAndUser, CommentItem, CommentReq, Comments, LatestComment } from '@/helpers/comment/types'
 
 import config from '@/blog.config'
+import * as commentRepo from '@/data/repositories/comment'
+import * as pageRepo from '@/data/repositories/page'
+import * as userRepo from '@/data/repositories/user'
+import { DomainError } from '@/domain/errors'
 import { isAdmin, userSession } from '@/helpers/auth/session'
 import { createUser } from '@/helpers/auth/user'
 import { parseContent } from '@/helpers/content/markdown'
-import { db } from '@/helpers/db/pool'
-import { comment, page, user } from '@/helpers/db/schema'
 import { sendApprovedComment, sendNewComment, sendNewReply } from '@/helpers/email/sender'
 import { ErrorMessages } from '@/helpers/errors'
 
-async function upsertPage(key: string, title: string | null): Promise<Page> {
-  const res = await db.select().from(page).where(eq(page.key, key)).limit(1)
-  if (res.length > 0) {
-    const p = res[0]
-    if (p.title !== title && title !== null) {
-      // Update the page with the new title
-      p.title = title
-      await db.update(page).set(p).where(eq(page.key, key)).returning()
-    }
-    return p
+function trimSiteSuffix(title: string | null): string {
+  let trim = title ?? ''
+  if (trim.includes(` - ${config.title}`)) {
+    trim = trim.substring(0, trim.indexOf(` - ${config.title}`))
   }
-  const np: NewPage = { title: title || '无标题', key, voteUp: 0, voteDown: 0, pv: 0 }
-  return (await db.insert(page).values(np).returning())[0]
+  return trim
+}
+
+function toLatestComment(row: commentRepo.PendingCommentRow): LatestComment {
+  return {
+    title: trimSiteSuffix(row.title),
+    author: row.author ?? '',
+    authorLink: row.authorLink ?? '',
+    permalink: `${row.page}#user-comment-${row.id}`,
+  }
 }
 
 export async function pendingComments(): Promise<LatestComment[]> {
-  const results = await db
-    .select({
-      id: comment.id,
-      page: comment.pageKey,
-      title: page.title,
-      author: user.name,
-      authorLink: user.link,
-    })
-    .from(comment)
-    .innerJoin(page, eq(comment.pageKey, page.key))
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(eq(comment.isPending, true))
-    .orderBy(desc(comment.id))
-    .limit(config.settings.sidebar.comment)
-
-  return results.map(({ title, author, authorLink, page, id }) => {
-    let trimTitle = title ?? ''
-    if (trimTitle.includes(` - ${config.title}`)) {
-      trimTitle = trimTitle.substring(0, trimTitle.indexOf(` - ${config.title}`))
-    }
-    return {
-      title: trimTitle,
-      author: author ?? '',
-      authorLink: authorLink ?? '',
-      permalink: `${page}#user-comment-${id}`,
-    }
-  })
+  const rows = await commentRepo.pendingComments(config.settings.sidebar.comment)
+  return rows.map(toLatestComment)
 }
 
 export async function latestComments(): Promise<LatestComment[]> {
-  const admins = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
-  const userFilterQuery =
-    admins.length > 0 ? sql`user_id NOT IN (${admins.map((admin) => admin.id).join(', ')})` : sql`1 = 1`
-  const latestDistinctCommentsQuery = sql`SELECT    id
-  FROM      (
-            SELECT    id,
-                      user_id,
-                      created_at,
-                      ROW_NUMBER() OVER (
-                      PARTITION BY user_id
-                      ORDER BY  created_at DESC
-                      ) rn
-            FROM      comment
-            WHERE     ${userFilterQuery}
-            AND       is_pending = FALSE
-            ) AS most_recent
-  WHERE     rn = 1
-  ORDER BY  created_at DESC
-  LIMIT     ${config.settings.sidebar.comment}`
-  const latestDistinctComments = (await db.execute(latestDistinctCommentsQuery)).rows
-    .map((row: { id: unknown }) => row.id)
-    .map((id: unknown) => BigInt(String(id)))
-  const results = await db
-    .select({
-      id: comment.id,
-      page: comment.pageKey,
-      title: page.title,
-      author: user.name,
-      authorLink: user.link,
-    })
-    .from(comment)
-    .innerJoin(page, eq(comment.pageKey, page.key))
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(inArray(comment.id, latestDistinctComments))
-    .orderBy(desc(comment.id))
-    .limit(config.settings.sidebar.comment)
-
-  return results.map(({ title, author, authorLink, page, id }) => {
-    let trimTitle = title ?? ''
-    if (trimTitle.includes(` - ${config.title}`)) {
-      trimTitle = trimTitle.substring(0, trimTitle.indexOf(` - ${config.title}`))
-    }
-    return {
-      title: trimTitle,
-      author: author ?? '',
-      authorLink: authorLink ?? '',
-      permalink: `${page}#user-comment-${id}`,
-    }
-  })
-}
-
-const unionCommentSelect = {
-  id: comment.id,
-  createAt: comment.createdAt,
-  updatedAt: comment.updatedAt,
-  deleteAt: comment.deletedAt,
-  content: comment.content,
-  pageKey: comment.pageKey,
-  userId: comment.userId,
-  isVerified: comment.isVerified,
-  ua: comment.ua,
-  ip: comment.ip,
-  rid: comment.rid,
-  isCollapsed: comment.isCollapsed,
-  isPending: comment.isPending,
-  isPinned: comment.isPinned,
-  voteUp: comment.voteUp,
-  voteDown: comment.voteDown,
-  rootId: comment.rootId,
-  name: user.name,
-  email: user.email,
-  emailVerified: user.emailVerified,
-  link: user.link,
-  badgeName: user.badgeName,
-  badgeColor: user.badgeColor,
+  const adminIds = await commentRepo.adminUserIds()
+  const ids = await commentRepo.latestDistinctCommentIds(adminIds, config.settings.sidebar.comment)
+  const rows = await commentRepo.commentsByIds(ids, config.settings.sidebar.comment)
+  return rows.map(toLatestComment)
 }
 
 export async function loadComments(
@@ -151,43 +51,17 @@ export async function loadComments(
   title: string | null,
   offset: number,
 ): Promise<Comments | null> {
-  await upsertPage(key, title)
+  await pageRepo.upsertPage(key, title)
   const pendingArray = session ? ((await isAdmin(session)) ? [false, true] : [false]) : [false]
 
-  const counts = (
-    await db
-      .select({ counts: count() })
-      .from(comment)
-      .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray)))
-  )[0].counts
-  const rootCounts = (
-    await db
-      .select({ counts: count() })
-      .from(comment)
-      .where(and(eq(comment.pageKey, key), inArray(comment.isPending, pendingArray), eq(comment.rootId, 0n)))
-  )[0].counts
-  const rootComments = await db
-    .select(unionCommentSelect)
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, key), eq(comment.rootId, 0n), inArray(comment.isPending, pendingArray)))
-    .limit(config.settings.comments.size)
-    .orderBy(desc(comment.createdAt))
-    .offset(offset)
-  const childComments = await db
-    .select(unionCommentSelect)
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(
-      and(
-        eq(comment.pageKey, key),
-        inArray(comment.isPending, pendingArray),
-        inArray(
-          comment.rootId,
-          rootComments.map((c) => c.id),
-        ),
-      ),
-    )
+  const counts = await commentRepo.countComments(key, pendingArray)
+  const rootCounts = await commentRepo.countRootComments(key, pendingArray)
+  const rootComments = await commentRepo.findRootComments(key, pendingArray, offset, config.settings.comments.size)
+  const childComments = await commentRepo.findChildComments(
+    key,
+    pendingArray,
+    rootComments.map((c) => c.id),
+  )
 
   return {
     count: counts,
@@ -197,36 +71,25 @@ export async function loadComments(
 }
 
 export async function increaseViews(key: string, title: string | null) {
-  await upsertPage(key, title)
+  await pageRepo.upsertPage(key, title)
   if (import.meta.env.PROD) {
-    await db
-      .update(page)
-      .set({
-        pv: sql`${page.pv} + 1`,
-      })
-      .where(eq(page.key, sql`${key}`))
+    // Aggregate writes in-memory and flush in batches; see MetricsBatcher.
+    const { bumpPageView } = await import('@/services/metrics-batcher')
+    bumpPageView(key)
   }
 }
 
 export async function approveComment(rid: string) {
-  await db
-    .update(comment)
-    .set({ isPending: false })
-    .where(eq(comment.id, BigInt(rid)))
-  const c = await db
-    .select()
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .innerJoin(page, eq(comment.pageKey, page.key))
-    .where(eq(comment.id, BigInt(rid)))
-    .limit(1)
-  if (c.length > 0) {
-    sendApprovedComment(c[0].comment, c[0].user, c[0].page)
+  const id = BigInt(rid)
+  await commentRepo.approveCommentById(id)
+  const c = await commentRepo.findCommentWithUserAndPage(id)
+  if (c) {
+    sendApprovedComment(c.comment, c.user, c.page)
   }
 }
 
 export async function deleteComment(rid: string) {
-  await db.delete(comment).where(eq(comment.id, BigInt(rid)))
+  await commentRepo.deleteCommentById(BigInt(rid))
 }
 
 export async function createComment(
@@ -234,70 +97,57 @@ export async function createComment(
   req: Request,
   clientAddress: string,
   session: AstroSession,
-): Promise<ErrorResp | CommentAndUser> {
+): Promise<CommentAndUser> {
   // Check page key
-  const p = await db.select().from(page).where(eq(page.key, commentReq.page_key))
-  if (p.length === 0) {
-    return { msg: ErrorMessages.COMMENT_PAGE_NOT_FOUND }
+  const p = await pageRepo.findPageByKey(commentReq.page_key)
+  if (p === null) {
+    throw new DomainError('NOT_FOUND', ErrorMessages.COMMENT_PAGE_NOT_FOUND)
   }
 
   // Upsert the comment user.
   const u = await createUser(commentReq.name, commentReq.email, commentReq.link || '')
   if (u === null) {
-    return { msg: ErrorMessages.COMMENT_USER_CREATE_FAILED }
+    throw new DomainError('INTERNAL', ErrorMessages.COMMENT_USER_CREATE_FAILED)
   }
 
   // Block the comment from the Admin
   const loginUser = await userSession(session)
   if (u.isAdmin) {
     if (loginUser === undefined) {
-      return { msg: ErrorMessages.COMMENT_ADMIN_REQUIRED }
+      throw new DomainError('UNAUTHORIZED', ErrorMessages.COMMENT_ADMIN_REQUIRED)
     }
   }
 
   // Ensure the commenter is the same as the login user
   else if (loginUser !== undefined && loginUser.email !== u.email) {
-    return { msg: ErrorMessages.COMMENT_EMAIL_MISMATCH }
+    throw new DomainError('FORBIDDEN', ErrorMessages.COMMENT_EMAIL_MISMATCH)
   }
 
   // Ensure the registered user should login to comment
   if (u.password !== undefined && u.password !== null && u.password !== '' && loginUser === undefined) {
-    return { msg: ErrorMessages.COMMENT_LOGIN_REQUIRED }
+    throw new DomainError('UNAUTHORIZED', ErrorMessages.COMMENT_LOGIN_REQUIRED)
   }
 
   // Query the existing comments for the user for deduplication.
-  const historicalComments = await db.select().from(comment).innerJoin(user, eq(comment.userId, user.id)).limit(10)
+  const historicalComments = await commentRepo.recentCommentsForUserDedupe(10)
   if (historicalComments.find((c) => c.comment.content === commentReq.content)) {
-    return { msg: ErrorMessages.COMMENT_DUPLICATE }
+    throw new DomainError('CONFLICT', ErrorMessages.COMMENT_DUPLICATE)
   }
 
   // Update the comment user information
-  await db
-    .update(user)
-    .set({ lastUa: req.headers.get('User-Agent'), lastIp: clientAddress })
-    .where(eq(user.id, u.id))
+  await userRepo.updateLastLogin(u.id, clientAddress, req.headers.get('User-Agent'))
 
   // Calculate comment architecture
   let rootId = 0n
   if (commentReq.rid !== undefined && commentReq.rid !== 0) {
-    const r = await db
-      .select({ rootId: comment.rootId })
-      .from(comment)
-      .where(eq(comment.id, BigInt(commentReq.rid)))
-      .limit(1)
-    if (r.length > 0 && r[0].rootId !== null && r[0].rootId !== 0n) {
-      rootId = r[0].rootId
-    } else {
-      rootId = BigInt(commentReq.rid)
-    }
+    const ridBig = BigInt(commentReq.rid)
+    const parentRoot = await commentRepo.findCommentRootId(ridBig)
+    rootId = parentRoot !== null && parentRoot !== 0n ? parentRoot : ridBig
   }
 
   // Should I bypass the check.
-  const pendingStatus = await db
-    .select({ count: count() })
-    .from(comment)
-    .where(and(eq(comment.userId, u.id), eq(comment.isPending, false)))
-  const isPending = pendingStatus.length === 0 || pendingStatus[0].count === 0
+  const approvedCount = await commentRepo.countApprovedCommentsByUser(u.id)
+  const isPending = approvedCount === 0
 
   // Insert the comment
   const newComment: NewComment = {
@@ -315,17 +165,14 @@ export async function createComment(
     voteDown: 0,
     rootId,
   }
-  const res = await db.insert(comment).values(newComment).returning()
-  if (res.length === 0) {
-    return { msg: ErrorMessages.COMMENT_CREATE_FAILED }
+  const cr = await commentRepo.insertComment(newComment)
+  if (cr === null) {
+    throw new DomainError('INTERNAL', ErrorMessages.COMMENT_CREATE_FAILED)
   }
-
-  // Parse comment content into HTML.
-  const cr = res[0]
 
   cr.content = await parseContent(cr.content || '该留言内容为空')
 
-  const info = {
+  const info: CommentAndUser = {
     id: cr.id,
     createAt: cr.createdAt,
     updatedAt: cr.updatedAt,
@@ -353,55 +200,31 @@ export async function createComment(
 
   // Send the email.
   if (info.email !== config.author.email) {
-    sendNewComment(info, p[0])
+    sendNewComment(info, p)
   }
   if (info.rid !== 0) {
-    const source = await db
-      .select()
-      .from(comment)
-      .innerJoin(user, eq(comment.userId, user.id))
-      .where(eq(comment.id, BigInt(info.rid)))
-      .limit(1)
-    if (source.length > 0) {
-      sendNewReply(source[0].user, source[0].comment, info, p[0])
+    const source = await commentRepo.findCommentWithSourceUser(BigInt(info.rid))
+    if (source) {
+      sendNewReply(source.user, source.comment, info, p)
     }
   }
 
-  // Return the comment
   return info
 }
 
 export async function getCommentById(rid: string) {
-  const r = await db
-    .select(unionCommentSelect)
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(eq(comment.id, BigInt(rid)))
-    .limit(1)
-  if (r.length === 0) return null
-  return r[0]
+  return commentRepo.findCommentWithUserById(BigInt(rid))
 }
 
 export async function updateComment(rid: string, newContent: string) {
-  // Update raw content and updated timestamp
-  await db
-    .update(comment)
-    .set({ content: newContent })
-    .where(eq(comment.id, BigInt(rid)))
+  const id = BigInt(rid)
+  await commentRepo.updateCommentContent(id, newContent)
 
-  const r = await db
-    .select(unionCommentSelect)
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(eq(comment.id, BigInt(rid)))
-    .limit(1)
+  const r = await commentRepo.findCommentWithUserById(id)
+  if (r === null) return null
 
-  if (r.length === 0) return null
-
-  // Parse content into HTML for rendering
-  r[0].content = await parseContent(r[0].content || '该留言内容为空')
-
-  return r[0]
+  r.content = await parseContent(r.content || '该留言内容为空')
+  return r
 }
 
 // Load all comments with pagination for admin
@@ -417,25 +240,12 @@ export interface AdminCommentsResult {
 
 // 获取所有文章列表（用于筛选）
 export async function getPageOptions(): Promise<Array<{ key: string; title: string }>> {
-  const pages = await db
-    .select({ key: page.key, title: page.title })
-    .from(page)
-    .where(isNull(page.deletedAt))
-    .orderBy(desc(page.id))
-
-  return pages
+  return commentRepo.listAllPages()
 }
 
 // 获取所有评论人员列表（用于筛选）
 export async function getCommentAuthors(): Promise<Array<{ id: bigint; name: string }>> {
-  const authors = await db
-    .selectDistinct({ id: user.id, name: user.name })
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .where(isNull(comment.deletedAt))
-    .orderBy(user.id)
-
-  return authors
+  return commentRepo.listCommentAuthors()
 }
 
 // 修改 loadAllComments 函数签名以支持筛选
@@ -445,35 +255,12 @@ export async function loadAllComments(
   filterPageKey?: string,
   filterUserId?: bigint,
 ): Promise<AdminCommentsResult> {
-  const conditions = [isNull(comment.deletedAt)]
-
-  if (filterPageKey) {
-    conditions.push(eq(comment.pageKey, filterPageKey))
+  const filters: commentRepo.AdminListFilters = {
+    pageKey: filterPageKey,
+    userId: filterUserId,
   }
-
-  if (filterUserId) {
-    conditions.push(eq(comment.userId, filterUserId))
-  }
-
-  const total = (
-    await db
-      .select({ counts: count() })
-      .from(comment)
-      .where(and(...conditions))
-  )[0].counts
-
-  const comments = await db
-    .select({
-      ...unionCommentSelect,
-      pageTitle: page.title,
-    })
-    .from(comment)
-    .innerJoin(user, eq(comment.userId, user.id))
-    .leftJoin(page, eq(comment.pageKey, page.key))
-    .where(and(...conditions))
-    .orderBy(desc(comment.createdAt))
-    .limit(limit)
-    .offset(offset)
+  const total = await commentRepo.countAllComments(filters)
+  const comments = await commentRepo.listAdminComments(offset, limit, filters)
 
   return {
     comments: await Promise.all(

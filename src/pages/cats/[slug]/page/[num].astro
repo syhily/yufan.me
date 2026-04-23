@@ -7,7 +7,8 @@ const { slug, num } = Astro.params
 const category = getCategory(undefined, slug)
 
 if (!category || !num) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 
 const pageNum = Number.parseInt(num)

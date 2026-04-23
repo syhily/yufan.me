@@ -3181,3 +3181,41 @@ a.index-menu-link:hover {
 .medium-zoom-image--opened {
   z-index: 1080;
 }
+
+/*--------------------------------------------------------------
+    Reply / edit overlay (moved from inline styles in scripts)
+--------------------------------------------------------------*/
+
+.comment-form-text {
+  position: relative;
+}
+
+.replying-to-overlay {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  font-size: 0.9rem;
+  color: rgba(73, 80, 87, 0.95);
+  pointer-events: none;
+  background: rgba(0, 140, 149, 0.05);
+  border-radius: 4px;
+  padding: 0.15rem 0.5rem;
+  z-index: 2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.6;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.replying-to-overlay .replying-name {
+  font-weight: 500;
+}
+
+.comment-edit-area {
+  display: block;
+  width: 100%;
+}

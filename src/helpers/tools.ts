@@ -1,17 +1,13 @@
+import { Buffer } from 'node:buffer'
 import crypto from 'node:crypto'
 
-export function makeToken(
-  length: number,
-  characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
-) {
-  let result = ''
-  const charactersLength = characters.length
-  let counter = 0
-  while (counter < length) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength))
-    counter += 1
-  }
-  return result
+// Generate a cryptographically-secure URL-safe random string of approximately
+// the given length. Uses base64url encoding so the result is safe to use in
+// query strings, HTML attributes, and database tokens without escaping.
+export function makeToken(length: number): string {
+  // base64url emits ~4 chars per 3 bytes; round up so we always meet `length`.
+  const bytes = Math.ceil((length * 3) / 4)
+  return crypto.randomBytes(bytes).toString('base64url').slice(0, length)
 }
 
 export function encodedEmail(email: string): string {
@@ -20,4 +16,14 @@ export function encodedEmail(email: string): string {
 
 export function isNumeric(str: string): boolean {
   return /^-?\d+$/.test(str)
+}
+
+// Constant-time string comparison to avoid leaking secrets through timing.
+export function timingSafeEqual(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a)
+  const bBuf = Buffer.from(b)
+  if (aBuf.length !== bBuf.length) {
+    return false
+  }
+  return crypto.timingSafeEqual(aBuf, bBuf)
 }

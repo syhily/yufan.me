@@ -1,24 +1,31 @@
-import {
-  transformerNotationDiff,
-  transformerNotationErrorLevel,
-  transformerNotationFocus,
-  transformerNotationHighlight,
-  transformerNotationWordHighlight,
-} from '@shikijs/transformers'
+import type { Highlighter } from 'shiki'
+
 import { Marked } from 'marked'
 import markedShiki from 'marked-shiki'
 import { bundledLanguages, createHighlighter } from 'shiki'
 import { ELEMENT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
 
-const highlighter = await createHighlighter({
-  langs: Object.keys(bundledLanguages),
-  themes: ['solarized-light'],
-})
+import { SHIKI_THEME, shikiTransformers } from '@/helpers/content/shiki'
+
+// Lazily create the shiki highlighter the first time we parse a snippet.
+// Loading every bundled language eagerly costs ~80ms even for routes that
+// never render markdown (e.g. JSON action endpoints), so we defer.
+let highlighterPromise: Promise<Highlighter> | null = null
+function getHighlighter(): Promise<Highlighter> {
+  if (highlighterPromise === null) {
+    highlighterPromise = createHighlighter({
+      langs: Object.keys(bundledLanguages),
+      themes: [SHIKI_THEME],
+    })
+  }
+  return highlighterPromise
+}
 
 export async function parseContent(content: string): Promise<string> {
   // Normalize newlines
   const normalized = content.replace(/\r\n/g, '\n')
+  const highlighter = await getHighlighter()
   // Let marked convert single line breaks into <br /> without breaking Markdown
   const parsed = await new Marked()
     .use(
@@ -26,25 +33,9 @@ export async function parseContent(content: string): Promise<string> {
         highlight(code, lang, props) {
           return highlighter.codeToHtml(code, {
             lang,
-            theme: 'solarized-light',
+            theme: SHIKI_THEME,
             meta: { __raw: props.join(' ') },
-            transformers: [
-              transformerNotationDiff({
-                matchAlgorithm: 'v3',
-              }),
-              transformerNotationHighlight({
-                matchAlgorithm: 'v3',
-              }),
-              transformerNotationWordHighlight({
-                matchAlgorithm: 'v3',
-              }),
-              transformerNotationFocus({
-                matchAlgorithm: 'v3',
-              }),
-              transformerNotationErrorLevel({
-                matchAlgorithm: 'v3',
-              }),
-            ],
+            transformers: shikiTransformers(),
           })
         },
       }),

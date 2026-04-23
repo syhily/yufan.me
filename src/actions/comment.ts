@@ -5,7 +5,6 @@ import { ActionError, defineAction } from 'astro:actions'
 import config from '@/blog.config'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
-import { requireAdmin } from '@/helpers/auth/session'
 import { queryUserId } from '@/helpers/auth/user'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/helpers/comment/likes'
 import {
@@ -23,6 +22,14 @@ import { partialRender } from '@/helpers/content/render'
 import { getPosts, pages } from '@/helpers/content/schema'
 import { ErrorMessages } from '@/helpers/errors'
 import { encodedEmail } from '@/helpers/tools'
+import {
+  commentEditSchema,
+  commentReplySchema,
+  commentRidSchema,
+  loadAllCommentsSchema,
+  loadCommentsSchema,
+} from '@/schemas/comment'
+import { catchDomain, withAdmin, withSession } from '@/web/actions/middleware'
 
 const keys = [
   ...getPosts({ hidden: true, schedule: true }).map((post) => post.permalink),
@@ -32,183 +39,148 @@ const keys = [
 export const comment = {
   increaseLike: defineAction({
     accept: 'json',
-    input: z.object({
-      key: z.enum(keys),
-    }),
-    handler: async (input) => {
-      return await increaseLikes(input.key)
-    },
+    input: z.object({ key: z.enum(keys) }),
+    handler: catchDomain(async (input) => increaseLikes(input.key)),
   }),
   decreaseLike: defineAction({
     accept: 'json',
-    input: z.object({
-      key: z.enum(keys),
-      token: z.string().min(1),
-    }),
-    handler: async (input) => {
+    input: z.object({ key: z.enum(keys), token: z.string().min(1) }),
+    handler: catchDomain(async (input) => {
       await decreaseLikes(input.key, input.token)
       return { likes: await queryLikes(input.key) }
-    },
+    }),
   }),
   validateLikeToken: defineAction({
     accept: 'json',
-    input: z.object({
-      key: z.enum(keys),
-      token: z.string().min(1),
-    }),
-    handler: async (input) => {
-      const isValid = await validateLikeToken(input.key, input.token)
-      return { valid: isValid }
-    },
+    input: z.object({ key: z.enum(keys), token: z.string().min(1) }),
+    handler: catchDomain(async (input) => ({
+      valid: await validateLikeToken(input.key, input.token),
+    })),
   }),
   findAvatar: defineAction({
     accept: 'json',
     input: z.object({ email: z.email() }),
-    handler: async ({ email }) => {
+    handler: catchDomain(async ({ email }) => {
       const id = await queryUserId(email)
       const hash = id === null ? encodedEmail(email) : `${id}`
       return { avatar: joinPaths(config.website, 'images/avatar', `${hash}.png`) }
-    },
+    }),
   }),
   replyComment: defineAction({
     accept: 'json',
-    input: z.object({
-      page_key: z.string(),
-      name: z.string(),
-      email: z.email(),
-      link: z.string().optional(),
-      content: z.string().min(1),
-      rid: z.number().optional(),
-    }),
-    handler: async (input, { request, clientAddress, session }) => {
-      if (session === undefined) {
-        throw new ActionError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: ErrorMessages.SESSION_NOT_CONFIGURED,
+    input: commentReplySchema,
+    handler: catchDomain(
+      withSession(async (input, ctx) => {
+        const comment = await createComment(input, ctx.request, ctx.clientAddress, ctx.session!)
+        const content = await partialRender(CommentItem, {
+          props: {
+            depth: comment.rid === 0 ? 1 : 2,
+            comment,
+            pending: comment.isPending,
+            session: ctx.session,
+          },
+          request: ctx.request,
         })
-      }
-      const resp = await createComment(input, request, clientAddress, session)
-      if ('msg' in resp) {
-        throw new ActionError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: resp.msg,
-        })
-      }
-
-      const content = await partialRender(CommentItem, {
-        props: {
-          depth: resp.rid === 0 ? 1 : 2,
-          comment: resp,
-          pending: resp.isPending,
-          session,
-        },
-        request,
-      })
-
-      return { content }
-    },
+        return { content }
+      }),
+    ),
   }),
   approve: defineAction({
     accept: 'json',
-    input: z.object({ rid: z.string() }),
-    handler: async ({ rid }, { session }) => {
-      await requireAdmin(session, ErrorMessages.NOT_ADMIN_SYSTEM)
-      await approveComment(rid)
-    },
+    input: commentRidSchema,
+    handler: catchDomain(
+      withAdmin(async ({ rid }) => {
+        await approveComment(rid)
+      }, ErrorMessages.NOT_ADMIN_SYSTEM),
+    ),
   }),
   delete: defineAction({
     accept: 'json',
-    input: z.object({ rid: z.string() }),
-    handler: async ({ rid }, { session }) => {
-      await requireAdmin(session, ErrorMessages.NOT_ADMIN_SYSTEM)
-      await deleteComment(rid)
-    },
+    input: commentRidSchema,
+    handler: catchDomain(
+      withAdmin(async ({ rid }) => {
+        await deleteComment(rid)
+      }, ErrorMessages.NOT_ADMIN_SYSTEM),
+    ),
   }),
   loadComments: defineAction({
     accept: 'json',
-    input: z.object({
-      page_key: z.string(),
-      offset: z.number(),
-    }),
-    handler: async ({ page_key, offset }, { session, request }) => {
-      const comments = await loadComments(session, page_key, null, Number(offset))
+    input: loadCommentsSchema,
+    handler: catchDomain(async ({ page_key, offset }, ctx) => {
+      const comments = await loadComments(ctx.session, page_key, null, Number(offset))
       if (comments === null) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
           message: ErrorMessages.COMMENT_SERVER_ERROR,
         })
       }
-
-      const content = await partialRender(Comment, { props: { comments, session }, request })
+      const content = await partialRender(Comment, { props: { comments, session: ctx.session }, request: ctx.request })
       const next = config.settings.comments.size + offset < comments.roots_count
-
       return { content, next }
-    },
+    }),
   }),
   // Get raw comment content (for admin editing)
   getRaw: defineAction({
     accept: 'json',
-    input: z.object({ rid: z.string() }),
-    handler: async ({ rid }, { session }) => {
-      await requireAdmin(session)
-      const c = await getCommentById(rid)
-      if (!c) {
-        throw new ActionError({ code: 'NOT_FOUND', message: ErrorMessages.COMMENT_NOT_FOUND })
-      }
-      return { content: c.content }
-    },
+    input: commentRidSchema,
+    handler: catchDomain(
+      withAdmin(async ({ rid }) => {
+        const c = await getCommentById(rid)
+        if (!c) {
+          throw new ActionError({ code: 'NOT_FOUND', message: ErrorMessages.COMMENT_NOT_FOUND })
+        }
+        return { content: c.content }
+      }),
+    ),
   }),
   // Edit an existing comment (admin only)
   edit: defineAction({
     accept: 'json',
-    input: z.object({ rid: z.string(), content: z.string().min(1) }),
-    handler: async ({ rid, content }, { session, request }) => {
-      await requireAdmin(session)
-      const updated = await updateComment(rid, content)
-      if (!updated) {
-        throw new ActionError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: ErrorMessages.COMMENT_UPDATE_FAILED,
+    input: commentEditSchema,
+    handler: catchDomain(
+      withAdmin(async ({ rid, content }, ctx) => {
+        const updated = await updateComment(rid, content)
+        if (!updated) {
+          throw new ActionError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: ErrorMessages.COMMENT_UPDATE_FAILED,
+          })
+        }
+
+        const html = await partialRender(CommentItem, {
+          props: {
+            depth: updated.rid === 0 ? 1 : 2,
+            comment: updated,
+            pending: updated.isPending,
+            session: ctx.session,
+          },
+          request: ctx.request,
         })
-      }
 
-      const html = await partialRender(CommentItem, {
-        props: {
-          depth: updated.rid === 0 ? 1 : 2,
-          comment: updated,
-          pending: updated.isPending,
-          session,
-        },
-        request,
-      })
-
-      return { content: html }
-    },
+        return { content: html }
+      }),
+    ),
   }),
   // Get filter options for admin panel
   getFilterOptions: defineAction({
     accept: 'json',
     input: z.object({}),
-    handler: async (_, { session }) => {
-      await requireAdmin(session)
-      const pages = await getPageOptions()
-      const authors = await getCommentAuthors()
-      return { pages, authors }
-    },
+    handler: catchDomain(
+      withAdmin(async () => ({
+        pages: await getPageOptions(),
+        authors: await getCommentAuthors(),
+      })),
+    ),
   }),
   // Load all comments with pagination (admin only)
   loadAll: defineAction({
     accept: 'json',
-    input: z.object({
-      offset: z.number().min(0),
-      limit: z.number().min(1).max(100),
-      pageKey: z.string().optional(),
-      userId: z.string().optional(),
-    }),
-    handler: async ({ offset, limit, pageKey, userId }, { session }) => {
-      await requireAdmin(session)
-      const userIdBigint = userId ? BigInt(userId) : undefined
-      return await loadAllComments(offset, limit, pageKey, userIdBigint)
-    },
+    input: loadAllCommentsSchema,
+    handler: catchDomain(
+      withAdmin(async ({ offset, limit, pageKey, userId }) => {
+        const userIdBigint = userId ? BigInt(userId) : undefined
+        return loadAllComments(offset, limit, pageKey, userIdBigint)
+      }),
+    ),
   }),
 }

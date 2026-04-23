@@ -14,7 +14,8 @@ interface Props {
 const { pageNum, posts } = Astro.props
 const results = slicePosts(posts, pageNum, config.settings.pagination.posts)
 if (results.totalPage === 0) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 
 const { currentPosts, totalPage } = results

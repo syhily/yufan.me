@@ -4,12 +4,14 @@ import PostLayout from '@/layouts/PostLayout.astro'
 
 const { slug } = Astro.params
 if (!slug) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 
 const post = getPost(slug)
 if (!post) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 ---
 

@@ -4,12 +4,14 @@ import PageLayout from '@/layouts/PageLayout.astro'
 
 const { slug } = Astro.params
 if (!slug) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 
 const page = getPage(slug)
 if (!page) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 ---
 

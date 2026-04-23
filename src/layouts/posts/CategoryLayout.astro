@@ -1,11 +1,8 @@
 ---
-import config from '@/blog.config'
-import Pagination from '@/components/page/pagination/Pagination.astro'
-import PostSquare from '@/components/page/post/PostSquare.astro'
-import { slicePosts } from '@/helpers/content/formatter'
 import type { Category, Post } from '@/helpers/content/schema'
-import { getPostsWithMetadata } from '@/helpers/content/schema'
-import BaseLayout from '@/layouts/BaseLayout.astro'
+
+import config from '@/blog.config'
+import PostListLayout from '@/layouts/posts/PostListLayout.astro'
 
 interface Props {
   category: Category
@@ -14,29 +11,13 @@ interface Props {
 }
 
 const { category, posts, pageNum } = Astro.props
-const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.pagination.category)
-const resolvedPosts = await getPostsWithMetadata(currentPosts, {
-  likes: true,
-  views: true,
-  comments: false,
-})
 ---
 
-<BaseLayout title={category.name}>
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-    <div class="container">
-      <div class="mb-3 mb-lg-4">
-        <h1>{category.name}</h1>
-        <div class="text-muted mt-1">
-          <Fragment set:html={category.description} />
-        </div>
-      </div>
-      <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-        {resolvedPosts.map((post, index) => <PostSquare post={post} first={index === 0} />)}
-      </div>
-      <div class="mt-4 mt-lg-5">
-        <Pagination current={pageNum} total={totalPage} rootPath={category.permalink} />
-      </div>
-    </div>
-  </div>
-</BaseLayout>
+<PostListLayout
+  title={category.name}
+  description={category.description}
+  {posts}
+  {pageNum}
+  pageSize={config.settings.pagination.category}
+  rootPath={category.permalink}
+/>

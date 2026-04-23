@@ -10,11 +10,15 @@ export const storage = createStorage({
 
 // Seconds
 const LIMIT_TTL = 60 * 30
+// Maximum number of attempts allowed in the LIMIT_TTL window before a caller
+// is considered rate limited. Centralised so we can tune both check and
+// increment paths in one place (and later move it into blog.config).
+export const LIMIT_THRESHOLD = 5
 
 export async function exceedLimit(ip: string) {
   const key = `astro-retry-limit-${ip}`
   const times = await storage.getItem<number>(key)
-  return times !== null && times > 5
+  return times !== null && times >= LIMIT_THRESHOLD
 }
 
 export async function incrLimit(ip: string) {
@@ -22,9 +26,9 @@ export async function incrLimit(ip: string) {
   const times = await storage.getItem<number>(key)
 
   if (times === null) {
-    storage.setItem(key, 1, { ttl: LIMIT_TTL })
+    await storage.setItem(key, 1, { ttl: LIMIT_TTL })
   } else {
-    storage.setItem(key, times + 1, { ttl: LIMIT_TTL })
+    await storage.setItem(key, times + 1, { ttl: LIMIT_TTL })
   }
 }
 

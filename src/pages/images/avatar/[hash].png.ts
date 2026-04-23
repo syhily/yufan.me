@@ -29,14 +29,34 @@ async function avatarImage(hash: string): Promise<Buffer | null> {
   return compressImage(Buffer.from(await resp.arrayBuffer()))
 }
 
+// Normalize the avatar cache key so a user accessed both as `/{userId}.png`
+// and as `/{md5(email)}.png` shares one cache entry. We keep two indirections:
+//   - `numeric id` → email (DB lookup)
+//   - email → md5 hash (deterministic, hashing is the canonical key)
+// The canonical cache key is always `avatar:<md5hash>`.
+async function resolveCanonicalKey(rawHash: string): Promise<string | null> {
+  if (isNumeric(rawHash)) {
+    const email = await queryEmail(BigInt(rawHash))
+    return email === null ? null : encodedEmail(email)
+  }
+  // Already an md5-style hash (32 hex). Treat as canonical.
+  return rawHash
+}
+
 export const GET: APIRoute = async ({ params, redirect }) => {
   const { hash } = params
   if (!hash) {
     return redirect(defaultAvatar())
   }
 
-  // Read from cache.
-  const avatar = await loadAvatar(hash)
+  const canonical = await resolveCanonicalKey(hash)
+  if (canonical === null) {
+    await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
+    return redirect(defaultAvatar())
+  }
+
+  // Read from cache (canonical key).
+  const avatar = await loadAvatar(canonical)
   if (avatar !== null) {
     if (avatar.status === AvatarStatus.NO_AVATAR) {
       return redirect(defaultAvatar())
@@ -50,21 +70,14 @@ export const GET: APIRoute = async ({ params, redirect }) => {
     }
   }
 
-  // Loading logic.
-  const email = isNumeric(hash) ? await queryEmail(Number.parseInt(hash)) : hash
-  if (email === null) {
-    await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
-    return redirect(defaultAvatar())
-  }
-  const encoded = email.includes('@') ? encodedEmail(email) : email
-  const buffer = await avatarImage(encoded)
+  const buffer = await avatarImage(canonical)
 
   if (buffer === null) {
-    await cacheAvatar({ email: hash, status: AvatarStatus.NO_AVATAR })
+    await cacheAvatar({ email: canonical, status: AvatarStatus.NO_AVATAR })
     return redirect(defaultAvatar())
-  } else {
-    await cacheAvatar({ email: hash, status: AvatarStatus.HAVE_AVATAR, buffer })
   }
+
+  await cacheAvatar({ email: canonical, status: AvatarStatus.HAVE_AVATAR, buffer })
 
   return new Response(new Uint8Array(buffer), {
     headers: {

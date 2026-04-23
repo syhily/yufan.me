@@ -12,7 +12,8 @@ const { slug } = Astro.params
 const category = getCategory(undefined, slug)
 
 if (!category) {
-  return Astro.redirect('/404')
+  Astro.response.status = 404
+  return Astro.rewrite('/404')
 }
 
 const filteredPosts = getPosts({ hidden: true, schedule: false }).filter((post) => post.category === category.name)

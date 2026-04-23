@@ -14,15 +14,27 @@ import type { Post } from '@/helpers/content/schema'
 import config from '@/blog.config'
 import PostContent from '@/components/page/post/PostContent.astro'
 
-const renderers = await loadRenderers([getContainerRenderer()])
-const container = await AstroContainer.create({ renderers })
+// Lazily build the AstroContainer the first time it's needed. Building it
+// eagerly at module load forced a Vite top-level await across the whole
+// dependency graph, which slowed down dev startup for routes that didn't
+// even render comments or feeds.
+let containerPromise: Promise<AstroContainer> | null = null
+function getContainer(): Promise<AstroContainer> {
+  if (containerPromise === null) {
+    containerPromise = (async () => {
+      const renderers = await loadRenderers([getContainerRenderer()])
+      return AstroContainer.create({ renderers })
+    })()
+  }
+  return containerPromise
+}
 
-// We only want to make sure the container instance is singleton.
 export async function partialRender(
   component: AstroComponentFactory,
   options?: ContainerRenderOptions,
 ): Promise<string> {
-  return await container.renderToString(component, { ...options, partial: true })
+  const container = await getContainer()
+  return container.renderToString(component, { ...options, partial: true })
 }
 
 async function cleanupContent(html: string) {

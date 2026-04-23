@@ -40,11 +40,11 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.3",
-    "@astrojs/node": "^10.0.5",
+    "@astrojs/mdx": "^5.0.4",
+    "@astrojs/node": "^10.0.6",
     "@napi-rs/canvas": "^0.1.99",
     "@shikijs/transformers": "^4.0.2",
-    "astro": "^6.1.8",
+    "astro": "^6.1.9",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.2",
     "feed": "^5.2.1",
@@ -90,16 +90,17 @@
     "remark-math": "^6.0.0",
     "tippy.js": "^6.3.7",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^7.3.2",
     "vite-plugin-binary": "^1.0.5"
   },
   "overrides": {
     "@xmldom/xmldom": "^0.9.9",
+    "fast-xml-parser": "^5.7.1",
     "yaml": "^2.8.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": "oxfmt && oxlint",
     "**/*.astro": "prettier --write"
   },
-  "packageManager": "npm@11.12.1"
+  "packageManager": "npm@11.13.0"
 }

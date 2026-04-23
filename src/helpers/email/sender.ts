@@ -9,6 +9,9 @@ import { partialRender } from '@/helpers/content/render'
 import ApprovedComment from '@/helpers/email/templates/ApprovedComment.astro'
 import NewComment from '@/helpers/email/templates/NewComment.astro'
 import NewReply from '@/helpers/email/templates/NewReply.astro'
+import { getLogger } from '@/helpers/logger'
+
+const log = getLogger('email')
 
 export interface EmailMessage {
   to: string
@@ -21,7 +24,7 @@ const ZEABUR_MAIL_BASE_URL = `https://${ZEABUR_MAIL_HOST}/api/v1/zsend`
 // Send an email using the configured transporter.
 async function internalSend(to: string, subject: string, html: string) {
   if (ZEABUR_MAIL_API_KEY === undefined || ZEABUR_MAIL_API_KEY === '') {
-    console.error('No Zeabur mail API key configured, skip sending message.')
+    log.error('No Zeabur mail API key configured, skip sending message.', { to, subject })
     return
   }
 
@@ -41,7 +44,12 @@ async function internalSend(to: string, subject: string, html: string) {
 
   if (!response.ok) {
     const body = await response.text()
-    console.error(`Failed to send email via Zeabur: ${response.status} ${response.statusText} ${body}`)
+    log.error('Failed to send email via Zeabur', {
+      status: response.status,
+      statusText: response.statusText,
+      body,
+      to,
+    })
   }
 }
 

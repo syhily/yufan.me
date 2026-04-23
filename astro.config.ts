@@ -1,12 +1,5 @@
 import mdx from '@astrojs/mdx'
 import node from '@astrojs/node'
-import {
-  transformerNotationDiff,
-  transformerNotationErrorLevel,
-  transformerNotationFocus,
-  transformerNotationHighlight,
-  transformerNotationWordHighlight,
-} from '@shikijs/transformers'
 import uploader from 'astro-uploader'
 import { defineConfig, envField, memoryCache, sessionDrivers } from 'astro/config'
 import process from 'node:process'
@@ -21,6 +14,7 @@ import vitePluginBinary from 'vite-plugin-binary'
 
 import config from './src/blog.config'
 import rehypeMermaid from './src/helpers/content/mermaid'
+import { SHIKI_THEME, shikiTransformers } from './src/helpers/content/shiki'
 
 const { REDIS_URL, NODE_ENV, S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY } = loadEnv(
   process.env.NODE_ENV!,
@@ -60,6 +54,17 @@ export default defineConfig({
     },
   },
   trailingSlash: 'ignore',
+  // Static redirects for routes whose only purpose was to bounce to "/".
+  // Previously each one was its own .astro file with `Astro.redirect('/')` in
+  // the frontmatter; collecting them here means Astro can serve a 301 from
+  // the edge instead of spinning up SSR.
+  redirects: {
+    '/page': '/',
+    '/posts': '/',
+    '/cats': '/',
+    '/cats/[slug]/page': '/',
+    '/tags/[slug]/page': '/',
+  },
   image: {
     domains: [config.settings.asset.host],
     service: { entrypoint: './src/helpers/images/service' },
@@ -119,25 +124,9 @@ export default defineConfig({
       excludeLangs: ['math', 'mermaid'],
     },
     shikiConfig: {
-      theme: 'solarized-light',
+      theme: SHIKI_THEME,
       wrap: false,
-      transformers: [
-        transformerNotationDiff({
-          matchAlgorithm: 'v3',
-        }),
-        transformerNotationHighlight({
-          matchAlgorithm: 'v3',
-        }),
-        transformerNotationWordHighlight({
-          matchAlgorithm: 'v3',
-        }),
-        transformerNotationFocus({
-          matchAlgorithm: 'v3',
-        }),
-        transformerNotationErrorLevel({
-          matchAlgorithm: 'v3',
-        }),
-      ],
+      transformers: shikiTransformers(),
     },
     remarkRehype: {
       footnoteLabelTagName: 'h2',

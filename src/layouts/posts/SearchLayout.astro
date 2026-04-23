@@ -1,10 +1,15 @@
 ---
 import type { Post } from '@/helpers/content/schema'
+
 import Pagination from '@/components/page/pagination/Pagination.astro'
 import PostSquare from '@/components/page/post/PostSquare.astro'
 import { getPostsWithMetadata } from '@/helpers/content/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
 
+// SearchLayout differs from PostListLayout because the caller has already
+// performed pagination via FlexSearch (`page` / `totalPages` come straight
+// from the search service). It still mirrors PostListLayout's markup so the
+// CSS stays consistent across listing pages.
 interface Props {
   title: string
   query: string
@@ -15,7 +20,6 @@ interface Props {
 
 const { title, posts, query, page, totalPages } = Astro.props
 
-// Redirect to the homepage.
 if (page < 1) {
   return Astro.redirect('/')
 }
