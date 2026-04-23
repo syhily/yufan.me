@@ -2,7 +2,6 @@ import type { PostWithMetadata } from '@/services/catalog/schema'
 
 import { Pagination } from '@/components/page/pagination/Pagination'
 import { PostSquare } from '@/components/page/post/PostSquare'
-import { Html } from '@/components/ui/Html'
 
 export interface PostListingBodyProps {
   title: string
@@ -33,7 +32,7 @@ export function PostListingBody({
           <h1>{title}</h1>
           {description && (
             <div className="text-muted mt-1">
-              <Html html={description} />
+              <span dangerouslySetInnerHTML={{ __html: description }} />
             </div>
           )}
         </div>

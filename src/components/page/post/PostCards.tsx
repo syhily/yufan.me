@@ -1,50 +1,31 @@
-import type { Post } from '@/services/catalog/schema'
+import type { PostWithMetadata } from '@/services/catalog/schema'
 
-import config from '@/blog.config'
-import { Icon } from '@/components/icons/Icon'
+import { Icon } from '@/assets/icons/Icon'
 import { Pagination } from '@/components/page/pagination/Pagination'
-import { AstroImage } from '@/components/ui/AstroImage'
-import { getCategory, getPostsWithMetadata } from '@/services/catalog/schema'
-import { formatShowDate, slicePosts } from '@/services/markdown/formatter'
+import { Image } from '@/components/partial/Image'
+import { formatShowDate } from '@/services/markdown/formatter'
 
 export interface PostCardsProps {
-  posts: Post[]
+  posts: PostWithMetadata[]
   pageNum: number
+  totalPage: number
+  categoryLinks: Record<string, string>
 }
 
-// Callers are responsible for handling the empty-slice case before we get
-// here (set `Astro.response.status = 404` / rewrite to `/404` from the page
-// shell). This component renders the grid + pagination for a valid page.
-export async function PostCards({ pageNum, posts }: PostCardsProps) {
-  const { currentPosts, totalPage } = slicePosts(posts, pageNum, config.settings.pagination.posts)
-  const resolvedPosts = await getPostsWithMetadata(currentPosts, {
-    likes: true,
-    views: true,
-    comments: true,
-  })
-
-  const categoryLinks = new Map<string, string>()
-  await Promise.all(
-    resolvedPosts.map(async (post) => {
-      if (categoryLinks.has(post.category)) return
-      const cat = await getCategory(post.category, undefined)
-      categoryLinks.set(post.category, cat?.permalink ?? '')
-    }),
-  )
-
+export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCardsProps) {
   return (
     <div className="content-wrapper col-12 col-xl-9">
       <div className="list-grid">
-        {resolvedPosts.map((post) => (
+        {posts.map((post) => (
           <div key={post.slug} className="list-item block">
             <div className="media media-3x2 col-6 col-md-5">
               <a href={post.permalink} className="media-content">
-                <AstroImage src={post.cover} alt={post.title} width={600} height={400} />
+                <Image src={post.cover} alt={post.title} width={600} height={400} />
               </a>
               <div className="media-overlay overlay-top">
                 <a
                   className="d-none d-md-inline-block badge badge-md bg-white-overlay"
-                  href={categoryLinks.get(post.category) || ''}
+                  href={categoryLinks[post.category] || ''}
                 >
                   {post.category}
                 </a>

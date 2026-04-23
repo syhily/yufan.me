@@ -1,6 +1,4 @@
-import { actions } from 'astro:actions'
-
-import { handleActionError } from '@/assets/scripts/shared/actions'
+import { actions, handleActionError } from '@/assets/scripts/shared/actions'
 
 import { attachReplyOverlay, removeReplyOverlay } from './reply-overlay'
 
@@ -148,6 +146,7 @@ export function initComments(): void {
     const request = buildReplyRequest(event.target as HTMLFormElement)
     const { data, error } = await actions.comment.replyComment(request)
     if (error) return handleActionError(error)
+    if (!data) return handleActionError({ message: '评论提交失败' })
 
     const { content: replyContent } = data
     if (request.rid !== 0) {
@@ -182,6 +181,11 @@ async function handleLoadMore(btn: HTMLButtonElement, comments: HTMLElement): Pr
       btn.disabled = false
       btn.textContent = originalText
       return handleActionError(error)
+    }
+    if (!data) {
+      btn.disabled = false
+      btn.textContent = originalText
+      return handleActionError({ message: '加载评论失败' })
     }
 
     const { content, next } = data

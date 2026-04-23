@@ -12,11 +12,9 @@
 
 import { ContentCatalog } from '@/services/catalog'
 
-export type { Category, Friend, LoadPostsOptions, Page, Post, Tag } from '@/services/catalog'
+export type { Category, Friend, LoadPostsOptions, MarkdownHeading, Page, Post, Tag } from '@/services/catalog'
 
 import type { Category, LoadPostsOptions, Page, Post, Tag } from '@/services/catalog'
-
-import { queryMetadata } from '@/services/comments/likes'
 
 const catalog = (): Promise<ContentCatalog> => ContentCatalog.get()
 
@@ -70,21 +68,4 @@ export interface PostMetadata {
   likes: number
   views: number
   comments: number
-}
-
-export async function getPostsWithMetadata(
-  posts: Post[],
-  options: LoadPostsWithMetadataOptions,
-): Promise<PostWithMetadata[]> {
-  if (posts.length === 0) {
-    return []
-  }
-  const metas = await queryMetadata(
-    posts.map((post) => post.permalink),
-    options,
-  )
-  return posts.map((post) => {
-    const meta = metas.get(post.permalink) ?? { likes: 0, views: 0, comments: 0 }
-    return { ...post, meta }
-  })
 }

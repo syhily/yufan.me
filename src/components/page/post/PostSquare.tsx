@@ -1,7 +1,7 @@
 import type { PostWithMetadata } from '@/services/catalog/schema'
 
-import { Icon } from '@/components/icons/Icon'
-import { AstroImage } from '@/components/ui/AstroImage'
+import { Icon } from '@/assets/icons/Icon'
+import { Image } from '@/components/partial/Image'
 import { formatShowDate } from '@/services/markdown/formatter'
 
 export interface PostSquareProps {
@@ -9,13 +9,13 @@ export interface PostSquareProps {
   first: boolean
 }
 
-export async function PostSquare({ post, first }: PostSquareProps) {
+export function PostSquare({ post, first }: PostSquareProps) {
   return (
     <div className={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
       <div className="list-item list-nice-overlay">
         <div className={`media ${first ? 'media-36x17' : ''}`}>
           <a href={post.permalink} className="media-content">
-            <AstroImage src={post.cover} alt={post.title} width={first ? 600 : 300} height={300} />
+            <Image src={post.cover} alt={post.title} width={first ? 600 : 300} height={300} />
             <div className="overlay" />
           </a>
         </div>

@@ -1,9 +1,0 @@
----
-import { getPosts, getTags } from '@/services/catalog/schema'
-import HomeLayout from '@/layouts/HomeLayout.astro'
-import '@/services/search'
-
-const [posts, tags] = await Promise.all([getPosts({ hidden: false, schedule: import.meta.env.DEV }), getTags()])
----
-
-<HomeLayout pageNum={1} {posts} {tags} />

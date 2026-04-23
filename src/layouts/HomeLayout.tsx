@@ -1,7 +1,7 @@
-import type { AstroSession } from 'astro'
 import type { ReactNode } from 'react'
 
-import type { Post, Tag } from '@/services/catalog/schema'
+import type { Post, PostWithMetadata, Tag } from '@/services/catalog/schema'
+import type { LatestComment } from '@/services/comments/types'
 
 import config from '@/blog.config'
 import { FeaturePosts } from '@/components/page/post/FeaturePosts'
@@ -10,24 +10,45 @@ import { Sidebar } from '@/components/sidebar/Sidebar'
 
 export interface HomeLayoutBodyProps {
   posts: Post[]
+  resolvedPosts: PostWithMetadata[]
   pageNum: number
+  totalPage: number
+  categoryLinks: Record<string, string>
   tags: Tag[]
-  session: AstroSession | undefined
+  admin: boolean
+  recentComments: LatestComment[]
+  pendingComments: LatestComment[]
   children?: ReactNode
 }
 
-// Body-region layout for the home/listing page. The surrounding `<html>` /
-// `<head>` document + SEO meta live in the `.astro` page shell so Astro-only
-// APIs (`Astro.redirect`, `Astro.response`, named slot forwarding for `<head>`)
-// stay where they can actually run.
-export function HomeLayoutBody({ posts, pageNum, tags, session, children }: HomeLayoutBodyProps) {
+// Body-region layout for the home/listing page. The route module owns the
+// document shell, redirects, status handling, and SEO metadata, then passes
+// a fully-computed data model in here.
+export function HomeLayoutBody({
+  posts,
+  resolvedPosts,
+  pageNum,
+  totalPage,
+  categoryLinks,
+  tags,
+  admin,
+  recentComments,
+  pendingComments,
+  children,
+}: HomeLayoutBodyProps) {
   return (
     <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
       {pageNum === 1 && <FeaturePosts posts={posts} />}
       <div className="container">
         <div className="row">
-          <PostCards pageNum={pageNum} posts={posts} />
-          <Sidebar posts={posts} tags={tags} session={session} />
+          <PostCards pageNum={pageNum} posts={resolvedPosts} totalPage={totalPage} categoryLinks={categoryLinks} />
+          <Sidebar
+            posts={posts}
+            tags={tags}
+            admin={admin}
+            recentComments={recentComments}
+            pendingComments={pendingComments}
+          />
         </div>
       </div>
       {children}

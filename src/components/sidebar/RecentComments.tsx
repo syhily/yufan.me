@@ -1,8 +1,12 @@
-import config from '@/blog.config'
-import { latestComments } from '@/services/comments/loader'
+import type { LatestComment } from '@/services/comments/types'
 
-export async function RecentComments() {
-  const comments = await latestComments()
+import config from '@/blog.config'
+
+export interface RecentCommentsProps {
+  comments: LatestComment[]
+}
+
+export function RecentComments({ comments }: RecentCommentsProps) {
   if (config.settings.sidebar.comment <= 0 || comments.length === 0) return null
 
   return (

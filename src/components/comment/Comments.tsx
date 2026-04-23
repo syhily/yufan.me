@@ -1,27 +1,19 @@
-import type { AstroSession } from 'astro'
-
-import { joinPaths } from '@astrojs/internal-helpers/path'
+import type { SessionUser } from '@/services/auth/types'
+import type { CommentItem } from '@/services/comments/types'
+import type { Comments as CommentsData } from '@/services/comments/types'
 
 import config from '@/blog.config'
 import { Comment } from '@/components/comment/Comment'
-import { userSession } from '@/services/auth/session'
-import { increaseViews, loadComments } from '@/services/comments/loader'
+import { joinUrl } from '@/shared/urls'
 
 export interface CommentsProps {
   commentKey: string
-  title: string
-  session: AstroSession | undefined
+  comments: CommentsData | null
+  items: CommentItem[]
+  user?: SessionUser
 }
 
-export async function Comments({ commentKey, title, session }: CommentsProps) {
-  const comments = await loadComments(session, commentKey, title, 0)
-
-  // Increase PV in production for non-admin visitors.
-  const user = await userSession(session)
-  if (user === undefined || !user.admin) {
-    await increaseViews(commentKey, title)
-  }
-
+export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
       <div id="comments" className="comments pt-5">
@@ -30,8 +22,8 @@ export async function Comments({ commentKey, title, session }: CommentsProps) {
     )
   }
 
-  const defaultAvatar = joinPaths(import.meta.env.SITE, '/images/default-avatar.png')
-  const adminAvatar = user?.admin ? joinPaths(import.meta.env.SITE, `/images/avatar/${user.id}.png`) : undefined
+  const defaultAvatar = '/images/default-avatar.png'
+  const adminAvatar = user?.admin ? joinUrl('/images/avatar', `${user.id}.png`) : undefined
 
   return (
     <div id="comments" className="comments pt-5">
@@ -39,7 +31,7 @@ export async function Comments({ commentKey, title, session }: CommentsProps) {
         评论 <small className="font-theme text-sm">({comments.count})</small>
       </div>
       <div id="respond" className="comment-respond mb-3 mb-md-4">
-        <form method="post" action="/comments/new" id="commentForm" className="comment-form">
+        <form method="post" action="/api/comments/reply" id="commentForm" className="comment-form">
           <div className="comment-from-avatar flex-avatar">
             {user?.admin ? (
               <img
@@ -102,8 +94,8 @@ export async function Comments({ commentKey, title, session }: CommentsProps) {
               {user?.admin ? (
                 <input
                   className="form-control"
-                  placeholder={user.website}
-                  defaultValue={user.website}
+                  placeholder={user.website ?? undefined}
+                  defaultValue={user.website ?? undefined}
                   name="link"
                   type="url"
                   readOnly
@@ -129,7 +121,7 @@ export async function Comments({ commentKey, title, session }: CommentsProps) {
         </form>
       </div>
       <ul className="comment-list">
-        <Comment comments={comments} admin={user?.admin === true} />
+        <Comment comments={items} admin={user?.admin === true} />
       </ul>
       {config.settings.comments.size < comments.roots_count && (
         <div className="text-center mt-3 mt-md-4">

@@ -1,4 +1,4 @@
-import type { MarkdownHeading } from 'astro'
+import type { MarkdownHeading } from '@/services/catalog'
 
 export interface TocItem extends MarkdownHeading {
   children: TocItem[]

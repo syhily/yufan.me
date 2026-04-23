@@ -1,5 +1,5 @@
+import { Icon } from '@/assets/icons/Icon'
 import config from '@/blog.config'
-import { Icon } from '@/components/icons/Icon'
 import { Footer } from '@/components/partial/Footer'
 
 export interface AdminCommentsPageProps {

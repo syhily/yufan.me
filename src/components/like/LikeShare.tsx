@@ -1,31 +1,29 @@
-import { joinPaths } from '@astrojs/internal-helpers/path'
-import querystring from 'node:querystring'
-
 import type { Post } from '@/services/catalog/schema'
 
+import { Icon } from '@/assets/icons/Icon'
 import config from '@/blog.config'
-import { Icon } from '@/components/icons/Icon'
 import { QRDialog } from '@/components/partial/QRDialog'
+import { joinUrl } from '@/shared/urls'
 
 export interface LikeShareProps {
   post: Post
 }
 
 export function LikeShare({ post }: LikeShareProps) {
-  const postURL = joinPaths(config.website, post.permalink)
-  const qq = querystring.stringify({
+  const postURL = joinUrl(config.website, post.permalink)
+  const qq = new URLSearchParams({
     url: postURL,
     pics: post.cover,
     summary: post.summary,
-  })
-  const weibo = querystring.stringify({
+  }).toString()
+  const weibo = new URLSearchParams({
     url: postURL,
     type: 'button',
     language: 'zh_cn',
     pic: post.cover,
-    searchPic: true,
+    searchPic: 'true',
     title: `【${post.title}】${post.summary}`,
-  })
+  }).toString()
 
   return (
     <div className="post-share text-center mt-4">

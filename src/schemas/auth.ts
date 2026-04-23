@@ -1,4 +1,4 @@
-import { z } from 'astro/zod'
+import { z } from 'zod'
 
 // Zod schemas shared between Astro Actions (server-side validation) and the
 // frontend forms (client-side validation). Centralising them ensures the two

@@ -1,10 +1,8 @@
-import { actions } from 'astro:actions'
-
 import type { FilterStatus } from '@/assets/scripts/admin/manage/types'
 
 import { bindCommentEvents, bindModalForms, setupModalClose } from '@/assets/scripts/admin/manage/modals'
 import { renderPagination } from '@/assets/scripts/admin/manage/pagination'
-import { handleActionError, showErrorDialog } from '@/assets/scripts/shared/actions'
+import { actions, handleActionError, showErrorDialog } from '@/assets/scripts/shared/actions'
 import SearchableSelect from '@/assets/scripts/shared/select'
 
 const commentsContainer = document.getElementById('comments-container')!

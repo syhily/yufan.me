@@ -1,4 +1,5 @@
-import { joinPaths } from '@astrojs/internal-helpers/path'
+import config from '@/blog.config'
+import { joinUrl } from '@/shared/urls'
 
 export interface PageMeta {
   title: string
@@ -34,9 +35,9 @@ export interface PageOgMeta {
 
 function parseOgImageUrl(ogImageUrl?: string): string {
   return ogImageUrl === undefined
-    ? `${import.meta.env.SITE}/images/open-graph.png`
+    ? joinUrl(config.website, 'images/open-graph.png')
     : !ogImageUrl.startsWith('http')
-      ? joinPaths(import.meta.env.SITE, ogImageUrl)
+      ? joinUrl(config.website, ogImageUrl)
       : ogImageUrl
 }
 

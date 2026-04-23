@@ -13,10 +13,9 @@ export const DOMAIN_ERROR_CODES = [
 
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number]
 
-// Error thrown by services / repositories. Action middleware catches it and
-// converts it into Astro's `ActionError` so the existing transport contract
-// stays the same. This lets the service layer stay decoupled from
-// astro:actions.
+// Error thrown by services / repositories. Route actions and resource routes
+// can translate it into HTTP responses without coupling the service layer to
+// a framework-specific transport.
 export class DomainError extends Error {
   readonly code: DomainErrorCode
 

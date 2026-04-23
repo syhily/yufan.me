@@ -1,8 +1,7 @@
-import type { AstroSession } from 'astro'
-import type { MarkdownHeading } from 'astro'
 import type { ReactNode } from 'react'
 
-import { joinPaths } from '@astrojs/internal-helpers/path'
+import type { SessionUser } from '@/services/auth/types'
+import type { CommentItem, Comments as CommentsData, LatestComment } from '@/services/comments/types'
 
 import config from '@/blog.config'
 import { Comments } from '@/components/comment/Comments'
@@ -10,8 +9,9 @@ import { LikeButton } from '@/components/like/LikeButton'
 import { LikeShare } from '@/components/like/LikeShare'
 import { TableOfContents } from '@/components/page/toc/TableOfContents'
 import { Sidebar } from '@/components/sidebar/Sidebar'
-import { type Post, type Tag } from '@/services/catalog/schema'
+import { type MarkdownHeading, type Post, type Tag } from '@/services/catalog/schema'
 import { formatLocalDate } from '@/services/markdown/formatter'
+import { joinUrl } from '@/shared/urls'
 
 export interface PostDetailBodyProps {
   post: Post
@@ -19,8 +19,13 @@ export interface PostDetailBodyProps {
   visibleTags: Tag[]
   sidebarPosts: Post[]
   tags: Tag[]
-  session: AstroSession | undefined
-  /** MDX-rendered `<Content />` body is injected here by the `.astro` shell. */
+  admin: boolean
+  likes: number
+  commentData: CommentsData | null
+  commentItems: CommentItem[]
+  currentUser?: SessionUser
+  recentComments: LatestComment[]
+  pendingComments: LatestComment[]
   children: ReactNode
 }
 
@@ -30,7 +35,13 @@ export function PostDetailBody({
   visibleTags,
   sidebarPosts,
   tags,
-  session,
+  admin,
+  likes,
+  commentData,
+  commentItems,
+  currentUser,
+  recentComments,
+  pendingComments,
   children,
 }: PostDetailBodyProps) {
   return (
@@ -56,19 +67,26 @@ export function PostDetailBody({
                 </div>
                 <TableOfContents headings={headings} toc={post.toc} />
                 <div className="post-content">{children}</div>
-                <LikeButton permalink={post.permalink} />
+                <LikeButton permalink={post.permalink} likes={likes} />
                 <LikeShare post={post} />
                 {post.comments && (
                   <Comments
-                    commentKey={joinPaths(config.website, post.permalink, '/')}
-                    title={post.title}
-                    session={session}
+                    commentKey={joinUrl(config.website, post.permalink, '/')}
+                    comments={commentData}
+                    items={commentItems}
+                    user={currentUser}
                   />
                 )}
               </div>
             </div>
           </div>
-          <Sidebar posts={sidebarPosts} tags={tags} session={session} />
+          <Sidebar
+            posts={sidebarPosts}
+            tags={tags}
+            admin={admin}
+            recentComments={recentComments}
+            pendingComments={pendingComments}
+          />
         </div>
       </div>
     </div>

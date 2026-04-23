@@ -1,21 +1,19 @@
-import type { AstroSession } from 'astro'
-
-import querystring from 'node:querystring'
-
+import { Icon } from '@/assets/icons/Icon'
 import config, { type BlogConfig } from '@/blog.config'
-import { Icon } from '@/components/icons/Icon'
 import { AdminBlock } from '@/components/partial/AdminBlock'
 import { QRDialog } from '@/components/partial/QRDialog'
 import { SearchIcon } from '@/components/search/SearchIcon'
 
 export interface HeaderProps {
   navigation: BlogConfig['navigation']
-  session: AstroSession | undefined
+  admin: boolean
   /** Current pathname used for the `redirect_to` after logout. */
   currentPath: string
 }
 
-export function Header({ navigation, session, currentPath }: HeaderProps) {
+export function Header({ navigation, admin, currentPath }: HeaderProps) {
+  const logoutQuery = new URLSearchParams({ action: 'logout', redirect_to: currentPath }).toString()
+
   return (
     <>
       <header className="site-aside">
@@ -35,14 +33,12 @@ export function Header({ navigation, session, currentPath }: HeaderProps) {
                   </a>
                 </li>
               ))}
-              <AdminBlock session={session}>
+              <AdminBlock admin={admin}>
                 <li id={`menu-item-${navigation.length}`} className="menu-item">
                   <a href="/wp-admin/">评论</a>
                 </li>
                 <li id={`menu-item-${navigation.length + 1}`} className="menu-item">
-                  <a href={`/wp-login.php?${querystring.stringify({ action: 'logout', redirect_to: currentPath })}`}>
-                    登出
-                  </a>
+                  <a href={`/wp-login.php?${logoutQuery}`}>登出</a>
                 </li>
               </AdminBlock>
             </ul>

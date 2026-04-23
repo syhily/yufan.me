@@ -1,18 +1,16 @@
-import type { Comments } from '@/services/comments/types'
+import type { CommentItem as CommentItemType } from '@/services/comments/types'
 
 import { CommentItem } from '@/components/comment/CommentItem'
-import { parseComments } from '@/services/comments/loader'
 
 export interface CommentProps {
-  comments: Comments
+  comments: CommentItemType[]
   admin: boolean
 }
 
-export async function Comment({ comments, admin }: CommentProps) {
-  const parsed = await parseComments(comments.comments)
+export function Comment({ comments, admin }: CommentProps) {
   return (
     <>
-      {parsed.map((item) => (
+      {comments.map((item) => (
         <CommentItem key={item.id} comment={item} depth={1} admin={admin} />
       ))}
     </>

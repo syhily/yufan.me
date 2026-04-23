@@ -1,5 +1,19 @@
 import { defineConfig } from 'oxfmt'
 
+const ignorePatterns = [
+  '**/*.mdx',
+  '**/*.md',
+  'node_modules',
+  'public',
+  'build',
+  'dist',
+  '.react-router',
+  '.source',
+  '.vite',
+  '.cache',
+  'coverage',
+]
+
 export default defineConfig({
   printWidth: 120,
   tabWidth: 2,
@@ -7,7 +21,7 @@ export default defineConfig({
   singleQuote: true,
   semi: false,
   trailingComma: 'all',
-  ignorePatterns: ['**/*.mdx', '**/*.md', 'node_modules', 'public', 'dist', '.astro'],
+  ignorePatterns,
   sortImports: {
     groups: [
       'type-import',

@@ -1,90 +1,149 @@
 # AGENTS.md
 
 Repository conventions for AI agents and contributors. Read this before
-authoring or refactoring templates.
+authoring routes, content loaders, templates, browser scripts, or server code.
 
 ## Stack
 
-- Astro 6 framework, router, MDX/asset pipeline, session, actions.
-- React 19 as the view layer. All UI templates are TSX **async server
-  components** — zero client JS by default.
-- `@astrojs/react` integration wired globally (see `astro.config.ts`).
+- React Router 7 Framework Mode with SSR enabled. `react-router.config.ts`
+  keeps `appDirectory` at `src` and enables `future.v8_middleware`.
+- Vite is the build system. `vite.config.ts` wires React Router, Fumadocs MDX,
+  binary asset imports, path aliases, and build-time `ASSET_BASE_URL`.
+- Fumadocs MDX compiles `src/content/posts` and `src/content/pages`; meta data
+  lives in `src/content/metas/*.yaml` and is configured from `source.config.ts`.
+- React 19 is the view layer. Route modules and components are TSX/TS only;
+  there should be no `.astro`, `astro:*`, or `@astrojs/*` runtime code.
+- Postgres stores comments, users, likes, and counters. Redis backs sessions,
+  rate limits, avatars, and generated-image caches.
 
-## File layout
+## File Layout
 
-- `src/pages/**/*.astro` — thin **route shells** (~3–10 lines). Read
-  `Astro.params/session/url/locals`, handle `Astro.redirect/rewrite`, compute
-  data, then hand everything off to a `<PageBody.tsx />`.
-- `src/layouts/BaseLayout.astro`, `src/layouts/AdminLayout.astro` — own the
-  full `<!doctype><html><head><body>` document and side-effect-import global
-  CSS. Each has a sibling `*.tsx` (`BaseLayout.tsx` / `AdminLayout.tsx`)
-  rendering the inner body chrome.
-- `src/components/**/*.tsx` — **every component** (partials, sidebar widgets,
-  comments tree, SEO meta, pagination, post cards, MDX wrappers, admin cards).
-- `src/components/**/*Partial.astro` — tiny wrappers that forward props into
-  TSX components so `actions/*.ts` can call
-  `AstroContainer.renderToString(...)` on them. Examples:
-  `CommentPartial.astro`, `CommentItemPartial.astro`,
-  `AdminCommentListPartial.astro`.
-- `src/components/page/post/PostContent.astro` — kept as `.astro` because it
-  invokes `await post.render()` and `<Content components={…}/>` (MDX output
-  can only live inside Astro components).
+- `src/root.tsx` is the only document shell. It imports global CSS and renders
+  React Router `Meta`, `Links`, `Outlet`, `ScrollRestoration`, and `Scripts`.
+- `src/routes.ts` is the route manifest. Public URLs must stay stable when route
+  modules move.
+- `src/routes/**/*.tsx` are page route modules with `loader`, `action`, `meta`,
+  and default components as needed.
+- `src/routes/**/*.ts` are resource routes such as feeds, sitemap, generated
+  images, and API/action endpoints.
+- `src/routes/_shared/*.server.ts` contains route-only server helpers.
+- `src/services/catalog/index.ts` is the content catalog over Fumadocs output.
+  Public content access goes through `src/services/catalog/schema.ts`; helpers
+  that query database metadata live in `schema.server.ts`.
+- `src/components/**/*.tsx` contains reusable React components. Prefer editing
+  existing components over introducing small one-off wrappers.
+- `src/components/partial/Image.tsx` is the framework-neutral image component.
+  It preserves the old UPYUN transform URL shape for configured remote assets.
+- `src/assets/icons/Icon.tsx` renders inline SVG icons. Raw SVG files live under
+  `src/assets/icons/svg/*.svg`; keep code and SVG resources separated.
+- `src/assets/scripts/**/*.ts` are browser-only scripts restored for SSR pages.
+  They call React Router resource routes through `src/assets/scripts/shared`.
+- `src/**/*.server.ts` is server-only. Keep database, Redis, session, email,
+  cache, and filesystem logic out of browser-reachable modules.
 
-## Translation rules (Astro → TSX)
+## Routing And Data
 
-| Astro | TSX |
-| --- | --- |
-| `Astro.props` | React function arguments |
-| default `<slot />` | `{children}` |
-| `<slot name="og">` | named prop, e.g. `og?: ReactNode` / `headExtra?: ReactNode` |
-| `<Fragment set:html={x} />` | `<Html html={x} as="span"\|"div" />` or inline `dangerouslySetInnerHTML` |
-| `class="..."` (on a TSX component) | `className="..."` — `@astrojs/react` drops `class` |
-| `class:list={[…]}` | `cx(...)` helper at `src/components/ui/cx.ts` |
-| `Astro.self` recursion | recurse by component name |
-| `<Image />` from `astro:assets` | `<AstroImage />` (`src/components/ui/AstroImage.tsx`) |
-| inline SVG via `experimental.svg` | `<Icon name="..." />` (`src/components/icons/Icon.tsx`) |
-| `Astro.redirect/rewrite/response.status/session` | stays in the `.astro` shell only |
-| `<Content components={…}/>` | stays in the `.astro` shell; pass body as `children` |
+- Use React Router `loader` for render-time data and `action` for route form
+  submissions.
+- Use `redirect`, `data`, `Response`, and thrown responses instead of legacy
+  Astro redirects, rewrites, response mutation, or actions.
+- Keep admin authentication and session reads in loaders/actions. UI components
+  should receive plain DTO props and should not import session or database code.
+- `src/routes/api-action.tsx` replaces the previous Astro actions layer for
+  comment, like, avatar, admin comment, and related browser-script requests.
+- Resource routes replace former `src/pages/**/*.ts` endpoints for feeds,
+  sitemap, Open Graph images, calendar images, and avatar images.
 
-## Client interactivity
+## Content
 
-- Default: server-only. Do not add `client:*`.
-- Add `client:load` / `client:visible` / `client:idle` **only** when the
-  component genuinely needs hydration.
-- Per-route client scripts live as `<script>import '…';</script>` blocks in
-  the surviving `.astro` shell (e.g. `global`, `admin/manage`, `admin/login`,
-  `admin/install`).
+- Do not use `astro:content`. Fumadocs collections are declared in
+  `source.config.ts`.
+- Posts stay in `src/content/posts/**/*.mdx`; pages stay in
+  `src/content/pages/**/*.mdx`.
+- Meta collections are YAML files in `src/content/metas`: `categories.yaml`,
+  `tags.yaml`, and `friends.yaml`.
+- URLs are based on MDX frontmatter `slug`, not physical filenames. Posts render
+  at `/posts/:slug`; pages render at `/:slug`.
+- The catalog returns compiled MDX components through `body`, headings, raw
+  source, and structured data. Do not reintroduce Astro `render()` semantics.
+- Custom MDX components live under `src/components/mdx`; preserve existing math,
+  Mermaid, heading slug, external link, title figure, and Shiki behavior via
+  `source.config.ts`.
 
-## Actions + SSR partials
+## Component Rules
 
-- `src/actions/*.ts` uses `partialRender(Component, { props, request })` from
-  `src/services/markdown/render.ts`. The container loads both the MDX and
-  React renderers, so partials can themselves render TSX components.
-- To render a TSX component from an action, create a tiny `*Partial.astro`
-  wrapper that forwards props. Do not pass TSX component factories to
-  `partialRender` directly.
+- Components should be plain TSX and receive explicit props. Avoid hidden reads
+  from route params, sessions, request objects, or environment variables.
+- For raw HTML, use `dangerouslySetInnerHTML` directly on the host element. Do
+  not recreate a generic `Html` helper.
+- For conditional classes, build the `className` string locally. Do not recreate
+  a generic `cx` helper for one-off use.
+- Use `<Image />` from `src/components/partial/Image.tsx` for transformed
+  remote images.
+- Use `<Icon name="..." />` from `src/assets/icons/Icon.tsx` for inline SVG.
+- Recursive components should recurse by component name.
 
-## Formatting / lint
+## Client Interactivity
 
-- `.tsx`/`.ts` are formatted with `oxfmt` and linted with `oxlint`.
-- `.astro` is formatted with `prettier` + `prettier-plugin-astro`.
-- `lint-staged` (see `package.json`) runs both pipelines automatically.
+- React Router hydrates the app, but keep browser behavior in
+  `src/assets/scripts` when it is page chrome or progressive enhancement rather
+  than React component state.
+- Browser scripts must call stable resource URLs, not import server modules.
+- Shared request helpers for browser scripts live in
+  `src/assets/scripts/shared/actions.ts`.
+- Avoid adding new client dependencies unless the interaction genuinely needs
+  them.
 
-## Build + check commands
+## Sessions, Env, And Security
 
-- `npm run dev` — Astro dev server.
-- `npm run build` — full production build. The post-build `astro-uploader`
-  S3 hook fails locally when S3 env vars are missing; that error is
-  unrelated to the Astro/React build.
-- `npx astro check` — type-checks `.astro` files (Astro-aware diagnostics).
-- `npx astro sync` — regenerates `.astro/` types when Astro-specific types
-  drift.
+- Sessions use React Router `createSessionStorage` with Redis persistence and a
+  signed `__session` cookie. `SESSION_SECRET` is required.
+- Server environment access should go through `src/shared/env.server.ts`, which
+  uses `@t3-oss/env-core` and Zod for runtime validation and typed exports.
+- When adding environment variables, update the t3-env schema, `src/env.d.ts`,
+  and `.env.example` together.
+- Use `zod` directly; do not import `astro/zod` or deprecated Zod APIs.
+- Security helpers such as CSRF and client address parsing live in shared
+  server/request modules. Keep them framework-neutral where possible.
 
-## Editing guidance
+## Assets, CDN, And Uploads
 
-- Prefer editing an existing component over creating a new one.
-- Never leave an orphan `.astro` duplicate of a TSX component. If you create
-  `Foo.tsx`, delete `Foo.astro` (Astro is case-insensitive on macOS file
-  resolution and will pick the wrong one).
-- Keep MDX-specific code (`await post.render()`, `<Content />`) inside the
-  page shell. Push everything else into TSX.
+- Vite `base` is set from `ASSET_BASE_URL` only during production builds.
+  React Router generated JS/CSS/font asset URLs can therefore point at a CDN.
+- `scripts/upload-assets.mjs` replaces the old `astro-uploader` hook. It uploads
+  `build/client/assets` when `UPLOAD_STATIC_FILES=true`.
+- S3 upload configuration uses `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`,
+  `S3_ACCESS_KEY`, `S3_SECRET_ACCESS_KEY`, and optional `S3_PREFIX`.
+- If `S3_PREFIX` is unset, the upload prefix is derived from the pathname of
+  `ASSET_BASE_URL`.
+- Public files and hard-coded absolute URLs are not automatically rewritten by
+  Vite `base`; only generated build assets are.
+
+## Formatting And Lint
+
+- `.ts` and `.tsx` are formatted with `oxfmt` and linted with `oxlint`.
+- `.astro` files should not exist. Do not add Astro formatters or Astro-only
+  lint paths back to the project.
+- `src/assets/scripts/**/*` is excluded from TypeScript project typecheck; keep
+  those scripts lint-clean and build-verified.
+
+## Build And Check Commands
+
+- `npm run dev` starts the React Router dev server.
+- `npm run build` runs `react-router build` and then `scripts/upload-assets.mjs`.
+- `npm run preview` and `npm run start` run
+  `react-router-serve ./build/server/index.js`.
+- `npm run typecheck` runs React Router type generation and `tsc`.
+- `npm run lint` runs `oxlint`.
+
+## Editing Guidance
+
+- Do not reintroduce `astro.config.ts`, `src/pages`, `.astro` route shells,
+  `src/actions`, or `src/web/middleware`.
+- Do not remove existing browser scripts under `src/assets/scripts`; they are
+  required for SSR-rendered page interactions.
+- Keep server-only imports behind `.server.ts` boundaries or dynamic imports
+  inside loaders/actions/resource routes.
+- Preserve public URLs, feed URLs, image endpoints, WordPress compatibility
+  routes, and pagination routes unless explicitly asked to change them.
+- When moving files, update both imports and documentation in the same change.

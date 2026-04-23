@@ -47,6 +47,16 @@ export interface Comments {
   roots_count: number
 }
 
+export interface AdminComment extends CommentAndUser {
+  pageTitle: string | null
+}
+
+export interface AdminCommentsResult {
+  comments: AdminComment[]
+  total: number
+  hasMore: boolean
+}
+
 // Create comment request.
 export interface CommentReq {
   page_key: string

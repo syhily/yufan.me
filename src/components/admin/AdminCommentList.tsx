@@ -1,4 +1,4 @@
-import type { AdminComment } from '@/services/comments/loader'
+import type { AdminComment } from '@/services/comments/types'
 
 import { AdminCommentCard } from '@/components/admin/AdminCommentCard'
 

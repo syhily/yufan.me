@@ -1,4 +1,4 @@
-import { Icon } from '@/components/icons/Icon'
+import { Icon } from '@/assets/icons/Icon'
 
 export interface PaginationProps {
   current: number

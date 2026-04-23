@@ -1,11 +1,11 @@
-import { joinPaths } from '@astrojs/internal-helpers/path'
 import { DateTime } from 'luxon'
 
 import config from '@/blog.config'
+import { joinUrl } from '@/shared/urls'
 
 function loadCalendarImage(): string {
   const now = DateTime.now().setZone(config.settings.timeZone).setLocale(config.settings.locale)
-  return joinPaths(import.meta.env.SITE, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.png`)
+  return joinUrl(config.website, 'images/calendar', `${now.year}`, `${now.toFormat('LLdd')}.png`)
 }
 
 export function TodayCalendar() {

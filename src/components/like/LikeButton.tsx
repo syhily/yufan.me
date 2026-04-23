@@ -1,12 +1,11 @@
-import { Icon } from '@/components/icons/Icon'
-import { queryLikes } from '@/services/comments/likes'
+import { Icon } from '@/assets/icons/Icon'
 
 export interface LikeButtonProps {
   permalink: string
+  likes: number
 }
 
-export async function LikeButton({ permalink }: LikeButtonProps) {
-  const likes = await queryLikes(permalink)
+export function LikeButton({ permalink, likes }: LikeButtonProps) {
   return (
     <div className="post-action text-center mt-5">
       <button

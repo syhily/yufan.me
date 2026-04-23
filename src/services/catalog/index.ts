@@ -1,7 +1,9 @@
-import type { RenderResult } from 'astro:content'
+import type { TOCItemType } from 'fumadocs-core/toc'
+import type { MDXContent } from 'mdx/types'
+import type { ReactNode } from 'react'
 
-import { getCollection, render } from 'astro:content'
 import { pinyin } from 'pinyin-pro'
+import YAML from 'yaml'
 
 import config from '@/blog.config'
 import { parseContent } from '@/services/markdown/parser'
@@ -9,62 +11,213 @@ import { getLogger } from '@/shared/logger'
 
 const log = getLogger('content.catalog')
 
-// -----------------------------------------------------------------------------
-// Public domain types. Kept here so the rest of the codebase only needs to
-// import from `@/data/content/catalog` (or the helper facade in
-// `@/helpers/content/schema`).
-// -----------------------------------------------------------------------------
+interface DocModule<Frontmatter> {
+  default: MDXContent
+  frontmatter: Frontmatter
+  toc: TOCItemType[]
+  structuredData: unknown
+  extractedReferences?: unknown[]
+}
 
-type FriendsCollection = Awaited<ReturnType<typeof getCollection<'friends'>>>
-type PagesCollection = Awaited<ReturnType<typeof getCollection<'pages'>>>
-type PostsCollection = Awaited<ReturnType<typeof getCollection<'posts'>>>
-type CategoriesCollection = Awaited<ReturnType<typeof getCollection<'categories'>>>
-type TagsCollection = Awaited<ReturnType<typeof getCollection<'tags'>>>
+export interface MarkdownHeading {
+  depth: number
+  slug: string
+  text: string
+}
 
-export type Friend = FriendsCollection[number]['data']
+type PostModule = DocModule<{
+  title: string
+  slug: string
+  date: Date
+  updated?: Date
+  comments?: boolean
+  alias?: string[]
+  tags?: string[]
+  category: string
+  summary?: string
+  cover?: string
+  og?: string
+  published?: boolean
+  visible?: boolean
+  toc?: boolean
+}>
 
-export type Page = Omit<PagesCollection[number]['data'], 'cover'> & {
+type PageModule = DocModule<{
+  title: string
+  slug: string
+  date: Date
+  updated?: Date
+  comments?: boolean
   cover: string
+  og?: string
+  published?: boolean
+  summary?: string
+  toc?: boolean
+}>
+
+type CategoryMeta = {
+  name: string
+  slug: string
+  cover: string
+  description?: string
+}
+
+type FriendMeta = {
+  website: string
+  description?: string
+  homepage: string
+  poster: string
+}
+
+type TagMeta = {
+  name: string
+  slug: string
+}
+
+export type Friend = FriendMeta
+
+export type Page = {
+  title: string
+  date: Date
+  updated?: Date
+  comments: boolean
+  cover: string
+  og?: string
+  published: boolean
+  summary?: string
+  toc: boolean
   slug: string
   permalink: string
-  render: () => Promise<RenderResult>
+  body: MDXContent
+  headings: MarkdownHeading[]
+  structuredData: unknown
+  raw: () => Promise<string>
 }
 
-export type Post = Omit<PostsCollection[number]['data'], 'cover'> & {
+export type Post = {
+  title: string
+  date: Date
+  updated?: Date
+  comments: boolean
+  alias: string[]
+  tags: string[]
+  category: string
+  summary: string
   cover: string
+  og?: string
+  published: boolean
+  visible: boolean
+  toc: boolean
   slug: string
   permalink: string
-  render: () => Promise<RenderResult>
-  raw: () => Promise<string | undefined>
+  body: MDXContent
+  headings: MarkdownHeading[]
+  structuredData: unknown
+  raw: () => Promise<string>
 }
 
-export type Category = Omit<CategoriesCollection[number]['data'], 'cover'> & {
-  cover: string
-  counts: number
-  permalink: string
-}
-
-export type Tag = TagsCollection[number]['data'] & { counts: number; permalink: string }
+export type Category = CategoryMeta & { counts: number; permalink: string; description: string }
+export type Tag = TagMeta & { counts: number; permalink: string }
 
 export interface LoadPostsOptions {
   hidden: boolean
   schedule: boolean
 }
 
-// -----------------------------------------------------------------------------
-// ContentCatalog — single source of truth for derived content data.
-//
-// We expose synchronous getters because almost every consumer (Astro pages,
-// components, feed builders) treats the catalog as an in-memory dataset; the
-// previous implementation in `helpers/content/schema.ts` did exactly the same
-// using a top-level `await getCollection(...)`. The catalog keeps the same
-// trade-off but adds:
-//   - O(1) lookup tables (`Map<slug, Post>`, `Map<name|slug, Category>`...)
-//   - `publicPosts` / `allPosts` precomputed slices so list pages don't have
-//     to re-filter on every render.
-//   - A clearly named `build()` entry point so tests can construct ad-hoc
-//     catalogs without crawling Astro's content layer.
-// -----------------------------------------------------------------------------
+const POST_MODULES = import.meta.glob<PostModule>('/src/content/posts/**/*.mdx', { eager: true })
+const PAGE_MODULES = import.meta.glob<PageModule>('/src/content/pages/**/*.mdx', { eager: true })
+const RAW_POST_MODULES = import.meta.glob<string>('/src/content/posts/**/*.mdx', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+})
+const RAW_PAGE_MODULES = import.meta.glob<string>('/src/content/pages/**/*.mdx', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+})
+const CATEGORY_MODULES = import.meta.glob<string>('/src/content/metas/categories.yaml', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+})
+const FRIEND_MODULES = import.meta.glob<string>('/src/content/metas/friends.yaml', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+})
+const TAG_MODULES = import.meta.glob<string>('/src/content/metas/tags.yaml', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+})
+
+function headingText(title: ReactNode): string {
+  if (typeof title === 'string') return title
+  if (typeof title === 'number') return `${title}`
+  if (Array.isArray(title)) return title.map((item) => headingText(item)).join('')
+  return ''
+}
+
+function toHeadings(toc: TOCItemType[]): MarkdownHeading[] {
+  return toc
+    .map((item) => {
+      const slug = item.url.startsWith('#') ? item.url.slice(1) : item.url
+      return {
+        depth: item.depth,
+        slug,
+        text: headingText(item.title),
+      }
+    })
+    .filter((item) => item.slug !== '' && item.text !== '')
+}
+
+function flattenMetaModules<Entry>(modules: Record<string, string>) {
+  return Object.values(modules).flatMap((source) => {
+    const parsed = YAML.parse(source)
+    return Array.isArray(parsed) ? (parsed as Entry[]) : []
+  })
+}
+
+function buildPage(modulePath: string, page: PageModule): Page {
+  const slug = page.frontmatter.slug
+  const raw = RAW_PAGE_MODULES[modulePath] ?? ''
+  return {
+    ...page.frontmatter,
+    comments: page.frontmatter.comments ?? true,
+    published: page.frontmatter.published ?? true,
+    summary: page.frontmatter.summary ?? '',
+    toc: page.frontmatter.toc ?? false,
+    slug,
+    permalink: `/${slug}`,
+    body: page.default,
+    headings: toHeadings(page.toc),
+    structuredData: page.structuredData,
+    raw: async () => raw,
+  }
+}
+
+function buildPost(modulePath: string, post: PostModule): Post {
+  const slug = post.frontmatter.slug
+  const raw = RAW_POST_MODULES[modulePath] ?? ''
+  return {
+    ...post.frontmatter,
+    comments: post.frontmatter.comments ?? true,
+    alias: post.frontmatter.alias ?? [],
+    tags: post.frontmatter.tags ?? [],
+    summary: post.frontmatter.summary ?? '',
+    cover: post.frontmatter.cover ?? '',
+    published: post.frontmatter.published ?? true,
+    visible: post.frontmatter.visible ?? true,
+    toc: post.frontmatter.toc ?? false,
+    slug,
+    permalink: `/posts/${slug}`,
+    body: post.default,
+    headings: toHeadings(post.toc),
+    structuredData: post.structuredData,
+    raw: async () => raw,
+  }
+}
 
 export class ContentCatalog {
   private static instance: Promise<ContentCatalog> | null = null
@@ -81,70 +234,52 @@ export class ContentCatalog {
   }
 
   static async build(): Promise<ContentCatalog> {
-    const friendsCollection = await getCollection('friends')
-    const pagesCollection = await getCollection('pages')
-    const postsCollection = await getCollection('posts')
-    const categoriesCollection = await getCollection('categories')
-    const tagsCollection = await getCollection('tags')
+    const friends: Friend[] = flattenMetaModules(FRIEND_MODULES)
 
-    const friends: Friend[] = friendsCollection.map((f) => f.data)
+    const pages: Page[] = Object.entries(PAGE_MODULES)
+      .map(([modulePath, page]) => buildPage(modulePath, page))
+      .filter((page) => page.published || !import.meta.env.PROD)
 
-    const pages: Page[] = pagesCollection
-      .filter((page) => page.data.published || !import.meta.env.PROD)
-      .map((page) => ({
-        ...page.data,
-        slug: page.id,
-        permalink: `/${page.id}`,
-        render: async () => render(page),
-      }))
-
-    const allPosts: Post[] = postsCollection
-      .filter((post) => post.data.published || !import.meta.env.PROD)
-      .map((post) => ({
-        ...post.data,
-        cover: post.data.cover ?? '',
-        slug: post.id,
-        permalink: `/posts/${post.id}`,
-        render: async () => render(post),
-        raw: async () => post.body,
-      }))
+    const allPosts: Post[] = Object.entries(POST_MODULES)
+      .map(([modulePath, post]) => buildPost(modulePath, post))
+      .filter((post) => post.published || !import.meta.env.PROD)
       .sort((left, right) => {
         const a = left.date.getTime()
         const b = right.date.getTime()
         return config.settings.post.sort === 'asc' ? a - b : b - a
       })
 
-    const categories: Category[] = categoriesCollection.map((cat) => ({
-      ...cat.data,
-      counts: allPosts.filter((post) => post.category === cat.data.name).length,
-      permalink: `/cats/${cat.data.slug}`,
+    const categoriesMeta = flattenMetaModules<CategoryMeta>(CATEGORY_MODULES)
+    const categories: Category[] = categoriesMeta.map((cat) => ({
+      ...cat,
+      description: cat.description ?? '',
+      counts: allPosts.filter((post) => post.category === cat.name).length,
+      permalink: `/cats/${cat.slug}`,
     }))
+
     for (const category of categories) {
       if (category.description !== '') {
         category.description = await parseContent(category.description)
       }
     }
 
-    const tags: Tag[] = tagsCollection.map((tag) => ({
-      ...tag.data,
-      counts: allPosts.filter((post) => post.tags.includes(tag.data.name)).length,
-      permalink: `/tags/${tag.data.slug}`,
+    const tagsMeta = flattenMetaModules<TagMeta>(TAG_MODULES)
+    const tags: Tag[] = tagsMeta.map((tag) => ({
+      ...tag,
+      counts: allPosts.filter((post) => post.tags.includes(tag.name)).length,
+      permalink: `/tags/${tag.slug}`,
     }))
 
-    // Verify that every post category was declared in the categories
-    // collection. We surface this as a hard error to fail builds early.
     const missingCategories: string[] = allPosts
       .map((post) => post.category)
-      .filter((c) => !categories.find((cat) => cat.name === c))
+      .filter((category) => !categories.find((cat) => cat.name === category))
     if (missingCategories.length > 0) {
       throw new Error(`The bellowing categories has not been configured:\n${missingCategories.join('\n')}`)
     }
 
-    // Auto-derive any missing tag definitions from the posts themselves so
-    // that a typo doesn't break the whole site (we only warn).
     const missingTags: string[] = allPosts
       .flatMap((post) => post.tags)
-      .filter((tag) => !tags.find((t) => t.name === tag))
+      .filter((tag) => !tags.find((item) => item.name === tag))
     if (missingTags.length > 0) {
       log.warn('auto-deriving missing tag definitions', { missing: missingTags })
       for (const missingTag of missingTags) {
@@ -165,17 +300,15 @@ export class ContentCatalog {
       }
     }
 
-    // Default cover from the post's category when explicit cover is missing.
     for (const post of allPosts) {
       if (post.cover === '') {
-        const cat = categories.find((cat) => cat.name === post.category)
-        if (cat !== undefined) {
-          post.cover = cat.cover
+        const category = categories.find((cat) => cat.name === post.category)
+        if (category !== undefined) {
+          post.cover = category.cover
         }
       }
     }
 
-    // Slug uniqueness validation (+ alias) and feature post sanity check.
     const postsSlugs = new Set<string>()
     const bySlug = new Map<string, Post>()
     const byAlias = new Map<string, Post>()
@@ -193,19 +326,19 @@ export class ContentCatalog {
         byAlias.set(alias, post)
       }
     }
+
     for (const page of pages) {
       if (postsSlugs.has(page.slug)) {
         throw new Error(`Page and post share same slug: ${page.slug}`)
       }
     }
+
     const featurePosts: string[] = config.settings.post.feature ?? []
     const invalidFeaturePosts = featurePosts.filter((slug) => !postsSlugs.has(slug))
     if (invalidFeaturePosts.length > 0) {
       throw new Error(`The bellowing feature posts are invalid:\n${invalidFeaturePosts.join('\n')}`)
     }
 
-    // Pre-compute the most common slice (visible AND already published) so
-    // list pages don't need to filter the full array on every render.
     const now = new Date()
     const publicPosts = allPosts.filter((post) => post.visible && post.date <= now)
 
@@ -214,9 +347,9 @@ export class ContentCatalog {
 
     const categoryByName = new Map<string, Category>()
     const categoryBySlug = new Map<string, Category>()
-    for (const cat of categories) {
-      categoryByName.set(cat.name, cat)
-      categoryBySlug.set(cat.slug, cat)
+    for (const category of categories) {
+      categoryByName.set(category.name, category)
+      categoryBySlug.set(category.slug, category)
     }
 
     const tagByName = new Map<string, Tag>()
@@ -245,9 +378,7 @@ export class ContentCatalog {
 
   readonly friends: Friend[]
   readonly pages: Page[]
-  /** Every post that survived the `published` filter. */
   readonly allPosts: Post[]
-  /** Subset of allPosts where `visible` is true and `date <= now`. */
   readonly publicPosts: Post[]
   readonly categories: Category[]
   readonly tags: Tag[]

@@ -1,17 +1,17 @@
 import type { Post } from '@/services/catalog/schema'
 
-import { AstroImage } from '@/components/ui/AstroImage'
+import { Image } from '@/components/partial/Image'
 
 export interface FeaturePostProps {
   post: Post
 }
 
-export async function FeaturePost({ post }: FeaturePostProps) {
+export function FeaturePost({ post }: FeaturePostProps) {
   return (
     <div className="list-item list-nice-overlay">
       <div className="media media-3x2">
         <a href={post.permalink} className="media-content">
-          <AstroImage src={post.cover} alt={post.title} width={750} height={500} />
+          <Image src={post.cover} alt={post.title} width={750} height={500} />
           <div className="overlay" />
         </a>
       </div>

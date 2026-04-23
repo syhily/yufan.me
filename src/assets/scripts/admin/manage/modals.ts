@@ -1,6 +1,4 @@
-import { actions } from 'astro:actions'
-
-import { handleActionError, showErrorDialog, showSuccessDialog } from '@/assets/scripts/shared/actions'
+import { actions, handleActionError, showErrorDialog, showSuccessDialog } from '@/assets/scripts/shared/actions'
 
 // Open / close handlers for the three admin modals (edit comment, edit user,
 // reply). Submission handlers are wired once on init.

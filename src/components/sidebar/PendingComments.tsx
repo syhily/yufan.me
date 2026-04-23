@@ -1,8 +1,10 @@
-import { pendingComments } from '@/services/comments/loader'
+import type { LatestComment } from '@/services/comments/types'
 
-export async function PendingComments() {
-  const comments = await pendingComments()
+export interface PendingCommentsProps {
+  comments: LatestComment[]
+}
 
+export function PendingComments({ comments }: PendingCommentsProps) {
   return (
     <div id="recent-comments" className="widget widget-recent-comments">
       <div className="widget-title" data-tippy-content="云中谁寄锦书来？雁字回时，月满西楼。">

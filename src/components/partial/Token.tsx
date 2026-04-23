@@ -1,12 +1,8 @@
-import type { AstroSession } from 'astro'
-
-import { generateToken } from '@/services/auth/csrf'
-
 export interface TokenProps {
-  session: AstroSession | undefined
+  token?: string
 }
 
-export function Token({ session }: TokenProps) {
-  const token = session ? generateToken(session) : 'Please configure your astro session'
+export function Token({ token }: TokenProps) {
+  if (!token) return null
   return <input type="hidden" name="token" value={token} />
 }

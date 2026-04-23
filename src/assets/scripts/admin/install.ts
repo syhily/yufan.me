@@ -1,6 +1,4 @@
-import { actions } from 'astro:actions'
-
-import { handleActionError, showErrorDialog } from '@/assets/scripts/shared/actions'
+import { actions, handleActionError, showErrorDialog } from '@/assets/scripts/shared/actions'
 
 const installForm = document.querySelector('form')
 if (installForm !== null) {
@@ -23,10 +21,10 @@ if (installForm !== null) {
       return showErrorDialog('The password is required')
     }
 
-    const { error } = await actions.auth.signUpAdmin({ name, email, password })
+    const { data, error } = await actions.auth.signUpAdmin({ name, email, password })
     if (error) {
       return handleActionError(error)
     }
-    return (location.href = '/admin/login')
+    return (location.href = data?.redirectTo || '/wp-admin')
   })
 }

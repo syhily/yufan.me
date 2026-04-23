@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import config from '@/blog.config'
 import { Footer } from '@/components/partial/Footer'
+import '@/assets/styles/admin.css'
 
 export interface AdminLayoutBodyProps {
   children?: ReactNode

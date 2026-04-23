@@ -1,9 +1,8 @@
-import type { MarkdownHeading } from 'astro'
-
+import type { MarkdownHeading } from '@/services/catalog'
 import type { TocOpts } from '@/services/markdown/toc'
 
+import { Icon } from '@/assets/icons/Icon'
 import config from '@/blog.config'
-import { Icon } from '@/components/icons/Icon'
 import { TocItems } from '@/components/page/toc/TocItems'
 import { generateToC } from '@/services/markdown/toc'
 

@@ -99,3 +99,5 @@ const features: Feature[] = [
 // Schedule everything in parallel; individual feature failures don't block
 // each other thanks to per-feature try/catch in `run`.
 void Promise.all(features.map(run))
+
+export {}

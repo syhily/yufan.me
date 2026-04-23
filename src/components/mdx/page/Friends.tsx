@@ -1,9 +1,9 @@
-import { AstroImage } from '@/components/ui/AstroImage'
-import { getFriends } from '@/services/catalog/schema'
+import { Image } from '@/components/partial/Image'
+import { FRIENDS } from '@/services/catalog/static'
 import { shuffle } from '@/shared/tools'
 
-export async function Friends() {
-  const list = shuffle(await getFriends())
+export function Friends() {
+  const list = shuffle([...FRIENDS])
 
   if (list.length === 0) {
     return (
@@ -26,7 +26,7 @@ export async function Friends() {
             <div className="list-item block">
               <div className="media media-3x1">
                 <div className="media-content">
-                  <AstroImage src={friend.poster} alt={friend.website} width={1280} height={425} />
+                  <Image src={friend.poster} alt={friend.website} width={1280} height={425} />
                 </div>
               </div>
               <div className="list-content">

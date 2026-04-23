@@ -1,16 +1,14 @@
-import type { AstroSession } from 'astro'
-
 import { Token } from '@/components/partial/Token'
 
 export interface LoginFormProps {
   action: string
-  session: AstroSession | undefined
+  token?: string
 }
 
-export function LoginForm({ action, session }: LoginFormProps) {
+export function LoginForm({ action, token }: LoginFormProps) {
   return (
     <form method="post" action={action} id="loginForm">
-      <Token session={session} />
+      <Token token={token} />
       <div className="flex-fill">
         <div className="row g-3 mb-5 px-5">
           <input className="form-control mb-2" placeholder="邮箱" name="email" type="email" required />

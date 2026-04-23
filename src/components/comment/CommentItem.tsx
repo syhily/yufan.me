@@ -1,9 +1,7 @@
-import { joinPaths } from '@astrojs/internal-helpers/path'
-
 import type { CommentItem as CommentItemType } from '@/services/comments/types'
 
-import { Html } from '@/components/ui/Html'
 import { formatLocalDate } from '@/services/markdown/formatter'
+import { joinUrl } from '@/shared/urls'
 
 export interface CommentItemProps {
   depth: number
@@ -25,7 +23,7 @@ export function CommentItem({ comment, depth, pending, admin }: CommentItemProps
         <div
           className="comment-avatar flex-avatar"
           style={{
-            backgroundImage: `url('${joinPaths(import.meta.env.SITE, '/images/default-avatar.png')}')`,
+            backgroundImage: "url('/images/default-avatar.png')",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
@@ -33,7 +31,7 @@ export function CommentItem({ comment, depth, pending, admin }: CommentItemProps
           {/* eslint-disable-next-line react/no-unknown-property */}
           <img
             alt={comment.name}
-            src={joinPaths(import.meta.env.SITE, 'images/avatar', `${comment.userId}.png`)}
+            src={joinUrl('/images/avatar', `${comment.userId}.png`)}
             // Inline HTML `onerror=` so it runs without hydration. React 19
             // allows unknown lowercase attrs to pass through SSR verbatim.
             {...({ onerror: "this.style.display='none'" } as { onerror: string })}
@@ -65,7 +63,7 @@ export function CommentItem({ comment, depth, pending, admin }: CommentItemProps
           {pending ? (
             <div className="comment-content text-wrap text-break">
               <p className="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>
-              <Html as="div" html={comment.content ?? ''} />
+              <div dangerouslySetInnerHTML={{ __html: comment.content ?? '' }} />
             </div>
           ) : (
             <div

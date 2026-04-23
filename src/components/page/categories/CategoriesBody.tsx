@@ -1,7 +1,6 @@
 import type { Category } from '@/services/catalog/schema'
 
-import { AstroImage } from '@/components/ui/AstroImage'
-import { Html } from '@/components/ui/Html'
+import { Image } from '@/components/partial/Image'
 
 export interface CategoriesBodyProps {
   title: string
@@ -19,7 +18,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
               <div className="list-item block">
                 <div className="media media-3x1">
                   <a href={category.permalink} className="media-content">
-                    <AstroImage src={category.cover} alt={category.name} width={600} height={200} />
+                    <Image src={category.cover} alt={category.name} width={600} height={200} />
                   </a>
                 </div>
                 <div className="list-content">
@@ -29,7 +28,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                     </a>
                     <div className="list-subtitle d-none d-md-block text-md text-secondary mt-2">
                       <div className="h-1x">
-                        <Html html={category.description} />
+                        <span dangerouslySetInnerHTML={{ __html: category.description }} />
                       </div>
                     </div>
                   </div>

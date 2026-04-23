@@ -1,6 +1,6 @@
-import type { AdminComment } from '@/services/comments/loader'
+import type { AdminComment } from '@/services/comments/types'
 
-import { Icon } from '@/components/icons/Icon'
+import { Icon } from '@/assets/icons/Icon'
 
 export interface AdminCommentCardProps {
   comment: AdminComment

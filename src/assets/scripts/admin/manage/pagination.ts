@@ -1,7 +1,7 @@
 // Renders the admin pagination UI matching the look of `Pagination.astro`.
 // Uses DOM APIs only and binds click handlers via the provided callback.
 
-import { iconElement } from '@/components/icons/iconRaw'
+import ellipsisIcon from '@/assets/icons/svg/ellipsis.svg?raw'
 
 interface RenderArgs {
   totalComments: number
@@ -34,7 +34,11 @@ function makeCurrent(label: number): HTMLSpanElement {
 function makeDots(): HTMLSpanElement {
   const span = document.createElement('span')
   span.className = 'page-numbers dots'
-  span.appendChild(iconElement('ellipsis'))
+  const icon = document.createElement('span')
+  icon.className = 'icon icon-ellipsis'
+  icon.setAttribute('aria-hidden', 'true')
+  icon.innerHTML = ellipsisIcon
+  span.appendChild(icon)
   return span
 }
 
