@@ -1,9 +1,10 @@
 ---
 import type { MarkdownHeading } from 'astro'
-import type { TocOpts } from '@/helpers/content/toc'
+import type { TocOpts } from '@/services/markdown/toc'
 import config from '@/blog.config'
 import TocItems from '@/components/page/toc/TocItems.astro'
-import { generateToC } from '@/helpers/content/toc'
+import { generateToC } from '@/services/markdown/toc'
+import Icon from '@/ui/icons/Icon.astro'
 
 interface Props {
   headings: MarkdownHeading[]
@@ -24,7 +25,7 @@ const items = generateToC(headings, generateTocConfig)
   items.length > 0 && (
     <Fragment>
       <a class="toggle-menu-tree">
-        <i class="text-md iconfont icon-left" />
+        <Icon name="left" class="text-md" />
       </a>
       <div class="post-menu">
         <div class="toc-wrap">

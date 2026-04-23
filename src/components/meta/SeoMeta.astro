@@ -1,16 +1,12 @@
 ---
-import type { Page, Post } from '@/helpers/content/schema'
+import type { Page, Post } from '@/services/catalog/schema'
 
 import config from '@/blog.config'
-import { getPageMeta } from '@/helpers/seo'
+import { getPageMeta } from '@/services/seo'
 
-// Unified Open Graph + Twitter card meta tag emitter. Replaces the previous
-// PageMeta and PostMeta components which shared ~90% of their markup. The
-// `kind` prop controls whether og:type is "website" or "article" and the
-// `article` prop adds the article:* tags (modified_time, tags, author...).
-//
-// Compatibility helpers `PageMeta.astro` and `PostMeta.astro` re-export this
-// component so existing call sites keep working until they are migrated.
+// Unified Open Graph + Twitter card meta tag emitter. The `kind` prop controls
+// whether og:type is "website" or "article" and the `article` prop adds the
+// article:* tags (modified_time, tags, author...).
 export type SeoArticle = { kind: 'page'; article: Page } | { kind: 'post'; article: Post } | { kind: 'website' }
 
 export interface Props {
@@ -24,6 +20,12 @@ export interface Props {
   variant?: SeoArticle
   /** Emit a <link rel="canonical"> tag pointing at pageUrl. */
   canonical?: boolean
+  /** rel="prev" target. Useful on paginated listings for SEO. */
+  prevUrl?: string
+  /** rel="next" target. Useful on paginated listings for SEO. */
+  nextUrl?: string
+  /** Emit `<meta name="robots" content="noindex,follow">` (e.g. paginated listings). */
+  noindex?: boolean
 }
 
 const {
@@ -34,7 +36,15 @@ const {
   ogImageAltText,
   variant = { kind: 'website' },
   canonical = false,
+  prevUrl,
+  nextUrl,
+  noindex = false,
 } = Astro.props
+
+function absoluteUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined
+  return url.startsWith('http') ? url : import.meta.env.SITE + url
+}
 
 const resolvedTitle = title || config.title
 const resolvedDescription = description || config.description
@@ -61,6 +71,9 @@ const ogType = variant.kind === 'website' ? 'website' : 'article'
 
 <>
   {canonical && og.url && <link rel="canonical" href={og.url} />}
+  {prevUrl && <link rel="prev" href={absoluteUrl(prevUrl)} />}
+  {nextUrl && <link rel="next" href={absoluteUrl(nextUrl)} />}
+  {noindex && <meta name="robots" content="noindex,follow" />}
   {og.title && <meta property="og:title" content={og.title} />}
   {og.description && <meta property="og:description" content={og.description} />}
   <meta property="og:type" content={ogType} />

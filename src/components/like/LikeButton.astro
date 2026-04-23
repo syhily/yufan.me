@@ -1,5 +1,6 @@
 ---
-import { queryLikes } from '@/helpers/comment/likes'
+import { queryLikes } from '@/services/comments/likes'
+import Icon from '@/ui/icons/Icon.astro'
 
 interface Props {
   permalink: string
@@ -16,7 +17,7 @@ const likes = await queryLikes(permalink)
     type="button"
     data-permalink={permalink}
   >
-    <i class="text-lg iconfont icon-heart-fill me-1"></i>
+    <Icon name="heart-fill" class="me-1" />
     <span class="like-count">{likes}</span>
   </button>
 </div>

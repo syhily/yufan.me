@@ -3,10 +3,19 @@ import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 
 import config from '@/blog.config'
+import AdminCommentList from '@/components/admin/AdminCommentList.astro'
 import Comment from '@/components/comment/Comment.astro'
 import CommentItem from '@/components/comment/CommentItem.astro'
-import { queryUserId } from '@/helpers/auth/user'
-import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/helpers/comment/likes'
+import { findUserIdByEmail } from '@/db/query/user'
+import {
+  commentEditSchema,
+  commentReplySchema,
+  commentRidSchema,
+  loadAllCommentsSchema,
+  loadCommentsSchema,
+} from '@/schemas/comment'
+import { getPages, getPosts } from '@/services/catalog/schema'
+import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/services/comments/likes'
 import {
   approveComment,
   createComment,
@@ -17,34 +26,40 @@ import {
   loadAllComments,
   loadComments,
   updateComment,
-} from '@/helpers/comment/loader'
-import { partialRender } from '@/helpers/content/render'
-import { getPosts, pages } from '@/helpers/content/schema'
-import { ErrorMessages } from '@/helpers/errors'
-import { encodedEmail } from '@/helpers/tools'
-import {
-  commentEditSchema,
-  commentReplySchema,
-  commentRidSchema,
-  loadAllCommentsSchema,
-  loadCommentsSchema,
-} from '@/schemas/comment'
+} from '@/services/comments/loader'
+import { partialRender } from '@/services/markdown/render'
+import { ErrorMessages } from '@/shared/messages'
+import { encodedEmail } from '@/shared/tools'
 import { catchDomain, withAdmin, withSession } from '@/web/actions/middleware'
 
-const keys = [
-  ...getPosts({ hidden: true, schedule: true }).map((post) => post.permalink),
-  ...pages.map((page) => page.permalink),
-]
+// Async, on-demand validation: looking up the permalink set requires
+// awaiting the content catalog, which we deliberately keep out of module
+// initialization. The result is cached after first build for the lifetime
+// of the process; ContentCatalog.reset() invalidates it.
+let permalinkSetPromise: Promise<Set<string>> | null = null
+function getValidPermalinks(): Promise<Set<string>> {
+  if (permalinkSetPromise === null) {
+    permalinkSetPromise = (async () => {
+      const [posts, pages] = await Promise.all([getPosts({ hidden: true, schedule: true }), getPages()])
+      return new Set<string>([...posts.map((p) => p.permalink), ...pages.map((p) => p.permalink)])
+    })()
+  }
+  return permalinkSetPromise
+}
+
+const keySchema = z.string().refine(async (value) => (await getValidPermalinks()).has(value), {
+  message: 'Unknown comment key',
+})
 
 export const comment = {
   increaseLike: defineAction({
     accept: 'json',
-    input: z.object({ key: z.enum(keys) }),
+    input: z.object({ key: keySchema }),
     handler: catchDomain(async (input) => increaseLikes(input.key)),
   }),
   decreaseLike: defineAction({
     accept: 'json',
-    input: z.object({ key: z.enum(keys), token: z.string().min(1) }),
+    input: z.object({ key: keySchema, token: z.string().min(1) }),
     handler: catchDomain(async (input) => {
       await decreaseLikes(input.key, input.token)
       return { likes: await queryLikes(input.key) }
@@ -52,7 +67,7 @@ export const comment = {
   }),
   validateLikeToken: defineAction({
     accept: 'json',
-    input: z.object({ key: z.enum(keys), token: z.string().min(1) }),
+    input: z.object({ key: keySchema, token: z.string().min(1) }),
     handler: catchDomain(async (input) => ({
       valid: await validateLikeToken(input.key, input.token),
     })),
@@ -61,7 +76,7 @@ export const comment = {
     accept: 'json',
     input: z.object({ email: z.email() }),
     handler: catchDomain(async ({ email }) => {
-      const id = await queryUserId(email)
+      const id = await findUserIdByEmail(email)
       const hash = id === null ? encodedEmail(email) : `${id}`
       return { avatar: joinPaths(config.website, 'images/avatar', `${hash}.png`) }
     }),
@@ -172,14 +187,24 @@ export const comment = {
       })),
     ),
   }),
-  // Load all comments with pagination (admin only)
+  // Load all comments with pagination (admin only). Renders the cards
+  // server-side so the browser only needs to swap a string of safe HTML.
   loadAll: defineAction({
     accept: 'json',
     input: loadAllCommentsSchema,
     handler: catchDomain(
-      withAdmin(async ({ offset, limit, pageKey, userId }) => {
+      withAdmin(async ({ offset, limit, pageKey, userId, status }, ctx) => {
         const userIdBigint = userId ? BigInt(userId) : undefined
-        return loadAllComments(offset, limit, pageKey, userIdBigint)
+        const result = await loadAllComments(offset, limit, pageKey, userIdBigint, status)
+        const html = await partialRender(AdminCommentList, {
+          props: { comments: result.comments },
+          request: ctx.request,
+        })
+        return {
+          html,
+          total: result.total,
+          hasMore: result.hasMore,
+        }
       }),
     ),
   }),

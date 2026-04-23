@@ -3,9 +3,9 @@ import type { APIRoute } from 'astro'
 import crypto from 'node:crypto'
 
 import config from '@/blog.config'
-import { loadBuffer } from '@/helpers/cache'
-import { getPage, getPost } from '@/helpers/content/schema'
-import { drawOpenGraph } from '@/helpers/images/og'
+import { getPage, getPost } from '@/services/catalog/schema'
+import { drawOpenGraph } from '@/services/images/og'
+import { loadBuffer } from '@/shared/cache'
 
 // 8 hex chars (32 bits) is plenty for cache busting; collisions only result
 // in the wrong cached image which would already be invalidated next time.
@@ -34,10 +34,10 @@ export const GET: APIRoute = async ({ params }) => {
   let cover: string
 
   // Query the post
-  const post = getPost(slug)
+  const post = await getPost(slug)
   if (!post) {
     // Fallback to query from pages
-    const page = getPage(slug)
+    const page = await getPage(slug)
     if (!page) {
       return await fallback()
     }

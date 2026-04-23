@@ -1,6 +1,6 @@
 import tippy from 'tippy.js'
 
-import { stickySidebar } from '@/assets/scripts/sidebar'
+import { stickySidebar } from '@/assets/scripts/shared/sidebar'
 
 export function initSidebar(): void {
   stickySidebar({

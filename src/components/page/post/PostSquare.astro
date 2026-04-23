@@ -1,6 +1,7 @@
 ---
-import { formatShowDate } from '@/helpers/content/formatter'
-import type { PostWithMetadata } from '@/helpers/content/schema'
+import type { PostWithMetadata } from '@/services/catalog/schema'
+import { formatShowDate } from '@/services/markdown/formatter'
+import Icon from '@/ui/icons/Icon.astro'
 import { Image } from 'astro:assets'
 
 interface Props {
@@ -26,11 +27,11 @@ const { post, first } = Astro.props
           <span class="d-inline-block">{formatShowDate(post.date)}</span>
           <div class="flex-fill"></div>
           <div class="list-like-square d-inline-block">
-            <i class="text-md iconfont icon-eye"></i>
+            <Icon name="eye" class="text-md" />
             <span class="like-count">{post.meta.views}</span>
           </div>
           <div class="list-like-square d-inline-block">
-            <i class="text-md iconfont icon-heart-fill"></i>
+            <Icon name="heart-fill" class="text-md" />
             <span class="like-count">{post.meta.likes}</span>
           </div>
         </div>

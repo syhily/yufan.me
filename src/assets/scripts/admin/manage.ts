@@ -1,12 +1,11 @@
 import { actions } from 'astro:actions'
 
-import type { AdminComment, FilterStatus } from '@/assets/scripts/admin/manage/types'
+import type { FilterStatus } from '@/assets/scripts/admin/manage/types'
 
-import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
 import { bindCommentEvents, bindModalForms, setupModalClose } from '@/assets/scripts/admin/manage/modals'
 import { renderPagination } from '@/assets/scripts/admin/manage/pagination'
-import { renderCommentsList } from '@/assets/scripts/admin/manage/render-card'
-import SearchableSelect from '@/assets/scripts/select'
+import { handleActionError, showErrorDialog } from '@/assets/scripts/shared/actions'
+import SearchableSelect from '@/assets/scripts/shared/select'
 
 const commentsContainer = document.getElementById('comments-container')!
 const paginationContainer = document.getElementById('pagination-container')!
@@ -48,27 +47,18 @@ async function loadComments(): Promise<void> {
       limit: state.pageSize,
       pageKey: state.filterPage || undefined,
       userId: state.filterAuthor || undefined,
+      status: state.filterStatus,
     })
 
     if (error) return handleActionError(error)
     if (!data) return showErrorDialog('加载评论失败')
 
-    const allComments = data.comments.map((c) => ({
-      ...c,
-      id: String(c.id),
-      userId: String(c.userId),
-      rootId: c.rootId ? String(c.rootId) : null,
-      createAt: c.createAt instanceof Date ? c.createAt.toISOString() : String(c.createAt),
-      updatedAt: c.updatedAt instanceof Date ? c.updatedAt.toISOString() : String(c.updatedAt),
-    })) as unknown as AdminComment[]
-
     state.totalComments = data.total
 
-    let comments = allComments
-    if (state.filterStatus === 'pending') comments = allComments.filter((c) => c.isPending)
-    else if (state.filterStatus === 'approved') comments = allComments.filter((c) => !c.isPending)
+    // The server has already rendered the cards as safe HTML through the
+    // shared <AdminCommentCard /> Astro component, so we just swap it in.
+    commentsContainer.innerHTML = data.html
 
-    renderCommentsList(commentsContainer, comments)
     renderPagination(paginationContainer, {
       totalComments: state.totalComments,
       currentPage: state.currentPage,

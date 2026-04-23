@@ -1,7 +1,7 @@
 ---
-import type { Tag } from '@/helpers/content/schema'
-import _ from 'lodash'
+import type { Tag } from '@/services/catalog/schema'
 import config from '@/blog.config'
+import { sampleSize } from '@/shared/tools'
 
 interface Props {
   tags: Tag[]
@@ -19,7 +19,7 @@ const topTags = tags.sort((a, b) => b.counts - a.counts).slice(0, randomSize * 2
         文踪墨迹
       </div>
       <div class="tagcloud">
-        {_.sampleSize(topTags, randomSize).map((tag) => (
+        {sampleSize(topTags, randomSize).map((tag) => (
           <a href={tag.permalink} class="tag-cloud-link" title={`${tag.name} (${tag.counts} 篇文章)`}>
             {tag.name}
           </a>

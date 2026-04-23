@@ -1,0 +1,145 @@
+---
+import type { Post } from '@/services/catalog/schema'
+
+import Pagination from '@/components/page/pagination/Pagination.astro'
+import PostSquare from '@/components/page/post/PostSquare.astro'
+import SeoMeta from '@/components/meta/SeoMeta.astro'
+import { slicePosts } from '@/services/markdown/formatter'
+import { getPostsWithMetadata } from '@/services/catalog/schema'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+// Generic "title + grid + pagination" page used by Category, Tag, Search and
+// any future listing-style page. Two calling styles are supported:
+//
+//  1. Internal pagination (default): pass the full `posts` array plus
+//     `pageNum` / `pageSize`; this layout slices the slice it needs and
+//     computes the total page count.
+//  2. Pre-paginated: callers that already paginated upstream (search via
+//     FlexSearch is the only one today) pass `presliced = { current, total }`
+//     and the `posts` array is treated as the current page's slice as-is.
+//
+// Whenever you find yourself wanting a slightly different layout for a new
+// listing surface, prefer adding a new prop here over forking the component.
+interface Props {
+  title: string
+  description?: string
+  posts: Post[]
+  pageNum: number
+  pageSize?: number
+  rootPath: string
+  /** When the slice is empty, fall through to a 404 redirect. */
+  redirectIfEmpty?: boolean
+  /** When the requested page is below 1, redirect to this path. */
+  redirectOnUnderflow?: string
+  /** Render even when only a single page exists (useful for search results). */
+  alwaysRenderPagination?: boolean
+  /**
+   * Skip internal pagination — callers that already paginated upstream
+   * supply the current/total page numbers and `posts` is the page slice.
+   */
+  presliced?: { current: number; total: number }
+  /** Force a `<meta name="robots" content="noindex">` regardless of pageNum. */
+  forceNoindex?: boolean
+}
+
+const {
+  title,
+  description,
+  posts,
+  pageNum,
+  pageSize,
+  rootPath,
+  redirectIfEmpty = false,
+  redirectOnUnderflow,
+  alwaysRenderPagination = true,
+  presliced,
+  forceNoindex = false,
+} = Astro.props
+
+if (redirectOnUnderflow !== undefined && pageNum < 1) {
+  return Astro.redirect(redirectOnUnderflow)
+}
+
+let currentPosts: Post[]
+let totalPage: number
+if (presliced) {
+  currentPosts = posts
+  totalPage = presliced.total
+} else {
+  if (pageSize === undefined) {
+    throw new Error('PostListingLayout: `pageSize` is required when `presliced` is not provided.')
+  }
+  ;({ currentPosts, totalPage } = slicePosts(posts, pageNum, pageSize))
+}
+
+if (redirectIfEmpty && totalPage === 0) {
+  return Astro.rewrite('/404')
+}
+
+const resolvedPosts = await getPostsWithMetadata(currentPosts, {
+  likes: true,
+  views: true,
+  comments: false,
+})
+
+// Listing pages share the same body across pageNum > 1, so a single
+// canonical URL would be a lie. We emit a per-page canonical pointing at
+// the rendered URL plus prev/next hints, and noindex paginated tail pages
+// to avoid diluting search rank.
+const pageTitle = pageNum > 1 ? `${title} · 第 ${pageNum} 页` : title
+const pageRoot = rootPath.endsWith('/') ? rootPath : `${rootPath}/`
+const buildPageUrl = (n: number): string => (n <= 1 ? rootPath : `${pageRoot}page/${n}`)
+const canonicalUrl = buildPageUrl(pageNum)
+const prevUrl = pageNum > 1 ? buildPageUrl(pageNum - 1) : undefined
+const nextUrl = pageNum < totalPage ? buildPageUrl(pageNum + 1) : undefined
+---
+
+<BaseLayout title={pageTitle}>
+  <SeoMeta
+    slot="og"
+    title={pageTitle}
+    description={description}
+    pageUrl={canonicalUrl}
+    canonical
+    {prevUrl}
+    {nextUrl}
+    noindex={forceNoindex || pageNum > 1}
+  />
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div class="container">
+      <div class="mb-3 mb-lg-4">
+        <h1>{title}</h1>
+        {
+          description && (
+            <div class="text-muted mt-1">
+              <Fragment set:html={description} />
+            </div>
+          )
+        }
+      </div>
+      {
+        resolvedPosts.length === 0 ? (
+          <div class="data-null">
+            <div class="my-auto">
+              <h1 class="font-number">404</h1>
+              <div>抱歉，没有你要找的内容...</div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
+              {resolvedPosts.map((post, index) => (
+                <PostSquare post={post} first={index === 0} />
+              ))}
+            </div>
+            {(alwaysRenderPagination || totalPage > 1) && (
+              <div class="mt-4 mt-lg-5">
+                <Pagination current={pageNum} total={totalPage} {rootPath} />
+              </div>
+            )}
+          </>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

@@ -1,8 +1,9 @@
 ---
 import config from '@/blog.config'
 import Footer from '@/components/partial/Footer.astro'
-import { requireAdmin, userSession } from '@/helpers/auth/session'
+import { requireAdmin, userSession } from '@/services/auth/session'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import Icon from '@/ui/icons/Icon.astro'
 import '@/assets/styles/select.css'
 
 if (Astro.session === undefined) {
@@ -25,7 +26,7 @@ const currentUser = await userSession(session)
                 <h1 class="h3 mb-0">评论管理</h1>
                 <div class="d-flex gap-2">
                   <button type="button" class="btn btn-primary" id="refresh-btn">
-                    <i class="iconfont icon-refresh"></i> 刷新
+                    <Icon name="refresh" /> 刷新
                   </button>
                 </div>
               </div>

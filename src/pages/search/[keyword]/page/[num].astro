@@ -1,8 +1,8 @@
 ---
 import config from '@/blog.config'
-import { getPosts } from '@/helpers/content/schema'
-import { searchPosts } from '@/helpers/content/search'
-import SearchLayout from '@/layouts/posts/SearchLayout.astro'
+import { getPosts } from '@/services/catalog/schema'
+import { searchPosts } from '@/services/search'
+import PostListingLayout from '@/layouts/PostListingLayout.astro'
 
 const { keyword, num } = Astro.params
 const query = keyword || ''
@@ -25,9 +25,16 @@ const { hits, page, totalPages } = await searchPosts(
 if (hits.length === 0 && pageNum > 1) {
   return Astro.redirect('/', 302)
 }
-const posts = hits
-  .map((slug) => getPosts({ hidden: true, schedule: false }).find((post) => post.slug === slug))
-  .filter((post) => post !== undefined)
+const allPosts = await getPosts({ hidden: true, schedule: false })
+const posts = hits.map((slug) => allPosts.find((post) => post.slug === slug)).filter((post) => post !== undefined)
 ---
 
-<SearchLayout {title} {query} {page} {totalPages} {posts} />
+<PostListingLayout
+  {title}
+  {posts}
+  pageNum={page}
+  rootPath={`/search/${query}`}
+  presliced={{ current: page, total: totalPages }}
+  forceNoindex
+  alwaysRenderPagination={false}
+/>

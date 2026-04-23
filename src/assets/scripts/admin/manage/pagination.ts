@@ -1,6 +1,8 @@
 // Renders the admin pagination UI matching the look of `Pagination.astro`.
 // Uses DOM APIs only and binds click handlers via the provided callback.
 
+import { iconElement } from '@/ui/icons/icon'
+
 interface RenderArgs {
   totalComments: number
   currentPage: number // 0-based
@@ -32,9 +34,7 @@ function makeCurrent(label: number): HTMLSpanElement {
 function makeDots(): HTMLSpanElement {
   const span = document.createElement('span')
   span.className = 'page-numbers dots'
-  const i = document.createElement('i')
-  i.className = 'iconfont icon-ellipsis'
-  span.appendChild(i)
+  span.appendChild(iconElement('ellipsis'))
   return span
 }
 

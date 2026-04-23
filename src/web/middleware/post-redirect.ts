@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from 'astro'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { defineMiddleware } from 'astro:middleware'
 
-import { ContentCatalog } from '@/data/content/catalog'
+import { ContentCatalog } from '@/services/catalog'
 import { isAdminEndpoint, isAdminPath } from '@/web/middleware/admin-endpoints'
 
 // Build the legacy permalink → canonical permalink lookup once. The catalog

@@ -1,6 +1,6 @@
 ---
 import config from '@/blog.config'
-import { latestComments } from '@/helpers/comment/loader'
+import { latestComments } from '@/services/comments/loader'
 
 const comments = await latestComments()
 ---

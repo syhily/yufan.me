@@ -1,10 +1,10 @@
 ---
 import config from '@/blog.config'
-import { getPosts, getTag } from '@/helpers/content/schema'
-import TagLayout from '@/layouts/posts/TagLayout.astro'
+import { getPosts, getTag } from '@/services/catalog/schema'
+import PostListingLayout from '@/layouts/PostListingLayout.astro'
 
 const { slug, num } = Astro.params
-const tag = getTag(undefined, slug)
+const tag = await getTag(undefined, slug)
 
 if (!tag || !num) {
   Astro.response.status = 404
@@ -16,7 +16,8 @@ if (pageNum <= 1) {
   return Astro.redirect(tag.permalink)
 }
 
-const filteredPosts = getPosts({ hidden: true, schedule: false }).filter((post) => post.tags.includes(tag.name))
+const allPosts = await getPosts({ hidden: true, schedule: false })
+const filteredPosts = allPosts.filter((post) => post.tags.includes(tag.name))
 const pageSize = config.settings.pagination.tags
 const total = Math.ceil(filteredPosts.length / pageSize)
 
@@ -25,4 +26,11 @@ if (pageNum > total) {
 }
 ---
 
-<TagLayout posts={filteredPosts} {tag} {pageNum} />
+<PostListingLayout
+  title={`标签 “${tag.name}”`}
+  posts={filteredPosts}
+  {pageNum}
+  {pageSize}
+  rootPath={tag.permalink}
+  redirectIfEmpty
+/>

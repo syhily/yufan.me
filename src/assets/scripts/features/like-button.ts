@@ -1,6 +1,6 @@
 import { actions } from 'astro:actions'
 
-import { handleActionError } from '@/assets/scripts/actions'
+import { handleActionError } from '@/assets/scripts/shared/actions'
 
 async function increaseLikes(count: HTMLElement, permalink: string): Promise<void> {
   count.textContent = (Number.parseInt(count.textContent || '0') + 1).toString()

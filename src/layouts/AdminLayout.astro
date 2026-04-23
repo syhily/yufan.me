@@ -1,6 +1,6 @@
 ---
 import config from '@/blog.config'
-import PageMeta from '@/components/meta/PageMeta.astro'
+import SeoMeta from '@/components/meta/SeoMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
 import '@/assets/styles/globals.css'
 import '@/assets/styles/admin.css'
@@ -28,7 +28,7 @@ const description = Astro.props.description || config.description
     <link rel="author" href={config.author.url} />
     <meta name="keywords" content={config.keywords.join(',')} />
     <slot name="og">
-      <PageMeta {title} {description} />
+      <SeoMeta {title} {description} />
     </slot>
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />

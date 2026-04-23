@@ -1,5 +1,6 @@
 import mdx from '@astrojs/mdx'
 import node from '@astrojs/node'
+import react from '@astrojs/react'
 import uploader from 'astro-uploader'
 import { defineConfig, envField, memoryCache, sessionDrivers } from 'astro/config'
 import process from 'node:process'
@@ -13,8 +14,9 @@ import { loadEnv } from 'vite'
 import vitePluginBinary from 'vite-plugin-binary'
 
 import config from './src/blog.config'
-import rehypeMermaid from './src/helpers/content/mermaid'
-import { SHIKI_THEME, shikiTransformers } from './src/helpers/content/shiki'
+import catalogDevHmr from './src/services/catalog/dev-hmr'
+import rehypeMermaid from './src/services/markdown/mermaid'
+import { SHIKI_THEME, shikiTransformers } from './src/services/markdown/shiki'
 
 const { REDIS_URL, NODE_ENV, S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY } = loadEnv(
   process.env.NODE_ENV!,
@@ -67,7 +69,7 @@ export default defineConfig({
   },
   image: {
     domains: [config.settings.asset.host],
-    service: { entrypoint: './src/helpers/images/service' },
+    service: { entrypoint: './src/services/images/service' },
   },
   session: {
     driver: sessionDrivers.redis({
@@ -113,6 +115,14 @@ export default defineConfig({
       accessKey: S3_ACCESS_KEY,
       secretAccessKey: S3_SECRET_ACCESS_KEY,
     }),
+    react({
+      // React is only used for server-side e-mail template rendering today.
+      // Limit the integration to that one folder so the rest of the site
+      // stays an Astro-only zero-JS surface and we don't ship a runtime
+      // for components that never need React.
+      include: ['**/services/email/**'],
+    }),
+    catalogDevHmr(),
   ],
   adapter: node({
     mode: 'standalone',

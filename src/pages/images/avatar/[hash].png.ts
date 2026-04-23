@@ -4,10 +4,10 @@ import { joinPaths } from '@astrojs/internal-helpers/path'
 import { Buffer } from 'node:buffer'
 
 import config from '@/blog.config'
-import { queryEmail } from '@/helpers/auth/user'
-import { AvatarStatus, cacheAvatar, loadAvatar } from '@/helpers/cache'
-import { compressImage } from '@/helpers/images/assets'
-import { encodedEmail, isNumeric } from '@/helpers/tools'
+import { findEmailById } from '@/db/query/user'
+import { compressImage } from '@/services/images/assets'
+import { AvatarStatus, cacheAvatar, loadAvatar } from '@/shared/cache'
+import { encodedEmail, isNumeric } from '@/shared/tools'
 
 function defaultAvatar(): string {
   return joinPaths(import.meta.env.SITE, '/images/default-avatar.png')
@@ -30,16 +30,17 @@ async function avatarImage(hash: string): Promise<Buffer | null> {
 }
 
 // Normalize the avatar cache key so a user accessed both as `/{userId}.png`
-// and as `/{md5(email)}.png` shares one cache entry. We keep two indirections:
+// and as `/{sha256(email)}.png` shares one cache entry. We keep two
+// indirections:
 //   - `numeric id` → email (DB lookup)
-//   - email → md5 hash (deterministic, hashing is the canonical key)
-// The canonical cache key is always `avatar:<md5hash>`.
+//   - email → sha256 hash (deterministic; matches Gravatar's modern hashing)
+// The canonical cache key is always `avatar:<sha256hash>`.
 async function resolveCanonicalKey(rawHash: string): Promise<string | null> {
   if (isNumeric(rawHash)) {
-    const email = await queryEmail(BigInt(rawHash))
+    const email = await findEmailById(BigInt(rawHash))
     return email === null ? null : encodedEmail(email)
   }
-  // Already an md5-style hash (32 hex). Treat as canonical.
+  // Already a sha256 hex digest. Treat as canonical.
   return rawHash
 }
 

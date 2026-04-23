@@ -1,4 +1,6 @@
 ---
+import Icon from '@/ui/icons/Icon.astro'
+
 interface Props {
   url: string
   name: string
@@ -20,6 +22,6 @@ const { url, name, title, icon, className } = Astro.props
   data-url={url}
 >
   <span>
-    <i class={`iconfont ${icon}`}></i>
+    <Icon name={icon} />
   </span>
 </div>

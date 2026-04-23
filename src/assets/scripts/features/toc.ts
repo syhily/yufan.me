@@ -1,4 +1,4 @@
-import { scrollIntoView } from '@/assets/scripts/actions'
+import { scrollIntoView } from '@/assets/scripts/shared/actions'
 
 // Smooth-scroll for in-page anchor links and toggle for the menu tree.
 export function initTableOfContents(): void {

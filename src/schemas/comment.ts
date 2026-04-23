@@ -27,5 +27,6 @@ export const loadAllCommentsSchema = z.object({
   limit: z.number().min(1).max(100),
   pageKey: z.string().optional(),
   userId: z.string().optional(),
+  status: z.enum(['all', 'pending', 'approved']).optional(),
 })
 export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>

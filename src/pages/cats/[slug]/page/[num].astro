@@ -1,10 +1,10 @@
 ---
 import config from '@/blog.config'
-import { getCategory, getPosts } from '@/helpers/content/schema'
-import CategoryLayout from '@/layouts/posts/CategoryLayout.astro'
+import { getCategory, getPosts } from '@/services/catalog/schema'
+import PostListingLayout from '@/layouts/PostListingLayout.astro'
 
 const { slug, num } = Astro.params
-const category = getCategory(undefined, slug)
+const category = await getCategory(undefined, slug)
 
 if (!category || !num) {
   Astro.response.status = 404
@@ -16,7 +16,8 @@ if (pageNum <= 1) {
   return Astro.redirect(category.permalink)
 }
 
-const filteredPosts = getPosts({ hidden: true, schedule: false }).filter((post) => post.category === category.name)
+const allPosts = await getPosts({ hidden: true, schedule: false })
+const filteredPosts = allPosts.filter((post) => post.category === category.name)
 const pageSize = config.settings.pagination.category
 const total = Math.ceil(filteredPosts.length / pageSize)
 
@@ -25,4 +26,11 @@ if (pageNum > total) {
 }
 ---
 
-<CategoryLayout posts={filteredPosts} {category} {pageNum} />
+<PostListingLayout
+  title={category.name}
+  description={category.description}
+  posts={filteredPosts}
+  {pageNum}
+  {pageSize}
+  rootPath={category.permalink}
+/>

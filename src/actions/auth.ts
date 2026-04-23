@@ -1,11 +1,14 @@
 import { ActionError, defineAction } from 'astro:actions'
 
-import * as userRepo from '@/data/repositories/user'
-import { login } from '@/helpers/auth/session'
-import { createAdmin, createUserWithPassword, hasAdmin } from '@/helpers/auth/user'
-import { ErrorMessages } from '@/helpers/errors'
-import { getLogger } from '@/helpers/logger'
+import type { UserUpdate } from '@/db/query/user'
+
+import { updateUserById } from '@/db/query/user'
+import { hasAdmin, insertAdmin, registerUserWithPassword } from '@/db/query/user'
 import { signInSchema, signUpAdminSchema, signUpUserSchema, updateUserSchema } from '@/schemas/auth'
+import { login } from '@/services/auth/session'
+import { incrLimit } from '@/shared/cache'
+import { getLogger } from '@/shared/logger'
+import { ErrorMessages } from '@/shared/messages'
 import { catchDomain, withAdmin, withCsrf, withRateLimit } from '@/web/actions/middleware'
 
 const log = getLogger('auth')
@@ -44,7 +47,7 @@ export const auth = {
           message: ErrorMessages.INSTALLATION_DONE,
         })
       }
-      const res = await createAdmin(name, email, password)
+      const res = await insertAdmin(name, email, password)
       if (res.length === 0) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -66,7 +69,7 @@ export const auth = {
             throw new ActionError({ code: 'BAD_REQUEST', message: ErrorMessages.PASSWORD_MISMATCH })
           }
 
-          const user = await createUserWithPassword(name, email, password, '')
+          const user = await registerUserWithPassword(name, email, password, '')
           if (user === null) {
             throw new ActionError({
               code: 'CONFLICT',
@@ -113,7 +116,6 @@ export const auth = {
             if (!success) {
               // Mirror the previous behaviour: bump the rate-limit counter on
               // bad credentials specifically (not on every error).
-              const { incrLimit } = await import('@/helpers/cache')
               await incrLimit(ctx.clientAddress)
               throw new ActionError({
                 code: 'FORBIDDEN',
@@ -131,7 +133,7 @@ export const auth = {
     input: updateUserSchema,
     handler: catchDomain(
       withAdmin(async ({ userId, name, email, link, badgeName, badgeColor }) => {
-        const updateData: userRepo.UserUpdate = {}
+        const updateData: UserUpdate = {}
         if (name !== undefined) updateData.name = name
         if (email !== undefined) updateData.email = email
         if (link !== undefined) updateData.link = link
@@ -145,7 +147,7 @@ export const auth = {
           })
         }
 
-        const updated = await userRepo.updateUserById(BigInt(userId), updateData)
+        const updated = await updateUserById(BigInt(userId), updateData)
         if (updated === null) {
           throw new ActionError({
             code: 'NOT_FOUND',

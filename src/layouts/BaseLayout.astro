@@ -1,9 +1,10 @@
 ---
 import type { BlogConfig } from '@/blog.config'
 import config from '@/blog.config'
-import PageMeta from '@/components/meta/PageMeta.astro'
+import SeoMeta from '@/components/meta/SeoMeta.astro'
 import Footer from '@/components/partial/Footer.astro'
 import Header from '@/components/partial/Header.astro'
+import Icon from '@/ui/icons/Icon.astro'
 import '@/assets/styles/globals.css'
 
 interface Props {
@@ -33,7 +34,7 @@ const navigation = Astro.props.navigation || config.navigation
     <link rel="author" href={config.author.url} />
     <meta name="keywords" content={config.keywords.join(',')} />
     <slot name="og">
-      <PageMeta {title} {description} />
+      <SeoMeta {title} {description} />
     </slot>
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
@@ -56,7 +57,7 @@ const navigation = Astro.props.navigation || config.navigation
         <li class="fixed-gotop">
           <div class="btn btn-light btn-icon btn-lg btn-rounded btn-gotop">
             <span>
-              <i class="iconfont icon-arrowup"></i>
+              <Icon name="arrowup" />
             </span>
           </div>
         </li>

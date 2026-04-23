@@ -1,4 +1,4 @@
-import { scrollIntoView } from '@/assets/scripts/actions'
+import { scrollIntoView } from '@/assets/scripts/shared/actions'
 
 // Highlight the comment or heading targeted by the URL hash on initial load.
 export function initFocusHash(): void {

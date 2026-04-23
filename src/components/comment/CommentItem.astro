@@ -1,9 +1,9 @@
 ---
 import type { AstroSession } from 'astro'
-import type { CommentItem } from '@/helpers/comment/types'
+import type { CommentItem } from '@/services/comments/types'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import AdminBlock from '@/components/partial/AdminBlock.astro'
-import { formatLocalDate } from '@/helpers/content/formatter'
+import { formatLocalDate } from '@/services/markdown/formatter'
 
 interface Props {
   depth: number

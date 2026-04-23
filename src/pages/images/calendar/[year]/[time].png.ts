@@ -2,8 +2,8 @@ import type { APIRoute } from 'astro'
 
 import { DateTime } from 'luxon'
 
-import { loadBuffer } from '@/helpers/cache'
-import { renderCalendar } from '@/helpers/images/calendar'
+import { renderCalendar } from '@/services/images/calendar'
+import { loadBuffer } from '@/shared/cache'
 
 const timeRegex = /\d{4}/
 

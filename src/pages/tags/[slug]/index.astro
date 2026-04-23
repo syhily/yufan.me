@@ -1,16 +1,25 @@
 ---
-import { getPosts, getTag } from '@/helpers/content/schema'
-import TagLayout from '@/layouts/posts/TagLayout.astro'
+import config from '@/blog.config'
+import PostListingLayout from '@/layouts/PostListingLayout.astro'
+import { getPosts, getTag } from '@/services/catalog/schema'
 
 const { slug } = Astro.params
-const tag = getTag(undefined, slug)
+const tag = await getTag(undefined, slug)
 
 if (!tag) {
   Astro.response.status = 404
   return Astro.rewrite('/404')
 }
 
-const filteredPosts = getPosts({ hidden: true, schedule: false }).filter((post) => post.tags.includes(tag.name))
+const allPosts = await getPosts({ hidden: true, schedule: false })
+const filteredPosts = allPosts.filter((post) => post.tags.includes(tag.name))
 ---
 
-<TagLayout posts={filteredPosts} {tag} pageNum={1} />
+<PostListingLayout
+  title={`标签 “${tag.name}”`}
+  posts={filteredPosts}
+  pageNum={1}
+  pageSize={config.settings.pagination.tags}
+  rootPath={tag.permalink}
+  redirectIfEmpty
+/>

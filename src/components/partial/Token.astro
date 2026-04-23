@@ -1,5 +1,5 @@
 ---
-import { generateToken } from '@/helpers/auth/csrf'
+import { generateToken } from '@/services/auth/csrf'
 
 const session = Astro.session
 const token = session ? generateToken(session) : 'Please configure your astro session'

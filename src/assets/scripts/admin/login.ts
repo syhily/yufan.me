@@ -1,6 +1,6 @@
 import { actions } from 'astro:actions'
 
-import { handleActionError, showErrorDialog } from '@/assets/scripts/actions'
+import { handleActionError, showErrorDialog } from '@/assets/scripts/shared/actions'
 
 const loginForm = document.querySelector('form')
 if (loginForm !== null) {

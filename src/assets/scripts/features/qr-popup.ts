@@ -1,4 +1,4 @@
-import { qrcode } from '@/assets/scripts/qrcode'
+import { qrcode } from '@/assets/scripts/shared/qrcode'
 
 import { buildQrPopup, hidePopup, showPopup } from './popup'
 

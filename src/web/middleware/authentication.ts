@@ -1,8 +1,8 @@
 import { defineMiddleware } from 'astro:middleware'
 import querystring from 'node:querystring'
 
-import { userSession } from '@/helpers/auth/session'
-import { getLogger } from '@/helpers/logger'
+import { userSession } from '@/services/auth/session'
+import { getLogger } from '@/shared/logger'
 import { ADMIN_ENDPOINTS, isAdminEndpoint, isAdminPath } from '@/web/middleware/admin-endpoints'
 
 const log = getLogger('middleware.auth')

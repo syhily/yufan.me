@@ -1,0 +1,43 @@
+---
+import type { Post, Tag } from '@/services/catalog/schema'
+import config from '@/blog.config'
+import FeaturePosts from '@/components/page/post/FeaturePosts.astro'
+import PostCards from '@/components/page/post/PostCards.astro'
+import SeoMeta from '@/components/meta/SeoMeta.astro'
+import Sidebar from '@/components/sidebar/Sidebar.astro'
+import BaseLayout from '@/layouts/BaseLayout.astro'
+
+interface Props {
+  posts: Post[]
+  pageNum: number
+  tags: Tag[]
+}
+
+const { posts, pageNum, tags } = Astro.props
+
+// Redirect to the homepage.
+if (pageNum < 1) {
+  return Astro.redirect('/')
+}
+
+const totalPage = Math.ceil(posts.length / config.settings.pagination.posts)
+const buildPageUrl = (n: number): string => (n <= 1 ? '/' : `/page/${n}`)
+const pageTitle = pageNum > 1 ? `第 ${pageNum} 页` : undefined
+const canonicalUrl = buildPageUrl(pageNum)
+const prevUrl = pageNum > 1 ? buildPageUrl(pageNum - 1) : undefined
+const nextUrl = pageNum < totalPage ? buildPageUrl(pageNum + 1) : undefined
+---
+
+<BaseLayout title={pageTitle}>
+  <SeoMeta slot="og" title={pageTitle} pageUrl={canonicalUrl} canonical {prevUrl} {nextUrl} noindex={pageNum > 1} />
+  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    {pageNum === 1 && <FeaturePosts {posts} />}
+    <div class="container">
+      <div class="row">
+        <PostCards {pageNum} {posts} />
+        <Sidebar {posts} {tags} />
+      </div>
+    </div>
+  </div>
+  <slot />
+</BaseLayout>

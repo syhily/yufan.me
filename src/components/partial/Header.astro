@@ -4,6 +4,7 @@ import config from '@/blog.config'
 import AdminBlock from '@/components/partial/AdminBlock.astro'
 import QRDialog from '@/components/partial/QRDialog.astro'
 import SearchIcon from '@/components/search/SearchIcon.astro'
+import Icon from '@/ui/icons/Icon.astro'
 import querystring from 'node:querystring'
 
 interface Props {
@@ -60,11 +61,7 @@ const { navigation } = Astro.props
                 class="btn btn-dark btn-icon btn-circle button-social"
               >
                 <span>
-                  {!social.icon.startsWith('<svg') ? (
-                    <i class={`iconfont ${social.icon}`} />
-                  ) : (
-                    <Fragment set:html={social.icon} />
-                  )}
+                  <Icon name={social.icon} />
                 </span>
               </a>
             )
@@ -83,7 +80,7 @@ const { navigation } = Astro.props
       </a>
       <div class="flex-fill"></div>
       <div class="menu-toggler text-xl">
-        <i class="d-block iconfont icon-menu"></i>
+        <Icon name="menu" class="d-block" />
       </div>
     </div>
   </div>

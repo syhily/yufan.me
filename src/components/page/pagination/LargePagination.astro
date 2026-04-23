@@ -1,5 +1,6 @@
 ---
 import PaginationItem from '@/components/page/pagination/PaginationItem.astro'
+import Icon from '@/ui/icons/Icon.astro'
 
 interface Props {
   current: number
@@ -23,7 +24,7 @@ const pages =
         <PaginationItem pageNum={page} current={current} rootPath={rootPath} />
       ))}
       <span class="page-numbers dots">
-        <i class="iconfont icon-ellipsis" />
+        <Icon name="ellipsis" />
       </span>
       <PaginationItem pageNum={total} current={current} rootPath={rootPath} />
     </>
@@ -31,7 +32,7 @@ const pages =
     <>
       <PaginationItem pageNum={1} current={current} rootPath={rootPath} />
       <span class="page-numbers dots">
-        <i class="iconfont icon-ellipsis" />
+        <Icon name="ellipsis" />
       </span>
       {pages.map((page) => (
         <PaginationItem pageNum={page} current={current} rootPath={rootPath} />
@@ -41,13 +42,13 @@ const pages =
     <>
       <PaginationItem pageNum={1} current={current} rootPath={rootPath} />
       <span class="page-numbers dots">
-        <i class="iconfont icon-ellipsis" />
+        <Icon name="ellipsis" />
       </span>
       {pages.map((page) => (
         <PaginationItem pageNum={page} current={current} rootPath={rootPath} />
       ))}
       <span class="page-numbers dots">
-        <i class="iconfont icon-ellipsis" />
+        <Icon name="ellipsis" />
       </span>
       <PaginationItem pageNum={total} current={current} rootPath={rootPath} />
     </>

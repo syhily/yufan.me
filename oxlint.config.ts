@@ -10,5 +10,7 @@ export default defineConfig({
   },
   rules: {
     'eslint/no-unused-vars': 'error',
+    'typescript/no-namespace': 'error',
+    'import/no-namespace': 'error',
   },
 })

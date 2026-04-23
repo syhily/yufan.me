@@ -1,8 +1,8 @@
 ---
 import config from '@/blog.config'
 import Comment from '@/components/comment/Comment.astro'
-import { userSession } from '@/helpers/auth/session'
-import { increaseViews, loadComments } from '@/helpers/comment/loader'
+import { userSession } from '@/services/auth/session'
+import { increaseViews, loadComments } from '@/services/comments/loader'
 import { joinPaths } from '@astrojs/internal-helpers/path'
 
 // This is a component which loads comments and renders it on server-side.

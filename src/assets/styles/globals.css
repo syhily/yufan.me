@@ -1,6 +1,5 @@
 @import 'bootstrap/dist/css/bootstrap.css';
 @import '@/assets/styles/reset.css';
-@import '@/assets/fonts/iconfont/iconfont.css';
 @import '@fontsource/iosevka/500.css';
 @import '@fontsource/iosevka/500-italic.css';
 @import '@/assets/fonts/opposans.css';
@@ -2287,6 +2286,16 @@ a:hover .overlay {
   vertical-align: middle;
 }
 
+/* Heart icon: lock to the button's own font-size and align to the number's
+   visual center. Without this the responsive `.btn-lg` font-size shift would
+   leave the icon (sized via .icon -> 1em) feeling out of proportion. */
+.post-like .icon {
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: middle;
+  margin-top: -2px;
+}
+
 .post-like.current {
   background: #ff4053;
   border-color: #ff4053;
@@ -3218,4 +3227,20 @@ a.index-menu-link:hover {
 .comment-edit-area {
   display: block;
   width: 100%;
+}
+
+/*--------------------------------------------------------------
+# Inline SVG icons
+# The icon SVGs (eye, heart-fill, comment, …) ship with only a viewBox.
+# Without an explicit size, browsers render them at the viewBox's 1024px,
+# which broke alignment in flex rows like .list-like (post card meta).
+# Track the surrounding font-size by default; tweak via .text-md / .text-lg
+# or by passing `size=` to <Icon /> at the call site.
+--------------------------------------------------------------*/
+.icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+  fill: currentColor;
 }

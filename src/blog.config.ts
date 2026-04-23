@@ -37,19 +37,19 @@ const config: BlogConfig = {
   socials: [
     {
       name: 'GitHub',
-      icon: 'icon-github-fill',
+      icon: 'github-fill',
       type: 'link',
       link: 'https://github.com/syhily',
     },
     {
       name: 'Twitter',
-      icon: 'icon-twitter',
+      icon: 'twitter',
       type: 'link',
       link: 'https://x.com/amehochan',
     },
     {
       name: 'Yufan Sheng',
-      icon: 'icon-wechat',
+      icon: 'wechat',
       type: 'qrcode',
       title: '扫码加我微信好友',
       link: 'https://u.wechat.com/EBpmuKmrVz4YVFnoCJdnruA',

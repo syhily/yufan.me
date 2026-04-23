@@ -1,9 +1,10 @@
 ---
 import config from '@/blog.config'
 import Pagination from '@/components/page/pagination/Pagination.astro'
-import { formatShowDate, slicePosts } from '@/helpers/content/formatter'
-import type { Post } from '@/helpers/content/schema'
-import { getCategory, getPostsWithMetadata } from '@/helpers/content/schema'
+import type { Post } from '@/services/catalog/schema'
+import { getCategory, getPostsWithMetadata } from '@/services/catalog/schema'
+import { formatShowDate, slicePosts } from '@/services/markdown/formatter'
+import Icon from '@/ui/icons/Icon.astro'
 import { Image } from 'astro:assets'
 
 interface Props {
@@ -24,6 +25,14 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, {
   views: true,
   comments: true,
 })
+const categoryLinks = new Map<string, string>()
+await Promise.all(
+  resolvedPosts.map(async (post) => {
+    if (categoryLinks.has(post.category)) return
+    const cat = await getCategory(post.category, undefined)
+    categoryLinks.set(post.category, cat?.permalink ?? '')
+  }),
+)
 ---
 
 <div class="content-wrapper col-12 col-xl-9">
@@ -38,7 +47,7 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, {
             <div class="media-overlay overlay-top">
               <a
                 class="d-none d-md-inline-block badge badge-md bg-white-overlay"
-                href={getCategory(post.category, undefined)?.permalink || ''}
+                href={categoryLinks.get(post.category) || ''}
               >
                 {post.category}
               </a>
@@ -60,15 +69,15 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, {
               <div class="d-flex flex-fill align-items-center text-muted text-sm">
                 <div class="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
                 <div class="list-like d-inline-block">
-                  <i class="text-md iconfont icon-eye" />
+                  <Icon name="eye" class="text-md" />
                   <span class="like-count">{post.meta.views}</span>
                 </div>
                 <div class="list-like d-inline-block">
-                  <i class="text-md iconfont icon-heart-fill" />
+                  <Icon name="heart-fill" class="text-md" />
                   <span class="like-count">{post.meta.likes}</span>
                 </div>
                 <div class="list-like d-inline-block">
-                  <i class="text-md iconfont icon-comment" />
+                  <Icon name="comment" class="text-md" />
                   <span class="like-count">{post.meta.comments}</span>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 ---
-import type { Post } from '@/helpers/content/schema'
-import _ from 'lodash'
+import type { Post } from '@/services/catalog/schema'
 import config from '@/blog.config'
+import { sampleSize } from '@/shared/tools'
 
 interface Props {
   posts: Post[]
@@ -18,7 +18,7 @@ const randomSize = config.settings.sidebar.post
         流年拾忆
       </div>
       <ul class="line">
-        {_.sampleSize(posts, randomSize).map((post) => (
+        {sampleSize(posts, randomSize).map((post) => (
           <li>
             <a href={post.permalink} title={post.title}>
               {post.title}

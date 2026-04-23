@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro'
 
-import { generateFeeds } from '@/helpers/content/feed'
+import { generateFeeds } from '@/services/feed'
 
 export type FeedFormat = 'rss' | 'atom'
 export type FeedScope = 'site' | 'category' | 'tag'

@@ -1,6 +1,6 @@
 import { actions } from 'astro:actions'
 
-import { handleActionError } from '@/assets/scripts/actions'
+import { handleActionError } from '@/assets/scripts/shared/actions'
 
 import { attachReplyOverlay, removeReplyOverlay } from './reply-overlay'
 

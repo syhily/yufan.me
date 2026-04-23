@@ -1,9 +1,9 @@
 ---
 import { Image } from 'astro:assets'
-import _ from 'lodash'
-import { friends } from '@/helpers/content/schema'
+import { getFriends } from '@/services/catalog/schema'
+import { shuffle } from '@/shared/tools'
 
-const list = _.shuffle(friends)
+const list = shuffle(await getFriends())
 ---
 
 {

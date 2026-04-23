@@ -1,13 +1,15 @@
 import { joinPaths } from '@astrojs/internal-helpers/path'
 
-import { getPosts, pages } from '@/helpers/content/schema'
+import { getPages, getPosts } from '@/services/catalog/schema'
 
 export async function GET() {
+  const [posts, pages] = await Promise.all([getPosts({ hidden: false, schedule: false }), getPages()])
+
   const result = `
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${import.meta.env.SITE}/</loc></url>
-  ${getPosts({ hidden: false, schedule: false })
+  ${posts
     .map((post) => {
       return `<url><loc>${joinPaths(import.meta.env.SITE, post.permalink)}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`
     })

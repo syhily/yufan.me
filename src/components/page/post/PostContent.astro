@@ -1,14 +1,15 @@
 ---
 import UnstyledMusicPlayer from '@/components/mdx/music/UnstyledMusicPlayer.astro'
 import UnstyledSolution from '@/components/mdx/solutions/UnstyledSolution.astro'
-import { getPosts } from '@/helpers/content/schema'
+import { getPosts } from '@/services/catalog/schema'
 
 interface Props {
   slug: string
 }
 
 const { slug } = Astro.props
-const post = getPosts({ hidden: true, schedule: true }).find((post) => post.slug === slug)
+const allPosts = await getPosts({ hidden: true, schedule: true })
+const post = allPosts.find((post) => post.slug === slug)
 if (!post) {
   Astro.response.status = 404
   return Astro.rewrite('/404')
