@@ -95,7 +95,6 @@
   },
   "overrides": {
     "@xmldom/xmldom": "^0.9.9",
-    "fast-xml-parser": "^5.7.1",
     "yaml": "^2.8.3"
   },
   "lint-staged": {
