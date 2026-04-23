@@ -22,9 +22,58 @@ The source code has gone through four major stages:
 ## Tech Stack
 
 1. Astro 6 (CMS)
-2. Postgres (stores post statistics, comments, and users)
-3. Redis (cache for generated images)
-4. Zeabur (mail and hosting services)
+2. React 19 (view layer; all UI templates are TSX server components)
+3. Postgres (stores post statistics, comments, and users)
+4. Redis (cache for generated images)
+5. Zeabur (mail and hosting services)
+
+## Template architecture (Astro shell + TSX body)
+
+Historically every page and partial was a `.astro` file. As of the 2026 Astro → TSX
+migration, the view layer is authored in React TSX and Astro acts as the framework,
+router, and MDX/asset pipeline. The conventions are:
+
+- Each route under `src/pages/**/*.astro` is a **thin shell (~3–10 lines)** that:
+  - Reads `Astro.params`, `Astro.session`, `Astro.url`, `Astro.locals`, etc.
+  - Performs short-circuit responses (`Astro.redirect`, `Astro.rewrite`,
+    `Astro.response.status`).
+  - Delegates the entire document body to a single `<PageBody.tsx />` server
+    component that receives plain JSON-ish props.
+- `src/layouts/BaseLayout.astro` and `src/layouts/AdminLayout.astro` own the
+  `<!doctype><html><head><body>` structure and side-effect-import global CSS.
+  The `.tsx` sibling (`BaseLayout.tsx` / `AdminLayout.tsx`) renders the inner
+  body chrome (header, main, sidebar, footer).
+- **Every other component** (partials, comment tree, sidebar, icons, SEO meta,
+  post cards, MDX wrappers, admin cards, etc.) is an async TSX **server
+  component**. Default rendering is server-only — `@astrojs/react` ships zero
+  client JS unless the component is explicitly tagged with a `client:*`
+  directive.
+- `slot` becomes `children` for the default slot; named slots (`<slot name="og">`)
+  become named React props (e.g. `og?: ReactNode` or a dedicated `headExtra`
+  prop pattern).
+- `set:html` / `<Fragment set:html={…}>` maps to either the
+  `src/components/ui/Html.tsx` helper or an inline `dangerouslySetInnerHTML`
+  on the host element.
+- Inline SVG icons use `import.meta.glob('@/assets/icons/*.svg', { query: '?raw' })`
+  and render through `src/components/icons/Icon.tsx`.
+- `astro:assets` `<Image />` is replaced by
+  `src/components/ui/AstroImage.tsx`, which calls `getImage()` server-side and
+  emits a plain optimized `<img>`.
+- MDX rendering stays in `.astro` shells because `Content` returned by
+  `await post.render()` is an Astro component. The `<Content components={…}/>`
+  call happens in the shell; the rendered body is passed as `children` into
+  the TSX body component.
+- When `src/actions/**/*.ts` needs to render HTML snippets via
+  `AstroContainer.renderToString`, it goes through tiny `*Partial.astro`
+  wrappers (`CommentPartial`, `CommentItemPartial`, `AdminCommentListPartial`)
+  that forward props into the TSX server component. The container is wired up
+  with both the MDX and React renderers in `src/services/markdown/render.ts`.
+- Per-route client `<script>` imports stay in the surviving `.astro` shell as
+  a single `<script>import '…';</script>` block (e.g. `global`, `admin/manage`,
+  `admin/login`, `admin/install`).
+- In `.astro` templates, when passing CSS classes to a TSX component, use the
+  React-idiomatic `className` prop — `@astrojs/react` drops `class` before
+  forwarding props to React components.
 
 ## Local Development
 

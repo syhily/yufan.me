@@ -1,7 +1,7 @@
 // Renders the admin pagination UI matching the look of `Pagination.astro`.
 // Uses DOM APIs only and binds click handlers via the provided callback.
 
-import { iconElement } from '@/ui/icons/icon'
+import { iconElement } from '@/components/icons/iconRaw'
 
 interface RenderArgs {
   totalComments: number

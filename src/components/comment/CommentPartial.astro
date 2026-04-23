@@ -1,0 +1,16 @@
+---
+import { Comment } from '@/components/comment/Comment'
+import { isAdmin } from '@/services/auth/session'
+import type { Comments } from '@/services/comments/types'
+import type { AstroSession } from 'astro'
+
+interface Props {
+  comments: Comments
+  session: AstroSession | undefined
+}
+
+const { comments, session } = Astro.props
+const admin = await isAdmin(session)
+---
+
+<Comment comments={comments} admin={admin} />

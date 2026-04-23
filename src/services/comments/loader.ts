@@ -31,7 +31,7 @@ import {
 } from '@/db/query/comment'
 import { findPageByKey, upsertPage } from '@/db/query/page'
 import { insertCommentUser, updateLastLogin } from '@/db/query/user'
-import { DomainError } from '@/domain/errors'
+import { DomainError } from '@/schemas/errors'
 import { isAdmin, userSession } from '@/services/auth/session'
 import { sendApprovedComment, sendNewComment, sendNewReply } from '@/services/email/sender'
 import { parseContent } from '@/services/markdown/parser'

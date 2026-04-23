@@ -2,9 +2,9 @@ import type { ActionAPIContext } from 'astro:actions'
 
 import { ActionError } from 'astro:actions'
 
-import type { DomainErrorCode } from '@/domain/errors'
+import type { DomainErrorCode } from '@/schemas/errors'
 
-import { DomainError } from '@/domain/errors'
+import { DomainError } from '@/schemas/errors'
 import { validateToken } from '@/services/auth/csrf'
 import { isAdmin, userSession } from '@/services/auth/session'
 import { exceedLimit, incrLimit } from '@/shared/cache'

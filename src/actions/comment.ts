@@ -3,9 +3,9 @@ import { z } from 'astro/zod'
 import { ActionError, defineAction } from 'astro:actions'
 
 import config from '@/blog.config'
-import AdminCommentList from '@/components/admin/AdminCommentList.astro'
-import Comment from '@/components/comment/Comment.astro'
-import CommentItem from '@/components/comment/CommentItem.astro'
+import AdminCommentList from '@/components/admin/AdminCommentListPartial.astro'
+import CommentItem from '@/components/comment/CommentItemPartial.astro'
+import Comment from '@/components/comment/CommentPartial.astro'
 import { findUserIdByEmail } from '@/db/query/user'
 import {
   commentEditSchema,

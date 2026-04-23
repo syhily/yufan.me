@@ -1,0 +1,18 @@
+---
+import { CommentItem } from '@/components/comment/CommentItem'
+import { isAdmin } from '@/services/auth/session'
+import type { CommentItem as CommentItemType } from '@/services/comments/types'
+import type { AstroSession } from 'astro'
+
+interface Props {
+  depth: number
+  comment: CommentItemType
+  pending?: boolean
+  session: AstroSession | undefined
+}
+
+const { depth, comment, pending, session } = Astro.props
+const admin = await isAdmin(session)
+---
+
+<CommentItem depth={depth} comment={comment} pending={pending} admin={admin} />

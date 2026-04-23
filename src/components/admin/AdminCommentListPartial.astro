@@ -1,0 +1,12 @@
+---
+import { AdminCommentList } from '@/components/admin/AdminCommentList'
+import type { AdminComment } from '@/services/comments/loader'
+
+interface Props {
+  comments: AdminComment[]
+}
+
+const { comments } = Astro.props
+---
+
+<AdminCommentList comments={comments} />

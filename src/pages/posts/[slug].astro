@@ -1,18 +1,11 @@
 ---
-import { joinPaths } from '@astrojs/internal-helpers/path'
-import { Image } from 'astro:assets'
-import config from '@/blog.config'
-import Comments from '@/components/comment/Comments.astro'
-import LikeButton from '@/components/like/LikeButton.astro'
-import LikeShare from '@/components/like/LikeShare.astro'
-import MusicPlayer from '@/components/mdx/music/MusicPlayer.astro'
-import Solution from '@/components/mdx/solutions/Solution.astro'
-import SeoMeta from '@/components/meta/SeoMeta.astro'
-import TableOfContents from '@/components/page/toc/TableOfContents.astro'
-import Sidebar from '@/components/sidebar/Sidebar.astro'
-import { getPost, getPosts, getTag, getTags } from '@/services/catalog/schema'
-import { formatLocalDate } from '@/services/markdown/formatter'
+import { MusicPlayer } from '@/components/mdx/music/MusicPlayer'
+import { Solution } from '@/components/mdx/solutions/Solution'
+import { SeoMeta } from '@/components/meta/SeoMeta'
+import { PostDetailBody } from '@/components/page/post/PostDetailBody'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getPost, getPosts, getTag, getTags } from '@/services/catalog/schema'
+import { Image } from 'astro:assets'
 
 const { slug } = Astro.params
 if (!slug) {
@@ -46,42 +39,14 @@ const visibleTags = postTags.filter((tag): tag is NonNullable<typeof tag> => tag
     variant={{ kind: 'post', article: post }}
     canonical
   />
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-    <div class="container">
-      <div class="row">
-        <div class="content-wrapper col-12 col-xl-9">
-          <div class="post card card-md">
-            <div class="card-body">
-              <h1 class="post-title">{post.title}</h1>
-              <div class="post-meta text-sm text-muted mt-3 mb-4">
-                <time class="">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
-                {
-                  visibleTags.length > 0 &&
-                    visibleTags.map((tag) => (
-                      <>
-                        <a class="float-end ms-2 badge badge-light badge-pill" href={`/tags/${tag.slug}`}>
-                          {tag.name}
-                        </a>
-                      </>
-                    ))
-                }
-              </div>
-              <TableOfContents {headings} toc={post.toc} />
-              <div class="post-content">
-                <Content components={{ img: Image, MusicPlayer, Solution }} />
-              </div>
-              <LikeButton permalink={post.permalink} />
-              <LikeShare {post} />
-              {
-                post.comments && (
-                  <Comments commentKey={joinPaths(config.website, post.permalink, '/')} title={post.title} />
-                )
-              }
-            </div>
-          </div>
-        </div>
-        <Sidebar posts={sidebarPosts} {tags} />
-      </div>
-    </div>
-  </div>
+  <PostDetailBody
+    post={post}
+    headings={headings}
+    visibleTags={visibleTags}
+    sidebarPosts={sidebarPosts}
+    tags={tags}
+    session={Astro.session}
+  >
+    <Content components={{ img: Image, MusicPlayer, Solution }} />
+  </PostDetailBody>
 </BaseLayout>

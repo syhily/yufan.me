@@ -1,12 +1,11 @@
 ---
 import type { Post } from '@/services/catalog/schema'
 
-import Pagination from '@/components/page/pagination/Pagination.astro'
-import PostSquare from '@/components/page/post/PostSquare.astro'
-import SeoMeta from '@/components/meta/SeoMeta.astro'
+import { SeoMeta } from '@/components/meta/SeoMeta'
 import { slicePosts } from '@/services/markdown/formatter'
 import { getPostsWithMetadata } from '@/services/catalog/schema'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import { PostListingBody, computePostListingSeoProps } from '@/layouts/PostListingLayout'
 
 // Generic "title + grid + pagination" page used by Category, Tag, Search and
 // any future listing-style page. Two calling styles are supported:
@@ -82,16 +81,13 @@ const resolvedPosts = await getPostsWithMetadata(currentPosts, {
   comments: false,
 })
 
-// Listing pages share the same body across pageNum > 1, so a single
-// canonical URL would be a lie. We emit a per-page canonical pointing at
-// the rendered URL plus prev/next hints, and noindex paginated tail pages
-// to avoid diluting search rank.
-const pageTitle = pageNum > 1 ? `${title} · 第 ${pageNum} 页` : title
-const pageRoot = rootPath.endsWith('/') ? rootPath : `${rootPath}/`
-const buildPageUrl = (n: number): string => (n <= 1 ? rootPath : `${pageRoot}page/${n}`)
-const canonicalUrl = buildPageUrl(pageNum)
-const prevUrl = pageNum > 1 ? buildPageUrl(pageNum - 1) : undefined
-const nextUrl = pageNum < totalPage ? buildPageUrl(pageNum + 1) : undefined
+const { pageTitle, canonicalUrl, prevUrl, nextUrl, noindex } = computePostListingSeoProps({
+  title,
+  pageNum,
+  totalPage,
+  rootPath,
+  forceNoindex,
+})
 ---
 
 <BaseLayout title={pageTitle}>
@@ -101,45 +97,9 @@ const nextUrl = pageNum < totalPage ? buildPageUrl(pageNum + 1) : undefined
     description={description}
     pageUrl={canonicalUrl}
     canonical
-    {prevUrl}
-    {nextUrl}
-    noindex={forceNoindex || pageNum > 1}
+    prevUrl={prevUrl}
+    nextUrl={nextUrl}
+    noindex={noindex}
   />
-  <div class="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-    <div class="container">
-      <div class="mb-3 mb-lg-4">
-        <h1>{title}</h1>
-        {
-          description && (
-            <div class="text-muted mt-1">
-              <Fragment set:html={description} />
-            </div>
-          )
-        }
-      </div>
-      {
-        resolvedPosts.length === 0 ? (
-          <div class="data-null">
-            <div class="my-auto">
-              <h1 class="font-number">404</h1>
-              <div>抱歉，没有你要找的内容...</div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div class="row g-2 g-md-3 g-xxl-4 list-grouped">
-              {resolvedPosts.map((post, index) => (
-                <PostSquare post={post} first={index === 0} />
-              ))}
-            </div>
-            {(alwaysRenderPagination || totalPage > 1) && (
-              <div class="mt-4 mt-lg-5">
-                <Pagination current={pageNum} total={totalPage} {rootPath} />
-              </div>
-            )}
-          </>
-        )
-      }
-    </div>
-  </div>
+  <PostListingBody {title} {description} {resolvedPosts} {pageNum} {totalPage} {rootPath} {alwaysRenderPagination} />
 </BaseLayout>

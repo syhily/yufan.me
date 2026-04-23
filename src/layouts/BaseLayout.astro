@@ -1,10 +1,8 @@
 ---
 import type { BlogConfig } from '@/blog.config'
 import config from '@/blog.config'
-import SeoMeta from '@/components/meta/SeoMeta.astro'
-import Footer from '@/components/partial/Footer.astro'
-import Header from '@/components/partial/Header.astro'
-import Icon from '@/ui/icons/Icon.astro'
+import { SeoMeta } from '@/components/meta/SeoMeta'
+import { BaseLayout as BaseLayoutBody } from '@/layouts/BaseLayout'
 import '@/assets/styles/globals.css'
 
 interface Props {
@@ -14,11 +12,9 @@ interface Props {
   footer?: boolean
 }
 
-const title =
-  Astro.props.title === undefined ? `${config.title} - ${config.description}` : `${Astro.props.title} - ${config.title}`
-const description = Astro.props.description || config.description
-const showFooter = Astro.props.footer !== undefined ? Astro.props.footer : true
-const navigation = Astro.props.navigation || config.navigation
+const { title, description, navigation, footer } = Astro.props
+const pageTitle = title === undefined ? `${config.title} - ${config.description}` : `${title} - ${config.title}`
+const pageDescription = description || config.description
 ---
 
 <!doctype html>
@@ -26,16 +22,14 @@ const navigation = Astro.props.navigation || config.navigation
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="title" content={title} />
-    <meta name="description" content={description} />
+    <title>{pageTitle}</title>
+    <meta name="title" content={pageTitle} />
+    <meta name="description" content={pageDescription} />
     <meta name="generator" content="WordPress 3.2.1" />
     <meta name="author" content={config.author.name} />
     <link rel="author" href={config.author.url} />
     <meta name="keywords" content={config.keywords.join(',')} />
-    <slot name="og">
-      <SeoMeta {title} {description} />
-    </slot>
+    {Astro.slots.has('og') ? <slot name="og" /> : <SeoMeta title={pageTitle} description={pageDescription} />}
     <meta name="robots" content="index, follow" />
     <meta name="googlebot" content="index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1" />
     <link rel="alternate" type="application/rss+xml" title={config.title} href={`${config.website}/feed/`} />
@@ -47,22 +41,9 @@ const navigation = Astro.props.navigation || config.navigation
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>
   <body class="home blog">
-    <div class="site-layout">
-      <Header {navigation} />
-      <main class="site-main">
-        <slot />
-        {showFooter && <Footer />}
-      </main>
-      <ul class="site-fixed-widget">
-        <li class="fixed-gotop">
-          <div class="btn btn-light btn-icon btn-lg btn-rounded btn-gotop">
-            <span>
-              <Icon name="arrowup" />
-            </span>
-          </div>
-        </li>
-      </ul>
-    </div>
+    <BaseLayoutBody navigation={navigation} footer={footer} session={Astro.session} currentPath={Astro.url.pathname}>
+      <slot />
+    </BaseLayoutBody>
   </body>
 </html>
 

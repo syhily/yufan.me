@@ -1,8 +1,0 @@
----
-import { generateToken } from '@/services/auth/csrf'
-
-const session = Astro.session
-const token = session ? generateToken(session) : 'Please configure your astro session'
----
-
-<input type="hidden" name="token" value={token} />

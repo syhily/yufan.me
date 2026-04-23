@@ -115,13 +115,11 @@ export default defineConfig({
       accessKey: S3_ACCESS_KEY,
       secretAccessKey: S3_SECRET_ACCESS_KEY,
     }),
-    react({
-      // React is only used for server-side e-mail template rendering today.
-      // Limit the integration to that one folder so the rest of the site
-      // stays an Astro-only zero-JS surface and we don't ship a runtime
-      // for components that never need React.
-      include: ['**/services/email/**'],
-    }),
+    // React powers the entire view layer (layouts, partials, listings, post detail,
+    // admin, MDX wrappers) after the Astro → TSX migration. Templates are authored as
+    // async server components and render to static HTML by default — Astro only ships
+    // a client runtime when a component is tagged with a `client:*` directive.
+    react(),
     catalogDevHmr(),
   ],
   adapter: node({

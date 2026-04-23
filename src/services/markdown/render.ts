@@ -4,6 +4,7 @@ import type { TextNode } from 'ultrahtml'
 
 import { joinPaths } from '@astrojs/internal-helpers/path'
 import { getContainerRenderer } from '@astrojs/mdx'
+import { getContainerRenderer as getReactContainerRenderer } from '@astrojs/react'
 import { experimental_AstroContainer as AstroContainer } from 'astro/container'
 import { loadRenderers } from 'astro:container'
 import { ELEMENT_NODE, TEXT_NODE, transform, walk } from 'ultrahtml'
@@ -22,7 +23,7 @@ let containerPromise: Promise<AstroContainer> | null = null
 function getContainer(): Promise<AstroContainer> {
   if (containerPromise === null) {
     containerPromise = (async () => {
-      const renderers = await loadRenderers([getContainerRenderer()])
+      const renderers = await loadRenderers([getContainerRenderer(), getReactContainerRenderer()])
       return AstroContainer.create({ renderers })
     })()
   }

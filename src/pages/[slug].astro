@@ -1,17 +1,12 @@
 ---
-import { joinPaths } from '@astrojs/internal-helpers/path'
-import { Image } from 'astro:assets'
-import config from '@/blog.config'
-import Comments from '@/components/comment/Comments.astro'
-import LikeButton from '@/components/like/LikeButton.astro'
-import MusicPlayer from '@/components/mdx/music/MusicPlayer.astro'
-import Friends from '@/components/mdx/page/Friends.astro'
-import Solution from '@/components/mdx/solutions/Solution.astro'
-import SeoMeta from '@/components/meta/SeoMeta.astro'
-import TableOfContents from '@/components/page/toc/TableOfContents.astro'
-import Footer from '@/components/partial/Footer.astro'
-import { getPage } from '@/services/catalog/schema'
+import { MusicPlayer } from '@/components/mdx/music/MusicPlayer'
+import { Friends } from '@/components/mdx/page/Friends'
+import { Solution } from '@/components/mdx/solutions/Solution'
+import { SeoMeta } from '@/components/meta/SeoMeta'
+import { PageDetailBody } from '@/components/page/post/PageDetailBody'
 import BaseLayout from '@/layouts/BaseLayout.astro'
+import { getPage } from '@/services/catalog/schema'
+import { Image } from 'astro:assets'
 
 const { slug } = Astro.params
 if (!slug) {
@@ -36,22 +31,7 @@ const { Content, headings } = await page.render()
     ogImageUrl={page.og ? page.og : `/images/og/${page.slug}.png`}
     variant={{ kind: 'page', article: page }}
   />
-
-  <div class="row gx-0">
-    <div class="col-lg-8 col-xl-8">
-      <div class="post p-3 p-md-5">
-        <h1 class="post-title mb-3 mb-xl-4">{page.title}</h1>
-        <TableOfContents {headings} toc={page.toc} />
-        <div class="post-content">
-          <Content components={{ img: Image, Friends, MusicPlayer, Solution }} />
-        </div>
-        <LikeButton permalink={page.permalink} />
-        {page.comments && <Comments commentKey={joinPaths(config.website, page.permalink, '/')} title={page.title} />}
-      </div>
-      <Footer />
-    </div>
-    <div class="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
-      <div class="bg-img hv" style={{ backgroundImage: `url('${page.cover}')` }}></div>
-    </div>
-  </div>
+  <PageDetailBody page={page} headings={headings} session={Astro.session}>
+    <Content components={{ img: Image, Friends, MusicPlayer, Solution }} />
+  </PageDetailBody>
 </BaseLayout>
