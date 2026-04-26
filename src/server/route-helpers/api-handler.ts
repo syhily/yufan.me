@@ -84,6 +84,26 @@ export async function readSearchInput<T>(url: URL, schema: ZodType<T>): Promise<
   return parseInput(schema, obj)
 }
 
+// Parse + validate `multipart/form-data` or
+// `application/x-www-form-urlencoded` request bodies. Used by Resource Route
+// actions that are reached through `<fetcher.Form method="post">` instead of
+// the JSON channel. File entries are dropped (the API doesn't accept blobs);
+// duplicate keys collapse to the last value, matching `readSearchInput`.
+export async function readFormDataInput<T>(request: Request, schema: ZodType<T>): Promise<T> {
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    throw new ActionFailure(400, 'Invalid form-encoded request body')
+  }
+  const obj: Record<string, string> = {}
+  for (const [key, value] of formData.entries()) {
+    if (typeof value !== 'string') continue
+    obj[key] = value
+  }
+  return parseInput(schema, obj)
+}
+
 // Reject any HTTP method other than the listed ones. Use at the top of an
 // `action` that intentionally only accepts e.g. PATCH or DELETE. (Loaders
 // don't need this — React Router only routes GET/HEAD to them.)
@@ -185,10 +205,15 @@ export async function runApi<O>(args: RunApiArgs, handler: ApiHandler<O>): Promi
 
 type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
-// Where to read the input from. JSON body for write methods; URL search params
-// for GET (where bodies aren't conventional). Defaults are picked from the
-// HTTP method when the caller doesn't override them.
-type InputSource = 'json' | 'search'
+// Where to read the input from. JSON body for write methods; URL search
+// params for GET (where bodies aren't conventional); form-encoded body for
+// React Router `<fetcher.Form method="post">` submissions that go through a
+// Resource Route action. `'auto'` inspects the request's `Content-Type` and
+// dispatches to JSON or form parsing accordingly — useful for endpoints that
+// have to handle both shapes during a migration.
+//
+// Defaults are picked from the HTTP method when the caller doesn't override.
+type InputSource = 'json' | 'search' | 'form' | 'auto'
 
 interface DefineApiActionConfig<I, O> {
   method: HttpMethod | HttpMethod[]
@@ -211,6 +236,27 @@ interface DefineApiActionConfig<I, O> {
   }) => Promise<ApiResult<O>> | ApiResult<O>
 }
 
+// Resolve the request payload to the validated input shape, choosing the
+// channel based on the declared (or inferred) `InputSource`. Centralised so
+// the wire-format vocabulary stays in one place.
+async function readInputFrom<T>(ctx: ApiContext, source: InputSource, schema: ZodType<T>): Promise<T> {
+  if (source === 'auto') {
+    const contentType = ctx.request.headers.get('content-type') ?? ''
+    if (contentType.startsWith('application/json')) {
+      return readJsonInput(ctx.request, schema)
+    }
+    return readFormDataInput(ctx.request, schema)
+  }
+  switch (source) {
+    case 'search':
+      return readSearchInput(ctx.url, schema)
+    case 'form':
+      return readFormDataInput(ctx.request, schema)
+    case 'json':
+      return readJsonInput(ctx.request, schema)
+  }
+}
+
 // Shrinks the typical 10-line resource-route action down to a config object.
 // Equivalent to writing `runApi(args, ...)` by hand but factors out method
 // assertion, input parsing, admin gating, and lets the handler focus on the
@@ -227,11 +273,7 @@ export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
       // so admin endpoints skip the redundant `isAdmin(session)` re-read.
       if (config.requireAdmin) requireAdminSession(ctx.session)
       const isAdminLazy = config.requireAdmin ? () => true : () => isAdmin(ctx.session)
-      const payload = config.input
-        ? sourceFor(ctx.request) === 'search'
-          ? await readSearchInput(ctx.url, config.input)
-          : await readJsonInput(ctx.request, config.input)
-        : (undefined as I)
+      const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)
       return config.run({ ctx, payload, isAdmin: isAdminLazy })
     })
 }

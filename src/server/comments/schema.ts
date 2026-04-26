@@ -2,13 +2,17 @@ import { z } from 'zod'
 
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 
+// `rid` arrives either as `number` (legacy JSON callers) or `string`
+// (`<fetcher.Form>` submissions, where every field is form-encoded). We
+// coerce to a number and treat the special value `0` as "top-level reply",
+// which then gets normalised to `undefined` for `createComment`.
 export const commentReplySchema = z.object({
   page_key: z.string(),
   name: z.string(),
   email: z.email(),
   link: httpUrlOrEmptyStringSchema.optional(),
   content: z.string().min(1),
-  rid: z.number().optional(),
+  rid: z.coerce.number().optional(),
 })
 export type CommentReplyInput = z.infer<typeof commentReplySchema>
 
