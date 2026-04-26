@@ -1,0 +1,15 @@
+/*--------------------------------------------------------------
+# Inline SVG icons
+# The icon SVGs (eye, heart-fill, comment, …) ship with only a viewBox.
+# Without an explicit size, browsers render them at the viewBox's 1024px,
+# which broke alignment in flex rows like .list-like (post card meta).
+# Track the surrounding font-size by default; tweak via .text-md / .text-lg
+# or by passing `size=` to <Icon /> at the call site.
+--------------------------------------------------------------*/
+.icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}

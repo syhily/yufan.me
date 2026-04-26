@@ -1,0 +1,20 @@
+/* Bootstrap is consumed for reboot/grid/utility classes only. The heavier
+   component bundle is replaced by `bootstrap-compat.css`, which contains the
+   small button/form/card surface this app actually renders. */
+@import 'bootstrap/dist/css/bootstrap-reboot.css';
+@import 'bootstrap/dist/css/bootstrap-grid.css';
+@import 'bootstrap/dist/css/bootstrap-utilities.css';
+@import '@/assets/styles/reset.css';
+@import '@/assets/fonts/iosevka.css';
+@import '@/assets/styles/bootstrap-compat.css';
+
+/*--------------------------------------------------------------
+# Internal partials, declared in cascade order. The 3.2K-line
+# pre-refactor file lived at this single path; the split was made
+# in step 6 of the codebase optimization plan to make sections
+# discoverable while keeping the resolved cascade byte-identical.
+--------------------------------------------------------------*/
+@import '@/assets/styles/_base.css';
+@import '@/assets/styles/_widgets.css';
+@import '@/assets/styles/_comments.css';
+@import '@/assets/styles/_icons.css';

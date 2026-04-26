@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`snapshot: markdown parser HTML output > normalises external link attributes 1`] = `
+"<p><a href="https://github.com/example" target="_blank" rel="nofollow">gh</a></p>
+"
+`;
+
+exports[`snapshot: markdown parser HTML output > renders a fenced code block via shiki 1`] = `
+"<pre class="shiki solarized-light" style="background-color:#FDF6E3;color:#657B83" tabindex="0"><code><span class="line"><span style="color:#586E75;font-weight:bold">const</span><span style="color:#268BD2"> x</span><span style="color:#859900">:</span><span style="color:#859900"> number</span><span style="color:#859900"> =</span><span style="color:#D33682"> 1</span><span style="color:#657B83">;</span></span></code></pre>
+"
+`;
+
+exports[`snapshot: markdown parser HTML output > renders a heading + paragraph + bold/em sequence 1`] = `
+"<h1>Hello</h1>
+<p>This is <strong>bold</strong> and <em>em</em>.</p>
+"
+`;
+
+exports[`snapshot: markdown parser HTML output > renders blockquote + nested list 1`] = `
+"<blockquote>
+<p>note:</p>
+<ul>
+<li>one</li>
+<li>two<ul>
+<li>nested</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+"
+`;

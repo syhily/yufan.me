@@ -1,0 +1,137 @@
+/* Minimal Bootstrap component surface used by the React templates. Grid,
+   reboot, and utility classes come from Bootstrap's split bundles; this file
+   keeps the handful of component primitives the site still references. */
+
+.btn {
+  display: inline-block;
+  border: 1px solid transparent;
+  text-align: center;
+  vertical-align: middle;
+  text-decoration: none;
+  user-select: none;
+  background-color: transparent;
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.btn:disabled,
+.btn.disabled {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.btn-outline-success {
+  color: var(--btn-success);
+  border-color: var(--btn-success);
+}
+
+.btn-outline-success:hover,
+.btn-outline-success:focus,
+.btn-outline-success:not(:disabled):not(.disabled):active {
+  color: #fff;
+  background-color: var(--btn-success);
+  border-color: var(--btn-success);
+}
+
+.btn-outline-danger {
+  color: var(--color-danger);
+  background-color: var(--btn-outline-danger);
+  border-color: var(--btn-outline-danger);
+}
+
+.btn-outline-danger:hover,
+.btn-outline-danger:focus,
+.btn-outline-danger:not(:disabled):not(.disabled):active {
+  color: #fff;
+  background-color: var(--btn-danger);
+  border-color: var(--btn-danger);
+}
+
+.form-label {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+  display: block;
+  width: 100%;
+  font-weight: 400;
+  line-height: 1.5;
+  background-color: #fff;
+  background-clip: padding-box;
+  appearance: none;
+}
+
+.form-control {
+  border: 1px solid var(--border-light);
+}
+
+.form-select {
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23283248' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+}
+
+.form-select:focus {
+  border-color: var(--border-muted);
+  outline: 0;
+  box-shadow: none;
+}
+
+.form-control-color {
+  width: 3rem;
+  height: calc(37px + 2px);
+  padding: 0.375rem;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.card-body {
+  flex: 1 1 auto;
+  padding: 1rem;
+}
+
+.spinner-border {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 0.25em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alert {
+  position: relative;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.alert-danger {
+  color: var(--color-danger);
+  background-color: var(--btn-outline-danger);
+  border-color: var(--btn-outline-danger);
+}

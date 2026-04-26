@@ -1,0 +1,37 @@
+.site-tooltip {
+  position: absolute;
+  z-index: 1080;
+  max-width: min(24rem, calc(100vw - 1rem));
+  padding: 0.375rem 0.625rem;
+  border-radius: var(--radius-xs);
+  color: var(--color-dark);
+  background-color: #fff;
+  box-shadow: 0 8px 28px rgb(40 49 73 / 14%);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.site-tooltip::before {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  content: '';
+}
+
+.site-tooltip-top::before {
+  left: 50%;
+  bottom: -6px;
+  margin-left: -6px;
+  border-width: 6px 6px 0;
+  border-color: #fff transparent transparent;
+}
+
+.site-tooltip-left::before {
+  top: 50%;
+  right: -6px;
+  margin-top: -6px;
+  border-width: 6px 0 6px 6px;
+  border-color: transparent transparent transparent #fff;
+}
