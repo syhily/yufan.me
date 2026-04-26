@@ -7,7 +7,7 @@ import { API_ACTIONS } from '@/client/api/actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { idStr } from '@/shared/tools'
-import { Icon } from '@/ui/icons/Icon'
+import { Icon } from '@/ui/icons/icons'
 
 interface ApiEnvelope<T> {
   data?: T

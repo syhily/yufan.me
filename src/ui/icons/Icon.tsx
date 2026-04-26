@@ -1,31 +1,24 @@
 // Inline SVG icon renderer for React server components.
 //
-// Each icon under `src/ui/icons/svg/*.svg` is eagerly imported as a raw string
-// via Vite's `?raw` query. We pre-parse the opening `<svg>` tag at module load
-// so we can strip out the vendor-exported sizing attributes that collide with
-// our own sizing rules, and emit a bare `<svg class="icon icon-<name>" …>`
-// element. Because React cannot inject a raw `<svg>` as the root of a subtree,
-// we wrap it in a `display: contents` span — invisible to layout, the
-// box-model, and CSS selectors that descend into `.icon`, so the rest of the
-// stylesheet can stay unchanged.
+// Each icon under `src/ui/icons/svg/*.svg` is exported as a *named* component
+// from `@/ui/icons/icons` (e.g. `MenuIcon`, `SearchIcon`). Call sites use
+// static named imports so Rolldown can statically analyse which icons are
+// actually shipped (`bundle-analyzable-paths`, plus the shadcn "Pass icons as
+// objects, not string keys" rule).
 //
-// Since the output is plain HTML, no React runtime ships to the client
-// unless the enclosing component is flagged with a `client:*` directive.
+// This file used to expose a string-keyed `<Icon name="…" />` lookup backed by
+// a `import.meta.glob` map; that defeated the bundler's static analysis and
+// forced every page to ship every SVG. The shared renderer below is the only
+// surface left, and it is consumed exclusively through `@/ui/icons/icons`.
 
-interface ParsedIcon {
+export interface ParsedIcon {
   /** Markup between the opening `<svg>` tag and the closing `</svg>`. */
   inner: string
   /** The original `<svg ...>` opening-tag attributes, minus width/height/class/fill. */
   attrs: string
 }
 
-const rawModules = import.meta.glob<string>('@/ui/icons/svg/*.svg', {
-  eager: true,
-  query: '?raw',
-  import: 'default',
-})
-
-function parseSvg(raw: string): ParsedIcon {
+export function parseSvg(raw: string): ParsedIcon {
   const openMatch = raw.match(/<svg\b([^>]*)>/i)
   if (!openMatch) {
     throw new Error('Failed to parse SVG: missing <svg> element')
@@ -41,12 +34,47 @@ function parseSvg(raw: string): ParsedIcon {
   return { inner, attrs }
 }
 
+export interface RenderInlineIconOptions {
+  icon: ParsedIcon
+  name: string
+  size?: string | number
+  title?: string
+  className?: string
+}
+
+// Shared HTML construction used by every per-icon component. Keeps the
+// `<svg ... fill="currentColor">` envelope identical to the previous
+// string-keyed `Icon` so existing CSS selectors (`.icon`, `.icon-<name>`)
+// still match.
+export function renderInlineIcon({ icon, name, size, title, className }: RenderInlineIconOptions) {
+  const dim = size ?? '1em'
+  const classList = ['icon', `icon-${name}`, className].filter(Boolean).join(' ')
+  const titleMarkup = title ? `<title>${escapeHtml(title)}</title>` : ''
+  const role = title ? 'img' : undefined
+  const ariaHidden = title ? undefined : 'true'
+  const svg =
+    `<svg ${icon.attrs} width="${dim}" height="${dim}" class="${classList}"` +
+    ` fill="currentColor" focusable="false"` +
+    (role ? ` role="${role}"` : '') +
+    (ariaHidden ? ` aria-hidden="${ariaHidden}"` : '') +
+    `>${titleMarkup}${icon.inner}</svg>`
+
+  return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: svg }} />
+}
+
+export interface IconProps {
+  /** CSS sizing hint applied to the rendered SVG. Defaults to `1em`. */
+  size?: string | number
+  /** Accessible title; if provided the icon becomes `role="img"`. */
+  title?: string
+  className?: string
+}
+
 // Hand-curated union of every icon currently shipped under
-// `src/ui/icons/svg`. Kept explicit (rather than a generic `string`) so
-// that callers like `<Icon name="…" />` are typed: typos and missing icons
-// are caught at compile time instead of at render time. The runtime assert
-// below makes the dev/test loop immediately surface any drift between this
-// list and the actual SVG inventory.
+// `src/ui/icons/svg`. Used by `blog.config.ts` and the `<DynamicIcon>` shim
+// for call sites that genuinely select an icon from runtime config (e.g.
+// social link icons). The 1:1 map between this union and the named exports
+// of `@/ui/icons/icons` is asserted at the bottom of `icons.tsx`.
 export type IconName =
   | 'arrowup'
   | 'check'
@@ -70,81 +98,6 @@ export type IconName =
   | 'user'
   | 'wechat'
   | 'weibo'
-
-const icons: Record<string, ParsedIcon> = {}
-for (const [path, raw] of Object.entries(rawModules)) {
-  const name = path
-    .split('/')
-    .pop()!
-    .replace(/\.svg$/, '')
-  icons[name] = parseSvg(raw)
-}
-
-// Surface drift between the on-disk SVG set and the `IconName` union early.
-// In production the assertion is skipped (it would only ever throw on a
-// shipped build that already typecheck-failed anyway).
-if (import.meta.env.DEV) {
-  const declared = new Set<string>([
-    'arrowup',
-    'check',
-    'close',
-    'comment',
-    'delete',
-    'edit',
-    'ellipsis',
-    'eye',
-    'github-fill',
-    'heart-fill',
-    'left',
-    'link',
-    'menu',
-    'qq',
-    'refresh',
-    'reply',
-    'right',
-    'search',
-    'twitter',
-    'user',
-    'wechat',
-    'weibo',
-  ] satisfies IconName[])
-  for (const name of Object.keys(icons)) {
-    if (!declared.has(name)) {
-      throw new Error(
-        `Icon "${name}" exists under src/ui/icons/svg/ but is missing from the IconName union in src/ui/icons/Icon.tsx.`,
-      )
-    }
-  }
-}
-
-export interface IconProps {
-  name: IconName
-  /** CSS sizing hint applied to the rendered SVG. Defaults to `1em`. */
-  size?: string | number
-  /** Accessible title; if provided the icon becomes `role="img"`. */
-  title?: string
-  className?: string
-}
-
-export function Icon({ name, size, title, className }: IconProps) {
-  const icon = icons[name]
-  if (!icon) {
-    throw new Error(`Unknown icon: ${name}. Add the SVG to src/ui/icons/svg/${name}.svg`)
-  }
-  const dim = size ?? '1em'
-  const classList = ['icon', `icon-${name}`, className].filter(Boolean).join(' ')
-  const titleMarkup = title ? `<title>${escapeHtml(title)}</title>` : ''
-  const role = title ? 'img' : undefined
-  const ariaHidden = title ? undefined : 'true'
-  const svg =
-    `<svg ${icon.attrs} width="${dim}" height="${dim}" class="${classList}"` +
-    ` fill="currentColor" focusable="false"` +
-    (role ? ` role="${role}"` : '') +
-    (ariaHidden ? ` aria-hidden="${ariaHidden}"` : '') +
-    `>${titleMarkup}${icon.inner}</svg>`
-
-  return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: svg }} />
-}
 
 function escapeHtml(s: string): string {
   return s

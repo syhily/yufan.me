@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { Icon } from '@/ui/icons/Icon'
+import { ArrowUpIcon } from '@/ui/icons/icons'
 
 // Scroll-to-top button. Becomes visible only once the reader has moved past
 // the initial viewport. Replaces the vanilla `features/scroll-top.ts` glue.
@@ -36,7 +36,7 @@ export function ScrollTopButton() {
         onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
       >
         <span>
-          <Icon name="arrowup" />
+          <ArrowUpIcon />
         </span>
       </button>
     </li>

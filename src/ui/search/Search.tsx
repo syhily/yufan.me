@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router'
 
 import config from '@/blog.config'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { Icon } from '@/ui/icons/Icon'
+import { SearchIcon } from '@/ui/icons/icons'
 import { Popup } from '@/ui/primitives/Popup'
 
 function searchPath(raw: string): string {
@@ -52,7 +52,7 @@ export function SearchBar() {
 }
 
 // Header search icon: opens a centered popup containing a search form.
-export function SearchIcon() {
+export function SearchIconButton() {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const popupInputRef = useRef<HTMLInputElement | null>(null)
@@ -88,7 +88,7 @@ export function SearchIcon() {
         }}
       >
         <span>
-          <Icon name="search" />
+          <SearchIcon />
         </span>
       </button>
       <SearchPopup open={open} onClose={handleClose} inputRef={popupInputRef} />

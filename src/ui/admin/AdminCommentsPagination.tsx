@@ -1,4 +1,4 @@
-import { Icon } from '@/ui/icons/Icon'
+import { Icon } from '@/ui/icons/icons'
 
 export interface AdminCommentsPaginationProps {
   totalPages: number

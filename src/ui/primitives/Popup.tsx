@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { Icon } from '@/ui/icons/Icon'
+import { CloseIcon } from '@/ui/icons/icons'
 
 export interface PopupProps {
   open: boolean
@@ -75,7 +75,7 @@ export function Popup({
             onClose()
           }}
         >
-          <Icon name="close" size={28} className="svg-white" />
+          <CloseIcon size={28} className="svg-white" />
         </button>
         <div className="nice-popup-content">{children}</div>
       </div>

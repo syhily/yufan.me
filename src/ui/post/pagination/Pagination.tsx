@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import { Icon } from '@/ui/icons/Icon'
+import { EllipsisIcon } from '@/ui/icons/icons'
 
 export interface PaginationProps {
   current: number
@@ -81,7 +81,7 @@ function WindowedPagination({ current, total, rootPath }: InnerProps) {
 function Ellipsis() {
   return (
     <span className="page-numbers dots">
-      <Icon name="ellipsis" />
+      <EllipsisIcon />
     </span>
   )
 }

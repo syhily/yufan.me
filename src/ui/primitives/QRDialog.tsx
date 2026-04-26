@@ -7,7 +7,9 @@ import type { QRCodeSVG as QRCodeSVGComponent } from 'qrcode.react'
 
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
-import { Icon, type IconName } from '@/ui/icons/Icon'
+import type { IconName } from '@/ui/icons/Icon'
+
+import { DynamicIcon } from '@/ui/icons/icons'
 import { Popup } from '@/ui/primitives/Popup'
 
 export interface QRDialogProps {
@@ -55,7 +57,7 @@ export function QRDialog({ url, name, title, icon, className }: QRDialogProps) {
     <>
       <button type="button" ref={triggerRef} className={rootClass} title={name} aria-label={title} onClick={handleOpen}>
         <span>
-          <Icon name={icon} />
+          <DynamicIcon name={icon} />
         </span>
       </button>
       {open && (

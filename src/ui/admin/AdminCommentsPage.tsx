@@ -14,7 +14,7 @@ import { API_ACTIONS } from '@/client/api/actions'
 import { idStr } from '@/shared/tools'
 import { AdminCommentList } from '@/ui/admin/AdminCommentList'
 import { AdminCommentsPagination } from '@/ui/admin/AdminCommentsPagination'
-import { Icon } from '@/ui/icons/Icon'
+import { Icon } from '@/ui/icons/icons'
 
 interface ApiEnvelope<T> {
   data?: T

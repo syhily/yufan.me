@@ -5,7 +5,7 @@ import type { TocOpts } from '@/shared/toc'
 
 import config from '@/blog.config'
 import { generateToC } from '@/shared/toc'
-import { Icon } from '@/ui/icons/Icon'
+import { LeftIcon, RightIcon } from '@/ui/icons/icons'
 import { TocItems } from '@/ui/post/toc/TocItems'
 
 export interface TableOfContentsProps {
@@ -55,7 +55,7 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
         aria-expanded={visible}
         onClick={onToggle}
       >
-        <Icon name={visible ? 'right' : 'left'} className="text-md" />
+        {visible ? <RightIcon className="text-md" /> : <LeftIcon className="text-md" />}
       </button>
       <div className="post-menu">
         <div className="toc-wrap">

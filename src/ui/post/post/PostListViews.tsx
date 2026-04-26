@@ -3,9 +3,10 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
+import type { IconName } from '@/ui/icons/Icon'
 
 import { formatShowDate } from '@/shared/formatter'
-import { Icon, type IconName } from '@/ui/icons/Icon'
+import { DynamicIcon } from '@/ui/icons/icons'
 import { Pagination } from '@/ui/post/pagination/Pagination'
 import { Image } from '@/ui/primitives/Image'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
@@ -209,7 +210,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
 function ListMetric({ icon, value }: { icon: IconName; value: number }) {
   return (
     <div className="list-like d-inline-block">
-      <Icon name={icon} className="text-md" />
+      <DynamicIcon name={icon} className="text-md" />
       <span className="like-count">{value}</span>
     </div>
   )
@@ -255,7 +256,7 @@ export function PostSquare({ post, first }: PostSquareProps) {
 function SquareMetric({ icon, value }: { icon: IconName; value: number }) {
   return (
     <div className="list-like-square d-inline-block">
-      <Icon name={icon} className="text-md" />
+      <DynamicIcon name={icon} className="text-md" />
       <span className="like-count">{value}</span>
     </div>
   )

@@ -8,12 +8,13 @@ import type {
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
 } from '@/client/api/action-types'
+import type { IconName } from '@/ui/icons/Icon'
 
 import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
-import { Icon, type IconName } from '@/ui/icons/Icon'
+import { DynamicIcon, HeartFillIcon } from '@/ui/icons/icons'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -135,7 +136,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
         onClick={onClick}
         disabled={isPending}
       >
-        <Icon name="heart-fill" className="me-1" />
+        <HeartFillIcon className="me-1" />
         <span className="like-count">{state.likes}</span>
       </button>
     </div>
@@ -208,7 +209,7 @@ function SocialIconLink({ href, title, icon, className }: SocialIconLinkProps) {
   return (
     <a href={href} className={className} title={title}>
       <span>
-        <Icon name={icon} />
+        <DynamicIcon name={icon} />
       </span>
     </a>
   )

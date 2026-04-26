@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
 import config, { type BlogConfig } from '@/blog.config'
-import { Icon } from '@/ui/icons/Icon'
+import { DynamicIcon, MenuIcon } from '@/ui/icons/icons'
 import { QRDialog } from '@/ui/primitives/QRDialog'
-import { SearchIcon } from '@/ui/search/Search'
+import { SearchIconButton } from '@/ui/search/Search'
 
 export interface HeaderProps {
   navigation: BlogConfig['navigation']
@@ -120,12 +120,12 @@ export function Header({ navigation, admin }: HeaderProps) {
                   className="btn btn-dark btn-icon btn-circle button-social"
                 >
                   <span>
-                    <Icon name={social.icon} />
+                    <DynamicIcon name={social.icon} />
                   </span>
                 </a>
               )
             })}
-            <SearchIcon />
+            <SearchIconButton />
           </div>
         </div>
       </header>
@@ -143,7 +143,7 @@ export function Header({ navigation, admin }: HeaderProps) {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(true)}
             >
-              <Icon name="menu" className="d-block" />
+              <MenuIcon className="d-block" />
             </button>
           </div>
         </div>
