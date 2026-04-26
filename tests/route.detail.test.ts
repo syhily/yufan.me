@@ -76,6 +76,22 @@ vi.mock('@/server/comments/page-data', () => ({
     recentComments: [],
     pendingComments: [],
   })),
+  // The detail loader now reads `loadDetailPageStreaming`; comments ride
+  // along as a Promise so the loader can stream them through `<Await>`.
+  loadDetailPageStreaming: vi.fn(async () => ({
+    critical: {
+      admin: false,
+      likes: { count: 0, liked: false },
+      currentUser: null,
+      commentKey: 'https://yufan.me/posts/hello/',
+      recentComments: [],
+      pendingComments: [],
+    },
+    comments: Promise.resolve({
+      commentData: { totalCount: 0, totalPages: 0, currentPage: 1 },
+      commentItems: [],
+    }),
+  })),
 }))
 
 const postRoute = await import('@/routes/post.detail')

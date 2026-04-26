@@ -26,14 +26,14 @@ describe('snapshot: PageDetailBody composed view', () => {
       toc: false,
       comments: false,
     })
+    const commentsPromise = Promise.resolve({ commentData: null, commentItems: [] })
     const html = renderInRouter(
       <PageDetailBody
         page={page}
         headings={[]}
         likes={0}
         commentKey="https://yufan.me/about/"
-        commentData={null}
-        commentItems={[]}
+        commentsPromise={commentsPromise}
       >
         <p>About body</p>
       </PageDetailBody>,
@@ -51,14 +51,17 @@ describe('snapshot: PageDetailBody composed view', () => {
       comments: true,
     })
     const headings: MarkdownHeading[] = [{ depth: 2, slug: 'intro', text: 'Intro' }]
+    // The comments island is rendered behind a `<Suspense fallback>` so the
+    // SSR snapshot captures the skeleton shell whether or not the promise
+    // resolves synchronously.
+    const commentsPromise = Promise.resolve({ commentData: null, commentItems: [] })
     const html = renderInRouter(
       <PageDetailBody
         page={page}
         headings={headings}
         likes={3}
         commentKey="https://yufan.me/guide/"
-        commentData={null}
-        commentItems={[]}
+        commentsPromise={commentsPromise}
       >
         <p>Guide body</p>
       </PageDetailBody>,

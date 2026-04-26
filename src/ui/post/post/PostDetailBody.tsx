@@ -1,13 +1,13 @@
-import type { ReactNode } from 'react'
-
-import { Link } from 'react-router'
+import { type ReactNode, Suspense } from 'react'
+import { Await, Link } from 'react-router'
 
 import type { ClientTag, CommentFormUser, DetailPostShell, MarkdownHeading } from '@/server/catalog'
-import type { CommentItem, Comments as CommentsData } from '@/server/comments/types'
+import type { DetailPageComments } from '@/server/comments/page-data'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { formatLocalDate } from '@/shared/formatter'
 import { Comments } from '@/ui/comments/Comments'
+import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
 import { LikeButton, LikeShare } from '@/ui/like/LikeActions'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
@@ -19,8 +19,8 @@ export interface PostDetailBodyProps {
   admin: boolean
   likes: number
   commentKey: string
-  commentData: CommentsData | null
-  commentItems: CommentItem[]
+  /** Streamed in via React Router `<Await>`. */
+  commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   sidebar: SidebarData
   children: ReactNode
@@ -33,8 +33,7 @@ export function PostDetailBody({
   admin,
   likes,
   commentKey,
-  commentData,
-  commentItems,
+  commentsPromise,
   currentUser,
   sidebar,
   children,
@@ -70,7 +69,18 @@ export function PostDetailBody({
                 <LikeButton permalink={post.permalink} likes={likes} />
                 <LikeShare post={post} />
                 {post.comments && (
-                  <Comments commentKey={commentKey} comments={commentData} items={commentItems} user={currentUser} />
+                  <Suspense fallback={<CommentsSkeleton />}>
+                    <Await resolve={commentsPromise}>
+                      {(resolved) => (
+                        <Comments
+                          commentKey={commentKey}
+                          comments={resolved.commentData}
+                          items={resolved.commentItems}
+                          user={currentUser}
+                        />
+                      )}
+                    </Await>
+                  </Suspense>
                 )}
               </div>
             </div>

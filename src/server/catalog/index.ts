@@ -8,6 +8,8 @@
 //    import everything they need from `@/server/catalog` without crossing
 //    private file boundaries.
 
+import { cache } from 'react'
+
 import { ContentCatalog } from '@/server/catalog/catalog'
 
 export { ContentCatalog } from '@/server/catalog/catalog'
@@ -45,8 +47,11 @@ export {
   toSidebarPostLink,
 } from '@/server/catalog/projections'
 
-// Resolve the singleton once. Loaders should `const cat = await getCatalog()`
-// and then read whichever fields/methods they need synchronously.
-export function getCatalog() {
-  return ContentCatalog.get()
-}
+// Resolve the singleton once per request via `React.cache` (the
+// `vercel-react-best-practices/server-cache-react` rule). The underlying
+// `ContentCatalog.get()` is already a process-wide singleton — wrapping it
+// with `cache()` is therefore a no-op on the cold path, but it gives every
+// in-render call site (loaders, child resource routes, MDX components) the
+// same identity-stable promise, which lets the SSR pass dedupe transparently
+// even if catalog hydration ever becomes per-request (e.g. preview drafts).
+export const getCatalog = cache(() => ContentCatalog.get())

@@ -59,8 +59,7 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
       admin={detail.admin}
       likes={detail.likes}
       commentKey={detail.commentKey}
-      commentData={detail.commentData}
-      commentItems={detail.commentItems}
+      commentsPromise={detail.comments}
       currentUser={detail.currentUser}
       sidebar={{
         posts: sidebarPosts,

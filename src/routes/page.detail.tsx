@@ -54,8 +54,7 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
       headings={page.headings}
       likes={detail.likes}
       commentKey={detail.commentKey}
-      commentData={detail.commentData}
-      commentItems={detail.commentItems}
+      commentsPromise={detail.comments}
       currentUser={detail.currentUser}
     >
       <PageBody path={mdxPath} friends={friends} />

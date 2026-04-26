@@ -4,12 +4,19 @@ import { redirect } from 'react-router'
 
 import type { ClientPost, ClientTag } from '@/server/catalog'
 
-import { loadDetailPageData } from '@/server/comments/page-data'
+import { type DetailPageComments, loadDetailPageStreaming } from '@/server/comments/page-data'
 import { notFound } from '@/server/route-helpers/http'
 import { getRouteRequestContext } from '@/server/session'
 import { selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
 
-export type PublicDetailData = Awaited<ReturnType<typeof loadDetailPageData>>
+export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
+
+// `comments` rides as a Promise so the route can stream it through
+// React Router's `<Await>` boundary while the critical body renders.
+// (`react-router-framework-mode/data-loading` "Streaming with defer".)
+export interface PublicDetailData extends PublicDetailCritical {
+  comments: Promise<DetailPageComments>
+}
 
 export interface PublicDetailSidebarData {
   posts: ReturnType<typeof selectSidebarPosts>
@@ -44,10 +51,10 @@ export async function loadPublicDetailData({
   }
 }): Promise<{ detail: PublicDetailData; sidebar?: PublicDetailSidebarData }> {
   const { session } = getRouteRequestContext({ request, context })
-  const [, detail] = await Promise.all([preload(), loadDetailPageData(session, permalink, title)])
+  const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(session, permalink, title)])
 
   return {
-    detail,
+    detail: { ...streaming.critical, comments: streaming.comments },
     sidebar:
       sidebar === undefined
         ? undefined

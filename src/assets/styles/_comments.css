@@ -697,3 +697,40 @@ a.index-menu-link:hover {
   display: block;
   width: 100%;
 }
+
+/*--------------------------------------------------------------
+    comments skeleton (Suspense fallback while comments stream in)
+--------------------------------------------------------------*/
+
+.comments-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.comments-skeleton-line {
+  height: 1rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.08) 50%, rgba(0, 0, 0, 0.04) 100%);
+  background-size: 200% 100%;
+  animation: comments-skeleton-shimmer 1.4s linear infinite;
+}
+
+.comments-skeleton-line--short {
+  width: 60%;
+}
+
+@keyframes comments-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comments-skeleton-line {
+    animation: none;
+  }
+}

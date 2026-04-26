@@ -52,6 +52,10 @@ describe('snapshot: PostDetailBody composed view', () => {
       pendingComments: [],
     }
 
+    // The Suspense fallback renders synchronously during the first SSR pass;
+    // the `<Await>` boundary catches the unresolved promise and the snapshot
+    // captures the comments-skeleton chrome instead of the resolved island.
+    const commentsPromise = Promise.resolve({ commentData: null, commentItems: [] })
     const html = renderInRouter(
       <PostDetailBody
         post={post}
@@ -60,8 +64,7 @@ describe('snapshot: PostDetailBody composed view', () => {
         admin={false}
         likes={7}
         commentKey="https://yufan.me/posts/hello/"
-        commentData={null}
-        commentItems={[]}
+        commentsPromise={commentsPromise}
         sidebar={sidebar}
       >
         <p>
@@ -81,6 +84,7 @@ describe('snapshot: PostDetailBody composed view', () => {
       toc: false,
     })
     const sidebar = { posts: [], tags: [], recentComments: [], pendingComments: [] }
+    const commentsPromise = Promise.resolve({ commentData: null, commentItems: [] })
     const html = renderInRouter(
       <PostDetailBody
         post={post}
@@ -89,8 +93,7 @@ describe('snapshot: PostDetailBody composed view', () => {
         admin={false}
         likes={0}
         commentKey="https://yufan.me/posts/no-toc/"
-        commentData={null}
-        commentItems={[]}
+        commentsPromise={commentsPromise}
         sidebar={sidebar}
       >
         <p>body</p>

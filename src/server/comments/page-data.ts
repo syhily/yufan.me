@@ -1,4 +1,5 @@
 import type { CommentFormUser } from '@/server/catalog'
+import type { Comments as CommentsData, CommentItem } from '@/server/comments/types'
 import type { BlogSession, SessionUser } from '@/server/session'
 
 import config from '@/blog.config'
@@ -24,21 +25,36 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
   }
 }
 
-export async function loadDetailPageData(session: BlogSession, permalink: string, title: string) {
+export interface DetailPageComments {
+  commentData: CommentsData | null
+  commentItems: CommentItem[]
+}
+
+// Comments are the slowest dependency on a typical detail page — they read
+// the comment row, page row, and route every body through the markdown
+// parser. Splitting them out lets the loader stream comments via React
+// Router's `<Await>` while the rest of the detail (likes, sidebar,
+// post body) renders immediately. Empty comment payloads short-circuit the
+// marked round-trip through `parseContent` for every "该留言内容为空"
+// placeholder.
+async function loadCommentsAndItems(
+  session: BlogSession,
+  commentKey: string,
+  title: string,
+): Promise<DetailPageComments> {
+  const commentData = await loadComments(session, commentKey, title, 0, { ensurePage: false })
+  const commentItems = commentData && commentData.comments.length > 0 ? await parseComments(commentData.comments) : []
+  return { commentData, commentItems }
+}
+
+// "Critical" detail data: everything the page needs to paint above the fold
+// (post body, likes, sidebar, current-user identity for the reply form).
+// Comments are intentionally excluded so the loader can stream them
+// alongside the SSR HTML.
+export async function loadDetailPageCritical(session: BlogSession, permalink: string, title: string) {
   const currentUser = toCommentFormUser(userSession(session))
   const admin = isAdmin(session)
   const commentKey = joinUrl(config.website, permalink, '/')
-
-  // Fan out every independent read. `loadComments` chains directly into
-  // `parseComments` (the marked/MDX pass) so that the comment markdown parsing
-  // overlaps with the sidebar / likes queries instead of running serially
-  // after them. Empty comment payloads short-circuit the marked round-trip
-  // through `parseContent` for every `"该留言内容为空"` placeholder.
-  const commentsAndItems = (async () => {
-    const commentData = await loadComments(session, commentKey, title, 0, { ensurePage: false })
-    const commentItems = commentData && commentData.comments.length > 0 ? await parseComments(commentData.comments) : []
-    return { commentData, commentItems }
-  })()
 
   // `bumpPageView` is a fire-and-forget in-memory increment (PROD-gated
   // inside the batcher) so the admin guard is the only thing left to gate
@@ -46,9 +62,8 @@ export async function loadDetailPageData(session: BlogSession, permalink: string
   // critical path.
   if (!admin) bumpPageView(commentKey)
 
-  const [, { commentData, commentItems }, likes, sidebar] = await Promise.all([
+  const [, likes, sidebar] = await Promise.all([
     ensureCommentPage(commentKey, title),
-    commentsAndItems,
     queryLikes(permalink),
     loadSidebarData(session),
   ])
@@ -56,8 +71,42 @@ export async function loadDetailPageData(session: BlogSession, permalink: string
   return {
     commentKey,
     likes,
-    commentData,
-    commentItems,
+    currentUser,
+    ...sidebar,
+  }
+}
+
+// Detail data with the comments promise split out, ready to stream through
+// React Router's `defer`-style return + `<Await>` consumer.
+export async function loadDetailPageStreaming(session: BlogSession, permalink: string, title: string) {
+  const critical = await loadDetailPageCritical(session, permalink, title)
+  const comments = loadCommentsAndItems(session, critical.commentKey, title)
+  return { critical, comments }
+}
+
+// Backwards-compatible eager loader. Kept exported because
+// `tests/service.comments-page-data.test.ts` exercises the parallel-fanout
+// contract directly and the admin-comments listing path still wants the
+// fully-resolved shape.
+export async function loadDetailPageData(session: BlogSession, permalink: string, title: string) {
+  const currentUser = toCommentFormUser(userSession(session))
+  const admin = isAdmin(session)
+  const commentKey = joinUrl(config.website, permalink, '/')
+
+  if (!admin) bumpPageView(commentKey)
+
+  const [, comments, likes, sidebar] = await Promise.all([
+    ensureCommentPage(commentKey, title),
+    loadCommentsAndItems(session, commentKey, title),
+    queryLikes(permalink),
+    loadSidebarData(session),
+  ])
+
+  return {
+    commentKey,
+    likes,
+    commentData: comments.commentData,
+    commentItems: comments.commentItems,
     currentUser,
     ...sidebar,
   }
