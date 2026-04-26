@@ -15,8 +15,8 @@ const feedSource = readFileSync(resolve(projectRoot, 'src/server/feed/index.tsx'
 
 describe('contract: feed (RSS + Atom) shape', () => {
   it('declares the historical content-types for both RSS and Atom', () => {
-    expect(feedSource).toContain('rss: "application/xml; charset=utf-8"')
-    expect(feedSource).toContain('atom: "application/atom+xml; charset=utf-8"')
+    expect(feedSource).toContain("rss: 'application/xml; charset=utf-8'")
+    expect(feedSource).toContain("atom: 'application/atom+xml; charset=utf-8'")
   })
 
   it('includes the iTunes-style stylesheet link for human-readable RSS', () => {
@@ -24,11 +24,11 @@ describe('contract: feed (RSS + Atom) shape', () => {
   })
 
   it('uses `WordPress 3.2.1` as the generator string (legacy compatibility)', () => {
-    expect(feedSource).toContain('generator: "WordPress 3.2.1"')
+    expect(feedSource).toContain("generator: 'WordPress 3.2.1'")
   })
 
   it('emits the feed in zh-CN', () => {
-    expect(feedSource).toContain('language: "zh-CN"')
+    expect(feedSource).toContain("language: 'zh-CN'")
   })
 
   it("renders each entry's full MDX body (not just the summary)", () => {

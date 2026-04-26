@@ -161,8 +161,8 @@ describe('contract: module and bundle boundaries', () => {
 
     expect(globals).not.toContain('opposans.css')
     expect(globals).not.toContain('opposerif.css')
-    expect(root).toContain('href: "/fonts/opposans.css"')
-    expect(root).toContain('href: "/fonts/opposerif.css"')
+    expect(root).toContain("href: '/fonts/opposans.css'")
+    expect(root).toContain("href: '/fonts/opposerif.css'")
     expect(files('public/fonts', '-g', '*.css').sort()).toEqual([
       'public/fonts/opposans.css',
       'public/fonts/opposerif.css',
@@ -173,7 +173,7 @@ describe('contract: module and bundle boundaries', () => {
     const source = readFileSync('src/assets/styles/_base.css', 'utf8')
 
     expect(source).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
-    expect(source).toContain('.post-content mjx-container[jax="SVG"][display="true"]')
+    expect(source).toContain(".post-content mjx-container[jax='SVG'][display='true']")
     expect(source).toContain('overflow-x: auto')
   })
 })

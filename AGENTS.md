@@ -372,44 +372,6 @@ reviewers reach for during PR review: `server-no-shared-module-state`,
 - When moving files, update both imports and documentation in the
   same change.
 
-## Open Follow-Ups
-
-These are intentionally out of scope for the layering refactor and
-should land as separate, focused PRs:
-
-- Split `ui/primitives/Tooltip` and `ui/comments/Comments` along
-  `architecture-avoid-boolean-props` and the compound-component
-  patterns from the Vercel composition Skill.
-- Migrate `ui/admin/AdminCommentsPage` to a compound-component layout
-  matching the rest of the admin surface.
-- Replace string-keyed `<Icon name="..." />` call sites with named
-  imports from `@/ui/icons` (the helper is already prepared; the
-  business code conversion is mechanical but voluminous).
-- Adopt the shadcn/ui registry once the icon migration lands so
-  primitives can use shadcn-aligned tokens and CVA variants.
-- Refactor the Drizzle schema to colocate row, insert, and projection
-  types beside their query helpers so `@/server/db/types` can be
-  retired.
-- Merge the per-concern comments helpers (`@/server/comments/{loader,
-admin, likes, badge, page-data}`) into a single `@/server/comments.ts`
-  with `@/server/comments-schema.ts` for DTO + Zod surfaces shared with
-  `@/ui/comments`.
-- Merge `@/server/catalog/{catalog, projections, render, schema}` and the
-  `index.ts` barrel into one `@/server/catalog.ts` so callers no longer
-  resolve through a 50-line re-export sheet.
-- Collapse `@/server/route-helpers/{listing-loader, listing-seo,
-pagination}` into `@/server/listing.ts` and
-  `@/server/route-helpers/{detail-loader, paths}` into
-  `@/server/detail.ts` (the four helpers move together in every loader
-  that uses them).
-- Decide on an `@/server/auth/*` shape (split today, merge into
-  `@/server/session.ts` if the surface stays small). Keep
-  `tests/contract.cookie.test.ts` updated alongside any move.
-- Add an isomorphic `@/shared/env-schema.ts` (Zod schema only, no
-  `process.env` access) so UI code can type env-derived DTOs without
-  dragging the server-only `@/server/env` module. (`domain-errors`
-  already lives in `@/shared`.)
-
 ## Git And Commits
 
 - Do not create commits unless explicitly asked.

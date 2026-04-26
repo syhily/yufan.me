@@ -13,7 +13,7 @@ const source = readFileSync(sessionFile, 'utf8')
 
 describe('contract: session cookie configuration', () => {
   it('uses the historical session cookie name (__session)', () => {
-    expect(source).toContain('name: "__session"')
+    expect(source).toContain("name: '__session'")
   })
 
   it("keeps the cookie httpOnly so client-side JS can't read it", () => {
@@ -21,11 +21,11 @@ describe('contract: session cookie configuration', () => {
   })
 
   it('locks SameSite to lax (no third-party CSRF, but normal nav works)', () => {
-    expect(source).toContain('sameSite: "lax"')
+    expect(source).toContain("sameSite: 'lax'")
   })
 
   it('scopes the cookie to / (whole site)', () => {
-    expect(source).toContain('path: "/"')
+    expect(source).toContain("path: '/'")
   })
 
   it('flips secure based on PROD (no Secure in dev so localhost works)', () => {

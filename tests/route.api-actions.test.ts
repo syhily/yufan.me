@@ -91,10 +91,8 @@ describe('routes/api/actions — file conventions', () => {
         declaresMethod,
         `${file} must call assertMethod() or pass method: "${action.method}" so disallowed verbs return 405.`,
       ).toBe(true)
-      expect(
-        source.includes(`"${action.method}"`),
-        `${file} must reference its HTTP method ("${action.method}").`,
-      ).toBe(true)
+      const methodQuoted = new RegExp(`["'\`]${action.method}["'\`]`)
+      expect(methodQuoted.test(source), `${file} must reference its HTTP method ("${action.method}").`).toBe(true)
     }
   })
 
