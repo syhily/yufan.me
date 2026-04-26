@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/client/api/action-types'
 import type { CommentItem as CommentItemType } from '@/server/comments/types'
@@ -8,57 +8,86 @@ import { useApiFetcher } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
-
-export interface CommentItemActions {
-  onReply?: (rid: number) => void
-  onEdited?: (comment: CommentItemType) => void
-  onApproved?: (id: bigint | string) => void
-  onDeleted?: (id: bigint | string) => void
-}
+import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
 
 export interface CommentItemProps {
   depth: number
   comment: CommentItemType
+  /** Renders the "等待审核" hint over the body. Falls back to `comment.isPending`. */
   pending?: boolean
-  /** Hoisted once in the page shell so the recursive tree doesn't re-query. */
-  admin: boolean
-  /** Optional client-island actions wired through `useFetcher`. */
-  actions?: CommentItemActions
-  /** Optional render function for child comments (used by the stateful island). */
-  renderChild?: (child: CommentItemType) => React.ReactNode
-  /** Extra node appended inside the top-level comment's children list. */
-  childrenTail?: React.ReactNode
-  /** Extra node rendered immediately after nested comments. */
-  afterComment?: React.ReactNode
+  /**
+   * Standalone admin override. When `<CommentItem>` is rendered outside the
+   * `<Comments>` orchestrator (e.g. SSR snapshot tests), callers pass this
+   * directly; in compound usage the value lifts from context.
+   */
+  admin?: boolean
 }
 
-// Top-level entry: dispatches to `RootComment` (depth 1) or `NestedComment`
-// (deeper) so each branch returns a single element. Previously a single
-// component used a `<>` fragment workaround for non-depth-1 items, which
-// confused TS and DOM-tree readers alike.
+// Read-only consumer that returns sensible defaults when no `<Comments>`
+// orchestrator is present (test snapshots and the legacy `<Comment>` SSR
+// helper). Compound usage is unaffected — the orchestrator always provides
+// the full context value, so leaf components see real callbacks there.
+function useCommentsLeafContext(propAdmin: boolean | undefined): {
+  admin: boolean
+  activeReplyToId: number
+  replyForm: React.ReactNode
+  onReply: (rid: number) => void
+  onEdited: (comment: CommentItemType) => void
+  onApproved: (id: bigint | string) => void
+  onDeleted: (id: bigint | string) => void
+} {
+  const ctx = useContext(CommentsContext)
+  if (ctx !== null) return adapt(ctx, propAdmin)
+  return {
+    admin: propAdmin === true,
+    activeReplyToId: 0,
+    replyForm: null,
+    onReply: noop,
+    onEdited: noop,
+    onApproved: noop,
+    onDeleted: noop,
+  }
+}
+
+function adapt(ctx: CommentsContextValue, propAdmin: boolean | undefined) {
+  return {
+    admin: propAdmin === undefined ? ctx.admin : propAdmin,
+    activeReplyToId: ctx.activeReplyToId,
+    replyForm: ctx.replyForm,
+    onReply: ctx.onReply,
+    onEdited: ctx.onEdited,
+    onApproved: ctx.onApproved,
+    onDeleted: ctx.onDeleted,
+  }
+}
+
+function noop() {}
+
+// Self-recursive comment node. The previous implementation accepted a
+// `renderChild` render-prop and an `actions` bag so the orchestrator could
+// override behaviour for every depth. Now that the parent `<Comments>`
+// publishes the same orchestration via `CommentsContext` (see
+// `vercel-composition-patterns/architecture-prefer-children-over-render-props`),
+// each `CommentItem` recurses by component name and reads what it needs
+// directly from context. The `admin` and `pending` props remain on the
+// public surface for callers that render `<CommentItem>` standalone (SSR
+// snapshots, the legacy `<Comment>` helper).
 export function CommentItem(props: CommentItemProps) {
   return props.depth === 1 ? <RootComment {...props} /> : <NestedComment {...props} />
 }
 
-function RootComment(props: CommentItemProps) {
-  const { comment, depth, renderChild, childrenTail } = props
+function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
+  const leaf = useCommentsLeafContext(propAdmin)
   const children = comment.children ?? []
-  const renderer =
-    renderChild ??
-    ((child: CommentItemType) => (
-      <CommentItem
-        key={String(child.id)}
-        comment={child}
-        depth={depth + 1}
-        admin={props.admin}
-        actions={props.actions}
-      />
-    ))
+  const isReplyTarget = leaf.activeReplyToId !== 0 && asKey(comment.id) === asKey(leaf.activeReplyToId)
+  const childrenTail = depth === 1 && isReplyTarget ? leaf.replyForm : null
   return (
-    <CommentLi {...props}>
+    <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin}>
       {(children.length > 0 || childrenTail) && (
         <ul className="children">
-          {children.map(renderer)}
+          {children.map((child) => (
+            <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
+          ))}
           {childrenTail && <li className="comment-reply-form-item">{childrenTail}</li>}
         </ul>
       )}
@@ -66,25 +95,18 @@ function RootComment(props: CommentItemProps) {
   )
 }
 
-function NestedComment(props: CommentItemProps) {
-  const { comment, depth, renderChild, afterComment } = props
+function NestedComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
+  const leaf = useCommentsLeafContext(propAdmin)
   const children = comment.children ?? []
-  const renderer =
-    renderChild ??
-    ((child: CommentItemType) => (
-      <CommentItem
-        key={String(child.id)}
-        comment={child}
-        depth={depth + 1}
-        admin={props.admin}
-        actions={props.actions}
-      />
-    ))
+  const isReplyTarget = leaf.activeReplyToId !== 0 && asKey(comment.id) === asKey(leaf.activeReplyToId)
+  const afterComment = depth !== 1 && isReplyTarget ? leaf.replyForm : null
   return (
     <>
-      <CommentLi {...props} />
+      <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin} />
       {afterComment && <li className="comment-reply-form-item">{afterComment}</li>}
-      {children.map(renderer)}
+      {children.map((child) => (
+        <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
+      ))}
     </>
   )
 }
@@ -93,7 +115,7 @@ interface CommentLiProps extends CommentItemProps {
   children?: React.ReactNode
 }
 
-function CommentLi({ comment, depth, pending, admin, actions, children }: CommentLiProps) {
+function CommentLi({ comment, depth, pending, admin: propAdmin, children }: CommentLiProps) {
   const authorHref = safeHref(comment.link)
   const [editing, setEditing] = useState(false)
   return (
@@ -153,13 +175,10 @@ function CommentLi({ comment, depth, pending, admin, actions, children }: Commen
             <CommentEditArea
               commentId={comment.id}
               onCancel={() => setEditing(false)}
-              onSaved={(updated) => {
-                setEditing(false)
-                actions?.onEdited?.(updated)
-              }}
+              onSaved={() => setEditing(false)}
             />
           )}
-          <CommentFooter comment={comment} admin={admin} actions={actions} onEdit={() => setEditing(true)} />
+          <CommentFooter comment={comment} admin={propAdmin} onEdit={() => setEditing(true)} />
         </div>
       </article>
       {children}
@@ -167,22 +186,26 @@ function CommentLi({ comment, depth, pending, admin, actions, children }: Commen
   )
 }
 
+function asKey(value: bigint | string | number): string {
+  return String(value)
+}
+
 interface CommentFooterProps {
   comment: CommentItemType
-  admin: boolean
-  actions?: CommentItemActions
+  admin: boolean | undefined
   onEdit: () => void
 }
 
-function CommentFooter({ comment, admin, actions, onEdit }: CommentFooterProps) {
+function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps) {
+  const leaf = useCommentsLeafContext(propAdmin)
   const approve = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.approve, {
-    onSuccess: () => actions?.onApproved?.(comment.id),
+    onSuccess: () => leaf.onApproved(comment.id),
   })
   const remove = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.delete, {
-    onSuccess: () => actions?.onDeleted?.(comment.id),
+    onSuccess: () => leaf.onDeleted(comment.id),
   })
 
-  const handleReply = () => actions?.onReply?.(Number(comment.id))
+  const handleReply = () => leaf.onReply(Number(comment.id))
   const handleApprove = () => approve.submit({ rid: String(comment.id) })
   const handleDelete = () => {
     if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！')) return
@@ -195,7 +218,7 @@ function CommentFooter({ comment, admin, actions, onEdit }: CommentFooterProps) 
       <button type="button" className="comment-reply-link me-2" data-rid={comment.id} onClick={handleReply}>
         回复
       </button>
-      {admin && (
+      {leaf.admin && (
         <>
           <button type="button" className="comment-edit-link me-2" data-rid={comment.id} onClick={onEdit}>
             编辑
@@ -233,6 +256,7 @@ interface CommentEditAreaProps {
 }
 
 function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps) {
+  const leaf = useCommentsLeafContext(undefined)
   const [value, setValue] = useState<string>('')
   const [loaded, setLoaded] = useState(false)
 
@@ -243,7 +267,13 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
     },
   })
   const editAction = useApiFetcher<CommentEditInput, CommentEditOutput>(API_ACTIONS.comment.edit, {
-    onSuccess: (payload) => onSaved(payload.comment),
+    onSuccess: (payload) => {
+      // Drive the parent reducer first so the freshly-edited content appears
+      // in the tree before the editor closes (keeps the post-save flicker
+      // confined to the edit area instead of the whole row).
+      leaf.onEdited(payload.comment)
+      onSaved(payload.comment)
+    },
   })
 
   // Load the raw markdown source on first mount.

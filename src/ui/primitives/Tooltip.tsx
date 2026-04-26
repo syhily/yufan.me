@@ -1,14 +1,13 @@
 import {
-  cloneElement,
-  isValidElement,
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
-  type ReactElement,
-  type ReactNode,
-  type Ref,
-  type SyntheticEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -16,30 +15,62 @@ import '@/assets/styles/vendor/tooltip.css'
 
 const GAP = 8
 
-export interface TooltipProps {
-  children: ReactElement
-  content: ReactNode
-  placement?: 'top' | 'left'
-}
+export type TooltipPlacement = 'top' | 'left'
 
 interface TooltipPosition {
   left: number
   top: number
 }
 
-interface RefCarrier {
-  ref?: Ref<HTMLElement>
+// `vercel-composition-patterns/architecture-avoid-boolean-props`: replace the
+// previous `cloneElement(child, { onMouseEnter, onFocus, ... })` adapter with
+// a small Context. Each subcomponent reads only what it needs from this value
+// — `<TooltipTrigger>` wires the ref + listeners, `<TooltipContent>` renders
+// the portal — so consumers can compose any DOM element they want without
+// the root needing to know about it.
+interface TooltipContextValue {
+  id: string
+  visible: boolean
+  hasContent: boolean
+  placement: TooltipPlacement
+  position: TooltipPosition | null
+  triggerRef: React.RefObject<HTMLElement | null>
+  tooltipRef: React.RefObject<HTMLDivElement | null>
+  show: () => void
+  hide: () => void
+  setPosition: (position: TooltipPosition | null) => void
+  /** Identifies whether the content carries any renderable value. */
+  setHasContent: (hasContent: boolean) => void
 }
 
-type EventHandler = (event: SyntheticEvent) => void
+const TooltipContext = createContext<TooltipContextValue | null>(null)
 
-export function Tooltip({ children, content, placement = 'top' }: TooltipProps) {
+function useTooltipContext(component: string): TooltipContextValue {
+  const ctx = useContext(TooltipContext)
+  if (ctx === null) {
+    throw new Error(`<${component}> must be rendered inside <Tooltip>`)
+  }
+  return ctx
+}
+
+export interface TooltipRootProps {
+  children: ReactNode
+  placement?: TooltipPlacement
+}
+
+export function TooltipRoot({ children, placement = 'top' }: TooltipRootProps) {
   const id = useId()
   const triggerRef = useRef<HTMLElement | null>(null)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState<TooltipPosition | null>(null)
-  const hasContent = content !== null && content !== undefined && content !== false && content !== ''
+  const [hasContent, setHasContent] = useState(false)
+
+  const show = useCallback(() => {
+    setPosition(null)
+    setVisible(true)
+  }, [])
+  const hide = useCallback(() => setVisible(false), [])
 
   useEffect(() => {
     if (!visible) return
@@ -50,81 +81,140 @@ export function Tooltip({ children, content, placement = 'top' }: TooltipProps) 
       if (!trigger || !tooltip) return
       setPosition(place(trigger, tooltip, placement))
     }
-    const hide = () => setVisible(false)
+    const hideOnScroll = () => setVisible(false)
 
     update()
-    window.addEventListener('resize', hide)
-    window.addEventListener('scroll', hide, { passive: true })
+    window.addEventListener('resize', hideOnScroll)
+    window.addEventListener('scroll', hideOnScroll, { passive: true })
     return () => {
-      window.removeEventListener('resize', hide)
-      window.removeEventListener('scroll', hide)
+      window.removeEventListener('resize', hideOnScroll)
+      window.removeEventListener('scroll', hideOnScroll)
     }
-  }, [placement, visible, content])
+  }, [placement, visible])
 
-  if (!isValidElement(children)) return children
+  const value = useMemo<TooltipContextValue>(
+    () => ({
+      id,
+      visible,
+      hasContent,
+      placement,
+      position,
+      triggerRef,
+      tooltipRef,
+      show,
+      hide,
+      setPosition,
+      setHasContent,
+    }),
+    [id, visible, hasContent, placement, position, show, hide],
+  )
 
-  const child = children as ReactElement<Record<string, unknown>> & RefCarrier
-  const show = () => {
-    if (!hasContent) return
-    setPosition(null)
-    setVisible(true)
+  return <TooltipContext.Provider value={value}>{children}</TooltipContext.Provider>
+}
+
+export interface TooltipTriggerProps extends React.HTMLAttributes<HTMLElement> {
+  /** Element type to render. Defaults to `<span>` since tooltips usually wrap inline content. */
+  as?: keyof React.JSX.IntrinsicElements
+  children: ReactNode
+}
+
+// `<TooltipTrigger>` owns the host element. Composing this way keeps the
+// interactive element's tag, attributes, and refs visible at the call site —
+// no more `cloneElement` rewriting unknown props onto an opaque child.
+export function TooltipTrigger({
+  as = 'span',
+  children,
+  onBlur,
+  onFocus,
+  onMouseEnter,
+  onMouseLeave,
+  ...rest
+}: TooltipTriggerProps) {
+  const ctx = useTooltipContext('TooltipTrigger')
+  const Comp = as as React.ElementType
+
+  const handleMouseEnter: React.MouseEventHandler<HTMLElement> = (event) => {
+    onMouseEnter?.(event)
+    if (!event.isDefaultPrevented() && ctx.hasContent) ctx.show()
   }
-  const hide = () => setVisible(false)
+  const handleMouseLeave: React.MouseEventHandler<HTMLElement> = (event) => {
+    onMouseLeave?.(event)
+    if (!event.isDefaultPrevented()) ctx.hide()
+  }
+  const handleFocus: React.FocusEventHandler<HTMLElement> = (event) => {
+    onFocus?.(event)
+    if (!event.isDefaultPrevented() && ctx.hasContent) ctx.show()
+  }
+  const handleBlur: React.FocusEventHandler<HTMLElement> = (event) => {
+    onBlur?.(event)
+    if (!event.isDefaultPrevented()) ctx.hide()
+  }
 
   return (
-    <>
-      {cloneElement(child, {
-        ref: (node: HTMLElement | null) => {
-          triggerRef.current = node
-          assignRef(child.ref, node)
-        },
-        'aria-describedby': visible && hasContent ? id : child.props['aria-describedby'],
-        onBlur: composeEventHandler(child.props.onBlur, hide),
-        onFocus: composeEventHandler(child.props.onFocus, show),
-        onMouseEnter: composeEventHandler(child.props.onMouseEnter, show),
-        onMouseLeave: composeEventHandler(child.props.onMouseLeave, hide),
-      })}
-      {visible &&
-        hasContent &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            ref={tooltipRef}
-            id={id}
-            className={`site-tooltip site-tooltip-${placement}`}
-            role="tooltip"
-            style={{
-              left: position?.left ?? 0,
-              top: position?.top ?? 0,
-              visibility: position === null ? 'hidden' : undefined,
-            }}
-          >
-            {content}
-          </div>,
-          document.body,
-        )}
-    </>
+    <Comp
+      {...rest}
+      ref={ctx.triggerRef as React.Ref<HTMLElement>}
+      aria-describedby={ctx.visible && ctx.hasContent ? ctx.id : rest['aria-describedby']}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+    >
+      {children}
+    </Comp>
   )
 }
 
-function composeEventHandler(handler: unknown, next: EventHandler): EventHandler {
-  return (event) => {
-    if (typeof handler === 'function') {
-      ;(handler as EventHandler)(event)
-    }
-    if (!event.isDefaultPrevented()) next(event)
-  }
+export interface TooltipContentProps {
+  children: ReactNode
 }
 
-function assignRef(ref: Ref<HTMLElement> | undefined, value: HTMLElement | null): void {
-  if (typeof ref === 'function') {
-    ref(value)
-  } else if (ref !== null && ref !== undefined) {
-    ref.current = value
-  }
+export function TooltipContent({ children }: TooltipContentProps) {
+  const ctx = useTooltipContext('TooltipContent')
+  const hasContent = children !== null && children !== undefined && children !== false && children !== ''
+
+  // Surface "do we have content?" to the trigger via context. The trigger
+  // skips `show()` when there's nothing to render, mirroring the legacy
+  // `hasContent` short-circuit without leaking the check across components.
+  useEffect(() => {
+    ctx.setHasContent(hasContent)
+  }, [ctx, hasContent])
+
+  if (!ctx.visible || !hasContent || typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      ref={ctx.tooltipRef}
+      id={ctx.id}
+      className={`site-tooltip site-tooltip-${ctx.placement}`}
+      role="tooltip"
+      style={{
+        left: ctx.position?.left ?? 0,
+        top: ctx.position?.top ?? 0,
+        visibility: ctx.position === null ? 'hidden' : undefined,
+      }}
+    >
+      {children}
+    </div>,
+    document.body,
+  )
 }
 
-function place(target: HTMLElement, tooltip: HTMLElement, placement: 'top' | 'left'): TooltipPosition {
+// Compound-component namespace. Call sites compose `<Tooltip>` (the root,
+// renamed `TooltipRoot` internally so consumers can spell it `Tooltip.Root`)
+// with `Tooltip.Trigger` and `Tooltip.Content`.
+//
+// Removing the legacy single-prop adapter intentionally: the previous
+// `cloneElement`-based shim couldn't pick the right host element for non-span
+// triggers (e.g. `<div className="widget-title">`), so every call site now
+// passes its own host element directly through `<Tooltip.Trigger as=...>`.
+export const Tooltip = Object.assign(TooltipRoot, {
+  Root: TooltipRoot,
+  Trigger: TooltipTrigger,
+  Content: TooltipContent,
+})
+
+function place(target: HTMLElement, tooltip: HTMLElement, placement: TooltipPlacement): TooltipPosition {
   const rect = target.getBoundingClientRect()
   const tip = tooltip.getBoundingClientRect()
   const scrollX = window.scrollX

@@ -159,8 +159,11 @@ function RandomTags({ tags }: RandomTagsProps) {
 
 function WidgetTitle({ children, tooltip }: { children: string; tooltip: string }) {
   return (
-    <Tooltip content={tooltip} placement="left">
-      <div className="widget-title">{children}</div>
+    <Tooltip placement="left">
+      <Tooltip.Trigger as="div" className="widget-title">
+        {children}
+      </Tooltip.Trigger>
+      <Tooltip.Content>{tooltip}</Tooltip.Content>
     </Tooltip>
   )
 }

@@ -65,12 +65,14 @@ export function FootnoteReference({ children, ...props }: ComponentProps<'sup'>)
   const context = useContext(FootnotePreviewContext)
   const href = footnoteReferenceHref(children)
   const preview = href === undefined ? undefined : context?.previews.get(href)
-  const sup = <sup {...props}>{children}</sup>
 
-  if (preview === undefined) return sup
+  if (preview === undefined) return <sup {...props}>{children}</sup>
   return (
-    <Tooltip content={preview} placement="top">
-      {sup}
+    <Tooltip placement="top">
+      <Tooltip.Trigger as="sup" {...props}>
+        {children}
+      </Tooltip.Trigger>
+      <Tooltip.Content>{preview}</Tooltip.Content>
     </Tooltip>
   )
 }

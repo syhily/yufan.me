@@ -11,6 +11,13 @@ import { useApiFetcher } from '@/client/api/fetcher'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { CommentItem } from '@/ui/comments/CommentItem'
 import { CommentReplyForm } from '@/ui/comments/CommentReplyForm'
+import {
+  CommentsContext,
+  type CommentsContextValue,
+  type CommentTreeAction,
+  type CommentTreeState,
+  useCommentsContext,
+} from '@/ui/comments/comments-context'
 
 export interface CommentsProps {
   commentKey: string
@@ -18,25 +25,6 @@ export interface CommentsProps {
   items: CommentItemType[]
   user?: CommentFormUser
 }
-
-export interface CommentTreeState {
-  items: CommentItemType[]
-  /** Currently visible "root" count for "load more" pagination. */
-  rootsLoaded: number
-  /** Total root comments according to the latest server response. */
-  rootsTotal: number
-  /** Currently active reply target id, or 0 when replying to the root. */
-  replyToId: number
-}
-
-type CommentTreeAction =
-  | { type: 'reset'; items: CommentItemType[]; rootsTotal: number; rootsLoaded: number }
-  | { type: 'append'; items: CommentItemType[]; rootsLoaded: number }
-  | { type: 'insertReply'; comment: CommentItemType; rid: number }
-  | { type: 'updateComment'; comment: CommentItemType }
-  | { type: 'removeComment'; id: bigint | string }
-  | { type: 'approveComment'; id: bigint | string }
-  | { type: 'setReplyTo'; rid: number }
 
 function asKey(value: bigint | string | number): string {
   return String(value)
@@ -135,6 +123,11 @@ export function createCommentTreeState(items: CommentItemType[], rootsCount: num
 
 export const commentTreeReducer = reducer
 
+// Public entry. Validates the loader payload and otherwise delegates to the
+// orchestrator (`CommentsRoot`) + compound subcomponents
+// (`Comments.Header`, `Comments.ReplyFormSlot`, `Comments.List`,
+// `Comments.LoadMore`). Leaf components consume the shared
+// `CommentsContext` instead of accepting render-prop callbacks.
 export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
@@ -145,27 +138,32 @@ export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   }
 
   return (
-    <CommentsBody
+    <CommentsRoot
       key={commentKey}
       commentKey={commentKey}
       initialItems={items}
       rootsCount={comments.roots_count}
       totalCount={comments.count}
       user={user}
-    />
+    >
+      <Comments.Header />
+      <Comments.ReplyFormSlot />
+      <Comments.List />
+      <Comments.LoadMore />
+    </CommentsRoot>
   )
 }
 
-interface CommentsBodyProps {
+interface CommentsRootProps {
   commentKey: string
   initialItems: CommentItemType[]
   rootsCount: number
   totalCount: number
   user?: CommentFormUser
+  children: React.ReactNode
 }
 
-function CommentsBody({ commentKey, initialItems, rootsCount, totalCount, user }: CommentsBodyProps) {
-  const pageSize = config.settings.comments.size
+function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, children }: CommentsRootProps) {
   const [state, dispatch] = useReducer(reducer, createCommentTreeState(initialItems, rootsCount))
 
   // Suppress iOS Safari's auto-zoom while any comment input/textarea is
@@ -173,39 +171,9 @@ function CommentsBody({ commentKey, initialItems, rootsCount, totalCount, user }
   const containerRef = useRef<HTMLDivElement | null>(null)
   useIosNoZoomOnFocus(containerRef)
 
-  const admin = user?.admin === true
-
-  // Pin the latest `rootsLoaded` so the success callback can compute the
-  // new offset without forcing the hook to remount on every dispatch.
-  const rootsLoadedRef = useRef(state.rootsLoaded)
-  rootsLoadedRef.current = state.rootsLoaded
-
-  const loadMore = useApiFetcher<never, LoadCommentsOutput>(API_ACTIONS.comment.loadComments, {
-    onSuccess: (payload) => {
-      dispatch({
-        type: 'append',
-        items: payload.comments,
-        rootsLoaded: rootsLoadedRef.current + payload.comments.length,
-      })
-    },
-  })
-
-  const onLoadMore = () => {
-    if (loadMore.isPending) return
-    loadMore.load({
-      page_key: commentKey,
-      offset: state.rootsLoaded,
-    } satisfies LoadCommentsInput)
-  }
-
-  const handleReplyDispatched = (comment: CommentItemType, rid: number) => {
-    dispatch({ type: 'insertReply', comment, rid })
-    dispatch({ type: 'setReplyTo', rid: 0 })
-  }
-
-  // Focus the reply form's textarea after a Reply click. The form is rendered
-  // through React (no need for `document.querySelector("#respond #content")`),
-  // so we thread a ref into `<CommentReplyForm>` and let it expose the node.
+  // Focus the reply form's textarea after a Reply click. The form is
+  // rendered through React, so we thread a ref into `<CommentReplyForm>`
+  // and let it expose the node.
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const focusReplyForm = useCallback(() => {
     const textarea = replyTextareaRef.current
@@ -213,19 +181,30 @@ function CommentsBody({ commentKey, initialItems, rootsCount, totalCount, user }
     textarea?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [])
 
-  const onReplyClick = (rid: number) => {
-    flushSync(() => {
-      dispatch({ type: 'setReplyTo', rid })
-    })
-    focusReplyForm()
-  }
+  const onReply = useCallback(
+    (rid: number) => {
+      flushSync(() => {
+        dispatch({ type: 'setReplyTo', rid })
+      })
+      focusReplyForm()
+    },
+    [focusReplyForm],
+  )
+  const onCancelReply = useCallback(() => dispatch({ type: 'setReplyTo', rid: 0 }), [])
+  const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
+  const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
+  const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
+  const onReplied = useCallback((comment: CommentItemType, rid: number) => {
+    dispatch({ type: 'insertReply', comment, rid })
+    dispatch({ type: 'setReplyTo', rid: 0 })
+  }, [])
 
-  const onCancelReply = () => dispatch({ type: 'setReplyTo', rid: 0 })
-
-  const showLoadMore = state.rootsLoaded < state.rootsTotal
-  const moreLoading = loadMore.isPending
+  const admin = user?.admin === true
   const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
   const activeReplyToId = replyTarget ? state.replyToId : 0
+
+  // The same reply form JSX flows through context to whichever depth
+  // currently owns it (top-level or nested under the active comment).
   const replyForm = (
     <CommentReplyForm
       commentKey={commentKey}
@@ -233,48 +212,111 @@ function CommentsBody({ commentKey, initialItems, rootsCount, totalCount, user }
       replyTarget={replyTarget}
       user={user}
       onCancel={onCancelReply}
-      onReplied={handleReplyDispatched}
+      onReplied={onReplied}
       textareaRef={replyTextareaRef}
     />
   )
 
+  // Rebuilt every render because `replyForm` is a fresh JSX node each time;
+  // memoising would force an extra dependency without a re-render benefit
+  // (every consumer re-renders on `state` changes anyway).
+  const value: CommentsContextValue = {
+    commentKey,
+    totalCount,
+    admin,
+    user,
+    state,
+    activeReplyToId,
+    onReply,
+    onCancelReply,
+    onEdited,
+    onApproved,
+    onDeleted,
+    dispatch,
+    replyForm,
+  }
+
   return (
-    <div id="comments" className="comments pt-5" ref={containerRef}>
-      <div className="h5 mb-4 comment-total-count">
-        评论 <small className="font-theme text-sm">({totalCount})</small>
+    <CommentsContext.Provider value={value}>
+      <div id="comments" className="comments pt-5" ref={containerRef}>
+        {children}
       </div>
-      {activeReplyToId === 0 && replyForm}
-      <ul className="comment-list">
-        {state.items.map((item) => (
-          <ManagedCommentItem
-            key={asKey(item.id)}
-            comment={item}
-            depth={1}
-            admin={admin}
-            replyToId={activeReplyToId}
-            replyForm={replyForm}
-            onReply={onReplyClick}
-            onEdited={(c) => dispatch({ type: 'updateComment', comment: c })}
-            onApproved={(id) => dispatch({ type: 'approveComment', id })}
-            onDeleted={(id) => dispatch({ type: 'removeComment', id })}
-          />
-        ))}
-      </ul>
-      {showLoadMore && (
-        <div className="text-center mt-3 mt-md-4">
-          <button
-            type="button"
-            className="btn btn-light"
-            onClick={onLoadMore}
-            disabled={moreLoading}
-            data-key={commentKey}
-            data-size={pageSize}
-            data-offset={state.rootsLoaded}
-          >
-            {moreLoading ? '加载中...' : '加载更多'}
-          </button>
-        </div>
-      )}
+    </CommentsContext.Provider>
+  )
+}
+
+function CommentsHeader() {
+  const ctx = useCommentsContext('Comments.Header')
+  return (
+    <div className="h5 mb-4 comment-total-count">
+      评论 <small className="font-theme text-sm">({ctx.totalCount})</small>
+    </div>
+  )
+}
+
+// Renders the reply form only when no comment is the active reply target —
+// i.e. the top-level "Leave a reply" position. Reply forms anchored under a
+// specific comment travel through the recursive `CommentItem` tree.
+function CommentsReplyFormSlot() {
+  const ctx = useCommentsContext('Comments.ReplyFormSlot')
+  if (ctx.activeReplyToId !== 0) return null
+  return <>{ctx.replyForm}</>
+}
+
+function CommentsList() {
+  const ctx = useCommentsContext('Comments.List')
+  return (
+    <ul className="comment-list">
+      {ctx.state.items.map((item) => (
+        <CommentItem key={asKey(item.id)} comment={item} depth={1} />
+      ))}
+    </ul>
+  )
+}
+
+function CommentsLoadMore() {
+  const ctx = useCommentsContext('Comments.LoadMore')
+  const pageSize = config.settings.comments.size
+
+  // Pin the latest `rootsLoaded` so the success callback can compute the
+  // new offset without forcing the hook to remount on every dispatch.
+  const rootsLoadedRef = useRef(ctx.state.rootsLoaded)
+  rootsLoadedRef.current = ctx.state.rootsLoaded
+
+  const loadMore = useApiFetcher<never, LoadCommentsOutput>(API_ACTIONS.comment.loadComments, {
+    onSuccess: (payload) => {
+      ctx.dispatch({
+        type: 'append',
+        items: payload.comments,
+        rootsLoaded: rootsLoadedRef.current + payload.comments.length,
+      })
+    },
+  })
+
+  if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) return null
+
+  const moreLoading = loadMore.isPending
+  const onLoadMore = () => {
+    if (loadMore.isPending) return
+    loadMore.load({
+      page_key: ctx.commentKey,
+      offset: ctx.state.rootsLoaded,
+    } satisfies LoadCommentsInput)
+  }
+
+  return (
+    <div className="text-center mt-3 mt-md-4">
+      <button
+        type="button"
+        className="btn btn-light"
+        onClick={onLoadMore}
+        disabled={moreLoading}
+        data-key={ctx.commentKey}
+        data-size={pageSize}
+        data-offset={ctx.state.rootsLoaded}
+      >
+        {moreLoading ? '加载中...' : '加载更多'}
+      </button>
     </div>
   )
 }
@@ -291,54 +333,9 @@ function findComment(items: CommentItemType[], rid: number): CommentItemType | u
   return undefined
 }
 
-interface ManagedCommentItemProps {
-  comment: CommentItemType
-  depth: number
-  admin: boolean
-  replyToId: number
-  replyForm: React.ReactNode
-  onReply: (rid: number) => void
-  onEdited: (comment: CommentItemType) => void
-  onApproved: (id: bigint | string) => void
-  onDeleted: (id: bigint | string) => void
-}
+Comments.Header = CommentsHeader
+Comments.ReplyFormSlot = CommentsReplyFormSlot
+Comments.List = CommentsList
+Comments.LoadMore = CommentsLoadMore
 
-function ManagedCommentItem({
-  comment,
-  depth,
-  admin,
-  replyToId,
-  replyForm,
-  onReply,
-  onEdited,
-  onApproved,
-  onDeleted,
-}: ManagedCommentItemProps) {
-  const isReplyTarget = replyToId !== 0 && asKey(comment.id) === asKey(replyToId)
-  return (
-    <CommentItem
-      comment={comment}
-      depth={depth}
-      admin={admin}
-      actions={{ onReply, onEdited, onApproved, onDeleted }}
-      childrenTail={depth === 1 && isReplyTarget ? replyForm : undefined}
-      afterComment={depth !== 1 && isReplyTarget ? replyForm : undefined}
-      renderChild={(child) => (
-        <ManagedCommentItem
-          key={asKey(child.id)}
-          comment={child}
-          depth={depth + 1}
-          admin={admin}
-          replyToId={replyToId}
-          replyForm={replyForm}
-          onReply={onReply}
-          onEdited={onEdited}
-          onApproved={onApproved}
-          onDeleted={onDeleted}
-        />
-      )}
-    />
-  )
-}
-
-export type { CommentTreeAction }
+export type { CommentTreeAction, CommentTreeState }
