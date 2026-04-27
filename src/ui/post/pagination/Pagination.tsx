@@ -130,10 +130,16 @@ function PageLink({ current, pageNum, rootPath }: PageLinkProps) {
   }
   const base = rootPath.endsWith('/') ? rootPath.slice(0, -1) : rootPath
   const to = pageNum === 1 ? rootPath : `${base}/page/${pageNum}`
-  // Adjacent pages (±1) are very likely the user's next destination, so we
-  // ask React Router to prefetch them on render. Other windowed entries use
-  // intent-based prefetching to keep the network quiet.
-  const prefetch = Math.abs(pageNum - current) === 1 ? 'render' : 'intent'
+  // Prefetch budget split per `react-router-framework-mode/loader-defer` and
+  // `vercel-react-best-practices/bundle-dynamic-imports`:
+  //   - Adjacent pages (±1) are the most likely next destination → `intent`,
+  //     so the prefetch fires on hover/focus/touchstart instead of on every
+  //     render. (`render` would burn the data-saver budget on first paint.)
+  //   - All other windowed entries → `viewport`, so the prefetch only runs
+  //     when the link actually enters the viewport. On mobile this skips
+  //     the offscreen page numbers entirely; on desktop it still warms the
+  //     cache for what the user can see.
+  const prefetch = Math.abs(pageNum - current) <= 1 ? 'intent' : 'viewport'
   return (
     <Link className={pageItem({ variant: 'default' })} to={to} prefetch={prefetch}>
       {pageNum}

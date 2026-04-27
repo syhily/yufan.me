@@ -4,6 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/ui/lib/cn'
 import { APPEARANCE_VARIANTS, TONE_VARIANTS, type Appearance } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 
 // 4 orthogonal dimensions per `vercel-composition-patterns/architecture-avoid-boolean-props`:
 //
@@ -85,54 +86,14 @@ export interface ButtonProps extends ComponentPropsWithRef<'button'>, ButtonVari
   ref?: Ref<HTMLButtonElement>
 }
 
-// Translate the `appearance` prop into the `data-appearance` attribute
-// for the two values that drive the data-attribute palette in
-// `toneStyles.css`. `ghost` and `link` keep their full inline className
-// (no data-attribute), since they intentionally bypass the tone matrix.
-function appearanceAttr(appearance: ButtonVariantProps['appearance']): Appearance | undefined {
-  return appearance === 'solid' || appearance === 'outline' ? appearance : undefined
-}
-
-export function Button({ className, tone, appearance, size, shape, type, ref, ...props }: ButtonProps) {
-  const dataTone = tone ?? 'accent'
-  const dataAppearance = appearanceAttr(appearance ?? 'solid')
-  const classes = cn(buttonVariants({ tone, appearance, size, shape }), className)
-
-  // The `react/button-has-type` rule rejects `type={...something dynamic...}`
-  // because it can't statically prove the value is one of "button" / "submit"
-  // / "reset". Branch on the prop and emit literal strings so the linter can
-  // verify each path.
-  if (type === 'submit') {
-    return (
-      <button
-        ref={ref}
-        type="submit"
-        data-tone={dataTone}
-        data-appearance={dataAppearance}
-        className={classes}
-        {...props}
-      />
-    )
-  }
-  if (type === 'reset') {
-    return (
-      <button
-        ref={ref}
-        type="reset"
-        data-tone={dataTone}
-        data-appearance={dataAppearance}
-        className={classes}
-        {...props}
-      />
-    )
-  }
+export function Button({ className, tone, appearance, size, shape, ref, ...props }: ButtonProps) {
   return (
-    <button
+    <ToneSurface
+      as="button"
+      tone={tone ?? 'accent'}
+      appearance={appearance ?? 'solid'}
       ref={ref}
-      type="button"
-      data-tone={dataTone}
-      data-appearance={dataAppearance}
-      className={classes}
+      className={cn(buttonVariants({ tone, appearance, size, shape }), className)}
       {...props}
     />
   )

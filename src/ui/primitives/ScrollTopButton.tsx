@@ -4,31 +4,40 @@ import { ArrowUpIcon } from '@/ui/icons/icons'
 import { Button } from '@/ui/primitives/Button'
 
 // Scroll-to-top button. Becomes visible only once the reader has moved past
-// the initial viewport. Replaces the vanilla `features/scroll-top.ts` glue.
+// the initial viewport. Uses an `IntersectionObserver` against a top-of-document
+// sentinel instead of a passive scroll listener: the observer fires twice
+// (entering / leaving the viewport) instead of once per scroll frame, which
+// keeps the main thread free during long-form reading.
+//
+// The sentinel is appended to `document.body` from the effect because the
+// recursive component tree renders this button inside a fixed `<ul>` at the
+// bottom-right of the viewport — adding the sentinel as a JSX sibling there
+// would anchor it to the list's containing block, not the document.
 export function ScrollTopButton() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    let rafHandle = 0
-    const update = () => {
-      rafHandle = 0
-      setShow(window.scrollY > 300)
-    }
-    const schedule = () => {
-      if (rafHandle !== 0) {
-        return
-      }
-      rafHandle = window.requestAnimationFrame(update)
-    }
-    window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
-    update()
+    const sentinel = document.createElement('div')
+    sentinel.setAttribute('aria-hidden', 'true')
+    sentinel.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:1px;pointer-events:none;'
+    document.body.appendChild(sentinel)
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry === undefined) {
+          return
+        }
+        // Inverse of intersection: button shows whenever the sentinel has
+        // scrolled past the rootMargin band at the top of the viewport.
+        setShow(!entry.isIntersecting)
+      },
+      { rootMargin: '300px 0px 0px 0px' },
+    )
+    io.observe(sentinel)
+
     return () => {
-      if (rafHandle !== 0) {
-        window.cancelAnimationFrame(rafHandle)
-      }
-      window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
+      io.disconnect()
+      sentinel.remove()
     }
   }, [])
 

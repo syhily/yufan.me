@@ -1,9 +1,7 @@
 import type { ImgHTMLAttributes } from 'react'
 
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
+import { cn } from '@/ui/lib/cn'
 
 // `<img>` override for compiled MDX bodies. The compile-time
 // `rehype-image-enhance.server.ts` plugin already inlines `width`, `height`,
@@ -19,7 +17,7 @@ export type MdxImgProps = ImgHTMLAttributes<HTMLImageElement> & {
   'data-thumbhash'?: string
 }
 
-const MDX_IMG_BASE = clsx('flex justify-center')
+const MDX_IMG_BASE = 'flex justify-center'
 
 export function MdxImg({ alt = '', loading = 'lazy', decoding = 'async', className, style, ...rest }: MdxImgProps) {
   const thumbhash = rest['data-thumbhash']
@@ -33,7 +31,7 @@ export function MdxImg({ alt = '', loading = 'lazy', decoding = 'async', classNa
       alt={alt}
       loading={loading}
       decoding={decoding}
-      className={twMerge(MDX_IMG_BASE, className)}
+      className={cn(MDX_IMG_BASE, className)}
       style={mergedStyle}
     />
   )

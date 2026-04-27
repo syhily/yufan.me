@@ -1,10 +1,9 @@
-import { clsx } from 'clsx'
 import { Form, useNavigation } from 'react-router'
-import { twMerge } from 'tailwind-merge'
 
+import { cn } from '@/ui/lib/cn'
 import { buttonVariants } from '@/ui/primitives/Button'
 import { inputVariants } from '@/ui/primitives/Input'
-import { toneAttrs } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 
 // LoginForm and InstallForm previously duplicated 90% of the same JSX (CSRF
 // token hidden field, email + password inputs, submit button styling). The
@@ -49,23 +48,11 @@ export function AdminCredentialsForm({ mode, action, token }: AdminCredentialsFo
       <div className="flex-1">
         <div className="flex flex-col gap-3 mb-5 px-5">
           {mode === 'install' && (
-            <input
-              className={twMerge(clsx(inputVariants(), 'mb-2'))}
-              placeholder="昵称"
-              name="name"
-              type="text"
-              required
-            />
+            <input className={cn(inputVariants(), 'mb-2')} placeholder="昵称" name="name" type="text" required />
           )}
+          <input className={cn(inputVariants(), 'mb-2')} placeholder="邮箱" name="email" type="email" required />
           <input
-            className={twMerge(clsx(inputVariants(), 'mb-2'))}
-            placeholder="邮箱"
-            name="email"
-            type="email"
-            required
-          />
-          <input
-            className={twMerge(clsx(inputVariants(), 'mb-2'))}
+            className={cn(inputVariants(), 'mb-2')}
             placeholder="密码"
             name="password"
             type="password"
@@ -74,12 +61,14 @@ export function AdminCredentialsForm({ mode, action, token }: AdminCredentialsFo
           />
         </div>
         <div className="text-center">
-          <input
+          <ToneSurface
+            as="input"
+            tone="accent"
+            appearance="solid"
             name="submit"
             type="submit"
             id="submit"
-            className={twMerge(clsx(buttonVariants({ tone: 'accent' }), 'w-1/3'))}
-            {...toneAttrs('accent', 'solid')}
+            className={cn(buttonVariants({ tone: 'accent' }), 'w-1/3')}
             value={isSubmitting ? pendingLabel : submitLabel}
             disabled={isSubmitting}
           />

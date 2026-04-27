@@ -3,7 +3,8 @@ import type { ComponentPropsWithRef, Ref } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/ui/lib/cn'
-import { TONE_VARIANTS, type Tone } from '@/ui/primitives/tone'
+import { TONE_VARIANTS } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 
 // Badge has 3 dimensions: `tone` × `size` × `shape`. Colours are
 // always `solid`, so the host element renders with
@@ -43,12 +44,12 @@ export interface BadgeProps extends ComponentPropsWithRef<'span'>, BadgeVariantP
 }
 
 export function Badge({ className, tone, size, shape, ref, ...props }: BadgeProps) {
-  const dataTone: Tone = tone ?? 'accent'
   return (
-    <span
+    <ToneSurface
+      as="span"
+      tone={tone ?? 'accent'}
+      appearance="solid"
       ref={ref}
-      data-tone={dataTone}
-      data-appearance="solid"
       className={cn(badgeVariants({ tone, size, shape }), className)}
       {...props}
     />

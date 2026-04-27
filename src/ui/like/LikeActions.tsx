@@ -1,6 +1,4 @@
-import { clsx } from 'clsx'
 import { startTransition, useEffect, useOptimistic, useReducer } from 'react'
-import { twMerge } from 'tailwind-merge'
 
 import type {
   DecreaseLikeInput,
@@ -16,10 +14,11 @@ import { API_ACTIONS } from '@/client/api/actions'
 import { useApiAction } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
 import { HeartIcon, QqIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
+import { cn } from '@/ui/lib/cn'
 import { buttonVariants } from '@/ui/primitives/Button'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { useSiteConfig } from '@/ui/primitives/site-config'
-import { toneAttrs } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 
 export interface LikeButtonProps {
   permalink: string
@@ -163,30 +162,30 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   // need `!important` on the className side anymore. The Layer C tokens
   // `--color-liked` / `--color-liked-shadow` (declared in `globals.css`)
   // swap automatically in dark mode.
-  const className = twMerge(
-    clsx(
-      buttonVariants({ tone: 'inverse', size: 'lg', shape: 'pill' }),
-      'hover:animate-[shake_0.82s_cubic-bezier(0.36,0.07,0.19,0.97)_both] hover:translate-z-0',
-      'data-[liked=true]:bg-liked data-[liked=true]:border-liked data-[liked=true]:text-surface',
-      'data-[liked=true]:shadow-[0_5px_20px_0_var(--color-liked-shadow)]',
-    ),
+  const className = cn(
+    buttonVariants({ tone: 'inverse', size: 'lg', shape: 'pill' }),
+    'hover:animate-[shake_0.82s_cubic-bezier(0.36,0.07,0.19,0.97)_both] hover:translate-z-0',
+    'data-[liked=true]:bg-liked data-[liked=true]:border-liked data-[liked=true]:text-surface',
+    'data-[liked=true]:shadow-[0_5px_20px_0_var(--color-liked-shadow)]',
   )
 
   return (
     <div className="text-center mt-5">
-      <button
+      <ToneSurface
+        as="button"
+        type="button"
+        tone="inverse"
+        appearance="solid"
         className={className}
-        {...toneAttrs('inverse', 'solid')}
         data-liked={optimistic.liked}
         title="Do you like me?"
-        type="button"
         data-permalink={permalink}
         onClick={onClick}
         disabled={isPending}
       >
         <HeartIcon className="me-1 w-[1.1em] h-[1.1em] -mt-0.5 align-middle" />
         <span className="inline-block align-middle">{optimistic.likes}</span>
-      </button>
+      </ToneSurface>
     </div>
   )
 }
@@ -220,7 +219,6 @@ export function LikeShare({ post }: LikeShareProps) {
   }).toString()
 
   const socialBtn = buttonVariants({ tone: 'neutral', size: 'md', shape: 'circle' })
-  const socialAttrs = toneAttrs('neutral', 'solid')
 
   return (
     <div className="text-center mt-4">
@@ -228,23 +226,22 @@ export function LikeShare({ post }: LikeShareProps) {
         href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
         title="分享到 QQ 空间"
         icon={QqIcon}
-        className={twMerge(clsx(socialBtn, 'mx-1'))}
-        toneAttrs={socialAttrs}
+        className={cn(socialBtn, 'mx-1')}
       />
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
         icon={WechatIcon}
-        className={twMerge(clsx(socialBtn, 'mx-1'))}
-        triggerTone={socialAttrs}
+        className={cn(socialBtn, 'mx-1')}
+        triggerTone="neutral"
+        triggerAppearance="solid"
       />
       <SocialIconLink
         href={`https://service.weibo.com/share/share.php?${weibo}`}
         title="分享到微博"
         icon={WeiboIcon}
-        className={twMerge(clsx(socialBtn, 'mx-1'))}
-        toneAttrs={socialAttrs}
+        className={cn(socialBtn, 'mx-1')}
       />
     </div>
   )
@@ -258,15 +255,14 @@ interface SocialIconLinkProps {
   title: string
   icon: IconComponent
   className: string
-  toneAttrs: ReturnType<typeof toneAttrs>
 }
 
-function SocialIconLink({ href, title, icon: Icon, className, toneAttrs: dataToneAttrs }: SocialIconLinkProps) {
+function SocialIconLink({ href, title, icon: Icon, className }: SocialIconLinkProps) {
   return (
-    <a href={href} className={className} title={title} {...dataToneAttrs}>
+    <ToneSurface as="a" tone="neutral" appearance="solid" href={href} className={className} title={title}>
       <span>
         <Icon />
       </span>
-    </a>
+    </ToneSurface>
   )
 }

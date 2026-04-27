@@ -1,8 +1,8 @@
 import type { ComponentPropsWithRef, Ref } from 'react'
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 // Replaces `.media / .media-3x2 / .media-3x1 / .media-36x17 / .media-overlay /
 // .media-content` (legacy `_base.css`). The aspect-ratio ratios mirror the legacy
@@ -30,7 +30,7 @@ export interface MediaProps extends ComponentPropsWithRef<'div'>, MediaVariantPr
 }
 
 export function Media({ className, ratio, ref, ...props }: MediaProps) {
-  return <div ref={ref} className={twMerge(clsx(mediaVariants({ ratio }), className))} {...props} />
+  return <div ref={ref} className={cn(mediaVariants({ ratio }), className)} {...props} />
 }
 
 export interface MediaContentProps extends ComponentPropsWithRef<'div'> {
@@ -41,11 +41,9 @@ export function MediaContent({ className, ref, ...props }: MediaContentProps) {
   return (
     <div
       ref={ref}
-      className={twMerge(
-        clsx(
-          'absolute inset-0 border-0 rounded-[inherit] bg-cover bg-no-repeat bg-center [&>img]:w-full [&>img]:h-full [&>img]:object-cover [&>img]:block',
-          className,
-        ),
+      className={cn(
+        'absolute inset-0 border-0 rounded-[inherit] bg-cover bg-no-repeat bg-center [&>img]:w-full [&>img]:h-full [&>img]:object-cover [&>img]:block',
+        className,
       )}
       {...props}
     />
@@ -64,12 +62,10 @@ export function MediaOverlay({ className, top, bottom, ref, ...props }: MediaOve
   return (
     <div
       ref={ref}
-      className={twMerge(
-        clsx(
-          'absolute left-0 right-0 z-(--z-card-overlay-2) flex items-center px-3 py-2',
-          top ? 'top-0 bottom-auto' : bottom ? 'bottom-0 top-auto' : 'inset-0',
-          className,
-        ),
+      className={cn(
+        'absolute left-0 right-0 z-(--z-card-overlay-2) flex items-center px-3 py-2',
+        top ? 'top-0 bottom-auto' : bottom ? 'bottom-0 top-auto' : 'inset-0',
+        className,
       )}
       {...props}
     />

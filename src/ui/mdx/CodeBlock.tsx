@@ -1,4 +1,3 @@
-import { clsx } from 'clsx'
 import {
   cloneElement,
   isValidElement,
@@ -9,7 +8,8 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 const COPY_LABEL = 'Copy'
 const COPIED_LABEL = 'Copied'
@@ -188,13 +188,11 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
   // is now baked in directly. Shiki's dual-theme inline styles still take
   // effect via the unscoped `pre.shiki { color: var(--shiki-light) }`
   // rule in globals.css.
-  const preClassName = twMerge(
-    clsx(
-      'relative font-mono text-inherit',
-      'bg-surface-muted',
-      'px-5 py-4 m-0',
-      'overflow-x-auto break-normal [overflow-wrap:normal]',
-    ),
+  const preClassName = cn(
+    'relative font-mono text-inherit',
+    'bg-surface-muted',
+    'px-5 py-4 m-0',
+    'overflow-x-auto break-normal [overflow-wrap:normal]',
     className,
   )
 
@@ -235,12 +233,8 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
 // Tracks `pre > code` from the legacy Bootstrap-era prose cascade. We
 // reach into the single `<code>` child the MDX compiler emits as the
 // immediate pre-child and merge its className with the layout utilities.
-const INNER_CODE_CLASSES = clsx(
-  'font-mono text-inherit bg-transparent',
-  'block min-w-full w-max',
-  'whitespace-pre break-normal [overflow-wrap:normal]',
-  'pt-0',
-)
+const INNER_CODE_CLASSES =
+  'font-mono text-inherit bg-transparent block min-w-full w-max whitespace-pre break-normal [overflow-wrap:normal] pt-0'
 
 function decorateInnerCode(children: ReactNode): ReactNode {
   const childList = Array.isArray(children) ? children : [children]
@@ -249,7 +243,7 @@ function decorateInnerCode(children: ReactNode): ReactNode {
     if (isValidElement<CodeElementProps>(child) && child.type === 'code') {
       next.push(
         cloneElement(child, {
-          className: twMerge(INNER_CODE_CLASSES, child.props.className),
+          className: cn(INNER_CODE_CLASSES, child.props.className),
         }),
       )
     } else {

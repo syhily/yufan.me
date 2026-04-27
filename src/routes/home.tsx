@@ -1,3 +1,6 @@
+import { Suspense, use } from 'react'
+
+import type { SidebarSnapshotOutput } from '@/client/api/action-types'
 import type { ListingPostCard } from '@/server/catalog'
 import type { ListingPageLoaderData } from '@/server/listing'
 import type { SidebarData } from '@/ui/sidebar/Sidebar'
@@ -10,7 +13,7 @@ import { getRouteRequestContext } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 import { selectFeaturePosts, selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
 import { formatLocalDate } from '@/shared/formatter'
-import { HomeLayoutBody } from '@/ui/post/post/PostListViews'
+import { HomeLayoutBody, HomeListingSkeleton } from '@/ui/post/post/PostListViews'
 import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
 
 import type { Route } from './+types/home'
@@ -78,67 +81,122 @@ export const headers = listingHeaders
 export const shouldRevalidate = listingShouldRevalidate
 
 /**
- * Client-side loader that overlays the cached sidebar snapshot on top of
- * the server's response. The server still ships the canonical sidebar
- * payload in the SSR HTML and on every navigation that misses the
- * cache; `clientLoader` lets us serve the cached value from Cache
- * Storage instead so back-to-home navigations skip the latest-comments
- * lookup. We always write the freshest data back to the cache so the
- * next navigation gets the new admin status / pending comments without
- * waiting for the TTL to expire. Defer-style background revalidation is
- * handled by `getSidebarSnapshot` itself when the entry is older than
- * the staleness threshold.
+ * Loader-data shape emitted by `clientLoader`. Two variants:
+ *
+ *   - `sync` — the cache was empty (first SPA navigation, hard reload, or
+ *     a sign-in/out invalidation). The server response has been awaited
+ *     and every field is ready to render synchronously, matching the
+ *     plain `loader()` shape.
+ *   - `swr` — the cache had a fresh sidebar snapshot. We render
+ *     immediately with the cached `admin/sidebar` slice and stream the
+ *     rest of the listing through `fresh`. The route component reads
+ *     `fresh` via `use()` inside a `<Suspense>` boundary that wraps the
+ *     post-grid only, so first paint is not blocked on the server's
+ *     `getCatalog().getClientPostsWithMetadata(...)` call.
+ *
+ * This implements `react-router-framework-mode/loader-defer` plus the
+ * stale-while-revalidate rule from the project's
+ * `client/sidebar/cache.ts` documentation.
  */
-export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
-  const serverData = await serverLoader()
+type ServerHomeData = ListingPageLoaderData<HomeExtra>
 
-  // Background-write the freshest sidebar to Cache Storage so the next
-  // navigation can short-circuit. `void`-discarded — the navigation
-  // shouldn't wait on a quota check.
-  void writeSidebarSnapshotCache({
-    admin: serverData.extra.admin,
-    recentComments: serverData.extra.sidebar.recentComments,
-    pendingComments: serverData.extra.sidebar.pendingComments,
+type HomeLoaderData =
+  | { kind: 'sync'; data: ServerHomeData }
+  | { kind: 'swr'; cached: SidebarSnapshotOutput; fresh: Promise<ServerHomeData> }
+
+/**
+ * Client-side loader. Implements stale-while-revalidate against the
+ * sidebar Cache Storage entry (`client/sidebar/cache.ts`). On a cache
+ * hit we render immediately with the cached sidebar slice and let the
+ * server response upgrade the post grid (and any post-tied counters)
+ * once it arrives — see the `swr` branch of `HomeLoaderData` above.
+ *
+ * The fire-and-forget cache write keeps the snapshot warm even when
+ * the cached value already wins for sidebar so back-to-home navigations
+ * always start from the latest admin / pending-comments view.
+ */
+export async function clientLoader({ serverLoader, params }: Route.ClientLoaderArgs): Promise<HomeLoaderData> {
+  // Kick off the cache read and the server fetch in parallel so the
+  // cache-hit branch never waits on the server, and the cache-miss
+  // branch never waits on a no-op cache miss before starting the
+  // server fetch.
+  const cachePromise: Promise<SidebarSnapshotOutput | null> = getSidebarSnapshot().catch(() => null)
+  const serverPromise: Promise<ServerHomeData> = serverLoader().then((serverData) => {
+    // Background-write the freshest sidebar to Cache Storage so the
+    // next navigation can short-circuit. Quota errors are swallowed
+    // by `writeSidebarSnapshotCache`.
+    void writeSidebarSnapshotCache({
+      admin: serverData.extra.admin,
+      recentComments: serverData.extra.sidebar.recentComments,
+      pendingComments: serverData.extra.sidebar.pendingComments,
+    })
+    return serverData
   })
 
-  // Cached value wins (matches the freshest user-visible state when the
-  // server didn't see a new comment yet, e.g. after the user just
-  // approved one in another tab). On a cache miss we fall through to the
-  // server payload, which is what every fresh load already gets.
-  let cached: Awaited<ReturnType<typeof getSidebarSnapshot>> | null = null
-  try {
-    cached = await getSidebarSnapshot()
-  } catch {
-    cached = null
+  // Page 2+ has listing-specific `<title>` / canonical / OpenGraph
+  // tags that ride along on `loaderData.seo`. `meta()` runs once per
+  // loader-data change, never against the deferred slice, so a SWR
+  // payload would silently drop those tags. Restrict SWR to the
+  // default `/` route (no paginated `num`) and always await the
+  // server on `/page/N` so SEO stays accurate.
+  if (params.num) {
+    return { kind: 'sync', data: await serverPromise }
   }
 
+  const cached = await cachePromise
   if (!cached) {
-    return serverData
+    // First paint / cache miss: wait for the canonical server payload
+    // before rendering. Same behaviour as the pre-SWR design.
+    return { kind: 'sync', data: await serverPromise }
   }
 
-  return {
-    ...serverData,
-    extra: {
-      ...serverData.extra,
-      admin: cached.admin,
-      sidebar: {
-        ...serverData.extra.sidebar,
-        recentComments: cached.recentComments,
-        pendingComments: cached.pendingComments,
-      },
-    },
-  }
+  return { kind: 'swr', cached, fresh: serverPromise }
+}
+
+// Type guard between the server `loader()` shape (raw
+// `ListingPageLoaderData`) and the `clientLoader()` discriminated union.
+// React Router's `Route.ComponentProps['loaderData']` is the union of
+// both — `meta()` and the route component both have to discriminate
+// before touching any client-only fields.
+function isClientLoaderShape(value: unknown): value is HomeLoaderData {
+  return typeof value === 'object' && value !== null && 'kind' in value
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData || loaderData.seo.length === 0) {
+  if (!loaderData) {
     return routeMeta()
   }
-  return loaderData.seo
+  // The server loader (`loader()`) returns a `ListingPageLoaderData`
+  // shape directly; only `clientLoader()` wraps it in the `sync` /
+  // `swr` discriminated union. `meta()` runs on every navigation
+  // (server-rendered first request and SPA transitions alike), so it
+  // has to handle both shapes.
+  const seo = isClientLoaderShape(loaderData) ? (loaderData.kind === 'sync' ? loaderData.data.seo : []) : loaderData.seo
+  if (seo.length === 0) {
+    return routeMeta()
+  }
+  return seo
 }
 
 export default function HomeRoute({ loaderData }: Route.ComponentProps) {
-  const { pageNum, totalPage, resolvedPosts, extra } = loaderData
+  // Server-rendered first request: `loaderData` is the raw server
+  // shape, render synchronously. Same path as before SWR landed.
+  if (!isClientLoaderShape(loaderData)) {
+    return <HomeBody data={loaderData} />
+  }
+  // SPA navigation: discriminate the client-loader union. `sync`
+  // means the cache missed and the server response was awaited, so
+  // we can render synchronously. `swr` means the cache hit and we
+  // hand the deferred server response to `<Suspense>` while the
+  // cached sidebar slice paints immediately.
+  if (loaderData.kind === 'sync') {
+    return <HomeBody data={loaderData.data} />
+  }
+  return <HomeBodyDeferred cached={loaderData.cached} fresh={loaderData.fresh} />
+}
+
+function HomeBody({ data }: { data: ServerHomeData }) {
+  const { pageNum, totalPage, resolvedPosts, extra } = data
   return (
     <HomeLayoutBody
       resolvedPosts={resolvedPosts}
@@ -150,6 +208,45 @@ export default function HomeRoute({ loaderData }: Route.ComponentProps) {
       sidebar={extra.sidebar}
     />
   )
+}
+
+interface HomeBodyDeferredProps {
+  cached: SidebarSnapshotOutput
+  fresh: Promise<ServerHomeData>
+}
+
+// Renders the listing inside a Suspense boundary so the cached sidebar
+// can paint immediately while the server response hydrates the rest.
+// Once `fresh` resolves, `HomeBody` swaps in with the canonical data —
+// including the cache's freshest admin/sidebar slice, which keeps
+// admin-only widgets (pending comments) accurate across tabs.
+function HomeBodyDeferred({ cached, fresh }: HomeBodyDeferredProps) {
+  return (
+    <Suspense fallback={<HomeListingSkeleton cached={cached} />}>
+      <HomeBodyResolved cached={cached} fresh={fresh} />
+    </Suspense>
+  )
+}
+
+function HomeBodyResolved({ cached, fresh }: HomeBodyDeferredProps) {
+  const data = use(fresh)
+  // The cache might be ahead of the server (admin just approved a
+  // comment in another tab and the recent-comments cache hasn't
+  // refreshed yet). Overlay the cached `admin/sidebar` slice on top
+  // of the server payload so the user keeps seeing the freshest state.
+  const merged: ServerHomeData = {
+    ...data,
+    extra: {
+      ...data.extra,
+      admin: cached.admin,
+      sidebar: {
+        ...data.extra.sidebar,
+        recentComments: cached.recentComments,
+        pendingComments: cached.pendingComments,
+      },
+    },
+  }
+  return <HomeBody data={merged} />
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

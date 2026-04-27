@@ -1,7 +1,14 @@
-import { clsx } from 'clsx'
-import { type CSSProperties, type ReactNode, memo, useContext, useEffect, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  memo,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useFormStatus } from 'react-dom'
-import { twMerge } from 'tailwind-merge'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/client/api/action-types'
 import type { CommentItem as CommentItemType } from '@/server/comments/types'
@@ -12,7 +19,14 @@ import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
 import { CommentBody } from '@/ui/comments/CommentBody'
-import { type CommentNode, CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
+import {
+  type CommentNode,
+  CommentsMetaContext,
+  useCommentNode,
+  useCommentsActions,
+  useReplyFormForId,
+} from '@/ui/comments/comments-context'
+import { cn } from '@/ui/lib/cn'
 import { badgeVariants } from '@/ui/primitives/Badge'
 import { Button } from '@/ui/primitives/Button'
 import { Textarea } from '@/ui/primitives/Textarea'
@@ -56,12 +70,8 @@ interface ResolvedNode {
 //   inline `children: CommentItemType[]`. This keeps the standalone
 //   `<Comment>` SSR helper and the snapshot tests working unchanged.
 function useResolvedNode(props: CommentItemProps): ResolvedNode | null {
-  const ctx = useContext(CommentsContext)
-  if (props.id !== undefined && ctx !== null) {
-    const node = ctx.state.byId.get(props.id) ?? null
-    if (node === null) {
-      return null
-    }
+  const node = useCommentNode(props.id ?? '')
+  if (props.id !== undefined && node !== null) {
     return {
       id: props.id,
       data: stripChildrenIds(node),
@@ -85,43 +95,31 @@ function stripChildrenIds(node: CommentNode): Omit<CommentItemType, 'children'> 
   return rest
 }
 
+/**
+ * Reads only Meta + Actions from the orchestrator. The recursive
+ * `<CommentItem>` no longer subscribes to the reply-form context here,
+ * so a fresh reply-form JSX node leaves the visible tree untouched.
+ * Standalone callers (no orchestrator) get a no-op fallback through
+ * `useCommentsActions()`.
+ */
 function useCommentsLeafContext(propAdmin: boolean | undefined): {
   admin: boolean
-  activeReplyToId: number
-  replyForm: React.ReactNode
   onReply: (rid: number) => void
   onEdited: (comment: CommentItemType) => void
   onApproved: (id: bigint | string) => void
   onDeleted: (id: bigint | string) => void
 } {
-  const ctx = useContext(CommentsContext)
-  if (ctx !== null) {
-    return adapt(ctx, propAdmin)
-  }
+  const meta = useContext(CommentsMetaContext)
+  const actions = useCommentsActions()
+  const admin = propAdmin === undefined ? meta?.admin === true : propAdmin
   return {
-    admin: propAdmin === true,
-    activeReplyToId: 0,
-    replyForm: null,
-    onReply: noop,
-    onEdited: noop,
-    onApproved: noop,
-    onDeleted: noop,
+    admin,
+    onReply: actions.onReply,
+    onEdited: actions.onEdited,
+    onApproved: actions.onApproved,
+    onDeleted: actions.onDeleted,
   }
 }
-
-function adapt(ctx: CommentsContextValue, propAdmin: boolean | undefined) {
-  return {
-    admin: propAdmin === undefined ? ctx.admin : propAdmin,
-    activeReplyToId: ctx.activeReplyToId,
-    replyForm: ctx.replyForm,
-    onReply: ctx.onReply,
-    onEdited: ctx.onEdited,
-    onApproved: ctx.onApproved,
-    onDeleted: ctx.onDeleted,
-  }
-}
-
-function noop() {}
 
 // The badge palette comes from the comment author's `badgeColor` /
 // `commentBadgeTextColor()` pair when available. When either side is
@@ -169,15 +167,17 @@ interface ResolvedItemProps extends CommentItemProps {
 }
 
 function RootComment({ resolved, depth, pending, admin: propAdmin }: ResolvedItemProps) {
-  const leaf = useCommentsLeafContext(propAdmin)
-  const isReplyTarget = leaf.activeReplyToId !== 0 && resolved.id === asKey(leaf.activeReplyToId)
-  const childrenTail = depth === 1 && isReplyTarget ? leaf.replyForm : null
+  // Reads the reply-form context only — and only forwards the node when
+  // *this* row is the active reply target. Other rows skip the
+  // subscription and stay memoised across reply-form identity churn.
+  const replyFormForRow = useReplyFormForId(resolved.id)
+  const childrenTail = depth === 1 ? replyFormForRow : null
   const childCount = resolved.childrenIds?.length ?? resolved.inlineChildren?.length ?? 0
   const showChildrenList = childCount > 0 || childrenTail !== null
   return (
     <CommentLi data={resolved.data} depth={depth} pending={pending} admin={propAdmin}>
       {showChildrenList && (
-        <ul className="children text-sm p-4 mt-4 ml-[2.375rem] rounded-sm bg-surface-muted md:p-6 md:mt-5 md:ml-14">
+        <ul data-nested className="text-sm p-4 mt-4 ml-[2.375rem] rounded-sm bg-surface-muted md:p-6 md:mt-5 md:ml-14">
           <ChildList resolved={resolved} depth={depth + 1} admin={propAdmin} />
           {childrenTail && <li>{childrenTail}</li>}
         </ul>
@@ -187,9 +187,8 @@ function RootComment({ resolved, depth, pending, admin: propAdmin }: ResolvedIte
 }
 
 function NestedComment({ resolved, depth, pending, admin: propAdmin }: ResolvedItemProps) {
-  const leaf = useCommentsLeafContext(propAdmin)
-  const isReplyTarget = leaf.activeReplyToId !== 0 && resolved.id === asKey(leaf.activeReplyToId)
-  const afterComment = depth !== 1 && isReplyTarget ? leaf.replyForm : null
+  const replyFormForRow = useReplyFormForId(resolved.id)
+  const afterComment = depth !== 1 ? replyFormForRow : null
   return (
     <>
       <CommentLi data={resolved.data} depth={depth} pending={pending} admin={propAdmin} />
@@ -246,7 +245,7 @@ function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }
     >
       <article id={`div-comment-${comment.id}`} className="relative flex flex-auto min-w-0 max-w-full box-border">
         <div
-          className="flex-avatar w-7 h-7 mr-2.5 [.children_&]:w-[30px] [.children_&]:h-[30px] md:w-10 md:h-10 md:mr-[0.9375rem]"
+          className="flex-avatar w-7 h-7 mr-2.5 md:w-10 md:h-10 md:mr-[0.9375rem]"
           style={{
             backgroundImage: "url('/images/default-avatar.png')",
             backgroundSize: 'cover',
@@ -263,7 +262,7 @@ function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }
             decoding="async"
           />
         </div>
-        <div className="flex-auto min-w-0 mt-0.5 md:mt-0 [.children_&]:mt-1">
+        <div className="author-row flex-auto min-w-0 mt-0.5 md:mt-0">
           <div className="font-bold inline-flex flex-wrap items-center gap-1.5 max-w-full [&_a]:align-middle">
             {authorHref === undefined ? (
               comment.name
@@ -280,11 +279,9 @@ function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }
               // `badgeVariants()` only to inherit the layout (font + spacing)
               // — colour stays under the inline-style override below.
               <span
-                className={twMerge(
-                  clsx(
-                    badgeVariants(),
-                    'inline-flex flex-none items-center px-1.5 py-0.5 leading-[1.2] whitespace-nowrap rounded-full font-bold border-0 bg-[color:var(--badge-color)] text-[color:var(--badge-fg)]',
-                  ),
+                className={cn(
+                  badgeVariants(),
+                  'inline-flex flex-none items-center px-1.5 py-0.5 leading-[1.2] whitespace-nowrap rounded-full font-bold border-0 bg-[color:var(--badge-color)] text-[color:var(--badge-fg)]',
                 )}
                 style={badgeStyle(comment.badgeColor, comment.badgeTextColor)}
               >
@@ -292,7 +289,7 @@ function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }
               </span>
             )}
           </div>
-          <div className="prose-host whitespace-normal break-words my-2 leading-[1.85] [.children_&]:my-1.5 [.children_&]:break-all">
+          <div className="comment-body prose-host whitespace-normal break-words my-2 leading-[1.85]">
             {pending && <p className="text-xs text-danger">您的评论正在等待审核中...</p>}
             <CommentBody compiled={comment.bodyCompiled} />
           </div>
@@ -340,17 +337,12 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
     await approve.submit({ rid: String(comment.id) })
   }
   const removeAction = async () => {
-    if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！')) {
-      return
-    }
     await remove.submit({ rid: String(comment.id) })
   }
 
   return (
     <div className="text-xs text-foreground-muted flex flex-auto items-center [&_button]:bg-transparent [&_button]:transition-all [&_button]:duration-300 [&_button]:ease-linear">
-      <time className="me-2 flex-auto [.children_&]:flex-none">
-        {formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}
-      </time>
+      <time className="comment-time me-2 flex-auto">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
       <button type="button" className="me-2 hover:text-accent" data-rid={comment.id} onClick={handleReply}>
         回复
       </button>
@@ -366,14 +358,82 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
               </ModerateSubmit>
             </ModerateForm>
           )}
-          <ModerateForm action={removeAction}>
-            <ModerateSubmit className="me-2 text-danger" data-rid={comment.id}>
-              删除
-            </ModerateSubmit>
-          </ModerateForm>
+          <DeleteButton commentId={comment.id} onConfirmed={removeAction} />
         </>
       )}
     </div>
+  )
+}
+
+// Two-step delete affordance that replaces a `window.confirm()` modal with an
+// inline cancel/confirm pair. Following
+// `vercel-composition-patterns/state-prefer-progressive-disclosure`, the
+// armed state lives in this leaf so the rest of the comment row stays calm.
+//
+// While confirming, both buttons live inside the same `<form action>` so
+// `useFormStatus` covers the submit *and* the cancel — preventing the
+// "user cancels mid-submit but the API still resolves and the comment
+// vanishes" race that an outside-form cancel button would have.
+//
+// Auto-focus on cancel keeps the safer default reachable with a single
+// Enter, matches the native `confirm()` dialog's bias, and gives keyboard
+// users a focus indicator that survives the inline replacement of the
+// armed-state buttons. Esc collapses back to the unarmed view so the
+// destructive flow has a no-mouse escape hatch.
+function DeleteButton({ commentId, onConfirmed }: { commentId: bigint | string; onConfirmed: () => Promise<void> }) {
+  const [armed, setArmed] = useState(false)
+  const cancelRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (armed) {
+      cancelRef.current?.focus()
+    }
+  }, [armed])
+
+  if (!armed) {
+    return (
+      <button type="button" className="me-2 hover:text-danger" data-rid={commentId} onClick={() => setArmed(true)}>
+        删除
+      </button>
+    )
+  }
+
+  return (
+    <form
+      action={onConfirmed}
+      className="me-2 inline-flex items-center gap-1"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation()
+          setArmed(false)
+        }
+      }}
+    >
+      <DeleteCancelButton cancelRef={cancelRef} onCancel={() => setArmed(false)} />
+      <ModerateSubmit className="text-danger" data-rid={commentId}>
+        确认删除
+      </ModerateSubmit>
+    </form>
+  )
+}
+
+interface DeleteCancelButtonProps {
+  cancelRef: RefObject<HTMLButtonElement | null>
+  onCancel: () => void
+}
+
+function DeleteCancelButton({ cancelRef, onCancel }: DeleteCancelButtonProps) {
+  const status = useFormStatus()
+  return (
+    <button
+      ref={cancelRef}
+      type="button"
+      onClick={onCancel}
+      disabled={status.pending}
+      className="text-foreground-muted hover:text-foreground"
+    >
+      取消
+    </button>
   )
 }
 

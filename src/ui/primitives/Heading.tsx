@@ -1,8 +1,8 @@
 import type { ComponentPropsWithRef } from 'react'
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 // Non-MDX heading primitive.
 //
@@ -53,7 +53,7 @@ export interface HeadingProps
 export function Heading({ level = 1, as, className, children, ...props }: HeadingProps) {
   const Tag = (as ?? `h${level}`) as HeadingTag
   return (
-    <Tag className={twMerge(clsx(headingVariants({ level }), className))} {...props}>
+    <Tag className={cn(headingVariants({ level }), className)} {...props}>
       {children}
     </Tag>
   )

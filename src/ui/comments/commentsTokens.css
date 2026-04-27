@@ -1,0 +1,35 @@
+/* Layer C — comment-tree spacing. Lives beside `CommentItem.tsx` so the
+   nested-row metrics stay out of the global semantic `@theme` block in
+   `globals.css`. The cascade keys off `ul[data-nested]` so the per-tag
+   sizing survives wrapper-class renames and composes cleanly with the
+   `.nice-dark-mode` variant.
+
+   Replaces the four `[.children_&]:*` arbitrary-cascade Tailwind variants
+   that previously lived inline on the JSX (avatar/body/footer-time). The
+   `prose-host` body picks up word-break behaviour from `prose-p` so the
+   former `[.children_&]:break-all` rule is intentionally not re-introduced
+   here. */
+
+@theme {
+  --comment-avatar-base: 1.75rem; /* 28px */
+  --comment-avatar-md: 2.5rem; /* 40px */
+  --comment-avatar-nested: 1.875rem; /* 30px */
+}
+
+@layer utilities {
+  /* The nested cascade is one rule per token, not three per element. */
+  ul[data-nested] .flex-avatar {
+    width: var(--comment-avatar-nested);
+    height: var(--comment-avatar-nested);
+  }
+  ul[data-nested] .author-row {
+    margin-top: 0.25rem;
+  }
+  ul[data-nested] .comment-body {
+    margin-top: 0.375rem;
+    margin-bottom: 0.375rem;
+  }
+  ul[data-nested] .comment-time {
+    flex: none;
+  }
+}

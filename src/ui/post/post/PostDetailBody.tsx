@@ -1,7 +1,5 @@
-import { clsx } from 'clsx'
 import { type ReactNode, Suspense, use } from 'react'
 import { Link } from 'react-router'
-import { twMerge } from 'tailwind-merge'
 
 import type { ClientTag, CommentFormUser, DetailPostShell, MarkdownHeading } from '@/server/catalog'
 import type { DetailPageComments } from '@/server/comments/page-data'
@@ -10,13 +8,14 @@ import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { formatLocalDate } from '@/shared/formatter'
 import { Comments } from '@/ui/comments/Comments'
 import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
+import { cn } from '@/ui/lib/cn'
 import { LikeButton, LikeShare } from '@/ui/like/LikeActions'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
 import { badgeVariants } from '@/ui/primitives/Badge'
 import { Card, CardBody } from '@/ui/primitives/Card'
 import { Container } from '@/ui/primitives/Container'
 import { Heading } from '@/ui/primitives/Heading'
-import { toneAttrs } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
 
 const DETAIL_SHELL_CLASS = 'py-4 md:py-6 lg:px-2 2xl:p-12'
@@ -63,17 +62,20 @@ export function PostDetailBody({
                   {visibleTags.length > 0 && (
                     <div className="flex flex-auto flex-wrap w-full justify-start gap-y-2 gap-x-2.5 min-w-0 md:w-auto md:justify-end md:gap-2 md:ml-auto">
                       {visibleTags.map((tag) => (
-                        <Link
+                        <ToneSurface
+                          as={Link}
                           key={tag.slug}
-                          className={twMerge(
-                            clsx(badgeVariants({ tone: 'neutral', shape: 'pill' }), 'leading-[1.2] whitespace-nowrap'),
+                          tone="neutral"
+                          appearance="solid"
+                          className={cn(
+                            badgeVariants({ tone: 'neutral', shape: 'pill' }),
+                            'leading-[1.2] whitespace-nowrap',
                           )}
-                          {...toneAttrs('neutral', 'solid')}
                           to={`/tags/${tag.slug}`}
                           prefetch="intent"
                         >
                           {tag.name}
-                        </Link>
+                        </ToneSurface>
                       ))}
                     </div>
                   )}

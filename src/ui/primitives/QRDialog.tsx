@@ -9,11 +9,12 @@ import { Dialog } from '@base-ui/react/dialog'
 import { Suspense, lazy, useState } from 'react'
 
 import type { IconComponent } from '@/ui/icons/icons'
+import type { Appearance, Tone } from '@/ui/primitives/tone'
 
-import { CloseIcon } from '@/ui/icons/icons'
 import { cn } from '@/ui/lib/cn'
 import { buttonVariants } from '@/ui/primitives/Button'
-import { toneAttrs } from '@/ui/primitives/tone'
+import { DialogShell } from '@/ui/primitives/DialogShell'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 
 export interface QRDialogProps {
   url: string
@@ -28,16 +29,18 @@ export interface QRDialogProps {
   icon: IconComponent
   /**
    * Override the trigger's className. When supplied, the consumer must also
-   * supply `triggerTone` (a `toneAttrs(...)` result) so the host element
-   * still emits the matching `data-tone`/`data-appearance` pair the
-   * tone palette in `toneStyles.css` keys off.
+   * supply `triggerTone` / `triggerAppearance` so the host element emits
+   * the matching `data-tone` / `data-appearance` pair the tone palette in
+   * `toneStyles.css` keys off.
    */
   className?: string
-  triggerTone?: ReturnType<typeof toneAttrs>
+  triggerTone?: Tone
+  triggerAppearance?: Appearance
 }
 
 const DEFAULT_TRIGGER_CLASS = cn(buttonVariants({ tone: 'inverse', shape: 'circle' }))
-const DEFAULT_TRIGGER_TONE = toneAttrs('inverse', 'solid')
+const DEFAULT_TRIGGER_TONE: Tone = 'inverse'
+const DEFAULT_TRIGGER_APPEARANCE: Appearance = 'solid'
 
 // The QR wrapper is 210×210 inline. After the 8px padding on each side the
 // content area shrinks to 194×194, which is what `qrcode.react` renders at to
@@ -49,70 +52,59 @@ const QRCodeSVG = lazy<typeof QRCodeSVGComponent>(async () => {
   return { default: mod.QRCodeSVG }
 })
 
-// `<QRDialog>` reaches for Base UI's `Dialog` directly instead of the legacy
-// `<Popup>` shell because it needs the same focus-trap / scroll-lock contract
-// but does not need the centred close-bar layout used by `<Search>`.
-export function QRDialog({ url, name, title, icon: TriggerIcon, className, triggerTone }: QRDialogProps) {
+// Composes the shared `<DialogShell>` (centred, sm size) with the QR-code
+// content. The trigger / focus-trap / scroll-lock / Escape behaviour all
+// come from `Dialog.Trigger` and the shell's Base UI scaffold; this file
+// only owns the QR-specific markup.
+export function QRDialog({
+  url,
+  name,
+  title,
+  icon: TriggerIcon,
+  className,
+  triggerTone,
+  triggerAppearance,
+}: QRDialogProps) {
   const triggerClass = className ?? DEFAULT_TRIGGER_CLASS
-  const triggerToneAttrs = triggerTone ?? DEFAULT_TRIGGER_TONE
+  const tone = triggerTone ?? DEFAULT_TRIGGER_TONE
+  const appearance = triggerAppearance ?? DEFAULT_TRIGGER_APPEARANCE
   const [open, setOpen] = useState(false)
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger
-        render={
-          <button type="button" className={triggerClass} title={name} aria-label={title} {...triggerToneAttrs}>
-            <span>
-              <TriggerIcon />
-            </span>
-          </button>
-        }
-      />
-      <Dialog.Portal>
-        <Dialog.Backdrop
-          className={cn(
-            'fixed inset-0 z-(--z-drawer) bg-overlay-scrim',
-            'transition-opacity duration-200 ease-out',
-            'data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
-          )}
-        />
-        <Dialog.Popup
-          className={cn(
-            'fixed inset-0 z-(--z-drawer) flex items-center justify-center px-4 py-8',
-            'pointer-events-none',
-          )}
-        >
-          <div
-            className={cn(
-              'pointer-events-auto relative w-auto max-w-[300px]',
-              'transition-all duration-300 ease-in-out',
-              'data-[ending-style]:-translate-y-10 data-[ending-style]:opacity-0',
-              'data-[starting-style]:-translate-y-10 data-[starting-style]:opacity-0',
-            )}
-          >
-            <Dialog.Close
-              className={cn(
-                'fixed bottom-0 left-0 z-(--z-overlay) flex w-full translate-y-1/4 items-center justify-center',
-                'appearance-none border-0 bg-transparent p-0 cursor-pointer',
-              )}
-              aria-label="关闭"
+    <DialogShell
+      open={open}
+      onOpenChange={setOpen}
+      size="sm"
+      align="center"
+      trigger={
+        <Dialog.Trigger
+          render={
+            <ToneSurface
+              as="button"
+              type="button"
+              tone={tone}
+              appearance={appearance}
+              className={triggerClass}
+              title={name}
+              aria-label={title}
             >
-              <CloseIcon size={28} className="inline-block align-middle text-white" />
-            </Dialog.Close>
-            <div className="relative rounded-lg bg-white text-foreground p-7 px-10">
-              <div className="text-center">
-                <Dialog.Title className="text-[20px]">{title}</Dialog.Title>
-                <p className="mt-1 mb-2 text-base">{name}</p>
-                <div className="flex justify-center items-center p-2 w-[210px] h-[210px] mx-auto">
-                  <Suspense fallback={null}>
-                    <QRCodeSVG value={url} level="M" marginSize={2} size={QR_CODE_SIZE} title={title} />
-                  </Suspense>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
+              <span>
+                <TriggerIcon />
+              </span>
+            </ToneSurface>
+          }
+        />
+      }
+    >
+      <div className="text-center">
+        <Dialog.Title className="text-[20px]">{title}</Dialog.Title>
+        <p className="mt-1 mb-2 text-base">{name}</p>
+        <div className="flex justify-center items-center p-2 w-[210px] h-[210px] mx-auto">
+          <Suspense fallback={null}>
+            <QRCodeSVG value={url} level="M" marginSize={2} size={QR_CODE_SIZE} title={title} />
+          </Suspense>
+        </div>
+      </div>
+    </DialogShell>
   )
 }

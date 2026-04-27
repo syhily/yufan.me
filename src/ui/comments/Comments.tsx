@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { LoadCommentsInput, LoadCommentsStreamLine } from '@/client/api/action-types'
@@ -12,11 +12,18 @@ import { CommentItem } from '@/ui/comments/CommentItem'
 import { CommentReplyForm } from '@/ui/comments/CommentReplyForm'
 import {
   type CommentNode,
-  CommentsContext,
-  type CommentsContextValue,
+  CommentsActionsContext,
+  type CommentsActionsContextValue,
+  CommentsMetaContext,
+  type CommentsMetaContextValue,
+  CommentsReplyFormContext,
+  CommentsStateContext,
   type CommentTreeAction,
   type CommentTreeState,
-  useCommentsContext,
+  useCommentsActions,
+  useCommentsMeta,
+  useCommentsState,
+  useRootReplyForm,
 } from '@/ui/comments/comments-context'
 import { Button } from '@/ui/primitives/Button'
 import { useSiteConfig } from '@/ui/primitives/site-config'
@@ -248,21 +255,10 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   // rendered through React, so we thread a ref into `<CommentReplyForm>`
   // and let it expose the node.
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null)
-  const focusReplyForm = useCallback(() => {
-    const textarea = replyTextareaRef.current
-    textarea?.focus({ preventScroll: true })
-    textarea?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [])
 
-  const onReply = useCallback(
-    (rid: number) => {
-      flushSync(() => {
-        dispatch({ type: 'setReplyTo', rid })
-      })
-      focusReplyForm()
-    },
-    [focusReplyForm],
-  )
+  const onReply = useCallback((rid: number) => {
+    dispatch({ type: 'setReplyTo', rid })
+  }, [])
   const onCancelReply = useCallback(() => dispatch({ type: 'setReplyTo', rid: 0 }), [])
   const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
@@ -272,13 +268,38 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     dispatch({ type: 'setReplyTo', rid: 0 })
   }, [])
 
+  // Drive textarea focus from `state.replyToId` instead of `flushSync`-ing the
+  // dispatch. React 19's automatic batching survives, and the focus call
+  // happens after the new tree commits.
+  useEffect(() => {
+    if (state.replyToId === 0) {
+      return
+    }
+    const textarea = replyTextareaRef.current
+    textarea?.focus({ preventScroll: true })
+    textarea?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [state.replyToId])
+
   const admin = user?.admin === true
   const replyTargetNode = state.replyToId === 0 ? undefined : state.byId.get(asKey(state.replyToId))
   const replyTarget = replyTargetNode === undefined ? undefined : nodeToCommentItem(replyTargetNode)
   const activeReplyToId = replyTarget ? state.replyToId : 0
 
+  const meta: CommentsMetaContextValue = useMemo(
+    () => ({ commentKey, totalCount, admin, user }),
+    [commentKey, totalCount, admin, user],
+  )
+
+  const actions: CommentsActionsContextValue = useMemo(
+    () => ({ onReply, onCancelReply, onEdited, onApproved, onDeleted, dispatch }),
+    [onReply, onCancelReply, onEdited, onApproved, onDeleted],
+  )
+
   // The same reply form JSX flows through context to whichever depth
   // currently owns it (top-level or nested under the active comment).
+  // Living on its own context means a fresh JSX identity only invalidates
+  // the active reply row plus `<Comments.ReplyFormSlot>` — every other
+  // memoised `<CommentItem>` skips reconciliation.
   const replyForm = (
     <CommentReplyForm
       commentKey={commentKey}
@@ -291,31 +312,18 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
     />
   )
 
-  // Rebuilt every render because `replyForm` is a fresh JSX node each time;
-  // memoising would force an extra dependency without a re-render benefit
-  // (every consumer re-renders on `state` changes anyway).
-  const value: CommentsContextValue = {
-    commentKey,
-    totalCount,
-    admin,
-    user,
-    state,
-    activeReplyToId,
-    onReply,
-    onCancelReply,
-    onEdited,
-    onApproved,
-    onDeleted,
-    dispatch,
-    replyForm,
-  }
-
   return (
-    <CommentsContext.Provider value={value}>
-      <div id="comments" className="pt-5" ref={containerRef}>
-        {children}
-      </div>
-    </CommentsContext.Provider>
+    <CommentsMetaContext.Provider value={meta}>
+      <CommentsActionsContext.Provider value={actions}>
+        <CommentsStateContext.Provider value={state}>
+          <CommentsReplyFormContext.Provider value={replyForm}>
+            <div id="comments" className="pt-5" ref={containerRef}>
+              {children}
+            </div>
+          </CommentsReplyFormContext.Provider>
+        </CommentsStateContext.Provider>
+      </CommentsActionsContext.Provider>
+    </CommentsMetaContext.Provider>
   )
 }
 
@@ -330,30 +338,35 @@ function nodeToCommentItem(node: CommentNode): CommentItemType {
 }
 
 function CommentsHeader() {
-  const ctx = useCommentsContext('Comments.Header')
+  const meta = useCommentsMeta('Comments.Header')
   return (
     <div className="text-[1.25rem] font-semibold leading-[1.4] mb-4">
-      评论 <small className="text-sm">({ctx.totalCount})</small>
+      评论 <small className="text-sm">({meta.totalCount})</small>
     </div>
   )
 }
 
 // Renders the reply form only when no comment is the active reply target —
 // i.e. the top-level "Leave a reply" position. Reply forms anchored under a
-// specific comment travel through the recursive `CommentItem` tree.
+// specific comment travel through the recursive `CommentItem` tree. Reads
+// only the State + ReplyForm contexts, so a fresh reply form identity does
+// not invalidate the rest of the tree.
 function CommentsReplyFormSlot() {
-  const ctx = useCommentsContext('Comments.ReplyFormSlot')
-  if (ctx.activeReplyToId !== 0) {
+  const replyForm = useRootReplyForm()
+  if (replyForm === null) {
     return null
   }
-  return <>{ctx.replyForm}</>
+  return <>{replyForm}</>
 }
 
 function CommentsList() {
-  const ctx = useCommentsContext('Comments.List')
+  const state = useCommentsState()
+  if (state === null) {
+    throw new Error('<Comments.List> must be rendered inside <Comments>')
+  }
   return (
     <ul>
-      {ctx.state.roots.map((id) => (
+      {state.roots.map((id) => (
         <CommentItem key={id} id={id} depth={1} />
       ))}
     </ul>
@@ -361,7 +374,9 @@ function CommentsList() {
 }
 
 function CommentsLoadMore() {
-  const ctx = useCommentsContext('Comments.LoadMore')
+  const meta = useCommentsMeta('Comments.LoadMore')
+  const actions = useCommentsActions()
+  const state = useCommentsState()
   const { settings } = useSiteConfig()
   const pageSize = settings.comments.size
 
@@ -372,8 +387,8 @@ function CommentsLoadMore() {
    * — otherwise React 19's automatic batching collapses the burst into a
    * single render that defeats the streaming UX.
    */
-  const dispatchRef = useRef(ctx.dispatch)
-  dispatchRef.current = ctx.dispatch
+  const dispatchRef = useRef(actions.dispatch)
+  dispatchRef.current = actions.dispatch
 
   const loadMore = useApiStream<LoadCommentsInput, LoadCommentsStreamLine>(API_ACTIONS.comment.loadComments, {
     onLine: (line) => {
@@ -387,7 +402,7 @@ function CommentsLoadMore() {
     },
   })
 
-  if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) {
+  if (state === null || state.rootsLoaded >= state.rootsTotal) {
     return null
   }
 
@@ -397,8 +412,8 @@ function CommentsLoadMore() {
       return
     }
     loadMore.load({
-      page_key: ctx.commentKey,
-      offset: ctx.state.rootsLoaded,
+      page_key: meta.commentKey,
+      offset: state.rootsLoaded,
     } satisfies LoadCommentsInput)
   }
 
@@ -408,9 +423,9 @@ function CommentsLoadMore() {
         tone="neutral"
         onClick={onLoadMore}
         disabled={moreLoading}
-        data-key={ctx.commentKey}
+        data-key={meta.commentKey}
         data-size={pageSize}
-        data-offset={ctx.state.rootsLoaded}
+        data-offset={state.rootsLoaded}
       >
         {moreLoading ? '加载中...' : '加载更多'}
       </Button>

@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, Ref } from 'react'
 
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/ui/lib/cn'
 
 // Replaces `.spinner-border` (legacy bootstrap shim). The keyframes and
 // the `--animate-spinner` token both live in `globals.css` now.
@@ -14,11 +13,9 @@ export function Spinner({ className, role, children, ref, ...props }: SpinnerPro
     <span
       ref={ref}
       role={role ?? 'status'}
-      className={twMerge(
-        clsx(
-          'inline-block w-8 h-8 border-[0.25em] border-current border-r-transparent rounded-full animate-spinner align-text-bottom',
-          className,
-        ),
+      className={cn(
+        'inline-block w-8 h-8 border-[0.25em] border-current border-r-transparent rounded-full animate-spinner align-text-bottom',
+        className,
       )}
       {...props}
     >

@@ -3,7 +3,8 @@ import type { ComponentPropsWithRef, Ref } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/ui/lib/cn'
-import { TONE_VARIANTS, type Tone } from '@/ui/primitives/tone'
+import { TONE_VARIANTS } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 
 // Alert is the outline-tinted cousin of Badge — non-interactive banner
 // rendered with `data-appearance="outline"`. We tag the host with
@@ -26,14 +27,14 @@ export interface AlertProps extends ComponentPropsWithRef<'div'>, AlertVariantPr
 }
 
 export function Alert({ className, tone, role, ref, ...props }: AlertProps) {
-  const dataTone: Tone = tone ?? 'danger'
   return (
-    <div
+    <ToneSurface
+      as="div"
+      tone={tone ?? 'danger'}
+      appearance="outline"
+      static
       ref={ref}
       role={role ?? 'alert'}
-      data-tone={dataTone}
-      data-appearance="outline"
-      data-static="true"
       className={cn(alertVariants({ tone }), className)}
       {...props}
     />

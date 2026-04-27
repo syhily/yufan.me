@@ -1,8 +1,8 @@
 import type { ComponentPropsWithRef, Ref } from 'react'
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 // Replaces `.card / .card-md / .block` (legacy `_base.css`) and the
 // bootstrap compatibility shim. The `block` variant matches
@@ -31,7 +31,7 @@ export interface CardProps extends ComponentPropsWithRef<'div'>, CardVariantProp
 }
 
 export function Card({ className, size, ref, ...props }: CardProps) {
-  return <div ref={ref} className={twMerge(clsx(cardVariants({ size }), className))} {...props} />
+  return <div ref={ref} className={cn(cardVariants({ size }), className)} {...props} />
 }
 
 export interface CardBodyProps extends ComponentPropsWithRef<'div'> {
@@ -41,9 +41,7 @@ export interface CardBodyProps extends ComponentPropsWithRef<'div'> {
 }
 
 export function CardBody({ className, size, ref, ...props }: CardBodyProps) {
-  return (
-    <div ref={ref} className={twMerge(clsx('flex-auto', size === 'md' ? 'p-4 md:p-8' : 'p-4', className))} {...props} />
-  )
+  return <div ref={ref} className={cn('flex-auto', size === 'md' ? 'p-4 md:p-8' : 'p-4', className)} {...props} />
 }
 
 export { cardVariants }

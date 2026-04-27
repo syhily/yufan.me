@@ -1,8 +1,8 @@
 import type { ComponentPropsWithRef } from 'react'
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 // Centred page container.
 //
@@ -43,7 +43,7 @@ export interface ContainerProps
 
 export function Container({ size, className, children, ...props }: ContainerProps) {
   return (
-    <div className={twMerge(clsx(containerVariants({ size }), className))} {...props}>
+    <div className={cn(containerVariants({ size }), className)} {...props}>
       {children}
     </div>
   )

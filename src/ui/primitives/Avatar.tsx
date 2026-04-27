@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, Ref } from 'react'
 
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/ui/lib/cn'
 
 // Replaces `.flex-avatar` (legacy `_base.css`). The legacy CSS uses
 // `border-radius: 50px` on the container and inherits radius on the inner
@@ -17,11 +16,9 @@ export function Avatar({ className, children, ref, ...props }: AvatarProps) {
   return (
     <div
       ref={ref}
-      className={twMerge(
-        clsx(
-          'relative inline-flex flex-shrink-0 items-center justify-center font-semibold leading-none whitespace-nowrap rounded-full overflow-hidden [&>img]:w-full [&>img]:rounded-[inherit]',
-          className,
-        ),
+      className={cn(
+        'relative inline-flex flex-shrink-0 items-center justify-center font-semibold leading-none whitespace-nowrap rounded-full overflow-hidden [&>img]:w-full [&>img]:rounded-[inherit]',
+        className,
       )}
       {...props}
     >

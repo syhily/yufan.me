@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 
-import { clsx } from 'clsx'
 import { Link } from 'react-router'
-import { twMerge } from 'tailwind-merge'
 
+import type { SidebarSnapshotOutput } from '@/client/api/action-types'
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
 import type { IconComponent } from '@/ui/icons/icons'
 
 import { formatShowDate } from '@/shared/formatter'
 import { CommentIcon, EyeIcon, HeartIcon } from '@/ui/icons/icons'
+import { cn } from '@/ui/lib/cn'
 import { Pagination } from '@/ui/post/pagination/Pagination'
 import { badgeVariants } from '@/ui/primitives/Badge'
 import { Container } from '@/ui/primitives/Container'
@@ -193,9 +193,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
                  * border over the overlay.
                  */}
                 <Link
-                  className={twMerge(
-                    clsx('hidden md:inline-block', badgeVariants({ size: 'md' }), 'border-0 bg-white-overlay'),
-                  )}
+                  className={cn('hidden md:inline-block', badgeVariants({ size: 'md' }), 'border-0 bg-white-overlay')}
                   to={categoryLinks[post.category] || '/'}
                   prefetch="intent"
                 >
@@ -289,6 +287,65 @@ function SquareMetric({ icon: Icon, value }: { icon: IconComponent; value: numbe
     <div className="inline-flex items-center ml-2.5 bg-transparent">
       <Icon className="text-md" />
       <span className="pl-[0.35rem]">{value}</span>
+    </div>
+  )
+}
+
+interface HomeListingSkeletonProps {
+  cached: SidebarSnapshotOutput
+}
+
+// Suspense fallback for the home `clientLoader` SWR path. The cached
+// sidebar slice (admin / recent / pending comments) renders immediately
+// from `cached`; everything else (feature posts, post grid, sidebar
+// random posts / tags / calendar) shows a placeholder shimmer until the
+// server response resolves through `<Suspense>`.
+//
+// `posts: []` and `tags: []` make `<RandomPosts>` / `<RandomTags>` /
+// `<TodayCalendar>` short-circuit out of the sidebar, so the skeleton
+// never paints stale placeholders alongside the live cached widgets.
+// Once `fresh` resolves, `HomeBody` swaps in with the canonical layout.
+export function HomeListingSkeleton({ cached }: HomeListingSkeletonProps) {
+  const sidebarData: SidebarData = {
+    posts: [],
+    tags: [],
+    recentComments: cached.recentComments,
+    pendingComments: cached.pendingComments,
+  }
+  return (
+    <div className={LISTING_SHELL_CLASS}>
+      <Container>
+        <div className="flex flex-col xl:-mx-3 xl:flex-row">
+          <div className="w-full xl:w-3/4 xl:px-3" aria-busy="true" aria-live="polite">
+            <PostCardsSkeleton />
+          </div>
+          <Sidebar data={sidebarData} admin={cached.admin} />
+        </div>
+      </Container>
+    </div>
+  )
+}
+
+const SKELETON_CARD_COUNT = 5
+
+function PostCardsSkeleton() {
+  return (
+    <div>
+      {Array.from({ length: SKELETON_CARD_COUNT }, (_, i) => (
+        <div
+          key={i}
+          className="relative flex flex-row flex-auto min-w-0 break-words mb-3 md:mb-5 2xl:mb-7 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]"
+        >
+          <Media ratio="3x2" className="w-[45%] md:w-5/12">
+            <div className="comments-skeleton-line animate-shimmer h-full w-full rounded-none" />
+          </Media>
+          <div className="flex flex-col flex-auto justify-center bg-white p-3 pb-2 md:px-5 md:py-5 md:pb-4 2xl:p-6 gap-2">
+            <div className="comments-skeleton-line animate-shimmer h-5 rounded w-3/4" />
+            <div className="comments-skeleton-line animate-shimmer h-3 rounded w-full" />
+            <div className="comments-skeleton-line animate-shimmer h-3 rounded w-5/6" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

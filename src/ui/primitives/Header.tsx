@@ -4,13 +4,14 @@ import { Link, useLocation } from 'react-router'
 
 import type { BlogConfig } from '@/blog.config'
 
-import { DynamicIcon, MenuIcon, iconByName } from '@/ui/icons/icons'
+import { MenuIcon } from '@/ui/icons/icons'
+import { DynamicIcon, iconByName } from '@/ui/icons/runtime'
 import { cn } from '@/ui/lib/cn'
 import { buttonVariants } from '@/ui/primitives/Button'
 import { Container } from '@/ui/primitives/Container'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { useSiteConfig } from '@/ui/primitives/site-config'
-import { toneAttrs } from '@/ui/primitives/tone'
+import { ToneSurface } from '@/ui/primitives/ToneSurface'
 import { SearchIconButton } from '@/ui/search/Search'
 
 export interface HeaderProps {
@@ -110,19 +111,21 @@ function HeaderNav({ navigation, admin, logoutQuery, onSelect }: HeaderNavProps)
             )
           }
           return (
-            <a
+            <ToneSurface
+              as="a"
               key={social.name}
               href={social.link}
               target="_blank"
               rel="noreferrer"
+              tone="inverse"
+              appearance="solid"
               title={social.title ?? social.name}
               className={cn(buttonVariants({ tone: 'inverse', shape: 'circle' }), 'mr-2')}
-              {...toneAttrs('inverse', 'solid')}
             >
               <span>
                 <DynamicIcon name={social.icon} />
               </span>
-            </a>
+            </ToneSurface>
           )
         })}
         <SearchIconButton />

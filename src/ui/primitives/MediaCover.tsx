@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, ElementType, ReactNode } from 'react'
 
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/ui/lib/cn'
 
 // Absolute "cover layer" used inside `<Media ratio=...>` cards.
 //
@@ -15,10 +14,8 @@ import { twMerge } from 'tailwind-merge'
 // without a wrapping element. We use `as` instead of `asChild` because the
 // cover is the leaf element here; render-prop nesting would buy nothing
 // and slot composition (`asChild`) belongs to widgets that own children.
-const COVER_BASE = clsx(
-  'absolute inset-0 border-0 rounded-[inherit] bg-cover bg-no-repeat bg-center',
-  '[&>img]:w-full [&>img]:h-full [&>img]:object-cover [&>img]:block',
-)
+const COVER_BASE =
+  'absolute inset-0 border-0 rounded-[inherit] bg-cover bg-no-repeat bg-center [&>img]:w-full [&>img]:h-full [&>img]:object-cover [&>img]:block'
 
 export interface MediaCoverProps<T extends ElementType = 'div'> {
   /**
@@ -49,7 +46,7 @@ export function MediaCover<T extends ElementType = 'div'>({
 }: MediaCoverComponentProps<T>) {
   const Tag = (as ?? 'div') as ElementType
   return (
-    <Tag className={twMerge(clsx(COVER_BASE, hover && 'group', className))} {...props}>
+    <Tag className={cn(COVER_BASE, hover && 'group', className)} {...props}>
       {children}
     </Tag>
   )

@@ -1,6 +1,4 @@
-import { clsx } from 'clsx'
 import { useRef, useState } from 'react'
-import { twMerge } from 'tailwind-merge'
 
 import type { FindAvatarInput, FindAvatarOutput, ReplyCommentOutput } from '@/client/api/action-types'
 import type { CommentFormUser } from '@/server/catalog'
@@ -9,6 +7,7 @@ import type { CommentItem as CommentItemType } from '@/server/comments/types'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiAction } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
+import { cn } from '@/ui/lib/cn'
 import { Button } from '@/ui/primitives/Button'
 import { inputVariants } from '@/ui/primitives/Input'
 import { Textarea } from '@/ui/primitives/Textarea'
@@ -49,18 +48,21 @@ export function CommentReplyForm({
   // doesn't fan out a fresh subscription on every parent rerender.
   const latest = useRef({ onReplied, replyToId })
   latest.current = { onReplied, replyToId }
-  const formRef = useRef<HTMLFormElement | null>(null)
   const [avatarSrc, setAvatarSrc] = useState<string>(() =>
     user?.admin ? joinUrl('/images/avatar', `${user.id}.png`) : '/images/default-avatar.png',
   )
+  // Bump after each successful submission so React remounts the form,
+  // dropping its uncontrolled input/textarea state along with it. This
+  // keeps the textarea uncontrolled (necessary so the Chinese IME
+  // composition pipeline owns intermediate keystrokes) without resorting
+  // to `formRef.current?.querySelector(...).value = ''`, which mutates a
+  // DOM node behind React's back.
+  const [resetKey, setResetKey] = useState(0)
 
   const reply = useApiAction<never, ReplyCommentOutput>(API_ACTIONS.comment.replyComment, {
     onSuccess: (payload) => {
       latest.current.onReplied(payload.comment, latest.current.replyToId)
-      const textarea = formRef.current?.querySelector<HTMLTextAreaElement>('textarea[name="content"]')
-      if (textarea) {
-        textarea.value = ''
-      }
+      setResetKey((value) => value + 1)
     },
   })
 
@@ -86,7 +88,7 @@ export function CommentReplyForm({
 
   return (
     <div id="respond" className="relative mb-3 md:mb-4">
-      <reply.Form ref={formRef} id="commentForm" className="flex flex-auto">
+      <reply.Form key={resetKey} id="commentForm" className="flex flex-auto">
         <div className="flex-avatar w-7 h-7 mr-2.5 md:w-10 md:h-10 md:mr-[0.9375rem]">
           <img
             alt="头像"
@@ -154,7 +156,7 @@ interface CommentFormFieldsProps {
 
 function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {
   const admin = user?.admin === true
-  const fieldClass = twMerge(clsx(inputVariants()))
+  const fieldClass = cn(inputVariants())
   return (
     <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 mb-3">
       {admin ? (

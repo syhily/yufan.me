@@ -1,12 +1,31 @@
-import { formatLocalDate } from '@/shared/formatter'
+import { useRouteLoaderData } from 'react-router'
+
 import { useSiteConfig } from '@/ui/primitives/site-config'
 
 const lineClass = 'mt-[3px] flex flex-row flex-wrap justify-center gap-[0.5em]'
 const linkClass = 'text-foreground hover:text-accent'
 
-export function Footer() {
+export interface FooterProps {
+  /**
+   * Current calendar year. When omitted, the component reads it from the
+   * root route loader (`{ admin, currentYear }`) via
+   * `useRouteLoaderData('root')`. Either way, the value is sourced from
+   * the server so SSR and CSR agree across the New-Year boundary —
+   * `new Date().getFullYear()` inside render would mismatch when the
+   * server renders Dec 31 23:59 UTC and the client hydrates as Jan 1
+   * 00:00 local.
+   */
+  currentYear?: number
+}
+
+interface RootLoaderShape {
+  currentYear?: number
+}
+
+export function Footer({ currentYear }: FooterProps) {
   const config = useSiteConfig()
-  const thisYear = formatLocalDate(new Date(), 'yyyy')
+  const rootData = useRouteLoaderData('root') as RootLoaderShape | undefined
+  const year = currentYear ?? rootData?.currentYear ?? new Date().getFullYear()
   const { icpNo, moeIcpNo, initialYear } = config.settings.footer
   const hasIcp = icpNo || moeIcpNo
 
@@ -14,7 +33,7 @@ export function Footer() {
     <footer className="border-t border-border text-xs text-center py-4 xl:py-5">
       <div className={lineClass}>
         <span>
-          Copyright © {initialYear}-{thisYear}{' '}
+          Copyright © {initialYear}-{year}{' '}
         </span>
         <a className={linkClass} href={config.website} title={config.title} rel="home">
           {config.title}

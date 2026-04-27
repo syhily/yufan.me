@@ -4,11 +4,13 @@
 // `dangerouslySetInnerHTML` envelope.
 //
 // Call sites import the icon they need by name
-// (`import { MenuIcon } from '@/ui/icons/icons'`). The `<DynamicIcon>` shim
-// at the bottom is for the few config-driven sites (social links, share
-// buttons, QR dialog triggers) that select an icon from runtime config.
+// (`import { MenuIcon } from '@/ui/icons/icons'`). The runtime dispatcher
+// (`iconByName` + `<DynamicIcon>`) lives in `@/ui/icons/runtime` so the
+// 22-icon map is only pulled into chunks that genuinely select an icon
+// at runtime — see the `bundle-analyzable-paths` rule in
+// `.claude/skills/vercel-react-best-practices`.
 
-import { type IconName, type IconProps, Svg } from '@/ui/icons/Icon'
+import { type IconProps, Svg } from '@/ui/icons/Icon'
 
 export function ArrowUpIcon(props: IconProps) {
   return (
@@ -198,50 +200,7 @@ export function WeiboIcon(props: IconProps) {
   )
 }
 
+// Shared shape for every per-icon component declared above. The runtime
+// dispatcher in `@/ui/icons/runtime` keys its name → component table off
+// this so swapping an icon's path data never breaks the lookup.
 export type IconComponent = (props: IconProps) => ReturnType<typeof Svg>
-
-// Stable name → component map used by the small number of call sites that
-// genuinely choose an icon from runtime configuration (social links, QR
-// dialog triggers, share buttons). Component identities are passed through
-// rather than string keys, so the bundler retains every entry but each
-// import is still resolved through `@/ui/icons/icons` (no `import.meta.glob`
-// plumbing). The union narrowing on `name` keeps typos from compiling.
-export const iconByName: { readonly [Name in IconName]: IconComponent } = {
-  arrowup: ArrowUpIcon,
-  check: CheckIcon,
-  close: CloseIcon,
-  comment: CommentIcon,
-  delete: DeleteIcon,
-  edit: EditIcon,
-  ellipsis: EllipsisIcon,
-  eye: EyeIcon,
-  github: GithubIcon,
-  heart: HeartIcon,
-  left: LeftIcon,
-  link: LinkIcon,
-  menu: MenuIcon,
-  qq: QqIcon,
-  refresh: RefreshIcon,
-  reply: ReplyIcon,
-  right: RightIcon,
-  search: SearchIcon,
-  twitter: TwitterIcon,
-  user: UserIcon,
-  wechat: WechatIcon,
-  weibo: WeiboIcon,
-}
-
-export interface DynamicIconProps extends IconProps {
-  name: IconName
-}
-
-// Thin dispatcher used by the few config-driven call sites
-// (`social.icon`, share buttons, QR dialog triggers). New code should
-// import the specific icon component instead, but this keeps declarative
-// runtime selection working without resurrecting the string-keyed
-// `<Icon name="…" />` lookup that used to hide every icon behind
-// `import.meta.glob`.
-export function DynamicIcon({ name, ...props }: DynamicIconProps) {
-  const IconComp = iconByName[name]
-  return <IconComp {...props} />
-}

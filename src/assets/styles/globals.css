@@ -6,6 +6,7 @@
 @import '@/assets/fonts/iosevka.css';
 @import '@/ui/post/toc/tocTokens.css';
 @import '@/ui/mdx/codeBlockTokens.css';
+@import '@/ui/comments/commentsTokens.css';
 @import '@/ui/primitives/toneStyles.css';
 
 /* -------------------------------------------------------------------------- */

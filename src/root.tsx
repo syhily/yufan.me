@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches } from 'react-router'
+import {
+  isRouteErrorResponse,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  useMatches,
+  useNavigation,
+} from 'react-router'
 
 import config, { type BlogConfig } from '@/blog.config'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
@@ -9,6 +18,7 @@ import { wpDecoyMiddleware } from '@/server/middleware-wp-decoy'
 import { NOT_WORDPRESS_STATUS_TEXT } from '@/server/route-helpers/wp-decoy'
 import { routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext, sessionMiddleware } from '@/server/session'
+import { cn } from '@/ui/lib/cn'
 import { NotWordPressView } from '@/ui/post/NotWordPressView'
 import { Footer } from '@/ui/primitives/Footer'
 import { Header } from '@/ui/primitives/Header'
@@ -37,7 +47,13 @@ export function links() {
 export function loader({ request, context }: Route.LoaderArgs) {
   const { admin } = getRouteRequestContext({ request, context })
 
-  return { admin }
+  // Compute the calendar year on the server so SSR and CSR agree.
+  // Rendering `new Date().getFullYear()` inside `<Footer>` would mismatch
+  // when the server renders Dec 31 23:59 UTC and the client hydrates as
+  // Jan 1 00:00 local — invisible 364/365 days, brittle on the boundary.
+  const currentYear = new Date().getFullYear()
+
+  return { admin, currentYear }
 }
 
 // The root loader only ships `{ admin }`, which can flip on the
@@ -63,11 +79,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <NavigationProgress />
         {children}
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
+  )
+}
+
+// Visual indicator that paints while React Router is fetching loader/action
+// data. Driven by `useNavigation()` so it covers `<Link>` clicks, programmatic
+// `navigate()` calls, and route-level `<Form>` submissions; per-domain
+// `useFetcher` activity (comment moderation, like clicks, etc.) is owned by
+// `useApiAction` / `useApiStream` and is intentionally excluded so this bar
+// only reflects route-level transitions.
+//
+// Lives at the very top of the viewport above page chrome via `--z-sticky`.
+// During SSR, `useNavigation().state` is `'idle'` so the bar starts collapsed
+// (`scale-x-0`); the CSS transition handles the grow/shrink animation,
+// avoiding a layout pass each frame and skipping a `useEffect` round-trip.
+function NavigationProgress() {
+  const navigation = useNavigation()
+  const pending = navigation.state !== 'idle'
+  return (
+    <div
+      aria-hidden
+      data-pending={pending ? '' : undefined}
+      className={cn(
+        'pointer-events-none fixed top-0 right-0 left-0 h-0.5 z-(--z-sticky)',
+        'origin-left bg-accent transition-transform duration-200 ease-out',
+        pending ? 'scale-x-100' : 'scale-x-0',
+      )}
+    />
   )
 }
 
@@ -93,6 +137,10 @@ export interface BaseLayoutProps {
 // Exported so `tests/snapshot.layout.test.tsx` can render the chrome in
 // isolation; production callers should rely on the default `<App>` export
 // rather than instantiating `BaseLayout` directly.
+//
+// `<Footer>` reads `currentYear` from the root loader via
+// `useRouteLoaderData('root')`, so neither `BaseLayout` nor the page-level
+// detail bodies have to thread the year through props.
 export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutProps) {
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || config.navigation

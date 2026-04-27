@@ -460,6 +460,16 @@ reviewers reach for during PR review: `server-no-shared-module-state`,
 
 ### Tailwind v4 conventions
 
+- **Plain CSS is the exception path.** Author component layout, spacing,
+  typography, colour, responsive behaviour, and state styling with
+  Tailwind utilities in JSX/TSX first. Keep CSS focused on Tailwind v4
+  design tokens (`@theme` variables), custom variants, keyframes,
+  unavoidable global/browser/third-party selectors, and the small set of
+  reusable Tailwind component scopes that genuinely reduce repetition.
+  When adding a reusable rule under `@layer components`, build it from
+  Tailwind primitives (`@apply`, tokens, and data attributes) and keep
+  the selector surface narrow enough that a React component could still
+  own most of the styling.
 - **Mobile-first by default.** Author the smallest-screen styles as
   the base classes and ascend (`sm:`, `md:`, `lg:`, …) toward larger
   viewports. Reach for a `max-md:` / `max-lg:` override only when a

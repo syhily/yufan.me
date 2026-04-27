@@ -1,7 +1,6 @@
 import type { ComponentProps } from 'react'
 
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/ui/lib/cn'
 
 // MDX prose components — only the React-only renderers stay here. The
 // per-element typography (h1, h5, h6, p, ol, ul, li, hr, blockquote,
@@ -40,21 +39,21 @@ function HeadingBar({ shape }: { shape: 'h2' | 'h3' | 'h4' }) {
     return (
       <span
         aria-hidden
-        className={clsx('absolute left-0 bg-accent', 'top-[5px] h-[18px] w-1.5', 'md:top-[7px] md:h-[22px]')}
+        className={cn('absolute left-0 bg-accent', 'top-[5px] h-[18px] w-1.5', 'md:top-[7px] md:h-[22px]')}
       />
     )
   }
   if (shape === 'h3') {
     return (
-      <span aria-hidden className={clsx('absolute left-0 bg-accent', 'top-[9px] w-[5px] h-[11px]', 'lg:top-[11px]')} />
+      <span aria-hidden className={cn('absolute left-0 bg-accent', 'top-[9px] w-[5px] h-[11px]', 'lg:top-[11px]')} />
     )
   }
-  return <span aria-hidden className={clsx('absolute left-0 bg-accent', 'top-[11px] w-[5px] h-[5px]')} />
+  return <span aria-hidden className={cn('absolute left-0 bg-accent', 'top-[11px] w-[5px] h-[5px]')} />
 }
 
 export function H2({ className, children, ...props }: ComponentProps<'h2'>) {
   return (
-    <h2 className={twMerge('relative pl-6', className)} {...props}>
+    <h2 className={cn('relative pl-6', className)} {...props}>
       <HeadingBar shape="h2" />
       {children}
     </h2>
@@ -63,7 +62,7 @@ export function H2({ className, children, ...props }: ComponentProps<'h2'>) {
 
 export function H3({ className, children, ...props }: ComponentProps<'h3'>) {
   return (
-    <h3 className={twMerge('relative pl-6', className)} {...props}>
+    <h3 className={cn('relative pl-6', className)} {...props}>
       <HeadingBar shape="h3" />
       {children}
     </h3>
@@ -72,7 +71,7 @@ export function H3({ className, children, ...props }: ComponentProps<'h3'>) {
 
 export function H4({ className, children, ...props }: ComponentProps<'h4'>) {
   return (
-    <h4 className={twMerge('relative pl-6', className)} {...props}>
+    <h4 className={cn('relative pl-6', className)} {...props}>
       <HeadingBar shape="h4" />
       {children}
     </h4>
@@ -91,13 +90,11 @@ export function H4({ className, children, ...props }: ComponentProps<'h4'>) {
 export function Code({ className, children, ...props }: ComponentProps<'code'>) {
   return (
     <code
-      className={twMerge(
-        clsx(
-          'px-[0.32em] py-[0.08em] mx-[0.06em] rounded-[3px]',
-          'font-mono text-[90%] [word-break:break-all] [overflow-wrap:break-word]',
-          'bg-[rgb(253,246,227)] dark:bg-surface-muted',
-          '[box-decoration-break:clone]',
-        ),
+      className={cn(
+        'px-[0.32em] py-[0.08em] mx-[0.06em] rounded-[3px]',
+        'font-mono text-[90%] [word-break:break-all] [overflow-wrap:break-word]',
+        'bg-[rgb(253,246,227)] dark:bg-surface-muted',
+        '[box-decoration-break:clone]',
         className,
       )}
       {...props}
@@ -113,16 +110,15 @@ export function Code({ className, children, ...props }: ComponentProps<'code'>) 
 // `Tooltip.Trigger as="sup">`. The bolding + accent colour is reused
 // from `.prose-host` (`[&_sup_a]:…`); this constant only holds the
 // extra refinements that need to override the host on hover.
-export const FOOTNOTE_SUP_CLASSES = clsx(
-  // No structural overrides today — the host `.prose-host [&_sup_a]:…`
-  // rule already matches everything we need. Kept as an exported empty
-  // string so the tooltip trigger can keep merging it without churn.
-  '',
-)
+//
+// No structural overrides today — the host `.prose-host [&_sup_a]:…`
+// rule already matches everything we need. Kept as an exported empty
+// string so the tooltip trigger can keep merging it without churn.
+export const FOOTNOTE_SUP_CLASSES = ''
 
 export function SupLink({ className, children, ...props }: ComponentProps<'sup'>) {
   return (
-    <sup className={twMerge(FOOTNOTE_SUP_CLASSES, className)} {...props}>
+    <sup className={cn(FOOTNOTE_SUP_CLASSES, className)} {...props}>
       {children}
     </sup>
   )
@@ -134,7 +130,7 @@ export function SupLink({ className, children, ...props }: ComponentProps<'sup'>
 // re-uses the same per-paragraph spacing the prose host applies.
 export function Center({ className, children, ...props }: ComponentProps<'center'>) {
   return (
-    <center className={twMerge(clsx('block mb-5 text-base md:text-[1.05rem]'), className)} {...props}>
+    <center className={cn('block mb-5 text-base md:text-[1.05rem]', className)} {...props}>
       {children}
     </center>
   )
