@@ -1,5 +1,6 @@
 import { useRouteLoaderData } from 'react-router'
 
+import { NavLink } from '@/ui/primitives/NavLink'
 import { useSiteConfig } from '@/ui/primitives/site-config'
 
 const lineClass = 'mt-[3px] flex flex-row flex-wrap justify-center gap-[0.5em]'
@@ -35,6 +36,14 @@ export function Footer({ currentYear }: FooterProps) {
         <span>
           Copyright © {initialYear}-{year}{' '}
         </span>
+        {/*
+          The site-root link is the canonical "home" anchor and stays
+          a plain `<a rel="home" href={config.website}>` rather than a
+          NavLink: `rel="home"` is a typed link relation that
+          accessibility tooling reads, NavLink's `<Link>` branch
+          can't carry a custom `rel`, and the click is a same-tab
+          full-document load anyway.
+        */}
         <a className={linkClass} href={config.website} title={config.title} rel="home">
           {config.title}
         </a>
@@ -42,26 +51,18 @@ export function Footer({ currentYear }: FooterProps) {
       {hasIcp && (
         <div className={lineClass}>
           {icpNo && (
-            <a
-              className={linkClass}
-              href="https://beian.miit.gov.cn"
-              rel="nofollow noreferrer"
-              target="_blank"
-              title="ICP 备案"
-            >
+            <NavLink className={linkClass} href="https://beian.miit.gov.cn" title="ICP 备案">
               {icpNo}
-            </a>
+            </NavLink>
           )}
           {moeIcpNo && (
-            <a
+            <NavLink
               className={linkClass}
               href={`https://icp.gov.moe/?keyword=${config.website.replace(/^https?:\/\//, '')}`}
-              rel="nofollow noreferrer"
-              target="_blank"
               title="萌国 ICP 备案"
             >
               {moeIcpNo}
-            </a>
+            </NavLink>
           )}
         </div>
       )}

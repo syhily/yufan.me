@@ -130,7 +130,7 @@ export function SupLink({ className, children, ...props }: ComponentProps<'sup'>
 // re-uses the same per-paragraph spacing the prose host applies.
 export function Center({ className, children, ...props }: ComponentProps<'center'>) {
   return (
-    <center className={cn('block mb-5 text-base md:text-[1.05rem]', className)} {...props}>
+    <center className={cn('block mb-5 text-base md:text-prose', className)} {...props}>
       {children}
     </center>
   )

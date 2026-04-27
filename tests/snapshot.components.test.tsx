@@ -5,7 +5,7 @@ import type { ClientPostWithMetadata } from '@/server/catalog'
 
 import { CodeBlock } from '@/ui/mdx/CodeBlock'
 import { Pagination } from '@/ui/post/pagination/Pagination'
-import { PostListingBody, PostSquare } from '@/ui/post/post/PostListViews'
+import { PostListingBody, PostSquare } from '@/ui/post/post/ListingLayout'
 import { SearchBar } from '@/ui/search/Search'
 
 import { makePost } from './_helpers/catalog'

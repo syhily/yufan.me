@@ -1,11 +1,10 @@
-import { Link } from 'react-router'
-
 import type { ClientTag, SidebarPostLink } from '@/server/catalog'
 import type { LatestComment } from '@/server/comments/types'
 
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
+import { NavLink } from '@/ui/primitives/NavLink'
 import { useSiteConfig } from '@/ui/primitives/site-config'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 import { SearchBar } from '@/ui/search/Search'
@@ -75,9 +74,17 @@ function RandomPosts({ posts }: RandomPostsProps) {
       <ul className="pl-5">
         {posts.map((post) => (
           <li key={post.slug} className="mb-3 list-[circle] overflow-hidden whitespace-nowrap">
-            <Link className="block hover:text-accent" to={post.permalink} title={post.title} prefetch="intent">
+            {/*
+              Sidebar widgets sit in the secondary column where click
+              probability is much lower than the main grid. Per the P1-5
+              prefetch budget we use `viewport`: the post is only
+              warmed once it scrolls into view, which keeps a hot
+              first-paint from queueing 5 random-post fetches the user
+              will likely never click.
+            */}
+            <NavLink className="block hover:text-accent" href={post.permalink} title={post.title} prefetch="viewport">
               {post.title}
-            </Link>
+            </NavLink>
           </li>
         ))}
       </ul>
@@ -121,15 +128,24 @@ function CommentLink({ comment }: { comment: LatestComment }) {
         {authorHref === undefined ? (
           comment.author
         ) : (
-          <a className="hover:text-accent" href={authorHref} target="_blank" rel="nofollow noreferrer">
+          // `safeHref` only returns `https?://` URLs, so the link is
+          // unconditionally external here. NavLink's URL heuristic
+          // would reach the same conclusion, but we set `external`
+          // explicitly to skip the regex roundtrip.
+          <NavLink className="hover:text-accent" href={authorHref} external>
             {comment.author}
-          </a>
+          </NavLink>
         )}
       </span>
       {' 发表在《'}
-      <Link className="hover:text-accent" to={comment.permalink} prefetch="intent">
+      {/*
+        The post permalink that owns the comment also lives in the
+        sidebar widget, so the same `viewport` budget applies: we
+        warm it only once the row scrolls into the user's viewport.
+      */}
+      <NavLink className="hover:text-accent" href={comment.permalink} prefetch="viewport">
         {comment.title}
-      </Link>
+      </NavLink>
       》
     </li>
   )
@@ -149,16 +165,20 @@ function RandomTags({ tags }: RandomTagsProps) {
       <WidgetTitle tooltip="流水落花春去也，天上人间。">文踪墨迹</WidgetTitle>
       <div className="flex flex-wrap">
         {tags.map((tag) => (
-          <Link
+          // Random tags are explicitly low-confidence — the user lands
+          // on a tag listing only when curiosity strikes mid-scroll.
+          // Viewport prefetch keeps idle bandwidth free until the cloud
+          // is in view.
+          <NavLink
             key={tag.slug}
-            to={tag.permalink}
+            href={tag.permalink}
             className="relative inline-block text-sm leading-none px-[0.9375rem] py-2 mr-[0.375rem] mb-[0.375rem] rounded-xs border border-border hover:text-accent"
             title={`${tag.name} (${tag.counts} 篇文章)`}
-            prefetch="intent"
+            prefetch="viewport"
           >
             <span className="text-accent mr-[5px]">#</span>
             {tag.name}
-          </Link>
+          </NavLink>
         ))}
       </div>
     </div>

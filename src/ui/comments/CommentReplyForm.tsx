@@ -8,6 +8,7 @@ import { API_ACTIONS } from '@/client/api/actions'
 import { useApiAction } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
 import { cn } from '@/ui/lib/cn'
+import { AvatarImage } from '@/ui/primitives/AvatarImage'
 import { Button } from '@/ui/primitives/Button'
 import { inputVariants } from '@/ui/primitives/Input'
 import { Textarea } from '@/ui/primitives/Textarea'
@@ -89,16 +90,7 @@ export function CommentReplyForm({
   return (
     <div id="respond" className="relative mb-3 md:mb-4">
       <reply.Form key={resetKey} id="commentForm" className="flex flex-auto">
-        <div className="flex-avatar w-7 h-7 mr-2.5 md:w-10 md:h-10 md:mr-[0.9375rem]">
-          <img
-            alt="头像"
-            src={avatarSrc}
-            className="avatar avatar-40 photo avatar-default"
-            height={40}
-            width={40}
-            decoding="async"
-          />
-        </div>
+        <AvatarImage alt="头像" src={avatarSrc} size="md" className="mr-2.5 md:mr-[0.9375rem]" />
         <div className="flex-1">
           <div className="mb-3 relative">
             <Textarea

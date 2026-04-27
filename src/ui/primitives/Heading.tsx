@@ -30,12 +30,12 @@ import { cn } from '@/ui/lib/cn'
 const headingVariants = cva('font-semibold text-foreground leading-tight', {
   variants: {
     level: {
-      1: 'text-[1.5rem] md:text-[1.625rem] lg:text-[1.75rem]',
-      2: 'text-[1.25rem] md:text-[1.375rem] lg:text-[1.5rem]',
+      1: 'text-h0 md:text-[1.625rem] lg:text-[1.75rem]',
+      2: 'text-card-title md:text-[1.375rem] lg:text-h0',
       3: 'text-[1.125rem] lg:text-[1.375rem]',
-      4: 'text-base lg:text-[1.25rem]',
-      5: 'text-[0.9375rem] md:text-base lg:text-[1.125rem]',
-      6: 'text-[0.9375rem] md:text-base',
+      4: 'text-base lg:text-card-title',
+      5: 'text-md md:text-base lg:text-[1.125rem]',
+      6: 'text-md md:text-base',
     },
   },
   defaultVariants: { level: 1 },

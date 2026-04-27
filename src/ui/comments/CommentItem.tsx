@@ -26,8 +26,8 @@ import {
   useCommentsActions,
   useReplyFormForId,
 } from '@/ui/comments/comments-context'
-import { cn } from '@/ui/lib/cn'
-import { badgeVariants } from '@/ui/primitives/Badge'
+import { AvatarImage } from '@/ui/primitives/AvatarImage'
+import { Badge } from '@/ui/primitives/Badge'
 import { Button } from '@/ui/primitives/Button'
 import { Textarea } from '@/ui/primitives/Textarea'
 
@@ -244,24 +244,12 @@ function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }
       data-depth={depth}
     >
       <article id={`div-comment-${comment.id}`} className="relative flex flex-auto min-w-0 max-w-full box-border">
-        <div
-          className="flex-avatar w-7 h-7 mr-2.5 md:w-10 md:h-10 md:mr-[0.9375rem]"
-          style={{
-            backgroundImage: "url('/images/default-avatar.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <img
-            alt={comment.name}
-            src={joinUrl('/images/avatar', `${comment.userId}.png`)}
-            className="avatar avatar-40 photo"
-            height={40}
-            width={40}
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
+        <AvatarImage
+          alt={comment.name}
+          src={joinUrl('/images/avatar', `${comment.userId}.png`)}
+          size="md"
+          className="mr-2.5 md:mr-[0.9375rem]"
+        />
         <div className="author-row flex-auto min-w-0 mt-0.5 md:mt-0">
           <div className="font-bold inline-flex flex-wrap items-center gap-1.5 max-w-full [&_a]:align-middle">
             {authorHref === undefined ? (
@@ -272,21 +260,20 @@ function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }
               </a>
             )}
             {comment.badgeName && (
-              // The comment-author badge is intentionally tone-less: its
-              // bg / fg are driven by per-comment CSS variables
-              // (`--badge-color`, `--badge-fg`) that come straight from the
-              // database, not from the project palette. We reach for
-              // `badgeVariants()` only to inherit the layout (font + spacing)
-              // — colour stays under the inline-style override below.
-              <span
-                className={cn(
-                  badgeVariants(),
-                  'inline-flex flex-none items-center px-1.5 py-0.5 leading-[1.2] whitespace-nowrap rounded-full font-bold border-0 bg-[color:var(--badge-color)] text-[color:var(--badge-fg)]',
-                )}
+              // The comment-author badge uses the `badge` tone — its bg /
+              // fg are driven by `--badge-color` / `--badge-fg`, which come
+              // from the database when present and fall back to the
+              // palette defaults declared in `globals.css`. Layout
+              // overrides (rounded-full, bold, custom paddings) flow
+              // through `className`; the data-tone cell in
+              // `toneStyles.css` paints the colour.
+              <Badge
+                tone="badge"
+                className="flex-none px-1.5 py-0.5 leading-[1.2] rounded-full font-bold"
                 style={badgeStyle(comment.badgeColor, comment.badgeTextColor)}
               >
                 {comment.badgeName}
-              </span>
+              </Badge>
             )}
           </div>
           <div className="comment-body prose-host whitespace-normal break-words my-2 leading-[1.85]">
