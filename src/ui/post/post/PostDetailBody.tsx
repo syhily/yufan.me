@@ -61,6 +61,15 @@ export function PostDetailBody({
                   </time>
                   {visibleTags.length > 0 && (
                     <div className="flex flex-auto flex-wrap w-full justify-start gap-y-2 gap-x-2.5 min-w-0 md:w-auto md:justify-end md:gap-2 md:ml-auto">
+                      {/*
+                        Per-post tag chips are below-the-fold meta links
+                        — the user has to read the post first, and only
+                        a fraction click through to the tag listing.
+                        `viewport` per the P1-5 budget keeps the tag
+                        listing prefetch cost off the post-load critical
+                        path while still warming the route as the user
+                        scrolls toward it.
+                      */}
                       {visibleTags.map((tag) => (
                         <ToneSurface
                           as={Link}
@@ -72,7 +81,7 @@ export function PostDetailBody({
                             'leading-[1.2] whitespace-nowrap',
                           )}
                           to={`/tags/${tag.slug}`}
-                          prefetch="intent"
+                          prefetch="viewport"
                         >
                           {tag.name}
                         </ToneSurface>
@@ -81,9 +90,7 @@ export function PostDetailBody({
                   )}
                 </div>
                 <TableOfContents headings={headings} toc={post.toc} />
-                <div className="prose-host text-[0.9375rem] leading-[1.875] [hyphens:auto] mb-6 font-serif">
-                  {children}
-                </div>
+                <div className="prose-host text-md leading-[1.875] [hyphens:auto] mb-6 font-serif">{children}</div>
                 <LikeButton permalink={post.permalink} likes={likes} />
                 <LikeShare post={post} />
                 {post.comments && (

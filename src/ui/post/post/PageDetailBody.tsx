@@ -39,7 +39,7 @@ export function PageDetailBody({
             {page.title}
           </Heading>
           <TableOfContents headings={headings} toc={page.toc} />
-          <div className="prose-host text-[0.9375rem] leading-[1.875] [hyphens:auto] mb-6 font-serif">{children}</div>
+          <div className="prose-host text-md leading-[1.875] [hyphens:auto] mb-6 font-serif">{children}</div>
           <LikeButton permalink={page.permalink} likes={likes} />
           {page.comments && (
             <Suspense fallback={<CommentsSkeleton />}>
