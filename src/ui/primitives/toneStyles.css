@@ -1,0 +1,136 @@
+/* Tone × appearance palette for cva-driven primitives.
+ *
+ * The colour decision for every Button / Badge / Alert / Pagination /
+ * Spinner / etc. is driven by a `data-tone` + `data-appearance` pair
+ * on the host element. The cells below are the closed list of tone
+ * × appearance combinations we ship; new tones land here in one
+ * place rather than in the `cva` tables of every primitive that
+ * accepts a `tone` prop (see `tone.ts`).
+ *
+ * Each rule:
+ *   - assumes the consumer has already opted into the data-attribute
+ *     contract by setting `data-tone="…" data-appearance="…"` on the
+ *     element, and
+ *   - leaves layout (padding / radius / size) to the per-primitive
+ *     `cva` table, since those dimensions are component-specific.
+ *
+ * Intentionally outside `@layer components` because the boundaries
+ * test caps that layer at three selector scopes (`.prose-host`,
+ * `pre.shiki`, `.medium-zoom-overlay`). The data-attribute selectors
+ * here live in `@layer utilities` so utility-cascade ordering still
+ * lets call-site `className` overrides win when both apply.
+ *
+ * Hover states deliberately use `:hover:not([data-static])` so the
+ * Alert primitive (and any future static use of these data-attrs)
+ * can opt out of pointer affordances by setting `data-static="true"`
+ * on the host element. The interactive primitives (Button, Badge,
+ * Pagination cell) leave the attribute off and pick up the hover.
+ */
+
+@layer utilities {
+  /* ---------------------------------------------------------------- */
+  /*  Solid (filled) tones                                             */
+  /* ---------------------------------------------------------------- */
+
+  [data-appearance='solid'][data-tone='accent'] {
+    @apply bg-accent text-accent-fg border-accent;
+  }
+  [data-appearance='solid'][data-tone='accent']:hover:not([data-static]) {
+    @apply bg-accent-strong border-accent-strong;
+  }
+
+  [data-appearance='solid'][data-tone='neutral'] {
+    @apply bg-surface-muted text-foreground-muted border-surface-muted;
+  }
+  [data-appearance='solid'][data-tone='neutral']:hover:not([data-static]) {
+    @apply bg-surface text-foreground border-border;
+  }
+
+  [data-appearance='solid'][data-tone='inverse'] {
+    @apply bg-foreground text-surface border-foreground;
+  }
+  [data-appearance='solid'][data-tone='inverse']:hover:not([data-static]) {
+    @apply bg-foreground-soft border-foreground-soft;
+  }
+
+  [data-appearance='solid'][data-tone='success'] {
+    @apply bg-success text-surface border-success;
+  }
+  [data-appearance='solid'][data-tone='success']:hover:not([data-static]) {
+    @apply opacity-80;
+  }
+
+  [data-appearance='solid'][data-tone='danger'] {
+    @apply bg-danger text-surface border-danger;
+  }
+  [data-appearance='solid'][data-tone='danger']:hover:not([data-static]) {
+    @apply opacity-80;
+  }
+
+  [data-appearance='solid'][data-tone='warning'] {
+    @apply bg-warning text-surface border-warning;
+  }
+  [data-appearance='solid'][data-tone='warning']:hover:not([data-static]) {
+    @apply opacity-80;
+  }
+
+  [data-appearance='solid'][data-tone='subtle'] {
+    @apply bg-transparent text-foreground-muted border-transparent;
+  }
+  [data-appearance='solid'][data-tone='subtle']:hover:not([data-static]) {
+    @apply bg-surface-muted text-foreground;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /*  Outline (ghost-with-tinted-border) tones                          */
+  /* ---------------------------------------------------------------- */
+
+  [data-appearance='outline'][data-tone='accent'] {
+    @apply bg-accent-soft text-accent border-accent/30;
+  }
+  [data-appearance='outline'][data-tone='accent']:hover:not([data-static]) {
+    @apply bg-accent text-accent-fg border-accent;
+  }
+
+  [data-appearance='outline'][data-tone='neutral'] {
+    @apply bg-transparent text-foreground-muted border-border;
+  }
+  [data-appearance='outline'][data-tone='neutral']:hover:not([data-static]) {
+    @apply bg-surface-muted text-foreground;
+  }
+
+  [data-appearance='outline'][data-tone='inverse'] {
+    @apply bg-transparent text-foreground border-foreground;
+  }
+  [data-appearance='outline'][data-tone='inverse']:hover:not([data-static]) {
+    @apply bg-foreground text-surface;
+  }
+
+  [data-appearance='outline'][data-tone='success'] {
+    @apply bg-transparent text-success border-success;
+  }
+  [data-appearance='outline'][data-tone='success']:hover:not([data-static]) {
+    @apply bg-success text-surface;
+  }
+
+  [data-appearance='outline'][data-tone='danger'] {
+    @apply bg-danger-soft text-danger border-danger-soft;
+  }
+  [data-appearance='outline'][data-tone='danger']:hover:not([data-static]) {
+    @apply bg-danger text-surface border-danger;
+  }
+
+  [data-appearance='outline'][data-tone='warning'] {
+    @apply bg-transparent text-warning border-warning;
+  }
+  [data-appearance='outline'][data-tone='warning']:hover:not([data-static]) {
+    @apply bg-warning text-surface;
+  }
+
+  [data-appearance='outline'][data-tone='subtle'] {
+    @apply bg-transparent text-foreground-muted border-transparent;
+  }
+  [data-appearance='outline'][data-tone='subtle']:hover:not([data-static]) {
+    @apply bg-surface-muted text-foreground;
+  }
+}

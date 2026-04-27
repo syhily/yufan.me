@@ -247,7 +247,9 @@ const DISPLAY_MJX_CLASSES = [
 
 function decorateMjxContainers(nodes: ElementContent[], display: boolean): void {
   for (const node of nodes) {
-    if (!isElement(node)) continue
+    if (!isElement(node)) {
+      continue
+    }
     if (node.tagName === 'mjx-container') {
       const properties = (node.properties ??= {})
       const existing = Array.isArray(properties.className) ? (properties.className as Array<string>) : []

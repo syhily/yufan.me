@@ -9,9 +9,8 @@ import { FootnoteDefinition, FootnoteProvider, FootnoteReference } from '@/ui/md
 import { MdxImg } from '@/ui/mdx/MdxImg'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Friends } from '@/ui/mdx/page/Friends'
-import { A, Blockquote, Center, Code, H1, H2, H3, H4, H5, H6, Hr, Ol, P, Ul } from '@/ui/mdx/prose'
+import { Center, Code, H2, H3, H4 } from '@/ui/mdx/prose'
 import { Solution } from '@/ui/mdx/solutions/Solution'
-import { Caption, Table, Tbody, Td, Th, Thead, Tr } from '@/ui/mdx/table'
 
 // Shared MDX component map for posts. The `img` override routes every
 // compiled `<img>` through `<MdxImg>`, which only needs to attach the
@@ -19,12 +18,16 @@ import { Caption, Table, Tbody, Td, Th, Thead, Tr } from '@/ui/mdx/table'
 // `src`, and `data-thumbhash` are all baked in at compile time by
 // `rehype-image-enhance.server.ts`.
 //
-// `pre` and `li` keep their dedicated wrappers (CodeBlock, FootnoteDefinition);
-// the rest (`h1..h6`, `p`, `a`, `ol`, `ul`, `hr`, `code`, `blockquote`,
-// `table` family, `caption`, `center`) are wrapped by lightweight
-// className-only components that replace the legacy Bootstrap-era prose
-// cascade hosted by `.prose-host`. See `src/ui/mdx/prose.tsx` and
-// `src/ui/mdx/table.tsx`.
+// Per-element typography (h1, p, ol, ul, li, hr, code (block-level),
+// blockquote, table family, caption, …) is owned by the
+// `@tailwindcss/typography` `prose-*` utilities applied on the
+// `.prose-host` host element in `globals.css` — there is no JSX
+// wrapper for those tags. The map below only registers the React-only
+// renderers that `prose-*` cannot reach: `<H2|H3|H4>` heading bars,
+// `<Code>` inline-token wash, `<Center>` legacy fallback, plus the
+// content-routing wrappers (`pre` → `<CodeBlock>`, `li` →
+// `<FootnoteDefinition>`, `sup` → `<FootnoteReference>`, `img` →
+// `<MdxImg>`, `Solution`, `MusicPlayer`).
 //
 // Exported as a named binding so the runtime MDX compiler used by comments
 // and category descriptions can reuse the same prose / table / footnote
@@ -38,26 +41,10 @@ export const postMdxComponents: MDXComponents = {
   li: FootnoteDefinition,
   pre: CodeBlock,
   sup: FootnoteReference,
-  h1: H1,
   h2: H2,
   h3: H3,
   h4: H4,
-  h5: H5,
-  h6: H6,
-  p: P,
-  a: A,
-  ol: Ol,
-  ul: Ul,
-  hr: Hr,
   code: Code,
-  blockquote: Blockquote,
-  table: Table,
-  thead: Thead,
-  tbody: Tbody,
-  tr: Tr,
-  th: Th,
-  td: Td,
-  caption: Caption,
   center: Center,
 }
 
@@ -72,7 +59,9 @@ const pageComponentsCache = new WeakMap<readonly Friend[], MDXComponents>()
 
 function pageComponents(friends: readonly Friend[]): MDXComponents {
   const cached = pageComponentsCache.get(friends)
-  if (cached !== undefined) return cached
+  if (cached !== undefined) {
+    return cached
+  }
 
   const friendsArray = [...friends]
   const FriendsComponent = () => <Friends friends={friendsArray} />
@@ -84,26 +73,10 @@ function pageComponents(friends: readonly Friend[]): MDXComponents {
     pre: CodeBlock,
     sup: FootnoteReference,
     Friends: FriendsComponent,
-    h1: H1,
     h2: H2,
     h3: H3,
     h4: H4,
-    h5: H5,
-    h6: H6,
-    p: P,
-    a: A,
-    ol: Ol,
-    ul: Ul,
-    hr: Hr,
     code: Code,
-    blockquote: Blockquote,
-    table: Table,
-    thead: Thead,
-    tbody: Tbody,
-    tr: Tr,
-    th: Th,
-    td: Td,
-    caption: Caption,
     center: Center,
   }
   pageComponentsCache.set(friends, components)

@@ -67,11 +67,19 @@ function drawImageProp(
 ) {
   // keep bounds [0.0, 1.0]
   let ox = offsetX
-  if (offsetX < 0) ox = 0
-  if (offsetX > 1) ox = 1
+  if (offsetX < 0) {
+    ox = 0
+  }
+  if (offsetX > 1) {
+    ox = 1
+  }
   let oy = offsetY
-  if (offsetY < 0) oy = 0
-  if (offsetY > 1) oy = 1
+  if (offsetY < 0) {
+    oy = 0
+  }
+  if (offsetY > 1) {
+    oy = 1
+  }
 
   const iw = img.width
   const ih = img.height
@@ -84,8 +92,12 @@ function drawImageProp(
   let ar = 1
 
   // decide which gap to fill
-  if (nw < w) ar = w / nw
-  if (Math.abs(ar - 1) < 1e-14 && nh < h) ar = h / nh // updated
+  if (nw < w) {
+    ar = w / nw
+  }
+  if (Math.abs(ar - 1) < 1e-14 && nh < h) {
+    ar = h / nh
+  } // updated
   nw *= ar
   nh *= ar
 
@@ -97,10 +109,18 @@ function drawImageProp(
   let cy = (ih - ch) * oy
 
   // make sure source rectangle is valid
-  if (cx < 0) cx = 0
-  if (cy < 0) cy = 0
-  if (cw > iw) cw = iw
-  if (ch > ih) ch = ih
+  if (cx < 0) {
+    cx = 0
+  }
+  if (cy < 0) {
+    cy = 0
+  }
+  if (cw > iw) {
+    cw = iw
+  }
+  if (ch > ih) {
+    ch = ih
+  }
 
   // fill image in dest. rectangle
   ctx.drawImage(img, cx, cy, cw, ch, x, y, w, h)

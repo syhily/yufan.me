@@ -1,68 +1,28 @@
 import type { ComponentPropsWithRef, Ref } from 'react'
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
 
-import { type Tone, TONE_OUTLINE, TONE_SOLID } from '@/ui/primitives/tone'
+import { cn } from '@/ui/lib/cn'
+import { APPEARANCE_VARIANTS, TONE_VARIANTS, type Appearance } from '@/ui/primitives/tone'
 
 // 4 orthogonal dimensions per `vercel-composition-patterns/architecture-avoid-boolean-props`:
 //
-//   tone        (color)   ← from `@/ui/primitives/tone`
-//   appearance  (fill)    ← solid / outline / ghost / link
+//   tone        (color)   ← serialised to `data-tone="…"`
+//   appearance  (fill)    ← serialised to `data-appearance="…"`
+//                            (or kept as a className for `ghost` / `link`)
 //   size                  ← sm / md / lg
 //   shape                 ← rect / pill / circle
 //
-// Previously this file shipped 11 hand-rolled `variant` strings + `icon` +
-// `block` boolean dimensions, which produced a ~40-cell Cartesian matrix
-// and made dark-mode + regression sweeps brittle. The new shape pulls
-// every colour decision out into [tone.ts](./tone.ts) so the same 4
-// primitives (Button/Badge/Alert/Pagination) react together when a token
-// is rebalanced.
+// Tone × appearance colour cells live in `toneStyles.css`, keyed off
+// the pair of data-attributes. The cva table here only ships the
+// layout-axis classes (size / shape / radius). `ghost` and `link`
+// share the data-appearance escape hatch — they intentionally ignore
+// `tone`, so they keep their full className chain inline below.
 //
 // `block` and `icon` are no longer cva dimensions:
 //   - block-width buttons just pass `className="w-full"` (one call site).
 //   - icon-only buttons use `<Button.Icon>` (see bottom of file). The
 //     square aspect + circle shape is implicit there.
-
-// Builds the cva `compoundVariants` array. Extracted into a function so we
-// can iterate `TONE_SOLID` / `TONE_OUTLINE` without spreading two arrays
-// into a third (eslint-plugin-unicorn `no-useless-spread` flags that as
-// an extra allocation).
-function buildCompoundVariants() {
-  const out: Array<{
-    appearance?: 'solid' | 'outline'
-    tone?: Tone
-    shape?: 'pill' | 'circle'
-    size?: 'sm' | 'md' | 'lg'
-    class: string
-  }> = []
-  // tone × solid (default colour fill)
-  for (const [tone, cls] of Object.entries(TONE_SOLID) as [Tone, string][]) {
-    out.push({ appearance: 'solid', tone, class: cls })
-  }
-  // tone × outline (ghost-with-tinted-border fill)
-  for (const [tone, cls] of Object.entries(TONE_OUTLINE) as [Tone, string][]) {
-    out.push({ appearance: 'outline', tone, class: cls })
-  }
-  // shape="pill" reflows the horizontal padding so the radius reads
-  // (Bootstrap's `.btn-rounded` legacy contract).
-  out.push({ shape: 'pill', size: 'sm', class: 'px-5 max-md:px-4' })
-  out.push({ shape: 'pill', size: 'md', class: 'px-7' })
-  out.push({ shape: 'pill', size: 'lg', class: 'rounded-[4rem] px-10' })
-  // shape="circle" wins over the size paddings (icon-only buttons are
-  // square; we set width explicitly per size).
-  out.push({ shape: 'circle', size: 'sm', class: 'w-[1.875rem] h-[1.875rem] text-[1.125rem]' })
-  out.push({ shape: 'circle', size: 'md', class: 'w-8 h-8 text-[1.0625rem]' })
-  out.push({
-    shape: 'circle',
-    size: 'lg',
-    class:
-      'w-11 h-11 text-[1.325rem] max-md:w-[3.125rem] max-md:h-[3.125rem] max-md:text-[1.125rem] max-lg:w-11 max-lg:h-11 max-lg:text-[1.25rem]',
-  })
-  return out
-}
-
 const buttonVariants = cva(
   [
     'inline-flex items-center justify-center whitespace-normal text-center align-middle border',
@@ -72,29 +32,18 @@ const buttonVariants = cva(
   ].join(' '),
   {
     variants: {
-      tone: {
-        accent: '',
-        neutral: '',
-        inverse: '',
-        success: '',
-        danger: '',
-        warning: '',
-        subtle: '',
-      } satisfies Record<Tone, string>,
+      tone: TONE_VARIANTS,
       appearance: {
-        // `solid` / `outline` colours come from compoundVariants below so
-        // the table stays aligned with `TONE_SOLID` / `TONE_OUTLINE`.
-        solid: '',
-        outline: '',
+        ...APPEARANCE_VARIANTS,
         // Ghost and link ignore tone deliberately — they're "no fill, no
         // border" and tone-aware variants would buy nothing visually.
         ghost: 'border-transparent bg-transparent text-foreground-muted hover:bg-surface-muted hover:text-foreground',
         link: 'border-transparent bg-transparent text-foreground-muted underline-offset-2 hover:underline hover:text-foreground',
-      },
+      } satisfies Record<Appearance | 'ghost' | 'link', string>,
       size: {
-        sm: 'text-[0.8125rem] px-3.5 py-[0.3125rem] max-md:text-xs max-md:px-2 max-md:py-1',
-        md: 'text-sm px-[1.625rem] py-2 max-md:py-[0.375rem]',
-        lg: 'text-[0.9375rem] px-8 py-[0.625rem] max-md:text-sm max-md:px-7 max-md:py-2',
+        sm: 'text-xs px-2 py-1 md:text-[0.8125rem] md:px-3.5 md:py-[0.3125rem]',
+        md: 'text-sm px-[1.625rem] py-[0.375rem] md:py-2',
+        lg: 'text-sm px-7 py-2 md:text-[0.9375rem] md:px-8 md:py-[0.625rem]',
       },
       shape: {
         rect: 'rounded-xs',
@@ -102,7 +51,25 @@ const buttonVariants = cva(
         circle: 'rounded-full aspect-square p-0',
       },
     },
-    compoundVariants: buildCompoundVariants(),
+    compoundVariants: [
+      // shape="pill" reflows the horizontal padding so the radius reads
+      // (Bootstrap's `.btn-rounded` legacy contract).
+      { shape: 'pill', size: 'sm', class: 'px-4 md:px-5' },
+      { shape: 'pill', size: 'md', class: 'px-7' },
+      { shape: 'pill', size: 'lg', class: 'rounded-[4rem] px-10' },
+      // shape="circle" wins over the size paddings (icon-only buttons are
+      // square; we set width explicitly per size).
+      { shape: 'circle', size: 'sm', class: 'w-[1.875rem] h-[1.875rem] text-[1.125rem]' },
+      { shape: 'circle', size: 'md', class: 'w-8 h-8 text-[1.0625rem]' },
+      // Mobile baseline matches the legacy `max-md` clamp; sm/md tighten as the
+      // viewport grows. ≥ lg falls back to the dense desktop affordance.
+      {
+        shape: 'circle',
+        size: 'lg',
+        class:
+          'w-[3.125rem] h-[3.125rem] text-[1.125rem] sm:w-11 sm:h-11 sm:text-[1.25rem] lg:w-11 lg:h-11 lg:text-[1.325rem]',
+      },
+    ],
     defaultVariants: {
       tone: 'accent',
       appearance: 'solid',
@@ -118,7 +85,19 @@ export interface ButtonProps extends ComponentPropsWithRef<'button'>, ButtonVari
   ref?: Ref<HTMLButtonElement>
 }
 
+// Translate the `appearance` prop into the `data-appearance` attribute
+// for the two values that drive the data-attribute palette in
+// `toneStyles.css`. `ghost` and `link` keep their full inline className
+// (no data-attribute), since they intentionally bypass the tone matrix.
+function appearanceAttr(appearance: ButtonVariantProps['appearance']): Appearance | undefined {
+  return appearance === 'solid' || appearance === 'outline' ? appearance : undefined
+}
+
 export function Button({ className, tone, appearance, size, shape, type, ref, ...props }: ButtonProps) {
+  const dataTone = tone ?? 'accent'
+  const dataAppearance = appearanceAttr(appearance ?? 'solid')
+  const classes = cn(buttonVariants({ tone, appearance, size, shape }), className)
+
   // The `react/button-has-type` rule rejects `type={...something dynamic...}`
   // because it can't statically prove the value is one of "button" / "submit"
   // / "reset". Branch on the prop and emit literal strings so the linter can
@@ -128,7 +107,9 @@ export function Button({ className, tone, appearance, size, shape, type, ref, ..
       <button
         ref={ref}
         type="submit"
-        className={twMerge(clsx(buttonVariants({ tone, appearance, size, shape }), className))}
+        data-tone={dataTone}
+        data-appearance={dataAppearance}
+        className={classes}
         {...props}
       />
     )
@@ -138,7 +119,9 @@ export function Button({ className, tone, appearance, size, shape, type, ref, ..
       <button
         ref={ref}
         type="reset"
-        className={twMerge(clsx(buttonVariants({ tone, appearance, size, shape }), className))}
+        data-tone={dataTone}
+        data-appearance={dataAppearance}
+        className={classes}
         {...props}
       />
     )
@@ -147,7 +130,9 @@ export function Button({ className, tone, appearance, size, shape, type, ref, ..
     <button
       ref={ref}
       type="button"
-      className={twMerge(clsx(buttonVariants({ tone, appearance, size, shape }), className))}
+      data-tone={dataTone}
+      data-appearance={dataAppearance}
+      className={classes}
       {...props}
     />
   )

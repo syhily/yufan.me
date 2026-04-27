@@ -149,13 +149,17 @@ function selectFeedPosts(
 
   if (options.category !== undefined) {
     const category = catalog.getCategoryBySlug(options.category) ?? catalog.getCategoryByName(options.category)
-    if (category === undefined) return []
+    if (category === undefined) {
+      return []
+    }
     return catalog.getPostsByTaxonomy({ categoryName: category.name }, visibility)
   }
 
   if (options.tag !== undefined) {
     const tag = catalog.getTagBySlug(options.tag) ?? catalog.getTagByName(options.tag)
-    if (tag === undefined) return []
+    if (tag === undefined) {
+      return []
+    }
     return catalog.getPostsByTaxonomy({ tagName: tag.name }, visibility)
   }
 

@@ -13,13 +13,25 @@
 const LEGIT_WP_PATHS = new Set(['/wp-login.php', '/wp-admin', '/wp-admin/install.php'])
 
 export function isWordPressDecoyPath(pathname: string): boolean {
-  if (LEGIT_WP_PATHS.has(pathname)) return false
+  if (LEGIT_WP_PATHS.has(pathname)) {
+    return false
+  }
 
-  if (pathname.startsWith('/wp-admin/')) return true
-  if (pathname.startsWith('/wp-content/')) return true
-  if (pathname.startsWith('/wp-includes/')) return true
-  if (pathname === '/cgi-bin' || pathname.startsWith('/cgi-bin/')) return true
-  if (pathname.endsWith('.php')) return true
+  if (pathname.startsWith('/wp-admin/')) {
+    return true
+  }
+  if (pathname.startsWith('/wp-content/')) {
+    return true
+  }
+  if (pathname.startsWith('/wp-includes/')) {
+    return true
+  }
+  if (pathname === '/cgi-bin' || pathname.startsWith('/cgi-bin/')) {
+    return true
+  }
+  if (pathname.endsWith('.php')) {
+    return true
+  }
 
   return false
 }

@@ -20,7 +20,9 @@ function cacheKey(options: CacheKeyOptions): string {
 }
 
 function stableRecord(record: Record<string, string> | undefined): Record<string, string> | undefined {
-  if (record === undefined) return undefined
+  if (record === undefined) {
+    return undefined
+  }
   return Object.fromEntries(Object.entries(record).sort(([a], [b]) => a.localeCompare(b)))
 }
 

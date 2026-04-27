@@ -2,11 +2,15 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import { API_ACTIONS } from '@/client/api/actions'
 import { loader as calendarLoader } from '@/routes/image.calendar'
+import { canonicalPostPath } from '@/server/detail'
+import {
+  listingSeo,
+  listingShouldRevalidate,
+  parsePageNum,
+  redirectListingOverflow,
+  searchRootPath,
+} from '@/server/listing'
 import { notFound, pngResponse } from '@/server/route-helpers/http'
-import { listingSeo } from '@/server/route-helpers/listing-seo'
-import { parsePageNum, redirectListingOverflow } from '@/server/route-helpers/pagination'
-import { canonicalPostPath, searchRootPath } from '@/server/route-helpers/paths'
-import { commentAwareRevalidate } from '@/server/route-helpers/revalidate'
 import { slicePosts } from '@/shared/formatter'
 
 describe('route shared helpers', () => {
@@ -104,13 +108,13 @@ describe('listing SEO helpers', () => {
 describe('route revalidation helpers', () => {
   it("keeps React Router's default behavior for plain link navigations", () => {
     expect(
-      commentAwareRevalidate({
+      listingShouldRevalidate({
         formAction: undefined,
         defaultShouldRevalidate: true,
       } as never),
     ).toBe(true)
     expect(
-      commentAwareRevalidate({
+      listingShouldRevalidate({
         formAction: undefined,
         defaultShouldRevalidate: false,
       } as never),
@@ -123,12 +127,12 @@ describe('route revalidation helpers', () => {
       defaultShouldRevalidate: true,
     } as never
 
-    expect(commentAwareRevalidate(args)).toBe(false)
+    expect(listingShouldRevalidate(args)).toBe(false)
   })
 
   it('keeps non-comment submissions on the default path', () => {
     expect(
-      commentAwareRevalidate({
+      listingShouldRevalidate({
         formAction: API_ACTIONS.auth.updateUser.path,
         defaultShouldRevalidate: true,
       } as never),

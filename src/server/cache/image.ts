@@ -17,7 +17,9 @@ export async function loadBuffer(key: string, loader: () => Promise<Buffer>, ttl
   // a deploy spike doesn't fan out into N parallel renders.
   if (import.meta.env.PROD) {
     const cached = await storage.getItemRaw<Buffer>(key)
-    if (cached !== null) return cached
+    if (cached !== null) {
+      return cached
+    }
   }
   return bufferInflight(key, async () => {
     const buffer = await loader()

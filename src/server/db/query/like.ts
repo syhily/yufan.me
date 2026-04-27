@@ -61,7 +61,9 @@ export interface PageMetricsRow {
 }
 
 export async function pageMetricsByKeys(pageKeys: string[]): Promise<PageMetricsRow[]> {
-  if (pageKeys.length === 0) return []
+  if (pageKeys.length === 0) {
+    return []
+  }
   return db.select({ key: page.key, like: page.voteUp, view: page.pv }).from(page).where(inArray(page.key, pageKeys))
 }
 
@@ -71,7 +73,9 @@ export interface PageCommentCountRow {
 }
 
 export async function commentCountsByPageKeys(pageKeys: string[]): Promise<PageCommentCountRow[]> {
-  if (pageKeys.length === 0) return []
+  if (pageKeys.length === 0) {
+    return []
+  }
   return db
     .select({ pageKey: comment.pageKey, count: count() })
     .from(comment)

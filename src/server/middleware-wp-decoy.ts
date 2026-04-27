@@ -10,6 +10,8 @@ import { isWordPressDecoyPath, notWordPressSite } from '@/server/route-helpers/w
 // to update if the probe pattern list grows and one place to look at when
 // debugging an unexpected 404 response.
 export const wpDecoyMiddleware: MiddlewareFunction<Response> = ({ request }, next) => {
-  if (isWordPressDecoyPath(new URL(request.url).pathname)) notWordPressSite()
+  if (isWordPressDecoyPath(new URL(request.url).pathname)) {
+    notWordPressSite()
+  }
   return next()
 }

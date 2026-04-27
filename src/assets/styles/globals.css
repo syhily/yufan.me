@@ -6,6 +6,7 @@
 @import '@/assets/fonts/iosevka.css';
 @import '@/ui/post/toc/tocTokens.css';
 @import '@/ui/mdx/codeBlockTokens.css';
+@import '@/ui/primitives/toneStyles.css';
 
 /* -------------------------------------------------------------------------- */
 /*  Dark-mode hook — `dark:` variants fire whenever a `.nice-dark-mode`      */
@@ -122,6 +123,42 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
+
+  /* ---------------------------------------------------------------------
+   * Z-index tokens. Tailwind classes consume them as `z-(--z-name)`; the
+   * progression below codifies the layering contract used by the chrome,
+   * the drawer/dialog primitives, and per-page floats. Replaces the
+   * scattered `z-[N]` magic numbers (Header, Drawer, Toc, Sidebar, …).
+   *
+   *  drawer-handle = floating handle/toggle button outside the drawer
+   *  drawer-scrim  = full-screen overlay behind a drawer/dialog
+   *  drawer        = the drawer / dialog popup itself
+   *  drawer-handle-open = handle pinned next to the open drawer
+   *  overlay       = on-popup chrome (close button, captions)
+   *  toast         = top-most live region (Base UI Toast viewport)
+   * ------------------------------------------------------------------ */
+  /* Per-card content overlays (image scrims, captions, hit-areas)
+   *  card-overlay-1 < card-overlay-2 < card-overlay-3 inside a single card */
+  --z-card-overlay-1: 1;
+  --z-card-overlay-2: 2;
+  --z-card-overlay-3: 3;
+
+  /* Page chrome */
+  --z-sticky: 1010;
+  --z-header: 1020;
+
+  /* Drawer / dialog stack */
+  --z-drawer-scrim: 500;
+  --z-drawer-handle: 890;
+  --z-drawer: 1000;
+  --z-drawer-handle-open: 1500;
+  --z-overlay: 1600;
+
+  /* Top-most floats (scroll-to-top FAB, toast viewport). The FAB sits above
+   * everything so it stays clickable while the user scrolls past dialogs;
+   * toast viewport sits one tier below it. */
+  --z-toast: 2000;
+  --z-fab: 9999;
 
   /* Mono font for `font-mono` utility. */
   --font-mono: 'Iosevka', monospace;
@@ -278,7 +315,11 @@
 
   /* Per-tag typography (h1..h6, p, blockquote, ol/ul/li, table family,
      code, pre, cite, dt/dd) is owned by the matching React components in
-     `src/ui/mdx/{prose,table}.tsx` (for MDX) and `src/ui/primitives/
+     `@tailwindcss/typography` `prose-*` utilities applied on the
+     `.prose-host` host (see the `@layer components` block below) and
+     the few JSX-only renderers in `src/ui/mdx/prose.tsx` (heading bars,
+     inline code wash, footnote `<sup>`, legacy `<center>`); direct
+     route headings live in `src/ui/primitives/
      Heading.tsx` (for direct route headings). The previous global
      cascade — element-wide font-size resets, four breakpoint heading
      scales, table chrome, anchor `transition: all 0.25s` — has been
@@ -496,7 +537,8 @@
 /*    1. Fumadocs MDX cascade hosted by `.prose-host` (the article wrapper    */
 /*       and the comment / category-description prose surfaces) —            */
 /*       `<a><img>` zoom cursor; per-element typography lives in the prose   */
-/*       components in `src/ui/mdx/{prose,table}.tsx`.                        */
+/*       `@tailwindcss/typography` `prose-*` utilities and the few JSX     */
+/*       wrappers in `src/ui/mdx/prose.tsx`.                                */
 /*    2. Shiki tokens (`pre.shiki span`).                                     */
 /*    3. medium-zoom portal nodes.                                            */
 /*                                                                            */
@@ -520,12 +562,16 @@
      `postMdxComponents` with the post body — no separate cascade lives
      in CSS for them anymore.
 
-     Per-element typography (h1..h6, p, img, ol/ul/li, hr, code, pre,
-     blockquote, table family, caption, center, the Solution wrapper) is
-     owned by the prose / table components in `src/ui/mdx/{prose,table}.tsx`
-     (wired up via `useMDXComponents` in `MdxContent.tsx`). The rules below
-     are the closed list of exceptions — things JSX cannot reach:
+     `.prose-host` enables the `@tailwindcss/typography` plugin's `prose`
+     utilities and overrides them to match the brand (accent links,
+     bordered tables, project font-size + line-height, footnote-ref
+     bolding, code chip wash). Per-tag styling that the plugin already
+     covers therefore lives here in CSS, not in the per-element JSX
+     wrappers. The remaining JSX wrappers (`<H2|H3|H4>` heading bars,
+     `<Code>` warm wash, `<Solution>` blockquote, `<Footnote*>`,
+     `<MdxImg>`) own the things `prose-*` cannot express directly.
 
+     The other rules in this block are JSX-unreachable exceptions:
        - `<a><img>` zoom cursor — the `<a>` wrapper is emitted by remark
          when a link wraps an image and React cannot reach the wrapper to
          attach a `cursor: zoom-in` from JSX.
@@ -534,14 +580,62 @@
          `style="--shiki-light:#…;--shiki-dark:#…"`, so the cascade has to
          pick which palette to bind to the actual `color` property.
        - `.medium-zoom-overlay` — third-party portal node outside the
-         component tree.
+         component tree. */
 
-     Adding a new selector here requires a comment explaining why a JSX
-     wrapper cannot own it. Otherwise prefer extending the prose / table
-     components. */
+  .prose-host {
+    @apply prose prose-slate max-w-none
+      prose-headings:font-semibold prose-headings:leading-[1.5] prose-headings:text-foreground
+      prose-h1:text-[1.875rem]
+      prose-h2:relative prose-h2:pl-6 prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-5 md:prose-h2:mb-4
+      prose-h3:relative prose-h3:pl-6 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-5 md:prose-h3:mb-4
+      prose-h4:relative prose-h4:pl-6 prose-h4:mt-10 prose-h4:mb-7 md:prose-h4:mt-8 md:prose-h4:mb-8
+      prose-h5:mt-10 prose-h5:mb-7 md:prose-h5:mt-8 md:prose-h5:mb-8
+      prose-h6:mt-10 prose-h6:mb-7 md:prose-h6:mt-8 md:prose-h6:mb-8
+      prose-p:mb-5 prose-p:text-base md:prose-p:text-[1.05rem]
+      prose-a:no-underline
+      hover:prose-a:no-underline focus:prose-a:no-underline
+      prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:border-y-0 prose-blockquote:border-r-0 prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:my-7 prose-blockquote:px-8 prose-blockquote:py-4
+      [&_blockquote_p:first-of-type]:before:content-none [&_blockquote_p:last-of-type]:after:content-none
+      [&_code]:before:content-none [&_code]:after:content-none
+      dark:prose-blockquote:bg-surface-muted
+      prose-ol:list-decimal prose-ol:mb-4 prose-ol:ml-4
+      prose-ul:list-[circle] prose-ul:mb-4 prose-ul:ml-4
+      prose-hr:my-8 prose-hr:mx-auto
+      prose-table:w-full prose-table:max-w-full prose-table:overflow-hidden prose-table:m-0
+      prose-table:border prose-table:border-border prose-table:border-collapse
+      prose-thead:align-bottom prose-thead:whitespace-nowrap
+      prose-th:border prose-th:border-border prose-th:px-[1.125rem] prose-th:py-3 prose-th:m-0 prose-th:overflow-visible prose-th:font-semibold
+      prose-td:border prose-td:border-border prose-td:px-[1.125rem] prose-td:py-3 prose-td:m-0 prose-td:overflow-visible
+      [&_caption]:bg-surface-muted [&_caption]:font-semibold [&_caption]:p-2 [&_caption]:text-center
+      [&_tbody_tr:nth-child(odd)]:bg-surface-muted
 
-  .prose-host a img {
-    cursor: zoom-in;
+      /* Headings: anchor links injected by `rehype-autolink-headings`. */
+      [&_:is(h1,h2,h3,h4,h5,h6)_a]:ml-3 [&_:is(h1,h2,h3,h4,h5,h6)_a]:no-underline
+      [&_:is(h1,h2,h3,h4,h5,h6)_a]:text-foreground-muted
+      [&_:is(h1,h2,h3,h4,h5,h6)_a]:transition-colors
+      hover:[&_:is(h1,h2,h3,h4,h5,h6)_a]:text-accent
+
+      /* Inline link underline — emulated as an inset `box-shadow` so the
+       * stroke colour can transition smoothly between accent and current
+       * text colour on hover without the brittle `text-decoration`
+       * cascade. Applied to inline links inside text containers (p, li,
+       * td, th, blockquote, sup, center). */
+      [&_:is(p,li,td,th,blockquote,center)_a]:[box-shadow:0_-1px_0_0_var(--color-accent)_inset]
+      [&_:is(p,li,td,th,blockquote,center)_a]:[transition:box-shadow_0.3s_ease-in,opacity_0.3s_ease-in]
+      hover:[&_:is(p,li,td,th,blockquote,center)_a]:[box-shadow:0_-1px_0_0_currentColor_inset]
+      hover:[&_:is(p,li,td,th,blockquote,center)_a]:opacity-100
+
+      /* Footnote refs ("[1]" superscripts inserted by remark-gfm) inherit
+       * the accent and bold treatment. The back-ref arrow drops the
+       * underline so it stays visually quiet. */
+      [&_sup_a]:text-accent [&_sup_a]:text-[0.8em] [&_sup_a]:font-bold [&_sup_a]:no-underline
+      hover:[&_sup_a]:text-foreground hover:[&_sup_a]:cursor-pointer
+      [&_sup_a.data-footnote-backref]:[box-shadow:none] hover:[&_sup_a.data-footnote-backref]:[box-shadow:none]
+
+      /* `<a><img>` zoom cursor — the `<a>` wrapper is emitted by remark
+       * when a link wraps an image and React cannot reach the wrapper to
+       * attach a `cursor: zoom-in` from JSX. */
+      [&_a_img]:[cursor:zoom-in];
   }
 
   /* Shiki token colors (light + dark). Shiki emits `<pre class="shiki">`

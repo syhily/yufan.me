@@ -7,7 +7,9 @@
 // output is always at least `length` characters, then slice to the exact
 // requested width.
 export function makeToken(length: number): string {
-  if (length <= 0) return ''
+  if (length <= 0) {
+    return ''
+  }
   const byteCount = Math.ceil((length * 6) / 8)
   const bytes = new Uint8Array(byteCount)
   crypto.getRandomValues(bytes)

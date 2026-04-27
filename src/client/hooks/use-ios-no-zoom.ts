@@ -16,31 +16,49 @@ export function useIosNoZoomOnFocus<T extends HTMLElement>(containerRef: RefObje
   const originalContentRef = useRef<string | null>(null)
 
   useBrowserLayoutEffect(() => {
-    if (typeof window === 'undefined') return
-    if (!enabled) return
-    if (!isIos()) return
+    if (typeof window === 'undefined') {
+      return
+    }
+    if (!enabled) {
+      return
+    }
+    if (!isIos()) {
+      return
+    }
 
     const container = containerRef.current
-    if (!container) return
+    if (!container) {
+      return
+    }
 
     const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
-    if (!meta) return
+    if (!meta) {
+      return
+    }
 
     const isFormControl = (target: EventTarget | null): target is HTMLElement => {
-      if (!(target instanceof HTMLElement)) return false
+      if (!(target instanceof HTMLElement)) {
+        return false
+      }
       const tag = target.tagName
       return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
     }
 
     const onFocusIn = (event: FocusEvent) => {
-      if (!isFormControl(event.target)) return
-      if (originalContentRef.current !== null) return
+      if (!isFormControl(event.target)) {
+        return
+      }
+      if (originalContentRef.current !== null) {
+        return
+      }
       originalContentRef.current = meta.getAttribute('content')
       meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no')
     }
 
     const onFocusOut = (event: FocusEvent) => {
-      if (!isFormControl(event.target)) return
+      if (!isFormControl(event.target)) {
+        return
+      }
       // `relatedTarget` is the next focus owner: when it stays inside the
       // container we keep the lock; when it leaves we restore the viewport.
       const next = event.relatedTarget
@@ -72,7 +90,9 @@ export function useIosNoZoomOnFocus<T extends HTMLElement>(containerRef: RefObje
 function isIos(): boolean {
   const ua = window.navigator.userAgent
   // iPhone / iPod / classic iPad UA strings.
-  if (/iPad|iPhone|iPod/.test(ua)) return true
+  if (/iPad|iPhone|iPod/.test(ua)) {
+    return true
+  }
   // iPadOS 13+ identifies as Macintosh; disambiguate via touch support.
   return ua.includes('Macintosh') && navigator.maxTouchPoints > 1
 }

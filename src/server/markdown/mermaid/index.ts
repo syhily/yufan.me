@@ -24,7 +24,9 @@ export type { RehypeMermaidOptions } from './types.ts'
 const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
   return async (ast, file) => {
     const instances = collectDiagrams(ast)
-    if (!instances.length) return
+    if (!instances.length) {
+      return
+    }
 
     const results = await renderInstances(instances, options)
 
@@ -44,9 +46,13 @@ const rehypeMermaid: Plugin<[RehypeMermaidOptions?], Root> = (options) => {
       const { ancestors } = instance
       const node = ancestors.at(-1)
       const parent = ancestors.at(-2)
-      if (!parent || !node) continue
+      if (!parent || !node) {
+        continue
+      }
       const nodeIndex = parent.children.indexOf(node)
-      if (nodeIndex < 0) continue
+      if (nodeIndex < 0) {
+        continue
+      }
       if (replacement) {
         parent.children[nodeIndex] = replacement
       } else {

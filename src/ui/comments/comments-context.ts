@@ -11,8 +11,24 @@ import type { CommentItem as CommentItemType } from '@/server/comments/types'
 // alongside the orchestrator that owns them; this module ships only the
 // types and the consumer hook, so leaf components don't import the reducer.
 
+/**
+ * A single normalised comment row. The list of immediate replies is
+ * stored as `childrenIds`; the corresponding comment objects live in
+ * `byId` on the parent state. Storing per-row data in a `Map` instead of
+ * a nested tree means a `dispatch` that touches a deeply-nested comment
+ * only invalidates that comment's identity — the parent rows stay
+ * referentially equal, which is exactly what `React.memo(CommentItem)`
+ * needs to skip re-rendering unchanged branches.
+ */
+export interface CommentNode extends Omit<CommentItemType, 'children'> {
+  childrenIds: string[]
+}
+
 export interface CommentTreeState {
-  items: CommentItemType[]
+  /** Per-id row data + child id list. Keys are stringified `comment.id`. */
+  byId: Map<string, CommentNode>
+  /** Top-level comment ids in render order. */
+  roots: string[]
   /** Currently visible "root" count for "load more" pagination. */
   rootsLoaded: number
   /** Total root comments according to the latest server response. */
@@ -24,6 +40,14 @@ export interface CommentTreeState {
 export type CommentTreeAction =
   | { type: 'reset'; items: CommentItemType[]; rootsTotal: number; rootsLoaded: number }
   | { type: 'append'; items: CommentItemType[]; rootsLoaded: number }
+  /**
+   * Append a single root subtree as it streams in from the NDJSON
+   * variant of `comment.loadComments`. Increments `rootsLoaded` by one
+   * so the "load more" button hides as soon as the cursor exhausts.
+   */
+  | { type: 'appendOne'; comment: CommentItemType }
+  /** Update the total root count (emitted on the streaming `meta` line). */
+  | { type: 'setRootsTotal'; rootsTotal: number }
   | { type: 'insertReply'; comment: CommentItemType; rid: number }
   | { type: 'updateComment'; comment: CommentItemType }
   | { type: 'removeComment'; id: bigint | string }
@@ -59,4 +83,17 @@ export function useCommentsContext(component: string): CommentsContextValue {
     throw new Error(`<${component}> must be rendered inside <Comments>`)
   }
   return ctx
+}
+
+/**
+ * Read a single comment row from the orchestrator. Returns `null` when
+ * `<CommentItem>` is rendered outside a `<Comments>` provider — in that
+ * case the caller falls back to the `comment` prop instead.
+ */
+export function useCommentNode(id: string): CommentNode | null {
+  const ctx = useContext(CommentsContext)
+  if (ctx === null) {
+    return null
+  }
+  return ctx.state.byId.get(id) ?? null
 }

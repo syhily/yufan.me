@@ -51,7 +51,9 @@ async function catchResponse(promise: Promise<unknown>): Promise<Response> {
   try {
     await promise
   } catch (error) {
-    if (error instanceof Response) return error
+    if (error instanceof Response) {
+      return error
+    }
     throw error
   }
   throw new Error('Expected route to throw a Response')

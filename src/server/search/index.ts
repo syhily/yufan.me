@@ -58,7 +58,9 @@ void getServer().catch((err) => {
 // per-heading/text entries; for our slug-based pagination we dedupe by page
 // while preserving the ranking order produced by the engine.
 function pageSlugFromResult(result: { type: string; id: string; url: string }): string {
-  if (result.type === 'page') return result.id
+  if (result.type === 'page') {
+    return result.id
+  }
   const hash = result.url.indexOf('#')
   return hash === -1 ? result.url : result.url.slice(0, hash)
 }

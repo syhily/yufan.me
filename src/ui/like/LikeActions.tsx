@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { useEffect, useReducer } from 'react'
+import { startTransition, useEffect, useOptimistic, useReducer } from 'react'
 import { twMerge } from 'tailwind-merge'
 
 import type {
@@ -10,15 +10,16 @@ import type {
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
 } from '@/client/api/action-types'
-import type { IconName } from '@/ui/icons/Icon'
+import type { IconComponent } from '@/ui/icons/icons'
 
-import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useApiAction } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
-import { DynamicIcon, HeartIcon } from '@/ui/icons/icons'
+import { HeartIcon, QqIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
 import { buttonVariants } from '@/ui/primitives/Button'
 import { QRDialog } from '@/ui/primitives/QRDialog'
+import { useSiteConfig } from '@/ui/primitives/site-config'
+import { toneAttrs } from '@/ui/primitives/tone'
 
 export interface LikeButtonProps {
   permalink: string
@@ -33,12 +34,13 @@ export interface LikeButtonState {
   liked: boolean
 }
 
+// Committed (server-truth) state. Optimistic increase/decrease lives on a
+// React 19 `useOptimistic` overlay so React owns the rollback / re-pin
+// instead of a manual `…Optimistic` reducer case.
 export type LikeButtonAction =
   | { type: 'reset'; permalink: string; likes: number }
   | { type: 'validated'; permalink: string; valid: boolean }
-  | { type: 'increaseOptimistic'; permalink: string }
   | { type: 'increaseConfirmed'; permalink: string; likes: number }
-  | { type: 'decreaseOptimistic'; permalink: string }
   | { type: 'decreaseConfirmed'; permalink: string; likes: number }
 
 export function createLikeButtonState(permalink: string, likes: number): LikeButtonState {
@@ -56,43 +58,59 @@ export function likeButtonReducer(state: LikeButtonState, action: LikeButtonActi
   switch (action.type) {
     case 'validated':
       return { ...state, liked: action.valid }
-    case 'increaseOptimistic':
-      return { ...state, liked: true, likes: state.likes + 1 }
     case 'increaseConfirmed':
       return { ...state, liked: true, likes: action.likes }
-    case 'decreaseOptimistic':
-      return { ...state, liked: false, likes: Math.max(0, state.likes - 1) }
     case 'decreaseConfirmed':
       return { ...state, liked: false, likes: action.likes }
   }
 }
 
+// Overlay used by `useOptimistic`. The reducer runs synchronously inside a
+// transition, then React unwinds it once the awaited mutation finishes (or
+// errors), at which point the committed reducer state takes over.
+type LikeOptimistic = 'increase' | 'decrease'
+
+function applyOptimistic(state: LikeButtonState, op: LikeOptimistic): LikeButtonState {
+  if (op === 'increase') {
+    return { ...state, liked: true, likes: state.likes + 1 }
+  }
+  return { ...state, liked: false, likes: Math.max(0, state.likes - 1) }
+}
+
 // React 19 client island: replaces the imperative
 // `src/assets/scripts/features/like-button.ts` glue. The button hydrates on
 // the post / page detail pages, validates any cached like token in
-// `localStorage`, and uses one `useApiFetcher` per direction so the SSR
+// `localStorage`, and uses one `useApiAction` per direction so the SSR
 // HTML (count / heart) stays the source of truth on first paint.
+//
+// Pending mutations are overlaid through React 19's `useOptimistic`, so the
+// counter / heart flip immediately while the network round-trip resolves.
+// React unwinds the overlay automatically when the awaited mutation
+// completes or rejects, restoring the committed reducer state.
 export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) {
   const [state, dispatch] = useReducer(likeButtonReducer, createLikeButtonState(permalink, initialLikes))
+  const [optimistic, addOptimistic] = useOptimistic<LikeButtonState, LikeOptimistic>(state, applyOptimistic)
 
-  const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
+  const validate = useApiAction<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
     API_ACTIONS.comment.validateLikeToken,
     {
       onSuccess: (data) => {
         dispatch({ type: 'validated', permalink: data.key, valid: data.valid })
-        if (!data.valid) localStorage.removeItem(tokenStorageKey(data.key))
+        if (!data.valid) {
+          localStorage.removeItem(tokenStorageKey(data.key))
+        }
       },
     },
   )
 
-  const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
+  const increase = useApiAction<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
     onSuccess: (data) => {
       dispatch({ type: 'increaseConfirmed', permalink: data.key, likes: data.likes })
       localStorage.setItem(tokenStorageKey(data.key), data.token)
     },
   })
 
-  const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
+  const decrease = useApiAction<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
     onSuccess: (data) => {
       dispatch({ type: 'decreaseConfirmed', permalink: data.key, likes: data.likes })
       localStorage.removeItem(tokenStorageKey(data.key))
@@ -107,23 +125,37 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   useEffect(() => {
     dispatch({ type: 'reset', permalink, likes: initialLikes })
     const token = localStorage.getItem(tokenStorageKey(permalink))
-    if (!token) return
-    validateSubmit({ key: permalink, token })
+    if (!token) {
+      return
+    }
+    void validateSubmit({ key: permalink, token })
   }, [permalink, initialLikes, validateSubmit])
 
   const isPending = increase.isPending || decrease.isPending
 
   const onClick = () => {
-    if (isPending) return
+    if (isPending) {
+      return
+    }
 
-    if (state.liked) {
+    if (optimistic.liked) {
       const token = localStorage.getItem(tokenStorageKey(permalink))
-      if (!token) return
-      dispatch({ type: 'decreaseOptimistic', permalink })
-      decrease.submit({ key: permalink, token })
+      if (!token) {
+        return
+      }
+      // `useOptimistic` overlays must be applied inside an async transition;
+      // React holds the overlay in place until the transition's promise
+      // settles. The committed reducer state then takes over once the
+      // fetcher's `onSuccess` drains the response envelope.
+      startTransition(async () => {
+        addOptimistic('decrease')
+        await decrease.submit({ key: permalink, token })
+      })
     } else {
-      dispatch({ type: 'increaseOptimistic', permalink })
-      increase.submit({ key: permalink })
+      startTransition(async () => {
+        addOptimistic('increase')
+        await increase.submit({ key: permalink })
+      })
     }
   }
 
@@ -144,7 +176,8 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
     <div className="text-center mt-5">
       <button
         className={className}
-        data-liked={state.liked}
+        {...toneAttrs('inverse', 'solid')}
+        data-liked={optimistic.liked}
         title="Do you like me?"
         type="button"
         data-permalink={permalink}
@@ -152,7 +185,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
         disabled={isPending}
       >
         <HeartIcon className="me-1 w-[1.1em] h-[1.1em] -mt-0.5 align-middle" />
-        <span className="inline-block align-middle">{state.likes}</span>
+        <span className="inline-block align-middle">{optimistic.likes}</span>
       </button>
     </div>
   )
@@ -170,7 +203,8 @@ export interface LikeShareProps {
 }
 
 export function LikeShare({ post }: LikeShareProps) {
-  const postURL = joinUrl(config.website, post.permalink)
+  const { website } = useSiteConfig()
+  const postURL = joinUrl(website, post.permalink)
   const qq = new URLSearchParams({
     url: postURL,
     pics: post.cover,
@@ -186,27 +220,31 @@ export function LikeShare({ post }: LikeShareProps) {
   }).toString()
 
   const socialBtn = buttonVariants({ tone: 'neutral', size: 'md', shape: 'circle' })
+  const socialAttrs = toneAttrs('neutral', 'solid')
 
   return (
     <div className="text-center mt-4">
       <SocialIconLink
         href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
         title="分享到 QQ 空间"
-        icon="qq"
+        icon={QqIcon}
         className={twMerge(clsx(socialBtn, 'mx-1'))}
+        toneAttrs={socialAttrs}
       />
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
-        icon="wechat"
+        icon={WechatIcon}
         className={twMerge(clsx(socialBtn, 'mx-1'))}
+        triggerTone={socialAttrs}
       />
       <SocialIconLink
         href={`https://service.weibo.com/share/share.php?${weibo}`}
         title="分享到微博"
-        icon="weibo"
+        icon={WeiboIcon}
         className={twMerge(clsx(socialBtn, 'mx-1'))}
+        toneAttrs={socialAttrs}
       />
     </div>
   )
@@ -218,15 +256,16 @@ export function LikeShare({ post }: LikeShareProps) {
 interface SocialIconLinkProps {
   href: string
   title: string
-  icon: IconName
+  icon: IconComponent
   className: string
+  toneAttrs: ReturnType<typeof toneAttrs>
 }
 
-function SocialIconLink({ href, title, icon, className }: SocialIconLinkProps) {
+function SocialIconLink({ href, title, icon: Icon, className, toneAttrs: dataToneAttrs }: SocialIconLinkProps) {
   return (
-    <a href={href} className={className} title={title}>
+    <a href={href} className={className} title={title} {...dataToneAttrs}>
       <span>
-        <DynamicIcon name={icon} />
+        <Icon />
       </span>
     </a>
   )

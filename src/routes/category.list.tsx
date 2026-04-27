@@ -1,10 +1,10 @@
 import config from '@/blog.config'
 import { getCatalog, toListingPostCard } from '@/server/catalog'
+import { listingHeaders, listingLoader, listingShouldRevalidate } from '@/server/listing'
 import { notFound } from '@/server/route-helpers/http'
-import { listingLoader } from '@/server/route-helpers/listing-loader'
-import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { routeMeta } from '@/server/seo/meta'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
+import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
 
 import type { Route } from './+types/category.list'
 
@@ -33,7 +33,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
+export const shouldRevalidate = listingShouldRevalidate
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return loaderData?.seo ?? routeMeta()
@@ -50,4 +50,8 @@ export default function CategoryListRoute({ loaderData }: Route.ComponentProps) 
       rootPath={loaderData.rootPath}
     />
   )
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <SectionErrorView error={error} title="无法加载分类" retryHref="/categories" retryLabel="返回分类列表" />
 }

@@ -62,7 +62,9 @@ export async function parseJson(request: Request): Promise<unknown> {
 
 export async function parseInput<T>(schema: ZodType<T>, input: unknown): Promise<T> {
   const result = await schema.safeParseAsync(input)
-  if (result.success) return result.data
+  if (result.success) {
+    return result.data
+  }
   throw zodFailure(result.error)
 }
 
@@ -98,7 +100,9 @@ export async function readFormDataInput<T>(request: Request, schema: ZodType<T>)
   }
   const obj: Record<string, string> = {}
   for (const [key, value] of formData.entries()) {
-    if (typeof value !== 'string') continue
+    if (typeof value !== 'string') {
+      continue
+    }
     obj[key] = value
   }
   return parseInput(schema, obj)
@@ -149,7 +153,9 @@ export interface ApiEnvelope<O> {
 }
 
 function isEnvelope(value: unknown): value is ApiEnvelope<unknown> {
-  if (typeof value !== 'object' || value === null) return false
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
   const keys = Object.keys(value)
   return keys.includes('data') && keys.every((k) => k === 'data' || k === 'headers')
 }
@@ -178,7 +184,9 @@ export async function runApi<O>(args: RunApiArgs, handler: ApiHandler<O>): Promi
       clientAddress: resolved.clientAddress,
     }
     const result = await handler(ctx)
-    if (result instanceof Response) return result
+    if (result instanceof Response) {
+      return result
+    }
     if (isEnvelope(result)) {
       return ok(result.data as never, result.headers)
     }
@@ -221,16 +229,15 @@ interface DefineApiActionConfig<I, O> {
   // payload (e.g. `comment.getFilterOptions`).
   input?: ZodType<I>
   inputSource?: InputSource
-  requireAdmin?: boolean
   run: (params: {
     ctx: ApiContext
     payload: I
     /**
-     * Lazy admin check. Returns `true` for endpoints declared with
-     * `requireAdmin: true` (the gate has already passed). For everything
-     * else we defer to `isAdmin(session)` only when the handler actually
-     * asks — most non-admin endpoints (likes, avatars, replies) never read
-     * this and shouldn't pay for an extra session lookup per request.
+     * Lazy admin check. Defers to `isAdmin(session)` only when the handler
+     * actually asks — most non-admin endpoints (likes, avatars, replies)
+     * never read this and shouldn't pay for an extra session lookup per
+     * request. Routes that gate on admin status entirely should export
+     * `middleware = [adminMiddleware]` instead of branching inside `run`.
      */
     isAdmin: () => boolean
   }) => Promise<ApiResult<O>> | ApiResult<O>
@@ -259,8 +266,9 @@ async function readInputFrom<T>(ctx: ApiContext, source: InputSource, schema: Zo
 
 // Shrinks the typical 10-line resource-route action down to a config object.
 // Equivalent to writing `runApi(args, ...)` by hand but factors out method
-// assertion, input parsing, admin gating, and lets the handler focus on the
-// business call.
+// assertion + input parsing, and lets the handler focus on the business
+// call. Admin gating is owned by the routing layer (`adminMiddleware`) so
+// it's not a per-handler concern any more.
 export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
   const methods = Array.isArray(config.method) ? config.method : [config.method]
   const sourceFor = (request: Request): InputSource =>
@@ -269,10 +277,7 @@ export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
   return (args: Pick<LoaderFunctionArgs, 'request' | 'context'>) =>
     runApi(args, async (ctx) => {
       assertMethod(ctx.request, ...methods)
-      // `requireAdminSession` already guarantees admin === true on success,
-      // so admin endpoints skip the redundant `isAdmin(session)` re-read.
-      if (config.requireAdmin) requireAdminSession(ctx.session)
-      const isAdminLazy = config.requireAdmin ? () => true : () => isAdmin(ctx.session)
+      const isAdminLazy = () => isAdmin(ctx.session)
       const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)
       return config.run({ ctx, payload, isAdmin: isAdminLazy })
     })

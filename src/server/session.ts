@@ -68,7 +68,9 @@ const storage = createSessionStorage<BlogSessionData>({
   },
   async readData(id) {
     const value = await redisInstance().get(`session:${id}`)
-    if (!value) return null
+    if (!value) {
+      return null
+    }
     return JSON.parse(value) as BlogSessionData
   },
   async updateData(id, data, expires) {
@@ -235,11 +237,36 @@ export const sessionMiddleware: MiddlewareFunction<Response> = async ({ request,
   return next()
 }
 
+// Per-route middleware for admin-only API surfaces. Reads the
+// `sessionContext` populated by `sessionMiddleware` (so it must run *after*
+// it) and short-circuits the request with a JSON 403 envelope before the
+// route's loader/action runs. Keeps the gate at the routing layer instead
+// of being re-declared inside every `defineApiAction({ requireAdmin: true })`.
+//
+// Routes opt-in by exporting `middleware = [adminMiddleware]` from their
+// route module.
+export const adminMiddleware: MiddlewareFunction<Response> = ({ context }, next) => {
+  const session = context.get(sessionContext)
+  if (!session.admin) {
+    // Match the legacy `requireAdminSession` JSON envelope so existing
+    // clients keep parsing the same `{ error: { message } }` shape.
+    return Promise.resolve(
+      new Response(JSON.stringify({ error: { message: '当前用户不是管理员。' } }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+  }
+  return next()
+}
+
 // `RouterContextProvider` only stores values for keys that have been written.
 // Reads on missing keys throw, so we guard against tests / direct unit
 // invocations of route handlers that bypass the middleware perimeter.
 export function tryGetSessionContext(context: Readonly<RouterContextProvider> | undefined): SessionContext | undefined {
-  if (context === undefined) return undefined
+  if (context === undefined) {
+    return undefined
+  }
   try {
     return context.get(sessionContext)
   } catch {
@@ -250,7 +277,9 @@ export function tryGetSessionContext(context: Readonly<RouterContextProvider> | 
 export function tryGetRequestContext(
   context: Readonly<RouterContextProvider> | undefined,
 ): RequestContextValue | undefined {
-  if (context === undefined) return undefined
+  if (context === undefined) {
+    return undefined
+  }
   try {
     return context.get(requestContext)
   } catch {
@@ -312,7 +341,9 @@ async function commitHeaders(session: BlogSession, extraSetCookie?: string): Pro
 
 async function csrfFailure(request: Request, session: BlogSession, token: string): Promise<AuthFailure | null> {
   const [valid] = await validateRequestCsrf(request, token)
-  if (valid) return null
+  if (valid) {
+    return null
+  }
   return {
     ok: false,
     status: 403,
@@ -339,7 +370,9 @@ export async function signInWithSession({
   redirectTo: string
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
   const csrf = await csrfFailure(request, session, token)
-  if (csrf) return csrf
+  if (csrf) {
+    return csrf
+  }
 
   // Single Redis round-trip: increment first, branch on the post-increment
   // result. The legacy flow ran `GET (exceedLimit)` *and* `INCR (incrLimit)`
@@ -393,7 +426,9 @@ export async function signUpInitialAdminWithSession({
   request: Request
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
   const csrf = await csrfFailure(request, session, token)
-  if (csrf) return csrf
+  if (csrf) {
+    return csrf
+  }
 
   if (await hasAdmin()) {
     return {
@@ -451,7 +486,9 @@ export async function processAuthFormSubmission<I>({
 }) {
   const formData = await request.formData()
   const values: Record<string, FormDataEntryValue | null> = {}
-  for (const field of fields) values[field] = formData.get(field)
+  for (const field of fields) {
+    values[field] = formData.get(field)
+  }
 
   const parsed = schema.safeParse(values)
   if (!parsed.success) {

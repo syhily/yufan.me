@@ -58,18 +58,26 @@ export const rehypeImageEnhance: Plugin<[], Root> = () => {
   return async (tree) => {
     const targets: Element[] = []
     visit(tree, 'element', (node: Element) => {
-      if (node.tagName !== 'img') return
+      if (node.tagName !== 'img') {
+        return
+      }
       const src = readStringProp(node, 'src')
-      if (src === undefined || !isTransformableRemoteImage(src)) return
+      if (src === undefined || !isTransformableRemoteImage(src)) {
+        return
+      }
       targets.push(node)
     })
 
     await Promise.all(
       targets.map(async (node) => {
         const src = readStringProp(node, 'src')
-        if (src === undefined) return
+        if (src === undefined) {
+          return
+        }
         const enhancement = await loadEnhancement(src)
-        if (enhancement === null) return
+        if (enhancement === null) {
+          return
+        }
         applyEnhancement(node, src, enhancement)
       }),
     )
@@ -83,10 +91,14 @@ function readStringProp(node: Element, key: string): string | undefined {
 
 function readNumericProp(node: Element, key: string): number | undefined {
   const value = node.properties?.[key]
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value
+  }
   if (typeof value === 'string' && value !== '') {
     const parsed = Number.parseInt(value, 10)
-    if (Number.isFinite(parsed) && parsed > 0) return parsed
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed
+    }
   }
   return undefined
 }
@@ -96,8 +108,12 @@ function applyEnhancement(node: Element, src: string, enhancement: ImageEnhancem
   const width = readNumericProp(node, 'width') ?? enhancement.width
   const height = readNumericProp(node, 'height') ?? enhancement.height
 
-  if (width !== undefined) properties.width = width
-  if (height !== undefined) properties.height = height
+  if (width !== undefined) {
+    properties.width = width
+  }
+  if (height !== undefined) {
+    properties.height = height
+  }
   if (enhancement.thumbhash !== undefined && enhancement.thumbhash !== '') {
     properties.dataThumbhash = enhancement.thumbhash
   }
@@ -107,7 +123,9 @@ function applyEnhancement(node: Element, src: string, enhancement: ImageEnhancem
 }
 
 function isTransformableRemoteImage(src: string): boolean {
-  if (src.startsWith('data:')) return false
+  if (src.startsWith('data:')) {
+    return false
+  }
   try {
     const url = new URL(src)
     return (
@@ -126,7 +144,9 @@ function upyunUrl(src: string, width: number, height: number, quality = 100): st
 
 async function loadEnhancement(src: string): Promise<ImageEnhancement | null> {
   const metadata = await getCachedMetadata(src)
-  if (metadata === null) return null
+  if (metadata === null) {
+    return null
+  }
   return {
     width: metadata.width,
     height: metadata.height,
@@ -155,7 +175,9 @@ function getCachedMetadata(src: string): Promise<ImageMetadata | null> {
 
 async function loadMetadata(src: string): Promise<ImageMetadata | null> {
   const cached = await readDiskMetadata(src)
-  if (cached !== null) return toImageMetadata(cached)
+  if (cached !== null) {
+    return toImageMetadata(cached)
+  }
 
   const metadata = await fetchMetadata(src)
   if (metadata !== null) {
@@ -170,9 +192,13 @@ async function fetchMetadata(src: string): Promise<ImageMetadata | null> {
       const response = await fetch(metadataUrl(src), {
         signal: AbortSignal.timeout(METADATA_FETCH_TIMEOUT_MS),
       })
-      if (!response.ok) return null
+      if (!response.ok) {
+        return null
+      }
       const metadata = await response.json()
-      if (!isValidMetadata(metadata)) return null
+      if (!isValidMetadata(metadata)) {
+        return null
+      }
       return metadata
     } catch {
       return null
@@ -210,8 +236,12 @@ async function readDiskMetadata(src: string): Promise<CachedImageMetadata | null
   try {
     const raw = await readFile(metadataDiskCachePath(src), 'utf8')
     const parsed = JSON.parse(raw)
-    if (!isCachedImageMetadata(parsed)) return null
-    if (parsed.src !== src || !isFreshCachedMetadata(parsed)) return null
+    if (!isCachedImageMetadata(parsed)) {
+      return null
+    }
+    if (parsed.src !== src || !isFreshCachedMetadata(parsed)) {
+      return null
+    }
     return parsed
   } catch {
     return null
@@ -224,7 +254,9 @@ async function writeDiskMetadata(metadata: CachedImageMetadata): Promise<void> {
 }
 
 function isValidMetadata(metadata: unknown): metadata is ImageMetadata {
-  if (!isRecord(metadata)) return false
+  if (!isRecord(metadata)) {
+    return false
+  }
   return (
     typeof metadata.width === 'number' &&
     Number.isFinite(metadata.width) &&
@@ -237,7 +269,9 @@ function isValidMetadata(metadata: unknown): metadata is ImageMetadata {
 }
 
 function isCachedImageMetadata(metadata: unknown): metadata is CachedImageMetadata {
-  if (!isValidMetadata(metadata) || !isRecord(metadata)) return false
+  if (!isValidMetadata(metadata) || !isRecord(metadata)) {
+    return false
+  }
   return (
     typeof metadata.src === 'string' &&
     metadata.src !== '' &&
@@ -267,6 +301,8 @@ function metadataDiskCachePath(src: string): string {
 
 function metadataUrl(src: string): string {
   const extensionIndex = src.lastIndexOf('.')
-  if (extensionIndex === -1) return `${src}.json`
+  if (extensionIndex === -1) {
+    return `${src}.json`
+  }
   return `${src.slice(0, extensionIndex)}.json`
 }

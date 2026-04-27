@@ -237,6 +237,85 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
   return parsedComments.filter(rootCommentFilter).map((comment) => commentItems(comment, childComments))
 }
 
+// Streaming variant of the root-only comment fetch. Yields a `meta` line
+// first, then one `item` line per fully-compiled root subtree (root + all
+// its compiled children, in original DB order), then a final `end` line.
+// The MDX compilation per root runs in parallel so the cursor returns the
+// fastest-compiled root first; the consumer can hydrate the UI as each
+// item arrives instead of waiting for the slowest comment to finish.
+export type LoadCommentsStreamLine =
+  | { type: 'meta'; count: number; roots_count: number; next: boolean }
+  | { type: 'item'; comment: CommentItem }
+  | { type: 'end' }
+  | { type: 'error'; message: string }
+
+export async function* streamLoadComments(
+  session: BlogSession,
+  key: string,
+  offset: number,
+): AsyncGenerator<LoadCommentsStreamLine, void, void> {
+  const pendingArray: boolean[] = isAdmin(session) ? [false, true] : [false]
+
+  const [, counts, rootComments] = await Promise.all([
+    upsertPage(key, null),
+    countCommentsAndRoots(key, pendingArray),
+    findRootComments(key, pendingArray, offset, config.settings.comments.size),
+  ])
+
+  yield {
+    type: 'meta',
+    count: counts.total,
+    roots_count: counts.roots,
+    next: config.settings.comments.size + offset < counts.roots,
+  }
+
+  if (rootComments.length === 0) {
+    yield { type: 'end' }
+    return
+  }
+
+  // Children ride in a single batched query keyed by root ids — same as
+  // the non-streaming path. They compile in parallel with the roots so
+  // the slowest comment's `compileMarkdown` doesn't gate the first
+  // root from streaming out.
+  const rootIds = rootComments.map((c) => c.id)
+  const childrenPromise = (async () => {
+    const rows = await findChildComments(key, pendingArray, rootIds)
+    const compiled = await Promise.all(
+      rows.map(async (child) => {
+        const c = await compileMarkdown(child.content, { profile: 'comment' })
+        return {
+          ...withCommentBadgeTextColor(child),
+          bodyCompiled: c?.compiled ?? null,
+        }
+      }),
+    )
+    return groupBy(compiled, (c) => String(c.rid))
+  })()
+
+  // Build a [rootId → resolved-tree] promise map so callers see roots in
+  // original DB order (newest-first) regardless of which root's MDX
+  // happened to compile first. We still emit items in source order so
+  // `state.roots` always reflects the canonical newest-first ordering.
+  const rootTreePromises = rootComments.map(async (rc) => {
+    const [compiled, childrenByRoot] = await Promise.all([
+      compileMarkdown(rc.content, { profile: 'comment' }),
+      childrenPromise,
+    ])
+    const root: CommentItem = {
+      ...withCommentBadgeTextColor(rc),
+      bodyCompiled: compiled?.compiled ?? null,
+    }
+    return commentItems(root, childrenByRoot)
+  })
+
+  for (const treePromise of rootTreePromises) {
+    yield { type: 'item', comment: await treePromise }
+  }
+
+  yield { type: 'end' }
+}
+
 function rootCommentFilter(comment: CommentAndUser): boolean {
   return comment.rid === 0 || comment.rid === null || comment.rid === undefined
 }

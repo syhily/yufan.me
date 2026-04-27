@@ -12,7 +12,9 @@ export function useFocusHash(): void {
   const { hash } = useLocation()
 
   useEffect(() => {
-    if (!hash) return
+    if (!hash) {
+      return
+    }
     // Defer one frame so newly rendered content (e.g. MDX body or a
     // freshly-inserted comment) has time to commit to the DOM before we
     // try to scroll to it.
@@ -36,7 +38,9 @@ export function useFocusHash(): void {
 }
 
 function smoothScrollTo(elem: HTMLElement | null): void {
-  if (!elem) return
+  if (!elem) {
+    return
+  }
   const rect = elem.getBoundingClientRect()
   const top = rect.top + window.scrollY
   window.scroll({ top, left: 0, behavior: 'smooth' })

@@ -8,8 +8,12 @@ function files(...args: string[]): string[] {
   // return early if no path-like argument resolves on disk. Flag args (`-g`
   // plus its value) are kept intact.
   const paths = args.filter((arg) => !arg.startsWith('-'))
-  if (paths.length === 0) return []
-  if (paths.every((path) => !existsSync(path))) return []
+  if (paths.length === 0) {
+    return []
+  }
+  if (paths.every((path) => !existsSync(path))) {
+    return []
+  }
   const out = execFileSync('rg', ['--files', ...args], { encoding: 'utf8' }).trim()
   return out === '' ? [] : out.split('\n')
 }
@@ -49,7 +53,9 @@ describe('contract: module and bundle boundaries', () => {
       const source = readFileSync(file, 'utf8')
       return source.split('\n').some((line) => {
         const trimmed = line.trim()
-        if (!trimmed.startsWith('import') || trimmed.startsWith('import type')) return false
+        if (!trimmed.startsWith('import') || trimmed.startsWith('import type')) {
+          return false
+        }
         return /@\/server\//.test(trimmed) || /\.server(?:["']|$)/.test(trimmed)
       })
     })
@@ -85,9 +91,23 @@ describe('contract: module and bundle boundaries', () => {
 
   it('keeps source relative imports inside the documented allowlist', () => {
     const allowed = (file: string, specifier: string): boolean => {
-      if (specifier.startsWith('./+types/')) return true
-      if (file === 'src/routes.ts' && specifier === './client/api/actions') return true
-      if (file === 'vite.config.ts' && specifier === './source.config.ts') return true
+      if (specifier.startsWith('./+types/')) {
+        return true
+      }
+      // `routes.ts` is loaded by React Router's `vite-node` configuration
+      // pass *before* Vite's path aliases register, so the route manifest
+      // and the API-actions re-export must use relative paths instead of
+      // `@/shared/api-actions`. Both files document this constraint
+      // inline.
+      if (file === 'src/routes.ts' && specifier === './shared/api-actions') {
+        return true
+      }
+      if (file === 'src/client/api/actions.ts' && specifier === '../../shared/api-actions') {
+        return true
+      }
+      if (file === 'vite.config.ts' && specifier === './source.config.ts') {
+        return true
+      }
       if (file === 'source.config.ts' && specifier === './src/server/markdown/mermaid/index.ts') {
         return true
       }
@@ -220,8 +240,12 @@ describe('contract: module and bundle boundaries', () => {
       const source = readFileSync(file, 'utf8')
       return source.split('\n').some((line) => {
         const trimmed = line.trim()
-        if (trimmed.startsWith('//')) return false
-        if (trimmed.startsWith('*')) return false
+        if (trimmed.startsWith('//')) {
+          return false
+        }
+        if (trimmed.startsWith('*')) {
+          return false
+        }
         return literalRe.test(line)
       })
     })
@@ -242,8 +266,12 @@ describe('contract: module and bundle boundaries', () => {
       const source = readFileSync(file, 'utf8')
       return source.split('\n').some((line) => {
         const trimmed = line.trim()
-        if (trimmed.startsWith('//')) return false
-        if (trimmed.startsWith('*')) return false
+        if (trimmed.startsWith('//')) {
+          return false
+        }
+        if (trimmed.startsWith('*')) {
+          return false
+        }
         return hexRe.test(line)
       })
     })
@@ -298,8 +326,9 @@ describe('contract: module and bundle boundaries', () => {
     let layerEnd = -1
     for (let i = openBrace; i < css.length; i++) {
       const ch = css[i]
-      if (ch === '{') depth += 1
-      else if (ch === '}') {
+      if (ch === '{') {
+        depth += 1
+      } else if (ch === '}') {
         depth -= 1
         if (depth === 0) {
           layerEnd = i
@@ -322,7 +351,9 @@ describe('contract: module and bundle boundaries', () => {
     let match: RegExpExecArray | null
     while ((match = ruleRe.exec(stripped)) !== null) {
       const selectorList = match[1].trim()
-      if (selectorList === '') continue
+      if (selectorList === '') {
+        continue
+      }
       // A leftover `}` from a closed `@variant` wrapper shouldn't count.
       const head = selectorList
         .replace(/^[}\s]+/, '')

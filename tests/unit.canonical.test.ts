@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { canonicalPostPath, searchRootPath } from '@/server/route-helpers/paths'
+import { canonicalPostPath } from '@/server/detail'
+import { searchRootPath } from '@/server/listing'
 
 // `canonicalPostPath` is what drives our alias-slug 301 redirects, and
 // `searchRootPath` is the only place query encoding happens for the search

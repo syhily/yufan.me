@@ -26,17 +26,23 @@ export interface RouteSeoOptions {
 }
 
 function absoluteUrl(url: string | undefined): string | undefined {
-  if (!url) return undefined
+  if (!url) {
+    return undefined
+  }
   return url.startsWith('http') ? url : config.website + url
 }
 
 function resolveOgImage(ogImageUrl?: string): string {
-  if (ogImageUrl === undefined) return joinUrl(config.website, 'images/open-graph.png')
+  if (ogImageUrl === undefined) {
+    return joinUrl(config.website, 'images/open-graph.png')
+  }
   return ogImageUrl.startsWith('http') ? ogImageUrl : joinUrl(config.website, ogImageUrl)
 }
 
 function ensureTwitterHandle(handle?: string): string | undefined {
-  if (handle === undefined || handle === '') return undefined
+  if (handle === undefined || handle === '') {
+    return undefined
+  }
   return handle.startsWith('@') ? handle : `@${handle}`
 }
 
@@ -137,7 +143,9 @@ function twitterTags(args: {
 }
 
 function articleTags(variant: SeoVariant): MetaDescriptor[] {
-  if (variant.kind === 'website') return []
+  if (variant.kind === 'website') {
+    return []
+  }
 
   const meta: MetaDescriptor[] = []
   if (variant.article.updated) {

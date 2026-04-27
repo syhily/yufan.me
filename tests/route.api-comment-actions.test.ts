@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { makeLoaderArgs } from './_helpers/context'
+import { makeLoaderArgs, runRouteWithMiddleware } from './_helpers/context'
 import { jsonRequest } from './_helpers/request'
 import { adminSession, regularSession } from './_helpers/session'
 
@@ -60,8 +60,10 @@ vi.mock('@/server/db/query/user', () => ({
 
 const userQuery = await import('@/server/db/query/user')
 
-const { action: loadAllAction } = await import('@/routes/api/actions/comment.loadAll')
-const { action: updateUserAction } = await import('@/routes/api/actions/auth.updateUser')
+const loadAllRoute = await import('@/routes/api/actions/comment.loadAll')
+const updateUserRoute = await import('@/routes/api/actions/auth.updateUser')
+const { action: loadAllAction, middleware: loadAllMiddleware } = loadAllRoute
+const { action: updateUserAction, middleware: updateUserMiddleware } = updateUserRoute
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -72,12 +74,11 @@ beforeEach(() => {
 describe('api/comment.loadAll action', () => {
   it('rejects non-admins with a 403 envelope', async () => {
     session.current = regularSession()
-    const res = await loadAllAction(
-      makeLoaderArgs({
-        request: jsonRequest('POST', { offset: 0, limit: 10 }),
-        session: session.current,
-      }),
-    )
+    const args = makeLoaderArgs({
+      request: jsonRequest('POST', { offset: 0, limit: 10 }),
+      session: session.current,
+    })
+    const res = await runRouteWithMiddleware(loadAllMiddleware, args, loadAllAction)
     expect(res.status).toBe(403)
     const body = (await res.json()) as { error: { message: string } }
     expect(body.error.message).toBeTruthy()
@@ -137,12 +138,11 @@ describe('api/comment.loadAll action', () => {
 describe('api/auth.updateUser action', () => {
   it('rejects non-admins with 403', async () => {
     session.current = regularSession()
-    const res = await updateUserAction(
-      makeLoaderArgs({
-        request: jsonRequest('PATCH', { userId: '1', name: 'updated' }),
-        session: session.current,
-      }),
-    )
+    const args = makeLoaderArgs({
+      request: jsonRequest('PATCH', { userId: '1', name: 'updated' }),
+      session: session.current,
+    })
+    const res = await runRouteWithMiddleware(updateUserMiddleware, args, updateUserAction)
     expect(res.status).toBe(403)
   })
 

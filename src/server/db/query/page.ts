@@ -43,7 +43,9 @@ export async function findPageByKey(key: string): Promise<Page | null> {
 }
 
 export async function incrementPageViews(key: string, delta = 1): Promise<void> {
-  if (delta <= 0) return
+  if (delta <= 0) {
+    return
+  }
   await db
     .update(page)
     .set({ pv: sql`${page.pv} + ${delta}` })
@@ -57,7 +59,9 @@ export async function incrementPageViews(key: string, delta = 1): Promise<void> 
  */
 export async function incrementPageViewsBatch(deltas: Map<string, number>): Promise<void> {
   const positive = Array.from(deltas).filter(([, delta]) => delta > 0)
-  if (positive.length === 0) return
+  if (positive.length === 0) {
+    return
+  }
 
   // Build `(?, ?), (?, ?), ...` rows with bound parameters — never inline
   // user-derived strings.

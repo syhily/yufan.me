@@ -23,9 +23,15 @@ export function getSlug(params: Record<string, string | undefined>): string | un
 }
 
 export function scopeFromUrl(url: string, slug: string | undefined): { category?: string; tag?: string } | undefined {
-  if (slug === undefined) return undefined
+  if (slug === undefined) {
+    return undefined
+  }
   const pathname = new URL(url).pathname
-  if (pathname.startsWith('/cats/')) return { category: slug }
-  if (pathname.startsWith('/tags/')) return { tag: slug }
+  if (pathname.startsWith('/cats/')) {
+    return { category: slug }
+  }
+  if (pathname.startsWith('/tags/')) {
+    return { tag: slug }
+  }
   return undefined
 }

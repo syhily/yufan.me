@@ -1,7 +1,10 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
 // React Router loads this manifest before Vite aliases are registered.
-import { API_ACTIONS } from './client/api/actions'
+// `API_ACTIONS` lives under `shared/` so the same literal manifest can
+// be imported from both server and client bundles (server's
+// `isCommentAction` check + browser's `useApiAction`/`useApiStream`).
+import { API_ACTIONS } from './shared/api-actions'
 
 export default [
   index('routes/home.tsx'),
@@ -45,6 +48,7 @@ export default [
   route(API_ACTIONS.comment.edit.route, 'routes/api/actions/comment.edit.ts'),
   route(API_ACTIONS.comment.getFilterOptions.route, 'routes/api/actions/comment.getFilterOptions.ts'),
   route(API_ACTIONS.comment.loadAll.route, 'routes/api/actions/comment.loadAll.ts'),
+  route(API_ACTIONS.sidebar.snapshot.route, 'routes/api/actions/sidebar.snapshot.ts'),
   layout('routes/admin.layout.tsx', [route('wp-login.php', 'routes/wp-login.tsx')]),
   // Splat MUST stay last. React Router treats `*` as the lowest-priority
   // match, so this only fires for paths nothing else handles (multi-segment

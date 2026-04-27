@@ -102,7 +102,9 @@ export async function latestDistinctCommentIds(adminIds: bigint[], limit: number
 }
 
 export async function commentsByIds(ids: bigint[], limit: number): Promise<PendingCommentRow[]> {
-  if (ids.length === 0) return []
+  if (ids.length === 0) {
+    return []
+  }
   return db
     .select({
       id: comment.id,
@@ -154,7 +156,9 @@ export async function findRootComments(pageKey: string, pendingValues: boolean[]
 }
 
 export async function findChildComments(pageKey: string, pendingValues: boolean[], rootIds: bigint[]) {
-  if (rootIds.length === 0) return []
+  if (rootIds.length === 0) {
+    return []
+  }
   return db
     .select(commentWithUser)
     .from(comment)
@@ -270,10 +274,18 @@ export interface AdminListFilters {
 
 function buildAdminListConditions(filters: AdminListFilters) {
   const conditions = [isNull(comment.deletedAt)]
-  if (filters.pageKey) conditions.push(eq(comment.pageKey, filters.pageKey))
-  if (filters.userId) conditions.push(eq(comment.userId, filters.userId))
-  if (filters.status === 'pending') conditions.push(eq(comment.isPending, true))
-  if (filters.status === 'approved') conditions.push(eq(comment.isPending, false))
+  if (filters.pageKey) {
+    conditions.push(eq(comment.pageKey, filters.pageKey))
+  }
+  if (filters.userId) {
+    conditions.push(eq(comment.userId, filters.userId))
+  }
+  if (filters.status === 'pending') {
+    conditions.push(eq(comment.isPending, true))
+  }
+  if (filters.status === 'approved') {
+    conditions.push(eq(comment.isPending, false))
+  }
   return conditions
 }
 

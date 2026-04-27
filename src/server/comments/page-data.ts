@@ -15,7 +15,9 @@ import { joinUrl } from '@/shared/urls'
 // `CommentFormUser` makes the boundary explicit so future session fields
 // don't accidentally reach the SSR DOM.
 function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | undefined {
-  if (user === undefined) return undefined
+  if (user === undefined) {
+    return undefined
+  }
   return {
     id: user.id,
     name: user.name,
@@ -60,7 +62,9 @@ export async function loadDetailPageCritical(session: BlogSession, permalink: st
   // inside the batcher) so the admin guard is the only thing left to gate
   // here. Doing this before the Promise.all keeps it strictly off the
   // critical path.
-  if (!admin) bumpPageView(commentKey)
+  if (!admin) {
+    bumpPageView(commentKey)
+  }
 
   const [, likes, sidebar] = await Promise.all([
     ensureCommentPage(commentKey, title),
@@ -93,7 +97,9 @@ export async function loadDetailPageData(session: BlogSession, permalink: string
   const admin = isAdmin(session)
   const commentKey = joinUrl(config.website, permalink, '/')
 
-  if (!admin) bumpPageView(commentKey)
+  if (!admin) {
+    bumpPageView(commentKey)
+  }
 
   const [, comments, likes, sidebar] = await Promise.all([
     ensureCommentPage(commentKey, title),

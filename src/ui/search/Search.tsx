@@ -6,12 +6,13 @@ import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router'
 import { twMerge } from 'tailwind-merge'
 
-import config from '@/blog.config'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { SearchIcon } from '@/ui/icons/icons'
 import { Button, buttonVariants } from '@/ui/primitives/Button'
 import { inputVariants } from '@/ui/primitives/Input'
 import { Popup } from '@/ui/primitives/Popup'
+import { useSiteConfig } from '@/ui/primitives/site-config'
+import { toneAttrs } from '@/ui/primitives/tone'
 
 function searchPath(raw: string): string {
   return `/search/${encodeURIComponent(raw)}`
@@ -19,12 +20,13 @@ function searchPath(raw: string): string {
 
 // Sidebar search: "enter to submit" input that navigates to the search route.
 export function SearchBar() {
+  const { settings } = useSiteConfig()
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [value, setValue] = useState('')
   useIosNoZoomOnFocus(containerRef)
 
-  if (!config.settings.sidebar.search) {
+  if (!settings.sidebar.search) {
     return <div id="search" className="mb-10" hidden />
   }
 
@@ -35,7 +37,9 @@ export function SearchBar() {
           event.preventDefault()
           const query = value.trim()
           setValue('')
-          if (query.length > 0) void navigate(searchPath(query))
+          if (query.length > 0) {
+            void navigate(searchPath(query))
+          }
         }}
       >
         <label className="block">
@@ -65,11 +69,17 @@ export function SearchIconButton() {
   }, [])
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      return
+    }
     const onDocClick = (event: MouseEvent) => {
-      if (triggerRef.current?.contains(event.target as Node)) return
+      if (triggerRef.current?.contains(event.target as Node)) {
+        return
+      }
       const popup = document.querySelector<HTMLElement>('.global-search-popup')
-      if (popup?.contains(event.target as Node)) return
+      if (popup?.contains(event.target as Node)) {
+        return
+      }
       setOpen(false)
     }
     document.addEventListener('click', onDocClick)
@@ -82,6 +92,7 @@ export function SearchIconButton() {
         type="button"
         ref={triggerRef}
         className={twMerge(clsx(buttonVariants({ tone: 'inverse', shape: 'circle' }), 'mr-2'))}
+        {...toneAttrs('inverse', 'solid')}
         title="搜索"
         aria-label="打开搜索"
         onClick={(event) => {
@@ -126,7 +137,9 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
         onSubmit={(event) => {
           event.preventDefault()
           const trimmed = query.trim()
-          if (trimmed.length === 0) return
+          if (trimmed.length === 0) {
+            return
+          }
           onClose()
           void navigate(searchPath(trimmed))
         }}

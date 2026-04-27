@@ -1,4 +1,4 @@
-// Shared "tone" palette for cva-driven primitives.
+// Shared "tone" + "appearance" identity for cva-driven primitives.
 //
 // Before this module the colour decision for a Button / Badge / Alert /
 // Pagination cell lived inside each primitive's `cva()` call as a pile of
@@ -7,16 +7,15 @@
 // literals all evolved independently — fixing one regression risked
 // drifting another.
 //
-// The refactor (see `refactor-design.md` §4.1) collapses every "what
-// colour" decision into a single `Tone` enum and two className tables
-// (`solid` and `outline` rendering of each tone). Every primitive that
-// has a "colour mode" dimension — Button, Badge, Alert, Pagination,
-// Spinner — pulls from the same source so:
-//
-//   - new tones land in one place (avoid `architecture-avoid-boolean-props`
-//     drift across primitives), and
-//   - dark-mode rebalancing is purely a token change in `globals.css`,
-//     never a sweep through the cva tables.
+// Today every primitive that has a "colour mode" dimension exposes a
+// `tone` + `appearance` prop and forwards them to the host element as
+// `data-tone="…"` and `data-appearance="…"` attributes. The actual
+// className soup (background, foreground, border, hover state) lives in
+// `toneStyles.css` next to this file, keyed off the data-attribute
+// pair. New tones land in one CSS file rather than in every cva table
+// that accepts them, dark-mode rebalancing is a `globals.css` token
+// swap, and the cva tables only carry layout dimensions
+// (size / shape / radius).
 //
 // Cards, Spinners, and small adornments may still hand-pick utilities
 // directly when their visual is intentionally one-off.
@@ -30,34 +29,37 @@ export type Tone =
   | 'warning' // Status: warning / pending.
   | 'subtle' // Borderless, near-invisible (link-like buttons, ghost adornments).
 
-// Solid fills (token-driven, light + dark via `globals.css`).
-//
-// Hover/active states deliberately avoid stacking class strings here —
-// the design system answer is "hover collapses tone with utility opacity"
-// (`hover:opacity-80`) for status colours and "step toward the strong
-// variant" (`hover:bg-accent-strong`) for accent tones. Token aliases
-// hide the dark-mode swap entirely.
-export const TONE_SOLID: Record<Tone, string> = {
-  accent: 'bg-accent text-accent-fg border-accent hover:bg-accent-strong hover:border-accent-strong',
-  neutral:
-    'bg-surface-muted text-foreground-muted border-surface-muted hover:bg-surface hover:text-foreground hover:border-border',
-  inverse: 'bg-foreground text-surface border-foreground hover:bg-foreground-soft hover:border-foreground-soft',
-  success: 'bg-success text-surface border-success hover:opacity-80',
-  danger: 'bg-danger text-surface border-danger hover:opacity-80',
-  warning: 'bg-warning text-surface border-warning hover:opacity-80',
-  subtle: 'bg-transparent text-foreground-muted border-transparent hover:bg-surface-muted hover:text-foreground',
+export type Appearance = 'solid' | 'outline'
+
+// CVA variants for a primitive's `tone` axis are empty strings — the
+// className is contributed by the data-attribute selectors in
+// `toneStyles.css`. Exporting the empty-keyed record from here keeps
+// the consumer side honest (TS type-checks every key) without forcing
+// each primitive to spell `accent: ''` seven times.
+export const TONE_VARIANTS: Record<Tone, string> = {
+  accent: '',
+  neutral: '',
+  inverse: '',
+  success: '',
+  danger: '',
+  warning: '',
+  subtle: '',
 }
 
-// Outline / "ghost-with-tinted-border" rendering of the same tones.
-// The accent variant keeps the warm `accent-soft` wash that the legacy
-// `outlinePrimary` button shipped, since that wash is brand-coded (not a
-// neutral surface) — the dark-mode token swaps it for a deeper teal.
-export const TONE_OUTLINE: Record<Tone, string> = {
-  accent: 'bg-accent-soft text-accent border-accent/30 hover:bg-accent hover:text-accent-fg hover:border-accent',
-  neutral: 'bg-transparent text-foreground-muted border-border hover:bg-surface-muted hover:text-foreground',
-  inverse: 'bg-transparent text-foreground border-foreground hover:bg-foreground hover:text-surface',
-  success: 'bg-transparent text-success border-success hover:bg-success hover:text-surface',
-  danger: 'bg-danger-soft text-danger border-danger-soft hover:bg-danger hover:text-surface hover:border-danger',
-  warning: 'bg-transparent text-warning border-warning hover:bg-warning hover:text-surface',
-  subtle: 'bg-transparent text-foreground-muted border-transparent hover:bg-surface-muted hover:text-foreground',
+// Same idea for the `appearance` axis. The two `appearance` values
+// reach the DOM as `data-appearance="…"` attributes; the className
+// pile is contributed by `toneStyles.css`.
+export const APPEARANCE_VARIANTS: Record<Appearance, string> = {
+  solid: '',
+  outline: '',
+}
+
+// Tone × appearance attribute bag. Spread onto a host element when a
+// caller bypasses the React component wrapper and uses the cva variant
+// helper directly (e.g. `<button className={buttonVariants(...)}
+// {...toneAttrs('inverse', 'solid')} />`). The pair is what
+// `toneStyles.css` keys off — without it, the host renders with the
+// layout-only utilities and no colour at all.
+export function toneAttrs(tone: Tone, appearance: Appearance): { 'data-tone': Tone; 'data-appearance': Appearance } {
+  return { 'data-tone': tone, 'data-appearance': appearance }
 }

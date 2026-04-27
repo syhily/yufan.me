@@ -1,5 +1,4 @@
-import { type ReactNode, Suspense } from 'react'
-import { Await } from 'react-router'
+import { type ReactNode, Suspense, use } from 'react'
 
 import type { CommentFormUser, DetailPageShell, MarkdownHeading } from '@/server/catalog'
 import type { DetailPageComments } from '@/server/comments/page-data'
@@ -44,16 +43,7 @@ export function PageDetailBody({
           <LikeButton permalink={page.permalink} likes={likes} />
           {page.comments && (
             <Suspense fallback={<CommentsSkeleton />}>
-              <Await resolve={commentsPromise}>
-                {(resolved) => (
-                  <Comments
-                    commentKey={commentKey}
-                    comments={resolved.commentData}
-                    items={resolved.commentItems}
-                    user={currentUser}
-                  />
-                )}
-              </Await>
+              <DeferredComments promise={commentsPromise} commentKey={commentKey} currentUser={currentUser} />
             </Suspense>
           )}
         </div>
@@ -63,5 +53,28 @@ export function PageDetailBody({
         <div className="bg-img h-screen" style={{ backgroundImage: `url('${page.cover}')` }} />
       </div>
     </div>
+  )
+}
+
+// React 19 `use()` wrapper. Exists in its own component because `use()` must
+// run inside the component body that should suspend; reading the promise from
+// the parent would suspend the entire `<PageDetailBody>` instead of just the
+// comment slot under `<Suspense>`. Replaces the previous render-prop
+// `<Await resolve={…}>` callback.
+interface DeferredCommentsProps {
+  promise: Promise<DetailPageComments>
+  commentKey: string
+  currentUser?: CommentFormUser
+}
+
+function DeferredComments({ promise, commentKey, currentUser }: DeferredCommentsProps) {
+  const resolved = use(promise)
+  return (
+    <Comments
+      commentKey={commentKey}
+      comments={resolved.commentData}
+      items={resolved.commentItems}
+      user={currentUser}
+    />
   )
 }

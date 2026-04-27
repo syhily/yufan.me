@@ -18,7 +18,9 @@ function isLevel(value: string | undefined): value is Level {
 
 function readMinLevel(): Level {
   const fallback = import.meta.env.PROD ? 'info' : 'debug'
-  if (typeof process === 'undefined') return fallback
+  if (typeof process === 'undefined') {
+    return fallback
+  }
   return isLevel(process.env.LOG_LEVEL) ? process.env.LOG_LEVEL : fallback
 }
 
@@ -41,7 +43,9 @@ const L3_KEYS = new Set([
 ])
 
 function tagL3(value: unknown): unknown {
-  if (value === null || value === undefined) return value
+  if (value === null || value === undefined) {
+    return value
+  }
   // For numbers/objects/arrays, JSON.stringify keeps the marker meaningful
   // without falling back to `[object Object]`.
   const str = typeof value === 'string' ? value : (JSON.stringify(value) ?? '')
@@ -61,7 +65,9 @@ interface LogContext {
 }
 
 function emit(level: Level, scope: string, message: string, context?: LogContext): void {
-  if (LEVEL_ORDER[level] < LEVEL_ORDER[minLevel]) return
+  if (LEVEL_ORDER[level] < LEVEL_ORDER[minLevel]) {
+    return
+  }
 
   const safeContext = context ? applyPrivacyTags(context) : undefined
 

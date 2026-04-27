@@ -139,6 +139,7 @@ export default defineConfig({
     },
     rules: {
       'no-unused-vars': 'error',
+      curly: ['error', 'all'],
 
       // Module boundaries and imports.
       'import/default': 'error',

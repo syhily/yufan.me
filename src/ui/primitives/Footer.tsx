@@ -1,10 +1,11 @@
-import config from '@/blog.config'
 import { formatLocalDate } from '@/shared/formatter'
+import { useSiteConfig } from '@/ui/primitives/site-config'
 
 const lineClass = 'mt-[3px] flex flex-row flex-wrap justify-center gap-[0.5em]'
 const linkClass = 'text-foreground hover:text-accent'
 
 export function Footer() {
+  const config = useSiteConfig()
   const thisYear = formatLocalDate(new Date(), 'yyyy')
   const { icpNo, moeIcpNo, initialYear } = config.settings.footer
   const hasIcp = icpNo || moeIcpNo

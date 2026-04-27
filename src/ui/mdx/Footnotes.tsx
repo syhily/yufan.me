@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import { FOOTNOTE_SUP_CLASSES, Li, SupLink } from '@/ui/mdx/prose'
+import { FOOTNOTE_SUP_CLASSES, SupLink } from '@/ui/mdx/prose'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 
 interface FootnoteContextValue {
@@ -46,7 +46,9 @@ export function FootnoteProvider({ children }: { children: ReactNode }) {
     })
     return () => {
       setPreviews((current) => {
-        if (!current.has(href)) return current
+        if (!current.has(href)) {
+          return current
+        }
         const next = new Map(current)
         next.delete(href)
         return next
@@ -92,27 +94,35 @@ export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'l
   previewRef.current = preview
 
   useEffect(() => {
-    if (!isFootnote || register === null || typeof id !== 'string') return
+    if (!isFootnote || register === null || typeof id !== 'string') {
+      return
+    }
     return register(`#${id}`, previewRef.current)
   }, [id, isFootnote, register])
 
   return (
-    <Li {...props} id={id}>
+    <li {...props} id={id}>
       {children}
-    </Li>
+    </li>
   )
 }
 
 function footnoteReferenceHref(node: ReactNode): string | undefined {
-  if (node === null || node === undefined || typeof node === 'boolean') return undefined
+  if (node === null || node === undefined || typeof node === 'boolean') {
+    return undefined
+  }
   if (Array.isArray(node)) {
     for (const child of node) {
       const href = footnoteReferenceHref(child)
-      if (href !== undefined) return href
+      if (href !== undefined) {
+        return href
+      }
     }
     return undefined
   }
-  if (!isValidElement<FootnoteElementProps>(node)) return undefined
+  if (!isValidElement<FootnoteElementProps>(node)) {
+    return undefined
+  }
 
   const { href, id, children } = node.props
   if (
@@ -127,11 +137,21 @@ function footnoteReferenceHref(node: ReactNode): string | undefined {
 }
 
 function stripBackrefs(node: ReactNode): ReactNode {
-  if (node === null || node === undefined || typeof node === 'boolean') return null
-  if (typeof node === 'string' || typeof node === 'number' || typeof node === 'bigint') return node
-  if (Array.isArray(node)) return node.map(stripBackrefs).filter((child) => child !== null)
-  if (!isValidElement<FootnoteElementProps>(node)) return node
-  if (isBackref(node.props)) return null
+  if (node === null || node === undefined || typeof node === 'boolean') {
+    return null
+  }
+  if (typeof node === 'string' || typeof node === 'number' || typeof node === 'bigint') {
+    return node
+  }
+  if (Array.isArray(node)) {
+    return node.map(stripBackrefs).filter((child) => child !== null)
+  }
+  if (!isValidElement<FootnoteElementProps>(node)) {
+    return node
+  }
+  if (isBackref(node.props)) {
+    return null
+  }
 
   const children = stripBackrefs(node.props.children)
   return cloneElement(node as ReactElement<FootnoteElementProps>, undefined, children)

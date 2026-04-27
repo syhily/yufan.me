@@ -41,7 +41,9 @@ function encodeAvatar(status: AvatarStatus, buffer: Buffer | null): Buffer {
 }
 
 function decodeAvatar(payload: unknown): Avatar | null {
-  if (!Buffer.isBuffer(payload) || payload.length === 0) return null
+  if (!Buffer.isBuffer(payload) || payload.length === 0) {
+    return null
+  }
   const status = payload[0] as AvatarStatus
   if (status === AvatarStatus.NO_AVATAR) {
     return { status, buffer: null }

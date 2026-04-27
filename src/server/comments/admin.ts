@@ -20,8 +20,8 @@ import { compileMarkdown } from '@/server/markdown/runtime'
 // Admin-only helpers for the moderation panel. Split out of `loader.server.ts`
 // so the public detail-route bundle no longer drags in the admin-list query
 // helpers transitively (page loaders only need the public surface). All
-// callers are gated by `requireAdmin` in their action route, so these
-// helpers themselves do not re-check authorization.
+// callers are gated by the routing-layer `adminMiddleware`, so these helpers
+// themselves do not re-check authorization.
 const log = getLogger('comments.admin')
 
 export async function approveComment(rid: string) {
@@ -48,7 +48,9 @@ export async function updateComment(rid: string, newContent: string) {
   await updateCommentContent(id, newContent)
 
   const r = await findCommentWithUserById(id)
-  if (r === null) return null
+  if (r === null) {
+    return null
+  }
 
   // Keep `r.content` as raw markdown (matches the public-facing
   // `createComment` shape) and attach the compiled body for the React

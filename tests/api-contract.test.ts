@@ -56,7 +56,9 @@ describe('shared API action contract', () => {
     // Read every server-side action file; if it's a GET endpoint, it must
     // not pull `userId` / `email` / `token` / `password` out of the URL.
     for (const action of API_ACTION_LIST) {
-      if (!READ_METHODS.includes(action.method)) continue
+      if (!READ_METHODS.includes(action.method)) {
+        continue
+      }
       const tail = action.route.replace(/^api\/actions\//, '')
       const filePath = resolve(actionsDir, `${tail.replace('/', '.')}.ts`)
       const source = readFileSync(filePath, 'utf8')
@@ -73,7 +75,9 @@ describe('shared API action contract', () => {
     // Mutations should authenticate through the body envelope so request
     // logs / CDN caches don't surface mutation parameters.
     for (const action of API_ACTION_LIST) {
-      if (READ_METHODS.includes(action.method)) continue
+      if (READ_METHODS.includes(action.method)) {
+        continue
+      }
       const tail = action.route.replace(/^api\/actions\//, '')
       const filePath = resolve(actionsDir, `${tail.replace('/', '.')}.ts`)
       const source = readFileSync(filePath, 'utf8')

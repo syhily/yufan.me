@@ -21,7 +21,9 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 
 export async function verifyUserPassword(email: string, password: string): Promise<User | null> {
   const u = await findUserByEmail(email)
-  if (u === null) return null
+  if (u === null) {
+    return null
+  }
   return (await bcrypt.compare(password, u.password)) ? u : null
 }
 
@@ -53,7 +55,9 @@ export async function insertAdmin(name: string, email: string, password: string)
 
 export async function insertCommentUser(name: string, email: string, website: string): Promise<User | null> {
   const existing = await findUserByEmail(email)
-  if (existing !== null) return existing
+  if (existing !== null) {
+    return existing
+  }
   const u: NewUser = {
     name,
     email,

@@ -66,7 +66,7 @@ export function MediaOverlay({ className, top, bottom, ref, ...props }: MediaOve
       ref={ref}
       className={twMerge(
         clsx(
-          'absolute left-0 right-0 z-[2] flex items-center px-3 py-2',
+          'absolute left-0 right-0 z-(--z-card-overlay-2) flex items-center px-3 py-2',
           top ? 'top-0 bottom-auto' : bottom ? 'bottom-0 top-auto' : 'inset-0',
           className,
         ),

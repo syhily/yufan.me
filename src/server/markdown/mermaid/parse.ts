@@ -22,7 +22,9 @@ function isMermaidElement(element: Element): boolean {
   if (typeof className === 'string') {
     className = parseTokens(className)
   }
-  if (!Array.isArray(className)) return false
+  if (!Array.isArray(className)) {
+    return false
+  }
   return className.includes(mermaidClassName)
 }
 
@@ -34,10 +36,14 @@ export function collectDiagrams(ast: Root): CodeInstance[] {
   const instances: CodeInstance[] = []
 
   visitParents(ast, 'element', (node, ancestors) => {
-    if (!isMermaidElement(node)) return
+    if (!isMermaidElement(node)) {
+      return
+    }
 
     const parent = ancestors.at(-1)
-    if (!parent) return
+    if (!parent) {
+      return
+    }
     let inclusiveAncestors = ancestors as Element[]
 
     // <code> wrapped in a <pre>: bail if the <pre> has any non-whitespace
@@ -46,7 +52,9 @@ export function collectDiagrams(ast: Root): CodeInstance[] {
     if (parent.type === 'element' && parent.tagName === 'pre') {
       for (const child of parent.children) {
         if (child.type === 'text') {
-          if (NON_WHITESPACE.test(child.value)) return
+          if (NON_WHITESPACE.test(child.value)) {
+            return
+          }
         } else if (child !== node) {
           return
         }

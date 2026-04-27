@@ -7,7 +7,7 @@ import {
   posts as postEntries,
   tags as tagEntries,
 } from '#source/server'
-import { isValidElement, type ReactNode } from 'react'
+import { cache, isValidElement, type ReactNode } from 'react'
 
 import type {
   Category,
@@ -65,9 +65,15 @@ function valuesByKeys<T>(items: ReadonlyMap<string, T>, keys: readonly string[])
 }
 
 function headingText(title: ReactNode): string {
-  if (typeof title === 'string') return title
-  if (typeof title === 'number') return `${title}`
-  if (Array.isArray(title)) return title.map((item) => headingText(item)).join('')
+  if (typeof title === 'string') {
+    return title
+  }
+  if (typeof title === 'number') {
+    return `${title}`
+  }
+  if (Array.isArray(title)) {
+    return title.map((item) => headingText(item)).join('')
+  }
   if (isValidElement(title)) {
     const props = title.props as { children?: ReactNode }
     return headingText(props.children)
@@ -90,7 +96,9 @@ function toHeadings(toc: unknown): MarkdownHeading[] {
 }
 
 function isTocItem(value: unknown): value is TOCItemType {
-  if (typeof value !== 'object' || value === null) return false
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
   const item = value as Record<string, unknown>
   return typeof item.url === 'string' && typeof item.depth === 'number'
 }
@@ -196,7 +204,9 @@ function fallbackTagSlug(name: string): string {
   const trimmed = name.trim().toLowerCase()
   // Replace any non-ASCII letter or digit with `-`, collapse repeats, trim.
   const slug = trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  if (slug !== '') return slug
+  if (slug !== '') {
+    return slug
+  }
   // Pure non-ASCII tags fall through here; encodeURIComponent keeps the URL
   // legal even if it isn't pretty. Authors should add the entry to
   // `tags.yaml` to fix this properly.
@@ -355,7 +365,9 @@ export class ContentCatalog {
   // archives) share one allocation per post per process.
   toClientPost(post: Post): ClientPost {
     const cached = this.clientPostCache.get(post)
-    if (cached !== undefined) return cached
+    if (cached !== undefined) {
+      return cached
+    }
     const client = toClientPost(post)
     this.clientPostCache.set(post, client)
     return client
@@ -391,7 +403,9 @@ export class ContentCatalog {
   getCategory(name?: string, slug?: string): Category | undefined {
     if (name !== undefined) {
       const byName = this.getCategoryByName(name)
-      if (byName) return byName
+      if (byName) {
+        return byName
+      }
     }
     return slug === undefined ? undefined : this.getCategoryBySlug(slug)
   }
@@ -407,7 +421,9 @@ export class ContentCatalog {
   getTag(name?: string, slug?: string): Tag | undefined {
     if (name !== undefined) {
       const byName = this.getTagByName(name)
-      if (byName) return byName
+      if (byName) {
+        return byName
+      }
     }
     return slug === undefined ? undefined : this.getTagBySlug(slug)
   }
@@ -498,7 +514,9 @@ function validateTaxonomies(posts: Post[], categories: Category[], tags: Tag[]):
 function fillMissingTags(posts: Post[], tags: Tag[], postsByTag: Map<string, Post[]>): void {
   const configured = new Set(tags.map((tag) => tag.name))
   for (const missingTag of posts.flatMap((post) => post.tags)) {
-    if (configured.has(missingTag)) continue
+    if (configured.has(missingTag)) {
+      continue
+    }
     configured.add(missingTag)
     const slug = fallbackTagSlug(missingTag)
     tags.push({
@@ -513,7 +531,9 @@ function fillMissingTags(posts: Post[], tags: Tag[], postsByTag: Map<string, Pos
 function fillMissingPostCovers(posts: Post[], categories: Category[]): void {
   const categoryByName = new Map(categories.map((cat) => [cat.name, cat]))
   for (const post of posts) {
-    if (post.cover !== '') continue
+    if (post.cover !== '') {
+      continue
+    }
     const category = categoryByName.get(post.category)
     if (category !== undefined) {
       post.cover = category.cover
@@ -528,8 +548,11 @@ function bucket<T, K>(items: T[], keysOf: (item: T) => readonly K[]): Map<K, T[]
   for (const item of items) {
     for (const key of keysOf(item)) {
       const existing = map.get(key)
-      if (existing) existing.push(item)
-      else map.set(key, [item])
+      if (existing) {
+        existing.push(item)
+      } else {
+        map.set(key, [item])
+      }
     }
   }
   return map
@@ -611,18 +634,38 @@ function applyPostOptions(posts: Post[], options: PostVisibilityOptions): Post[]
 // metadata stored alongside the catalog (Postgres + Redis). The query is
 // short-circuited for empty inputs so listing routes that already filtered
 // to zero results don't pay for a round trip.
+//
+// Per-request deduplication runs at the metadata layer through
+// `cachedQueryMetadata` (`vercel-react-best-practices/server-cache-react`):
+// listing routes that call us with overlapping permalink slices share one
+// Postgres + Redis round trip. The `posts` array reference is unstable
+// between callers (each call sites does its own slicing/sorting), so we
+// memoize the *sorted permalink list* and the metadata flag combination
+// instead. `cache()` keys are compared by referential equality, so the
+// memoization key has to be a primitive.
 export async function getClientPostsWithMetadata<PostLike extends { permalink: string }>(
   posts: PostLike[],
   options: LoadPostsWithMetadataOptions,
 ): Promise<(PostLike & { meta: PostMetadata })[]> {
-  if (posts.length === 0) return []
+  if (posts.length === 0) {
+    return []
+  }
 
-  const metas = await queryMetadata(
-    posts.map((post) => post.permalink),
-    options,
-  )
+  const permalinks = posts.map((post) => post.permalink)
+  const cacheKey = `${permalinks.slice().sort().join('\u0000')}|${options.likes ? 1 : 0}${options.views ? 1 : 0}${options.comments ? 1 : 0}`
+  const metas = await cachedQueryMetadata(cacheKey, permalinks, options)
   return posts.map((post) => {
     const meta = metas.get(post.permalink) ?? { likes: 0, views: 0, comments: 0 }
     return { ...post, meta }
   })
 }
+
+// Memoize the underlying `queryMetadata` per (sorted permalink set,
+// metadata flags) tuple per SSR pass so two listing surfaces touching the
+// same slice (e.g. archives + sidebar derivatives sharing recent posts in
+// a future iteration) coalesce onto one query.
+const cachedQueryMetadata = cache(
+  async (_cacheKey: string, permalinks: string[], options: LoadPostsWithMetadataOptions) => {
+    return queryMetadata(permalinks, options)
+  },
+)

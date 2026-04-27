@@ -63,7 +63,9 @@ export async function parseContent(content: string | null | undefined): Promise<
     return '<p><br /></p>\n'
   }
   const cached = cache.get(normalized)
-  if (cached) return cached
+  if (cached) {
+    return cached
+  }
 
   const promise = renderContent(normalized)
   cache.set(normalized, promise)

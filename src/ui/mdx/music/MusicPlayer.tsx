@@ -13,7 +13,9 @@ export function MusicPlayer({ id }: MusicPlayerProps) {
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container || !id) return
+    if (!container || !id) {
+      return
+    }
     let cancelled = false
     let destroy: (() => void) | undefined
 
@@ -23,7 +25,9 @@ export function MusicPlayer({ id }: MusicPlayerProps) {
         loadMusic(id),
         import('aplayer-ts/src/css/base.css'),
       ])
-      if (cancelled || meta === null) return
+      if (cancelled || meta === null) {
+        return
+      }
 
       // APlayer expects a literal CSS colour string and stamps it into
       // inline `style="background:..."` attributes that the project would
@@ -73,7 +77,7 @@ export function MusicPlayer({ id }: MusicPlayerProps) {
       // to it. Wrapper sizing/margins live as Tailwind utilities so the
       // only remaining CSS for the player is the third-party stylesheet
       // itself.
-      className="aplayer my-5 max-w-[350px] max-md:mt-0 max-md:mx-8 max-md:mb-5 max-md:max-w-full"
+      className="aplayer mt-0 mx-8 mb-5 max-w-full md:my-5 md:mx-0 md:max-w-[350px]"
       data-id={id}
     />
   )
@@ -86,7 +90,9 @@ export interface UnstyledMusicPlayerProps {
 export async function UnstyledMusicPlayer({ id }: UnstyledMusicPlayerProps) {
   const meta = await loadMusic(id)
   const url = meta === null ? '' : meta.url
-  if (url === '') return null
+  if (url === '') {
+    return null
+  }
   // oxlint-disable-next-line jsx-a11y/media-has-caption -- These MDX audio embeds do not have transcript metadata.
   return <audio controls src={url} aria-label={id} />
 }

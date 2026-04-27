@@ -55,8 +55,12 @@ class PageViewBatcher {
   }
 
   async flush(): Promise<void> {
-    if (this.flushing) return this.flushing
-    if (this.buffer.size === 0) return
+    if (this.flushing) {
+      return this.flushing
+    }
+    if (this.buffer.size === 0) {
+      return
+    }
 
     if (this.timer) {
       clearTimeout(this.timer)
@@ -104,7 +108,9 @@ function getBatcher(): PageViewBatcher {
 // guard here keeps every bump call site (loader, page-data, future routes)
 // consistent and makes flushing a no-op outside production.
 export function bumpPageView(key: string): void {
-  if (!import.meta.env.PROD) return
+  if (!import.meta.env.PROD) {
+    return
+  }
   getBatcher().increment(key)
 }
 

@@ -25,7 +25,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4 mt-3 md:mt-4">
           {categories.map((category) => (
             <div key={category.slug} className="flex min-w-0">
-              <div className="relative flex flex-col flex-auto min-w-0 break-words mb-7 max-md:mb-3 md:max-2xl:mb-5 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]">
+              <div className="relative flex flex-col flex-auto min-w-0 break-words mb-3 md:mb-5 2xl:mb-7 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]">
                 <Media ratio="3x1">
                   <MediaCover as={Link} to={category.permalink} prefetch="intent">
                     <Image

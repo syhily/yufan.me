@@ -15,14 +15,18 @@ export function ScrollTopButton() {
       setShow(window.scrollY > 300)
     }
     const schedule = () => {
-      if (rafHandle !== 0) return
+      if (rafHandle !== 0) {
+        return
+      }
       rafHandle = window.requestAnimationFrame(update)
     }
     window.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
     update()
     return () => {
-      if (rafHandle !== 0) window.cancelAnimationFrame(rafHandle)
+      if (rafHandle !== 0) {
+        window.cancelAnimationFrame(rafHandle)
+      }
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }

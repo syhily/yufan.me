@@ -1,8 +1,8 @@
 import type { ComponentPropsWithRef, Ref } from 'react'
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { clsx } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 // Replaces `.form-control` and `.form-control-lg` (legacy `_base.css`).
 // Heights mirror the legacy 39px / 44px / 35px (mobile) so visual
@@ -12,8 +12,8 @@ const inputVariants = cva(
   {
     variants: {
       size: {
-        md: 'text-sm h-[39px] py-[0.375rem] px-3 max-md:h-[35px]',
-        lg: 'text-[0.9375rem] h-[44px] py-2 px-4 max-md:text-sm max-md:h-[39px] max-md:px-[0.875rem]',
+        md: 'text-sm h-[35px] py-[0.375rem] px-3 md:h-[39px]',
+        lg: 'text-sm h-[39px] py-2 px-[0.875rem] md:text-[0.9375rem] md:h-[44px] md:px-4',
       },
     },
     defaultVariants: {
@@ -29,9 +29,7 @@ export interface InputProps extends Omit<ComponentPropsWithRef<'input'>, 'size'>
 }
 
 export function Input({ className, size, type, ref, ...props }: InputProps) {
-  return (
-    <input ref={ref} type={type ?? 'text'} className={twMerge(clsx(inputVariants({ size }), className))} {...props} />
-  )
+  return <input ref={ref} type={type ?? 'text'} className={cn(inputVariants({ size }), className)} {...props} />
 }
 
 export { inputVariants }

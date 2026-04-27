@@ -12,7 +12,9 @@ export function useMediumZoom(): void {
         import('medium-zoom/dist/pure'),
         import('medium-zoom/dist/style.css'),
       ])
-      if (cancelled) return
+      if (cancelled) {
+        return
+      }
       const zoom = mediumZoom()
       zoom.attach('.prose-host img', '.prose-host svg')
       cleanup = () => zoom.detach()

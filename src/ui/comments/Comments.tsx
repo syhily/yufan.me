@@ -1,17 +1,17 @@
 import { useCallback, useReducer, useRef } from 'react'
 import { flushSync } from 'react-dom'
 
-import type { LoadCommentsInput, LoadCommentsOutput } from '@/client/api/action-types'
+import type { LoadCommentsInput, LoadCommentsStreamLine } from '@/client/api/action-types'
 import type { CommentFormUser } from '@/server/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/server/comments/types'
 
-import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useApiStream } from '@/client/api/stream'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { CommentItem } from '@/ui/comments/CommentItem'
 import { CommentReplyForm } from '@/ui/comments/CommentReplyForm'
 import {
+  type CommentNode,
   CommentsContext,
   type CommentsContextValue,
   type CommentTreeAction,
@@ -19,6 +19,7 @@ import {
   useCommentsContext,
 } from '@/ui/comments/comments-context'
 import { Button } from '@/ui/primitives/Button'
+import { useSiteConfig } from '@/ui/primitives/site-config'
 
 export interface CommentsProps {
   commentKey: string
@@ -31,92 +32,163 @@ function asKey(value: bigint | string | number): string {
   return String(value)
 }
 
-// Replace a comment by id anywhere in the tree (root or nested).
-function mapTree(items: CommentItemType[], fn: (item: CommentItemType) => CommentItemType): CommentItemType[] {
-  return items.map((item) => {
-    const next = fn(item)
-    if (next.children && next.children.length > 0) {
-      const children = mapTree(next.children, fn)
-      return children === next.children ? next : { ...next, children }
-    }
-    return next
-  })
-}
-
-function filterTree(items: CommentItemType[], predicate: (item: CommentItemType) => boolean): CommentItemType[] {
-  return items.filter(predicate).map((item) => {
-    if (item.children && item.children.length > 0) {
-      return { ...item, children: filterTree(item.children, predicate) }
-    }
-    return item
-  })
+// Walk the nested `CommentItemType` tree once, materialising each row into
+// the normalised `Map<id, CommentNode>` and capturing per-parent
+// `childrenIds`. The recursion is local to this function — every other
+// reducer case operates on the flat store.
+function ingestTree(
+  items: CommentItemType[],
+  byId: Map<string, CommentNode>,
+): { ids: string[]; byId: Map<string, CommentNode> } {
+  const ids: string[] = []
+  for (const item of items) {
+    const id = asKey(item.id)
+    ids.push(id)
+    // The wire shape carries the descendant subtree on `children`. Strip
+    // it here so the normalised store only references descendants by id;
+    // re-keying happens in the recursive call below.
+    const { children, ...rest } = item
+    const inner = ingestTree(children ?? [], byId)
+    byId.set(id, { ...rest, childrenIds: inner.ids })
+  }
+  return { ids, byId }
 }
 
 function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTreeState {
   switch (action.type) {
-    case 'reset':
+    case 'reset': {
+      const byId = new Map<string, CommentNode>()
+      const roots = ingestTree(action.items, byId).ids
       return {
-        items: action.items,
+        byId,
+        roots,
         rootsTotal: action.rootsTotal,
         rootsLoaded: action.rootsLoaded,
         replyToId: 0,
       }
-    case 'append':
+    }
+    case 'append': {
+      const byId = new Map(state.byId)
+      const appendIds = ingestTree(action.items, byId).ids
       return {
         ...state,
-        items: [...state.items, ...action.items],
+        byId,
+        roots: [...state.roots, ...appendIds],
         rootsLoaded: action.rootsLoaded,
       }
+    }
+    case 'appendOne': {
+      const byId = new Map(state.byId)
+      const ids = ingestTree([action.comment], byId).ids
+      const id = ids[0]
+      if (id === undefined) {
+        return state
+      }
+      return {
+        ...state,
+        byId,
+        roots: [...state.roots, id],
+        rootsLoaded: state.rootsLoaded + 1,
+      }
+    }
+    case 'setRootsTotal': {
+      if (action.rootsTotal === state.rootsTotal) {
+        return state
+      }
+      return { ...state, rootsTotal: action.rootsTotal }
+    }
     case 'insertReply': {
+      const byId = new Map(state.byId)
+      const inserted = ingestTree([action.comment], byId).ids
+      const insertedId = inserted[0]
+      if (insertedId === undefined) {
+        return state
+      }
       if (action.rid === 0) {
         return {
           ...state,
-          items: [action.comment, ...state.items],
+          byId,
+          roots: [...state.roots, insertedId],
           rootsTotal: state.rootsTotal + 1,
           rootsLoaded: state.rootsLoaded + 1,
         }
       }
       const ridKey = asKey(action.rid)
-      const items = mapTree(state.items, (item) => {
-        if (asKey(item.id) !== ridKey) return item
-        const children = item.children ?? []
-        return { ...item, children: [...children, action.comment] }
-      })
-      return { ...state, items }
+      const parent = byId.get(ridKey)
+      if (parent === undefined) {
+        return state
+      }
+      byId.set(ridKey, { ...parent, childrenIds: [...parent.childrenIds, insertedId] })
+      return { ...state, byId }
     }
     case 'updateComment': {
       const id = asKey(action.comment.id)
-      const items = mapTree(state.items, (item) => {
-        if (asKey(item.id) !== id) return item
-        // Preserve existing children (the edit endpoint returns the comment
-        // shape without its descendants).
-        const children = item.children
-        return { ...action.comment, children }
-      })
-      return { ...state, items }
+      const existing = state.byId.get(id)
+      if (existing === undefined) {
+        return state
+      }
+      const byId = new Map(state.byId)
+      // Preserve existing `childrenIds`: the edit endpoint returns the
+      // comment shape without its descendants.
+      const { children: _children, ...rest } = action.comment
+      byId.set(id, { ...rest, childrenIds: existing.childrenIds })
+      return { ...state, byId }
     }
     case 'removeComment': {
       const id = asKey(action.id)
-      const items = filterTree(state.items, (item) => asKey(item.id) !== id)
-      return { ...state, items }
+      if (!state.byId.has(id)) {
+        return state
+      }
+      const byId = new Map(state.byId)
+      // Remove the row plus every descendant that hangs off it.
+      pruneSubtree(byId, id)
+      // Drop any direct child reference from any remaining parent.
+      for (const [parentId, parent] of byId) {
+        if (!parent.childrenIds.includes(id)) {
+          continue
+        }
+        byId.set(parentId, {
+          ...parent,
+          childrenIds: parent.childrenIds.filter((childId) => childId !== id),
+        })
+      }
+      const wasRoot = state.roots.includes(id)
+      const roots = wasRoot ? state.roots.filter((rootId) => rootId !== id) : state.roots
+      return { ...state, byId, roots }
     }
     case 'approveComment': {
       const id = asKey(action.id)
-      const items = mapTree(state.items, (item) => {
-        if (asKey(item.id) !== id) return item
-        return { ...item, isPending: false }
-      })
-      return { ...state, items }
+      const existing = state.byId.get(id)
+      if (existing === undefined) {
+        return state
+      }
+      const byId = new Map(state.byId)
+      byId.set(id, { ...existing, isPending: false })
+      return { ...state, byId }
     }
     case 'setReplyTo':
       return { ...state, replyToId: action.rid }
   }
 }
 
+function pruneSubtree(byId: Map<string, CommentNode>, id: string) {
+  const node = byId.get(id)
+  if (node === undefined) {
+    return
+  }
+  for (const childId of node.childrenIds) {
+    pruneSubtree(byId, childId)
+  }
+  byId.delete(id)
+}
+
 export function createCommentTreeState(items: CommentItemType[], rootsCount: number): CommentTreeState {
+  const byId = new Map<string, CommentNode>()
+  const roots = ingestTree(items, byId).ids
   return {
-    items,
-    rootsLoaded: Math.min(items.length, rootsCount),
+    byId,
+    roots,
+    rootsLoaded: Math.min(roots.length, rootsCount),
     rootsTotal: rootsCount,
     replyToId: 0,
   }
@@ -201,7 +273,8 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   }, [])
 
   const admin = user?.admin === true
-  const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
+  const replyTargetNode = state.replyToId === 0 ? undefined : state.byId.get(asKey(state.replyToId))
+  const replyTarget = replyTargetNode === undefined ? undefined : nodeToCommentItem(replyTargetNode)
   const activeReplyToId = replyTarget ? state.replyToId : 0
 
   // The same reply form JSX flows through context to whichever depth
@@ -246,6 +319,16 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   )
 }
 
+// Materialise a normalised node back into the `CommentItemType` shape so
+// `<CommentReplyForm>` can keep accepting the wire-shaped `replyTarget`
+// it already understands. The reply overlay only reads `name` and
+// `content`, so we hand back an empty children list rather than
+// rebuilding the entire descendant subtree.
+function nodeToCommentItem(node: CommentNode): CommentItemType {
+  const { childrenIds: _childrenIds, ...comment } = node
+  return { ...comment, children: [] } as CommentItemType
+}
+
 function CommentsHeader() {
   const ctx = useCommentsContext('Comments.Header')
   return (
@@ -260,7 +343,9 @@ function CommentsHeader() {
 // specific comment travel through the recursive `CommentItem` tree.
 function CommentsReplyFormSlot() {
   const ctx = useCommentsContext('Comments.ReplyFormSlot')
-  if (ctx.activeReplyToId !== 0) return null
+  if (ctx.activeReplyToId !== 0) {
+    return null
+  }
   return <>{ctx.replyForm}</>
 }
 
@@ -268,8 +353,8 @@ function CommentsList() {
   const ctx = useCommentsContext('Comments.List')
   return (
     <ul>
-      {ctx.state.items.map((item) => (
-        <CommentItem key={asKey(item.id)} comment={item} depth={1} />
+      {ctx.state.roots.map((id) => (
+        <CommentItem key={id} id={id} depth={1} />
       ))}
     </ul>
   )
@@ -277,28 +362,40 @@ function CommentsList() {
 
 function CommentsLoadMore() {
   const ctx = useCommentsContext('Comments.LoadMore')
-  const pageSize = config.settings.comments.size
+  const { settings } = useSiteConfig()
+  const pageSize = settings.comments.size
 
-  // Pin the latest `rootsLoaded` so the success callback can compute the
-  // new offset without forcing the hook to remount on every dispatch.
-  const rootsLoadedRef = useRef(ctx.state.rootsLoaded)
-  rootsLoadedRef.current = ctx.state.rootsLoaded
+  /**
+   * Streaming variant: each NDJSON line is dispatched as it arrives so
+   * roots paint top-down without waiting for the whole page. The reducer
+   * is wrapped in `flushSync` so React commits each subtree synchronously
+   * — otherwise React 19's automatic batching collapses the burst into a
+   * single render that defeats the streaming UX.
+   */
+  const dispatchRef = useRef(ctx.dispatch)
+  dispatchRef.current = ctx.dispatch
 
-  const loadMore = useApiFetcher<never, LoadCommentsOutput>(API_ACTIONS.comment.loadComments, {
-    onSuccess: (payload) => {
-      ctx.dispatch({
-        type: 'append',
-        items: payload.comments,
-        rootsLoaded: rootsLoadedRef.current + payload.comments.length,
-      })
+  const loadMore = useApiStream<LoadCommentsInput, LoadCommentsStreamLine>(API_ACTIONS.comment.loadComments, {
+    onLine: (line) => {
+      if (line.type === 'meta') {
+        flushSync(() => dispatchRef.current({ type: 'setRootsTotal', rootsTotal: line.roots_count }))
+        return
+      }
+      if (line.type === 'item') {
+        flushSync(() => dispatchRef.current({ type: 'appendOne', comment: line.comment }))
+      }
     },
   })
 
-  if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) return null
+  if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) {
+    return null
+  }
 
   const moreLoading = loadMore.isPending
   const onLoadMore = () => {
-    if (loadMore.isPending) return
+    if (loadMore.isPending) {
+      return
+    }
     loadMore.load({
       page_key: ctx.commentKey,
       offset: ctx.state.rootsLoaded,
@@ -319,18 +416,6 @@ function CommentsLoadMore() {
       </Button>
     </div>
   )
-}
-
-function findComment(items: CommentItemType[], rid: number): CommentItemType | undefined {
-  const target = asKey(rid)
-  for (const item of items) {
-    if (asKey(item.id) === target) return item
-    if (item.children && item.children.length > 0) {
-      const inner = findComment(item.children, rid)
-      if (inner) return inner
-    }
-  }
-  return undefined
 }
 
 Comments.Header = CommentsHeader

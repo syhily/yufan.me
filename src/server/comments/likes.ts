@@ -104,7 +104,9 @@ type SweepGlobal = { [SWEEP_KEY]?: NodeJS.Timeout }
 
 function ensureLikeTokenSweepStarted(): void {
   const slot = globalThis as unknown as SweepGlobal
-  if (slot[SWEEP_KEY] !== undefined) return
+  if (slot[SWEEP_KEY] !== undefined) {
+    return
+  }
   slot[SWEEP_KEY] = setInterval(() => {
     void purgeStaleLikeTokens().catch((err) => {
       console.warn('[likes] background sweep failed', err)

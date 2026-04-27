@@ -3,10 +3,10 @@ import { Link } from 'react-router'
 import type { ClientTag, SidebarPostLink } from '@/server/catalog'
 import type { LatestComment } from '@/server/comments/types'
 
-import config from '@/blog.config'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
+import { useSiteConfig } from '@/ui/primitives/site-config'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 import { SearchBar } from '@/ui/search/Search'
 
@@ -66,7 +66,9 @@ interface RandomPostsProps {
 }
 
 function RandomPosts({ posts }: RandomPostsProps) {
-  if (posts.length === 0) return null
+  if (posts.length === 0) {
+    return null
+  }
   return (
     <div id="recent-posts" className="mb-10">
       <WidgetTitle tooltip="年年岁岁花相似，岁岁年年人不同。">流年拾忆</WidgetTitle>
@@ -88,7 +90,10 @@ interface RecentCommentsProps {
 }
 
 function RecentComments({ comments }: RecentCommentsProps) {
-  if (config.settings.sidebar.comment <= 0 || comments.length === 0) return null
+  const { settings } = useSiteConfig()
+  if (settings.sidebar.comment <= 0 || comments.length === 0) {
+    return null
+  }
 
   return (
     <div id="recent-comments" className="mb-10">
@@ -135,7 +140,9 @@ interface RandomTagsProps {
 }
 
 function RandomTags({ tags }: RandomTagsProps) {
-  if (tags.length === 0) return null
+  if (tags.length === 0) {
+    return null
+  }
 
   return (
     <div id="tag-cloud" className="mb-10">
@@ -174,10 +181,13 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 }
 
 function TodayCalendar() {
-  if (!config.settings.sidebar.calendar) return null
+  const { website, settings } = useSiteConfig()
+  if (!settings.sidebar.calendar) {
+    return null
+  }
   const today = new Date()
   const calendarImage = joinUrl(
-    config.website,
+    website,
     'images/calendar',
     formatLocalDate(today, 'yyyy'),
     `${formatLocalDate(today, 'LLdd')}.png`,

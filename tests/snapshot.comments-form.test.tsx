@@ -1,5 +1,3 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vite-plus/test'
 
 import type { CommentFormUser } from '@/server/catalog'
@@ -8,14 +6,7 @@ import type { CommentItem as CommentItemType } from '@/server/comments/types'
 import { CommentReplyForm } from '@/ui/comments/CommentReplyForm'
 import { Comments } from '@/ui/comments/Comments'
 
-// The reply form is now a React Router 7 client island (uses `useFetcher`),
-// so we need a router context to render the snapshots. We render the
-// component as a single in-memory route and snapshot the resulting HTML.
-function renderInRouter(element: React.ReactNode): string {
-  const routes: RouteObject[] = [{ path: '/', element }]
-  const router = createMemoryRouter(routes, { initialEntries: ['/'] })
-  return renderToStaticMarkup(<RouterProvider router={router} />)
-}
+import { renderInRouter } from './_helpers/render'
 
 // `Comments.tsx` was previously a 159-line component that hand-rolled the
 // admin-vs-anonymous form three times (name / email / link). After

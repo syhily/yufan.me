@@ -1,16 +1,21 @@
 import { redirect } from 'react-router'
 
-import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
+import type { ListingPageLoaderData } from '@/server/listing'
 
 import config from '@/blog.config'
 import { getCatalog, getClientPostsWithMetadata, toListingPostCard } from '@/server/catalog'
-import { listingSeo } from '@/server/route-helpers/listing-seo'
-import { parseListingPage } from '@/server/route-helpers/pagination'
-import { pagePath, searchRootPath } from '@/server/route-helpers/paths'
-import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
+import {
+  listingHeaders,
+  listingSeo,
+  listingShouldRevalidate,
+  pagePath,
+  parseListingPage,
+  searchRootPath,
+} from '@/server/listing'
 import { searchPostOptions, searchPosts } from '@/server/search'
 import { routeMeta } from '@/server/seo/meta'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
+import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
 
 import type { Route } from './+types/search.list'
 
@@ -32,8 +37,12 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
   // number and treats `totalPage === 0` as a 404). For search we always
   // redirect home on empty results to preserve the historical UX.
   if (params.num !== undefined) {
-    if (totalPages === 0) throw redirect('/', { status: 302 })
-    if (pageNum > totalPages) throw redirect(pagePath(rootPath, totalPages))
+    if (totalPages === 0) {
+      throw redirect('/', { status: 302 })
+    }
+    if (pageNum > totalPages) {
+      throw redirect(pagePath(rootPath, totalPages))
+    }
   }
 
   const catalog = await getCatalog()
@@ -67,7 +76,7 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
+export const shouldRevalidate = listingShouldRevalidate
 
 export function meta({ loaderData }: Route.MetaArgs) {
   return loaderData?.seo ?? routeMeta()
@@ -84,4 +93,8 @@ export default function SearchListRoute({ loaderData }: Route.ComponentProps) {
       alwaysRenderPagination={false}
     />
   )
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <SectionErrorView error={error} title="搜索失败" />
 }

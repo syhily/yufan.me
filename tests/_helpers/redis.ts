@@ -46,7 +46,9 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
 
   function read(key: string): unknown {
     const entry = store.get(key)
-    if (entry === undefined) return null
+    if (entry === undefined) {
+      return null
+    }
     if (isExpired(entry, now())) {
       store.delete(key)
       return null
@@ -67,7 +69,9 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
   // `session.server.ts`; everything else is treated as a no-TTL set.
   const get = vi.fn(async (key: string) => {
     const value = read(key)
-    if (value === null || value === undefined) return null
+    if (value === null || value === undefined) {
+      return null
+    }
     return typeof value === 'string' ? value : JSON.stringify(value)
   })
   const set = vi.fn(async (key: string, value: string, ...rest: unknown[]) => {
@@ -100,14 +104,20 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
   })
   const expire = vi.fn(async (key: string, seconds: number) => {
     const entry = store.get(key)
-    if (!entry) return 0
+    if (!entry) {
+      return 0
+    }
     entry.expiresAt = now() + seconds * 1000
     return 1
   })
   const ttl = vi.fn(async (key: string) => {
     const entry = store.get(key)
-    if (!entry) return -2
-    if (entry.expiresAt === null) return -1
+    if (!entry) {
+      return -2
+    }
+    if (entry.expiresAt === null) {
+      return -1
+    }
     return Math.max(0, Math.ceil((entry.expiresAt - now()) / 1000))
   })
   // ioredis pipeline returns a builder whose `exec()` resolves to
@@ -153,7 +163,9 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
   // production write through `setItem("k", ...)` and observe the round trip.
   const getItem = vi.fn(async (key: string) => {
     const raw = read(key)
-    if (raw === null || raw === undefined) return null
+    if (raw === null || raw === undefined) {
+      return null
+    }
     if (typeof raw === 'string') {
       try {
         return JSON.parse(raw)
@@ -194,7 +206,9 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
       const out: Record<string, unknown> = {}
       const t = now()
       for (const [key, entry] of store.entries()) {
-        if (!isExpired(entry, t)) out[key] = entry.value
+        if (!isExpired(entry, t)) {
+          out[key] = entry.value
+        }
       }
       return out
     },

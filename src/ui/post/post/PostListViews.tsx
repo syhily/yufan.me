@@ -5,10 +5,10 @@ import { Link } from 'react-router'
 import { twMerge } from 'tailwind-merge'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
-import type { IconName } from '@/ui/icons/Icon'
+import type { IconComponent } from '@/ui/icons/icons'
 
 import { formatShowDate } from '@/shared/formatter'
-import { DynamicIcon } from '@/ui/icons/icons'
+import { CommentIcon, EyeIcon, HeartIcon } from '@/ui/icons/icons'
 import { Pagination } from '@/ui/post/pagination/Pagination'
 import { badgeVariants } from '@/ui/primitives/Badge'
 import { Container } from '@/ui/primitives/Container'
@@ -119,7 +119,9 @@ interface FeaturePostsProps {
 }
 
 function FeaturePosts({ posts }: FeaturePostsProps) {
-  if (posts.length !== 3) return null
+  if (posts.length !== 3) {
+    return null
+  }
   return (
     <div className="mb-4 md:mb-6 lg:mb-12">
       <Container>
@@ -146,7 +148,7 @@ function FeaturePost({ post }: { post: ListingPostCard }) {
           <div className={`${HOVER_OVERLAY_CLASS} group-hover:opacity-[0.22]`} />
         </MediaCover>
       </Media>
-      <div className="absolute right-0 bottom-0 left-0 z-[1] p-2 md:p-3">
+      <div className="absolute right-0 bottom-0 left-0 z-(--z-card-overlay-1) p-2 md:p-3">
         <div className="flex flex-col flex-none">
           <Link
             to={post.permalink}
@@ -175,15 +177,25 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
         {posts.map((post) => (
           <div
             key={post.slug}
-            className="relative flex flex-row flex-auto min-w-0 break-words mb-7 max-md:mb-3 md:max-2xl:mb-5 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]"
+            className="relative flex flex-row flex-auto min-w-0 break-words mb-3 md:mb-5 2xl:mb-7 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]"
           >
-            <Media ratio="3x2" className="max-md:w-[45%] md:w-5/12">
+            <Media ratio="3x2" className="w-[45%] md:w-5/12">
               <MediaCover as={Link} to={post.permalink} prefetch="intent">
                 <Image src={post.cover} alt={post.title} width={600} height={400} thumbhash={post.coverThumbhash} />
               </MediaCover>
               <MediaOverlay top>
+                {/*
+                 * The cover-image category overlay has its own translucent
+                 * surface (`bg-white-overlay`) and intentionally bypasses
+                 * the project tone palette — we only borrow the `size: 'md'`
+                 * layout dimensions from `badgeVariants`. No `data-tone`
+                 * attribute is emitted so `toneStyles.css` doesn't paint a
+                 * border over the overlay.
+                 */}
                 <Link
-                  className={twMerge(clsx('hidden md:inline-block', badgeVariants({ size: 'md' }), 'bg-white-overlay'))}
+                  className={twMerge(
+                    clsx('hidden md:inline-block', badgeVariants({ size: 'md' }), 'border-0 bg-white-overlay'),
+                  )}
                   to={categoryLinks[post.category] || '/'}
                   prefetch="intent"
                 >
@@ -191,7 +203,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
                 </Link>
               </MediaOverlay>
             </Media>
-            <div className="flex flex-col flex-auto justify-center bg-white p-6 max-md:p-3 max-md:pb-2 md:max-2xl:px-5 md:max-2xl:py-5 md:max-2xl:pb-4">
+            <div className="flex flex-col flex-auto justify-center bg-white p-3 pb-2 md:px-5 md:py-5 md:pb-4 2xl:p-6">
               <div className="flex-auto">
                 <Link
                   to={post.permalink}
@@ -210,9 +222,9 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
               <div>
                 <div className="flex flex-1 items-center text-foreground-muted text-sm">
                   <div className="flex-1 hidden md:block">{formatShowDate(post.date)}</div>
-                  <ListMetric icon="eye" value={post.meta.views} />
-                  <ListMetric icon="heart" value={post.meta.likes} />
-                  <ListMetric icon="comment" value={post.meta.comments} />
+                  <ListMetric icon={EyeIcon} value={post.meta.views} />
+                  <ListMetric icon={HeartIcon} value={post.meta.likes} />
+                  <ListMetric icon={CommentIcon} value={post.meta.comments} />
                 </div>
               </div>
             </div>
@@ -224,10 +236,10 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
   )
 }
 
-function ListMetric({ icon, value }: { icon: IconName; value: number }) {
+function ListMetric({ icon: Icon, value }: { icon: IconComponent; value: number }) {
   return (
     <div className="inline-flex items-center ml-2.5 bg-transparent text-foreground">
-      <DynamicIcon name={icon} className="text-md" />
+      <Icon className="text-md" />
       <span className="pl-[0.35rem]">{value}</span>
     </div>
   )
@@ -254,7 +266,7 @@ export function PostSquare({ post, first }: PostSquareProps) {
             <div className={`${HOVER_OVERLAY_CLASS} group-hover:opacity-[0.22]`} />
           </MediaCover>
         </Media>
-        <div className="absolute right-0 bottom-0 left-0 z-[1] px-4 py-3 max-md:p-2">
+        <div className="absolute right-0 bottom-0 left-0 z-(--z-card-overlay-1) p-2 md:px-4 md:py-3">
           <Link to={post.permalink} className="flex flex-col flex-none" prefetch="intent">
             <div className="line-clamp-2 block mb-2 text-base font-semibold text-white hover:text-foreground-on-dark">
               {post.title}
@@ -262,8 +274,8 @@ export function PostSquare({ post, first }: PostSquareProps) {
             <div className="flex flex-1 text-sm text-foreground-on-dark-muted">
               <span className="inline-block">{formatShowDate(post.date)}</span>
               <div className="flex-1" />
-              <SquareMetric icon="eye" value={post.meta.views} />
-              <SquareMetric icon="heart" value={post.meta.likes} />
+              <SquareMetric icon={EyeIcon} value={post.meta.views} />
+              <SquareMetric icon={HeartIcon} value={post.meta.likes} />
             </div>
           </Link>
         </div>
@@ -272,10 +284,10 @@ export function PostSquare({ post, first }: PostSquareProps) {
   )
 }
 
-function SquareMetric({ icon, value }: { icon: IconName; value: number }) {
+function SquareMetric({ icon: Icon, value }: { icon: IconComponent; value: number }) {
   return (
     <div className="inline-flex items-center ml-2.5 bg-transparent">
-      <DynamicIcon name={icon} className="text-md" />
+      <Icon className="text-md" />
       <span className="pl-[0.35rem]">{value}</span>
     </div>
   )

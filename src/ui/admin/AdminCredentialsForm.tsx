@@ -4,6 +4,7 @@ import { twMerge } from 'tailwind-merge'
 
 import { buttonVariants } from '@/ui/primitives/Button'
 import { inputVariants } from '@/ui/primitives/Input'
+import { toneAttrs } from '@/ui/primitives/tone'
 
 // LoginForm and InstallForm previously duplicated 90% of the same JSX (CSRF
 // token hidden field, email + password inputs, submit button styling). The
@@ -78,6 +79,7 @@ export function AdminCredentialsForm({ mode, action, token }: AdminCredentialsFo
             type="submit"
             id="submit"
             className={twMerge(clsx(buttonVariants({ tone: 'accent' }), 'w-1/3'))}
+            {...toneAttrs('accent', 'solid')}
             value={isSubmitting ? pendingLabel : submitLabel}
             disabled={isSubmitting}
           />

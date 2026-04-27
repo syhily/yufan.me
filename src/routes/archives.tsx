@@ -1,7 +1,8 @@
 import { getCatalog, getClientPostsWithMetadata, toListingPostCard } from '@/server/catalog'
-import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
+import { listingHeaders, listingShouldRevalidate } from '@/server/listing'
 import { routeMeta } from '@/server/seo/meta'
 import { ArchivesBody } from '@/ui/post/archives/ArchivesBody'
+import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
 
 import type { Route } from './+types/archives'
 
@@ -19,7 +20,7 @@ export async function loader(_: Route.LoaderArgs) {
 }
 
 export const headers = listingHeaders
-export const shouldRevalidate = publicShouldRevalidate
+export const shouldRevalidate = listingShouldRevalidate
 
 export function meta() {
   return routeMeta({ title: '归档' })
@@ -27,4 +28,8 @@ export function meta() {
 
 export default function ArchivesRoute({ loaderData }: Route.ComponentProps) {
   return <ArchivesBody resolvedPosts={loaderData.resolvedPosts} />
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <SectionErrorView error={error} title="无法加载归档" />
 }

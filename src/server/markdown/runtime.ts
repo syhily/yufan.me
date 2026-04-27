@@ -125,7 +125,9 @@ export async function compileMarkdown(
 
   const key = cacheKey(options.profile, normalized)
   const cached = cache.get(key)
-  if (cached) return cached
+  if (cached) {
+    return cached
+  }
 
   const promise = compileImpl(normalized, options.profile)
   cache.set(key, promise)

@@ -1,11 +1,15 @@
+import type { MiddlewareFunction } from 'react-router'
+
 import { updateUserSchema } from '@/server/auth-schema'
 import { updateUserById } from '@/server/db/query/user'
 import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { adminMiddleware } from '@/server/session'
+
+export const middleware: MiddlewareFunction<Response>[] = [adminMiddleware]
 
 export const action = defineApiAction({
   method: 'PATCH',
   input: updateUserSchema,
-  requireAdmin: true,
   async run({ payload }) {
     const { userId, ...patch } = payload
     const filtered = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined))

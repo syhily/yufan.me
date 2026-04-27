@@ -17,7 +17,9 @@ interface RouteEntry {
 function flatten(entries: unknown[]): RouteEntry[] {
   const out: RouteEntry[] = []
   for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue
+    if (!entry || typeof entry !== 'object') {
+      continue
+    }
     if ('file' in entry) {
       out.push(entry as RouteEntry)
     }

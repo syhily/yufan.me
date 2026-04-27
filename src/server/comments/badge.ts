@@ -36,7 +36,9 @@ export function withCommentBadgeTextColor<T extends CommentBadgeSource>(
 
 function parseHexColor(color: string | null | undefined): Rgb | null {
   const raw = color?.trim()
-  if (!raw) return null
+  if (!raw) {
+    return null
+  }
 
   const hex = raw.startsWith('#') ? raw.slice(1) : raw
   const normalized =

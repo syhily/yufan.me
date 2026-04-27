@@ -39,9 +39,11 @@ const pageItem = cva(
 )
 
 export function Pagination({ current, total, rootPath }: PaginationProps) {
-  if (total <= 1) return null
+  if (total <= 1) {
+    return null
+  }
   return (
-    <nav className="relative mt-10 max-md:mt-5" aria-label="文章">
+    <nav className="relative mt-5 md:mt-10" aria-label="文章">
       <h2 className="sr-only">文章导航</h2>
       <div className="flex flex-wrap justify-center w-full">
         {total <= DENSE_THRESHOLD ? (

@@ -198,7 +198,9 @@ describe('services/markdown/mermaid — render.renderInstances', () => {
 
     const result = results[0]
     expect(result.status).toBe('fulfilled')
-    if (result.status !== 'fulfilled') return
+    if (result.status !== 'fulfilled') {
+      return
+    }
     expect(result.value.svg).toContain('<svg')
   })
 })

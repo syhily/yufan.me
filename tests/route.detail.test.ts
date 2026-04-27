@@ -41,8 +41,12 @@ vi.mock('@/server/catalog', () => ({
     getPosts: vi.fn(() => sidebarSamples),
     getClientPosts: vi.fn(() => sidebarSamples),
     getPost: vi.fn((slug: string) => {
-      if (slug === 'hello') return samplePost
-      if (slug === 'hello-old') return samplePost // alias resolves to canonical
+      if (slug === 'hello') {
+        return samplePost
+      }
+      if (slug === 'hello-old') {
+        return samplePost
+      } // alias resolves to canonical
       return undefined
     }),
     getPage: vi.fn((slug: string) => (slug === 'about' ? samplePage : undefined)),

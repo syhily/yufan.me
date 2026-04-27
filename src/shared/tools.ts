@@ -50,8 +50,12 @@ export function shuffle<T>(items: readonly T[], seed?: string): T[] {
 // order. Drop-in replacement so we no longer need to ship lodash on the
 // server (~70KB of duplicated functionality for two utilities).
 export function sampleSize<T>(items: readonly T[], n: number, seed?: string): T[] {
-  if (n <= 0 || items.length === 0) return []
-  if (n >= items.length) return shuffle(items, seed)
+  if (n <= 0 || items.length === 0) {
+    return []
+  }
+  if (n >= items.length) {
+    return shuffle(items, seed)
+  }
   return shuffle(items, seed).slice(0, n)
 }
 

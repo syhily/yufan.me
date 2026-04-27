@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { canonicalPostPath } from '@/server/route-helpers/paths'
+import { canonicalPostPath } from '@/server/detail'
 
 // Redirect contract for post aliases: opening a post via a legacy alias
 // must always redirect (HTTP 301) to its canonical /posts/<slug> URL so

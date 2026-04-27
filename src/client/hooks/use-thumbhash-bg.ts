@@ -55,12 +55,16 @@ export function useThumbhashBackground(thumbhash: string | undefined): CSSProper
     void (async () => {
       try {
         const { thumbHashToDataURL } = await loadThumbhashModule()
-        if (cancelled) return
+        if (cancelled) {
+          return
+        }
         const dataUrl = thumbHashToDataURL(base64ToBytes(thumbhash))
         thumbhashUrlCache.set(thumbhash, dataUrl)
         setStyle(buildStyle(dataUrl))
       } catch {
-        if (cancelled) return
+        if (cancelled) {
+          return
+        }
         setStyle(undefined)
       }
     })()

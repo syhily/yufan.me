@@ -54,16 +54,21 @@ vi.mock('@/server/email/sender', () => ({
 // MDX deps and adds ~100ms per call).
 vi.mock('@/server/markdown/runtime', () => ({
   compileMarkdown: vi.fn(async (source: string | null | undefined) => {
-    if (source === null || source === undefined) return null
+    if (source === null || source === undefined) {
+      return null
+    }
     const trimmed = source.replace(/\r\n/g, '\n').trim()
-    if (trimmed === '') return null
+    if (trimmed === '') {
+      return null
+    }
     return { compiled: `MOCK::${trimmed}`, plain: trimmed }
   }),
 }))
 
 const queries = await import('@/server/db/query/comment')
 const pageQueries = await import('@/server/db/query/page')
-const { loadComments, latestComments, pendingComments, parseComments } = await import('@/server/comments/loader')
+const { loadComments, latestComments, pendingComments, parseComments, streamLoadComments } =
+  await import('@/server/comments/loader')
 
 function row(overrides: Record<string, unknown> = {}) {
   return {
@@ -211,5 +216,56 @@ describe('services/comments/loader — parseComments', () => {
     const comments = await parseComments([row({ badgeName: '站长', badgeColor: '#6ab7ca' })])
 
     expect(comments[0].badgeTextColor).toBe('#151b2b')
+  })
+})
+
+describe('services/comments/loader — streamLoadComments', () => {
+  it('emits meta first, then one item per root subtree, then end', async () => {
+    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 4, roots: 2 })
+    vi.mocked(queries.findRootComments).mockResolvedValue([row({ id: 1n }), row({ id: 2n })])
+    vi.mocked(queries.findChildComments).mockResolvedValue([
+      row({ id: 3n, rid: 1, rootId: 1n }),
+      row({ id: 4n, rid: 2, rootId: 2n }),
+    ])
+
+    const lines: unknown[] = []
+    for await (const line of streamLoadComments(regularSession(), '/posts/hello', 0)) {
+      lines.push(line)
+    }
+
+    // Order contract: meta, one item per root (in order), end.
+    expect(lines[0]).toMatchObject({ type: 'meta', count: 4, roots_count: 2, next: false })
+    expect(lines[1]).toMatchObject({ type: 'item' })
+    expect((lines[1] as { type: 'item'; comment: { id: bigint } }).comment.id).toBe(1n)
+    expect(lines[2]).toMatchObject({ type: 'item' })
+    expect((lines[2] as { type: 'item'; comment: { id: bigint } }).comment.id).toBe(2n)
+    expect(lines[3]).toEqual({ type: 'end' })
+  })
+
+  it('reports next=true when more roots remain past the current page', async () => {
+    // 100 roots total, page size config.settings.comments.size (default 10),
+    // offset 0 → next page exists.
+    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 100, roots: 100 })
+    vi.mocked(queries.findRootComments).mockResolvedValue([row({ id: 1n })])
+    vi.mocked(queries.findChildComments).mockResolvedValue([])
+
+    const iterator = streamLoadComments(regularSession(), '/posts/big', 0)
+    const meta = (await iterator.next()).value
+    await iterator.return?.()
+
+    expect(meta).toMatchObject({ type: 'meta', next: true })
+  })
+
+  it('respects admin visibility (pending=[false,true]) on the streaming path', async () => {
+    vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
+    vi.mocked(queries.findRootComments).mockResolvedValue([])
+    vi.mocked(queries.findChildComments).mockResolvedValue([])
+
+    const iterator = streamLoadComments(adminSession(), '/posts/admin', 0)
+    await iterator.next()
+    await iterator.return?.()
+
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith('/posts/admin', [false, true])
+    expect(queries.findRootComments).toHaveBeenCalledWith('/posts/admin', [false, true], 0, expect.any(Number))
   })
 })

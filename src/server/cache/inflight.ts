@@ -11,7 +11,9 @@ export function createInflight<T>(): Inflight<T> {
   const requests = new Map<string, Promise<T>>()
   const inflight = (key: string, run: () => Promise<T>): Promise<T> => {
     let pending = requests.get(key)
-    if (pending !== undefined) return pending
+    if (pending !== undefined) {
+      return pending
+    }
     pending = run().finally(() => {
       requests.delete(key)
     })

@@ -77,7 +77,9 @@ export async function renderInstances(
       // the other. Diagrams with identical theme colours still dedupe.
       const cacheKey = JSON.stringify({ diagram: instance.diagram, renderOptions })
       let settled = cache.get(cacheKey)
-      if (settled !== undefined) return settled
+      if (settled !== undefined) {
+        return settled
+      }
 
       settled = (async (): Promise<SettledRender> => {
         try {

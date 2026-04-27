@@ -13,6 +13,8 @@ import { NotWordPressView } from '@/ui/post/NotWordPressView'
 import { Footer } from '@/ui/primitives/Footer'
 import { Header } from '@/ui/primitives/Header'
 import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
+import { SiteConfigProvider } from '@/ui/primitives/site-config'
+import { ToastProvider, ToastSurface } from '@/ui/primitives/Toast'
 
 import type { Route } from './+types/root'
 import '@/assets/styles/globals.css'
@@ -96,16 +98,21 @@ export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutPr
   const resolvedNavigation = navigation || config.navigation
 
   return (
-    <div className="flex flex-col lg:flex-row">
-      <Header navigation={resolvedNavigation} admin={admin} />
-      <main className="flex flex-1 flex-col">
-        {children}
-        {showFooter && <Footer />}
-      </main>
-      <ul className="fixed right-5 bottom-0 block -translate-y-1/2 z-[9999]">
-        <ScrollTopButton />
-      </ul>
-    </div>
+    <SiteConfigProvider value={config}>
+      <ToastProvider>
+        <div className="flex flex-col lg:flex-row">
+          <Header navigation={resolvedNavigation} admin={admin} />
+          <main className="flex flex-1 flex-col">
+            {children}
+            {showFooter && <Footer />}
+          </main>
+          <ul className="fixed right-5 bottom-0 block -translate-y-1/2 z-(--z-fab)">
+            <ScrollTopButton />
+          </ul>
+        </div>
+        <ToastSurface />
+      </ToastProvider>
+    </SiteConfigProvider>
   )
 }
 
@@ -118,8 +125,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
   }>(
     (acc, match) => {
       const handle = match.handle as RouteHandle | undefined
-      if (handle?.layout) acc.layout = handle.layout
-      if (handle?.footer === false) acc.footer = false
+      if (handle?.layout) {
+        acc.layout = handle.layout
+      }
+      if (handle?.footer === false) {
+        acc.footer = false
+      }
       return acc
     },
     { layout: undefined, footer: true },

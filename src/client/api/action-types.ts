@@ -5,7 +5,7 @@ import type {
   CommentRidInput,
   LoadAllCommentsInput,
 } from '@/server/comments/schema'
-import type { AdminComment, CommentItem } from '@/server/comments/types'
+import type { AdminComment, CommentItem, LatestComment } from '@/server/comments/types'
 
 export type { UpdateUserInput }
 
@@ -77,6 +77,23 @@ export interface LoadCommentsOutput {
   next: boolean
 }
 
+// NDJSON line types emitted by the streaming variant of
+// `comment.loadComments`. The first line is always `meta` (carries the
+// header that the legacy envelope shipped under `next` + counts), then
+// one `item` line per fully-compiled root subtree, and finally a single
+// `end` line. `error` is only emitted when the generator throws partway
+// through; the `useApiStream` hook upgrades it to its `onError` callback.
+export type LoadCommentsStreamLine =
+  | {
+      type: 'meta'
+      count: number
+      roots_count: number
+      next: boolean
+    }
+  | { type: 'item'; comment: CommentItem }
+  | { type: 'end' }
+  | { type: 'error'; message: string }
+
 export interface CommentRawOutput {
   content: string
 }
@@ -92,4 +109,13 @@ export interface LoadAllOutput {
   comments: AdminComment[]
   total: number
   hasMore: boolean
+}
+
+// Output of `/api/actions/sidebar/snapshot`. Mirrors the SSR
+// `loadSidebarData` result so the public `clientLoader` can drop the JSON
+// payload directly into the route's loader data without re-projecting.
+export interface SidebarSnapshotOutput {
+  admin: boolean
+  recentComments: LatestComment[]
+  pendingComments: LatestComment[]
 }

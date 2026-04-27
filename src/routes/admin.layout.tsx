@@ -5,6 +5,9 @@ import type { RouteHandle } from '@/root'
 import config from '@/blog.config'
 import { Container } from '@/ui/primitives/Container'
 import { Footer } from '@/ui/primitives/Footer'
+import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
+
+import type { Route } from './+types/admin.layout'
 
 // Tells `root.tsx` to skip rendering `<BaseLayout>` for any descendant route,
 // so the admin / login stack can own its own chrome.
@@ -14,7 +17,7 @@ export default function AdminLayoutRoute() {
   const bgImage = `${config.settings.asset.scheme}://${config.settings.asset.host}/images/admin/bg.jpg`
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-surface-muted">
-      <div className="absolute left-10 top-10 max-lg:hidden [&_img]:h-[100px]">
+      <div className="absolute left-10 top-10 hidden lg:block [&_img]:h-[100px]">
         <img src="/logo.svg" alt="且听书吟" />
       </div>
       <div>
@@ -41,6 +44,20 @@ export default function AdminLayoutRoute() {
             <div className="bg-img h-screen" style={{ backgroundImage: `url('${bgImage}')` }} />
           </div>
         </div>
+      </main>
+    </div>
+  )
+}
+
+// Admin section opts out of `BaseLayout`, so root's ErrorBoundary would
+// render an unbranded view if a child route threw. Owning the boundary
+// here lets us reuse the admin chrome (logo, footer, background) and
+// keep the user inside the admin shell.
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return (
+    <div className="flex flex-col lg:flex-row min-h-screen bg-surface-muted">
+      <main className="flex flex-1 flex-col items-center justify-center p-6">
+        <SectionErrorView error={error} title="无法加载管理页面" retryHref="/" retryLabel="返回首页" />
       </main>
     </div>
   )

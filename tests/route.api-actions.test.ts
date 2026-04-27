@@ -36,7 +36,9 @@ describe('routes/api/actions — file conventions', () => {
 
   it('every mutating action validates input via readJsonInput (never trusts raw body)', () => {
     for (const action of API_ACTION_LIST) {
-      if (action.method === 'GET') continue
+      if (action.method === 'GET') {
+        continue
+      }
       const { file, source } = readActionSource(action.route)
       // `defineApiAction` parses via the declared `input:` schema; only flag
       // raw `request.json()` use that bypasses both pathways.
@@ -66,12 +68,21 @@ describe('routes/api/actions — file conventions', () => {
       'api/actions/auth/updateUser',
     ])
     for (const action of API_ACTION_LIST) {
-      if (!adminEndpoints.has(action.route)) continue
+      if (!adminEndpoints.has(action.route)) {
+        continue
+      }
       const { file, source } = readActionSource(action.route)
-      const usesGuard = source.includes('requireAdminSession(') || /requireAdmin:\s*true/.test(source)
+      // The canonical gate is the routing-layer `adminMiddleware`. The two
+      // fallbacks (`requireAdminSession` / `requireAdmin: true`) are kept in
+      // the matcher so the suite still passes mid-migration if someone is
+      // patching just one route.
+      const usesGuard =
+        /middleware:\s*MiddlewareFunction[^=]*=\s*\[[^\]]*adminMiddleware/.test(source) ||
+        source.includes('requireAdminSession(') ||
+        /requireAdmin:\s*true/.test(source)
       expect(
         usesGuard,
-        `${file} is admin-only and must call requireAdminSession(session) or pass requireAdmin: true to defineApiAction.`,
+        `${file} is admin-only and must export middleware = [adminMiddleware] (preferred) or call requireAdminSession.`,
       ).toBe(true)
     }
   })
@@ -83,7 +94,9 @@ describe('routes/api/actions — file conventions', () => {
     // explicit `assertMethod` call (legacy `runApi` shape) or a `method:`
     // declaration (declarative `defineApiAction` shape).
     for (const action of API_ACTION_LIST) {
-      if (action.method === 'GET') continue
+      if (action.method === 'GET') {
+        continue
+      }
       const { file, source } = readActionSource(action.route)
       const declaresMethod =
         source.includes(`assertMethod(`) || new RegExp(`method:\\s*["'\`]${action.method}["'\`]`).test(source)

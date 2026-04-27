@@ -160,12 +160,16 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
 
   useEffect(() => {
     return () => {
-      if (resetTimer.current !== null) clearTimeout(resetTimer.current)
+      if (resetTimer.current !== null) {
+        clearTimeout(resetTimer.current)
+      }
     }
   }, [])
 
   const onCopy = async () => {
-    if (resetTimer.current !== null) clearTimeout(resetTimer.current)
+    if (resetTimer.current !== null) {
+      clearTimeout(resetTimer.current)
+    }
 
     let copied = false
     try {
@@ -271,7 +275,9 @@ function languageFromClassName(className: string | null | undefined): string | u
 
 function getLanguageLabel(language: string): string {
   const normalized = language.trim().toLowerCase()
-  if (normalized === '') return 'Text'
+  if (normalized === '') {
+    return 'Text'
+  }
   return LANGUAGE_MAP[normalized] ?? normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
@@ -289,18 +295,26 @@ function codeDataLanguage(children: ReactNode): string | undefined {
 function firstCodeElement(children: ReactNode): ReactElement<CodeElementProps> | undefined {
   const childList = Array.isArray(children) ? children : [children]
   for (const child of childList) {
-    if (isValidElement<CodeElementProps>(child) && child.type === 'code') return child
+    if (isValidElement<CodeElementProps>(child) && child.type === 'code') {
+      return child
+    }
   }
   return undefined
 }
 
 function textFromReactNode(node: ReactNode): string {
-  if (node === null || node === undefined || typeof node === 'boolean') return ''
+  if (node === null || node === undefined || typeof node === 'boolean') {
+    return ''
+  }
   if (typeof node === 'string' || typeof node === 'number' || typeof node === 'bigint') {
     return String(node)
   }
-  if (Array.isArray(node)) return node.map(textFromReactNode).join('')
-  if (isValidElement<{ children?: ReactNode }>(node)) return textFromReactNode(node.props.children)
+  if (Array.isArray(node)) {
+    return node.map(textFromReactNode).join('')
+  }
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    return textFromReactNode(node.props.children)
+  }
   return ''
 }
 
@@ -313,7 +327,9 @@ interface ClipboardCopyEnvironment {
 
 async function copyTextToClipboard(text: string, environment: ClipboardCopyEnvironment = {}): Promise<boolean> {
   const documentRef = environment.document ?? globalThis.document
-  if (legacyCopyText(text, documentRef)) return true
+  if (legacyCopyText(text, documentRef)) {
+    return true
+  }
 
   const clipboard = environment.navigator?.clipboard ?? globalThis.navigator?.clipboard
   if (clipboard?.writeText !== undefined) {
@@ -329,8 +345,12 @@ async function copyTextToClipboard(text: string, environment: ClipboardCopyEnvir
 }
 
 function legacyCopyText(text: string, documentRef: ClipboardCopyEnvironment['document'] | undefined): boolean {
-  if (copyViaClipboardEvent(text, documentRef)) return true
-  if (documentRef?.body === undefined) return false
+  if (copyViaClipboardEvent(text, documentRef)) {
+    return true
+  }
+  if (documentRef?.body === undefined) {
+    return false
+  }
 
   const textarea = documentRef.createElement('textarea')
   textarea.value = text
@@ -352,7 +372,9 @@ function legacyCopyText(text: string, documentRef: ClipboardCopyEnvironment['doc
 }
 
 function copyViaClipboardEvent(text: string, documentRef: ClipboardCopyEnvironment['document'] | undefined): boolean {
-  if (documentRef === undefined) return false
+  if (documentRef === undefined) {
+    return false
+  }
 
   let copied = false
   const onCopy = (event: ClipboardEvent) => {
@@ -372,6 +394,8 @@ function copyViaClipboardEvent(text: string, documentRef: ClipboardCopyEnvironme
 }
 
 function runLegacyCopyCommand(documentRef: ClipboardCopyEnvironment['document']): boolean {
-  if (documentRef?.execCommand === undefined) return false
+  if (documentRef?.execCommand === undefined) {
+    return false
+  }
   return documentRef.execCommand('copy')
 }

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import { API_ACTION_LIST, API_ACTIONS } from '@/client/api/actions'
+import { isCommentAction, listingShouldRevalidate } from '@/server/listing'
 import { ErrorMessages } from '@/server/route-helpers/errors'
-import { commentAwareRevalidate, isCommentAction } from '@/server/route-helpers/revalidate'
 import { safeHref, safeRedirectPath } from '@/shared/safe-url'
 import { groupBy, isNumeric, sampleSize, shuffle } from '@/shared/tools'
 import { joinUrl, withLeadingSlash } from '@/shared/urls'
@@ -52,7 +52,9 @@ describe('shared/tools — shuffle / sampleSize', () => {
     const sample = sampleSize(items, 3, 'seed')
     expect(sample.length).toBe(3)
     expect(new Set(sample).size).toBe(3)
-    for (const x of sample) expect(items).toContain(x)
+    for (const x of sample) {
+      expect(items).toContain(x)
+    }
   })
 
   it('sampleSize handles edge cases (n<=0, n>=length, empty input)', () => {
@@ -123,10 +125,19 @@ describe('shared/api-actions', () => {
     }
   })
 
-  it('auth/comment grouping is exhaustively listed in API_ACTION_LIST', () => {
-    const flat = [...Object.values(API_ACTIONS.auth), ...Object.values(API_ACTIONS.comment)]
+  it('auth/comment/sidebar grouping is exhaustively listed in API_ACTION_LIST', () => {
+    const flat = [
+      ...Object.values(API_ACTIONS.auth),
+      ...Object.values(API_ACTIONS.comment),
+      ...Object.values(API_ACTIONS.sidebar),
+    ]
     expect(new Set(flat).size).toBe(flat.length)
     expect(flat.length).toBe(API_ACTION_LIST.length)
+  })
+
+  it('sidebar.snapshot is GET-only (cacheable, idempotent SPA dedupe)', () => {
+    expect(API_ACTIONS.sidebar.snapshot.method).toBe('GET')
+    expect(API_ACTIONS.sidebar.snapshot.path).toBe('/api/actions/sidebar/snapshot')
   })
 
   it('PII-bearing endpoints are POST (validateLikeToken/findAvatar/loadAll)', () => {
@@ -151,13 +162,13 @@ describe('routes/_shared/revalidate', () => {
 
   it('skips detail-route revalidation after comment submissions only', () => {
     expect(
-      commentAwareRevalidate({
+      listingShouldRevalidate({
         formAction: API_ACTIONS.comment.replyComment.path,
         defaultShouldRevalidate: true,
       } as never),
     ).toBe(false)
     expect(
-      commentAwareRevalidate({
+      listingShouldRevalidate({
         formAction: API_ACTIONS.auth.updateUser.path,
         defaultShouldRevalidate: true,
       } as never),

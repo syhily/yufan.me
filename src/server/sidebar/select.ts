@@ -11,7 +11,9 @@ import { sampleSize, shuffle } from '@/shared/tools'
 
 export function selectSidebarPosts(posts: ClientPost[]): SidebarPostLink[] {
   const randomSize = config.settings.sidebar.post
-  if (randomSize <= 0) return []
+  if (randomSize <= 0) {
+    return []
+  }
   // Sample first, project second — `toSidebarPostLink` is cheap but the
   // sidebar only ships ~5 picks and there's no point projecting the whole
   // catalog when 99% of it gets discarded.
@@ -21,12 +23,16 @@ export function selectSidebarPosts(posts: ClientPost[]): SidebarPostLink[] {
 
 export function selectSidebarTags(tags: ClientTag[]): ClientTag[] {
   const randomSize = config.settings.sidebar.tag
-  if (randomSize <= 0) return []
+  if (randomSize <= 0) {
+    return []
+  }
   const topTags = tags
     .slice()
     .sort((a, b) => b.counts - a.counts)
     .slice(0, randomSize * 2)
-  if (topTags.length <= randomSize) return topTags
+  if (topTags.length <= randomSize) {
+    return topTags
+  }
 
   return sampleSize(topTags, randomSize)
 }
@@ -49,11 +55,15 @@ export function selectFeaturePosts(posts: ClientPost[], seed: string): ClientPos
       .slice(0, 3)
   }
 
-  if (posts.length < 3) return posts
+  if (posts.length < 3) {
+    return posts
+  }
 
   const cacheKey = `${seed}:${posts.length}:${posts[0]?.slug ?? ''}`
   const cached = featurePostCache.get(cacheKey)
-  if (cached !== undefined) return cached
+  if (cached !== undefined) {
+    return cached
+  }
 
   // Exclude the two most recent listing pages so "feature" never overlaps with
   // the fresh posts already rendered above the fold. Fall back to the full set
@@ -63,7 +73,9 @@ export function selectFeaturePosts(posts: ClientPost[], seed: string): ClientPos
 
   const withCover = candidates.filter((post) => post.cover)
   const pool = withCover.length >= 3 ? withCover : candidates
-  if (pool.length < 3) return pool
+  if (pool.length < 3) {
+    return pool
+  }
 
   // Use `pool.length` instead of joining every slug — the seed already varies
   // by day so we don't need slug-level entropy here, and the previous
@@ -76,7 +88,9 @@ export function selectFeaturePosts(posts: ClientPost[], seed: string): ClientPos
   // upper bound is tiny in practice; the cap is purely defensive.
   if (featurePostCache.size > 32) {
     const oldest = featurePostCache.keys().next().value
-    if (oldest !== undefined) featurePostCache.delete(oldest)
+    if (oldest !== undefined) {
+      featurePostCache.delete(oldest)
+    }
   }
   featurePostCache.set(cacheKey, result)
   return result

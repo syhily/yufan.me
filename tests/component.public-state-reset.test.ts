@@ -37,8 +37,12 @@ function makeComment(id: bigint, pageKey: string, name = 'Alice'): CommentItem {
 
 describe('public detail island state reset', () => {
   it('resets like state when React Router reuses the detail route for another permalink', () => {
+    // Optimistic transitions live on `useOptimistic` now; the reducer only
+    // handles committed server-truth values. The reset test still has to
+    // verify that a stale "first permalink" confirmation cannot leak into a
+    // freshly-mounted "second permalink" state.
     let state = createLikeButtonState('/posts/first', 3)
-    state = likeButtonReducer(state, { type: 'increaseOptimistic', permalink: '/posts/first' })
+    state = likeButtonReducer(state, { type: 'increaseConfirmed', permalink: '/posts/first', likes: 4 })
 
     expect(state).toMatchObject({ permalink: '/posts/first', likes: 4, liked: true })
 
@@ -66,7 +70,7 @@ describe('public detail island state reset', () => {
     })
 
     expect(state.replyToId).toBe(1)
-    expect(state.items.map((item) => item.pageKey)).toEqual([
+    expect(state.roots.map((id) => state.byId.get(id)?.pageKey)).toEqual([
       'https://yufan.me/posts/first/',
       'https://yufan.me/posts/first/',
     ])
@@ -81,6 +85,8 @@ describe('public detail island state reset', () => {
     expect(state.replyToId).toBe(0)
     expect(state.rootsLoaded).toBe(1)
     expect(state.rootsTotal).toBe(1)
-    expect(state.items).toEqual([second])
+    expect(state.roots).toEqual(['2'])
+    expect(state.byId.get('2')?.pageKey).toBe('https://yufan.me/posts/second/')
+    expect(state.byId.get('2')?.name).toBe('Bob')
   })
 })

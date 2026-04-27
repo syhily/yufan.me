@@ -1,24 +1,32 @@
 import { clsx } from 'clsx'
-import { type CSSProperties, useContext, useEffect, useState } from 'react'
+import { type CSSProperties, type ReactNode, memo, useContext, useEffect, useState } from 'react'
+import { useFormStatus } from 'react-dom'
 import { twMerge } from 'tailwind-merge'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/client/api/action-types'
 import type { CommentItem as CommentItemType } from '@/server/comments/types'
 
 import { API_ACTIONS } from '@/client/api/actions'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useApiAction } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
 import { CommentBody } from '@/ui/comments/CommentBody'
-import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
+import { type CommentNode, CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
 import { badgeVariants } from '@/ui/primitives/Badge'
 import { Button } from '@/ui/primitives/Button'
 import { Textarea } from '@/ui/primitives/Textarea'
 
 export interface CommentItemProps {
   depth: number
-  comment: CommentItemType
+  /**
+   * Normalised node id. Provided by the `<Comments>` orchestrator so leaf
+   * rows look themselves up via context (`useCommentNode(id)`), which is
+   * what lets `React.memo` skip unrelated dispatches. Standalone callers
+   * — `<Comment>` SSR helper and snapshot tests — pass `comment` instead.
+   */
+  id?: string
+  comment?: CommentItemType
   /** Renders the "等待审核" hint over the body. Falls back to `comment.isPending`. */
   pending?: boolean
   /**
@@ -29,10 +37,54 @@ export interface CommentItemProps {
   admin?: boolean
 }
 
-// Read-only consumer that returns sensible defaults when no `<Comments>`
-// orchestrator is present (test snapshots and the legacy `<Comment>` SSR
-// helper). Compound usage is unaffected — the orchestrator always provides
-// the full context value, so leaf components see real callbacks there.
+interface ResolvedNode {
+  /** Stable id used for child recursion / `React.memo` keys. */
+  id: string
+  /** Comment data (without the legacy nested `children` array). */
+  data: Omit<CommentItemType, 'children'>
+  /** Child ids when the node was resolved via the orchestrator. */
+  childrenIds: string[] | null
+  /** Inline children when the node was resolved from the `comment` prop. */
+  inlineChildren: CommentItemType[] | null
+}
+
+// Resolve a `<CommentItem>` to the row data + child shape it should render.
+//
+// - When `id` is provided AND a `<Comments>` provider is mounted, we read
+//   the row out of the normalised store. Children recurse by id.
+// - Otherwise we fall back to the `comment` prop. Children recurse by
+//   inline `children: CommentItemType[]`. This keeps the standalone
+//   `<Comment>` SSR helper and the snapshot tests working unchanged.
+function useResolvedNode(props: CommentItemProps): ResolvedNode | null {
+  const ctx = useContext(CommentsContext)
+  if (props.id !== undefined && ctx !== null) {
+    const node = ctx.state.byId.get(props.id) ?? null
+    if (node === null) {
+      return null
+    }
+    return {
+      id: props.id,
+      data: stripChildrenIds(node),
+      childrenIds: node.childrenIds,
+      inlineChildren: null,
+    }
+  }
+  if (props.comment !== undefined) {
+    return {
+      id: asKey(props.comment.id),
+      data: props.comment,
+      childrenIds: null,
+      inlineChildren: props.comment.children ?? [],
+    }
+  }
+  return null
+}
+
+function stripChildrenIds(node: CommentNode): Omit<CommentItemType, 'children'> {
+  const { childrenIds: _childrenIds, ...rest } = node
+  return rest
+}
+
 function useCommentsLeafContext(propAdmin: boolean | undefined): {
   admin: boolean
   activeReplyToId: number
@@ -43,7 +95,9 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
   onDeleted: (id: bigint | string) => void
 } {
   const ctx = useContext(CommentsContext)
-  if (ctx !== null) return adapt(ctx, propAdmin)
+  if (ctx !== null) {
+    return adapt(ctx, propAdmin)
+  }
   return {
     admin: propAdmin === true,
     activeReplyToId: 0,
@@ -94,22 +148,37 @@ function badgeStyle(backgroundColor: string | null | undefined, color: string | 
 // directly from context. The `admin` and `pending` props remain on the
 // public surface for callers that render `<CommentItem>` standalone (SSR
 // snapshots, the legacy `<Comment>` helper).
-export function CommentItem(props: CommentItemProps) {
-  return props.depth === 1 ? <RootComment {...props} /> : <NestedComment {...props} />
+//
+// Memoised so a dispatch that touches a deeply-nested comment only
+// re-renders the affected branch — root rows whose `id` and `depth` stay
+// the same skip work entirely.
+export const CommentItem = memo(function CommentItem(props: CommentItemProps) {
+  const resolved = useResolvedNode(props)
+  if (resolved === null) {
+    return null
+  }
+  return props.depth === 1 ? (
+    <RootComment {...props} resolved={resolved} />
+  ) : (
+    <NestedComment {...props} resolved={resolved} />
+  )
+})
+
+interface ResolvedItemProps extends CommentItemProps {
+  resolved: ResolvedNode
 }
 
-function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
+function RootComment({ resolved, depth, pending, admin: propAdmin }: ResolvedItemProps) {
   const leaf = useCommentsLeafContext(propAdmin)
-  const children = comment.children ?? []
-  const isReplyTarget = leaf.activeReplyToId !== 0 && asKey(comment.id) === asKey(leaf.activeReplyToId)
+  const isReplyTarget = leaf.activeReplyToId !== 0 && resolved.id === asKey(leaf.activeReplyToId)
   const childrenTail = depth === 1 && isReplyTarget ? leaf.replyForm : null
+  const childCount = resolved.childrenIds?.length ?? resolved.inlineChildren?.length ?? 0
+  const showChildrenList = childCount > 0 || childrenTail !== null
   return (
-    <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin}>
-      {(children.length > 0 || childrenTail) && (
-        <ul className="children text-sm p-6 mt-5 ml-14 rounded-sm bg-surface-muted max-md:p-4 max-md:mt-4 max-md:ml-[2.375rem]">
-          {children.map((child) => (
-            <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
-          ))}
+    <CommentLi data={resolved.data} depth={depth} pending={pending} admin={propAdmin}>
+      {showChildrenList && (
+        <ul className="children text-sm p-4 mt-4 ml-[2.375rem] rounded-sm bg-surface-muted md:p-6 md:mt-5 md:ml-14">
+          <ChildList resolved={resolved} depth={depth + 1} admin={propAdmin} />
           {childrenTail && <li>{childrenTail}</li>}
         </ul>
       )}
@@ -117,38 +186,67 @@ function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemP
   )
 }
 
-function NestedComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
+function NestedComment({ resolved, depth, pending, admin: propAdmin }: ResolvedItemProps) {
   const leaf = useCommentsLeafContext(propAdmin)
-  const children = comment.children ?? []
-  const isReplyTarget = leaf.activeReplyToId !== 0 && asKey(comment.id) === asKey(leaf.activeReplyToId)
+  const isReplyTarget = leaf.activeReplyToId !== 0 && resolved.id === asKey(leaf.activeReplyToId)
   const afterComment = depth !== 1 && isReplyTarget ? leaf.replyForm : null
   return (
     <>
-      <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin} />
+      <CommentLi data={resolved.data} depth={depth} pending={pending} admin={propAdmin} />
       {afterComment && <li>{afterComment}</li>}
-      {children.map((child) => (
-        <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
-      ))}
+      <ChildList resolved={resolved} depth={depth + 1} admin={propAdmin} />
     </>
   )
 }
 
-interface CommentLiProps extends CommentItemProps {
+interface ChildListProps {
+  resolved: ResolvedNode
+  depth: number
+  admin: boolean | undefined
+}
+
+function ChildList({ resolved, depth, admin }: ChildListProps) {
+  if (resolved.childrenIds !== null) {
+    return (
+      <>
+        {resolved.childrenIds.map((childId) => (
+          <CommentItem key={childId} id={childId} depth={depth} admin={admin} />
+        ))}
+      </>
+    )
+  }
+  if (resolved.inlineChildren !== null) {
+    return (
+      <>
+        {resolved.inlineChildren.map((child) => (
+          <CommentItem key={asKey(child.id)} comment={child} depth={depth} admin={admin} />
+        ))}
+      </>
+    )
+  }
+  return null
+}
+
+interface CommentLiProps {
+  data: Omit<CommentItemType, 'children'>
+  depth: number
+  pending: boolean | undefined
+  admin: boolean | undefined
   children?: React.ReactNode
 }
 
-function CommentLi({ comment, depth, pending, admin: propAdmin, children }: CommentLiProps) {
+function CommentLi({ data: comment, depth, pending, admin: propAdmin, children }: CommentLiProps) {
   const authorHref = safeHref(comment.link)
   const [editing, setEditing] = useState(false)
   return (
     <li
       id={`user-comment-${comment.id}`}
-      className="relative mb-6 pb-6 border-b border-border last:m-0 last:p-0 last:border-b-0 max-md:mb-4 max-md:pb-4"
+      className="relative mb-4 pb-4 border-b border-border last:m-0 last:p-0 last:border-b-0 md:mb-6 md:pb-6"
       data-depth={depth}
     >
       <article id={`div-comment-${comment.id}`} className="relative flex flex-auto min-w-0 max-w-full box-border">
         <div
-          className="flex-avatar w-10 h-10 mr-[0.9375rem] [.children_&]:w-[30px] [.children_&]:h-[30px] max-md:w-7 max-md:h-7 max-md:mr-2.5"
+          className="flex-avatar w-7 h-7 mr-2.5 [.children_&]:w-[30px] [.children_&]:h-[30px] md:w-10 md:h-10 md:mr-[0.9375rem]"
           style={{
             backgroundImage: "url('/images/default-avatar.png')",
             backgroundSize: 'cover',
@@ -165,7 +263,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
             decoding="async"
           />
         </div>
-        <div className="flex-auto min-w-0 [.children_&]:mt-1 max-md:mt-0.5">
+        <div className="flex-auto min-w-0 mt-0.5 md:mt-0 [.children_&]:mt-1">
           <div className="font-bold inline-flex flex-wrap items-center gap-1.5 max-w-full [&_a]:align-middle">
             {authorHref === undefined ? (
               comment.name
@@ -175,11 +273,17 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               </a>
             )}
             {comment.badgeName && (
+              // The comment-author badge is intentionally tone-less: its
+              // bg / fg are driven by per-comment CSS variables
+              // (`--badge-color`, `--badge-fg`) that come straight from the
+              // database, not from the project palette. We reach for
+              // `badgeVariants()` only to inherit the layout (font + spacing)
+              // — colour stays under the inline-style override below.
               <span
                 className={twMerge(
                   clsx(
                     badgeVariants(),
-                    'inline-flex flex-none items-center px-1.5 py-0.5 leading-[1.2] whitespace-nowrap rounded-full font-bold bg-[color:var(--badge-color)] text-[color:var(--badge-fg)]',
+                    'inline-flex flex-none items-center px-1.5 py-0.5 leading-[1.2] whitespace-nowrap rounded-full font-bold border-0 bg-[color:var(--badge-color)] text-[color:var(--badge-fg)]',
                   ),
                 )}
                 style={badgeStyle(comment.badgeColor, comment.badgeTextColor)}
@@ -188,7 +292,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               </span>
             )}
           </div>
-          <div className="prose-host whitespace-normal break-words my-2 leading-[1.85] [.children_&]:my-1.5 [.children_&]:break-all max-md:[.children_&]:my-1.5">
+          <div className="prose-host whitespace-normal break-words my-2 leading-[1.85] [.children_&]:my-1.5 [.children_&]:break-all">
             {pending && <p className="text-xs text-danger">您的评论正在等待审核中...</p>}
             <CommentBody compiled={comment.bodyCompiled} />
           </div>
@@ -212,25 +316,34 @@ function asKey(value: bigint | string | number): string {
 }
 
 interface CommentFooterProps {
-  comment: CommentItemType
+  comment: Omit<CommentItemType, 'children'>
   admin: boolean | undefined
   onEdit: () => void
 }
 
 function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps) {
   const leaf = useCommentsLeafContext(propAdmin)
-  const approve = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.approve, {
+  const approve = useApiAction<CommentRidInput, null>(API_ACTIONS.comment.approve, {
     onSuccess: () => leaf.onApproved(comment.id),
   })
-  const remove = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.delete, {
+  const remove = useApiAction<CommentRidInput, null>(API_ACTIONS.comment.delete, {
     onSuccess: () => leaf.onDeleted(comment.id),
   })
 
   const handleReply = () => leaf.onReply(Number(comment.id))
-  const handleApprove = () => approve.submit({ rid: String(comment.id) })
-  const handleDelete = () => {
-    if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！')) return
-    remove.submit({ rid: String(comment.id) })
+
+  // React 19 `<form action={fn}>` lets the moderation buttons drive their own
+  // submission lifecycle through `useFormStatus`, so each button gets a free
+  // `pending` flag for `disabled` without us threading `approve.isPending` /
+  // `remove.isPending` through render.
+  const approveAction = async () => {
+    await approve.submit({ rid: String(comment.id) })
+  }
+  const removeAction = async () => {
+    if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！')) {
+      return
+    }
+    await remove.submit({ rid: String(comment.id) })
   }
 
   return (
@@ -247,28 +360,47 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
             编辑
           </button>
           {comment.isPending && (
-            <button
-              type="button"
-              className="me-2 text-warning"
-              data-rid={comment.id}
-              onClick={handleApprove}
-              disabled={approve.isPending}
-            >
-              通过
-            </button>
+            <ModerateForm action={approveAction}>
+              <ModerateSubmit className="me-2 text-warning" data-rid={comment.id}>
+                通过
+              </ModerateSubmit>
+            </ModerateForm>
           )}
-          <button
-            type="button"
-            className="me-2 text-danger"
-            data-rid={comment.id}
-            onClick={handleDelete}
-            disabled={remove.isPending}
-          >
-            删除
-          </button>
+          <ModerateForm action={removeAction}>
+            <ModerateSubmit className="me-2 text-danger" data-rid={comment.id}>
+              删除
+            </ModerateSubmit>
+          </ModerateForm>
         </>
       )}
     </div>
+  )
+}
+
+// Wraps a single moderation button in its own `<form action={fn}>` so the
+// submit lifecycle is owned by the platform: React 19 unwinds the pending
+// state automatically and `<ModerateSubmit>` reads it through `useFormStatus`
+// without prop-drilling.
+function ModerateForm({ action, children }: { action: () => Promise<void> | void; children: ReactNode }) {
+  return (
+    <form action={action} className="contents">
+      {children}
+    </form>
+  )
+}
+
+interface ModerateSubmitProps {
+  className: string
+  'data-rid': bigint | string
+  children: ReactNode
+}
+
+function ModerateSubmit({ className, 'data-rid': dataRid, children }: ModerateSubmitProps) {
+  const status = useFormStatus()
+  return (
+    <button type="submit" className={className} data-rid={dataRid} disabled={status.pending}>
+      {children}
+    </button>
   )
 }
 
@@ -283,13 +415,13 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   const [value, setValue] = useState<string>('')
   const [loaded, setLoaded] = useState(false)
 
-  const raw = useApiFetcher<never, CommentRawOutput>(API_ACTIONS.comment.getRaw, {
+  const raw = useApiAction<never, CommentRawOutput>(API_ACTIONS.comment.getRaw, {
     onSuccess: (payload) => {
       setValue(payload.content || '')
       setLoaded(true)
     },
   })
-  const editAction = useApiFetcher<CommentEditInput, CommentEditOutput>(API_ACTIONS.comment.edit, {
+  const editAction = useApiAction<CommentEditInput, CommentEditOutput>(API_ACTIONS.comment.edit, {
     onSuccess: (payload) => {
       // Drive the parent reducer first so the freshly-edited content appears
       // in the tree before the editor closes (keeps the post-save flicker
@@ -302,14 +434,16 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   // Load the raw markdown source on first mount.
   const rawLoad = raw.load
   useEffect(() => {
-    rawLoad({ rid: String(commentId) })
+    void rawLoad({ rid: String(commentId) })
   }, [commentId, rawLoad])
 
   const saving = editAction.isPending
 
   const handleSave = () => {
-    if (!value.trim()) return
-    editAction.submit({ rid: String(commentId), content: value })
+    if (!value.trim()) {
+      return
+    }
+    void editAction.submit({ rid: String(commentId), content: value })
   }
 
   return (
