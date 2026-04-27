@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from 'react'
 
+import { FOOTNOTE_SUP_CLASSES, Li, SupLink } from '@/ui/mdx/prose'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 
 interface FootnoteContextValue {
@@ -61,15 +62,21 @@ export function FootnoteProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function FootnoteReference({ children, ...props }: ComponentProps<'sup'>) {
+export function FootnoteReference({ children, className, ...props }: ComponentProps<'sup'>) {
   const context = useContext(FootnotePreviewContext)
   const href = footnoteReferenceHref(children)
   const preview = href === undefined ? undefined : context?.previews.get(href)
 
-  if (preview === undefined) return <sup {...props}>{children}</sup>
+  if (preview === undefined) {
+    return (
+      <SupLink className={className} {...props}>
+        {children}
+      </SupLink>
+    )
+  }
   return (
     <Tooltip placement="top">
-      <Tooltip.Trigger as="sup" {...props}>
+      <Tooltip.Trigger as="sup" className={[FOOTNOTE_SUP_CLASSES, className].filter(Boolean).join(' ')} {...props}>
         {children}
       </Tooltip.Trigger>
       <Tooltip.Content>{preview}</Tooltip.Content>
@@ -90,9 +97,9 @@ export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'l
   }, [id, isFootnote, register])
 
   return (
-    <li {...props} id={id}>
+    <Li {...props} id={id}>
       {children}
-    </li>
+    </Li>
   )
 }
 

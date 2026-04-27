@@ -45,11 +45,7 @@ export default [
   route(API_ACTIONS.comment.edit.route, 'routes/api/actions/comment.edit.ts'),
   route(API_ACTIONS.comment.getFilterOptions.route, 'routes/api/actions/comment.getFilterOptions.ts'),
   route(API_ACTIONS.comment.loadAll.route, 'routes/api/actions/comment.loadAll.ts'),
-  layout('routes/admin.layout.tsx', [
-    route('wp-login.php', 'routes/wp-login.tsx'),
-    route('wp-admin', 'routes/wp-admin.tsx'),
-    route('wp-admin/install.php', 'routes/wp-admin.install.tsx'),
-  ]),
+  layout('routes/admin.layout.tsx', [route('wp-login.php', 'routes/wp-login.tsx')]),
   // Splat MUST stay last. React Router treats `*` as the lowest-priority
   // match, so this only fires for paths nothing else handles (multi-segment
   // WordPress probes such as `/wp-content/plugins/x.php`, `/cgi-bin/test`,

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import { parseContent } from '@/server/markdown/parser'
 
 // Snapshot a handful of canonical markdown shapes (heading, link, code
-// fence, blockquote) so any change in the marked + shiki + ultrahtml
+// fence, blockquote) so any change in the fumadocs + shiki + ultrahtml
 // pipeline surfaces as a PR diff. The first snapshot also exercises the
 // shiki cold-load — bump the timeout accordingly.
 

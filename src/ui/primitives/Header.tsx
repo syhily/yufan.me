@@ -1,8 +1,12 @@
+import { clsx } from 'clsx'
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
+import { twMerge } from 'tailwind-merge'
 
 import config, { type BlogConfig } from '@/blog.config'
 import { DynamicIcon, MenuIcon } from '@/ui/icons/icons'
+import { buttonVariants } from '@/ui/primitives/Button'
+import { Container } from '@/ui/primitives/Container'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { SearchIconButton } from '@/ui/search/Search'
 
@@ -56,28 +60,57 @@ export function Header({ navigation, admin }: HeaderProps) {
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [menuOpen])
 
-  const asideClass = menuOpen ? 'site-aside in' : 'site-aside'
-
   return (
     <>
-      <header className={asideClass}>
-        <div className="aside-overlay" onClick={() => setMenuOpen(false)} />
-        <div className="aside-inner bg-secondary">
-          <h1 className="navbar-brand">
-            <Link to="/" title={config.title} className="d-block" prefetch="intent">
-              <img src="/logo-dark.svg" alt="且听书吟" />
+      <header
+        data-state={menuOpen ? 'open' : 'closed'}
+        className={clsx(
+          'sticky top-0 block w-[280px] h-screen z-[1020] shrink-0',
+          'md:w-[240px] lg:w-[220px] xl:w-[260px] 2xl:w-[280px]',
+          'max-lg:fixed max-lg:w-full max-lg:h-full max-lg:opacity-0 max-lg:invisible max-lg:pointer-events-none max-lg:transition-all max-lg:duration-500 max-lg:ease-in',
+          'data-[state=open]:max-lg:opacity-100 data-[state=open]:max-lg:visible data-[state=open]:max-lg:pointer-events-auto data-[state=open]:max-lg:z-10',
+        )}
+      >
+        <div
+          className={clsx(
+            'max-lg:invisible max-lg:pointer-events-none',
+            'data-[state=open]:max-lg:fixed data-[state=open]:max-lg:inset-0 data-[state=open]:max-lg:bg-[rgb(8_15_25/0.3)] data-[state=open]:max-lg:visible data-[state=open]:max-lg:pointer-events-auto',
+          )}
+          data-state={menuOpen ? 'open' : 'closed'}
+          onClick={() => setMenuOpen(false)}
+        />
+        <div
+          data-state={menuOpen ? 'open' : 'closed'}
+          className={clsx(
+            'pointer-events-auto flex flex-col h-full bg-surface-inverse',
+            'max-lg:fixed max-lg:w-[240px] max-lg:transition-transform max-lg:duration-[400ms] max-lg:ease-in-out max-lg:-translate-x-full',
+            'data-[state=open]:max-lg:translate-x-0',
+            'max-md:w-[75%]',
+          )}
+        >
+          <h1 className="block m-0 px-[25px] pt-5 pb-[15px] shrink-0 max-lg:hidden">
+            <Link to="/" title={config.title} className="block" prefetch="intent">
+              <img className="max-h-[60px]" src="/logo-dark.svg" alt="且听书吟" />
             </Link>
           </h1>
-          <div className="site-menu" onClick={() => setMenuOpen(false)}>
-            <ul>
+          <div className="flex-auto overflow-x-hidden overflow-y-hidden" onClick={() => setMenuOpen(false)}>
+            <ul className="px-3 py-[0.625rem]">
               {navigation.map((menu, i) => (
-                <li id={menuId(i)} key={`menu-${i}`} className={`menu-item${i === 0 ? ' menu-item-home' : ''}`}>
+                <li id={menuId(i)} key={`menu-${i}`} className="relative block p-3">
                   {isExternalNavTarget(menu) ? (
-                    <a href={menu.link} target={menu.target}>
+                    <a
+                      className="relative block text-white text-[0.9375rem] cursor-pointer no-underline opacity-60 hover:opacity-100"
+                      href={menu.link}
+                      target={menu.target}
+                    >
                       {menu.text}
                     </a>
                   ) : (
-                    <Link to={menu.link} prefetch="intent">
+                    <Link
+                      className="relative block text-white text-[0.9375rem] cursor-pointer no-underline opacity-60 hover:opacity-100"
+                      to={menu.link}
+                      prefetch="intent"
+                    >
                       {menu.text}
                     </Link>
                   )}
@@ -85,19 +118,19 @@ export function Header({ navigation, admin }: HeaderProps) {
               ))}
               {admin && (
                 <>
-                  <li id={menuId(navigation.length)} className="menu-item">
-                    <Link to="/wp-admin/" prefetch="intent">
-                      评论
-                    </Link>
-                  </li>
-                  <li id={menuId(navigation.length + 1)} className="menu-item">
-                    <a href={`/wp-login.php?${logoutQuery}`}>登出</a>
+                  <li id={menuId(navigation.length)} className="relative block p-3 last:[&_a]:m-0">
+                    <a
+                      className="relative block text-white text-[0.9375rem] cursor-pointer no-underline opacity-60 hover:opacity-100"
+                      href={`/wp-login.php?${logoutQuery}`}
+                    >
+                      登出
+                    </a>
                   </li>
                 </>
               )}
             </ul>
           </div>
-          <div className="site-submenu">
+          <div className="shrink-0 p-[25px] max-md:px-[25px] max-md:py-5">
             {config.socials.map((social) => {
               if (social.type === 'qrcode') {
                 return (
@@ -117,7 +150,7 @@ export function Header({ navigation, admin }: HeaderProps) {
                   target="_blank"
                   rel="noreferrer"
                   title={social.title ?? social.name}
-                  className="btn btn-dark btn-icon btn-circle button-social"
+                  className={twMerge(clsx(buttonVariants({ tone: 'inverse', shape: 'circle' }), 'mr-2'))}
                 >
                   <span>
                     <DynamicIcon name={social.icon} />
@@ -129,24 +162,24 @@ export function Header({ navigation, admin }: HeaderProps) {
           </div>
         </div>
       </header>
-      <div className="mobile-brand">
-        <div className="container">
-          <div className="d-flex flex-flex align-items-center">
-            <Link to="/" title={config.title} className="d-block" prefetch="intent">
-              <img src="/logo-large.svg" alt="且听书吟" />
+      <div className="hidden py-4 bg-white border-b border-border-chrome max-lg:block">
+        <Container>
+          <div className="flex items-center">
+            <Link to="/" title={config.title} className="block" prefetch="intent">
+              <img className="h-[50px] max-lg:max-h-10 max-md:max-h-[35px]" src="/logo-large.svg" alt="且听书吟" />
             </Link>
-            <div className="flex-fill" />
+            <div className="flex-1" />
             <button
               type="button"
-              className="menu-toggler text-xl"
+              className="inline-flex items-center justify-center p-0 border-0 bg-transparent appearance-none text-foreground cursor-pointer leading-none text-xl"
               aria-label="打开主菜单"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen(true)}
             >
-              <MenuIcon className="d-block" />
+              <MenuIcon className="block" />
             </button>
           </div>
-        </div>
+        </Container>
       </div>
     </>
   )

@@ -1,4 +1,6 @@
+import { clsx } from 'clsx'
 import {
+  cloneElement,
   isValidElement,
   useEffect,
   useRef,
@@ -7,6 +9,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 const COPY_LABEL = 'Copy'
 const COPIED_LABEL = 'Copied'
@@ -175,15 +178,42 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
     resetTimer.current = setTimeout(() => setLabel(COPY_LABEL), RESET_DELAY)
   }
 
+  // The bare `<pre>` styling that used to live as a `pre` selector under
+  // the Bootstrap-era prose host (font-family, surface colour, padding,
+  // overflow, no top margin since we sit flush against the header chrome)
+  // is now baked in directly. Shiki's dual-theme inline styles still take
+  // effect via the unscoped `pre.shiki { color: var(--shiki-light) }`
+  // rule in globals.css.
+  const preClassName = twMerge(
+    clsx(
+      'relative font-mono text-inherit',
+      'bg-surface-muted',
+      'px-5 py-4 m-0',
+      'overflow-x-auto break-normal [overflow-wrap:normal]',
+    ),
+    className,
+  )
+
+  // The `<code>` child that the MDX compiler emits as `<pre><code>...
+  // </code></pre>` previously inherited its layout from a `pre > code`
+  // selector under the Bootstrap-era prose host. We rewrite the inner
+  // `<code>`'s className inline so the wrapper has no implicit dependency
+  // on a host-class ancestor.
+  const decoratedChildren = decorateInnerCode(children)
+
   return (
-    <div className="code-block-wrapper">
-      <div className="code-header">
-        <span className="language-label" aria-label={`Code language: ${displayLanguage}`} role="note">
+    <div data-code-block-wrapper className="relative w-full mb-4 rounded-md overflow-hidden">
+      <div className="font-mono select-none w-full flex items-center justify-between bg-surface-muted px-4 py-2 rounded-t-md">
+        <span
+          className="font-mono select-none pointer-events-none text-sm font-medium text-[var(--color-code-block-header-text)]"
+          aria-label={`Code language: ${displayLanguage}`}
+          role="note"
+        >
           {displayLanguage}
         </span>
         <button
           type="button"
-          className="copy-code"
+          className="font-mono cursor-pointer select-none text-sm font-medium text-[var(--color-code-block-header-text)] bg-transparent border-0 transition-[transform,color] duration-150 hover:scale-105 hover:text-accent"
           title={`Copy ${displayLanguage} code`}
           aria-label={`Copy ${displayLanguage} code to clipboard`}
           onClick={() => void onCopy()}
@@ -191,11 +221,38 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
           {label}
         </button>
       </div>
-      <pre {...props} className={className} data-language={language}>
-        {children}
+      <pre {...props} className={preClassName} data-language={language}>
+        {decoratedChildren}
       </pre>
     </div>
   )
+}
+
+// Tracks `pre > code` from the legacy Bootstrap-era prose cascade. We
+// reach into the single `<code>` child the MDX compiler emits as the
+// immediate pre-child and merge its className with the layout utilities.
+const INNER_CODE_CLASSES = clsx(
+  'font-mono text-inherit bg-transparent',
+  'block min-w-full w-max',
+  'whitespace-pre break-normal [overflow-wrap:normal]',
+  'pt-0',
+)
+
+function decorateInnerCode(children: ReactNode): ReactNode {
+  const childList = Array.isArray(children) ? children : [children]
+  const next: ReactNode[] = []
+  for (const child of childList) {
+    if (isValidElement<CodeElementProps>(child) && child.type === 'code') {
+      next.push(
+        cloneElement(child, {
+          className: twMerge(INNER_CODE_CLASSES, child.props.className),
+        }),
+      )
+    } else {
+      next.push(child)
+    }
+  }
+  return next
 }
 
 function getCodeLanguage(className: string | undefined, children: ReactNode): string {

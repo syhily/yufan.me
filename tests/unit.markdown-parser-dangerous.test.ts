@@ -8,7 +8,7 @@ import { parseContent } from '@/server/markdown/parser'
 // know about should land here as a regression test.
 
 describe('services/markdown/parser — XSS / injection battery', () => {
-  // Cold-load of marked + shiki + ultrahtml routinely exceeds 5s on the
+  // Cold-load of mdx-remote + shiki + ultrahtml routinely exceeds 5s on the
   // first call; once warm, every other case here completes in milliseconds.
   it('strips bare <script> tags', { timeout: 30_000 }, async () => {
     const html = await parseContent("<script>alert('boom')</script>")
@@ -48,9 +48,8 @@ describe('services/markdown/parser — XSS / injection battery', () => {
   it('never lets a `<script` tag survive even when fragmented across newlines', async () => {
     const html = await parseContent('hello<script\n>document.cookie</script>world')
     expect(html.toLowerCase()).not.toContain('<script')
-    // The leftover JS source ends up as inert text inside an auto-quoted
-    // block (marked treats `<script\n>` as the start of a quote line). It is
-    // not executable in any rendering context, so we explicitly tolerate the
+    // The leftover source may remain as inert text inside `<p>`; it is not
+    // executable in any rendering context, so we explicitly tolerate the
     // string but lock down the active tag.
   })
 

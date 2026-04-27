@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { ArrowUpIcon } from '@/ui/icons/icons'
+import { Button } from '@/ui/primitives/Button'
 
 // Scroll-to-top button. Becomes visible only once the reader has moved past
 // the initial viewport. Replaces the vanilla `features/scroll-top.ts` glue.
@@ -28,17 +29,17 @@ export function ScrollTopButton() {
   }, [])
 
   return (
-    <li className={`fixed-gotop${show ? ' current' : ''}`}>
-      <button
-        type="button"
+    <li className={`m-0 ${show ? 'block' : 'hidden'}`}>
+      <Button.Icon
+        tone="neutral"
+        size="lg"
         aria-label="回到顶部"
-        className="btn btn-light btn-icon btn-lg btn-rounded btn-gotop"
         onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
       >
         <span>
           <ArrowUpIcon />
         </span>
-      </button>
+      </Button.Icon>
     </li>
   )
 }

@@ -1,4 +1,6 @@
-import { useContext, useEffect, useState } from 'react'
+import { clsx } from 'clsx'
+import { type CSSProperties, useContext, useEffect, useState } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/client/api/action-types'
 import type { CommentItem as CommentItemType } from '@/server/comments/types'
@@ -8,7 +10,11 @@ import { useApiFetcher } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
+import { CommentBody } from '@/ui/comments/CommentBody'
 import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
+import { badgeVariants } from '@/ui/primitives/Badge'
+import { Button } from '@/ui/primitives/Button'
+import { Textarea } from '@/ui/primitives/Textarea'
 
 export interface CommentItemProps {
   depth: number
@@ -63,6 +69,22 @@ function adapt(ctx: CommentsContextValue, propAdmin: boolean | undefined) {
 
 function noop() {}
 
+// The badge palette comes from the comment author's `badgeColor` /
+// `commentBadgeTextColor()` pair when available. When either side is
+// `null` we keep the inline style attribute empty so the surface uses
+// the `--badge-color` / `--badge-fg` defaults declared in `globals.css`
+// instead of stamping a literal hex into every JSX node.
+function badgeStyle(backgroundColor: string | null | undefined, color: string | null | undefined): CSSProperties {
+  const overrides = {} as Record<'--badge-color' | '--badge-fg', string>
+  if (backgroundColor !== null && backgroundColor !== undefined && backgroundColor !== '') {
+    overrides['--badge-color'] = backgroundColor
+  }
+  if (color !== null && color !== undefined && color !== '') {
+    overrides['--badge-fg'] = color
+  }
+  return overrides as CSSProperties
+}
+
 // Self-recursive comment node. The previous implementation accepted a
 // `renderChild` render-prop and an `actions` bag so the orchestrator could
 // override behaviour for every depth. Now that the parent `<Comments>`
@@ -84,11 +106,11 @@ function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemP
   return (
     <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin}>
       {(children.length > 0 || childrenTail) && (
-        <ul className="children">
+        <ul className="children text-sm p-6 mt-5 ml-14 rounded-sm bg-surface-muted max-md:p-4 max-md:mt-4 max-md:ml-[2.375rem]">
           {children.map((child) => (
             <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
           ))}
-          {childrenTail && <li className="comment-reply-form-item">{childrenTail}</li>}
+          {childrenTail && <li>{childrenTail}</li>}
         </ul>
       )}
     </CommentLi>
@@ -103,7 +125,7 @@ function NestedComment({ comment, depth, pending, admin: propAdmin }: CommentIte
   return (
     <>
       <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin} />
-      {afterComment && <li className="comment-reply-form-item">{afterComment}</li>}
+      {afterComment && <li>{afterComment}</li>}
       {children.map((child) => (
         <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
       ))}
@@ -119,10 +141,14 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
   const authorHref = safeHref(comment.link)
   const [editing, setEditing] = useState(false)
   return (
-    <li id={`user-comment-${comment.id}`} className="comment odd alt thread-odd thread-alt" data-depth={depth}>
-      <article id={`div-comment-${comment.id}`} className="comment-body">
+    <li
+      id={`user-comment-${comment.id}`}
+      className="relative mb-6 pb-6 border-b border-border last:m-0 last:p-0 last:border-b-0 max-md:mb-4 max-md:pb-4"
+      data-depth={depth}
+    >
+      <article id={`div-comment-${comment.id}`} className="relative flex flex-auto min-w-0 max-w-full box-border">
         <div
-          className="comment-avatar flex-avatar"
+          className="flex-avatar w-10 h-10 mr-[0.9375rem] [.children_&]:w-[30px] [.children_&]:h-[30px] max-md:w-7 max-md:h-7 max-md:mr-2.5"
           style={{
             backgroundImage: "url('/images/default-avatar.png')",
             backgroundSize: 'cover',
@@ -139,8 +165,8 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
             decoding="async"
           />
         </div>
-        <div className="comment-inner">
-          <div className="comment-author fw-bold">
+        <div className="flex-auto min-w-0 [.children_&]:mt-1 max-md:mt-0.5">
+          <div className="font-bold inline-flex flex-wrap items-center gap-1.5 max-w-full [&_a]:align-middle">
             {authorHref === undefined ? (
               comment.name
             ) : (
@@ -150,27 +176,22 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
             )}
             {comment.badgeName && (
               <span
-                className="badge comment-author-badge fw-bold"
-                style={{
-                  backgroundColor: comment.badgeColor || '#008c95',
-                  color: comment.badgeTextColor || '#ffffff',
-                }}
+                className={twMerge(
+                  clsx(
+                    badgeVariants(),
+                    'inline-flex flex-none items-center px-1.5 py-0.5 leading-[1.2] whitespace-nowrap rounded-full font-bold bg-[color:var(--badge-color)] text-[color:var(--badge-fg)]',
+                  ),
+                )}
+                style={badgeStyle(comment.badgeColor, comment.badgeTextColor)}
               >
                 {comment.badgeName}
               </span>
             )}
           </div>
-          {pending ? (
-            <div className="comment-content text-wrap text-break">
-              <p className="text-xs text-danger tip-comment-check">您的评论正在等待审核中...</p>
-              <div dangerouslySetInnerHTML={{ __html: comment.content ?? '' }} />
-            </div>
-          ) : (
-            <div
-              className="comment-content text-wrap text-break"
-              dangerouslySetInnerHTML={{ __html: comment.content ?? '' }}
-            />
-          )}
+          <div className="prose-host whitespace-normal break-words my-2 leading-[1.85] [.children_&]:my-1.5 [.children_&]:break-all max-md:[.children_&]:my-1.5">
+            {pending && <p className="text-xs text-danger">您的评论正在等待审核中...</p>}
+            <CommentBody compiled={comment.bodyCompiled} />
+          </div>
           {editing && (
             <CommentEditArea
               commentId={comment.id}
@@ -213,20 +234,22 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
   }
 
   return (
-    <div className="comment-footer text-xs text-muted">
-      <time className="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
-      <button type="button" className="comment-reply-link me-2" data-rid={comment.id} onClick={handleReply}>
+    <div className="text-xs text-foreground-muted flex flex-auto items-center [&_button]:bg-transparent [&_button]:transition-all [&_button]:duration-300 [&_button]:ease-linear">
+      <time className="me-2 flex-auto [.children_&]:flex-none">
+        {formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}
+      </time>
+      <button type="button" className="me-2 hover:text-accent" data-rid={comment.id} onClick={handleReply}>
         回复
       </button>
       {leaf.admin && (
         <>
-          <button type="button" className="comment-edit-link me-2" data-rid={comment.id} onClick={onEdit}>
+          <button type="button" className="me-2 hover:text-danger" data-rid={comment.id} onClick={onEdit}>
             编辑
           </button>
           {comment.isPending && (
             <button
               type="button"
-              className="comment-approve-link me-2"
+              className="me-2 text-warning"
               data-rid={comment.id}
               onClick={handleApprove}
               disabled={approve.isPending}
@@ -236,7 +259,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
           )}
           <button
             type="button"
-            className="comment-delete-link me-2"
+            className="me-2 text-danger"
             data-rid={comment.id}
             onClick={handleDelete}
             disabled={remove.isPending}
@@ -290,26 +313,15 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   }
 
   return (
-    <div className="comment-edit-area mt-2">
-      <textarea
-        className="form-control comment-edit-textarea"
-        rows={4}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        disabled={!loaded || saving}
-      />
-      <div className="mt-2 text-end">
-        <button
-          type="button"
-          className="btn btn-primary me-2 comment-save-edit"
-          onClick={handleSave}
-          disabled={!loaded || saving}
-        >
+    <div className="mt-2 block w-full">
+      <Textarea rows={4} value={value} onChange={(e) => setValue(e.target.value)} disabled={!loaded || saving} />
+      <div className="mt-2 text-right">
+        <Button className="me-2" onClick={handleSave} disabled={!loaded || saving}>
           {saving ? '保存中...' : '保存'}
-        </button>
-        <button type="button" className="btn btn-light comment-cancel-edit" onClick={onCancel} disabled={saving}>
+        </Button>
+        <Button tone="neutral" onClick={onCancel} disabled={saving}>
           取消
-        </button>
+        </Button>
       </div>
     </div>
   )

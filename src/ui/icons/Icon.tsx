@@ -1,66 +1,19 @@
-// Inline SVG icon renderer for React server components.
+// Inline SVG icon primitives.
 //
-// Each icon under `src/ui/icons/svg/*.svg` is exported as a *named* component
-// from `@/ui/icons/icons` (e.g. `MenuIcon`, `SearchIcon`). Call sites use
-// static named imports so Rolldown can statically analyse which icons are
-// actually shipped (`bundle-analyzable-paths`, plus the shadcn "Pass icons as
-// objects, not string keys" rule).
+// Each icon under `@/ui/icons/icons` is a real React component that renders
+// `<Svg name="…"><path d="…" /></Svg>`, so the path data ships as plain JSX
+// — no `?raw` imports, no runtime parsing, no `dangerouslySetInnerHTML`. The
+// envelope (size, className, fill, role/aria, optional <title>) is owned by
+// the shared `<Svg>` component below.
 //
-// This file used to expose a string-keyed `<Icon name="…" />` lookup backed by
-// a `import.meta.glob` map; that defeated the bundler's static analysis and
-// forced every page to ship every SVG. The shared renderer below is the only
-// surface left, and it is consumed exclusively through `@/ui/icons/icons`.
+// Call sites import the icon they need by name
+// (`import { MenuIcon } from '@/ui/icons/icons'`) so Rolldown can prune the
+// rest from the client bundle (`bundle-analyzable-paths`, plus the shadcn
+// "Pass icons as objects, not string keys" rule). The `<DynamicIcon>` shim
+// in `@/ui/icons/icons` covers the small number of call sites that select an
+// icon from runtime configuration (social links, share buttons, QR dialogs).
 
-export interface ParsedIcon {
-  /** Markup between the opening `<svg>` tag and the closing `</svg>`. */
-  inner: string
-  /** The original `<svg ...>` opening-tag attributes, minus width/height/class/fill. */
-  attrs: string
-}
-
-export function parseSvg(raw: string): ParsedIcon {
-  const openMatch = raw.match(/<svg\b([^>]*)>/i)
-  if (!openMatch) {
-    throw new Error('Failed to parse SVG: missing <svg> element')
-  }
-  const rawAttrs = openMatch[1] ?? ''
-  const closeIdx = raw.lastIndexOf('</svg>')
-  const inner = closeIdx === -1 ? '' : raw.slice(openMatch.index! + openMatch[0].length, closeIdx)
-
-  // Strip width/height/class/fill so our own props win; everything else (viewBox,
-  // xmlns, preserveAspectRatio) is preserved verbatim.
-  const attrs = rawAttrs.replace(/\s+(width|height|class|fill)\s*=\s*("[^"]*"|'[^']*')/gi, '').trim()
-
-  return { inner, attrs }
-}
-
-export interface RenderInlineIconOptions {
-  icon: ParsedIcon
-  name: string
-  size?: string | number
-  title?: string
-  className?: string
-}
-
-// Shared HTML construction used by every per-icon component. Keeps the
-// `<svg ... fill="currentColor">` envelope identical to the previous
-// string-keyed `Icon` so existing CSS selectors (`.icon`, `.icon-<name>`)
-// still match.
-export function renderInlineIcon({ icon, name, size, title, className }: RenderInlineIconOptions) {
-  const dim = size ?? '1em'
-  const classList = ['icon', `icon-${name}`, className].filter(Boolean).join(' ')
-  const titleMarkup = title ? `<title>${escapeHtml(title)}</title>` : ''
-  const role = title ? 'img' : undefined
-  const ariaHidden = title ? undefined : 'true'
-  const svg =
-    `<svg ${icon.attrs} width="${dim}" height="${dim}" class="${classList}"` +
-    ` fill="currentColor" focusable="false"` +
-    (role ? ` role="${role}"` : '') +
-    (ariaHidden ? ` aria-hidden="${ariaHidden}"` : '') +
-    `>${titleMarkup}${icon.inner}</svg>`
-
-  return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: svg }} />
-}
+import type { ReactNode } from 'react'
 
 export interface IconProps {
   /** CSS sizing hint applied to the rendered SVG. Defaults to `1em`. */
@@ -70,11 +23,44 @@ export interface IconProps {
   className?: string
 }
 
-// Hand-curated union of every icon currently shipped under
-// `src/ui/icons/svg`. Used by `blog.config.ts` and the `<DynamicIcon>` shim
-// for call sites that genuinely select an icon from runtime config (e.g.
-// social link icons). The 1:1 map between this union and the named exports
-// of `@/ui/icons/icons` is asserted at the bottom of `icons.tsx`.
+export interface SvgProps extends IconProps {
+  /** Stable icon name; used to compose the `icon-<name>` className. */
+  name: string
+  /** SVG path data and other inner elements. */
+  children: ReactNode
+}
+
+// Shared SVG envelope used by every named icon component. The attribute
+// order (`viewBox` → `width`/`height` → `class` → `fill` → focus/aria) is
+// fixed to match the previous string-templated renderer so existing CSS
+// selectors (`.icon`, `.icon-<name>`) and snapshot expectations keep
+// matching.
+export function Svg({ name, size, title, className, children }: SvgProps) {
+  const dim = size ?? '1em'
+  const classList = ['icon', `icon-${name}`, className].filter(Boolean).join(' ')
+
+  return (
+    <svg
+      viewBox="0 0 1024 1024"
+      width={dim}
+      height={dim}
+      className={classList}
+      fill="currentColor"
+      focusable="false"
+      role={title ? 'img' : undefined}
+      aria-hidden={title ? undefined : true}
+    >
+      {title ? <title>{title}</title> : null}
+      {children}
+    </svg>
+  )
+}
+
+// Hand-curated union of every icon currently shipped under `@/ui/icons`.
+// Used by `blog.config.ts` and the `<DynamicIcon>` shim for call sites that
+// genuinely select an icon from runtime config (e.g. social link icons).
+// The 1:1 map between this union and the named exports of
+// `@/ui/icons/icons` is asserted at the bottom of `icons.tsx`.
 export type IconName =
   | 'arrowup'
   | 'check'
@@ -84,8 +70,8 @@ export type IconName =
   | 'edit'
   | 'ellipsis'
   | 'eye'
-  | 'github-fill'
-  | 'heart-fill'
+  | 'github'
+  | 'heart'
   | 'left'
   | 'link'
   | 'menu'
@@ -98,12 +84,3 @@ export type IconName =
   | 'user'
   | 'wechat'
   | 'weibo'
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}

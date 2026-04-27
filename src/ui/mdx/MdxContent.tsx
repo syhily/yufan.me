@@ -9,20 +9,56 @@ import { FootnoteDefinition, FootnoteProvider, FootnoteReference } from '@/ui/md
 import { MdxImg } from '@/ui/mdx/MdxImg'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Friends } from '@/ui/mdx/page/Friends'
+import { A, Blockquote, Center, Code, H1, H2, H3, H4, H5, H6, Hr, Ol, P, Ul } from '@/ui/mdx/prose'
 import { Solution } from '@/ui/mdx/solutions/Solution'
+import { Caption, Table, Tbody, Td, Th, Thead, Tr } from '@/ui/mdx/table'
 
 // Shared MDX component map for posts. The `img` override routes every
 // compiled `<img>` through `<MdxImg>`, which only needs to attach the
 // thumbhash background placeholder — `width`, `height`, the upyun-rewritten
 // `src`, and `data-thumbhash` are all baked in at compile time by
 // `rehype-image-enhance.server.ts`.
-const POST_MDX_COMPONENTS: MDXComponents = {
+//
+// `pre` and `li` keep their dedicated wrappers (CodeBlock, FootnoteDefinition);
+// the rest (`h1..h6`, `p`, `a`, `ol`, `ul`, `hr`, `code`, `blockquote`,
+// `table` family, `caption`, `center`) are wrapped by lightweight
+// className-only components that replace the legacy Bootstrap-era prose
+// cascade hosted by `.prose-host`. See `src/ui/mdx/prose.tsx` and
+// `src/ui/mdx/table.tsx`.
+//
+// Exported as a named binding so the runtime MDX compiler used by comments
+// and category descriptions can reuse the same prose / table / footnote
+// renderers (see `src/ui/mdx/MdxRemoteBody.tsx`). Keeping the map in one
+// place guarantees the SSR + hydration paths share an identity-stable
+// `MDXComponents` value.
+export const postMdxComponents: MDXComponents = {
   MusicPlayer,
   Solution,
   img: MdxImg,
   li: FootnoteDefinition,
   pre: CodeBlock,
   sup: FootnoteReference,
+  h1: H1,
+  h2: H2,
+  h3: H3,
+  h4: H4,
+  h5: H5,
+  h6: H6,
+  p: P,
+  a: A,
+  ol: Ol,
+  ul: Ul,
+  hr: Hr,
+  code: Code,
+  blockquote: Blockquote,
+  table: Table,
+  thead: Thead,
+  tbody: Tbody,
+  tr: Tr,
+  th: Th,
+  td: Td,
+  caption: Caption,
+  center: Center,
 }
 
 // `pageComponents` is called on every MDX body render, but `friends` is
@@ -48,6 +84,27 @@ function pageComponents(friends: readonly Friend[]): MDXComponents {
     pre: CodeBlock,
     sup: FootnoteReference,
     Friends: FriendsComponent,
+    h1: H1,
+    h2: H2,
+    h3: H3,
+    h4: H4,
+    h5: H5,
+    h6: H6,
+    p: P,
+    a: A,
+    ol: Ol,
+    ul: Ul,
+    hr: Hr,
+    code: Code,
+    blockquote: Blockquote,
+    table: Table,
+    thead: Thead,
+    tbody: Tbody,
+    tr: Tr,
+    th: Th,
+    td: Td,
+    caption: Caption,
+    center: Center,
   }
   pageComponentsCache.set(friends, components)
   return components
@@ -59,7 +116,7 @@ const postClientLoader = browserCollections.posts.createClientLoader({
     const Body = loaded.default
     return (
       <FootnoteProvider>
-        <Body components={POST_MDX_COMPONENTS} />
+        <Body components={postMdxComponents} />
       </FootnoteProvider>
     )
   },

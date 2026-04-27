@@ -22,7 +22,7 @@ import { findPageByKey, upsertPage } from '@/server/db/query/page'
 import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
-import { parseContent } from '@/server/markdown/parser'
+import { compileMarkdown } from '@/server/markdown/runtime'
 import { DomainError } from '@/server/route-helpers/errors'
 import { isAdmin, userSession, type BlogSession } from '@/server/session'
 import { groupBy } from '@/shared/tools'
@@ -100,7 +100,7 @@ export async function createComment(
   req: Request,
   clientAddress: string,
   session: BlogSession,
-): Promise<CommentAndUser> {
+): Promise<CommentItem> {
   // Check page key
   const p = await findPageByKey(commentReq.page_key)
   if (p === null) {
@@ -178,7 +178,10 @@ export async function createComment(
     throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
   }
 
-  cr.content = await parseContent(cr.content)
+  // `cr.content` stays raw markdown so the email senders can still pipe
+  // it through `parseContent` (SMTP needs an HTML string). The DTO that
+  // ships to the public client carries the compiled MDX body separately.
+  const compiled = await compileMarkdown(cr.content, { profile: 'comment' })
 
   const { createdAt, deletedAt, ...commentRest } = cr
   const info = withCommentBadgeTextColor({
@@ -191,6 +194,7 @@ export async function createComment(
     link: u.link,
     badgeName: u.badgeName,
     badgeColor: u.badgeColor,
+    bodyCompiled: compiled?.compiled ?? null,
   })
 
   // Send the email.
@@ -212,11 +216,18 @@ export async function createComment(
 }
 
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {
+  // `comment.content` stays as the raw markdown source — the UI consumes
+  // the compiled MDX body via `bodyCompiled` (see `<CommentBody />`). The
+  // public client never reads `content` for rendering; admin moderation
+  // reaches for it through `comment.getRaw` when an editor is opened.
   const parsedComments = await Promise.all(
-    comments.map(async (comment) => ({
-      ...withCommentBadgeTextColor(comment),
-      content: await parseContent(comment.content),
-    })),
+    comments.map(async (comment) => {
+      const compiled = await compileMarkdown(comment.content, { profile: 'comment' })
+      return {
+        ...withCommentBadgeTextColor(comment),
+        bodyCompiled: compiled?.compiled ?? null,
+      }
+    }),
   )
   const childComments = groupBy(
     parsedComments.filter((comment) => !rootCommentFilter(comment)),
@@ -230,7 +241,7 @@ function rootCommentFilter(comment: CommentAndUser): boolean {
   return comment.rid === 0 || comment.rid === null || comment.rid === undefined
 }
 
-function commentItems(comment: CommentAndUser, childComments: Record<string, CommentAndUser[]>): CommentItem {
+function commentItems(comment: CommentItem, childComments: Record<string, CommentItem[]>): CommentItem {
   const children = childComments[`${comment.id}`]
   if (children === undefined) {
     return comment

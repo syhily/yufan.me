@@ -1,4 +1,4 @@
-import type { AdminCommentsResult } from '@/server/comments/types'
+import type { AdminComment, AdminCommentsResult } from '@/server/comments/types'
 import type { AdminListFilters } from '@/server/db/query/comment'
 
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
@@ -15,7 +15,7 @@ import {
 } from '@/server/db/query/comment'
 import { sendApprovedComment } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
-import { parseContent } from '@/server/markdown/parser'
+import { compileMarkdown } from '@/server/markdown/runtime'
 
 // Admin-only helpers for the moderation panel. Split out of `loader.server.ts`
 // so the public detail-route bundle no longer drags in the admin-list query
@@ -50,8 +50,15 @@ export async function updateComment(rid: string, newContent: string) {
   const r = await findCommentWithUserById(id)
   if (r === null) return null
 
-  r.content = await parseContent(r.content)
-  return withCommentBadgeTextColor(r)
+  // Keep `r.content` as raw markdown (matches the public-facing
+  // `createComment` shape) and attach the compiled body for the React
+  // surface. The admin edit form re-loads the raw source through
+  // `comment.getRaw` so callers never read `content` for rendering.
+  const compiled = await compileMarkdown(r.content, { profile: 'comment' })
+  return {
+    ...withCommentBadgeTextColor(r),
+    bodyCompiled: compiled?.compiled ?? null,
+  }
 }
 
 export async function getPageOptions(): Promise<Array<{ key: string; title: string }>> {
@@ -79,11 +86,14 @@ export async function loadAllComments(
 
   return {
     comments: await Promise.all(
-      comments.map(async (c) => ({
-        ...withCommentBadgeTextColor(c),
-        content: await parseContent(c.content),
-        pageTitle: c.pageTitle,
-      })),
+      comments.map(async (c): Promise<AdminComment> => {
+        const compiled = await compileMarkdown(c.content, { profile: 'comment' })
+        return {
+          ...withCommentBadgeTextColor(c),
+          bodyCompiled: compiled?.compiled ?? null,
+          pageTitle: c.pageTitle,
+        }
+      }),
     ),
     total,
     hasMore: offset + limit < total,

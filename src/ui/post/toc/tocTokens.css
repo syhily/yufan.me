@@ -1,0 +1,18 @@
+/* Layer C — post TOC drawer. Lives beside `TableOfContents.tsx` so the palette
+   stays out of the global semantic `@theme` block in `globals.css`. Tailwind
+   still emits `bg-toc-*` / `text-toc-*` utilities because this file is
+   `@import`ed from the Tailwind entry. */
+
+@theme {
+  --color-toc-floating-accent: rgb(255 255 255 / 90%);
+  --color-toc-text-muted: #555555;
+  --color-toc-border-hairline: #f0f0f0;
+  --color-toc-surface: #fafafa;
+  --color-toc-scrollbar-track: #191919;
+  --color-toc-title: #202020;
+  --color-toc-link-hover-bg: #efefef;
+  --color-toc-link-hover-text: #333333;
+  --color-toc-current-bg: #f5f5f5;
+  --color-toc-link-active: #1abc9c;
+  --color-toc-overlay-scrim: rgb(8 15 25 / 30%);
+}

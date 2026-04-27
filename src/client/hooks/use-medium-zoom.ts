@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-// Attach medium-zoom behaviour to images + SVGs inside `.post-content`.
+// Attach medium-zoom behaviour to images + SVGs inside `.prose-host`.
 // Lazy-loads the library so it stays out of the initial bundle; the effect
 // no-ops on SSR because `useEffect` does not fire during renderToString.
 export function useMediumZoom(): void {
@@ -14,7 +14,7 @@ export function useMediumZoom(): void {
       ])
       if (cancelled) return
       const zoom = mediumZoom()
-      zoom.attach('.post-content img', '.post-content svg')
+      zoom.attach('.prose-host img', '.prose-host svg')
       cleanup = () => zoom.detach()
     })()
     return () => {

@@ -1,12 +1,16 @@
 import type { RefObject } from 'react'
 
+import { clsx } from 'clsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router'
+import { twMerge } from 'tailwind-merge'
 
 import config from '@/blog.config'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { SearchIcon } from '@/ui/icons/icons'
+import { Button, buttonVariants } from '@/ui/primitives/Button'
+import { inputVariants } from '@/ui/primitives/Input'
 import { Popup } from '@/ui/primitives/Popup'
 
 function searchPath(raw: string): string {
@@ -21,13 +25,12 @@ export function SearchBar() {
   useIosNoZoomOnFocus(containerRef)
 
   if (!config.settings.sidebar.search) {
-    return <div id="search" className="widget widget-search" hidden />
+    return <div id="search" className="mb-10" hidden />
   }
 
   return (
-    <div id="search" className="widget widget-search" ref={containerRef}>
+    <div id="search" className="mb-10" ref={containerRef}>
       <form
-        className="search-form"
         onSubmit={(event) => {
           event.preventDefault()
           const query = value.trim()
@@ -35,11 +38,11 @@ export function SearchBar() {
           if (query.length > 0) void navigate(searchPath(query))
         }}
       >
-        <label>
-          <span className="screen-reader-text">文章寻踪</span>
+        <label className="block">
+          <span className="sr-only">文章寻踪</span>
           <input
             type="search"
-            className="search-field search-sidebar"
+            className="relative block w-full px-4 py-2 border-0 rounded-sm bg-surface-muted shadow-none transition-[background-color,box-shadow] duration-150 ease-in-out hover:shadow-none focus:shadow-none focus:outline-0"
             placeholder="文章寻踪（输入后回车）"
             name="q"
             value={value}
@@ -65,7 +68,7 @@ export function SearchIconButton() {
     if (!open) return
     const onDocClick = (event: MouseEvent) => {
       if (triggerRef.current?.contains(event.target as Node)) return
-      const popup = document.querySelector<HTMLElement>('.nice-popup.global-search-popup')
+      const popup = document.querySelector<HTMLElement>('.global-search-popup')
       if (popup?.contains(event.target as Node)) return
       setOpen(false)
     }
@@ -78,7 +81,7 @@ export function SearchIconButton() {
       <button
         type="button"
         ref={triggerRef}
-        className="global-search btn btn-dark btn-icon btn-circle site-search-toggler button-social"
+        className={twMerge(clsx(buttonVariants({ tone: 'inverse', shape: 'circle' }), 'mr-2'))}
         title="搜索"
         aria-label="打开搜索"
         onClick={(event) => {
@@ -115,10 +118,10 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
   }, [open])
 
   return (
-    <Popup open={open} onClose={onClose} sizeClass="nice-popup-md" className="global-search-popup" enterImmediately>
+    <Popup open={open} onClose={onClose} size="md" className="global-search-popup" enterImmediately>
       <form
         ref={formRef}
-        className="search-dialog text-center p-3 p-md-5"
+        className="search-dialog text-center p-3 md:p-5"
         action="/search"
         onSubmit={(event) => {
           event.preventDefault()
@@ -128,22 +131,22 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
           void navigate(searchPath(trimmed))
         }}
       >
-        <div className="mb-3 mb-md-4">
+        <div className="mb-3 md:mb-4">
           <input
             ref={inputRef}
             type="search"
             name="q"
             required
             enterKeyHint="search"
-            className="form-control form-control-lg text-center"
+            className={twMerge(clsx(inputVariants({ size: 'lg' }), 'text-center'))}
             placeholder="搜索并回车"
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
           />
         </div>
-        <button type="submit" className="btn btn-primary btn-block btn-lg">
+        <Button size="lg" type="submit" className="w-full">
           搜索
-        </button>
+        </Button>
       </form>
     </Popup>
   )

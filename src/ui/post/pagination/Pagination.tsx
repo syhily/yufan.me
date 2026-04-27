@@ -1,3 +1,4 @@
+import { cva } from 'class-variance-authority'
 import { Link } from 'react-router'
 
 import { EllipsisIcon } from '@/ui/icons/icons'
@@ -12,12 +13,37 @@ export interface PaginationProps {
 // windowed layout (first/last + neighborhood around current, with ellipses).
 const DENSE_THRESHOLD = 6
 
+// Per `vercel-composition-patterns/architecture-avoid-boolean-props`: use a
+// `variant` enum instead of a boolean matrix. Mirrors the legacy
+// `.page-numbers / .current / .dots` cascade so we can drop those rules in
+// the Phase 2 sweep without changing the visual output.
+//
+// Colour decisions route through semantic tokens (`bg-foreground` for the
+// idle dot, `bg-accent` for current/hover) so dark mode swaps everything
+// in one go via `globals.css` — no hardcoded brand-hex / `bg-accent`
+// pairs to keep aligned. Token rationale: the legacy literal lives in
+// `--color-surface-inverse` (≈ `--color-foreground`) so the visual is
+// preserved in light mode and inverted automatically in dark mode.
+const pageItem = cva(
+  'relative inline-block w-10 h-10 leading-10 text-center m-1 p-0 rounded-full text-accent-fg bg-foreground border-0 cursor-pointer',
+  {
+    variants: {
+      variant: {
+        default: 'hover:bg-accent',
+        current: 'bg-accent',
+        dots: 'cursor-default',
+      },
+    },
+    defaultVariants: { variant: 'default' },
+  },
+)
+
 export function Pagination({ current, total, rootPath }: PaginationProps) {
   if (total <= 1) return null
   return (
-    <nav className="navigation pagination" aria-label="文章">
-      <h2 className="screen-reader-text">文章导航</h2>
-      <div className="nav-links">
+    <nav className="relative mt-10 max-md:mt-5" aria-label="文章">
+      <h2 className="sr-only">文章导航</h2>
+      <div className="flex flex-wrap justify-center w-full">
         {total <= DENSE_THRESHOLD ? (
           <DensePagination current={current} total={total} rootPath={rootPath} />
         ) : (
@@ -80,7 +106,7 @@ function WindowedPagination({ current, total, rootPath }: InnerProps) {
 
 function Ellipsis() {
   return (
-    <span className="page-numbers dots">
+    <span className={pageItem({ variant: 'dots' })}>
       <EllipsisIcon />
     </span>
   )
@@ -95,7 +121,7 @@ interface PageLinkProps {
 function PageLink({ current, pageNum, rootPath }: PageLinkProps) {
   if (current === pageNum) {
     return (
-      <span aria-current="page" className="page-numbers current">
+      <span aria-current="page" className={pageItem({ variant: 'current' })}>
         {pageNum}
       </span>
     )
@@ -107,7 +133,7 @@ function PageLink({ current, pageNum, rootPath }: PageLinkProps) {
   // intent-based prefetching to keep the network quiet.
   const prefetch = Math.abs(pageNum - current) === 1 ? 'render' : 'intent'
   return (
-    <Link className="page-numbers" to={to} prefetch={prefetch}>
+    <Link className={pageItem({ variant: 'default' })} to={to} prefetch={prefetch}>
       {pageNum}
     </Link>
   )

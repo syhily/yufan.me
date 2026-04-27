@@ -76,7 +76,14 @@ export default function rehypeMathjax(options: MathjaxOptions = emptyOptions) {
         const display = fencedMath || mathDisplay
 
         try {
-          replace(renderer.render(toText(element, { whitespace: 'pre' }), { display }))
+          const rendered = renderer.render(toText(element, { whitespace: 'pre' }), { display })
+          // Tag the produced `<mjx-container>` so the legacy
+          // Bootstrap-era `.prose-host mjx-container[jax='SVG'][display='true']`
+          // overflow rule can be expressed as Tailwind utilities directly
+          // on the element. Display-mode formulas may overflow narrow
+          // viewports; inline math should not be width-clipped.
+          decorateMjxContainers(rendered, display)
+          replace(rendered)
         } catch (error) {
           const cause = error instanceof Error ? error : new Error(String(error))
           file.message('Could not render math with mathjax', {
@@ -219,4 +226,36 @@ function fromLiteElement(liteElement: LiteElement): Element {
   }
 
   return h(liteElement.kind, liteElement.attributes, children)
+}
+
+// Walk the rendered MathJax subtree and stamp `mjx-container` elements
+// with className utilities. Display-mode formulas get a horizontal
+// scroll surface (replaces the legacy Bootstrap-era
+// `.prose-host mjx-container[jax='SVG'][display='true']` rule); the
+// inner `<svg>` is allowed to exceed the container width
+// (`max-w-none`) so long formulas do not get squashed before the
+// overflow kicks in.
+const DISPLAY_MJX_CLASSES = [
+  'block',
+  'max-w-full',
+  'overflow-x-auto',
+  'overflow-y-hidden',
+  'pb-0.5',
+  '[-webkit-overflow-scrolling:touch]',
+  '[&>svg]:max-w-none',
+]
+
+function decorateMjxContainers(nodes: ElementContent[], display: boolean): void {
+  for (const node of nodes) {
+    if (!isElement(node)) continue
+    if (node.tagName === 'mjx-container') {
+      const properties = (node.properties ??= {})
+      const existing = Array.isArray(properties.className) ? (properties.className as Array<string>) : []
+      const additions = display ? DISPLAY_MJX_CLASSES : ['inline-block', '[&>svg]:max-w-none']
+      properties.className = [...existing, ...additions]
+    }
+    if (Array.isArray(node.children)) {
+      decorateMjxContainers(node.children as ElementContent[], display)
+    }
+  }
 }

@@ -29,8 +29,8 @@ export function Sidebar({ data, admin }: SidebarProps) {
   const { posts, tags, recentComments, pendingComments } = data
 
   return (
-    <aside className="sidebar col-12 col-xl-3 d-none d-xl-block">
-      <div className="sidebar-inner block">
+    <aside className="hidden w-full xl:block xl:w-1/4 xl:px-3">
+      <div className="block py-8 px-7 bg-white xl:sticky xl:top-[30px]">
         <SearchBar />
         {admin && <PendingComments comments={pendingComments} />}
         <RandomPosts posts={posts} />
@@ -48,9 +48,9 @@ interface PendingCommentsProps {
 
 function PendingComments({ comments }: PendingCommentsProps) {
   return (
-    <div id="pending-comments" className="widget widget-recent-comments">
+    <div id="pending-comments" className="mb-10">
       <WidgetTitle tooltip="云中谁寄锦书来？雁字回时，月满西楼。">待审评论</WidgetTitle>
-      <ul>
+      <ul className="pl-5">
         {comments.length > 0 ? (
           comments.map((comment) => <CommentLink key={commentKey(comment)} comment={comment} />)
         ) : (
@@ -68,12 +68,12 @@ interface RandomPostsProps {
 function RandomPosts({ posts }: RandomPostsProps) {
   if (posts.length === 0) return null
   return (
-    <div id="recent-posts" className="widget widget-recent-entries">
+    <div id="recent-posts" className="mb-10">
       <WidgetTitle tooltip="年年岁岁花相似，岁岁年年人不同。">流年拾忆</WidgetTitle>
-      <ul className="line">
+      <ul className="pl-5">
         {posts.map((post) => (
-          <li key={post.slug}>
-            <Link to={post.permalink} title={post.title} prefetch="intent">
+          <li key={post.slug} className="mb-3 list-[circle] overflow-hidden whitespace-nowrap">
+            <Link className="block hover:text-accent" to={post.permalink} title={post.title} prefetch="intent">
               {post.title}
             </Link>
           </li>
@@ -91,9 +91,9 @@ function RecentComments({ comments }: RecentCommentsProps) {
   if (config.settings.sidebar.comment <= 0 || comments.length === 0) return null
 
   return (
-    <div id="recent-comments" className="widget widget-recent-comments">
+    <div id="recent-comments" className="mb-10">
       <WidgetTitle tooltip="欲寄彩笺兼尺素，山长水阔知何处？">雁过留声</WidgetTitle>
-      <ul>
+      <ul className="pl-5">
         {comments.map((comment) => (
           <CommentLink key={commentKey(comment)} comment={comment} />
         ))}
@@ -111,18 +111,18 @@ function commentKey(comment: LatestComment): string {
 function CommentLink({ comment }: { comment: LatestComment }) {
   const authorHref = safeHref(comment.authorLink)
   return (
-    <li className="recent-comments">
-      <span className="comment-author-link">
+    <li className="mb-3 list-[circle] overflow-hidden whitespace-nowrap">
+      <span className="font-semibold text-foreground mr-[5px]">
         {authorHref === undefined ? (
           comment.author
         ) : (
-          <a href={authorHref} target="_blank" rel="nofollow noreferrer">
+          <a className="hover:text-accent" href={authorHref} target="_blank" rel="nofollow noreferrer">
             {comment.author}
           </a>
         )}
       </span>
       {' 发表在《'}
-      <Link to={comment.permalink} prefetch="intent">
+      <Link className="hover:text-accent" to={comment.permalink} prefetch="intent">
         {comment.title}
       </Link>
       》
@@ -138,17 +138,18 @@ function RandomTags({ tags }: RandomTagsProps) {
   if (tags.length === 0) return null
 
   return (
-    <div id="tag-cloud" className="widget widget-tag-cloud">
+    <div id="tag-cloud" className="mb-10">
       <WidgetTitle tooltip="流水落花春去也，天上人间。">文踪墨迹</WidgetTitle>
-      <div className="tagcloud">
+      <div className="flex flex-wrap">
         {tags.map((tag) => (
           <Link
             key={tag.slug}
             to={tag.permalink}
-            className="tag-cloud-link"
+            className="relative inline-block text-sm leading-none px-[0.9375rem] py-2 mr-[0.375rem] mb-[0.375rem] rounded-xs border border-border hover:text-accent"
             title={`${tag.name} (${tag.counts} 篇文章)`}
             prefetch="intent"
           >
+            <span className="text-accent mr-[5px]">#</span>
             {tag.name}
           </Link>
         ))}
@@ -160,8 +161,12 @@ function RandomTags({ tags }: RandomTagsProps) {
 function WidgetTitle({ children, tooltip }: { children: string; tooltip: string }) {
   return (
     <Tooltip placement="left">
-      <Tooltip.Trigger as="div" className="widget-title">
-        {children}
+      <Tooltip.Trigger as="div" className="relative text-accent text-base py-5 border-t-2 border-border-sidebar">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-[2px] left-0 w-[30px] h-[2px] bg-accent"
+        />
+        <span className="relative">{children}</span>
       </Tooltip.Trigger>
       <Tooltip.Content>{tooltip}</Tooltip.Content>
     </Tooltip>
@@ -178,7 +183,7 @@ function TodayCalendar() {
     `${formatLocalDate(today, 'LLdd')}.png`,
   )
   return (
-    <div className="widget widget-owspace-calendar">
+    <div className="mb-10">
       <WidgetTitle tooltip="时光只解催人老，不信多情，长恨离亭。">时光只言</WidgetTitle>
       <img loading="lazy" decoding="async" src={calendarImage} width={600} height={880} alt="今日日历" />
     </div>

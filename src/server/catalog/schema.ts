@@ -13,12 +13,28 @@ export type Friend = {
   posterThumbhash?: string
 }
 
+export type CategoryDescription = {
+  /** JS function-body string returned by the runtime MDX compiler. The
+   *  React surface (`<MdxRemoteBody>`) calls `executeMdxSync` on this
+   *  and renders the resulting component with `postMdxComponents`. */
+  compiled: string
+  /** Trimmed raw markdown source. Listing SEO (`og:description`) consumes
+   *  this directly because the meta-tag pipeline still wants a string. */
+  plain: string
+}
+
 export type Category = {
   name: string
   slug: string
   cover: string
   coverThumbhash?: string
-  description: string
+  /**
+   * Empty string when the YAML entry omitted `description`. When present,
+   * holds both the compiled MDX body and its plain source — the plain
+   * track keeps SEO meta callers single-string while the compiled track
+   * powers the categories-listing prose surface.
+   */
+  description: CategoryDescription | null
   counts: number
   permalink: string
 }

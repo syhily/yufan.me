@@ -95,7 +95,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/',
     })
 
     expect(result.ok).toBe(true)
@@ -126,7 +126,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/',
     })
 
     expect(rateLimit.tryRateLimit).toHaveBeenCalledTimes(1)
@@ -144,7 +144,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/',
     })
 
     expect(result.ok).toBe(false)
@@ -165,7 +165,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/',
     })
 
     expect(result.ok).toBe(false)

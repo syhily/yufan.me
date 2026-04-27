@@ -18,6 +18,7 @@ import {
   type CommentTreeState,
   useCommentsContext,
 } from '@/ui/comments/comments-context'
+import { Button } from '@/ui/primitives/Button'
 
 export interface CommentsProps {
   commentKey: string
@@ -131,7 +132,7 @@ export const commentTreeReducer = reducer
 export function Comments({ commentKey, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
-      <div id="comments" className="comments pt-5">
+      <div id="comments" className="pt-5">
         评论加载失败 ❌
       </div>
     )
@@ -238,7 +239,7 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
 
   return (
     <CommentsContext.Provider value={value}>
-      <div id="comments" className="comments pt-5" ref={containerRef}>
+      <div id="comments" className="pt-5" ref={containerRef}>
         {children}
       </div>
     </CommentsContext.Provider>
@@ -248,8 +249,8 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
 function CommentsHeader() {
   const ctx = useCommentsContext('Comments.Header')
   return (
-    <div className="h5 mb-4 comment-total-count">
-      评论 <small className="font-theme text-sm">({ctx.totalCount})</small>
+    <div className="text-[1.25rem] font-semibold leading-[1.4] mb-4">
+      评论 <small className="text-sm">({ctx.totalCount})</small>
     </div>
   )
 }
@@ -266,7 +267,7 @@ function CommentsReplyFormSlot() {
 function CommentsList() {
   const ctx = useCommentsContext('Comments.List')
   return (
-    <ul className="comment-list">
+    <ul>
       {ctx.state.items.map((item) => (
         <CommentItem key={asKey(item.id)} comment={item} depth={1} />
       ))}
@@ -305,10 +306,9 @@ function CommentsLoadMore() {
   }
 
   return (
-    <div className="text-center mt-3 mt-md-4">
-      <button
-        type="button"
-        className="btn btn-light"
+    <div className="text-center mt-3 md:mt-4">
+      <Button
+        tone="neutral"
         onClick={onLoadMore}
         disabled={moreLoading}
         data-key={ctx.commentKey}
@@ -316,7 +316,7 @@ function CommentsLoadMore() {
         data-offset={ctx.state.rootsLoaded}
       >
         {moreLoading ? '加载中...' : '加载更多'}
-      </button>
+      </Button>
     </div>
   )
 }

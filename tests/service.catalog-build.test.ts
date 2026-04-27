@@ -124,7 +124,21 @@ vi.mock('@/server/images/thumbhash', () => ({
   enhanceImageHtml: vi.fn(async (html: string) => html),
 }))
 
-// Avoid the real markdown parser cold-load when categories have descriptions.
+// Avoid the real MDX runtime cold-load when categories have descriptions.
+// `compileMarkdown` is the only thing `buildCategories` reaches for now;
+// the legacy `parseContent` mock above stays only because email senders
+// still use it (it does not affect the catalog build path).
+vi.mock('@/server/markdown/runtime', () => ({
+  compileMarkdown: vi.fn(async (source: string | null | undefined) => {
+    if (source === null || source === undefined) return null
+    const trimmed = source.replace(/\r\n/g, '\n').trim()
+    if (trimmed === '') return null
+    return { compiled: `MOCK::${trimmed}`, plain: trimmed }
+  }),
+}))
+
+// `parseContent` is still imported elsewhere (e.g. email senders); keep the
+// mock so unrelated catalog tests don't pull the real markdown compile chain.
 vi.mock('@/server/markdown/parser', () => ({
   parseContent: vi.fn(async (content: string) => `<p>${content}</p>\n`),
   EMPTY_COMMENT_RAW: '该留言内容为空',

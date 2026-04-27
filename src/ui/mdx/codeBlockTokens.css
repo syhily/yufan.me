@@ -1,0 +1,6 @@
+/* Layer C — MDX code block chrome header text. Imported from the Tailwind
+   entry so `text-[var(--color-code-block-header-text)]` resolves consistently. */
+
+@theme {
+  --color-code-block-header-text: #212529;
+}

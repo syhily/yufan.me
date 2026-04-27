@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 
+import { clsx } from 'clsx'
 import { Link } from 'react-router'
+import { twMerge } from 'tailwind-merge'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
 import type { IconName } from '@/ui/icons/Icon'
@@ -8,8 +10,18 @@ import type { IconName } from '@/ui/icons/Icon'
 import { formatShowDate } from '@/shared/formatter'
 import { DynamicIcon } from '@/ui/icons/icons'
 import { Pagination } from '@/ui/post/pagination/Pagination'
+import { badgeVariants } from '@/ui/primitives/Badge'
+import { Container } from '@/ui/primitives/Container'
+import { Heading } from '@/ui/primitives/Heading'
 import { Image } from '@/ui/primitives/Image'
+import { Media, MediaOverlay } from '@/ui/primitives/Media'
+import { MediaCover } from '@/ui/primitives/MediaCover'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
+
+const LISTING_SHELL_CLASS = 'py-4 md:py-6 lg:px-2 2xl:p-12'
+
+const HOVER_OVERLAY_CLASS =
+  'w-full h-full bg-[rgb(40_49_73/0.66)] absolute opacity-60 top-0 left-0 transition-opacity duration-300 ease-in-out'
 
 export interface HomeLayoutBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]
@@ -33,14 +45,14 @@ export function HomeLayoutBody({
   children,
 }: HomeLayoutBodyProps) {
   return (
-    <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
+    <div className={LISTING_SHELL_CLASS}>
       {pageNum === 1 && <FeaturePosts posts={featurePosts} />}
-      <div className="container">
-        <div className="row">
+      <Container>
+        <div className="flex flex-col xl:-mx-3 xl:flex-row">
           <PostCards pageNum={pageNum} posts={resolvedPosts} totalPage={totalPage} categoryLinks={categoryLinks} />
           <Sidebar data={sidebar} admin={admin} />
         </div>
-      </div>
+      </Container>
       {children}
     </div>
   )
@@ -66,38 +78,38 @@ export function PostListingBody({
   alwaysRenderPagination = true,
 }: PostListingBodyProps) {
   return (
-    <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-      <div className="container">
-        <div className="mb-3 mb-lg-4">
-          <h1>{title}</h1>
+    <div className={LISTING_SHELL_CLASS}>
+      <Container>
+        <div className="mb-4 lg:mb-6">
+          <Heading level={1}>{title}</Heading>
           {description && (
-            <div className="text-muted mt-1">
+            <div className="text-foreground-muted mt-1">
               <span dangerouslySetInnerHTML={{ __html: description }} />
             </div>
           )}
         </div>
         {resolvedPosts.length === 0 ? (
-          <div className="data-null">
+          <div className="flex h-[50vh] flex-1 flex-col text-center">
             <div className="my-auto">
-              <h1 className="font-number">404</h1>
+              <h2 className="text-[6rem] font-semibold leading-tight text-foreground">404</h2>
               <div>抱歉，没有你要找的内容...</div>
             </div>
           </div>
         ) : (
           <>
-            <div className="row g-2 g-md-3 g-xxl-4 list-grouped">
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 xl:grid-cols-4 2xl:gap-4">
               {resolvedPosts.map((post, index) => (
                 <PostSquare key={post.slug} post={post} first={index === 0} />
               ))}
             </div>
             {(alwaysRenderPagination || totalPage > 1) && (
-              <div className="mt-4 mt-lg-5">
+              <div className="mt-4 lg:mt-5">
                 <Pagination current={pageNum} total={totalPage} rootPath={rootPath} />
               </div>
             )}
           </>
         )}
-      </div>
+      </Container>
     </div>
   )
 }
@@ -109,40 +121,38 @@ interface FeaturePostsProps {
 function FeaturePosts({ posts }: FeaturePostsProps) {
   if (posts.length !== 3) return null
   return (
-    <div className="list-top-pushes mb-3 mb-md-4 mb-lg-5">
-      <div className="container">
-        <div className="row gx-2 gx-md-3 list-grouped">
-          <div className="col-lg-8">
+    <div className="mb-4 md:mb-6 lg:mb-12">
+      <Container>
+        <div className="grid grid-cols-1 gap-x-2 gap-y-2 md:gap-x-4 md:gap-y-4 lg:grid-cols-[2fr_1fr] lg:gap-y-0">
+          <div className="min-w-0">
             <FeaturePost post={posts[0]} />
           </div>
-          <div className="col-lg-4 d-flex flex-column mt-2 mt-md-3 mt-lg-0">
-            <div className="row g-2 g-md-3">
-              <div className="col-6 col-lg-12">
-                <FeaturePost post={posts[1]} />
-              </div>
-              <div className="col-6 col-lg-12">
-                <FeaturePost post={posts[2]} />
-              </div>
-            </div>
+          <div className="grid min-w-0 grid-cols-2 gap-2 md:gap-4 lg:grid-cols-1 lg:gap-2 lg:gap-y-4 mt-2 md:mt-4 lg:mt-0">
+            <FeaturePost post={posts[1]} />
+            <FeaturePost post={posts[2]} />
           </div>
         </div>
-      </div>
+      </Container>
     </div>
   )
 }
 
 function FeaturePost({ post }: { post: ListingPostCard }) {
   return (
-    <div className="list-item list-nice-overlay">
-      <div className="media media-3x2">
-        <Link to={post.permalink} className="media-content" prefetch="intent">
+    <div className="relative flex flex-col min-w-0 break-words mb-0 flex-auto">
+      <Media ratio="3x2" className="flex-auto">
+        <MediaCover as={Link} to={post.permalink} hover prefetch="intent">
           <Image src={post.cover} alt={post.title} width={750} height={500} thumbhash={post.coverThumbhash} />
-          <div className="overlay" />
-        </Link>
-      </div>
-      <div className="list-content p-2 p-md-3">
-        <div className="list-body">
-          <Link to={post.permalink} className="list-title h5 h-2x m-0" prefetch="intent">
+          <div className={`${HOVER_OVERLAY_CLASS} group-hover:opacity-[0.22]`} />
+        </MediaCover>
+      </Media>
+      <div className="absolute right-0 bottom-0 left-0 z-[1] p-2 md:p-3">
+        <div className="flex flex-col flex-none">
+          <Link
+            to={post.permalink}
+            className="line-clamp-2 m-0 block mb-2 text-[1.25rem] font-semibold text-white hover:text-foreground-on-dark"
+            prefetch="intent"
+          >
             {post.title}
           </Link>
         </div>
@@ -160,41 +170,48 @@ export interface PostCardsProps {
 
 export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCardsProps) {
   return (
-    <div className="content-wrapper col-12 col-xl-9">
-      <div className="list-grid">
+    <div className="w-full xl:w-3/4 xl:px-3">
+      <div>
         {posts.map((post) => (
-          <div key={post.slug} className="list-item block">
-            <div className="media media-3x2 col-6 col-md-5">
-              <Link to={post.permalink} className="media-content" prefetch="intent">
+          <div
+            key={post.slug}
+            className="relative flex flex-row flex-auto min-w-0 break-words mb-7 max-md:mb-3 md:max-2xl:mb-5 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]"
+          >
+            <Media ratio="3x2" className="max-md:w-[45%] md:w-5/12">
+              <MediaCover as={Link} to={post.permalink} prefetch="intent">
                 <Image src={post.cover} alt={post.title} width={600} height={400} thumbhash={post.coverThumbhash} />
-              </Link>
-              <div className="media-overlay overlay-top">
+              </MediaCover>
+              <MediaOverlay top>
                 <Link
-                  className="d-none d-md-inline-block badge badge-md bg-white-overlay"
+                  className={twMerge(clsx('hidden md:inline-block', badgeVariants({ size: 'md' }), 'bg-white-overlay'))}
                   to={categoryLinks[post.category] || '/'}
                   prefetch="intent"
                 >
                   {post.category}
                 </Link>
-              </div>
-            </div>
-            <div className="list-content">
-              <div className="list-body">
-                <Link to={post.permalink} className="list-title h5" prefetch="intent">
-                  <div className="h-2x">
+              </MediaOverlay>
+            </Media>
+            <div className="flex flex-col flex-auto justify-center bg-white p-6 max-md:p-3 max-md:pb-2 md:max-2xl:px-5 md:max-2xl:py-5 md:max-2xl:pb-4">
+              <div className="flex-auto">
+                <Link
+                  to={post.permalink}
+                  className="block text-[1.25rem] font-semibold text-inherit hover:text-accent"
+                  prefetch="intent"
+                >
+                  <div className="line-clamp-2">
                     {!post.published && <span style={{ color: 'var(--color-danger)' }}>【草稿】</span>}
                     {post.title}
                   </div>
                 </Link>
-                <div className="d-none d-md-block list-desc text-secondary text-md mt-3">
-                  <div className="h-3x">{post.summary ?? ''}</div>
+                <div className="hidden md:block text-foreground-soft text-md mt-3">
+                  <div className="line-clamp-3">{post.summary ?? ''}</div>
                 </div>
               </div>
-              <div className="list-footer">
-                <div className="d-flex flex-fill align-items-center text-muted text-sm">
-                  <div className="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
+              <div>
+                <div className="flex flex-1 items-center text-foreground-muted text-sm">
+                  <div className="flex-1 hidden md:block">{formatShowDate(post.date)}</div>
                   <ListMetric icon="eye" value={post.meta.views} />
-                  <ListMetric icon="heart-fill" value={post.meta.likes} />
+                  <ListMetric icon="heart" value={post.meta.likes} />
                   <ListMetric icon="comment" value={post.meta.comments} />
                 </div>
               </div>
@@ -209,9 +226,9 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
 
 function ListMetric({ icon, value }: { icon: IconName; value: number }) {
   return (
-    <div className="list-like d-inline-block">
+    <div className="inline-flex items-center ml-2.5 bg-transparent text-foreground">
       <DynamicIcon name={icon} className="text-md" />
-      <span className="like-count">{value}</span>
+      <span className="pl-[0.35rem]">{value}</span>
     </div>
   )
 }
@@ -223,10 +240,10 @@ export interface PostSquareProps {
 
 export function PostSquare({ post, first }: PostSquareProps) {
   return (
-    <div className={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
-      <div className="list-item list-nice-overlay">
-        <div className={`media ${first ? 'media-36x17' : ''}`}>
-          <Link to={post.permalink} className="media-content" prefetch="intent">
+    <div className={first ? 'col-span-2 md:col-span-2 xl:col-span-2' : undefined}>
+      <div className="relative flex flex-col min-w-0 break-words mb-0 flex-auto">
+        <Media ratio={first ? '36x17' : '1x1'} className="flex-auto">
+          <MediaCover as={Link} to={post.permalink} hover prefetch="intent">
             <Image
               src={post.cover}
               alt={post.title}
@@ -234,17 +251,19 @@ export function PostSquare({ post, first }: PostSquareProps) {
               height={300}
               thumbhash={post.coverThumbhash}
             />
-            <div className="overlay" />
-          </Link>
-        </div>
-        <div className="list-content">
-          <Link to={post.permalink} className="list-body" prefetch="intent">
-            <div className="list-title h6 h-2x">{post.title}</div>
-            <div className="list-meta font-number d-flex flex-fill text-muted text-sm">
-              <span className="d-inline-block">{formatShowDate(post.date)}</span>
-              <div className="flex-fill" />
+            <div className={`${HOVER_OVERLAY_CLASS} group-hover:opacity-[0.22]`} />
+          </MediaCover>
+        </Media>
+        <div className="absolute right-0 bottom-0 left-0 z-[1] px-4 py-3 max-md:p-2">
+          <Link to={post.permalink} className="flex flex-col flex-none" prefetch="intent">
+            <div className="line-clamp-2 block mb-2 text-base font-semibold text-white hover:text-foreground-on-dark">
+              {post.title}
+            </div>
+            <div className="flex flex-1 text-sm text-foreground-on-dark-muted">
+              <span className="inline-block">{formatShowDate(post.date)}</span>
+              <div className="flex-1" />
               <SquareMetric icon="eye" value={post.meta.views} />
-              <SquareMetric icon="heart-fill" value={post.meta.likes} />
+              <SquareMetric icon="heart" value={post.meta.likes} />
             </div>
           </Link>
         </div>
@@ -255,9 +274,9 @@ export function PostSquare({ post, first }: PostSquareProps) {
 
 function SquareMetric({ icon, value }: { icon: IconName; value: number }) {
   return (
-    <div className="list-like-square d-inline-block">
+    <div className="inline-flex items-center ml-2.5 bg-transparent">
       <DynamicIcon name={icon} className="text-md" />
-      <span className="like-count">{value}</span>
+      <span className="pl-[0.35rem]">{value}</span>
     </div>
   )
 }

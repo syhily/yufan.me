@@ -89,6 +89,6 @@ describe('routes/wp-login', () => {
       }),
     } as never)
 
-    expect(mocks.processAuthFormSubmission).toHaveBeenCalledWith(expect.objectContaining({ redirectTo: '/wp-admin' }))
+    expect(mocks.processAuthFormSubmission).toHaveBeenCalledWith(expect.objectContaining({ redirectTo: '/' }))
   })
 })

@@ -1,60 +1,41 @@
-import type { Highlighter } from 'shiki'
+import type { MDXComponents } from 'mdx/types'
+import type { ComponentProps } from 'react'
 
+import { executeMdxSync } from '@fumadocs/mdx-remote/client'
 import { LRUCache } from 'lru-cache'
-import { Marked } from 'marked'
-import markedShiki from 'marked-shiki'
-import { bundledLanguages, createHighlighter } from 'shiki'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { COMMENT_NODE, ELEMENT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
 
-import { SHIKI_THEME, shikiTransformers } from '@/server/markdown/shiki'
+import { compileMarkdown } from '@/server/markdown/runtime'
 
 const globalForMarkdown = globalThis as unknown as {
-  yufanCommentHighlighterPromise: Promise<Highlighter> | null | undefined
-  yufanCommentMarkedPromise: Promise<Marked> | null | undefined
   yufanCommentMarkdownCache: LRUCache<string, Promise<string>> | undefined
 }
 
-// Lazily create the shiki highlighter the first time we parse a snippet.
-// Loading every bundled language eagerly costs ~80ms even for routes that
-// never render markdown (e.g. JSON action endpoints), so we defer.
-function getHighlighter(): Promise<Highlighter> {
-  if (globalForMarkdown.yufanCommentHighlighterPromise == null) {
-    globalForMarkdown.yufanCommentHighlighterPromise = createHighlighter({
-      langs: Object.keys(bundledLanguages),
-      themes: [SHIKI_THEME],
-    })
-  }
-  return globalForMarkdown.yufanCommentHighlighterPromise
+function mdxNoop(): null {
+  return null
 }
 
-// Reuse a single Marked instance across calls. `new Marked()` per call
-// re-creates the lexer/parser pipeline and re-registers the shiki extension,
-// which is expensive when rendering a comment thread (parseContent runs once
-// per comment, often dozens of times in a single request).
-function getMarked(): Promise<Marked> {
-  if (globalForMarkdown.yufanCommentMarkedPromise == null) {
-    globalForMarkdown.yufanCommentMarkedPromise = (async () => {
-      const highlighter = await getHighlighter()
-      return new Marked().use(
-        markedShiki({
-          highlight(code, lang, props) {
-            return highlighter.codeToHtml(code, {
-              lang,
-              theme: SHIKI_THEME,
-              meta: { __raw: props.join(' ') },
-              transformers: shikiTransformers(),
-            })
-          },
-        }),
-      )
-    })()
-  }
-  return globalForMarkdown.yufanCommentMarkedPromise
+// Post-level MDX tags that may appear in user comments but must not pull
+// `ui/` into the email HTML pipeline (server layering). They are no-ops here,
+// matching the `comment` compile profile (no figure / widget passes).
+const emailMdxComponents: MDXComponents = {
+  MusicPlayer: mdxNoop,
+  Solution: mdxNoop,
+  Friends: mdxNoop,
+  // Raw HTML can compile to a string `style` prop; React rejects that during
+  // `renderToStaticMarkup`. Strip it here — `ultrahtml` already drops `style`
+  // on anchors in the post-sanitize prune pass for security.
+  a: (props: ComponentProps<'a'>) => {
+    const { style: _style, ...rest } = props
+    return createElement('a', rest)
+  },
 }
 
 // Bounded LRU keyed by raw content. parseContent is called from
-// `loader.server.ts` for every comment render and from category descriptions
+// `sender.ts` for every outbound email and from category descriptions
 // on cold start; both have a small working set that benefits from a tiny cache
 // without growing unbounded under traffic.
 const CACHE_LIMIT = 256
@@ -62,11 +43,8 @@ const cache = (globalForMarkdown.yufanCommentMarkdownCache ??= new LRUCache<stri
   max: CACHE_LIMIT,
 }))
 
-// Server-rendered placeholder for empty/missing comment bodies. Rendering
-// "该留言内容为空" through marked + shiki + sanitize is wasteful (the result
-// is always the same `<p>...</p>`), and it also pollutes the LRU cache with a
-// hot key that pushes useful entries out. Returning a constant short-circuits
-// the entire pipeline.
+// Server-rendered placeholder for empty/missing comment bodies. Returning a
+// constant short-circuits the compile + render pipeline.
 export const EMPTY_COMMENT_RAW = '该留言内容为空'
 export const EMPTY_COMMENT_HTML = '<p>该留言内容为空</p>\n'
 
@@ -78,6 +56,11 @@ export async function parseContent(content: string | null | undefined): Promise<
   const normalized = content.replace(/\r\n/g, '\n')
   if (normalized === '' || normalized === EMPTY_COMMENT_RAW) {
     return EMPTY_COMMENT_HTML
+  }
+  // `compileMarkdown` trims; legacy email HTML still rendered whitespace-only
+  // bodies (e.g. a lone `\n` with `breaks: true`) into non-empty HTML.
+  if (normalized.trim() === '') {
+    return '<p><br /></p>\n'
   }
   const cached = cache.get(normalized)
   if (cached) return cached
@@ -99,12 +82,12 @@ export async function parseContent(content: string | null | undefined): Promise<
 const ATTR_ALLOWLIST: Record<string, string[]> = {
   href: ['a'],
   src: ['img'],
-  width: ['img'],
-  height: ['img'],
+  width: ['img', 'rect', 'svg'],
+  height: ['img', 'rect', 'svg'],
   rel: ['a'],
   target: ['a'],
-  class: ['pre', 'code', 'span'],
-  style: ['pre', 'code', 'span'],
+  class: ['pre', 'code', 'span', 'svg', 'g', 'path', 'rect', 'line', 'polygon', 'circle', 'ellipse', 'use'],
+  style: ['pre', 'code', 'span', 'svg', 'g', 'path', 'rect', 'line', 'polygon', 'circle', 'ellipse', 'use'],
   // shiki's transformers add `tabindex="0"` on the wrapping <pre> for
   // accessibility (so keyboard users can scroll long code blocks). It's an
   // inert attribute, but we list it explicitly so the strict prune below
@@ -117,6 +100,29 @@ const ATTR_ALLOWLIST: Record<string, string[]> = {
   type: ['input'],
   disabled: ['input'],
   checked: ['input'],
+  xmlns: ['svg'],
+  viewBox: ['svg'],
+  fill: ['path', 'g', 'svg', 'rect', 'circle', 'ellipse', 'polygon', 'line'],
+  stroke: ['path', 'g', 'svg', 'rect', 'circle', 'ellipse', 'line', 'polygon'],
+  d: ['path'],
+  x: ['rect', 'use', 'text'],
+  y: ['rect', 'use', 'text'],
+  points: ['polygon', 'polyline'],
+  cx: ['circle', 'ellipse'],
+  cy: ['circle', 'ellipse'],
+  r: ['circle'],
+  rx: ['ellipse', 'rect'],
+  ry: ['ellipse', 'rect'],
+  'stroke-width': ['path', 'line', 'polyline', 'polygon', 'rect', 'circle', 'ellipse', 'g'],
+  'stroke-linecap': ['path', 'line'],
+  'stroke-linejoin': ['path'],
+  'fill-opacity': ['path', 'g'],
+  'stroke-opacity': ['path'],
+  'aria-hidden': ['svg'],
+  focusable: ['svg'],
+  role: ['svg'],
+  transform: ['g', 'svg', 'use'],
+  overflow: ['svg'],
 }
 
 const ALLOWED_ELEMENTS = [
@@ -148,12 +154,35 @@ const ALLOWED_ELEMENTS = [
   'ol',
   'li',
   'input',
+  'svg',
+  'g',
+  'path',
+  'defs',
+  'clipPath',
+  'use',
+  'rect',
+  'line',
+  'polyline',
+  'polygon',
+  'circle',
+  'ellipse',
+  'foreignObject',
+  'text',
+  // MathJax 4 wraps formulas in custom elements; keep the subtree so email
+  // notifications match the in-app comment renderer.
+  'mjx-container',
+  'mjx-math',
+  'mjx-assistive-mml',
+  'mjx-svg',
 ]
 
 async function renderContent(normalized: string): Promise<string> {
-  const marked = await getMarked()
-  // Let marked convert single line breaks into <br /> without breaking Markdown
-  const parsed = await marked.parse(normalized, { breaks: true, gfm: true })
+  const compiled = await compileMarkdown(normalized, { profile: 'email' })
+  if (compiled === null) {
+    return EMPTY_COMMENT_HTML
+  }
+  const Body = executeMdxSync(compiled.compiled).default
+  const parsed = renderToStaticMarkup(createElement(Body, { components: emailMdxComponents }))
   // Avoid the XSS attack.
   return transform(parsed, [
     async (node) => {

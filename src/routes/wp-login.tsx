@@ -11,6 +11,9 @@ import {
 } from '@/server/session'
 import { safeRedirectPath } from '@/shared/safe-url'
 import { AdminCredentialsForm } from '@/ui/admin/AdminCredentialsForm'
+import { Alert } from '@/ui/primitives/Alert'
+import { Container } from '@/ui/primitives/Container'
+import { Heading } from '@/ui/primitives/Heading'
 
 import type { Route } from './+types/wp-login'
 
@@ -35,7 +38,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   const { session, clientAddress, url } = getRouteRequestContext({ request, context })
-  const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/wp-admin', url.origin)
+  const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
   return processAuthFormSubmission({
     request,
     schema: signInSchema,
@@ -52,10 +55,12 @@ export function meta() {
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
   return (
-    <div className="container">
-      <h1 className="mb-4">用户登陆</h1>
-      {actionData?.error && <div className="alert alert-danger">{actionData.error}</div>}
+    <Container size="narrow">
+      <Heading level={1} className="mb-4">
+        用户登陆
+      </Heading>
+      {actionData?.error && <Alert tone="danger">{actionData.error}</Alert>}
       <AdminCredentialsForm mode="login" token={loaderData.token} />
-    </div>
+    </Container>
   )
 }

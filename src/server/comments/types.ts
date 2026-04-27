@@ -11,6 +11,14 @@ export interface LatestComment {
 // Grouping the comments into parent child structure.
 export interface CommentItem extends CommentAndUser {
   badgeTextColor?: string | null
+  /**
+   * Compiled MDX body produced by `@/server/markdown/runtime` (the
+   * `comment` profile). The string is a JS function-body that
+   * `executeMdxSync` evaluates client-side to mount the rendered React
+   * subtree. `null` for empty comment bodies — the UI shows a placeholder
+   * in that case.
+   */
+  bodyCompiled?: string | null
   children?: CommentItem[]
 }
 
@@ -28,6 +36,8 @@ export interface Comments {
 
 export interface AdminComment extends CommentAndUser {
   badgeTextColor?: string | null
+  /** See `CommentItem.bodyCompiled`. */
+  bodyCompiled?: string | null
   pageTitle: string | null
 }
 

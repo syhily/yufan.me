@@ -1,20 +1,580 @@
-/* Bootstrap is consumed for reboot/grid/utility classes only. The heavier
-   component bundle is replaced by `bootstrap-compat.css`, which contains the
-   small button/form/card surface this app actually renders. */
-@import 'bootstrap/dist/css/bootstrap-reboot.css';
-@import 'bootstrap/dist/css/bootstrap-grid.css';
-@import 'bootstrap/dist/css/bootstrap-utilities.css';
-@import '@/assets/styles/reset.css';
+/* Tailwind CSS v4 entry. The Tailwind import comes first so utility classes
+   can be overridden by component selectors declared further down in the
+   cascade. */
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 @import '@/assets/fonts/iosevka.css';
-@import '@/assets/styles/bootstrap-compat.css';
+@import '@/ui/post/toc/tocTokens.css';
+@import '@/ui/mdx/codeBlockTokens.css';
 
-/*--------------------------------------------------------------
-# Internal partials, declared in cascade order. The 3.2K-line
-# pre-refactor file lived at this single path; the split was made
-# in step 6 of the codebase optimization plan to make sections
-# discoverable while keeping the resolved cascade byte-identical.
---------------------------------------------------------------*/
-@import '@/assets/styles/_base.css';
-@import '@/assets/styles/_widgets.css';
-@import '@/assets/styles/_comments.css';
-@import '@/assets/styles/_icons.css';
+/* -------------------------------------------------------------------------- */
+/*  Dark-mode hook — `dark:` variants fire whenever a `.nice-dark-mode`      */
+/*  class is present on (or above) the host element. The class itself is     */
+/*  toggled by future site chrome (today nothing flips it). When it does     */
+/*  ship, every component already follows the dark track via the semantic   */
+/*  tokens overridden inside `.nice-dark-mode { … }` further down.           */
+/* -------------------------------------------------------------------------- */
+
+@custom-variant dark (&:where(.nice-dark-mode, .nice-dark-mode *));
+
+/* -------------------------------------------------------------------------- */
+/*  @theme — design tokens (colors, radii, fonts, animations) plus the       */
+/*  `@keyframes` they reference. Tailwind v4 generates the matching utility  */
+/*  classes (text-*, bg-*, border-*, ring-*, rounded-*, font-*, animate-*)   */
+/*  and exposes the values at runtime as `var(--color-foreground)` etc.      */
+/* -------------------------------------------------------------------------- */
+
+@theme {
+  /* ---------------------------------------------------------------------
+   * Layer B — semantic design tokens. One token = one semantic role.
+   * Every utility class consumes these directly (`text-foreground`,
+   * `bg-surface-muted`, `border-border-strong`, `text-accent`, …); there
+   * is no compatibility alias layer.
+   *
+   * `.nice-dark-mode` further down overrides ONLY the semantic tokens
+   * declared here, so every consumer automatically follows the dark
+   * track when the variant lights up.
+   * ------------------------------------------------------------------ */
+
+  /* Foreground (text) -------------------------------------------------- */
+  --color-foreground: #151924;
+  --color-foreground-soft: #404b69;
+  --color-foreground-muted: #8a92a9;
+  --color-foreground-on-dark: #e8e9ea;
+
+  /* Surfaces (page / panel / card) ------------------------------------ */
+  --color-background: #fbfbfd;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f6f7;
+  --color-surface-inverse: #283149;
+  --color-surface-inverse-strong: #151b2b;
+
+  /* Brand accent ------------------------------------------------------- */
+  --color-accent: #008c95;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #fff0f0;
+  --color-accent-strong: #006d75;
+
+  /* Status palette ----------------------------------------------------- */
+  --color-success: #41d589;
+  --color-danger: #f7094c;
+  --color-danger-soft: #ffe8e8;
+  --color-warning: #ff8338;
+  --color-warning-soft: #ffe9d5;
+
+  /* Borders ------------------------------------------------------------ */
+  --color-border: #eff3fa;
+  --color-border-strong: #d4ddec;
+  /* Sidebar widget title hairlines (`<WidgetTitle />`). Lighter than the
+   * generic surface border so the section dividers stay subtle. */
+  --color-border-sidebar: #d2e3e4;
+  /* Mobile chrome strip below the sticky header. Slightly cooler than the
+   * default surface border; only used by `<Header />`'s small-screen bar. */
+  --color-border-chrome: #ebf1f6;
+
+  /* On-dark cover meta text (post card timestamps + view/like counters
+   * floating above a dark image). Sits between `--color-foreground-on-dark`
+   * (full opacity surface text) and the cover overlay so it stays legible
+   * without cranking up the saturation. */
+  --color-foreground-on-dark-muted: #eaecf3;
+
+  /* Overlays ----------------------------------------------------------- */
+  --color-overlay-scrim: rgb(40 49 73 / 0.66);
+
+  /* LikeButton (Layer C — single component) -----------------------------
+   * Surfaces the "liked" state without an `!important` override on the
+   * generic Button. Drives `data-[liked=true]:bg-liked` and a matching
+   * pressed-shadow utility. Dark mode below relaxes the saturation so the
+   * heart pops on the dim canvas without burning. See
+   * `refactor-design.md` §4.6.
+   * ------------------------------------------------------------------ */
+  --color-liked: #ff4053;
+  --color-liked-shadow: rgb(228 93 106 / 0.35);
+
+  /* Comment badge (Layer C — single component) --------------------------
+   * Fallback palette for the per-author "站长" / "管理员" badge rendered
+   * inside `<CommentItem>`. The component sets `--badge-color` /
+   * `--badge-fg` inline only when `comment.badgeColor` is non-null; the
+   * tokens here are the "no-author-color" defaults so the fallback hex
+   * stops leaking into JSX. The contrast helper in
+   * `@/server/comments/badge` keeps `commentBadgeTextColor()` happy by
+   * pointing at the same default brand accent.
+   * ------------------------------------------------------------------ */
+  --badge-color: var(--color-accent);
+  --badge-fg: var(--color-accent-fg);
+
+  /* ---------------------------------------------------------------------
+   * Project breakpoints. Tailwind v4 default `2xl` is 1536px; this project
+   * historically uses Bootstrap-style 576/768/992/1200/1400. Re-declaring
+   * the named tokens here lets `sm:` / `md:` / `lg:` / `xl:` / `2xl:` map
+   * to the project's existing pixel layout, replacing the scattered
+   * `min-[576px]:`, `min-[1400px]:` etc. arbitrary-value variants in
+   * `<Container>`, `Header`, post listings, and admin layout.
+   * ------------------------------------------------------------------ */
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1400px;
+
+  /* Radii -> generates `rounded-*` utilities. */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* Mono font for `font-mono` utility. */
+  --font-mono: 'Iosevka', monospace;
+  --font-code: 'Iosevka', monospace;
+
+  /* Serif body font used by `font-serif` (post / page MDX bodies). */
+  --font-serif: 'OPPO Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
+
+  /* Animations -> generates `animate-*` utilities. */
+  --animate-spinner: spinner-border 0.75s linear infinite;
+  --animate-shake: shake 0.6s ease both;
+  --animate-shimmer: comments-skeleton-shimmer 1.4s linear infinite;
+
+  @keyframes spinner-border {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes shake {
+    10%,
+    90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    20%,
+    80% {
+      transform: translate3d(2px, 0, 0);
+    }
+    30%,
+    50%,
+    70% {
+      transform: translate3d(-2px, 0, 0);
+    }
+    40%,
+    60% {
+      transform: translate3d(2px, 0, 0);
+    }
+  }
+
+  @keyframes comments-skeleton-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Dark-mode track. Overrides the Layer-B semantic tokens declared above.   */
+/*  Every utility / component reads through these tokens directly, so a       */
+/*  single dark override here flips the whole tree. The class itself is      */
+/*  toggled by `<DarkModeToggle>` (not yet wired into the chrome); every     */
+/*  component using `dark:bg-surface-muted` etc. reacts the moment it lights */
+/*  up.                                                                       */
+/*                                                                            */
+/*  Each color below is the project's documented "dark" intent (see          */
+/*  `refactor-design.md` §2.2). Visual verification per token is part of     */
+/*  the dark-mode toggle follow-up; the values here are the agreed           */
+/*  starting point.                                                           */
+/* -------------------------------------------------------------------------- */
+
+.nice-dark-mode {
+  /* Foreground (text) */
+  --color-foreground: #e8e9ea;
+  --color-foreground-soft: #a8b0c0;
+  --color-foreground-muted: #737a8a;
+  --color-foreground-on-dark: #e8e9ea;
+
+  /* Surfaces */
+  --color-background: #131419;
+  --color-surface: #1c1d23;
+  --color-surface-muted: #232327;
+  --color-surface-inverse: #3d4666;
+  --color-surface-inverse-strong: #0b0f1a;
+
+  /* Brand accent */
+  --color-accent: #2bd3da;
+  --color-accent-fg: #0a0d12;
+  --color-accent-soft: #1f3236;
+  --color-accent-strong: #7df4f9;
+
+  /* Status palette */
+  --color-success: #41d589;
+  --color-danger: #ff5d83;
+  --color-danger-soft: #3a1c2a;
+  --color-warning: #ffae74;
+  --color-warning-soft: #3a2c1c;
+
+  /* Borders */
+  --color-border: #2a2c33;
+  --color-border-strong: #3d4048;
+  --color-border-sidebar: #2f3640;
+  --color-border-chrome: #1f2126;
+
+  /* On-dark cover meta text — the dark-mode value sits a touch warmer so
+   * the timestamps stay legible against the dimmed cover overlay. */
+  --color-foreground-on-dark-muted: #c1c5d2;
+
+  /* Overlays */
+  --color-overlay-scrim: rgb(0 0 0 / 0.7);
+
+  /* LikeButton (component token) — softer hue / shadow on dim canvas. */
+  --color-liked: #ff5d83;
+  --color-liked-shadow: rgb(255 93 131 / 0.5);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  @layer base — element-level resets and typography                         */
+/* -------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    font-size: 16px;
+  }
+
+  html,
+  body {
+    border: none;
+    margin: 0;
+    padding: 0;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    font-family:
+      'OPPO Sans 4.0',
+      'PingFang SC',
+      'Lantinghei SC',
+      'Microsoft YaHei',
+      'Source Han Sans CN',
+      -apple-system,
+      BlinkMacSystemFont,
+      'HanHei SC',
+      'Helvetica Neue',
+      'Open Sans',
+      Arial,
+      'Hiragino Sans GB',
+      STHeiti,
+      'WenQuanYi Micro Hei',
+      SimSun,
+      sans-serif,
+      'Apple Color Emoji',
+      'Segoe UI Emoji',
+      'Segoe UI Symbol';
+    font-size: 0.9375rem;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Per-tag typography (h1..h6, p, blockquote, ol/ul/li, table family,
+     code, pre, cite, dt/dd) is owned by the matching React components in
+     `src/ui/mdx/{prose,table}.tsx` (for MDX) and `src/ui/primitives/
+     Heading.tsx` (for direct route headings). The previous global
+     cascade — element-wide font-size resets, four breakpoint heading
+     scales, table chrome, anchor `transition: all 0.25s` — has been
+     deleted because Tailwind preflight covers the basics and the JSX
+     wrappers cover everything else. */
+
+  /* Native form defaults + keyboard focus rings. Bare inputs (admin forms)
+     pick up border + foreground text; CVA-based fields layer their own
+     surfaces. Buttons and inputs use `:focus-visible` so pointer focus
+     does not flash the UA ring while Tab navigation keeps a clear outline. */
+  input,
+  textarea {
+    border-color: var(--color-border);
+    color: var(--color-foreground);
+  }
+
+  input[type='url'],
+  input[type='email'],
+  input[type='tel'] {
+    direction: ltr;
+  }
+
+  input[type='text'],
+  input[type='password'],
+  input[type='email'],
+  input[type='url'] {
+    appearance: none;
+    box-shadow: none;
+  }
+
+  input[type='date'],
+  input[type='month'],
+  input[type='time'],
+  input[type='datetime'],
+  input[type='datetime-local'],
+  input[type='week'],
+  input[type='number'],
+  input[type='search'],
+  input[type='tel'],
+  input[type='color'],
+  textarea {
+    appearance: none;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+
+  textarea {
+    line-height: 1.5;
+    width: 100%;
+    height: auto;
+    resize: none;
+  }
+
+  input[type='search']::-webkit-search-decoration,
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-results-button,
+  input[type='search']::-webkit-search-results-decoration {
+    display: none;
+  }
+
+  button {
+    appearance: none;
+  }
+
+  button:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  input:focus:not(:focus-visible),
+  textarea:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Media — only the bare-minimum max-width clamp so MDX-rendered
+     <img>/<embed>/<iframe>/<video> never break the listing grid. */
+  img,
+  embed,
+  iframe,
+  object,
+  video {
+    max-width: 100%;
+  }
+  img {
+    height: auto;
+    vertical-align: middle;
+  }
+
+  template,
+  [hidden] {
+    display: none !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  @utility — Tailwind-style class definitions for our shared primitives.    */
+/*                                                                            */
+/*  These behave like first-class Tailwind utilities (work with variants,     */
+/*  composable with arbitrary values), but the class names match what the     */
+/*  components have always used so we don't have to rename them.              */
+/* -------------------------------------------------------------------------- */
+
+@utility icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}
+
+@utility text-md {
+  font-size: 0.9375rem;
+  @media (max-width: 767.98px) {
+    font-size: 0.9375rem;
+  }
+  @media (min-width: 768px) and (max-width: 991.98px) {
+    font-size: 0.9375rem;
+  }
+}
+
+@utility text-xl {
+  font-size: 1.625rem;
+  @media (max-width: 767.98px) {
+    font-size: 1.5rem;
+  }
+  @media (min-width: 768px) and (max-width: 991.98px) {
+    font-size: 1.5rem;
+  }
+}
+
+/* The `.bg-img` background helper used by hero and admin layouts. */
+@utility bg-img {
+  background-size: cover;
+  background-position: 50% 50%;
+  background-repeat: no-repeat;
+}
+
+/* Used by listing-card overlays where a translucent dark backdrop makes
+   the overlaid badge readable against the cover image. */
+@utility bg-white-overlay {
+  color: var(--color-surface);
+  background-color: rgb(40 49 73 / 60%);
+}
+
+/* -------------------------------------------------------------------------- */
+/*  @layer utilities — opt-in helpers that only attach when explicitly used.  */
+/*                                                                            */
+/*  The TOC drawer renders inside `<TableOfContents>` which lives outside the */
+/*  generated bundle's static analysis (Tailwind cannot author webkit         */
+/*  scrollbar pseudo-elements through JSX), so the `.toc-scrollbar` helper    */
+/*  carries the entire scrollbar look in one short rule the component opts    */
+/*  into via `className`.                                                     */
+/* -------------------------------------------------------------------------- */
+
+@layer utilities {
+  .toc-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    width: 4px;
+  }
+
+  .toc-scrollbar::-webkit-scrollbar-button {
+    height: 0;
+    width: 0;
+  }
+
+  .toc-scrollbar::-webkit-scrollbar-track:vertical,
+  .toc-scrollbar::-webkit-scrollbar-track:horizontal {
+    background-clip: padding-box;
+    background-color: var(--color-toc-scrollbar-track);
+    border: 0 solid transparent;
+  }
+
+  .toc-scrollbar::-webkit-scrollbar-thumb {
+    background-clip: padding-box;
+    background-color: rgba(255, 255, 255, 0.3);
+    min-height: 40px;
+    padding-top: 100px;
+    border-radius: 2px;
+  }
+
+  /* Comments skeleton shimmer surface. The animated `background-position`
+     interpolation across a long gradient is awkward to express purely with
+     utilities — the moving stop list is a single static gradient image, so
+     we anchor it here and the JSX side adds `animate-shimmer` for motion. */
+  .comments-skeleton-line {
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.08) 50%, rgba(0, 0, 0, 0.04) 100%);
+    background-size: 200% 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .comments-skeleton-line {
+      animation: none;
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  @layer components — MDX cascade and third-party DOM hooks.                */
+/*                                                                            */
+/*  Everything in this layer styles HTML emitted by tools we do NOT control:  */
+/*    1. Fumadocs MDX cascade hosted by `.prose-host` (the article wrapper    */
+/*       and the comment / category-description prose surfaces) —            */
+/*       `<a><img>` zoom cursor; per-element typography lives in the prose   */
+/*       components in `src/ui/mdx/{prose,table}.tsx`.                        */
+/*    2. Shiki tokens (`pre.shiki span`).                                     */
+/*    3. medium-zoom portal nodes.                                            */
+/*                                                                            */
+/*  Component-level styles for OUR JSX (CodeBlock chrome, TOC drawer,         */
+/*  Solution wrapper, APlayer wrapper, Tooltip, comments skeleton motion,     */
+/*  shake/shimmer keyframes, top-level blockquotes, .h5/.h6/font-* orphans)   */
+/*  live inline on the components or in `@theme` tokens — not here.           */
+/*                                                                            */
+/*  Hard cap: this layer holds at most THREE selector scope strings —        */
+/*  `.prose-host`, `pre.shiki`, and `.medium-zoom-overlay`. Adding a fourth  */
+/*  requires a comment in this header explaining why a React component       */
+/*  cannot own the rule. The contract test in                                */
+/*  `tests/contract.boundaries.test.ts` enforces the cap on PRs.             */
+/* -------------------------------------------------------------------------- */
+
+@layer components {
+  /* ---- Post content (Markdown body) --------------------------------------
+     The article shell, comment bodies, and category-description previews
+     all use `<div className="prose-host ...">`. Comments compile their
+     bodies through the `@/server/markdown/runtime` pipeline so they share
+     `postMdxComponents` with the post body — no separate cascade lives
+     in CSS for them anymore.
+
+     Per-element typography (h1..h6, p, img, ol/ul/li, hr, code, pre,
+     blockquote, table family, caption, center, the Solution wrapper) is
+     owned by the prose / table components in `src/ui/mdx/{prose,table}.tsx`
+     (wired up via `useMDXComponents` in `MdxContent.tsx`). The rules below
+     are the closed list of exceptions — things JSX cannot reach:
+
+       - `<a><img>` zoom cursor — the `<a>` wrapper is emitted by remark
+         when a link wraps an image and React cannot reach the wrapper to
+         attach a `cursor: zoom-in` from JSX.
+       - Shiki dual-theme colour binding — Shiki emits
+         `<pre class="shiki">` with inline
+         `style="--shiki-light:#…;--shiki-dark:#…"`, so the cascade has to
+         pick which palette to bind to the actual `color` property.
+       - `.medium-zoom-overlay` — third-party portal node outside the
+         component tree.
+
+     Adding a new selector here requires a comment explaining why a JSX
+     wrapper cannot own it. Otherwise prefer extending the prose / table
+     components. */
+
+  .prose-host a img {
+    cursor: zoom-in;
+  }
+
+  /* Shiki token colors (light + dark). Shiki emits `<pre class="shiki">`
+     with inline `<span style="--shiki-light:...;--shiki-dark:...">`; this
+     rule binds the right palette to the actual `color` property so the
+     inline custom properties take effect. The selector is intentionally
+     unscoped — any `pre.shiki`, even outside an MDX body, gets the same
+     colour binding so the highlighter is portable. */
+  pre.shiki {
+    color: var(--shiki-light);
+    background-color: var(--color-surface-muted);
+  }
+
+  pre.shiki span {
+    color: var(--shiki-light);
+  }
+
+  @variant dark {
+    pre.shiki {
+      color: var(--shiki-dark);
+      background-color: var(--shiki-dark-bg, var(--color-surface-muted));
+    }
+
+    pre.shiki span {
+      color: var(--shiki-dark);
+    }
+  }
+
+  /* medium-zoom portal nodes rendered by `<MdxImg />` overlay above the
+     post chrome but below modals; this rule simply hoists their stacking
+     context above the TOC drawer. */
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 1080;
+  }
+}

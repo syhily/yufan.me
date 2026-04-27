@@ -1,11 +1,28 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { beforeAll, describe, expect, it } from 'vite-plus/test'
 
 import type { CommentItem as CommentItemType } from '@/server/comments/types'
 
+import { compileMarkdown } from '@/server/markdown/runtime'
 import { Comment } from '@/ui/comments/Comment'
 import { CommentItem } from '@/ui/comments/CommentItem'
 
 import { renderInRouter } from './_helpers/render'
+
+// Pre-compile the two comment bodies used across this file. The runtime
+// MDX compiler is async, but the snapshot tests want a synchronous
+// `renderInRouter` call. Warming the cache in `beforeAll` lets each
+// fixture grab its `bodyCompiled` synchronously through a closure.
+let helloBody: string
+let replyBody: string
+
+beforeAll(async () => {
+  const [hello, reply] = await Promise.all([
+    compileMarkdown('Hello, world.', { profile: 'comment' }),
+    compileMarkdown('Reply.', { profile: 'comment' }),
+  ])
+  helloBody = hello?.compiled ?? ''
+  replyBody = reply?.compiled ?? ''
+}, 60_000)
 
 function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
   return {
@@ -13,7 +30,7 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     createAt: new Date('2024-01-15T08:30:00.000Z'),
     updatedAt: new Date('2024-01-15T08:30:00.000Z'),
     deleteAt: null,
-    content: '<p>Hello, world.</p>',
+    content: 'Hello, world.',
     pageKey: '/posts/hello',
     userId: 42n,
     isVerified: true,
@@ -33,6 +50,7 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     badgeName: null,
     badgeColor: null,
     badgeTextColor: null,
+    bodyCompiled: helloBody,
     children: [],
     ...overrides,
   }
@@ -60,9 +78,14 @@ describe('snapshot: comment HTML', () => {
         admin={false}
       />,
     )
-    expect(html).toContain('<span class="badge comment-author-badge fw-bold"')
-    expect(html).toContain('color:#151b2b')
-    expect(html).not.toContain('<div class="badge')
+    // Inline style writes the per-author palette to CSS custom
+    // properties; the surface picks them up through Tailwind utilities
+    // like `bg-[color:var(--badge-color)]`. The fallback hex now lives
+    // in `globals.css` rather than in the component file, so the
+    // assertions check the variable names rather than literal hex.
+    expect(html).toContain('--badge-color:#6ab7ca')
+    expect(html).toContain('--badge-fg:#151b2b')
+    expect(html).toContain('rounded-full font-bold')
     expect(html).toMatchSnapshot()
   })
 
@@ -73,7 +96,8 @@ describe('snapshot: comment HTML', () => {
       rootId: 1n,
       name: 'Bob',
       link: null,
-      content: '<p>Reply.</p>',
+      content: 'Reply.',
+      bodyCompiled: replyBody,
     })
     const root = makeComment({ children: [child] })
     const html = renderInRouter(<CommentItem comment={root} depth={1} admin={true} />)

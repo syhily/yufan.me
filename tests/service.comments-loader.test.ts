@@ -48,8 +48,17 @@ vi.mock('@/server/email/sender', () => ({
   sendNewReply: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/markdown/parser', () => ({
-  parseContent: vi.fn(async (content: string) => content),
+// `parseComments` / `createComment` now route every body through the
+// runtime MDX compiler; mocking it keeps the loader tests fast (the
+// real `@fumadocs/mdx-remote` pipeline pulls in a few hundred KB of
+// MDX deps and adds ~100ms per call).
+vi.mock('@/server/markdown/runtime', () => ({
+  compileMarkdown: vi.fn(async (source: string | null | undefined) => {
+    if (source === null || source === undefined) return null
+    const trimmed = source.replace(/\r\n/g, '\n').trim()
+    if (trimmed === '') return null
+    return { compiled: `MOCK::${trimmed}`, plain: trimmed }
+  }),
 }))
 
 const queries = await import('@/server/db/query/comment')

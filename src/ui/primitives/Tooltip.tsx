@@ -11,9 +11,17 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 
-import '@/assets/styles/vendor/tooltip.css'
-
 const GAP = 8
+
+const TOOLTIP_CLASS = [
+  'absolute z-[1080]',
+  'max-w-[min(24rem,calc(100vw-1rem))]',
+  'px-2.5 py-1.5',
+  'rounded-xs text-foreground bg-surface',
+  'shadow-[0_8px_28px_rgb(40_49_73/0.14)]',
+  'text-[0.8125rem] leading-[1.6]',
+  'pointer-events-none',
+].join(' ')
 
 export type TooltipPlacement = 'top' | 'left'
 
@@ -186,7 +194,7 @@ export function TooltipContent({ children }: TooltipContentProps) {
     <div
       ref={ctx.tooltipRef}
       id={ctx.id}
-      className={`site-tooltip site-tooltip-${ctx.placement}`}
+      className={TOOLTIP_CLASS}
       role="tooltip"
       style={{
         left: ctx.position?.left ?? 0,
@@ -195,8 +203,44 @@ export function TooltipContent({ children }: TooltipContentProps) {
       }}
     >
       {children}
+      <TooltipArrow placement={ctx.placement} />
     </div>,
     document.body,
+  )
+}
+
+// SVG arrow that replaces the previous `::before` triangle. The fill picks
+// up the tooltip's background-color via `fill="currentColor"` plus a
+// `text-surface` colour utility, and `aria-hidden` keeps it out of the
+// accessibility tree (the `<div role="tooltip">` parent is what assistive
+// tech reads).
+function TooltipArrow({ placement }: { placement: TooltipPlacement }) {
+  if (placement === 'left') {
+    return (
+      <svg
+        aria-hidden="true"
+        focusable="false"
+        viewBox="0 0 6 12"
+        width="6"
+        height="12"
+        className="absolute top-1/2 -right-[6px] -mt-[6px] text-surface"
+      >
+        <path d="M0 0 L6 6 L0 12 Z" fill="currentColor" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 12 6"
+      width="12"
+      height="6"
+      className="absolute left-1/2 -bottom-[6px] -ml-[6px] text-surface"
+    >
+      <path d="M0 0 L6 6 L12 0 Z" fill="currentColor" />
+    </svg>
   )
 }
 

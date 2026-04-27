@@ -1,6 +1,7 @@
 import type { Plugin } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
+import tailwindcss from '@tailwindcss/vite'
 import mdx from 'fumadocs-mdx/vite'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
@@ -215,7 +216,7 @@ export default defineConfig({
   staged: {
     '*.{js,jsx,ts,tsx,mjs,cjs}': 'vp fmt && vp lint',
   },
-  plugins: [mdxPlugin, reactRouter(), ssrFontAssets()],
+  plugins: [tailwindcss(), mdxPlugin, reactRouter(), ssrFontAssets()],
   resolve: {
     alias: {
       '@': path.resolve(rootDir, 'src'),

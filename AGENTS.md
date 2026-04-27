@@ -164,14 +164,44 @@ src/
     MusicPlayer, Solution, Friends).
   - `ui/icons/` — Static-export icon library plus the inline SVG
     pieces.
-  - `ui/lib/` — UI-only utilities such as the `cn()` helper.
 - For raw HTML, use `dangerouslySetInnerHTML` directly on the host
   element. Do not recreate a generic `Html` wrapper component.
-- For conditional classNames, use `cn()` from `@/ui/lib/cn`. The current
-  implementation is dependency-free (string concatenation that drops
-  falsy entries); a follow-up may upgrade it to `clsx + tailwind-merge`
-  if/when the surface grows enough to need class arbitration. Consult
-  the `tailwind-design-system` Skill before changing the helper.
+- For conditional / merged Tailwind classNames inside a component,
+  call `twMerge(clsx(...))` directly (`clsx` from `clsx`, `twMerge`
+  from `tailwind-merge`). The project intentionally has no shared
+  `cn()` re-export so each call site is self-contained and the
+  bundler can analyse Tailwind class strings statically.
+- MDX-rendered HTML inside post/page bodies, comment bodies, and
+  category-description previews (all `<div className="prose-host …">`)
+  is styled by lightweight per-tag wrappers under `src/ui/mdx/` —
+  `prose.tsx` covers `h1..h6`, `p`, `a`, `ol`, `ul`, `li`, `hr`,
+  `code` (inline), `blockquote`, `sup`, `center`, and `table.tsx`
+  covers `table`, `thead`, `tbody`, `tr`, `th`, `td`, `caption`.
+  These are wired into MDX through the `MDXComponents` map in
+  `src/ui/mdx/MdxContent.tsx`. Add a new wrapper there before
+  reaching for a `.prose-host <tag>` rule in `globals.css`. The
+  `.prose-host` cascade in `globals.css` is intentionally kept tiny
+  and only covers what JSX cannot reach: `<a><img>` zoom cursor.
+  Everything else (Shiki dual-theme `<pre class="shiki">` colour
+  binding, medium-zoom portal nodes) lives in its own scope in the
+  same `@layer components` block.
+- `@layer components` only allows three scope-string selectors:
+  `.prose-host`, `pre.shiki`, and `.medium-zoom-overlay`. Adding a
+  fourth requires a comment in `globals.css` (and a note in the PR
+  description) explaining why a React component cannot own the rule.
+  `.toc-scrollbar` stays in `@layer utilities` as an opt-in utility
+  and is exempt from this cap.
+- Comment bodies are compiled to MDX through
+  `@/server/markdown/runtime` (the `comment` profile) and rendered by
+  `<CommentBody>` inside a `.prose-host` wrapper. They share
+  `postMdxComponents` with post bodies, so per-tag styling in
+  `src/ui/mdx/{prose,table}.tsx` covers them automatically. There is
+  no longer a `.comment-content` cascade in `globals.css`. The
+  `parseContent()` in `@/server/markdown/parser` compiles through the same
+  `@fumadocs/mdx-remote` stack as comments (`compileMarkdown` with the
+  `email` profile: CommonMark `format: 'md'`, no heading slug icons), then
+  `executeMdxSync` + `renderToStaticMarkup` to produce HTML for email
+  templates only (SMTP needs a string).
 - Use `<Image />` from `@/ui/primitives/Image` for transformed remote
   images. Use named imports from `@/ui/icons` for inline SVG instead of
   string-based `<Icon name="..." />` lookups (string lookups defeat the
@@ -358,11 +388,13 @@ reviewers reach for during PR review: `server-no-shared-module-state`,
   shells, `src/actions`, `src/middleware`, `src/layouts`,
   `src/services`, `src/hooks`, or `src/db`. These have been folded
   into the four-layer architecture above.
-- Today's UI utilities live under `@/ui/lib`; do not add a duplicate
-  `src/lib/` in parallel. If the shadcn-registry adoption follow-up
-  lands, follow whichever `aliases.lib` is recorded in
-  `components.json` (per the `shadcn` Skill) and migrate the existing
-  files atomically — never split helpers across both directories.
+- There is intentionally no `@/ui/lib/` (or `src/lib/`) helper module
+  today. Class-name composition is inlined as `twMerge(clsx(...))` at
+  every call site so each primitive is self-contained. If the
+  shadcn-registry adoption follow-up lands and re-introduces a `cn()`
+  helper, follow whichever `aliases.lib` is recorded in
+  `components.json` (per the `shadcn` Skill) and migrate every call
+  site atomically — never split the convention across both styles.
 - Keep server-only imports inside `src/server/` (or behind dynamic
   imports inside loaders/actions/resource routes if the call site
   must live elsewhere).

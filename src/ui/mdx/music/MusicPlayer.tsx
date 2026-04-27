@@ -21,9 +21,19 @@ export function MusicPlayer({ id }: MusicPlayerProps) {
       const [{ default: APlayer }, meta] = await Promise.all([
         import('aplayer-ts'),
         loadMusic(id),
-        import('@/assets/styles/vendor/aplayer.css'),
+        import('aplayer-ts/src/css/base.css'),
       ])
       if (cancelled || meta === null) return
+
+      // APlayer expects a literal CSS colour string and stamps it into
+      // inline `style="background:..."` attributes that the project would
+      // otherwise have to keep in lock-step with the brand hex. Resolving
+      // `--color-accent` from `globals.css` at runtime keeps the player's
+      // theme in sync with the design token (light + dark) without baking
+      // a brand-hex literal into JSX. The variable is always declared on
+      // `:root`, so the lookup never returns an empty string in the
+      // browser.
+      const themeColor = getComputedStyle(container).getPropertyValue('--color-accent').trim()
 
       const player = APlayer().init({
         container,
@@ -34,7 +44,7 @@ export function MusicPlayer({ id }: MusicPlayerProps) {
           artist: meta.artist,
           url: meta.url,
           cover: meta.pic,
-          theme: '#008c95',
+          theme: themeColor,
           lrc: meta.lyric,
         },
       })
@@ -55,7 +65,18 @@ export function MusicPlayer({ id }: MusicPlayerProps) {
     }
   }, [id])
 
-  return <div ref={containerRef} className="music-player aplayer" data-id={id} />
+  return (
+    <div
+      ref={containerRef}
+      // The `aplayer` class is also a hook for the dynamically imported
+      // `aplayer-ts/src/css/base.css`, which scopes a few internal styles
+      // to it. Wrapper sizing/margins live as Tailwind utilities so the
+      // only remaining CSS for the player is the third-party stylesheet
+      // itself.
+      className="aplayer my-5 max-w-[350px] max-md:mt-0 max-md:mx-8 max-md:mb-5 max-md:max-w-full"
+      data-id={id}
+    />
+  )
 }
 
 export interface UnstyledMusicPlayerProps {

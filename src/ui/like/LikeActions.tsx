@@ -1,4 +1,6 @@
+import { clsx } from 'clsx'
 import { useEffect, useReducer } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 import type {
   DecreaseLikeInput,
@@ -14,7 +16,8 @@ import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
-import { DynamicIcon, HeartFillIcon } from '@/ui/icons/icons'
+import { DynamicIcon, HeartIcon } from '@/ui/icons/icons'
+import { buttonVariants } from '@/ui/primitives/Button'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -124,20 +127,32 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
     }
   }
 
-  const className = `post-like btn btn-secondary btn-lg btn-rounded${state.liked ? ' current' : ''}${isPending ? ' lock' : ''}`
+  // `data-liked` drives the "loved" surface entirely from CSS so we don't
+  // need `!important` on the className side anymore. The Layer C tokens
+  // `--color-liked` / `--color-liked-shadow` (declared in `globals.css`)
+  // swap automatically in dark mode.
+  const className = twMerge(
+    clsx(
+      buttonVariants({ tone: 'inverse', size: 'lg', shape: 'pill' }),
+      'hover:animate-[shake_0.82s_cubic-bezier(0.36,0.07,0.19,0.97)_both] hover:translate-z-0',
+      'data-[liked=true]:bg-liked data-[liked=true]:border-liked data-[liked=true]:text-surface',
+      'data-[liked=true]:shadow-[0_5px_20px_0_var(--color-liked-shadow)]',
+    ),
+  )
 
   return (
-    <div className="post-action text-center mt-5">
+    <div className="text-center mt-5">
       <button
         className={className}
+        data-liked={state.liked}
         title="Do you like me?"
         type="button"
         data-permalink={permalink}
         onClick={onClick}
         disabled={isPending}
       >
-        <HeartFillIcon className="me-1" />
-        <span className="like-count">{state.likes}</span>
+        <HeartIcon className="me-1 w-[1.1em] h-[1.1em] -mt-0.5 align-middle" />
+        <span className="inline-block align-middle">{state.likes}</span>
       </button>
     </div>
   )
@@ -170,26 +185,28 @@ export function LikeShare({ post }: LikeShareProps) {
     title: `【${post.title}】${post.summary}`,
   }).toString()
 
+  const socialBtn = buttonVariants({ tone: 'neutral', size: 'md', shape: 'circle' })
+
   return (
-    <div className="post-share text-center mt-4">
+    <div className="text-center mt-4">
       <SocialIconLink
         href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
         title="分享到 QQ 空间"
         icon="qq"
-        className="btn btn-light btn-icon btn-md btn-circle mx-1 qq"
+        className={twMerge(clsx(socialBtn, 'mx-1'))}
       />
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
         icon="wechat"
-        className="btn btn-light btn-icon btn-circle btn-md single-popup mx-1"
+        className={twMerge(clsx(socialBtn, 'mx-1'))}
       />
       <SocialIconLink
         href={`https://service.weibo.com/share/share.php?${weibo}`}
         title="分享到微博"
         icon="weibo"
-        className="btn btn-light btn-icon btn-circle btn-md mx-1 weibo"
+        className={twMerge(clsx(socialBtn, 'mx-1'))}
       />
     </div>
   )

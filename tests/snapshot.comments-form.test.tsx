@@ -64,7 +64,10 @@ describe('snapshot: Comments form variants', () => {
       createAt: new Date('2024-04-18T13:06:00.000Z'),
       updatedAt: new Date('2024-04-18T13:06:00.000Z'),
       deleteAt: null,
-      content: '<p>谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。</p>',
+      // The reply form renders a stripped preview of the parent comment;
+      // post-MDX migration `content` is the raw markdown source so the
+      // overlay shows it as-is (no tags to strip).
+      content: '谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。',
       pageKey: '/posts/hello',
       userId: 1n,
       isVerified: true,
@@ -97,8 +100,10 @@ describe('snapshot: Comments form variants', () => {
       />,
     )
 
-    expect(html).toContain('class="form-control comment-reply-textarea"')
-    expect(html).toContain('class="replying-to-overlay"')
+    // The reply textarea is offset down by `pt-10` to clear the absolutely
+    // positioned reply-context overlay above it.
+    expect(html).toContain('pt-10')
+    expect(html).toContain('pointer-events-none')
     expect(html).toContain('回复 @雨帆')
   })
 })

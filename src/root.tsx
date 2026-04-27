@@ -38,9 +38,10 @@ export function loader({ request, context }: Route.LoaderArgs) {
   return { admin }
 }
 
-// The root loader only ships `{ admin }`, which can flip on three POST
-// endpoints: the WordPress-compatible login (`/wp-login.php`), the bootstrap
-// installer (`/wp-admin/install`), and the logout endpoint (`/wp-login.php?action=logout`).
+// The root loader only ships `{ admin }`, which can flip on the
+// WordPress-compatible login (`/wp-login.php`) and the logout action
+// (`/wp-login.php?action=logout`), plus a future install route
+// (`/wp-admin/install`, when remounted) if forms post there again.
 // Every other navigation/fetcher submission leaves the session untouched, so
 // short-circuit revalidation here to skip a `RouterContext` read per nav.
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
@@ -95,13 +96,13 @@ export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutPr
   const resolvedNavigation = navigation || config.navigation
 
   return (
-    <div className="site-layout">
+    <div className="flex flex-col lg:flex-row">
       <Header navigation={resolvedNavigation} admin={admin} />
-      <main className="site-main">
+      <main className="flex flex-1 flex-col">
         {children}
         {showFooter && <Footer />}
       </main>
-      <ul className="site-fixed-widget">
+      <ul className="fixed right-5 bottom-0 block -translate-y-1/2 z-[9999]">
         <ScrollTopButton />
       </ul>
     </div>
@@ -159,9 +160,9 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
 
   return (
     <BaseLayout admin={loaderData?.admin ?? false}>
-      <div className="data-null">
+      <div className="flex h-[50vh] flex-1 flex-col text-center">
         <div className="my-auto">
-          <h1 className="font-number">{title === '未找到页面' ? '404' : '500'}</h1>
+          <h1 className="text-[6rem]">{title === '未找到页面' ? '404' : '500'}</h1>
           <div>{description}</div>
         </div>
       </div>

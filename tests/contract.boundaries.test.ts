@@ -170,10 +170,185 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps solution math scrollable instead of clipping long formulas', () => {
-    const source = readFileSync('src/assets/styles/_base.css', 'utf8')
+    const css = readFileSync('src/assets/styles/globals.css', 'utf8')
+    const rehype = readFileSync('src/server/markdown/rehype-mathjax.ts', 'utf8')
+    const solution = readFileSync('src/ui/mdx/solutions/Solution.tsx', 'utf8')
 
-    expect(source).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
-    expect(source).toContain(".post-content mjx-container[jax='SVG'][display='true']")
-    expect(source).toContain('overflow-x: auto')
+    // The `.solution` blockquote must never set `overflow: hidden`; long
+    // MathJax formulas would be clipped before they could scroll. The
+    // wrapper itself opts into a horizontal scroll surface via Tailwind
+    // utilities on the JSX root.
+    expect(css).not.toMatch(/\.prose-host \.solution\s*{[^}]*overflow:\s*hidden/s)
+    expect(solution).toMatch(/overflow-x-auto/)
+    expect(solution).toMatch(/overflow-y-hidden/)
+
+    // `.solution`-internal `<p>` / `<mjx-container>` margins are now
+    // collapsed via Tailwind arbitrary descendant variants on the
+    // `<Solution>` wrapper, not via a `.prose-host .solution p` cascade.
+    expect(solution).toMatch(/\[&_p\]:/)
+    expect(solution).toMatch(/\[&_mjx-container\]:/)
+
+    // Display-mode MathJax containers must remain horizontally scrollable.
+    // The overflow is applied by `rehype-mathjax.ts` as a Tailwind utility
+    // baked into the generated `<mjx-container>` className list, so the
+    // legacy `.prose-host mjx-container[...]` cascade no longer exists.
+    expect(rehype).toContain('overflow-x-auto')
+    expect(rehype).toContain("'mjx-container'")
+  })
+
+  // ---------------------------------------------------------------------
+  // Design-system lock-down (refactor-design.md "Phase B" contract tests).
+  //
+  // The cleanups completed in commits A1–B1 collapsed the Bootstrap-era
+  // `min-[…px]:` / `max-[…px]:` literals onto the named breakpoint
+  // variants (`sm:` / `md:` / `lg:` / `xl:` / `2xl:`), moved every
+  // brand-hex constant into a CSS variable, renamed the legacy article
+  // wrapper class to `.prose-host`, capped the `@layer components`
+  // scopes at three, and routed comments + category descriptions
+  // through the runtime MDX pipeline. The five tests below freeze that
+  // contract so the next refactor doesn't reintroduce them silently.
+  // ---------------------------------------------------------------------
+
+  it('keeps Bootstrap-era min-[Npx]: / max-[Npx]: literals out of src/ui', () => {
+    // Tailwind variants `sm:` / `md:` / `lg:` / `xl:` / `2xl:` (declared
+    // via `@theme` in `globals.css`) are the only sanctioned breakpoint
+    // hooks. Anything else has to spell out a justification in a comment;
+    // the regex below ignores comment lines so legitimate prose still
+    // compiles, but trips on real class strings.
+    const literalRe = /(?:min|max)-\[\d+(?:\.\d+)?(?:px|rem)\]:/
+    const offenders = files('src/ui', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return source.split('\n').some((line) => {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('//')) return false
+        if (trimmed.startsWith('*')) return false
+        return literalRe.test(line)
+      })
+    })
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps brand-hex literals out of UI component modules (tokens only)', () => {
+    // The full hex palette lives in the `@theme` block in
+    // `globals.css`; component-tree CSS files (e.g.
+    // `tocTokens.css`, `codeBlockTokens.css`) hold component-scoped
+    // tokens. Inside `.tsx` / `.ts` we only ever consume the named
+    // tokens (`text-foreground`, `bg-accent`, etc.), so a literal
+    // `#…` in a JSX file is always a regression. Comments are skipped
+    // so legitimate prose can still mention historical values.
+    const hexRe = /#[0-9a-fA-F]{3,8}\b/
+    const offenders = files('src/ui', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return source.split('\n').some((line) => {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('//')) return false
+        if (trimmed.startsWith('*')) return false
+        return hexRe.test(line)
+      })
+    })
+
+    expect(offenders).toEqual([])
+  })
+
+  it('does not reintroduce the legacy prose wrapper class name', () => {
+    // The article wrapper, comment bodies, and category-description
+    // previews all share `<div className="prose-host …">` now. The
+    // legacy class was renamed in the design-system refactor; this test
+    // prevents it from creeping back via a search / replace gone wrong.
+    // The offending name is constructed at runtime so the test file
+    // itself doesn't trip the regex.
+    const legacy = ['post', 'content'].join('-')
+    const classRe = new RegExp(`["'\\s]${legacy}(?=["'\\s])`)
+    const cssRe = new RegExp(`\\.${legacy}\\b`)
+    const sources = [
+      ...files('src', '-g', '*.ts', '-g', '*.tsx', '-g', '*.css'),
+      ...files('tests', '-g', '*.ts', '-g', '*.tsx'),
+    ].filter((file) => existsSync(file))
+    const offenders = sources.filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return classRe.test(source) || cssRe.test(source)
+    })
+
+    expect(offenders).toEqual([])
+  })
+
+  it('keeps @layer components capped at three selector scope strings', () => {
+    // The `@layer components` block is reserved for HTML we do NOT
+    // control — Fumadocs MDX cascade (`.prose-host`), Shiki tokens
+    // (`pre.shiki`), and medium-zoom portal nodes
+    // (`.medium-zoom-overlay`). Anything else has to live inline on a
+    // React component or as a token in `@theme`, so we cap the layer at
+    // three distinct top-level selectors. `@variant` blocks reuse the
+    // same scopes, so they don't count toward the cap.
+    const rawCss = readFileSync('src/assets/styles/globals.css', 'utf8')
+    // Strip CSS block comments first — comments often embed brace
+    // characters (e.g. `src/ui/mdx/{prose,table}.tsx`) that would
+    // otherwise confuse the depth tracker below.
+    const css = rawCss.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    // Find the top-level `@layer components { ... }` block. We balance
+    // braces manually because the block contains nested `@variant`
+    // groups that a non-greedy `.+?` would prematurely terminate on.
+    const layerStart = css.indexOf('@layer components')
+    expect(layerStart).toBeGreaterThan(-1)
+    const openBrace = css.indexOf('{', layerStart)
+    expect(openBrace).toBeGreaterThan(-1)
+    let depth = 0
+    let layerEnd = -1
+    for (let i = openBrace; i < css.length; i++) {
+      const ch = css[i]
+      if (ch === '{') depth += 1
+      else if (ch === '}') {
+        depth -= 1
+        if (depth === 0) {
+          layerEnd = i
+          break
+        }
+      }
+    }
+    expect(layerEnd).toBeGreaterThan(openBrace)
+    const body = css.slice(openBrace + 1, layerEnd)
+
+    // Strip `@variant …` wrappers — they reuse outer scopes and would
+    // otherwise double-count toward the cap.
+    const stripped = body.replace(/@variant\s+\w+\s*{/g, '')
+
+    // Match every "selector list before `{`" by scanning forward; we
+    // gather the comma-group head of each rule and take the leading
+    // simple selector (`pre.shiki span` -> `pre.shiki`).
+    const scopes = new Set<string>()
+    const ruleRe = /([^{}@]+?)\{/g
+    let match: RegExpExecArray | null
+    while ((match = ruleRe.exec(stripped)) !== null) {
+      const selectorList = match[1].trim()
+      if (selectorList === '') continue
+      // A leftover `}` from a closed `@variant` wrapper shouldn't count.
+      const head = selectorList
+        .replace(/^[}\s]+/, '')
+        .split(',')[0]
+        ?.trim()
+        .split(/\s+/)[0]
+      if (head !== undefined && head !== '' && !head.startsWith('@')) {
+        scopes.add(head)
+      }
+    }
+
+    expect([...scopes].sort()).toEqual(['.medium-zoom-overlay', '.prose-host', 'pre.shiki'])
+  })
+
+  it('renders comments and category descriptions through MDX, not raw HTML injection', () => {
+    // `.comment-content` was retired in commit A4 — comments now
+    // compile through `@/server/markdown/runtime` and render via
+    // `<CommentBody />`. Category descriptions follow the same path
+    // through `<CategoriesBody />`. A raw `dangerouslySetInnerHTML`
+    // anywhere in those trees indicates a regression that bypasses the
+    // shared `postMdxComponents` map and the XSS-safe MDX sandbox.
+    const offenders = [
+      ...files('src/ui/comments', '-g', '*.ts', '-g', '*.tsx'),
+      ...files('src/ui/post/categories', '-g', '*.ts', '-g', '*.tsx'),
+    ].filter((file) => /dangerouslySetInnerHTML/.test(readFileSync(file, 'utf8')))
+
+    expect(offenders).toEqual([])
   })
 })

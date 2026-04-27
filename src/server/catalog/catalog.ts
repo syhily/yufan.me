@@ -27,7 +27,7 @@ import { toClientPost } from '@/server/catalog/schema'
 import { queryMetadata } from '@/server/comments/likes'
 import { loadImageThumbhash } from '@/server/images/thumbhash'
 import { getLogger } from '@/server/logger'
-import { parseContent } from '@/server/markdown/parser'
+import { compileMarkdown } from '@/server/markdown/runtime'
 
 const log = getLogger('content.catalog')
 
@@ -447,22 +447,26 @@ export class ContentCatalog {
 }
 
 async function buildCategories(entries: CategoryMeta[], postsByCategory: Map<string, Post[]>): Promise<Category[]> {
-  const categories = entries.map((category) => ({
-    name: category.name,
-    slug: category.slug,
-    cover: category.cover,
-    description: category.description ?? '',
-    counts: postsByCategory.get(category.name)?.length ?? 0,
-    permalink: `/cats/${category.slug}`,
-  }))
-
-  for (const category of categories) {
-    if (category.description !== '') {
-      category.description = await parseContent(category.description)
-    }
-  }
-
-  return categories
+  // Compile every category description in parallel through the runtime
+  // MDX compiler. Categories are admin-authored so the richer `category`
+  // profile is in play (it adds `rehypeTitleFigure` over the comment
+  // profile). `compileMarkdown` returns `null` for empty / whitespace
+  // sources, which we surface as a `null` description so the listing
+  // route can short-circuit the prose host instead of rendering an
+  // empty `<MdxRemoteBody>`.
+  return Promise.all(
+    entries.map(async (category): Promise<Category> => {
+      const description = await compileMarkdown(category.description, { profile: 'category' })
+      return {
+        name: category.name,
+        slug: category.slug,
+        cover: category.cover,
+        description,
+        counts: postsByCategory.get(category.name)?.length ?? 0,
+        permalink: `/cats/${category.slug}`,
+      }
+    }),
+  )
 }
 
 function buildTags(entries: TagMeta[], postsByTag: Map<string, Post[]>): Tag[] {

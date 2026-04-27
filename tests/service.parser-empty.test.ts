@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import { EMPTY_COMMENT_HTML, EMPTY_COMMENT_RAW, parseContent } from '@/server/markdown/parser'
 
-// Stage-5 short-circuit: `parseContent` must avoid the (cold-load) marked +
+// Stage-5 short-circuit: `parseContent` must avoid the (cold-load) mdx +
 // shiki + sanitize pipeline for the empty-comment placeholder. We assert it
 // returns the constant *synchronously enough* that we can race it against a
-// long-running call without observing the marked round-trip.
+// long-running call without observing the compile round-trip.
 
 describe('services/markdown/parser — EMPTY_COMMENT short-circuit', () => {
   it('returns the constant for the literal placeholder string', async () => {

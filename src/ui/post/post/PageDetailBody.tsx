@@ -10,6 +10,7 @@ import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
 import { LikeButton } from '@/ui/like/LikeActions'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
 import { Footer } from '@/ui/primitives/Footer'
+import { Heading } from '@/ui/primitives/Heading'
 
 export interface PageDetailBodyProps {
   page: DetailPageShell
@@ -32,12 +33,14 @@ export function PageDetailBody({
 }: PageDetailBodyProps) {
   useMediumZoom()
   return (
-    <div className="row gx-0">
-      <div className="col-lg-8 col-xl-8">
-        <div className="post p-3 p-md-5">
-          <h1 className="post-title mb-3 mb-xl-4">{page.title}</h1>
+    <div className="grid grid-cols-1 gap-x-0 lg:grid-cols-[2fr_1fr]">
+      <div className="min-w-0">
+        <div className="post p-3 md:p-5">
+          <Heading level={1} className="mb-3 xl:mb-4">
+            {page.title}
+          </Heading>
           <TableOfContents headings={headings} toc={page.toc} />
-          <div className="post-content">{children}</div>
+          <div className="prose-host text-[0.9375rem] leading-[1.875] [hyphens:auto] mb-6 font-serif">{children}</div>
           <LikeButton permalink={page.permalink} likes={likes} />
           {page.comments && (
             <Suspense fallback={<CommentsSkeleton />}>
@@ -56,8 +59,8 @@ export function PageDetailBody({
         </div>
         <Footer />
       </div>
-      <div className="col-lg-4 col-xl-4 d-none d-lg-block sticky-top hv">
-        <div className="bg-img hv" style={{ backgroundImage: `url('${page.cover}')` }} />
+      <div className="hidden min-w-0 lg:block sticky top-0 z-10 h-screen">
+        <div className="bg-img h-screen" style={{ backgroundImage: `url('${page.cover}')` }} />
       </div>
     </div>
   )

@@ -1,5 +1,7 @@
+import { clsx } from 'clsx'
 import { type ReactNode, Suspense } from 'react'
 import { Await, Link } from 'react-router'
+import { twMerge } from 'tailwind-merge'
 
 import type { ClientTag, CommentFormUser, DetailPostShell, MarkdownHeading } from '@/server/catalog'
 import type { DetailPageComments } from '@/server/comments/page-data'
@@ -10,7 +12,13 @@ import { Comments } from '@/ui/comments/Comments'
 import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
 import { LikeButton, LikeShare } from '@/ui/like/LikeActions'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
+import { badgeVariants } from '@/ui/primitives/Badge'
+import { Card, CardBody } from '@/ui/primitives/Card'
+import { Container } from '@/ui/primitives/Container'
+import { Heading } from '@/ui/primitives/Heading'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
+
+const DETAIL_SHELL_CLASS = 'py-4 md:py-6 lg:px-2 2xl:p-12'
 
 export interface PostDetailBodyProps {
   post: DetailPostShell
@@ -40,21 +48,25 @@ export function PostDetailBody({
 }: PostDetailBodyProps) {
   useMediumZoom()
   return (
-    <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
-      <div className="container">
-        <div className="row">
-          <div className="content-wrapper col-12 col-xl-9">
-            <div className="post card card-md">
-              <div className="card-body">
-                <h1 className="post-title">{post.title}</h1>
-                <div className="post-meta text-sm text-muted mt-3 mb-4">
-                  <time className="post-meta-date">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
+    <div className={DETAIL_SHELL_CLASS}>
+      <Container>
+        <div className="flex flex-col xl:-mx-3 xl:flex-row">
+          <div className="w-full xl:w-3/4 xl:px-3">
+            <Card size="md">
+              <CardBody size="md">
+                <Heading level={1}>{post.title}</Heading>
+                <div className="text-sm text-foreground-muted mt-3 mb-4 flex items-start gap-y-3 gap-x-4 max-md:flex-col max-md:gap-2.5">
+                  <time className="flex-none leading-7 max-md:leading-normal">
+                    {formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}
+                  </time>
                   {visibleTags.length > 0 && (
-                    <div className="post-meta-tags">
+                    <div className="flex flex-auto flex-wrap justify-end gap-2 min-w-0 ml-auto max-md:w-full max-md:justify-start max-md:gap-y-2 max-md:gap-x-2.5 max-md:ml-0">
                       {visibleTags.map((tag) => (
                         <Link
                           key={tag.slug}
-                          className="badge badge-light badge-pill"
+                          className={twMerge(
+                            clsx(badgeVariants({ tone: 'neutral', shape: 'pill' }), 'leading-[1.2] whitespace-nowrap'),
+                          )}
                           to={`/tags/${tag.slug}`}
                           prefetch="intent"
                         >
@@ -65,7 +77,9 @@ export function PostDetailBody({
                   )}
                 </div>
                 <TableOfContents headings={headings} toc={post.toc} />
-                <div className="post-content">{children}</div>
+                <div className="prose-host text-[0.9375rem] leading-[1.875] [hyphens:auto] mb-6 font-serif">
+                  {children}
+                </div>
                 <LikeButton permalink={post.permalink} likes={likes} />
                 <LikeShare post={post} />
                 {post.comments && (
@@ -82,12 +96,12 @@ export function PostDetailBody({
                     </Await>
                   </Suspense>
                 )}
-              </div>
-            </div>
+              </CardBody>
+            </Card>
           </div>
           <Sidebar data={sidebar} admin={admin} />
         </div>
-      </div>
+      </Container>
     </div>
   )
 }

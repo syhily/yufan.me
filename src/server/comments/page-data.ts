@@ -30,13 +30,13 @@ export interface DetailPageComments {
   commentItems: CommentItem[]
 }
 
-// Comments are the slowest dependency on a typical detail page — they read
-// the comment row, page row, and route every body through the markdown
-// parser. Splitting them out lets the loader stream comments via React
-// Router's `<Await>` while the rest of the detail (likes, sidebar,
-// post body) renders immediately. Empty comment payloads short-circuit the
-// marked round-trip through `parseContent` for every "该留言内容为空"
-// placeholder.
+// Comments are the slowest dependency on a typical detail page — they
+// read the comment row, page row, and compile every body through the
+// runtime MDX pipeline. Splitting them out lets the loader stream
+// comments via React Router's `<Await>` while the rest of the detail
+// (likes, sidebar, post body) renders immediately. Empty payloads
+// short-circuit `compileMarkdown` so the empty-comment placeholder
+// path stays free of MDX work.
 async function loadCommentsAndItems(
   session: BlogSession,
   commentKey: string,

@@ -1,5 +1,7 @@
+import { clsx } from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 import { useFetcher } from 'react-router'
+import { twMerge } from 'tailwind-merge'
 
 import type { FindAvatarInput, FindAvatarOutput, ReplyCommentOutput } from '@/client/api/action-types'
 import type { CommentFormUser } from '@/server/catalog'
@@ -9,6 +11,9 @@ import type { ApiEnvelope } from '@/shared/api-envelope'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
+import { Button } from '@/ui/primitives/Button'
+import { inputVariants } from '@/ui/primitives/Input'
+import { Textarea } from '@/ui/primitives/Textarea'
 
 export interface CommentReplyFormProps {
   commentKey: string
@@ -91,9 +96,9 @@ export function CommentReplyForm({
   }
 
   return (
-    <div id="respond" className="comment-respond mb-3 mb-md-4">
-      <fetcher.Form ref={formRef} method={REPLY.method} action={REPLY.path} id="commentForm" className="comment-form">
-        <div className="comment-from-avatar flex-avatar">
+    <div id="respond" className="relative mb-3 md:mb-4">
+      <fetcher.Form ref={formRef} method={REPLY.method} action={REPLY.path} id="commentForm" className="flex flex-auto">
+        <div className="flex-avatar w-10 h-10 mr-[0.9375rem] max-md:w-7 max-md:h-7 max-md:mr-2.5">
           <img
             alt="头像"
             src={avatarSrc}
@@ -103,13 +108,13 @@ export function CommentReplyForm({
             decoding="async"
           />
         </div>
-        <div className="comment-from-input flex-fill">
-          <div className="comment-form-text mb-3 position-relative">
-            <textarea
+        <div className="flex-1">
+          <div className="mb-3 relative">
+            <Textarea
               id="content"
               name="content"
               ref={textareaRef}
-              className={isReplying ? 'form-control comment-reply-textarea' : 'form-control'}
+              className={isReplying ? 'pt-10' : undefined}
               rows={3}
               required
             />
@@ -121,15 +126,15 @@ export function CommentReplyForm({
             )}
           </div>
           <CommentFormFields user={user} commentKey={commentKey} replyToId={replyToId} onEmailBlur={onEmailBlur} />
-          <div className="form-submit text-end">
+          <div className="text-right">
             {replyToId !== 0 && (
-              <button type="button" id="cancel-comment-reply-link" className="btn btn-light me-1" onClick={onCancel}>
+              <Button tone="neutral" id="cancel-comment-reply-link" className="me-1" onClick={onCancel}>
                 再想想
-              </button>
+              </Button>
             )}
-            <button name="submit" type="submit" id="submit" className="btn btn-primary" disabled={isPending}>
+            <Button name="submit" type="submit" id="submit" disabled={isPending}>
               {isPending ? '发表中…' : '发表评论'}
-            </button>
+            </Button>
           </div>
         </div>
       </fetcher.Form>
@@ -144,9 +149,9 @@ interface ReplyOverlayProps {
 
 function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
   return (
-    <div className="replying-to-overlay">
-      <span className="replying-name">回复 @{authorName}</span>
-      {originalContent && <span className="replying-content">: {originalContent}</span>}
+    <div className="absolute top-[0.4rem] left-3 right-3 flex items-center gap-1 text-[0.9rem] text-foreground-soft/95 bg-accent/5 rounded px-2 py-[0.15rem] z-[2] whitespace-nowrap overflow-hidden text-ellipsis opacity-60 pointer-events-none">
+      <span className="font-medium">回复 @{authorName}</span>
+      {originalContent && <span>: {originalContent}</span>}
     </div>
   )
 }
@@ -160,11 +165,12 @@ interface CommentFormFieldsProps {
 
 function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {
   const admin = user?.admin === true
+  const fieldClass = twMerge(clsx(inputVariants()))
   return (
-    <div className="comment-form-info row g-2 g-md-3 mb-3">
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 mb-3">
       {admin ? (
         <input
-          className="form-control"
+          className={fieldClass}
           placeholder={user.name}
           name="name"
           type="text"
@@ -173,13 +179,13 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
           defaultValue={user.name}
         />
       ) : (
-        <div className="col">
-          <input className="form-control" placeholder="昵称" name="name" type="text" required />
+        <div className="min-w-0">
+          <input className={fieldClass} placeholder="昵称" name="name" type="text" required />
         </div>
       )}
       {admin ? (
         <input
-          className="form-control"
+          className={fieldClass}
           name="email"
           placeholder={user.email}
           defaultValue={user.email}
@@ -188,8 +194,8 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
           hidden
         />
       ) : (
-        <div className="col-12 col-md-6">
-          <input className="form-control" name="email" placeholder="邮箱" type="email" required onBlur={onEmailBlur} />
+        <div className="min-w-0">
+          <input className={fieldClass} name="email" placeholder="邮箱" type="email" required onBlur={onEmailBlur} />
         </div>
       )}
       <input hidden name="page_key" type="text" defaultValue={commentKey} />
@@ -198,7 +204,7 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
       <input hidden name="rid" type="text" value={String(replyToId)} readOnly />
       {admin ? (
         <input
-          className="form-control"
+          className={fieldClass}
           placeholder={user.website ?? undefined}
           defaultValue={user.website ?? undefined}
           name="link"
@@ -207,8 +213,8 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
           hidden
         />
       ) : (
-        <div className="col-12">
-          <input className="form-control" placeholder="网址" name="link" type="url" />
+        <div className="min-w-0 md:col-span-2">
+          <input className={fieldClass} placeholder="网址" name="link" type="url" />
         </div>
       )}
     </div>

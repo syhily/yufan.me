@@ -44,7 +44,7 @@ const config: BlogConfig = {
   socials: [
     {
       name: 'GitHub',
-      icon: 'github-fill',
+      icon: 'github',
       type: 'link',
       link: 'https://github.com/syhily',
     },

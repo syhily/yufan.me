@@ -68,11 +68,9 @@ describe('contract: public URL stability', () => {
     expect(paths.has('images/avatar/:hash.png')).toBe(true)
   })
 
-  it('WordPress compatibility URLs are still mounted (login + admin install)', () => {
+  it('WordPress-compatible login route is still mounted', () => {
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('wp-login.php')).toBe(true)
-    expect(paths.has('wp-admin')).toBe(true)
-    expect(paths.has('wp-admin/install.php')).toBe(true)
   })
 
   it('post + page detail pages still match /posts/:slug and /:slug', () => {

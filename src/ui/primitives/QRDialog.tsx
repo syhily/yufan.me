@@ -5,11 +5,14 @@
 // (see vercel-react-best-practices `bundle-dynamic-imports`).
 import type { QRCodeSVG as QRCodeSVGComponent } from 'qrcode.react'
 
+import { clsx } from 'clsx'
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 import type { IconName } from '@/ui/icons/Icon'
 
 import { DynamicIcon } from '@/ui/icons/icons'
+import { buttonVariants } from '@/ui/primitives/Button'
 import { Popup } from '@/ui/primitives/Popup'
 
 export interface QRDialogProps {
@@ -20,12 +23,11 @@ export interface QRDialogProps {
   className?: string
 }
 
-const DEFAULT_CLASS = 'btn btn-dark btn-icon btn-circle single-popup button-social'
+const DEFAULT_CLASS = twMerge(clsx(buttonVariants({ tone: 'inverse', shape: 'circle' })))
 
-// The QR wrapper is sized via `.nice-popup-content .qrcode` in `_base.css`
-// (210×210). After Bootstrap's `p-2` (8px each side) the content area shrinks
-// to 194×194, which is what `qrcode.react` should render at to match the
-// previous fluid viewBox behaviour.
+// The QR wrapper is 210×210 inline. After the 8px padding on each side the
+// content area shrinks to 194×194, which is what `qrcode.react` renders at to
+// match the previous fluid viewBox behaviour.
 const QR_CODE_SIZE = 194
 
 const QRCodeSVG = lazy<typeof QRCodeSVGComponent>(async () => {
@@ -34,7 +36,7 @@ const QRCodeSVG = lazy<typeof QRCodeSVGComponent>(async () => {
 })
 
 export function QRDialog({ url, name, title, icon, className }: QRDialogProps) {
-  const rootClass = `nice-dialog ${className ?? DEFAULT_CLASS}`
+  const rootClass = className ?? DEFAULT_CLASS
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
 
@@ -45,7 +47,7 @@ export function QRDialog({ url, name, title, icon, className }: QRDialogProps) {
     if (!open) return
     const onDocClick = (event: MouseEvent) => {
       if (triggerRef.current?.contains(event.target as Node)) return
-      const popup = document.querySelector<HTMLElement>('.nice-popup.qr-dialog-popup')
+      const popup = document.querySelector<HTMLElement>('.qr-dialog-popup')
       if (popup?.contains(event.target as Node)) return
       setOpen(false)
     }
@@ -63,9 +65,9 @@ export function QRDialog({ url, name, title, icon, className }: QRDialogProps) {
       {open && (
         <Popup open={open} onClose={handleClose} className="qr-dialog-popup">
           <div className="text-center">
-            <h6>{title}</h6>
-            <p className="mt-1 mb-2">{name}</p>
-            <div className="qrcode d-flex justify-content-center align-items-center p-2">
+            <h6 className="text-[20px]">{title}</h6>
+            <p className="mt-1 mb-2 text-base">{name}</p>
+            <div className="flex justify-center items-center p-2 w-[210px] h-[210px] mx-auto">
               <Suspense fallback={null}>
                 <QRCodeSVG value={url} level="M" marginSize={2} size={QR_CODE_SIZE} title={title} />
               </Suspense>

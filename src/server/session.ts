@@ -425,13 +425,13 @@ export async function signUpInitialAdminWithSession({
 
   return {
     ok: true,
-    data: { redirectTo: '/wp-admin' },
+    data: { redirectTo: '/' },
     headers: await commitHeaders(session, await clearCsrfCookie()),
   }
 }
 
 // ---------------------------------------------------------------------------
-// HTML form action adapter (used by `wp-login` and `wp-admin.install`)
+// HTML form action adapter (used by `wp-login` and, when restored, `wp-admin.install`)
 // ---------------------------------------------------------------------------
 
 export async function processAuthFormSubmission<I>({

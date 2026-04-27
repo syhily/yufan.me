@@ -21,9 +21,13 @@ export async function loader({ params }: Route.LoaderArgs) {
   return listingLoader({
     rawNum: params.num,
     posts,
+    // Listing chrome consumes a plain string (the SEO `og:description`
+    // and the `<PostListingBody>` description preview are still string
+    // surfaces). The `<CategoriesBody>` cards are the only place that
+    // currently renders the compiled MDX body.
     rootPath: category.permalink,
     title: category.name,
-    description: category.description,
+    description: category.description?.plain,
     pageSize: config.settings.pagination.category,
   })
 }

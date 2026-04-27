@@ -13,8 +13,8 @@ function defineApiAction<const Route extends string, const Method extends ApiAct
 
 export const API_ACTIONS = {
   auth: {
-    // The browser sign-in / sign-up flows go directly through React Router's
-    // `<Form>` → route `action` (see `routes/wp-login.tsx` and
+    // The browser sign-in flow goes through React Router's `<Form>` → route
+    // `action` (see `routes/wp-login.tsx`; install can be re-added alongside
     // `routes/wp-admin.install.tsx`). The previous `auth.signIn` /
     // `auth.signUpAdmin` JSON endpoints have been removed; only mutations
     // that genuinely need a JSON channel (admin user editing) remain.

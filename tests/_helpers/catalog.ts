@@ -22,7 +22,10 @@ export function makeCategory(overrides: Partial<ClientCategory> = {}): ClientCat
     name: overrides.name ?? slug,
     slug,
     cover: overrides.cover ?? '/images/cover.png',
-    description: overrides.description ?? '',
+    // `Category.description` is `CategoryDescription | null` since the
+    // runtime MDX migration. Tests that need a populated description
+    // pass an explicit `{ compiled, plain }` pair through `overrides`.
+    description: overrides.description ?? null,
     counts: overrides.counts ?? 1,
     permalink: overrides.permalink ?? `/cats/${slug}`,
     ...overrides,
