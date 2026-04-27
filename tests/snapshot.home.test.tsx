@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { ClientPostWithMetadata } from '@/server/catalog'
 
-import { HomeLayoutBody } from '@/ui/post/post/PostListViews'
+import { HomeLayoutBody } from '@/ui/post/post/HomeLayoutBody'
 
 import { makePost, makePostList, makeTag } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'

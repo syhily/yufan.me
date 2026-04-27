@@ -4,25 +4,42 @@ import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/ui/lib/cn'
 
-// Replaces `.card / .card-md / .block` (legacy `_base.css`) and the
-// bootstrap compatibility shim. The `block` variant matches
-// `.block` (used by listings and aside widgets); `card` matches `.card`
-// (used by the post detail shell and admin widgets). The `md` size opts in
-// to the legacy `.card-md .card-body { padding: 2rem }` rule.
-const cardVariants = cva(
-  'relative flex flex-col min-w-0 break-words border-0 rounded-none bg-white mb-3 md:mb-5 2xl:mb-7 shadow-[0_0_30px_0_rgba(40,49,73,0.02)]',
-  {
-    variants: {
-      size: {
-        sm: '',
-        md: '',
-      },
+// Brand-card recipe used by post listings, friends, categories, and the
+// post/page detail shells. The shadow comes from the `--shadow-brand-card`
+// token in `globals.css` so all six call sites share one source of truth
+// (no more `rgb(40_49_73/0.02)` vs `rgba(40,49,73,0.02)` drift).
+//
+// Three orthogonal axes:
+//
+//   - `orientation`: stacked card (`col`, default) vs the listing row card
+//     (`row`, used by `PostCards` on home).
+//   - `density`: `none` for surfaces that own their own vertical rhythm
+//     (post detail, admin dashboards), `tight` for sidebar cards, `listing`
+//     (default) for the home/category/tag/friends grid spacing.
+//   - `size`: kept for `<CardBody size="md">` callers that opt into the
+//     larger internal padding (post detail uses this).
+const cardVariants = cva('relative flex min-w-0 break-words border-0 rounded-none bg-white shadow-brand-card', {
+  variants: {
+    orientation: {
+      col: 'flex-col',
+      row: 'flex-row flex-auto',
     },
-    defaultVariants: {
-      size: 'sm',
+    density: {
+      none: '',
+      tight: 'mb-3',
+      listing: 'mb-3 md:mb-5 2xl:mb-7',
+    },
+    size: {
+      sm: '',
+      md: '',
     },
   },
-)
+  defaultVariants: {
+    orientation: 'col',
+    density: 'listing',
+    size: 'sm',
+  },
+})
 
 export type CardVariantProps = VariantProps<typeof cardVariants>
 
@@ -30,8 +47,8 @@ export interface CardProps extends ComponentPropsWithRef<'div'>, CardVariantProp
   ref?: Ref<HTMLDivElement>
 }
 
-export function Card({ className, size, ref, ...props }: CardProps) {
-  return <div ref={ref} className={cn(cardVariants({ size }), className)} {...props} />
+export function Card({ className, orientation, density, size, ref, ...props }: CardProps) {
+  return <div ref={ref} className={cn(cardVariants({ orientation, density, size }), className)} {...props} />
 }
 
 export interface CardBodyProps extends ComponentPropsWithRef<'div'> {

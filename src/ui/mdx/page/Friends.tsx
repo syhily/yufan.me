@@ -1,6 +1,7 @@
 import type { Friend } from '@/server/catalog'
 
 import { shuffle } from '@/shared/tools'
+import { Card } from '@/ui/primitives/Card'
 import { Heading } from '@/ui/primitives/Heading'
 import { Image } from '@/ui/primitives/Image'
 import { Media } from '@/ui/primitives/Media'
@@ -34,7 +35,7 @@ export function Friends({ friends }: FriendsProps) {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
         {list.map((friend) => (
           <div key={friend.website} className="flex">
-            <div className="relative flex flex-col flex-auto min-w-0 break-words mb-3 md:mb-5 2xl:mb-7 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]">
+            <Card className="flex-auto">
               <Media ratio="3x1">
                 <MediaCover>
                   <Image
@@ -61,7 +62,7 @@ export function Friends({ friends }: FriendsProps) {
                 className="absolute inset-0 z-(--z-card-overlay-3)"
                 aria-label={`访问 ${friend.website}`}
               />
-            </div>
+            </Card>
           </div>
         ))}
       </div>

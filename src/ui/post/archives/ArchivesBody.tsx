@@ -1,7 +1,7 @@
 import type { ListingPostCardWithMetadata } from '@/server/catalog'
 
 import { groupBy } from '@/shared/tools'
-import { PostSquare } from '@/ui/post/post/PostListViews'
+import { PostSquare } from '@/ui/post/post/ListingLayout'
 import { Container } from '@/ui/primitives/Container'
 import { Heading } from '@/ui/primitives/Heading'
 

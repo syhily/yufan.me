@@ -1,3 +1,5 @@
+import type { MetaDescriptor } from 'react-router'
+
 import { Suspense, use } from 'react'
 
 import type { SidebarSnapshotOutput } from '@/client/api/action-types'
@@ -13,7 +15,7 @@ import { getRouteRequestContext } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 import { selectFeaturePosts, selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
 import { formatLocalDate } from '@/shared/formatter'
-import { HomeLayoutBody, HomeListingSkeleton } from '@/ui/post/post/PostListViews'
+import { HomeLayoutBody, HomeListingSkeleton } from '@/ui/post/post/HomeLayoutBody'
 import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
 
 import type { Route } from './+types/home'
@@ -94,6 +96,14 @@ export const shouldRevalidate = listingShouldRevalidate
  *     post-grid only, so first paint is not blocked on the server's
  *     `getCatalog().getClientPostsWithMetadata(...)` call.
  *
+ * Both variants carry `seo: MetaDescriptor[]` at the top level so
+ * `meta()` (server-direct, sync, swr) can read it via the same key —
+ * the discriminated union no longer leaks into route metadata. For the
+ * `swr` branch the array is always empty because that branch only fires
+ * for the default `/` URL (no `num` param) and `seoMode:
+ * 'skip-on-first-page'` makes the server-side seo empty there too —
+ * keeping the contract explicit instead of implicit.
+ *
  * This implements `react-router-framework-mode/loader-defer` plus the
  * stale-while-revalidate rule from the project's
  * `client/sidebar/cache.ts` documentation.
@@ -101,8 +111,8 @@ export const shouldRevalidate = listingShouldRevalidate
 type ServerHomeData = ListingPageLoaderData<HomeExtra>
 
 type HomeLoaderData =
-  | { kind: 'sync'; data: ServerHomeData }
-  | { kind: 'swr'; cached: SidebarSnapshotOutput; fresh: Promise<ServerHomeData> }
+  | { kind: 'sync'; seo: MetaDescriptor[]; data: ServerHomeData }
+  | { kind: 'swr'; seo: MetaDescriptor[]; cached: SidebarSnapshotOutput; fresh: Promise<ServerHomeData> }
 
 /**
  * Client-side loader. Implements stale-while-revalidate against the
@@ -140,42 +150,43 @@ export async function clientLoader({ serverLoader, params }: Route.ClientLoaderA
   // default `/` route (no paginated `num`) and always await the
   // server on `/page/N` so SEO stays accurate.
   if (params.num) {
-    return { kind: 'sync', data: await serverPromise }
+    const data = await serverPromise
+    return { kind: 'sync', seo: data.seo, data }
   }
 
   const cached = await cachePromise
   if (!cached) {
     // First paint / cache miss: wait for the canonical server payload
     // before rendering. Same behaviour as the pre-SWR design.
-    return { kind: 'sync', data: await serverPromise }
+    const data = await serverPromise
+    return { kind: 'sync', seo: data.seo, data }
   }
 
-  return { kind: 'swr', cached, fresh: serverPromise }
+  // SWR branch only fires on the default `/` URL where `seoMode:
+  // 'skip-on-first-page'` already produces an empty `seo` array, so we
+  // hard-code that contract here instead of awaiting `serverPromise`
+  // just to read its `.seo` field.
+  return { kind: 'swr', seo: [], cached, fresh: serverPromise }
 }
 
 // Type guard between the server `loader()` shape (raw
 // `ListingPageLoaderData`) and the `clientLoader()` discriminated union.
 // React Router's `Route.ComponentProps['loaderData']` is the union of
-// both — `meta()` and the route component both have to discriminate
-// before touching any client-only fields.
+// both — the route component still has to discriminate before touching
+// any client-only fields, but `meta()` reads only `seo` and that field
+// lives at the top level on every variant, so it can stay one-liner.
 function isClientLoaderShape(value: unknown): value is HomeLoaderData {
   return typeof value === 'object' && value !== null && 'kind' in value
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) {
-    return routeMeta()
-  }
-  // The server loader (`loader()`) returns a `ListingPageLoaderData`
-  // shape directly; only `clientLoader()` wraps it in the `sync` /
-  // `swr` discriminated union. `meta()` runs on every navigation
-  // (server-rendered first request and SPA transitions alike), so it
-  // has to handle both shapes.
-  const seo = isClientLoaderShape(loaderData) ? (loaderData.kind === 'sync' ? loaderData.data.seo : []) : loaderData.seo
-  if (seo.length === 0) {
-    return routeMeta()
-  }
-  return seo
+  // Both `loader()` (raw `ListingPageLoaderData`) and `clientLoader()`
+  // (discriminated `sync` / `swr`) carry `seo` at the top level. The
+  // server seoMode (`skip-on-first-page`) makes `seo` empty for the
+  // default `/` route, where we fall through to `routeMeta()` for the
+  // home-page defaults.
+  const seo = loaderData?.seo
+  return seo && seo.length > 0 ? seo : routeMeta()
 }
 
 export default function HomeRoute({ loaderData }: Route.ComponentProps) {

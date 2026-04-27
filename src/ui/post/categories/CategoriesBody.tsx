@@ -4,6 +4,7 @@ import type { ClientCategory } from '@/server/catalog'
 
 import { postMdxComponents } from '@/ui/mdx/MdxContent'
 import { MdxRemoteBody } from '@/ui/mdx/MdxRemoteBody'
+import { Card } from '@/ui/primitives/Card'
 import { Container } from '@/ui/primitives/Container'
 import { Heading } from '@/ui/primitives/Heading'
 import { Image } from '@/ui/primitives/Image'
@@ -23,11 +24,19 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
           {title}
         </Heading>
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4 mt-3 md:mt-4">
+          {/*
+            `/categories` is a static index page — visitors browse the
+            full list once and pick at most one or two destinations. The
+            P1-5 budget table calls for `viewport`: the route is warmed
+            on first scroll into view so the click is still instant,
+            but we don't queue a fetch for every category at first
+            paint (the grid is 6+ cells on `md+`).
+          */}
           {categories.map((category) => (
             <div key={category.slug} className="flex min-w-0">
-              <div className="relative flex flex-col flex-auto min-w-0 break-words mb-3 md:mb-5 2xl:mb-7 border-0 rounded-none bg-white shadow-[0_0_30px_0_rgb(40_49_73/0.02)]">
+              <Card className="flex-auto">
                 <Media ratio="3x1">
-                  <MediaCover as={Link} to={category.permalink} prefetch="intent">
+                  <MediaCover as={Link} to={category.permalink} prefetch="viewport">
                     <Image
                       src={category.cover}
                       alt={category.name}
@@ -41,8 +50,8 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                   <div className="flex-auto">
                     <Link
                       to={category.permalink}
-                      className="block text-[1.25rem] font-semibold text-inherit hover:text-accent"
-                      prefetch="intent"
+                      className="block text-card-title font-semibold text-inherit hover:text-accent"
+                      prefetch="viewport"
                     >
                       {category.name}
                     </Link>
@@ -58,7 +67,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
           ))}
         </div>

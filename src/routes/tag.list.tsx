@@ -3,7 +3,7 @@ import { getCatalog, toListingPostCard } from '@/server/catalog'
 import { listingHeaders, listingLoader, listingShouldRevalidate } from '@/server/listing'
 import { notFound } from '@/server/route-helpers/http'
 import { routeMeta } from '@/server/seo/meta'
-import { PostListingBody } from '@/ui/post/post/PostListViews'
+import { PostListingBody } from '@/ui/post/post/ListingLayout'
 import { SectionErrorView } from '@/ui/primitives/SectionErrorView'
 
 import type { Route } from './+types/tag.list'
