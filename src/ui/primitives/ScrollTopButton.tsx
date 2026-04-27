@@ -10,9 +10,13 @@ import { Button } from '@/ui/primitives/Button'
 // keeps the main thread free during long-form reading.
 //
 // The sentinel is appended to `document.body` from the effect because the
-// recursive component tree renders this button inside a fixed `<ul>` at the
-// bottom-right of the viewport — adding the sentinel as a JSX sibling there
-// would anchor it to the list's containing block, not the document.
+// component renders a fixed-positioned wrapper at the bottom-right of the
+// viewport — adding the sentinel as a JSX sibling here would anchor it to
+// the wrapper's containing block, not the document.
+//
+// The component owns its semantic shell (`<ul><li>`) so callers don't have
+// to wrap it in a parent list — a bare `<li>` floating in the page tree
+// is a semantic violation a parent shouldn't be forced to fix.
 export function ScrollTopButton() {
   const [show, setShow] = useState(false)
 
@@ -42,17 +46,19 @@ export function ScrollTopButton() {
   }, [])
 
   return (
-    <li className={`m-0 ${show ? 'block' : 'hidden'}`}>
-      <Button.Icon
-        tone="neutral"
-        size="lg"
-        aria-label="回到顶部"
-        onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
-      >
-        <span>
-          <ArrowUpIcon />
-        </span>
-      </Button.Icon>
-    </li>
+    <ul className="fixed right-5 bottom-0 block -translate-y-1/2 z-(--z-fab)">
+      <li className={`m-0 ${show ? 'block' : 'hidden'}`}>
+        <Button.Icon
+          tone="neutral"
+          size="lg"
+          aria-label="回到顶部"
+          onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
+        >
+          <span>
+            <ArrowUpIcon />
+          </span>
+        </Button.Icon>
+      </li>
+    </ul>
   )
 }

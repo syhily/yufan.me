@@ -154,9 +154,7 @@ export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutPr
             {children}
             {showFooter && <Footer />}
           </main>
-          <ul className="fixed right-5 bottom-0 block -translate-y-1/2 z-(--z-fab)">
-            <ScrollTopButton />
-          </ul>
+          <ScrollTopButton />
         </div>
         <ToastSurface />
       </ToastProvider>
