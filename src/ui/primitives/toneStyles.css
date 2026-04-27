@@ -81,6 +81,19 @@
     @apply bg-surface-muted text-foreground;
   }
 
+  /* The `badge` tone is database-driven: the per-author palette flows
+   * in via `--badge-color` / `--badge-fg` (set inline by the consumer
+   * when those columns are non-null, with palette defaults declared in
+   * `globals.css`'s `@theme`). Consumers therefore get the standard
+   * tone-attribute contract without hard-coding `bg-[color:var(...)]`
+   * arbitrary utilities at every call site. There is intentionally no
+   * `outline` cell — badges only ship in solid form today. */
+  [data-appearance='solid'][data-tone='badge'] {
+    background-color: var(--badge-color);
+    color: var(--badge-fg);
+    border-color: transparent;
+  }
+
   /* ---------------------------------------------------------------- */
   /*  Outline (ghost-with-tinted-border) tones                          */
   /* ---------------------------------------------------------------- */

@@ -119,11 +119,57 @@
   --breakpoint-xl: 1200px;
   --breakpoint-2xl: 1400px;
 
+  /* ---------------------------------------------------------------------
+   * Container max-widths. The five Bootstrap-era container thresholds
+   * (540 / 720 / 960 / 1140 / 1320 + the wide-shell 1440) used to live as
+   * arbitrary values inside `<Container>`'s `cva` table. Promoting them
+   * to `@theme` lets Tailwind generate real `max-w-container-*`
+   * utilities, so a brand-driven width bump is one CSS line instead of
+   * five JSX patches. The tokens follow the design-system tier names
+   * (`sm` / `md` / `lg` / `xl` / `2xl` / `3xl`) — `3xl` is the wide
+   * archives ceiling and stays distinct from the breakpoint family.
+   * ------------------------------------------------------------------ */
+  --container-sm: 540px;
+  --container-md: 720px;
+  --container-lg: 960px;
+  --container-xl: 1140px;
+  --container-2xl: 1320px;
+  --container-3xl: 1440px;
+
+  /* ---------------------------------------------------------------------
+   * Comment-tree spacing (Layer C — single component family). Lives in
+   * the global `@theme` block so the design system stays in one place;
+   * the matching `.flex-avatar[data-size]` / `ul[data-nested] …`
+   * cascade still ships from `@/ui/comments/commentsTokens.css` because
+   * it's an `@layer utilities` rule, not a token. The cascade keys off
+   * `ul[data-nested]` so the per-tag sizing survives wrapper-class
+   * renames and composes cleanly with the `.nice-dark-mode` variant.
+   *
+   * Replaces the four `[.children_&]:*` arbitrary-cascade Tailwind
+   * variants that previously lived inline on the JSX (avatar / body /
+   * footer-time). The `prose-host` body picks up word-break behaviour
+   * from `prose-p` so the former `[.children_&]:break-all` rule is
+   * intentionally not re-introduced here.
+   * ------------------------------------------------------------------ */
+  --comment-avatar-base: 1.75rem; /* 28px */
+  --comment-avatar-md: 2.5rem; /* 40px */
+  --comment-avatar-nested: 1.875rem; /* 30px */
+
   /* Radii -> generates `rounded-*` utilities. */
   --radius-xs: 3px;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
+
+  /* ---------------------------------------------------------------------
+   * Brand-card shadow. The 6-rule recipe (`shadow-[0_0_30px_0_rgb(40 49
+   * 73 / 0.02)]`) used to drift between `rgba(40,49,73,0.02)` and
+   * `rgb(40_49_73/0.02)` across listing/category/friends/skeleton; promoting
+   * it to a token gives Tailwind a real `shadow-brand-card` utility plus a
+   * single dark-mode override site. The matching `cardVariants()` recipe
+   * lives next to `<Card>` in `@/ui/primitives/Card`.
+   * ------------------------------------------------------------------ */
+  --shadow-brand-card: 0 0 30px 0 rgb(40 49 73 / 0.02);
 
   /* ---------------------------------------------------------------------
    * Z-index tokens. Tailwind classes consume them as `z-(--z-name)`; the
@@ -168,10 +214,40 @@
   /* Serif body font used by `font-serif` (post / page MDX bodies). */
   --font-serif: 'OPPO Serif SC', 'Source Han Serif SC', 'Songti SC', serif;
 
+  /* ---------------------------------------------------------------------
+   * Project typography scale. Tailwind v4 turns each `--text-X` token into
+   * a real `text-X` utility (and `prose-X:` modifier), replacing the
+   * scattered `text-[0.9375rem]` / `text-[1.25rem]` / `text-[1.875rem]`
+   * arbitrary values that used to leak across components. The named
+   * intent below maps directly to the on-page rhythm:
+   *
+   *  - text-md          legacy 15px body baseline (sidebar, header, body
+   *                     copy, listing card meta). Used to live as a
+   *                     `@utility text-md` no-op shim.
+   *  - text-prose       prose paragraph reading size on md+ viewports.
+   *                     Drives `prose-p:text-prose` inside `.prose-host`.
+   *  - text-card-title  listing / row / category card titles.
+   *  - text-h0          heading-1 base / comments header.
+   *  - text-page-title  prose-h1 (post detail) and admin section heads.
+   *
+   * `--text-X--line-height` companions are wired so `text-md` etc. ship
+   * the matching `line-height` automatically (Tailwind v4 default).
+   * ------------------------------------------------------------------ */
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.5;
+  --text-prose: 1.05rem;
+  --text-prose--line-height: 1.75;
+  --text-card-title: 1.25rem;
+  --text-card-title--line-height: 1.4;
+  --text-h0: 1.5rem;
+  --text-h0--line-height: 1.4;
+  --text-page-title: 1.875rem;
+  --text-page-title--line-height: 1.4;
+
   /* Animations -> generates `animate-*` utilities. */
   --animate-spinner: spinner-border 0.75s linear infinite;
   --animate-shake: shake 0.6s ease both;
-  --animate-shimmer: comments-skeleton-shimmer 1.4s linear infinite;
+  --animate-shimmer: skeleton-shimmer-frames 1.4s linear infinite;
 
   @keyframes spinner-border {
     to {
@@ -199,7 +275,7 @@
     }
   }
 
-  @keyframes comments-skeleton-shimmer {
+  @keyframes skeleton-shimmer-frames {
     0% {
       background-position: 200% 0;
     }
@@ -388,15 +464,13 @@
     appearance: none;
   }
 
-  button:focus:not(:focus-visible) {
-    outline: none;
-  }
-
-  button:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-
+  /* Inputs / textareas keep a global focus ring because admin forms (and a
+     few sidebar widgets) ship raw `<input>` / `<textarea>` elements without
+     going through `<Field>`. The matching ring on `<button>` lives on the
+     `Button` primitive itself (`focus-visible:outline-2 …` in `cva`), so
+     bare `<button>` elements outside our primitive intentionally fall
+     through to UA defaults — pairs that drift past the design system
+     deserve a bug, not an invisible auto-promotion. */
   input:focus:not(:focus-visible),
   textarea:focus:not(:focus-visible) {
     outline: none;
@@ -421,11 +495,6 @@
     height: auto;
     vertical-align: middle;
   }
-
-  template,
-  [hidden] {
-    display: none !important;
-  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -443,26 +512,6 @@
   flex-shrink: 0;
   vertical-align: -0.125em;
   fill: currentColor;
-}
-
-@utility text-md {
-  font-size: 0.9375rem;
-  @media (max-width: 767.98px) {
-    font-size: 0.9375rem;
-  }
-  @media (min-width: 768px) and (max-width: 991.98px) {
-    font-size: 0.9375rem;
-  }
-}
-
-@utility text-xl {
-  font-size: 1.625rem;
-  @media (max-width: 767.98px) {
-    font-size: 1.5rem;
-  }
-  @media (min-width: 768px) and (max-width: 991.98px) {
-    font-size: 1.5rem;
-  }
 }
 
 /* The `.bg-img` background helper used by hero and admin layouts. */
@@ -515,17 +564,21 @@
     border-radius: 2px;
   }
 
-  /* Comments skeleton shimmer surface. The animated `background-position`
+  /* Generic skeleton shimmer surface (consumed by `<Skeleton>` in
+     `@/ui/primitives/Skeleton`). The animated `background-position`
      interpolation across a long gradient is awkward to express purely with
      utilities — the moving stop list is a single static gradient image, so
-     we anchor it here and the JSX side adds `animate-shimmer` for motion. */
-  .comments-skeleton-line {
+     we anchor it here and the JSX side adds `animate-shimmer` for motion.
+     The class was historically named `.comments-skeleton-line` because the
+     comments island was its first caller; the home / post-listing skeletons
+     share the same recipe so we use a generic name now. */
+  .skeleton-shimmer {
     background: linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.08) 50%, rgba(0, 0, 0, 0.04) 100%);
     background-size: 200% 100%;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .comments-skeleton-line {
+    .skeleton-shimmer {
       animation: none;
     }
   }
@@ -586,13 +639,13 @@
   .prose-host {
     @apply prose prose-slate max-w-none
       prose-headings:font-semibold prose-headings:leading-[1.5] prose-headings:text-foreground
-      prose-h1:text-[1.875rem]
+      prose-h1:text-page-title
       prose-h2:relative prose-h2:pl-6 prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-5 md:prose-h2:mb-4
-      prose-h3:relative prose-h3:pl-6 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-5 md:prose-h3:mb-4
+      prose-h3:relative prose-h3:pl-6 prose-h3:text-h0 prose-h3:mt-8 prose-h3:mb-5 md:prose-h3:mb-4
       prose-h4:relative prose-h4:pl-6 prose-h4:mt-10 prose-h4:mb-7 md:prose-h4:mt-8 md:prose-h4:mb-8
       prose-h5:mt-10 prose-h5:mb-7 md:prose-h5:mt-8 md:prose-h5:mb-8
       prose-h6:mt-10 prose-h6:mb-7 md:prose-h6:mt-8 md:prose-h6:mb-8
-      prose-p:mb-5 prose-p:text-base md:prose-p:text-[1.05rem]
+      prose-p:mb-5 prose-p:text-base md:prose-p:text-prose
       prose-a:no-underline
       hover:prose-a:no-underline focus:prose-a:no-underline
       prose-blockquote:border-l-4 prose-blockquote:border-accent prose-blockquote:border-y-0 prose-blockquote:border-r-0 prose-blockquote:not-italic prose-blockquote:font-normal prose-blockquote:my-7 prose-blockquote:px-8 prose-blockquote:py-4

@@ -28,6 +28,12 @@ export type Tone =
   | 'danger' // Status: danger / destructive.
   | 'warning' // Status: warning / pending.
   | 'subtle' // Borderless, near-invisible (link-like buttons, ghost adornments).
+  | 'badge' // Per-instance palette via `--badge-color` / `--badge-fg`
+// (the comment-author rosette). The default values for the
+// CSS variables live in `globals.css`; consumers can override
+// them inline (e.g. `style={{ '--badge-color': hex }}`) so a
+// database-driven palette flows through the standard tone
+// contract without arbitrary `bg-[color:var(...)]` chains.
 
 export type Appearance = 'solid' | 'outline'
 
@@ -44,6 +50,7 @@ export const TONE_VARIANTS: Record<Tone, string> = {
   danger: '',
   warning: '',
   subtle: '',
+  badge: '',
 }
 
 // Same idea for the `appearance` axis. The two `appearance` values

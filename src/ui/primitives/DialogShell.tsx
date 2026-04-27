@@ -38,7 +38,7 @@ export type DialogSize = 'sm' | 'md' | 'lg' | 'xl' | 'flush'
 
 const BODY_SIZE: Record<DialogSize, string> = {
   sm: 'w-auto max-w-[300px]',
-  md: 'max-w-[540px]',
+  md: 'max-w-container-sm',
   lg: 'max-w-[750px]',
   xl: 'h-screen md:h-auto md:max-w-[670px] lg:max-w-[790px]',
   flush: 'w-[75%] max-w-[340px]',

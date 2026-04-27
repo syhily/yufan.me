@@ -27,9 +27,10 @@ import { cn } from '@/ui/lib/cn'
 const containerVariants = cva('mx-auto w-full px-3', {
   variants: {
     size: {
-      default: 'sm:max-w-[540px] md:max-w-[720px] lg:max-w-[960px] xl:max-w-[1140px] 2xl:max-w-[1320px]',
-      narrow: 'sm:max-w-[540px] md:max-w-[720px] lg:max-w-[960px]',
-      wide: 'sm:max-w-[540px] md:max-w-[720px] lg:max-w-[960px] xl:max-w-[1140px] 2xl:max-w-[1440px]',
+      default:
+        'sm:max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl 2xl:max-w-container-2xl',
+      narrow: 'sm:max-w-container-sm md:max-w-container-md lg:max-w-container-lg',
+      wide: 'sm:max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl 2xl:max-w-container-3xl',
       fluid: '',
     },
   },

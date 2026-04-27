@@ -1,8 +1,8 @@
-/* Layer C — comment-tree spacing. Lives beside `CommentItem.tsx` so the
-   nested-row metrics stay out of the global semantic `@theme` block in
-   `globals.css`. The cascade keys off `ul[data-nested]` so the per-tag
-   sizing survives wrapper-class renames and composes cleanly with the
-   `.nice-dark-mode` variant.
+/* Layer C — comment-tree cascade. The matching `--comment-avatar-*`
+   tokens live in `globals.css` `@theme` so the design system stays in
+   one place; only the `@layer utilities` cascade lives here because it
+   keys off `ul[data-nested]` and `.flex-avatar[data-size]` selectors
+   the components emit themselves.
 
    Replaces the four `[.children_&]:*` arbitrary-cascade Tailwind variants
    that previously lived inline on the JSX (avatar/body/footer-time). The
@@ -10,13 +10,24 @@
    former `[.children_&]:break-all` rule is intentionally not re-introduced
    here. */
 
-@theme {
-  --comment-avatar-base: 1.75rem; /* 28px */
-  --comment-avatar-md: 2.5rem; /* 40px */
-  --comment-avatar-nested: 1.875rem; /* 30px */
-}
-
 @layer utilities {
+  /* `<AvatarImage>` opts in via `data-size`. Sizes flow from CSS so a
+     responsive switch between `--comment-avatar-base` (28px on small
+     screens) and `--comment-avatar-md` (40px on `md+`) stays one rule
+     each, instead of the four-class chain
+     (`w-7 h-7 md:w-10 md:h-10`) repeated on every comment row. */
+  .flex-avatar[data-size='sm'],
+  .flex-avatar[data-size='md'] {
+    width: var(--comment-avatar-base);
+    height: var(--comment-avatar-base);
+  }
+  @media (min-width: 48rem) {
+    .flex-avatar[data-size='md'] {
+      width: var(--comment-avatar-md);
+      height: var(--comment-avatar-md);
+    }
+  }
+
   /* The nested cascade is one rule per token, not three per element. */
   ul[data-nested] .flex-avatar {
     width: var(--comment-avatar-nested);
