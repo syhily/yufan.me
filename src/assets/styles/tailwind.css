@@ -1,0 +1,19 @@
+/* Tailwind CSS v4 entry. Uses the official `prefix(tw)` option so every
+   utility compiles to `.tw\:…` and every theme variable to `--tw-*`,
+   guaranteeing zero collision with the project's existing Bootstrap 5
+   utility surface (`bootstrap-utilities.css`) and the `:root` design
+   tokens declared in `reset.css` / `_base.css`.
+
+   New components opt into Tailwind via the `tw:` prefix in JSX, e.g.
+   `<div className="tw:flex tw:items-center tw:gap-2 tw:bg-slate-100">`.
+   Existing Bootstrap-styled markup is intentionally left untouched.
+
+   Cascade-layer interaction: Tailwind v4 emits Preflight into `@layer base`,
+   theme tokens into `@layer theme`, and utilities into `@layer utilities`.
+   All of the project's hand-written CSS (`reset.css`, `_base.css`, …) is
+   un-layered, and per the W3C cascade-layers spec un-layered rules beat any
+   layered rule of any specificity. So the only Preflight rule that survives
+   into the resolved cascade is the one whose target elements aren't already
+   covered un-layered — `img, svg, video, … { display: block }`. That single
+   leak is patched in `reset.css` (search for "Tailwind preflight overlap"). */
+@import 'tailwindcss' prefix(tw);

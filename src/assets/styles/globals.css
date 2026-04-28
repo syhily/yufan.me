@@ -18,3 +18,12 @@
 @import '@/assets/styles/_widgets.css';
 @import '@/assets/styles/_comments.css';
 @import '@/assets/styles/_icons.css';
+
+/*--------------------------------------------------------------
+# Tailwind CSS v4 (prefix-isolated as `tw:`). Imported last so the
+# resolved cascade for legacy Bootstrap markup stays byte-identical;
+# every Tailwind selector is `.tw\:…` and every theme var is `--tw-*`,
+# so co-existence is purely additive. See `tailwind.css` for the
+# rationale and JSX usage convention.
+--------------------------------------------------------------*/
+@import '@/assets/styles/tailwind.css';
