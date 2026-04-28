@@ -234,6 +234,30 @@ svg {
   vertical-align: middle;
 }
 
+/* Tailwind preflight overlap. Tailwind v4's preflight (in `@layer base`)
+   forces `img, svg, video, canvas, audio, iframe, embed, object` to
+   `display: block`. That breaks every legacy "icon next to text" inside a
+   button or link — `.post-like` (HeartFillIcon next to like-count),
+   `.btn-icon`, `.button-social`, `.menu-toggler`, etc. The icon jumps to
+   its own line and the adjacent text wraps below it.
+
+   Bootstrap reboot and this file otherwise win against preflight automatically
+   (un-layered beats any layered rule), but neither set `display` on these
+   elements — they relied on the browser default of `inline`. Restore it
+   explicitly here so the cascade stays byte-identical for legacy markup.
+   Tailwind utilities like `tw:block`, `tw:inline-block`, `tw:flex` still
+   override this on a per-element basis. */
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: inline;
+}
+
 template {
   display: none;
 }
