@@ -1,4 +1,5 @@
-import type { IconName } from '@/ui/icons/Icon'
+/** Branded social entry in `socials`; Header maps each value to a fixed icon. */
+export type SocialNetwork = 'github' | 'twitter' | 'wechat' | 'weibo' | 'qq'
 
 // Single source of truth for blog-wide configuration. Every field is safe to
 // reference from both server (loaders, feeds, OG images, comment APIs) and
@@ -44,19 +45,19 @@ const config: BlogConfig = {
   socials: [
     {
       name: 'GitHub',
-      icon: 'github-fill',
+      network: 'github',
       type: 'link',
       link: 'https://github.com/syhily',
     },
     {
       name: 'Twitter',
-      icon: 'twitter',
+      network: 'twitter',
       type: 'link',
       link: 'https://x.com/amehochan',
     },
     {
       name: 'Yufan Sheng',
-      icon: 'wechat',
+      network: 'wechat',
       type: 'qrcode',
       title: '扫码加我微信好友',
       link: 'https://u.wechat.com/EBpmuKmrVz4YVFnoCJdnruA',
@@ -124,7 +125,7 @@ export interface BlogConfig {
   navigation: { text: string; link: string; target?: string }[]
   socials: {
     name: string
-    icon: IconName
+    network: SocialNetwork
     type: 'link' | 'qrcode'
     title?: string
     link: string

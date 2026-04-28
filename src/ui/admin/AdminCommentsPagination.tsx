@@ -1,4 +1,4 @@
-import { Icon } from '@/ui/icons/icons'
+import { EllipsisIcon } from '@/ui/icons/icons'
 
 export interface AdminCommentsPaginationProps {
   totalPages: number
@@ -85,10 +85,8 @@ function PageLink({ page, active, onChange }: PageLinkProps) {
 
 function Dots() {
   return (
-    <span className="page-numbers dots">
-      <span className="icon icon-ellipsis" aria-hidden="true">
-        <Icon name="ellipsis" />
-      </span>
+    <span className="page-numbers dots" aria-hidden="true">
+      <EllipsisIcon />
     </span>
   )
 }

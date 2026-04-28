@@ -2404,8 +2404,8 @@ a:hover .overlay {
 
 /* Heart icon: lock to the button's own font-size and align to the number's
    visual center. Without this the responsive `.btn-lg` font-size shift would
-   leave the icon (sized via .icon -> 1em) feeling out of proportion. */
-.post-like .icon {
+   leave the inline SVG feeling out of proportion next to the count. */
+.post-like .icon-heart-fill {
   width: 1.1em;
   height: 1.1em;
   vertical-align: middle;

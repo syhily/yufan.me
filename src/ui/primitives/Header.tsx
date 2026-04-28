@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
-import config, { type BlogConfig } from '@/blog.config'
-import { DynamicIcon, MenuIcon } from '@/ui/icons/icons'
+import config, { type BlogConfig, type SocialNetwork } from '@/blog.config'
+import { GithubFillIcon, MenuIcon, QqIcon, TwitterIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { SearchIconButton } from '@/ui/search/Search'
 
@@ -26,6 +26,21 @@ function menuId(index: number): string {
 function isExternalNavTarget(menu: BlogConfig['navigation'][number]): boolean {
   if (menu.target === '_blank') return true
   return /^https?:\/\//.test(menu.link)
+}
+
+function SocialNavIcon({ network }: { network: SocialNetwork }) {
+  switch (network) {
+    case 'github':
+      return <GithubFillIcon />
+    case 'twitter':
+      return <TwitterIcon />
+    case 'wechat':
+      return <WechatIcon />
+    case 'weibo':
+      return <WeiboIcon />
+    case 'qq':
+      return <QqIcon />
+  }
 }
 
 export function Header({ navigation, admin }: HeaderProps) {
@@ -106,7 +121,7 @@ export function Header({ navigation, admin }: HeaderProps) {
                     url={social.link}
                     name={social.name}
                     title={social.title ?? social.name}
-                    icon={social.icon}
+                    trigger={<SocialNavIcon network={social.network} />}
                   />
                 )
               }
@@ -120,7 +135,7 @@ export function Header({ navigation, admin }: HeaderProps) {
                   className="btn btn-dark btn-icon btn-circle button-social"
                 >
                   <span>
-                    <DynamicIcon name={social.icon} />
+                    <SocialNavIcon network={social.network} />
                   </span>
                 </a>
               )

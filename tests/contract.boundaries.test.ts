@@ -112,6 +112,9 @@ describe('contract: module and bundle boundaries', () => {
       ) {
         return true
       }
+      if (file === 'src/ui/icons/icons.tsx' && specifier === './icon-props') {
+        return true
+      }
       return false
     }
 

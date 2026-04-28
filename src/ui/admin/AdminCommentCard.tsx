@@ -7,7 +7,7 @@ import { API_ACTIONS } from '@/client/api/actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { idStr } from '@/shared/tools'
-import { Icon } from '@/ui/icons/icons'
+import { CheckIcon, DeleteIcon, EditIcon, LinkIcon, ReplyIcon, UserIcon } from '@/ui/icons/icons'
 
 interface ApiEnvelope<T> {
   data?: T
@@ -105,7 +105,7 @@ export function AdminCommentCard({
                   <strong>{comment.name}</strong>
                   {authorHref && (
                     <a href={authorHref} target="_blank" rel="nofollow noreferrer" className="text-muted small">
-                      <Icon name="link" />
+                      <LinkIcon />
                     </a>
                   )}
                   {comment.badgeName && (
@@ -139,10 +139,10 @@ export function AdminCommentCard({
               </div>
               <div className="d-flex flex-wrap gap-2">
                 <button type="button" className="btn btn-sm btn-primary edit-comment-btn" onClick={onEdit}>
-                  <Icon name="edit" /> 编辑
+                  <EditIcon /> 编辑
                 </button>
                 <button type="button" className="btn btn-sm btn-primary edit-user-btn" onClick={onEditUser}>
-                  <Icon name="user" /> 用户
+                  <UserIcon /> 用户
                 </button>
                 {comment.isPending && (
                   <button
@@ -151,11 +151,11 @@ export function AdminCommentCard({
                     onClick={handleApprove}
                     disabled={approveFetcher.state !== 'idle'}
                   >
-                    <Icon name="check" /> 审核
+                    <CheckIcon /> 审核
                   </button>
                 )}
                 <button type="button" className="btn btn-sm btn-primary reply-comment-btn" onClick={onReply}>
-                  <Icon name="reply" /> 回复
+                  <ReplyIcon /> 回复
                 </button>
                 <button
                   type="button"
@@ -163,7 +163,7 @@ export function AdminCommentCard({
                   onClick={handleDelete}
                   disabled={deleteFetcher.state !== 'idle'}
                 >
-                  <Icon name="delete" /> 删除
+                  <DeleteIcon /> 删除
                 </button>
               </div>
             </div>

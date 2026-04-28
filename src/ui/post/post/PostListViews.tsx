@@ -3,10 +3,9 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
-import type { IconName } from '@/ui/icons/Icon'
 
 import { formatShowDate } from '@/shared/formatter'
-import { DynamicIcon } from '@/ui/icons/icons'
+import { CommentIcon, EyeIcon, HeartFillIcon } from '@/ui/icons/icons'
 import { Pagination } from '@/ui/post/pagination/Pagination'
 import { Image } from '@/ui/primitives/Image'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
@@ -193,9 +192,15 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
               <div className="list-footer">
                 <div className="d-flex flex-fill align-items-center text-muted text-sm">
                   <div className="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
-                  <ListMetric icon="eye" value={post.meta.views} />
-                  <ListMetric icon="heart-fill" value={post.meta.likes} />
-                  <ListMetric icon="comment" value={post.meta.comments} />
+                  <ListMetric value={post.meta.views}>
+                    <EyeIcon className="text-md" />
+                  </ListMetric>
+                  <ListMetric value={post.meta.likes}>
+                    <HeartFillIcon className="text-md" />
+                  </ListMetric>
+                  <ListMetric value={post.meta.comments}>
+                    <CommentIcon className="text-md" />
+                  </ListMetric>
                 </div>
               </div>
             </div>
@@ -207,10 +212,10 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
   )
 }
 
-function ListMetric({ icon, value }: { icon: IconName; value: number }) {
+function ListMetric({ children, value }: { children: ReactNode; value: number }) {
   return (
     <div className="list-like d-inline-block">
-      <DynamicIcon name={icon} className="text-md" />
+      {children}
       <span className="like-count">{value}</span>
     </div>
   )
@@ -243,8 +248,12 @@ export function PostSquare({ post, first }: PostSquareProps) {
             <div className="list-meta font-number d-flex flex-fill text-muted text-sm">
               <span className="d-inline-block">{formatShowDate(post.date)}</span>
               <div className="flex-fill" />
-              <SquareMetric icon="eye" value={post.meta.views} />
-              <SquareMetric icon="heart-fill" value={post.meta.likes} />
+              <SquareMetric value={post.meta.views}>
+                <EyeIcon className="text-md" />
+              </SquareMetric>
+              <SquareMetric value={post.meta.likes}>
+                <HeartFillIcon className="text-md" />
+              </SquareMetric>
             </div>
           </Link>
         </div>
@@ -253,10 +262,10 @@ export function PostSquare({ post, first }: PostSquareProps) {
   )
 }
 
-function SquareMetric({ icon, value }: { icon: IconName; value: number }) {
+function SquareMetric({ children, value }: { children: ReactNode; value: number }) {
   return (
     <div className="list-like-square d-inline-block">
-      <DynamicIcon name={icon} className="text-md" />
+      {children}
       <span className="like-count">{value}</span>
     </div>
   )

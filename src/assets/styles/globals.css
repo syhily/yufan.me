@@ -17,7 +17,6 @@
 @import '@/assets/styles/_base.css';
 @import '@/assets/styles/_widgets.css';
 @import '@/assets/styles/_comments.css';
-@import '@/assets/styles/_icons.css';
 
 /*--------------------------------------------------------------
 # Tailwind CSS v4 (prefix-isolated as `tw:`). Imported last so the

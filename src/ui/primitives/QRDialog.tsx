@@ -4,19 +4,18 @@
 // runtime import below stays dynamic so Rolldown emits it as its own chunk
 // (see vercel-react-best-practices `bundle-dynamic-imports`).
 import type { QRCodeSVG as QRCodeSVGComponent } from 'qrcode.react'
+import type { ReactNode } from 'react'
 
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
-import type { IconName } from '@/ui/icons/Icon'
-
-import { DynamicIcon } from '@/ui/icons/icons'
 import { Popup } from '@/ui/primitives/Popup'
 
 export interface QRDialogProps {
   url: string
   name: string
   title: string
-  icon: IconName
+  /** Icon markup inside the trigger button (e.g. `<WechatIcon />`). */
+  trigger: ReactNode
   className?: string
 }
 
@@ -33,7 +32,7 @@ const QRCodeSVG = lazy<typeof QRCodeSVGComponent>(async () => {
   return { default: mod.QRCodeSVG }
 })
 
-export function QRDialog({ url, name, title, icon, className }: QRDialogProps) {
+export function QRDialog({ url, name, title, trigger, className }: QRDialogProps) {
   const rootClass = `nice-dialog ${className ?? DEFAULT_CLASS}`
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -56,9 +55,7 @@ export function QRDialog({ url, name, title, icon, className }: QRDialogProps) {
   return (
     <>
       <button type="button" ref={triggerRef} className={rootClass} title={name} aria-label={title} onClick={handleOpen}>
-        <span>
-          <DynamicIcon name={icon} />
-        </span>
+        <span>{trigger}</span>
       </button>
       {open && (
         <Popup open={open} onClose={handleClose} className="qr-dialog-popup">

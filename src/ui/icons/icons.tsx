@@ -1,117 +1,219 @@
-// Per-icon React components, one named export per SVG under
-// `src/ui/icons/svg/*.svg`. Call sites import the icon they need by name
-// (`import { MenuIcon } from '@/ui/icons/icons'`) so Rolldown can prune the
-// rest from the client bundle (`bundle-analyzable-paths`).
-//
-// Each SVG is loaded at module evaluation time via Vite's `?raw` query and
-// parsed once into the shape `<Icon>` used to compute. The component itself
-// is a thin wrapper around `renderInlineIcon` that fixes the icon name + the
-// parsed payload.
+import type { ReactNode } from 'react'
 
-import { parseSvg, renderInlineIcon, type IconName, type IconProps, type ParsedIcon } from '@/ui/icons/Icon'
-import arrowupRaw from '@/ui/icons/svg/arrowup.svg?raw'
-import checkRaw from '@/ui/icons/svg/check.svg?raw'
-import closeRaw from '@/ui/icons/svg/close.svg?raw'
-import commentRaw from '@/ui/icons/svg/comment.svg?raw'
-import deleteRaw from '@/ui/icons/svg/delete.svg?raw'
-import editRaw from '@/ui/icons/svg/edit.svg?raw'
-import ellipsisRaw from '@/ui/icons/svg/ellipsis.svg?raw'
-import eyeRaw from '@/ui/icons/svg/eye.svg?raw'
-import githubFillRaw from '@/ui/icons/svg/github-fill.svg?raw'
-import heartFillRaw from '@/ui/icons/svg/heart-fill.svg?raw'
-import leftRaw from '@/ui/icons/svg/left.svg?raw'
-import linkRaw from '@/ui/icons/svg/link.svg?raw'
-import menuRaw from '@/ui/icons/svg/menu.svg?raw'
-import qqRaw from '@/ui/icons/svg/qq.svg?raw'
-import refreshRaw from '@/ui/icons/svg/refresh.svg?raw'
-import replyRaw from '@/ui/icons/svg/reply.svg?raw'
-import rightRaw from '@/ui/icons/svg/right.svg?raw'
-import searchRaw from '@/ui/icons/svg/search.svg?raw'
-import twitterRaw from '@/ui/icons/svg/twitter.svg?raw'
-import userRaw from '@/ui/icons/svg/user.svg?raw'
-import wechatRaw from '@/ui/icons/svg/wechat.svg?raw'
-import weiboRaw from '@/ui/icons/svg/weibo.svg?raw'
+import type { IconProps } from '@/ui/icons/icon-props'
 
-function defineIcon(name: string, raw: string) {
-  const parsed: ParsedIcon = parseSvg(raw)
-  function IconComponent({ size, title, className }: IconProps) {
-    return renderInlineIcon({ icon: parsed, name, size, title, className })
-  }
-  IconComponent.displayName = `Icon(${name})`
-  return IconComponent
+import { cn } from '@/ui/lib/cn'
+
+function SvgIconRoot({
+  name,
+  size = '1em',
+  title,
+  className,
+  children,
+}: IconProps & { name: string; children: ReactNode }) {
+  return (
+    <svg
+      viewBox="0 0 1024 1024"
+      className={cn(`icon-${name}`, 'tw:shrink-0 tw:fill-current tw:!-[vertical-align:-0.125em]', className)}
+      width={size}
+      height={size}
+      fill="currentColor"
+      focusable={false}
+      role={title ? 'img' : undefined}
+      aria-hidden={title ? undefined : true}
+    >
+      {title ? <title>{title}</title> : null}
+      {children}
+    </svg>
+  )
 }
 
-export const ArrowUpIcon = defineIcon('arrowup', arrowupRaw)
-export const CheckIcon = defineIcon('check', checkRaw)
-export const CloseIcon = defineIcon('close', closeRaw)
-export const CommentIcon = defineIcon('comment', commentRaw)
-export const DeleteIcon = defineIcon('delete', deleteRaw)
-export const EditIcon = defineIcon('edit', editRaw)
-export const EllipsisIcon = defineIcon('ellipsis', ellipsisRaw)
-export const EyeIcon = defineIcon('eye', eyeRaw)
-export const GithubFillIcon = defineIcon('github-fill', githubFillRaw)
-export const HeartFillIcon = defineIcon('heart-fill', heartFillRaw)
-export const LeftIcon = defineIcon('left', leftRaw)
-export const LinkIcon = defineIcon('link', linkRaw)
-export const MenuIcon = defineIcon('menu', menuRaw)
-export const QqIcon = defineIcon('qq', qqRaw)
-export const RefreshIcon = defineIcon('refresh', refreshRaw)
-export const ReplyIcon = defineIcon('reply', replyRaw)
-export const RightIcon = defineIcon('right', rightRaw)
-export const SearchIcon = defineIcon('search', searchRaw)
-export const TwitterIcon = defineIcon('twitter', twitterRaw)
-export const UserIcon = defineIcon('user', userRaw)
-export const WechatIcon = defineIcon('wechat', wechatRaw)
-export const WeiboIcon = defineIcon('weibo', weiboRaw)
-
-export type IconComponent = (props: IconProps) => ReturnType<typeof renderInlineIcon>
-
-// Stable name → component map used by the small number of call sites that
-// genuinely choose an icon from runtime configuration (social links, QR
-// dialog triggers, share buttons). Component identities are passed through
-// rather than string keys, so the bundler retains every entry but each
-// import is still resolved through `@/ui/icons/icons` (no `import.meta.glob`
-// plumbing). The union narrowing on `name` keeps typos from compiling.
-export const iconByName: { readonly [Name in IconName]: IconComponent } = {
-  arrowup: ArrowUpIcon,
-  check: CheckIcon,
-  close: CloseIcon,
-  comment: CommentIcon,
-  delete: DeleteIcon,
-  edit: EditIcon,
-  ellipsis: EllipsisIcon,
-  eye: EyeIcon,
-  'github-fill': GithubFillIcon,
-  'heart-fill': HeartFillIcon,
-  left: LeftIcon,
-  link: LinkIcon,
-  menu: MenuIcon,
-  qq: QqIcon,
-  refresh: RefreshIcon,
-  reply: ReplyIcon,
-  right: RightIcon,
-  search: SearchIcon,
-  twitter: TwitterIcon,
-  user: UserIcon,
-  wechat: WechatIcon,
-  weibo: WeiboIcon,
+export function ArrowUpIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="arrowup" {...props}>
+      <path d="M868 545.5L536.1 163c-12.7-14.7-35.5-14.7-48.3 0L156 545.5c-4.5 5.2-0.8 13.2 6 13.2h81c4.6 0 9-2 12.1-5.5L474 300.9V864c0 4.4 3.6 8 8 8h60c4.4 0 8-3.6 8-8V300.9l218.9 252.3c3 3.5 7.4 5.5 12.1 5.5h81c6.8 0 10.5-8 6-13.2z" />
+    </SvgIconRoot>
+  )
 }
 
-export interface DynamicIconProps extends IconProps {
-  name: IconName
+export function CheckIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="check" {...props}>
+      <path d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474c-6.1-7.7-15.3-12.2-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1 0.4-12.8-6.3-12.8z" />
+    </SvgIconRoot>
+  )
 }
 
-// Thin dispatcher used by the few config-driven call sites. New code should
-// import the specific icon component instead, but this lets `social.icon` /
-// QR dialog triggers stay declarative without resurrecting the string-keyed
-// `<Icon name="…" />` lookup that hid every icon behind `import.meta.glob`.
-export function DynamicIcon({ name, ...props }: DynamicIconProps) {
-  const IconComp = iconByName[name]
-  return <IconComp {...props} />
+export function CloseIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="close" {...props}>
+      <path d="M512 0C229.2 0 0 229.199999 0 512c0 282.8 229.2 512 512 512 282.800001 0 512-229.2 512-512C1024 229.199999 794.800001 0 512 0zm213.460522 725.975659c-6.077249 6.077248-14.064488 9.115872-22.051727 9.115872-7.987242 0-16.061298-3.038624-22.138548-9.20269L512 556.271323 342.729752 725.888841c-6.077248 6.164066-14.151306 9.20269-22.138546 9.20269-7.98724 0-15.974479-3.038624-22.051727-9.115872-12.241313-12.154496-12.241313-31.94896-.086818-44.190273L467.896546 511.99423 298.452661 342.203074c-12.154495-12.241312-12.154495-32.035776.086818-44.190271 12.241313-12.154495 32.035777-12.154495 44.190273.086817L512 467.717141l169.270247-169.704338c12.154495-12.241313 31.948959-12.241313 44.190275-.086818 12.241313 12.154495 12.241313 31.948959.086818 44.190272L556.103454 511.99423 725.54734 681.785386c12.154495 12.241313 12.154495 32.035777-.086818 44.190273z" />
+    </SvgIconRoot>
+  )
 }
 
-// Backwards-compatible alias kept exclusively for the admin surface
-// (`src/ui/admin/*`), which is intentionally out of scope for the
-// static-import migration. New code should import the specific icon
-// component instead. Internally just forwards to `DynamicIcon`.
-export const Icon = DynamicIcon
+export function CommentIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="comment" {...props}>
+      <path d="M573 421c-23.1 0-41 17.9-41 40s17.9 40 41 40c21.1 0 39-17.9 39-40s-17.9-40-39-40zM293 421c-23.1 0-41 17.9-41 40s17.9 40 41 40c21.1 0 39-17.9 39-40s-17.9-40-39-40z" />
+      <path d="M894 345c-48.1-66-115.3-110.1-189-130v0.1c-17.1-19-36.4-36.5-58-52.1-163.7-119-393.5-82.7-513 81-96.3 133-92.2 311.9 6 439l0.8 132.6c0 3.2 0.5 6.4 1.5 9.4 5.3 16.9 23.3 26.2 40.1 20.9L309 806c33.5 11.9 68.1 18.7 102.5 20.6l-0.5 0.4c89.1 64.9 205.9 84.4 313 49l127.1 41.4c3.2 1 6.5 1.6 9.9 1.6 17.7 0 32-14.3 32-32V753c88.1-119.6 90.4-284.9 1-408zM323 735l-12-5-99 31-1-104-8-9c-84.6-103.2-90.2-251.9-11-361 96.4-132.2 281.2-161.4 413-66 132.2 96.1 161.5 280.6 66 412-80.1 109.9-223.5 150.5-348 102z m505-17l-8 10 1 104-98-33-12 5c-56 20.8-115.7 22.5-171 7l-0.2-0.1C613.7 788.2 680.7 742.2 729 676c76.4-105.3 88.8-237.6 44.4-350.4l0.6 0.4c23 16.5 44.1 37.1 62 62 72.6 99.6 68.5 235.2-8 330z" />
+      <path d="M433 421c-23.1 0-41 17.9-41 40s17.9 40 41 40c21.1 0 39-17.9 39-40s-17.9-40-39-40z" />
+    </SvgIconRoot>
+  )
+}
+
+export function DeleteIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="delete" {...props}>
+      <path d="M360 184h-8c4.4 0 8-3.6 8-8v8h304v-8c0 4.4 3.6 8 8 8h-8v72h72v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80h72v-72z" />
+      <path d="M864 256H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zM731.3 840H292.7l-24.2-512h487l-24.2 512z" />
+    </SvgIconRoot>
+  )
+}
+
+export function EditIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="edit" {...props}>
+      <path d="M257.7 752c2 0 4-0.2 6-0.5L431.9 722c2-0.4 3.9-1.3 5.3-2.8l423.9-423.9c3.9-3.9 3.9-10.2 0-14.1L694.9 114.9c-1.9-1.9-4.4-2.9-7.1-2.9s-5.2 1-7.1 2.9L256.8 538.8c-1.5 1.5-2.4 3.3-2.8 5.3l-29.5 168.2c-1.9 11.1 1.5 21.9 9.4 29.8 6.6 6.4 14.9 9.9 23.8 9.9z m67.4-174.4L687.8 215l73.3 73.3-362.7 362.6-88.9 15.7 15.6-89zM880 836H144c-17.7 0-32 14.3-32 32v36c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-36c0-17.7-14.3-32-32-32z" />
+    </SvgIconRoot>
+  )
+}
+
+export function EllipsisIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="ellipsis" {...props}>
+      <path d="M232 511m-56 0a56 56 0 1 0 112 0 56 56 0 1 0-112 0Z" />
+      <path d="M512 511m-56 0a56 56 0 1 0 112 0 56 56 0 1 0-112 0Z" />
+      <path d="M792 511m-56 0a56 56 0 1 0 112 0 56 56 0 1 0-112 0Z" />
+    </SvgIconRoot>
+  )
+}
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="eye" {...props}>
+      <path d="M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3-7.7 16.2-7.7 35.2 0 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.5 684.2 673.4 766 512 766z" />
+      <path d="M508 336c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176z m0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112z" />
+    </SvgIconRoot>
+  )
+}
+
+export function GithubFillIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="github-fill" {...props}>
+      <path d="M64 512c0 195.2 124.8 361.6 300.8 422.4 22.4 6.4 19.2-9.6 19.2-22.4v-76.8c-134.4 16-140.8-73.6-150.4-89.6-19.2-32-60.8-38.4-48-54.4 32-16 64 3.2 99.2 57.6 25.6 38.4 76.8 32 105.6 25.6 6.4-22.4 19.2-44.8 35.2-60.8-144-22.4-201.6-108.8-201.6-211.2 0-48 16-96 48-131.2-22.4-60.8 0-115.2 3.2-121.6 57.6-6.4 118.4 41.6 124.8 44.8 32-9.6 70.4-12.8 112-12.8 41.6 0 80 6.4 112 12.8 12.8-9.6 67.2-48 121.6-44.8 3.2 6.4 25.6 57.6 6.4 118.4 32 38.4 48 83.2 48 131.2 0 102.4-57.6 188.8-201.6 214.4 22.4 22.4 38.4 54.4 38.4 92.8v112c0 9.6 0 19.2 16 19.2C832 876.8 960 710.4 960 512c0-246.4-201.6-448-448-448S64 265.6 64 512z" />
+    </SvgIconRoot>
+  )
+}
+
+export function HeartFillIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="heart-fill" {...props}>
+      <path d="M923 283.6c-13.4-31.1-32.6-58.9-56.9-82.8-24.3-23.8-52.5-42.4-84-55.5-32.5-13.5-66.9-20.3-102.4-20.3-49.3 0-97.4 13.5-139.2 39-10 6.1-19.5 12.8-28.5 20.1-9-7.3-18.5-14-28.5-20.1-41.8-25.5-89.9-39-139.2-39-35.5 0-69.9 6.8-102.4 20.3-31.4 13-59.7 31.7-84 55.5-24.4 23.9-43.5 51.7-56.9 82.8-13.9 32.3-21 66.6-21 101.9 0 33.3 6.8 68 20.3 103.3 11.3 29.5 27.5 60.1 48.2 91 32.8 48.9 77.9 99.9 133.9 151.6 92.8 85.7 184.7 144.9 188.6 147.3l23.7 15.2c10.5 6.7 24 6.7 34.5 0l23.7-15.2c3.9-2.5 95.7-61.6 188.6-147.3 56-51.7 101.1-102.7 133.9-151.6 20.7-30.9 37-61.5 48.2-91 13.5-35.3 20.3-70 20.3-103.3 0.1-35.3-7-69.6-20.9-101.9z" />
+    </SvgIconRoot>
+  )
+}
+
+export function LeftIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="left" {...props}>
+      <path d="M724 218.3V141c0-6.7-7.7-10.4-12.9-6.3L260.3 486.8c-16.4 12.8-16.4 37.5 0 50.3l450.8 352.1c5.3 4.1 12.9 0.4 12.9-6.3v-77.3c0-4.9-2.3-9.6-6.1-12.6l-360-281 360-281.1c3.8-3 6.1-7.7 6.1-12.6z" />
+    </SvgIconRoot>
+  )
+}
+
+export function LinkIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="link" {...props}>
+      <path d="M574 665.4c-3.1-3.1-8.2-3.1-11.3 0L446.5 781.6c-53.8 53.8-144.6 59.5-204 0-59.5-59.5-53.8-150.2 0-204l116.2-116.2c3.1-3.1 3.1-8.2 0-11.3l-39.8-39.8c-3.1-3.1-8.2-3.1-11.3 0L191.4 526.5c-84.6 84.6-84.6 221.5 0 306s221.5 84.6 306 0l116.2-116.2c3.1-3.1 3.1-8.2 0-11.3L574 665.4zM832.6 191.4c-84.6-84.6-221.5-84.6-306 0L410.3 307.6c-3.1 3.1-3.1 8.2 0 11.3l39.7 39.7c3.1 3.1 8.2 3.1 11.3 0l116.2-116.2c53.8-53.8 144.6-59.5 204 0 59.5 59.5 53.8 150.2 0 204L665.3 562.6c-3.1 3.1-3.1 8.2 0 11.3l39.8 39.8c3.1 3.1 8.2 3.1 11.3 0l116.2-116.2c84.5-84.6 84.5-221.5 0-306.1z" />
+      <path d="M610.1 372.3c-3.1-3.1-8.2-3.1-11.3 0L372.3 598.7c-3.1 3.1-3.1 8.2 0 11.3l39.6 39.6c3.1 3.1 8.2 3.1 11.3 0l226.4-226.4c3.1-3.1 3.1-8.2 0-11.3l-39.5-39.6z" />
+    </SvgIconRoot>
+  )
+}
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="menu" {...props}>
+      <path d="M904 160H120c-4.4 0-8 3.6-8 8v64c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-64c0-4.4-3.6-8-8-8zM904 784H120c-4.4 0-8 3.6-8 8v64c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-64c0-4.4-3.6-8-8-8zM904 472H120c-4.4 0-8 3.6-8 8v64c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-64c0-4.4-3.6-8-8-8z" />
+    </SvgIconRoot>
+  )
+}
+
+export function QqIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="qq" {...props}>
+      <path d="M825.82555555 598.78555555c-17.06666667-54.82666667-36.69333333-100.90666667-66.87999999-176.31999999C763.63888889 224.38555555 681.29222223 64.17222222 491.63888889 64.17222222 299.85222222 64.17222222 219.31888889 227.58555556 224.4388889 422.46555556c-30.29333333 75.52-49.81333333 121.28-66.88 176.31999999-36.26666667 116.8-24.53333333 165.12-15.57333334 166.18666668 19.2 2.34666667 74.77333333-87.89333333 74.77333334-87.89333333 0 52.26666667 26.88 120.42666667 85.11999998 169.59999998-28.16 8.64-91.41333333 31.89333333-76.37333332 57.38666667 12.16 20.58666667 209.28 13.12 266.13333334 6.72000001 56.85333333 6.4 253.97333333 13.86666667 266.13333332-6.72000001 15.04-25.38666667-48.32-48.74666667-76.37333333-57.38666667 58.24-49.28 85.12-117.44 85.12-169.59999998 0 0 55.57333333 90.24 74.77333333 87.89333333 9.06666667-1.17333333 20.8-49.49333333-15.46666667-166.18666668z" />
+    </SvgIconRoot>
+  )
+}
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="refresh" {...props}>
+      <path d="M909.1 209.3l-56.4 44.1C775.8 155.1 656.2 92 521.9 92 290 92 102.3 279.5 102 511.5 101.7 743.7 289.8 932 521.9 932c181.3 0 335.8-115 394.6-276.1 1.5-4.2-0.7-8.9-4.9-10.3l-56.7-19.5c-4.1-1.4-8.6 0.7-10.1 4.8-1.8 5-3.8 10-5.9 14.9-17.3 41-42.1 77.8-73.7 109.4-31.6 31.6-68.4 56.4-109.3 73.8-42.3 17.9-87.4 27-133.8 27-46.5 0-91.5-9.1-133.8-27-40.9-17.3-77.7-42.1-109.3-73.8-31.6-31.6-56.4-68.4-73.7-109.4-17.9-42.4-27-87.4-27-133.9s9.1-91.5 27-133.9c17.3-41 42.1-77.8 73.7-109.4 31.6-31.6 68.4-56.4 109.3-73.8 42.3-17.9 87.4-27 133.8-27 46.5 0 91.5 9.1 133.8 27 40.9 17.3 77.7 42.1 109.3 73.8 9.9 9.9 19.2 20.4 27.8 31.4l-60.2 47c-5.3 4.1-3.5 12.5 3 14.1l175.6 43c5 1.2 9.9-2.6 9.9-7.7l0.8-180.9c-0.1-6.6-7.8-10.3-13-6.2z" />
+    </SvgIconRoot>
+  )
+}
+
+export function ReplyIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="reply" {...props}>
+      <path d="M512 512m-48 0a48 48 0 1 0 96 0 48 48 0 1 0-96 0Z" />
+      <path d="M712 512m-48 0a48 48 0 1 0 96 0 48 48 0 1 0-96 0Z" />
+      <path d="M312 512m-48 0a48 48 0 1 0 96 0 48 48 0 1 0-96 0Z" />
+      <path d="M925.2 338.4c-22.6-53.7-55-101.9-96.3-143.3-41.3-41.3-89.5-73.8-143.3-96.3C630.6 75.7 572.2 64 512 64h-2c-60.6 0.3-119.3 12.3-174.5 35.9-53.3 22.8-101.1 55.2-142 96.5-40.9 41.3-73 89.3-95.2 142.8-23 55.4-34.6 114.3-34.3 174.9 0.3 69.4 16.9 138.3 48 199.9v152c0 25.4 20.6 46 46 46h152.1c61.6 31.1 130.5 47.7 199.9 48h2.1c59.9 0 118-11.6 172.7-34.3 53.5-22.3 101.6-54.3 142.8-95.2 41.3-40.9 73.8-88.7 96.5-142 23.6-55.2 35.6-113.9 35.9-174.5 0.3-60.9-11.5-120-34.8-175.6z m-151.1 438C704 845.8 611 884 512 884h-1.7c-60.3-0.3-120.2-15.3-173.1-43.5l-8.4-4.5H188V695.2l-4.5-8.4C155.3 633.9 140.3 574 140 513.7c-0.4-99.7 37.7-193.3 107.6-263.8 69.8-70.5 163.1-109.5 262.8-109.9h1.7c50 0 98.5 9.7 144.2 28.9 44.6 18.7 84.6 45.6 119 80 34.3 34.3 61.3 74.4 80 119 19.4 46.2 29.1 95.2 28.9 145.8-0.6 99.6-39.7 192.9-110.1 262.7z" />
+    </SvgIconRoot>
+  )
+}
+
+export function RightIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="right" {...props}>
+      <path d="M765.7 486.8L314.9 134.7c-5.3-4.1-12.9-0.4-12.9 6.3v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1c16.4-12.8 16.4-37.6 0-50.4z" />
+    </SvgIconRoot>
+  )
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="search" {...props}>
+      <path d="M909.6 854.5L649.9 594.8C690.2 542.7 712 479 712 412c0-80.2-31.3-155.4-87.9-212.1-56.6-56.7-132-87.9-212.1-87.9s-155.5 31.3-212.1 87.9C143.2 256.5 112 331.8 112 412c0 80.1 31.3 155.5 87.9 212.1C256.5 680.8 331.8 712 412 712c67 0 130.6-21.8 182.7-62l259.7 259.6c3.2 3.2 8.4 3.2 11.6 0l43.6-43.5c3.2-3.2 3.2-8.4 0-11.6zM570.4 570.4C528 612.7 471.8 636 412 636s-116-23.3-158.4-65.6C211.3 528 188 471.8 188 412s23.3-116.1 65.6-158.4C296 211.3 352.2 188 412 188s116.1 23.2 158.4 65.6S636 352.2 636 412s-23.3 116.1-65.6 158.4z" />
+    </SvgIconRoot>
+  )
+}
+
+export function TwitterIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="twitter" {...props}>
+      <path d="M928 254.3c-30.6 13.2-63.9 22.7-98.2 26.4 35.4-21.1 62.3-54.4 75-94-32.7 19.5-69.7 33.8-108.2 41.2C765.4 194.6 721.1 174 672 174c-94.5 0-170.5 76.6-170.5 170.6 0 13.2 1.6 26.4 4.2 39.1-141.5-7.4-267.7-75-351.6-178.5-14.8 25.4-23.2 54.4-23.2 86.1 0 59.2 30.1 111.4 76 142.1-28-1.1-54.4-9-77.1-21.7v2.1c0 82.9 58.6 151.6 136.7 167.4-14.3 3.7-29.6 5.8-44.9 5.8-11.1 0-21.6-1.1-32.2-2.6C211 652 273.9 701.1 348.8 702.7c-58.6 45.9-132 72.9-211.7 72.9-14.3 0-27.5-0.5-41.2-2.1C171.5 822 261.2 850 357.8 850 671.4 850 843 590.2 843 364.7c0-7.4 0-14.8-0.5-22.2 33.2-24.3 62.3-54.4 85.5-88.2z" />
+    </SvgIconRoot>
+  )
+}
+
+export function UserIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="user" {...props}>
+      <path d="M858.5 763.6c-18.9-44.8-46.1-85-80.6-119.5-34.5-34.5-74.7-61.6-119.5-80.6-0.4-0.2-0.8-0.3-1.2-0.5C719.5 518 760 444.7 760 362c0-137-111-248-248-248S264 225 264 362c0 82.7 40.5 156 102.8 201.1-0.4 0.2-0.8 0.3-1.2 0.5-44.8 18.9-85 46-119.5 80.6-34.5 34.5-61.6 74.7-80.6 119.5C146.9 807.5 137 854 136 901.8c-0.1 4.5 3.5 8.2 8 8.2h60c4.4 0 7.9-3.5 8-7.8 2-77.2 33-149.5 87.8-204.3 56.7-56.7 132-87.9 212.2-87.9s155.5 31.2 212.2 87.9C779 752.7 810 825 812 902.2c0.1 4.4 3.6 7.8 8 7.8h60c4.5 0 8.1-3.7 8-8.2-1-47.8-10.9-94.3-29.5-138.2zM512 534c-45.9 0-89.1-17.9-121.6-50.4S340 407.9 340 362c0-45.9 17.9-89.1 50.4-121.6S466.1 190 512 190s89.1 17.9 121.6 50.4S684 316.1 684 362c0 45.9-17.9 89.1-50.4 121.6S557.9 534 512 534z" />
+    </SvgIconRoot>
+  )
+}
+
+export function WechatIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="wechat" {...props}>
+      <path d="M690.1 377.4c5.9 0 11.8 0.2 17.6 0.5-24.4-128.7-158.3-227.1-319.9-227.1C209 150.8 64 271.4 64 420.2c0 81.1 43.6 154.2 111.9 203.6 5.5 3.9 9.1 10.3 9.1 17.6 0 2.4-0.5 4.6-1.1 6.9-5.5 20.3-14.2 52.8-14.6 54.3-0.7 2.6-1.7 5.2-1.7 7.9 0 5.9 4.8 10.8 10.8 10.8 2.3 0 4.2-0.9 6.2-2l70.9-40.9c5.3-3.1 11-5 17.2-5 3.2 0 6.4 0.5 9.5 1.4 33.1 9.5 68.8 14.8 105.7 14.8 6 0 11.9-0.1 17.8-0.4-7.1-21-10.9-43.1-10.9-66 0-135.8 132.2-245.8 295.3-245.8z m-194.3-86.5c23.8 0 43.2 19.3 43.2 43.1s-19.3 43.1-43.2 43.1c-23.8 0-43.2-19.3-43.2-43.1s19.4-43.1 43.2-43.1z m-215.9 86.2c-23.8 0-43.2-19.3-43.2-43.1s19.3-43.1 43.2-43.1 43.2 19.3 43.2 43.1-19.4 43.1-43.2 43.1z" />
+      <path d="M866.7 792.7c56.9-41.2 93.2-102 93.2-169.7 0-124-120.8-224.5-269.9-224.5-149 0-269.9 100.5-269.9 224.5S540.9 847.5 690 847.5c30.8 0 60.6-4.4 88.1-12.3 2.6-0.8 5.2-1.2 7.9-1.2 5.2 0 9.9 1.6 14.3 4.1l59.1 34c1.7 1 3.3 1.7 5.2 1.7 2.4 0 4.7-0.9 6.4-2.6 1.7-1.7 2.6-4 2.6-6.4 0-2.2-0.9-4.4-1.4-6.6-0.3-1.2-7.6-28.3-12.2-45.3-0.5-1.9-0.9-3.8-0.9-5.7 0.1-5.9 3.1-11.2 7.6-14.5zM600.2 587.2c-19.9 0-36-16.1-36-35.9 0-19.8 16.1-35.9 36-35.9s36 16.1 36 35.9c0 19.8-16.2 35.9-36 35.9z m179.9 0c-19.9 0-36-16.1-36-35.9 0-19.8 16.1-35.9 36-35.9s36 16.1 36 35.9c-0.1 19.8-16.2 35.9-36 35.9z" />
+    </SvgIconRoot>
+  )
+}
+
+export function WeiboIcon(props: IconProps) {
+  return (
+    <SvgIconRoot name="weibo" {...props}>
+      <path d="M457.3 543c-68.1-17.7-145 16.2-174.6 76.2-30.1 61.2-1 129.1 67.8 151.3 71.2 23 155.2-12.2 184.4-78.3 28.7-64.6-7.2-131-77.6-149.2z m-52 156.2c-13.8 22.1-43.5 31.7-65.8 21.6-22-10-28.5-35.7-14.6-57.2 13.7-21.4 42.3-31 64.4-21.7 22.4 9.5 29.6 35 16 57.3z m45.5-58.5c-5 8.6-16.1 12.7-24.7 9.1-8.5-3.5-11.2-13.1-6.4-21.5 5-8.4 15.6-12.4 24.1-9.1 8.7 3.2 11.8 12.9 7 21.5zM785.3 443.5c15 4.8 31-3.4 35.9-18.3 11.8-36.6 4.4-78.4-23.2-109-27.6-30.6-68.4-42.3-106-34.3-15.4 3.3-25.2 18.4-21.9 33.8 3.3 15.3 18.4 25.2 33.8 21.8 18.4-3.9 38.3 1.8 51.9 16.7 13.5 15 17.2 35.4 11.3 53.3-4.9 15.1 3.2 31.1 18.2 36z" />
+      <path d="M885.1 237.5c-56.7-62.9-140.4-86.9-217.7-70.5-17.9 3.8-29.3 21.4-25.4 39.3 3.8 17.9 21.4 29.3 39.3 25.5 55-11.7 114.4 5.4 154.8 50.1 40.3 44.7 51.2 105.7 34 159.1-5.6 17.4 3.9 36 21.3 41.7 17.4 5.6 36-3.9 41.6-21.2v-0.1c24.1-75.4 8.9-161.1-47.9-223.9zM729 499c-12.2-3.6-20.5-6.1-14.1-22.1 13.8-34.7 15.2-64.7 0.3-86-28-40.1-104.8-37.9-192.8-1.1 0 0-27.6 12.1-20.6-9.8 13.5-43.5 11.5-79.9-9.6-101-47.7-47.8-174.6 1.8-283.5 110.6C127.3 471.1 80 557.5 80 632.2 80 775.1 263.2 862 442.5 862c235 0 391.3-136.5 391.3-245 0-65.5-55.2-102.6-104.8-118zM443 810.8c-143 14.1-266.5-50.5-275.8-144.5-9.3-93.9 99.2-181.5 242.2-195.6 143-14.2 266.5 50.5 275.8 144.4C694.4 709 586 796.6 443 810.8z" />
+    </SvgIconRoot>
+  )
+}
+
+export type { IconProps } from './icon-props'

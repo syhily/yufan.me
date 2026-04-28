@@ -8,13 +8,12 @@ import type {
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
 } from '@/client/api/action-types'
-import type { IconName } from '@/ui/icons/Icon'
 
 import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
-import { DynamicIcon, HeartFillIcon } from '@/ui/icons/icons'
+import { HeartFillIcon, QqIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -172,45 +171,31 @@ export function LikeShare({ post }: LikeShareProps) {
 
   return (
     <div className="post-share text-center mt-4">
-      <SocialIconLink
+      <a
         href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
-        title="分享到 QQ 空间"
-        icon="qq"
         className="btn btn-light btn-icon btn-md btn-circle mx-1 qq"
-      />
+        title="分享到 QQ 空间"
+      >
+        <span>
+          <QqIcon />
+        </span>
+      </a>
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
-        icon="wechat"
+        trigger={<WechatIcon />}
         className="btn btn-light btn-icon btn-circle btn-md single-popup mx-1"
       />
-      <SocialIconLink
+      <a
         href={`https://service.weibo.com/share/share.php?${weibo}`}
-        title="分享到微博"
-        icon="weibo"
         className="btn btn-light btn-icon btn-circle btn-md mx-1 weibo"
-      />
+        title="分享到微博"
+      >
+        <span>
+          <WeiboIcon />
+        </span>
+      </a>
     </div>
-  )
-}
-
-// Each external share button collapses to <a><span><Icon /></span></a> with
-// the exact same shape; the QR variant uses its own dialog so we don't
-// generalize that one. Extracted to keep `LikeShare` declarative.
-interface SocialIconLinkProps {
-  href: string
-  title: string
-  icon: IconName
-  className: string
-}
-
-function SocialIconLink({ href, title, icon, className }: SocialIconLinkProps) {
-  return (
-    <a href={href} className={className} title={title}>
-      <span>
-        <DynamicIcon name={icon} />
-      </span>
-    </a>
   )
 }

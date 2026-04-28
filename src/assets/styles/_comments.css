@@ -399,7 +399,7 @@ blockquote p:last-child {
   box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.117);
 }
 
-.toggle-menu-tree .icon {
+.toggle-menu-tree svg {
   display: block;
   flex: 0 0 auto;
 }

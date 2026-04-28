@@ -14,7 +14,7 @@ import { API_ACTIONS } from '@/client/api/actions'
 import { idStr } from '@/shared/tools'
 import { AdminCommentList } from '@/ui/admin/AdminCommentList'
 import { AdminCommentsPagination } from '@/ui/admin/AdminCommentsPagination'
-import { Icon } from '@/ui/icons/icons'
+import { RefreshIcon } from '@/ui/icons/icons'
 
 interface ApiEnvelope<T> {
   data?: T
@@ -168,7 +168,7 @@ export function AdminCommentsPage({ currentUserName, currentUserEmail }: AdminCo
               <h1 className="h3 mb-0">评论管理</h1>
               <div className="d-flex gap-2">
                 <button type="button" className="btn btn-primary" onClick={reload}>
-                  <Icon name="refresh" /> 刷新
+                  <RefreshIcon /> 刷新
                 </button>
               </div>
             </div>
