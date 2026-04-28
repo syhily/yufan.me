@@ -232,6 +232,10 @@ are:
   `src/content/pages/**/*.mdx`.
 - Meta collections are YAML files in `src/content/metas`:
   `categories.yaml`, `tags.yaml`, and `friends.yaml`.
+- Asset-host (`blog.config` `settings.asset.host`) image metadata lives under
+  `src/content/image-metadata/` (one JSON file per image path). After adding
+  or changing remote images in MDX/YAML, run `npm run image:metadata:sync`.
+  Optional CDN fallback during build/SSR: `IMAGE_METADATA_REMOTE_FALLBACK=1`.
 - URLs are based on MDX frontmatter `slug`, not physical filenames.
   Posts render at `/posts/:slug`; pages render at `/:slug`.
 - `visible=false` posts are hidden from the public home listing and

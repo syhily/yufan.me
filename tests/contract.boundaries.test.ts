@@ -97,6 +97,12 @@ describe('contract: module and bundle boundaries', () => {
       if (file === 'source.config.ts' && specifier === './src/server/markdown/rehype-image-enhance.ts') {
         return true
       }
+      if (file === 'src/server/markdown/rehype-image-enhance.ts' && specifier === '../images/metadata-store.ts') {
+        return true
+      }
+      if (file === 'src/server/images/metadata-store.ts' && specifier === '../../blog.config.ts') {
+        return true
+      }
       if (file === 'source.config.ts' && specifier === './src/server/markdown/rehype-mathjax.ts') {
         return true
       }

@@ -5,7 +5,7 @@ RUN npm ci
 
 FROM deps AS build
 COPY . .
-RUN --mount=type=cache,target=/app/.cache,sharing=locked NODE_ENV=production npm run build
+RUN NODE_ENV=production npm run build
 
 FROM node:25-alpine AS runtime
 WORKDIR /app

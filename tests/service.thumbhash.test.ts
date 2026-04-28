@@ -10,9 +10,11 @@ describe('services/images/thumbhash — loadImageThumbhash', () => {
   let mock: ReturnType<typeof installFetch>
   beforeEach(() => {
     mock = installFetch()
+    process.env.IMAGE_METADATA_REMOTE_FALLBACK = '1'
   })
   afterEach(() => {
     mock.reset()
+    delete process.env.IMAGE_METADATA_REMOTE_FALLBACK
   })
 
   it('returns null for non-asset-host URLs (no metadata fetch attempted)', async () => {
@@ -60,9 +62,11 @@ describe('services/images/thumbhash — enhanceImageHtml', () => {
   let mock: ReturnType<typeof installFetch>
   beforeEach(() => {
     mock = installFetch()
+    process.env.IMAGE_METADATA_REMOTE_FALLBACK = '1'
   })
   afterEach(() => {
     mock.reset()
+    delete process.env.IMAGE_METADATA_REMOTE_FALLBACK
   })
 
   it('injects data-thumbhash and rewrites src for asset-host images', async () => {
@@ -84,5 +88,22 @@ describe('services/images/thumbhash — enhanceImageHtml', () => {
   it('ignores empty src attributes safely', async () => {
     const html = await enhanceImageHtml(`<img src="" />`)
     expect(html).not.toContain('data-thumbhash')
+  })
+})
+
+describe('services/images/thumbhash — remote fallback gate', () => {
+  let mock: ReturnType<typeof installFetch>
+  beforeEach(() => {
+    mock = installFetch()
+    delete process.env.IMAGE_METADATA_REMOTE_FALLBACK
+  })
+  afterEach(() => {
+    mock.reset()
+  })
+
+  it('does not fetch metadata when fallback is disabled and no committed file exists', async () => {
+    const src = `https://${ASSET_HOST}/images/__missing_committed_metadata__.jpg`
+    expect(await loadImageThumbhash(src)).toBeNull()
+    expect(mock.calls.length).toBe(0)
   })
 })

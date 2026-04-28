@@ -1,7 +1,11 @@
 import { ELEMENT_NODE, transform, walk } from 'ultrahtml'
 
 import { createInflight } from '@/server/cache/inflight'
-import { storage } from '@/server/cache/storage'
+import {
+  isImageMetadataRemoteFallbackEnabled,
+  metadataJsonUrlForImageSrc,
+  readCommittedImageMetadata,
+} from '@/server/images/metadata-store'
 import { getImageUrl, isTransformableRemoteImage } from '@/shared/image-url'
 
 interface ImageMetadata {
@@ -16,7 +20,6 @@ export interface ImageThumbhash {
   thumbhash?: string
 }
 
-const IMAGE_METADATA_TTL = 60 * 60 * 24 * 7
 const METADATA_FETCH_TIMEOUT_MS = 1500
 const metadataInflight = createInflight<ImageMetadata | null>()
 
@@ -51,17 +54,26 @@ async function getImageMetadata(src: string): Promise<ImageMetadata | null> {
 }
 
 async function loadImageMetadata(src: string): Promise<ImageMetadata | null> {
-  const key = `image-metadata-${src}`
-
-  if (import.meta.env.PROD) {
-    const cached = await storage.getItem<ImageMetadata>(key)
-    if (cached !== null) {
-      return cached
+  const committed = await readCommittedImageMetadata(src)
+  if (committed !== null) {
+    return {
+      width: committed.width,
+      height: committed.height,
+      blurhash: committed.blurhash,
     }
   }
 
+  if (!isImageMetadataRemoteFallbackEnabled()) {
+    return null
+  }
+
+  const remoteUrl = metadataJsonUrlForImageSrc(src)
+  if (remoteUrl === null) {
+    return null
+  }
+
   try {
-    const response = await fetch(metadataUrl(src), {
+    const response = await fetch(remoteUrl, {
       signal: AbortSignal.timeout(METADATA_FETCH_TIMEOUT_MS),
     })
     if (!response.ok) {
@@ -71,10 +83,6 @@ async function loadImageMetadata(src: string): Promise<ImageMetadata | null> {
     const metadata = (await response.json()) as ImageMetadata
     if (!isValidMetadata(metadata)) {
       return null
-    }
-
-    if (import.meta.env.PROD && metadata.blurhash !== undefined && metadata.blurhash !== '') {
-      await storage.setItem(key, metadata, { ttl: IMAGE_METADATA_TTL })
     }
 
     return metadata
@@ -101,14 +109,6 @@ function isValidMetadata(
   return (
     Number.isFinite(metadata.width) && metadata.width > 0 && Number.isFinite(metadata.height) && metadata.height > 0
   )
-}
-
-function metadataUrl(src: string): string {
-  const extensionIndex = src.lastIndexOf('.')
-  if (extensionIndex === -1) {
-    return `${src}.json`
-  }
-  return `${src.slice(0, extensionIndex)}.json`
 }
 
 async function enhanceImageNode(attributes: Record<string, string | undefined>): Promise<void> {

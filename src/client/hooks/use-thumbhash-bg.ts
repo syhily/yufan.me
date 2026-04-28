@@ -27,9 +27,9 @@ const thumbhashUrlCache = new Map<string, string>()
 // then a stable style object that the host element merges via the `style`
 // prop.
 //
-// The thumbhash itself is computed at MDX compile time by
-// `rehype-image-enhance.server.ts` (via `loadImageThumbhash`) and inlined as
-// `data-thumbhash` on the HTML, so consumers only need to pass it through.
+// The thumbhash itself is inlined at MDX compile time by `rehype-image-enhance`
+// (from committed `src/content/image-metadata/**` sidecars) as `data-thumbhash`
+// on the HTML, so consumers only need to pass it through.
 //
 // React 19 lets us drive the visual change through a `style` prop on the
 // host element instead of imperatively mutating `image.style.background*`
