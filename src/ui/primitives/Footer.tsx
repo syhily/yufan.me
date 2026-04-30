@@ -1,10 +1,12 @@
 import { formatLocalDate } from '@/shared/formatter'
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useFooterSettings, useLocalization, useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 export function Footer() {
-  const config = useBlogConfig()
-  const thisYear = formatLocalDate(new Date(), 'yyyy')
-  const { icpNo, moeIcpNo, initialYear } = config.settings.footer
+  const { website, title } = useSiteIdentity()
+  const localization = useLocalization()
+  const { footer } = useFooterSettings()
+  const thisYear = formatLocalDate(new Date(), 'yyyy', localization)
+  const { icpNo, moeIcpNo, initialYear } = footer
   const hasIcp = icpNo || moeIcpNo
 
   return (
@@ -13,8 +15,8 @@ export function Footer() {
         <span>
           Copyright © {initialYear}-{thisYear}{' '}
         </span>
-        <a href={config.website} title={config.title} rel="home">
-          {config.title}
+        <a href={website} title={title} rel="home">
+          {title}
         </a>
       </div>
       {hasIcp && (
@@ -26,7 +28,7 @@ export function Footer() {
           )}
           {moeIcpNo && (
             <a
-              href={`https://icp.gov.moe/?keyword=${config.website.replace(/^https?:\/\//, '')}`}
+              href={`https://icp.gov.moe/?keyword=${website.replace(/^https?:\/\//, '')}`}
               rel="nofollow noreferrer"
               target="_blank"
               title="萌国 ICP 备案"

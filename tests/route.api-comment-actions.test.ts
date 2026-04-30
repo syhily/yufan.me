@@ -133,8 +133,10 @@ describe('api/comment.loadAll action', () => {
 // the WordPress login + install pages submit through React Router's
 // `<Form>` directly to the route's `action`, exercising
 // `processAuthFormSubmission` end-to-end. Coverage for the underlying
-// `signInWithSession` / `signUpInitialAdminWithSession` flows lives in
-// `route.wp-login.test.ts` (route action level).
+// `signInWithSession` / `signUpInitialAdminWithSession` /
+// `seedInstallSettingsWithSession` flows lives in
+// `service.auth-flow.test.ts` (helper level) and `route.wp-login.test.ts`
+// (route action level).
 
 describe('api/auth.updateUser action', () => {
   it('rejects non-admins with 403', async () => {

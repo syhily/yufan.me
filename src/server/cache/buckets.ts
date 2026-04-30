@@ -1,6 +1,6 @@
 import { redisInstance } from '@/server/cache/storage'
 import { getLogger } from '@/server/logger'
-import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 const log = getLogger('cache.buckets')
 
@@ -72,7 +72,7 @@ const BUCKET_IDS = BUCKET_META.map((meta) => meta.id) as [CacheBucketId, ...Cach
  * `getAdminCacheStats()` / `clearAdminCache()`.
  */
 export function getCacheBuckets(): CacheBucket[] {
-  const cache = getBlogSettingsSync().settings.cache
+  const cache = requireBlogConfig().settings.cache
   return BUCKET_META.map((meta) => {
     const slot = cache[meta.id]
     return {

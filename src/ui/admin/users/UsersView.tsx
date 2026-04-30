@@ -60,6 +60,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/admin/shadcn/components/ui/select'
 import { Skeleton } from '@/ui/admin/shadcn/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/admin/shadcn/components/ui/table'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 
 interface ApiEnvelope<T> {
   data?: T
@@ -164,6 +165,7 @@ function reducer(state: UsersState, action: UsersAction): UsersState {
 }
 
 export function UsersView() {
+  const config = useLocalization()
   const [state, dispatch] = useReducer(reducer, {
     rows: [],
     total: 0,
@@ -480,6 +482,7 @@ export function UsersView() {
                   <UserRow
                     key={user.id}
                     user={user}
+                    config={config}
                     selected={!!state.selected[user.id]}
                     onSelectedChange={(value) => dispatch({ type: 'setSelected', id: user.id, value })}
                     onMuteToggle={() =>
@@ -571,6 +574,7 @@ export function UsersView() {
 
 interface UserRowProps {
   user: AdminUserDto
+  config: ReturnType<typeof useLocalization>
   selected: boolean
   onSelectedChange: (value: boolean) => void
   onMuteToggle: () => void
@@ -582,6 +586,7 @@ interface UserRowProps {
 
 function UserRow({
   user,
+  config,
   selected,
   onSelectedChange,
   onMuteToggle,
@@ -658,7 +663,9 @@ function UserRow({
       </TableCell>
       <TableCell className="tw:hidden tw:lg:table-cell">
         <div className="tw:text-muted-foreground tw:flex tw:flex-col tw:gap-0.5 tw:text-xs">
-          {user.lastCommentAt && <span>评论：{formatLocalDate(new Date(user.lastCommentAt), DATE_FORMAT)}</span>}
+          {user.lastCommentAt && (
+            <span>评论：{formatLocalDate(new Date(user.lastCommentAt), DATE_FORMAT, config)}</span>
+          )}
           {user.lastIp && <span>IP：{user.lastIp}</span>}
           {user.lastUa && <span className="tw:max-w-xs tw:truncate">UA：{user.lastUa}</span>}
         </div>

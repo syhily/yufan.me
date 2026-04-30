@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { BlogConfig } from '@/blog.config'
+import type { BlogConfig } from '@/shared/blog-config'
 
 import { BaseLayout } from '@/ui/primitives/BaseLayout'
 // `globals.css` is the public site's complete cascade (Bootstrap reboot/grid/

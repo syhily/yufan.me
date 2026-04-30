@@ -3,10 +3,15 @@ import type { ZodType } from 'zod'
 
 import { createContext, createCookie, createSessionStorage, data, redirect } from 'react-router'
 
+import type { LocalizationSettings, SiteIdentitySettings } from '@/shared/blog-config'
+
 import { redisInstance } from '@/server/cache/storage'
+import { upsertSetting } from '@/server/db/query/setting'
 import { hasAdmin, insertAdmin, updateLastLogin, verifyUserPassword } from '@/server/db/query/user'
 import { SESSION_SECRET } from '@/server/env'
 import { tryRateLimit } from '@/server/rate-limit'
+import { buildDefaultSectionPayloads, SECTION_REGISTRY, type SettingsSection } from '@/server/settings/sections'
+import { refreshBlogSettings } from '@/server/settings/snapshot'
 import { getClientAddress } from '@/shared/request'
 import { makeToken, timingSafeEqual } from '@/shared/security'
 
@@ -377,6 +382,32 @@ export async function signInWithSession({
   }
 }
 
+// Two-stage install. Replaces the legacy `installBlogWithSession`
+// helper that did everything in one POST.
+//
+// STAGE 1 — `signUpInitialAdminWithSession`: insert the very first
+//           admin row, then auto-login the new user so the redirect to
+//           stage 2 is already authenticated. Refuses to run when an
+//           admin already exists.
+// STAGE 2 — `seedInstallSettingsWithSession`: persist the `setting`
+//           row at scope `blog` and refresh the snapshot. Requires a
+//           live admin session (the action route enforces that via the
+//           usual `getRouteRequestContext({ admin })` check), and
+//           refuses to run when a settings row is already present.
+//
+// The admin row written in stage 1 is meaningful on its own (a half-
+// installed deployment can still log in via `/wp-login.php`), and an
+// absent settings row simply re-triggers the install gate's redirect
+// to stage 2. There is no transactional invariant between the two
+// writes, so the split is purely operational.
+
+export interface SignUpAdminSeed {
+  name: string
+  email: string
+  password: string
+  token: string
+}
+
 export async function signUpInitialAdminWithSession({
   name,
   email,
@@ -384,11 +415,7 @@ export async function signUpInitialAdminWithSession({
   token,
   session,
   request,
-}: {
-  name: string
-  email: string
-  password: string
-  token: string
+}: SignUpAdminSeed & {
   session: BlogSession
   request: Request
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
@@ -399,7 +426,7 @@ export async function signUpInitialAdminWithSession({
     return {
       ok: false,
       status: 409,
-      message: '安装已完成',
+      message: '管理员账号已存在，请直接登录后继续初始化。',
       headers: await commitHeaders(session),
     }
   }
@@ -415,6 +442,10 @@ export async function signUpInitialAdminWithSession({
     }
   }
 
+  // Auto-login the freshly-created admin so the stage-2 redirect lands
+  // on a fully authenticated request. The install gate's stage-2 check
+  // (`/wp-admin/install/settings.php`) refuses anonymous traffic, so
+  // skipping this would force the user through `/wp-login.php` first.
   session.set('user', {
     id: `${admin.id}`,
     name: admin.name,
@@ -425,8 +456,195 @@ export async function signUpInitialAdminWithSession({
 
   return {
     ok: true,
+    data: { redirectTo: '/wp-admin/install/settings.php' },
+    headers: await commitHeaders(session, await clearCsrfCookie()),
+  }
+}
+
+export interface InstallSettingsSeed {
+  token: string
+  // Site identity
+  title: string
+  website: string
+  authorEmail: string
+  // Asset CDN
+  assetHost: string
+  assetScheme: 'http' | 'https'
+  // Localization
+  locale: string
+  timeZone: string
+  timeFormat: string
+}
+
+export async function seedInstallSettingsWithSession({
+  token,
+  title,
+  website,
+  authorEmail,
+  assetHost,
+  assetScheme,
+  locale,
+  timeZone,
+  timeFormat,
+  admin,
+  session,
+  request,
+}: InstallSettingsSeed & {
+  /** The currently authenticated admin (caller is the wp-admin route). */
+  admin: { id: string; name: string }
+  session: BlogSession
+  request: Request
+}): Promise<AuthFlowResult<{ redirectTo: string }>> {
+  const csrf = await csrfFailure(request, session, token)
+  if (csrf) return csrf
+
+  const siteIdentity = buildSiteIdentitySeed({
+    name: admin.name,
+    title,
+    website,
+    authorEmail,
+  })
+  const localization = buildLocalizationSeed({
+    assetHost,
+    assetScheme,
+    locale,
+    timeZone,
+    timeFormat,
+  })
+
+  // Defence in depth: the install form's flat `installSettingsSchema`
+  // and each section's `generalSchema` / `localizationSchema` have the
+  // same constraints today, but they live in separate files and could
+  // drift. Re-validating the assembled seed against the canonical
+  // section schemas at the perimeter means a future schema change
+  // (e.g. a new required field) fails the install flow loudly instead
+  // of writing a row that any later admin save would silently reject.
+  const generalCheck = SECTION_REGISTRY.general.schema.safeParse(siteIdentity)
+  if (!generalCheck.success) {
+    return {
+      ok: false,
+      status: 400,
+      message: '站点信息不符合 blog.general 的校验规则，无法初始化。',
+      headers: await commitHeaders(session),
+    }
+  }
+  const localizationCheck = SECTION_REGISTRY.localization.schema.safeParse(localization)
+  if (!localizationCheck.success) {
+    return {
+      ok: false,
+      status: 400,
+      message: '本地化信息不符合 blog.localization 的校验规则，无法初始化。',
+      headers: await commitHeaders(session),
+    }
+  }
+
+  // Pre-validate the 9 optional sections' default seed payloads up
+  // front through `buildDefaultSectionPayloads()`. The helper throws
+  // if a registry default no longer satisfies its schema (a programmer
+  // bug in `sections.ts`, not user data), so we catch and surface a
+  // 500 instead of letting the throw bubble to the route boundary.
+  let defaultSections: { section: SettingsSection; payload: Record<string, unknown> }[]
+  try {
+    defaultSections = buildDefaultSectionPayloads()
+  } catch (error) {
+    return {
+      ok: false,
+      status: 500,
+      message: error instanceof Error ? `内置默认值校验失败：${error.message}` : '内置默认值校验失败。',
+      headers: await commitHeaders(session),
+    }
+  }
+
+  // `setting.updatedBy` is `bigint | null`; the session/admin id is a
+  // string in the cookie payload but corresponds to the same column.
+  // Writes are serialised here for clarity (one row at a time); they
+  // could go in parallel because each row is keyed on a distinct unique
+  // `scope`, but the install flow is not latency-sensitive and the
+  // serialised order makes a partial-failure crash report easier to
+  // read. All 11 sections are written at install time so the very
+  // first public request after install never observes a `null`
+  // section bucket — the strict per-section hooks
+  // (`useFooterSettings()`, `useNavigationSettings()`, …) all resolve
+  // immediately. The admin can still tune any section later from the
+  // matching `/wp-admin/settings/*` page.
+  const updatedBy = BigInt(admin.id)
+  await upsertSetting(
+    generalCheck.data as unknown as Record<string, unknown>,
+    updatedBy,
+    SECTION_REGISTRY.general.scope,
+  )
+  await upsertSetting(
+    localizationCheck.data as unknown as Record<string, unknown>,
+    updatedBy,
+    SECTION_REGISTRY.localization.scope,
+  )
+  for (const { section, payload } of defaultSections) {
+    await upsertSetting(payload, updatedBy, SECTION_REGISTRY[section].scope)
+  }
+  // Force the in-process snapshot to pick up the freshly-written rows
+  // so the very next request (the redirect to `/wp-admin`) sees the
+  // live values from the synchronous reader without waiting for the
+  // next hydration tick.
+  await refreshBlogSettings()
+
+  return {
+    ok: true,
     data: { redirectTo: '/wp-admin' },
     headers: await commitHeaders(session, await clearCsrfCookie()),
+  }
+}
+
+// Build the `blog.general` row contents. `author.name` is sourced from
+// the admin row created in stage 1 so the editor doesn't have to
+// re-type it; `description` is bootstrapped from the title so the
+// row satisfies `generalSchema` (which requires `description.min(1)`)
+// — without a non-empty seed the very first save from
+// `/wp-admin/settings/general` would silently reject the form. The
+// admin can overwrite the description any time from the same page.
+// `keywords` stays empty: the schema only enforces a max length, an
+// empty array is valid.
+function buildSiteIdentitySeed({
+  name,
+  title,
+  website,
+  authorEmail,
+}: {
+  name: string
+  title: string
+  website: string
+  authorEmail: string
+}): SiteIdentitySettings {
+  return {
+    title,
+    description: title,
+    website,
+    keywords: [],
+    author: { name, email: authorEmail, url: website },
+  }
+}
+
+// Build the `blog.localization` row contents. The CDN host / scheme
+// MUST match the deployment-time `ASSET_HOST` / `ASSET_SCHEME` env
+// vars consumed by the build-time MDX pipeline; the install form
+// surfaces both knobs side-by-side so the editor sees the coupling.
+function buildLocalizationSeed({
+  assetHost,
+  assetScheme,
+  locale,
+  timeZone,
+  timeFormat,
+}: {
+  assetHost: string
+  assetScheme: 'http' | 'https'
+  locale: string
+  timeZone: string
+  timeFormat: string
+}): LocalizationSettings {
+  return {
+    asset: { host: assetHost, scheme: assetScheme },
+    locale,
+    timeZone,
+    timeFormat,
   }
 }
 

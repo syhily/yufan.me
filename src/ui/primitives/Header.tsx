@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
-import type { BlogConfig, SocialNetwork } from '@/blog.config'
+import type { NavigationItem } from '@/shared/blog-config'
+import type { SocialNetwork } from '@/shared/socials'
 
 import { GithubFillIcon, MenuIcon, QqIcon, TwitterIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { SearchIconButton } from '@/ui/search/Search'
 
 export interface HeaderProps {
-  navigation: BlogConfig['navigation']
+  navigation: NavigationItem[]
   admin: boolean
 }
 
@@ -25,7 +26,7 @@ function menuId(index: number): string {
 // React Router can perform client-side transitions and `prefetch` the next
 // route's data. External / `target="_blank"` links stay as plain `<a>` since
 // they leave the SPA boundary anyway.
-function isExternalNavTarget(menu: BlogConfig['navigation'][number]): boolean {
+function isExternalNavTarget(menu: NavigationItem): boolean {
   if (menu.target === '_blank') return true
   return /^https?:\/\//.test(menu.link)
 }
@@ -46,7 +47,8 @@ function SocialNavIcon({ network }: { network: SocialNetwork }) {
 }
 
 export function Header({ navigation, admin }: HeaderProps) {
-  const config = useBlogConfig()
+  const { title } = useSiteIdentity()
+  const { socials } = useSocialsSettings()
   const { pathname, search } = useLocation()
   const logoutQuery = new URLSearchParams({
     action: 'logout',
@@ -82,7 +84,7 @@ export function Header({ navigation, admin }: HeaderProps) {
         <div className="aside-overlay" onClick={() => setMenuOpen(false)} />
         <div className="aside-inner bg-secondary">
           <h1 className="navbar-brand">
-            <Link to="/" title={config.title} className="d-block" prefetch="intent">
+            <Link to="/" title={title} className="d-block" prefetch="intent">
               <img src="/logo-dark.svg" alt="且听书吟" />
             </Link>
           </h1>
@@ -116,7 +118,7 @@ export function Header({ navigation, admin }: HeaderProps) {
             </ul>
           </div>
           <div className="site-submenu">
-            {config.socials.map((social) => {
+            {socials.map((social) => {
               if (social.type === 'qrcode') {
                 return (
                   <QRDialog
@@ -150,7 +152,7 @@ export function Header({ navigation, admin }: HeaderProps) {
       <div className="mobile-brand">
         <div className="container">
           <div className="d-flex flex-flex align-items-center">
-            <Link to="/" title={config.title} className="d-block" prefetch="intent">
+            <Link to="/" title={title} className="d-block" prefetch="intent">
               <img src="/logo-large.svg" alt="且听书吟" />
             </Link>
             <div className="flex-fill" />

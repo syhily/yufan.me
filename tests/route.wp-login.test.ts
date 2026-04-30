@@ -39,6 +39,19 @@ vi.mock('@/server/session', async () => {
   }
 })
 
+// `wp-login` is part of the auth trio (login + install stage 1 +
+// install stage 2): its loader/action call `ensureInstalledOrRedirect()`
+// BEFORE doing anything else. Stub the helper to a no-op so we
+// exercise the `redirect_to` sanitisation logic these tests target
+// without spinning up a Postgres connection.
+vi.mock('@/server/install/gate', () => ({
+  ensureInstalledOrRedirect: vi.fn(async () => null),
+  ensureNoAdminOrRedirect: vi.fn(async () => null),
+  ensureNoSettingsOrRedirect: vi.fn(async () => null),
+  isInstalled: vi.fn(async () => true),
+  getInstallState: vi.fn(async () => 'installed' as const),
+}))
+
 const { action, loader } = await import('@/routes/wp-login')
 
 beforeEach(() => {

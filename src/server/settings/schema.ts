@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { isSupportedTimeZone } from '@/server/settings/timezones'
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/socials'
 
@@ -7,10 +8,6 @@ import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/socials'
 // settings page sends only its own slice through `updateSettings`, so the
 // validator can stay tightly bounded. The union is reassembled via
 // `BlogSettingsPatch` for the storage layer.
-//
-// Bucket B (DB-editable) only — bucket A (asset host, OG dimensions, locale,
-// time zone, time format) stays in `blog.config.ts` and is exposed read-only
-// in the admin "advanced" view, so it has no Zod schema here.
 
 export type { SocialNetwork } from '@/shared/socials'
 export { SOCIAL_NETWORKS }
@@ -29,6 +26,41 @@ export const generalSchema = z.object({
   }),
 })
 export type GeneralInput = z.infer<typeof generalSchema>
+
+// Asset CDN + date-formatting locale. The `asset.host` written here MUST
+// match `process.env.ASSET_HOST` at deploy time — the env var feeds the
+// build-time MDX compile pipeline, this row feeds runtime consumers
+// (SSR + client). The schema rejects an empty hostname so an editor
+// can't accidentally point the runtime at a different CDN than the
+// committed image-metadata files were generated against.
+//
+// `locale` is a BCP 47 tag (e.g. `zh-CN`); `timeZone` is an IANA name
+// (e.g. `Asia/Shanghai`); `timeFormat` is the project's small token
+// language consumed by `formatLocalDate` (`yyyy LL MM dd HH mm`).
+export const localizationSchema = z.object({
+  asset: z.object({
+    host: z
+      .string()
+      .trim()
+      .min(1)
+      .max(253)
+      .regex(/^[a-z0-9.-]+$/i, '只能包含字母 / 数字 / `-` / `.`'),
+    scheme: z.enum(['http', 'https']),
+  }),
+  locale: z.string().trim().min(2).max(35),
+  // The dropdown UI only offers values from `Intl.supportedValuesOf`,
+  // but we still validate at the perimeter so a hand-crafted POST that
+  // bypasses the picker can't smuggle a bogus zone into the JSONB
+  // document — the formatters would silently throw at render time.
+  timeZone: z
+    .string()
+    .trim()
+    .min(1)
+    .max(64)
+    .refine(isSupportedTimeZone, { message: '必须是 IANA 时区名（如 Asia/Shanghai、UTC）' }),
+  timeFormat: z.string().trim().min(1).max(40),
+})
+export type LocalizationInput = z.infer<typeof localizationSchema>
 
 export const navigationSchema = z.object({
   navigation: z
@@ -277,43 +309,10 @@ export const cacheSchema = z
   })
 export type CacheSettingsInput = z.infer<typeof cacheSchema>
 
-// Section discriminator. Everything outside this enum is rejected at the
-// perimeter so a malicious caller cannot "smuggle" arbitrary keys into the
-// JSON document by claiming a fake section.
-export const SETTINGS_SECTIONS = [
-  'general',
-  'navigation',
-  'socials',
-  'content',
-  'sidebar',
-  'comments',
-  'seo',
-  'footer',
-  'mail',
-  'cache',
-] as const
-export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
-
-export const SECTION_SCHEMAS = {
-  general: generalSchema,
-  navigation: navigationSchema,
-  socials: socialsSchema,
-  content: contentSchema,
-  sidebar: sidebarSchema,
-  comments: commentsSchema,
-  seo: seoSchema,
-  footer: footerSchema,
-  mail: mailSchema,
-  cache: cacheSchema,
-} as const satisfies Record<SettingsSection, z.ZodType>
-
-export const updateSettingsSchema = z.object({
-  section: z.enum(SETTINGS_SECTIONS),
-  payload: z.unknown(),
-})
-export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>
-
-export const resetSettingsSchema = z.object({
-  section: z.enum(SETTINGS_SECTIONS),
-})
-export type ResetSettingsInput = z.infer<typeof resetSettingsSchema>
+// The section discriminator (`SETTINGS_SECTIONS`), per-section schema
+// map (`SECTION_REGISTRY`), and admin PATCH envelope
+// (`updateSettingsSchema`) all live in `@/server/settings/sections.ts`
+// so the section name → DB scope → Zod schema → bundle key
+// relationship is encoded in a single registry. This module owns only
+// the per-section Zod schemas above plus side-effect schemas
+// (`sendTestMailSchema`).

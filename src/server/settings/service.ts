@@ -1,37 +1,48 @@
+import type { BlogSettings, BlogSettingsBundle } from '@/shared/blog-config'
+
 import { findSettingByScope, upsertSetting } from '@/server/db/query/setting'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
-import { type BlogSettings, BLOG_CONSTANTS, DEFAULT_SETTINGS } from '@/server/settings/defaults'
-import { SECTION_SCHEMAS, type SettingsSection } from '@/server/settings/schema'
+import { SECTION_REGISTRY, type SettingsSection } from '@/server/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/settings/snapshot'
+import { bundleToBlogSettings } from '@/shared/blog-config'
 
-const SCOPE = 'blog'
-
-// DTO returned by the admin "get settings" endpoint. Editors see the
-// merged snapshot plus a `constants` block describing the bucket-A
-// fields that remain code-side (read-only display only).
+// DTO returned by the admin "get settings" endpoint. The codebase no
+// longer ships a `BlogConstants` block — every previously-static field
+// (`asset`, `locale`, `timeZone`, `timeFormat`) is editable via the
+// localization section. The DTO can be `null` only on a deployment that
+// has not been installed yet, but in practice the install gate already
+// redirected the request away from the admin shell, so callers may
+// safely treat `null` as a programmer error.
+//
+// The on-disk shape is now bucketed (`BlogSettingsBundle`) but the
+// admin layout and its 11 child routes still consume the legacy
+// aggregated `BlogSettings` view so we can ship the storage refactor
+// without touching every form. The bundle is exposed alongside it for
+// consumers that want to read individual sections directly.
 export interface AdminBlogSettingsDto {
-  settings: BlogSettings
-  constants: typeof BLOG_CONSTANTS
+  settings: BlogSettings | null
+  bundle: BlogSettingsBundle | null
 }
 
 export async function getAdminBlogSettings(): Promise<AdminBlogSettingsDto> {
   // Always re-hydrate when the admin panel loads so the editor sees the
   // latest committed state, even if another tab just wrote to the row.
-  const settings = await hydrateBlogSettings()
-  return { settings, constants: BLOG_CONSTANTS }
+  const bundle = await hydrateBlogSettings()
+  return { settings: bundleToBlogSettings(bundle), bundle }
 }
 
-// Apply a section-scoped patch to the stored JSON document. Each section
-// fully replaces its own slice (no nested merge inside a section) so the
-// admin form behaves predictably: whatever the user submits IS the new
-// value for that section.
+// Apply a section-scoped patch by writing ONLY the row that owns the
+// section. Each section has its own `setting('blog.<section>')` row, so
+// concurrent edits to different sections never read, merge, or
+// overwrite each other's JSONB. The on-disk row is the validated
+// payload verbatim — no nested merge with the rest of the document.
 export async function updateBlogSettingsSection<S extends SettingsSection>(
   section: S,
   payload: unknown,
   updatedBy: bigint | null,
-): Promise<BlogSettings> {
-  const schema = SECTION_SCHEMAS[section]
-  const parsed = await schema.safeParseAsync(payload)
+): Promise<BlogSettings | null> {
+  const meta = SECTION_REGISTRY[section]
+  const parsed = await meta.schema.safeParseAsync(payload)
   if (!parsed.success) {
     throw new ActionFailure(
       400,
@@ -44,161 +55,40 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   }
   const validated = parsed.data as Record<string, unknown>
 
-  const existing = await findSettingByScope(SCOPE)
-  const existingData = (existing?.data as Record<string, unknown> | undefined) ?? {}
+  const nextRow = await applySectionPatch(section, validated)
+  await upsertSetting(nextRow, updatedBy, meta.scope)
 
-  const nextDocument = applySectionPatch(existingData, section, validated)
-  await upsertSetting(nextDocument, updatedBy, SCOPE)
-
-  return refreshBlogSettings()
-}
-
-// Drop the stored override for a section so the next read falls back to
-// `DEFAULT_SETTINGS`. The DB document is rewritten without that section's
-// keys; deleting the entire row would also reset every other section.
-export async function resetBlogSettingsSection(
-  section: SettingsSection,
-  updatedBy: bigint | null,
-): Promise<BlogSettings> {
-  const existing = await findSettingByScope(SCOPE)
-  const existingData = (existing?.data as Record<string, unknown> | undefined) ?? {}
-
-  const nextDocument = removeSectionPatch(existingData, section)
-  await upsertSetting(nextDocument, updatedBy, SCOPE)
-
-  return refreshBlogSettings()
+  const bundle = await refreshBlogSettings()
+  return bundleToBlogSettings(bundle)
 }
 
 // --- Internal helpers ------------------------------------------------------
 
-// Map a section to the top-level keys it owns inside the stored document.
-// Sections that hold a single nested object (e.g. `sidebar`, `comments`,
-// `footer`) overwrite the nested key wholesale; sections that own multiple
-// top-level keys (e.g. `general` → title/description/…) get exploded.
-function applySectionPatch(
-  existing: Record<string, unknown>,
+// Build the row's `data` payload for the given section. Most sections
+// just return the validated payload verbatim; the `mail` section folds
+// in the existing API key when the editor omits it (see comment below).
+async function applySectionPatch(
   section: SettingsSection,
   validated: Record<string, unknown>,
-): Record<string, unknown> {
-  switch (section) {
-    case 'general':
-      return {
-        ...existing,
-        title: validated.title,
-        description: validated.description,
-        website: validated.website,
-        keywords: validated.keywords,
-        author: validated.author,
-      }
-    case 'navigation':
-      return { ...existing, navigation: validated.navigation }
-    case 'socials':
-      return { ...existing, socials: validated.socials }
-    case 'content': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      return {
-        ...existing,
-        settings: {
-          ...nested,
-          pagination: validated.pagination,
-          feed: validated.feed,
-          post: validated.post,
-        },
-      }
-    }
-    case 'sidebar': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      return { ...existing, settings: { ...nested, sidebar: validated.sidebar } }
-    }
-    case 'comments': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      return { ...existing, settings: { ...nested, comments: validated.comments } }
-    }
-    case 'seo': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      return {
-        ...existing,
-        settings: { ...nested, twitter: validated.twitter, toc: validated.toc, og: validated.og },
-      }
-    }
-    case 'footer': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      return { ...existing, settings: { ...nested, footer: validated.footer } }
-    }
-    case 'mail': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      // Preserve the existing API key when the editor omits the field:
-      // the admin form sends `apiKey: undefined` whenever the input is
-      // left blank, which means "I'm tweaking other fields, don't make
-      // me re-paste the secret". Only an explicit string value (even
-      // empty) intentionally overwrites the stored key.
-      const incomingMail = (validated.mail as Record<string, unknown>) ?? {}
-      const existingMail = (nested.mail as Record<string, unknown> | undefined) ?? {}
-      const nextMail: Record<string, unknown> = { ...incomingMail }
-      if (!('apiKey' in incomingMail) || incomingMail.apiKey === undefined) {
-        nextMail.apiKey = existingMail.apiKey ?? ''
-      }
-      return { ...existing, settings: { ...nested, mail: nextMail } }
-    }
-    case 'cache': {
-      const nested = (existing.settings as Record<string, unknown> | undefined) ?? {}
-      return { ...existing, settings: { ...nested, cache: validated.cache } }
-    }
-  }
-}
+): Promise<Record<string, unknown>> {
+  if (section !== 'mail') return validated
 
-function removeSectionPatch(existing: Record<string, unknown>, section: SettingsSection): Record<string, unknown> {
-  const next = { ...existing }
-  const settingsBlock = { ...(existing.settings as Record<string, unknown> | undefined) }
-  switch (section) {
-    case 'general':
-      delete next.title
-      delete next.description
-      delete next.website
-      delete next.keywords
-      delete next.author
-      break
-    case 'navigation':
-      delete next.navigation
-      break
-    case 'socials':
-      delete next.socials
-      break
-    case 'content':
-      delete settingsBlock.pagination
-      delete settingsBlock.feed
-      delete settingsBlock.post
-      next.settings = settingsBlock
-      break
-    case 'sidebar':
-      delete settingsBlock.sidebar
-      next.settings = settingsBlock
-      break
-    case 'comments':
-      delete settingsBlock.comments
-      next.settings = settingsBlock
-      break
-    case 'seo':
-      delete settingsBlock.twitter
-      delete settingsBlock.toc
-      delete settingsBlock.og
-      next.settings = settingsBlock
-      break
-    case 'footer':
-      delete settingsBlock.footer
-      next.settings = settingsBlock
-      break
-    case 'mail':
-      delete settingsBlock.mail
-      next.settings = settingsBlock
-      break
-    case 'cache':
-      delete settingsBlock.cache
-      next.settings = settingsBlock
-      break
+  // Preserve the existing API key when the editor omits the field:
+  // the admin form sends `apiKey: undefined` whenever the input is
+  // left blank, which means "I'm tweaking other fields, don't make
+  // me re-paste the secret". Only an explicit string value (even
+  // empty) intentionally overwrites the stored key. The conflict
+  // domain is the `blog.mail` row only — a concurrent edit to
+  // `blog.cache` cannot wipe the API key.
+  const incomingMail = (validated.mail as Record<string, unknown>) ?? {}
+  if ('apiKey' in incomingMail && incomingMail.apiKey !== undefined) {
+    return validated
   }
-  return next
-}
 
-// Re-export the defaults for callers (mostly tests) that need the seed.
-export { DEFAULT_SETTINGS }
+  const existingRow = await findSettingByScope(SECTION_REGISTRY.mail.scope)
+  const existingMail = (existingRow?.data as Record<string, unknown> | undefined)?.mail as
+    | Record<string, unknown>
+    | undefined
+  const nextMail: Record<string, unknown> = { ...incomingMail, apiKey: existingMail?.apiKey ?? '' }
+  return { mail: nextMail }
+}

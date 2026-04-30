@@ -8,6 +8,7 @@ import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { formatLocalDate } from '@/shared/formatter'
 import { Comments } from '@/ui/comments/Comments'
 import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 import { LikeButton, LikeShare } from '@/ui/like/LikeActions'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
@@ -41,6 +42,7 @@ export function PostDetailBody({
   sidebar,
   children,
 }: PostDetailBodyProps) {
+  const config = useLocalization()
   useMediumZoom()
   return (
     <div className="px-lg-2 px-xxl-5 py-3 py-md-4 py-xxl-5">
@@ -51,7 +53,7 @@ export function PostDetailBody({
               <div className="card-body">
                 <h1 className="post-title">{post.title}</h1>
                 <div className="post-meta text-sm text-muted mt-3 mb-4">
-                  <time className="post-meta-date">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm')}</time>
+                  <time className="post-meta-date">{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}</time>
                   {visibleTags.length > 0 && (
                     <div className="post-meta-tags">
                       {visibleTags.map((tag) => (

@@ -1,7 +1,8 @@
 // WordPress probe detector. The site borrows the WordPress URL shape for
-// its real admin (`/wp-login.php`, `/wp-admin`, `/wp-admin/install.php`,
-// plus the SPA sub-routes mounted under `/wp-admin/*`); every other
-// request that *looks* like a WordPress install is almost certainly an
+// its real admin (`/wp-login.php`, `/wp-admin`, the two-stage install
+// pair `/wp-admin/install.php` + `/wp-admin/install/settings.php`, plus
+// the SPA sub-routes mounted under `/wp-admin/*`); every other request
+// that *looks* like a WordPress install is almost certainly an
 // automated scanner. We answer those with a HTTP 404 plus a custom
 // "this is not a WordPress site" view rather than the generic 404.
 //
@@ -9,7 +10,12 @@
 // `ErrorBoundary` reads to switch from the regular 404 view to
 // `<NotWordPressView />`.
 
-const LEGIT_WP_PATHS = new Set(['/wp-login.php', '/wp-admin', '/wp-admin/install.php'])
+const LEGIT_WP_PATHS = new Set([
+  '/wp-login.php',
+  '/wp-admin',
+  '/wp-admin/install.php',
+  '/wp-admin/install/settings.php',
+])
 
 export function isWordPressDecoyPath(pathname: string): boolean {
   if (LEGIT_WP_PATHS.has(pathname)) return false

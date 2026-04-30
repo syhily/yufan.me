@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { Body, Container, Html, Img, Link, Section, Text } from 'react-email'
 
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 interface Props {
   receiver: string
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export function EmailLayout({ receiver, children }: Props) {
+  const config = requireBlogConfig()
   const year = DateTime.now().setZone(config.settings.timeZone).year
   return (
     <Html lang="en">

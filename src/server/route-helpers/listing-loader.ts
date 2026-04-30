@@ -6,7 +6,7 @@ import type { FeedLinkOptions } from '@/server/seo/meta'
 import { getClientPostsWithMetadata } from '@/server/catalog'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parseListingPage, redirectListingOverflow } from '@/server/route-helpers/pagination'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { slicePosts } from '@/shared/formatter'
 
 // Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
@@ -98,7 +98,11 @@ export async function listingLoader<TExtra = undefined>({
 }): Promise<ListingPageLoaderData<TExtra>> {
   const pageNum = parseListingPage(rawNum, rootPath)
 
-  const { currentPosts, totalPage } = slicePosts(posts, pageNum, pageSize ?? config.settings.pagination.posts)
+  const { currentPosts, totalPage } = slicePosts(
+    posts,
+    pageNum,
+    pageSize ?? requireBlogConfig().settings.pagination.posts,
+  )
   const resolvedPosts = await getClientPostsWithMetadata(currentPosts, {
     ...DEFAULT_LISTING_METADATA,
     ...metadata,

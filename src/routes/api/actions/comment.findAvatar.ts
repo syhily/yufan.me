@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { findUserIdByEmail } from '@/server/db/query/user'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { encodedEmail } from '@/shared/security'
 import { joinUrl } from '@/shared/urls'
 
@@ -14,6 +14,6 @@ export const action = defineApiAction({
   async run({ payload }) {
     const id = await findUserIdByEmail(payload.email)
     const hash = id === null ? await encodedEmail(payload.email) : id
-    return { avatar: joinUrl(config.website, 'images/avatar', `${hash}.png`) }
+    return { avatar: joinUrl(requireBlogConfig().website, 'images/avatar', `${hash}.png`) }
   },
 })

@@ -6,8 +6,8 @@ import { queryLikes } from '@/server/comments/likes'
 import { ensureCommentPage, loadComments, parseComments } from '@/server/comments/loader'
 import { bumpPageView } from '@/server/metrics/batcher'
 import { isAdmin, userSession } from '@/server/session'
-import config from '@/server/settings/config'
 import { loadSidebarData } from '@/server/sidebar/load'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { joinUrl } from '@/shared/urls'
 
 // `SessionUser` already only carries id/name/email/website/admin, but the
@@ -54,7 +54,7 @@ async function loadCommentsAndItems(
 export async function loadDetailPageCritical(session: BlogSession, permalink: string, title: string) {
   const currentUser = toCommentFormUser(userSession(session))
   const admin = isAdmin(session)
-  const commentKey = joinUrl(config.website, permalink, '/')
+  const commentKey = joinUrl(requireBlogConfig().website, permalink, '/')
 
   // `bumpPageView` is a fire-and-forget in-memory increment (PROD-gated
   // inside the batcher) so the admin guard is the only thing left to gate
@@ -91,7 +91,7 @@ export async function loadDetailPageStreaming(session: BlogSession, permalink: s
 export async function loadDetailPageData(session: BlogSession, permalink: string, title: string) {
   const currentUser = toCommentFormUser(userSession(session))
   const admin = isAdmin(session)
-  const commentKey = joinUrl(config.website, permalink, '/')
+  const commentKey = joinUrl(requireBlogConfig().website, permalink, '/')
 
   if (!admin) bumpPageView(commentKey)
 

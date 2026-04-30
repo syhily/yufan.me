@@ -19,9 +19,9 @@ vi.mock('@/server/markdown/parser', () => ({
   parseContent: vi.fn(async (raw: string) => `<p>${raw}</p>`),
 }))
 
-const { DEFAULT_SETTINGS } = await import('@/server/settings/defaults')
 const { setBlogSettingsSnapshotForTests } = await import('@/server/settings/snapshot')
 const { sendNewComment, sendTestMail } = await import('@/server/email/sender')
+const { TEST_BLOG_SETTINGS } = await import('./_helpers/blog-settings')
 
 interface MailFixture {
   enabled: boolean
@@ -32,10 +32,10 @@ interface MailFixture {
 
 function setMail(mail: Partial<MailFixture>) {
   setBlogSettingsSnapshotForTests({
-    ...DEFAULT_SETTINGS,
+    ...TEST_BLOG_SETTINGS,
     settings: {
-      ...DEFAULT_SETTINGS.settings,
-      mail: { ...DEFAULT_SETTINGS.settings.mail, ...mail },
+      ...TEST_BLOG_SETTINGS.settings,
+      mail: { ...TEST_BLOG_SETTINGS.settings.mail, ...mail },
     },
   })
 }
@@ -48,7 +48,10 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  setBlogSettingsSnapshotForTests(undefined)
+  // Restore the global fixture installed by `tests/setup.ts` so the
+  // next test in this file (and other files reusing the worker) sees a
+  // hydrated snapshot.
+  setBlogSettingsSnapshotForTests(TEST_BLOG_SETTINGS)
   vi.unstubAllGlobals()
 })
 
@@ -97,7 +100,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     expect(headers['Content-Type']).toBe('application/json')
     const body = JSON.parse(init?.body as string)
     expect(body.from).toBe('noreply@example.com')
-    expect(body.to).toEqual([DEFAULT_SETTINGS.author.email])
+    expect(body.to).toEqual([TEST_BLOG_SETTINGS.author.email])
   })
 
   it('reports upstream rejections through reason=upstream with the status code', async () => {
@@ -142,7 +145,7 @@ describe('email/sender — sendTestMail', () => {
     const [, init] = fetchMock.mock.calls[0]
     const body = JSON.parse(init?.body as string)
     expect(body.to).toEqual(['me@example.com'])
-    expect(body.subject).toContain(DEFAULT_SETTINGS.title)
+    expect(body.subject).toContain(TEST_BLOG_SETTINGS.title)
   })
 
   it('still refuses to send when the configuration is incomplete', async () => {

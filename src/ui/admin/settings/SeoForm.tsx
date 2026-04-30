@@ -1,6 +1,6 @@
 import { type SubmitEventHandler, useCallback, useEffect, useState } from 'react'
 
-import type { BlogConstants, BlogSettings } from '@/server/settings/defaults'
+import type { BlogSettings } from '@/shared/blog-config'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { FieldRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
@@ -9,10 +9,6 @@ import { Input } from '@/ui/admin/shadcn/components/ui/input'
 
 interface SeoFormProps {
   settings: BlogSettings
-  // Kept for symmetry with the other section forms even though SEO no
-  // longer has any read-only constants to display — the layout still
-  // hands every section the same outlet context.
-  constants: BlogConstants
   csrfToken: string
 }
 
@@ -43,7 +39,7 @@ function statesEqual(a: FormState, b: FormState): boolean {
   )
 }
 
-export function SeoForm({ settings, constants: _constants, csrfToken: _csrfToken }: SeoFormProps) {
+export function SeoForm({ settings, csrfToken: _csrfToken }: SeoFormProps) {
   const [snapshot, setSnapshot] = useState<FormState>(() => snapshotFromSettings(settings))
   const [draft, setDraft] = useState<FormState>(snapshot)
 
@@ -55,7 +51,7 @@ export function SeoForm({ settings, constants: _constants, csrfToken: _csrfToken
 
   const isDirty = !statesEqual(draft, snapshot)
   const onSaved = useCallback(() => setSnapshot(draft), [draft])
-  const { save, reset, isPending, status, errorMessage } = useSettingsFetcher({
+  const { save, isPending, status, errorMessage } = useSettingsFetcher({
     section: 'seo',
     onSaved,
   })
@@ -140,13 +136,7 @@ export function SeoForm({ settings, constants: _constants, csrfToken: _csrfToken
         </FieldRow>
       </SettingsSection>
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onReset={reset}
-      />
+      <SettingsFormBar isPending={isPending} isDirty={isDirty} status={status} errorMessage={errorMessage} />
     </form>
   )
 }

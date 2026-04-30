@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { type ComponentType, type SubmitEventHandler, useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { BlogSettings } from '@/server/settings/defaults'
+import type { BlogSettings } from '@/shared/blog-config'
 
 import { type SocialNetwork, SOCIAL_NETWORK_META, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@/shared/socials'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
@@ -99,7 +99,7 @@ export function SocialsEditor({ settings, csrfToken: _csrfToken }: SocialsEditor
   )
 
   const onSaved = useCallback(() => setSnapshot(draft), [draft])
-  const { save, reset, isPending, status, errorMessage } = useSettingsFetcher({
+  const { save, isPending, status, errorMessage } = useSettingsFetcher({
     section: 'socials',
     onSaved,
   })
@@ -278,13 +278,7 @@ export function SocialsEditor({ settings, csrfToken: _csrfToken }: SocialsEditor
         </div>
       </SettingsSection>
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onReset={reset}
-      />
+      <SettingsFormBar isPending={isPending} isDirty={isDirty} status={status} errorMessage={errorMessage} />
     </form>
   )
 }

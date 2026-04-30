@@ -2,6 +2,7 @@ import type { ImgHTMLAttributes } from 'react'
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { getImageUrl } from '@/shared/image-url'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 
 export interface ImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'width' | 'height'> {
   src: string
@@ -25,6 +26,7 @@ export function Image({
   style,
   ...rest
 }: ImageProps) {
+  const { asset } = useLocalization()
   const thumbhashStyle = useThumbhashBackground(thumbhash)
   const mergedStyle =
     thumbhashStyle === undefined ? style : style === undefined ? thumbhashStyle : { ...thumbhashStyle, ...style }
@@ -32,7 +34,7 @@ export function Image({
   return (
     <img
       {...rest}
-      src={getImageUrl({ src, width, height, quality })}
+      src={getImageUrl({ src, width, height, quality, assetHost: asset.host })}
       data-thumbhash={thumbhash}
       alt={alt}
       width={width}

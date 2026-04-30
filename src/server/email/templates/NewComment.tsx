@@ -1,7 +1,7 @@
 import { Link, Text } from 'react-email'
 
 import { EmailLayout } from '@/server/email/templates/layout/EmailLayout'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 interface Props {
   postTitle: string
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function NewComment({ postTitle, postLink, commentNeedApproval, commentContent, commentLink }: Props) {
+  const config = requireBlogConfig()
   return (
     <EmailLayout receiver={config.author.name}>
       <Text style={paragraph}>您的网站《{config.title}》有了新留言</Text>

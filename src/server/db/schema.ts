@@ -117,12 +117,15 @@ export const verification = pgTable('verification', {
     .$defaultFn(() => new Date()),
 })
 
-// Singleton store for the editable blog configuration (bucket B from the
-// settings plan). One row per `scope`; today the admin panel only writes
-// `scope = 'blog'`, but the column keeps the door open for per-site
-// overrides without an extra migration. The full settings document lives
-// in `data` as JSON so a single SELECT reconstitutes the snapshot, and so
-// adding a new field never costs another column.
+// Section-scoped store for the editable blog configuration. One row per
+// `scope`; the admin panel writes one row per settings section, named
+// `blog.<section>` (e.g. `blog.general`, `blog.localization`,
+// `blog.mail`, …). Splitting the previously-singleton `blog` row this
+// way means a save to one section never reads, merges, or rewrites the
+// JSONB belonging to any other section, so concurrent edits on
+// different tabs cannot race each other. The full snapshot is
+// reassembled in memory by `hydrateBlogSettings()` via a single
+// `WHERE scope LIKE 'blog.%'` SELECT.
 export const setting = pgTable('setting', {
   id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
   scope: varchar('scope', { length: 64 }).unique().notNull().default('blog'),

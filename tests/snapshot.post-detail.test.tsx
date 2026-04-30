@@ -1,5 +1,3 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { MarkdownHeading } from '@/server/catalog'
@@ -7,14 +5,7 @@ import type { MarkdownHeading } from '@/server/catalog'
 import { PostDetailBody } from '@/ui/post/post/PostDetailBody'
 
 import { makePost, makePostList, makeTag } from './_helpers/catalog'
-
-// Both `<LikeButton>` and `<CommentReplyForm>` are React Router 7 client
-// islands using `useFetcher`, so the SSR pass needs a router context.
-function renderInRouter(element: React.ReactNode): string {
-  const routes: RouteObject[] = [{ path: '/', element }]
-  const router = createMemoryRouter(routes, { initialEntries: ['/'] })
-  return renderToStaticMarkup(<RouterProvider router={router} />)
-}
+import { renderInRouter } from './_helpers/render'
 
 describe('snapshot: PostDetailBody composed view', () => {
   // Pin a deterministic clock so the TodayCalendar widget produces a stable

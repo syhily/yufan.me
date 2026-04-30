@@ -6,7 +6,7 @@ import type { LatestComment } from '@/server/comments/types'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useLocalization, useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 import { SearchBar } from '@/ui/search/Search'
 
@@ -88,8 +88,8 @@ interface RecentCommentsProps {
 }
 
 function RecentComments({ comments }: RecentCommentsProps) {
-  const config = useBlogConfig()
-  if (config.settings.sidebar.comment <= 0 || comments.length === 0) return null
+  const { sidebar } = useSidebarSettings()
+  if (sidebar.comment <= 0 || comments.length === 0) return null
 
   return (
     <div id="recent-comments" className="widget widget-recent-comments">
@@ -170,14 +170,16 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 }
 
 function TodayCalendar() {
-  const config = useBlogConfig()
-  if (!config.settings.sidebar.calendar) return null
+  const { sidebar } = useSidebarSettings()
+  const { website } = useSiteIdentity()
+  const localization = useLocalization()
+  if (!sidebar.calendar) return null
   const today = new Date()
   const calendarImage = joinUrl(
-    config.website,
+    website,
     'images/calendar',
-    formatLocalDate(today, 'yyyy'),
-    `${formatLocalDate(today, 'LLdd')}.png`,
+    formatLocalDate(today, 'yyyy', localization),
+    `${formatLocalDate(today, 'LLdd', localization)}.png`,
   )
   return (
     <div className="widget widget-owspace-calendar">

@@ -1,7 +1,7 @@
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useEffect, useState } from 'react'
 
-import type { BlogSettings } from '@/server/settings/defaults'
+import type { BlogSettings } from '@/shared/blog-config'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
@@ -51,7 +51,7 @@ export function NavigationEditor({ settings, csrfToken: _csrfToken }: Navigation
   const isDirty = !rowsEqual(draft, snapshot)
 
   const onSaved = useCallback(() => setSnapshot(draft), [draft])
-  const { save, reset, isPending, status, errorMessage } = useSettingsFetcher({
+  const { save, isPending, status, errorMessage } = useSettingsFetcher({
     section: 'navigation',
     onSaved,
   })
@@ -172,13 +172,7 @@ export function NavigationEditor({ settings, csrfToken: _csrfToken }: Navigation
         </div>
       </SettingsSection>
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onReset={reset}
-      />
+      <SettingsFormBar isPending={isPending} isDirty={isDirty} status={status} errorMessage={errorMessage} />
     </form>
   )
 }

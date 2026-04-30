@@ -9,7 +9,7 @@ import { pagePath, searchRootPath } from '@/server/route-helpers/paths'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { searchPostOptions, searchPosts } from '@/server/search'
 import { routeMeta } from '@/server/seo/meta'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
 
 import type { Route } from './+types/search.list'
@@ -23,7 +23,7 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
   const rootPath = searchRootPath(query)
   const pageNum = parseListingPage(params.num, rootPath)
 
-  const pageSize = config.settings.pagination.search
+  const pageSize = requireBlogConfig().settings.pagination.search
   const { hits, page, totalPages } = await searchPosts(query, pageSize, (pageNum - 1) * pageSize)
 
   // Search uses its own pagination shape (FlexSearch returns the total page

@@ -9,6 +9,7 @@ import { routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 import { selectFeaturePosts, selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { formatLocalDate } from '@/shared/formatter'
 import { HomeLayoutBody } from '@/ui/post/post/PostListViews'
 
@@ -56,7 +57,7 @@ export async function loader({
         }
       }
 
-      const featureSeed = formatLocalDate(new Date(), 'yyyy-MM-dd')
+      const featureSeed = formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogConfig())
       const sidebar = await sidebarPromise
       return {
         categoryLinks,

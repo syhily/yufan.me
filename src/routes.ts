@@ -75,13 +75,13 @@ export default [
   route(API_ACTIONS.admin.bulkSoftDeleteUserComments.route, 'routes/api/actions/admin.bulkSoftDeleteUserComments.ts'),
   route(API_ACTIONS.admin.getSettings.route, 'routes/api/actions/admin.getSettings.ts'),
   route(API_ACTIONS.admin.updateSettings.route, 'routes/api/actions/admin.updateSettings.ts'),
-  route(API_ACTIONS.admin.resetSettings.route, 'routes/api/actions/admin.resetSettings.ts'),
   route(API_ACTIONS.admin.getCacheStats.route, 'routes/api/actions/admin.getCacheStats.ts'),
   route(API_ACTIONS.admin.clearCache.route, 'routes/api/actions/admin.clearCache.ts'),
   route(API_ACTIONS.admin.sendTestMail.route, 'routes/api/actions/admin.sendTestMail.ts'),
   layout('routes/admin.layout.tsx', [
     route('wp-login.php', 'routes/wp-login.tsx'),
     route('wp-admin/install.php', 'routes/wp-admin.install.tsx'),
+    route('wp-admin/install/settings.php', 'routes/wp-admin.install.settings.tsx'),
   ]),
   // The SPA admin shell owns its own chrome (sidebar + topbar) under
   // `routes/wp-admin.layout.tsx`. It still opts out of `BaseLayout`
@@ -95,6 +95,7 @@ export default [
     layout('routes/wp-admin.settings.layout.tsx', [
       route('wp-admin/settings', 'routes/wp-admin.settings.index.tsx'),
       route('wp-admin/settings/general', 'routes/wp-admin.settings.general.tsx'),
+      route('wp-admin/settings/localization', 'routes/wp-admin.settings.localization.tsx'),
       route('wp-admin/settings/navigation', 'routes/wp-admin.settings.navigation.tsx'),
       route('wp-admin/settings/socials', 'routes/wp-admin.settings.socials.tsx'),
       route('wp-admin/settings/content', 'routes/wp-admin.settings.content.tsx'),
@@ -104,7 +105,6 @@ export default [
       route('wp-admin/settings/footer', 'routes/wp-admin.settings.footer.tsx'),
       route('wp-admin/settings/mail', 'routes/wp-admin.settings.mail.tsx'),
       route('wp-admin/settings/cache', 'routes/wp-admin.settings.cache.tsx'),
-      route('wp-admin/settings/advanced', 'routes/wp-admin.settings.advanced.tsx'),
     ]),
   ]),
 ] satisfies RouteConfig

@@ -5,7 +5,7 @@ import type { NewUser, User } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
 import { comment, user } from '@/server/db/schema'
-import config from '@/server/settings/config'
+import { getBlogConfigSync } from '@/shared/blog-config-snapshot'
 
 const PASSWORD_HASH_ROUNDS = 12
 
@@ -35,13 +35,32 @@ export async function findEmailById(id: bigint): Promise<string | null> {
   return rows[0]?.email ?? null
 }
 
-export async function insertAdmin(name: string, email: string, password: string): Promise<User[]> {
+export interface InsertAdminOptions {
+  /**
+   * Optional homepage URL stored on the admin row. The install flow
+   * threads in the freshly-collected `website` field directly because
+   * the settings snapshot has not been written yet at that point. Other
+   * call sites (none today, but kept for symmetry) can omit this and
+   * fall back to the snapshot value, ultimately the empty string.
+   */
+  link?: string
+}
+
+export async function insertAdmin(
+  name: string,
+  email: string,
+  password: string,
+  options: InsertAdminOptions = {},
+): Promise<User[]> {
   const hashedPassword = bcrypt.hashSync(password, PASSWORD_HASH_ROUNDS)
   const admin: NewUser = {
     name,
     email,
     emailVerified: false,
-    link: config.website || '',
+    // The install flow passes `link` explicitly because the settings
+    // snapshot is not hydrated yet. Other callers fall back to the
+    // already-installed `website` value (or empty string pre-install).
+    link: options.link ?? getBlogConfigSync()?.website ?? '',
     isAdmin: true,
     password: hashedPassword,
     badgeName: 'MOD',

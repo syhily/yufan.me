@@ -1,5 +1,3 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vite-plus/test'
 
 import type { MarkdownHeading } from '@/server/catalog'
@@ -7,14 +5,7 @@ import type { MarkdownHeading } from '@/server/catalog'
 import { PageDetailBody } from '@/ui/post/post/PageDetailBody'
 
 import { makePage } from './_helpers/catalog'
-
-// `<LikeButton>` and `<CommentReplyForm>` are React 19 islands that depend
-// on `useFetcher`, so the SSR pass needs a router context here.
-function renderInRouter(element: React.ReactNode): string {
-  const routes: RouteObject[] = [{ path: '/', element }]
-  const router = createMemoryRouter(routes, { initialEntries: ['/'] })
-  return renderToStaticMarkup(<RouterProvider router={router} />)
-}
+import { renderInRouter } from './_helpers/render'
 
 describe('snapshot: PageDetailBody composed view', () => {
   it('renders a static page (no comments, no TOC)', () => {

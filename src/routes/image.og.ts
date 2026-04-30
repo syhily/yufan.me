@@ -4,8 +4,7 @@ import { loadBuffer } from '@/server/cache/image'
 import { getCatalog } from '@/server/catalog'
 import { drawOpenGraph } from '@/server/images/og'
 import { pngResponse } from '@/server/route-helpers/http'
-import config from '@/server/settings/config'
-import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { joinUrl } from '@/shared/urls'
 
 import type { Route } from './+types/image.og'
@@ -15,7 +14,7 @@ function ogCacheKey(slug: string, title: string, summary: string, cover: string)
   // Read the prefix from the live snapshot so an admin rename in
   // `/wp-admin/settings/cache` takes effect on the next request. Old
   // keys under the previous prefix age out at their stored TTL.
-  return `${getBlogSettingsSync().settings.cache.og.prefix}${slug}-${hash}`
+  return `${requireBlogConfig().settings.cache.og.prefix}${slug}-${hash}`
 }
 
 // Cache for one week — OG images are derived from post metadata that rarely
@@ -33,7 +32,7 @@ function fallback() {
   return new Response(null, {
     status: 302,
     headers: {
-      Location: joinUrl(config.website, '/images/open-graph.png'),
+      Location: joinUrl(requireBlogConfig().website, '/images/open-graph.png'),
     },
   })
 }
@@ -46,7 +45,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   // TTL is also pulled from the live snapshot — `loadBuffer` accepts
   // any positive integer; the schema bounds it to 1h–30d.
-  const ttl = getBlogSettingsSync().settings.cache.og.ttlSeconds
+  const ttl = requireBlogConfig().settings.cache.og.ttlSeconds
 
   const catalog = await getCatalog()
   const post = catalog.getPost(slug)
@@ -64,7 +63,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     return fallback()
   }
 
-  const summary = page.summary || config.description
+  const summary = page.summary || requireBlogConfig().description
   const buffer = await loadBuffer(
     ogCacheKey(slug, page.title, summary, page.cover),
     () => drawOpenGraph({ title: page.title, summary, cover: page.cover }),

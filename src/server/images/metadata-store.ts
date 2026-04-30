@@ -1,11 +1,22 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
-// Relative import so this module stays resolvable from `rehype-image-enhance.ts`
-// when Vite loads `source.config.ts` before `@/` aliases exist.
-import config from '../../blog.config.ts'
-
-const assetHost = config.settings.asset.host
+// Read the asset host from `process.env` *lazily*. This module is
+// loaded from `rehype-image-enhance.ts` while Vite is still processing
+// `source.config.ts`, before `@/` aliases (or even the t3-env wrapper)
+// are wired up — and crucially before Vite has loaded `.env`. We defer
+// the `ASSET_HOST` lookup until first use so `vite.config.ts` itself
+// can be parsed by `vp check` without setting the variable manually.
+// The DB-backed runtime config reads the same value via
+// `getBlogConfigSync()`; the env var and the admin-edited setting MUST
+// stay in sync at deploy time. See `src/server/env.ts` for the schema.
+function getAssetHost(): string {
+  const value = process.env.ASSET_HOST
+  if (!value) {
+    throw new Error('ASSET_HOST environment variable is required (see .env.example).')
+  }
+  return value
+}
 
 /** Root for committed per-image metadata JSON (mirrors CDN path under /images/...). */
 const COMMITTED_METADATA_ROOT = resolve(process.cwd(), 'src/content/image-metadata')
@@ -39,7 +50,7 @@ export function isCommittedMetadataHostUrl(src: string): boolean {
     const url = new URL(stripUrlNoise(src))
     return (
       (url.protocol === 'http:' || url.protocol === 'https:') &&
-      url.hostname === assetHost &&
+      url.hostname === getAssetHost() &&
       !url.pathname.includes('!upyun520/')
     )
   } catch {

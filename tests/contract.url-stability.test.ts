@@ -68,11 +68,15 @@ describe('contract: public URL stability', () => {
     expect(paths.has('images/avatar/:hash.png')).toBe(true)
   })
 
-  it('WordPress compatibility URLs are still mounted (login + admin install)', () => {
+  it('WordPress compatibility URLs are still mounted (login + two-stage install)', () => {
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('wp-login.php')).toBe(true)
     expect(paths.has('wp-admin')).toBe(true)
+    // Stage 1 (admin credentials) and stage 2 (site / asset / locale)
+    // live on separate URLs so the install gate can route the user
+    // through the right page based on `getInstallState()`.
     expect(paths.has('wp-admin/install.php')).toBe(true)
+    expect(paths.has('wp-admin/install/settings.php')).toBe(true)
   })
 
   it('post + page detail pages still match /posts/:slug and /:slug', () => {

@@ -1,6 +1,7 @@
 import { data, redirect } from 'react-router'
 
 import { signInSchema } from '@/server/auth-schema'
+import { ensureInstalledOrRedirect } from '@/server/install/gate'
 import { routeMeta } from '@/server/seo/meta'
 import {
   issueCsrfToken,
@@ -11,10 +12,26 @@ import {
 } from '@/server/session'
 import { safeRedirectPath } from '@/shared/safe-url'
 import { AdminCredentialsForm } from '@/ui/admin/AdminCredentialsForm'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/admin/shadcn/components/ui/card'
 
 import type { Route } from './+types/wp-login'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  // The install gate exempts this route so login owns the
+  // "is the deployment installed?" branch directly. With the two-stage
+  // install split:
+  //
+  //   noAdmin    → 303 → /wp-admin/install.php (nothing to log in to).
+  //   noSettings → render the login form (the user will be auto-bounced
+  //                to stage 2 by the install gate after a successful
+  //                login, since stage 2 needs an admin session).
+  //   installed  → render the login form.
+  //
+  // Only one of the four `ensure…OrRedirect()` helpers across the
+  // install/login routes ever throws for a given install state, so the
+  // auth trio (install / settings / login) cannot loop.
+  await ensureInstalledOrRedirect()
+
   const { session, user, url } = getRouteRequestContext({ request, context })
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/', url.origin)
   const action = url.searchParams.get('action')
@@ -34,6 +51,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
+  // Refuse login POSTs on a noAdmin deployment for the same reason the
+  // loader bounces GETs: there is no admin row to authenticate against.
+  // noSettings is allowed through (the admin can log in and finish the
+  // install flow from stage 2).
+  await ensureInstalledOrRedirect()
+
   const { session, clientAddress, url } = getRouteRequestContext({ request, context })
   const redirectTo = safeRedirectPath(url.searchParams.get('redirect_to'), '/wp-admin', url.origin)
   return processAuthFormSubmission({
@@ -52,10 +75,23 @@ export function meta() {
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
   return (
-    <div className="container">
-      <h1 className="mb-4">用户登陆</h1>
-      {actionData?.error && <div className="alert alert-danger">{actionData.error}</div>}
-      <AdminCredentialsForm mode="login" token={loaderData.token} />
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="tw:text-xl">用户登陆</CardTitle>
+        <CardDescription>使用管理员邮箱与密码登陆后台。</CardDescription>
+      </CardHeader>
+      <CardContent className="tw:flex tw:flex-col tw:gap-4">
+        {actionData?.error && (
+          <div
+            role="alert"
+            aria-live="polite"
+            className="tw:bg-destructive/10 tw:text-destructive tw:rounded-md tw:border tw:border-destructive/20 tw:px-3 tw:py-2 tw:text-sm"
+          >
+            {actionData.error}
+          </div>
+        )}
+        <AdminCredentialsForm token={loaderData.token} />
+      </CardContent>
+    </Card>
   )
 }

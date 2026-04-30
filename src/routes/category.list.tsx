@@ -3,7 +3,7 @@ import { notFound } from '@/server/route-helpers/http'
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { routeMeta } from '@/server/seo/meta'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
 
 import type { Route } from './+types/category.list'
@@ -18,6 +18,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   const posts = catalog
     .getPostsByTaxonomy({ categoryName: category.name }, { includeHidden: true, includeScheduled: false })
     .map((post) => toListingPostCard(catalog.toClientPost(post)))
+  const config = requireBlogConfig()
   return listingLoader({
     rawNum: params.num,
     posts,

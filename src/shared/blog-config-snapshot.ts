@@ -1,4 +1,6 @@
-import { BLOG_CONSTANTS, type BlogSettings, DEFAULT_SETTINGS } from '@/shared/blog-defaults'
+import type { BlogConfig, BlogSettings, BlogSettingsBundle } from '@/shared/blog-config'
+
+import { bundleToBlogSettings } from '@/shared/blog-config'
 
 // Synchronous reader for the in-process blog settings snapshot.
 //
@@ -15,98 +17,97 @@ import { BLOG_CONSTANTS, type BlogSettings, DEFAULT_SETTINGS } from '@/shared/bl
 // through the same `globalThis` slot so a single in-process snapshot is
 // observable everywhere.
 //
-// On the client this reader always returns `DEFAULT_SETTINGS` because no
-// server hydration ran in that bundle — which matches the historical
-// pre-DB behaviour where the static `@/blog.config` literal was the
-// single source of truth across the wire.
+// On the client the slot is hydrated from the root loader's
+// `blogSettings` field on every render (see `root.tsx`), so client-side
+// `meta()` callbacks after a SPA navigation see the same values the
+// server saw on the original page render.
 //
-// Bucket-A constants (asset host, locale/timeZone/timeFormat) are
-// merged in here from `BLOG_CONSTANTS` so consumers see one combined
-// `BlogConfig` shape, exactly like the historical static literal.
+// On a fresh deployment that hasn't been installed yet, both halves
+// return `null`: the install gate (`@/server/install/gate`) catches
+// every non-install request before any consumer reaches for the
+// snapshot, but defensive callers should still guard against the
+// possibility — see `requireBlogConfig` below.
 
 const globalForSnapshot = globalThis as unknown as {
-  blogSettingsSnapshot: BlogSettings | undefined
-  blogSettingsHydration: Promise<BlogSettings> | undefined
-}
-
-export interface BlogConfigSnapshot {
-  title: BlogSettings['title']
-  description: BlogSettings['description']
-  website: BlogSettings['website']
-  keywords: BlogSettings['keywords']
-  author: BlogSettings['author']
-  navigation: BlogSettings['navigation']
-  socials: BlogSettings['socials']
-  settings: {
-    asset: (typeof BLOG_CONSTANTS)['asset']
-    footer: BlogSettings['settings']['footer']
-    locale: (typeof BLOG_CONSTANTS)['locale']
-    timeZone: (typeof BLOG_CONSTANTS)['timeZone']
-    timeFormat: (typeof BLOG_CONSTANTS)['timeFormat']
-    twitter: BlogSettings['settings']['twitter']
-    pagination: BlogSettings['settings']['pagination']
-    feed: BlogSettings['settings']['feed']
-    post: BlogSettings['settings']['post']
-    sidebar: BlogSettings['settings']['sidebar']
-    comments: BlogSettings['settings']['comments']
-    toc: BlogSettings['settings']['toc']
-    og: BlogSettings['settings']['og']
-  }
+  blogSettingsSnapshot: BlogSettingsBundle | null | undefined
+  blogSettingsHydration: Promise<BlogSettingsBundle | null> | undefined
 }
 
 /**
- * Synchronous accessor for the editable settings slice. Returns the
- * defaults until the first server-side hydration completes; after that
- * it returns the live snapshot (refreshed on every admin write).
+ * Synchronous accessor for the bucketed settings bundle. Returns
+ * `null` when no DB rows have been written yet (i.e. the install flow
+ * hasn't been completed) AND nothing else has populated the snapshot
+ * slot. Individual section fields inside the bundle may also be `null`
+ * for sections the admin hasn't visited yet.
  */
-export function getBlogSettingsSync(): BlogSettings {
-  return globalForSnapshot.blogSettingsSnapshot ?? DEFAULT_SETTINGS
+export function getBlogSettingsBundleSync(): BlogSettingsBundle | null {
+  return globalForSnapshot.blogSettingsSnapshot ?? null
+}
+
+/**
+ * Legacy aggregated reader. Projects the bundle back into the historical
+ * `BlogSettings` shape so callers that haven't migrated to the
+ * per-section accessors keep working. Returns `null` when either of the
+ * install-required sections (`siteIdentity` + `localization`) is
+ * missing — the legacy shape has non-optional fields for both.
+ *
+ * Prefer `getBlogSettingsBundleSync()` and read only the section you
+ * need.
+ */
+export function getBlogSettingsSync(): BlogSettings | null {
+  return bundleToBlogSettings(getBlogSettingsBundleSync())
 }
 
 /**
  * Combined accessor returning the same `BlogConfig` shape consumers
- * historically imported from `@/blog.config`. The DB-backed editable
- * fields override the seed values; bucket-A constants remain code-side.
+ * historically imported from `@/blog.config`. After the asset / locale
+ * fields moved into the editable document, `BlogConfig` is a 1:1 alias
+ * of `BlogSettings` — the indirection is kept for call-site readability.
+ *
+ * Returns `null` when the deployment has not been installed yet.
  */
-export function getBlogConfigSync(): BlogConfigSnapshot {
-  const editable = getBlogSettingsSync()
-  return {
-    title: editable.title,
-    description: editable.description,
-    website: editable.website,
-    keywords: editable.keywords,
-    author: editable.author,
-    navigation: editable.navigation,
-    socials: editable.socials,
-    settings: {
-      asset: BLOG_CONSTANTS.asset,
-      footer: editable.settings.footer,
-      locale: BLOG_CONSTANTS.locale,
-      timeZone: BLOG_CONSTANTS.timeZone,
-      timeFormat: BLOG_CONSTANTS.timeFormat,
-      twitter: editable.settings.twitter,
-      pagination: editable.settings.pagination,
-      feed: editable.settings.feed,
-      post: editable.settings.post,
-      sidebar: editable.settings.sidebar,
-      comments: editable.settings.comments,
-      toc: editable.settings.toc,
-      og: editable.settings.og,
-    },
+export function getBlogConfigSync(): BlogConfig | null {
+  return getBlogSettingsSync()
+}
+
+/**
+ * Strict accessor for code paths that are guaranteed to run AFTER the
+ * install gate has admitted the request. Throws an `Error` if the
+ * snapshot is unhydrated so a missing-row regression surfaces loudly
+ * instead of silently rendering a broken page.
+ */
+export function requireBlogConfig(): BlogConfig {
+  const config = getBlogConfigSync()
+  if (config === null) {
+    throw new Error('Blog settings have not been hydrated yet. The install gate should have intercepted this request.')
   }
+  return config
+}
+
+/**
+ * Strict accessor for the bundle. Same gate semantics as
+ * `requireBlogConfig` but returns the bucketed shape so callers can
+ * read individual sections without going through the legacy projection.
+ */
+export function requireBlogSettingsBundle(): BlogSettingsBundle {
+  const bundle = getBlogSettingsBundleSync()
+  if (bundle === null) {
+    throw new Error('Blog settings have not been hydrated yet. The install gate should have intercepted this request.')
+  }
+  return bundle
 }
 
 /** Internal: server-only writer uses this to share the slot. */
-export function _setBlogSettingsSnapshot(value: BlogSettings | undefined): void {
+export function _setBlogSettingsSnapshot(value: BlogSettingsBundle | null | undefined): void {
   globalForSnapshot.blogSettingsSnapshot = value
 }
 
 /** Internal: server-only writer uses this to share the slot. */
-export function _setBlogSettingsHydration(value: Promise<BlogSettings> | undefined): void {
+export function _setBlogSettingsHydration(value: Promise<BlogSettingsBundle | null> | undefined): void {
   globalForSnapshot.blogSettingsHydration = value
 }
 
 /** Internal: server-only writer uses this to share the slot. */
-export function _getBlogSettingsHydration(): Promise<BlogSettings> | undefined {
+export function _getBlogSettingsHydration(): Promise<BlogSettingsBundle | null> | undefined {
   return globalForSnapshot.blogSettingsHydration
 }

@@ -1,24 +1,15 @@
-import type { ReactNode } from 'react'
-
-import { renderToStaticMarkup } from 'react-dom/server'
-import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vite-plus/test'
 
 import { BaseLayout } from '@/ui/primitives/BaseLayout'
 
+import { renderInRouter } from './_helpers/render'
+
 // BaseLayout is the chrome shared by every page (header, main, fixed
 // widgets). Snapshot it in its three primary configurations so any
-// markup drift surfaces as a PR diff.
-
-// `Header` reads `useLocation()` directly, so the snapshot must render under
-// a router. A memory router with a single route at `initialPath` faithfully
-// reproduces what the SSR runtime would feed `Header` for that URL.
-function renderInRouter(node: ReactNode, initialPath: string): string {
-  const router = createMemoryRouter([{ path: '*', element: <>{node}</> }], {
-    initialEntries: [initialPath],
-  })
-  return renderToStaticMarkup(<RouterProvider router={router} />)
-}
+// markup drift surfaces as a PR diff. `renderInRouter` from the shared
+// helper wires both the memory router (so `Header`'s `useLocation`
+// resolves) and the `BlogConfigProvider` (so `useRequiredBlogConfig`
+// resolves to `TEST_BLOG_SETTINGS`).
 
 describe('snapshot: BaseLayout shell', () => {
   it('renders the default chrome (footer on, non-admin)', () => {

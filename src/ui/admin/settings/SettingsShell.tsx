@@ -12,6 +12,7 @@ interface SectionLink {
 
 const SECTIONS: SectionLink[] = [
   { to: '/wp-admin/settings/general', label: '基本信息', description: '站点标题、描述、关键词、作者' },
+  { to: '/wp-admin/settings/localization', label: '资源与本地化', description: 'CDN 域名、语言、时区、日期格式' },
   { to: '/wp-admin/settings/navigation', label: '导航菜单', description: '顶部导航条目顺序与链接' },
   { to: '/wp-admin/settings/socials', label: '社交链接', description: 'Header 中显示的社交账号 / 二维码' },
   { to: '/wp-admin/settings/content', label: '内容与分页', description: '列表分页大小、排序、Feed' },
@@ -21,7 +22,6 @@ const SECTIONS: SectionLink[] = [
   { to: '/wp-admin/settings/footer', label: '页脚', description: '起始年份、ICP 备案号' },
   { to: '/wp-admin/settings/mail', label: '邮件服务', description: 'Zeabur ZSend 配置 / 测试发送' },
   { to: '/wp-admin/settings/cache', label: '缓存管理', description: 'OG 图 / 头像 / 日历的 Redis 缓存' },
-  { to: '/wp-admin/settings/advanced', label: '高级（只读）', description: '需要修改源码并重新部署的常量' },
 ]
 
 interface SettingsShellProps {
@@ -44,8 +44,8 @@ export function SettingsShell({ children }: SettingsShellProps) {
       <header>
         <h1 className="tw:text-2xl tw:font-semibold tw:tracking-tight">系统设置</h1>
         <p className="tw:text-muted-foreground tw:text-sm">
-          这里管理博客的运行期配置。修改后立即生效，无需重新部署。受构建期常量影响的字段（如静态资源域名、OG
-          图尺寸）显示在「高级」页签，仅供参考。
+          这里管理博客的运行期配置，修改后立即生效，无需重新部署。CDN 域名同时由部署期 ENV 变量提供给 MDX
+          编译流水线，请确保两边数值一致。
         </p>
       </header>
       {/*

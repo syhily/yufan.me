@@ -36,6 +36,7 @@ import { Input } from '@/ui/admin/shadcn/components/ui/input'
 import { Label } from '@/ui/admin/shadcn/components/ui/label'
 import { Separator } from '@/ui/admin/shadcn/components/ui/separator'
 import { Skeleton } from '@/ui/admin/shadcn/components/ui/skeleton'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 
 interface ApiEnvelope<T> {
   data?: T
@@ -58,6 +59,7 @@ const COMMENTS_LOAD = API_ACTIONS.comment.loadAll
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export function UserDetailView({ userId }: { userId: string }) {
+  const config = useLocalization()
   const navigate = useNavigate()
   const userFetcher = useFetcher<ApiEnvelope<GetUserOutput>>()
   const updateFetcher = useFetcher<ApiEnvelope<UpdateUserOutput>>()
@@ -258,7 +260,9 @@ export function UserDetailView({ userId }: { userId: string }) {
                 </div>
                 <div className="tw:flex tw:justify-between">
                   <span className="tw:text-muted-foreground">最近评论</span>
-                  <span>{user.lastCommentAt ? formatLocalDate(new Date(user.lastCommentAt), DATE_FORMAT) : '—'}</span>
+                  <span>
+                    {user.lastCommentAt ? formatLocalDate(new Date(user.lastCommentAt), DATE_FORMAT, config) : '—'}
+                  </span>
                 </div>
                 <Separator className="tw:my-2" />
                 <div className="tw:flex tw:flex-col tw:gap-1">
@@ -271,7 +275,7 @@ export function UserDetailView({ userId }: { userId: string }) {
                 </div>
                 <div className="tw:flex tw:justify-between">
                   <span className="tw:text-muted-foreground">注册时间</span>
-                  <span>{formatLocalDate(new Date(user.createdAt), DATE_FORMAT)}</span>
+                  <span>{formatLocalDate(new Date(user.createdAt), DATE_FORMAT, config)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -546,7 +550,7 @@ export function UserDetailView({ userId }: { userId: string }) {
                             </Link>
                           )}
                           <span className="tw:text-muted-foreground">
-                            {c.createAt && formatLocalDate(c.createAt, DATE_FORMAT)}
+                            {c.createAt && formatLocalDate(c.createAt, DATE_FORMAT, config)}
                           </span>
                           {c.isPending && <Badge variant="destructive">待审核</Badge>}
                         </div>

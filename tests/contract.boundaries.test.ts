@@ -57,23 +57,31 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
-  it('keeps UI components from importing the static blog.config (use BlogConfigContext)', () => {
-    const offenders = files('src/ui', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+  it('keeps the static `@/blog.config` import out of the codebase entirely', () => {
+    // The static config tree (`src/blog.config.ts`, `DEFAULT_SETTINGS`,
+    // `BlogConstants`) was deleted alongside the install-flow refactor.
+    // Every consumer now reaches the live values through the
+    // DB-backed `getBlogConfigSync()` / `useBlogConfig()` pair.
+    const offenders = files('src', 'tests', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
       const source = readFileSync(file, 'utf8')
-      return source.split('\n').some((line) => {
-        const trimmed = line.trim()
-        if (!trimmed.startsWith('import')) return false
-        // Type-only imports of BlogConfig types are allowed; runtime value
-        // imports of `@/blog.config` are not.
-        if (trimmed.startsWith('import type')) return false
-        return /from\s+["']@\/blog\.config["']/.test(trimmed)
-      })
+      return /from\s+["']@\/blog\.config["']/.test(source)
     })
+    expect(offenders).toEqual([])
+  })
 
-    // The default-fallback BlogConfigProvider context owns the only allowed
-    // value-import of `@/blog.config` from the UI tree.
-    const allowedFallback = ['src/ui/lib/blog-config-context.tsx']
-    expect(offenders.filter((f) => !allowedFallback.includes(f))).toEqual([])
+  it('keeps the build-time asset host bootstrap on `process.env.ASSET_HOST`', () => {
+    // `metadata-store.ts` runs from `source.config.ts`, which is loaded
+    // by Vite BEFORE `@/` aliases or the DB pool exist. It must read
+    // `process.env.ASSET_HOST` directly and never reach for the
+    // (now-deleted) `@/blog.config` shim. The `sync-image-metadata`
+    // CLI is in the same boat.
+    const buildTime = ['src/server/images/metadata-store.ts', 'scripts/sync-image-metadata.ts']
+    for (const file of buildTime) {
+      const source = readFileSync(file, 'utf8')
+      expect(source).toContain('process.env.ASSET_HOST')
+      expect(source).not.toContain('@/blog.config')
+      expect(source).not.toContain('blog.config.ts')
+    }
   })
 
   it('keeps non-type catalog imports out of UI components', () => {
@@ -119,20 +127,7 @@ describe('contract: module and bundle boundaries', () => {
       if (file === 'src/server/markdown/rehype-image-enhance.ts' && specifier === '../images/metadata-store.ts') {
         return true
       }
-      if (file === 'src/server/images/metadata-store.ts' && specifier === '../../blog.config.ts') {
-        return true
-      }
-      // `blog.config.ts` is loaded via relative paths from
-      // `metadata-store.ts` during Vite's early `source.config.ts`
-      // bootstrap, before `@/` aliases are wired in. Mirror the same
-      // constraint here so it can in turn reach the shared seed values.
-      if (file === 'src/blog.config.ts' && specifier === './shared/blog-defaults.ts') {
-        return true
-      }
-      if (file === 'src/blog.config.ts' && specifier === './shared/socials.ts') {
-        return true
-      }
-      if (file === 'src/shared/blog-defaults.ts' && specifier === './socials.ts') {
+      if (file === 'src/shared/blog-config.ts' && specifier === './socials.ts') {
         return true
       }
       if (file === 'source.config.ts' && specifier === './src/server/markdown/rehype-mathjax.ts') {

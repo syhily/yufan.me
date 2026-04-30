@@ -55,17 +55,21 @@ vi.mock('@/server/cache/storage', () => ({
 const { clearAdminCache, getAdminCacheStats } = await import('@/server/cache/admin-service')
 const { ActionFailure } = await import('@/server/route-helpers/api-handler')
 const { setBlogSettingsSnapshotForTests } = await import('@/server/settings/snapshot')
-const { DEFAULT_SETTINGS } = await import('@/server/settings/defaults')
+const { TEST_BLOG_SETTINGS } = await import('./_helpers/blog-settings')
 
 describe('service: cache admin', () => {
   beforeEach(() => {
     fixture.store.clear()
     fixture.unlink.mockClear()
     fixture.scan.mockClear()
-    setBlogSettingsSnapshotForTests(undefined)
+    // Restore the global fixture between tests; individual cases below
+    // override individual cache prefixes to exercise rename logic.
+    setBlogSettingsSnapshotForTests(TEST_BLOG_SETTINGS)
   })
 
   it('counts keys per bucket via SCAN', async () => {
+    // The shared fixture seeds historical prefixes (`og-`, `avatar-`,
+    // `calendar-`); see `tests/_helpers/blog-settings`.
     fixture.store.set('og-hello-deadbeef', new Uint8Array([1, 2]))
     fixture.store.set('og-world-cafef00d', new Uint8Array([3, 4]))
     fixture.store.set('avatar-abc', new Uint8Array([5]))
@@ -125,17 +129,17 @@ describe('service: cache admin', () => {
   })
 
   it('honors a renamed prefix from the live snapshot', async () => {
-    // Editor renamed the OG bucket to a custom prefix via the admin
-    // panel. The SCAN pattern + key matching must follow the rename
-    // immediately, so old keys under `og-…` are NOT touched while
-    // the renamed bucket targets `opengraph-…` instead.
+    // Editor renamed the OG bucket via the admin panel. The SCAN
+    // pattern + key matching must follow the rename immediately, so
+    // legacy keys under the previous prefix are NOT touched while the
+    // renamed bucket targets the new pattern.
     setBlogSettingsSnapshotForTests({
-      ...DEFAULT_SETTINGS,
+      ...TEST_BLOG_SETTINGS,
       settings: {
-        ...DEFAULT_SETTINGS.settings,
+        ...TEST_BLOG_SETTINGS.settings,
         cache: {
-          ...DEFAULT_SETTINGS.settings.cache,
-          og: { prefix: 'opengraph-', ttlSeconds: DEFAULT_SETTINGS.settings.cache.og.ttlSeconds },
+          ...TEST_BLOG_SETTINGS.settings.cache,
+          og: { prefix: 'opengraph-', ttlSeconds: TEST_BLOG_SETTINGS.settings.cache.og.ttlSeconds },
         },
       },
     })
@@ -159,8 +163,8 @@ describe('service: cache admin', () => {
     const stats = await getAdminCacheStats()
 
     const og = stats.buckets.find((bucket) => bucket.id === 'og')
-    expect(og?.prefix).toBe(DEFAULT_SETTINGS.settings.cache.og.prefix)
-    expect(og?.ttlSeconds).toBe(DEFAULT_SETTINGS.settings.cache.og.ttlSeconds)
-    expect(og?.pattern).toBe(`${DEFAULT_SETTINGS.settings.cache.og.prefix}*`)
+    expect(og?.prefix).toBe(TEST_BLOG_SETTINGS.settings.cache.og.prefix)
+    expect(og?.ttlSeconds).toBe(TEST_BLOG_SETTINGS.settings.cache.og.ttlSeconds)
+    expect(og?.pattern).toBe(`${TEST_BLOG_SETTINGS.settings.cache.og.prefix}*`)
   })
 })

@@ -6,11 +6,11 @@ import type { ClientPost, ClientTag, SidebarPostLink } from '@/server/catalog'
 // the projection helper directly from the side-effect-free
 // `@/server/catalog/projections` keeps `select.ts` cheap to load.
 import { toSidebarPostLink } from '@/server/catalog/projections'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { sampleSize, shuffle } from '@/shared/tools'
 
 export function selectSidebarPosts(posts: ClientPost[]): SidebarPostLink[] {
-  const randomSize = config.settings.sidebar.post
+  const randomSize = requireBlogConfig().settings.sidebar.post
   if (randomSize <= 0) return []
   // Sample first, project second — `toSidebarPostLink` is cheap but the
   // sidebar only ships ~5 picks and there's no point projecting the whole
@@ -20,7 +20,7 @@ export function selectSidebarPosts(posts: ClientPost[]): SidebarPostLink[] {
 }
 
 export function selectSidebarTags(tags: ClientTag[]): ClientTag[] {
-  const randomSize = config.settings.sidebar.tag
+  const randomSize = requireBlogConfig().settings.sidebar.tag
   if (randomSize <= 0) return []
   const topTags = tags
     .slice()
@@ -41,6 +41,7 @@ export function selectSidebarTags(tags: ClientTag[]): ClientTag[] {
 const featurePostCache = new Map<string, ClientPost[]>()
 
 export function selectFeaturePosts(posts: ClientPost[], seed: string): ClientPost[] {
+  const config = requireBlogConfig()
   const featurePosts = config.settings.post.feature ?? []
   if (featurePosts.length >= 3) {
     return featurePosts

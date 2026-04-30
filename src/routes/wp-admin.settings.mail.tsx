@@ -20,8 +20,15 @@ export function meta() {
 // before it leaves the server, so the raw value never reaches the
 // browser.
 export async function loader(_args: Route.LoaderArgs) {
-  const settings = await hydrateBlogSettings()
-  const mail = settings.settings.mail
+  const bundle = await hydrateBlogSettings()
+  if (bundle === null) {
+    // `installGateMiddleware` redirects pre-install requests, so by the
+    // time the admin shell renders this route the snapshot is hydrated.
+    // Surface the unexpected case as 503 instead of dereferencing
+    // `bundle.mail`.
+    throw new Response('Blog has not been installed yet.', { status: 503 })
+  }
+  const mail = bundle.mail?.mail ?? { enabled: false, host: '', sender: '', apiKey: '' }
   return {
     mail: {
       enabled: mail.enabled,

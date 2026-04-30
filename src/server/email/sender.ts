@@ -9,8 +9,7 @@ import NewComment from '@/server/email/templates/NewComment'
 import NewReply from '@/server/email/templates/NewReply'
 import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
-import config from '@/server/settings/config'
-import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 const log = getLogger('email')
 
@@ -33,12 +32,12 @@ interface MailConfig {
   sender: string
 }
 
-// Read the live mail slice straight from the snapshot rather than the
-// blog config Proxy. The sender is server-only and `BlogConfigSnapshot`
-// deliberately doesn't expose `mail` to keep secrets out of the shared
-// config surface that `meta()` exports could pull into the client bundle.
+// Read the live mail slice straight from the snapshot. Mail senders only
+// run from server-side code paths that already sit behind the install
+// gate, so `requireBlogConfig()` is the right call — a `null` here would
+// be a regression in the gate, not a runtime mode we need to support.
 function readMailConfig(): MailConfig {
-  return getBlogSettingsSync().settings.mail
+  return requireBlogConfig().settings.mail
 }
 
 // Single source of truth for "should this notification actually fire?"
@@ -129,6 +128,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, page: Page): P
       commentLink: `${page.key}#user-comment-${commentInfo.id}`,
     }),
   )
+  const config = requireBlogConfig()
   return internalSend(config.author.email, `您的网站【${config.title}】有了新评论`, html)
 }
 
@@ -149,7 +149,7 @@ export async function sendNewReply(
       replyLink: `${page.key}#user-comment-${reply.id}`,
     }),
   )
-  return internalSend(sourceUser.email, `您在【${config.title}】的留言有了新回复`, html)
+  return internalSend(sourceUser.email, `您在【${requireBlogConfig().title}】的留言有了新回复`, html)
 }
 
 // Sent to the commenter when an admin approves their previously pending comment.
@@ -163,7 +163,7 @@ export async function sendApprovedComment(comment: Comment, user: User, page: Pa
       commentLink: `${page.key}#user-comment-${comment.id}`,
     }),
   )
-  return internalSend(user.email, `您在【${config.title}】的留言已经通过审核`, html)
+  return internalSend(user.email, `您在【${requireBlogConfig().title}】的留言已经通过审核`, html)
 }
 
 // Sent on demand from the admin "测试发送" button. Bypasses the
@@ -182,6 +182,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     }
   }
 
+  const config = requireBlogConfig()
   const subject = `【${config.title}】管理员邮件测试`
   const sentAt = new Date().toISOString()
   // Keep the test body intentionally plain (no React Email render) so a

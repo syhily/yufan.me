@@ -5,7 +5,7 @@ import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 
 import { compressImage } from '@/server/images/compress'
 import { logoDark, oppoSans } from '@/server/images/font-assets'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 /**
  * Generate the open graph.
@@ -120,6 +120,7 @@ function ensureFonts(): void {
 
 export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
   ensureFonts()
+  const config = requireBlogConfig()
 
   // Fetch the cover image as the background
   const coverImage = await loadImage(cover)

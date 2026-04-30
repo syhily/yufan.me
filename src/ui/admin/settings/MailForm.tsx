@@ -11,7 +11,7 @@ import { useSettingsFetcher } from '@/ui/admin/settings/useSettingsFetcher'
 import { Button } from '@/ui/admin/shadcn/components/ui/button'
 import { Checkbox } from '@/ui/admin/shadcn/components/ui/checkbox'
 import { Input } from '@/ui/admin/shadcn/components/ui/input'
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 // `MailLoaderData['mail']` mirrors the projection in the route loader.
 // Repeated here as a plain type so the component can stay framework-
@@ -65,13 +65,13 @@ interface TestStatus {
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
 export function MailForm({ mail, csrfToken: _csrfToken }: MailFormProps) {
-  const blogConfig = useBlogConfig()
+  const { author } = useSiteIdentity()
   const [snapshot, setSnapshot] = useState<FormState>(() => snapshotFromMail(mail))
   const [draft, setDraft] = useState<FormState>(snapshot)
   // Editor's chosen recipient for the test send. Defaults to the
   // configured author email so a single click verifies the typical
   // delivery path.
-  const [testTo, setTestTo] = useState<string>(blogConfig.author.email)
+  const [testTo, setTestTo] = useState<string>(author.email)
   const [testStatus, setTestStatus] = useState<TestStatus>(idleTestStatus)
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export function MailForm({ mail, csrfToken: _csrfToken }: MailFormProps) {
 
   const isDirty = !statesEqual(draft, snapshot)
   const onSaved = useCallback(() => setSnapshot(draft), [draft])
-  const { save, reset, isPending, status, errorMessage } = useSettingsFetcher({
+  const { save, isPending, status, errorMessage } = useSettingsFetcher({
     section: 'mail',
     onSaved,
   })
@@ -250,15 +250,7 @@ export function MailForm({ mail, csrfToken: _csrfToken }: MailFormProps) {
         ) : null}
       </SettingsSection>
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onReset={reset}
-        resetTitle="重置邮件配置为默认？"
-        resetDescription="数据库中保存的邮件配置会被清除，下次读取将回退到默认值（未启用 + 默认接入域名 + 空 API Key）。该操作不可撤销。"
-      />
+      <SettingsFormBar isPending={isPending} isDirty={isDirty} status={status} errorMessage={errorMessage} />
     </form>
   )
 }

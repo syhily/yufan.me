@@ -5,7 +5,7 @@ import type { TocOpts } from '@/shared/toc'
 
 import { generateToC } from '@/shared/toc'
 import { LeftIcon, RightIcon } from '@/ui/icons/icons'
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useSeoSettings } from '@/ui/lib/blog-config-context'
 import { TocItems } from '@/ui/post/toc/TocItems'
 
 export interface TableOfContentsProps {
@@ -14,11 +14,11 @@ export interface TableOfContentsProps {
 }
 
 export function TableOfContents({ headings, toc }: TableOfContentsProps) {
-  const config = useBlogConfig()
+  const seo = useSeoSettings()
   const generateTocConfig = toc
     ? ({
-        maxHeadingLevel: config.settings.toc.maxHeadingLevel,
-        minHeadingLevel: config.settings.toc.minHeadingLevel,
+        maxHeadingLevel: seo.toc.maxHeadingLevel,
+        minHeadingLevel: seo.toc.minHeadingLevel,
       } satisfies TocOpts)
     : false
   const items = generateToC(headings, generateTocConfig)

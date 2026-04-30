@@ -17,7 +17,7 @@ import {
   type CommentTreeState,
   useCommentsContext,
 } from '@/ui/comments/comments-context'
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useCommentsSettings } from '@/ui/lib/blog-config-context'
 
 export interface CommentsProps {
   commentKey: string
@@ -294,8 +294,8 @@ function CommentsList() {
 
 function CommentsLoadMore() {
   const ctx = useCommentsContext('Comments.LoadMore')
-  const config = useBlogConfig()
-  const pageSize = config.settings.comments.size
+  const { comments } = useCommentsSettings()
+  const pageSize = comments.size
 
   // Pin the latest `rootsLoaded` so the success callback can compute the
   // new offset without forcing the hook to remount on every dispatch.

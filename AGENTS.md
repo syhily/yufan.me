@@ -79,7 +79,6 @@ src/
 │                     # safe to evaluate in both server and client bundles.
 ├── content/          # Fumadocs collections (posts, pages, metas).
 ├── assets/           # Static assets (icon SVGs, fonts, styles).
-├── blog.config.ts    # Static site configuration consumed by every layer.
 ├── env.d.ts          # Vite-side ambient typings.
 ├── react-router.d.ts # React Router framework-mode ambient typings.
 ├── routes.ts         # Route manifest (URL → route module).
@@ -232,10 +231,16 @@ are:
   `src/content/pages/**/*.mdx`.
 - Meta collections are YAML files in `src/content/metas`:
   `categories.yaml`, `tags.yaml`, and `friends.yaml`.
-- Asset-host (`blog.config` `settings.asset.host`) image metadata lives under
-  `src/content/image-metadata/` (one JSON file per image path). After adding
-  or changing remote images in MDX/YAML, run `npm run image:metadata:sync`.
-  Optional CDN fallback during build/SSR: `IMAGE_METADATA_REMOTE_FALLBACK=1`.
+- Asset-host image metadata lives under `src/content/image-metadata/` (one
+  JSON file per image path). The build-time MDX pipeline and the
+  `sync-image-metadata` CLI read the host from `process.env.ASSET_HOST` /
+  `ASSET_SCHEME` (set in `.env`); the runtime (SSR + client) reads the
+  same values from the DB-backed `setting` row, which the install flow
+  seeds. **Keep both layers in sync at deploy time** — there is no
+  deploy-time check that the env vars match the DB document. After
+  adding or changing remote images in MDX/YAML, run
+  `npm run image:metadata:sync`. Optional CDN fallback during
+  build/SSR: `IMAGE_METADATA_REMOTE_FALLBACK=1`.
 - URLs are based on MDX frontmatter `slug`, not physical filenames.
   Posts render at `/posts/:slug`; pages render at `/:slug`.
 - `visible=false` posts are hidden from the public home listing and
@@ -316,11 +321,115 @@ reviewers reach for during PR review: `server-no-shared-module-state`,
   `@t3-oss/env-core` + Zod for runtime validation and typed exports).
 - When adding environment variables, update the t3-env schema,
   `src/env.d.ts`, and `.env.example` together.
+- `ASSET_HOST` / `ASSET_SCHEME` are required env vars: the
+  build-time MDX pipeline (`source.config.ts` → `metadata-store.ts`)
+  and the `sync-image-metadata` CLI read them through `process.env`
+  before the DB pool exists. The runtime mirrors them from the
+  DB-backed `setting` row. The two layers have to be kept in sync
+  manually at deploy time.
 - Use `zod` directly; do not import `astro/zod` or deprecated Zod APIs.
 - Security helpers such as CSRF and client-address parsing live in
   `@/server/auth/*` (server-side wiring) and `@/shared/request`,
   `@/shared/security` (isomorphic primitives). Keep them
   framework-neutral where possible.
+
+## Configuration & Install Gate
+
+- The single source of truth for runtime blog config is the
+  `setting` table — **one JSONB row per settings section**, named
+  `scope='blog.<section>'` (e.g. `blog.general`, `blog.localization`,
+  `blog.navigation`, `blog.socials`, `blog.content`, `blog.sidebar`,
+  `blog.comments`, `blog.seo`, `blog.footer`, `blog.mail`,
+  `blog.cache`). The full mapping (section ↔ DB scope ↔ Zod schema
+  ↔ bundle key) lives in `@/server/settings/sections.ts`'s
+  `SECTION_REGISTRY`. Splitting the previously-singleton `blog` row
+  this way means a save to one section never reads, merges, or
+  rewrites the JSONB belonging to any other section, so concurrent
+  edits on different tabs cannot race each other.
+- The in-memory composition of all section rows is `BlogSettingsBundle`
+  (`@/shared/blog-config`): one bucket per section
+  (`siteIdentity`, `localization`, `navigation`, `socials`, `content`,
+  `sidebar`, `comments`, `seo`, `footer`, `mail`, `cache`), each
+  typed independently. The legacy aggregated `BlogSettings` /
+  `BlogConfig` shape is still around as a compatibility projection for
+  unmigrated SSR helpers (`requireBlogConfig()` /
+  `getBlogConfigSync()` keep working).
+- There is no `DEFAULT_SETTINGS` constant; the install flow seeds
+  every section row up front (`blog.general` + `blog.localization`
+  from the stage-2 form, the other 9 sections from per-section
+  `defaults` in `SECTION_REGISTRY`). Pre-install,
+  `getBlogSettingsBundleSync()` returns `null`,
+  `getBlogConfigSync()` returns `null`, and `useBlogSettingsBundle()`
+  / the per-section accessors return `undefined`. Post-install,
+  every section bucket is populated, so the strict per-section hooks
+  always resolve. Server code that runs after install should use
+  `requireBlogSettingsBundle()` (or the legacy `requireBlogConfig()`);
+  UI code reads only the section it actually needs through one of the
+  per-section hooks (`useSiteIdentity`, `useLocalization`,
+  `useNavigationSettings`, `useSocialsSettings`, `useContentSettings`,
+  `useSidebarSettings`, `useCommentsSettings`, `useSeoSettings`,
+  `useFooterSettings`, `useMailSettings`, `useCacheSettings`). Each
+  hook has a strict variant (throws if the section is unseeded —
+  protects against a partial install or a manually-truncated row)
+  and a `…Optional` variant (returns `undefined`) for the rare
+  rendering paths that need to tolerate a missing bucket.
+- New UI components MUST NOT reach for the legacy aggregated
+  `useBlogConfig()` / `useRequiredBlogConfig()`. They are kept as
+  `@deprecated` wrappers so unmigrated code keeps compiling, but
+  reading a slice you do not need re-renders the component on every
+  unrelated section save. The aggregated `useBlogSettingsBundle()`
+  exists for the admin shell only — do not introduce new call sites.
+- `installGateMiddleware` (`@/server/install/gate`) registered in
+  `src/root.tsx` reads the install state through `getInstallState()`
+  and routes accordingly:
+  - `noAdmin` (no admin row) → 303 → `/wp-admin/install.php`
+  - `noSettings` (admin row present, but `blog.general` and/or
+    `blog.localization` rows missing) → 303 →
+    `/wp-admin/install/settings.php`
+  - `installed` → through to the matched route.
+  "Installed" requires BOTH the `blog.general` and the
+  `blog.localization` rows. The other 9 sections are seeded from
+  `SECTION_REGISTRY[<section>].defaults` by the same install flow
+  call (`seedInstallSettingsWithSession`), so a successful install
+  produces 11 rows. Deployments installed BEFORE this contract are
+  backfilled lazily by `loadSettingsFromDb()` on the next snapshot
+  hydration: any missing optional section is written with the
+  registry default through `upsertSetting`, and the in-memory
+  bundle is populated with the same payload so the SAME hydration
+  call returns a complete snapshot. The backfill is best-effort and
+  swallows DB errors so a transient outage cannot deadlock the site
+  behind the install gate. Static assets, framework internals
+  (`/__manifest`, …) and the auth trio (`/wp-login.php`,
+  `/wp-admin/install.php`, `/wp-admin/install/settings.php`) are
+  exempt from the redirect; the trio drives its own cross-redirect
+  via the matching `ensureInstalledOrRedirect()` /
+  `ensureNoAdminOrRedirect()` / `ensureNoSettingsOrRedirect()`
+  helper. Together they guarantee the snapshot invariant without
+  any chance of a redirect loop (for any state, exactly one helper
+  throws).
+- The install flow is split into two stages so the settings rows
+  write is gated by an admin login:
+  - **Stage 1** — `/wp-admin/install.php` (`signUpAdminSchema`):
+    creates the very first admin row and auto-logs the new user in
+    via `signUpInitialAdminWithSession`. On success the action
+    redirects to stage 2.
+  - **Stage 2** — `/wp-admin/install/settings.php`
+    (`installSettingsSchema`): persists the `blog.general` and
+    `blog.localization` rows from the form, AND seeds the remaining
+    9 sections (`blog.navigation`, `blog.socials`, `blog.content`,
+    `blog.sidebar`, `blog.comments`, `blog.seo`, `blog.footer`,
+    `blog.mail`, `blog.cache`) from `SECTION_REGISTRY[<section>].defaults`
+    via `seedInstallSettingsWithSession`. All 11 rows are written in
+    one go so the very first public render after install can use the
+    strict per-section hooks without throwing on a `null` bucket. The
+    route loader requires an authenticated admin session — if none, it
+    bounces through `/wp-login.php?redirect_to=/wp-admin/install/settings.php`.
+- The legacy "重置为默认" reset action is removed. The admin edits
+  individual sections from `/wp-admin/settings/*` and persists each
+  patch through `API_ACTIONS.admin.updateSettings`. The handler
+  routes the payload through `SECTION_REGISTRY[section].schema` for
+  validation and writes ONLY that one row via
+  `upsertSetting(payload, updatedBy, SECTION_REGISTRY[section].scope)`.
 
 ## Assets
 
@@ -362,6 +471,18 @@ reviewers reach for during PR review: `server-no-shared-module-state`,
   shells, `src/actions`, `src/middleware`, `src/layouts`,
   `src/services`, `src/hooks`, or `src/db`. These have been folded
   into the four-layer architecture above.
+- Do not reintroduce `src/blog.config.ts`, `DEFAULT_SETTINGS`,
+  `BlogConstants`, or any per-section "重置为默认" reset action.
+  Runtime config lives in `setting('blog.<section>')` rows (one per
+  section), the install flow seeds the required two
+  (`blog.general` + `blog.localization`), and the install gate covers
+  the empty-config window.
+- Do not reintroduce a single monolithic `BlogConfigContext` /
+  `<BlogConfigProvider>` on the public tree. The public bundle is
+  exposed through `<BlogSettingsProvider>` which internally nests one
+  React context per section; consumers must subscribe with the
+  per-section hook (e.g. `useFooterSettings`, `useSidebarSettings`)
+  so an unrelated section save does not re-render them.
 - Today's UI utilities live under `@/ui/lib`; do not add a duplicate
   `src/lib/` in parallel. If the shadcn-registry adoption follow-up
   lands, follow whichever `aliases.lib` is recorded in

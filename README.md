@@ -68,7 +68,16 @@ because those scripts are the runtime wrapper around the built server.
 - Pages live in `src/content/pages/**/*.mdx` and render at `/:slug`.
 - Categories, tags, and friends live in `src/content/metas/*.yaml`.
 - Frontmatter schemas are defined in [source.config.ts](source.config.ts).
-- Non-sensitive site settings live in [src/blog.config.ts](src/blog.config.ts).
+- Runtime site settings (title, navigation, socials, sidebar, mail, cache,
+  asset host, locale, time zone, …) live in the Postgres `setting` row and
+  are edited from `/wp-admin/settings/*`. The first-run install flow at
+  `/wp-admin/install.php` seeds the row alongside the initial admin
+  account; until that completes, every request is redirected to the
+  install page by `installGateMiddleware`.
+- The build-time MDX pipeline and the `sync-image-metadata` CLI read
+  the asset host from `process.env.ASSET_HOST` / `ASSET_SCHEME` because
+  they run before any DB connection exists. Keep these env vars in sync
+  with the DB-backed settings document at deploy time.
 
 The `visible=false` post flag hides content from the public home listing and
 random post widgets. Hidden posts are intentionally still included in archives,

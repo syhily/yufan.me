@@ -10,8 +10,9 @@ import type {
   LoadAllCommentsInput,
 } from '@/server/comments/schema'
 import type { AdminComment, CommentItem } from '@/server/comments/types'
-import type { BlogConstants, BlogSettings } from '@/server/settings/defaults'
-import type { ResetSettingsInput, SendTestMailInput, UpdateSettingsInput } from '@/server/settings/schema'
+import type { SendTestMailInput } from '@/server/settings/schema'
+import type { UpdateSettingsInput } from '@/server/settings/sections'
+import type { BlogSettings } from '@/shared/blog-config'
 
 export type { UpdateUserInput }
 
@@ -162,18 +163,18 @@ export interface AdminMutationSuccessOutput {
 
 // --- Admin settings endpoints ---------------------------------------------
 
-export type { BlogConstants, BlogSettings, ResetSettingsInput, UpdateSettingsInput }
+export type { BlogSettings, UpdateSettingsInput }
 
+// `settings` is `null` when no DB row exists yet (i.e. the deployment
+// hasn't gone through `/wp-admin/install.php`). The admin layout will
+// only ever land here AFTER install (see the install gate), so the
+// admin panel itself can rely on a populated value, but other callers
+// must still tolerate the absence.
 export interface GetSettingsOutput {
-  settings: BlogSettings
-  constants: BlogConstants
+  settings: BlogSettings | null
 }
 
 export interface UpdateSettingsOutput {
-  settings: BlogSettings
-}
-
-export interface ResetSettingsOutput {
   settings: BlogSettings
 }
 

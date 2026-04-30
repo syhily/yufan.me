@@ -1,16 +1,19 @@
-import config from '@/blog.config'
-
-const assetHost = config.settings.asset.host
-
 export interface ImageUrlOptions {
   src: string
   width: number
   height: number
   quality?: number
+  /**
+   * The asset CDN host the image is expected to live on. The caller
+   * threads this in from `useRequiredBlogConfig()` (UI / SSR) or
+   * `requireBlogConfig()` (server-only) so this helper stays a pure,
+   * isomorphic function with no hidden global lookup.
+   */
+  assetHost: string
 }
 
-export function getImageUrl({ src, width, height, quality }: ImageUrlOptions): string {
-  if (!isTransformableRemoteImage(src)) {
+export function getImageUrl({ src, width, height, quality, assetHost }: ImageUrlOptions): string {
+  if (!isTransformableRemoteImage(src, assetHost)) {
     return src
   }
 
@@ -18,7 +21,7 @@ export function getImageUrl({ src, width, height, quality }: ImageUrlOptions): s
   return `${src}!upyun520/both/${width}x${height}/format/webp/quality/${imageQuality}/unsharp/true/progressive/true`
 }
 
-export function isTransformableRemoteImage(src: string): boolean {
+export function isTransformableRemoteImage(src: string, assetHost: string): boolean {
   if (src.startsWith('data:')) {
     return false
   }

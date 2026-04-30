@@ -1,6 +1,6 @@
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { userSession } from '@/server/session'
-import { updateSettingsSchema } from '@/server/settings/schema'
+import { updateSettingsSchema } from '@/server/settings/sections'
 import { updateBlogSettingsSection } from '@/server/settings/service'
 
 export const action = defineApiAction({

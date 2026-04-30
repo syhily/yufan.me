@@ -24,15 +24,16 @@ import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
 import { DomainError } from '@/server/route-helpers/errors'
 import { isAdmin, userSession, type BlogSession } from '@/server/session'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { groupBy } from '@/shared/tools'
 
 const log = getLogger('comments.loader')
 
 function trimSiteSuffix(title: string | null): string {
   let trim = title ?? ''
-  if (trim.includes(` - ${config.title}`)) {
-    trim = trim.substring(0, trim.indexOf(` - ${config.title}`))
+  const siteTitle = requireBlogConfig().title
+  if (trim.includes(` - ${siteTitle}`)) {
+    trim = trim.substring(0, trim.indexOf(` - ${siteTitle}`))
   }
   return trim
 }
@@ -47,14 +48,15 @@ function toLatestComment(row: PendingCommentRow): LatestComment {
 }
 
 export async function pendingComments(): Promise<LatestComment[]> {
-  const rows = await pendingCommentsRepo(config.settings.sidebar.comment)
+  const rows = await pendingCommentsRepo(requireBlogConfig().settings.sidebar.comment)
   return rows.map(toLatestComment)
 }
 
 export async function latestComments(): Promise<LatestComment[]> {
+  const limit = requireBlogConfig().settings.sidebar.comment
   const ids = await adminUserIds()
-  const distinctIds = await latestDistinctCommentIds(ids, config.settings.sidebar.comment)
-  const rows = await commentsByIds(distinctIds, config.settings.sidebar.comment)
+  const distinctIds = await latestDistinctCommentIds(ids, limit)
+  const rows = await commentsByIds(distinctIds, limit)
   return rows.map(toLatestComment)
 }
 
@@ -76,7 +78,7 @@ export async function loadComments(
   const [, counts, rootComments] = await Promise.all([
     ensurePage ? upsertPage(key, title) : Promise.resolve(null),
     countCommentsAndRoots(key, pendingArray),
-    findRootComments(key, pendingArray, offset, config.settings.comments.size),
+    findRootComments(key, pendingArray, offset, requireBlogConfig().settings.comments.size),
   ])
   const childComments = await findChildComments(
     key,
@@ -204,7 +206,7 @@ export async function createComment(
   })
 
   // Send the email.
-  if (info.email !== config.author.email) {
+  if (info.email !== requireBlogConfig().author.email) {
     void sendNewComment(info, p).catch((error) => {
       log.error('failed to send new comment email', { error })
     })

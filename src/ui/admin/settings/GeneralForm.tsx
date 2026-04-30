@@ -1,7 +1,7 @@
 import { Trash2Icon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useEffect, useState } from 'react'
 
-import type { BlogSettings } from '@/server/settings/defaults'
+import type { BlogSettings } from '@/shared/blog-config'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { FieldRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
@@ -67,7 +67,7 @@ export function GeneralForm({ settings, csrfToken: _csrfToken }: GeneralFormProp
     setSnapshot(draft)
   }, [draft])
 
-  const { save, reset, isPending, status, errorMessage } = useSettingsFetcher({
+  const { save, isPending, status, errorMessage } = useSettingsFetcher({
     section: 'general',
     onSaved,
   })
@@ -201,13 +201,7 @@ export function GeneralForm({ settings, csrfToken: _csrfToken }: GeneralFormProp
         </FieldRow>
       </SettingsSection>
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onReset={reset}
-      />
+      <SettingsFormBar isPending={isPending} isDirty={isDirty} status={status} errorMessage={errorMessage} />
     </form>
   )
 }

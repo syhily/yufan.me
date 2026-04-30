@@ -27,7 +27,7 @@ import { queryMetadata } from '@/server/comments/likes'
 import { loadImageThumbhash } from '@/server/images/thumbhash'
 import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 const log = getLogger('content.catalog')
 
@@ -248,7 +248,7 @@ export class ContentCatalog {
       .sort((left, right) => {
         const a = left.date.getTime()
         const b = right.date.getTime()
-        return config.settings.post.sort === 'asc' ? a - b : b - a
+        return requireBlogConfig().settings.post.sort === 'asc' ? a - b : b - a
       })
 
     const now = new Date()
@@ -587,7 +587,7 @@ function validatePageSlugs(pages: Page[], postSlugs: Set<string>): void {
 }
 
 function validateFeaturePosts(postSlugs: Set<string>): void {
-  const featurePosts = config.settings.post.feature ?? []
+  const featurePosts = requireBlogConfig().settings.post.feature ?? []
   const invalidFeaturePosts = featurePosts.filter((slug) => !postSlugs.has(slug))
   if (invalidFeaturePosts.length > 0) {
     throw new Error(`The following feature posts are invalid:\n${invalidFeaturePosts.join('\n')}`)

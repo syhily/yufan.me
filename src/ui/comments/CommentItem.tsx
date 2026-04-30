@@ -9,6 +9,7 @@ import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
 import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 
 export interface CommentItemProps {
   depth: number
@@ -197,6 +198,7 @@ interface CommentFooterProps {
 }
 
 function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps) {
+  const localization = useLocalization()
   const leaf = useCommentsLeafContext(propAdmin)
   const approve = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.approve, {
     onSuccess: () => leaf.onApproved(comment.id),
@@ -214,7 +216,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
 
   return (
     <div className="comment-footer text-xs text-muted">
-      <time className="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm')}</time>
+      <time className="me-2">{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm', localization)}</time>
       <button type="button" className="comment-reply-link me-2" data-rid={comment.id} onClick={handleReply}>
         回复
       </button>

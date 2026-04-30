@@ -12,7 +12,6 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 
-import config from '../src/blog.config.ts'
 import {
   committedImageMetadataFilePath,
   isCommittedMetadataHostUrl,
@@ -23,7 +22,13 @@ import {
 const FETCH_TIMEOUT_MS = 1500
 const CONCURRENCY = 16
 
-const assetHost = config.settings.asset.host
+const assetHost = (() => {
+  const value = process.env.ASSET_HOST
+  if (!value) {
+    throw new Error('ASSET_HOST environment variable is required (see .env.example).')
+  }
+  return value
+})()
 
 /** Pathnames must end with one of these — PDFs and other uploads are ignored. */
 const IMAGE_METADATA_EXTENSIONS = new Set([

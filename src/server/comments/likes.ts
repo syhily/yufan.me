@@ -10,11 +10,11 @@ import {
   recordLikeAndCount,
 } from '@/server/db/query/like'
 import { decrementPageVotes } from '@/server/db/query/page'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { makeToken } from '@/shared/security'
 import { joinUrl } from '@/shared/urls'
 
-const generatePageKey = (permalink: string): string => joinUrl(config.website, permalink, '/')
+const generatePageKey = (permalink: string): string => joinUrl(requireBlogConfig().website, permalink, '/')
 
 export async function increaseLikes(permalink: string): Promise<{ likes: number; token: string }> {
   const pageKey = generatePageKey(permalink)

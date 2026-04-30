@@ -3,12 +3,25 @@ import type { MetaDescriptor } from 'react-router'
 // IMPORTANT: this module is imported by every route's `meta()` export
 // and `meta()` runs on the client too (after client-side navigation).
 // That means anything imported here ends up in the client bundle, so
-// we read settings through the **shared** proxy — NOT the server-only
-// `@/server/settings/config` proxy, which would drag Drizzle/Postgres
-// into the browser. On the server the proxy reads the live DB-backed
-// snapshot; on the client it falls back to the seed defaults.
-import config from '@/shared/blog-config-proxy'
+// we read settings through the **shared** snapshot reader — never
+// through `@/server/*`, which would drag Drizzle/Postgres into the
+// browser. On the server the snapshot is hydrated by the settings
+// service; on the client the root loader pushes the same value into
+// the shared `globalThis` slot on every render.
+//
+// `getBlogConfigSync()` returns `null` on a fresh, uninstalled
+// deployment. The install gate catches every non-install request
+// before any meta callback runs, but the install route itself still
+// sits in front of the gate, so each helper handles a `null` config
+// defensively.
+import { getBlogConfigSync } from '@/shared/blog-config-snapshot'
 import { joinUrl } from '@/shared/urls'
+
+// Minimal sentinel rendered before the install flow has populated the
+// settings row. The wp-admin SPA never reaches `routeMeta` (it owns its
+// own meta), so the only consumer is the install split-screen — a few
+// generic tags is plenty until the editor finishes installing.
+const PRE_INSTALL_TITLE = '正在安装'
 
 interface ArticleSeo {
   date: Date | string
@@ -51,14 +64,14 @@ export interface RouteSeoOptions {
   feedLinks?: FeedLinkOptions
 }
 
-function absoluteUrl(url: string | undefined): string | undefined {
+function absoluteUrl(url: string | undefined, website: string): string | undefined {
   if (!url) return undefined
-  return url.startsWith('http') ? url : config.website + url
+  return url.startsWith('http') ? url : website + url
 }
 
-function resolveOgImage(ogImageUrl?: string): string {
-  if (ogImageUrl === undefined) return joinUrl(config.website, 'images/open-graph.png')
-  return ogImageUrl.startsWith('http') ? ogImageUrl : joinUrl(config.website, ogImageUrl)
+function resolveOgImage(website: string, ogImageUrl?: string): string {
+  if (ogImageUrl === undefined) return joinUrl(website, 'images/open-graph.png')
+  return ogImageUrl.startsWith('http') ? ogImageUrl : joinUrl(website, ogImageUrl)
 }
 
 function ensureTwitterHandle(handle?: string): string | undefined {
@@ -67,10 +80,16 @@ function ensureTwitterHandle(handle?: string): string | undefined {
 }
 
 export function pageTitle(title?: string): string {
+  const config = getBlogConfigSync()
+  if (config === null) return title ?? PRE_INSTALL_TITLE
   return title === undefined ? `${config.title} - ${config.description}` : `${title} - ${config.title}`
 }
 
-function baseTags(title: string, description: string): MetaDescriptor[] {
+function baseTags(
+  title: string,
+  description: string,
+  config: { title: string; author: { name: string; url: string }; keywords: string[]; website: string },
+): MetaDescriptor[] {
   return [
     { title },
     { name: 'title', content: title },
@@ -113,14 +132,17 @@ function robotsTags(noindex: boolean): MetaDescriptor[] {
   ]
 }
 
-function ogTags(args: {
-  variant: SeoVariant
-  title: string
-  description: string
-  pageUrl: string
-  imageUrl: string
-  imageAlt: string
-}): MetaDescriptor[] {
+function ogTags(
+  args: {
+    variant: SeoVariant
+    title: string
+    description: string
+    pageUrl: string
+    imageUrl: string
+    imageAlt: string
+  },
+  config: { settings: { locale: string; og: { width: number; height: number } } },
+): MetaDescriptor[] {
   const type = args.variant.kind === 'website' ? 'website' : 'article'
   const meta: MetaDescriptor[] = [
     { property: 'og:type', content: type },
@@ -140,13 +162,16 @@ function ogTags(args: {
   return meta
 }
 
-function twitterTags(args: {
-  title: string
-  description: string
-  imageUrl: string
-  imageAlt: string
-}): MetaDescriptor[] {
-  const site = ensureTwitterHandle(config.settings.twitter)
+function twitterTags(
+  args: {
+    title: string
+    description: string
+    imageUrl: string
+    imageAlt: string
+  },
+  twitter: string,
+): MetaDescriptor[] {
+  const site = ensureTwitterHandle(twitter)
   const meta: MetaDescriptor[] = [
     { property: 'twitter:title', content: args.title },
     { property: 'twitter:description', content: args.description },
@@ -162,7 +187,7 @@ function twitterTags(args: {
   return meta
 }
 
-function articleTags(variant: SeoVariant): MetaDescriptor[] {
+function articleTags(variant: SeoVariant, authorName: string): MetaDescriptor[] {
   if (variant.kind === 'website') return []
 
   const meta: MetaDescriptor[] = []
@@ -171,7 +196,7 @@ function articleTags(variant: SeoVariant): MetaDescriptor[] {
   }
   meta.push(
     { property: 'article:published_time', content: toIsoString(variant.article.date) },
-    { property: 'article:author', content: config.author.name },
+    { property: 'article:author', content: authorName },
     {
       property: 'article:section',
       content: variant.kind === 'page' ? '页面' : (variant.article.category ?? ''),
@@ -263,42 +288,56 @@ export function routeMeta({
   noindex = false,
   feedLinks,
 }: RouteSeoOptions = {}): MetaDescriptor[] {
+  const config = getBlogConfigSync()
+  if (config === null) {
+    // Pre-install fallback. The install split-screen renders before the
+    // gate has any settings to hand out; emit a minimal `<title>` so
+    // browsers don't show "untitled" and call it a day.
+    return [{ title: title ?? PRE_INSTALL_TITLE }, ...robotsTags(true)]
+  }
+
   const resolvedTitle = pageTitle(title)
   const resolvedDescription = description || config.description
-  const resolvedPageUrl = absoluteUrl(pageUrl) || config.website
-  const imageUrl = resolveOgImage(ogImageUrl)
+  const resolvedPageUrl = absoluteUrl(pageUrl, config.website) || config.website
+  const imageUrl = resolveOgImage(config.website, ogImageUrl)
   const imageAlt = ogImageAltText || resolvedTitle
 
   const meta: MetaDescriptor[] = [
-    ...baseTags(resolvedTitle, resolvedDescription),
+    ...baseTags(resolvedTitle, resolvedDescription, config),
     ...robotsTags(noindex),
-    ...ogTags({
-      variant,
-      title: resolvedTitle,
-      description: resolvedDescription,
-      pageUrl: resolvedPageUrl,
-      imageUrl,
-      imageAlt,
-    }),
-    ...articleTags(variant),
-    ...twitterTags({ title: resolvedTitle, description: resolvedDescription, imageUrl, imageAlt }),
+    ...ogTags(
+      {
+        variant,
+        title: resolvedTitle,
+        description: resolvedDescription,
+        pageUrl: resolvedPageUrl,
+        imageUrl,
+        imageAlt,
+      },
+      config,
+    ),
+    ...articleTags(variant, config.author.name),
+    ...twitterTags(
+      { title: resolvedTitle, description: resolvedDescription, imageUrl, imageAlt },
+      config.settings.twitter,
+    ),
   ]
 
   if (canonical) {
     meta.push({ tagName: 'link', rel: 'canonical', href: resolvedPageUrl })
   }
-  const prevHref = absoluteUrl(prevUrl)
+  const prevHref = absoluteUrl(prevUrl, config.website)
   if (prevHref) {
     meta.push({ tagName: 'link', rel: 'prev', href: prevHref })
   }
-  const nextHref = absoluteUrl(nextUrl)
+  const nextHref = absoluteUrl(nextUrl, config.website)
   if (nextHref) {
     meta.push({ tagName: 'link', rel: 'next', href: nextHref })
   }
 
   if (feedLinks) {
     const feedTitle = feedLinks.title ?? resolvedTitle
-    const rssHref = absoluteUrl(feedLinks.rss)
+    const rssHref = absoluteUrl(feedLinks.rss, config.website)
     if (rssHref) {
       meta.push({
         tagName: 'link',
@@ -308,7 +347,7 @@ export function routeMeta({
         href: rssHref,
       })
     }
-    const atomHref = absoluteUrl(feedLinks.atom)
+    const atomHref = absoluteUrl(feedLinks.atom, config.website)
     if (atomHref) {
       meta.push({
         tagName: 'link',

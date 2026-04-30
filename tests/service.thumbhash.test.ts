@@ -2,9 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test'
 
 import { enhanceImageHtml, loadImageThumbhash } from '@/server/images/thumbhash'
 
+import { TEST_BLOG_SETTINGS } from './_helpers/blog-settings'
 import { installFetch, jsonResponse } from './_helpers/fetch'
 
-const ASSET_HOST = 'cat.yufan.me'
+// Mirror the fixture host so the asset-host gate inside the SSR
+// pipeline (`requireBlogConfig().settings.asset.host`) accepts these
+// URLs as transformable.
+const ASSET_HOST = TEST_BLOG_SETTINGS.settings.asset.host
 
 describe('services/images/thumbhash — loadImageThumbhash', () => {
   let mock: ReturnType<typeof installFetch>

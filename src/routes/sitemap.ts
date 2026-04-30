@@ -1,5 +1,5 @@
 import { getCatalog } from '@/server/catalog'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { joinUrl } from '@/shared/urls'
 
 import type { Route } from './+types/sitemap'
@@ -19,19 +19,20 @@ export async function loader(_: Route.LoaderArgs) {
   // Build via array join so the response starts with `<?xml ... ?>` on the
   // first byte. The previous template-literal version left a leading newline
   // which some validators reject.
+  const website = requireBlogConfig().website
   const lines: string[] = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    `  <url><loc>${config.website}/</loc></url>`,
+    `  <url><loc>${website}/</loc></url>`,
   ]
   for (const post of posts) {
     lines.push(
-      `  <url><loc>${joinUrl(config.website, post.permalink)}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`,
+      `  <url><loc>${joinUrl(website, post.permalink)}</loc><lastmod>${post.date.toISOString()}</lastmod></url>`,
     )
   }
   for (const page of pages) {
     lines.push(
-      `  <url><loc>${joinUrl(config.website, page.permalink)}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`,
+      `  <url><loc>${joinUrl(website, page.permalink)}</loc><lastmod>${page.date.toISOString()}</lastmod></url>`,
     )
   }
   lines.push('</urlset>')

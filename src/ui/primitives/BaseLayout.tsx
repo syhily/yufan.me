@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
-import type { BlogConfig } from '@/blog.config'
+import type { NavigationItem } from '@/shared/blog-config'
 
-import { useBlogConfig } from '@/ui/lib/blog-config-context'
+import { useNavigationSettings } from '@/ui/lib/blog-config-context'
 import { Footer } from '@/ui/primitives/Footer'
 import { Header } from '@/ui/primitives/Header'
 import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
@@ -21,7 +21,7 @@ import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
 // need both the chrome AND the public stylesheet.
 
 export interface BaseLayoutProps {
-  navigation?: BlogConfig['navigation']
+  navigation?: NavigationItem[]
   footer?: boolean
   admin: boolean
   children?: ReactNode
@@ -34,9 +34,9 @@ export interface BaseLayoutProps {
 // isolation; production callers should rely on the default `<App>` export
 // from `@/root` rather than instantiating `BaseLayout` directly.
 export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutProps) {
-  const config = useBlogConfig()
+  const navigationSection = useNavigationSettings()
   const showFooter = footer !== undefined ? footer : true
-  const resolvedNavigation = navigation || config.navigation
+  const resolvedNavigation = navigation || navigationSection.navigation
 
   return (
     <div className="site-layout">

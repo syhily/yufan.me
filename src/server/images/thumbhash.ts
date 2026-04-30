@@ -6,7 +6,12 @@ import {
   metadataJsonUrlForImageSrc,
   readCommittedImageMetadata,
 } from '@/server/images/metadata-store'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { getImageUrl, isTransformableRemoteImage } from '@/shared/image-url'
+
+function liveAssetHost(): string {
+  return requireBlogConfig().settings.asset.host
+}
 
 interface ImageMetadata {
   width: number
@@ -24,7 +29,7 @@ const METADATA_FETCH_TIMEOUT_MS = 1500
 const metadataInflight = createInflight<ImageMetadata | null>()
 
 export async function loadImageThumbhash(src: string): Promise<ImageThumbhash | null> {
-  if (!isTransformableRemoteImage(src)) {
+  if (!isTransformableRemoteImage(src, liveAssetHost())) {
     return null
   }
 
@@ -131,7 +136,7 @@ async function enhanceImageNode(attributes: Record<string, string | undefined>):
     attributes.height = `${height}`
   }
   if (width !== undefined && height !== undefined) {
-    attributes.src = getImageUrl({ src, width, height })
+    attributes.src = getImageUrl({ src, width, height, assetHost: liveAssetHost() })
   }
 }
 

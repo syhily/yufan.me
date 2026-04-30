@@ -4,7 +4,7 @@ import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/cache/avatar'
 import { findEmailById } from '@/server/db/query/user'
 import { compressImage } from '@/server/images/compress'
 import { pngResponse } from '@/server/route-helpers/http'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { encodedEmail } from '@/shared/security'
 import { isNumeric } from '@/shared/tools'
 import { joinUrl } from '@/shared/urls'
@@ -20,7 +20,7 @@ export function headers() {
 }
 
 function defaultAvatar(): string {
-  return joinUrl(config.website, '/images/default-avatar.png')
+  return joinUrl(requireBlogConfig().website, '/images/default-avatar.png')
 }
 
 // Some Gravatar mirrors answer with a 302 to a sized / CDN variant rather than
@@ -32,6 +32,7 @@ function defaultAvatar(): string {
 const MAX_REDIRECT_HOPS = 5
 
 async function avatarImage(hash: string): Promise<Buffer | null> {
+  const config = requireBlogConfig()
   const defaultAvatarLink = defaultAvatar()
   const initialLink = joinUrl(
     config.settings.comments.avatar.mirror,

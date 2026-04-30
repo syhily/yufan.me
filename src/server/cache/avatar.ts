@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { createInflight } from '@/server/cache/inflight'
 import { storage } from '@/server/cache/storage'
-import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 export interface Avatar {
   status: AvatarStatus
@@ -23,7 +23,7 @@ const avatarInflight = createInflight<Avatar | null>()
 // `/wp-admin/settings/cache` applies to the next read / write. Old keys
 // under the previous prefix age out at their stored TTL.
 function avatarConfig(): { prefix: string; ttlSeconds: number } {
-  return getBlogSettingsSync().settings.cache.avatar
+  return requireBlogConfig().settings.cache.avatar
 }
 const avatarKey = (email: string): string => `${avatarConfig().prefix}${email}`
 

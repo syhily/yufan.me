@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/admin/shadcn/components/ui/dropdown-menu'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 
 interface ApiEnvelope<T> {
   data?: T
@@ -62,6 +63,7 @@ export function AdminCommentRow({
   onFilterByPage,
   onFilterByAuthor,
 }: AdminCommentRowProps) {
+  const config = useLocalization()
   const authorHref = safeHref(comment.link)
   const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
 
@@ -255,7 +257,7 @@ export function AdminCommentRow({
               </div>
               <div className="tw:text-muted-foreground tw:mt-1 tw:flex tw:flex-wrap tw:gap-x-3 tw:gap-y-0.5 tw:text-xs">
                 <span className="tw:truncate">{comment.email}</span>
-                <span>{comment.createAt ? formatLocalDate(comment.createAt, ADMIN_DATE_FORMAT) : ''}</span>
+                <span>{comment.createAt ? formatLocalDate(comment.createAt, ADMIN_DATE_FORMAT, config) : ''}</span>
                 {comment.pageTitle && (
                   <span className="tw:flex tw:min-w-0 tw:items-center tw:gap-0.5">
                     <span>来自：</span>

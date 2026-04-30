@@ -10,6 +10,6 @@ export function meta() {
 }
 
 export default function WpAdminSettingsSeoRoute() {
-  const { settings, constants, csrfToken } = useOutletContext<SettingsOutletContext>()
-  return <SeoForm settings={settings} constants={constants} csrfToken={csrfToken} />
+  const { settings, csrfToken } = useOutletContext<SettingsOutletContext>()
+  return <SeoForm settings={settings} csrfToken={csrfToken} />
 }

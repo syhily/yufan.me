@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import { formatLocalDate, formatShowDate, slicePosts } from '@/shared/formatter'
 
+// Minimal `BlogSettings`-shaped fixture for the date formatters. Only the
+// `locale` / `timeZone` / `timeFormat` slice is read.
+const config = {
+  settings: {
+    locale: 'zh-CN',
+    timeZone: 'Asia/Shanghai',
+    timeFormat: 'yyyy-LL-dd HH:mm',
+  },
+}
+
 describe('services/markdown/formatter — slicePosts', () => {
   it('returns the requested page slice and the correct totalPage count', () => {
     const posts = Array.from({ length: 23 }, (_, i) => i)
@@ -27,21 +37,21 @@ describe('services/markdown/formatter — slicePosts', () => {
 
 describe('services/markdown/formatter — date formatting', () => {
   it('formatShowDate returns 今天 for the current calendar day', () => {
-    expect(formatShowDate(new Date())).toBe('今天')
+    expect(formatShowDate(new Date(), config)).toBe('今天')
   })
 
   it('formatShowDate returns 昨天 for one day before now', () => {
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
-    expect(formatShowDate(yesterday)).toBe('昨天')
+    expect(formatShowDate(yesterday, config)).toBe('昨天')
   })
 
   it("formatShowDate returns 'N 天前' inside the past week", () => {
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
-    expect(formatShowDate(threeDaysAgo)).toMatch(/^[1-6] 天前$/)
+    expect(formatShowDate(threeDaysAgo, config)).toMatch(/^[1-6] 天前$/)
   })
 
   it('formatLocalDate honours an explicit format string', () => {
     const date = new Date('2024-05-15T12:34:56.000Z')
-    expect(formatLocalDate(date, 'yyyy-LL-dd')).toBe('2024-05-15')
+    expect(formatLocalDate(date, 'yyyy-LL-dd', config)).toBe('2024-05-15')
   })
 })

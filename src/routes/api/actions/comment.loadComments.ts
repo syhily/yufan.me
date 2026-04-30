@@ -2,7 +2,7 @@ import { loadComments, parseComments } from '@/server/comments/loader'
 import { loadCommentsSchema } from '@/server/comments/schema'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 
 export const loader = defineApiAction({
   method: 'GET',
@@ -13,7 +13,7 @@ export const loader = defineApiAction({
       throw new ActionFailure(500, '无法连接到评论服务器')
     }
     const items = await parseComments(comments.comments)
-    const next = config.settings.comments.size + payload.offset < comments.roots_count
+    const next = requireBlogConfig().settings.comments.size + payload.offset < comments.roots_count
     return { comments: items, next }
   },
 })

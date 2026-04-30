@@ -3,7 +3,7 @@ import { Feed } from 'feed'
 import { ContentCatalog, type Page, type Post } from '@/server/catalog'
 import { prerenderToHtml } from '@/server/catalog/render'
 import { enhanceImageHtml } from '@/server/images/thumbhash'
-import config from '@/server/settings/config'
+import { requireBlogConfig } from '@/shared/blog-config-snapshot'
 import { joinUrl } from '@/shared/urls'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Friends } from '@/ui/mdx/page/Friends'
@@ -52,6 +52,7 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
 }
 
 export async function generateFeeds(options: FeedOptions = {}) {
+  const config = requireBlogConfig()
   const { includeHidden = true, includeScheduled = false, size = config.settings.feed.size, category, tag } = options
   if (category !== undefined && tag !== undefined) {
     throw new Error('Category and tag cannot be specified at the same time')

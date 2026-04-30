@@ -6,6 +6,7 @@ import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/cata
 
 import { formatShowDate } from '@/shared/formatter'
 import { CommentIcon, EyeIcon, HeartFillIcon } from '@/ui/icons/icons'
+import { useLocalization } from '@/ui/lib/blog-config-context'
 import { Pagination } from '@/ui/post/pagination/Pagination'
 import { Image } from '@/ui/primitives/Image'
 import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
@@ -158,6 +159,7 @@ export interface PostCardsProps {
 }
 
 export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCardsProps) {
+  const config = useLocalization()
   return (
     <div className="content-wrapper col-12 col-xl-9">
       <div className="list-grid">
@@ -191,7 +193,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
               </div>
               <div className="list-footer">
                 <div className="d-flex flex-fill align-items-center text-muted text-sm">
-                  <div className="flex-fill d-none d-md-block">{formatShowDate(post.date)}</div>
+                  <div className="flex-fill d-none d-md-block">{formatShowDate(post.date, config)}</div>
                   <ListMetric value={post.meta.views}>
                     <EyeIcon className="text-md" />
                   </ListMetric>
@@ -227,6 +229,7 @@ export interface PostSquareProps {
 }
 
 export function PostSquare({ post, first }: PostSquareProps) {
+  const config = useLocalization()
   return (
     <div className={first ? 'col-12 col-md-8 col-xl-6' : 'col-6 col-md-4 col-xl-3'}>
       <div className="list-item list-nice-overlay">
@@ -246,7 +249,7 @@ export function PostSquare({ post, first }: PostSquareProps) {
           <Link to={post.permalink} className="list-body" prefetch="intent">
             <div className="list-title h6 h-2x">{post.title}</div>
             <div className="list-meta font-number d-flex flex-fill text-muted text-sm">
-              <span className="d-inline-block">{formatShowDate(post.date)}</span>
+              <span className="d-inline-block">{formatShowDate(post.date, config)}</span>
               <div className="flex-fill" />
               <SquareMetric value={post.meta.views}>
                 <EyeIcon className="text-md" />
