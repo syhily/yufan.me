@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
 import type { ResetSettingsOutput, UpdateSettingsOutput } from '@/client/api/action-types'
@@ -38,10 +38,26 @@ export function useSettingsFetcher({ section, onSaved, onReset }: UseSettingsFet
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  // `useFetcher.data` keeps the last response payload around even after
+  // the fetcher returns to `idle`, so the drain effects below would fire
+  // every time `onSaved` / `onReset` change identity (for example because
+  // the parent's draft state shifted after revalidation populated fresh
+  // settings). Without a guard this would re-trigger `revalidator.revalidate()`
+  // and snowball into an infinite loop. The refs remember the exact
+  // `data` object we've already drained, so subsequent renders that share
+  // the same response are no-ops.
+  const handledUpdateRef = useRef<typeof updateFetcher.data | null>(null)
+  const handledResetRef = useRef<typeof resetFetcher.data | null>(null)
+
   const save = useCallback(
     (payload: unknown) => {
       setStatus('saving')
       setErrorMessage(null)
+      // Forget the last drained response so the drain effect below will
+      // process the upcoming reply (which would otherwise be reference-
+      // equal to the previous one if the server happened to reuse the
+      // payload shape).
+      handledUpdateRef.current = null
       // `useFetcher.submit` types JSON bodies pretty narrowly; the
       // `{ section, payload }` envelope is exactly what `defineApiAction`
       // expects on the server, so cast it to the framework's loose
@@ -58,6 +74,7 @@ export function useSettingsFetcher({ section, onSaved, onReset }: UseSettingsFet
   const reset = useCallback(() => {
     setStatus('saving')
     setErrorMessage(null)
+    handledResetRef.current = null
     void resetFetcher.submit({ section } as never, {
       method: RESET.method,
       encType: 'application/json',
@@ -65,9 +82,15 @@ export function useSettingsFetcher({ section, onSaved, onReset }: UseSettingsFet
     })
   }, [section, resetFetcher])
 
-  // Drain update results.
+  // Drain update results. Idempotent against `data` reference: once a
+  // particular response object has been processed, later renders with
+  // the same `data` (which `useFetcher` keeps around even after `state`
+  // returns to `idle`) skip the side-effects so a parent re-render
+  // can't accidentally re-trigger `revalidator.revalidate()`.
   useEffect(() => {
     if (updateFetcher.state !== 'idle' || !updateFetcher.data) return
+    if (handledUpdateRef.current === updateFetcher.data) return
+    handledUpdateRef.current = updateFetcher.data
     if (updateFetcher.data.error) {
       setStatus('error')
       setErrorMessage(updateFetcher.data.error.message)
@@ -80,9 +103,11 @@ export function useSettingsFetcher({ section, onSaved, onReset }: UseSettingsFet
     }
   }, [updateFetcher.state, updateFetcher.data, onSaved, revalidator])
 
-  // Drain reset results.
+  // Drain reset results. Same idempotency guard as the update branch.
   useEffect(() => {
     if (resetFetcher.state !== 'idle' || !resetFetcher.data) return
+    if (handledResetRef.current === resetFetcher.data) return
+    handledResetRef.current = resetFetcher.data
     if (resetFetcher.data.error) {
       setStatus('error')
       setErrorMessage(resetFetcher.data.error.message)

@@ -1,4 +1,4 @@
-import { type SubmitEventHandler, useCallback, useEffect, useMemo, useState } from 'react'
+import { type SubmitEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
 import type { ClearCacheOutput, GetCacheStatsOutput } from '@/client/api/action-types'
@@ -601,8 +601,21 @@ interface ConfirmClearDialogProps {
 }
 
 function ConfirmClearDialog({ open, target, buckets, onConfirm, onCancel }: ConfirmClearDialogProps) {
-  const isAll = target === 'all'
-  const bucket = !isAll && target ? buckets.find((entry) => entry.id === target) : null
+  // The dialog is rendered with `open` driven by the parent's
+  // `confirmTarget !== null`. When the user clicks 取消 the parent flips
+  // `confirmTarget` back to `null`, which (a) starts the close animation
+  // and (b) immediately resets every prop derived from `target`. Without
+  // a snapshot the title would morph from "清空全部缓存？" to
+  // "清空「」缓存？" and the action button from "确认清空全部" to
+  // "确认清空" *during* the fade-out — exactly what the user reported.
+  // Cache the last truthy `target` so the in-flight close animation
+  // keeps rendering the contents the user just saw, without ever
+  // crossing back to a stale value once the dialog reopens.
+  const lastTargetRef = useRef<ClearCacheTarget | null>(target)
+  if (target !== null) lastTargetRef.current = target
+  const renderTarget = target ?? lastTargetRef.current
+  const isAll = renderTarget === 'all'
+  const bucket = !isAll && renderTarget ? buckets.find((entry) => entry.id === renderTarget) : null
   const total = isAll ? buckets.reduce((sum, entry) => sum + entry.keyCount, 0) : (bucket?.keyCount ?? 0)
   const title = isAll ? '清空全部缓存？' : `清空「${bucket?.label ?? ''}」缓存？`
   const description = isAll

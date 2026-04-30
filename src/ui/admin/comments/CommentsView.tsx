@@ -631,27 +631,60 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
         onCsrfRotated={setReplyCsrfToken}
       />
 
-      <AlertDialog open={confirm !== null} onOpenChange={(next) => !next && setConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirm?.title}</AlertDialogTitle>
-            <AlertDialogDescription>{confirm?.description}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              className={confirm?.destructive ? 'tw:bg-destructive tw:hover:bg-destructive/90' : undefined}
-              onClick={() => {
-                confirm?.onConfirm()
-                setConfirm(null)
-              }}
-            >
-              {confirm?.actionLabel}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </>
+  )
+}
+
+interface ConfirmState {
+  title: string
+  description: string
+  actionLabel: string
+  destructive: boolean
+  onConfirm: () => void
+}
+
+interface ConfirmDialogProps {
+  state: ConfirmState | null
+  onClose: () => void
+}
+
+// Generic approve/delete confirmation dialog. The parent passes `state`
+// only when it wants the dialog open: setting it back to `null` flips
+// `open` to false AND would normally blank every prop derived from
+// `state` (`title`, `description`, `actionLabel`, `destructive`) — which
+// shadcn AlertDialog renders for the duration of its close animation.
+// Without a snapshot the title would flash to the empty string and the
+// action button would lose its label and red tint mid-animation. Cache
+// the last truthy `state` in a ref so the in-flight close animation
+// keeps rendering the contents the user just saw, and don't blow that
+// snapshot away when the parent reopens with new content (the new
+// truthy `state` overwrites the ref before render reads it).
+function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
+  const lastStateRef = useRef<ConfirmState | null>(state)
+  if (state !== null) lastStateRef.current = state
+  const renderState = state ?? lastStateRef.current
+  return (
+    <AlertDialog open={state !== null} onOpenChange={(next) => !next && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{renderState?.title}</AlertDialogTitle>
+          <AlertDialogDescription>{renderState?.description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction
+            className={renderState?.destructive ? 'tw:bg-destructive tw:hover:bg-destructive/90' : undefined}
+            onClick={() => {
+              renderState?.onConfirm()
+              onClose()
+            }}
+          >
+            {renderState?.actionLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
