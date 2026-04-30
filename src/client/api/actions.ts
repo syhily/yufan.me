@@ -31,9 +31,27 @@ export const API_ACTIONS = {
     loadComments: defineApiAction('api/actions/comment/loadComments', 'GET'),
     getRaw: defineApiAction('api/actions/comment/getRaw', 'GET'),
     edit: defineApiAction('api/actions/comment/edit', 'PATCH'),
-    getFilterOptions: defineApiAction('api/actions/comment/getFilterOptions', 'GET'),
+    searchPages: defineApiAction('api/actions/comment/searchPages', 'GET'),
+    searchAuthors: defineApiAction('api/actions/comment/searchAuthors', 'GET'),
     loadAll: defineApiAction('api/actions/comment/loadAll', 'POST'),
+  },
+  admin: {
+    // Admin-only user-management endpoints consumed by the wp-admin SPA.
+    // Each is gated by `requireAdmin: true` in its `defineApiAction(...)`
+    // block, so even a hand-crafted request without an admin session is
+    // rejected with a 403 at the perimeter.
+    listUsers: defineApiAction('api/actions/admin/listUsers', 'GET'),
+    getUser: defineApiAction('api/actions/admin/getUser', 'POST'),
+    softDeleteUser: defineApiAction('api/actions/admin/softDeleteUser', 'DELETE'),
+    restoreUser: defineApiAction('api/actions/admin/restoreUser', 'POST'),
+    muteUser: defineApiAction('api/actions/admin/muteUser', 'PATCH'),
+    bulkApproveUserComments: defineApiAction('api/actions/admin/bulkApproveUserComments', 'POST'),
+    bulkSoftDeleteUserComments: defineApiAction('api/actions/admin/bulkSoftDeleteUserComments', 'DELETE'),
   },
 } as const
 
-export const API_ACTION_LIST = [...Object.values(API_ACTIONS.auth), ...Object.values(API_ACTIONS.comment)] as const
+export const API_ACTION_LIST = [
+  ...Object.values(API_ACTIONS.auth),
+  ...Object.values(API_ACTIONS.comment),
+  ...Object.values(API_ACTIONS.admin),
+] as const

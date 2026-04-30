@@ -168,6 +168,7 @@ export function seedComment(overrides: CommentFixture = {}) {
     link: overrides.user?.link ?? '',
     badgeName: overrides.user?.badgeName ?? null,
     badgeColor: overrides.user?.badgeColor ?? null,
+    badgeTextColor: overrides.user?.badgeTextColor ?? null,
   }
 }
 
@@ -185,6 +186,7 @@ export function seedUser(overrides: Partial<User> = {}): User {
     isAdmin: overrides.isAdmin ?? false,
     badgeName: overrides.badgeName ?? null,
     badgeColor: overrides.badgeColor ?? null,
+    badgeTextColor: overrides.badgeTextColor ?? null,
     createdAt: overrides.createdAt ?? new Date('2024-01-01T00:00:00.000Z'),
     updatedAt: overrides.updatedAt ?? new Date('2024-01-01T00:00:00.000Z'),
   } as User

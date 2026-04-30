@@ -137,10 +137,17 @@ describe('isWordPressDecoyPath', () => {
     }
   })
 
-  it('preserves the three legitimate WordPress-style routes', () => {
+  it('preserves the legitimate WordPress-style routes (login, install, SPA shell)', () => {
     expect(isWordPressDecoyPath('/wp-login.php')).toBe(false)
     expect(isWordPressDecoyPath('/wp-admin')).toBe(false)
     expect(isWordPressDecoyPath('/wp-admin/install.php')).toBe(false)
+    // The wp-admin SPA is mounted at `/wp-admin/<page>` and `/wp-admin/<page>/:id`;
+    // it shares the WordPress URL shape on purpose so admins can keep their muscle
+    // memory. Paths under that prefix that don't end in `.php` are SPA routes,
+    // not scanner probes.
+    expect(isWordPressDecoyPath('/wp-admin/comments')).toBe(false)
+    expect(isWordPressDecoyPath('/wp-admin/users')).toBe(false)
+    expect(isWordPressDecoyPath('/wp-admin/users/12345')).toBe(false)
   })
 
   it('ignores unrelated paths', () => {

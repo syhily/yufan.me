@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vite-plus/test'
 
-import { BaseLayout } from '@/root'
+import { BaseLayout } from '@/ui/primitives/BaseLayout'
 
 // BaseLayout is the chrome shared by every page (header, main, fixed
 // widgets). Snapshot it in its three primary configurations so any

@@ -1,21 +1,36 @@
-import type { ReactNode } from 'react'
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
+import { lazy, Suspense } from 'react'
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches } from 'react-router'
 
-import config, { type BlogConfig } from '@/blog.config'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { wpDecoyMiddleware } from '@/server/middleware-wp-decoy'
 import { NOT_WORDPRESS_STATUS_TEXT } from '@/server/route-helpers/wp-decoy'
 import { routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext, sessionMiddleware } from '@/server/session'
 import { NotWordPressView } from '@/ui/post/NotWordPressView'
-import { Footer } from '@/ui/primitives/Footer'
-import { Header } from '@/ui/primitives/Header'
-import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
 
 import type { Route } from './+types/root'
-import '@/assets/styles/globals.css'
+
+// `BaseLayout` and `globals.css` (Bootstrap + public site cascade) live in
+// their own chunk so admin/login routes that opt out via `handle.layout =
+// 'admin'` never pull the public stylesheet bundle. The lazy boundary also
+// means the wp-admin SPA chunk stays Bootstrap-free.
+//
+// IMPORTANT: do NOT re-export `BaseLayout` (or any other binding from
+// `@/ui/primitives/BaseLayout`) eagerly from this module. Even an unused
+// `export { BaseLayout } from '…'` line statically pins the module —
+// because the re-export must observe the live binding — which in turn
+// pulls `globals.css` into every page chunk including `/wp-admin/*`.
+// That breaks the cascade contract documented in `tailwind.css`: the
+// un-layered `button { padding: 0; border: none }` rule from
+// `reset.css` then beats the layered `tw:px-5` / `tw:border` utilities,
+// stripping all padding from shadcn buttons (#admin-buttons-no-padding).
+// Tests that need the chrome synchronously should import `BaseLayout`
+// directly from `@/ui/primitives/BaseLayout`.
+const BaseLayoutLazy = lazy(() => import('@/ui/primitives/BaseLayout').then((m) => ({ default: m.BaseLayout })))
+
+export type { BaseLayoutProps } from '@/ui/primitives/BaseLayout'
 
 // Order matters: the WordPress probe filter runs before session decryption
 // so scanner traffic never even touches Redis.
@@ -77,37 +92,6 @@ export type RouteHandle = {
   footer?: boolean
 }
 
-export interface BaseLayoutProps {
-  navigation?: BlogConfig['navigation']
-  footer?: boolean
-  admin: boolean
-  children?: ReactNode
-}
-
-// Body-chrome wrapper: header + main region + fixed widgets. The wrapping
-// `<html>`, `<head>`, and `<body>` live in `Layout` above.
-//
-// Exported so `tests/snapshot.layout.test.tsx` can render the chrome in
-// isolation; production callers should rely on the default `<App>` export
-// rather than instantiating `BaseLayout` directly.
-export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutProps) {
-  const showFooter = footer !== undefined ? footer : true
-  const resolvedNavigation = navigation || config.navigation
-
-  return (
-    <div className="site-layout">
-      <Header navigation={resolvedNavigation} admin={admin} />
-      <main className="site-main">
-        {children}
-        {showFooter && <Footer />}
-      </main>
-      <ul className="site-fixed-widget">
-        <ScrollTopButton />
-      </ul>
-    </div>
-  )
-}
-
 export default function App({ loaderData }: Route.ComponentProps) {
   useFocusHash()
 
@@ -129,9 +113,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <BaseLayout admin={loaderData?.admin ?? false} footer={footer}>
-      <Outlet />
-    </BaseLayout>
+    <Suspense fallback={null}>
+      <BaseLayoutLazy admin={loaderData?.admin ?? false} footer={footer}>
+        <Outlet />
+      </BaseLayoutLazy>
+    </Suspense>
   )
 }
 
@@ -141,9 +127,11 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   // see "this is not a WordPress site" instead of the generic "未找到页面".
   if (isRouteErrorResponse(error) && error.status === 404 && error.statusText === NOT_WORDPRESS_STATUS_TEXT) {
     return (
-      <BaseLayout admin={loaderData?.admin ?? false}>
-        <NotWordPressView />
-      </BaseLayout>
+      <Suspense fallback={null}>
+        <BaseLayoutLazy admin={loaderData?.admin ?? false}>
+          <NotWordPressView />
+        </BaseLayoutLazy>
+      </Suspense>
     )
   }
 
@@ -158,13 +146,15 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   }
 
   return (
-    <BaseLayout admin={loaderData?.admin ?? false}>
-      <div className="data-null">
-        <div className="my-auto">
-          <h1 className="font-number">{title === '未找到页面' ? '404' : '500'}</h1>
-          <div>{description}</div>
+    <Suspense fallback={null}>
+      <BaseLayoutLazy admin={loaderData?.admin ?? false}>
+        <div className="data-null">
+          <div className="my-auto">
+            <h1 className="font-number">{title === '未找到页面' ? '404' : '500'}</h1>
+            <div>{description}</div>
+          </div>
         </div>
-      </div>
-    </BaseLayout>
+      </BaseLayoutLazy>
+    </Suspense>
   )
 }

@@ -9,8 +9,8 @@ import {
   findCommentWithUserAndPage,
   findCommentWithUserById,
   listAdminComments,
-  listAllPages,
-  listCommentAuthors,
+  searchCommentAuthors,
+  searchPages,
   updateCommentContent,
 } from '@/server/db/query/comment'
 import { sendApprovedComment } from '@/server/email/sender'
@@ -54,12 +54,25 @@ export async function updateComment(rid: string, newContent: string) {
   return withCommentBadgeTextColor(r)
 }
 
-export async function getPageOptions(): Promise<Array<{ key: string; title: string }>> {
-  return listAllPages()
+// Server-side autocomplete: invoked by the moderation Combobox filters
+// on every (debounced) keystroke. `q` is the current input value and
+// `limit` caps the response so a misclick on a 50k-page site doesn't
+// shovel everything to the client. The Comments view shows ~20 rows in
+// its dropdown, so 20 is the natural default both here and on the
+// schema layer.
+export async function searchPageOptions(
+  q: string | undefined,
+  limit: number,
+): Promise<Array<{ key: string; title: string }>> {
+  return searchPages(q, limit)
 }
 
-export async function getCommentAuthors(): Promise<Array<{ id: bigint; name: string }>> {
-  return listCommentAuthors()
+export async function searchAuthorOptions(
+  q: string | undefined,
+  limit: number,
+  ids?: bigint[],
+): Promise<Array<{ id: bigint; name: string }>> {
+  return searchCommentAuthors(q, limit, ids)
 }
 
 export async function loadAllComments(

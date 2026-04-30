@@ -61,7 +61,8 @@ describe('routes/api/actions — file conventions', () => {
       'api/actions/comment/delete',
       'api/actions/comment/edit',
       'api/actions/comment/getRaw',
-      'api/actions/comment/getFilterOptions',
+      'api/actions/comment/searchPages',
+      'api/actions/comment/searchAuthors',
       'api/actions/comment/loadAll',
       'api/actions/auth/updateUser',
     ])

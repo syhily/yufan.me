@@ -25,6 +25,15 @@ export const updateUserSchema = z
     link: httpUrlOrEmptyStringSchema.optional(),
     badgeName: z.string().optional(),
     badgeColor: z.string().optional(),
+    // Optional manual override for the badge text colour. The form
+    // sends a string (the picker output), an explicit `null` ("clear
+    // override"), or `undefined` ("don't touch"). We normalise empty
+    // strings to `null` here so the storage column has just two
+    // meaningful states: explicit hex, or NULL → auto-derive.
+    badgeTextColor: z
+      .union([z.string(), z.null()])
+      .optional()
+      .transform((value) => (value === undefined ? undefined : value && value.trim() !== '' ? value : null)),
   })
   .refine(({ userId: _userId, ...patch }) => Object.values(patch).some((value) => value !== undefined), {
     message: '至少需要提供一个更新字段',

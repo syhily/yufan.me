@@ -67,3 +67,33 @@ export const loadAllCommentsSchema = z.object({
   status: z.enum(['all', 'pending', 'approved']).optional(),
 })
 export type LoadAllCommentsInput = z.infer<typeof loadAllCommentsSchema>
+
+// Server-side autocomplete inputs for the moderation Combobox filters.
+// Both endpoints accept the same shape so the schema is shared. `q` is
+// trimmed and capped at 100 chars (any sane substring fits) and `limit`
+// is hard-bounded so a malicious caller can't request 1M rows.
+//
+// `ids` is an optional, comma-separated list of user/page identifiers
+// the caller wants to "rehydrate" (e.g. when restoring a Combobox
+// selection from a `?userId=2232` URL parameter — the URL only carries
+// the value, never the human label, so the client needs a one-shot
+// lookup to render "雨帆" instead of "2232" in the trigger). When
+// `ids` is present the endpoint returns an exact-match by id and
+// ignores `q` to avoid mixing two query intents in one round-trip.
+export const filterAutocompleteSchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  limit: z.coerce.number().min(1).max(50).default(20),
+  ids: z
+    .string()
+    .max(400)
+    .optional()
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : undefined,
+    ),
+})
+export type FilterAutocompleteInput = z.infer<typeof filterAutocompleteSchema>

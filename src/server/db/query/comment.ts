@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ilike, inArray, isNull, sql } from 'drizzle-orm'
 
 import type { Comment, NewComment } from '@/server/db/types'
 
@@ -32,6 +32,7 @@ const commentWithUser = {
   link: user.link,
   badgeName: user.badgeName,
   badgeColor: user.badgeColor,
+  badgeTextColor: user.badgeTextColor,
 }
 
 // Pure type derived from the projection above via Drizzle's column-shape
@@ -244,8 +245,22 @@ export interface PageOption {
   title: string
 }
 
-export async function listAllPages(): Promise<PageOption[]> {
-  return db.select({ key: page.key, title: page.title }).from(page).where(isNull(page.deletedAt)).orderBy(desc(page.id))
+// Page-title autocomplete for the comment-moderation filter Combobox.
+// `q` is matched case-insensitively against `page.title`. Empty `q` is
+// allowed and returns the most recent N pages so the dropdown can show
+// a reasonable default the moment the user opens it. The caller-side
+// `limit` is bounded to a server-side hard cap upstream (see schema).
+export async function searchPages(q: string | undefined, limit: number): Promise<PageOption[]> {
+  const conditions = [isNull(page.deletedAt)]
+  if (q) {
+    conditions.push(ilike(page.title, `%${q}%`))
+  }
+  return db
+    .select({ key: page.key, title: page.title })
+    .from(page)
+    .where(and(...conditions))
+    .orderBy(desc(page.id))
+    .limit(limit)
 }
 
 export interface CommentAuthor {
@@ -253,13 +268,32 @@ export interface CommentAuthor {
   name: string
 }
 
-export async function listCommentAuthors(): Promise<CommentAuthor[]> {
+// Comment-author autocomplete. We restrict to authors who have at least
+// one non-deleted comment (same predicate as the original
+// `listCommentAuthors`) so the dropdown only ever surfaces names the
+// admin actually has comments to filter by. `q` matches against
+// `user.name` case-insensitively. When `ids` is supplied we instead do
+// an exact id-match — this is the "rehydrate selection from URL" path
+// where the client only knows the user id (e.g. from `?userId=2232`)
+// and needs the matching `name` to render in the Combobox trigger.
+export async function searchCommentAuthors(
+  q: string | undefined,
+  limit: number,
+  ids?: bigint[],
+): Promise<CommentAuthor[]> {
+  const conditions = [isNull(comment.deletedAt)]
+  if (ids && ids.length > 0) {
+    conditions.push(inArray(user.id, ids))
+  } else if (q) {
+    conditions.push(ilike(user.name, `%${q}%`))
+  }
   return db
     .selectDistinct({ id: user.id, name: user.name })
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(isNull(comment.deletedAt))
+    .where(and(...conditions))
     .orderBy(user.id)
+    .limit(limit)
 }
 
 export interface AdminListFilters {
@@ -297,4 +331,26 @@ export async function listAdminComments(offset: number, limit: number, filters: 
     .orderBy(desc(comment.createdAt))
     .limit(limit)
     .offset(offset)
+}
+
+export async function bulkApprovePendingByUser(userId: bigint): Promise<number> {
+  // Returns the number of pending comments that were just approved.
+  const updated = await db
+    .update(comment)
+    .set({ isPending: false })
+    .where(and(eq(comment.userId, userId), eq(comment.isPending, true), isNull(comment.deletedAt)))
+    .returning({ id: comment.id })
+  return updated.length
+}
+
+export async function bulkSoftDeleteCommentsByUser(userId: bigint): Promise<number> {
+  // Soft-deletion mirrors the per-row delete used by the existing admin
+  // page. We avoid the hard `DELETE` so moderation actions remain
+  // recoverable and downstream like-counts stay consistent.
+  const updated = await db
+    .update(comment)
+    .set({ deletedAt: new Date() })
+    .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
+    .returning({ id: comment.id })
+  return updated.length
 }

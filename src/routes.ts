@@ -43,12 +43,29 @@ export default [
   route(API_ACTIONS.comment.loadComments.route, 'routes/api/actions/comment.loadComments.ts'),
   route(API_ACTIONS.comment.getRaw.route, 'routes/api/actions/comment.getRaw.ts'),
   route(API_ACTIONS.comment.edit.route, 'routes/api/actions/comment.edit.ts'),
-  route(API_ACTIONS.comment.getFilterOptions.route, 'routes/api/actions/comment.getFilterOptions.ts'),
+  route(API_ACTIONS.comment.searchPages.route, 'routes/api/actions/comment.searchPages.ts'),
+  route(API_ACTIONS.comment.searchAuthors.route, 'routes/api/actions/comment.searchAuthors.ts'),
   route(API_ACTIONS.comment.loadAll.route, 'routes/api/actions/comment.loadAll.ts'),
+  route(API_ACTIONS.admin.listUsers.route, 'routes/api/actions/admin.listUsers.ts'),
+  route(API_ACTIONS.admin.getUser.route, 'routes/api/actions/admin.getUser.ts'),
+  route(API_ACTIONS.admin.softDeleteUser.route, 'routes/api/actions/admin.softDeleteUser.ts'),
+  route(API_ACTIONS.admin.restoreUser.route, 'routes/api/actions/admin.restoreUser.ts'),
+  route(API_ACTIONS.admin.muteUser.route, 'routes/api/actions/admin.muteUser.ts'),
+  route(API_ACTIONS.admin.bulkApproveUserComments.route, 'routes/api/actions/admin.bulkApproveUserComments.ts'),
+  route(API_ACTIONS.admin.bulkSoftDeleteUserComments.route, 'routes/api/actions/admin.bulkSoftDeleteUserComments.ts'),
   layout('routes/admin.layout.tsx', [
     route('wp-login.php', 'routes/wp-login.tsx'),
-    route('wp-admin', 'routes/wp-admin.tsx'),
     route('wp-admin/install.php', 'routes/wp-admin.install.tsx'),
+  ]),
+  // The SPA admin shell owns its own chrome (sidebar + topbar) under
+  // `routes/wp-admin.layout.tsx`. It still opts out of `BaseLayout`
+  // via `handle.layout = 'admin'`, but does not reuse the public
+  // login/install left-right split-screen layout above.
+  layout('routes/wp-admin.layout.tsx', [
+    route('wp-admin', 'routes/wp-admin.dashboard.tsx'),
+    route('wp-admin/comments', 'routes/wp-admin.comments.tsx'),
+    route('wp-admin/users', 'routes/wp-admin.users.tsx'),
+    route('wp-admin/users/:id', 'routes/wp-admin.users.detail.tsx'),
   ]),
   // Splat MUST stay last. React Router treats `*` as the lowest-priority
   // match, so this only fires for paths nothing else handles (multi-segment

@@ -12,6 +12,10 @@ interface Rgb {
 interface CommentBadgeSource {
   badgeName: string | null
   badgeColor: string | null
+  // Optional explicit override stored on the user row. When non-empty
+  // it short-circuits the WCAG auto-pick below; legacy rows without an
+  // override pass `null`/`undefined` and keep the historical behaviour.
+  badgeTextColor?: string | null
 }
 
 export function commentBadgeTextColor(backgroundColor: string | null | undefined): string {
@@ -28,9 +32,17 @@ export function commentBadgeTextColor(backgroundColor: string | null | undefined
 export function withCommentBadgeTextColor<T extends CommentBadgeSource>(
   comment: T,
 ): T & { badgeTextColor: string | null } {
+  if (!comment.badgeName) {
+    // No badge → no text colour to project.
+    return { ...comment, badgeTextColor: null }
+  }
+  // Honour the admin-set override verbatim when present (after a trim
+  // sanity check), otherwise fall back to the WCAG-based auto-pick so
+  // accounts that never customised the field render exactly as before.
+  const override = comment.badgeTextColor?.trim()
   return {
     ...comment,
-    badgeTextColor: comment.badgeName ? commentBadgeTextColor(comment.badgeColor) : null,
+    badgeTextColor: override ? override : commentBadgeTextColor(comment.badgeColor),
   }
 }
 

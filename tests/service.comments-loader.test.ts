@@ -29,8 +29,8 @@ vi.mock('@/server/db/query/comment', () => ({
   findCommentWithUserAndPage: vi.fn(),
   findCommentWithUserById: vi.fn(),
   updateCommentContent: vi.fn(),
-  listCommentAuthors: vi.fn(),
-  listAllPages: vi.fn(),
+  searchCommentAuthors: vi.fn(),
+  searchPages: vi.fn(),
 }))
 
 vi.mock('@/server/db/query/page', () => ({
@@ -81,6 +81,7 @@ function row(overrides: Record<string, unknown> = {}) {
     link: '',
     badgeName: null,
     badgeColor: null,
+    badgeTextColor: null,
     ...overrides,
   }
 }

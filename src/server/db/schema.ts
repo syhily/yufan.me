@@ -85,9 +85,15 @@ export const user = pgTable(
     password: text('password').notNull(),
     badgeName: text('badge_name'),
     badgeColor: text('badge_color'),
+    // Optional manual override for the badge text colour. When `null`
+    // (the historical default for every existing row) the public
+    // renderer falls back to `commentBadgeTextColor()`'s WCAG-based
+    // auto-pick so older accounts keep working without an admin sweep.
+    badgeTextColor: text('badge_text_color'),
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
     isAdmin: boolean('is_admin').default(false),
+    isMuted: boolean('is_muted').default(false).notNull(),
     receiveEmail: boolean('receive_email').default(true),
   },
   (table) => [

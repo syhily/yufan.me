@@ -9,8 +9,14 @@ export interface LatestComment {
 }
 
 // Grouping the comments into parent child structure.
+//
+// `badgeTextColor` already lives on `CommentAndUser` as the *raw*
+// override column from the user table (nullable). After running the
+// row through `withCommentBadgeTextColor()` the same property is
+// re-projected to its *resolved* value (override → WCAG fallback),
+// which keeps the field's name and shape consistent so consumers
+// don't have to branch on which stage of the pipeline they hold.
 export interface CommentItem extends CommentAndUser {
-  badgeTextColor?: string | null
   children?: CommentItem[]
 }
 
@@ -27,7 +33,6 @@ export interface Comments {
 }
 
 export interface AdminComment extends CommentAndUser {
-  badgeTextColor?: string | null
   pageTitle: string | null
 }
 

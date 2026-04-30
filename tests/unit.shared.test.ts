@@ -123,8 +123,12 @@ describe('shared/api-actions', () => {
     }
   })
 
-  it('auth/comment grouping is exhaustively listed in API_ACTION_LIST', () => {
-    const flat = [...Object.values(API_ACTIONS.auth), ...Object.values(API_ACTIONS.comment)]
+  it('auth/comment/admin grouping is exhaustively listed in API_ACTION_LIST', () => {
+    const flat = [
+      ...Object.values(API_ACTIONS.auth),
+      ...Object.values(API_ACTIONS.comment),
+      ...Object.values(API_ACTIONS.admin),
+    ]
     expect(new Set(flat).size).toBe(flat.length)
     expect(flat.length).toBe(API_ACTION_LIST.length)
   })
@@ -135,10 +139,11 @@ describe('shared/api-actions', () => {
     expect(API_ACTIONS.comment.loadAll.method).toBe('POST')
   })
 
-  it('read-only endpoints stay GET (loadComments / getRaw / getFilterOptions)', () => {
+  it('read-only endpoints stay GET (loadComments / getRaw / searchPages / searchAuthors)', () => {
     expect(API_ACTIONS.comment.loadComments.method).toBe('GET')
     expect(API_ACTIONS.comment.getRaw.method).toBe('GET')
-    expect(API_ACTIONS.comment.getFilterOptions.method).toBe('GET')
+    expect(API_ACTIONS.comment.searchPages.method).toBe('GET')
+    expect(API_ACTIONS.comment.searchAuthors.method).toBe('GET')
   })
 })
 

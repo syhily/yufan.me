@@ -102,7 +102,7 @@ export function Header({ navigation, admin }: HeaderProps) {
                 <>
                   <li id={menuId(navigation.length)} className="menu-item">
                     <Link to="/wp-admin/" prefetch="intent">
-                      评论
+                      管理
                     </Link>
                   </li>
                   <li id={menuId(navigation.length + 1)} className="menu-item">

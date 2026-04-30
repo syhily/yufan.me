@@ -1,0 +1,296 @@
+/* Admin shell theme tokens for shadcn/ui (Base UI variant).
+   Imported from `tailwind.css` so that Tailwind v4 sees the
+   `@theme inline { … }` block at compile time and emits utilities
+   like `.tw\:bg-background`, `.tw\:text-muted-foreground`, etc.
+
+   The CSS variables themselves are scoped to the `[data-admin-shell]`
+   element (which the wp-admin layout renders at its root). Outside
+   that subtree the variables are undefined, so Bootstrap and the
+   public site keep their existing palette unchanged.
+
+   Palette is derived from the site's existing design tokens declared
+   in `reset.css` so the admin shell visually belongs to the same
+   product family as the public blog. The public theme is documented
+   here for cross-reference:
+
+     --color-primary   : #008c95   teal brand color
+     --color-dark      : #151b2b   primary text / heading
+     --color-secondary : #404b69   secondary text
+     --color-muted     : #8a92a9   muted text
+     --color-light     : #e8e9ea   tinted light text
+     --color-danger    : #f7094c   destructive / error red
+     --color-warning   : #ff8338   warning amber
+     --bg-body         : #fbfbfd   page background
+     --bg-light        : #f6f6f7   subtle surface
+     --bg-muted        : #ededf1   muted surface (chips, tracks)
+     --bg-warning      : #ffe9d5   warning surface
+     --border-light    : #eff3fa   hairline divider
+     --border-muted    : #d4ddec   prominent border
+     --btn-success     : #41d589   success accent
+
+   Cascade interaction with Tailwind v4 + prefix(tw):
+   - `tailwind.css` does `@import 'tailwindcss' prefix(tw);` which
+     renames every theme variable to the `--tw-*` namespace.
+   - Wrapping the shadcn token map in `@theme inline { … }` registers
+     each variable under that namespace AND tells Tailwind to generate
+     utilities that resolve back to the `[data-admin-shell]`-defined
+     CSS variables via `var(--background)`. */
+
+/* Tailwind v4 compatibility shim ---------------------------------------
+   Tailwind v4's Preflight resets every element to `border: 0 solid`,
+   leaving `border-color` unset → it falls back to `currentColor`
+   (the inherited text color, which in our admin shell is the very
+   dark `--foreground: #151b2b`). The result is that a stock
+   `tw:border` / `tw:border-b` / `tw:border-r` reads as a near-black
+   stroke on the white card surface, which is exactly the regression
+   the user kept describing as "border 颜色依旧是黑色".
+
+   The official v4 upgrade guide recommends restoring the v3 behavior
+   by writing a base-layer rule that sets `border-color` to a token,
+   e.g.
+
+       @layer base {
+         *, ::after, ::before, ::backdrop, ::file-selector-button {
+           border-color: var(--color-gray-200, currentColor);
+         }
+       }
+
+   We narrow that rule to the `[data-admin-shell]` subtree so the
+   public site (Bootstrap 5 + the original `--border-light` cascade)
+   stays untouched, and we point it at our soft token `--border`
+   (resolved to `--border-soft: #eff3fa` in light mode, the
+   half-transparent stroke in dark mode). Components that *do* want
+   the stronger stroke (inputs, comboboxes) keep their explicit
+   `tw:border-input` and so are unaffected.
+
+   Putting this inside `@layer base` matters: Preflight itself lives
+   in `@layer base`, so a layered rule of equal precedence wins on
+   appearance order — by emitting this _after_ `@import 'tailwindcss'`
+   in `tailwind.css`, Tailwind's own Preflight runs first and our
+   override layer wins. */
+@layer base {
+  [data-admin-shell],
+  [data-admin-shell] *,
+  [data-admin-shell] ::before,
+  [data-admin-shell] ::after,
+  [data-admin-shell] ::backdrop,
+  [data-admin-shell] ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
+[data-admin-shell] {
+  /* Match the radius our `Button` defaults to (`tw:rounded-md` →
+     `--radius-md` ≈ 5px) so cards, inputs, popovers and buttons all
+     share the same shoulder. 5px reads as "barely rounded": clearly
+     not a sharp corner, but tight enough that dense table rows and
+     toolbars don't look pill-y. shadcn derives sm/md/xl from this
+     base via the `@theme inline` block below, so adjusting here
+     cascades to every primitive. */
+  --radius: 0.3125rem;
+
+  /* Surfaces ----------------------------------------------------------
+     `background` is the page wash, `card`/`popover` are raised. The
+     public site uses `--bg-body: #fbfbfd` for the page and white for
+     cards; mirror that exactly so admin pages feel native. */
+  --background: #fbfbfd;
+  --foreground: #151b2b;
+  --card: #ffffff;
+  --card-foreground: #151b2b;
+  --popover: #ffffff;
+  --popover-foreground: #151b2b;
+
+  /* Brand --------------------------------------------------------------
+     `--primary` becomes the default action / focus color across shadcn
+     (Button default, Tabs indicator border, ring). Tie it to the brand
+     teal `--color-primary: #008c95`. */
+  --primary: #008c95;
+  --primary-foreground: #ffffff;
+
+  /* Secondary ---------------------------------------------------------
+     Used by the secondary Button variant and certain badges. The site
+     pairs `--color-light: #e8e9ea` text on `--btn-secondary: #20283b`
+     for dark surfaces; on light admin surfaces a flat off-white chip
+     reads better, so we use the public muted background paired with
+     the dark heading text. */
+  --secondary: #ededf1;
+  --secondary-foreground: #151b2b;
+
+  /* Muted -------------------------------------------------------------
+     Track / pill color for tabs, skeleton, soft buttons. Mirror the
+     public `--bg-muted` and `--color-muted` directly. */
+  --muted: #ededf1;
+  --muted-foreground: #8a92a9;
+
+  /* Accent ------------------------------------------------------------
+     Hover/highlight surfaces (dropdown items, ghost button hover,
+     selected checkbox row). Use the public `--border-light` tone so
+     the admin behaves like the rest of the product. */
+  --accent: #eff3fa;
+  --accent-foreground: #151b2b;
+
+  /* Destructive -------------------------------------------------------
+     Red used for delete confirmations, badge variants, error focus
+     rings. Inherit the public `--color-danger`. */
+  --destructive: #f7094c;
+  --destructive-foreground: #ffffff;
+
+  /* Borders / inputs / focus ring ------------------------------------
+     The admin shell defines two stroke tones, mirroring the public
+     site's `--border-light` / `--border-muted` pair but tuned to read
+     softer on dense screens:
+
+       --border-soft   : #eff3fa  hairline, used as the global default
+                                   for cards, table dividers, sheet
+                                   edges and most `tw:border` calls.
+                                   Matches the public site exactly so
+                                   chrome that bridges admin/public
+                                   (e.g. embedded comment previews)
+                                   doesn't shift hue.
+       --border-strong : #d2e3e4  cooler, slightly teal-leaning stroke
+                                   reserved for surfaces that need to
+                                   pop against white — primarily the
+                                   focus-able `--input` outline. Pulls
+                                   from the brand cyan family so a
+                                   focused input reads "live" without
+                                   competing with the teal `--ring`.
+
+     `--border` is what shadcn and Tailwind (`tw:border`) hit when no
+     explicit colour is set, so it gets `--border-soft`. `--input`
+     prefers `--border-strong` because text fields, comboboxes and
+     selects need to be visibly outlined even at rest, otherwise the
+     transparent backgrounds disappear into the white card.
+     `--ring` stays on the brand teal so focused inputs telegraph the
+     same accent as the primary button. */
+  --border-soft: #eff3fa;
+  --border-strong: #d2e3e4;
+  --border: var(--border-soft);
+  --input: var(--border-strong);
+  --ring: #008c95;
+
+  /* Charts ------------------------------------------------------------
+     Five-color rotation used by shadcn chart components. Anchor on the
+     brand teal and add complementary hues that read against the white
+     `--card` surface. */
+  --chart-1: #008c95;
+  --chart-2: #41d589;
+  --chart-3: #ff8338;
+  --chart-4: #f7094c;
+  --chart-5: #404b69;
+
+  /* Sidebar -----------------------------------------------------------
+     Dedicated tokens for the left navigation rail. `AdminShell` uses
+     `bg-sidebar` + `text-sidebar-foreground`. Keep it as `--bg-light`
+     so it sits one step deeper than the white `--card` content area. */
+  --sidebar: #f6f6f7;
+  --sidebar-foreground: #151b2b;
+  --sidebar-primary: #008c95;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eff3fa;
+  --sidebar-accent-foreground: #151b2b;
+  --sidebar-border: var(--border-soft);
+  --sidebar-ring: #008c95;
+}
+
+/* Dark mode -----------------------------------------------------------
+   Public site uses `--night-bg-light: #232327` plus the same brand
+   teal. Mirror that here. The admin shell is currently light-only,
+   but keeping these tokens correct means a future dark toggle just
+   needs to set `[data-admin-shell].dark`. */
+[data-admin-shell].dark,
+.dark [data-admin-shell] {
+  --background: #151b2b;
+  --foreground: #f6f6f7;
+  --card: #20283b;
+  --card-foreground: #f6f6f7;
+  --popover: #20283b;
+  --popover-foreground: #f6f6f7;
+
+  --primary: #008c95;
+  --primary-foreground: #ffffff;
+
+  --secondary: #283149;
+  --secondary-foreground: #f6f6f7;
+
+  --muted: #283149;
+  --muted-foreground: #8a92a9;
+
+  --accent: #283149;
+  --accent-foreground: #f6f6f7;
+
+  --destructive: #f7094c;
+  --destructive-foreground: #ffffff;
+
+  /* Dark theme keeps the same soft/strong split as light mode so
+     `tw:border` consistently means "default hairline" and `--input`
+     means "needs to pop against the surface". Alphas are tuned for
+     the navy `#20283b` card surface. */
+  --border-soft: rgba(239, 243, 250, 0.1);
+  --border-strong: rgba(210, 227, 228, 0.18);
+  --border: var(--border-soft);
+  --input: var(--border-strong);
+  --ring: #008c95;
+
+  --chart-1: #008c95;
+  --chart-2: #41d589;
+  --chart-3: #ff8338;
+  --chart-4: #f7094c;
+  --chart-5: #8a92a9;
+
+  --sidebar: #20283b;
+  --sidebar-foreground: #f6f6f7;
+  --sidebar-primary: #008c95;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #283149;
+  --sidebar-accent-foreground: #f6f6f7;
+  --sidebar-border: rgba(212, 221, 236, 0.1);
+  --sidebar-ring: #008c95;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius scale: with the 5px base the upstream -4/-2/+4 split
+     would collapse sm/md to 1/3px and read as straight corners. Hold
+     sm/md/lg at the same 5px shoulder and only let `xl` step up,
+     which keeps buttons, cards, inputs and popovers visually
+     identical while still giving room for the occasional larger
+     surface (e.g. modal dialogs) to feel a touch softer. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 2px);
+}

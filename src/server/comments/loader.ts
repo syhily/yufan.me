@@ -131,6 +131,15 @@ export async function createComment(
     throw new DomainError('UNAUTHORIZED', '该邮箱已经注册，请登录后再进行评论留言。')
   }
 
+  // Block muted users from posting. Admins flip this flag from the
+  // admin user-management page; the muted user keeps the ability to
+  // browse the site but loses comment posting privileges. Admins
+  // themselves cannot be muted (the admin UI hides the action), so
+  // there is no need to special-case them here.
+  if (u.isMuted) {
+    throw new DomainError('FORBIDDEN', '您的评论功能已被管理员禁用，如有疑问请联系站长。')
+  }
+
   // Query the existing comments for the user for deduplication. Scoped to
   // (userId, last 7 days). Admins are exempt because they may legitimately
   // post the same canned reply on different threads.
@@ -191,6 +200,7 @@ export async function createComment(
     link: u.link,
     badgeName: u.badgeName,
     badgeColor: u.badgeColor,
+    badgeTextColor: u.badgeTextColor,
   })
 
   // Send the email.

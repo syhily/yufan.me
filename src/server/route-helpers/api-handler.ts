@@ -218,7 +218,8 @@ type InputSource = 'json' | 'search' | 'form' | 'auto'
 interface DefineApiActionConfig<I, O> {
   method: HttpMethod | HttpMethod[]
   // Optional Zod schema. Pass `undefined` for endpoints without an input
-  // payload (e.g. `comment.getFilterOptions`).
+  // payload (e.g. read-only listings whose only "input" is the admin
+  // session cookie itself).
   input?: ZodType<I>
   inputSource?: InputSource
   requireAdmin?: boolean

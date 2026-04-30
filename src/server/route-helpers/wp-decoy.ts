@@ -1,6 +1,7 @@
-// WordPress probe detector. The site uses three WordPress-style URLs for its
-// real admin (`/wp-login.php`, `/wp-admin`, `/wp-admin/install.php`); every
-// other request that *looks* like a WordPress install is almost certainly an
+// WordPress probe detector. The site borrows the WordPress URL shape for
+// its real admin (`/wp-login.php`, `/wp-admin`, `/wp-admin/install.php`,
+// plus the SPA sub-routes mounted under `/wp-admin/*`); every other
+// request that *looks* like a WordPress install is almost certainly an
 // automated scanner. We answer those with a HTTP 404 plus a custom
 // "this is not a WordPress site" view rather than the generic 404.
 //
@@ -13,7 +14,14 @@ const LEGIT_WP_PATHS = new Set(['/wp-login.php', '/wp-admin', '/wp-admin/install
 export function isWordPressDecoyPath(pathname: string): boolean {
   if (LEGIT_WP_PATHS.has(pathname)) return false
 
-  if (pathname.startsWith('/wp-admin/')) return true
+  // `/wp-admin/*` is the SPA admin shell. Everything the real shell ever
+  // serves is a clean React Router path with no file extension
+  // (`/wp-admin/comments`, `/wp-admin/users`, `/wp-admin/users/123`).
+  // The probes we want to keep intercepting under this prefix are
+  // exclusively WordPress PHP entry points (e.g. `options.php`,
+  // `setup-config.php`, `admin-ajax.php`, `network/setup-config.php`),
+  // so the `.php` rule below already covers them — we just need to
+  // avoid blanket-rejecting the prefix here.
   if (pathname.startsWith('/wp-content/')) return true
   if (pathname.startsWith('/wp-includes/')) return true
   if (pathname === '/cgi-bin' || pathname.startsWith('/cgi-bin/')) return true

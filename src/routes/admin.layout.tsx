@@ -3,6 +3,13 @@ import { Link, Outlet } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import config from '@/blog.config'
+// The login / install split-screen layout is built on Bootstrap grid and
+// utility classes (`col-lg-7`, `d-flex`, `align-items-center`, `sticky-top`,
+// `bg-img`, …). `globals.css` carries that Bootstrap cascade. We import it
+// explicitly here because `root.tsx` no longer pulls `globals.css` at the
+// top level — the wp-admin SPA must stay Bootstrap-free, but this legacy
+// admin shell still depends on it.
+import '@/assets/styles/globals.css'
 import '@/assets/styles/admin.css'
 import { Footer } from '@/ui/primitives/Footer'
 

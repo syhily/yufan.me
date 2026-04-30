@@ -17,3 +17,11 @@
    covered un-layered — `img, svg, video, … { display: block }`. That single
    leak is patched in `reset.css` (search for "Tailwind preflight overlap"). */
 @import 'tailwindcss' prefix(tw);
+
+/* Admin shell theme tokens for shadcn/ui (Base UI variant). The
+   `@theme inline { … }` block must be visible to the Tailwind v4
+   compiler so that utilities like `tw:bg-background` are emitted.
+   The CSS variables themselves are scoped to `[data-admin-shell]`,
+   so this import is a pure addition — Bootstrap-styled markup on
+   the public site keeps its existing palette unchanged. */
+@import '@/assets/styles/admin-theme.css';
