@@ -22,12 +22,12 @@ import type {
   Tag,
 } from '@/server/catalog/schema'
 
-import config from '@/blog.config'
 import { toClientPost } from '@/server/catalog/schema'
 import { queryMetadata } from '@/server/comments/likes'
 import { loadImageThumbhash } from '@/server/images/thumbhash'
 import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
+import config from '@/server/settings/config'
 
 const log = getLogger('content.catalog')
 

@@ -250,9 +250,16 @@ export interface PageOption {
 // allowed and returns the most recent N pages so the dropdown can show
 // a reasonable default the moment the user opens it. The caller-side
 // `limit` is bounded to a server-side hard cap upstream (see schema).
-export async function searchPages(q: string | undefined, limit: number): Promise<PageOption[]> {
+//
+// When `keys` is supplied we instead do an exact key-match — this is
+// the "rehydrate selection from URL" path where the client only knows
+// the page key (e.g. from `?pageKey=https://yufan.me/about/`) and
+// needs the matching `title` to render in the Combobox trigger.
+export async function searchPages(q: string | undefined, limit: number, keys?: string[]): Promise<PageOption[]> {
   const conditions = [isNull(page.deletedAt)]
-  if (q) {
+  if (keys && keys.length > 0) {
+    conditions.push(inArray(page.key, keys))
+  } else if (q) {
     conditions.push(ilike(page.title, `%${q}%`))
   }
   return db

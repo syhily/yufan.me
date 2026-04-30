@@ -2,11 +2,11 @@ import type { CommentFormUser } from '@/server/catalog'
 import type { Comments as CommentsData, CommentItem } from '@/server/comments/types'
 import type { BlogSession, SessionUser } from '@/server/session'
 
-import config from '@/blog.config'
 import { queryLikes } from '@/server/comments/likes'
 import { ensureCommentPage, loadComments, parseComments } from '@/server/comments/loader'
 import { bumpPageView } from '@/server/metrics/batcher'
 import { isAdmin, userSession } from '@/server/session'
+import config from '@/server/settings/config'
 import { loadSidebarData } from '@/server/sidebar/load'
 import { joinUrl } from '@/shared/urls'
 

@@ -1,5 +1,7 @@
 import type { ListUsersInput, MuteUserInput, UserIdInput } from '@/server/admin-users/schema'
 import type { UpdateUserInput } from '@/server/auth-schema'
+import type { AdminCacheStatsDto, ClearCacheResultDto } from '@/server/cache/admin-service'
+import type { ClearCacheInput } from '@/server/cache/schema'
 import type {
   CommentEditInput,
   CommentReplyInput,
@@ -8,6 +10,8 @@ import type {
   LoadAllCommentsInput,
 } from '@/server/comments/schema'
 import type { AdminComment, CommentItem } from '@/server/comments/types'
+import type { BlogConstants, BlogSettings } from '@/server/settings/defaults'
+import type { ResetSettingsInput, SendTestMailInput, UpdateSettingsInput } from '@/server/settings/schema'
 
 export type { UpdateUserInput }
 
@@ -153,5 +157,37 @@ export interface BulkSoftDeleteOutput {
 }
 
 export interface AdminMutationSuccessOutput {
+  success: true
+}
+
+// --- Admin settings endpoints ---------------------------------------------
+
+export type { BlogConstants, BlogSettings, ResetSettingsInput, UpdateSettingsInput }
+
+export interface GetSettingsOutput {
+  settings: BlogSettings
+  constants: BlogConstants
+}
+
+export interface UpdateSettingsOutput {
+  settings: BlogSettings
+}
+
+export interface ResetSettingsOutput {
+  settings: BlogSettings
+}
+
+// --- Admin cache endpoints ------------------------------------------------
+
+export type { ClearCacheInput }
+
+export type GetCacheStatsOutput = AdminCacheStatsDto
+export type ClearCacheOutput = ClearCacheResultDto
+
+// --- Admin mail endpoint --------------------------------------------------
+
+export type { SendTestMailInput }
+
+export interface SendTestMailOutput {
   success: true
 }

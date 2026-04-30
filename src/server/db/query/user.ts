@@ -3,9 +3,9 @@ import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
 
 import type { NewUser, User } from '@/server/db/types'
 
-import config from '@/blog.config'
 import { db } from '@/server/db/pool'
 import { comment, user } from '@/server/db/schema'
+import config from '@/server/settings/config'
 
 const PASSWORD_HASH_ROUNDS = 12
 

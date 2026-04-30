@@ -63,8 +63,9 @@ export async function updateComment(rid: string, newContent: string) {
 export async function searchPageOptions(
   q: string | undefined,
   limit: number,
+  keys?: string[],
 ): Promise<Array<{ key: string; title: string }>> {
-  return searchPages(q, limit)
+  return searchPages(q, limit, keys)
 }
 
 export async function searchAuthorOptions(

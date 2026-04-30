@@ -2,7 +2,7 @@ import { Link, Outlet } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
-import config from '@/blog.config'
+import config from '@/server/settings/config'
 // The login / install split-screen layout is built on Bootstrap grid and
 // utility classes (`col-lg-7`, `d-flex`, `align-items-center`, `sticky-top`,
 // `bg-img`, …). `globals.css` carries that Bootstrap cascade. We import it

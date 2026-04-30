@@ -2,7 +2,6 @@ import type { CommentAndUser, CommentItem, CommentReq, Comments, LatestComment }
 import type { PendingCommentRow } from '@/server/db/query/comment'
 import type { NewComment } from '@/server/db/types'
 
-import config from '@/blog.config'
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
 import {
   adminUserIds,
@@ -25,6 +24,7 @@ import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
 import { DomainError } from '@/server/route-helpers/errors'
 import { isAdmin, userSession, type BlogSession } from '@/server/session'
+import config from '@/server/settings/config'
 import { groupBy } from '@/shared/tools'
 
 const log = getLogger('comments.loader')

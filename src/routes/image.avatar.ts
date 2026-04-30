@@ -1,10 +1,10 @@
 import { Buffer } from 'node:buffer'
 
-import config from '@/blog.config'
 import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/cache/avatar'
 import { findEmailById } from '@/server/db/query/user'
 import { compressImage } from '@/server/images/compress'
 import { pngResponse } from '@/server/route-helpers/http'
+import config from '@/server/settings/config'
 import { encodedEmail } from '@/shared/security'
 import { isNumeric } from '@/shared/tools'
 import { joinUrl } from '@/shared/urls'

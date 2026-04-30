@@ -2,7 +2,6 @@ import { redirect } from 'react-router'
 
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 
-import config from '@/blog.config'
 import { getCatalog, getClientPostsWithMetadata, toListingPostCard } from '@/server/catalog'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parseListingPage } from '@/server/route-helpers/pagination'
@@ -10,6 +9,7 @@ import { pagePath, searchRootPath } from '@/server/route-helpers/paths'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { searchPostOptions, searchPosts } from '@/server/search'
 import { routeMeta } from '@/server/seo/meta'
+import config from '@/server/settings/config'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
 
 import type { Route } from './+types/search.list'

@@ -3,9 +3,9 @@ import type { Buffer } from 'node:buffer'
 
 import { Canvas, GlobalFonts, loadImage } from '@napi-rs/canvas'
 
-import config from '@/blog.config'
 import { compressImage } from '@/server/images/compress'
 import { logoDark, oppoSans } from '@/server/images/font-assets'
+import config from '@/server/settings/config'
 
 /**
  * Generate the open graph.

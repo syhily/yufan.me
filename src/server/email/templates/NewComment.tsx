@@ -1,7 +1,7 @@
 import { Link, Text } from 'react-email'
 
-import config from '@/blog.config'
 import { EmailLayout } from '@/server/email/templates/layout/EmailLayout'
+import config from '@/server/settings/config'
 
 interface Props {
   postTitle: string

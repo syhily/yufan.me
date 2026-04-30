@@ -1,6 +1,5 @@
 import { DateTime } from 'luxon'
 
-import config from '@/blog.config'
 import {
   commentCountsByPageKeys,
   consumeActiveLikeToken,
@@ -11,6 +10,7 @@ import {
   recordLikeAndCount,
 } from '@/server/db/query/like'
 import { decrementPageVotes } from '@/server/db/query/page'
+import config from '@/server/settings/config'
 import { makeToken } from '@/shared/security'
 import { joinUrl } from '@/shared/urls'
 

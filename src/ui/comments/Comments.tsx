@@ -5,7 +5,6 @@ import type { LoadCommentsInput, LoadCommentsOutput } from '@/client/api/action-
 import type { CommentFormUser } from '@/server/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/server/comments/types'
 
-import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiFetcher } from '@/client/api/fetcher'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
@@ -18,6 +17,7 @@ import {
   type CommentTreeState,
   useCommentsContext,
 } from '@/ui/comments/comments-context'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 
 export interface CommentsProps {
   commentKey: string
@@ -294,6 +294,7 @@ function CommentsList() {
 
 function CommentsLoadMore() {
   const ctx = useCommentsContext('Comments.LoadMore')
+  const config = useBlogConfig()
   const pageSize = config.settings.comments.size
 
   // Pin the latest `rootsLoaded` so the success callback can compute the

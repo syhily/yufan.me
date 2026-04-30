@@ -4,13 +4,13 @@ import { render } from 'react-email'
 import type { CommentAndUser } from '@/server/comments/types'
 import type { Comment, Page, User } from '@/server/db/types'
 
-import config from '@/blog.config'
 import ApprovedComment from '@/server/email/templates/ApprovedComment'
 import NewComment from '@/server/email/templates/NewComment'
 import NewReply from '@/server/email/templates/NewReply'
-import { ZEABUR_MAIL_API_KEY, ZEABUR_MAIL_HOST, ZEABUR_MAIL_SENDER } from '@/server/env'
 import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
+import config from '@/server/settings/config'
+import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
 
 const log = getLogger('email')
 
@@ -20,41 +20,106 @@ export interface EmailMessage {
   html: string
 }
 
-const ZEABUR_MAIL_BASE_URL = `https://${ZEABUR_MAIL_HOST}/api/v1/zsend`
+export type SendResult =
+  | { ok: true }
+  | { ok: false; reason: 'disabled' | 'unconfigured'; message: string }
+  | { ok: false; reason: 'upstream'; status: number; message: string }
+  | { ok: false; reason: 'network'; message: string }
 
-async function internalSend(to: string, subject: string, html: string) {
-  if (ZEABUR_MAIL_API_KEY === undefined || ZEABUR_MAIL_API_KEY === '') {
-    log.error('No Zeabur mail API key configured, skip sending message.', { to, subject })
-    return
+interface MailConfig {
+  enabled: boolean
+  host: string
+  apiKey: string
+  sender: string
+}
+
+// Read the live mail slice straight from the snapshot rather than the
+// blog config Proxy. The sender is server-only and `BlogConfigSnapshot`
+// deliberately doesn't expose `mail` to keep secrets out of the shared
+// config surface that `meta()` exports could pull into the client bundle.
+function readMailConfig(): MailConfig {
+  return getBlogSettingsSync().settings.mail
+}
+
+// Single source of truth for "should this notification actually fire?"
+// — used both internally by the comment-fired senders below and by the
+// admin "send test" action so the UI can surface the same skip reason.
+function checkMailReady(
+  mail: MailConfig,
+): { ready: true } | { ready: false; reason: 'disabled' | 'unconfigured'; message: string } {
+  if (!mail.enabled) {
+    return { ready: false, reason: 'disabled', message: '邮件发送已在管理面板中关闭' }
+  }
+  if (!mail.host || !mail.apiKey || !mail.sender) {
+    return {
+      ready: false,
+      reason: 'unconfigured',
+      message: '邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
+    }
+  }
+  return { ready: true }
+}
+
+async function internalSend(to: string, subject: string, html: string): Promise<SendResult> {
+  const mail = readMailConfig()
+  const ready = checkMailReady(mail)
+  if (!ready.ready) {
+    // Skip path used to be an `error`-level log because the only way
+    // to land here was a misconfigured deployment. Now that an editor
+    // can intentionally pause notifications, the disabled branch is
+    // demoted to `debug` and the unconfigured branch stays `warn` so
+    // it's still visible in CI / production logs.
+    if (ready.reason === 'disabled') {
+      log.debug('Mail send skipped: disabled', { to, subject })
+    } else {
+      log.warn('Mail send skipped: unconfigured', { to, subject })
+    }
+    return { ok: false, reason: ready.reason, message: ready.message }
   }
 
-  const response = await fetch(`${ZEABUR_MAIL_BASE_URL}/emails`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${ZEABUR_MAIL_API_KEY}`,
-    },
-    body: JSON.stringify({
-      from: ZEABUR_MAIL_SENDER,
-      to: [to],
-      subject,
-      html,
-    }),
-  })
+  const url = `https://${mail.host}/api/v1/zsend/emails`
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${mail.apiKey}`,
+      },
+      body: JSON.stringify({
+        from: mail.sender,
+        to: [to],
+        subject,
+        html,
+      }),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    log.error('Mail send failed: network error', { to, subject, error })
+    return { ok: false, reason: 'network', message }
+  }
 
   if (!response.ok) {
-    const body = await response.text()
-    log.error('Failed to send email via Zeabur', {
+    const body = await response.text().catch(() => '')
+    log.error('Mail send failed: upstream rejected', {
       status: response.status,
       statusText: response.statusText,
       body,
       to,
+      subject,
     })
+    return {
+      ok: false,
+      reason: 'upstream',
+      status: response.status,
+      message: `${response.status} ${response.statusText}${body ? ` — ${body}` : ''}`,
+    }
   }
+  return { ok: true }
 }
 
 // Sent to the administrator whenever a new comment is posted.
-export async function sendNewComment(commentInfo: CommentAndUser, page: Page) {
+export async function sendNewComment(commentInfo: CommentAndUser, page: Page): Promise<SendResult> {
   const html = await render(
     createElement(NewComment, {
       postTitle: page.title,
@@ -64,11 +129,16 @@ export async function sendNewComment(commentInfo: CommentAndUser, page: Page) {
       commentLink: `${page.key}#user-comment-${commentInfo.id}`,
     }),
   )
-  await internalSend(config.author.email, `您的网站【${config.title}】有了新评论`, html)
+  return internalSend(config.author.email, `您的网站【${config.title}】有了新评论`, html)
 }
 
 // Sent to the original commenter when one of their comments receives a reply.
-export async function sendNewReply(sourceUser: User, source: Comment, reply: CommentAndUser, page: Page) {
+export async function sendNewReply(
+  sourceUser: User,
+  source: Comment,
+  reply: CommentAndUser,
+  page: Page,
+): Promise<SendResult> {
   const html = await render(
     createElement(NewReply, {
       receiver: sourceUser.name,
@@ -79,11 +149,11 @@ export async function sendNewReply(sourceUser: User, source: Comment, reply: Com
       replyLink: `${page.key}#user-comment-${reply.id}`,
     }),
   )
-  await internalSend(sourceUser.email, `您在【${config.title}】的留言有了新回复`, html)
+  return internalSend(sourceUser.email, `您在【${config.title}】的留言有了新回复`, html)
 }
 
 // Sent to the commenter when an admin approves their previously pending comment.
-export async function sendApprovedComment(comment: Comment, user: User, page: Page) {
+export async function sendApprovedComment(comment: Comment, user: User, page: Page): Promise<SendResult> {
   const html = await render(
     createElement(ApprovedComment, {
       receiver: user.name,
@@ -93,5 +163,80 @@ export async function sendApprovedComment(comment: Comment, user: User, page: Pa
       commentLink: `${page.key}#user-comment-${comment.id}`,
     }),
   )
-  await internalSend(user.email, `您在【${config.title}】的留言已经通过审核`, html)
+  return internalSend(user.email, `您在【${config.title}】的留言已经通过审核`, html)
+}
+
+// Sent on demand from the admin "测试发送" button. Bypasses the
+// `enabled` master switch on purpose: an editor needs to verify the
+// connection to upstream BEFORE flipping the public toggle. The
+// `unconfigured` guard still applies — there's no point round-tripping
+// to Zeabur with an empty key.
+export async function sendTestMail(to: string): Promise<SendResult> {
+  const mail = readMailConfig()
+  if (!mail.host || !mail.apiKey || !mail.sender) {
+    log.warn('Test mail skipped: unconfigured', { to })
+    return {
+      ok: false,
+      reason: 'unconfigured',
+      message: '邮件服务尚未配置完整（缺少 Host / API Key / 发件人）',
+    }
+  }
+
+  const subject = `【${config.title}】管理员邮件测试`
+  const sentAt = new Date().toISOString()
+  // Keep the test body intentionally plain (no React Email render) so a
+  // failure here points at the SMTP/HTTP plumbing rather than the
+  // template renderer.
+  const html = [
+    `<p>这是一封来自 <strong>${escapeHtml(config.title)}</strong> 后台的邮件发送测试。</p>`,
+    `<p>如果你收到了这封邮件，说明 Zeabur ZSend 配置工作正常。</p>`,
+    `<ul>`,
+    `<li>站点：${escapeHtml(config.website)}</li>`,
+    `<li>发件人：${escapeHtml(mail.sender)}</li>`,
+    `<li>触发时间（UTC）：${sentAt}</li>`,
+    `</ul>`,
+  ].join('\n')
+
+  // Send through a direct fetch instead of `internalSend` so we report
+  // the upstream status verbatim — the admin UI surfaces it for
+  // troubleshooting.
+  const url = `https://${mail.host}/api/v1/zsend/emails`
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${mail.apiKey}`,
+      },
+      body: JSON.stringify({ from: mail.sender, to: [to], subject, html }),
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    log.error('Test mail send failed: network error', { to, error })
+    return { ok: false, reason: 'network', message }
+  }
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    log.error('Test mail send failed: upstream rejected', {
+      status: response.status,
+      statusText: response.statusText,
+      body,
+      to,
+    })
+    return {
+      ok: false,
+      reason: 'upstream',
+      status: response.status,
+      message: `${response.status} ${response.statusText}${body ? ` — ${body}` : ''}`,
+    }
+  }
+  return { ok: true }
+}
+
+// Tiny escape used only by the test-mail HTML — the comment templates
+// already run through React Email which handles escaping for us.
+function escapeHtml(value: string): string {
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
 }

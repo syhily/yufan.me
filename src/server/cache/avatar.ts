@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { createInflight } from '@/server/cache/inflight'
 import { storage } from '@/server/cache/storage'
+import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
 
 export interface Avatar {
   status: AvatarStatus
@@ -18,8 +19,13 @@ export enum AvatarStatus {
 // concurrent burst instead of once per requesting comment.
 const avatarInflight = createInflight<Avatar | null>()
 
-const AVATAR_TTL_SECONDS = 60 * 60 * 24 * 7
-const avatarKey = (email: string): string => `avatar-${email}`
+// Prefix + TTL pulled from the live snapshot so an admin rename in
+// `/wp-admin/settings/cache` applies to the next read / write. Old keys
+// under the previous prefix age out at their stored TTL.
+function avatarConfig(): { prefix: string; ttlSeconds: number } {
+  return getBlogSettingsSync().settings.cache.avatar
+}
+const avatarKey = (email: string): string => `${avatarConfig().prefix}${email}`
 
 // Single-key cache layout (was two keys: `avatar-status-${email}` plus
 // `avatar-${email}`). Byte 0 is the status sentinel, the rest is the
@@ -66,6 +72,6 @@ export async function cacheAvatar(
 ) {
   const buffer = args.status === AvatarStatus.HAVE_AVATAR ? args.buffer : null
   await storage.setItemRaw(avatarKey(args.email), encodeAvatar(args.status, buffer), {
-    ttl: AVATAR_TTL_SECONDS,
+    ttl: avatarConfig().ttlSeconds,
   })
 }

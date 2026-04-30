@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { Body, Container, Html, Img, Link, Section, Text } from 'react-email'
 
-import config from '@/blog.config'
+import config from '@/server/settings/config'
 
 interface Props {
   receiver: string

@@ -1,12 +1,12 @@
 import type { ClientPost, ClientTag, SidebarPostLink } from '@/server/catalog'
 
-import config from '@/blog.config'
 // Avoid importing the projection helper through `@/server/catalog` —
 // the index re-exports `getCatalog` (a `.server` module) which would drag
 // the YAML/MDX loader graph into the sidebar unit test runtime. Importing
 // the projection helper directly from the side-effect-free
 // `@/server/catalog/projections` keeps `select.ts` cheap to load.
 import { toSidebarPostLink } from '@/server/catalog/projections'
+import config from '@/server/settings/config'
 import { sampleSize, shuffle } from '@/shared/tools'
 
 export function selectSidebarPosts(posts: ClientPost[]): SidebarPostLink[] {

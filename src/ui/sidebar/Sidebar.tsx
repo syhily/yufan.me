@@ -3,10 +3,10 @@ import { Link } from 'react-router'
 import type { ClientTag, SidebarPostLink } from '@/server/catalog'
 import type { LatestComment } from '@/server/comments/types'
 
-import config from '@/blog.config'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 import { SearchBar } from '@/ui/search/Search'
 
@@ -88,6 +88,7 @@ interface RecentCommentsProps {
 }
 
 function RecentComments({ comments }: RecentCommentsProps) {
+  const config = useBlogConfig()
   if (config.settings.sidebar.comment <= 0 || comments.length === 0) return null
 
   return (
@@ -169,6 +170,7 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 }
 
 function TodayCalendar() {
+  const config = useBlogConfig()
   if (!config.settings.sidebar.calendar) return null
   const today = new Date()
   const calendarImage = joinUrl(

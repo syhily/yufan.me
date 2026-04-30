@@ -1,9 +1,9 @@
-import config from '@/blog.config'
 import { getCatalog, toListingPostCard } from '@/server/catalog'
 import { notFound } from '@/server/route-helpers/http'
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { routeMeta } from '@/server/seo/meta'
+import config from '@/server/settings/config'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
 
 import type { Route } from './+types/tag.list'
@@ -22,6 +22,11 @@ export async function loader({ params }: Route.LoaderArgs) {
     rootPath: tag.permalink,
     title: `标签 “${tag.name}”`,
     pageSize: config.settings.pagination.tags,
+    feedLinks: {
+      rss: `${tag.permalink}/feed`,
+      atom: `${tag.permalink}/feed/atom`,
+      title: `${config.title} » 标签 “${tag.name}”`,
+    },
   })
 }
 

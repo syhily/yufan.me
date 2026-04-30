@@ -1,5 +1,5 @@
-import config from '@/blog.config'
 import { getCatalog } from '@/server/catalog'
+import config from '@/server/settings/config'
 import { joinUrl } from '@/shared/urls'
 
 import type { Route } from './+types/sitemap'

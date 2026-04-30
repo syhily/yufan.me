@@ -47,6 +47,22 @@ export const API_ACTIONS = {
     muteUser: defineApiAction('api/actions/admin/muteUser', 'PATCH'),
     bulkApproveUserComments: defineApiAction('api/actions/admin/bulkApproveUserComments', 'POST'),
     bulkSoftDeleteUserComments: defineApiAction('api/actions/admin/bulkSoftDeleteUserComments', 'DELETE'),
+    // Admin settings panel — read snapshot, write a section-scoped patch,
+    // or drop a section back to the seed defaults. Each gated by
+    // `requireAdmin: true` in the corresponding `defineApiAction(...)`.
+    getSettings: defineApiAction('api/actions/admin/getSettings', 'GET'),
+    updateSettings: defineApiAction('api/actions/admin/updateSettings', 'PATCH'),
+    resetSettings: defineApiAction('api/actions/admin/resetSettings', 'POST'),
+    // Admin cache panel — list registered Redis buckets with current
+    // key counts, and clear a single bucket (or all of them) via SCAN +
+    // UNLINK. Same `requireAdmin: true` perimeter as everything else
+    // in this group.
+    getCacheStats: defineApiAction('api/actions/admin/getCacheStats', 'GET'),
+    clearCache: defineApiAction('api/actions/admin/clearCache', 'POST'),
+    // Admin mail panel — fire a one-off test email through the live
+    // settings to verify the Zeabur connection before flipping the
+    // public toggle.
+    sendTestMail: defineApiAction('api/actions/admin/sendTestMail', 'POST'),
   },
 } as const
 

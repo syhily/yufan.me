@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router'
 
-import config, { type BlogConfig, type SocialNetwork } from '@/blog.config'
+import type { BlogConfig, SocialNetwork } from '@/blog.config'
+
 import { GithubFillIcon, MenuIcon, QqIcon, TwitterIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { SearchIconButton } from '@/ui/search/Search'
 
@@ -44,6 +46,7 @@ function SocialNavIcon({ network }: { network: SocialNetwork }) {
 }
 
 export function Header({ navigation, admin }: HeaderProps) {
+  const config = useBlogConfig()
   const { pathname, search } = useLocation()
   const logoutQuery = new URLSearchParams({
     action: 'logout',

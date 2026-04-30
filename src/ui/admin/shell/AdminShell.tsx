@@ -1,6 +1,6 @@
-import { LogOutIcon, MenuIcon, MessageSquareIcon, UsersIcon } from 'lucide-react'
+import { LogOutIcon, MenuIcon, MessageSquareIcon, SettingsIcon, UsersIcon } from 'lucide-react'
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react'
-import { Form, NavLink } from 'react-router'
+import { Form, NavLink, useLocation } from 'react-router'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/admin/shadcn/components/ui/avatar'
 import { Button } from '@/ui/admin/shadcn/components/ui/button'
@@ -13,11 +13,24 @@ interface NavItem {
   to: string
   label: string
   icon: ComponentType<{ className?: string }>
+  /**
+   * Optional prefix used for the active highlight. Without it the
+   * `NavLink` only matches its exact `to`; settings pages live under
+   * `/wp-admin/settings/*` so the entry should stay highlighted on every
+   * sub-route.
+   */
+  matchPrefix?: string
 }
 
 const NAV: NavItem[] = [
   { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon },
-  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon },
+  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users' },
+  {
+    to: '/wp-admin/settings/general',
+    label: '系统设置',
+    icon: SettingsIcon,
+    matchPrefix: '/wp-admin/settings',
+  },
 ]
 
 interface AdminShellProps {
@@ -26,27 +39,34 @@ interface AdminShellProps {
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
+  const { pathname } = useLocation()
   return (
     <nav aria-label="Admin navigation" className="tw:flex tw:flex-col tw:gap-1 tw:px-3">
-      {NAV.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          onClick={onNavigate}
-          prefetch="intent"
-          className={({ isActive }) =>
-            cn(
-              'tw:flex tw:items-center tw:gap-3 tw:rounded-md tw:px-3 tw:py-2 tw:text-sm tw:font-medium tw:transition-colors',
-              isActive
-                ? 'tw:bg-sidebar-accent tw:text-sidebar-accent-foreground'
-                : 'tw:text-sidebar-foreground/80 tw:hover:bg-sidebar-accent tw:hover:text-sidebar-accent-foreground',
-            )
-          }
-        >
-          <item.icon className="tw:size-4" />
-          <span>{item.label}</span>
-        </NavLink>
-      ))}
+      {NAV.map((item) => {
+        const prefixActive = item.matchPrefix
+          ? pathname === item.matchPrefix || pathname.startsWith(`${item.matchPrefix}/`)
+          : undefined
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            onClick={onNavigate}
+            prefetch="intent"
+            className={({ isActive }) => {
+              const active = prefixActive ?? isActive
+              return cn(
+                'tw:flex tw:items-center tw:gap-3 tw:rounded-md tw:px-3 tw:py-2 tw:text-sm tw:font-medium tw:transition-colors',
+                active
+                  ? 'tw:bg-sidebar-accent tw:text-sidebar-accent-foreground'
+                  : 'tw:text-sidebar-foreground/80 tw:hover:bg-sidebar-accent tw:hover:text-sidebar-accent-foreground',
+              )
+            }}
+          >
+            <item.icon className="tw:size-4" />
+            <span>{item.label}</span>
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }
@@ -118,7 +138,28 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
           href="/wp-admin/comments"
           className="tw:flex tw:items-center tw:gap-2 tw:text-base tw:font-semibold tw:text-foreground"
         >
-          <span>且听书吟</span>
+          {/* `style` carries the LOGO size instead of relying on `tw:h-7
+              tw:w-auto`. When the user arrives here through a *client-side*
+              SPA navigation from the public site, React Router keeps the
+              public `globals.css` `<link>` attached to `<head>` for the
+              current tick (see `persistentHrefs` in `react-router-dev`).
+              That sheet ships an UN-LAYERED `img { height: auto }` reset —
+              and per the W3C cascade-layers spec un-layered rules beat any
+              layered rule of any specificity. Tailwind v4 utilities like
+              `tw:h-7` live in `@layer utilities` and silently lose, so the
+              SVG renders at its intrinsic ~700px size for one paint and the
+              header explodes (a hard refresh fixes it because the public
+              sheet stops being fetched). Inline `style` wins both against
+              un-layered selector rules and against Tailwind utilities, so
+              the LOGO stays at 28px regardless of which stylesheets currently
+              sit in `<head>`. The `tw:h-7 tw:w-auto` classes remain so the
+              intent reads correctly in JSX. */}
+          <img
+            src="/logo-large.svg"
+            alt="且听书吟"
+            className="tw:h-7 tw:w-auto"
+            style={{ height: '1.75rem', width: 'auto' }}
+          />
           <span className="tw:text-muted-foreground tw:hidden tw:sm:inline">·</span>
           <span className="tw:text-muted-foreground tw:hidden tw:text-sm tw:sm:inline">管理后台</span>
         </a>

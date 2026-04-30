@@ -11,23 +11,14 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     REDIS_URL: z.url(),
     SESSION_SECRET: z.string().min(1),
-
-    ZEABUR_MAIL_HOST: z.string().min(1).optional(),
-    ZEABUR_MAIL_API_KEY: z.string().min(1).optional(),
-    ZEABUR_MAIL_SENDER: z.email().optional(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
 })
 
-export const {
-  DATABASE_URL,
-  HOST,
-  LOG_LEVEL,
-  PORT,
-  REDIS_URL,
-  SESSION_SECRET,
-  ZEABUR_MAIL_API_KEY,
-  ZEABUR_MAIL_HOST,
-  ZEABUR_MAIL_SENDER,
-} = env
+// Zeabur mail credentials used to live here. They have been promoted to
+// the DB-backed admin settings panel (`/wp-admin/settings/mail`) so an
+// editor can pause notifications, rotate the API key, or change the
+// `From:` address without redeploying. Bumping `ZEABUR_MAIL_*` in `.env`
+// no longer has any effect — set the values from the admin UI instead.
+export const { DATABASE_URL, HOST, LOG_LEVEL, PORT, REDIS_URL, SESSION_SECRET } = env

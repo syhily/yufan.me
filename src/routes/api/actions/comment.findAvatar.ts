@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
-import config from '@/blog.config'
 import { findUserIdByEmail } from '@/server/db/query/user'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
+import config from '@/server/settings/config'
 import { encodedEmail } from '@/shared/security'
 import { joinUrl } from '@/shared/urls'
 

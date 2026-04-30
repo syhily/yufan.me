@@ -1,4 +1,5 @@
-import { bigint, bigserial, boolean, index, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import { bigint, bigserial, boolean, index, jsonb, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core'
 
 export const page = pgTable(
   'page',
@@ -114,4 +115,22 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at')
     .notNull()
     .$defaultFn(() => new Date()),
+})
+
+// Singleton store for the editable blog configuration (bucket B from the
+// settings plan). One row per `scope`; today the admin panel only writes
+// `scope = 'blog'`, but the column keeps the door open for per-site
+// overrides without an extra migration. The full settings document lives
+// in `data` as JSON so a single SELECT reconstitutes the snapshot, and so
+// adding a new field never costs another column.
+export const setting = pgTable('setting', {
+  id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
+  scope: varchar('scope', { length: 64 }).unique().notNull().default('blog'),
+  data: jsonb('data')
+    .notNull()
+    .default(sql`'{}'::jsonb`),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedBy: bigint('updated_by', { mode: 'bigint' }),
 })

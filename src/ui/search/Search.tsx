@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router'
 
-import config from '@/blog.config'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { SearchIcon } from '@/ui/icons/icons'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 import { Popup } from '@/ui/primitives/Popup'
 
 function searchPath(raw: string): string {
@@ -15,6 +15,7 @@ function searchPath(raw: string): string {
 
 // Sidebar search: "enter to submit" input that navigates to the search route.
 export function SearchBar() {
+  const config = useBlogConfig()
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [value, setValue] = useState('')

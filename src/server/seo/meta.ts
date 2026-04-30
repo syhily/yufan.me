@@ -1,6 +1,13 @@
 import type { MetaDescriptor } from 'react-router'
 
-import config from '@/blog.config'
+// IMPORTANT: this module is imported by every route's `meta()` export
+// and `meta()` runs on the client too (after client-side navigation).
+// That means anything imported here ends up in the client bundle, so
+// we read settings through the **shared** proxy — NOT the server-only
+// `@/server/settings/config` proxy, which would drag Drizzle/Postgres
+// into the browser. On the server the proxy reads the live DB-backed
+// snapshot; on the client it falls back to the seed defaults.
+import config from '@/shared/blog-config-proxy'
 import { joinUrl } from '@/shared/urls'
 
 interface ArticleSeo {
@@ -11,6 +18,19 @@ interface ArticleSeo {
 }
 
 type SeoVariant = { kind: 'page'; article: ArticleSeo } | { kind: 'post'; article: ArticleSeo } | { kind: 'website' }
+
+export interface FeedLinkOptions {
+  /** RSS feed URL (absolute or root-relative). */
+  rss?: string
+  /** Atom feed URL (absolute or root-relative). */
+  atom?: string
+  /**
+   * Optional `<link title>` shown by feed readers. When omitted, falls back
+   * to the page title so readers can distinguish per-category/per-tag feeds
+   * from the site-wide one.
+   */
+  title?: string
+}
 
 export interface RouteSeoOptions {
   title?: string
@@ -23,6 +43,12 @@ export interface RouteSeoOptions {
   prevUrl?: string
   nextUrl?: string
   noindex?: boolean
+  /**
+   * Additional `<link rel="alternate">` entries advertising scoped feeds
+   * (per-category, per-tag, …). These append to — never replace — the
+   * site-wide feeds emitted by `baseTags()`.
+   */
+  feedLinks?: FeedLinkOptions
 }
 
 function absoluteUrl(url: string | undefined): string | undefined {
@@ -235,6 +261,7 @@ export function routeMeta({
   prevUrl,
   nextUrl,
   noindex = false,
+  feedLinks,
 }: RouteSeoOptions = {}): MetaDescriptor[] {
   const resolvedTitle = pageTitle(title)
   const resolvedDescription = description || config.description
@@ -267,6 +294,30 @@ export function routeMeta({
   const nextHref = absoluteUrl(nextUrl)
   if (nextHref) {
     meta.push({ tagName: 'link', rel: 'next', href: nextHref })
+  }
+
+  if (feedLinks) {
+    const feedTitle = feedLinks.title ?? resolvedTitle
+    const rssHref = absoluteUrl(feedLinks.rss)
+    if (rssHref) {
+      meta.push({
+        tagName: 'link',
+        rel: 'alternate',
+        type: 'application/rss+xml',
+        title: feedTitle,
+        href: rssHref,
+      })
+    }
+    const atomHref = absoluteUrl(feedLinks.atom)
+    if (atomHref) {
+      meta.push({
+        tagName: 'link',
+        rel: 'alternate',
+        type: 'application/atom+xml',
+        title: feedTitle,
+        href: atomHref,
+      })
+    }
   }
 
   return meta

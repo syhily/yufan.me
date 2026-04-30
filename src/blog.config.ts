@@ -1,190 +1,95 @@
-/** Branded social entry in `socials`; Header maps each value to a fixed icon. */
-export type SocialNetwork = 'github' | 'twitter' | 'wechat' | 'weibo' | 'qq'
+// Relative imports so this module stays resolvable from
+// `rehype-image-enhance.ts` (and the metadata-store CLI) when Vite
+// loads `source.config.ts` before `@/` aliases exist — see the comment
+// on `metadata-store.ts` for the same constraint.
+import { BLOG_CONSTANTS, type BlogConstants, type BlogSettings, DEFAULT_SETTINGS } from './shared/blog-defaults.ts'
+import { SOCIAL_NETWORKS, type SocialNetwork } from './shared/socials.ts'
 
-// Single source of truth for blog-wide configuration. Every field is safe to
-// reference from both server (loaders, feeds, OG images, comment APIs) and
-// client (Header, Sidebar, navigation, …) modules. The value is a plain
-// JS object today; in the future it will be replaced by a database-backed
-// config so we keep all knobs in one shape rather than splitting by surface.
-const config: BlogConfig = {
-  title: '且听书吟',
-  description: '诗与梦想的远方',
-  website: 'https://yufan.me',
-  keywords: ['雨帆', '且听书吟', 'syhily', 'amehochan', 'yufan'],
-  author: {
-    name: '雨帆',
-    email: 'syhily@gmail.com',
-    url: 'https://yufan.me',
-  },
-  navigation: [
-    {
-      text: '首页',
-      link: '/',
-    },
-    {
-      text: '分类',
-      link: '/categories',
-    },
-    {
-      text: '归档',
-      link: '/archives',
-    },
-    {
-      text: '关于',
-      link: '/about',
-    },
-    {
-      text: '留言',
-      link: '/guestbook',
-    },
-    {
-      text: '友链',
-      link: '/links',
-    },
-  ],
-  socials: [
-    {
-      name: 'GitHub',
-      network: 'github',
-      type: 'link',
-      link: 'https://github.com/syhily',
-    },
-    {
-      name: 'Twitter',
-      network: 'twitter',
-      type: 'link',
-      link: 'https://x.com/amehochan',
-    },
-    {
-      name: 'Yufan Sheng',
-      network: 'wechat',
-      type: 'qrcode',
-      title: '扫码加我微信好友',
-      link: 'https://u.wechat.com/EBpmuKmrVz4YVFnoCJdnruA',
-    },
-  ],
-  settings: {
-    asset: {
-      host: 'cat.yufan.me',
-      scheme: 'https',
-    },
-    footer: {
-      initialYear: 2011,
-      icpNo: '皖ICP备2021002315号-2',
-    },
-    locale: 'zh-CN',
-    timeZone: 'Asia/Shanghai',
-    timeFormat: 'yyyy-MM-dd',
-    twitter: 'syhily',
-    pagination: {
-      posts: 6,
-      category: 7,
-      tags: 7,
-      search: 7,
-    },
-    feed: {
-      full: true,
-      size: 20,
-    },
-    post: {
-      sort: 'desc',
-    },
-    sidebar: {
-      calendar: true,
-      search: true,
-      comment: 5,
-      post: 5,
-      tag: 10,
-    },
-    comments: {
-      size: 10,
-      avatar: {
-        mirror: 'https://gravatar.loli.net/avatar',
-        size: 120,
-      },
-    },
-    toc: {
-      minHeadingLevel: 2,
-      maxHeadingLevel: 3,
-    },
-    og: {
-      width: 1200,
-      height: 768,
-    },
-  },
-}
+// Branded social entries in `socials`; Header maps each value to a fixed
+// icon. The canonical list lives in `@/shared/socials` so the admin UI
+// editor and the Zod schema can both read it without the UI tree
+// pulling from `@/server/`.
+export { SOCIAL_NETWORKS, type SocialNetwork }
 
-export const assetConfig = config.settings.asset
+// `BlogConfig` historically described the static configuration object
+// every layer imported. After the migration to a DB-backed editable
+// settings table, the runtime "live" shape is assembled by
+// `getBlogConfigSync()` in `@/server/settings/snapshot` from
+// `DEFAULT_SETTINGS` (or DB overlays) merged with `BLOG_CONSTANTS`.
+//
+// This module keeps a static `BlogConfig` object that mirrors the seed
+// values purely for two purposes:
+//   1. The default fallback inside `BlogConfigContext` so UI components
+//      rendered outside the provider (Storybook fixtures, isolated
+//      tests, the `not-found` shell that may render before the provider
+//      mounts) still see a fully populated shape.
+//   2. Type-only imports across the tree (`import type { BlogConfig }`),
+//      which read the structural type without paying any runtime cost.
+//
+// All editable values come from `DEFAULT_SETTINGS`; bucket-A values come
+// from `BLOG_CONSTANTS`. To change a default, edit
+// `@/shared/blog-defaults` (a redeploy is required for that file, but
+// admin-editable fields can also be changed through `/wp-admin/settings/*`
+// at runtime without one).
 
 export interface BlogConfig {
-  title: string
-  description: string
-  website: string
-  keywords: string[]
-  author: { name: string; email: string; url: string }
-  navigation: { text: string; link: string; target?: string }[]
-  socials: {
-    name: string
-    network: SocialNetwork
-    type: 'link' | 'qrcode'
-    title?: string
-    link: string
-  }[]
+  title: BlogSettings['title']
+  description: BlogSettings['description']
+  website: BlogSettings['website']
+  keywords: BlogSettings['keywords']
+  author: BlogSettings['author']
+  navigation: BlogSettings['navigation']
+  socials: BlogSettings['socials']
   settings: {
-    asset: {
-      host: string
-      scheme: 'http' | 'https'
-    }
-    footer: {
-      initialYear: number
-      icpNo?: string
-      moeIcpNo?: string
-    }
-    locale: string
-    timeZone: string
-    timeFormat: string
-    twitter: string
-    pagination: {
-      posts: number
-      category: number
-      tags: number
-      search: number
-    }
-    feed: {
-      full: boolean
-      size: number
-    }
-    post: {
-      sort: 'asc' | 'desc'
-      feature?: string[]
-    }
-    sidebar: {
-      calendar: boolean
-      search: boolean
-      /** Number of recent / pending comments shown in the sidebar widget. */
-      comment: number
-      /** Random-pick window for the sidebar's recommended posts widget. */
-      post: number
-      /** Random-pick window for the sidebar's tag cloud widget. */
-      tag: number
-    }
-    comments: {
-      /** Page size for the inline comment thread (used on both client and server). */
-      size: number
-      avatar: {
-        mirror: string
-        size: number
-      }
-    }
-    toc: {
-      minHeadingLevel: number
-      maxHeadingLevel: number
-    }
-    og: {
-      width: number
-      height: number
-    }
+    asset: BlogConstants['asset']
+    footer: BlogSettings['settings']['footer']
+    locale: BlogConstants['locale']
+    timeZone: BlogConstants['timeZone']
+    timeFormat: BlogConstants['timeFormat']
+    twitter: BlogSettings['settings']['twitter']
+    pagination: BlogSettings['settings']['pagination']
+    feed: BlogSettings['settings']['feed']
+    post: BlogSettings['settings']['post']
+    sidebar: BlogSettings['settings']['sidebar']
+    comments: BlogSettings['settings']['comments']
+    toc: BlogSettings['settings']['toc']
+    og: BlogSettings['settings']['og']
   }
 }
+
+const config: BlogConfig = {
+  title: DEFAULT_SETTINGS.title,
+  description: DEFAULT_SETTINGS.description,
+  website: DEFAULT_SETTINGS.website,
+  keywords: DEFAULT_SETTINGS.keywords,
+  author: DEFAULT_SETTINGS.author,
+  navigation: DEFAULT_SETTINGS.navigation,
+  socials: DEFAULT_SETTINGS.socials,
+  settings: {
+    asset: BLOG_CONSTANTS.asset,
+    footer: DEFAULT_SETTINGS.settings.footer,
+    locale: BLOG_CONSTANTS.locale,
+    timeZone: BLOG_CONSTANTS.timeZone,
+    timeFormat: BLOG_CONSTANTS.timeFormat,
+    twitter: DEFAULT_SETTINGS.settings.twitter,
+    pagination: DEFAULT_SETTINGS.settings.pagination,
+    feed: DEFAULT_SETTINGS.settings.feed,
+    post: DEFAULT_SETTINGS.settings.post,
+    sidebar: DEFAULT_SETTINGS.settings.sidebar,
+    comments: DEFAULT_SETTINGS.settings.comments,
+    toc: DEFAULT_SETTINGS.settings.toc,
+    og: DEFAULT_SETTINGS.settings.og,
+  },
+}
+
+// Bucket-A asset host/scheme is closed over by the client bundle (see
+// `@/client/music`, `@/shared/image-url`, `@/server/images/metadata-store`,
+// and the `scripts/sync-image-metadata.ts` CLI). Re-export it as a
+// dedicated value so those callers don't have to drill through `config`.
+export const assetConfig = config.settings.asset
+
+// Re-export the seed values for callers that historically reached the
+// well-known names through `@/blog.config`.
+export { BLOG_CONSTANTS, DEFAULT_SETTINGS }
 
 export default config

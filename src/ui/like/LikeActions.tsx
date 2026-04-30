@@ -9,11 +9,11 @@ import type {
   ValidateLikeTokenOutput,
 } from '@/client/api/action-types'
 
-import config from '@/blog.config'
 import { API_ACTIONS } from '@/client/api/actions'
 import { useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'
 import { HeartFillIcon, QqIcon, WechatIcon, WeiboIcon } from '@/ui/icons/icons'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -154,6 +154,7 @@ export interface LikeShareProps {
 }
 
 export function LikeShare({ post }: LikeShareProps) {
+  const config = useBlogConfig()
   const postURL = joinUrl(config.website, post.permalink)
   const qq = new URLSearchParams({
     url: postURL,

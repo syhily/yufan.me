@@ -65,6 +65,19 @@ describe('routes/api/actions — file conventions', () => {
       'api/actions/comment/searchAuthors',
       'api/actions/comment/loadAll',
       'api/actions/auth/updateUser',
+      'api/actions/admin/listUsers',
+      'api/actions/admin/getUser',
+      'api/actions/admin/muteUser',
+      'api/actions/admin/softDeleteUser',
+      'api/actions/admin/restoreUser',
+      'api/actions/admin/bulkApproveUserComments',
+      'api/actions/admin/bulkSoftDeleteUserComments',
+      'api/actions/admin/getSettings',
+      'api/actions/admin/updateSettings',
+      'api/actions/admin/resetSettings',
+      'api/actions/admin/getCacheStats',
+      'api/actions/admin/clearCache',
+      'api/actions/admin/sendTestMail',
     ])
     for (const action of API_ACTION_LIST) {
       if (!adminEndpoints.has(action.route)) continue

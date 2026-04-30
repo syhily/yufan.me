@@ -1,7 +1,7 @@
 import type { MetaDescriptor } from 'react-router'
 
 import { pagePath } from '@/server/route-helpers/paths'
-import { routeMeta } from '@/server/seo/meta'
+import { type FeedLinkOptions, routeMeta } from '@/server/seo/meta'
 
 export interface ListingSeoProps {
   title?: string
@@ -10,6 +10,12 @@ export interface ListingSeoProps {
   totalPage: number
   rootPath: string
   forceNoindex?: boolean
+  /**
+   * Optional scoped RSS/Atom links emitted as additional
+   * `<link rel="alternate">` entries (in addition to the site-wide feeds).
+   * Used by category and tag listings to advertise their dedicated feeds.
+   */
+  feedLinks?: FeedLinkOptions
 }
 
 // Produces the **complete** `MetaDescriptor[]` for a listing page in one
@@ -24,6 +30,7 @@ export function listingSeo({
   totalPage,
   rootPath,
   forceNoindex = false,
+  feedLinks,
 }: ListingSeoProps): MetaDescriptor[] {
   let pageTitle = title
   if (pageNum > 1) {
@@ -38,5 +45,6 @@ export function listingSeo({
     prevUrl: pageNum > 1 ? pagePath(rootPath, pageNum - 1) : undefined,
     nextUrl: pageNum < totalPage ? pagePath(rootPath, pageNum + 1) : undefined,
     noindex: forceNoindex || pageNum > 1,
+    feedLinks,
   })
 }

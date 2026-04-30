@@ -1,11 +1,12 @@
 import type { MetaDescriptor } from 'react-router'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
+import type { FeedLinkOptions } from '@/server/seo/meta'
 
-import config from '@/blog.config'
 import { getClientPostsWithMetadata } from '@/server/catalog'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parseListingPage, redirectListingOverflow } from '@/server/route-helpers/pagination'
+import config from '@/server/settings/config'
 import { slicePosts } from '@/shared/formatter'
 
 // Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
@@ -67,6 +68,7 @@ export async function listingLoader<TExtra = undefined>({
   forceNoindex,
   metadata,
   seoMode = 'always',
+  feedLinks,
   computeExtra,
   extra,
 }: {
@@ -79,6 +81,12 @@ export async function listingLoader<TExtra = undefined>({
   forceNoindex?: boolean
   metadata?: ListingMetadataFlags
   seoMode?: ListingSeoMode
+  /**
+   * Optional scoped feed links (e.g. per-category or per-tag RSS/Atom URLs)
+   * forwarded to `listingSeo` so the rendered head advertises them as
+   * `<link rel="alternate">` entries alongside the site-wide feeds.
+   */
+  feedLinks?: FeedLinkOptions
   /**
    * Async callback that produces the per-route `extra` payload from the
    * resolved page slice. Runs after pagination/overflow redirects so the
@@ -111,6 +119,7 @@ export async function listingLoader<TExtra = undefined>({
           totalPage,
           rootPath,
           forceNoindex,
+          feedLinks,
         })
 
   return {

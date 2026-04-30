@@ -1,17 +1,21 @@
 import crypto from 'node:crypto'
 
-import config from '@/blog.config'
 import { loadBuffer } from '@/server/cache/image'
 import { getCatalog } from '@/server/catalog'
 import { drawOpenGraph } from '@/server/images/og'
 import { pngResponse } from '@/server/route-helpers/http'
+import config from '@/server/settings/config'
+import { getBlogSettingsSync } from '@/shared/blog-config-snapshot'
 import { joinUrl } from '@/shared/urls'
 
 import type { Route } from './+types/image.og'
 
 function ogCacheKey(slug: string, title: string, summary: string, cover: string): string {
   const hash = crypto.createHash('sha1').update(`${title}\u0001${summary}\u0001${cover}`).digest('hex').slice(0, 16)
-  return `og-${slug}-${hash}`
+  // Read the prefix from the live snapshot so an admin rename in
+  // `/wp-admin/settings/cache` takes effect on the next request. Old
+  // keys under the previous prefix age out at their stored TTL.
+  return `${getBlogSettingsSync().settings.cache.og.prefix}${slug}-${hash}`
 }
 
 // Cache for one week — OG images are derived from post metadata that rarely
@@ -40,13 +44,17 @@ export async function loader({ params }: Route.LoaderArgs) {
     return fallback()
   }
 
+  // TTL is also pulled from the live snapshot — `loadBuffer` accepts
+  // any positive integer; the schema bounds it to 1h–30d.
+  const ttl = getBlogSettingsSync().settings.cache.og.ttlSeconds
+
   const catalog = await getCatalog()
   const post = catalog.getPost(slug)
   if (post) {
     const buffer = await loadBuffer(
       ogCacheKey(slug, post.title, post.summary, post.cover),
       () => drawOpenGraph({ title: post.title, summary: post.summary, cover: post.cover }),
-      24 * 60 * 60 * 7,
+      ttl,
     )
     return pngResponse(buffer, PNG_HEADERS)
   }
@@ -60,7 +68,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   const buffer = await loadBuffer(
     ogCacheKey(slug, page.title, summary, page.cover),
     () => drawOpenGraph({ title: page.title, summary, cover: page.cover }),
-    24 * 60 * 60 * 7,
+    ttl,
   )
 
   return pngResponse(buffer, PNG_HEADERS)

@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from 'react'
 import type { MarkdownHeading } from '@/server/catalog'
 import type { TocOpts } from '@/shared/toc'
 
-import config from '@/blog.config'
 import { generateToC } from '@/shared/toc'
 import { LeftIcon, RightIcon } from '@/ui/icons/icons'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 import { TocItems } from '@/ui/post/toc/TocItems'
 
 export interface TableOfContentsProps {
@@ -14,6 +14,7 @@ export interface TableOfContentsProps {
 }
 
 export function TableOfContents({ headings, toc }: TableOfContentsProps) {
+  const config = useBlogConfig()
   const generateTocConfig = toc
     ? ({
         maxHeadingLevel: config.settings.toc.maxHeadingLevel,

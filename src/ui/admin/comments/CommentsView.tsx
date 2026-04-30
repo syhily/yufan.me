@@ -93,6 +93,18 @@ type PageAction =
    * never picked a new filter, we're just decorating the existing one.
    */
   | { type: 'renameFilterAuthor'; label: string }
+  /*
+   * `renameFilterPage` is the page-flavoured twin of
+   * `renameFilterAuthor`: when we land on
+   * `/wp-admin/comments?pageKey=https%3A%2F%2Fyufan.me%2Fabout%2F` we
+   * initially seed the filter with `{ value: <key>, label: <key> }`
+   * so the Combobox isn't blank, then fire a one-shot lookup against
+   * `searchPages?key=…` and rename the label to e.g. "关于" once the
+   * response comes back. Like `renameFilterAuthor`, this must NOT
+   * reset `currentPage` — the user never picked a new filter, we're
+   * just decorating the existing one.
+   */
+  | { type: 'renameFilterPage'; label: string }
   | { type: 'setPageSize'; value: number }
   | { type: 'setCurrentPage'; value: number }
 
@@ -125,6 +137,9 @@ function reducer(state: PageState, action: PageAction): PageState {
       // rename, so we no-op.
       if (!state.filterAuthor) return state
       return { ...state, filterAuthor: { ...state.filterAuthor, label: action.label } }
+    case 'renameFilterPage':
+      if (!state.filterPage) return state
+      return { ...state, filterPage: { ...state.filterPage, label: action.label } }
     case 'setPageSize':
       return { ...state, pageSize: action.value, currentPage: 0 }
     case 'setCurrentPage':
@@ -187,13 +202,11 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
     pageSize: 10,
     filterStatus: initialStatus,
     // URL-restore path: we have the value but not the label, so use
-    // the value as a temporary stand-in. A mount-time effect below
-    // (`SEARCH_AUTHORS?ids=…`) reaches out to the server once to swap
-    // the placeholder ("2232") for the real user name ("雨帆") via
-    // `dispatch({ type: 'renameFilterAuthor' })`. The page-key flavour
-    // intentionally stays as-is — page keys are already human-readable
-    // slugs ("hello-world") and the lookup table is much smaller, so
-    // the placeholder isn't noticeably ugly there.
+    // the value as a temporary stand-in. Mount-time effects below
+    // (`SEARCH_PAGES?key=…` / `SEARCH_AUTHORS?ids=…`) reach out to
+    // the server once each to swap the placeholders (e.g.
+    // `https://yufan.me/about/` / `2232`) for the real human labels
+    // (`关于` / `雨帆`) via the corresponding `renameFilter*` actions.
     filterPage: initialPageKey ? { value: initialPageKey, label: initialPageKey } : null,
     filterAuthor: initialAuthorId ? { value: initialAuthorId, label: initialAuthorId } : null,
   })
@@ -201,14 +214,15 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
   const loadFetcher = useFetcher<ApiEnvelope<LoadAllOutput>>()
   const pagesFetcher = useFetcher<ApiEnvelope<SearchPagesOutput>>()
   const authorsFetcher = useFetcher<ApiEnvelope<SearchAuthorsOutput>>()
-  // Dedicated fetcher for the one-shot "ids → label" rehydrate after
-  // restoring `?userId=2232` from the URL. Kept separate from
-  // `authorsFetcher` (which serves the dropdown's debounced search)
-  // because they race: the rehydrate fires on mount and would
-  // immediately be overwritten by the empty-query autocomplete that
-  // also runs on mount, causing the rename effect to never observe
-  // the matching response.
+  // Dedicated fetchers for the one-shot "id/key → label" rehydrate after
+  // restoring `?userId=…` / `?pageKey=…` from the URL. Kept separate
+  // from `authorsFetcher` / `pagesFetcher` (which serve the dropdown's
+  // debounced search) because they race: the rehydrate fires on mount
+  // and would immediately be overwritten by the empty-query
+  // autocomplete that also runs on mount, causing the rename effect to
+  // never observe the matching response.
   const authorRehydrateFetcher = useFetcher<ApiEnvelope<SearchAuthorsOutput>>()
+  const pageRehydrateFetcher = useFetcher<ApiEnvelope<SearchPagesOutput>>()
 
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
@@ -239,6 +253,8 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
   authorsFetcherRef.current = authorsFetcher
   const authorRehydrateFetcherRef = useRef(authorRehydrateFetcher)
   authorRehydrateFetcherRef.current = authorRehydrateFetcher
+  const pageRehydrateFetcherRef = useRef(pageRehydrateFetcher)
+  pageRehydrateFetcherRef.current = pageRehydrateFetcher
 
   /*
    * Mount-only: if the page was opened with `?userId=2232` we have a
@@ -268,6 +284,28 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
     // valid match for one of our ids).
     dispatch({ type: 'renameFilterAuthor', label: fetched[0].name })
   }, [authorRehydrateFetcher.state, authorRehydrateFetcher.data])
+
+  // Page-key flavour of the same rehydrate dance. See the matching
+  // author-rehydrate block above for the rationale; the only material
+  // difference is the wire format (`?key=<single>` rather than
+  // `?ids=<csv>`) because page keys are URL strings that aren't
+  // comma-safe.
+  useEffect(() => {
+    if (!initialPageKey) return
+    const params = new URLSearchParams({ key: initialPageKey })
+    void pageRehydrateFetcherRef.current.load(`${SEARCH_PAGES.path}?${params.toString()}`)
+  }, [initialPageKey])
+
+  const lastPageRehydrateHandled = useRef<unknown>(null)
+  useEffect(() => {
+    if (pageRehydrateFetcher.state !== 'idle' || !pageRehydrateFetcher.data) return
+    if (pageRehydrateFetcher.data === lastPageRehydrateHandled.current) return
+    lastPageRehydrateHandled.current = pageRehydrateFetcher.data
+    const fetched = pageRehydrateFetcher.data.data?.pages ?? []
+    if (fetched.length === 0) return
+    const title = fetched[0].title || '无标题'
+    dispatch({ type: 'renameFilterPage', label: title })
+  }, [pageRehydrateFetcher.state, pageRehydrateFetcher.data])
 
   const filterPageKey = state.filterPage?.value ?? ''
   const filterAuthorId = state.filterAuthor?.value ?? ''

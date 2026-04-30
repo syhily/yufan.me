@@ -1,7 +1,8 @@
 FROM node:25-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 FROM deps AS build
 COPY . .
@@ -10,7 +11,8 @@ RUN NODE_ENV=production npm run build
 FROM node:25-alpine AS runtime
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
 ENV NODE_ENV=production

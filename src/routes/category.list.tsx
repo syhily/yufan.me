@@ -1,9 +1,9 @@
-import config from '@/blog.config'
 import { getCatalog, toListingPostCard } from '@/server/catalog'
 import { notFound } from '@/server/route-helpers/http'
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { routeMeta } from '@/server/seo/meta'
+import config from '@/server/settings/config'
 import { PostListingBody } from '@/ui/post/post/PostListViews'
 
 import type { Route } from './+types/category.list'
@@ -25,6 +25,11 @@ export async function loader({ params }: Route.LoaderArgs) {
     title: category.name,
     description: category.description,
     pageSize: config.settings.pagination.category,
+    feedLinks: {
+      rss: `${category.permalink}/feed`,
+      atom: `${category.permalink}/feed/atom`,
+      title: `${config.title} » 分类 “${category.name}”`,
+    },
   })
 }
 

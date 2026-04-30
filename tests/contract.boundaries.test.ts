@@ -57,6 +57,25 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('keeps UI components from importing the static blog.config (use BlogConfigContext)', () => {
+    const offenders = files('src/ui', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return source.split('\n').some((line) => {
+        const trimmed = line.trim()
+        if (!trimmed.startsWith('import')) return false
+        // Type-only imports of BlogConfig types are allowed; runtime value
+        // imports of `@/blog.config` are not.
+        if (trimmed.startsWith('import type')) return false
+        return /from\s+["']@\/blog\.config["']/.test(trimmed)
+      })
+    })
+
+    // The default-fallback BlogConfigProvider context owns the only allowed
+    // value-import of `@/blog.config` from the UI tree.
+    const allowedFallback = ['src/ui/lib/blog-config-context.tsx']
+    expect(offenders.filter((f) => !allowedFallback.includes(f))).toEqual([])
+  })
+
   it('keeps non-type catalog imports out of UI components', () => {
     const offenders = files('src/ui', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
       const source = readFileSync(file, 'utf8')
@@ -101,6 +120,19 @@ describe('contract: module and bundle boundaries', () => {
         return true
       }
       if (file === 'src/server/images/metadata-store.ts' && specifier === '../../blog.config.ts') {
+        return true
+      }
+      // `blog.config.ts` is loaded via relative paths from
+      // `metadata-store.ts` during Vite's early `source.config.ts`
+      // bootstrap, before `@/` aliases are wired in. Mirror the same
+      // constraint here so it can in turn reach the shared seed values.
+      if (file === 'src/blog.config.ts' && specifier === './shared/blog-defaults.ts') {
+        return true
+      }
+      if (file === 'src/blog.config.ts' && specifier === './shared/socials.ts') {
+        return true
+      }
+      if (file === 'src/shared/blog-defaults.ts' && specifier === './socials.ts') {
         return true
       }
       if (file === 'source.config.ts' && specifier === './src/server/markdown/rehype-mathjax.ts') {

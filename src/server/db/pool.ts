@@ -3,10 +3,10 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { drizzle } from 'drizzle-orm/node-postgres'
 
 import { runDatabaseMigrations } from '@/server/db/migrate'
-import { comment, like, page, user, verification } from '@/server/db/schema'
+import { comment, like, page, setting, user, verification } from '@/server/db/schema'
 import { DATABASE_URL } from '@/server/env'
 
-const schema = { comment, like, page, user, verification }
+const schema = { comment, like, page, setting, user, verification }
 type Schema = typeof schema
 
 // Using globalThis to store the database connection for avoiding multiple connections in Vite dev server.

@@ -1,15 +1,24 @@
 import type { ReactNode } from 'react'
 
-import config, { type BlogConfig } from '@/blog.config'
+import type { BlogConfig } from '@/blog.config'
+
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 import { Footer } from '@/ui/primitives/Footer'
 import { Header } from '@/ui/primitives/Header'
 import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
-// `globals.css` is the public site's complete cascade (Bootstrap reboot/grid/
-// utilities, hand-written `_base.css`/`_widgets.css`/`_comments.css`, and
-// Tailwind v4 with the `tw:` prefix). Keep the import colocated with the
-// only component that ever renders that chrome so the wp-admin SPA chunk
-// (which lazy-loads nothing from this file) stays Bootstrap-free.
-import '@/assets/styles/globals.css'
+
+// NOTE: this component does NOT import `globals.css`. The public stylesheet
+// cascade lives one level up in `@/ui/primitives/PublicChrome` so it can be
+// reached through a *static* import from `routes/public.layout.tsx` (which
+// in turn lets React Router include the resolved `<link rel="stylesheet">`
+// tags in the SSR `<Links />` output, preventing FOUC on first paint).
+//
+// Importing `globals.css` here would re-attach the Bootstrap reboot/grid/
+// utility cascade to every consumer of `<BaseLayout>` — including the
+// `<BaseLayout>` rendered by the root `ErrorBoundary`'s lazy chunk — and
+// would drag those bytes into the wp-admin SPA chunk through that lazy
+// graph. Keep this file CSS-free; mount `<PublicChrome>` instead when you
+// need both the chrome AND the public stylesheet.
 
 export interface BaseLayoutProps {
   navigation?: BlogConfig['navigation']
@@ -25,6 +34,7 @@ export interface BaseLayoutProps {
 // isolation; production callers should rely on the default `<App>` export
 // from `@/root` rather than instantiating `BaseLayout` directly.
 export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutProps) {
+  const config = useBlogConfig()
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || config.navigation
 

@@ -1,8 +1,8 @@
-import config from '@/blog.config'
 import { loadComments, parseComments } from '@/server/comments/loader'
 import { loadCommentsSchema } from '@/server/comments/schema'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
+import config from '@/server/settings/config'
 
 export const loader = defineApiAction({
   method: 'GET',

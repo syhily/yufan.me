@@ -1,9 +1,9 @@
 import { Feed } from 'feed'
 
-import config from '@/blog.config'
 import { ContentCatalog, type Page, type Post } from '@/server/catalog'
 import { prerenderToHtml } from '@/server/catalog/render'
 import { enhanceImageHtml } from '@/server/images/thumbhash'
+import config from '@/server/settings/config'
 import { joinUrl } from '@/shared/urls'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Friends } from '@/ui/mdx/page/Friends'

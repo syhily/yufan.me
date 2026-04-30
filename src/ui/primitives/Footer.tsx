@@ -1,7 +1,8 @@
-import config from '@/blog.config'
 import { formatLocalDate } from '@/shared/formatter'
+import { useBlogConfig } from '@/ui/lib/blog-config-context'
 
 export function Footer() {
+  const config = useBlogConfig()
   const thisYear = formatLocalDate(new Date(), 'yyyy')
   const { icpNo, moeIcpNo, initialYear } = config.settings.footer
   const hasIcp = icpNo || moeIcpNo
