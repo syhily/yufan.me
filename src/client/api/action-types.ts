@@ -66,6 +66,8 @@ export interface LoadCommentsInput {
 // Router's turbo-stream serializer, which supports BigInt natively.
 export interface ReplyCommentOutput {
   comment: CommentItem
+  /** Next CSRF token for a follow-up `replyComment` without full page reload. */
+  csrfToken: string
 }
 
 export interface CommentEditOutput {

@@ -6,7 +6,7 @@ import type { ClientPost, ClientTag } from '@/server/catalog'
 
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/comments/page-data'
 import { notFound } from '@/server/route-helpers/http'
-import { getRouteRequestContext } from '@/server/session'
+import { getRouteRequestContext, issueCsrfToken } from '@/server/session'
 import { selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
@@ -16,6 +16,8 @@ export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStrea
 // (`react-router-framework-mode/data-loading` "Streaming with defer".)
 export interface PublicDetailData extends PublicDetailCritical {
   comments: Promise<DetailPageComments>
+  /** Double-submit CSRF token; pair with `csrf-token` cookie from the route `Set-Cookie` header. */
+  csrfToken: string
 }
 
 export interface PublicDetailSidebarData {
@@ -49,12 +51,21 @@ export async function loadPublicDetailData({
     posts: ClientPost[]
     tags: ClientTag[]
   }
-}): Promise<{ detail: PublicDetailData; sidebar?: PublicDetailSidebarData }> {
+}): Promise<{
+  detail: PublicDetailData
+  sidebar?: PublicDetailSidebarData
+  /** Use only as `data(..., { headers: { 'Set-Cookie': … } })` — omit from the client-visible loader object. */
+  commentCsrfSetCookie: string
+}> {
   const { session } = getRouteRequestContext({ request, context })
-  const [, streaming] = await Promise.all([preload(), loadDetailPageStreaming(session, permalink, title)])
+  const [, streaming, issued] = await Promise.all([
+    preload(),
+    loadDetailPageStreaming(session, permalink, title),
+    issueCsrfToken(),
+  ])
 
   return {
-    detail: { ...streaming.critical, comments: streaming.comments },
+    detail: { ...streaming.critical, comments: streaming.comments, csrfToken: issued.token },
     sidebar:
       sidebar === undefined
         ? undefined
@@ -62,5 +73,6 @@ export async function loadPublicDetailData({
             posts: selectSidebarPosts(sidebar.posts),
             tags: selectSidebarTags(sidebar.tags),
           },
+    commentCsrfSetCookie: issued.setCookie,
   }
 }

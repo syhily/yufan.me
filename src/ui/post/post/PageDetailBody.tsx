@@ -16,6 +16,7 @@ export interface PageDetailBodyProps {
   headings: MarkdownHeading[]
   likes: number
   commentKey: string
+  commentCsrfToken: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
   children: ReactNode
@@ -26,6 +27,7 @@ export function PageDetailBody({
   headings,
   likes,
   commentKey,
+  commentCsrfToken,
   commentsPromise,
   currentUser,
   children,
@@ -45,6 +47,7 @@ export function PageDetailBody({
                 {(resolved) => (
                   <Comments
                     commentKey={commentKey}
+                    csrfToken={commentCsrfToken}
                     comments={resolved.commentData}
                     items={resolved.commentItems}
                     user={currentUser}

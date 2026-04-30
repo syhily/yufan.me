@@ -47,3 +47,11 @@ export function makeLoaderArgs(options: MakeContextOptions & { params?: Record<s
   const context = makeRouteContext({ ...options, request })
   return { request, context, params: options.params ?? {} } as never
 }
+
+/** React Router `data()` wraps the loader payload; unwrap for direct handler tests. */
+export function unwrapLoaderData<T>(value: unknown): T {
+  if (value !== null && typeof value === 'object' && 'data' in value) {
+    return (value as { data: T }).data
+  }
+  return value as T
+}

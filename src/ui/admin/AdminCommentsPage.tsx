@@ -87,11 +87,12 @@ const GET_RAW = API_ACTIONS.comment.getRaw
 const UPDATE_USER = API_ACTIONS.auth.updateUser
 
 export interface AdminCommentsPageProps {
+  commentCsrfToken: string
   currentUserName: string
   currentUserEmail: string
 }
 
-export function AdminCommentsPage({ currentUserName, currentUserEmail }: AdminCommentsPageProps) {
+export function AdminCommentsPage({ commentCsrfToken, currentUserName, currentUserEmail }: AdminCommentsPageProps) {
   const [state, dispatch] = useReducer(reducer, {
     comments: [],
     total: 0,
@@ -108,7 +109,12 @@ export function AdminCommentsPage({ currentUserName, currentUserEmail }: AdminCo
 
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
+  const [replyCsrfToken, setReplyCsrfToken] = useState(commentCsrfToken)
   const [editUserTarget, setEditUserTarget] = useState<AdminComment | null>(null)
+
+  useEffect(() => {
+    setReplyCsrfToken(commentCsrfToken)
+  }, [commentCsrfToken])
 
   const reload = useCallback(() => {
     const offset = state.currentPage * state.pageSize
@@ -312,11 +318,13 @@ export function AdminCommentsPage({ currentUserName, currentUserEmail }: AdminCo
           comment={replyTarget}
           authorName={currentUserName || '管理员'}
           authorEmail={currentUserEmail}
+          csrfToken={replyCsrfToken}
           onClose={() => setReplyTarget(null)}
           onReplied={() => {
             setReplyTarget(null)
             reload()
           }}
+          onCsrfRotated={setReplyCsrfToken}
         />
       )}
     </>
@@ -536,11 +544,21 @@ interface ReplyCommentModalProps {
   comment: AdminComment
   authorName: string
   authorEmail: string
+  csrfToken: string
   onClose: () => void
   onReplied: () => void
+  onCsrfRotated: (token: string) => void
 }
 
-function ReplyCommentModal({ comment, authorName, authorEmail, onClose, onReplied }: ReplyCommentModalProps) {
+function ReplyCommentModal({
+  comment,
+  authorName,
+  authorEmail,
+  csrfToken,
+  onClose,
+  onReplied,
+  onCsrfRotated,
+}: ReplyCommentModalProps) {
   const fetcher = useFetcher<ApiEnvelope<ReplyCommentOutput>>()
   const [value, setValue] = useState('')
 
@@ -550,8 +568,11 @@ function ReplyCommentModal({ comment, authorName, authorEmail, onClose, onReplie
       console.error('[admin] reply failed', fetcher.data.error)
       return
     }
+    if (fetcher.data.data?.csrfToken) {
+      onCsrfRotated(fetcher.data.data.csrfToken)
+    }
     onReplied()
-  }, [fetcher.state, fetcher.data, onReplied])
+  }, [fetcher.state, fetcher.data, onCsrfRotated, onReplied])
 
   const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -570,6 +591,7 @@ function ReplyCommentModal({ comment, authorName, authorEmail, onClose, onReplie
         email: authorEmail,
         content: value,
         rid: Number.parseInt(idStr(comment.id), 10),
+        csrf: csrfToken,
       },
       { method: REPLY.method, encType: 'application/json', action: REPLY.path },
     )

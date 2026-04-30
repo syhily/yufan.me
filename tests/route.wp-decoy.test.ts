@@ -4,7 +4,7 @@ import { wpDecoyMiddleware } from '@/server/middleware-wp-decoy'
 import { isWordPressDecoyPath, NOT_WORDPRESS_STATUS_TEXT, notWordPressSite } from '@/server/route-helpers/wp-decoy'
 
 import { makePage, makePost } from './_helpers/catalog'
-import { makeLoaderArgs } from './_helpers/context'
+import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
 import { regularSession } from './_helpers/session'
 
 // WordPress probe decoy contract. Three layers under test:
@@ -217,13 +217,15 @@ describe('wpDecoyMiddleware (single-segment + multi-segment probes)', () => {
 
 describe('routes/page.detail loader (probe interception now lives in middleware)', () => {
   it('still serves real page slugs', async () => {
-    const data = (await pageDetailRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/about'),
-        session,
-        params: { slug: 'about' },
-      }),
-    )) as { page: { permalink: string } }
+    const data = unwrapLoaderData<{ page: { permalink: string } }>(
+      await pageDetailRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about'),
+          session,
+          params: { slug: 'about' },
+        }),
+      ),
+    )
     expect(data.page.permalink).toBe('/about')
   })
 })

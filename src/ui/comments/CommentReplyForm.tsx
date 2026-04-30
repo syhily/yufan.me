@@ -12,6 +12,9 @@ import { joinUrl } from '@/shared/urls'
 
 export interface CommentReplyFormProps {
   commentKey: string
+  /** Matches `csrf-token` cookie; server returns a fresh token after each successful reply. */
+  csrfToken: string
+  onCsrfRotated: (token: string) => void
   user?: CommentFormUser
   /** Currently active reply target id; 0 means top-level reply. */
   replyToId: number
@@ -36,6 +39,8 @@ const REPLY = API_ACTIONS.comment.replyComment
 // fires on email blur) since it's not a form submission.
 export function CommentReplyForm({
   commentKey,
+  csrfToken,
+  onCsrfRotated,
   user,
   replyToId,
   replyTarget,
@@ -49,10 +54,10 @@ export function CommentReplyForm({
     user?.admin ? joinUrl('/images/avatar', `${user.id}.png`) : '/images/default-avatar.png',
   )
 
-  // Pin the latest `onReplied` and `replyToId` so the result-draining effect
-  // doesn't fan out a fresh subscription on every parent rerender.
-  const latest = useRef({ onReplied, replyToId })
-  latest.current = { onReplied, replyToId }
+  // Pin the latest callbacks so the result-draining effect doesn't fan out a
+  // fresh subscription on every parent rerender.
+  const latest = useRef({ onReplied, onCsrfRotated, replyToId })
+  latest.current = { onReplied, onCsrfRotated, replyToId }
 
   // Drain `fetcher.data` once per response, then clear the textarea so the
   // next submission starts empty.
@@ -67,6 +72,9 @@ export function CommentReplyForm({
       return
     }
     if (data.data === undefined) return
+    if (data.data.csrfToken) {
+      latest.current.onCsrfRotated(data.data.csrfToken)
+    }
     latest.current.onReplied(data.data.comment, latest.current.replyToId)
     const textarea = formRef.current?.querySelector<HTMLTextAreaElement>('textarea[name="content"]')
     if (textarea) textarea.value = ''
@@ -93,6 +101,7 @@ export function CommentReplyForm({
   return (
     <div id="respond" className="comment-respond mb-3 mb-md-4">
       <fetcher.Form ref={formRef} method={REPLY.method} action={REPLY.path} id="commentForm" className="comment-form">
+        <input name="csrf" type="hidden" value={csrfToken} />
         <div className="comment-from-avatar flex-avatar">
           <img
             alt="头像"
@@ -121,6 +130,7 @@ export function CommentReplyForm({
             )}
           </div>
           <CommentFormFields user={user} commentKey={commentKey} replyToId={replyToId} onEmailBlur={onEmailBlur} />
+          {!admin && <CommentFormHoneypot />}
           <div className="form-submit text-end">
             {replyToId !== 0 && (
               <button type="button" id="cancel-comment-reply-link" className="btn btn-light me-1" onClick={onCancel}>
@@ -147,6 +157,16 @@ function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
     <div className="replying-to-overlay">
       <span className="replying-name">回复 @{authorName}</span>
       {originalContent && <span className="replying-content">: {originalContent}</span>}
+    </div>
+  )
+}
+
+/** Off-screen honeypot: humans never see it; bots that fill every input trip schema validation. */
+function CommentFormHoneypot() {
+  return (
+    <div className="comment-form-honeypot" aria-hidden="true">
+      <label htmlFor="comment-subtitle">Subtitle</label>
+      <input id="comment-subtitle" name="subtitle" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
     </div>
   )
 }

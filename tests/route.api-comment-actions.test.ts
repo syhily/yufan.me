@@ -49,6 +49,8 @@ vi.mock('@/services/comments/render.server', () => ({
 
 vi.mock('@/server/rate-limit', () => ({
   tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
+  tryCommentPostRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
+  tryCommentPostRateLimitByEmail: vi.fn(async () => ({ count: 1, exceeded: false })),
   LIMIT_THRESHOLD: 5,
 }))
 

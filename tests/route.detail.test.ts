@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeCategory, makePage, makePost, makePostList, makeTag } from './_helpers/catalog'
-import { makeLoaderArgs } from './_helpers/context'
+import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
 import { regularSession } from './_helpers/session'
 
 // post.detail / page.detail loaders form the most-trafficked SSR endpoints.
@@ -127,16 +127,18 @@ describe('routes/post.detail loader', () => {
   })
 
   it('returns the canonical post payload for a real slug', async () => {
-    const data = (await postRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/posts/hello'),
-        session,
-        params: { slug: 'hello' },
-      }),
-    )) as unknown as {
+    const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
       mdxPath: string
-    }
+    }>(
+      await postRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/posts/hello'),
+          session,
+          params: { slug: 'hello' },
+        }),
+      ),
+    )
 
     expect(data.post.title).toBe(samplePost.title)
     expect(data.post.permalink).toBe('/posts/hello')
@@ -146,13 +148,15 @@ describe('routes/post.detail loader', () => {
 
 describe('routes/page.detail loader', () => {
   it('returns the canonical page payload for a real page slug', async () => {
-    const data = (await pageRoute.loader(
-      makeLoaderArgs({
-        request: new Request('http://localhost/about'),
-        session,
-        params: { slug: 'about' },
-      }),
-    )) as { page: { permalink: string } }
+    const data = unwrapLoaderData<{ page: { permalink: string } }>(
+      await pageRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/about'),
+          session,
+          params: { slug: 'about' },
+        }),
+      ),
+    )
 
     expect(data.page.permalink).toBe('/about')
   })

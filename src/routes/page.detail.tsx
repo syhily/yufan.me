@@ -1,3 +1,5 @@
+import { data } from 'react-router'
+
 import { getCatalog, toClientPage, toDetailPageShell } from '@/server/catalog'
 import { loadPublicDetailData, redirectPermanent } from '@/server/route-helpers/detail-loader'
 import { notFound } from '@/server/route-helpers/http'
@@ -25,7 +27,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     notFound()
   }
   const page = toDetailPageShell(toClientPage(sourcePage))
-  const { detail } = await loadPublicDetailData({
+  const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
     context,
     permalink: page.permalink,
@@ -33,12 +35,15 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     preload: () => preloadPageBody(sourcePage.mdxPath),
   })
 
-  return {
-    page,
-    mdxPath: sourcePage.mdxPath,
-    friends: catalog.friends,
-    detail,
-  }
+  return data(
+    {
+      page,
+      mdxPath: sourcePage.mdxPath,
+      friends: catalog.friends,
+      detail,
+    },
+    { headers: { 'Set-Cookie': commentCsrfSetCookie } },
+  )
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -54,6 +59,7 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
       headings={page.headings}
       likes={detail.likes}
       commentKey={detail.commentKey}
+      commentCsrfToken={detail.csrfToken}
       commentsPromise={detail.comments}
       currentUser={detail.currentUser}
     >

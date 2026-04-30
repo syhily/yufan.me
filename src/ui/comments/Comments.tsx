@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
 import type { LoadCommentsInput, LoadCommentsOutput } from '@/client/api/action-types'
@@ -21,6 +21,8 @@ import {
 
 export interface CommentsProps {
   commentKey: string
+  /** CSRF token for `replyComment` (must match `csrf-token` cookie). Rotates after each successful reply. */
+  csrfToken: string
   comments: CommentsData | null
   items: CommentItemType[]
   user?: CommentFormUser
@@ -128,7 +130,7 @@ export const commentTreeReducer = reducer
 // (`Comments.Header`, `Comments.ReplyFormSlot`, `Comments.List`,
 // `Comments.LoadMore`). Leaf components consume the shared
 // `CommentsContext` instead of accepting render-prop callbacks.
-export function Comments({ commentKey, comments, items, user }: CommentsProps) {
+export function Comments({ commentKey, csrfToken: initialCsrfToken, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
       <div id="comments" className="comments pt-5">
@@ -141,6 +143,7 @@ export function Comments({ commentKey, comments, items, user }: CommentsProps) {
     <CommentsRoot
       key={commentKey}
       commentKey={commentKey}
+      initialCsrfToken={initialCsrfToken}
       initialItems={items}
       rootsCount={comments.roots_count}
       totalCount={comments.count}
@@ -156,6 +159,7 @@ export function Comments({ commentKey, comments, items, user }: CommentsProps) {
 
 interface CommentsRootProps {
   commentKey: string
+  initialCsrfToken: string
   initialItems: CommentItemType[]
   rootsCount: number
   totalCount: number
@@ -163,8 +167,20 @@ interface CommentsRootProps {
   children: React.ReactNode
 }
 
-function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, children }: CommentsRootProps) {
+function CommentsRoot({
+  commentKey,
+  initialCsrfToken,
+  initialItems,
+  rootsCount,
+  totalCount,
+  user,
+  children,
+}: CommentsRootProps) {
   const [state, dispatch] = useReducer(reducer, createCommentTreeState(initialItems, rootsCount))
+  const [csrfToken, setCsrfToken] = useState(initialCsrfToken)
+  useEffect(() => {
+    setCsrfToken(initialCsrfToken)
+  }, [initialCsrfToken])
 
   // Suppress iOS Safari's auto-zoom while any comment input/textarea is
   // focused, then restore the original viewport meta on blur.
@@ -208,6 +224,8 @@ function CommentsRoot({ commentKey, initialItems, rootsCount, totalCount, user, 
   const replyForm = (
     <CommentReplyForm
       commentKey={commentKey}
+      csrfToken={csrfToken}
+      onCsrfRotated={setCsrfToken}
       replyToId={activeReplyToId}
       replyTarget={replyTarget}
       user={user}

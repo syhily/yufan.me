@@ -1,3 +1,5 @@
+import { data } from 'react-router'
+
 import { getCatalog, toDetailPostShell } from '@/server/catalog'
 import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/route-helpers/detail-loader'
 import { canonicalPostPath } from '@/server/route-helpers/paths'
@@ -22,7 +24,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   const post = toDetailPostShell(clientPost)
   const visibleTags = catalog.getTagsByName(post.tags)
-  const { detail, sidebar } = await loadPublicDetailData({
+  const { detail, sidebar, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
     context,
     permalink: post.permalink,
@@ -34,14 +36,17 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     },
   })
 
-  return {
-    post,
-    mdxPath: sourcePost.mdxPath,
-    visibleTags,
-    sidebarPosts: sidebar?.posts ?? [],
-    tags: sidebar?.tags ?? [],
-    detail,
-  }
+  return data(
+    {
+      post,
+      mdxPath: sourcePost.mdxPath,
+      visibleTags,
+      sidebarPosts: sidebar?.posts ?? [],
+      tags: sidebar?.tags ?? [],
+      detail,
+    },
+    { headers: { 'Set-Cookie': commentCsrfSetCookie } },
+  )
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -59,6 +64,7 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
       admin={detail.admin}
       likes={detail.likes}
       commentKey={detail.commentKey}
+      commentCsrfToken={detail.csrfToken}
       commentsPromise={detail.comments}
       currentUser={detail.currentUser}
       sidebar={{

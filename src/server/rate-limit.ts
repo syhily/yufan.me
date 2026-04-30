@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { redisInstance } from '@/server/cache/storage'
 
 const LIMIT_TTL = 60 * 30
@@ -5,6 +7,22 @@ const LIMIT_TTL = 60 * 30
 export const LIMIT_THRESHOLD = 5
 
 const limitKey = (ip: string) => `rate-limit:${ip}`
+
+/** Window for anonymous comment POSTs per client IP (seconds). */
+const COMMENT_POST_IP_TTL = 60 * 60
+/** Max top-level comment POST attempts per IP within `COMMENT_POST_IP_TTL`. */
+export const COMMENT_POST_IP_THRESHOLD = 12
+
+/** Same window for per-email caps (normalized + hashed; no raw email in Redis). */
+const COMMENT_POST_EMAIL_TTL = 60 * 60
+export const COMMENT_POST_EMAIL_THRESHOLD = 8
+
+const commentPostIpKey = (ip: string) => `rate-limit:comment-post:${ip}`
+const commentPostEmailKey = (email: string) => {
+  const normalized = email.trim().toLowerCase()
+  const hash = createHash('sha256').update(normalized).digest('hex').slice(0, 32)
+  return `rate-limit:comment-email:${hash}`
+}
 
 export interface RateLimitResult {
   /** Post-increment counter value for this IP within the current window. */
@@ -46,4 +64,30 @@ export async function tryRateLimit(ip: string): Promise<RateLimitResult> {
   }
   const count = Number(incrResult[1])
   return { count, exceeded: count > LIMIT_THRESHOLD }
+}
+
+async function tryKeyedRateLimit(key: string, ttlSeconds: number, threshold: number): Promise<RateLimitResult> {
+  const redis = redisInstance()
+  const pipeline = redis.pipeline()
+  pipeline.incr(key)
+  pipeline.expire(key, ttlSeconds, 'NX')
+  const results = await pipeline.exec()
+  const incrResult = results?.[0]
+  if (!incrResult || incrResult[0]) {
+    throw new Error(`tryKeyedRateLimit: failed to increment counter for ${key}`, {
+      cause: incrResult?.[0] ?? undefined,
+    })
+  }
+  const count = Number(incrResult[1])
+  return { count, exceeded: count > threshold }
+}
+
+/** Throttles public comment submissions by IP (independent of login rate limits). */
+export async function tryCommentPostRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(commentPostIpKey(ip), COMMENT_POST_IP_TTL, COMMENT_POST_IP_THRESHOLD)
+}
+
+/** Throttles public comment submissions by normalized email (spam from many IPs, one mailbox). */
+export async function tryCommentPostRateLimitByEmail(email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(commentPostEmailKey(email), COMMENT_POST_EMAIL_TTL, COMMENT_POST_EMAIL_THRESHOLD)
 }

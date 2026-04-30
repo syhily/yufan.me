@@ -33,6 +33,15 @@
   flex: 1 1 auto;
 }
 
+/* Anti-spam honeypot: off-screen, not keyboard-focusable in practice (tabIndex -1). */
+.comment-form-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .comment-body {
   position: relative;
   display: flex;

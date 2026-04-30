@@ -33,6 +33,7 @@ describe('snapshot: PageDetailBody composed view', () => {
         headings={[]}
         likes={0}
         commentKey="https://yufan.me/about/"
+        commentCsrfToken="snapshot-csrf-token"
         commentsPromise={commentsPromise}
       >
         <p>About body</p>
@@ -61,6 +62,7 @@ describe('snapshot: PageDetailBody composed view', () => {
         headings={headings}
         likes={3}
         commentKey="https://yufan.me/guide/"
+        commentCsrfToken="snapshot-csrf-token"
         commentsPromise={commentsPromise}
       >
         <p>Guide body</p>
