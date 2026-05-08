@@ -1,6 +1,8 @@
 import type {
   category,
   comment,
+  content,
+  doc,
   friend,
   image,
   like,
@@ -24,6 +26,10 @@ export type NewCategory = typeof category.$inferInsert
 export type NewTag = typeof tag.$inferInsert
 export type NewImage = typeof image.$inferInsert
 export type NewMusic = typeof music.$inferInsert
+// `NewPageMeta` / `NewContent` use the business-layer alias the rest
+// of the codebase reads via `import { doc as pageMetaTable }`.
+export type NewPageMeta = typeof doc.$inferInsert
+export type NewContent = typeof content.$inferInsert
 
 // Types for select
 export type Page = typeof page.$inferSelect
@@ -47,3 +53,9 @@ export type ImageRow = typeof image.$inferSelect
 // `MusicRow` ditto: the public `AdminMusicDto` from `@/shared/music`
 // is the projection consumed by UI; the row stays server-side only.
 export type MusicRow = typeof music.$inferSelect
+// `PageMetaRow` / `ContentRow` are the schema-projected row types for
+// the new doc/content tables. The unsuffixed `Page` type above is the
+// historical metric counter row (will become `Metric` once the
+// physical rename is in flight).
+export type PageMetaRow = typeof doc.$inferSelect
+export type ContentRow = typeof content.$inferSelect

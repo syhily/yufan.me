@@ -1,4 +1,4 @@
-import { incrementPageViews, incrementPageViewsBatch } from '@/server/db/query/page'
+import { incrementMetricPv, incrementMetricPvBatch } from '@/server/db/query/metric'
 import { getLogger } from '@/server/logger'
 
 // In-memory aggregator for high-frequency counters. We currently track page
@@ -72,7 +72,7 @@ class PageViewBatcher {
 
     this.flushing = (async () => {
       try {
-        await incrementPageViewsBatch(snapshot)
+        await incrementMetricPvBatch(snapshot)
         log.debug('flushed page views', { keys: snapshot.size })
       } catch (err) {
         log.error('flush failed; restoring buffer', { err: String(err), keys: snapshot.size })
@@ -109,7 +109,7 @@ function getBatcher(): PageViewBatcher {
 // batcher so production deployments with short-lived/ephemeral workers do not
 // lose buffered increments before a timer flush runs.
 export function bumpPageView(key: string): void {
-  void incrementPageViews(key).catch((err) => {
+  void incrementMetricPv(key).catch((err) => {
     log.error('direct page-view increment failed', { err: String(err), key })
   })
 }

@@ -1,13 +1,16 @@
 import { and, count, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 
 import { db } from '@/server/db/pool'
-import { comment, like, page } from '@/server/db/schema'
+// `metric` aliases the page-counter table the same way
+// `@/server/db/query/metric` does — keeping every "this query touches
+// the metric table" statement self-evident from the import.
+import { comment, like, page as metric } from '@/server/db/schema'
 
 /**
  * Atomic "register like + bump counter + read fresh count" in one transaction.
  *
  * Previously the like flow ran three separate round-trips (insertToken,
- * incrementPageVotes, queryLikes) which let a concurrent decrement land
+ * incrementMetricVotes, queryLikes) which let a concurrent decrement land
  * between the bump and the read and report a stale count to the client.
  * The transaction guarantees the returned count reflects this exact
  * insert; downstream UPDATEs touching the same row queue behind it.
@@ -17,10 +20,10 @@ export async function recordLikeAndCount(token: string, pageKey: string): Promis
     const now = new Date()
     await tx.insert(like).values({ token, pageKey, createdAt: now, updatedAt: now })
     const rows = await tx
-      .update(page)
-      .set({ voteUp: sql`${page.voteUp} + 1` })
-      .where(eq(page.key, pageKey))
-      .returning({ voteUp: page.voteUp })
+      .update(metric)
+      .set({ voteUp: sql`${metric.voteUp} + 1` })
+      .where(eq(metric.key, pageKey))
+      .returning({ voteUp: metric.voteUp })
     return rows[0]?.voteUp ?? 0
   })
 }
@@ -49,22 +52,25 @@ export async function consumeActiveLikeToken(pageKey: string, token: string): Pr
   return rows.length > 0
 }
 
-export async function pageVoteUp(pageKey: string): Promise<number> {
-  const rows = await db.select({ like: page.voteUp }).from(page).where(eq(page.key, pageKey)).limit(1)
+export async function metricVoteUp(pageKey: string): Promise<number> {
+  const rows = await db.select({ like: metric.voteUp }).from(metric).where(eq(metric.key, pageKey)).limit(1)
   return rows[0]?.like ?? 0
 }
 
-export interface PageMetricsRow {
+export interface MetricsRow {
   key: string
   like: number | null
   view: number | null
 }
 
-export async function pageMetricsByKeys(pageKeys: string[]): Promise<PageMetricsRow[]> {
+export async function metricsByKeys(pageKeys: string[]): Promise<MetricsRow[]> {
   if (pageKeys.length === 0) {
     return []
   }
-  return db.select({ key: page.key, like: page.voteUp, view: page.pv }).from(page).where(inArray(page.key, pageKeys))
+  return db
+    .select({ key: metric.key, like: metric.voteUp, view: metric.pv })
+    .from(metric)
+    .where(inArray(metric.key, pageKeys))
 }
 
 export interface PageCommentCountRow {

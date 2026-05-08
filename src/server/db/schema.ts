@@ -10,8 +10,10 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
+import { randomUUID } from 'node:crypto'
 
 export const page = pgTable(
   'page',
@@ -309,6 +311,161 @@ export const music = pgTable(
     index('idx_music_player_id').on(table.playerId),
     index('idx_music_created_at').on(table.createdAt),
     index('idx_music_deleted_at').on(table.deletedAt),
+  ],
+)
+
+// Page business-identity table. Owns one row per page (about / links /
+// guestbook / …) and, for each row, the metadata an admin edits in the
+// right-hand "metadata" panel of the editor. The actual PortableText
+// body and its history live in the shared `content` table below — `doc`
+// only points to the currently-published revision via
+// `published_revision_id`.
+//
+// The physical name `doc` is **temporary**: the historical metric
+// counter table already occupies the natural `page` name. After the
+// follow-up PR drops the `key`/`title` columns from that table and
+// renames it to `metrics`, this table will pick up its proper name via
+// `ALTER TABLE doc RENAME TO page;`. The `doc` literal **must only**
+// appear in this file; every other module imports it via the alias
+// `import { doc as pageMetaTable } from '@/server/db/schema'` so the
+// future rename is a one-line change to schema.ts.
+//
+// Field design rationale:
+// - `slug` drives the public `/:slug` URL (varchar(80) is the same
+//   ceiling enforced on category/tag slugs and is plenty for human-
+//   chosen handles like `about` / `friends` / `guestbook`).
+// - `title` / `summary` / `cover` / `og` are the same surface the
+//   catalog has historically projected from MDX frontmatter — keeping
+//   them on the meta row means listing pages and feeds never need to
+//   join `content`.
+// - `published` / `comments_enabled` / `show_toc` are boolean toggles
+//   the admin flips without writing a new revision (these are
+//   metadata, not body), so they live on `doc` rather than `content`.
+// - `published_at` is the canonical "first published" timestamp shown
+//   in the public footer / `<time>`. It defaults to the row's create
+//   time if the operator forgets to set it explicitly.
+// - `published_revision_id` is a foreign key into `content.id`. NULL
+//   means "never published yet" — the public catalog hides such rows.
+//   We deliberately don't enforce the FK in DDL because the runtime
+//   guarantees ordering (`content` row exists before `doc.published_
+//   revision_id` is updated to point at it within the same
+//   transaction).
+// - `deleted_at` follows the soft-delete convention used by every
+//   other long-lived row (page / friend / image / music). `/wp-admin/
+//   pages/restore` flips it back to NULL.
+export const doc = pgTable(
+  'doc',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+    slug: varchar('slug', { length: 80 }).unique().notNull(),
+    title: varchar('title', { length: 200 }).notNull(),
+    summary: text('summary').notNull().default(''),
+    cover: text('cover').notNull().default(''),
+    og: text('og'),
+    published: boolean('published').notNull().default(true),
+    commentsEnabled: boolean('comments_enabled').notNull().default(true),
+    showToc: boolean('show_toc').notNull().default(false),
+    publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    publishedRevisionId: bigint('published_revision_id', { mode: 'bigint' }),
+  },
+  (table) => [index('idx_doc_slug').on(table.slug), index('idx_doc_deleted_at').on(table.deletedAt)],
+)
+
+// Shared revision repository for both pages and (eventually) posts.
+//
+// Why a single shared table instead of `page_revision` / `post_revision`?
+// 1. PortableText body shape is identical between the two; splitting
+//    forces two near-identical projections.
+// 2. The editor save/publish state machine is also identical (draft
+//    branches off the latest revision, publish promotes one row).
+// 3. Cross-content features added later — e.g. "where is image X
+//    embedded?" or "global trash bin" — are a single index scan on
+//    `content` instead of a UNION of two history tables.
+//
+// Discriminator pair `(type, owner_id)`:
+// - `type` is `'page' | 'post'` (no DB enum — keep it varchar so a
+//   future `'note'` / `'snippet'` doesn't require a `pg_enum_add`
+//   migration).
+// - `owner_id` references `doc.id` when type='page' and (in the
+//   future) the corresponding `post.id`. The FK is **not** enforced
+//   in DDL: a polymorphic FK isn't expressible without a CHECK +
+//   trigger pair, and the application layer guarantees the invariant
+//   inside transactions where it matters.
+//
+// Revision numbering:
+// - `revision_no` is monotonically increasing **per (type, owner_id)**.
+//   The unique index `uq_content_owner_revision` enforces no two
+//   revisions of the same owner share a number; the service layer
+//   acquires `SELECT … FOR UPDATE` on the doc row before computing
+//   `MAX(revision_no) + 1` so concurrent saves serialise correctly.
+//
+// Status:
+// - `'draft'` is the in-progress revision the editor writes back to
+//   on every autosave; `'published'` is immutable and exactly one row
+//   per owner is referenced by `doc.published_revision_id` at any
+//   given time. The transition is one-way (publishing a draft flips
+//   it to `'published'`; further edits create a new draft on top).
+//
+// Optimistic concurrency:
+// - `client_revision_token` is a UUID rotated on every server-side
+//   write. The editor sends the token it last received; the service
+//   layer rejects writes whose token doesn't match the row's current
+//   token, surfacing a "conflict, choose a side" diff in the UI.
+//
+// Snapshot fields:
+// - `body` is the canonical PortableText (`PortableTextBlock[]`)
+//   payload. Validated by `@/shared/portable-text` at the API
+//   perimeter so a malformed payload never lands.
+// - `image_sources` is the array of S3 storagePath values referenced
+//   by the body, denormalised so the SSR enhancer can resolve
+//   thumbhashes in a single `WHERE storage_path IN (…)` lookup
+//   without re-walking the body tree.
+// - `headings` is the structured TOC array (`{depth, text, slug}[]`),
+//   pre-computed at save time so SSR doesn't re-parse PortableText
+//   to render the right-hand TOC widget.
+// - `author_id` records who saved the revision (NULL only for the
+//   migration script that backfills the initial publication).
+export const content = pgTable(
+  'content',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    type: varchar('type', { length: 16 }).notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
+    revisionNo: integer('revision_no').notNull(),
+    status: varchar('status', { length: 16 }).notNull().default('draft'),
+    body: jsonb('body')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    imageSources: jsonb('image_sources')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    headings: jsonb('headings')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    authorId: bigint('author_id', { mode: 'bigint' }),
+    clientRevisionToken: uuid('client_revision_token')
+      .notNull()
+      .$defaultFn(() => randomUUID()),
+  },
+  (table) => [
+    uniqueIndex('uq_content_owner_revision').on(table.type, table.ownerId, table.revisionNo),
+    index('idx_content_owner_status').on(table.type, table.ownerId, table.status),
+    index('idx_content_status').on(table.status),
   ],
 )
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { seedPage } from './_helpers/db'
+import { seedMetric } from './_helpers/db'
 import { adminSession, regularSession } from './_helpers/session'
 
 // `loadComments` is the most-called server function on the site (every post
@@ -33,9 +33,9 @@ vi.mock('@/server/db/query/comment', () => ({
   searchPages: vi.fn(),
 }))
 
-vi.mock('@/server/db/query/page', () => ({
-  upsertPage: vi.fn(async () => undefined),
-  findPageByKey: vi.fn(),
+vi.mock('@/server/db/query/metric', () => ({
+  upsertMetric: vi.fn(async () => undefined),
+  findMetricByKey: vi.fn(),
 }))
 
 vi.mock('@/server/metrics/batcher', () => ({
@@ -53,7 +53,7 @@ vi.mock('@/server/markdown/parser', () => ({
 }))
 
 const queries = await import('@/server/db/query/comment')
-const pageQueries = await import('@/server/db/query/page')
+const metricQueries = await import('@/server/db/query/metric')
 const { loadComments, latestComments, pendingComments, parseComments } = await import('@/server/comments/loader')
 
 function row(overrides: Record<string, unknown> = {}) {
@@ -87,7 +87,7 @@ function row(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  for (const fn of Object.values({ ...queries, ...pageQueries })) {
+  for (const fn of Object.values({ ...queries, ...metricQueries })) {
     if (typeof fn === 'function' && 'mockReset' in fn) {
       ;(fn as ReturnType<typeof vi.fn>).mockReset()
     }
@@ -142,7 +142,7 @@ describe('services/comments/loader — loadComments', () => {
 
     await loadComments(regularSession(), '/posts/new', 'New post', 0)
 
-    expect(pageQueries.upsertPage).toHaveBeenCalledWith('/posts/new', 'New post')
+    expect(metricQueries.upsertMetric).toHaveBeenCalledWith('/posts/new', 'New post')
   })
 
   it('issues page upsert + counts + root listing in parallel (single tick)', async () => {
@@ -158,8 +158,8 @@ describe('services/comments/loader — loadComments', () => {
         }, 20)
       })
     }
-    vi.mocked(pageQueries.upsertPage).mockImplementation((key, title) =>
-      tracked(seedPage({ key, title: title ?? '无标题' })),
+    vi.mocked(metricQueries.upsertMetric).mockImplementation((key, title) =>
+      tracked(seedMetric({ key, title: title ?? '无标题' })),
     )
     vi.mocked(queries.countCommentsAndRoots).mockImplementation(() => tracked({ total: 0, roots: 0 }))
     vi.mocked(queries.findRootComments).mockImplementation(() => tracked([]))

@@ -13,15 +13,15 @@ vi.mock('@/server/db/pool', () => ({
   },
 }))
 
-const { incrementPageViewsBatch } = await import('@/server/db/query/page')
+const { incrementMetricPvBatch } = await import('@/server/db/query/metric')
 
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe('db/query/page.server', () => {
+describe('db/query/metric', () => {
   it('casts batched view values to stable postgres types', async () => {
-    await incrementPageViewsBatch(
+    await incrementMetricPvBatch(
       new Map([
         ['https://yufan.me/posts/a/', 1],
         ['https://yufan.me/posts/b/', 2],
@@ -39,7 +39,7 @@ describe('db/query/page.server', () => {
   })
 
   it('skips empty and non-positive batched view deltas', async () => {
-    await incrementPageViewsBatch(
+    await incrementMetricPvBatch(
       new Map([
         ['https://yufan.me/posts/a/', 0],
         ['https://yufan.me/posts/b/', -1],
