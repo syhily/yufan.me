@@ -1,5 +1,5 @@
 import { ArrowLeftIcon, ExternalLinkIcon, EyeIcon, FileTextIcon, SaveIcon, UploadIcon } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import type {
@@ -14,9 +14,15 @@ import type {
 import type { PortableTextBody } from '@/shared/portable-text'
 
 import { useApiFetcher } from '@/client/api/fetcher'
+import { submitApiAction } from '@/client/api/submit'
+import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
+import { usePageAutosave } from '@/client/hooks/use-page-autosave'
+import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { DraftConflictDialog } from '@/ui/admin/pages/DraftConflictDialog'
 import { MetaSidebar, type PageMetaDraft, EMPTY_META_DRAFT, metaDraftFromPage } from '@/ui/admin/pages/MetaSidebar'
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
+import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { cn } from '@/ui/lib/cn'
@@ -78,7 +84,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // edits in the same browser tab don't blow away in-flight changes.
   const initialBodyKey = useMemo(() => {
     if (!isEditing) {
-      return 'create'
+      return 'create:initial'
     }
     const rev = detail.latestRevision ?? detail.publishedRevision
     return rev !== null ? `${detail.page.id}:${rev.clientRevisionToken}` : `${detail.page.id}:empty`
@@ -92,6 +98,69 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   )
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
+  // --- Local Storage draft persistence --------------------------------------
+  // Edit mode keys on `(pageId, clientRevisionToken)` so adopting a
+  // remote revision (or saving) starts a fresh slot.
+  const { loadedDraft, clearDraft } = usePageLocalDraft({
+    pageId: isEditing ? detail.page.id : null,
+    clientRevisionToken: expectedToken,
+    body,
+    disabled: !isEditing,
+  })
+
+  // Create mode mirrors body + meta into a per-tab LS slot so closing
+  // the tab mid-authoring doesn't lose work and a refresh restores
+  // exactly where the user left off. Once the user clicks "create
+  // page" we migrate the slot to the canonical edit-mode key shape.
+  const createDraft = useCreatePageDraft({ body, meta })
+  const createDraftHydratedRef = useRef(false)
+  useEffect(() => {
+    if (isEditing) {
+      return
+    }
+    if (createDraftHydratedRef.current) {
+      return
+    }
+    if (createDraft.loadedDraft === null) {
+      // No LS slot to restore — mark as hydrated so we don't keep
+      // checking on every render.
+      createDraftHydratedRef.current = true
+      return
+    }
+    createDraftHydratedRef.current = true
+    setMeta(createDraft.loadedDraft.meta)
+    setBody(createDraft.loadedDraft.body)
+    // Force `<PageBodyEditor>` to remount with the restored content.
+    setBodyKey(`create:restored:${createDraft.loadedDraft.savedAt}`)
+  }, [isEditing, createDraft.loadedDraft])
+
+  // When the loader observes a local draft different from the body
+  // we just hydrated from the server's latest revision, present the
+  // diff resolver. Otherwise silently discard the LS slot — its
+  // payload matches what the server already has.
+  const [conflict, setConflict] = useState<{ localBody: PortableTextBody; localSavedAt: number } | null>(null)
+  const [conflictResolved, setConflictResolved] = useState(false)
+  useEffect(() => {
+    if (conflictResolved) {
+      return
+    }
+    if (loadedDraft === null) {
+      return
+    }
+    // Compare structurally — same `JSON.stringify` semantics as the
+    // diff resolver so the "they're equal" branch matches the
+    // resolver's notion of equality.
+    if (JSON.stringify(loadedDraft.body) === JSON.stringify(initialBody)) {
+      return
+    }
+    setConflict({ localBody: loadedDraft.body, localSavedAt: loadedDraft.savedAt })
+  }, [loadedDraft, initialBody, conflictResolved])
+
+  // `create` mode chains upsertMeta → saveDraft → navigate, so it
+  // can't piggy-back on `useApiFetcher` (which exposes a synchronous
+  // `submit()` and an `onSuccess` callback). The chain runs through
+  // `submitApiAction` instead and tracks its own pending flag.
+  const [isCreatingPage, setIsCreatingPage] = useState(false)
   const upsertMetaApi = useApiFetcher<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
     onSuccess: (payload) => onMetaSaved(payload.page),
     onError: (error) => setStatus({ kind: 'error', message: error.message }),
@@ -105,16 +174,54 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     onError: (error) => setStatus({ kind: 'error', message: error.message }),
   })
 
+  // --- Autosave -------------------------------------------------------------
+  // Disabled while a save is in flight, while a conflict dialog is
+  // pending resolution, or in `create` mode (no `id` to save against
+  // yet). The flush hits `saveDraft` directly via `submitApiAction`
+  // so the autosave can `await` each round-trip — `useApiFetcher`'s
+  // sync `submit()` doesn't return a promise.
+  const autosaveEnabled =
+    isEditing && conflict === null && !isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi })
+  // The `onBodySaved` reducer reads from a closure that captures
+  // `detail`, `expectedToken`, etc. We mirror it through a ref so the
+  // autosave flush always picks up the latest values without forcing
+  // every keystroke to recreate the flush callback.
+  const handleBodySavedRef = useRef<(payload: SavePageBodyOutput) => void>(() => undefined)
+  handleBodySavedRef.current = (payload) => onBodySaved(payload)
+
+  const flushAutosave = useCallback(
+    async (snapshot: PortableTextBody) => {
+      if (!isEditing) {
+        return
+      }
+      const envelope = await submitApiAction<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
+        id: detail.page.id,
+        body: snapshot,
+        expectedClientRevisionToken: expectedToken,
+      })
+      if ('data' in envelope && envelope.data !== undefined) {
+        handleBodySavedRef.current(envelope.data)
+        return
+      }
+      if ('error' in envelope && envelope.error !== undefined) {
+        setStatus({ kind: 'error', message: envelope.error.message })
+      }
+    },
+    [isEditing, detail, expectedToken],
+  )
+
+  usePageAutosave({
+    body,
+    enabled: autosaveEnabled,
+    flush: flushAutosave,
+  })
+
   function onMetaSaved(saved: AdminPageDto) {
+    // `useApiFetcher.onSuccess` is the edit-mode path. Create mode
+    // routes through `persistCreate()` instead — the `submit()` call
+    // there bypasses this callback by using `submitApiAction`.
     setStatus({ kind: 'saved', at: new Date() })
-    if (mode === 'create') {
-      // After the first metadata save, jump to the edit URL so the
-      // user can continue authoring the body. Replace the history
-      // entry so "back" goes to the list rather than to /new.
-      void navigate(`/wp-admin/pages/${saved.id}/edit`, { replace: true })
-    } else {
-      setMeta(metaDraftFromPage(saved))
-    }
+    setMeta(metaDraftFromPage(saved))
   }
 
   function onBodySaved(payload: SavePageBodyOutput) {
@@ -133,9 +240,13 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // --- Save handlers ------------------------------------------------------
 
   const persistMeta = useCallback(() => {
+    if (!isEditing) {
+      // Edit mode reaches this through `persistCreate` instead.
+      return
+    }
     setStatus({ kind: 'saving' })
     upsertMetaApi.submit({
-      id: isEditing ? detail.page.id : undefined,
+      id: detail.page.id,
       slug: meta.slug.trim(),
       title: meta.title.trim(),
       summary: meta.summary.trim(),
@@ -146,6 +257,73 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       showToc: meta.showToc,
     })
   }, [upsertMetaApi, isEditing, detail, meta])
+
+  // Two-step "create page" flow: upsert metadata to assign an id,
+  // then push the locally-authored body to the brand-new page in a
+  // single click. Once both succeed we migrate the LS slot to the
+  // canonical edit-mode key shape and navigate to `/edit/:id` so
+  // subsequent saves go through the regular edit-mode path.
+  const persistCreate = useCallback(async () => {
+    if (isEditing || isCreatingPage) {
+      return
+    }
+    setIsCreatingPage(true)
+    setStatus({ kind: 'saving' })
+
+    const metaEnvelope = await submitApiAction<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
+      slug: meta.slug.trim(),
+      title: meta.title.trim(),
+      summary: meta.summary.trim(),
+      cover: meta.cover.trim(),
+      og: meta.og.trim() === '' ? null : meta.og.trim(),
+      published: meta.published,
+      commentsEnabled: meta.commentsEnabled,
+      showToc: meta.showToc,
+    })
+    if (!('data' in metaEnvelope) || metaEnvelope.data === undefined) {
+      const errorMessage = 'error' in metaEnvelope && metaEnvelope.error ? metaEnvelope.error.message : '保存失败'
+      setStatus({ kind: 'error', message: errorMessage })
+      setIsCreatingPage(false)
+      return
+    }
+    const savedPage = metaEnvelope.data.page
+
+    // Push the body through `saveDraft`. `expectedClientRevisionToken: null`
+    // because there's no revision yet — saveDraft creates the first one.
+    const draftEnvelope = await submitApiAction<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
+      id: savedPage.id,
+      body,
+      expectedClientRevisionToken: null,
+    })
+    if (!('data' in draftEnvelope) || draftEnvelope.data === undefined) {
+      const errorMessage =
+        'error' in draftEnvelope && draftEnvelope.error ? draftEnvelope.error.message : '保存正文失败'
+      setStatus({ kind: 'error', message: errorMessage })
+      setIsCreatingPage(false)
+      // The metadata row exists at this point so navigate the user
+      // there — they can retry the body save from the edit screen.
+      void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
+      return
+    }
+    if (draftEnvelope.data.status === 'conflict') {
+      // A genuinely unreachable branch on a brand-new page — a fresh
+      // row can't have a competing revision — but treat it as a
+      // soft failure rather than crashing.
+      setStatus({ kind: 'conflict', expectedToken: draftEnvelope.data.expectedToken })
+      setIsCreatingPage(false)
+      void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
+      return
+    }
+
+    // Migrate the LS slot from `cms-page-draft:new:<sessionId>` to
+    // the edit-mode shape so a refresh on the edit screen still
+    // loads the just-saved body without showing a conflict.
+    createDraft.migrateToEditKey(savedPage.id, draftEnvelope.data.revision.clientRevisionToken, body)
+
+    setStatus({ kind: 'saved', at: new Date() })
+    setIsCreatingPage(false)
+    void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
+  }, [isEditing, isCreatingPage, meta, body, createDraft, navigate])
 
   const persistDraft = useCallback(() => {
     if (!isEditing) {
@@ -173,14 +351,15 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     })
   }, [publishApi, isEditing, detail, body, expectedToken])
 
-  // Cmd/Ctrl-S triggers the appropriate save: meta on create, draft
-  // on edit. Publish stays a deliberate click — too easy to misfire.
+  // Cmd/Ctrl-S triggers the appropriate save: create-flow on create,
+  // draft on edit. Publish stays a deliberate click (or
+  // Cmd/Ctrl+Shift+P, see below) — too easy to misfire.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's' && !event.shiftKey) {
         event.preventDefault()
         if (mode === 'create') {
-          persistMeta()
+          void persistCreate()
         } else {
           persistDraft()
         }
@@ -188,11 +367,30 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, persistMeta, persistDraft])
+  }, [mode, persistCreate, persistDraft])
 
-  const isMetaPending = upsertMetaApi.isPending
+  const isMetaPending = upsertMetaApi.isPending || isCreatingPage
   const isBodyPending = saveDraftApi.isPending || publishApi.isPending
   const isPending = isMetaPending || isBodyPending
+
+  // --- Conflict resolution handlers -----------------------------------------
+  const adoptLocalDraft = useCallback(() => {
+    if (conflict === null) {
+      return
+    }
+    setBody(conflict.localBody)
+    setBodyKey(`${detail?.page.id ?? 'new'}:adopt-local:${Date.now()}`)
+    setConflict(null)
+    setConflictResolved(true)
+  }, [conflict, detail])
+
+  const adoptServerVersion = useCallback(() => {
+    setBody(initialBody)
+    setBodyKey(`${detail?.page.id ?? 'new'}:adopt-server:${Date.now()}`)
+    clearDraft()
+    setConflict(null)
+    setConflictResolved(true)
+  }, [initialBody, detail, clearDraft])
 
   const canPersistMeta = meta.slug.trim() !== '' && meta.title.trim() !== ''
 
@@ -226,17 +424,28 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               }
             />
           ) : null}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={persistMeta}
-            disabled={isPending || !canPersistMeta}
-            title="保存页面信息"
-          >
-            <SaveIcon /> {mode === 'create' ? '创建页面' : '保存信息'}
-          </Button>
-          {isEditing ? (
+          {mode === 'create' ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                void persistCreate()
+              }}
+              disabled={isPending || !canPersistMeta}
+              title="保存页面信息并上传当前正文"
+            >
+              <UploadIcon /> 创建页面
+            </Button>
+          ) : (
             <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={persistMeta}
+                disabled={isPending || !canPersistMeta}
+                title="保存页面信息"
+              >
+                <SaveIcon /> 保存信息
+              </Button>
               <Button variant="outline" size="sm" onClick={persistDraft} disabled={isPending}>
                 <SaveIcon /> 保存草稿
               </Button>
@@ -244,7 +453,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                 <UploadIcon /> 发布
               </Button>
             </>
-          ) : null}
+          )}
         </div>
       </header>
 
@@ -257,26 +466,69 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
           'lg:grid-cols-[minmax(0,1fr)_360px]',
         )}
       >
-        <div className="flex min-h-0 flex-col">
-          {mode === 'create' ? (
-            <CreateModeHint />
-          ) : (
-            <PageBodyEditor initialBody={initialBody} bodyKey={bodyKey} onBodyChange={setBody} disabled={isPending} />
-          )}
+        <div className="flex min-h-0 flex-col gap-2">
+          {mode === 'create' ? <CreateModeBanner draftSavedAt={createDraft.loadedDraft?.savedAt ?? null} /> : null}
+          <PageBodyEditor initialBody={initialBody} bodyKey={bodyKey} onBodyChange={setBody} disabled={isPending} />
         </div>
         <aside className="min-h-0 overflow-y-auto pr-1">
-          <MetaSidebar draft={meta} onChange={setMeta} disabled={isPending} />
+          <MetaSidebar
+            draft={meta}
+            onChange={setMeta}
+            disabled={isPending}
+            extras={
+              isEditing ? (
+                <div className="rounded-md border bg-card p-2">
+                  <RevisionHistoryDrawer pageId={detail.page.id} currentToken={expectedToken} />
+                </div>
+              ) : null
+            }
+          />
         </aside>
       </div>
+      {conflict !== null && isEditing ? (
+        <DraftConflictDialog
+          open={true}
+          localBody={conflict.localBody}
+          serverBody={initialBody}
+          localSavedAt={conflict.localSavedAt}
+          serverUpdatedAt={
+            (detail.latestRevision ?? detail.publishedRevision)?.updatedAt
+              ? Date.parse((detail.latestRevision ?? detail.publishedRevision)!.updatedAt)
+              : null
+          }
+          onChooseLocal={adoptLocalDraft}
+          onChooseServer={adoptServerVersion}
+        />
+      ) : null}
     </div>
   )
 }
 
-function CreateModeHint() {
+interface AutosavePendingArg {
+  upsertMetaApi: { isPending: boolean }
+  saveDraftApi: { isPending: boolean }
+  publishApi: { isPending: boolean }
+}
+
+function isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi }: AutosavePendingArg): boolean {
+  return upsertMetaApi.isPending || saveDraftApi.isPending || publishApi.isPending
+}
+
+interface CreateModeBannerProps {
+  draftSavedAt: number | null
+}
+
+function CreateModeBanner({ draftSavedAt }: CreateModeBannerProps) {
+  // Show a thin banner so the user understands the body is being
+  // mirrored locally and won't be uploaded until they hit "create".
+  // Once a previous local draft has been restored we surface the
+  // timestamp so the user can verify nothing was lost.
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-dashed bg-card/50 p-12 text-center">
-      <FileTextIcon className="size-10 text-muted-foreground" />
-      <div className="text-sm text-muted-foreground">填写右侧页面信息后点击「创建页面」，就可以开始编辑正文了。</div>
+    <div className="flex items-center justify-between rounded-md border border-dashed bg-card/50 px-3 py-2 text-xs text-muted-foreground">
+      <span>新页面正文仅本地保留，点击「创建页面」后才会同步到服务器。</span>
+      {draftSavedAt !== null ? (
+        <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
+      ) : null}
     </div>
   )
 }
