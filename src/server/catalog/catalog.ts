@@ -184,7 +184,6 @@ interface CatalogInput {
   pages: Page[]
   allPosts: Post[]
   categories: Category[]
-  categoriesByCount: Category[]
   categoryLinkByName: Map<string, string>
   tags: Tag[]
   bySlug: Map<string, Post>
@@ -290,10 +289,6 @@ export class ContentCatalog {
     const tagBySlug = new Map(tags.map((tag) => [tag.slug, tag]))
     const permalinks = new Set([...allPosts.map((post) => post.permalink), ...pages.map((page) => page.permalink)])
 
-    // Pre-sort once at build so the categories listing route can return the
-    // pre-sorted view without an additional `.slice().sort()` per request.
-    const categoriesByCount = [...categories].sort((a, b) => b.counts - a.counts)
-
     // Direct name → permalink lookup for the home/listing routes that need to
     // attach a category breadcrumb chip per post. The previous implementation
     // built a `new Set(...)` + `getCategoriesByName` round-trip per request;
@@ -305,7 +300,6 @@ export class ContentCatalog {
       pages,
       allPosts,
       categories,
-      categoriesByCount,
       categoryLinkByName,
       tags,
       bySlug,
@@ -325,7 +319,6 @@ export class ContentCatalog {
   readonly pages!: Page[]
   readonly allPosts!: Post[]
   readonly categories!: Category[]
-  readonly categoriesByCount!: Category[]
   readonly categoryLinkByName!: Map<string, string>
   readonly tags!: Tag[]
   readonly permalinks!: Set<string>
