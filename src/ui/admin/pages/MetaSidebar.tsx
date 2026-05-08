@@ -185,14 +185,6 @@ export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarPr
           <CardTitle className="text-base">展示选项</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <ToggleRow
-            id="page-published"
-            label="已发布"
-            description="未发布的页面在公网会返回 404，仅自己可预览。"
-            checked={draft.published}
-            onCheckedChange={(value) => set('published', value)}
-            disabled={disabled}
-          />
           <div className="grid gap-2">
             <Label htmlFor="page-published-at">发布时间</Label>
             <Input

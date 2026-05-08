@@ -3,6 +3,8 @@ import {
   CheckCircle2Icon,
   CircleDashedIcon,
   ExternalLinkIcon,
+  EyeIcon,
+  EyeOffIcon,
   FileTextIcon,
   PencilLineIcon,
   SaveIcon,
@@ -16,6 +18,8 @@ import type {
   AdminPageDto,
   SavePageBodyInput,
   SavePageBodyOutput,
+  UnpublishPageInput,
+  UnpublishPageOutput,
   UpsertPageMetaInput,
   UpsertPageMetaOutput,
 } from '@/shared/cms-pages'
@@ -46,6 +50,7 @@ import { cn } from '@/ui/lib/cn'
 const UPSERT_META = API_ACTIONS.admin.upsertPageMeta
 const SAVE_DRAFT = API_ACTIONS.admin.saveDraft
 const PUBLISH = API_ACTIONS.admin.publishLatest
+const UNPUBLISH = API_ACTIONS.admin.unpublishPage
 
 type Status =
   | { kind: 'idle' }
@@ -186,7 +191,23 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     onError: (error) => setStatus({ kind: 'error', message: error.message }),
   })
   const publishApi = useApiFetcher<SavePageBodyInput, SavePageBodyOutput>(PUBLISH, {
-    onSuccess: (payload) => onBodySaved(payload),
+    onSuccess: (payload) => {
+      onBodySaved(payload)
+      // Server-side publish flips `meta.published = true` in the
+      // same transaction as promoting the revision. Mirror that
+      // locally so the badge + toolbar swap to the published state
+      // immediately, without waiting for a route refresh.
+      if (payload.status === 'saved') {
+        setMeta((m) => ({ ...m, published: true }))
+      }
+    },
+    onError: (error) => setStatus({ kind: 'error', message: error.message }),
+  })
+  const unpublishApi = useApiFetcher<UnpublishPageInput, UnpublishPageOutput>(UNPUBLISH, {
+    onSuccess: (payload) => {
+      setStatus({ kind: 'saved', at: new Date() })
+      setMeta(metaDraftFromPage(payload.page))
+    },
     onError: (error) => setStatus({ kind: 'error', message: error.message }),
   })
 
@@ -197,7 +218,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // so the autosave can `await` each round-trip — `useApiFetcher`'s
   // sync `submit()` doesn't return a promise.
   const autosaveEnabled =
-    isEditing && conflict === null && !isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi })
+    isEditing && conflict === null && !isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi, unpublishApi })
   // The `onBodySaved` reducer reads from a closure that captures
   // `detail`, `expectedToken`, etc. We mirror it through a ref so the
   // autosave flush always picks up the latest values without forcing
@@ -383,6 +404,47 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     })
   }, [publishApi, isEditing, detail, body, expectedToken])
 
+  const persistUnpublish = useCallback(() => {
+    if (!isEditing) {
+      return
+    }
+    setStatus({ kind: 'saving' })
+    unpublishApi.submit({ id: detail.page.id })
+  }, [unpublishApi, isEditing, detail])
+
+  // Bring a previously taken-offline page back online without
+  // writing a new revision. We piggy-back on `upsertPageMeta` rather
+  // than `publishLatest` because the latest revision is already
+  // promoted — we only need to flip the visibility flag.
+  const persistRepublish = useCallback(() => {
+    if (!isEditing) {
+      return
+    }
+    setStatus({ kind: 'saving' })
+    const publishedAt = localInputValueToIso(meta.publishedAt)
+    upsertMetaApi.submit({
+      id: detail.page.id,
+      slug: meta.slug.trim(),
+      title: meta.title.trim(),
+      summary: meta.summary.trim(),
+      cover: meta.cover.trim(),
+      og: meta.og.trim() === '' ? null : meta.og.trim(),
+      published: true,
+      commentsEnabled: meta.commentsEnabled,
+      showToc: meta.showToc,
+      ...(publishedAt !== null ? { publishedAt } : {}),
+    })
+  }, [upsertMetaApi, isEditing, detail, meta])
+
+  const publishState = useMemo<PublishState>(
+    // We pass `meta.published` separately because `detail.page.published`
+    // is the snapshot from the loader and doesn't follow our
+    // post-publish / post-unpublish state updates. The shell owns
+    // the current truth in `meta`.
+    () => (isEditing ? derivePublishState(detail, meta.published) : { kind: 'not-published-yet' }),
+    [isEditing, detail, meta.published],
+  )
+
   // Cmd/Ctrl-S triggers the appropriate save: create-flow on create,
   // draft on edit. Cmd/Ctrl+Shift+P publishes the latest body.
   // Both shortcuts also gate on the same enabled-conditions as the
@@ -405,16 +467,25 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       }
       if (key === 'p' && event.shiftKey) {
         event.preventDefault()
-        if (isEditing) {
+        if (!isEditing) {
+          return
+        }
+        // Match the visible toolbar control: an offline-but-promoted
+        // page binds the shortcut to the bring-back-online flow,
+        // not a fresh publish (which would create an empty no-op
+        // revision on top of the existing published one).
+        if (publishState.kind === 'unpublished') {
+          persistRepublish()
+        } else {
           persistPublish()
         }
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, isEditing, persistCreate, persistDraft, persistPublish])
+  }, [mode, isEditing, persistCreate, persistDraft, persistPublish, persistRepublish, publishState])
 
-  const isMetaPending = upsertMetaApi.isPending || isCreatingPage
+  const isMetaPending = upsertMetaApi.isPending || isCreatingPage || unpublishApi.isPending
   const isBodyPending = saveDraftApi.isPending || publishApi.isPending
   const isPending = isMetaPending || isBodyPending
 
@@ -456,16 +527,14 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   }, [initialBody, detail, clearDraft])
 
   const canPersistMeta = meta.slug.trim() !== '' && meta.title.trim() !== ''
-
-  const publishState = useMemo<PublishState>(
-    () => (isEditing ? derivePublishState(detail) : { kind: 'not-published-yet' }),
-    [isEditing, detail],
-  )
   // The publish button is suppressed when the latest revision *is*
-  // already the published one, because publishing again would just
-  // create an empty no-op revision. The user can still re-publish by
-  // making any edit (which moves to `draft-ahead`).
+  // already the published one (publishing again would create an
+  // empty no-op revision). The user can still re-publish by making
+  // any edit (which moves to `draft-ahead`) or by hitting 取消发布
+  // first and 发布 again.
   const canPublish = isEditing && publishState.kind !== 'published-current'
+  // 取消发布 only makes sense when the page is currently visible.
+  const canUnpublish = isEditing && meta.published
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 p-4">
@@ -522,14 +591,31 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               <Button variant="outline" size="sm" onClick={persistDraft} disabled={isPending}>
                 <SaveIcon /> 保存草稿
               </Button>
-              <Button
-                size="sm"
-                onClick={persistPublish}
-                disabled={isPending || !canPublish}
-                title={canPublish ? '发布最新内容 (Cmd/Ctrl+Shift+P)' : '当前最新版本已发布'}
-              >
-                <UploadIcon /> 发布
-              </Button>
+              {publishState.kind === 'unpublished' ? (
+                <Button size="sm" onClick={persistRepublish} disabled={isPending} title="重新上线（不会写入新版本）">
+                  <EyeIcon /> 重新上线
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={persistPublish}
+                  disabled={isPending || !canPublish}
+                  title={canPublish ? '发布最新内容 (Cmd/Ctrl+Shift+P)' : '当前最新版本已发布'}
+                >
+                  <UploadIcon /> 发布
+                </Button>
+              )}
+              {canUnpublish ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={persistUnpublish}
+                  disabled={isPending}
+                  title="将页面下线，公开访问会返回 404；正文不会丢失，重新上线即可恢复"
+                >
+                  <EyeOffIcon /> 取消发布
+                </Button>
+              ) : null}
             </>
           )}
         </div>
@@ -599,10 +685,11 @@ interface AutosavePendingArg {
   upsertMetaApi: { isPending: boolean }
   saveDraftApi: { isPending: boolean }
   publishApi: { isPending: boolean }
+  unpublishApi: { isPending: boolean }
 }
 
-function isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi }: AutosavePendingArg): boolean {
-  return upsertMetaApi.isPending || saveDraftApi.isPending || publishApi.isPending
+function isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi, unpublishApi }: AutosavePendingArg): boolean {
+  return upsertMetaApi.isPending || saveDraftApi.isPending || publishApi.isPending || unpublishApi.isPending
 }
 
 interface CreateModeBannerProps {
@@ -640,23 +727,41 @@ function StatusIndicator({ status }: { status: Status }) {
 }
 
 type PublishState =
+  // No revision has been promoted yet. Saving still works; the page
+  // is invisible to the public until a manual 发布.
   | { kind: 'not-published-yet' }
+  // Latest revision was promoted AND `meta.published === true` —
+  // page is live with the current body.
   | { kind: 'published-current'; revisionNo: number }
+  // Latest is a draft sitting on top of a (possibly missing)
+  // published revision. Visible publicly iff `meta.published`.
   | { kind: 'draft-ahead'; draftRevisionNo: number; publishedRevisionNo: number | null }
+  // A revision was promoted at some point but the operator later
+  // hit 取消发布. The body still exists in `content`; flipping
+  // `meta.published` back to true re-shows the page.
+  | { kind: 'unpublished'; lastPublishedRevisionNo: number | null }
 
-function derivePublishState(detail: AdminPageDetailDto): PublishState {
+function derivePublishState(detail: AdminPageDetailDto, visible: boolean): PublishState {
   const latest = detail.latestRevision
   const published = detail.publishedRevision
+
   if (latest === null) {
+    // No revisions at all — the "尚未发布" badge is correct
+    // regardless of `meta.published` (an empty page can't be
+    // public anyway).
     return { kind: 'not-published-yet' }
   }
+
+  if (!visible) {
+    // Operator explicitly took the page offline. We still know the
+    // last revision number that *was* live so the badge can hint
+    // at it.
+    return { kind: 'unpublished', lastPublishedRevisionNo: published?.revisionNo ?? null }
+  }
+
   if (latest.status === 'published') {
-    // The latest revision is itself the published row — no newer
-    // draft ahead of it.
     return { kind: 'published-current', revisionNo: latest.revisionNo }
   }
-  // Latest is a draft. There may or may not be a published revision
-  // behind it.
   return {
     kind: 'draft-ahead',
     draftRevisionNo: latest.revisionNo,
@@ -670,6 +775,15 @@ function RevisionStatusBadge({ state }: { state: PublishState }) {
       return (
         <Badge variant="outline">
           <CircleDashedIcon /> 尚未发布
+        </Badge>
+      )
+    case 'unpublished':
+      return (
+        <Badge variant="outline" className="border-destructive/40 text-destructive">
+          <EyeOffIcon /> 已取消发布
+          {state.lastPublishedRevisionNo !== null ? (
+            <span className="ml-1 opacity-70">（曾发布 R{state.lastPublishedRevisionNo}）</span>
+          ) : null}
         </Badge>
       )
     case 'published-current':

@@ -405,9 +405,17 @@ export async function publishLatestRevision(input: PublishLatestInput): Promise<
       savedRow = inserted[0]
     }
 
+    // `publishLatestRevision` is the single transition that flips a
+    // page from "draft-only" to "live". Setting `published = true`
+    // alongside `published_revision_id` means a fresh page (created
+    // with `published = false` so saving stays save-only) becomes
+    // public the moment the operator hits "发布", and stays public
+    // across subsequent re-publishes. Operators take it back offline
+    // through `unpublishPage` (which flips `published` to false
+    // without touching the content row).
     await tx
       .update(pageMetaTable)
-      .set({ publishedRevisionId: savedRow.id, updatedAt: now })
+      .set({ publishedRevisionId: savedRow.id, published: true, updatedAt: now })
       .where(eq(pageMetaTable.id, input.ownerId))
 
     return { status: 'published' as const, row: savedRow }

@@ -189,7 +189,11 @@ export async function createPage(input: UpsertPageMetaInput, _authorId: bigint |
     summary: input.summary ?? '',
     cover: input.cover ?? '',
     og: input.og ?? null,
-    published: input.published ?? true,
+    // New pages default to `published = false` — creating + saving
+    // is "draft only". The page becomes public when the operator
+    // hits "发布" (which both promotes the latest revision *and*
+    // flips this flag in the same transaction).
+    published: input.published ?? false,
     commentsEnabled: input.commentsEnabled ?? true,
     showToc: input.showToc ?? false,
     publishedAt: input.publishedAt ?? now,
@@ -235,6 +239,23 @@ export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
 
 export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
   return { restored: await restorePageMeta(id) }
+}
+
+// Take a previously published page offline. Flips `meta.published`
+// to false without touching the `content` row referenced by
+// `published_revision_id` — the public site simply 404s the page
+// while the latest published revision stays in the history. A later
+// `publishLatest` re-promotes it.
+export async function unpublishPage(id: bigint): Promise<AdminPageDto> {
+  const existing = await findPageMetaById(id)
+  if (existing === null) {
+    throw new ActionFailure(404, '页面不存在或已被删除。')
+  }
+  const updated = await updatePageMetaById(id, { published: false })
+  if (updated === null) {
+    throw new ActionFailure(404, '页面不存在或已被删除。')
+  }
+  return toAdminPageDto(updated)
 }
 
 // --- Save / publish --------------------------------------------------------

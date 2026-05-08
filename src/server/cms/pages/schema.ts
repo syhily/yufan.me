@@ -8,6 +8,7 @@ import type {
   PreviewPageBodyInput,
   RestorePageInput,
   SavePageBodyInput,
+  UnpublishPageInput,
   UpsertPageMetaInput,
 } from '@/shared/cms-pages'
 
@@ -23,6 +24,7 @@ export type {
   PreviewPageBodyInput,
   RestorePageInput,
   SavePageBodyInput,
+  UnpublishPageInput,
   UpsertPageMetaInput,
 }
 
@@ -62,6 +64,7 @@ export const listPagesSchema = z.object({
 export const getPageSchema = idSchema
 export const deletePageSchema = idSchema
 export const restorePageSchema = idSchema
+export const unpublishPageSchema = idSchema
 export const listPageRevisionsSchema = idSchema
 
 // Optional fields are normalised to safe defaults at the schema level

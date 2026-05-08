@@ -99,6 +99,7 @@ export const API_ACTIONS = {
     listPageRevisions: defineApiAction('api/actions/admin/listPageRevisions', 'GET'),
     saveDraft: defineApiAction('api/actions/admin/saveDraft', 'POST'),
     publishLatest: defineApiAction('api/actions/admin/publishLatest', 'POST'),
+    unpublishPage: defineApiAction('api/actions/admin/unpublishPage', 'POST'),
     previewPage: defineApiAction('api/actions/admin/previewPage', 'POST'),
   },
 } as const

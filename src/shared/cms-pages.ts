@@ -132,6 +132,18 @@ export interface RestorePageOutput {
   success: true
 }
 
+// `unpublishPage` flips `meta.published` to false without touching
+// the latest published revision (so re-publishing later promotes the
+// existing content instead of writing an empty no-op revision). The
+// public catalog 404s the page while it's unpublished.
+export interface UnpublishPageInput {
+  id: string
+}
+
+export interface UnpublishPageOutput {
+  page: AdminPageDto
+}
+
 // --- save / publish -------------------------------------------------------
 
 // Save a draft body or publish it atomically. The wire shape is
