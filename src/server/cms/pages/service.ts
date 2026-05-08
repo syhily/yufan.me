@@ -1,6 +1,7 @@
 import type { ContentRow, PageMetaRow } from '@/server/db/types'
 import type { PortableTextBody } from '@/shared/portable-text'
 
+import { prerenderPortableTextBody } from '@/server/cms/pages/prerender'
 import {
   toAdminPageDto,
   toAdminRevisionDto,
@@ -266,10 +267,13 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   if (meta === null) {
     throw new ActionFailure(404, '页面不存在或已被删除。')
   }
-  // Validate body + derive the denormalised side-fields the
-  // repository writes alongside it. All three must succeed before we
-  // open a transaction.
+  // Validate body + pre-render heavy blocks (Shiki / MathJax /
+  // Mermaid) so SSR public renders stay cheap. The pre-render is
+  // best-effort: it mutates the validated body in place, leaving
+  // already-rendered fields alone and skipping blocks whose
+  // renderer throws so a single bad block doesn't fail the save.
   const body = parseBodyOrThrow(input.body)
+  await prerenderPortableTextBody(body)
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body)
 
