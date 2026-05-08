@@ -4,7 +4,9 @@ import { z } from 'zod'
 import type { BlogSession } from '@/server/session'
 
 import {
+  assertContentLengthUnder,
   assertMethod,
+  defineApiAction,
   readJsonInput,
   readSearchInput,
   requireAdminSession,
@@ -129,6 +131,51 @@ describe('routes/_shared/api/handler — runApi perimeter', () => {
     } as BlogSession
 
     expect(requireAdminSession(session)).toBe(session)
+  })
+
+  it('assertContentLengthUnder accepts requests under the limit (and missing headers)', () => {
+    const headed = new Request('http://localhost/api/test', {
+      method: 'POST',
+      headers: { 'Content-Length': '512' },
+      body: 'x'.repeat(512),
+    })
+    expect(() => assertContentLengthUnder(headed, 1024)).not.toThrow()
+
+    const headerless = new Request('http://localhost/api/test', { method: 'POST' })
+    expect(() => assertContentLengthUnder(headerless, 1024)).not.toThrow()
+  })
+
+  it('assertContentLengthUnder throws ActionFailure(413) when the declared length exceeds the limit', () => {
+    const oversize = new Request('http://localhost/api/test', {
+      method: 'POST',
+      headers: { 'Content-Length': '2048' },
+      body: 'x',
+    })
+    try {
+      assertContentLengthUnder(oversize, 1024)
+      expect.fail('expected ActionFailure')
+    } catch (error) {
+      expect(error).toBeInstanceOf(ActionFailure)
+      expect((error as ActionFailure).status).toBe(413)
+    }
+  })
+
+  it('defineApiAction wires maxBodyBytes through to the 413 envelope', async () => {
+    const handler = defineApiAction({
+      method: 'POST',
+      input: z.object({ payload: z.string() }),
+      maxBodyBytes: 1024,
+      run: () => ({ ok: true }),
+    })
+    const oversize = new Request('http://localhost/api/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': '2048' },
+      body: JSON.stringify({ payload: 'x'.repeat(1500) }),
+    })
+    const response = await handler(makeLoaderArgs({ request: oversize }))
+    expect(response.status).toBe(413)
+    const body = await response.json()
+    expect(body.error.message).toContain('1KB')
   })
 
   it('requireAdminSession keeps admin failures in the standard error envelope', async () => {

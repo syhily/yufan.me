@@ -60,6 +60,28 @@ export async function parseJson(request: Request): Promise<unknown> {
   }
 }
 
+/**
+ * Reject the request before reading the body if `Content-Length`
+ * declares more than `limit` bytes. Endpoints that accept large
+ * editor payloads (PortableText bodies) wire this in front of
+ * `readJsonInput` so a runaway client can't OOM the SSR process.
+ *
+ * Returns 413 Payload Too Large per RFC 9110 §15.5.14. The check is
+ * advisory — `Content-Length` can be missing on chunked transfers
+ * — but the editor's `submitApiAction` always sets it, so the guard
+ * holds in the cases that matter.
+ */
+export function assertContentLengthUnder(request: Request, limit: number): void {
+  const header = request.headers.get('content-length')
+  if (header === null) {
+    return
+  }
+  const declared = Number.parseInt(header, 10)
+  if (Number.isFinite(declared) && declared > limit) {
+    throw new ActionFailure(413, `请求体超过 ${Math.round(limit / 1024)}KB 限制`)
+  }
+}
+
 export async function parseInput<T>(schema: ZodType<T>, input: unknown): Promise<T> {
   const result = await schema.safeParseAsync(input)
   if (result.success) {
@@ -230,6 +252,13 @@ interface DefineApiActionConfig<I, O> {
   input?: ZodType<I>
   inputSource?: InputSource
   requireAdmin?: boolean
+  /**
+   * Reject the request with 413 if the declared `Content-Length`
+   * exceeds this many bytes. Use on endpoints that accept large
+   * editor payloads (PortableText bodies, image metadata) to put a
+   * cheap upper bound on the request before the body is even read.
+   */
+  maxBodyBytes?: number
   run: (params: {
     ctx: ApiContext
     payload: I
@@ -281,6 +310,9 @@ export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
       // so admin endpoints skip the redundant `isAdmin(session)` re-read.
       if (config.requireAdmin) {
         requireAdminSession(ctx.session)
+      }
+      if (config.maxBodyBytes !== undefined) {
+        assertContentLengthUnder(ctx.request, config.maxBodyBytes)
       }
       const isAdminLazy = config.requireAdmin ? () => true : () => isAdmin(ctx.session)
       const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)

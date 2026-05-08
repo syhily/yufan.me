@@ -10,10 +10,14 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 //     returned token + revision metadata.
 //   - status: 'conflict' — server's latest token diverged; client
 //     must rebase / overwrite (force=true) before retrying.
+// 1MB ceiling. See `admin.previewPage` for the rationale.
+const MAX_BODY_BYTES = 1 * 1024 * 1024
+
 export const action = defineApiAction({
   method: 'POST',
   input: savePageBodySchema,
   requireAdmin: true,
+  maxBodyBytes: MAX_BODY_BYTES,
   async run({ ctx, payload }) {
     const user = userSession(ctx.session)
     const authorId = user?.id ? BigInt(user.id) : null
