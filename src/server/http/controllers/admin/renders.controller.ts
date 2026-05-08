@@ -1,0 +1,59 @@
+import { renderMermaidSVGAsync } from 'beautiful-mermaid'
+import { z } from 'zod'
+
+import { adminProc } from '@/server/http/orpc-base'
+import { reindexSearchBatch } from '@/server/infra/search/reindex-service'
+import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
+
+const math = adminProc
+  .route({ method: 'POST', path: '/admin/renders/math' })
+  .input(z.object({ tex: z.string(), display: z.boolean().optional() }))
+  .output(z.object({ mathml: z.string(), error: z.string().nullable() }))
+  .handler(async ({ input }) => {
+    if (input.tex.trim() === '') {
+      return { mathml: '', error: null }
+    }
+    let renderer: KatexRenderer
+    try {
+      renderer = await getKatexRenderer()
+    } catch (err) {
+      return { mathml: '', error: err instanceof Error ? err.message : 'KaTeX 加载失败' }
+    }
+    try {
+      const mathml = await renderer.render(input.tex, input.display ?? false)
+      return { mathml, error: null }
+    } catch (err) {
+      return { mathml: '', error: err instanceof Error ? err.message : '公式渲染失败' }
+    }
+  })
+
+const mermaid = adminProc
+  .route({ method: 'POST', path: '/admin/renders/mermaid' })
+  .input(z.object({ code: z.string() }))
+  .output(z.object({ svg: z.string(), error: z.string().nullable() }))
+  .handler(async ({ input }) => {
+    if (input.code.trim() === '') {
+      return { svg: '', error: null }
+    }
+    try {
+      const svg = await renderMermaidSVGAsync(input.code)
+      return { svg, error: null }
+    } catch (err) {
+      return { svg: '', error: err instanceof Error ? err.message : '图表渲染失败' }
+    }
+  })
+
+const reindexSearch = adminProc
+  .route({ method: 'POST', path: '/admin/renders/reindex-search' })
+  .input(z.object({ offset: z.number().optional(), batchSize: z.number().optional() }))
+  .output(
+    z.object({
+      processed: z.number(),
+      failed: z.number(),
+      total: z.number(),
+      nextOffset: z.number().nullable(),
+    }),
+  )
+  .handler(({ input }) => reindexSearchBatch(input))
+
+export const adminRendersRouter = { math, mermaid, reindexSearch }

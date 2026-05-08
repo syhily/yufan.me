@@ -1,0 +1,146 @@
+import { defineConfig } from 'oxlint'
+
+export default defineConfig({
+  plugins: ['react', 'jsx-a11y', 'react-perf', 'import', 'typescript', 'promise', 'node', 'unicorn', 'oxc'],
+  env: {
+    browser: true,
+    node: true,
+    es2022: true,
+  },
+  ignorePatterns: ['.agents/**/*', 'docs/**/*', 'drizzle/**/*'],
+  settings: {
+    react: {
+      version: '19.2.5',
+      formComponents: [{ name: 'Form', attribute: 'action' }],
+      linkComponents: [
+        { name: 'Link', attribute: 'to' },
+        { name: 'NavLink', attribute: 'to' },
+      ],
+    },
+    'jsx-a11y': {
+      components: {
+        Form: 'form',
+        Image: 'img',
+        Icon: 'svg',
+      },
+    },
+  },
+  options: {
+    reportUnusedDisableDirectives: 'warn',
+    typeAware: true,
+    typeCheck: true,
+  },
+  categories: {
+    correctness: 'error',
+  },
+  rules: {
+    curly: 'error',
+    'no-unused-vars': 'error',
+
+    // Module boundaries and imports.
+    'import/default': 'error',
+    'import/no-namespace': 'error',
+    'import/no-cycle': 'warn',
+    'import/no-duplicates': 'error',
+    'import/no-self-import': 'error',
+    'import/no-webpack-loader-syntax': 'error',
+    // Mutable named exports break tree-shaking and confuse module consumers.
+    'import/no-mutable-exports': 'error',
+
+    // Promise / async correctness. Fire-and-forget work should be written as
+    // `void task().catch(...)` so the intent is visible to reviewers and lint.
+    'promise/no-callback-in-promise': 'error',
+    'promise/no-multiple-resolved': 'error',
+    'promise/no-promise-in-callback': 'off',
+    'promise/no-return-in-finally': 'error',
+    'promise/always-return': 'off',
+
+    // React and React Hooks.
+    'react/exhaustive-deps': 'warn',
+    'react/rules-of-hooks': 'error',
+    'react/button-has-type': 'error',
+    'react/checked-requires-onchange-or-readonly': 'error',
+    'react/jsx-no-comment-textnodes': 'error',
+    'react/jsx-key': 'error',
+    'react/jsx-no-duplicate-props': 'error',
+    'react/jsx-no-script-url': 'error',
+    'react/jsx-no-target-blank': 'error',
+    'react/jsx-no-undef': 'error',
+    'react/no-children-prop': 'error',
+    'react/no-danger-with-children': 'error',
+    'react/no-unknown-property': 'error',
+    'react/react-in-jsx-scope': 'off',
+    'react/style-prop-object': 'error',
+    'react/void-dom-elements-no-children': 'error',
+    // Legacy guard. Zero violations today; cheap insurance against a
+    // tutorial-copy slipping `ref="..."` (string ref) into modern code.
+    'react/no-string-refs': 'error',
+    // `posts.map((p, i) => <Card key={i} />)` survives an insert but
+    // shuffles state on a delete. Default to stable keys. Existing
+    // backlog (~22 sites) is `warn` for incremental cleanup.
+    'react/no-array-index-key': 'warn',
+
+    // TypeScript rules that catch runtime bugs without forcing noisy style preferences.
+    'typescript/await-thenable': 'error',
+    'typescript/no-array-delete': 'error',
+    'typescript/no-confusing-void-expression': 'off',
+    'typescript/no-deprecated': 'warn',
+    'typescript/no-floating-promises': 'error',
+    'typescript/no-for-in-array': 'error',
+    'typescript/no-implied-eval': 'error',
+    'typescript/no-misused-promises': 'error',
+    'typescript/no-namespace': 'error',
+    'typescript/no-non-null-asserted-optional-chain': 'error',
+    'typescript/no-require-imports': 'error',
+    'typescript/no-unnecessary-type-assertion': 'off',
+    'typescript/no-unsafe-argument': 'off',
+    'typescript/no-unsafe-assignment': 'off',
+    'typescript/no-unsafe-call': 'off',
+    'typescript/no-unsafe-member-access': 'off',
+    'typescript/no-unsafe-return': 'off',
+    'typescript/no-unsafe-type-assertion': 'off',
+    'typescript/prefer-nullish-coalescing': 'off',
+    'typescript/prefer-optional-chain': 'off',
+    'typescript/restrict-plus-operands': 'warn',
+    // `${obj}` silently produces `"[object Object]"`. Caught us once in a
+    // log line; the cost of locking it down is zero today.
+    'typescript/no-base-to-string': 'error',
+    // Spreading a non-iterable / Map / Set into an array or object produces
+    // surprising shapes. Rule has no current violations.
+    'typescript/no-misused-spread': 'error',
+    // Tagged-union exhaustiveness on `'post' | 'page'` discriminators and
+    // PortableText block types. 7 sites today are missing default branches;
+    // warn lets the backlog drain without blocking.
+    'typescript/switch-exhaustiveness-check': 'warn',
+
+    // React Router and SSR routes intentionally forward props and render trusted HTML.
+    'react/jsx-props-no-spread-multi': 'off',
+    'react/no-danger': 'off',
+
+    // Existing templates use progressive-enhancement hooks that are noisy with generic a11y heuristics.
+    'jsx_a11y/click-events-have-key-events': 'off',
+    'jsx_a11y/no-static-element-interactions': 'off',
+    'react_perf/jsx-no-new-array-as-prop': 'off',
+    'react_perf/jsx-no-new-function-as-prop': 'off',
+    'react_perf/jsx-no-new-object-as-prop': 'off',
+
+    // Server modules intentionally read the validated env facade instead of raw process.env.
+    'node/no-process-env': 'off',
+
+    // Catch `module.exports = ...` slipping into an ESM file.
+    'node/no-exports-assign': 'error',
+
+    // Throw hygiene + the silent-await-in-Promise.all() footgun.
+    'unicorn/error-message': 'error',
+    'unicorn/throw-new-error': 'error',
+    'unicorn/no-await-in-promise-methods': 'error',
+    // `await foo.bar.baz` parses as `(await foo).bar.baz` only when the
+    // expression starts with await — surprising in property-chain reads.
+    'unicorn/no-await-expression-member': 'warn',
+
+    // A11y additions. Both are zero-violation guards against empty headings
+    // and broken `<a>` (`href="#"` or missing href).
+    'jsx-a11y/heading-has-content': 'error',
+    'jsx-a11y/anchor-is-valid': 'error',
+  },
+})

@@ -1,0 +1,70 @@
+import type { Context } from 'hono'
+
+import { HTTPException } from 'hono/http-exception'
+import { ZodError } from 'zod'
+
+import { getLogger } from '@/server/infra/logger'
+import { ActionFailure, DomainError, domainStatus } from '@/server/present/response/errors'
+
+import type { Env } from './context'
+
+const log = getLogger('http.error')
+
+export function onErrorHandler(err: Error, c: Context<Env>): Response {
+  const requestId = c.var.requestId
+
+  if (err instanceof HTTPException) {
+    c.header('X-Request-Id', requestId)
+    return c.json(
+      {
+        error: {
+          message: err.message,
+          issues: err.cause as { message: string; path?: string[] }[] | undefined,
+        },
+      },
+      err.status as 400 | 401 | 403 | 404 | 409 | 413 | 429 | 500,
+    )
+  }
+
+  if (err instanceof ActionFailure) {
+    if (err.headers) {
+      const h = new Headers(err.headers)
+      h.forEach((v, k) => c.header(k, v, { append: true }))
+    }
+    c.header('X-Request-Id', requestId)
+    return c.json(
+      {
+        error: {
+          message: err.message,
+          issues: err.issues,
+        },
+      },
+      err.status as 400 | 401 | 403 | 404 | 409 | 413 | 429 | 500,
+    )
+  }
+
+  if (err instanceof DomainError) {
+    c.header('X-Request-Id', requestId)
+    return c.json(
+      { error: { message: err.message, issues: err.issues } },
+      domainStatus(err) as 400 | 401 | 403 | 404 | 409 | 429 | 500,
+    )
+  }
+
+  if (err instanceof ZodError) {
+    c.header('X-Request-Id', requestId)
+    return c.json(
+      {
+        error: {
+          message: '输入数据无效',
+          issues: err.issues.map((i) => ({ message: i.message, path: i.path.map(String) })),
+        },
+      },
+      400,
+    )
+  }
+
+  log.error('unexpected', { requestId, error: err })
+  c.header('X-Request-Id', requestId)
+  return c.json({ error: { message: '服务器内部错误' } }, 500)
+}

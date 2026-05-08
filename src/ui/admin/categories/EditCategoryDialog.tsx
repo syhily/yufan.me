@@ -1,0 +1,201 @@
+import { SaveIcon, XIcon } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+
+import type { AdminCategoryDto, UpsertCategoryInput } from '@/shared/types/categories'
+
+import { useMutation, orpcQuery } from '@/client/api/query'
+import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/types/images'
+import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
+import { Button } from '@/ui/components/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/components/dialog'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
+import { Textarea } from '@/ui/components/textarea'
+import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
+
+// Discriminator: `category === null` opens the dialog in "new
+// category" mode; a populated `category` opens it in "edit existing"
+// mode. Same convention as `EditFriendDialog`.
+export interface EditCategoryDialogProps {
+  category: AdminCategoryDto | null | undefined
+  onClose: () => void
+  onSaved: (category: AdminCategoryDto) => void
+}
+
+const EMPTY_DRAFT = {
+  name: '',
+  slug: '',
+  cover: '',
+  description: '',
+  sortOrder: 0,
+}
+
+export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryDialogProps) {
+  const [draft, setDraft] = useState(EMPTY_DRAFT)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const upsertMutation = useMutation({
+    ...orpcQuery.admin.categories.upsert.mutationOptions(),
+    onSuccess: (payload) => {
+      toast.success('分类已保存')
+      setErrorMessage(null)
+      onSaved(payload.category)
+    },
+    onError: (error) => {
+      setErrorMessage(error.message)
+    },
+  })
+  const { mutate: submit, isPending } = upsertMutation
+
+  useEffect(() => {
+    if (category === undefined) {
+      return
+    }
+    setErrorMessage(null)
+    if (category === null) {
+      setDraft(EMPTY_DRAFT)
+      return
+    }
+    setDraft({
+      name: category.name,
+      slug: category.slug,
+      cover: category.cover,
+      description: category.description,
+      sortOrder: category.sortOrder,
+    })
+  }, [category])
+
+  const open = category !== undefined
+  const isEditing = category !== null && category !== undefined
+
+  const assetsSettings = useAssetsSettingsOptional()
+  const slugSafe = useMemo(() => isSafeImageSegment(draft.slug), [draft.slug])
+  const expectedAutoUrl = useMemo(() => {
+    if (!slugSafe) {
+      return ''
+    }
+    const base = buildPublicBaseUrlFromStorage(
+      assetsSettings ? { storageEnabled: assetsSettings.storage.enabled, asset: assetsSettings.asset } : undefined,
+    )
+    if (base === null) {
+      return ''
+    }
+    const slug = draft.slug.trim().toLowerCase()
+    return `${base}/images/categories/${slug}.jpg`
+  }, [assetsSettings, slugSafe, draft.slug])
+  const slugChanged = isEditing && category && category.slug !== draft.slug.trim()
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isEditing ? '编辑分类' : '新增分类'}</DialogTitle>
+          <DialogDescription>
+            {isEditing
+              ? '修改分类的展示信息；重命名后所有引用该分类的 MDX 文章 frontmatter 也需同步更新。'
+              : '填写新分类的名称、URL slug 与展示封面。'}
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const trimmedSlug = draft.slug.trim()
+            const payload: UpsertCategoryInput = {
+              ...(isEditing && category ? { id: category.id } : {}),
+              name: draft.name.trim(),
+              // Only forward `slug` when the operator typed something.
+              // An empty value means "let the server derive it from name".
+              ...(trimmedSlug !== '' ? { slug: trimmedSlug } : {}),
+              cover: draft.cover.trim(),
+              description: draft.description,
+              sortOrder: draft.sortOrder,
+            }
+            submit(payload)
+          }}
+          className="grid gap-4 sm:grid-cols-2"
+        >
+          <div className="flex flex-col gap-2 sm:col-span-1">
+            <Label htmlFor="category-name">名称</Label>
+            <Input
+              id="category-name"
+              type="text"
+              value={draft.name}
+              onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+              maxLength={20}
+              required
+              placeholder="例：编程"
+            />
+          </div>
+          <div className="flex flex-col gap-2 sm:col-span-1">
+            <Label htmlFor="category-slug">URL slug</Label>
+            <Input
+              id="category-slug"
+              type="text"
+              value={draft.slug}
+              onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
+              maxLength={80}
+              placeholder="留空将从名称推导（拼音）"
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+            />
+            <p className="text-xs text-muted-foreground">仅允许小写字母、数字、短横线；留空时按拼音从名称自动生成。</p>
+          </div>
+          <div className="sm:col-span-2">
+            <CoverInputRow
+              label="封面图 (1280×425)"
+              htmlFor="category-cover"
+              description={
+                slugChanged
+                  ? '注意：slug 已修改，新封面会写入新 slug 对应的 S3 对象，旧对象会成为孤儿，需要在「图片管理」手动删除。'
+                  : '裁剪、旋转、调整画质后将上传到 images/categories/<slug>.jpg。'
+              }
+              value={draft.cover}
+              onChange={(value) => setDraft((prev) => ({ ...prev, cover: value }))}
+              uploadKind={slugSafe ? { kind: 'category', slug: draft.slug.trim().toLowerCase() } : null}
+              expectedAutoUrl={expectedAutoUrl}
+            />
+          </div>
+          <div className="flex flex-col gap-2 sm:col-span-2">
+            <Label htmlFor="category-description">简介</Label>
+            <Textarea
+              id="category-description"
+              value={draft.description}
+              onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+              maxLength={999}
+              rows={4}
+              placeholder="该分类的简介，将在 /cats/:slug 顶部渲染（支持 Markdown）"
+            />
+          </div>
+          <div className="flex flex-col gap-2 sm:col-span-1">
+            <Label htmlFor="category-sort-order">排序</Label>
+            <Input
+              id="category-sort-order"
+              type="number"
+              value={draft.sortOrder}
+              min={0}
+              max={9999}
+              onChange={(e) => setDraft((prev) => ({ ...prev, sortOrder: Number(e.target.value) || 0 }))}
+            />
+            <p className="text-xs text-muted-foreground">数字越小越靠前。</p>
+          </div>
+          {errorMessage ? <p className="text-sm text-destructive sm:col-span-2">{errorMessage}</p> : null}
+          <DialogFooter className="sm:col-span-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              <XIcon data-icon /> 取消
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              <SaveIcon data-icon /> {isPending ? '保存中…' : isEditing ? '保存' : '创建'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -1,0 +1,267 @@
+import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
+
+import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense, useState } from 'react'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
+
+import { makeQueryClient } from '@/client/api/query-client'
+import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
+import { useFocusHash } from '@/client/hooks/use-focus-hash'
+import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
+import { getRouteRequestContext } from '@/server/auth/context'
+import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
+import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
+import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
+import { ErrorView } from '@/ui/public/chrome/ErrorView'
+import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
+
+import type { Route } from './+types/root'
+
+// `PublicChrome` (which carries `public.css`) is reached *statically* by
+// every public URL through `routes/public.layout.tsx`, which is what makes
+// the SSR `<Links />` output include the resolved stylesheet on first paint.
+// The root `ErrorBoundary` only fires for errors that propagate above the
+// route layouts (root middleware, root loader, or wp-decoy probes), so it
+// can afford to lazy-load the chrome — that keeps the wp-admin SPA chunk
+// free of `public.css` while still giving fatal-error pages real styling.
+//
+// IMPORTANT: do NOT re-export `PublicChrome` (or any binding from
+// `@/ui/public/chrome/PublicChrome` or `@/ui/public/chrome/BaseLayout`) from
+// this module. A re-export pins the live binding statically and would
+// drag `public.css` into every route chunk, breaking the cascade
+// contract documented in `tailwind.css` (#admin-buttons-no-padding).
+const PublicChromeLazy = lazy(() =>
+  import('@/ui/public/chrome/PublicChrome').then((m) => ({ default: m.PublicChrome })),
+)
+
+// Order matters:
+//   1. Session middleware decrypts the cookie + populates request
+//      context.
+//   2. Install gate redirects to `/wp-admin/install.php` when the
+//      deployment hasn't been installed yet (no admin user OR no
+//      `setting` row). Sits AFTER session so the gate's exemption list
+//      can be reasoned about against the same context every loader sees.
+//
+// WordPress probe interception is NOT a root middleware. React Router
+// routes a middleware throw thrown BEFORE `next()` to the ErrorBoundary
+// of the *highest route with a loader* and refuses to render any
+// component below it (no `loaderData` available; see RR docs §"next()
+// and Error Handling"). Putting the probe filter on root would
+// therefore force scanner 404s through root's lazy-chrome
+// `ErrorBoundary` and lose the synchronous `<PublicChrome>` shell that
+// the public layout's boundary already provides for real 404s.
+// Instead, the two routes that can legitimately receive a probe path
+// (`page.detail` for single-segment `.php`/`cgi-bin`, `not-found` for
+// the splat) call `assertNotWordPressDecoy()` at the top of their
+// loader, so the throw originates inside a leaf loader and bubbles up
+// to the public layout's `ErrorBoundary` exactly like a normal 404.
+export const middleware: MiddlewareFunction<Response>[] = []
+
+export function meta({ loaderData, matches }: Route.MetaArgs) {
+  // `meta()` runs on both SSR and after every client-side navigation,
+  // so we read the bundle from the explicit data path (root loader
+  // payload) rather than a `globalThis` slot. The fallback chain is
+  // (1) the loader's own `blogSettings`, (2) the bundle hanging off
+  // the root match (matches the helper used by leaf routes), then
+  // (3) the SSR-only boot-hydrated snapshot for non-React server
+  // modules — none of which apply on the client, so passing
+  // `undefined` lets `routeMeta()` degrade to its pre-install
+  // fallback if no source has the bundle yet.
+  return routeMeta(undefined, loaderData?.blogSettings ?? bundleFromMatches(matches))
+}
+
+export function loader({ request, context }: Route.LoaderArgs) {
+  const { role, user } = getRouteRequestContext({ request, context })
+  const admin = role === 'admin'
+  // Project the authenticated user (if any) to the slim shape the
+  // public chrome's UserMenu needs. Don't ship the whole SessionUser —
+  // email and badge fields belong on the profile page, not in the
+  // navigation bar payload.
+  const currentUser = user && role ? { id: user.id, name: user.name, role } : null
+
+  // Read the theme cookie so the SSR <html> tag carries the correct
+  // class before the client bundle loads — no inline scripts needed.
+  // When no cookie is present we deliberately render `<html>` without
+  // a theme class so the CSS `@media (prefers-color-scheme: dark)`
+  // fallback in tailwind.css can resolve the right palette for
+  // noscript users. ThemeProvider sets an explicit class after
+  // hydration, after which cookie precedence applies on every
+  // subsequent request.
+  const cookie = request.headers.get('Cookie') ?? ''
+  const themeMatch = cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`))
+  const cookieValue = themeMatch?.[1]
+  const theme: 'dark' | 'light' | null = cookieValue === 'dark' ? 'dark' : cookieValue === 'light' ? 'light' : null
+
+  // The DB-backed blog config is serialised once per top-level request so
+  // every UI component can read the live snapshot through the
+  // per-section accessors. All fields (including asset / locale slices) come
+  // from the in-process settings
+  // snapshot, which is hydrated on server start and refreshed on every
+  // admin save. The wire shape is `BlogSettingsBundle` (one bucket per
+  // section) so the client provider can hand each section to its own
+  // React context instead of forcing every consumer to re-render when
+  // an unrelated section changes.
+  //
+  // `null` is possible on a fresh, uninstalled deployment — the install
+  // gate above intercepts every non-install request, so this loader only
+  // returns `null` when serving the install split-screen itself.
+  const blogSettings = getBlogSettingsBundleSync()
+
+  // Create a per-request QueryClient for SSR dehydration.
+  const queryClient = makeQueryClient()
+  const dehydratedState = dehydrate(queryClient)
+
+  return { admin, currentUser, blogSettings, theme, dehydratedState }
+}
+
+// The root loader ships `{ admin, blogSettings }`. Both can change at
+// runtime: `admin` flips on three POST endpoints (login, install,
+// logout); `blogSettings` flips whenever an admin saves a settings page.
+// Revalidate when any of those actions submit. The settings layout
+// calls `useRevalidator()` after a successful oRPC mutation, so
+// admin saves through other tabs are already covered.
+export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
+  if (formAction && (formAction.startsWith('/wp-login.php') || formAction.startsWith('/wp-admin/install'))) {
+    return defaultShouldRevalidate
+  }
+  return false
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  // Pull both the theme cookie and the admin-configured site-wide font
+  // CSS URLs off the root loader data. `fonts` is null when the
+  // settings row hasn't been seeded yet (pre-install) — in that
+  // case `globalCss` is `[]` and no font `<link>` is emitted, so the
+  // page falls back to the system-stack fonts declared in
+  // `tailwind.css` without any pre-paint flash.
+  const rootData = useRouteLoaderData<{
+    theme?: 'dark' | 'light' | null
+    blogSettings?: { fonts?: { globalCss?: string[] } | null } | null
+  }>('root')
+  const theme = rootData?.theme ?? null
+  const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
+
+  return (
+    <html lang="zh-CN" className={theme ?? undefined}>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content={theme ?? 'light dark'} />
+        {globalFontCss.map((url) => (
+          <link key={url} rel="stylesheet" href={url} />
+        ))}
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        {children}
+        <ChunkReloadOverlay />
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
+  )
+}
+
+// Routes can opt-in to a custom chrome by exporting a `handle.layout` value.
+// `"admin"` marks routes that own their own chrome (admin SPA, login/install
+// split-screen). Routes can also disable the site footer with
+// `handle.footer = false` (see `routes/page.detail.tsx`).
+export type RouteHandle = {
+  layout?: 'admin'
+  footer?: boolean
+}
+
+export default function App({ loaderData }: Route.ComponentProps) {
+  useFocusHash()
+  // Document-scoped install — every INPUT / TEXTAREA / SELECT across
+  // public + admin + login + install flows inherits the no-zoom
+  // behaviour from this single mount. Per-form re-installs are
+  // forbidden; see `@/client/hooks/use-ios-no-zoom` for the contract.
+  useIosNoZoomOnFocus()
+  // Document-scoped chunk-load-error recovery: when a previous
+  // deploy's tab tries to fetch a JS / CSS chunk that the new
+  // deploy no longer serves, hard-reload to pick up the new bundle.
+  // Same single-install contract as the iOS hook above — never
+  // re-install per route. See `@/client/hooks/use-chunk-error-recovery`.
+  useChunkErrorRecovery()
+
+  // One QueryClient per request on the server; one per browser session
+  // on the client.  HydrationBoundary seeds it with the dehydrated
+  // state produced by the root loader.
+  const [queryClient] = useState(() => makeQueryClient())
+
+  // The bundle flows down through `BlogSettingsProvider` (per-section
+  // contexts) and the route data path (`Route.MetaArgs.matches`). On
+  // the server, non-React modules read the boot-hydrated snapshot in
+  // `@/server/settings/snapshot`; on the client they don't run at
+  // all. There is no longer a render-time `globalThis` write here.
+  //
+  // The chrome is owned by the matched layout route (`public.layout.tsx`,
+  // `admin.layout.tsx`, or `wp-admin.layout.tsx`). The root just renders
+  // the route tree wrapped in the per-section settings contexts that UI
+  // components reach for through `useSiteIdentity()` /
+  // `useFooterSettings()` / etc.
+  return (
+    <QueryClientProvider client={queryClient}>
+      <HydrationBoundary state={loaderData.dehydratedState}>
+        <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
+          <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+            <NavigationSplash />
+            <Outlet />
+          </BlogSettingsProvider>
+        </ThemeProvider>
+      </HydrationBoundary>
+    </QueryClientProvider>
+  )
+}
+
+export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
+  // A chunk error thrown during render (e.g. a `React.lazy()`
+  // component whose chunk 404s after a deploy) lands here instead of
+  // as an unhandled rejection, so the window-level listeners
+  // installed in `App` never see it. Trigger the same reload path.
+  useReloadOnChunkError(error)
+
+  // The root `ErrorBoundary` mounts INSTEAD of `App`, so the surrounding
+  // `<BlogSettingsProvider>` from `App` is not in scope. The chrome
+  // below depends on the per-section accessors
+  // (Header/Footer/Image/…), so we re-establish the provider here
+  // using whichever bundle is reachable:
+  //   1. The root loader's `loaderData.blogSettings` (when the loader ran).
+  //   2. The SSR-only boot-hydrated snapshot
+  //      (`getBlogSettingsBundleSync()`); this is `null` on the client
+  //      because we no longer mirror the provider into `globalThis` —
+  //      which is fine because the same payload is reachable through
+  //      `loaderData` whenever the root loader actually ran.
+  const blogSettings = loaderData?.blogSettings ?? getBlogSettingsBundleSync()
+
+  // Body decision is shared with `routes/public.layout.tsx`'s
+  // boundary via `<ErrorView />`. Keeping the body off-component
+  // guarantees scanner traffic and real 404s get the same shell.
+  const body = <ErrorView error={error} isDev={import.meta.env.DEV} />
+
+  // Fallback for the (rare) case where we hit an error before any
+  // request ever populated the snapshot — e.g. the root loader threw on
+  // a deployment that hasn't been installed yet AND the install gate
+  // somehow let the request through. Render a chrome-less message so
+  // the user at least sees what went wrong instead of a blank page from
+  // a strict per-section accessor throw inside the chrome.
+  return (
+    <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
+      <BlogSettingsProvider value={blogSettings ?? undefined}>
+        <Suspense fallback={null}>
+          {blogSettings ? (
+            <PublicChromeLazy currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
+              {body}
+            </PublicChromeLazy>
+          ) : (
+            body
+          )}
+        </Suspense>
+      </BlogSettingsProvider>
+    </ThemeProvider>
+  )
+}

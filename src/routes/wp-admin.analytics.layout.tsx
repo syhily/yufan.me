@@ -1,0 +1,59 @@
+import { ChartLineIcon, RadioIcon } from 'lucide-react'
+import { NavLink, Outlet } from 'react-router'
+
+import { getRouteRequestContext } from '@/server/auth/context'
+import { requireRole } from '@/server/auth/rbac'
+import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { cn } from '@/ui/lib/cn'
+
+import type { Route } from './+types/wp-admin.analytics.layout'
+
+export function meta({ matches }: Route.MetaArgs) {
+  return routeMeta({ title: '访问统计' }, bundleFromMatches(matches))
+}
+
+// Layout is intentionally thin — date-range picker + filters live on
+// the child routes because the realtime feed doesn't need them.
+// Putting them here would force `wp-admin.analytics.realtime.tsx` to
+// either ignore the URL params (confusing) or run a no-op revalidation
+// every time the user tweaks the range (wasteful).
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const ctx = getRouteRequestContext({ request, context })
+  requireRole(ctx, 'admin')
+  return null
+}
+
+const SUBNAV = [
+  { to: '/wp-admin/analytics', label: '概览', icon: ChartLineIcon, end: true },
+  { to: '/wp-admin/analytics/realtime', label: '实时', icon: RadioIcon, end: false },
+]
+
+export default function WpAdminAnalyticsLayout() {
+  return (
+    <div className="flex flex-col gap-4 p-4 md:p-6">
+      <header className="flex flex-col gap-3">
+        <h1 className="text-2xl font-semibold text-foreground">访问统计</h1>
+        <p className="text-sm text-muted-foreground">基于 access_log 时序表的访问、访客、来源、地理与设备分布。</p>
+        <nav aria-label="统计子页" className="flex items-center gap-1 border-b">
+          {SUBNAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  'inline-flex items-center gap-1.5 border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground',
+                  isActive && 'border-foreground text-foreground',
+                )
+              }
+            >
+              <item.icon className="size-4" />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+      <Outlet />
+    </div>
+  )
+}

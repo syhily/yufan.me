@@ -1,0 +1,64 @@
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
+
+import { adminProc } from '@/server/http/orpc-base'
+import {
+  deleteAdminCategory,
+  listCategoriesForAdmin,
+  reorderAdminCategories,
+  upsertAdminCategory,
+} from '@/server/taxonomies/category-service'
+import { adminCategoryDto } from '@/shared/contracts/categories'
+
+const list = adminProc
+  .route({ method: 'GET', path: '/admin/categories/list' })
+  .input(z.object({ q: z.string().optional() }))
+  .output(z.object({ categories: z.array(adminCategoryDto), total: z.number() }))
+  .handler(({ input }) => listCategoriesForAdmin({ q: input.q }))
+
+const upsert = adminProc
+  .route({ method: 'POST', path: '/admin/categories/upsert' })
+  .input(
+    z.object({
+      id: z.string().min(1).optional(),
+      name: z.string().trim().min(1).max(20),
+      slug: z.string().optional(),
+      cover: z.url().max(500),
+      description: z.string().max(999).optional(),
+      sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
+    }),
+  )
+  .output(z.object({ category: adminCategoryDto }))
+  .handler(async ({ input }) => {
+    const category = await upsertAdminCategory({
+      id: input.id !== undefined ? BigInt(input.id) : undefined,
+      name: input.name,
+      slug: input.slug,
+      cover: input.cover,
+      description: input.description ?? '',
+      sortOrder: input.sortOrder,
+    })
+    return { category }
+  })
+
+const remove = adminProc
+  .route({ method: 'POST', path: '/admin/categories/remove' })
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.void())
+  .handler(async ({ input }) => {
+    const ok = await deleteAdminCategory(BigInt(input.id))
+    if (!ok) {
+      throw new ORPCError('NOT_FOUND', { message: '分类不存在' })
+    }
+  })
+
+const reorder = adminProc
+  .route({ method: 'POST', path: '/admin/categories/reorder' })
+  .input(z.object({ orderedIds: z.array(z.string().min(1)).min(1).max(500) }))
+  .output(z.object({ categories: z.array(adminCategoryDto) }))
+  .handler(async ({ input }) => {
+    const categories = await reorderAdminCategories(input.orderedIds)
+    return { categories }
+  })
+
+export const adminCategoriesRouter = { list, upsert, delete: remove, reorder }

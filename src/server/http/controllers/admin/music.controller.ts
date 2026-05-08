@@ -1,0 +1,75 @@
+import { z } from 'zod'
+
+import { userSession } from '@/server/auth/primitives'
+import { authorProc } from '@/server/http/orpc-base'
+import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetadata } from '@/server/music/service'
+import {
+  addMusicOutputDto,
+  listMusicOutputDto,
+  searchMusicOutputDto,
+  updateMusicOutputDto,
+} from '@/shared/contracts/music'
+
+const list = authorProc
+  .route({ method: 'GET', path: '/admin/music/list' })
+  .input(
+    z.object({
+      q: z.string().optional(),
+      offset: z.coerce.number().optional(),
+      limit: z.coerce.number().optional(),
+    }),
+  )
+  .output(listMusicOutputDto)
+  .handler(({ input }) => listMusicForAdmin({ q: input.q, offset: input.offset, limit: input.limit }))
+
+const search = authorProc
+  .route({ method: 'GET', path: '/admin/music/search' })
+  .input(z.object({ keyword: z.string(), limit: z.coerce.number().optional() }))
+  .output(searchMusicOutputDto)
+  .handler(({ input }) => searchMusic(input.keyword, input.limit))
+
+const add = authorProc
+  .route({ method: 'POST', path: '/admin/music/add' })
+  .input(z.object({ source: z.literal('netease'), sourceId: z.string().trim().min(1).max(64) }))
+  .output(addMusicOutputDto)
+  .handler(async ({ input, context }) => {
+    const music = await addMusic({
+      source: input.source,
+      sourceId: input.sourceId,
+      uploader: { id: BigInt(context.viewer.userId), name: userSession(context.session)?.name ?? '' },
+    })
+    return { music }
+  })
+
+const update = authorProc
+  .route({ method: 'POST', path: '/admin/music/update' })
+  .input(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().trim().min(1).max(200),
+      artist: z.array(z.string().trim().min(1).max(80)).min(1).max(20),
+      album: z.string().trim().max(200).optional().default(''),
+      lyric: z.string().max(50_000).optional(),
+    }),
+  )
+  .output(updateMusicOutputDto)
+  .handler(async ({ input }) => {
+    const music = await updateMusicMetadata({
+      id: BigInt(input.id),
+      name: input.name,
+      artist: input.artist,
+      album: input.album,
+      lyric: input.lyric ?? null,
+    })
+    return { music }
+  })
+
+const remove = authorProc
+  .route({ method: 'POST', path: '/admin/music/remove' })
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.void())
+  .handler(async ({ input, context }) => {
+    await deleteMusic(BigInt(input.id), { userId: context.viewer.userId, role: context.viewer.role })
+  })
+
+export const adminMusicRouter = { list, search, add, update, delete: remove }

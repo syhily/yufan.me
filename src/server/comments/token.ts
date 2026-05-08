@@ -1,0 +1,119 @@
+import { randomUUID } from 'node:crypto'
+
+import type { CommentTokenCookie, CommentTokenCookieEntry } from '@/shared/utils/comment-token'
+
+import { redisInstance } from '@/server/infra/cache/storage'
+import { requireBlogSettingsSection } from '@/shared/config/blog'
+
+const TOKEN_KEY_PREFIX = 'comment:token:'
+
+export interface CommentTokenPayload {
+  commentId: string
+  userId: string
+  pageKey: string
+  createdAt: number
+}
+
+export async function issueCommentToken(
+  commentId: bigint | string,
+  userId: bigint | string,
+  pageKey: string,
+  ttlSeconds?: number,
+): Promise<string> {
+  const token = randomUUID()
+  const payload: CommentTokenPayload = {
+    commentId: String(commentId),
+    userId: String(userId),
+    pageKey,
+    createdAt: Date.now(),
+  }
+  const ttl = ttlSeconds ?? requireBlogSettingsSection('comments').comments.tokenTtlSeconds
+  const redis = redisInstance()
+  await redis.set(`${TOKEN_KEY_PREFIX}${token}`, JSON.stringify(payload), 'EX', ttl)
+  return token
+}
+
+export async function verifyCommentToken(token: string): Promise<CommentTokenPayload | null> {
+  const redis = redisInstance()
+  const raw = await redis.get(`${TOKEN_KEY_PREFIX}${token}`)
+  if (!raw) {
+    return null
+  }
+  try {
+    return JSON.parse(raw) as CommentTokenPayload
+  } catch {
+    return null
+  }
+}
+
+export async function revokeCommentToken(token: string): Promise<void> {
+  const redis = redisInstance()
+  await redis.del(`${TOKEN_KEY_PREFIX}${token}`)
+}
+
+/**
+ * Clean up expired tokens from the cookie value by checking both the
+ * per-token `expiresAt` field and the Redis key existence.
+ * Returns the cleaned cookie payload and the list of still-valid tokens with payloads.
+ */
+export async function cleanupExpiredTokens(cookie: CommentTokenCookie): Promise<{
+  cleaned: CommentTokenCookie
+  validEntries: Array<{ token: string; payload: CommentTokenPayload; expiresAt: number }>
+}> {
+  const cleaned: CommentTokenCookie = {}
+  const validEntries: Array<{ token: string; payload: CommentTokenPayload; expiresAt: number }> = []
+  const now = Date.now()
+
+  for (const [pageKey, entries] of Object.entries(cookie)) {
+    const kept: CommentTokenCookieEntry[] = []
+    for (const entry of entries) {
+      if (entry.expiresAt <= now) {
+        continue
+      }
+      const payload = await verifyCommentToken(entry.token)
+      if (payload === null) {
+        continue
+      }
+      kept.push(entry)
+      validEntries.push({ token: entry.token, payload, expiresAt: entry.expiresAt })
+    }
+    if (kept.length > 0) {
+      cleaned[pageKey] = kept
+    }
+  }
+
+  return { cleaned, validEntries }
+}
+
+/**
+ * Build a new cookie payload by appending a freshly-issued token.
+ */
+export function appendCommentToken(
+  existing: CommentTokenCookie,
+  pageKey: string,
+  token: string,
+  ttlSeconds: number,
+): CommentTokenCookie {
+  const next: CommentTokenCookie = { ...existing }
+  const list = next[pageKey] ? [...next[pageKey]] : []
+  list.push({ token, expiresAt: Date.now() + ttlSeconds * 1000 })
+  next[pageKey] = list
+  return next
+}
+
+/**
+ * Check whether the caller owns the given comment via a valid token.
+ * Returns the cleaned cookie (for Set-Cookie refresh) and a boolean.
+ */
+export async function verifyCommentOwnership(
+  cookie: CommentTokenCookie,
+  commentId: string,
+): Promise<{ ok: boolean; cleaned: CommentTokenCookie }> {
+  const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
+  for (const entry of validEntries) {
+    if (entry.payload.commentId === commentId) {
+      return { ok: true, cleaned }
+    }
+  }
+  return { ok: false, cleaned }
+}
