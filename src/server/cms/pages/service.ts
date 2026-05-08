@@ -1,0 +1,342 @@
+import type { ContentRow, PageMetaRow } from '@/server/db/types'
+import type { PortableTextBody } from '@/shared/portable-text'
+
+import {
+  toAdminPageDto,
+  toAdminRevisionDto,
+  toCmsPage,
+  type AdminPageDetailDto,
+  type AdminPageDto,
+  type AdminRevisionDto,
+  type CmsPage,
+} from '@/server/cms/pages/projection'
+import {
+  countPageMetas,
+  findContentById,
+  findLatestDraft,
+  findLatestRevision,
+  findPageMetaById,
+  findPageMetaBySlug,
+  findPublicPageMetaBySlug,
+  insertPageMeta,
+  listPageMetas,
+  listPublicPageMetas,
+  listRevisions,
+  publishLatestRevision,
+  restorePageMeta,
+  saveDraftRevision,
+  softDeletePageMeta,
+  updatePageMetaById,
+  type ListPagesFilters,
+  type PublishLatestResult,
+  type SaveDraftResult,
+} from '@/server/cms/pages/repository'
+import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { collectHeadings, collectImageStoragePaths, validatePortableTextBody } from '@/shared/portable-text'
+
+// Service layer for the page CMS. Wraps the repository's transactional
+// state machines with input validation, ActionFailure surfacing, and
+// the projections the API/SSR consumers want.
+//
+// All public functions in this module either return a DTO ready to
+// hand to the wire, or throw `ActionFailure` (translated by `runApi`
+// at the route perimeter into the standard error envelope).
+
+// --- Public catalog --------------------------------------------------------
+
+/** All non-deleted pages, joined with their published revision. */
+export async function loadCatalogPages(): Promise<CmsPage[]> {
+  const metas = await listPublicPageMetas()
+  if (metas.length === 0) {
+    return []
+  }
+  const revisions = await Promise.all(
+    metas.map((meta) =>
+      meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
+    ),
+  )
+  return metas.map((meta, idx) => toCmsPage(meta, revisions[idx]))
+}
+
+/**
+ * Single-page lookup for the public detail route. Returns `null` when
+ * the slug is unknown, soft-deleted, or has never been published.
+ * Soft-deleted pages 404; pages with `published=false` on the meta
+ * row also 404 — matching the historical Fumadocs `published`
+ * frontmatter behaviour.
+ */
+export async function loadCatalogPageBySlug(slug: string): Promise<CmsPage | null> {
+  const meta = await findPublicPageMetaBySlug(slug)
+  if (meta === null || !meta.published) {
+    return null
+  }
+  const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
+  return toCmsPage(meta, revision)
+}
+
+// --- Admin list / get ------------------------------------------------------
+
+export interface AdminPagesListResult {
+  pages: AdminPageDto[]
+  total: number
+  hasMore: boolean
+}
+
+export async function listPagesForAdmin(filters: ListPagesFilters = {}): Promise<AdminPagesListResult> {
+  const offset = filters.offset ?? 0
+  const [rows, total] = await Promise.all([listPageMetas(filters), countPageMetas(filters)])
+  return {
+    pages: rows.map(toAdminPageDto),
+    total,
+    hasMore: offset + rows.length < total,
+  }
+}
+
+export async function getPageDetailForAdmin(id: bigint): Promise<AdminPageDetailDto | null> {
+  const meta = await findPageMetaById(id)
+  if (meta === null) {
+    return null
+  }
+  const [latest, published] = await Promise.all([
+    findLatestRevision('page', meta.id),
+    meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
+  ])
+  return {
+    page: toAdminPageDto(meta),
+    latestRevision: latest === null ? null : toAdminRevisionDto(latest),
+    publishedRevision: published === null ? null : toAdminRevisionDto(published),
+  }
+}
+
+export async function listRevisionsForAdmin(id: bigint): Promise<AdminRevisionDto[]> {
+  const rows = await listRevisions('page', id)
+  return rows.map(toAdminRevisionDto)
+}
+
+// --- Admin metadata CRUD ---------------------------------------------------
+
+const RESERVED_PAGE_SLUGS = new Set<string>([
+  // Reserve slugs that already drive top-level routing on the public
+  // site so an admin can't shadow `/posts/...`, `/cats/...`, etc. with
+  // a page row.
+  'posts',
+  'cats',
+  'tags',
+  'archives',
+  'search',
+  'wp-admin',
+  'api',
+  'feed',
+  'sitemap.xml',
+  'robots.txt',
+])
+
+const SLUG_PATTERN = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/
+
+export interface UpsertPageMetaInput {
+  /** Existing page id; omitted on create. */
+  id?: bigint
+  slug: string
+  title: string
+  summary?: string
+  cover?: string
+  og?: string | null
+  published?: boolean
+  commentsEnabled?: boolean
+  showToc?: boolean
+  publishedAt?: Date
+}
+
+function ensureSlugLegal(slug: string): void {
+  if (!SLUG_PATTERN.test(slug)) {
+    throw new ActionFailure(400, '页面 slug 格式不合法（仅允许小写字母、数字、`-` `_` `.`）。')
+  }
+  if (slug.length > 80) {
+    throw new ActionFailure(400, '页面 slug 长度不得超过 80 个字符。')
+  }
+  if (RESERVED_PAGE_SLUGS.has(slug)) {
+    throw new ActionFailure(400, `slug "${slug}" 是站点保留路径。`)
+  }
+}
+
+export async function createPage(input: UpsertPageMetaInput, _authorId: bigint | null): Promise<AdminPageDto> {
+  ensureSlugLegal(input.slug)
+  const collision = await findPageMetaBySlug(input.slug)
+  if (collision !== null) {
+    throw new ActionFailure(409, `slug "${input.slug}" 已被其它页面占用。`)
+  }
+  const now = new Date()
+  const row = await insertPageMeta({
+    slug: input.slug,
+    title: input.title,
+    summary: input.summary ?? '',
+    cover: input.cover ?? '',
+    og: input.og ?? null,
+    published: input.published ?? true,
+    commentsEnabled: input.commentsEnabled ?? true,
+    showToc: input.showToc ?? false,
+    publishedAt: input.publishedAt ?? now,
+  })
+  return toAdminPageDto(row)
+}
+
+export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminPageDto> {
+  if (input.id === undefined) {
+    throw new ActionFailure(400, 'updatePageMeta requires an id')
+  }
+  ensureSlugLegal(input.slug)
+  const existing = await findPageMetaById(input.id)
+  if (existing === null) {
+    throw new ActionFailure(404, '页面不存在或已被删除。')
+  }
+  if (existing.slug !== input.slug) {
+    const collision = await findPageMetaBySlug(input.slug)
+    if (collision !== null && collision.id !== input.id) {
+      throw new ActionFailure(409, `slug "${input.slug}" 已被其它页面占用。`)
+    }
+  }
+  const updated = await updatePageMetaById(input.id, {
+    slug: input.slug,
+    title: input.title,
+    summary: input.summary ?? existing.summary,
+    cover: input.cover ?? existing.cover,
+    og: input.og === undefined ? existing.og : input.og,
+    published: input.published ?? existing.published,
+    commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
+    showToc: input.showToc ?? existing.showToc,
+    publishedAt: input.publishedAt ?? existing.publishedAt,
+  })
+  if (updated === null) {
+    throw new ActionFailure(404, '页面不存在或已被删除。')
+  }
+  return toAdminPageDto(updated)
+}
+
+export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
+  return { deleted: await softDeletePageMeta(id) }
+}
+
+export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
+  return { restored: await restorePageMeta(id) }
+}
+
+// --- Save / publish --------------------------------------------------------
+
+export interface SavePageBodyInput {
+  pageId: bigint
+  body: unknown
+  /** When provided, must match the latest revision's token. */
+  expectedClientRevisionToken?: string | null
+  /** When true, ignore token mismatch and overwrite. */
+  force?: boolean
+  /** Author user id stamped on the saved revision. */
+  authorId: bigint | null
+}
+
+export type SavePageResult =
+  | { status: 'saved'; revision: AdminRevisionDto }
+  | {
+      status: 'conflict'
+      latest: AdminRevisionDto
+      /** Token the editor must echo on the next attempt. */
+      expectedToken: string
+    }
+
+async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'publish'): Promise<SavePageResult> {
+  // Ensure the doc row exists before we open a transaction. Doing it
+  // upfront produces a friendly 404 instead of a transaction-rollback
+  // error on the operator's screen.
+  const meta = await findPageMetaById(input.pageId)
+  if (meta === null) {
+    throw new ActionFailure(404, '页面不存在或已被删除。')
+  }
+  // Validate body + derive the denormalised side-fields the
+  // repository writes alongside it. All three must succeed before we
+  // open a transaction.
+  const body = parseBodyOrThrow(input.body)
+  const imageSources = collectImageStoragePaths(body)
+  const headings = collectHeadings(body)
+
+  const repoInput = {
+    ownerId: meta.id,
+    body,
+    imageSources,
+    headings,
+    authorId: input.authorId,
+    expectedClientRevisionToken: input.expectedClientRevisionToken,
+    force: input.force,
+  }
+
+  const result = mode === 'draft' ? await saveDraftRevision(repoInput) : await publishLatestRevision(repoInput)
+  return projectSaveResult(result)
+}
+
+export function saveDraft(input: SavePageBodyInput): Promise<SavePageResult> {
+  return savePageBodyInternal(input, 'draft')
+}
+
+export function publishLatest(input: SavePageBodyInput): Promise<SavePageResult> {
+  return savePageBodyInternal(input, 'publish')
+}
+
+function parseBodyOrThrow(value: unknown): PortableTextBody {
+  try {
+    return validatePortableTextBody(value)
+  } catch (error) {
+    throw new ActionFailure(400, '正文格式不合法。', extractZodIssues(error))
+  }
+}
+
+function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SavePageResult {
+  if (result.status === 'conflict') {
+    return {
+      status: 'conflict',
+      latest: toAdminRevisionDto(result.latest),
+      expectedToken: result.expectedToken,
+    }
+  }
+  return { status: 'saved', revision: toAdminRevisionDto(result.row) }
+}
+
+function extractZodIssues(error: unknown): { message: string; path?: string[] }[] | undefined {
+  // Zod errors expose `.issues`; everything else surfaces as a single
+  // generic message. We deliberately don't expose the raw payload so
+  // a malformed save doesn't echo the editor body back to the client
+  // (privacy + log noise).
+  if (typeof error !== 'object' || error === null) {
+    return undefined
+  }
+  const issues = (error as { issues?: unknown }).issues
+  if (!Array.isArray(issues)) {
+    return undefined
+  }
+  return issues
+    .filter((issue): issue is { message: string; path?: unknown[] } => typeof issue === 'object' && issue !== null)
+    .map((issue) => ({
+      message: typeof issue.message === 'string' ? issue.message : 'invalid body',
+      path: Array.isArray(issue.path) ? issue.path.map(String) : undefined,
+    }))
+}
+
+// --- Re-exports -------------------------------------------------------------
+
+export type { AdminPageDetailDto, AdminPageDto, AdminRevisionDto, CmsPage } from '@/server/cms/pages/projection'
+
+// Convenience for the editor "preview" path: fetch + project the
+// latest draft, falling back to the published revision when the
+// editor is opened without an in-progress draft.
+export async function loadEditorBody(id: bigint): Promise<{
+  meta: PageMetaRow
+  draft: ContentRow | null
+  published: ContentRow | null
+}> {
+  const meta = await findPageMetaById(id)
+  if (meta === null) {
+    throw new ActionFailure(404, '页面不存在或已被删除。')
+  }
+  const [draft, published] = await Promise.all([
+    findLatestDraft('page', meta.id),
+    meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
+  ])
+  return { meta, draft, published }
+}

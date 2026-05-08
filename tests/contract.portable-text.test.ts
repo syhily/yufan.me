@@ -184,9 +184,19 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
 })
 
 describe('contract: portable-text helpers', () => {
-  it('collectHeadings emits depth + text for h1-h4 styled blocks only', () => {
+  it('collectHeadings emits depth + text + github-slugger slug for h1-h4 styled blocks only', () => {
     const headings = collectHeadings(FULL_BODY)
-    expect(headings).toEqual([{ depth: 2, text: 'Section title' }])
+    expect(headings).toEqual([{ depth: 2, text: 'Section title', slug: 'section-title' }])
+  })
+
+  it('collectHeadings disambiguates duplicate text with -1, -2, ... suffixes (matches rehype-slug)', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'h1', style: 'h2', children: [span('Intro')] },
+      { _type: 'block', _key: 'h2', style: 'h2', children: [span('Intro')] },
+      { _type: 'block', _key: 'h3', style: 'h3', children: [span('Intro')] },
+    ]
+    const headings = collectHeadings(body)
+    expect(headings.map((h) => h.slug)).toEqual(['intro', 'intro-1', 'intro-2'])
   })
 
   it('collectHeadings ignores blockquote / normal styles', () => {
