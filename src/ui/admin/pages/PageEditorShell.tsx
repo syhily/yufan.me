@@ -6,6 +6,8 @@ import {
   EyeIcon,
   EyeOffIcon,
   FileTextIcon,
+  PanelRightCloseIcon,
+  PanelRightOpenIcon,
   PencilLineIcon,
   SaveIcon,
   UploadIcon,
@@ -43,10 +45,10 @@ import {
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
 import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
+import { useAdminChromeFocus } from '@/ui/admin/shell/AdminShell'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/ui/tabs'
 import { cn } from '@/ui/lib/cn'
 
 const UPSERT_META = API_ACTIONS.admin.upsertPageMeta
@@ -118,6 +120,15 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     return rev !== null ? `${detail.page.id}:${rev.clientRevisionToken}` : `${detail.page.id}:empty`
   }, [isEditing, detail])
   const [bodyKey, setBodyKey] = useState(initialBodyKey)
+
+  // Live-preview pane: when on, the editor lays out as
+  // `[editor | preview | meta]` and tells the admin shell to
+  // collapse its left navigation rail to give the three columns
+  // breathing room. When off, the layout is the default
+  // `[editor | meta]` and the rail comes back. State lives here so
+  // it survives metadata edits but resets on route navigation.
+  const [previewOpen, setPreviewOpen] = useState(false)
+  useAdminChromeFocus(previewOpen)
 
   // The token the next save/publish must echo. Starts at the latest
   // revision's token; every successful save updates it.
@@ -631,6 +642,15 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               }
             />
           ) : null}
+          <Button
+            variant={previewOpen ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPreviewOpen((open) => !open)}
+            title={previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
+            aria-pressed={previewOpen}
+          >
+            {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />} 实时预览
+          </Button>
           {mode === 'create' ? (
             <Button
               size="sm"
@@ -695,10 +715,17 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       <div
         className={cn(
           'grid min-h-0 grow gap-4',
-          // Two columns on lg+ — left flex-grow editor, fixed-width
-          // right pane for metadata. On smaller screens the metadata
+          // Default: editor flex-grows on the left, fixed metadata
+          // rail on the right. On smaller screens the metadata
           // panel drops below the editor.
-          'lg:grid-cols-[minmax(0,1fr)_360px]',
+          !previewOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
+          // Preview mode: the editor and live preview share the
+          // available width 1:1 with the metadata rail pinned to
+          // the far right. The admin shell's left navigation
+          // collapses while this layout is mounted (see
+          // `useAdminChromeFocus(previewOpen)` above) so all three
+          // columns get usable widths even on a 13" laptop.
+          previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]',
         )}
       >
         <div className="flex min-h-0 flex-col gap-2">
@@ -712,36 +739,30 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
           />
           <PageBodyEditor initialBody={initialBody} bodyKey={bodyKey} onBodyChange={setBody} disabled={isPending} />
         </div>
-        <aside className="flex min-h-0 flex-col">
-          <Tabs defaultValue="meta" className="min-h-0 grow">
-            <TabsList className="self-start">
-              <TabsTrigger value="meta">页面信息</TabsTrigger>
-              <TabsTrigger value="preview">实时预览</TabsTrigger>
-            </TabsList>
-            <TabsContent value="meta" className="min-h-0 overflow-y-auto pr-1">
-              <MetaSidebar
-                draft={meta}
-                onChange={setMeta}
-                disabled={isPending}
-                publishStatus={sidebarPublishStatus}
-                extras={
-                  isEditing ? (
-                    <div className="rounded-md border bg-card p-2">
-                      <RevisionHistoryDrawer
-                        pageId={detail.page.id}
-                        currentToken={expectedToken}
-                        currentBody={body}
-                        onAdoptRevision={adoptRevisionFromHistory}
-                      />
-                    </div>
-                  ) : null
-                }
-              />
-            </TabsContent>
-            <TabsContent value="preview" className="flex min-h-0 grow flex-col">
-              <PreviewPane body={body} />
-            </TabsContent>
-          </Tabs>
+        {previewOpen ? (
+          <section aria-label="实时预览" className="flex min-h-0 flex-col">
+            <PreviewPane body={body} />
+          </section>
+        ) : null}
+        <aside className="flex min-h-0 flex-col overflow-y-auto pr-1">
+          <MetaSidebar
+            draft={meta}
+            onChange={setMeta}
+            disabled={isPending}
+            publishStatus={sidebarPublishStatus}
+            extras={
+              isEditing ? (
+                <div className="rounded-md border bg-card p-2">
+                  <RevisionHistoryDrawer
+                    pageId={detail.page.id}
+                    currentToken={expectedToken}
+                    currentBody={body}
+                    onAdoptRevision={adoptRevisionFromHistory}
+                  />
+                </div>
+              ) : null
+            }
+          />
         </aside>
       </div>
       {conflict !== null && isEditing ? (
