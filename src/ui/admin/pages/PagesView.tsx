@@ -14,7 +14,6 @@ import type {
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { EditPageDialog } from '@/ui/admin/pages/EditPageDialog'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -32,16 +31,13 @@ const LIST = API_ACTIONS.admin.listPages
 const DELETE = API_ACTIONS.admin.deletePage
 const RESTORE = API_ACTIONS.admin.restorePage
 
-type EditTarget = AdminPageDto | null | undefined
-
-// Pages admin page orchestrator. Owns the controller dispatch, the
-// edit dialog state, and the soft-delete / restore flow. The body
-// editor lives at `/wp-admin/pages/:id/edit` and is reached from the
-// row's "编辑内容" button — that route is built in a follow-up
-// milestone.
+// Pages admin list. New + edit both navigate to a dedicated full-page
+// route (/wp-admin/pages/new and /wp-admin/pages/:id/edit) — page
+// authoring is too heavy for a modal, and switching between metadata
+// + body editing in a side-panel-on-page-route layout matches the
+// product requirement of "left editor / right metadata".
 export function PagesView() {
   const { state, dispatch } = usePagesController()
-  const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const listApi = useApiFetcher<ListPagesInput, ListPagesOutput>(LIST, {
@@ -99,14 +95,19 @@ export function PagesView() {
       <AdminListPage>
         <AdminListPage.Header
           title="页面管理"
-          description={`共 ${state.total} 个页面。页面正文以 PortableText 形式存储在数据库；点击「编辑内容」可进入富文本编辑器。`}
+          description={`共 ${state.total} 个页面。点击「编辑」可进入富文本编辑器，编辑器右侧可同时调整页面元数据。`}
         >
           <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
-          <Button type="button" onClick={() => setEditTarget(null)}>
-            <PlusIcon /> 新建页面
-          </Button>
+          <Button
+            type="button"
+            render={
+              <Link to="/wp-admin/pages/new">
+                <PlusIcon /> 新建页面
+              </Link>
+            }
+          />
         </AdminListPage.Header>
 
         <AdminListPage.Toolbar>
@@ -148,7 +149,7 @@ export function PagesView() {
                   <TableHead className="hidden md:table-cell">摘要</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">更新时间</TableHead>
-                  <TableHead className="w-48 pr-4 text-right">操作</TableHead>
+                  <TableHead className="w-44 pr-4 text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -172,7 +173,6 @@ export function PagesView() {
                     <PageRow
                       key={row.id}
                       page={row}
-                      onEditMeta={() => setEditTarget(row)}
                       onDelete={() =>
                         setConfirm({
                           title: `删除页面「${row.title}」？`,
@@ -192,19 +192,6 @@ export function PagesView() {
         </AdminListPage.Body>
       </AdminListPage>
 
-      <EditPageDialog
-        page={editTarget}
-        onClose={() => setEditTarget(undefined)}
-        onSaved={(saved) => {
-          if (editTarget === null) {
-            dispatch({ type: 'prependPage', page: saved })
-          } else {
-            dispatch({ type: 'patchPage', page: saved })
-          }
-          setEditTarget(undefined)
-        }}
-      />
-
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </>
   )
@@ -212,12 +199,11 @@ export function PagesView() {
 
 interface PageRowProps {
   page: AdminPageDto
-  onEditMeta: () => void
   onDelete: () => void
   onRestore: () => void
 }
 
-function PageRow({ page, onEditMeta, onDelete, onRestore }: PageRowProps) {
+function PageRow({ page, onDelete, onRestore }: PageRowProps) {
   const isDeleted = page.deletedAt !== null
   return (
     <TableRow className={isDeleted ? 'opacity-60' : undefined}>
@@ -253,13 +239,10 @@ function PageRow({ page, onEditMeta, onDelete, onRestore }: PageRowProps) {
                 size="sm"
                 render={
                   <Link to={`/wp-admin/pages/${page.id}/edit`}>
-                    <FilePenIcon /> 编辑内容
+                    <FilePenIcon /> 编辑
                   </Link>
                 }
               />
-              <Button variant="ghost" size="sm" onClick={onEditMeta} title="编辑元数据">
-                信息
-              </Button>
               <Button variant="ghost" size="sm" onClick={onDelete} title="删除">
                 <Trash2Icon />
               </Button>

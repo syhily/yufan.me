@@ -326,6 +326,31 @@ export type PortableTextBody = z.infer<typeof portableTextBodySchema>
 export type PortableTextBlock = Block
 export type { Block as PtBlock }
 
+// --- Key generation ----------------------------------------------------------
+
+// Generate a short opaque `_key` for a freshly-created block / span /
+// markDef. Keys only need uniqueness within the body — they're not
+// stable across saves. We use a 12-char `[a-z0-9]` chunk so they're
+// short enough to render in DevTools without hurting readability.
+//
+// Falls back to `Math.random` when `crypto.getRandomValues` is missing
+// (e.g. some Node test environments).
+export function generateBlockKey(): string {
+  const bytes = new Uint8Array(8)
+  if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes)
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) {
+      bytes[i] = Math.floor(Math.random() * 256)
+    }
+  }
+  let out = ''
+  for (let i = 0; i < bytes.length; i += 1) {
+    out += bytes[i].toString(36).padStart(2, '0')
+  }
+  return out.slice(0, 12)
+}
+
 // --- Helpers ----------------------------------------------------------------
 
 export interface PortableTextHeading {
