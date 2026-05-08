@@ -249,6 +249,172 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
   })
 })
 
+describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
+  it('saveDraft forwards expectedClientRevisionToken untouched into the repo call', async () => {
+    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+      status: 'saved',
+      row: contentRow({ revisionNo: 1, status: 'draft' }),
+    })
+
+    await service.saveDraft({
+      pageId: 1n,
+      body: VALID_BODY,
+      authorId: null,
+      expectedClientRevisionToken: 'expected-token-abc',
+    })
+
+    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][0]
+    expect(arg.expectedClientRevisionToken).toBe('expected-token-abc')
+    expect(arg.force).toBeUndefined()
+  })
+
+  it('saveDraft with force=true bypasses CAS at the repo and writes an audit log row', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
+    vi.mocked(repo.findLatestRevision).mockResolvedValue(
+      contentRow({
+        id: 600n,
+        ownerId: 7n,
+        revisionNo: 9,
+        status: 'draft',
+        clientRevisionToken: 'server-side-newer',
+      }),
+    )
+    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+      status: 'saved',
+      row: contentRow({ id: 601n, ownerId: 7n, revisionNo: 9, status: 'draft' }),
+    })
+
+    await service.saveDraft({
+      pageId: 7n,
+      body: VALID_BODY,
+      authorId: 42n,
+      expectedClientRevisionToken: 'client-thought-this',
+      force: true,
+    })
+
+    const repoArg = vi.mocked(repo.saveDraftRevision).mock.calls[0][0]
+    expect(repoArg.force).toBe(true)
+
+    // Audit log line emitted exactly once for the genuine overwrite.
+    const auditLines = consoleSpy.mock.calls
+      .map(([first]) => (typeof first === 'string' ? first : ''))
+      .filter((line) => line.includes('"scope":"audit.cms.pages"'))
+    expect(auditLines.length).toBe(1)
+    const parsed = JSON.parse(auditLines[0]!)
+    expect(parsed.msg).toBe('force_overwrite_save')
+    expect(parsed.mode).toBe('draft')
+    expect(parsed.actor).toBe('42')
+    expect(parsed.pageMetaId).toBe('7')
+    expect(parsed.overwrittenRevisionId).toBe('600')
+    expect(parsed.overwrittenRevisionToken).toBe('server-side-newer')
+    expect(parsed.clientExpectedToken).toBe('client-thought-this')
+    expect(parsed.resultRevisionId).toBe('601')
+
+    consoleSpy.mockRestore()
+  })
+
+  it('saveDraft with force=true on a no-op overwrite (matching tokens) skips the audit log', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n }))
+    const same = 'aligned-token'
+    vi.mocked(repo.findLatestRevision).mockResolvedValue(
+      contentRow({ id: 700n, ownerId: 7n, revisionNo: 3, status: 'draft', clientRevisionToken: same }),
+    )
+    vi.mocked(repo.saveDraftRevision).mockResolvedValue({
+      status: 'saved',
+      row: contentRow({ id: 701n, ownerId: 7n, revisionNo: 3, status: 'draft' }),
+    })
+
+    await service.saveDraft({
+      pageId: 7n,
+      body: VALID_BODY,
+      authorId: null,
+      expectedClientRevisionToken: same,
+      force: true,
+    })
+
+    const auditLines = consoleSpy.mock.calls
+      .map(([first]) => (typeof first === 'string' ? first : ''))
+      .filter((line) => line.includes('"scope":"audit.cms.pages"'))
+    expect(auditLines.length).toBe(0)
+
+    consoleSpy.mockRestore()
+  })
+
+  it('publishLatest forwards force=true and translates a conflict back into the wire shape', async () => {
+    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
+    const stale = contentRow({
+      id: 800n,
+      revisionNo: 4,
+      status: 'draft',
+      clientRevisionToken: 'newer-than-client',
+    })
+    vi.mocked(repo.publishLatestRevision).mockResolvedValue({
+      status: 'conflict',
+      latest: stale,
+      expectedToken: stale.clientRevisionToken,
+    })
+
+    const result = await service.publishLatest({
+      pageId: 1n,
+      body: VALID_BODY,
+      authorId: null,
+      expectedClientRevisionToken: 'stale-client',
+      force: false,
+    })
+    expect(result.status).toBe('conflict')
+    if (result.status === 'conflict') {
+      expect(result.latest.id).toBe('800')
+      expect(result.expectedToken).toBe('newer-than-client')
+    }
+
+    const repoArg = vi.mocked(repo.publishLatestRevision).mock.calls[0][0]
+    expect(repoArg.force).toBe(false)
+    expect(repoArg.expectedClientRevisionToken).toBe('stale-client')
+  })
+
+  it('publishLatest with force=true writes audit log with mode="publish"', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 11n }))
+    vi.mocked(repo.findLatestRevision).mockResolvedValue(
+      contentRow({
+        id: 900n,
+        ownerId: 11n,
+        revisionNo: 12,
+        status: 'draft',
+        clientRevisionToken: 'srv-token',
+      }),
+    )
+    vi.mocked(repo.publishLatestRevision).mockResolvedValue({
+      status: 'published',
+      row: contentRow({ id: 901n, ownerId: 11n, revisionNo: 12, status: 'published' }),
+    })
+
+    await service.publishLatest({
+      pageId: 11n,
+      body: VALID_BODY,
+      authorId: 99n,
+      expectedClientRevisionToken: 'cli-token',
+      force: true,
+    })
+
+    const auditLines = consoleSpy.mock.calls
+      .map(([first]) => (typeof first === 'string' ? first : ''))
+      .filter((line) => line.includes('"scope":"audit.cms.pages"'))
+    expect(auditLines.length).toBe(1)
+    const parsed = JSON.parse(auditLines[0]!)
+    expect(parsed.mode).toBe('publish')
+    expect(parsed.resultRevisionId).toBe('901')
+
+    consoleSpy.mockRestore()
+  })
+})
+
 describe('cms/pages/service — public catalog projection', () => {
   it('loadCatalogPageBySlug 404s on soft-deleted rows', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(null)

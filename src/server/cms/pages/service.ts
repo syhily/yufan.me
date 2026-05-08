@@ -295,7 +295,11 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   }
 
   const result = mode === 'draft' ? await saveDraftRevision(repoInput) : await publishLatestRevision(repoInput)
-  if (input.force === true && result.status === 'saved' && overwriteContext !== null) {
+  // Repository status is `'saved'` for drafts and `'published'` for
+  // publishes — both indicate a successful write that the audit
+  // trail should observe.
+  const wroteSuccessfully = result.status === 'saved' || result.status === 'published'
+  if (input.force === true && wroteSuccessfully && overwriteContext !== null) {
     // We only emit when an overwrite was actually consequential —
     // i.e. the server's stored token differed from what the client
     // expected. Equal tokens with `force=true` is a no-op overwrite
