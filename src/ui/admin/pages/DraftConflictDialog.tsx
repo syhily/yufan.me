@@ -1,13 +1,10 @@
-import { diff_match_patch } from 'diff-match-patch'
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
-import type { Block, PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/shared/portable-text'
 
-import { bodyToPlainText } from '@/shared/portable-text'
-import { Badge } from '@/ui/components/ui/badge'
+import { diffBodies, DiffPanel } from '@/ui/admin/pages/portable-text-diff'
 import { Button } from '@/ui/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/ui/dialog'
-import { cn } from '@/ui/lib/cn'
 
 // "Local vs server" diff resolver. Renders when the editor opens a
 // page and both Local Storage AND the server have a draft, but their
@@ -16,9 +13,10 @@ import { cn } from '@/ui/lib/cn'
 // merging two structural docs requires user-driven block-level
 // resolution, which is overkill for our scale.
 //
-// Diff strategy: align blocks by `_key`. A block present only in
-// local is shown as added; only-in-server is removed; same-key but
-// different content shows both bodies side by side.
+// Diff strategy: align blocks by `_key` via `diffBodies`. The
+// rendering primitive (`DiffPanel`) is shared with the revision
+// history drawer, which uses the same alignment to compare any
+// historical revision against the editor's current body.
 
 export interface DraftConflictDialogProps {
   open: boolean
@@ -45,7 +43,10 @@ export function DraftConflictDialog({
   onChooseLocal,
   onChooseServer,
 }: DraftConflictDialogProps) {
-  const diff = diffBodies(localBody, serverBody)
+  // Server is on the *left*, local on the *right*: the right column
+  // gets the green "added" highlights so the operator can scan the
+  // delta they've authored at a glance.
+  const diff = diffBodies(serverBody, localBody)
 
   return (
     <Dialog open={open}>
@@ -61,17 +62,17 @@ export function DraftConflictDialog({
         </p>
         <div className="grid gap-3 lg:grid-cols-2">
           <DraftPanel
-            title="本地草稿"
-            icon={<MonitorIcon className="size-4" />}
-            timestamp={localSavedAt}
-            kind="local"
-            diff={diff}
-          />
-          <DraftPanel
             title="云端版本"
             icon={<ServerIcon className="size-4" />}
             timestamp={serverUpdatedAt}
-            kind="server"
+            side="left"
+            diff={diff}
+          />
+          <DraftPanel
+            title="本地草稿"
+            icon={<MonitorIcon className="size-4" />}
+            timestamp={localSavedAt}
+            side="right"
             diff={diff}
           />
         </div>
@@ -88,42 +89,15 @@ export function DraftConflictDialog({
   )
 }
 
-interface DiffEntry {
-  key: string
-  status: 'unchanged' | 'changed' | 'localOnly' | 'serverOnly'
-  localBlock: Block | null
-  serverBlock: Block | null
-}
-
-// Singleton — diff-match-patch is stateless after construction and
-// the cleanup defaults are tuned for our short editor blocks.
-const dmp = new diff_match_patch()
-
-interface InlineDiffPart {
-  // 1 = insertion (only on the local side); -1 = deletion (only on
-  // the server side); 0 = unchanged on both sides.
-  op: -1 | 0 | 1
-  text: string
-}
-
-function inlineCharDiff(left: string, right: string): InlineDiffPart[] {
-  const result = dmp.diff_main(left, right)
-  // Word-level cleanup is the closest match to "show me what the
-  // user actually changed" — the per-character output of diff_main
-  // looks like alphabet soup on Chinese prose.
-  dmp.diff_cleanupSemantic(result)
-  return result.map(([op, text]) => ({ op: op as -1 | 0 | 1, text }))
-}
-
 interface DraftPanelProps {
   title: string
   icon: React.ReactNode
   timestamp: number | null
-  kind: 'local' | 'server'
-  diff: DiffEntry[]
+  side: 'left' | 'right'
+  diff: ReturnType<typeof diffBodies>
 }
 
-function DraftPanel({ title, icon, timestamp, kind, diff }: DraftPanelProps) {
+function DraftPanel({ title, icon, timestamp, side, diff }: DraftPanelProps) {
   return (
     <div className="flex min-h-0 flex-col rounded-md border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm font-medium">
@@ -133,142 +107,9 @@ function DraftPanel({ title, icon, timestamp, kind, diff }: DraftPanelProps) {
           <span className="ml-auto text-xs text-muted-foreground">{new Date(timestamp).toLocaleString('zh-CN')}</span>
         ) : null}
       </div>
-      <div className="max-h-[480px] overflow-y-auto">
-        <ol className="flex flex-col gap-2 p-3">
-          {diff.map((entry, idx) => {
-            const block = kind === 'local' ? entry.localBlock : entry.serverBlock
-            const visible = entry.status !== (kind === 'local' ? 'serverOnly' : 'localOnly')
-            if (!visible) {
-              // Render a placeholder so the two columns stay aligned.
-              return (
-                <li
-                  key={`${entry.key}-${idx}`}
-                  className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"
-                >
-                  （无）
-                </li>
-              )
-            }
-            return (
-              <li
-                key={`${entry.key}-${idx}`}
-                className={cn(
-                  'rounded border px-2 py-2 text-sm',
-                  entry.status === 'unchanged' && 'border-muted bg-muted/30',
-                  entry.status === 'changed' && 'border-amber-300 bg-amber-50',
-                  entry.status === 'localOnly' && kind === 'local' && 'border-emerald-300 bg-emerald-50',
-                  entry.status === 'serverOnly' && kind === 'server' && 'border-rose-300 bg-rose-50',
-                )}
-              >
-                <div className="mb-1 flex items-center gap-2">
-                  <BlockTypeBadge block={block} />
-                  <span className="text-[10px] tracking-wide text-muted-foreground uppercase">{entry.status}</span>
-                </div>
-                {entry.status === 'changed' &&
-                entry.localBlock?._type === 'block' &&
-                entry.serverBlock?._type === 'block' ? (
-                  <BlockInlineDiff localBlock={entry.localBlock} serverBlock={entry.serverBlock} side={kind} />
-                ) : (
-                  <BlockPreview block={block} />
-                )}
-              </li>
-            )
-          })}
-        </ol>
+      <div className="max-h-[480px] overflow-y-auto p-3">
+        <DiffPanel diff={diff} side={side} />
       </div>
     </div>
   )
-}
-
-function BlockTypeBadge({ block }: { block: Block | null }) {
-  if (block === null) {
-    return null
-  }
-  return <Badge variant="outline">{block._type}</Badge>
-}
-
-interface BlockInlineDiffProps {
-  localBlock: Block
-  serverBlock: Block
-  side: 'local' | 'server'
-}
-
-// Highlight char-level insertions / deletions inside a text block
-// pair. The local panel highlights insertions (greens); the server
-// panel highlights deletions (reds). Equal runs render as plain
-// text. Falls back to the plain preview when the block isn't
-// `_type === 'block'` (the caller already gates on that).
-function BlockInlineDiff({ localBlock, serverBlock, side }: BlockInlineDiffProps) {
-  const localText = bodyToPlainText([localBlock]).trim()
-  const serverText = bodyToPlainText([serverBlock]).trim()
-  const parts = inlineCharDiff(serverText, localText)
-  return (
-    <p className="line-clamp-6 leading-relaxed break-words">
-      {parts.map((part, idx) => {
-        if (part.op === 0) {
-          return <span key={idx}>{part.text}</span>
-        }
-        if (side === 'local' && part.op === 1) {
-          return (
-            <span key={idx} className="rounded bg-emerald-200/70 px-0.5 text-emerald-950">
-              {part.text}
-            </span>
-          )
-        }
-        if (side === 'server' && part.op === -1) {
-          return (
-            <span key={idx} className="rounded bg-rose-200/70 px-0.5 text-rose-950 line-through">
-              {part.text}
-            </span>
-          )
-        }
-        return null
-      })}
-    </p>
-  )
-}
-
-function BlockPreview({ block }: { block: Block | null }) {
-  if (block === null) {
-    return <span className="text-xs text-muted-foreground">（空）</span>
-  }
-  if (block._type === 'block') {
-    const text = bodyToPlainText([block]).trim()
-    return <span className="line-clamp-3 break-words">{text || '（空文本块）'}</span>
-  }
-  return (
-    <pre className="line-clamp-3 text-xs break-all text-muted-foreground">{JSON.stringify(block).slice(0, 240)}</pre>
-  )
-}
-
-// Align two bodies by `_key`. The output preserves the order in which
-// each block first appears, leaning on the local body for shared
-// blocks (so the author sees their own ordering on the left). This
-// is intentionally simpler than a Myers diff — for the small bodies
-// we care about (≤ a few hundred blocks) the per-key alignment is
-// good enough and renders predictably.
-function diffBodies(localBody: PortableTextBody, serverBody: PortableTextBody): DiffEntry[] {
-  const serverByKey = new Map(serverBody.map((block) => [block._key, block]))
-  const localByKey = new Map(localBody.map((block) => [block._key, block]))
-  const entries: DiffEntry[] = []
-  for (const block of localBody) {
-    const counterpart = serverByKey.get(block._key) ?? null
-    if (counterpart === null) {
-      entries.push({ key: block._key, status: 'localOnly', localBlock: block, serverBlock: null })
-    } else if (sameBlock(block, counterpart)) {
-      entries.push({ key: block._key, status: 'unchanged', localBlock: block, serverBlock: counterpart })
-    } else {
-      entries.push({ key: block._key, status: 'changed', localBlock: block, serverBlock: counterpart })
-    }
-  }
-  for (const block of serverBody) {
-    if (!localByKey.has(block._key)) {
-      entries.push({ key: block._key, status: 'serverOnly', localBlock: null, serverBlock: block })
-    }
-  }
-  return entries
-}
-
-function sameBlock(left: Block, right: Block): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
 }

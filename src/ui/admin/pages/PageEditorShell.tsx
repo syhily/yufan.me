@@ -58,6 +58,11 @@ type Status =
   | { kind: 'saved'; at: Date }
   | { kind: 'error'; message: string }
   | { kind: 'conflict'; expectedToken: string }
+  // Neutral message — not an error, but not a "saved" either.
+  // Used by flows like "loaded a history revision" that need to
+  // tell the user "you have unsaved local changes" without
+  // colouring the chip red.
+  | { kind: 'info'; message: string }
 
 export interface PageEditorShellProps {
   /**
@@ -526,6 +531,28 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     setConflictResolved(true)
   }, [initialBody, detail, clearDraft])
 
+  // Pull a historical revision's body into the editor pane. We do
+  // NOT call the server here — the operator still has to hit
+  // 保存草稿 / 发布 to persist the adopted body, the same way they
+  // would after manually editing. This keeps "selecting a history
+  // entry" reversible: closing the tab without saving discards the
+  // adoption and the live page stays on whatever the published
+  // revision was.
+  const adoptRevisionFromHistory = useCallback(
+    (revision: { body: PortableTextBody; revisionNo: number }) => {
+      if (!isEditing) {
+        return
+      }
+      setBody(revision.body)
+      setBodyKey(`${detail.page.id}:adopt-revision:${revision.revisionNo}:${Date.now()}`)
+      // Surface a hint so the operator notices the editor was
+      // rewound — easy to miss otherwise because the body just
+      // appears to "change" in the panel.
+      setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存草稿或发布以生效。` })
+    },
+    [isEditing, detail],
+  )
+
   const canPersistMeta = meta.slug.trim() !== '' && meta.title.trim() !== ''
   // The publish button is suppressed when the latest revision *is*
   // already the published one (publishing again would create an
@@ -648,7 +675,12 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                 extras={
                   isEditing ? (
                     <div className="rounded-md border bg-card p-2">
-                      <RevisionHistoryDrawer pageId={detail.page.id} currentToken={expectedToken} />
+                      <RevisionHistoryDrawer
+                        pageId={detail.page.id}
+                        currentToken={expectedToken}
+                        currentBody={body}
+                        onAdoptRevision={adoptRevisionFromHistory}
+                      />
                     </div>
                   ) : null
                 }
@@ -723,6 +755,8 @@ function StatusIndicator({ status }: { status: Status }) {
       return <span className="text-destructive">{status.message}</span>
     case 'conflict':
       return <span className="text-destructive">检测到云端有更新的修订，请刷新后再保存。</span>
+    case 'info':
+      return <span className="text-amber-600 dark:text-amber-400">{status.message}</span>
   }
 }
 
