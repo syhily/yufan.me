@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import type { MarkdownHeading } from '@/shared/catalog'
 import type { TocOpts } from '@/shared/toc'
@@ -31,24 +31,6 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
   const items = generateToC(headings, generateTocConfig)
   const [visible, setVisible] = useState(false)
 
-  // Keep the historical `body.display-menu-tree` hook for CSS that targets
-  // the toggle state via the body class. The ToC overlay's chrome lives in
-  // `@/ui/post/toc/toc.css` and reads this class to flip the drawer
-  // (`.display-menu-tree .post-menu` translateX, `.display-menu-tree
-  // .toggle-menu-tree` shape change, `.display-menu-tree .post-menu-overlay`
-  // visibility); driving the toggle through a body class instead of a
-  // React `data-state` keeps the CSS hook the same one this project has
-  // shipped since the legacy build.
-  useEffect(() => {
-    const body = document.body
-    if (visible) {
-      body.classList.add('display-menu-tree')
-    } else {
-      body.classList.remove('display-menu-tree')
-    }
-    return () => body.classList.remove('display-menu-tree')
-  }, [visible])
-
   // Anchor scrolling is owned by `useFocusHash` (mounted on `root.tsx`):
   // an `a[href="#section"]` click natively updates `location.hash`, which
   // `useFocusHash` observes via `useLocation()` and handles in one place.
@@ -61,11 +43,14 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
     return null
   }
 
+  const state = visible ? 'open' : 'closed'
+
   return (
     <>
       <button
         type="button"
-        className="toggle-menu-tree"
+        data-state={state}
+        className="fixed top-0 right-0 bottom-0 z-890 my-auto -mr-20 flex h-25 w-25 cursor-pointer items-center justify-start rounded-full border border-line bg-white/90 pl-[0.35rem] text-toc-toggle leading-none text-ink-secondary shadow-toc-toggle transition-[background-color,color,transform,box-shadow] duration-200 hover:h-30 hover:w-30 hover:-translate-x-5 hover:bg-surface data-[state=open]:z-1500 data-[state=open]:-mr-6.25 data-[state=open]:h-12.5 data-[state=open]:w-12.5 data-[state=open]:-translate-x-70 data-[state=open]:justify-center data-[state=open]:bg-surface data-[state=open]:pl-0 data-[state=open]:hover:-mr-8 data-[state=open]:hover:h-16 data-[state=open]:hover:w-16 data-[state=open]:hover:-translate-x-70"
         aria-label={visible ? '关闭文章目录' : '展开文章目录'}
         aria-expanded={visible}
         onClick={onToggle}
@@ -76,17 +61,26 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
           <ChevronLeftIcon className="text-md" size="1em" aria-hidden />
         )}
       </button>
-      <div className="post-menu">
-        <div className="toc-wrap">
-          <div className="toc-content">
-            <h2 className="post-menu-title">文章目录</h2>
-            <div className="index-menu">
+      <div
+        data-state={state}
+        className="fixed top-0 -right-72.5 bottom-0 z-880 h-full w-70 border-l border-line bg-surface font-normal transition-transform duration-500 ease-in-out data-[state=open]:z-1000 data-[state=open]:-translate-x-72.5"
+      >
+        <div className="absolute top-0 -right-12 bottom-0 left-0 overflow-x-hidden overflow-y-auto">
+          <div className="mr-12 pt-11.5">
+            <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-strong">
+              文章目录
+            </h2>
+            <div className="pt-8">
               <TocItems items={items} />
             </div>
           </div>
         </div>
       </div>
-      <div className="post-menu-overlay" onClick={() => setVisible(false)} />
+      <div
+        data-state={state}
+        className="pointer-events-none invisible data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-black/30"
+        onClick={() => setVisible(false)}
+      />
     </>
   )
 }

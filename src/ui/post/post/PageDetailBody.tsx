@@ -7,6 +7,7 @@ import type { DetailPageComments } from '@/shared/comments'
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { Comments } from '@/ui/comments/Comments'
 import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
+import { cn } from '@/ui/lib/cn'
 import { LikeButton } from '@/ui/like/LikeActions'
 import { postTitleClass } from '@/ui/post/postChrome'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
@@ -43,7 +44,7 @@ export function PageDetailBody({
           <h1 className={postTitleClass}>{page.title}</h1>
           <TableOfContents headings={headings} toc={page.toc} />
           <div className="mt-4 xl:mt-6">
-            <div ref={postContentRef} className="post-content">
+            <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
               {children}
             </div>
           </div>

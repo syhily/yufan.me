@@ -29,20 +29,22 @@ const widgetClass = 'mb-10'
 
 // `<h3>` widget title. Replaces the legacy `.widget-title { color:
 // #008c95; font-size: 1rem; padding: 1.25rem 0; position: relative;
-// border-top: 2px solid #d2e3e4 }` rule. The `!`-prefixed
+// border-top: 2px solid #d2e3e4 }` rule plus its `:before { content:
+// ''; position: absolute; top: -2px; left: 0; width: 30px; height:
+// 2px; background-color: #008c95 }` decoration bar. The `!`-prefixed
 // border / padding utilities fight reset.css's un-layered
 // `h1..h6 { border: none; margin: 0; padding: 0 }` rule (un-
-// layered NORMAL beats layered NORMAL — Lesson 2). The
-// `relative` is kept because the literal `widget-title`
-// className stays as a selector anchor for the `:before`
-// decoration bar (kept inside `public.css`'s `@layer components`
-// block — `:before` content cannot be expressed as pure utility,
-// Lesson 5).
+// layered NORMAL beats layered NORMAL — Lesson 2). The decoration
+// bar is now expressed via the `before:` variant chain instead of
+// living in `public.css`'s `@layer components` block; the literal
+// `widget-title` className is kept only as a WP-compat marker (no
+// CSS rule of its own, used by downstream theme integrations).
 const widgetTitleClass = cn(
   'widget-title',
-  'relative !border-t-2 !border-widget-border',
-  '!px-0 !py-5',
+  'relative border-t-2! border-widget-border!',
+  'px-0! py-5!',
   'text-base text-brand',
+  "before:absolute before:-top-0.5 before:left-0 before:h-0.5 before:w-[30px] before:bg-brand before:content-['']",
 )
 
 // `<ul>` inside RandomPosts / RecentComments / PendingComments.
@@ -92,10 +94,10 @@ const commentAuthorLinkClass = 'mr-1.5 font-semibold text-ink-strong'
 
 // `<div className="tagcloud">` wrapping the RandomTags chips.
 // Replaces the legacy `.tagcloud { display: flex; flex-wrap: wrap }`.
-// The `tagcloud` literal className stays as a selector anchor for
-// `.tagcloud > a:before` (the `'#'` prefix `:before` cannot be
-// expressed as a pure utility — Lesson 5 — so it remains in
-// `public.css`'s `@layer components` block).
+// The `tagcloud` literal className is kept only as a WP-compat
+// marker (no CSS rule of its own — the `'#'` prefix that used to
+// live in `.tagcloud > a:before` is now expressed via the `before:`
+// variant chain on `tagcloudLinkClass` below).
 const tagcloudClass = cn('tagcloud', 'flex flex-wrap')
 
 // Each `<Link>` chip inside `.tagcloud`. Replaces the legacy
@@ -104,21 +106,29 @@ const tagcloudClass = cn('tagcloud', 'flex flex-wrap')
 // 0.9375rem; margin: 0 0.375rem 0.375rem 0; border-radius:
 // var(--radius-xs); border: 1px solid var(--border-light) }`
 // rule plus `#tag-cloud a:hover { color: var(--color-primary) }`
-// on the legacy `font-size` was a defensive holdover from when
-// Bootstrap's `.btn` rules competed; with all `.btn` selectors
-// retired, plain `text-sm` wins by specificity over the
-// inherited `body { font-size: 0.9375rem }` (Lesson 2 —
-// inheritance has zero specificity). 0.9375rem → `px-[15px]`
-// (no Tailwind step at exactly 15px — closest are `px-3.5` =
-// 14px and `px-4` = 16px), 0.5rem → `py-2`, 0.375rem →
-// `mr-1.5 mb-1.5`. The `tag-cloud-link` literal stays
-// as a WP-compat marker (no CSS rule of its own).
+// and the legacy `.tagcloud > a:before { content: '#'; font-size:
+// inherit; display: inline-block; color: var(--color-primary);
+// margin-right: 5px }` `#`-prefix decoration. The legacy `font-
+// size` was a defensive holdover from when Bootstrap's `.btn`
+// rules competed; with all `.btn` selectors retired, plain
+// `text-sm` wins by specificity over the inherited
+// `body { font-size: 0.9375rem }` (Lesson 2 — inheritance has
+// zero specificity). 0.9375rem → `px-[15px]` (no Tailwind step
+// at exactly 15px — closest are `px-3.5` = 14px and `px-4` =
+// 16px), 0.5rem → `py-2`, 0.375rem → `mr-1.5 mb-1.5`. The
+// `#` prefix is now expressed via the `before:` variant chain
+// instead of `public.css`'s `@layer components` block; `font-
+// size: inherit` falls out for free because the `:before` box
+// inherits its own font-size from the `<a>` (`text-sm`). The
+// `tag-cloud-link` literal stays as a WP-compat marker (no CSS
+// rule of its own).
 const tagcloudLinkClass = cn(
   'tag-cloud-link',
   'relative inline-block text-sm leading-none',
   'mr-1.5 mb-1.5 px-[15px] py-2',
   'rounded-xs border border-line',
   'hover:text-brand',
+  "before:mr-[5px] before:inline-block before:text-brand before:content-['#']",
 )
 
 // Bundle of widgets the sidebar consumes. Grouping these in a single value

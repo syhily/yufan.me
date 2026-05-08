@@ -32,10 +32,6 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
   }
   return (
     <nav aria-label="文章" data-slot="pagination" className="navigation mx-auto flex w-full justify-center">
-      {/* Sr-only landmark heading: kept for assistive tech parity with
-          the legacy markup. `screen-reader-text` is a long-standing
-          public-site utility from `reset.css`. */}
-      <h2 className="screen-reader-text">文章导航</h2>
       <ul data-slot="pagination-content" className="flex flex-row flex-wrap items-center justify-center gap-2">
         {items.map((item, i) =>
           item === 'ellipsis' ? (

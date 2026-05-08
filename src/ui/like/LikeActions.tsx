@@ -146,29 +146,6 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   return (
     <div className="post-action mt-12 text-center">
       <button
-        // `!px-10` recovers the legacy `.btn-rounded.btn-lg`
-        // `padding-inline: 2.5rem` that `btnRoundedLg` intentionally
-        // leaves to the call site.
-        //
-        // The `post-like` literal stays as a WP-compat marker AND
-        // because `post.css` still owns the `.post-like:hover {
-        // animation: shake … }` rule + the `@keyframes shake`
-        // sequence — neither expressible as a Tailwind utility
-        // (lesson 5: keyframes need an `@keyframes` block, and
-        // attaching the animation only to `:hover` is awkward in
-        // utility form). The `lock` literal stays for the same
-        // reason (the `:disabled` state is already covered by the
-        // button's `disabled` attribute, but keeping the marker
-        // matches downstream WP conventions).
-        //
-        // replaced it with a `data-liked` attribute so the
-        // active-state visuals (red fill + box-shadow) live
-        // entirely in the utility chain via the `data-[liked=
-        // true]:` variant. The `!shadow-[…]` carries the legacy
-        // `box-shadow … !important` from `.post-like.current`
-        // verbatim (the `!important` was needed to beat the
-        // un-layered `.btn-secondary:hover` shadow; even after
-        // moving to a layered utility we keep `!` for parity).
         className={cn(
           btnBase,
           btnSecondary,
@@ -176,6 +153,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
           btnRoundedLg,
           '!px-10',
           'post-like',
+          'hover:animate-shake hover:will-change-transform',
           'data-[liked=true]:!border-like-active data-[liked=true]:!bg-like-active data-[liked=true]:!text-white data-[liked=true]:!shadow-like-active',
           isPending && 'lock',
         )}
@@ -187,10 +165,6 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
         disabled={isPending}
       >
         <HeartIcon
-          // `.post-like .icon-heart-fill` is gone — the inline
-          // chain now carries the same 1.1 em width/height (heart
-          // glyph slightly larger than the count text), the
-          // vertical-align, and the -2 px optical-centre nudge.
           className="icon-heart-fill me-1 mt-[-2px] size-[1.1em] align-middle"
           fill="currentColor"
           size="1em"

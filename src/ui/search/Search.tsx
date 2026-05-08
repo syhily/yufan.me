@@ -59,23 +59,7 @@ export function SearchBar() {
   return (
     <div id="search" className="widget-search mb-10" ref={containerRef}>
       <Form method="get" action="/search" className="search-form">
-        {/* `block` replaces the legacy `.widget-search label
-            { display: block }`; without it the inline `<label>`
-            collapses around its hidden `<span>` and the input
-            row loses its 100%-width baseline. */}
-        <label className="block">
-          {/*
-            `hidden` preserves the legacy `.widget-search
-            .screen-reader-text { display: none }` override that
-            sat on top of the base `.screen-reader-text` visually-
-            hidden helper. Note: `display: none` removes the
-            `<span>` from the accessibility tree as well, so this
-            input has no programmatic name today; the `placeholder`
-            is the only hint a screen reader hears. A full fix
-            would switch to a visually-hidden `<label>` (or
-            `aria-label`) so the input announces "文章寻踪".
-          */}
-          <span className="hidden">文章寻踪</span>
+        <label className="block" aria-label="文章寻踪">
           <input
             type="search"
             className={sidebarSearchInputClass}

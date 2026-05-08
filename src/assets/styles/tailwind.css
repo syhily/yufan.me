@@ -1,24 +1,60 @@
 @import 'tailwindcss' source(none);
+@plugin '@tailwindcss/typography';
 
 @source '../..';
 
-@layer base {
-  [data-admin-shell],
-  [data-admin-shell] *,
-  [data-admin-shell] ::before,
-  [data-admin-shell] ::after,
-  [data-admin-shell] ::backdrop,
-  [data-admin-shell] ::file-selector-button {
-    border-color: var(--border);
-  }
+/* 1. Raw design tokens */
+:root {
+  --color-primary: #008c95;
+  --color-dark: #151b2b;
+  --color-secondary: #404b69;
+  --color-muted: #8a92a9;
+  --color-light: #e8e9ea;
+  --color-light-overlay: #eaecf3;
+  --color-danger: #f7094c;
+  --color-warning: #ff8338;
+  --color-body: #151924;
+  --text-dark: #000;
+
+  --btn-primary: #008c95;
+  --btn-dark: #151b2b;
+  --btn-secondary: #20283b;
+  --btn-light: #eceef1;
+  --btn-success: #41d589;
+
+  --bg-primary: #008c95;
+  --bg-dark: #151b2b;
+  --bg-secondary: #283149;
+  --bg-warning: #ffe9d5;
+  --bg-light: #f6f6f7;
+  --bg-muted: #ededf1;
+  --bg-white: #fff;
+  --bg-body: #fbfbfd;
+  --night-bg-light: #232327;
+
+  --border-primary: #008c95;
+  --border-secondary: #283149;
+  --border-muted: #d4ddec;
+  --border-light: #eff3fa;
+  --border-widget: #d2e3e4;
+
+  --bg-like-active: #ff4053;
+  --shadow-like-active-raw: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
+
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --font-code: 'Iosevka', monospace;
+  --bg-shiki-light: rgb(253, 246, 227);
+
+  --size-empty-state: 50vh;
+  --z-aside-drawer: 1020;
+  text-autospace: normal;
 }
 
-html:has(body[data-admin-shell]),
-body[data-admin-shell],
-[data-admin-shell] {
-  overscroll-behavior: none;
-}
-
+/* 2. Shadcn semantic tokens (light) */
 :root {
   --radius: 0.3125rem;
 
@@ -66,6 +102,7 @@ body[data-admin-shell],
   --sidebar-ring: var(--color-primary);
 }
 
+/* 3. Shadcn semantic tokens (dark — admin shell only) */
 [data-admin-shell].dark,
 .dark [data-admin-shell] {
   --background: var(--color-dark);
@@ -112,6 +149,7 @@ body[data-admin-shell],
   --sidebar-ring: var(--color-primary);
 }
 
+/* 4. Tailwind theme bridge — shadcn colour & radius namespace */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -154,6 +192,7 @@ body[data-admin-shell],
   --radius-xl: calc(var(--radius) + 2px);
 }
 
+/* 5. Tailwind theme — project tokens, breakpoints, animations */
 @theme inline {
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
@@ -171,7 +210,6 @@ body[data-admin-shell],
   --color-surface: var(--bg-light);
   --color-surface-dim: var(--bg-muted);
   --color-surface-warn: var(--bg-warning);
-
   --color-surface-body: var(--bg-body);
   --color-surface-secondary: var(--bg-secondary);
   --color-surface-night: var(--night-bg-light);
@@ -179,9 +217,6 @@ body[data-admin-shell],
   --color-line: var(--border-light);
   --color-line-muted: var(--border-muted);
   --color-widget-border: var(--border-widget);
-
-  --color-like-active: var(--bg-like-active);
-  --shadow-like-active: var(--shadow-like-active-raw);
 
   --color-brand: var(--color-primary);
   --color-brand-dark: var(--btn-dark);
@@ -195,13 +230,24 @@ body[data-admin-shell],
   --color-ink-light: var(--color-light);
   --color-ink-overlay: var(--color-light-overlay);
 
-  --radius-xs: var(--radius-xs);
+  --color-like-active: var(--bg-like-active);
+  --shadow-like-active: var(--shadow-like-active-raw);
 
+  --radius-xs: var(--radius-xs);
   --font-code: var(--font-code);
 
   --text-md: 0.9375rem;
-
   --text-2xl: 1.625rem;
+  --text-toc-toggle: 1.375rem;
+  --text-toc-title: 1.5rem;
+  --text-toc-link: 0.85rem;
+  --text-badge: 0.625rem;
+  --text-empty-state-hero: 6rem;
+  --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
+
+  --leading-badge: 1.2;
+  --spacing-badge-overlay-y: 0.4375rem;
+  --spacing-icon-inset: 28%;
 
   --container-popup-sm: 300px;
   --container-popup-md: 540px;
@@ -212,66 +258,69 @@ body[data-admin-shell],
 
   --size-qr-dialog: 210px;
 
-  --text-empty-state-hero: 6rem;
-
   --shadow-card: 0 0 30px 0 rgb(40 49 73 / 2%);
-
   --shadow-tooltip: 0 8px 28px rgb(40 49 73 / 14%);
+  --shadow-toc-toggle: 0 0.125rem 0.3125rem rgb(0 0 0 / 11.7%);
 
-  --text-badge: 0.625rem;
-  --spacing-badge-overlay-y: 0.4375rem;
-  --leading-badge: 1.2;
+  --animate-shake: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 
-  --text-btn-lg: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem);
+  @keyframes shake {
+    10%,
+    90% {
+      transform: translate3d(-1px, 0, 0);
+    }
+    20%,
+    80% {
+      transform: translate3d(2px, 0, 0);
+    }
+    30%,
+    50%,
+    70% {
+      transform: translate3d(-2px, 0, 0);
+    }
+    40%,
+    60% {
+      transform: translate3d(2px, 0, 0);
+    }
+  }
 
-  --spacing-icon-inset: 28%;
+  --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
+
+  @keyframes comments-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
 }
 
-:root {
-  --color-primary: #008c95;
-  --color-dark: #151b2b;
-  --color-secondary: #404b69;
-  --color-muted: #8a92a9;
-  --color-light: #e8e9ea;
-  --color-light-overlay: #eaecf3;
-  --color-danger: #f7094c;
-  --color-warning: #ff8338;
-  --color-body: #151924;
-  --btn-primary: #008c95;
-  --btn-dark: #151b2b;
-  --btn-secondary: #20283b;
-  --btn-light: #eceef1;
-  --btn-success: #41d589;
-  --bg-primary: #008c95;
-  --bg-dark: #151b2b;
-  --bg-secondary: #283149;
-  --bg-warning: #ffe9d5;
-  --bg-light: #f6f6f7;
-  --bg-muted: #ededf1;
-  --bg-white: #fff;
-  --bg-body: #fbfbfd;
-  --border-primary: #008c95;
-  --border-secondary: #283149;
-  --border-muted: #d4ddec;
-  --border-light: #eff3fa;
-  --border-widget: #d2e3e4;
-  --night-bg-light: #232327;
-  --bg-like-active: #ff4053;
-  --shadow-like-active-raw: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
-  --radius-xs: 3px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-  --text-dark: #000;
-  --font-code: 'Iosevka', monospace;
-  --size-empty-state: 50vh;
-  --z-aside-drawer: 1020;
-  text-autospace: normal;
+/* 6. Base layer — Preflight overrides */
+@layer base {
+  /* Tailwind v4 Preflight resets `svg { display: block }` (cssremedy
+   * §14). That breaks every inline icon in this codebase — lucide
+   * glyphs in buttons, status pills, the like-count heart, social
+   * share icons, etc. all expect to flow with adjacent text. We
+   * default `<svg>` back to `inline-block` and let the few genuinely
+   * block-level SVGs (decorative artwork, hero illustrations) opt in
+   * with a Tailwind `block` utility. MathJax SVGs are scoped under
+   * `.prose` separately and stay `inline-block` for inline equations
+   * via `&.prose :where(mjx-container[jax='SVG']) > :where(svg)`. */
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
 }
 
+/* 7. Document chrome — body font / cursors */
+html,
 body {
+  overscroll-behavior: none;
   font-family:
     'OPPO Sans 4.0',
+    'OPPO Sans',
+    OPPOSans,
     'PingFang SC',
     'Lantinghei SC',
     'Microsoft YaHei',
@@ -298,10 +347,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
-}
-
-body,
-html {
   cursor:
     image-set(
         url(data:image/png;base64,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)
@@ -309,14 +354,169 @@ html {
       )
       4 4,
     auto !important;
+  a,
+  button {
+    cursor: image-set(url(data:image/png;base64,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) 2x) 9 9, auto;
+  }
 }
 
-a,
-button {
-  cursor: image-set(url(data:image/png;base64,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) 2x) 9 9, auto;
-}
+/* 8. Brand typography utility — prose-blog
+ *
+ * NOTE: Tailwind Typography's `.prose` selector itself sets every
+ * `--tw-prose-*` variable to the plugin's gray theme defaults
+ * (e.g. `--tw-prose-quote-borders: gray-200`). Both `.prose-blog`
+ * and `.prose` resolve to specificity (0,1,0); when both are
+ * present on the same element, source order decides the winner —
+ * and `@plugin '@tailwindcss/typography'` is emitted *after* user
+ * `@utility` blocks, so the plugin's defaults would override our
+ * brand vars and `<blockquote>` etc. would render with gray-200.
+ * Scoping each var assignment under `&.prose` raises the specificity
+ * to (0,2,0) which beats the plugin's `.prose` block.
+ */
+@utility prose-blog {
+  &.prose {
+    --tw-prose-body: var(--color-body);
+    --tw-prose-headings: var(--color-dark);
+    --tw-prose-lead: var(--color-body);
+    --tw-prose-links: var(--color-primary);
+    --tw-prose-bold: var(--color-dark);
+    --tw-prose-counters: var(--color-secondary);
+    --tw-prose-bullets: var(--color-muted);
+    --tw-prose-hr: var(--border-light);
+    --tw-prose-quotes: var(--color-body);
+    --tw-prose-quote-borders: rgba(0, 140, 149, 0.55);
+    --tw-prose-captions: var(--color-muted);
+    --tw-prose-code: var(--color-secondary);
+    --tw-prose-pre-code: var(--shiki-light);
+    --tw-prose-pre-bg: var(--bg-shiki-light);
+    --tw-prose-th-borders: var(--border-light);
+    --tw-prose-td-borders: var(--border-light);
 
-input,
-textarea {
-  cursor: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAAEEfUpiAAAAAXNSR0IArs4c6QAAAupJREFUWAntl89vElEQx0EopAl6ESm2KgmcTLwoPWBjYojEpHeS3jnwH3jg5r/jwRN/gQd+hDsXLiWNgm0QSAUbEFjns77d7MKubCMYD0wymTcz35333sy8x8Pnc6NsNqvZfM1m024Q71sbwqZcXl4CT1qNpnJHWZ+LPLQiPI/3VXzzAyOkbigWiw9arRbjgIn4t4MkCVxepG0JyrlvNdp20ev18D10AwQGg4FPtjqzAvwWhdQ+E74r/NFi3/LQugTrVBHZ8fdwOPwB42QyOTs4OGBpIyvoT+OIOF+0220NZiyMbYWCK5bfBmY6H4/HhvtcBo6zuwXQP4xGo0YAV+kW4CgWi30ulUr6hzLuX11dPRLly3IktyTSzwRfqA/oGBpgrvSdWJOBwGKx6I9Go+tyufwKiS7feL4owtPp9LpWq2mZTEZDokuA8JqJTTczPU6lUmdSfw2JLux5BUSiP54SAKl0Ed4pMJvNhgRAymeus9vuJEv8oCRO9ynp1vI+twCzUCj0hoBK2u4xy0SOAdh/UO6BdwCVZAVu5waYjfY0oXg8rnU6HV2iC2LPhlKKU1SAL4W5DL4J3xfmwq4J/xS2kVMAfQuCIj8cXyrAsSYPrGRH/1kGnIrotERwFNVgMBSWoho+w4bd8GHbCNGah/Qz55seLxQKWrfb1SU6dgicsGPP/81KCHgk/DqRSBQqlcqnarWqT8p9iY4dv8JtfAGkmfPEpczBPOa1xa7Vq+tY2fGD81pa/bdX8GuJ1HKoqe0PYfPNIWMIHftUGKxn8rxSFZHUxqXUF/LaMieRLPj8fv8TMXwVXrmuTOAGBiyAn7fTpRKcKvuta8+xug1Rhv7JyYm8p7mf5ZYWiY5dGP9WiMaKzOfzATuv1+taLpfT0um0xn8DdOz4wQmD3yjR3UmeJ0w0HA5vGo1GLZ/Pv0eiY1fPl6RgwXsir03IjviDc09JOn0iTMNRdyYk1o0wbyjk1sohsXe0uQz8AtSlOGRROrZeAAAAAElFTkSuQmCC);
+    --tw-prose-invert-body: var(--color-body);
+    --tw-prose-invert-headings: var(--color-dark);
+    --tw-prose-invert-lead: var(--color-body);
+    --tw-prose-invert-links: var(--color-primary);
+    --tw-prose-invert-bold: var(--color-dark);
+    --tw-prose-invert-counters: var(--color-secondary);
+    --tw-prose-invert-bullets: var(--color-muted);
+    --tw-prose-invert-hr: var(--border-light);
+    --tw-prose-invert-quotes: var(--color-body);
+    --tw-prose-invert-quote-borders: rgba(0, 140, 149, 0.55);
+    --tw-prose-invert-captions: var(--color-muted);
+    --tw-prose-invert-code: var(--color-secondary);
+    --tw-prose-invert-pre-code: var(--shiki-light);
+    --tw-prose-invert-pre-bg: var(--bg-shiki-light);
+    --tw-prose-invert-th-borders: var(--border-light);
+    --tw-prose-invert-td-borders: var(--border-light);
+
+    font-family: 'OPPO Serif SC';
+
+    :where(blockquote) {
+      font-style: normal;
+      font-weight: 400;
+      background-color: var(--bg-light);
+      border-radius: var(--radius-sm);
+    }
+
+    :where(mjx-container[jax='SVG']) > :where(svg) {
+      max-width: none;
+    }
+
+    :where(mjx-container[jax='SVG'][display='true']) {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 0.125rem;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  :where(code, pre, kbd, samp) {
+    font-family: var(--font-code);
+  }
+
+  &.post-content {
+    :where(:not(pre) > code) {
+      padding: 0.08em 0.32em 0.1em;
+      margin: 0 0.06em;
+      border-radius: 0.1875rem;
+      box-decoration-break: clone;
+    }
+
+    :where(pre) {
+      position: relative;
+      color: inherit;
+      background-color: rgb(253, 246, 227);
+      padding: 1rem 1.25rem;
+      margin-top: 0 !important;
+      margin-bottom: 1rem !important;
+      border-radius: 0 0 0.375rem 0.375rem;
+      overflow-x: auto;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+
+    :where(pre.shiki) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre.shiki) :where(span) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre) > :where(code) {
+      color: inherit;
+      background: transparent;
+      padding-top: 0 !important;
+      display: block;
+      min-width: 100%;
+      width: max-content;
+      white-space: pre;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+  }
+
+  &.comment-content {
+    :where(pre) {
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: inherit;
+      background-color: rgb(253, 246, 227);
+      padding: 0.875rem 1rem;
+      margin: 0.75rem 0;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      word-break: normal;
+      overflow-wrap: normal;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    :where(pre.shiki) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre.shiki) :where(span) {
+      color: var(--shiki-light);
+    }
+
+    :where(pre) > :where(code) {
+      display: block;
+      min-width: 100%;
+      width: max-content;
+      font-size: inherit;
+      line-height: inherit;
+      color: inherit;
+      background: transparent;
+      padding: 0;
+      white-space: pre;
+      word-break: normal;
+      overflow-wrap: normal;
+    }
+
+    :where(code:not(pre > code)) {
+      padding: 0.125rem 0.25rem;
+      border-radius: 0.25rem;
+    }
+  }
 }

@@ -81,7 +81,7 @@ export function PostDetailBody({
                 )}
               </div>
               <TableOfContents headings={headings} toc={post.toc} />
-              <div ref={postContentRef} className="post-content">
+              <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
                 {children}
               </div>
               <LikeButton permalink={post.permalink} likes={likes} />

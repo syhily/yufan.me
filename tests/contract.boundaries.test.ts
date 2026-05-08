@@ -421,30 +421,47 @@ describe('contract: module and bundle boundaries', () => {
     //   - `ScrollTopButton.tsx` carries the inline `hidden`/
     //     `block` toggle on its `<li className="fixed-gotop …">`.
     //
-    // Two `:before` decorations whose `content: …` owned boxes
-    // cannot be expressed as Tailwind utilities (`.widget-title:
-    // before` and `.tagcloud > a:before`) survive in the
-    // `@layer components` block of `public.css`; the
-    // `.screen-reader-text` a11y helper survives un-layered just
-    // below it (cross-partial concern shared with `Pagination.tsx`).
-    // Re-introducing the partial would silently shadow every inlined
-    // chain because the legacy partial would have to come back
-    // un-layered (un-layered普通 declarations beat `@layer utilities`
-    // per the W3C cascade-layers spec); this contract makes the
-    // regression visible at PR time instead.
+    // The two `:before` decorations that used to be the lone
+    // exceptions — `.widget-title:before` (the 30×2px brand bar
+    // above each widget heading) and `.tagcloud > a:before` (the
+    // `'#'` prefix on each tag chip) — have been folded back into
+    // the consumer through Tailwind v4's `before:` variant chain
+    // (`widgetTitleClass` and `tagcloudLinkClass` in `Sidebar.tsx`).
+    // `public.css`'s `@layer components` block is therefore empty
+    // and gone; the only surviving rule in `public.css` is the
+    // `.medium-zoom-overlay` z-index pin for the third-party
+    // medium-zoom widget. The legacy `.screen-reader-text` a11y
+    // helper has been retired in favour of Tailwind's built-in
+    // `sr-only` utility (see `Pagination.tsx`). Re-introducing the
+    // sidebar partial would silently shadow every inlined chain
+    // because the legacy partial would have to come back un-layered
+    // (un-layered普通 declarations beat `@layer utilities` per the
+    // W3C cascade-layers spec); this contract makes the regression
+    // visible at PR time instead.
     expect(existsSync('src/ui/sidebar/sidebar.css')).toBe(false)
 
     const globals = readFileSync('src/assets/styles/public.css', 'utf8')
     expect(globals).not.toMatch(/@import\s+['"][^'"]*sidebar\.css['"]/)
 
-    // The two surviving `:before` decorations and the relocated a11y
-    // helper must live in `public.css`. Pin them so a future cleanup
-    // can't drop them without replacing the consumer (`Sidebar.tsx`'s
-    // `widgetTitleClass` / `tagcloudClass`, `Pagination.tsx`'s
-    // landmark `<h2>`, `Search.tsx`'s `<span>`).
-    expect(globals).toMatch(/\.widget-title:before\s*\{/)
-    expect(globals).toMatch(/\.tagcloud\s*>\s*a:before\s*\{/)
-    expect(globals).toMatch(/\.screen-reader-text\s*\{/)
+    // The previously-pinned `:before` exceptions are now banned
+    // from `public.css` — they belong to `Sidebar.tsx`'s
+    // `widgetTitleClass` / `tagcloudLinkClass` `before:` chains
+    // and must not silently regrow a CSS twin (which would
+    // double-paint the decoration). The `@layer components` block
+    // that used to host them is fully retired.
+    expect(globals).not.toMatch(/\.widget-title:before\b/)
+    expect(globals).not.toMatch(/\.tagcloud\s*>\s*a:before\b/)
+    expect(globals).not.toMatch(/@layer\s+components\s*\{/)
+    expect(globals).not.toMatch(/\.screen-reader-text\b/)
+
+    // Pin the two `before:` chains on `Sidebar.tsx` so a future
+    // cleanup can't drop them without realising it deletes the
+    // bar/`#` decorations entirely. The matchers are intentionally
+    // anchored on the literal `content: …` payloads (the value that
+    // actually paints the decoration) rather than on the full chain.
+    const sidebarSource = readFileSync('src/ui/sidebar/Sidebar.tsx', 'utf8')
+    expect(sidebarSource).toMatch(/before:content-\['']/)
+    expect(sidebarSource).toMatch(/before:content-\['#']/)
 
     // No `.css` partial under `src/` may redefine the inlined
     // selectors. (`.like-count` is a special case — `post.css`'s
@@ -764,19 +781,18 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps screen-reader helpers visually hidden instead of display-none', () => {
-    // sweep deleted everything except the body typography baseline and
-    // the cursor-image overrides, so the sr-only rule is no longer in
-    // `reset.css` at all. Pin the rule lives in `public.css` and uses
-    // the WordPress-classic 1px visually-hidden recipe (some older
-    // screen readers skipped 0×0 rects, so 1px keeps belt-and-braces
-    // coverage). `display: none` would hide the helper from screen
-    // readers too — the assertion below explicitly bans it.
+    // The legacy `.screen-reader-text` helper has been retired —
+    // every consumer now uses Tailwind's built-in `sr-only` utility,
+    // whose recipe (`clip-path: inset(50%); position: absolute; …`)
+    // is shipped by the framework. `display: none` would hide the
+    // helper from screen readers too — the assertion below explicitly
+    // bans any user-authored partial from re-overriding `sr-only`
+    // with that anti-pattern, and pins that the retired class is not
+    // resurrected in `public.css`.
     const source = readFileSync('src/assets/styles/public.css', 'utf8')
 
-    expect(source).not.toMatch(/\.screen-reader-text\s*\{[^}]*display:\s*none/s)
+    expect(source).not.toMatch(/\.screen-reader-text\b/)
     expect(source).not.toMatch(/\.sr-only\s*\{[^}]*display:\s*none/s)
-    expect(source).toMatch(/\.screen-reader-text\s*\{[^}]*clip:\s*rect\(\s*1px,\s*1px,\s*1px,\s*1px\s*\)/s)
-    expect(source).toMatch(/\.screen-reader-text\s*\{[^}]*position:\s*absolute\s*!important/s)
   })
 
   it('does not pass hex design tokens through rgba(var(...))', () => {
@@ -863,13 +879,62 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps solution math scrollable instead of clipping long formulas', () => {
-    // The post-detail partial moved next to the consuming components
-    // (see `public.css` — `@import '@/ui/post/post.css';`). The
-    // assertions stay the same; only the source path moved.
-    const source = readFileSync('src/assets/styles/public.css', 'utf8')
+    // The MathJax overflow rule used to live in `public.css`'s
+    // `.post-content mjx-container[jax='SVG'][display='true']` block,
+    // alongside the rest of the post / comment chrome. That block has
+    // since migrated into the `@utility prose-blog` tree in
+    // `tailwind.css` (keyed off `&.post-content :where(mjx-container…)`)
+    // so the brand typography utility owns the whole post-content
+    // surface in one place. The MDX `<Solution>` clip-on-hidden rule
+    // must never come back in either file.
+    const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
+    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
 
-    expect(source).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
-    expect(source).toContain(".post-content mjx-container[jax='SVG'][display='true']")
-    expect(source).toContain('overflow-x: auto')
+    expect(publicCss).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
+    expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
+    expect(tailwindCss).toContain("mjx-container[jax='SVG'][display='true']")
+    expect(tailwindCss).toContain('overflow-x: auto')
+  })
+
+  it('routes post / comment typography through @tailwindcss/typography', () => {
+    // The legacy giant `.post-content { … }` / `.comment-content { … }`
+    // declarations in `public.css` are gone — typography is now
+    // expressed as a `@utility prose-blog` block consumed by the JSX
+    // carriers (`PostDetailBody`, `PageDetailBody`,
+    // `CommentItem.commentContentClass`) via the `prose prose-blog`
+    // class chain. The standalone `src/ui/post/post.css` partial was
+    // folded back into `public.css`, so the only post-content CSS
+    // partial is the inline block right after `@utility prose-blog`.
+    // This contract makes both invariants visible at PR time.
+    const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
+    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    const commentItem = readFileSync('src/ui/comments/CommentItem.tsx', 'utf8')
+
+    expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
+    expect(publicCss).not.toMatch(/^\s*\.comment-content\s*\{/m)
+    // The `@utility prose-blog { … }` block lives in `tailwind.css`
+    // (which `public.css` `@import`s at the bottom) and now owns every
+    // `.post-content` / `.comment-content` descendant rule via nested
+    // `&.post-content :where(…)` / `&.comment-content :where(…)`
+    // compounds. Pin the location so a future cleanup can't silently
+    // smear the utility back into `public.css`.
+    expect(tailwindCss).toMatch(/@utility\s+prose-blog\s*\{/)
+    expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
+    expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
+    // The standalone `src/ui/post/post.css` partial is gone; everything
+    // it owned now lives directly in `public.css`.
+    expect(publicCss).not.toMatch(/@import\s+['"][^'"]*ui\/post\/post\.css['"]/)
+    expect(existsSync('src/ui/post/post.css')).toBe(false)
+
+    expect(tailwindCss).toContain("@plugin '@tailwindcss/typography'")
+    expect(tailwindCss).toMatch(/--bg-shiki-light:\s*rgb\(253,\s*246,\s*227\);/)
+
+    // Comment HTML is rendered via `dangerouslySetInnerHTML`, so the
+    // `prose prose-sm prose-blog max-w-none` chain on the wrapper
+    // `<div class="comment-content …">` is what drives the comment
+    // typography cascade. Pin the literal so a refactor that drops the
+    // chain is caught at PR time (matches the same-line guarantee that
+    // the post / page carriers carry the `prose prose-lg` variant).
+    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,\s*'prose prose-sm prose-blog max-w-none'/)
   })
 })

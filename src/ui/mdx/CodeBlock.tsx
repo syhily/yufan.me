@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from 'react'
 
+import { cn } from '@/ui/lib/cn'
+
 const COPY_LABEL = 'Copy'
 const COPIED_LABEL = 'Copied'
 const FAILED_LABEL = 'Failed'
@@ -180,14 +182,30 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
   }
 
   return (
-    <div className="code-block-wrapper">
-      <div className="code-header">
-        <span className="language-label" aria-label={`Code language: ${displayLanguage}`} role="note">
+    <div
+      className={cn(
+        'code-block-wrapper',
+        'relative mx-0 mt-0 mb-4 w-full overflow-hidden rounded-md',
+        'in-[.comment-content]:mx-0 in-[.comment-content]:my-3 in-[.comment-content]:rounded-sm',
+      )}
+    >
+      <div
+        className={cn(
+          'code-header',
+          'mb-0! flex w-full items-center justify-between rounded-t-md bg-surface px-4 py-2 font-code select-none',
+          'in-[.comment-content]:hidden',
+        )}
+      >
+        <span
+          className="language-label pointer-events-none font-code text-sm font-medium text-ink-strong select-none"
+          aria-label={`Code language: ${displayLanguage}`}
+          role="note"
+        >
           {displayLanguage}
         </span>
         <button
           type="button"
-          className="copy-code"
+          className="copy-code cursor-pointer border-0 bg-transparent font-code text-sm font-medium text-ink-strong transition-[transform,color] duration-150 ease-in-out select-none hover:scale-105 hover:text-brand"
           title={`Copy ${displayLanguage} code`}
           aria-label={`Copy ${displayLanguage} code to clipboard`}
           onClick={() => void onCopy()}
@@ -195,7 +213,17 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
           {label}
         </button>
       </div>
-      <pre {...props} className={className} data-language={language}>
+      <pre
+        {...props}
+        // Resets the parent prose `:where(pre)` margins / top-radius so the
+        // pre tucks flush under `.code-header`. Mirrors the legacy
+        // `.code-block-wrapper > pre` and `.code-header + pre` rules
+        // (including their `!important` to beat the `:where(pre)` shorthand
+        // that still fires on every other prose pre). Inside
+        // `.comment-content` the wrapper already collapses pre margins to 0.
+        className={cn(className, 'mt-0! mb-0! rounded-t-none! border-t-0!', 'in-[.comment-content]:m-0!')}
+        data-language={language}
+      >
         {children}
       </pre>
     </div>
