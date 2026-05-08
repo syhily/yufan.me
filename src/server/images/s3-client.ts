@@ -1,3 +1,5 @@
+import type { FinalizeRequestMiddleware } from '@smithy/types'
+
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -5,7 +7,10 @@ import {
   PutObjectCommand,
   S3Client,
   type S3ClientConfig,
+  type ServiceInputTypes,
+  type ServiceOutputTypes,
 } from '@aws-sdk/client-s3'
+import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 
 import type { AssetsSettings } from '@/shared/blog-config'
@@ -99,8 +104,63 @@ export function getImageStorageContext(options?: { requireEnabled?: boolean }): 
     responseChecksumValidation: 'WHEN_REQUIRED',
   }
   const client = new S3Client(config)
+  installDeleteObjectsMd5Fallback(client)
   globalForS3.imageS3CachedClient = { fingerprint, client }
   return { client, bucket: storage.bucket }
+}
+
+// AWS SDK v3 (>= 3.729.0) defaults to CRC32 for `DeleteObjects`. Several
+// S3-compatible providers (Backblaze B2, MinIO older builds, some Aliyun
+// OSS configurations, Cloudflare R2 in certain regions) reject those
+// requests with `ErrMissingContentMD5` because they only honor the legacy
+// `Content-MD5` header for that one operation. The documented fallback
+// (https://github.com/aws/aws-sdk-js-v3/blob/main/supplemental-docs/MD5_FALLBACK.md)
+// is to install a middleware AFTER `flexibleChecksumsMiddleware` that
+// strips the modern checksum headers and replaces them with `Content-MD5`.
+// Doing it here centralises the workaround for every caller of
+// `getImageStorageContext()` (runtime image deletes, the music admin,
+// any future bulk-delete script).
+function installDeleteObjectsMd5Fallback(client: S3Client): void {
+  const middleware: FinalizeRequestMiddleware<ServiceInputTypes, ServiceOutputTypes> =
+    (next, context) => async (args) => {
+      if (context.commandName !== 'DeleteObjectsCommand') {
+        return next(args)
+      }
+      const request = args.request as { headers: Record<string, string>; body?: unknown }
+      for (const header of Object.keys(request.headers)) {
+        const lower = header.toLowerCase()
+        if (lower.startsWith('x-amz-checksum-') || lower.startsWith('x-amz-sdk-checksum-')) {
+          delete request.headers[header]
+        }
+      }
+      if (request.body !== undefined && request.body !== null) {
+        const body = Buffer.from(request.body as string | Uint8Array)
+        request.headers['Content-MD5'] = createHash('md5').update(body).digest('base64')
+      }
+      return next(args)
+    }
+  // Two timing constraints:
+  //   1. `flexibleChecksumsMiddleware` runs in the `build` step and adds
+  //      `x-amz-checksum-*` headers — we must run AFTER it so we can
+  //      strip those headers and replace them with `Content-MD5`.
+  //   2. `httpSigningMiddleware` runs in the `finalizeRequest` step and
+  //      signs the request based on the headers it sees — we must run
+  //      BEFORE it, otherwise the new `Content-MD5` is unsigned and the
+  //      bucket rejects the request with `ErrUnsignedHeaders`.
+  //
+  // The SDK no longer registers `flexibleChecksumsMiddleware` on the
+  // client stack (it lives on the per-command stack), so an
+  // `addRelativeTo(after, 'flexibleChecksumsMiddleware')` would throw
+  // "middleware is not found". `httpSigningMiddleware`, however, IS on
+  // the client stack via `getHttpSigningPlugin`, so anchoring `before`
+  // it satisfies both constraints — anything in the `build` step has
+  // already executed by the time we reach `finalizeRequest`.
+  client.middlewareStack.addRelativeTo(middleware, {
+    relation: 'before',
+    toMiddleware: 'httpSigningMiddleware',
+    name: 'addMD5ChecksumForDeleteObjects',
+    tags: ['MD5_FALLBACK'],
+  })
 }
 
 export interface PutImageObjectInput {

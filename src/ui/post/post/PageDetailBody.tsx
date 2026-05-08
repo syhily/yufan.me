@@ -41,7 +41,7 @@ export function PageDetailBody({
     <div className="flex flex-wrap">
       <div className="box-border w-full max-w-full shrink-0 xl:w-2/3">
         <div className="p-4 md:p-12">
-          <h1 className={postTitleClass}>{page.title}</h1>
+          <h1 className={cn(postTitleClass, 'font-bold')}>{page.title}</h1>
           <TableOfContents headings={headings} toc={page.toc} />
           <div className="mt-4 xl:mt-6">
             {/* `post-content` is the compound suffix targeted by

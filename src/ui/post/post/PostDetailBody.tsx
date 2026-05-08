@@ -60,7 +60,7 @@ export function PostDetailBody({
                 inner wrapper's `flex-1` / `p-4 md:p-8` utilities
                 migrated to the same element. */}
             <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
-              <h1 className={postTitleClass}>{post.title}</h1>
+              <h1 className={cn(postTitleClass, 'font-bold')}>{post.title}</h1>
               <div className={cn(postMetaClass, 'mt-4 mb-6 text-sm text-ink-muted')}>
                 <time className={postMetaDateClass}>{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}</time>
                 {visibleTags.length > 0 && (

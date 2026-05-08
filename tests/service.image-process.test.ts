@@ -50,4 +50,22 @@ describe('server/images/process — processImageBuffer', () => {
     const garbage = Buffer.from('this is not an image')
     await expect(processImageBuffer({ buffer: garbage, jpegQuality: 80 })).rejects.toBeInstanceOf(ActionFailure)
   })
+
+  it('coerces the output to the requested resize dimensions (used by the music import 300×300 cover path)', async () => {
+    const input = await syntheticPng(800, 600, { r: 50, g: 100, b: 150 })
+    const result = await processImageBuffer({
+      buffer: input,
+      jpegQuality: 85,
+      resize: { width: 300, height: 300, fit: 'cover' },
+    })
+    expect(result.width).toBe(300)
+    expect(result.height).toBe(300)
+  })
+
+  it('preserves the original dimensions when no resize is requested', async () => {
+    const input = await syntheticPng(800, 600, { r: 50, g: 100, b: 150 })
+    const result = await processImageBuffer({ buffer: input, jpegQuality: 85 })
+    expect(result.width).toBe(800)
+    expect(result.height).toBe(600)
+  })
 })

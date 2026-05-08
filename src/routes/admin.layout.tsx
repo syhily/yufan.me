@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Link, Outlet } from 'react-router'
 
 import type { RouteHandle } from '@/root'
@@ -25,22 +24,6 @@ export default function AdminLayoutRoute() {
   // primitive on this page (see hook docs for the full cascade story).
   useDetachPublicCss()
 
-  // Bridge the `[data-admin-shell]` theme variables to portaled popups.
-  // Base UI's `Select` / `Combobox` / `Dialog` / `Tooltip` mount their
-  // popups under `document.body`, which lives outside the
-  // `[data-admin-shell]` subtree below. Without this attribute the
-  // shadcn theme tokens (`--popover`, `--accent`, …) stay undefined on
-  // the portal, the popover renders with a transparent background, and
-  // dropdowns appear to "bleed" into the form rows below them (the
-  // user-reported "安装页面的样式不对" symptom). The wp-admin SPA does
-  // exactly the same in `AdminShell`; mirror it here so login / install
-  useEffect(() => {
-    document.body.dataset.adminShell = ''
-    return () => {
-      delete document.body.dataset.adminShell
-    }
-  }, [])
-
   // The login / install split-screen sits IN FRONT of the install gate
   // (the install page is the only way through the gate when the
   // deployment hasn't been initialised yet), so the blog-config context
@@ -50,7 +33,7 @@ export default function AdminLayoutRoute() {
   const siteTitle = siteIdentity?.title ?? '且听书吟'
 
   return (
-    <div data-admin-shell className="relative flex min-h-screen flex-col bg-background text-foreground">
+    <div className="relative flex min-h-screen flex-col bg-background text-foreground">
       {/* Soft brand-tinted backdrop. Pure CSS — no remote asset host
           dependency, so the screen renders identically on a fresh
           deployment that hasn't been installed yet. */}

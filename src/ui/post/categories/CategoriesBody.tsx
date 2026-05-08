@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 
 import type { ClientCategory } from '@/shared/catalog'
 
+import { cn } from '@/ui/lib/cn'
 import { postTitleClass } from '@/ui/post/postChrome'
 import { Image } from '@/ui/primitives/Image'
 
@@ -15,7 +16,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="mb-4 lg:mb-6">
-          <h1 className={postTitleClass}>{title}</h1>
+          <h1 className={cn(postTitleClass, 'font-bold')}>{title}</h1>
         </div>
         <div className="-mx-1 -mt-2 flex flex-wrap md:-mx-3 md:-mt-6">
           {categories.map((category) => (

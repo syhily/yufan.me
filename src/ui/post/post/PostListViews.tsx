@@ -71,7 +71,7 @@ export function PostListingBody({
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="mb-4 lg:mb-6">
-          <h1 className={postTitleClass}>{title}</h1>
+          <h1 className={cn(postTitleClass, 'font-bold')}>{title}</h1>
           {description && (
             <div className="mt-1 text-ink-muted">
               <span dangerouslySetInnerHTML={{ __html: description }} />

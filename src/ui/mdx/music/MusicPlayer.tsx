@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
 
 import { loadMusic } from '@/client/music'
-import { requireBlogSettingsBundle } from '@/shared/blog-config'
-import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 
 export interface MusicPlayerProps {
@@ -75,23 +73,21 @@ export function scheduleMusicPlayerInit(
   }
 }
 
-// MDX-embeddable music player. Lazy-loads APlayer only when the component
-// is actually mounted, so posts without music carry no aplayer.js payload.
+// MDX-embeddable music player. Lazy-loads APlayer only when the
+// component is actually mounted, so posts without music carry no
+// aplayer.js payload.
 //
-// Reads the assets section from `<BlogSettingsProvider>`. Live SSR / client
-// renders inherit the provider from `root.tsx`; the RSS / Atom prerender
-// in `@/server/feed` wraps its `prerenderToHtml` call in the same provider
-// so this hook can stay strict (no shared-snapshot fallback, no extra
-// import boundary).
+// Metadata is fetched through the internal public API
+// (`/api/actions/music/get?id=<playerId>`) which resolves the audio /
+// cover URL pair against the configured S3 public base URL on the
+// server side. The client never has to know about asset hosts or
+// storage settings.
 export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { asset } = useAssetsSettings()
-  const assetHost = asset.host
-  const assetScheme = asset.scheme
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container || !id || assetHost === '') {
+    if (!container || !id) {
       return
     }
     let cancelled = false
@@ -105,7 +101,7 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
       void (async () => {
         const [{ default: APlayer }, meta] = await Promise.all([
           import('aplayer-ts'),
-          loadMusic(id, { assetHost, assetScheme }),
+          loadMusic(id),
           import('aplayer-ts/src/css/base.css'),
         ])
         if (cancelled || meta === null) {
@@ -143,7 +139,7 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
       cancelInit()
       destroy?.()
     }
-  }, [id, assetHost, assetScheme, auto])
+  }, [id, auto])
 
   return (
     <div
@@ -155,29 +151,4 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
       <div ref={containerRef} className="aplayer" data-id={id} />
     </div>
   )
-}
-
-export interface UnstyledMusicPlayerProps {
-  id: string
-}
-
-export async function UnstyledMusicPlayer({ id }: UnstyledMusicPlayerProps) {
-  // SSR-only path. Reach for the asset host through the shared snapshot
-  // because this is async-rendered straight from MDX and has no React
-  // context to read from.
-  const bundle = requireBlogSettingsBundle()
-  if (bundle.assets === null) {
-    return null
-  }
-  const { asset } = bundle.assets
-  const meta = await loadMusic(id, {
-    assetHost: asset.host,
-    assetScheme: asset.scheme,
-  })
-  const url = meta === null ? '' : meta.url
-  if (url === '') {
-    return null
-  }
-  // oxlint-disable-next-line jsx-a11y/media-has-caption -- These MDX audio embeds do not have transcript metadata.
-  return <audio controls src={url} aria-label={id} />
 }
