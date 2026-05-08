@@ -8,6 +8,7 @@ import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Friends } from '@/ui/mdx/page/Friends'
 import { Solution } from '@/ui/mdx/solutions/Solution'
+import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 
 export interface FeedOptions {
   includeHidden?: boolean
@@ -42,11 +43,20 @@ export async function feedResponse(
 }
 
 async function renderEntryContent(entry: Post | Page): Promise<string> {
-  const Body = entry.body
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
-  // the MDX body but skip the image-enhancement pipeline: feed readers don't
+  // the body but skip the image-enhancement pipeline: feed readers don't
   // need thumbhash placeholders or DB-resolved dimensions.
   const bundle = requireBlogSettingsBundle()
+  // Pages can be sourced from MDX or from the DB during the migration.
+  // The Post type stays MDX-only for now.
+  if ('source' in entry && entry.source === 'db') {
+    return prerenderToHtml(
+      <BlogSettingsProvider value={bundle}>
+        <PortableTextBody body={entry.body} />
+      </BlogSettingsProvider>,
+    )
+  }
+  const Body = entry.body
   return prerenderToHtml(
     <BlogSettingsProvider value={bundle}>
       <Body components={{ Friends, MusicPlayer, Solution }} />

@@ -1,6 +1,6 @@
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { EditorContent, useEditor } from '@tiptap/react'
+import { type Editor, EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
   BoldIcon,
@@ -8,21 +8,39 @@ import {
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
+  ImageIcon,
   ItalicIcon,
   LinkIcon,
   ListIcon,
   ListOrderedIcon,
   MinusIcon,
+  Music2Icon,
+  PlusIcon,
   QuoteIcon,
+  SigmaIcon,
   StrikethroughIcon,
+  UsersIcon,
+  WorkflowIcon,
 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { Block, PortableTextBody } from '@/shared/portable-text'
 import type { PmDoc } from '@/shared/pt-bridge'
 
+import { generateBlockKey } from '@/shared/portable-text'
 import { bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
+import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
+import { MusicPickerDialog } from '@/ui/admin/pages/MusicPickerDialog'
+import { BlockCardNode } from '@/ui/admin/pages/tiptap/BlockCardNode'
+import { ImageNode } from '@/ui/admin/pages/tiptap/ImageNode'
+import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/pages/tiptap/InlineMarks'
 import { Button } from '@/ui/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/components/ui/dropdown-menu'
 import { Separator } from '@/ui/components/ui/separator'
 import { cn } from '@/ui/lib/cn'
 
@@ -79,6 +97,17 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       Placeholder.configure({
         placeholder: '在此处开始编写内容…',
       }),
+      // Custom Node + Mark specs that mirror the PT ↔ PM bridge so
+      // every PortableText shape round-trips losslessly through the
+      // editor. `BlockCardNode` is the catch-all for the six custom
+      // block types (musicPlayer / mathBlock / mermaid / solution /
+      // friends / footnoteDefinition); `ImageNode` extends Tiptap's
+      // image with PT-specific attrs; `MathInlineMark` and
+      // `FootnoteRefMark` keep the inline marks alive on save.
+      ImageNode,
+      BlockCardNode,
+      MathInlineMark,
+      FootnoteRefMark,
     ],
     content: bodyToPmDoc(initialBody) as never,
     onUpdate({ editor: instance }) {
@@ -155,6 +184,33 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
           }
           editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
         }}
+        onInsertCustom={(payload) => insertCustomBlock(editor, payload)}
+        onPickImage={(image) => {
+          editor
+            .chain()
+            .focus()
+            .insertContent({
+              type: 'image',
+              attrs: {
+                _key: generateBlockKey(),
+                src: image.publicUrl,
+                alt: image.note ?? '',
+                width: image.width,
+                height: image.height,
+                thumbhash: image.thumbhash ?? undefined,
+                storagePath: image.storagePath,
+              },
+            })
+            .run()
+        }}
+        onPickMusic={(music) => {
+          insertCustomBlock(editor, {
+            _type: 'musicPlayer',
+            _key: generateBlockKey(),
+            playerId: music.playerId,
+          })
+        }}
+        onInsertMathInline={() => promptInsertMathInline(editor)}
       />
       <div className="grow overflow-auto px-6 py-6">
         <EditorContent
@@ -173,6 +229,41 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       </div>
     </div>
   )
+}
+
+// Insert a PortableText custom block at the current selection. We do
+// this through the bridge's `blockCard` PM node so we keep one
+// authoritative round-trip path (vs. inserting a per-type Tiptap node
+// and then teaching `pmDocToBody` to handle it).
+function insertCustomBlock(editor: Editor, payload: Block): void {
+  editor
+    .chain()
+    .focus()
+    .insertContent({
+      type: 'blockCard',
+      attrs: {
+        _key: payload._key,
+        _ptType: payload._type,
+        payload,
+      },
+    })
+    .run()
+}
+
+function promptInsertMathInline(editor: Editor): void {
+  const tex = window.prompt('行内 TeX 公式（不含 $…$ ）', '')
+  if (tex === null || tex === '') {
+    return
+  }
+  editor
+    .chain()
+    .focus()
+    .insertContent({
+      type: 'text',
+      text: tex,
+      marks: [{ type: 'mathInline', attrs: { _key: generateBlockKey(), tex } }],
+    })
+    .run()
 }
 
 interface ToolbarProps {
@@ -202,6 +293,10 @@ interface ToolbarProps {
   onCodeBlock: () => void
   onHr: () => void
   onLink: () => void
+  onInsertCustom: (payload: Block) => void
+  onPickImage: (image: import('@/shared/images').AdminImageDto) => void
+  onPickMusic: (music: import('@/shared/music').AdminMusicDto) => void
+  onInsertMathInline: () => void
 }
 
 function Toolbar(props: ToolbarProps) {
@@ -255,7 +350,118 @@ function Toolbar(props: ToolbarProps) {
       <ToolbarButton title="链接" active={props.linkActive} disabled={disabled} onClick={props.onLink}>
         <LinkIcon />
       </ToolbarButton>
+      <Separator orientation="vertical" className="mx-1 h-6" />
+      <ImageLibraryPicker
+        trigger={
+          <Button variant="ghost" size="sm" disabled={disabled} title="插入图片" aria-label="插入图片" type="button">
+            <ImageIcon />
+            图片
+          </Button>
+        }
+        onPick={props.onPickImage}
+      />
+      <MusicPickerDialog
+        trigger={
+          <Button variant="ghost" size="sm" disabled={disabled} title="插入音乐" aria-label="插入音乐" type="button">
+            <Music2Icon />
+            音乐
+          </Button>
+        }
+        onPick={props.onPickMusic}
+      />
+      <InsertMenu
+        disabled={disabled}
+        onInsertCustom={props.onInsertCustom}
+        onInsertMathInline={props.onInsertMathInline}
+      />
     </div>
+  )
+}
+
+interface InsertMenuProps {
+  disabled?: boolean
+  onInsertCustom: (payload: Block) => void
+  onInsertMathInline: () => void
+}
+
+function InsertMenu({ disabled, onInsertCustom, onInsertMathInline }: InsertMenuProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="sm" disabled={disabled} title="插入" aria-label="插入自定义块">
+            <PlusIcon />
+            插入
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="start" className="min-w-48">
+        <DropdownMenuItem onClick={onInsertMathInline}>
+          <SigmaIcon />
+          行内公式（math inline）
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            onInsertCustom({
+              _type: 'mathBlock',
+              _key: generateBlockKey(),
+              tex: 'a^2 + b^2 = c^2',
+            })
+          }
+        >
+          <SigmaIcon />
+          公式块（math block）
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            onInsertCustom({
+              _type: 'mermaid',
+              _key: generateBlockKey(),
+              code: 'graph TD\n  A --> B',
+            })
+          }
+        >
+          <WorkflowIcon />
+          Mermaid 流程图
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            onInsertCustom({
+              _type: 'solution',
+              _key: generateBlockKey(),
+              children: [
+                {
+                  _type: 'block',
+                  _key: generateBlockKey(),
+                  style: 'normal',
+                  children: [
+                    {
+                      _type: 'span',
+                      _key: generateBlockKey(),
+                      text: '在此处填写解答步骤',
+                    },
+                  ],
+                },
+              ],
+            })
+          }
+        >
+          <Code2Icon />
+          解答块（Solution）
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() =>
+            onInsertCustom({
+              _type: 'friends',
+              _key: generateBlockKey(),
+            })
+          }
+        >
+          <UsersIcon />
+          友链网格
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

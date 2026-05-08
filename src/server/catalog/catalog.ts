@@ -17,6 +17,7 @@ import type {
 } from '@/server/catalog/schema'
 
 import { toClientPost } from '@/server/catalog/schema'
+import { loadCatalogPages, type CmsPage } from '@/server/cms/pages/service'
 import { queryMetadata } from '@/server/comments/likes'
 import { listPublicCategoryRows } from '@/server/db/query/category'
 import { listPublicTagRows } from '@/server/db/query/tag'
@@ -112,9 +113,38 @@ function compiledToc(entry: { toc: unknown; _exports?: Record<string, unknown> }
   return entry._exports?.toc ?? entry.toc
 }
 
+// Promote a `CmsPage` (DB-backed projection) into the catalog's
+// internal `Page` shape. Pages with no published revision still surface
+// so editors can link to them while drafting; the public detail route
+// renders an empty body in that case.
+function buildDbPage(page: CmsPage): Page {
+  return {
+    source: 'db',
+    title: page.title,
+    date: page.date,
+    updated: page.updated,
+    comments: page.comments,
+    cover: page.cover,
+    coverThumbhash: page.coverThumbhash,
+    coverWidth: page.coverWidth,
+    coverHeight: page.coverHeight,
+    og: page.og,
+    published: page.published,
+    summary: page.summary,
+    toc: page.toc,
+    slug: page.slug,
+    permalink: page.permalink,
+    headings: page.headings,
+    body: page.body,
+    imageSources: page.imageSources,
+    publishedRevisionId: page.publishedRevisionId,
+  }
+}
+
 function buildPage(page: SourcePage): Page {
   const slug = page.slug
   return {
+    source: 'mdx',
     title: page.title,
     date: page.date,
     updated: page.updated,
@@ -227,7 +257,29 @@ export class ContentCatalog {
       poster: row.poster,
     }))
 
-    const pages = pageEntries.map(buildPage).filter((page) => page.published || !import.meta.env.PROD)
+    // Pages can be sourced from MDX (legacy) or from the `doc` +
+    // `content` Postgres tables (the new editor). DB pages take
+    // precedence: if a DB row exists with the same slug as an MDX
+    // file, the MDX file is dropped from the catalog so the admin's
+    // live edit always wins. The dev environment keeps unpublished
+    // pages visible (matching the historical behaviour) so authors
+    // can preview drafts without flipping `published=true`.
+    let dbPages: Page[] = []
+    try {
+      const cmsPages = await loadCatalogPages()
+      dbPages = cmsPages.map(buildDbPage).filter((page) => page.published || !import.meta.env.PROD)
+    } catch (error) {
+      // Swallow DB outages so static MDX content can still render
+      // when Postgres is unreachable. The error is logged so an
+      // operator can see it in the structured log.
+      log.warn('catalog.db_pages.load_failed', { error: String(error) })
+    }
+    const dbPageSlugs = new Set(dbPages.map((page) => page.slug))
+    const mdxPages = pageEntries
+      .map(buildPage)
+      .filter((page) => !dbPageSlugs.has(page.slug))
+      .filter((page) => page.published || !import.meta.env.PROD)
+    const pages: Page[] = [...dbPages, ...mdxPages]
 
     const allPosts = postEntries
       .map(buildPost)

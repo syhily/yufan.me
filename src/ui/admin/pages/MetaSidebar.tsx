@@ -48,12 +48,18 @@ export interface MetaSidebarProps {
   onChange: (next: PageMetaDraft) => void
   /** Disable every input while a save / publish is in flight. */
   disabled?: boolean
+  /**
+   * Optional extra slot rendered at the bottom of the panel. Used by
+   * the editor shell to mount the revision history drawer trigger
+   * once a page has been saved (creating mode renders nothing).
+   */
+  extras?: React.ReactNode
 }
 
 // Right-pane metadata panel for the page editor. Lives in its own
 // component so the editor route can swap the right pane between this
 // (default) and a live preview without re-mounting the editor.
-export function MetaSidebar({ draft, onChange, disabled }: MetaSidebarProps) {
+export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarProps) {
   const set = <K extends keyof PageMetaDraft>(key: K, value: PageMetaDraft[K]) => onChange({ ...draft, [key]: value })
 
   return (
@@ -161,6 +167,7 @@ export function MetaSidebar({ draft, onChange, disabled }: MetaSidebarProps) {
           />
         </CardContent>
       </Card>
+      {extras !== undefined ? extras : null}
     </div>
   )
 }

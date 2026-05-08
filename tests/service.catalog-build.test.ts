@@ -147,6 +147,17 @@ vi.mock('@/server/images/render-enhance', () => ({
   clearImageEnhanceCache: vi.fn(),
 }))
 
+// CMS pages service is consulted at catalog build time so DB-backed
+// pages can supersede MDX pages with the same slug. The default mock
+// returns the empty list — individual specs override the mock when
+// they want to exercise the merge path.
+const loadCatalogPagesMock = vi.fn(
+  async () => [] as Awaited<ReturnType<typeof import('@/server/cms/pages/service').loadCatalogPages>>,
+)
+vi.mock('@/server/cms/pages/service', () => ({
+  loadCatalogPages: loadCatalogPagesMock,
+}))
+
 // Avoid the real markdown parser cold-load when categories have descriptions.
 vi.mock('@/server/markdown/parser', () => ({
   parseContent: vi.fn(async (content: string) => `<p>${content}</p>\n`),
@@ -225,5 +236,57 @@ describe('services/catalog/ContentCatalog.build', () => {
     const a = await ContentCatalog.get()
     const b = await ContentCatalog.get()
     expect(a).toBe(b)
+  })
+
+  it('DB-backed pages take precedence over MDX pages sharing the same slug', async () => {
+    const dbAboutDate = new Date('2026-05-01T00:00:00.000Z')
+    loadCatalogPagesMock.mockImplementationOnce(async () => [
+      {
+        title: 'About (DB)',
+        date: dbAboutDate,
+        updated: dbAboutDate,
+        comments: true,
+        cover: '',
+        og: undefined,
+        published: true,
+        summary: 'db summary',
+        toc: false,
+        slug: 'about',
+        permalink: '/about',
+        headings: [],
+        body: [
+          {
+            _type: 'block',
+            _key: 'p1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's1', text: 'Hello from DB' }],
+          },
+        ],
+        imageSources: [],
+        publishedRevisionId: 1n,
+      },
+    ])
+    ContentCatalog.reset()
+    const catalog = await ContentCatalog.get()
+    const aboutPage = catalog.getPage('about')
+    expect(aboutPage).toBeDefined()
+    expect(aboutPage?.source).toBe('db')
+    expect(aboutPage?.title).toBe('About (DB)')
+    // The MDX `about.mdx` row is intentionally NOT exposed when
+    // a DB row covers the same slug — only one page surfaces per
+    // slug to avoid two competing renderings.
+    const mdxStillRendered = catalog.pages.filter((page) => page.slug === 'about' && page.source === 'mdx')
+    expect(mdxStillRendered).toEqual([])
+  })
+
+  it('falls back to MDX pages when the DB-page loader throws', async () => {
+    loadCatalogPagesMock.mockImplementationOnce(async () => {
+      throw new Error('postgres unreachable')
+    })
+    ContentCatalog.reset()
+    const catalog = await ContentCatalog.get()
+    const aboutPage = catalog.getPage('about')
+    expect(aboutPage).toBeDefined()
+    expect(aboutPage?.source).toBe('mdx')
   })
 })
