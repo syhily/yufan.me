@@ -1,3 +1,4 @@
+import { diff_match_patch } from 'diff-match-patch'
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
 import type { Block, PortableTextBody } from '@/shared/portable-text'
@@ -94,6 +95,26 @@ interface DiffEntry {
   serverBlock: Block | null
 }
 
+// Singleton — diff-match-patch is stateless after construction and
+// the cleanup defaults are tuned for our short editor blocks.
+const dmp = new diff_match_patch()
+
+interface InlineDiffPart {
+  // 1 = insertion (only on the local side); -1 = deletion (only on
+  // the server side); 0 = unchanged on both sides.
+  op: -1 | 0 | 1
+  text: string
+}
+
+function inlineCharDiff(left: string, right: string): InlineDiffPart[] {
+  const result = dmp.diff_main(left, right)
+  // Word-level cleanup is the closest match to "show me what the
+  // user actually changed" — the per-character output of diff_main
+  // looks like alphabet soup on Chinese prose.
+  dmp.diff_cleanupSemantic(result)
+  return result.map(([op, text]) => ({ op: op as -1 | 0 | 1, text }))
+}
+
 interface DraftPanelProps {
   title: string
   icon: React.ReactNode
@@ -143,7 +164,13 @@ function DraftPanel({ title, icon, timestamp, kind, diff }: DraftPanelProps) {
                   <BlockTypeBadge block={block} />
                   <span className="text-[10px] tracking-wide text-muted-foreground uppercase">{entry.status}</span>
                 </div>
-                <BlockPreview block={block} />
+                {entry.status === 'changed' &&
+                entry.localBlock?._type === 'block' &&
+                entry.serverBlock?._type === 'block' ? (
+                  <BlockInlineDiff localBlock={entry.localBlock} serverBlock={entry.serverBlock} side={kind} />
+                ) : (
+                  <BlockPreview block={block} />
+                )}
               </li>
             )
           })}
@@ -158,6 +185,47 @@ function BlockTypeBadge({ block }: { block: Block | null }) {
     return null
   }
   return <Badge variant="outline">{block._type}</Badge>
+}
+
+interface BlockInlineDiffProps {
+  localBlock: Block
+  serverBlock: Block
+  side: 'local' | 'server'
+}
+
+// Highlight char-level insertions / deletions inside a text block
+// pair. The local panel highlights insertions (greens); the server
+// panel highlights deletions (reds). Equal runs render as plain
+// text. Falls back to the plain preview when the block isn't
+// `_type === 'block'` (the caller already gates on that).
+function BlockInlineDiff({ localBlock, serverBlock, side }: BlockInlineDiffProps) {
+  const localText = bodyToPlainText([localBlock]).trim()
+  const serverText = bodyToPlainText([serverBlock]).trim()
+  const parts = inlineCharDiff(serverText, localText)
+  return (
+    <p className="line-clamp-6 leading-relaxed break-words">
+      {parts.map((part, idx) => {
+        if (part.op === 0) {
+          return <span key={idx}>{part.text}</span>
+        }
+        if (side === 'local' && part.op === 1) {
+          return (
+            <span key={idx} className="rounded bg-emerald-200/70 px-0.5 text-emerald-950">
+              {part.text}
+            </span>
+          )
+        }
+        if (side === 'server' && part.op === -1) {
+          return (
+            <span key={idx} className="rounded bg-rose-200/70 px-0.5 text-rose-950 line-through">
+              {part.text}
+            </span>
+          )
+        }
+        return null
+      })}
+    </p>
+  )
 }
 
 function BlockPreview({ block }: { block: Block | null }) {

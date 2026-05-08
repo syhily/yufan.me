@@ -407,15 +407,33 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   const isPending = isMetaPending || isBodyPending
 
   // --- Conflict resolution handlers -----------------------------------------
-  const adoptLocalDraft = useCallback(() => {
-    if (conflict === null) {
+  const adoptLocalDraft = useCallback(async () => {
+    if (conflict === null || !isEditing) {
       return
     }
+    // 1. Adopt the local body in the editor immediately so the user
+    //    sees the right content even if the server save is slow.
     setBody(conflict.localBody)
-    setBodyKey(`${detail?.page.id ?? 'new'}:adopt-local:${Date.now()}`)
+    setBodyKey(`${detail.page.id}:adopt-local:${Date.now()}`)
     setConflict(null)
     setConflictResolved(true)
-  }, [conflict, detail])
+    // 2. Push the adopted body to the server with `force: true` so
+    //    the server overwrites whatever it had as the latest draft.
+    //    This burns the LS/server divergence in one round trip — the
+    //    next opening of the page sees a single canonical revision.
+    setStatus({ kind: 'saving' })
+    const envelope = await submitApiAction<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
+      id: detail.page.id,
+      body: conflict.localBody,
+      expectedClientRevisionToken: expectedToken,
+      force: true,
+    })
+    if ('data' in envelope && envelope.data !== undefined) {
+      handleBodySavedRef.current(envelope.data)
+    } else if ('error' in envelope && envelope.error !== undefined) {
+      setStatus({ kind: 'error', message: envelope.error.message })
+    }
+  }, [conflict, isEditing, detail, expectedToken])
 
   const adoptServerVersion = useCallback(() => {
     setBody(initialBody)
@@ -555,7 +573,9 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               ? Date.parse((detail.latestRevision ?? detail.publishedRevision)!.updatedAt)
               : null
           }
-          onChooseLocal={adoptLocalDraft}
+          onChooseLocal={() => {
+            void adoptLocalDraft()
+          }}
           onChooseServer={adoptServerVersion}
         />
       ) : null}
