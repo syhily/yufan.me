@@ -40,10 +40,23 @@ export async function loader({
   // path is the historical hot path.
   const sidebarPromise = loadSidebarData(session)
 
+  // Home opts into the tail-merge guard so a near-empty last page never
+  // renders alone with one or two cards stranded under the hero — the
+  // visual rhythm of the grid breaks down at that count and the empty
+  // sidebar gutter looks broken. With threshold = pageSize - 2 a tail
+  // of pageSize - 3 or fewer posts collapses into the previous page;
+  // any orphan stub of pageSize - 2 or larger keeps its own page.
+  // Out-of-range :num still 301-redirects to the new last page through
+  // the shared overflow handler in `redirectListingOverflow`.
+  const homePageSize = requireBlogSettingsSection('content').pagination.posts
+  const mergeTailWhenLessThan = Math.max(0, homePageSize - 2)
+
   return listingLoader<HomeExtra>({
     rawNum: params.num,
     posts: allPosts.map(toListingPostCard),
     rootPath: '/',
+    pageSize: homePageSize,
+    mergeTailWhenLessThan,
     metadata: { likes: true, views: true, comments: true },
     seoMode: 'skip-on-first-page',
     computeExtra: async ({ resolvedPosts }) => {

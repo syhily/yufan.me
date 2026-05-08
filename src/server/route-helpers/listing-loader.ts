@@ -65,6 +65,7 @@ export async function listingLoader<TExtra = undefined>({
   title,
   description,
   pageSize,
+  mergeTailWhenLessThan,
   forceNoindex,
   metadata,
   seoMode = 'always',
@@ -78,6 +79,15 @@ export async function listingLoader<TExtra = undefined>({
   title?: string
   description?: string
   pageSize?: number
+  /**
+   * Optional tail-merge guard threaded through to `slicePosts`. When set,
+   * a natural last page that would render fewer than this many posts is
+   * folded into its predecessor; the predecessor then renders the orphan
+   * posts inline and the URL space loses one page. Defaults to undefined
+   * disabled. The home route opts in with `pageSize - 2`; every other
+   * listing route keeps the legacy behaviour.
+   */
+  mergeTailWhenLessThan?: number
   forceNoindex?: boolean
   metadata?: ListingMetadataFlags
   seoMode?: ListingSeoMode
@@ -102,6 +112,7 @@ export async function listingLoader<TExtra = undefined>({
     posts,
     pageNum,
     pageSize ?? requireBlogSettingsSection('content').pagination.posts,
+    { mergeTailWhenLessThan },
   )
   const resolvedPosts = await getClientPostsWithMetadata(currentPosts, {
     ...DEFAULT_LISTING_METADATA,

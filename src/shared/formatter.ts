@@ -111,12 +111,30 @@ function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
 
+export interface SlicePostsOptions {
+  // Optional tail-merge guard. When set to a positive integer M and the
+  // natural last page would render fewer than M posts, that last page is
+  // merged into its predecessor i.e. the predecessor absorbs the orphan
+  // posts via the existing "the last page is open-ended" branch below.
+  // The result is a smaller totalPage and a fatter last page; the route
+  // helper then 301-redirects any out-of-range :num back to the new
+  // last page through the shared overflow handler. Defaults to 0
+  // disabled, which is the historical behaviour every listing route
+  // except home opts into. Home uses pageSize - 2 so a tail of one or
+  // two orphaned posts collapses, but a near-full tail e.g. 8 of 10
+  // keeps its own page.
+  mergeTailWhenLessThan?: number
+}
+
 export function slicePosts<Type>(
   posts: Type[],
   pageNum: number,
   pageSize: number,
+  options: SlicePostsOptions = {},
 ): { currentPosts: Type[]; totalPage: number } {
-  const totalPage = Math.ceil(posts.length / pageSize)
+  const naturalTotalPage = Math.ceil(posts.length / pageSize)
+  const totalPage = applyTailMerge(posts.length, pageSize, naturalTotalPage, options.mergeTailWhenLessThan ?? 0)
+
   if (totalPage === 0 || pageNum > totalPage) {
     return { currentPosts: [], totalPage }
   }
@@ -128,6 +146,23 @@ export function slicePosts<Type>(
         : posts.slice((pageNum - 1) * pageSize, pageNum * pageSize),
     totalPage,
   }
+}
+
+// Returns the post-merge totalPage. When `threshold` is 0 or the natural
+// last page is already large enough, the natural totalPage is returned
+// unchanged. The merge is only valid when there are at least two pages
+// to begin with totalPage >= 2; a single-page listing has nothing to
+// merge into. The single-page guard also protects callers from a
+// near-empty catalog where the entire listing would otherwise be hidden.
+function applyTailMerge(postCount: number, pageSize: number, naturalTotalPage: number, threshold: number): number {
+  if (threshold <= 0 || naturalTotalPage < 2) {
+    return naturalTotalPage
+  }
+  const tailSize = postCount - (naturalTotalPage - 1) * pageSize
+  if (tailSize < threshold) {
+    return naturalTotalPage - 1
+  }
+  return naturalTotalPage
 }
 
 export function formatShowDate(date: Date, config: FormatterLocale) {

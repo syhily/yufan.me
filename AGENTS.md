@@ -182,16 +182,60 @@ add/diff/--dry-run` works out of the box. Both the public and
   element. Do not recreate a generic `Html` wrapper component.
 - For conditional classNames, use `cn()` from `@/ui/lib/cn`. The
   current implementation composes `clsx` (for falsy short-circuiting,
-  array/object flattening) with the default `twMerge` from
+  array/object flattening) with a project-customised `twMerge` from
   `tailwind-merge` (for last-wins deduplication of conflicting
   Tailwind utilities — `gap-2 gap-4` collapses to `gap-4`,
   responsive variants like `md:gap-4` are scoped independently).
   Stage 10 dropped the historical `extendTailwindMerge({ prefix:
 'tw' })` wrapper alongside the `prefix(tw)` Tailwind import option
   — the global `tw:` prefix was a pre-stage-9 collision-isolation
-  hedge against Bootstrap and is no longer needed. Consult the
-  `tailwind-design-system` Skill before changing the helper, and
-  pin any contract via `tests/unit.cn.test.ts`.
+  hedge against Bootstrap and is no longer needed.
+- A later stage re-introduced `extendTailwindMerge` for a different
+  reason: tailwind-merge does not parse the project's `@theme inline`
+  blocks, so every custom token name (e.g. `text-toc-toggle`,
+  `text-ink-secondary`, `shadow-card`, `font-code`) used to fall into
+  a generic "unknown utility for prefix X" bucket and arbitrate
+  against every other class with the same prefix as if they were the
+  same group. The visible symptom was font-size + text-color pairs
+  like `text-toc-toggle text-ink-secondary` collapsing to
+  `text-ink-secondary` alone, silently dropping the font-size.
+  `cn.ts` now registers every project token name under its matching
+  tailwind-merge theme key (`text` for `--text-*`, `color` for
+  `--color-*`, `shadow` for `--shadow-*`, `radius`, `font`, `animate`,
+  `spacing`). Adding a new `--<namespace>-<name>` token in
+  `tailwind.css` MUST be paired with a matching entry in `cn.ts`'s
+  per-namespace token list. The token lists are explicit string
+  arrays (no glob, no auto-import from the CSS) so the dependency
+  is grep-able and survives a CSS pipeline rebuild.
+- One namespace is intentionally NOT registered: `leading`. Tailwind
+  v4 links font-size and line-height through a built-in
+  conflicting-class-groups rule so `text-<size>` can carry an
+  implicit line-height. When a token name lives in BOTH the `text`
+  scale and the `leading` scale (the project ships exactly one such
+  pair, `--text-badge` + `--leading-badge`), a later `text-badge`
+  would eat an earlier `leading-badge` as if it were a redundant
+  line-height. Leaving `leading-*` unregistered makes
+  tailwind-merge treat `leading-badge` as an opaque token that
+  survives any neighbouring text utility, at the cost of not
+  deduping against another custom leading utility — which the
+  project never composes.
+- Drift between `tailwind.css` and `cn.ts` is caught at CI time by
+  `tests/contract.tailwind-tokens.test.ts`. The contract test parses
+  every `@theme inline` block in the stylesheet, diffs the resulting
+  per-namespace token sets against the `*_TOKENS` constants exported
+  through `__TOKENS_FOR_TESTS` in `cn.ts`, and fails noisily on any
+  one of three failure modes: a CSS token not registered in `cn.ts`
+  (the original "forgot to add" case), a `cn.ts` entry no longer
+  present in the CSS (stale entry to be removed), or a brand-new
+  CSS namespace that was neither registered, omitted, nor explicitly
+  marked below-the-line in the test. The test does NOT auto-generate
+  the lists; it asserts that human-curated lists in `cn.ts` agree
+  with the CSS source of truth. This keeps the human-only decisions
+  (e.g. why `leading` is omitted) under explicit code review while
+  still making the "did I forget?" case impossible to miss.
+- Consult the `tailwind-design-system` Skill before changing the
+  helper, and pin any contract via `tests/unit.cn.test.ts` (the
+  namespace-distinguishing rules are guarded there).
 - Use `<Image />` from `@/ui/primitives/Image` for transformed remote
   images. Use named imports from `@/ui/icons` for inline SVG instead of
   string-based `<Icon name="..." />` lookups (string lookups defeat the

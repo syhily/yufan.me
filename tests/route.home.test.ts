@@ -30,7 +30,15 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-const allPosts = makePostList(7, { slug: 'post' })
+// Fixture size and pagination: the home loader's tail-merge guard
+// folds an orphan last page into its predecessor when the tail is
+// strictly smaller than `pageSize - 2`. The test blog-config fixture
+// pins `pagination.posts = 6`, so threshold = 4 and a 7-post catalogue
+// (tail = 1) would now merge into a single page, which would break
+// the deep-paginated payload assertion below. We size the fixture at
+// 10 posts so the natural page-2 tail is exactly 4, which fails the
+// strict-less-than check and preserves the two-page split.
+const allPosts = makePostList(10, { slug: 'post' })
 const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 
@@ -101,8 +109,10 @@ describe('routes/home loader', () => {
   })
 
   it('returns the deep-paginated payload (with seo populated) on /page/N', async () => {
-    // The mocked listing has 7 posts; with default pagination (likely 6/page)
-    // page 2 should be a valid deep-page render.
+    // 10 posts at pageSize 6 fan out to 6 + 4. The home tail-merge
+    // guard's threshold is `pageSize - 2 = 4`, and the strict less-than
+    // check keeps a tail of exactly 4 on its own page so /page/2 still
+    // renders the four-post stub instead of redirecting.
     const result = await loader(
       makeLoaderArgs({
         request: new Request('http://localhost/page/2'),
@@ -139,5 +149,68 @@ describe('routes/home loader', () => {
         }),
       ),
     ).rejects.toMatchObject({ status: 302 })
+  })
+})
+
+// Tail-merge guard. The fixture above carries 10 posts at pageSize 6
+// so we keep two pages; this describe block re-mocks the catalogue
+// with a smaller list to exercise the merge branch.
+describe('routes/home loader — tail-merge guard', () => {
+  it('absorbs a 1-post tail into the previous page so /page/2 redirects to /', async () => {
+    const { getCatalog } = await import('@/server/catalog')
+    const catalogMock = vi.mocked(getCatalog)
+    const sevenPosts = makePostList(7, { slug: 'short' })
+    catalogMock.mockImplementationOnce(
+      async () =>
+        ({
+          tags: [sampleTag],
+          getPosts: vi.fn(() => sevenPosts),
+          getClientPosts: vi.fn(() => sevenPosts),
+          getCategoriesByName: vi.fn(() => [sampleCategory]),
+          getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
+        }) as never,
+    )
+
+    // 7 posts at pageSize 6 naturally split 6 + 1; threshold = 4; merge
+    // collapses the trailing single post into page 1 so /page/2 now
+    // redirects through the shared overflow handler instead of
+    // rendering the orphan card alone.
+    await expect(
+      loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/page/2'),
+          session,
+          params: { num: '2' },
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 302 })
+  })
+
+  it('returns all posts on / when the merge collapses the full catalogue into one page', async () => {
+    const { getCatalog } = await import('@/server/catalog')
+    const catalogMock = vi.mocked(getCatalog)
+    const sevenPosts = makePostList(7, { slug: 'short' })
+    catalogMock.mockImplementationOnce(
+      async () =>
+        ({
+          tags: [sampleTag],
+          getPosts: vi.fn(() => sevenPosts),
+          getClientPosts: vi.fn(() => sevenPosts),
+          getCategoriesByName: vi.fn(() => [sampleCategory]),
+          getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
+        }) as never,
+    )
+
+    const result = await loader(
+      makeLoaderArgs({
+        request: new Request('http://localhost/'),
+        session,
+        params: {},
+      }),
+    )
+
+    expect(result.totalPage).toBe(1)
+    expect(result.pageNum).toBe(1)
+    expect(result.resolvedPosts).toHaveLength(7)
   })
 })
