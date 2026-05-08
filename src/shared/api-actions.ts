@@ -91,6 +91,15 @@ export const API_ACTIONS = {
     addMusic: defineApiAction('api/actions/admin/addMusic', 'POST'),
     updateMusic: defineApiAction('api/actions/admin/updateMusic', 'PATCH'),
     deleteMusic: defineApiAction('api/actions/admin/deleteMusic', 'DELETE'),
+    listPages: defineApiAction('api/actions/admin/listPages', 'GET'),
+    getPage: defineApiAction('api/actions/admin/getPage', 'GET'),
+    upsertPageMeta: defineApiAction('api/actions/admin/upsertPageMeta', 'POST'),
+    deletePage: defineApiAction('api/actions/admin/deletePage', 'DELETE'),
+    restorePage: defineApiAction('api/actions/admin/restorePage', 'POST'),
+    listPageRevisions: defineApiAction('api/actions/admin/listPageRevisions', 'GET'),
+    saveDraft: defineApiAction('api/actions/admin/saveDraft', 'POST'),
+    publishLatest: defineApiAction('api/actions/admin/publishLatest', 'POST'),
+    previewPage: defineApiAction('api/actions/admin/previewPage', 'POST'),
   },
 } as const
 
