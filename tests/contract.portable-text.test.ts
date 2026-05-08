@@ -1,0 +1,244 @@
+import { describe, expect, it } from 'vite-plus/test'
+
+import {
+  bodyToPlainText,
+  collectHeadings,
+  collectImageStoragePaths,
+  portableTextBodySchema,
+  safeValidatePortableTextBody,
+  validatePortableTextBody,
+  type Block,
+  type PortableTextBody,
+} from '@/shared/portable-text'
+
+// Pin the in-repo PortableText dialect. Every editor save and every
+// SSR render parses through `portableTextBodySchema`, so drift here
+// either lets malformed payloads land in `content.body` (the editor
+// then silently corrupts pages) or rejects valid revisions (the
+// public site goes blank). The constants below are the canonical
+// shape every other layer should mirror.
+
+function span(text: string, marks?: string[]) {
+  return { _type: 'span' as const, _key: `s-${text.slice(0, 4)}`, text, marks }
+}
+
+const HELLO_PARAGRAPH: Block = {
+  _type: 'block',
+  _key: 'b1',
+  style: 'normal',
+  children: [span('Hello '), span('world', ['strong'])],
+}
+
+const HEADING_H2: Block = {
+  _type: 'block',
+  _key: 'h1',
+  style: 'h2',
+  children: [span('Section title')],
+}
+
+const IMAGE: Block = {
+  _type: 'image',
+  _key: 'i1',
+  src: 'https://cdn.example/path.jpg',
+  storagePath: 'images/2026/05/2026050214321999.jpg',
+  alt: 'Cover',
+  width: 1280,
+  height: 720,
+}
+
+const CODE: Block = {
+  _type: 'code',
+  _key: 'c1',
+  code: 'console.log(1)\n',
+  language: 'ts',
+}
+
+const MUSIC: Block = {
+  _type: 'musicPlayer',
+  _key: 'm1',
+  playerId: '7hk2pqrxyzabc012',
+  auto: false,
+  center: true,
+}
+
+const FRIENDS: Block = { _type: 'friends', _key: 'f1' }
+
+const SOLUTION: Block = {
+  _type: 'solution',
+  _key: 'sol1',
+  children: [
+    {
+      _type: 'block',
+      _key: 'sol-b1',
+      style: 'normal',
+      children: [span('Therefore '), span('x = 1', ['code'])],
+    },
+  ],
+}
+
+const FOOTNOTE_DEF: Block = {
+  _type: 'footnoteDefinition',
+  _key: 'fn1',
+  index: 1,
+  children: [{ _type: 'block', _key: 'fn-b1', style: 'normal', children: [span('See ref.')] }],
+}
+
+const PARAGRAPH_WITH_LINK: Block = {
+  _type: 'block',
+  _key: 'b2',
+  style: 'normal',
+  children: [span('See '), { _type: 'span', _key: 's-link', text: 'docs', marks: ['link-1'] }],
+  markDefs: [{ _type: 'link', _key: 'link-1', href: 'https://example.com', target: '_blank', rel: 'nofollow' }],
+}
+
+const FULL_BODY: PortableTextBody = [
+  HEADING_H2,
+  HELLO_PARAGRAPH,
+  PARAGRAPH_WITH_LINK,
+  IMAGE,
+  CODE,
+  { _type: 'mathBlock', _key: 'math-1', tex: 'a^2 + b^2 = c^2', svg: '<svg/>' },
+  { _type: 'mermaid', _key: 'mer-1', code: 'graph TD; A-->B', svg: '<svg/>' },
+  { _type: 'horizontalRule', _key: 'hr-1' },
+  MUSIC,
+  SOLUTION,
+  FRIENDS,
+  FOOTNOTE_DEF,
+]
+
+describe('contract: portable-text dialect — accepts the canonical block set', () => {
+  it('parses every supported _type without errors', () => {
+    expect(() => validatePortableTextBody(FULL_BODY)).not.toThrow()
+  })
+
+  it('an empty body is valid (newly-created doc with no draft yet)', () => {
+    expect(portableTextBodySchema.parse([])).toEqual([])
+  })
+})
+
+describe('contract: portable-text dialect — rejects unknown shapes', () => {
+  it('rejects an unknown block _type', () => {
+    const bad = [{ _type: 'unknown-block', _key: 'x' }]
+    const result = safeValidatePortableTextBody(bad)
+    expect(result.ok).toBe(false)
+  })
+
+  it('rejects a block with no _key', () => {
+    const bad = [{ _type: 'block', children: [span('x')] }]
+    expect(safeValidatePortableTextBody(bad).ok).toBe(false)
+  })
+
+  it('rejects a span with empty _key', () => {
+    const bad: unknown = [
+      {
+        _type: 'block',
+        _key: 'b',
+        children: [{ _type: 'span', _key: '', text: 'x' }],
+      },
+    ]
+    expect(safeValidatePortableTextBody(bad).ok).toBe(false)
+  })
+
+  it('rejects an unknown markDef _type', () => {
+    const bad: unknown = [
+      {
+        _type: 'block',
+        _key: 'b',
+        children: [span('x', ['m1'])],
+        markDefs: [{ _type: 'unknown-mark', _key: 'm1' }],
+      },
+    ]
+    expect(safeValidatePortableTextBody(bad).ok).toBe(false)
+  })
+
+  it('rejects a heading style outside h1-h4', () => {
+    const bad: unknown = [
+      {
+        _type: 'block',
+        _key: 'b',
+        style: 'h5',
+        children: [span('x')],
+      },
+    ]
+    expect(safeValidatePortableTextBody(bad).ok).toBe(false)
+  })
+
+  it('rejects a solution that nests another solution (one-deep recursion)', () => {
+    const bad: Block = {
+      _type: 'solution',
+      _key: 'sol-outer',
+      children: [SOLUTION as never],
+    }
+    expect(safeValidatePortableTextBody([bad]).ok).toBe(false)
+  })
+
+  it('rejects a footnoteDefinition that nests a solution', () => {
+    const bad: Block = {
+      _type: 'footnoteDefinition',
+      _key: 'fn-outer',
+      index: 1,
+      children: [SOLUTION as never],
+    }
+    expect(safeValidatePortableTextBody([bad]).ok).toBe(false)
+  })
+})
+
+describe('contract: portable-text helpers', () => {
+  it('collectHeadings emits depth + text for h1-h4 styled blocks only', () => {
+    const headings = collectHeadings(FULL_BODY)
+    expect(headings).toEqual([{ depth: 2, text: 'Section title' }])
+  })
+
+  it('collectHeadings ignores blockquote / normal styles', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'b', style: 'blockquote', children: [span('quote')] },
+      { _type: 'block', _key: 'b2', style: 'normal', children: [span('plain')] },
+    ]
+    expect(collectHeadings(body)).toEqual([])
+  })
+
+  it('collectImageStoragePaths walks solution / footnoteDefinition children', () => {
+    const body: PortableTextBody = [
+      IMAGE,
+      {
+        _type: 'solution',
+        _key: 'sol',
+        children: [{ _type: 'image', _key: 'i2', src: 'a', storagePath: 'images/inside-solution.jpg' }],
+      },
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn',
+        index: 1,
+        children: [{ _type: 'image', _key: 'i3', src: 'b', storagePath: 'images/inside-footnote.jpg' }],
+      },
+    ]
+    const paths = collectImageStoragePaths(body)
+    expect(paths.sort()).toEqual([
+      'images/2026/05/2026050214321999.jpg',
+      'images/inside-footnote.jpg',
+      'images/inside-solution.jpg',
+    ])
+  })
+
+  it('collectImageStoragePaths dedupes identical paths', () => {
+    const body: PortableTextBody = [IMAGE, { ...IMAGE, _key: 'i-dup' }]
+    expect(collectImageStoragePaths(body)).toEqual([IMAGE.storagePath])
+  })
+
+  it('bodyToPlainText concatenates text/code/math but skips images without alt', () => {
+    const body: PortableTextBody = [
+      HEADING_H2,
+      HELLO_PARAGRAPH,
+      CODE,
+      { _type: 'mathBlock', _key: 'm', tex: 'E=mc^2' },
+      { _type: 'image', _key: 'i', src: 'a' },
+      { _type: 'image', _key: 'i2', src: 'b', alt: 'cover alt' },
+    ]
+    const text = bodyToPlainText(body)
+    expect(text).toContain('Section title')
+    expect(text).toContain('Hello world')
+    expect(text).toContain('console.log(1)')
+    expect(text).toContain('E=mc^2')
+    expect(text).toContain('cover alt')
+  })
+})
