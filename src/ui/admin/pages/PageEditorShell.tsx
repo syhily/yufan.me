@@ -44,6 +44,7 @@ import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
+import { Input } from '@/ui/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/ui/tabs'
 import { cn } from '@/ui/lib/cn'
 
@@ -659,6 +660,13 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       >
         <div className="flex min-h-0 flex-col gap-2">
           {mode === 'create' ? <CreateModeBanner draftSavedAt={createDraft.loadedDraft?.savedAt ?? null} /> : null}
+          <TitleSlugStrip
+            title={meta.title}
+            slug={meta.slug}
+            onTitleChange={(value) => setMeta((m) => ({ ...m, title: value }))}
+            onSlugChange={(value) => setMeta((m) => ({ ...m, slug: value }))}
+            disabled={isPending}
+          />
           <PageBodyEditor initialBody={initialBody} bodyKey={bodyKey} onBodyChange={setBody} disabled={isPending} />
         </div>
         <aside className="flex min-h-0 flex-col">
@@ -739,6 +747,51 @@ function CreateModeBanner({ draftSavedAt }: CreateModeBannerProps) {
       {draftSavedAt !== null ? (
         <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
       ) : null}
+    </div>
+  )
+}
+
+interface TitleSlugStripProps {
+  title: string
+  slug: string
+  onTitleChange: (value: string) => void
+  onSlugChange: (value: string) => void
+  disabled?: boolean
+}
+
+// Title + slug strip rendered immediately above the body editor,
+// mirroring the layout in CMSes like Notion / Ghost / WordPress's
+// block editor: the visible page identity sits at the top of the
+// canvas, not buried in a side panel. The values are mirrored into
+// `meta` (the `MetaSidebar` form state), so editing here updates
+// the metadata draft the same way the sidebar does — the next
+// 保存信息 / 创建页面 / 重新上线 click pushes both fields to the
+// server. The sidebar's URL slug input still works as a secondary
+// surface for operators who land in 页面信息 first.
+function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: TitleSlugStripProps) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border bg-card p-3">
+      <Input
+        aria-label="页面标题"
+        value={title}
+        onChange={(e) => onTitleChange(e.target.value)}
+        placeholder="页面标题"
+        maxLength={200}
+        disabled={disabled}
+        className="h-auto border-0 bg-transparent px-0 text-2xl font-semibold shadow-none focus-visible:ring-0 dark:bg-transparent"
+      />
+      <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+        <span>/</span>
+        <Input
+          aria-label="URL slug"
+          value={slug}
+          onChange={(e) => onSlugChange(e.target.value)}
+          placeholder="slug"
+          maxLength={80}
+          disabled={disabled}
+          className="h-7 grow border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"
+        />
+      </div>
     </div>
   )
 }
