@@ -220,7 +220,10 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         return
       }
       if ('error' in envelope && envelope.error !== undefined) {
-        setStatus({ kind: 'error', message: envelope.error.message })
+        // Rethrow so the autosave loop schedules a retry. The
+        // editor's status indicator picks up the message via the
+        // `onStatusChange` surface below.
+        throw new Error(envelope.error.message)
       }
     },
     [isEditing, detail, expectedToken],
@@ -230,6 +233,15 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     body,
     enabled: autosaveEnabled,
     flush: flushAutosave,
+    onStatusChange: (autosaveStatus) => {
+      if (autosaveStatus.kind === 'saving') {
+        setStatus({ kind: 'saving' })
+      } else if (autosaveStatus.kind === 'saved') {
+        setStatus({ kind: 'saved', at: new Date(autosaveStatus.at) })
+      } else if (autosaveStatus.kind === 'retrying') {
+        setStatus({ kind: 'error', message: autosaveStatus.message })
+      }
+    },
   })
 
   function onMetaSaved(saved: AdminPageDto) {
