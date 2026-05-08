@@ -31,8 +31,24 @@ import {
   type PublishLatestResult,
   type SaveDraftResult,
 } from '@/server/cms/pages/repository'
+import { getLogger } from '@/server/logger'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { collectHeadings, collectImageStoragePaths, validatePortableTextBody } from '@/shared/portable-text'
+
+// Audit logger for force-overwrite saves. Emits at info level so
+// admin actions stay visible in production without being noisy in
+// dev. Fields:
+//   - actor (admin user id, L2)
+//   - pageMetaId (page id, L2)
+//   - overwrittenRevisionId (server's latest revision id when the
+//     conflict guard was bypassed)
+//   - overwrittenRevisionToken (the token the server held just
+//     before the overwrite)
+//   - clientExpectedToken (what the client thought it was rebasing
+//     against — handy for forensics)
+//   - mode ('draft' | 'publish')
+//   - resultRevisionId (the row that ended up persisted)
+const auditLog = getLogger('audit.cms.pages')
 
 // Service layer for the page CMS. Wraps the repository's transactional
 // state machines with input validation, ActionFailure surfacing, and
@@ -257,6 +273,13 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body)
 
+  // Capture the row that's about to be overwritten when force=true,
+  // so we can record an audit trail even though the repo already
+  // discarded that information by the time it returns. Best-effort
+  // — a failure here doesn't block the save (the audit log is
+  // diagnostic, not authoritative).
+  const overwriteContext = input.force === true ? await findLatestRevision('page', meta.id).catch(() => null) : null
+
   const repoInput = {
     ownerId: meta.id,
     body,
@@ -268,6 +291,27 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   }
 
   const result = mode === 'draft' ? await saveDraftRevision(repoInput) : await publishLatestRevision(repoInput)
+  if (input.force === true && result.status === 'saved' && overwriteContext !== null) {
+    // We only emit when an overwrite was actually consequential —
+    // i.e. the server's stored token differed from what the client
+    // expected. Equal tokens with `force=true` is a no-op overwrite
+    // (e.g. the user clicked "use local" on a body that hadn't
+    // really diverged) and isn't worth a log line.
+    if (
+      input.expectedClientRevisionToken === undefined ||
+      input.expectedClientRevisionToken !== overwriteContext.clientRevisionToken
+    ) {
+      auditLog.info('force_overwrite_save', {
+        mode,
+        actor: input.authorId === null ? null : input.authorId.toString(),
+        pageMetaId: meta.id.toString(),
+        overwrittenRevisionId: overwriteContext.id.toString(),
+        overwrittenRevisionToken: overwriteContext.clientRevisionToken,
+        clientExpectedToken: input.expectedClientRevisionToken ?? null,
+        resultRevisionId: result.row.id.toString(),
+      })
+    }
+  }
   return projectSaveResult(result)
 }
 
