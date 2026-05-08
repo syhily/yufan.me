@@ -1,19 +1,26 @@
 import { Node } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import {
+  CheckIcon,
   CodeIcon,
   FunctionSquareIcon,
   ListTreeIcon,
   Music2Icon,
+  PencilIcon,
   SigmaIcon,
   TrashIcon,
   UsersIcon,
   WorkflowIcon,
+  XIcon,
 } from 'lucide-react'
+import { useState } from 'react'
 
 import type { Block } from '@/shared/portable-text'
 
 import { Button } from '@/ui/components/ui/button'
+import { Input } from '@/ui/components/ui/input'
+import { Label } from '@/ui/components/ui/label'
+import { Textarea } from '@/ui/components/ui/textarea'
 import { cn } from '@/ui/lib/cn'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 
@@ -75,6 +82,17 @@ export const BlockCardNode = Node.create({
 function BlockCardView(props: NodeViewProps) {
   const attrs = props.node.attrs as BlockCardAttrs
   const payload = attrs.payload
+  const [editing, setEditing] = useState(false)
+  const editable = payload !== null && isInlineEditable(payload._type)
+
+  const commitPayload = (next: Block) => {
+    // Drop any pre-rendered fields when the source changes — the
+    // server will repopulate them on save (see prerender.ts). This
+    // keeps the editor honest about "preview matches the source".
+    const cleaned = stripPrerenderArtifacts(next)
+    props.updateAttributes({ payload: cleaned })
+    setEditing(false)
+  }
 
   return (
     <NodeViewWrapper
@@ -88,8 +106,26 @@ function BlockCardView(props: NodeViewProps) {
       <div className="flex items-start gap-3">
         <CardIcon ptType={attrs._ptType} />
         <div className="grow">
-          <div className="font-medium">{cardTitle(attrs._ptType)}</div>
-          <CardSummary payload={payload} />
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{cardTitle(attrs._ptType)}</span>
+            {editable && !editing ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="编辑源"
+                aria-label="编辑源"
+                className="opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={() => setEditing(true)}
+              >
+                <PencilIcon />
+              </Button>
+            ) : null}
+          </div>
+          {editing && payload !== null ? (
+            <CardSourceEditor payload={payload} onCommit={commitPayload} onCancel={() => setEditing(false)} />
+          ) : (
+            <CardSummary payload={payload} />
+          )}
         </div>
         <Button
           variant="ghost"
@@ -103,6 +139,113 @@ function BlockCardView(props: NodeViewProps) {
         </Button>
       </div>
     </NodeViewWrapper>
+  )
+}
+
+function isInlineEditable(ptType: string): boolean {
+  return ptType === 'mathBlock' || ptType === 'mermaid' || ptType === 'solution'
+}
+
+// Drop the cached server-rendered fields when the user mutates the
+// source. The save path repopulates them; leaving stale renders in
+// place would silently desync source and preview.
+function stripPrerenderArtifacts(block: Block): Block {
+  if (block._type === 'mathBlock' || block._type === 'mermaid') {
+    const { svg: _ignored, ...rest } = block as { svg?: string } & Block
+    return rest as Block
+  }
+  if (block._type === 'code') {
+    const { highlightedHtml: _ignored, ...rest } = block as { highlightedHtml?: string } & Block
+    return rest as Block
+  }
+  return block
+}
+
+interface CardSourceEditorProps {
+  payload: Block
+  onCommit: (next: Block) => void
+  onCancel: () => void
+}
+
+function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps) {
+  if (payload._type === 'mathBlock') {
+    return (
+      <SourceForm
+        label="TeX 源"
+        initial={payload.tex}
+        multiline
+        placeholder="\\frac{a}{b}"
+        onCommit={(next) => onCommit({ ...payload, tex: next })}
+        onCancel={onCancel}
+      />
+    )
+  }
+  if (payload._type === 'mermaid') {
+    return (
+      <SourceForm
+        label="Mermaid 源"
+        initial={payload.code}
+        multiline
+        placeholder="graph TD\n  A --> B"
+        onCommit={(next) => onCommit({ ...payload, code: next })}
+        onCancel={onCancel}
+      />
+    )
+  }
+  if (payload._type === 'solution') {
+    // Solution blocks have nested PT children which are out of
+    // scope for this inline editor (the round-trip bridge already
+    // preserves them). The only field worth editing in place is
+    // the visible label.
+    const initial = (payload as { label?: string }).label ?? ''
+    return (
+      <SourceForm
+        label="标签文本"
+        initial={initial}
+        multiline={false}
+        placeholder="解答 / 提示"
+        onCommit={(next) => onCommit({ ...payload, label: next } as Block)}
+        onCancel={onCancel}
+      />
+    )
+  }
+  return null
+}
+
+interface SourceFormProps {
+  label: string
+  initial: string
+  multiline: boolean
+  placeholder: string
+  onCommit: (next: string) => void
+  onCancel: () => void
+}
+
+function SourceForm({ label, initial, multiline, placeholder, onCommit, onCancel }: SourceFormProps) {
+  const [draft, setDraft] = useState(initial)
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <Label className="text-xs">{label}</Label>
+      {multiline ? (
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={placeholder}
+          rows={5}
+          className="font-mono text-xs"
+        />
+      ) : (
+        <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={placeholder} />
+      )}
+      <div className="flex justify-end gap-1">
+        <Button variant="ghost" size="sm" onClick={onCancel} title="取消">
+          <XIcon /> 取消
+        </Button>
+        <Button size="sm" onClick={() => onCommit(draft)} title="保存编辑">
+          <CheckIcon /> 保存
+        </Button>
+      </div>
+    </div>
   )
 }
 
