@@ -1,0 +1,8 @@
+@layer base, components, utilities;
+
+.medium-zoom-overlay,
+.medium-zoom-image--opened {
+  z-index: 1080;
+}
+
+@import './tailwind.css';

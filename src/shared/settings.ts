@@ -1,0 +1,114 @@
+export const SETTINGS_SECTIONS = [
+  'general',
+  'assets',
+  'navigation',
+  'socials',
+  'content',
+  'sidebar',
+  'comments',
+  'seo',
+  'footer',
+  'mail',
+  'cache',
+  'rateLimit',
+  'search',
+] as const
+
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
+
+// Section → `BlogSettingsBundle` field mapping. Lives here (and not in
+// `@/server/settings/sections.ts`) because every layer of the app
+// reaches for it: the server registry uses it to type its `key`
+// field, the snapshot builder uses it to project rows into the
+// in-memory bundle, and the React contexts file uses it to mint one
+// context per bundle slot. Centralising the map deletes three sibling
+// "list of 12 keys" copies that used to drift on every section
+// addition.
+//
+// `general` → `siteIdentity` is the only non-identity mapping
+// (historical: `blog.general` was renamed before the install seed
+// rolled out, but the bundle field kept its old "site identity" name
+// so existing UI hooks didn't have to rotate).
+export const SECTION_TO_BUNDLE_KEY = {
+  general: 'siteIdentity',
+  assets: 'assets',
+  navigation: 'navigation',
+  socials: 'socials',
+  content: 'content',
+  sidebar: 'sidebar',
+  comments: 'comments',
+  seo: 'seo',
+  footer: 'footer',
+  mail: 'mail',
+  cache: 'cache',
+  rateLimit: 'rateLimit',
+  search: 'search',
+} as const satisfies Record<SettingsSection, string>
+
+export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
+
+/** Stable iteration order for bundle keys (mirrors `SETTINGS_SECTIONS`). */
+export const BUNDLE_KEYS = SETTINGS_SECTIONS.map((section) => SECTION_TO_BUNDLE_KEY[section]) as readonly BundleKey[]
+
+// Display metadata for each settings section. The strings are
+// rendered in the admin `<SettingsShell>` sidebar and the mobile
+// drawer; centralising them here means adding a thirteenth section
+// is a one-file edit (extend `SETTINGS_SECTIONS` and add the matching
+// label/description) instead of "remember to also touch the sidebar
+// component".
+//
+// Lives in `@/shared/` because the strings are pure data — no
+// server- or DOM-only dependencies — and the UI layer must not
+// reach into `@/server/` to pull them in.
+export interface SectionDisplayMeta {
+  /** URL the sidebar `NavLink` points at. */
+  to: string
+  /** Short Chinese label rendered as the sidebar item title. */
+  label: string
+  /** One-line Chinese description shown beneath the label. */
+  description: string
+}
+
+export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
+  general: {
+    to: '/wp-admin/settings/general',
+    label: '基本信息',
+    description: '站点标题、描述、关键词、作者、语言与时区',
+  },
+  assets: {
+    to: '/wp-admin/settings/assets',
+    label: '存储配置',
+    description: '资源/CDN 域名、S3 兼容存储、上传参数',
+  },
+  navigation: { to: '/wp-admin/settings/navigation', label: '导航菜单', description: '顶部导航条目顺序与链接' },
+  socials: { to: '/wp-admin/settings/socials', label: '社交链接', description: 'Header 中显示的社交账号 / 二维码' },
+  content: { to: '/wp-admin/settings/content', label: '内容与分页', description: '列表分页大小、排序、Feed' },
+  sidebar: { to: '/wp-admin/settings/sidebar', label: '侧边栏', description: '日历、搜索、推荐数量等开关' },
+  comments: { to: '/wp-admin/settings/comments', label: '评论与头像', description: '评论分页与 Gravatar 镜像' },
+  seo: { to: '/wp-admin/settings/seo', label: 'SEO 与目录', description: 'Twitter handle、TOC 标题级别' },
+  footer: { to: '/wp-admin/settings/footer', label: '页脚', description: '起始年份、ICP 备案号' },
+  mail: { to: '/wp-admin/settings/mail', label: '邮件服务', description: 'Zeabur ZSend 配置 / 测试发送' },
+  cache: { to: '/wp-admin/settings/cache', label: '缓存管理', description: 'OG 图 / 头像 / 日历的 Redis 缓存' },
+  rateLimit: {
+    to: '/wp-admin/settings/rate-limit',
+    label: '流控设置',
+    description: '登录、评论、点赞按 IP / 邮箱的限流策略',
+  },
+  search: {
+    to: '/wp-admin/settings/search',
+    label: '文章搜索',
+    description: 'AI 向量搜索与关键词搜索切换、OpenAI 配置',
+  },
+}
+
+/**
+ * Stable display order for the admin settings sidebar (mirrors
+ * `SETTINGS_SECTIONS`). Consumed by `<SettingsShell>` so adding a
+ * section is a one-file change above plus extending `SETTINGS_SECTIONS`.
+ */
+export const SECTION_DISPLAY_LIST = SETTINGS_SECTIONS.map((section) => SECTION_DISPLAY[section])
+
+export interface UpdateSettingsInput {
+  section: SettingsSection
+  payload: unknown
+}

@@ -1,0 +1,72 @@
+// WordPress probe detector. The site borrows the WordPress URL shape for
+// its real admin (`/wp-login.php`, `/wp-admin`, the two-stage install
+// pair `/wp-admin/install.php` + `/wp-admin/install/settings.php`, plus
+// the SPA sub-routes mounted under `/wp-admin/*`); every other request
+// that *looks* like a WordPress install is almost certainly an
+// automated scanner. We answer those with a HTTP 404 plus a custom
+// "this is not a WordPress site" view rather than the generic 404.
+//
+// The marker (`statusText: "Not WordPress"`) is what `src/root.tsx`
+// `ErrorBoundary` reads to switch from the regular 404 view to
+// `<NotWordPressView />`.
+
+const LEGIT_WP_PATHS = new Set([
+  '/wp-login.php',
+  '/wp-admin',
+  '/wp-admin/',
+  '/wp-admin/install.php',
+  '/wp-admin/install/settings.php',
+])
+
+export function isWordPressDecoyPath(pathname: string): boolean {
+  if (LEGIT_WP_PATHS.has(pathname)) {
+    return false
+  }
+
+  // `/wp-admin/*` is the SPA admin shell. Everything the real shell ever
+  // serves is a clean React Router path with no file extension
+  // (`/wp-admin/comments`, `/wp-admin/users`, `/wp-admin/users/123`).
+  // The probes we want to keep intercepting under this prefix are
+  // exclusively WordPress PHP entry points (e.g. `options.php`,
+  // `setup-config.php`, `admin-ajax.php`, `network/setup-config.php`),
+  // so the `.php` rule below already covers them — we just need to
+  // avoid blanket-rejecting the prefix here.
+  if (pathname.startsWith('/wp-content/')) {
+    return true
+  }
+  if (pathname.startsWith('/wp-includes/')) {
+    return true
+  }
+  if (pathname === '/cgi-bin' || pathname.startsWith('/cgi-bin/')) {
+    return true
+  }
+  if (pathname.endsWith('.php')) {
+    return true
+  }
+
+  return false
+}
+
+export function notWordPressSite(): never {
+  throw new Response('Not WordPress', { status: 404, statusText: 'Not WordPress' })
+}
+
+export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
+
+// Loader-side guard that the two routes capable of matching a probe
+// path (`page.detail` for `:slug`, `not-found` for the splat) call at
+// the top of their loader. Throwing here — instead of from a root
+// middleware — means React Router treats the response like any other
+// loader error and walks up to the *closest* `ErrorBoundary`, which is
+// `routes/public.layout.tsx`'s synchronous `<PublicChrome>` shell. That
+// shell renders the same left-side menu / header / footer the regular
+// 404 view gets, instead of the chrome-less fallback that root's
+// boundary would produce when the throw originates above every
+// loader (cf. React Router docs §"next() and Error Handling": a
+// pre-`next()` middleware throw forces the boundary to the highest
+// loaded route, which is `root` here and only owns the lazy chrome).
+export function assertNotWordPressDecoy(request: Request): void {
+  if (isWordPressDecoyPath(new URL(request.url).pathname)) {
+    notWordPressSite()
+  }
+}

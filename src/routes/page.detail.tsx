@@ -1,0 +1,155 @@
+import { data } from 'react-router'
+
+import type { Page } from '@/shared/catalog'
+
+import { buildDbPage, findPageBySlug, getEntryBySlug, listAllFriends } from '@/server/catalog'
+import { loadPageDraftPreviewBySlug } from '@/server/cms/pages/service'
+import { resolveImageMetaBySources } from '@/server/images/render-enhance'
+import { loadPublicDetailData, redirectPermanent } from '@/server/route-helpers/detail-loader'
+import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpers/etag'
+import { notFound } from '@/server/route-helpers/http'
+import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
+import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
+import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
+import { isAdmin, resolveSessionContext, tryGetSessionContext } from '@/server/session'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
+import { type DraftMarker, PageDetailBody } from '@/ui/post/post/PageDetailBody'
+import { Friends } from '@/ui/pt/blocks/Friends'
+import { PortableTextBody } from '@/ui/pt/render'
+
+import type { Route } from './+types/page.detail'
+
+export const handle = { footer: false }
+export const headers = detailHeaders
+export const shouldRevalidate = publicShouldRevalidate
+
+export async function loader({ request, context, params }: Route.LoaderArgs) {
+  assertNotWordPressDecoy(request)
+  const url = new URL(request.url)
+  const wantsDraftPreview = url.searchParams.get('draft') === 'true'
+
+  const entry = await getEntryBySlug(params.slug)
+  if (entry !== null && entry.type === 'post') {
+    redirectPermanent(`/posts/${entry.slug}`)
+  }
+
+  const publishedPage: Page | undefined =
+    entry !== null && entry.type === 'page' ? ((await findPageBySlug(params.slug)) ?? undefined) : undefined
+
+  let sourcePage: Page | undefined = publishedPage
+  let draftMarker: DraftMarker = null
+
+  const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
+  if (needsDraftLookup) {
+    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
+    if (isAdmin(sessionContext.session)) {
+      const preview = await loadPageDraftPreviewBySlug(params.slug)
+      if (preview !== null) {
+        if (sourcePage === undefined) {
+          sourcePage = buildDbPage(preview.page)
+          draftMarker = 'draft'
+        } else if (wantsDraftPreview) {
+          if (preview.hasNewerDraft) {
+            sourcePage = buildDbPage(preview.page)
+            draftMarker = 'unpublished-draft'
+          } else {
+            draftMarker = 'published-draft'
+          }
+        }
+      }
+    }
+  }
+
+  if (sourcePage === undefined) {
+    notFound()
+  }
+
+  const publicEtag =
+    draftMarker === null ? weakEtag(['page', sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated]) : null
+  if (publicEtag !== null && ifNoneMatch(request, publicEtag)) {
+    throw notModifiedResponse(publicEtag)
+  }
+
+  const page = {
+    id: sourcePage.id,
+    slug: sourcePage.slug,
+    title: sourcePage.title,
+    summary: sourcePage.summary,
+    cover: sourcePage.cover,
+    coverThumbhash: sourcePage.coverThumbhash,
+    coverWidth: sourcePage.coverWidth,
+    coverHeight: sourcePage.coverHeight,
+    permalink: sourcePage.permalink,
+    date: sourcePage.date,
+    updated: sourcePage.updated,
+    og: sourcePage.og,
+    comments: sourcePage.comments,
+    toc: sourcePage.toc,
+    showUpdated: sourcePage.showUpdated,
+    headings: sourcePage.headings,
+  }
+
+  const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePage.imageSources))
+  const body = sourcePage.body
+  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
+
+  const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
+    request,
+    context,
+    target: { type: 'page', ownerId: BigInt(page.id) },
+    preload: () => Promise.resolve(),
+  })
+
+  return data(
+    {
+      page,
+      body,
+      friends: await listAllFriends(),
+      showFriends: sourcePage.showFriends,
+      draftMarker,
+      detail,
+      imageMeta,
+      footnotesSectionTitle,
+    },
+    {
+      headers:
+        publicEtag === null
+          ? { 'Set-Cookie': commentCsrfSetCookie }
+          : { 'Set-Cookie': commentCsrfSetCookie, ETag: publicEtag },
+    },
+  )
+}
+
+export function meta({ loaderData, matches }: Route.MetaArgs) {
+  const bundle = bundleFromMatches(matches)
+  if (!loaderData) {
+    return routeMeta(undefined, bundle)
+  }
+  return routeMeta(seoForPage(loaderData.page), bundle)
+}
+
+export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
+  const { page, body, friends, showFriends, draftMarker, detail, imageMeta, footnotesSectionTitle } = loaderData
+  return (
+    <PageDetailBody
+      page={page}
+      headings={page.headings}
+      draftMarker={draftMarker}
+      likes={detail.likes}
+      commentKey={detail.commentKey}
+      commentCsrfToken={detail.csrfToken}
+      commentsPromise={detail.comments}
+      currentUser={detail.currentUser}
+      admin={detail.admin}
+    >
+      <PortableTextBody
+        body={body}
+        imageMeta={imageMeta}
+        headingSlugs={page.headings.map((h) => h.slug)}
+        footnotesSectionTitle={footnotesSectionTitle}
+      />
+      {showFriends && <Friends friends={[...friends]} />}
+    </PageDetailBody>
+  )
+}

@@ -1,0 +1,112 @@
+import { defineConfig } from 'oxlint'
+
+export default defineConfig({
+  plugins: ['react', 'jsx-a11y', 'react-perf', 'import', 'typescript', 'promise', 'node', 'unicorn', 'oxc'],
+  env: {
+    browser: true,
+    node: true,
+    es2022: true,
+  },
+  ignorePatterns: ['.agents/**/*', 'public/**/*.css'],
+  settings: {
+    react: {
+      version: '19.2.5',
+      formComponents: [{ name: 'Form', attribute: 'action' }],
+      linkComponents: [
+        { name: 'Link', attribute: 'to' },
+        { name: 'NavLink', attribute: 'to' },
+      ],
+    },
+    'jsx-a11y': {
+      components: {
+        Form: 'form',
+        Image: 'img',
+        Icon: 'svg',
+      },
+    },
+  },
+  options: {
+    reportUnusedDisableDirectives: 'warn',
+    typeAware: true,
+    typeCheck: true,
+  },
+  categories: {
+    correctness: 'error',
+  },
+  rules: {
+    curly: 'error',
+    'no-unused-vars': 'error',
+
+    // Module boundaries and imports.
+    'import/default': 'error',
+    'import/no-namespace': 'error',
+    'import/no-cycle': 'warn',
+    'import/no-duplicates': 'error',
+    'import/no-self-import': 'error',
+    'import/no-webpack-loader-syntax': 'error',
+
+    // Promise / async correctness. Fire-and-forget work should be written as
+    // `void task().catch(...)` so the intent is visible to reviewers and lint.
+    'promise/no-callback-in-promise': 'error',
+    'promise/no-multiple-resolved': 'error',
+    'promise/no-promise-in-callback': 'off',
+    'promise/no-return-in-finally': 'error',
+    'promise/always-return': 'off',
+
+    // React and React Hooks.
+    'react/exhaustive-deps': 'warn',
+    'react/rules-of-hooks': 'error',
+    'react/button-has-type': 'error',
+    'react/checked-requires-onchange-or-readonly': 'error',
+    'react/jsx-no-comment-textnodes': 'error',
+    'react/jsx-key': 'error',
+    'react/jsx-no-duplicate-props': 'error',
+    'react/jsx-no-script-url': 'error',
+    'react/jsx-no-target-blank': 'error',
+    'react/jsx-no-undef': 'error',
+    'react/no-children-prop': 'error',
+    'react/no-danger-with-children': 'error',
+    'react/no-unknown-property': 'error',
+    'react/react-in-jsx-scope': 'off',
+    'react/style-prop-object': 'error',
+    'react/void-dom-elements-no-children': 'error',
+
+    // TypeScript rules that catch runtime bugs without forcing noisy style preferences.
+    'typescript/await-thenable': 'error',
+    'typescript/no-array-delete': 'error',
+    'typescript/no-confusing-void-expression': 'off',
+    'typescript/no-deprecated': 'warn',
+    'typescript/no-floating-promises': 'error',
+    'typescript/no-for-in-array': 'error',
+    'typescript/no-implied-eval': 'error',
+    'typescript/no-misused-promises': 'error',
+    'typescript/no-namespace': 'error',
+    'typescript/no-non-null-asserted-optional-chain': 'error',
+    'typescript/no-require-imports': 'error',
+    'typescript/no-unnecessary-type-assertion': 'off',
+    'typescript/no-unsafe-argument': 'off',
+    'typescript/no-unsafe-assignment': 'off',
+    'typescript/no-unsafe-call': 'off',
+    'typescript/no-unsafe-member-access': 'off',
+    'typescript/no-unsafe-return': 'off',
+    'typescript/no-unsafe-type-assertion': 'off',
+    'typescript/prefer-nullish-coalescing': 'off',
+    'typescript/prefer-optional-chain': 'off',
+    'typescript/restrict-plus-operands': 'warn',
+    'typescript/switch-exhaustiveness-check': 'off',
+
+    // React Router and SSR routes intentionally forward props and render trusted HTML.
+    'react/jsx-props-no-spread-multi': 'off',
+    'react/no-danger': 'off',
+
+    // Existing templates use progressive-enhancement hooks that are noisy with generic a11y heuristics.
+    'jsx_a11y/click-events-have-key-events': 'off',
+    'jsx_a11y/no-static-element-interactions': 'off',
+    'react_perf/jsx-no-new-array-as-prop': 'off',
+    'react_perf/jsx-no-new-function-as-prop': 'off',
+    'react_perf/jsx-no-new-object-as-prop': 'off',
+
+    // Server modules intentionally read the validated env facade instead of raw process.env.
+    'node/no-process-env': 'off',
+  },
+})

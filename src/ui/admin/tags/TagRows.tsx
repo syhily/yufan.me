@@ -1,0 +1,225 @@
+import { EditIcon, ExternalLinkIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'react'
+
+import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags'
+
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { API_ACTIONS } from '@/shared/api-actions'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
+import { Skeleton } from '@/ui/components/skeleton'
+import { TableCell, TableRow } from '@/ui/components/table'
+
+const UPSERT = API_ACTIONS.admin.upsertTag
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i
+
+export interface TagDraft {
+  name: string
+  slug: string
+}
+
+export function draftFromTag(tag: AdminTagDto): TagDraft {
+  return { name: tag.name, slug: tag.slug }
+}
+
+export const EMPTY_TAG_DRAFT: TagDraft = { name: '', slug: '' }
+
+interface TagDisplayRowProps {
+  tag: AdminTagDto
+  disabled: boolean
+  onEdit: () => void
+  onDelete: () => void
+}
+
+// Read-only row in the tags table. Memoized so the parent can rotate
+// `editingId` without reconciling unrelated rows; the matching
+// `disabled` prop is `false` for every row in the same render except
+// the one currently being edited (which never renders as a display
+// row at all), so the diff stays trivial.
+export const TagDisplayRow = memo(function TagDisplayRow({ tag, disabled, onEdit, onDelete }: TagDisplayRowProps) {
+  return (
+    <TableRow>
+      <TableCell>
+        <span className="font-medium">{tag.name}</span>
+      </TableCell>
+      <TableCell>
+        <a
+          href={`/tags/${tag.slug}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ExternalLinkIcon className="size-3" />
+          <span className="truncate">/tags/{tag.slug}</span>
+        </a>
+      </TableCell>
+      <TableCell className="text-center">
+        {/* `secondary` reads as "informational" for non-zero counts;
+            zero falls back to `outline` so the cell visually says
+            "no references → safe to delete" without a colored chip. */}
+        <Badge variant={tag.postCount > 0 ? 'secondary' : 'outline'}>{tag.postCount}</Badge>
+      </TableCell>
+      <TableCell className="pr-4 text-right">
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={onEdit}
+            disabled={disabled}
+            aria-label={`编辑标签 ${tag.name}`}
+          >
+            <EditIcon />
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={onDelete}
+            disabled={disabled}
+            aria-label={`删除标签 ${tag.name}`}
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  )
+})
+
+interface TagEditorRowProps {
+  /** Present for an existing row; absent for the "new tag" row. */
+  tagId?: string
+  initialDraft: TagDraft
+  submitLabel: string
+  onCancel: () => void
+  onSaved: (tag: AdminTagDto) => void
+}
+
+// Inline editor row, mounted at most twice per page (one row in
+// "edit existing" mode + the always-on "create new" row at the top).
+// Each editor mounts its own fetcher so concurrent edits across rows
+// can't collide on a shared submit channel — the same per-card
+// pattern that `BucketCard` follows in the cache settings page.
+export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSaved }: TagEditorRowProps) {
+  const [draft, setDraft] = useState<TagDraft>(initialDraft)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const nameInputRef = useRef<HTMLInputElement>(null)
+
+  // Move focus into the name input on mount so the editor is ready
+  // for typing immediately. Using an effect (rather than `autoFocus`)
+  // keeps `jsx-a11y/no-autofocus` happy while preserving the UX —
+  // the row is rendered only as a deliberate user action (click on
+  // 编辑 / 新增标签), so a focus jump here is expected.
+  useEffect(() => {
+    nameInputRef.current?.focus()
+  }, [])
+
+  const upsertApi = useAdminMutation<UpsertTagInput, UpsertTagOutput>(UPSERT, {
+    successMessage: '标签已保存',
+    onSuccess: (payload) => {
+      setErrorMessage(null)
+      onSaved(payload.tag)
+    },
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
+  })
+  const { submit, isPending } = upsertApi
+
+  const trimmedName = draft.name.trim()
+  const trimmedSlug = draft.slug.trim()
+  const localError = (() => {
+    if (trimmedName.length === 0) {
+      return '名称不能为空'
+    }
+    if (trimmedName.length > 20) {
+      return '名称不能超过 20 个字符'
+    }
+    if (trimmedSlug !== '' && !SLUG_PATTERN.test(trimmedSlug)) {
+      return 'slug 仅允许小写字母、数字、短横线'
+    }
+    if (trimmedSlug.length > 80) {
+      return 'slug 不能超过 80 个字符'
+    }
+    return null
+  })()
+
+  const onSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
+    event.preventDefault()
+    if (localError) {
+      setErrorMessage(localError)
+      return
+    }
+    const payload: UpsertTagInput = {
+      ...(tagId ? { id: tagId } : {}),
+      name: trimmedName,
+    }
+    if (trimmedSlug !== '') {
+      payload.slug = trimmedSlug
+    }
+    submit(payload)
+  }
+
+  return (
+    <TableRow>
+      <TableCell colSpan={4} className="bg-muted/30">
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col gap-3 py-1 lg:grid lg:grid-cols-[28%_1fr_auto] lg:items-start lg:gap-4"
+        >
+          <div className="flex flex-col gap-1">
+            <Input
+              ref={nameInputRef}
+              type="text"
+              value={draft.name}
+              onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+              maxLength={20}
+              placeholder="例：编程"
+              required
+              aria-label="名称"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Input
+              type="text"
+              value={draft.slug}
+              onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
+              maxLength={80}
+              placeholder="留空则使用拼音自动生成"
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              aria-label="URL slug"
+            />
+            <p className="text-xs text-muted-foreground">仅允许小写字母、数字、短横线；用于 /tags/:slug。</p>
+          </div>
+          <div className="flex items-center justify-end gap-2 lg:pt-px">
+            <Button type="button" size="sm" variant="ghost" onClick={onCancel} disabled={isPending}>
+              <XIcon data-icon /> 取消
+            </Button>
+            <Button type="submit" size="sm" disabled={isPending || localError !== null}>
+              <SaveIcon data-icon /> {isPending ? '保存中…' : submitLabel}
+            </Button>
+          </div>
+          {errorMessage ? <p className="text-sm text-destructive lg:col-span-3">{errorMessage}</p> : null}
+        </form>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+export function TagsSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell colSpan={4}>
+            <Skeleton className="h-4 w-1/3" />
+          </TableCell>
+        </TableRow>
+      ))}
+    </>
+  )
+}
