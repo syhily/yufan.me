@@ -38,6 +38,7 @@ import {
   metaDraftFromPage,
   MetaSidebar,
   type PageMetaDraft,
+  type SidebarPublishStatus,
 } from '@/ui/admin/pages/MetaSidebar'
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
 import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
@@ -403,12 +404,20 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       return
     }
     setStatus({ kind: 'saving' })
+    // `publishedAt` is optional on the wire: empty string ⇒ omit ⇒
+    // server stamps `now()` (publish-immediately). A future ISO
+    // timestamp parks the page as scheduled — the server still
+    // promotes the revision, but the catalog filter
+    // (`publishedAt <= now()`) hides the page until the time
+    // arrives.
+    const publishedAtIso = localInputValueToIso(meta.publishedAt)
     publishApi.submit({
       id: detail.page.id,
       body,
       expectedClientRevisionToken: expectedToken,
+      ...(publishedAtIso !== null ? { publishedAt: publishedAtIso } : {}),
     })
-  }, [publishApi, isEditing, detail, body, expectedToken])
+  }, [publishApi, isEditing, detail, body, expectedToken, meta.publishedAt])
 
   const persistUnpublish = useCallback(() => {
     if (!isEditing) {
@@ -450,6 +459,34 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     () => (isEditing ? derivePublishState(detail, meta.published) : { kind: 'not-published-yet' }),
     [isEditing, detail, meta.published],
   )
+
+  // Sidebar status badge has slightly different cuts than the
+  // toolbar's `RevisionStatusBadge`: it also surfaces "scheduled"
+  // (i.e. `published === true` but `publishedAt > now()`), which
+  // the toolbar collapses into the live-state because the toolbar
+  // tracks the **revision** lifecycle whereas the sidebar tracks
+  // the **visibility** lifecycle. We compute it here from the
+  // shell-owned `meta` + the loader-supplied `detail` so the
+  // sidebar stays a pure-props view.
+  const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(() => {
+    if (!isEditing) {
+      return 'never-saved'
+    }
+    if (publishState.kind === 'not-published-yet') {
+      return 'never-saved'
+    }
+    if (publishState.kind === 'unpublished') {
+      return 'offline'
+    }
+    // `meta.publishedAt` is the user-facing input string (`YYYY-MM-DDTHH:mm`).
+    // Treat unparsable / empty as "live now"; future = scheduled.
+    const ts = meta.publishedAt === '' ? Number.NaN : Date.parse(meta.publishedAt)
+    const isFuture = !Number.isNaN(ts) && ts > Date.now()
+    if (isFuture) {
+      return 'scheduled'
+    }
+    return publishState.kind === 'draft-ahead' ? 'live-with-draft-ahead' : 'live'
+  }, [isEditing, publishState, meta.publishedAt])
 
   // Cmd/Ctrl-S triggers the appropriate save: create-flow on create,
   // draft on edit. Cmd/Ctrl+Shift+P publishes the latest body.
@@ -628,9 +665,15 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                   size="sm"
                   onClick={persistPublish}
                   disabled={isPending || !canPublish}
-                  title={canPublish ? '发布最新内容 (Cmd/Ctrl+Shift+P)' : '当前最新版本已发布'}
+                  title={
+                    canPublish
+                      ? sidebarPublishStatus === 'scheduled'
+                        ? '按计划时间上线 (Cmd/Ctrl+Shift+P)'
+                        : '发布最新内容 (Cmd/Ctrl+Shift+P)'
+                      : '当前最新版本已发布'
+                  }
                 >
-                  <UploadIcon /> 发布
+                  <UploadIcon /> {sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布'}
                 </Button>
               )}
               {canUnpublish ? (
@@ -680,6 +723,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                 draft={meta}
                 onChange={setMeta}
                 disabled={isPending}
+                publishStatus={sidebarPublishStatus}
                 extras={
                   isEditing ? (
                     <div className="rounded-md border bg-card p-2">

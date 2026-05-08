@@ -1,9 +1,11 @@
-import { ImageIcon, XIcon } from 'lucide-react'
+import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon, ImageIcon, XIcon } from 'lucide-react'
+import { useId } from 'react'
 
 import type { AdminPageDto } from '@/shared/cms-pages'
 import type { AdminImageDto } from '@/shared/images'
 
 import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
+import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/ui/card'
 import { Checkbox } from '@/ui/components/ui/checkbox'
@@ -53,10 +55,25 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     published: page.published,
     commentsEnabled: page.commentsEnabled,
     showToc: page.showToc,
-    // Trim seconds + timezone for `<input type="datetime-local">`.
-    // The DTO carries an ISO-8601 string; the input wants "YYYY-MM-DDTHH:mm".
-    publishedAt: isoToLocalInputValue(page.publishedAt),
+    // The picker treats the non-empty datetime-local string as "the
+    // operator has opted into 定时发布 mode". For an already-published
+    // page sitting in the past, leaving the string non-empty would
+    // misleadingly start the editor in "schedule mode" with a past
+    // time. Default-blank the field when the stored timestamp is at
+    // or before "now" so the sidebar opens in 立即发布 mode (matching
+    // the wire convention: empty ⇒ omit on publish ⇒ server stamps
+    // `now()`). Future timestamps surface verbatim so the operator
+    // can edit / cancel a pending schedule.
+    publishedAt: futureLocalInputValueOrEmpty(page.publishedAt),
   }
+}
+
+function futureLocalInputValueOrEmpty(iso: string): string {
+  const ms = Date.parse(iso)
+  if (Number.isNaN(ms) || ms <= Date.now()) {
+    return ''
+  }
+  return isoToLocalInputValue(iso)
 }
 
 /**
@@ -90,11 +107,39 @@ export function localInputValueToIso(value: string): string | null {
   return new Date(ms).toISOString()
 }
 
+// High-level "where is this page in its lifecycle?" used to render
+// the badge inside the 基本信息 card. The shell derives the value
+// from server state + `meta.published` + `meta.publishedAt` and
+// hands it in; the sidebar stays free of any business logic.
+export type SidebarPublishStatus =
+  // No revisions exist yet (create mode or a doc that's never been
+  // saved to the server).
+  | 'never-saved'
+  // Latest revision exists but the page is offline (`published =
+  // false`). May or may not have been live in the past.
+  | 'offline'
+  // `published = true` and `publishedAt > now()`. The catalog
+  // hides the page until the timestamp arrives.
+  | 'scheduled'
+  // `published = true` and `publishedAt <= now()` and the latest
+  // revision has been promoted.
+  | 'live'
+  // `published = true` and `publishedAt <= now()` but the latest
+  // revision is a draft sitting on top of an older published row.
+  | 'live-with-draft-ahead'
+
 export interface MetaSidebarProps {
   draft: PageMetaDraft
   onChange: (next: PageMetaDraft) => void
   /** Disable every input while a save / publish is in flight. */
   disabled?: boolean
+  /**
+   * Lifecycle status used to render the badge inside 基本信息.
+   * `null` means the sidebar is being rendered in a context that
+   * doesn't have a clear publish state (create mode before first
+   * save), and the badge falls back to `never-saved`.
+   */
+  publishStatus?: SidebarPublishStatus | null
   /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
@@ -106,7 +151,7 @@ export interface MetaSidebarProps {
 // Right-pane metadata panel for the page editor. Lives in its own
 // component so the editor route can swap the right pane between this
 // (default) and a live preview without re-mounting the editor.
-export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarProps) {
+export function MetaSidebar({ draft, onChange, disabled, publishStatus, extras }: MetaSidebarProps) {
   const set = <K extends keyof PageMetaDraft>(key: K, value: PageMetaDraft[K]) => onChange({ ...draft, [key]: value })
 
   return (
@@ -116,6 +161,12 @@ export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarPr
           <CardTitle className="text-base">基本信息</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
+          <PublishStatusRow
+            status={publishStatus ?? 'never-saved'}
+            publishedAt={draft.publishedAt}
+            onChangePublishedAt={(value) => set('publishedAt', value)}
+            disabled={disabled}
+          />
           <div className="grid gap-2">
             <Label htmlFor="page-title">标题</Label>
             <Input
@@ -185,19 +236,6 @@ export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarPr
           <CardTitle className="text-base">展示选项</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <div className="grid gap-2">
-            <Label htmlFor="page-published-at">发布时间</Label>
-            <Input
-              id="page-published-at"
-              type="datetime-local"
-              value={draft.publishedAt}
-              onChange={(e) => set('publishedAt', e.target.value)}
-              disabled={disabled}
-            />
-            <p className="text-xs text-muted-foreground">
-              留空保持现有时间。修改后会更新页面对外展示的发布日期，并影响排序。
-            </p>
-          </div>
           <ToggleRow
             id="page-comments"
             label="开启评论"
@@ -304,6 +342,148 @@ function ImageField({ id, label, placeholder, value, onChange, disabled }: Image
       ) : null}
     </div>
   )
+}
+
+interface PublishStatusRowProps {
+  status: SidebarPublishStatus
+  /** Current `<input type="datetime-local">` value (`''` = unset). */
+  publishedAt: string
+  onChangePublishedAt: (value: string) => void
+  disabled?: boolean
+}
+
+// "Publish status + publish time" widget shown at the top of 基本信息.
+//
+// The status badge tells the operator where the page sits in its
+// lifecycle ("尚未保存" / "已下线" / "已计划" / "已发布" / "草稿
+// 领先"). The publish-time radio toggles between two presets:
+//
+//   - 立即发布 — `publishedAt` is cleared. The publish action
+//     reads "no override" and the server stamps `now()`. (For an
+//     already-published page this means "leave the existing
+//     timestamp alone"; the publish flow on the editor toolbar
+//     re-stamps `now()` if the operator hits 发布 again.)
+//
+//   - 定时发布 — exposes a `<input type="datetime-local">` so the
+//     operator can pick a future time. Sending that to 发布 parks
+//     the page as "scheduled" — the public site 404s it until the
+//     timestamp arrives.
+function PublishStatusRow({ status, publishedAt, onChangePublishedAt, disabled }: PublishStatusRowProps) {
+  const fieldId = useId()
+  const isScheduled = publishedAt !== ''
+  const isFuture = isScheduled && (Date.parse(publishedAt) || 0) > Date.now()
+
+  return (
+    <div className="grid gap-2 rounded-md border bg-muted/30 p-3">
+      <div className="flex items-center gap-2">
+        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布状态</Label>
+        <PublishBadge status={status} isFuture={isFuture} />
+      </div>
+      <div className="grid gap-2">
+        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布时间</Label>
+        <div className="flex items-center gap-3 text-sm">
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="radio"
+              name={`${fieldId}-mode`}
+              checked={!isScheduled}
+              onChange={() => onChangePublishedAt('')}
+              disabled={disabled}
+            />
+            立即发布
+          </label>
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="radio"
+              name={`${fieldId}-mode`}
+              checked={isScheduled}
+              onChange={() => {
+                if (isScheduled) {
+                  return
+                }
+                // Default to "tomorrow at 09:00 local" when the
+                // operator first switches into schedule mode, so
+                // the picker isn't fighting with the "now" they
+                // just opted out of.
+                const d = new Date()
+                d.setDate(d.getDate() + 1)
+                d.setHours(9, 0, 0, 0)
+                onChangePublishedAt(dateToLocalInputValue(d))
+              }}
+              disabled={disabled}
+            />
+            定时发布
+          </label>
+        </div>
+        {isScheduled ? (
+          <Input
+            id={`${fieldId}-at`}
+            type="datetime-local"
+            value={publishedAt}
+            onChange={(e) => onChangePublishedAt(e.target.value)}
+            disabled={disabled}
+          />
+        ) : null}
+        <p className="text-xs text-muted-foreground">
+          {isScheduled
+            ? isFuture
+              ? '点击「发布」会按上述时间上线，到时间前公网会返回 404。'
+              : '已选择的时间不在未来，点击「发布」会立刻上线。'
+            : '点击「发布」会立刻上线，并使用当前时间作为对外展示的发布日期。'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFuture: boolean }) {
+  switch (status) {
+    case 'never-saved':
+      return (
+        <Badge variant="outline">
+          <CircleDashedIcon /> 尚未保存
+        </Badge>
+      )
+    case 'offline':
+      return (
+        <Badge variant="outline" className="border-destructive/40 text-destructive">
+          <EyeOffIcon /> 已取消发布
+        </Badge>
+      )
+    case 'scheduled':
+      return (
+        <Badge variant="secondary">
+          <CalendarClockIcon /> 已计划发布
+        </Badge>
+      )
+    case 'live':
+      // The picker may show "立即发布" while the server is already
+      // live; the badge stays "已发布". When the operator switches
+      // to a future time the badge alone wouldn't reflect that yet
+      // (it only flips on save). Keep it deterministic so the
+      // header doesn't flicker as the operator toys with the
+      // picker.
+      void isFuture
+      return (
+        <Badge>
+          <CheckCircle2Icon /> 已发布
+        </Badge>
+      )
+    case 'live-with-draft-ahead':
+      return (
+        <Badge variant="secondary">
+          <CheckCircle2Icon /> 已发布（有未发布草稿）
+        </Badge>
+      )
+  }
+}
+
+// Helper used by the schedule-mode radio to drop the operator
+// straight into "tomorrow 09:00" — sharing the same `YYYY-
+// MM-DDTHH:mm` shape the picker reads from `draft.publishedAt`.
+function dateToLocalInputValue(d: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function ToggleRow({ id, label, description, checked, onCheckedChange, disabled }: ToggleRowProps) {

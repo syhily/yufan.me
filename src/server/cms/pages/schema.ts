@@ -103,6 +103,14 @@ export const savePageBodySchema = z.object({
   body: portableTextBodySchema,
   expectedClientRevisionToken: z.uuid().nullable().optional(),
   force: z.coerce.boolean().optional(),
+  // Optional publish target. Only `publishLatest` honours this; the
+  // draft path ignores it (the metadata save endpoint owns
+  // `publishedAt` for non-publish edits). When omitted, publish
+  // sets `publishedAt = now()` so the page goes live immediately.
+  // When the supplied timestamp is in the future, the page is
+  // promoted but the catalog filter (`publishedAt <= now()`) keeps
+  // it hidden until the time arrives — that's the "定时发布" path.
+  publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 
 // `previewPage` is a read-only render path, but it still needs the

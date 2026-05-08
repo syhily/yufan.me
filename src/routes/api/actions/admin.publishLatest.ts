@@ -28,6 +28,10 @@ export const action = defineApiAction({
       expectedClientRevisionToken: payload.expectedClientRevisionToken ?? undefined,
       force: payload.force,
       authorId,
+      // Future publishedAt = scheduled publish; absent / past = "now".
+      // The schema validates ISO-8601, the repo defaults to `now()`
+      // when omitted.
+      publishedAt: payload.publishedAt !== undefined ? new Date(payload.publishedAt) : undefined,
     })
     if (result.status === 'saved') {
       ContentCatalog.reset()

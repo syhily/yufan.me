@@ -82,7 +82,12 @@ export async function findPageMetaBySlug(slug: string): Promise<PageMetaRow | nu
 /**
  * Slug-keyed lookup that **excludes** soft-deleted rows. Used by the
  * public catalog where deleted pages should 404 even if they share a
- * slug with a future restoration target.
+ * slug with a future restoration target. Scheduled pages (rows with
+ * `published_at > now()`) are NOT filtered here because the catalog
+ * caller is the only place where the visibility check belongs;
+ * keeping the row reachable from the admin path through this same
+ * helper would force a parallel "include scheduled" boolean. The
+ * catalog applies the timestamp gate in the service layer instead.
  */
 export async function findPublicPageMetaBySlug(slug: string): Promise<PageMetaRow | null> {
   const rows = await db
@@ -321,7 +326,16 @@ export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraf
   })
 }
 
-export interface PublishLatestInput extends SaveDraftInput {}
+export interface PublishLatestInput extends SaveDraftInput {
+  /**
+   * Publish target stamped on `doc.published_at`. Defaults to the
+   * write timestamp (`now()`) so publishes are immediate. A future
+   * value parks the page as "scheduled" — `published = true` but
+   * the public catalog filters on `published_at <= now()` so it
+   * stays hidden until the time arrives.
+   */
+  publishedAt?: Date
+}
 
 export type PublishLatestResult =
   | { status: 'published'; row: ContentRow }
@@ -413,9 +427,21 @@ export async function publishLatestRevision(input: PublishLatestInput): Promise<
     // across subsequent re-publishes. Operators take it back offline
     // through `unpublishPage` (which flips `published` to false
     // without touching the content row).
+    //
+    // `publishedAt` is the public-facing "first published" timestamp.
+    // We rewrite it on every publish so a republish refreshes the
+    // visible date (operators don't have a separate edit-then-stamp
+    // affordance) and so a future timestamp can park the page as
+    // "scheduled" — `published = true` but hidden from the catalog
+    // until the timestamp arrives.
     await tx
       .update(pageMetaTable)
-      .set({ publishedRevisionId: savedRow.id, published: true, updatedAt: now })
+      .set({
+        publishedRevisionId: savedRow.id,
+        published: true,
+        publishedAt: input.publishedAt ?? now,
+        updatedAt: now,
+      })
       .where(eq(pageMetaTable.id, input.ownerId))
 
     return { status: 'published' as const, row: savedRow }

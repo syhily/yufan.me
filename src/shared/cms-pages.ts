@@ -161,6 +161,14 @@ export interface SavePageBodyInput {
   expectedClientRevisionToken?: string | null
   /** Override the conflict guard. Used by the conflict-resolution UI. */
   force?: boolean
+  /**
+   * Optional ISO-8601 publish target. Honoured only by
+   * `publishLatest`. Omit (or send a past timestamp) to publish
+   * immediately; send a future timestamp to schedule the page —
+   * the public catalog hides scheduled pages until their
+   * `publishedAt` arrives.
+   */
+  publishedAt?: string
 }
 
 export type SavePageBodyOutput =

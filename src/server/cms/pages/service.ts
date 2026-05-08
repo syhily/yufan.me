@@ -61,30 +61,55 @@ const auditLog = getLogger('audit.cms.pages')
 
 // --- Public catalog --------------------------------------------------------
 
-/** All non-deleted pages, joined with their published revision. */
+// Visibility gate shared by the listing and single-page lookups.
+// A page is considered live publicly iff:
+//   1. It hasn't been soft-deleted (the repo lookups already filter
+//      this, but we re-check for defence in depth).
+//   2. `published === true` (operator hasn't taken it offline).
+//   3. `publishedAt <= now()` (i.e. not scheduled for the future).
+// Future-dated rows mirror the Fumadocs convention for posts: the
+// row is fully promoted, but stays hidden from listings, feeds and
+// the detail route until the time arrives.
+function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
+  if (meta.deletedAt !== null) {
+    return false
+  }
+  if (!meta.published) {
+    return false
+  }
+  if (meta.publishedAt.getTime() > asOf.getTime()) {
+    return false
+  }
+  return true
+}
+
+/** All non-deleted, non-scheduled, published pages joined with their content. */
 export async function loadCatalogPages(): Promise<CmsPage[]> {
   const metas = await listPublicPageMetas()
-  if (metas.length === 0) {
+  const asOf = new Date()
+  const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
+  if (visible.length === 0) {
     return []
   }
   const revisions = await Promise.all(
-    metas.map((meta) =>
+    visible.map((meta) =>
       meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
     ),
   )
-  return metas.map((meta, idx) => toCmsPage(meta, revisions[idx]))
+  return visible.map((meta, idx) => toCmsPage(meta, revisions[idx]))
 }
 
 /**
  * Single-page lookup for the public detail route. Returns `null` when
- * the slug is unknown, soft-deleted, or has never been published.
- * Soft-deleted pages 404; pages with `published=false` on the meta
- * row also 404 — matching the historical Fumadocs `published`
- * frontmatter behaviour.
+ * the slug is unknown, soft-deleted, taken offline, or scheduled for
+ * the future. Soft-deleted pages 404; pages with `published=false`
+ * on the meta row also 404 — matching the historical Fumadocs
+ * `published` frontmatter behaviour. Scheduled (future-dated) pages
+ * 404 too so the catalog stays consistent with `loadCatalogPages()`.
  */
 export async function loadCatalogPageBySlug(slug: string): Promise<CmsPage | null> {
   const meta = await findPublicPageMetaBySlug(slug)
-  if (meta === null || !meta.published) {
+  if (meta === null || !isCatalogVisible(meta)) {
     return null
   }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
@@ -269,6 +294,13 @@ export interface SavePageBodyInput {
   force?: boolean
   /** Author user id stamped on the saved revision. */
   authorId: bigint | null
+  /**
+   * Publish target (only honoured by `publishLatest`). Omit for
+   * "publish immediately" (server uses `now()`); pass a future
+   * `Date` to schedule. The catalog hides scheduled pages until
+   * `publishedAt <= now()`.
+   */
+  publishedAt?: Date
 }
 
 export type SavePageResult =
@@ -315,7 +347,13 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
     force: input.force,
   }
 
-  const result = mode === 'draft' ? await saveDraftRevision(repoInput) : await publishLatestRevision(repoInput)
+  const result =
+    mode === 'draft'
+      ? await saveDraftRevision(repoInput)
+      : // Publish path: pass through the optional `publishedAt`. The
+        // repo defaults to `now()` when undefined, so omitting it from
+        // the wire = "publish immediately".
+        await publishLatestRevision({ ...repoInput, publishedAt: input.publishedAt })
   // Repository status is `'saved'` for drafts and `'published'` for
   // publishes — both indicate a successful write that the audit
   // trail should observe.
