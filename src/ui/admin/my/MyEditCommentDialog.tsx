@@ -1,0 +1,120 @@
+import { SaveIcon, XIcon } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useFetcher } from 'react-router'
+
+import type { ApiEnvelope } from '@/shared/api-envelope'
+import type { CommentBody } from '@/shared/pt/comment-schema'
+
+import { useFetcherResult } from '@/client/api/fetcher'
+import { toast } from '@/client/api/use-admin-mutation'
+import { API_ACTIONS } from '@/shared/api-actions'
+import { Button } from '@/ui/components/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/components/dialog'
+import { Label } from '@/ui/components/label'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
+
+const UPDATE_OWN = API_ACTIONS.comment.updateOwn
+
+// Self-edit dialog for `/wp-admin/my/comments`. Differs from the
+// admin `EditCommentDialog`:
+// - posts to `comment.updateOwn` (visitor-allowed) instead of `comment.edit` (admin)
+// - takes the body straight from the loader-provided `MyCommentItem.body`
+//   so there's no extra getRaw round-trip
+// - server enforces the 30-min auto-approve vs re-pend rule; the UI
+//   surfaces both outcomes through the same success path
+export interface MyEditCommentDialogProps {
+  target: { id: string; body: CommentBody } | null
+  onClose: () => void
+  onSaved: () => void
+}
+
+export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
+  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [bodyKey, setBodyKey] = useState(0)
+
+  useEffect(() => {
+    if (!target) {
+      setInitialBody(EMPTY_COMMENT_BODY)
+      setBody(EMPTY_COMMENT_BODY)
+      return
+    }
+    setInitialBody(target.body)
+    setBody(target.body)
+    setBodyKey((k) => k + 1)
+    // Reset on identity change, not on every render — `target` is
+    // freshly constructed by the parent on each row click.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target?.id])
+
+  useFetcherResult(fetcher, {
+    action: UPDATE_OWN,
+    onSuccess: () => onSaved(),
+  })
+
+  const open = target !== null
+  const submitting = fetcher.state !== 'idle'
+  const dialogKey = target?.id ?? 'empty'
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>修改评论</DialogTitle>
+          <DialogDescription>
+            评论发表 30 分钟内修改将直接生效；超过 30 分钟的修改将自动进入待审核状态。
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!target) {
+              return
+            }
+            if (isCommentBodyBlank(body)) {
+              toast.error('评论内容不能为空')
+              return
+            }
+            // `updateOwn` reads `commentId` from the query string while
+            // the JSON body carries the PortableText payload directly.
+            // `as never` mirrors the same cast used in
+            // `@/client/api/fetcher` when the wire schema is not a
+            // plain object.
+            void fetcher.submit(body as never, {
+              method: UPDATE_OWN.method,
+              encType: 'application/json',
+              action: `${UPDATE_OWN.path}?commentId=${encodeURIComponent(target.id)}`,
+            })
+          }}
+          className="flex flex-col gap-4"
+        >
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="my-edit-comment-content">评论内容</Label>
+            <CommentBodyEditor
+              initialBody={initialBody}
+              bodyKey={`my-edit-${dialogKey}-${bodyKey}`}
+              onBodyChange={setBody}
+              disabled={submitting}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>
+              <XIcon data-icon /> 取消
+            </Button>
+            <Button type="submit" disabled={submitting} onMouseDown={(event) => event.preventDefault()}>
+              <SaveIcon data-icon /> {submitting ? '保存中…' : '保存'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
