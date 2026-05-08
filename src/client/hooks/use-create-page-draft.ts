@@ -23,6 +23,10 @@ const STORAGE_VERSION = 1
 const STORAGE_KEY_PREFIX = 'cms-page-draft:new:'
 const SESSION_KEY = 'cms-page-draft:new:session'
 
+// Mirror of `PageMetaDraft` from the editor. We keep a structural
+// copy here because the boundary contract forbids `client/` from
+// reaching into `@/ui/`. Adding a field requires updating both
+// shapes — a one-time tax that's worth keeping the layering pure.
 export interface CreateDraftMeta {
   slug: string
   title: string
@@ -32,6 +36,7 @@ export interface CreateDraftMeta {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  publishedAt: string
 }
 
 interface StoredCreateDraft {

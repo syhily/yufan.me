@@ -17,6 +17,13 @@ export interface PageMetaDraft {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  /**
+   * `<input type="datetime-local">` value (no timezone). Kept as a
+   * raw string so the sidebar doesn't have to round-trip through the
+   * Date constructor on every keystroke. Empty string ⇒ "leave the
+   * current `publishedAt` alone on save".
+   */
+  publishedAt: string
 }
 
 export const EMPTY_META_DRAFT: PageMetaDraft = {
@@ -28,6 +35,7 @@ export const EMPTY_META_DRAFT: PageMetaDraft = {
   published: true,
   commentsEnabled: true,
   showToc: false,
+  publishedAt: '',
 }
 
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
@@ -40,7 +48,41 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     published: page.published,
     commentsEnabled: page.commentsEnabled,
     showToc: page.showToc,
+    // Trim seconds + timezone for `<input type="datetime-local">`.
+    // The DTO carries an ISO-8601 string; the input wants "YYYY-MM-DDTHH:mm".
+    publishedAt: isoToLocalInputValue(page.publishedAt),
   }
+}
+
+/**
+ * Convert an ISO-8601 wire DTO timestamp into the `YYYY-MM-DDTHH:mm`
+ * shape that `<input type="datetime-local">` expects. Returns `''`
+ * for invalid inputs so the picker just renders blank.
+ */
+function isoToLocalInputValue(iso: string): string {
+  const ms = Date.parse(iso)
+  if (Number.isNaN(ms)) {
+    return ''
+  }
+  const d = new Date(ms)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/**
+ * Inverse of `isoToLocalInputValue`. Returns `null` for empty input
+ * so the caller can omit `publishedAt` from the save payload (server
+ * preserves the existing value in that case).
+ */
+export function localInputValueToIso(value: string): string | null {
+  if (value.trim() === '') {
+    return null
+  }
+  const ms = Date.parse(value)
+  if (Number.isNaN(ms)) {
+    return null
+  }
+  return new Date(ms).toISOString()
 }
 
 export interface MetaSidebarProps {
@@ -149,6 +191,19 @@ export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarPr
             onCheckedChange={(value) => set('published', value)}
             disabled={disabled}
           />
+          <div className="grid gap-2">
+            <Label htmlFor="page-published-at">发布时间</Label>
+            <Input
+              id="page-published-at"
+              type="datetime-local"
+              value={draft.publishedAt}
+              onChange={(e) => set('publishedAt', e.target.value)}
+              disabled={disabled}
+            />
+            <p className="text-xs text-muted-foreground">
+              留空保持现有时间。修改后会更新页面对外展示的发布日期，并影响排序。
+            </p>
+          </div>
           <ToggleRow
             id="page-comments"
             label="开启评论"

@@ -20,7 +20,13 @@ import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { DraftConflictDialog } from '@/ui/admin/pages/DraftConflictDialog'
-import { MetaSidebar, type PageMetaDraft, EMPTY_META_DRAFT, metaDraftFromPage } from '@/ui/admin/pages/MetaSidebar'
+import {
+  EMPTY_META_DRAFT,
+  localInputValueToIso,
+  metaDraftFromPage,
+  MetaSidebar,
+  type PageMetaDraft,
+} from '@/ui/admin/pages/MetaSidebar'
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import { Badge } from '@/ui/components/ui/badge'
@@ -245,6 +251,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       return
     }
     setStatus({ kind: 'saving' })
+    const publishedAt = localInputValueToIso(meta.publishedAt)
     upsertMetaApi.submit({
       id: detail.page.id,
       slug: meta.slug.trim(),
@@ -255,6 +262,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: meta.published,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      ...(publishedAt !== null ? { publishedAt } : {}),
     })
   }, [upsertMetaApi, isEditing, detail, meta])
 
@@ -270,6 +278,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     setIsCreatingPage(true)
     setStatus({ kind: 'saving' })
 
+    const publishedAt = localInputValueToIso(meta.publishedAt)
     const metaEnvelope = await submitApiAction<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
       slug: meta.slug.trim(),
       title: meta.title.trim(),
@@ -279,6 +288,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: meta.published,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      ...(publishedAt !== null ? { publishedAt } : {}),
     })
     if (!('data' in metaEnvelope) || metaEnvelope.data === undefined) {
       const errorMessage = 'error' in metaEnvelope && metaEnvelope.error ? metaEnvelope.error.message : '保存失败'
