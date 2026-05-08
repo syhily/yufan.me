@@ -99,53 +99,6 @@
   --sidebar-ring: var(--brand);
 }
 
-/* Shadcn semantic tokens dark admin shell only */
-[data-admin-shell].dark,
-.dark [data-admin-shell] {
-  --background: var(--ink-strong);
-  --foreground: var(--ink-light);
-  --card: var(--brand-darker);
-  --card-foreground: var(--ink-light);
-  --popover: var(--brand-darker);
-  --popover-foreground: var(--ink-light);
-
-  --primary: var(--brand);
-  --primary-foreground: #ffffff;
-
-  --secondary: var(--surface-secondary);
-  --secondary-foreground: var(--ink-light);
-
-  --muted: var(--surface-secondary);
-  --muted-foreground: var(--ink-muted);
-
-  --accent: var(--surface-secondary);
-  --accent-foreground: var(--ink-light);
-
-  --destructive: var(--alert);
-  --destructive-foreground: #ffffff;
-
-  --border-soft: rgba(239, 243, 250, 0.1);
-  --border-strong: rgba(210, 227, 228, 0.18);
-  --border: var(--border-soft);
-  --input: var(--border-strong);
-  --ring: var(--brand);
-
-  --chart-1: var(--brand);
-  --chart-2: var(--brand-success);
-  --chart-3: var(--warn);
-  --chart-4: var(--alert);
-  --chart-5: var(--ink-muted);
-
-  --sidebar: var(--brand-darker);
-  --sidebar-foreground: var(--ink-light);
-  --sidebar-primary: var(--brand);
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--surface-secondary);
-  --sidebar-accent-foreground: var(--ink-light);
-  --sidebar-border: rgba(212, 221, 236, 0.1);
-  --sidebar-ring: var(--brand);
-}
-
 /* Tailwind theme bridge shadcn */
 @theme inline {
   --color-background: var(--background);
@@ -301,6 +254,14 @@
   svg {
     display: inline-block;
     vertical-align: middle;
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
   }
 }
 

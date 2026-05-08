@@ -1,4 +1,16 @@
-import type { category, comment, friend, image, like, page, setting, tag, user, verification } from '@/server/db/schema'
+import type {
+  category,
+  comment,
+  friend,
+  image,
+  like,
+  music,
+  page,
+  setting,
+  tag,
+  user,
+  verification,
+} from '@/server/db/schema'
 
 // Types for insert
 export type NewPage = typeof page.$inferInsert
@@ -11,6 +23,7 @@ export type NewFriend = typeof friend.$inferInsert
 export type NewCategory = typeof category.$inferInsert
 export type NewTag = typeof tag.$inferInsert
 export type NewImage = typeof image.$inferInsert
+export type NewMusic = typeof music.$inferInsert
 
 // Types for select
 export type Page = typeof page.$inferSelect
@@ -31,3 +44,6 @@ export type TagRow = typeof tag.$inferSelect
 // exported from `@/shared/images` carries the projection used in the
 // admin UI.
 export type ImageRow = typeof image.$inferSelect
+// `MusicRow` ditto: the public `AdminMusicDto` from `@/shared/music`
+// is the projection consumed by UI; the row stays server-side only.
+export type MusicRow = typeof music.$inferSelect

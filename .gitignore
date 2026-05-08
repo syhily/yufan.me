@@ -25,6 +25,9 @@ bun-debug.log*
 # test output
 coverage/
 
+# scratch / probe scripts (e.g. tmp/meting-probe.mjs)
+tmp/
+
 # environment variables
 .env
 .env.*

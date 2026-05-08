@@ -17,10 +17,30 @@ import { ActionFailure } from '@/server/route-helpers/api-handler'
 
 const THUMBHASH_MAX_DIMENSION = 100
 
+export interface ProcessImageResize {
+  width: number
+  height: number
+  /**
+   * Sharp resize fit. Defaults to `'cover'` so callers asking for a
+   * fixed aspect ratio (album covers, posters, …) get a centre-cropped
+   * result rather than letterboxed bands. Pass `'inside'` for a
+   * dimension cap that preserves the original ratio.
+   */
+  fit?: 'cover' | 'contain' | 'inside' | 'outside' | 'fill'
+}
+
 export interface ProcessImageInput {
   buffer: Buffer
   /** Quality forwarded to sharp's mozjpeg encoder. 40-100. */
   jpegQuality: number
+  /**
+   * Optional resize step applied BEFORE the JPEG re-encode. Used by
+   * the music import pipeline to coerce a third-party album cover to
+   * 300×300 before storing it in S3. The image library's regular
+   * upload path leaves this `undefined` so the operator's own crop
+   * dimensions survive the round-trip.
+   */
+  resize?: ProcessImageResize
 }
 
 export interface ProcessedImage {
@@ -44,10 +64,16 @@ export async function processImageBuffer(input: ProcessImageInput): Promise<Proc
 
   let normalisedBuffer: Buffer
   try {
-    normalisedBuffer = await pipeline
-      .clone()
-      .jpeg({ quality: input.jpegQuality, mozjpeg: true, progressive: true })
-      .toBuffer()
+    let staged = pipeline.clone()
+    if (input.resize !== undefined) {
+      staged = staged.resize({
+        width: input.resize.width,
+        height: input.resize.height,
+        fit: input.resize.fit ?? 'cover',
+        withoutEnlargement: false,
+      })
+    }
+    normalisedBuffer = await staged.jpeg({ quality: input.jpegQuality, mozjpeg: true, progressive: true }).toBuffer()
   } catch (error) {
     throw new ActionFailure(400, '图片重新编码失败', [
       { message: error instanceof Error ? error.message : String(error) },

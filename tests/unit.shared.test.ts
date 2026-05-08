@@ -125,11 +125,12 @@ describe('shared/api-actions', () => {
     }
   })
 
-  it('auth/comment/image/admin grouping is exhaustively listed in API_ACTION_LIST', () => {
+  it('auth/comment/image/music/admin grouping is exhaustively listed in API_ACTION_LIST', () => {
     const flat = [
       ...Object.values(API_ACTIONS.auth),
       ...Object.values(API_ACTIONS.comment),
       ...Object.values(API_ACTIONS.image),
+      ...Object.values(API_ACTIONS.music),
       ...Object.values(API_ACTIONS.admin),
     ]
     expect(new Set(flat).size).toBe(flat.length)

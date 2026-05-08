@@ -112,10 +112,8 @@ The server runs `react-router-serve ./build/server/index.js` and listens on
 
 ## TODO
 
-- [ ] Drop bootstrap and use tailwind
 - [ ] Music file management
 - [ ] Move static MDX files to PortableText and Postgres
-- [ ] Use tailwind typography
 - [ ] Add font size switch in post and page
 - [ ] Add new traditional chinese layouts
   - [ ] Use opencc for chinese characters converting

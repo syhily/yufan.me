@@ -6,11 +6,12 @@ import {
   LogOutIcon,
   MenuIcon,
   MessageSquareIcon,
+  Music2Icon,
   SettingsIcon,
   TagsIcon,
   UsersIcon,
 } from 'lucide-react'
-import { type ComponentType, type ReactNode, useEffect, useState } from 'react'
+import { type ComponentType, type ReactNode, useState } from 'react'
 import { Form, NavLink, useLocation } from 'react-router'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
@@ -38,6 +39,7 @@ const NAV: NavItem[] = [
   { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon },
   { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon },
   { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon },
+  { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon },
   { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon },
   { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users' },
   {
@@ -125,21 +127,8 @@ function UserMenu({ id, name, email }: { id: string; name: string; email: string
 export function AdminShell({ currentUser, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Base UI portals popups (DropdownMenu, Dialog, Tooltip, …) to
-  // `document.body`, which sits outside the `[data-admin-shell]` subtree
-  // below. Without the attribute, the shadcn theme variables stay
-  // undefined and popovers render with transparent backgrounds. Mirror
-  // the marker on `<body>` while the admin shell is mounted; remove it
-  // on unmount so the public site keeps its untouched palette.
-  useEffect(() => {
-    document.body.dataset.adminShell = ''
-    return () => {
-      delete document.body.dataset.adminShell
-    }
-  }, [])
-
   return (
-    <div data-admin-shell className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-card px-4 lg:px-6">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger

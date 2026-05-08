@@ -166,11 +166,16 @@ src/
     QRDialog, ScrollTopButton.
   - `ui/components/ui/` — shadcn/ui primitives (Base UI variant). The
     directory layout matches `components.json` so `npx shadcn@latest
-add/diff/--dry-run` works out of the box. Both the public and
-    admin subtrees are free to import from here; visual scoping
-    happens at the stylesheet boundary (only `PublicChrome` imports
-    `globals.css`, only the admin shell carries `data-admin-shell`),
-    not at the component-source boundary.
+add/diff/--dry-run` works out of the box. Public and admin trees both
+    consume these primitives directly. The public site and the admin
+    shell now share a single token cascade: `tailwind.css` defines
+    every `--background` / `--foreground` / `--card` / `--border` /
+    `--ring` / `--sidebar-*` slot once at `:root`, so a shadcn
+    primitive renders identically on either surface without any
+    `[data-admin-shell]` scoping. Do not reintroduce the
+    `data-admin-shell` data-attribute or any selector that branches on
+    it — branding differences belong in component props, not in
+    parallel CSS variable trees.
   - `ui/post/`, `ui/pagination/`, `ui/toc/`, `ui/sidebar/`,
     `ui/search/`, `ui/like/`, `ui/comments/`, `ui/admin/` — Domain UIs.
   - `ui/mdx/` — MDX-only React renderers (CodeBlock, MdxImg,
@@ -391,6 +396,23 @@ are:
   single DB lookup; new uploads come exclusively from the admin
   library at `/wp-admin/images`.
 
+- Music tracks for the `<MusicPlayer>` MDX component are owned by the
+  Postgres `music` table and managed at `/wp-admin/musics`. Audio
+  (`musics/<playerId>.mp3`) and 300×300 JPEG covers
+  (`musics/<playerId>.jpg`) live in the same S3 bucket as images and
+  share the `assets.storage.enabled` toggle — when the toggle is OFF
+  the admin library is read-only and `addMusic` returns 503. The
+  legacy `cat.yufan.me/musics/<id>.json` origin lookup is gone; MDX
+  references the row through a 16-character lowercase nanoid
+  (`<MusicPlayer id="..." />`) and the browser fetches metadata from
+  `/api/actions/music/get?id=<playerId>`. The service layer is
+  `@meting/core` netease-only — `(source, sourceId)` is a unique key
+  and the schema reserves `source` as a varchar so additional providers
+  can be added later without a migration. Lyrics live in
+  `music.lyric` so the player never makes a second round trip. The
+  one-time historical migration is `vp run import-music --apply` (see
+  `scripts/import-music.ts`); it scans MDX, imports through
+  `addMusic`, and only rewrites MDX after every row commits.
 - URLs are based on MDX frontmatter `slug`, not physical filenames.
   Posts render at `/posts/:slug`; pages render at `/:slug`.
 - `visible=false` posts are hidden from the public home listing and

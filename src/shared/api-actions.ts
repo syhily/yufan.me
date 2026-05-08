@@ -55,6 +55,9 @@ export const API_ACTIONS = {
   image: {
     resolveThumbhash: defineApiAction('api/actions/image/resolveThumbhash', 'GET'),
   },
+  music: {
+    get: defineApiAction('api/actions/music/get', 'GET'),
+  },
   admin: {
     listUsers: defineApiAction('api/actions/admin/listUsers', 'GET'),
     getUser: defineApiAction('api/actions/admin/getUser', 'POST'),
@@ -83,6 +86,10 @@ export const API_ACTIONS = {
     deleteImage: defineApiAction('api/actions/admin/deleteImage', 'DELETE'),
     updateImageNote: defineApiAction('api/actions/admin/updateImageNote', 'PATCH'),
     recalculateImageThumbhash: defineApiAction('api/actions/admin/recalculateImageThumbhash', 'POST'),
+    listMusic: defineApiAction('api/actions/admin/listMusic', 'GET'),
+    searchMusic: defineApiAction('api/actions/admin/searchMusic', 'GET'),
+    addMusic: defineApiAction('api/actions/admin/addMusic', 'POST'),
+    deleteMusic: defineApiAction('api/actions/admin/deleteMusic', 'DELETE'),
   },
 } as const
 
@@ -90,5 +97,6 @@ export const API_ACTION_LIST = [
   ...Object.values(API_ACTIONS.auth),
   ...Object.values(API_ACTIONS.comment),
   ...Object.values(API_ACTIONS.image),
+  ...Object.values(API_ACTIONS.music),
   ...Object.values(API_ACTIONS.admin),
 ] as const

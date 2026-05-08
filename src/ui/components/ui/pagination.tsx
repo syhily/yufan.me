@@ -73,11 +73,8 @@ function PaginationItem({ ...props }: ComponentProps<'li'>) {
 // `<span>` chips with the SAME utility chain admin uses on its
 // `<button>` chips. Both surfaces resolve `bg-foreground`,
 // `bg-primary`, `text-primary-foreground`, `ring-ring/60`,
-// `ring-offset-background` against the public `:root` aliases that
-// `admin-theme.css` defines (un-scoped, see "Surfaces" / "Brand" /
-// "Borders / inputs / focus ring" comment blocks there) — so the chip
-// renders identically regardless of whether the document carries
-// `[data-admin-shell]`.
+// `ring-offset-background` against the same `:root` aliases declared in
+// `tailwind.css`, so the chip renders identically on both surfaces.
 //
 // Caveat: the `disabled:*` modifiers are inert on `<Link>` / `<span>`
 // (only `<button>` / form controls match `:disabled`), but harmless. We
