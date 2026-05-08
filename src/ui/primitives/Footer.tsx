@@ -15,7 +15,7 @@ export function Footer() {
         <span>
           Copyright © {initialYear}-{thisYear}{' '}
         </span>
-        <a href={website} title={title} rel="home" className="text-(--color-dark) hover:text-(--color-primary)">
+        <a href={website} title={title} rel="home" className="text-ink-strong hover:text-brand">
           {title}
         </a>
       </div>
@@ -27,7 +27,7 @@ export function Footer() {
               rel="nofollow noreferrer"
               target="_blank"
               title="ICP 备案"
-              className="text-(--color-dark) hover:text-(--color-primary)"
+              className="text-ink-strong hover:text-brand"
             >
               {icpNo}
             </a>
@@ -38,7 +38,7 @@ export function Footer() {
               rel="nofollow noreferrer"
               target="_blank"
               title="萌国 ICP 备案"
-              className="text-(--color-dark) hover:text-(--color-primary)"
+              className="text-ink-strong hover:text-brand"
             >
               {moeIcpNo}
             </a>

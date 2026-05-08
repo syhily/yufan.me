@@ -11,8 +11,8 @@ import { joinUrl } from '@/shared/urls'
 import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { btnBase, btnLight, btnPrimary } from '@/ui/primitives/btn'
-import { formControlTextareaClass } from '@/ui/primitives/formControl'
+import { publicButtonVariants } from '@/ui/primitives/btn'
+import { formControlVariants } from '@/ui/primitives/formControl'
 
 export interface CommentItemProps {
   depth: number
@@ -83,16 +83,14 @@ export function CommentItem(props: CommentItemProps) {
 }
 
 // Nested-replies wrapper. The legacy `.children` rule lived in
-// `comments.css` and reset.css zeros out `<ul>` margin/padding (lesson
-// 2), so every spacing utility on this element has to ride
-// `important`. The default-vs-mobile margin/padding pair is preserved
-// in two `max-md:` overrides instead of the legacy media query.
-const childrenListClass = cn(
-  'children',
-  'mt-5! ml-14! p-6!',
-  'rounded-sm bg-surface text-sm',
-  'max-md:mt-4! max-md:ml-9.5! max-md:p-4!',
-)
+// `comments.css`. Preflight ('@layer base') zeros out `<ul>`
+// margin/padding/list-style; Tailwind utilities live in `@layer
+// utilities`, which beats `@layer base` per the W3C cascade-layers
+// spec — so the spacing utilities below do NOT need `!important` to
+// win against the Preflight reset (Stage 11 P2). The default-vs-
+// mobile margin/padding pair is preserved in two `max-md:` overrides
+// instead of the legacy media query.
+const childrenListClass = cn('mt-5 ml-14 p-6', 'rounded-sm bg-surface text-sm', 'max-md:mt-4 max-md:ml-9.5 max-md:p-4')
 
 function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemProps) {
   const leaf = useCommentsLeafContext(propAdmin)
@@ -106,7 +104,7 @@ function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemP
           {children.map((child) => (
             <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
           ))}
-          {childrenTail && <li className="comment-reply-form-item">{childrenTail}</li>}
+          {childrenTail && <li>{childrenTail}</li>}
         </ul>
       )}
     </CommentLi>
@@ -121,7 +119,7 @@ function NestedComment({ comment, depth, pending, admin: propAdmin }: CommentIte
   return (
     <>
       <CommentLi comment={comment} depth={depth} pending={pending} admin={propAdmin} />
-      {afterComment && <li className="comment-reply-form-item">{afterComment}</li>}
+      {afterComment && <li>{afterComment}</li>}
       {children.map((child) => (
         <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
       ))}
@@ -133,62 +131,61 @@ interface CommentLiProps extends CommentItemProps {
   children?: React.ReactNode
 }
 
-// `<li>` is hit by reset.css (un-layered: `margin: 0; padding: 0;
-// border: 0`), so every spacing utility on a comment row must ride
-// `important` per lesson 2. depth === 1 keeps the full root chrome
-// (1.5rem mb/pb + bottom border collapse on last child); depth > 1
-// runs inside the `.children` `<ul>` and the legacy `.children .comment`
-// override drops to `1rem` margin and removes the divider.
+// `<li>` is hit by Preflight (`@layer base`), but Tailwind utilities
+// land in `@layer utilities` and beat `@layer base` regardless of
+// selector specificity — Stage 11 P2 dropped the historical `!`
+// modifiers that fought a hypothetical un-layered reset.
+//
+// depth === 1 keeps the full root chrome (1.5rem mb/pb + bottom
+// border collapse on last child); depth > 1 runs inside the nested
+// `<ul>` and the legacy override drops to `1rem` margin and removes
+// the divider.
 function rootCommentLiClass(): string {
   return cn(
-    'comment',
     'relative',
-    'mb-6! pb-6! max-md:mb-4! max-md:pb-4!',
+    'mb-6 pb-6 max-md:mb-4 max-md:pb-4',
     'border-b border-line',
-    'last:mb-0! last:border-b-0! last:pb-0!',
+    'last:mb-0 last:border-b-0 last:pb-0',
   )
 }
 
 function nestedCommentLiClass(): string {
-  return cn('comment', 'relative', 'mb-4! pb-0!', 'border-b-0!', 'last:mb-0!')
+  return cn('relative', 'mb-4 pb-0', 'border-b-0', 'last:mb-0')
 }
 
 // `<article>` is not in reset.css, so the `display: flex`/min-width:0
 // chain travels without `important`.
-const commentBodyClass = cn('comment-body', 'relative box-border flex max-w-full min-w-0 flex-1')
+const commentBodyClass = cn('relative box-border flex max-w-full min-w-0 flex-1')
 
-const commentAuthorClass = cn('comment-author', 'inline-flex max-w-full flex-wrap items-center gap-1.5', 'font-bold')
+const commentAuthorClass = cn('inline-flex max-w-full flex-wrap items-center gap-1.5', 'font-bold')
 
 // Depth-aware avatar size + right margin. Default = 40 px square with
 // 15 px right margin (root rows on >=768 px). Mobile (<768 px) drops to
 // 28×28 + 10 px. Nested rows always render at 30×30 on >=768 px and
-// fall to 28×28 on mobile (legacy `.children .comment-from-avatar`
-// + `.children .comment .comment-avatar` rules).
+// fall to 28×28 on mobile.
 function commentAvatarClass(depth: number): string {
   return cn(
-    'comment-avatar',
     'relative flex shrink-0 items-center justify-center',
     'rounded-full leading-none font-semibold whitespace-nowrap',
     depth === 1 ? 'mr-[15px] size-10 max-md:mr-2.5 max-md:size-7' : 'mr-[15px] size-[30px] max-md:mr-2.5 max-md:size-7',
   )
 }
 
-const commentInnerClass = cn('comment-inner', 'min-w-0 flex-1')
+const commentInnerClass = cn('min-w-0 flex-1')
 
-// Mobile overrides on `.comment .comment-inner` (`margin: 0.125rem 0
-// 0`) and `.children .comment .comment-inner` (`margin: 0.25rem 0 0`)
-// historically shifted the inner column down by 2-4 px to align with
-// the avatar baseline. Inline that on the same node so the cascade is
-// local.
+// Mobile overrides on `.comment-inner` (`margin: 0.125rem 0 0`) and
+// the nested `.comment-inner` (`margin: 0.25rem 0 0`) historically
+// shifted the inner column down by 2-4 px to align with the avatar
+// baseline. Inline that on the same node so the cascade is local.
 function nestedCommentInnerClass(): string {
   return cn(commentInnerClass, 'mt-1 max-md:mt-0.5')
 }
 
-// `.comment .comment-content` had `margin: 0.5rem 0` + `line-height:
-// 1.85` on root rows; nested rows tightened to `0.375rem` (default)
-// and `0.3125rem` (<=767 px). The `comment-content` literal stays on
-// the element so the 8c-3 `.post-content, .comment-content`
-// `@layer components` block still hits these descendants.
+// Root rows had `margin: 0.5rem 0` + `line-height: 1.85`; nested rows
+// tightened to `0.375rem` (default) and `0.3125rem` (<=767 px). The
+// `comment-content` literal stays on the element because the
+// `@utility prose-blog { &.comment-content {…} }` nested compound in
+// `tailwind.css` targets it for code-block typography fine-tuning.
 function commentContentClass(depth: number): string {
   const base = cn('comment-content', 'prose-blog prose prose-sm max-w-none', 'wrap-break-word whitespace-normal')
   return depth === 1 ? cn(base, 'my-2 leading-[1.85]') : cn(base, 'my-1.5 break-all max-md:my-1.25')
@@ -200,7 +197,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
   return (
     <li
       id={`user-comment-${comment.id}`}
-      className={cn(depth === 1 ? rootCommentLiClass() : nestedCommentLiClass(), 'odd alt thread-odd thread-alt')}
+      className={depth === 1 ? rootCommentLiClass() : nestedCommentLiClass()}
       data-depth={depth}
     >
       <article id={`div-comment-${comment.id}`} className={commentBodyClass}>
@@ -215,7 +212,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
           <img
             alt={comment.name}
             src={joinUrl('/images/avatar', `${comment.userId}.png`)}
-            className={cn(`comment-avatar-${comment.userId}`, 'size-full rounded-full object-cover')}
+            className="size-full rounded-full object-cover"
             height={40}
             width={40}
             loading="lazy"
@@ -234,7 +231,6 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
             {comment.badgeName && (
               <span
                 className={cn(
-                  'comment-author-badge',
                   'inline-flex shrink-0 items-center',
                   'px-1.5 py-0.5 leading-badge whitespace-nowrap',
                   'rounded-full text-badge font-bold',
@@ -301,11 +297,11 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
   }
 
   return (
-    <div className={cn('comment-footer', 'flex flex-1 items-center gap-2 text-xs text-ink-muted')}>
+    <div className="flex flex-1 items-center gap-2 text-xs text-ink-muted">
       <time>{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm', siteIdentity)}</time>
       <button
         type="button"
-        className={cn('comment-reply-link', commentFooterButtonClass, 'hover:text-brand')}
+        className={cn(commentFooterButtonClass, 'hover:text-brand')}
         data-rid={comment.id}
         onClick={handleReply}
       >
@@ -315,7 +311,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
         <>
           <button
             type="button"
-            className={cn('comment-edit-link', commentFooterButtonClass, 'hover:text-alert')}
+            className={cn(commentFooterButtonClass, 'hover:text-alert')}
             data-rid={comment.id}
             onClick={onEdit}
           >
@@ -324,7 +320,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
           {comment.isPending && (
             <button
               type="button"
-              className={cn('comment-approve-link', commentFooterButtonClass, 'text-warn')}
+              className={cn(commentFooterButtonClass, 'text-warn')}
               data-rid={comment.id}
               onClick={handleApprove}
               disabled={approve.isPending}
@@ -334,7 +330,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
           )}
           <button
             type="button"
-            className={cn('comment-delete-link', commentFooterButtonClass, 'text-alert')}
+            className={cn(commentFooterButtonClass, 'text-alert')}
             data-rid={comment.id}
             onClick={handleDelete}
             disabled={remove.isPending}
@@ -348,14 +344,13 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
 }
 
 // Shared base for every `<button>` inside the comment footer. The
-// legacy `.comment-footer button` rule used `transition: all 0.3s
-// linear`; keep the 300ms / linear timing exactly so hover/focus
-// states animate at the same pace as before. We narrow `all` to
-// `color, background-color, border-color` (the only properties that
-// can change here) so future `transform`/`opacity` tweaks don't get
-// ridden by a 300ms ramp. `bg-transparent` is preserved because
-// reset.css normalizes `<button>` to a UA default that varies between
-// engines.
+// legacy footer-button rule used `transition: all 0.3s linear`; keep
+// the 300ms / linear timing exactly so hover/focus states animate at
+// the same pace as before. We narrow `all` to `color, background-
+// color, border-color` (the only properties that can change here) so
+// future `transform`/`opacity` tweaks don't get ridden by a 300ms
+// ramp. `bg-transparent` is preserved because reset.css normalizes
+// `<button>` to a UA default that varies between engines.
 const commentFooterButtonClass = cn(
   'bg-transparent',
   'transition-[color,background-color,border-color] duration-300 ease-linear',
@@ -404,9 +399,9 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   }
 
   return (
-    <div className="comment-edit-area mt-2 block w-full">
+    <div className="mt-2 block w-full">
       <textarea
-        className={cn(formControlTextareaClass, 'comment-edit-textarea')}
+        className={formControlVariants({ control: 'textarea' })}
         rows={4}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -415,7 +410,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
       <div className="mt-2 flex justify-end gap-2">
         <button
           type="button"
-          className={cn(btnBase, btnPrimary, 'comment-save-edit')}
+          className={publicButtonVariants({ variant: 'primary' })}
           onClick={handleSave}
           disabled={!loaded || saving}
         >
@@ -423,7 +418,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
         </button>
         <button
           type="button"
-          className={cn(btnBase, btnLight, 'comment-cancel-edit')}
+          className={publicButtonVariants({ variant: 'light' })}
           onClick={onCancel}
           disabled={saving}
         >

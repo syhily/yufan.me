@@ -16,16 +16,8 @@ import { joinUrl } from '@/shared/urls'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import {
-  btnBase,
-  btnCircle,
-  btnIcon,
-  btnIconMd,
-  btnLg,
-  btnLight,
-  btnRoundedLg,
-  btnSecondary,
-} from '@/ui/primitives/btn'
+import { publicButtonVariants } from '@/ui/primitives/btn'
+import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -144,19 +136,33 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   }
 
   return (
-    <div className="post-action mt-12 text-center">
+    <div className="mt-12 text-center">
       <button
-        className={cn(
-          btnBase,
-          btnSecondary,
-          btnLg,
-          btnRoundedLg,
-          '!px-10',
-          'post-like',
-          'hover:animate-shake hover:will-change-transform',
-          'data-[liked=true]:!border-like-active data-[liked=true]:!bg-like-active data-[liked=true]:!text-white data-[liked=true]:!shadow-like-active',
-          isPending && 'lock',
-        )}
+        className={publicButtonVariants({
+          variant: 'secondary',
+          size: 'lg',
+          shape: 'pill',
+          // - `px-10` widens the pill horizontally to match the
+          //   legacy `padding-inline: 2.5rem` from the post-like rule.
+          // - `data-[liked=true]:…` swaps the chrome to the red
+          //   like-active state when the post is liked. The
+          //   `[data-liked=true]` attribute selector adds 1 to
+          //   selector specificity, so the data-state utilities
+          //   win over the unconditional `secondary` colourway by
+          //   specificity at runtime — no `!` is needed (Stage 11
+          //   P2). `tailwind-merge` does NOT dedupe across these
+          //   two classes because one is unmodified (`bg-brand-
+          //   darker`) and the other carries the data-state prefix
+          //   (`data-[liked=true]:bg-like-active`); they ride into
+          //   the rendered class string side-by-side and the runtime
+          //   selector chooses which wins.
+          className: cn(
+            'px-10',
+            'hover:animate-shake hover:will-change-transform',
+            'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
+            isPending && 'lock',
+          ),
+        })}
         title="Do you like me?"
         type="button"
         data-permalink={permalink}
@@ -171,7 +177,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
           strokeWidth={0}
           aria-hidden
         />
-        <span className="like-count inline-block align-middle">{state.likes}</span>
+        <span className="inline-block align-middle">{state.likes}</span>
       </button>
     </div>
   )
@@ -206,31 +212,46 @@ export function LikeShare({ post }: LikeShareProps) {
   }).toString()
 
   return (
-    <div className="post-share mt-6 text-center">
+    <div className="mt-6 text-center">
       <a
         href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
-        className={cn(btnBase, btnLight, btnIcon, btnIconMd, btnCircle, 'mx-1')}
+        className={publicButtonVariants({
+          variant: 'light',
+          size: 'iconMd',
+          shape: 'circle',
+          className: 'mx-1',
+        })}
         title="分享到 QQ 空间"
       >
-        <span className="absolute top-0 flex size-full items-center justify-center">
+        <IconButtonContent>
           <QQIcon className="m-icon-inset" />
-        </span>
+        </IconButtonContent>
       </a>
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
         trigger={<WechatIcon className="m-icon-inset" />}
-        className={cn(btnBase, btnLight, btnIcon, btnIconMd, btnCircle, 'mx-1')}
+        className={publicButtonVariants({
+          variant: 'light',
+          size: 'iconMd',
+          shape: 'circle',
+          className: 'mx-1',
+        })}
       />
       <a
         href={`https://service.weibo.com/share/share.php?${weibo}`}
-        className={cn(btnBase, btnLight, btnIcon, btnIconMd, btnCircle, 'mx-1')}
+        className={publicButtonVariants({
+          variant: 'light',
+          size: 'iconMd',
+          shape: 'circle',
+          className: 'mx-1',
+        })}
         title="分享到微博"
       >
-        <span className="absolute top-0 flex size-full items-center justify-center">
+        <IconButtonContent>
           <WeiboIcon className="m-icon-inset" />
-        </span>
+        </IconButtonContent>
       </a>
     </div>
   )

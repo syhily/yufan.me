@@ -99,16 +99,16 @@ describe('snapshot: Comments form variants', () => {
       />,
     )
 
-    // `comment-reply-textarea` is the marker class that flips on extra
-    // padding-top to make room for the `<ReplyOverlay>`. The shared
-    // `formControlTextareaClass` chain is asserted by the full-
-    // snapshot tests above; here we only care that the marker class
-    // lands on the textarea.
-    expect(html).toMatch(/<textarea[^>]*class="[^"]*comment-reply-textarea\b[^"]*pt-10\b/u)
-    // `replying-to-overlay` is now followed by a long utility chain
-    // (absolute positioning + brand-tinted bg + ellipsis chrome) that
-    // the marker presence rather than pinning the exact ordering.
-    expect(html).toMatch(/<div class="replying-to-overlay\b/u)
+    // The reply textarea flips on extra padding-top (`pt-10`) when a
+    // reply is staged so the absolutely-positioned `<ReplyOverlay>`
+    // doesn't sit on top of the user's caret. Stage 11 P9 dropped
+    // the legacy `comment-reply-textarea` WP-compat marker, so this
+    // assertion keys off the `pt-10` utility instead. The
+    // `<ReplyOverlay>` `<div>` is identified by its `pointer-events-
+    // none absolute top-[0.4rem]` chain (also from stage 11 P9 — the
+    // legacy `replying-to-overlay` marker is gone).
+    expect(html).toMatch(/<textarea[^>]*class="[^"]*\bpt-10\b/u)
+    expect(html).toMatch(/<div class="[^"]*\bpointer-events-none\b[^"]*\babsolute\b[^"]*\btop-\[0\.4rem\]/u)
     expect(html).toContain('回复 @雨帆')
   })
 })

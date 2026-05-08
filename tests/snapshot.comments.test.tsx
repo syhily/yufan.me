@@ -61,14 +61,17 @@ describe('snapshot: comment HTML', () => {
       />,
     )
     // The badge is still a `<span>` (not a `<div>`) carrying the
-    // `comment-author-badge` literal as a marker plus the project's
-    // .comment-author-badge` rule into a longer utility chain
-    // (inline-flex layout + inline padding + rounded-full chip), so
-    // the previous strict prefix assertion would over-pin the class
-    // order. Match each marker independently instead.
-    expect(html).toMatch(/<span class="comment-author-badge\b[^"]*text-badge\b[^"]*font-bold\b/u)
+    // chip utility chain (`text-badge font-bold rounded-full
+    // inline-flex …`). Stage 11 P9 dropped the legacy
+    // `comment-author-badge` WP-compat literal, so the matcher keys
+    // off the surviving badge-typography tokens instead.
+    expect(html).toMatch(/<span class="[^"]*\bleading-badge\b[^"]*\btext-badge\b[^"]*\bfont-bold\b/u)
     expect(html).toContain('color:#151b2b')
-    expect(html).not.toContain('<div class="comment-author-badge')
+    // Defence: the badge label "站长" must sit inside a `<span>`,
+    // not a `<div>` (the `<div>` would break the inline flow next to
+    // the author link).
+    expect(html).not.toMatch(/<div[^>]*\bleading-badge\b/u)
+    expect(html).not.toContain('comment-author-badge')
     expect(html).toMatchSnapshot()
   })
 

@@ -1,8 +1,8 @@
 import { ArrowUpIcon } from 'lucide-react'
 
 import { useShowOnScroll } from '@/client/hooks/use-show-on-scroll'
-import { cn } from '@/ui/lib/cn'
-import { btnBase, btnIcon, btnIconLg, btnLight, btnRoundedLg } from '@/ui/primitives/btn'
+import { publicButtonVariants } from '@/ui/primitives/btn'
+import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 
 // Scroll-to-top button for the public site. Becomes visible only once
 // the reader has moved past the initial viewport. The twin
@@ -11,8 +11,8 @@ import { btnBase, btnIcon, btnIconLg, btnLight, btnRoundedLg } from '@/ui/primit
 // scroll-position observer is shared through `useShowOnScroll` so
 // both widgets stay in lockstep.
 //
-// `btnRoundedLg` is intentionally radius-only — `btnIcon`'s `!p-0`
-// must flow through unchallenged on this icon-button consumer (see
+// `shape: 'pill'` is intentionally radius-only — `size: 'iconLg'` pins
+// the square padding to zero on this icon-button consumer (see
 // inner `<span>` and `<svg>` carry the centring / SVG inset utilities
 // directly because the legacy `.btn-icon span` / `.btn-icon span svg`
 // descendant selectors no longer match the inlined className.
@@ -23,19 +23,18 @@ export function ScrollTopButton() {
   // { display: block }` pair: hidden by default, revealed once the
   // reader scrolls past the initial viewport. `margin: 0` is already
   // the `<li>` default via reset.css, so the inline chain only needs
-  // the display toggle. The `fixed-gotop` and `current` literals stay
-  // as WP-compat markers (no CSS rule of their own).
+  // the display toggle.
   return (
-    <li className={cn('fixed-gotop', show && 'current', show ? 'block' : 'hidden')}>
+    <li className={show ? 'block' : 'hidden'}>
       <button
         type="button"
         aria-label="回到顶部"
-        className={cn(btnBase, btnLight, btnIcon, btnIconLg, btnRoundedLg)}
+        className={publicButtonVariants({ variant: 'light', size: 'iconLg', shape: 'pill' })}
         onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
       >
-        <span className="absolute top-0 flex size-full items-center justify-center">
+        <IconButtonContent>
           <ArrowUpIcon size="1em" aria-hidden className="m-icon-inset" />
-        </span>
+        </IconButtonContent>
       </button>
     </li>
   )

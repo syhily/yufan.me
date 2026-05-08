@@ -14,7 +14,7 @@ function SvgIconRoot({
   return (
     <svg
       viewBox="0 0 1024 1024"
-      className={cn(`icon-${name}`, 'shrink-0 fill-current [vertical-align:-0.125em]!', className)}
+      className={cn(`icon-${name}`, 'shrink-0 fill-current [vertical-align:-0.125em]', className)}
       width={size}
       height={size}
       fill="currentColor"

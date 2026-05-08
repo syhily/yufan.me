@@ -52,16 +52,14 @@ export function PostDetailBody({
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="-mx-3 flex flex-wrap">
           <div className="box-border w-full max-w-full shrink-0 px-3 xl:w-[71%]">
-            {/* Collapsed the historical two-layer DOM
-                (outer `<div class="post flex flex-col …">`
-                holding the card chrome, inner `<div class="flex-1
-                p-4 md:p-8">` holding the body padding) into
-                a single wrapper since the bare `.post` class
-                attaches no CSS rule. The `post` literal stays on
-                the JSX as a WP-compat marker; the inner wrapper's
-                `flex-1` / `p-4 md:p-8` utilities migrated to the
-                same element. */}
-            <div className="post relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
+            {/* Collapsed the historical two-layer DOM (outer
+                `<div class="post flex flex-col …">` holding the card
+                chrome, inner `<div class="flex-1 p-4 md:p-8">`
+                holding the body padding) into a single wrapper since
+                the bare `.post` class attaches no CSS rule. The
+                inner wrapper's `flex-1` / `p-4 md:p-8` utilities
+                migrated to the same element. */}
+            <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
               <h1 className={postTitleClass}>{post.title}</h1>
               <div className={cn(postMetaClass, 'mt-4 mb-6 text-sm text-ink-muted')}>
                 <time className={postMetaDateClass}>{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}</time>
@@ -70,7 +68,7 @@ export function PostDetailBody({
                     {visibleTags.map((tag) => (
                       <Link
                         key={tag.slug}
-                        className="rounded-full bg-(--btn-light) px-3 py-1.5 align-middle text-badge leading-badge font-normal whitespace-nowrap text-(--color-secondary)"
+                        className="rounded-full bg-surface-soft px-3 py-1.5 align-middle text-badge leading-badge font-normal whitespace-nowrap text-ink-secondary"
                         to={`/tags/${tag.slug}`}
                         prefetch="intent"
                       >
@@ -81,6 +79,10 @@ export function PostDetailBody({
                 )}
               </div>
               <TableOfContents headings={headings} toc={post.toc} />
+              {/* `post-content` is the compound suffix targeted by
+                  `@utility prose-blog { &.post-content {…} }` in
+                  `tailwind.css` for code-block / shiki / inline-code
+                  typography fine-tuning on rendered MDX bodies. */}
               <div ref={postContentRef} className={cn('post-content', 'prose-blog prose prose-lg max-w-none')}>
                 {children}
               </div>

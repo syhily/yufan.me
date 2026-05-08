@@ -8,8 +8,8 @@ import type { ReactNode } from 'react'
 
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
-import { cn } from '@/ui/lib/cn'
-import { btnSocial } from '@/ui/primitives/btn'
+import { publicButtonVariants } from '@/ui/primitives/btn'
+import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { Popup } from '@/ui/primitives/Popup'
 
 export interface QRDialogProps {
@@ -23,11 +23,17 @@ export interface QRDialogProps {
 
 // Default trigger styling for the public Header social rail. The
 // `mr-2` (= 8px) is the rail-gap supplied by every social-rail
-// consumer (see `btnSocial` JSDoc in `@/ui/primitives/btn`). Sole
-// consumer of this default today is `Header.tsx`'s social rail;
-// LikeActions overrides `className` entirely (no rail context, no
-// inter-button gap).
-const DEFAULT_CLASS = cn(btnSocial, 'mr-2')
+// consumer (the `dark + iconSm + circle` combo of
+// `publicButtonVariants` in `@/ui/primitives/btn`). Sole consumer
+// of this default today is `Header.tsx`'s social rail; LikeActions
+// overrides `className` entirely (no rail context, no inter-button
+// gap).
+const DEFAULT_CLASS = publicButtonVariants({
+  variant: 'dark',
+  size: 'iconSm',
+  shape: 'circle',
+  className: 'mr-2',
+})
 
 // The QR wrapper is a fixed `--size-qr-dialog` (210px) box, driven by
 // `size-qr-dialog` on the wrapper. After the wrapper's `p-2`
@@ -45,8 +51,13 @@ const QRCodeSVG = lazy<typeof QRCodeSVGComponent>(async () => {
   return { default: mod.QRCodeSVG }
 })
 
+// Stable `data-popup-id` for the outside-click test on document.
+// Each `<QRDialog>` instance gets its own portalised `<Popup>`, but
+// only one is ever open at a time so a single shared id is enough.
+const QR_POPUP_ID = 'qr-dialog'
+
 export function QRDialog({ url, name, title, trigger, className }: QRDialogProps) {
-  const rootClass = `nice-dialog ${className ?? DEFAULT_CLASS}`
+  const rootClass = className ?? DEFAULT_CLASS
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
 
@@ -61,7 +72,7 @@ export function QRDialog({ url, name, title, trigger, className }: QRDialogProps
       if (triggerRef.current?.contains(event.target as Node)) {
         return
       }
-      const popup = document.querySelector<HTMLElement>('.qr-dialog-popup')
+      const popup = document.querySelector<HTMLElement>(`[data-popup-id="${QR_POPUP_ID}"]`)
       if (popup?.contains(event.target as Node)) {
         return
       }
@@ -74,10 +85,10 @@ export function QRDialog({ url, name, title, trigger, className }: QRDialogProps
   return (
     <>
       <button type="button" ref={triggerRef} className={rootClass} title={name} aria-label={title} onClick={handleOpen}>
-        <span className="absolute top-0 flex size-full items-center justify-center">{trigger}</span>
+        <IconButtonContent>{trigger}</IconButtonContent>
       </button>
       {open && (
-        <Popup open={open} onClose={handleClose} className="qr-dialog-popup">
+        <Popup open={open} onClose={handleClose} popupId={QR_POPUP_ID}>
           <div className="text-center">
             <div className="text-xl leading-tight font-semibold">{title}</div>
             <p className="mt-1 mb-2 text-base">{name}</p>

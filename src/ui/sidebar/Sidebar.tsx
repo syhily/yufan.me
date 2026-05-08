@@ -20,53 +20,47 @@ const sidebarInnerClass = cn('mb-7 px-7 py-8', 'bg-canvas shadow-card', 'xl:stic
 
 // Each widget container (one per RecentComments / PendingComments /
 // RandomPosts / RandomTags / TodayCalendar / SearchBar). Replaces
-// the legacy `.widget { margin-bottom: 2.5rem }` rule; the
-// `widget-recent-comments` / `widget-recent-entries` / `widget-
-// search` / `widget-tag-cloud` / `widget-owspace-calendar` suffix
-// classes stay as WP-compat markers (no CSS rules of their own
-// today, used by downstream theme integrations).
+// the legacy `.widget { margin-bottom: 2.5rem }` rule.
 const widgetClass = 'mb-10'
 
 // `<h3>` widget title. Replaces the legacy `.widget-title { color:
 // #008c95; font-size: 1rem; padding: 1.25rem 0; position: relative;
 // border-top: 2px solid #d2e3e4 }` rule plus its `:before { content:
 // ''; position: absolute; top: -2px; left: 0; width: 30px; height:
-// 2px; background-color: #008c95 }` decoration bar. The `!`-prefixed
-// border / padding utilities fight reset.css's un-layered
-// `h1..h6 { border: none; margin: 0; padding: 0 }` rule (un-
-// layered NORMAL beats layered NORMAL — Lesson 2). The decoration
-// bar is now expressed via the `before:` variant chain instead of
-// living in `public.css`'s `@layer components` block; the literal
-// `widget-title` className is kept only as a WP-compat marker (no
-// CSS rule of its own, used by downstream theme integrations).
+// 2px; background-color: #008c95 }` decoration bar. Stage 11 P2:
+// the historical `!` modifiers on the border / padding utilities
+// (which fought Preflight's `h1..h6 { margin: 0 }` reset) are gone
+// because Tailwind utilities land in `@layer utilities` and beat
+// `@layer base` Preflight per the W3C cascade-layers spec, regardless
+// of selector specificity. The decoration bar is expressed via the
+// `before:` variant chain instead of living in `public.css`'s
+// `@layer components` block.
 const widgetTitleClass = cn(
-  'widget-title',
-  'relative border-t-2! border-widget-border!',
-  'px-0! py-5!',
+  'relative border-t-2 border-widget-border',
+  'px-0 py-5',
   'text-base text-brand',
   "before:absolute before:-top-0.5 before:left-0 before:h-0.5 before:w-[30px] before:bg-brand before:content-['']",
 )
 
 // `<ul>` inside RandomPosts / RecentComments / PendingComments.
 // Replaces the legacy `.widget-recent-entries ul, .widget-recent-
-// comments ul { padding-left: 1.25rem }` rule. The `!pl-5` fights
-// reset.css's un-layered `ul, ol, menu { padding: 0 }` rule (Lesson
-// 2 — same fix as Header.tsx's `siteMenuListClass`).
-const widgetListClass = '!pl-5'
+// comments ul { padding-left: 1.25rem }` rule. Stage 11 P2 dropped
+// the historical `!` modifier — `pl-5` is a `@layer utilities` rule
+// that beats Preflight's `ul { padding: 0 }` reset by layer order.
+const widgetListClass = 'pl-5'
 
 // `<li>` inside the same widget bodies. Replaces the legacy
 // `.widget-recent-entries ul li, .widget-recent-comments ul li
 // { margin-bottom: 0.75rem; list-style-type: circle; overflow:
-// hidden; white-space: nowrap }` rule. Both `margin` and `list-
-// style` are reset.css un-layered (`li { margin: 0 }` + `ul, ol
-// { list-style: none }`), so both fights need `!` (Lesson 2).
-// `font-size: inherit` is the default, dropped per Lesson 1.
+// hidden; white-space: nowrap }` rule. Same Stage 11 P2 cleanup —
+// `mb-3` and `list-[circle]` both ride layer ordering instead of
+// `!`. `font-size: inherit` is the default, dropped per Lesson 1.
 //
 // `text-ellipsis` adds the missing `text-overflow: ellipsis`
 // that the legacy rule forgot — `overflow: hidden` + `white-
 // space: nowrap` alone hard-clips the text mid-glyph; the
 // ellipsis tail is what makes it read as "truncated".
-const widgetListItemClass = '!mb-3 !list-[circle] overflow-hidden text-ellipsis whitespace-nowrap'
+const widgetListItemClass = 'mb-3 list-[circle] overflow-hidden text-ellipsis whitespace-nowrap'
 
 // `<Link>` / `<a>` inside the recent-entries / recent-comments
 // widgets. Replaces the legacy `.widget-recent-entries ul li a
@@ -82,25 +76,20 @@ const widgetListItemClass = '!mb-3 !list-[circle] overflow-hidden text-ellipsis 
 const widgetEntryLinkClass = 'block overflow-hidden text-ellipsis whitespace-nowrap hover:text-brand'
 const widgetCommentLinkClass = 'hover:text-brand'
 
-// `<span className="comment-author-link">` inside `CommentLink`.
-// Replaces the legacy `.widget-recent-comments ul li span
-// { font-weight: 600; color: var(--color-dark); margin-right:
-// 5px }` rule. The 5px → `mr-1.5` (= 6px) is a Lesson 8
-// 1px collapse; visually indistinguishable next to the trailing
-// "发表在《" Chinese punctuation. The literal `comment-author-
-// link` className stays on the `<span>` as a WP-compat marker
-// (no CSS rule of its own, used by downstream theme integrations).
+// `<span>` wrapping the comment author. Replaces the legacy
+// `.widget-recent-comments ul li span { font-weight: 600; color:
+// var(--color-dark); margin-right: 5px }` rule. The 5px → `mr-1.5`
+// (= 6px) is a Lesson 8 1px collapse; visually indistinguishable
+// next to the trailing "发表在《" Chinese punctuation.
 const commentAuthorLinkClass = 'mr-1.5 font-semibold text-ink-strong'
 
-// `<div className="tagcloud">` wrapping the RandomTags chips.
-// Replaces the legacy `.tagcloud { display: flex; flex-wrap: wrap }`.
-// The `tagcloud` literal className is kept only as a WP-compat
-// marker (no CSS rule of its own — the `'#'` prefix that used to
-// live in `.tagcloud > a:before` is now expressed via the `before:`
-// variant chain on `tagcloudLinkClass` below).
-const tagcloudClass = cn('tagcloud', 'flex flex-wrap')
+// `<div>` wrapping the RandomTags chips. Replaces the legacy
+// `.tagcloud { display: flex; flex-wrap: wrap }`. The `'#'` prefix
+// that used to live in `.tagcloud > a:before` is now expressed via
+// the `before:` variant chain on `tagcloudLinkClass` below.
+const tagcloudClass = 'flex flex-wrap'
 
-// Each `<Link>` chip inside `.tagcloud`. Replaces the legacy
+// Each `<Link>` chip inside the tag cloud. Replaces the legacy
 // `.tagcloud a { position: relative; display: inline-block;
 // font-size: 0.875rem !important; line-height: 1; padding: 0.5rem
 // 0.9375rem; margin: 0 0.375rem 0.375rem 0; border-radius:
@@ -119,11 +108,8 @@ const tagcloudClass = cn('tagcloud', 'flex flex-wrap')
 // `#` prefix is now expressed via the `before:` variant chain
 // instead of `public.css`'s `@layer components` block; `font-
 // size: inherit` falls out for free because the `:before` box
-// inherits its own font-size from the `<a>` (`text-sm`). The
-// `tag-cloud-link` literal stays as a WP-compat marker (no CSS
-// rule of its own).
+// inherits its own font-size from the `<a>` (`text-sm`).
 const tagcloudLinkClass = cn(
-  'tag-cloud-link',
   'relative inline-block text-sm leading-none',
   'mr-1.5 mb-1.5 px-[15px] py-2',
   'rounded-xs border border-line',
@@ -169,7 +155,7 @@ interface PendingCommentsProps {
 
 function PendingComments({ comments }: PendingCommentsProps) {
   return (
-    <div id="pending-comments" className={cn(widgetClass, 'widget-recent-comments')}>
+    <div id="pending-comments" className={widgetClass}>
       <WidgetTitle tooltip="云中谁寄锦书来？雁字回时，月满西楼。">待审评论</WidgetTitle>
       <ul className={widgetListClass}>
         {comments.length > 0 ? (
@@ -191,7 +177,7 @@ function RandomPosts({ posts }: RandomPostsProps) {
     return null
   }
   return (
-    <div id="recent-posts" className={cn(widgetClass, 'widget-recent-entries')}>
+    <div id="recent-posts" className={widgetClass}>
       <WidgetTitle tooltip="年年岁岁花相似，岁岁年年人不同。">流年拾忆</WidgetTitle>
       <ul className={widgetListClass}>
         {posts.map((post) => (
@@ -217,7 +203,7 @@ function RecentComments({ comments }: RecentCommentsProps) {
   }
 
   return (
-    <div id="recent-comments" className={cn(widgetClass, 'widget-recent-comments')}>
+    <div id="recent-comments" className={widgetClass}>
       <WidgetTitle tooltip="欲寄彩笺兼尺素，山长水阔知何处？">雁过留声</WidgetTitle>
       <ul className={widgetListClass}>
         {comments.map((comment) => (
@@ -237,8 +223,8 @@ function commentKey(comment: LatestComment): string {
 function CommentLink({ comment }: { comment: LatestComment }) {
   const authorHref = safeHref(comment.authorLink)
   return (
-    <li className={cn('recent-comments', widgetListItemClass)}>
-      <span className={cn('comment-author-link', commentAuthorLinkClass)}>
+    <li className={widgetListItemClass}>
+      <span className={commentAuthorLinkClass}>
         {authorHref === undefined ? (
           comment.author
         ) : (
@@ -266,7 +252,7 @@ function RandomTags({ tags }: RandomTagsProps) {
   }
 
   return (
-    <div id="tag-cloud" className={cn(widgetClass, 'widget-tag-cloud')}>
+    <div id="tag-cloud" className={widgetClass}>
       <WidgetTitle tooltip="流水落花春去也，天上人间。">文踪墨迹</WidgetTitle>
       <div className={tagcloudClass}>
         {tags.map((tag) => (
@@ -319,7 +305,7 @@ function TodayCalendar() {
     `${formatLocalDate(today, 'LLdd', siteIdentity)}.png`,
   )
   return (
-    <div className={cn(widgetClass, 'widget-owspace-calendar')}>
+    <div className={widgetClass}>
       <WidgetTitle tooltip="时光只解催人老，不信多情，长恨离亭。">时光只言</WidgetTitle>
       <img loading="lazy" decoding="async" src={calendarImage} width={600} height={880} alt="今日日历" />
     </div>

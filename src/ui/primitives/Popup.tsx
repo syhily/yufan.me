@@ -13,10 +13,15 @@ export interface PopupProps {
   onClose: () => void
   /** Body max-width preset. Defaults to `sm` (300px / fit-content). */
   size?: PopupSize
-  /** Optional extra class added to the outer popup container — kept as
-   *  a hook for callers that need a unique selector for outside-click
-   *  detection (`document.querySelector('.qr-dialog-popup')`). */
-  className?: string
+  /**
+   * Optional unique identifier surfaced as `data-popup-id` on the
+   * outer container so callers that need outside-click detection can
+   * disambiguate sibling popups via a `[data-popup-id="…"]` selector
+   * (the click happens on the document root, so a class hook on the
+   * popup element is the standard way to scope the test). Without
+   * this prop the popup still renders, just without a stable hook.
+   */
+  popupId?: string
   children: ReactNode
 }
 
@@ -42,6 +47,18 @@ const CONTENT_SIZE_CLASS: Record<PopupSize, string> = {
   lg: 'p-7',
 }
 
+// Floating "X" close button that sits half-overlapping the bottom of
+// the popup card. Split into layout / box / colour / motion / state
+// rows so the open hover / focus-visible flips read at a glance.
+const popupCloseButtonClass = cn(
+  'fixed bottom-0 left-1/2 z-99 flex items-center justify-center',
+  '-translate-x-1/2 translate-y-1/2',
+  'h-8 w-8 appearance-none rounded-full border-0 p-0',
+  'bg-white shadow-popup-close',
+  'transition-colors duration-150 ease-out',
+  'hover:bg-popup-close-hover focus-visible:bg-popup-close-hover',
+)
+
 // Centered modal shell. We defer flipping on the "open" state by one
 // frame so the CSS transition plays — without the rAF gate the
 // browser would commit the open opacity/translate in the same paint
@@ -53,7 +70,7 @@ const CONTENT_SIZE_CLASS: Record<PopupSize, string> = {
 // commits before the rAF below fires, so the input is interactive
 // from the moment the user sees the dialog and the entrance
 // animation still plays its full ~300ms cycle.
-export function Popup({ open, onClose, size = 'sm', className, children }: PopupProps) {
+export function Popup({ open, onClose, size = 'sm', popupId, children }: PopupProps) {
   const [entered, setEntered] = useState(false)
 
   useEffect(() => {
@@ -85,10 +102,10 @@ export function Popup({ open, onClose, size = 'sm', className, children }: Popup
 
   return createPortal(
     <div
+      data-popup-id={popupId}
       className={cn(
         'fixed inset-0 z-1500 flex items-center justify-center overflow-x-hidden overflow-y-auto',
         entered ? 'visible opacity-100' : 'invisible opacity-0',
-        className,
       )}
     >
       <div
@@ -108,7 +125,7 @@ export function Popup({ open, onClose, size = 'sm', className, children }: Popup
         <button
           type="button"
           aria-label="关闭"
-          className="fixed bottom-0 left-1/2 z-99 flex h-8 w-8 -translate-x-1/2 translate-y-1/2 appearance-none items-center justify-center rounded-full border-0 bg-white p-0 shadow-popup-close transition-colors duration-150 ease-out hover:bg-popup-close-hover focus-visible:bg-popup-close-hover"
+          className={popupCloseButtonClass}
           onClick={(event) => {
             event.stopPropagation()
             onClose()

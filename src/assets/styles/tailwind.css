@@ -3,153 +3,168 @@
 
 @source '../..';
 
-/* 1. Raw design tokens */
+/* 1. Project semantic tokens (light) — single source of truth.
+ *
+ * Stage 11 collapsed the historical three-tier token stack
+ * (`raw → shadcn → @theme`) down to two tiers: this `:root` block
+ * and the `@theme inline` bridges below. The Bootstrap-era raw
+ * layer (`--btn-*`, `--bg-*`, `--border-*`, `--color-{light,dark,
+ * muted,secondary,danger,warning,body,light-overlay}`) was a
+ * port-from-Bootstrap naming convention that had no semantic
+ * meaning of its own — every consumer had to climb back through
+ * the alias chain to discover the brand colour was just `#008c95`.
+ *
+ * Now every hex appears exactly once, on its semantic name. Theme
+ * customisation (rebrand, palette swap, …) is a single edit in
+ * this block. The shadcn slot vars (`--background`, `--primary`,
+ * …) sit alongside the project's own ink/surface/brand vocabulary
+ * so the public site and the admin shadcn surface read from the
+ * same wells. */
 :root {
-  --color-primary: #008c95;
-  --color-dark: #151b2b;
-  --color-secondary: #404b69;
-  --color-muted: #8a92a9;
-  --color-light: #e8e9ea;
-  --color-light-overlay: #eaecf3;
-  --color-danger: #f7094c;
-  --color-warning: #ff8338;
-  --color-body: #151924;
-  --text-dark: #000;
+  /* Brand */
+  --brand: #008c95;
+  --brand-dark: #151b2b;
+  --brand-darker: #20283b;
+  --brand-success: #41d589;
 
-  --btn-primary: #008c95;
-  --btn-dark: #151b2b;
-  --btn-secondary: #20283b;
-  --btn-light: #eceef1;
-  --btn-success: #41d589;
+  /* Ink (text colors) */
+  --ink-strong: #151b2b;
+  --ink-body: #151924;
+  --ink-secondary: #404b69;
+  --ink-muted: #8a92a9;
+  --ink-light: #e8e9ea;
+  --ink-overlay: #eaecf3;
 
-  --bg-primary: #008c95;
-  --bg-dark: #151b2b;
-  --bg-secondary: #283149;
-  --bg-warning: #ffe9d5;
-  --bg-light: #f6f6f7;
-  --bg-muted: #ededf1;
-  --bg-white: #fff;
-  --bg-body: #fbfbfd;
-  --night-bg-light: #232327;
+  /* Surfaces */
+  --canvas: #ffffff;
+  --surface: #f6f6f7;
+  --surface-dim: #ededf1;
+  --surface-warn: #ffe9d5;
+  --surface-body: #fbfbfd;
+  --surface-secondary: #283149;
+  --surface-night: #232327;
+  --surface-soft: #eceef1;
 
-  --border-primary: #008c95;
-  --border-secondary: #283149;
-  --border-muted: #d4ddec;
-  --border-light: #eff3fa;
-  --border-widget: #d2e3e4;
+  /* Lines / borders */
+  --line: #eff3fa;
+  --line-muted: #d4ddec;
+  --line-widget: #d2e3e4;
 
-  --bg-like-active: #ff4053;
-  --shadow-like-active-raw: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
+  /* Status */
+  --warn: #ff8338;
+  --alert: #f7094c;
+  --like-active: #ff4053;
+  --like-active-shadow: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
 
+  /* Radius */
+  --radius: 0.3125rem;
   --radius-xs: 3px;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
 
+  /* Misc primitives */
   --font-code: 'Iosevka', monospace;
   --bg-shiki-light: rgb(253, 246, 227);
-
   --size-empty-state: 50vh;
   --z-aside-drawer: 1020;
   text-autospace: normal;
-}
 
-/* 2. Shadcn semantic tokens (light) */
-:root {
-  --radius: 0.3125rem;
+  /* Shadcn semantic slots — light. Public bundle reads these
+   * unscoped; admin shell narrows them with `[data-admin-shell].dark`
+   * below. */
+  --background: var(--surface-body);
+  --foreground: var(--ink-strong);
+  --card: var(--canvas);
+  --card-foreground: var(--ink-strong);
+  --popover: var(--canvas);
+  --popover-foreground: var(--ink-strong);
 
-  --background: var(--bg-body);
-  --foreground: var(--color-dark);
-  --card: var(--bg-white);
-  --card-foreground: var(--color-dark);
-  --popover: var(--bg-white);
-  --popover-foreground: var(--color-dark);
-
-  --primary: var(--color-primary);
+  --primary: var(--brand);
   --primary-foreground: #ffffff;
 
-  --secondary: var(--bg-muted);
-  --secondary-foreground: var(--color-dark);
+  --secondary: var(--surface-dim);
+  --secondary-foreground: var(--ink-strong);
 
-  --muted: var(--bg-muted);
-  --muted-foreground: var(--color-muted);
+  --muted: var(--surface-dim);
+  --muted-foreground: var(--ink-muted);
 
-  --accent: var(--border-light);
-  --accent-foreground: var(--color-dark);
+  --accent: var(--line);
+  --accent-foreground: var(--ink-strong);
 
-  --destructive: var(--color-danger);
+  --destructive: var(--alert);
   --destructive-foreground: #ffffff;
 
-  --border-soft: var(--border-light);
-  --border-strong: #d2e3e4;
+  --border-soft: var(--line);
+  --border-strong: var(--line-widget);
   --border: var(--border-soft);
   --input: var(--border-strong);
-  --ring: var(--color-primary);
+  --ring: var(--brand);
 
-  --chart-1: var(--color-primary);
-  --chart-2: var(--btn-success);
-  --chart-3: var(--color-warning);
-  --chart-4: var(--color-danger);
-  --chart-5: var(--color-secondary);
+  --chart-1: var(--brand);
+  --chart-2: var(--brand-success);
+  --chart-3: var(--warn);
+  --chart-4: var(--alert);
+  --chart-5: var(--ink-secondary);
 
-  --sidebar: var(--bg-light);
-  --sidebar-foreground: var(--color-dark);
-  --sidebar-primary: var(--color-primary);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink-strong);
+  --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--border-light);
-  --sidebar-accent-foreground: var(--color-dark);
+  --sidebar-accent: var(--line);
+  --sidebar-accent-foreground: var(--ink-strong);
   --sidebar-border: var(--border-soft);
-  --sidebar-ring: var(--color-primary);
+  --sidebar-ring: var(--brand);
 }
 
-/* 3. Shadcn semantic tokens (dark — admin shell only) */
+/* 2. Shadcn semantic tokens (dark — admin shell only) */
 [data-admin-shell].dark,
 .dark [data-admin-shell] {
-  --background: var(--color-dark);
-  --foreground: var(--bg-light);
-  --card: #20283b;
-  --card-foreground: var(--bg-light);
-  --popover: #20283b;
-  --popover-foreground: var(--bg-light);
+  --background: var(--ink-strong);
+  --foreground: var(--ink-light);
+  --card: var(--brand-darker);
+  --card-foreground: var(--ink-light);
+  --popover: var(--brand-darker);
+  --popover-foreground: var(--ink-light);
 
-  --primary: var(--color-primary);
+  --primary: var(--brand);
   --primary-foreground: #ffffff;
 
-  --secondary: #283149;
-  --secondary-foreground: var(--bg-light);
+  --secondary: var(--surface-secondary);
+  --secondary-foreground: var(--ink-light);
 
-  --muted: #283149;
-  --muted-foreground: var(--color-muted);
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--ink-muted);
 
-  --accent: #283149;
-  --accent-foreground: var(--bg-light);
+  --accent: var(--surface-secondary);
+  --accent-foreground: var(--ink-light);
 
-  --destructive: var(--color-danger);
+  --destructive: var(--alert);
   --destructive-foreground: #ffffff;
 
   --border-soft: rgba(239, 243, 250, 0.1);
   --border-strong: rgba(210, 227, 228, 0.18);
   --border: var(--border-soft);
   --input: var(--border-strong);
-  --ring: var(--color-primary);
+  --ring: var(--brand);
 
-  --chart-1: var(--color-primary);
-  --chart-2: var(--btn-success);
-  --chart-3: var(--color-warning);
-  --chart-4: var(--color-danger);
-  --chart-5: var(--color-muted);
+  --chart-1: var(--brand);
+  --chart-2: var(--brand-success);
+  --chart-3: var(--warn);
+  --chart-4: var(--alert);
+  --chart-5: var(--ink-muted);
 
-  --sidebar: #20283b;
-  --sidebar-foreground: var(--bg-light);
-  --sidebar-primary: var(--color-primary);
+  --sidebar: var(--brand-darker);
+  --sidebar-foreground: var(--ink-light);
+  --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #283149;
-  --sidebar-accent-foreground: var(--bg-light);
+  --sidebar-accent: var(--surface-secondary);
+  --sidebar-accent-foreground: var(--ink-light);
   --sidebar-border: rgba(212, 221, 236, 0.1);
-  --sidebar-ring: var(--color-primary);
+  --sidebar-ring: var(--brand);
 }
 
-/* 4. Tailwind theme bridge — shadcn colour & radius namespace */
+/* 3. Tailwind theme bridge — shadcn colour & radius namespace */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -192,7 +207,7 @@
   --radius-xl: calc(var(--radius) + 2px);
 }
 
-/* 5. Tailwind theme — project tokens, breakpoints, animations */
+/* 4. Tailwind theme — project tokens, breakpoints, animations */
 @theme inline {
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
@@ -206,32 +221,35 @@
   --container-xl: 1140px;
   --container-2xl: 1320px;
 
-  --color-canvas: var(--bg-white);
-  --color-surface: var(--bg-light);
-  --color-surface-dim: var(--bg-muted);
-  --color-surface-warn: var(--bg-warning);
-  --color-surface-body: var(--bg-body);
-  --color-surface-secondary: var(--bg-secondary);
-  --color-surface-night: var(--night-bg-light);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-soft: var(--surface-soft);
+  --color-surface-warn: var(--surface-warn);
+  --color-surface-body: var(--surface-body);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-night: var(--surface-night);
 
-  --color-line: var(--border-light);
-  --color-line-muted: var(--border-muted);
-  --color-widget-border: var(--border-widget);
+  --color-line: var(--line);
+  --color-line-muted: var(--line-muted);
+  --color-widget-border: var(--line-widget);
 
-  --color-brand: var(--color-primary);
-  --color-brand-dark: var(--btn-dark);
-  --color-brand-success: var(--btn-success);
-  --color-warn: var(--color-warning);
-  --color-alert: var(--color-danger);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-darker: var(--brand-darker);
+  --color-brand-success: var(--brand-success);
+  --color-warn: var(--warn);
+  --color-alert: var(--alert);
 
-  --color-ink-strong: var(--color-dark);
-  --color-ink-secondary: var(--color-secondary);
-  --color-ink-muted: var(--color-muted);
-  --color-ink-light: var(--color-light);
-  --color-ink-overlay: var(--color-light-overlay);
+  --color-ink-strong: var(--ink-strong);
+  --color-ink-body: var(--ink-body);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-light: var(--ink-light);
+  --color-ink-overlay: var(--ink-overlay);
 
-  --color-like-active: var(--bg-like-active);
-  --shadow-like-active: var(--shadow-like-active-raw);
+  --color-like-active: var(--like-active);
+  --shadow-like-active: var(--like-active-shadow);
 
   --radius-xs: var(--radius-xs);
   --font-code: var(--font-code);
@@ -340,8 +358,8 @@ body {
     'Segoe UI Emoji',
     'Segoe UI Symbol';
   font-size: 0.9375rem;
-  background-color: var(--bg-body);
-  color: var(--color-body);
+  background-color: var(--surface-body);
+  color: var(--ink-body);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -375,46 +393,76 @@ body {
  */
 @utility prose-blog {
   &.prose {
-    --tw-prose-body: var(--color-body);
-    --tw-prose-headings: var(--color-dark);
-    --tw-prose-lead: var(--color-body);
-    --tw-prose-links: var(--color-primary);
-    --tw-prose-bold: var(--color-dark);
-    --tw-prose-counters: var(--color-secondary);
-    --tw-prose-bullets: var(--color-muted);
-    --tw-prose-hr: var(--border-light);
-    --tw-prose-quotes: var(--color-body);
-    --tw-prose-quote-borders: rgba(0, 140, 149, 0.55);
-    --tw-prose-captions: var(--color-muted);
-    --tw-prose-code: var(--color-secondary);
-    --tw-prose-pre-code: var(--shiki-light);
-    --tw-prose-pre-bg: var(--bg-shiki-light);
-    --tw-prose-th-borders: var(--border-light);
-    --tw-prose-td-borders: var(--border-light);
+    /* Brand-tier prose colours, expressed in semantic tokens.
+     *
+     * Stage 11 P7 collapsed the previous 16+16 hand-written light/
+     * invert ladders into a single shared `--prose-blog-*` slot
+     * table, then fanned each slot out to its `--tw-prose-*` and
+     * `--tw-prose-invert-*` consumers. The public site never
+     * renders dark prose, so the invert ladder mirrors the light
+     * ladder by default; an `&.dark { --prose-blog-*: …; }` block
+     * (or specifically the invert vars) can re-enter here if a
+     * dark surface ever lands without rippling through 32 vars.
+     *
+     * Each slot is one project-semantic token, so a brand re-skin
+     * is also a single edit per slot. */
+    --prose-blog-body: var(--ink-body);
+    --prose-blog-headings: var(--ink-strong);
+    --prose-blog-lead: var(--ink-body);
+    --prose-blog-links: var(--brand);
+    --prose-blog-bold: var(--ink-strong);
+    --prose-blog-counters: var(--ink-secondary);
+    --prose-blog-bullets: var(--ink-muted);
+    --prose-blog-hr: var(--line);
+    --prose-blog-quotes: var(--ink-body);
+    --prose-blog-quote-borders: rgba(0, 140, 149, 0.55);
+    --prose-blog-captions: var(--ink-muted);
+    --prose-blog-code: var(--ink-secondary);
+    --prose-blog-pre-code: var(--shiki-light);
+    --prose-blog-pre-bg: var(--bg-shiki-light);
+    --prose-blog-th-borders: var(--line);
+    --prose-blog-td-borders: var(--line);
 
-    --tw-prose-invert-body: var(--color-body);
-    --tw-prose-invert-headings: var(--color-dark);
-    --tw-prose-invert-lead: var(--color-body);
-    --tw-prose-invert-links: var(--color-primary);
-    --tw-prose-invert-bold: var(--color-dark);
-    --tw-prose-invert-counters: var(--color-secondary);
-    --tw-prose-invert-bullets: var(--color-muted);
-    --tw-prose-invert-hr: var(--border-light);
-    --tw-prose-invert-quotes: var(--color-body);
-    --tw-prose-invert-quote-borders: rgba(0, 140, 149, 0.55);
-    --tw-prose-invert-captions: var(--color-muted);
-    --tw-prose-invert-code: var(--color-secondary);
-    --tw-prose-invert-pre-code: var(--shiki-light);
-    --tw-prose-invert-pre-bg: var(--bg-shiki-light);
-    --tw-prose-invert-th-borders: var(--border-light);
-    --tw-prose-invert-td-borders: var(--border-light);
+    --tw-prose-body: var(--prose-blog-body);
+    --tw-prose-headings: var(--prose-blog-headings);
+    --tw-prose-lead: var(--prose-blog-lead);
+    --tw-prose-links: var(--prose-blog-links);
+    --tw-prose-bold: var(--prose-blog-bold);
+    --tw-prose-counters: var(--prose-blog-counters);
+    --tw-prose-bullets: var(--prose-blog-bullets);
+    --tw-prose-hr: var(--prose-blog-hr);
+    --tw-prose-quotes: var(--prose-blog-quotes);
+    --tw-prose-quote-borders: var(--prose-blog-quote-borders);
+    --tw-prose-captions: var(--prose-blog-captions);
+    --tw-prose-code: var(--prose-blog-code);
+    --tw-prose-pre-code: var(--prose-blog-pre-code);
+    --tw-prose-pre-bg: var(--prose-blog-pre-bg);
+    --tw-prose-th-borders: var(--prose-blog-th-borders);
+    --tw-prose-td-borders: var(--prose-blog-td-borders);
+
+    --tw-prose-invert-body: var(--prose-blog-body);
+    --tw-prose-invert-headings: var(--prose-blog-headings);
+    --tw-prose-invert-lead: var(--prose-blog-lead);
+    --tw-prose-invert-links: var(--prose-blog-links);
+    --tw-prose-invert-bold: var(--prose-blog-bold);
+    --tw-prose-invert-counters: var(--prose-blog-counters);
+    --tw-prose-invert-bullets: var(--prose-blog-bullets);
+    --tw-prose-invert-hr: var(--prose-blog-hr);
+    --tw-prose-invert-quotes: var(--prose-blog-quotes);
+    --tw-prose-invert-quote-borders: var(--prose-blog-quote-borders);
+    --tw-prose-invert-captions: var(--prose-blog-captions);
+    --tw-prose-invert-code: var(--prose-blog-code);
+    --tw-prose-invert-pre-code: var(--prose-blog-pre-code);
+    --tw-prose-invert-pre-bg: var(--prose-blog-pre-bg);
+    --tw-prose-invert-th-borders: var(--prose-blog-th-borders);
+    --tw-prose-invert-td-borders: var(--prose-blog-td-borders);
 
     font-family: 'OPPO Serif SC';
 
     :where(blockquote) {
       font-style: normal;
       font-weight: 400;
-      background-color: var(--bg-light);
+      background-color: var(--surface);
       border-radius: var(--radius-sm);
     }
 

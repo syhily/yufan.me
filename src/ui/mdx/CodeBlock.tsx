@@ -217,11 +217,13 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
         {...props}
         // Resets the parent prose `:where(pre)` margins / top-radius so the
         // pre tucks flush under `.code-header`. Mirrors the legacy
-        // `.code-block-wrapper > pre` and `.code-header + pre` rules
-        // (including their `!important` to beat the `:where(pre)` shorthand
-        // that still fires on every other prose pre). Inside
-        // `.comment-content` the wrapper already collapses pre margins to 0.
-        className={cn(className, 'mt-0! mb-0! rounded-t-none! border-t-0!', 'in-[.comment-content]:m-0!')}
+        // `.code-block-wrapper > pre` and `.code-header + pre` rules.
+        // The utilities below land in `@layer utilities`, which beats
+        // `@tailwindcss/typography`'s prose styles in `@layer components`
+        // per the W3C cascade-layers spec — so no `!` is needed (Stage
+        // 11 P2). Inside `.comment-content` the wrapper already
+        // collapses pre margins to 0.
+        className={cn(className, 'mt-0 mb-0 rounded-t-none border-t-0', 'in-[.comment-content]:m-0')}
         data-language={language}
       >
         {children}

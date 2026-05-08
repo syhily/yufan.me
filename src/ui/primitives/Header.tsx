@@ -8,7 +8,8 @@ import type { SocialNetwork } from '@/shared/socials'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
 import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { btnSocial } from '@/ui/primitives/btn'
+import { publicButtonVariants } from '@/ui/primitives/btn'
+import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { SearchIconButton } from '@/ui/search/Search'
 
@@ -101,16 +102,12 @@ const asideOverlayClass = cn(
 // rules are dead code (the element is `display: none` there),
 // collapsed away per Lesson 8. The `lg:py-3` / `xl:pt-5` step
 // accepts a 3px shrink on `lg..xl` against the legacy 15px, also
-// per Lesson 8. The `!` modifiers on every padding step originally
-// fought reset.css's un-layered `h1, h2, ..., h6 { padding: 0 }`
-// that rule, but Tailwind v4 Preflight ships the same shape
-// (`h1..h6 { font-size: inherit; font-weight: inherit }`, no
-// padding zeroing — though `<body>` margin reset also lands here),
-// and the legacy `.navbar-brand` h1 hosts a logo that has to clear
-// the dark aside panel's top-left corner. Keeping the bangs
-// guarantees the 20px×25px inset survives any future Preflight or
-// shadcn theme write that lands `h1 { padding: 0 }` again.
-const navbarBrandClass = cn('m-0 hidden shrink-0', 'lg:block lg:!px-5 lg:!py-3', 'xl:!px-[25px] xl:!pt-5 xl:!pb-[15px]')
+// per Lesson 8. Stage 11 P2 dropped the historical `!` modifiers
+// — Tailwind utilities land in `@layer utilities`, which beats
+// `@layer base` Preflight per the W3C cascade-layers spec, so a
+// hypothetical future Preflight write that re-adds `h1 { padding:
+// 0 }` would still lose to the inset utilities below.
+const navbarBrandClass = cn('m-0 hidden shrink-0', 'lg:block lg:px-5 lg:py-3', 'xl:px-[25px] xl:pt-5 xl:pb-[15px]')
 
 // `<img>` inside the navbar brand. Only ever rendered at `>=lg`
 // because the `<h1>` host is `display: none` below that breakpoint;
@@ -155,16 +152,15 @@ const menuTogglerClass = cn(
 // the established Lesson 8 precedent.
 const siteMenuClass = 'flex-1 overflow-hidden'
 
-// `<ul>` inside `.site-menu`. The `!` modifiers fight reset.css's
-// un-layered `ul, ol, menu { padding: 0 }` rule (un-layered NORMAL
-// beats layered NORMAL; Lesson 2). The legacy `md..lg` step
-// (`padding: 0.625rem 0.5rem`) shrinks the inline padding by 4px on
-// tablet — collapsed to the mobile value per Lesson 8.
-const siteMenuListClass = '!py-2.5 !px-3'
+// `<ul>` inside `.site-menu`. The legacy `md..lg` step (`padding:
+// 0.625rem 0.5rem`) shrinks the inline padding by 4px on tablet —
+// collapsed to the mobile value per Lesson 8. Stage 11 P2: no `!`
+// — `@layer utilities` beats Preflight's `ul { padding: 0 }`.
+const siteMenuListClass = 'py-2.5 px-3'
 
-// `<li>` inside `.site-menu li`. `!` fights reset.css's
-// `li { padding: 0; margin: 0 }` un-layered rule (Lesson 2).
-const siteMenuItemClass = 'relative block !py-3 !px-3'
+// `<li>` inside `.site-menu li`. Same Stage 11 P2 cleanup as the
+// `<ul>` above — utilities ride layer ordering instead of `!`.
+const siteMenuItemClass = 'relative block py-3 px-3'
 
 // `<a>` / `<Link>` inside `.site-menu li a`. Hover flips opacity
 // from 60% to full and shifts the text from white to the brand
@@ -194,17 +190,10 @@ const siteMenuLinkClass = cn(
 // to the default `p-[25px]` rule (24px doesn't visually match —
 // stick with the legacy 25px arbitrary value). The 8px inter-
 // button gap is supplied by each rail consumer's own `mr-2`
-// (see `btnSocial` in `@/ui/primitives/btn` for the pattern) so an
-// off-rail consumer can opt out without an `!`-modifier conflict.
+// (see `publicButtonVariants` in `@/ui/primitives/btn` —
+// `variant: 'dark'`, `size: 'iconSm'`, `shape: 'circle'`) so an
+// off-rail consumer can opt out without a `!`-modifier conflict.
 const siteSubmenuClass = cn('shrink-0 p-[25px]', 'max-md:py-5', 'lg:max-xl:px-[15px] lg:max-xl:py-5')
-
-// Sequential WordPress-theme-style menu item IDs. No CSS or JS in this repo
-// targets these IDs by number, but downstream WP-compatible themes/integrations
-// often do, so we keep the numbering deterministic and intentional via this
-// helper rather than open-coding `menu-item-${i}` in three places.
-function menuId(index: number): string {
-  return `menu-item-${index}`
-}
 
 // Internal navigation links that target the same site live in `<Link>` so
 // React Router can perform client-side transitions and `prefetch` the next
@@ -343,11 +332,7 @@ export function Header({ navigation, admin }: HeaderProps) {
           <nav className={siteMenuClass} onClick={() => setMenuOpen(false)}>
             <ul className={siteMenuListClass}>
               {navigation.map((menu, i) => (
-                <li
-                  id={menuId(i)}
-                  key={`menu-${i}`}
-                  className={cn('menu-item', i === 0 && 'menu-item-home', siteMenuItemClass)}
-                >
+                <li key={`menu-${i}`} className={siteMenuItemClass}>
                   {isExternalNavTarget(menu) ? (
                     <a href={menu.link} target={menu.target} className={siteMenuLinkClass}>
                       {menu.text}
@@ -361,12 +346,12 @@ export function Header({ navigation, admin }: HeaderProps) {
               ))}
               {admin && (
                 <>
-                  <li id={menuId(navigation.length)} className={cn('menu-item', siteMenuItemClass)}>
+                  <li className={siteMenuItemClass}>
                     <Link to="/wp-admin/" prefetch="intent" className={siteMenuLinkClass}>
                       管理
                     </Link>
                   </li>
-                  <li id={menuId(navigation.length + 1)} className={cn('menu-item', siteMenuItemClass)}>
+                  <li className={siteMenuItemClass}>
                     <a href={`/wp-login.php?${logoutQuery}`} className={siteMenuLinkClass}>
                       登出
                     </a>
@@ -395,11 +380,16 @@ export function Header({ navigation, admin }: HeaderProps) {
                   target="_blank"
                   rel="noreferrer"
                   title={social.title ?? social.name}
-                  className={cn(btnSocial, 'mr-2')}
+                  className={publicButtonVariants({
+                    variant: 'dark',
+                    size: 'iconSm',
+                    shape: 'circle',
+                    className: 'mr-2',
+                  })}
                 >
-                  <span className="absolute top-0 flex size-full items-center justify-center">
+                  <IconButtonContent>
                     <SocialNavIcon network={social.network} className="m-icon-inset" />
-                  </span>
+                  </IconButtonContent>
                 </a>
               )
             })}

@@ -18,8 +18,7 @@ import {
   useCommentsContext,
 } from '@/ui/comments/comments-context'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
-import { cn } from '@/ui/lib/cn'
-import { btnBase, btnLight } from '@/ui/primitives/btn'
+import { publicButtonVariants } from '@/ui/primitives/btn'
 
 export interface CommentsProps {
   commentKey: string
@@ -141,7 +140,7 @@ export const commentTreeReducer = reducer
 export function Comments({ commentKey, csrfToken: initialCsrfToken, comments, items, user }: CommentsProps) {
   if (comments == null) {
     return (
-      <div id="comments" className="comments pt-12">
+      <div id="comments" className="pt-12">
         评论加载失败 ❌
       </div>
     )
@@ -264,7 +263,7 @@ function CommentsRoot({
 
   return (
     <CommentsContext.Provider value={value}>
-      <div id="comments" className="comments pt-12" ref={containerRef}>
+      <div id="comments" className="pt-12" ref={containerRef}>
         {children}
       </div>
     </CommentsContext.Provider>
@@ -274,7 +273,7 @@ function CommentsRoot({
 function CommentsHeader() {
   const ctx = useCommentsContext('Comments.Header')
   return (
-    <div className="comment-total-count mb-6 text-xl leading-[1.4] font-semibold">
+    <div className="mb-6 text-xl leading-[1.4] font-semibold">
       评论 <small className="font-theme text-sm">({ctx.totalCount})</small>
     </div>
   )
@@ -341,7 +340,7 @@ function CommentsLoadMore() {
     <div className="mt-4 text-center md:mt-6">
       <button
         type="button"
-        className={cn(btnBase, btnLight)}
+        className={publicButtonVariants({ variant: 'light' })}
         onClick={onLoadMore}
         disabled={moreLoading}
         data-key={ctx.commentKey}

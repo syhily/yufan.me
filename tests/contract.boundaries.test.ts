@@ -30,6 +30,39 @@ describe('contract: module and bundle boundaries', () => {
     expect(offenders).toEqual([])
   })
 
+  it('public stylesheet declares the cascade layer order so utilities beat preflight without `!important`', () => {
+    // Stage 11 (P2) stripped the historical "fight reset.css with `!`"
+    // pattern from every cn() chain on the public site. The promise
+    // is that Tailwind utilities land in `@layer utilities` (top of
+    // the user-declared layer order), Preflight lands in `@layer
+    // base` (bottom of the same order), and per the W3C cascade-
+    // layers spec a layered NORMAL `@layer utilities` rule beats a
+    // layered NORMAL `@layer base` rule regardless of selector
+    // specificity. So ordinary utilities like `pl-5` automatically
+    // outrank Preflight's `<ul> { padding-inline-start: 40px }`
+    // inheritance reset and don't need `!important` to win.
+    //
+    // The single load-bearing invariant is the `@layer base,
+    // components, utilities;` declaration at the TOP of `public.css`
+    // — without it Tailwind would still have its OWN internal layer
+    // order but author CSS could land un-layered and beat utilities.
+    // Pin the declaration here so a refactor can't silently drop it.
+    //
+    // Public CSS must also stay free of un-layered author rules
+    // (rules outside of `@layer …` and outside of an `@import`).
+    // The only un-layered block we tolerate is the medium-zoom
+    // `z-index` shim (the medium-zoom NPM package emits its own
+    // styles in `@layer base`-equivalent territory and the overlay
+    // needs to sit above the rest of the page). Anything else
+    // un-layered would risk shadowing Tailwind utilities and
+    // resurrect the `!important` fight.
+    const globals = readFileSync('src/assets/styles/public.css', 'utf8')
+    expect(globals).toMatch(/^\s*@layer\s+base\s*,\s*components\s*,\s*utilities\s*;/m)
+    // The Tailwind import must still be present — it's the source
+    // of `@layer utilities` and Preflight `@layer base`.
+    expect(globals).toMatch(/@import\s+['"]\.\/tailwind\.css['"]/)
+  })
+
   it('keeps optional vendor CSS out of the root stylesheet', () => {
     const source = readFileSync('src/assets/styles/public.css', 'utf8')
 
@@ -83,28 +116,28 @@ describe('contract: module and bundle boundaries', () => {
     expect(globals).not.toMatch(/@import\s+['"][^'"]*bootstrap-compat\.css['"]/)
     expect(globals).not.toMatch(/@import\s+['"][^'"]*components\.css['"]/)
 
-    // Every inlined `.btn` consumer reads from this module; a future
-    // refactor that drops one of these symbols must update the
-    // `cn(btn*)` call sites in lockstep rather than silently delete
-    // the export.
+    // Stage 11 collapsed the previous string-constant family
+    // (`btnBase`, `btnPrimary`, `btnSocial`, …) into a single CVA
+    // recipe (`publicButtonVariants`). The legacy constants are
+    // intentionally NOT re-exported any more — every call site
+    // spreads `{ variant, size, shape }` over the recipe — so the
+    // pin here tracks the recipe and the variants it exposes
+    // instead of a flat list of named exports. Adding or renaming
+    // a variant requires updating this list too so a future
+    // refactor cannot silently drop, say, the `dark + iconSm +
+    // circle` social-rail combo.
     expect(existsSync('src/ui/primitives/btn.ts')).toBe(true)
     const btn = readFileSync('src/ui/primitives/btn.ts', 'utf8')
-    for (const symbol of [
-      'btnBase',
-      'btnPrimary',
-      'btnSecondary',
-      'btnLight',
-      'btnDark',
-      'btnCircle',
-      'btnRoundedLg',
-      'btnLg',
-      'btnBlock',
-      'btnIcon',
-      'btnIconMd',
-      'btnIconLg',
-      'btnSocial',
-    ]) {
-      expect(btn).toMatch(new RegExp(`export const ${symbol}\\b`))
+    expect(btn).toMatch(/export const publicButtonVariants\b/)
+    expect(btn).toMatch(/export type PublicButtonVariantProps\b/)
+    for (const variant of ['primary', 'secondary', 'light', 'dark']) {
+      expect(btn).toMatch(new RegExp(`\\b${variant}:`))
+    }
+    for (const size of ['default', 'lg', 'iconSm', 'iconMd', 'iconLg']) {
+      expect(btn).toMatch(new RegExp(`\\b${size}:`))
+    }
+    for (const shape of ['default', 'circle', 'pill', 'block']) {
+      expect(btn).toMatch(new RegExp(`\\b${shape}:`))
     }
 
     // Source-of-truth for the `28%` icon-inset magic number — every
@@ -121,9 +154,9 @@ describe('contract: module and bundle boundaries', () => {
     // the matching JSX as a Tailwind utility chain (stages 6e-6k).
     // The dark-overlay metadata colour `#eaecf3` that used to live
     // in lists.css's `.list-nice-overlay .text-muted:not(i)`
-    // override is now a first-class token (`--color-light-overlay`
-    // raw + `--color-ink-overlay` theme alias); PostSquare reads it
-    // as `text-ink-overlay`. Re-introducing either partial would
+    // override is now a first-class semantic token (`--ink-overlay`
+    // raw hex + `--color-ink-overlay` `@theme` alias); PostSquare
+    // reads it as `text-ink-overlay`. Re-introducing either partial would
     // silently shadow the inlined chains because the legacy
     // partials would have to come back un-layered (un-layered beats
     // `@layer utilities` per the W3C cascade-layers spec, lesson 2);
@@ -136,13 +169,12 @@ describe('contract: module and bundle boundaries', () => {
     expect(globals).not.toMatch(/@import\s+['"][^'"]*lists\.css['"]/)
 
     // The `--color-ink-overlay` token lives in `tailwind.css`
-    // (theme alias) backed by `--color-light-overlay` in
-    // `_tokens.css` (raw hex). Both must stay registered because
+    // (theme alias) backed by `--ink-overlay` (`#eaecf3`) in the
+    // semantic `:root` block. Both must stay registered because
     // PostSquare reads the alias as `text-ink-overlay`.
-    const tokens = readFileSync('src/assets/styles/tailwind.css', 'utf8')
-    expect(tokens).toMatch(/--color-light-overlay:\s*#eaecf3;/)
     const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
-    expect(tailwindCss).toMatch(/--color-ink-overlay:\s*var\(--color-light-overlay\);/)
+    expect(tailwindCss).toMatch(/--ink-overlay:\s*#eaecf3;/)
+    expect(tailwindCss).toMatch(/--color-ink-overlay:\s*var\(--ink-overlay\);/)
 
     // Scan every public source file for residual className tokens
     // that would only resolve through the deleted partials. We strip
@@ -230,8 +262,10 @@ describe('contract: module and bundle boundaries', () => {
     // token / shadcn semantic colour like `bg-sidebar` is NOT
     // banned —, `.site-layout`, `.site-main`) is inlined into JSX as
     // a Tailwind utility chain. The single shared social-button
-    // wrapper now lives at `btnSocial` in `@/ui/primitives/btn.ts`
-    // (covered by the buttons describe above). Re-introducing the
+    // wrapper now lives in `@/ui/primitives/btn.ts` as the
+    // `publicButtonVariants({ variant: 'dark', size: 'iconSm',
+    // shape: 'circle' })` combo (covered by the buttons describe
+    // above). Re-introducing the
     // partial would silently shadow the inlined chains because the
     // legacy partial would have to come back un-layered, and
     // un-layered normal declarations beat `@layer utilities` per the
@@ -929,12 +963,154 @@ describe('contract: module and bundle boundaries', () => {
     expect(tailwindCss).toContain("@plugin '@tailwindcss/typography'")
     expect(tailwindCss).toMatch(/--bg-shiki-light:\s*rgb\(253,\s*246,\s*227\);/)
 
+    // P7 (Stage 11) collapsed the previously hand-maintained 16+16
+    // light/invert prose-colour ladders into a shared
+    // `--prose-blog-*` slot table. Each `--tw-prose-*` light var
+    // and its `--tw-prose-invert-*` partner now both read from the
+    // same `--prose-blog-<slot>` source; the public site renders
+    // light prose only, so the invert ladder mirrors light by
+    // default and an `&.dark` override (or specifically the invert
+    // vars) re-enters here if a dark surface ever lands. Pin the
+    // shared ladder + the light/invert fan-out so a regression
+    // can't re-introduce a hand-maintained twin.
+    for (const slot of [
+      'body',
+      'headings',
+      'lead',
+      'links',
+      'bold',
+      'counters',
+      'bullets',
+      'hr',
+      'quotes',
+      'quote-borders',
+      'captions',
+      'code',
+      'pre-code',
+      'pre-bg',
+      'th-borders',
+      'td-borders',
+    ]) {
+      expect(tailwindCss).toMatch(new RegExp(`--prose-blog-${slot}\\s*:`))
+      expect(tailwindCss).toMatch(new RegExp(`--tw-prose-${slot}\\s*:\\s*var\\(--prose-blog-${slot}\\)`))
+      expect(tailwindCss).toMatch(new RegExp(`--tw-prose-invert-${slot}\\s*:\\s*var\\(--prose-blog-${slot}\\)`))
+    }
+
     // Comment HTML is rendered via `dangerouslySetInnerHTML`, so the
     // `prose prose-sm prose-blog max-w-none` chain on the wrapper
     // `<div class="comment-content …">` is what drives the comment
     // typography cascade. Pin the literal so a refactor that drops the
     // chain is caught at PR time (matches the same-line guarantee that
     // the post / page carriers carry the `prose prose-lg` variant).
-    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,\s*'prose prose-sm prose-blog max-w-none'/)
+    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,\s*'prose-blog prose prose-sm max-w-none'/)
+  })
+
+  it('inlines the post-content / comment-content literals at the only two call-site shapes', () => {
+    // The two `comment-content` / `post-content` literals are the
+    // only WordPress-compatibility class-name markers that survived
+    // the Stage 11 cleanup, because `@utility prose-blog
+    // { &.post-content {…} &.comment-content {…} }` in `tailwind.css`
+    // uses them as compound selectors to fine-tune typography on
+    // rendered MDX bodies and comment-body MDX trees. Everything
+    // else — the previous `wp-compat.ts` registry, every per-class
+    // marker shipped on `<header>`, `<aside>`, comment list rows,
+    // tag-cloud chips, popup containers, etc. — has been deleted.
+    //
+    // Pin four invariants so a future refactor either (a) keeps the
+    // two surviving literals at their two call-site shapes or
+    // (b) deletes them entirely along with the matching `tailwind.
+    // css` nested compounds:
+    //
+    //   1. The compounds `&.post-content` and `&.comment-content`
+    //      still live inside `@utility prose-blog` in `tailwind.css`.
+    //   2. The detail-body call sites (`PostDetailBody`,
+    //      `PageDetailBody`) construct their wrapper `className`
+    //      through `cn('post-content', …)`.
+    //   3. The comment row (`CommentItem`) constructs its wrapper
+    //      `className` through `cn('comment-content', …)`.
+    //   4. The historical `src/ui/lib/wp-compat.ts` registry stays
+    //      deleted — no file re-introduces it or re-imports it.
+    const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
+    expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
+    expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
+
+    const postDetail = readFileSync('src/ui/post/post/PostDetailBody.tsx', 'utf8')
+    const pageDetail = readFileSync('src/ui/post/post/PageDetailBody.tsx', 'utf8')
+    const commentItem = readFileSync('src/ui/comments/CommentItem.tsx', 'utf8')
+
+    expect(postDetail).toMatch(/cn\(\s*'post-content'\s*,/)
+    expect(pageDetail).toMatch(/cn\(\s*'post-content'\s*,/)
+    expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,/)
+
+    // The registry stays deleted. A regression that re-adds it or
+    // re-imports from `@/ui/lib/wp-compat` anywhere under `src/`
+    // lands here at PR time.
+    expect(existsSync('src/ui/lib/wp-compat.ts')).toBe(false)
+    const offenders = files('src', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return /from '@\/ui\/lib\/wp-compat'/.test(source)
+    })
+    expect(offenders).toEqual([])
+  })
+
+  it('drives popup outside-click detection via data-popup-id, not className', () => {
+    // P9 (Stage 11) replaced the WP-compat `qr-dialog-popup` and
+    // `global-search-popup` literals (used as `document.querySelector
+    // ('.…')` hooks for outside-click detection) with a `data-popup-
+    // id` attribute on the `<Popup>` outer container. Pin three
+    // invariants:
+    //
+    //   1. `<Popup>` accepts a `popupId` prop and forwards it as
+    //      `data-popup-id` (the new contract).
+    //   2. The two consumers (`QRDialog`, header `Search`) pass a
+    //      stable `popupId` and use the matching
+    //      `[data-popup-id="…"]` selector for the `document` click
+    //      test. They must NOT re-introduce the legacy class hooks
+    //      (`.qr-dialog-popup`, `.global-search-popup`).
+    const popup = readFileSync('src/ui/primitives/Popup.tsx', 'utf8')
+    expect(popup).toMatch(/popupId\?:\s*string/)
+    expect(popup).toMatch(/data-popup-id=\{popupId\}/)
+    // The legacy `className?: string` prop has been removed from the
+    // `<Popup>` API; consumers can no longer leak a class hook into
+    // the portalised container.
+    expect(popup).not.toMatch(/^\s*className\?:\s*string/m)
+
+    const qr = readFileSync('src/ui/primitives/QRDialog.tsx', 'utf8')
+    expect(qr).toMatch(/popupId=\{QR_POPUP_ID\}/)
+    expect(qr).toMatch(/\[data-popup-id="\$\{QR_POPUP_ID\}"\]/)
+    expect(qr).not.toMatch(/'\.qr-dialog-popup'/)
+    expect(qr).not.toMatch(/'qr-dialog-popup'/)
+
+    const search = readFileSync('src/ui/search/Search.tsx', 'utf8')
+    expect(search).toMatch(/popupId=\{SEARCH_POPUP_ID\}/)
+    expect(search).toMatch(/\[data-popup-id="\$\{SEARCH_POPUP_ID\}"\]/)
+    expect(search).not.toMatch(/'\.global-search-popup'/)
+    expect(search).not.toMatch(/'global-search-popup'/)
+  })
+
+  it('routes icon-button content through @/ui/primitives/IconButtonContent', () => {
+    // P4 (Stage 11) extracted the repeated `<span className="absolute
+    // top-0 flex size-full items-center justify-center">…</span>`
+    // wrapper into `<IconButtonContent>`. The wrapper is the
+    // text-baseline-drift-proof centring rule for every icon-only
+    // public button (see the component for the rationale).
+    //
+    // Pin two invariants:
+    //
+    //   1. The component file exists and exports `IconButtonContent`.
+    //   2. No other file in `src/` re-introduces the literal centring
+    //      chain — every consumer must go through the component.
+    expect(existsSync('src/ui/primitives/IconButtonContent.tsx')).toBe(true)
+    const component = readFileSync('src/ui/primitives/IconButtonContent.tsx', 'utf8')
+    expect(component).toMatch(/export\s+function\s+IconButtonContent\b/)
+    expect(component).toMatch(/absolute top-0 flex size-full items-center justify-center/)
+
+    const offenders = files('src', '-g', '*.ts', '-g', '*.tsx')
+      .filter((file) => file !== 'src/ui/primitives/IconButtonContent.tsx')
+      .filter((file) => {
+        const source = readFileSync(file, 'utf8')
+        return /absolute top-0 flex size-full items-center justify-center/.test(source)
+      })
+    expect(offenders).toEqual([])
   })
 })

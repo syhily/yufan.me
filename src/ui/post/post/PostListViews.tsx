@@ -150,7 +150,7 @@ function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: b
             width={first ? 750 : 450}
             height={first ? 500 : 300}
             thumbhash={post.coverThumbhash}
-            className="block size-full! object-cover"
+            className="block size-full object-cover"
           />
           <div className="absolute inset-0 size-full bg-surface-secondary/60 opacity-60 transition-opacity duration-300 ease-in-out group-hover:opacity-[0.22]" />
         </Link>
@@ -159,7 +159,7 @@ function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: b
         <div className="flex flex-none flex-col">
           <Link
             to={post.permalink}
-            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-white hover:text-ink-light hover:[text-shadow:var(--border-primary)_1px_0_4px] md:text-xl"
+            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-white hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
             prefetch="intent"
           >
             {post.title}
@@ -221,7 +221,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
                 >
                   <div className="line-clamp-2">
                     {!post.published && (
-                      <span style={{ color: 'var(--color-danger)' }}>
+                      <span className="text-alert">
                         <span className="sr-only">未发布草稿：</span>
                         【草稿】
                       </span>
@@ -258,25 +258,23 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
   )
 }
 
-// `.list-like` (icon + count chip in `PostCards` rows). Replaces the
-// legacy `.list-like, .list-like-square { display: inline-flex;
-// align-items: center; gap: 0.35rem; margin-left: 10px; vertical-
-// align: middle; background-color: transparent }` shared rule plus
-// the `.list-like { color: var(--color-dark) }` colour override. The
+// Icon + count chip in `PostCards` rows. Replaces the legacy
+// `.list-like, .list-like-square { display: inline-flex; align-items:
+// center; gap: 0.35rem; margin-left: 10px; vertical-align: middle;
+// background-color: transparent }` shared rule plus the
+// `.list-like { color: var(--color-dark) }` colour override. The
 // 0.35rem gap → `gap-1.5` (6 px) is a Lesson 8 0.4 px collapse;
 // the `background-color: transparent` is a `<div>` default and was
-// dropped (Lesson 1). The `list-like` literal stays as a WP-compat
-// marker (no CSS rule of its own).
-const listLikeClass = cn('list-like', 'ml-2.5 inline-flex items-center gap-1.5 align-middle', 'text-ink-strong')
+// dropped (Lesson 1).
+const listLikeClass = cn('ml-2.5 inline-flex items-center gap-1.5 align-middle', 'text-ink-strong')
 
-// `<span className="like-count">`. Replaces the legacy `.list-like
-// .like-count, .list-like-square .like-count { padding-left: 0;
-// line-height: 1 }` rule. `padding-left: 0` is a `<span>` default
-// (dropped per Lesson 1); `line-height: 1` is preserved as a
-// defensive baseline so the digit stays vertically centred next to
-// the SVG. The `like-count` literal stays as a WP-compat marker
-// (also picked up by `post.css`'s `.post-like .like-count` rule
-const likeCountClass = cn('like-count', 'leading-none')
+// `<span>` displaying the like count. Replaces the legacy
+// `.list-like .like-count, .list-like-square .like-count
+// { padding-left: 0; line-height: 1 }` rule. `padding-left: 0` is a
+// `<span>` default (dropped per Lesson 1); `line-height: 1` is
+// preserved as a defensive baseline so the digit stays vertically
+// centred next to the SVG.
+const likeCountClass = 'leading-none'
 
 function ListMetric({ children, value }: { children: ReactNode; value: number }) {
   return (
@@ -321,7 +319,7 @@ export function PostSquare({ post, first }: PostSquareProps) {
         </div>
         <div className="absolute inset-x-0 bottom-0 z-1 flex flex-none flex-col p-2 md:px-4 md:py-3">
           <Link to={post.permalink} className="flex flex-none flex-col" prefetch="intent">
-            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-white hover:text-ink-light hover:[text-shadow:var(--border-primary)_1px_0_4px]">
+            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-white hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px]">
               {post.title}
             </div>
             <div className="font-number flex flex-1 text-sm text-ink-overlay">
@@ -341,12 +339,11 @@ export function PostSquare({ post, first }: PostSquareProps) {
   )
 }
 
-// `.list-like-square` (icon + count chip in `PostSquare` overlays).
-// Same chrome as `listLikeClass` minus the `color: var(--color-dark)`
-// — the square variant inherits its colour (`text-ink-overlay`)
-// from the parent overlay row. The `list-like-square` literal stays
-// as a WP-compat marker (no CSS rule of its own).
-const listLikeSquareClass = cn('list-like-square', 'ml-2.5 inline-flex items-center gap-1.5 align-middle')
+// Icon + count chip in `PostSquare` overlays. Same chrome as
+// `listLikeClass` minus the `color: var(--color-dark)` — the square
+// variant inherits its colour (`text-ink-overlay`) from the parent
+// overlay row.
+const listLikeSquareClass = 'ml-2.5 inline-flex items-center gap-1.5 align-middle'
 
 function SquareMetric({ children, value }: { children: ReactNode; value: number }) {
   return (

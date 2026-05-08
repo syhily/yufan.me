@@ -10,8 +10,8 @@ import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { joinUrl } from '@/shared/urls'
 import { cn } from '@/ui/lib/cn'
-import { btnBase, btnLight, btnPrimary } from '@/ui/primitives/btn'
-import { formControlInputClass, formControlTextareaClass } from '@/ui/primitives/formControl'
+import { publicButtonVariants } from '@/ui/primitives/btn'
+import { formControlVariants } from '@/ui/primitives/formControl'
 
 export interface CommentReplyFormProps {
   commentKey: string
@@ -112,40 +112,31 @@ export function CommentReplyForm({
   }
 
   return (
-    <div id="respond" className="comment-respond mb-4 md:mb-6">
-      <fetcher.Form
-        ref={formRef}
-        method={REPLY.method}
-        action={REPLY.path}
-        id="commentForm"
-        className="comment-form flex flex-1"
-      >
+    <div id="respond" className="mb-4 md:mb-6">
+      <fetcher.Form ref={formRef} method={REPLY.method} action={REPLY.path} id="commentForm" className="flex flex-1">
         <input name="csrf" type="hidden" value={csrfToken} />
-        <div className="comment-from-avatar relative mr-[15px] flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7">
+        <div className="relative mr-[15px] flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7">
           <img
             alt="头像"
             src={avatarSrc}
-            className="comment-avatar-default size-full rounded-full object-cover"
+            className="size-full rounded-full object-cover"
             height={40}
             width={40}
             decoding="async"
           />
         </div>
-        <div className="comment-from-input flex-1">
-          <div className="comment-form-text relative mb-4">
+        <div className="flex-1">
+          <div className="relative mb-4">
             <textarea
               id="content"
               name="content"
               ref={textareaRef}
               className={cn(
-                formControlTextareaClass,
+                formControlVariants({ control: 'textarea' }),
                 // 40 px (= 2.5 rem) top inset reserves room for the
                 // absolutely-positioned `<ReplyOverlay>` chip rendered
                 // just below this textarea when a reply is staged.
-                // The `comment-reply-textarea` literal stays as a
-                // WP-compat marker even though the partial rule is
-                // gone — downstream templates can still hook on it.
-                isReplying && 'comment-reply-textarea pt-10',
+                isReplying && 'pt-10',
               )}
               rows={3}
               required
@@ -159,13 +150,24 @@ export function CommentReplyForm({
           </div>
           <CommentFormFields user={user} commentKey={commentKey} replyToId={replyToId} onEmailBlur={onEmailBlur} />
           {!admin && <CommentFormHoneypot />}
-          <div className="form-submit flex justify-end gap-2">
+          <div className="flex justify-end gap-2">
             {replyToId !== 0 && (
-              <button type="button" id="cancel-comment-reply-link" className={cn(btnBase, btnLight)} onClick={onCancel}>
+              <button
+                type="button"
+                id="cancel-comment-reply-link"
+                className={publicButtonVariants({ variant: 'light' })}
+                onClick={onCancel}
+              >
                 再想想
               </button>
             )}
-            <button name="submit" type="submit" id="submit" className={cn(btnBase, btnPrimary)} disabled={isPending}>
+            <button
+              name="submit"
+              type="submit"
+              id="submit"
+              className={publicButtonVariants({ variant: 'primary' })}
+              disabled={isPending}
+            >
               {isPending ? '发表中…' : '发表评论'}
             </button>
           </div>
@@ -190,7 +192,6 @@ interface ReplyOverlayProps {
 // click-through so the textarea below stays interactive even when
 // the overlay extends beyond a single line.
 const replyingToOverlayClass = cn(
-  'replying-to-overlay',
   'pointer-events-none absolute top-[0.4rem] right-3 left-3 z-2',
   'flex items-center gap-1',
   'rounded-sm bg-[rgba(0,140,149,0.05)] px-2 py-[0.15rem]',
@@ -201,8 +202,8 @@ const replyingToOverlayClass = cn(
 function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
   return (
     <div className={replyingToOverlayClass}>
-      <span className="replying-name font-medium">回复 @{authorName}</span>
-      {originalContent && <span className="replying-content">: {originalContent}</span>}
+      <span className="font-medium">回复 @{authorName}</span>
+      {originalContent && <span>: {originalContent}</span>}
     </div>
   )
 }
@@ -214,7 +215,7 @@ function CommentFormHoneypot() {
   // and skip). `size-px` collapses the box to 1×1 so even probes
   // that ignore `left` still get nothing useful.
   return (
-    <div className="comment-form-honeypot absolute left-[-10000px] size-px overflow-hidden" aria-hidden="true">
+    <div className="absolute left-[-10000px] size-px overflow-hidden" aria-hidden="true">
       <label htmlFor="comment-subtitle">Subtitle</label>
       <input id="comment-subtitle" name="subtitle" type="text" tabIndex={-1} autoComplete="off" defaultValue="" />
     </div>
@@ -231,10 +232,10 @@ interface CommentFormFieldsProps {
 function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {
   const admin = user?.admin === true
   return (
-    <div className="comment-form-info -mx-1 -mt-2 mb-4 flex flex-wrap md:-mx-2 md:-mt-4">
+    <div className="-mx-1 -mt-2 mb-4 flex flex-wrap md:-mx-2 md:-mt-4">
       {admin ? (
         <input
-          className={formControlInputClass}
+          className={formControlVariants()}
           placeholder={user.name}
           name="name"
           type="text"
@@ -244,12 +245,12 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
         />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
-          <input className={formControlInputClass} placeholder="昵称" name="name" type="text" required />
+          <input className={formControlVariants()} placeholder="昵称" name="name" type="text" required />
         </div>
       )}
       {admin ? (
         <input
-          className={formControlInputClass}
+          className={formControlVariants()}
           name="email"
           placeholder={user.email}
           defaultValue={user.email}
@@ -260,7 +261,7 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
           <input
-            className={formControlInputClass}
+            className={formControlVariants()}
             name="email"
             placeholder="邮箱"
             type="email"
@@ -275,7 +276,7 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
       <input hidden name="rid" type="text" value={String(replyToId)} readOnly />
       {admin ? (
         <input
-          className={formControlInputClass}
+          className={formControlVariants()}
           placeholder={user.website ?? undefined}
           defaultValue={user.website ?? undefined}
           name="link"
@@ -285,7 +286,7 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
         />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:px-2">
-          <input className={formControlInputClass} placeholder="网址" name="link" type="url" />
+          <input className={formControlVariants()} placeholder="网址" name="link" type="url" />
         </div>
       )}
     </div>
