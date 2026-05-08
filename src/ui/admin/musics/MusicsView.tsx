@@ -1,4 +1,13 @@
-import { CopyIcon, MusicIcon, PlusIcon, RefreshCwIcon, SearchIcon, Trash2Icon } from 'lucide-react'
+import {
+  CopyIcon,
+  MusicIcon,
+  PencilIcon,
+  PlayIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type {
@@ -12,6 +21,8 @@ import type {
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
+import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'
+import { FloatingMusicPlayer, type FloatingMusicPlayerTrack } from '@/ui/admin/musics/FloatingMusicPlayer'
 import { useMusicsController } from '@/ui/admin/musics/useMusicsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -23,11 +34,12 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
 import { Skeleton } from '@/ui/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/ui/table'
+import { cn } from '@/ui/lib/cn'
 
 const LIST = API_ACTIONS.admin.listMusic
 const DELETE = API_ACTIONS.admin.deleteMusic
 
-const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [20, 50, 100].map((n) => ({
+const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
   value: String(n),
   label: `${n} 条`,
 }))
@@ -41,7 +53,9 @@ export function MusicsView() {
   const { state, dispatch } = useMusicsController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<AdminMusicDto | undefined>(undefined)
   const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null)
+  const [playingTrack, setPlayingTrack] = useState<FloatingMusicPlayerTrack | null>(null)
 
   const listApi = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST, {
     onSuccess: (payload) =>
@@ -113,7 +127,7 @@ export function MusicsView() {
       <AdminListPage>
         <AdminListPage.Header
           title="音乐管理"
-          description={`共 ${state.total} 条。当前仅支持 NetEase；删除时同步移除 S3 中的音频与封面对象。`}
+          description={`共 ${state.total} 条。当前仅支持 NetEase；可在右侧浮动播放器试听，可编辑歌名、歌手、专辑、歌词等元数据，删除时同步移除 S3 中的音频与封面对象。`}
         >
           <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
@@ -144,7 +158,7 @@ export function MusicsView() {
               <Select
                 items={PAGE_SIZE_OPTIONS}
                 value={String(state.pageSize)}
-                onValueChange={(value) => dispatch({ type: 'setPageSize', value: Number.parseInt(value ?? '20', 10) })}
+                onValueChange={(value) => dispatch({ type: 'setPageSize', value: Number.parseInt(value ?? '10', 10) })}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -173,7 +187,7 @@ export function MusicsView() {
                   <TableHead className="hidden w-32 lg:table-cell">source_id</TableHead>
                   <TableHead className="hidden w-28 xl:table-cell">上传者</TableHead>
                   <TableHead className="hidden w-28 xl:table-cell">时间</TableHead>
-                  <TableHead className="w-20 pr-4 text-right" />
+                  <TableHead className="w-36 pr-4 text-right" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -233,6 +247,36 @@ export function MusicsView() {
                           type="button"
                           variant="ghost"
                           size="icon"
+                          onClick={() =>
+                            setPlayingTrack({
+                              playerId: row.playerId,
+                              name: row.name,
+                              artist: row.artist,
+                              coverUrl: row.coverUrl,
+                            })
+                          }
+                          aria-label={`播放「${row.name}」`}
+                          aria-pressed={playingTrack?.playerId === row.playerId}
+                          className={cn(
+                            playingTrack?.playerId === row.playerId &&
+                              'text-primary hover:text-primary focus-visible:text-primary',
+                          )}
+                        >
+                          <PlayIcon />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditTarget(row)}
+                          aria-label={`编辑「${row.name}」`}
+                        >
+                          <PencilIcon />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => onDelete(row)}
                           aria-label={`删除「${row.name}」`}
                         >
@@ -260,7 +304,25 @@ export function MusicsView() {
         onAdded={(music) => dispatch({ type: 'prependMusic', music })}
       />
 
+      <EditMusicDialog
+        music={editTarget}
+        onClose={() => setEditTarget(undefined)}
+        onSaved={(saved) => {
+          dispatch({ type: 'patchMusic', music: saved })
+          setEditTarget(undefined)
+        }}
+      />
+
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+
+      {playingTrack !== null ? (
+        // `key` forces a remount whenever the operator picks a
+        // different track. APlayer mutates the container DOM
+        // extensively; remounting (which re-runs the init effect with
+        // a fresh container) is the cleanest way to swap audio
+        // without reaching into APlayer's mutable state.
+        <FloatingMusicPlayer key={playingTrack.playerId} track={playingTrack} onClose={() => setPlayingTrack(null)} />
+      ) : null}
     </>
   )
 }

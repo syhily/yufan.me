@@ -20,6 +20,7 @@ import {
   insertMusic,
   listAdminMusicRows,
   softDeleteMusic,
+  updateMusic,
 } from '@/server/db/query/music'
 import { processImageBuffer } from '@/server/images/process'
 import { getLogger } from '@/server/logger'
@@ -243,6 +244,50 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
   }
 
   return toAdminMusicDto(row, input.uploader?.name ?? null)
+}
+
+export interface UpdateMusicMetadataInputs {
+  id: bigint
+  name: string
+  artist: string[]
+  album: string
+  /** `null` clears the stored lyric (matches the "no upstream lyric" case). */
+  lyric: string | null
+}
+
+/**
+ * Metadata-only edit for the admin UI. Provider id triplet
+ * (`source`, `sourceId`, `playerId`), audio/cover storage paths,
+ * uploader, and timestamps are intentionally untouched — the
+ * upload pipeline owns those, and they are how MDX references the
+ * row. `artist[]` is packed back to the historical
+ * `'Artist A / Artist B'` row representation; the public
+ * projection unpacks it again on read.
+ */
+export async function updateMusicMetadata(input: UpdateMusicMetadataInputs): Promise<AdminMusicDto> {
+  const existing = await findMusicById(input.id)
+  if (existing === null || existing.deletedAt !== null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+
+  const updated = await updateMusic(input.id, {
+    name: input.name,
+    artist: input.artist.join(' / '),
+    album: input.album,
+    lyric: input.lyric,
+  })
+  if (updated === null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+
+  // Re-fetch through the admin projection so the response carries
+  // the joined `uploaderName` instead of forcing the caller to
+  // re-derive it.
+  const projected = await findAdminMusicRowById(input.id)
+  if (projected === null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+  return toAdminMusicDto(projected, projected.uploaderName)
 }
 
 export async function deleteMusic(id: bigint): Promise<void> {

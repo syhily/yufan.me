@@ -89,6 +89,23 @@ export interface DeleteMusicOutput {
   success: true
 }
 
+// Metadata-only edit. Audio / cover bytes, provider id triplet
+// (source, sourceId, playerId), uploader, and timestamps are NOT
+// editable from this surface — only the human-curated columns the
+// admin actually wants to override. `lyric === ''` clears the
+// stored lyric (server-side normalised to NULL).
+export interface UpdateMusicInput {
+  id: string
+  name: string
+  artist: string[]
+  album?: string
+  lyric?: string
+}
+
+export interface UpdateMusicOutput {
+  music: AdminMusicDto
+}
+
 // Public GET payload — what `/api/actions/music/get?id=...` returns
 // to the browser-side `<MusicPlayer />` so APlayer can render. Kept
 // intentionally aligned with the historical `MusicMeta` shape from

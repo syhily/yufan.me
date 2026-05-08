@@ -112,7 +112,6 @@ The server runs `react-router-serve ./build/server/index.js` and listens on
 
 ## TODO
 
-- [ ] Music file management
 - [ ] Move static MDX files to PortableText and Postgres
 - [ ] Add font size switch in post and page
 - [ ] Add new traditional chinese layouts

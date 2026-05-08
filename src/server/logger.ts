@@ -17,7 +17,12 @@ function isLevel(value: string | undefined): value is Level {
 }
 
 function readMinLevel(): Level {
-  const fallback = import.meta.env.PROD ? 'info' : 'debug'
+  // `import.meta.env` is injected by Vite at build/dev time. Guard
+  // against bare-Node entry points (e.g. one-off `vp dlx tsx`
+  // scripts under `scripts/`) where the object is undefined and
+  // accessing `.PROD` would otherwise crash module evaluation.
+  const meta = (import.meta as { env?: { PROD?: boolean } }).env
+  const fallback = meta?.PROD === true ? 'info' : 'debug'
   if (typeof process === 'undefined') {
     return fallback
   }

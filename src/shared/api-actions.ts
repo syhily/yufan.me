@@ -89,6 +89,7 @@ export const API_ACTIONS = {
     listMusic: defineApiAction('api/actions/admin/listMusic', 'GET'),
     searchMusic: defineApiAction('api/actions/admin/searchMusic', 'GET'),
     addMusic: defineApiAction('api/actions/admin/addMusic', 'POST'),
+    updateMusic: defineApiAction('api/actions/admin/updateMusic', 'PATCH'),
     deleteMusic: defineApiAction('api/actions/admin/deleteMusic', 'DELETE'),
   },
 } as const

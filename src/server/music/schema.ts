@@ -27,6 +27,24 @@ export const deleteMusicSchema = z.object({
   id: z.string().trim().min(1),
 })
 
+// Metadata-only edit. Audio / cover bytes and provider triplet
+// (source, sourceId, playerId) are intentionally NOT mutable from
+// this surface — those are owned by the upload pipeline. Lyrics
+// accept an empty string (cleared) but the wire layer normalises
+// `''` to `null` server-side so the column matches the upstream
+// "no lyric" representation.
+export const updateMusicSchema = z.object({
+  id: z.string().trim().min(1),
+  name: z.string().trim().min(1, '请输入歌名').max(200),
+  artist: z.array(z.string().trim().min(1).max(80)).min(1, '至少填写一位歌手').max(20),
+  album: z.string().trim().max(200).optional().default(''),
+  lyric: z
+    .string()
+    .max(50_000, '歌词过长')
+    .optional()
+    .transform((value) => (value === undefined || value.trim() === '' ? null : value)),
+})
+
 export const publicMusicGetSchema = z.object({
   id: z
     .string()
@@ -38,4 +56,5 @@ export type ListMusicInput = z.infer<typeof listMusicSchema>
 export type SearchMusicInput = z.infer<typeof searchMusicSchema>
 export type AddMusicInput = z.infer<typeof addMusicSchema>
 export type DeleteMusicInput = z.infer<typeof deleteMusicSchema>
+export type UpdateMusicInput = z.infer<typeof updateMusicSchema>
 export type PublicMusicGetInput = z.infer<typeof publicMusicGetSchema>

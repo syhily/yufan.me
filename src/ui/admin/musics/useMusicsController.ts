@@ -19,6 +19,7 @@ type MusicsAction =
   | { type: 'setPageSize'; value: number }
   | { type: 'removeMusic'; id: string }
   | { type: 'prependMusic'; music: AdminMusicDto }
+  | { type: 'patchMusic'; music: AdminMusicDto }
 
 function musicsReducer(state: MusicsState, action: MusicsAction): MusicsState {
   switch (action.type) {
@@ -38,6 +39,11 @@ function musicsReducer(state: MusicsState, action: MusicsAction): MusicsState {
       }
     case 'prependMusic':
       return { ...state, rows: [action.music, ...state.rows], total: state.total + 1 }
+    case 'patchMusic':
+      return {
+        ...state,
+        rows: state.rows.map((row) => (row.id === action.music.id ? { ...row, ...action.music } : row)),
+      }
   }
 }
 
@@ -48,7 +54,7 @@ export function useMusicsController() {
     hasMore: false,
     q: '',
     currentPage: 0,
-    pageSize: 20,
+    pageSize: 10,
   })
   return { state, dispatch }
 }

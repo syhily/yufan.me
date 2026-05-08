@@ -157,6 +157,15 @@ export async function insertMusic(values: NewMusic): Promise<MusicRow> {
   return rows[0]
 }
 
+export async function updateMusic(id: bigint, values: Partial<NewMusic>): Promise<MusicRow | null> {
+  const rows = await db
+    .update(music)
+    .set({ ...values, updatedAt: new Date() })
+    .where(eq(music.id, id))
+    .returning()
+  return rows[0] ?? null
+}
+
 export async function softDeleteMusic(id: bigint): Promise<MusicRow | null> {
   const now = new Date()
   const rows = await db.update(music).set({ deletedAt: now, updatedAt: now }).where(eq(music.id, id)).returning()

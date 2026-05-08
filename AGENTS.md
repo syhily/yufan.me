@@ -410,9 +410,10 @@ are:
   and the schema reserves `source` as a varchar so additional providers
   can be added later without a migration. Lyrics live in
   `music.lyric` so the player never makes a second round trip. The
-  one-time historical migration is `vp run import-music --apply` (see
-  `scripts/import-music.ts`); it scans MDX, imports through
-  `addMusic`, and only rewrites MDX after every row commits.
+  bucket layout is one `<playerId>.mp3` + one `<playerId>.jpg` per
+  row; the one-time MDX-to-DB import script and the matching
+  `musics/*.json` sidecar sweeper have been retired now that the
+  migration has settled.
 - URLs are based on MDX frontmatter `slug`, not physical filenames.
   Posts render at `/posts/:slug`; pages render at `/:slug`.
 - `visible=false` posts are hidden from the public home listing and
