@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "badge_text_color" text;

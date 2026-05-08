@@ -1,0 +1,108 @@
+import { createHash } from 'node:crypto'
+
+import type { RateLimitBucket, RateLimitSettings } from '@/shared/blog-config'
+
+import { redisInstance } from '@/server/cache/storage'
+import { rateLimitDefaults } from '@/server/settings/sections'
+import { getBlogSettingsBundleSync } from '@/shared/blog-config'
+
+// All keys live under the reserved `rate-limit:` namespace so the
+// admin cache panel can never SCAN/UNLINK them by accident — see the
+// `RESERVED_CACHE_PREFIXES` enforcement in `@/server/settings/schema`.
+const RATE_LIMIT_NAMESPACE = 'rate-limit:'
+
+const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
+const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
+const commentPostEmailKey = (email: string) => {
+  // Hash the email so the raw string never lands in Redis. SHA-256
+  // truncated to 32 hex chars (128 bits) is more than enough collision
+  // resistance for a per-window counter.
+  const normalized = email.trim().toLowerCase()
+  const hash = createHash('sha256').update(normalized).digest('hex').slice(0, 32)
+  return `${RATE_LIMIT_NAMESPACE}comment-email:${hash}`
+}
+const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${ip}`
+
+// Conservative fallbacks used ONLY when the settings snapshot has
+// not been hydrated yet (pre-install, or the very first request after
+// boot if a hydration race ever lets a request slip past the install
+// gate). The values are sourced from `rateLimitDefaults` in the
+// section registry — the same payload the install flow seeds and the
+// `loadSettingsFromDb` backfill writes for upgrading deployments — so
+// the fallback path behaves identically to the seeded path.
+const FALLBACK_RATE_LIMITS: RateLimitSettings = rateLimitDefaults
+
+function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
+  // We deliberately read the snapshot synchronously every call — the
+  // in-process slot is a single-pointer load, so the cost is
+  // negligible and an admin save takes effect on the very next
+  // request without any TTL or restart.
+  const bundle = getBlogSettingsBundleSync()
+  const live = bundle?.rateLimit?.[name]
+  if (live !== undefined) {
+    return live
+  }
+  return FALLBACK_RATE_LIMITS[name]
+}
+
+export interface RateLimitResult {
+  /** Post-increment counter value within the current window. */
+  count: number
+  /** True once the counter strictly exceeds the configured `maxAttempts`. */
+  exceeded: boolean
+}
+
+// Increment-and-check in a single round trip. `INCR` is atomic in
+// Redis so the post-increment counter is strictly monotonic; the
+// pipelined `EXPIRE … NX` arms the TTL on the first hit only and
+// silently no-ops on subsequent hits within the window (Redis 7.0+;
+// older servers without NX support extend the TTL on every hit, which
+// is still correct just less ideal).
+async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
+  const redis = redisInstance()
+  const pipeline = redis.pipeline()
+  pipeline.incr(key)
+  pipeline.expire(key, bucket.windowSeconds, 'NX')
+  const results = await pipeline.exec()
+  const incrResult = results?.[0]
+  if (!incrResult || incrResult[0]) {
+    throw new Error(`tryKeyedRateLimit: failed to increment counter for ${key}`, {
+      cause: incrResult?.[0] ?? undefined,
+    })
+  }
+  const count = Number(incrResult[1])
+  return { count, exceeded: count > bucket.maxAttempts }
+}
+
+/**
+ * Throttles login attempts by client IP. Counts every reach of the
+ * sign-in form (success and failure both bump the counter); the
+ * threshold is "attempts per `windowSeconds`" and the bookkeeping
+ * shouldn't depend on the eventual outcome of the login.
+ */
+export async function tryRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(signInKey(ip), readBucket('signInIp'))
+}
+
+/** Throttles public comment submissions by IP (independent of login rate limits). */
+export async function tryCommentPostRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(commentPostIpKey(ip), readBucket('commentPostIp'))
+}
+
+/** Throttles public comment submissions by normalized email (spam from many IPs, one mailbox). */
+export async function tryCommentPostRateLimitByEmail(email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(commentPostEmailKey(email), readBucket('commentPostEmail'))
+}
+
+/**
+ * Throttles `like` increases by client IP. Cancellation (the
+ * token-driven decrease path) intentionally does NOT bump this
+ * counter — only fresh inserts add `like` rows to the DB, so
+ * gating insertion is the right shape to keep table growth
+ * bounded. An admin who wants to relax the cap (e.g. a viral post)
+ * can raise `maxAttempts` from `/wp-admin/settings/rate-limit`
+ * without touching cancel flows.
+ */
+export async function tryLikeIncreaseRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(likeIncreaseKey(ip), readBucket('likeIncreaseIp'))
+}

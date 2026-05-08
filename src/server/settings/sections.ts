@@ -1,0 +1,258 @@
+import { z } from 'zod'
+
+import type { BlogSettingsBundle } from '@/shared/blog-config'
+
+import {
+  assetsSchema,
+  cacheSchema,
+  commentsSchema,
+  contentSchema,
+  footerSchema,
+  generalSchema,
+  mailSchema,
+  navigationSchema,
+  rateLimitSchema,
+  seoSchema,
+  sidebarSchema,
+  socialsSchema,
+} from '@/server/settings/schema'
+import { SETTINGS_SECTIONS, type SettingsSection, type UpdateSettingsInput } from '@/shared/settings'
+
+export { SETTINGS_SECTIONS }
+export type { SettingsSection, UpdateSettingsInput }
+
+// Section registry. Single source of truth for every settings section
+// and its four relationships:
+//
+//   1. `scope`    — the `setting.scope` row that holds this section.
+//   2. `schema`   — the Zod validator the admin update endpoint uses.
+//   3. `key`      — the bundle field this section maps to in
+//                   `BlogSettingsBundle` (also the React-context name on
+//                   the UI side).
+//   4. `defaults` — the seed payload the install flow writes when the
+//                   section has no admin-provided values. `null` means
+//                   the section requires user input (general, assets)
+//                   contents directly. Every other section ships with a
+//                   sensible starter document so the very first request
+//                   after install can render without throwing from the
+//                   strict per-section hooks (`useFooterSettings()`,
+//                   `useNavigationSettings()`, …) before the admin has
+//                   visited each settings tab.
+//
+// `service.ts`, `snapshot.ts`, and the install seed all import this
+// registry instead of hard-coding the scope strings, so renaming a
+// section (or adding an 11th) is a one-line change here.
+
+export interface SectionMeta<
+  S extends z.ZodType = z.ZodType,
+  K extends keyof BlogSettingsBundle = keyof BlogSettingsBundle,
+> {
+  /** DB scope key, e.g. `blog.general`. */
+  scope: string
+  /** Zod schema validating the inbound admin payload. */
+  schema: S
+  /** Bundle field this section populates on the in-memory snapshot. */
+  key: K
+  /**
+   * Install-time seed payload. `null` means the section requires user
+   * input (the install form provides it). A non-null value MUST already
+   * satisfy `schema` — see the install seed's `safeParse` defence in
+   * depth and the `service.settings — sections.defaults` test.
+   */
+  defaults: Record<string, unknown> | null
+}
+
+// Sensible-default seed payloads for the 9 optional sections. Each
+// payload is shaped to satisfy its section's Zod schema verbatim so the
+// install flow can write it through `upsertSetting` without any extra
+// massaging. Keep these values conservative — empty arrays / disabled
+// integrations / 1-day TTLs — so a fresh deployment looks "off" until
+// the admin opts into each surface from the matching `/wp-admin/
+// settings/<section>` page. (`assets` and `general` carry `defaults: null`
+const navigationDefaults = { navigation: [] } as const
+const socialsDefaults = { socials: [] } as const
+const contentDefaults = {
+  pagination: { posts: 10, category: 10, tags: 10, search: 10 },
+  feed: { full: false, size: 20 },
+  post: { sort: 'desc' as const },
+} as const
+const sidebarDefaults = {
+  sidebar: { calendar: false, search: true, comment: 5, post: 5, tag: 20 },
+} as const
+const commentsDefaults = {
+  comments: {
+    size: 10,
+    // Gravatar's HTTPS endpoint is the historical default mirror; the
+    // admin can swap in a regional mirror (e.g. `gravatar.loli.net`)
+    // from `/wp-admin/settings/comments` without dropping a row.
+    avatar: { mirror: 'https://www.gravatar.com/avatar', size: 80 },
+  },
+} as const
+const seoDefaults = {
+  twitter: '',
+  toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+  og: { width: 1200, height: 630 },
+} as const
+// `initialYear` is bound to the install-time current year so the
+// footer's "© 2024-2026" range starts from a sensible baseline. The
+// admin can backdate it from `/wp-admin/settings/footer` if the site's
+// real first-publish year is earlier.
+//
+// Stored as a stable object literal computed at module load time. The
+// process restarts on each deploy so the year stays current; tests
+// that need a fixed year freeze `Date` themselves before importing.
+const footerDefaults = {
+  footer: { initialYear: new Date().getUTCFullYear() },
+} as const
+const mailDefaults = {
+  // Disabled by default — the sender must supply a Zeabur ZSend host +
+  // API key + verified sender address before any outgoing mail flows.
+  // `host`/`sender` carry placeholders so the schema's `min(1)` and
+  // `email` constraints pass: an empty `mail.host` would reject the
+  // seed. The admin form treats both fields as freely editable.
+  mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' },
+} as const
+// `:`-suffixed prefixes are the safe shape: the cache schema rejects
+// any prefix that's a strict prefix of (or equal to) another bucket's
+// prefix, AND any prefix that collides with the reserved `session:` /
+// `rate-limit:` / `avatar-status-` surfaces. `og:`, `calendar:`, and
+// `avatar:` clear both bars without overlapping each other.
+const cacheDefaults = {
+  cache: {
+    og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
+    calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
+    avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
+  },
+} as const
+// Rate-limit defaults mirror the historical hard-coded values that
+// shipped before this surface was admin-editable, so an upgrading
+// deployment behaves identically until the admin opts to tune the
+// caps from `/wp-admin/settings/rate-limit`:
+//
+//   * Sign-in IP — 5 attempts / 30 minutes (login lockout).
+//   * Comment IP — 12 attempts / 1 hour (anonymous comment spam wall).
+//   * Comment email — 8 attempts / 1 hour (mailbox-level spam wall).
+//   * Like increase IP — 30 likes / 1 hour. New surface; sized so a
+//     normal reader scrolling through a blog roll never trips it,
+//     but a script hammering a single page burns through the cap in
+//     a couple of seconds and stops creating `like` token rows.
+// Exported so `@/server/rate-limit` can use the same constants for its
+// pre-hydration `FALLBACK_RATE_LIMITS`. The two lists used to drift in
+// silence whenever a default was tuned in only one of the files; a
+// single export rules out that class of bug.
+export const rateLimitDefaults = {
+  signInIp: { windowSeconds: 60 * 30, maxAttempts: 5 },
+  commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
+  commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
+  likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
+} as const
+export const SECTION_REGISTRY = {
+  general: { scope: 'blog.general', schema: generalSchema, key: 'siteIdentity', defaults: null },
+  // `assets` packs the music CDN host AND the S3 bucket credentials AND
+  // the upload limits. `defaults` is `null` because the install flow
+  // requires a real `asset.host` (an empty default would never satisfy
+  // and the registry contributes the conservative S3 starter (toggle
+  // OFF, empty credentials, 8 MiB / quality 82) through the install
+  // seed below. The admin then opens `/wp-admin/settings/assets` to
+  // flip the storage toggle on and supply credentials when ready.
+  assets: { scope: 'blog.assets', schema: assetsSchema, key: 'assets', defaults: null },
+  navigation: { scope: 'blog.navigation', schema: navigationSchema, key: 'navigation', defaults: navigationDefaults },
+  socials: { scope: 'blog.socials', schema: socialsSchema, key: 'socials', defaults: socialsDefaults },
+  content: { scope: 'blog.content', schema: contentSchema, key: 'content', defaults: contentDefaults },
+  sidebar: { scope: 'blog.sidebar', schema: sidebarSchema, key: 'sidebar', defaults: sidebarDefaults },
+  comments: { scope: 'blog.comments', schema: commentsSchema, key: 'comments', defaults: commentsDefaults },
+  seo: { scope: 'blog.seo', schema: seoSchema, key: 'seo', defaults: seoDefaults },
+  footer: { scope: 'blog.footer', schema: footerSchema, key: 'footer', defaults: footerDefaults },
+  mail: { scope: 'blog.mail', schema: mailSchema, key: 'mail', defaults: mailDefaults },
+  cache: { scope: 'blog.cache', schema: cacheSchema, key: 'cache', defaults: cacheDefaults },
+  // `rateLimit` is a pure runtime-policy section: every bucket has a
+  // schema-validated default mirroring the historical hard-coded
+  // values, so an upgrading deployment that hits the
+  // `backfillMissingSectionDefaults()` path picks up the current
+  // behaviour automatically without admin intervention.
+  rateLimit: {
+    scope: 'blog.rateLimit',
+    schema: rateLimitSchema,
+    key: 'rateLimit',
+    defaults: rateLimitDefaults,
+  },
+} as const satisfies Record<SettingsSection, SectionMeta>
+
+// Conservative starter S3 configuration the install flow writes for the
+// `blog.assets` row alongside the user-supplied `asset.host` / `asset.scheme`.
+// The toggle is OFF and the bucket fields are empty so a fresh install
+// never tries to ship to a non-existent S3 endpoint; the admin flips
+// the toggle on from `/wp-admin/settings/assets` after entering valid
+// credentials.
+export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
+  storage: {
+    enabled: false,
+    endpoint: '',
+    region: '',
+    bucket: '',
+    accessKeyId: '',
+    secretAccessKey: '',
+    forcePathStyle: false,
+    urlTemplate: '',
+  },
+  upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
+} as const
+
+/** Common prefix used to fetch every settings row in one SELECT. */
+export const SETTINGS_SCOPE_PREFIX = 'blog.'
+
+/**
+ * Reverse lookup: given a `scope` string from the DB, return the
+ * matching section id (or `null` if the row belongs to some other
+ * surface we don't recognise — defensive against stale rows).
+ */
+export function sectionFromScope(scope: string): SettingsSection | null {
+  for (const section of SETTINGS_SECTIONS) {
+    if (SECTION_REGISTRY[section].scope === scope) {
+      return section
+    }
+  }
+  return null
+}
+
+// Wire envelope used by the admin `updateSettings` PATCH endpoint.
+// Defined here (not in `schema.ts`) so it can `z.enum(SETTINGS_SECTIONS)`
+// off the registry without creating a `schema.ts` ↔ `sections.ts`
+// circular import.
+export const updateSettingsSchema = z.object({
+  section: z.enum([...SETTINGS_SECTIONS] as [SettingsSection, ...SettingsSection[]]),
+  payload: z.unknown(),
+})
+
+/**
+ * Validate every section's `defaults` payload against its own
+ * `schema`, returning the list of `(section, parsed-payload)` pairs
+ * for sections that ship with a non-null seed. Throws
+ * `Error('blog.<section> defaults invalid')` when any default fails
+ * its schema — that's a programmer bug in this file, not a runtime
+ * data error, so loud failure is the right behaviour.
+ *
+ * Used by:
+ *   - `seedInstallSettingsWithSession()` (first-time install).
+ *   - `backfillMissingSectionDefaults()` (existing deployments that
+ *     pre-date the "seed all sections at install" change).
+ */
+export function buildDefaultSectionPayloads(): { section: SettingsSection; payload: Record<string, unknown> }[] {
+  const out: { section: SettingsSection; payload: Record<string, unknown> }[] = []
+  for (const section of SETTINGS_SECTIONS) {
+    const meta = SECTION_REGISTRY[section]
+    if (meta.defaults === null) {
+      continue
+    }
+    const check = meta.schema.safeParse(meta.defaults)
+    if (!check.success) {
+      // Surface the first issue path in the message so a regression
+      // pinpoints the exact field that drifted.
+      const first = check.error.issues[0]
+      const path = first ? first.path.join('.') : '<unknown>'
+      throw new Error(`${meta.scope} defaults invalid at \`${path}\`: ${first?.message ?? 'unknown reason'}`)
+    }
+    out.push({ section, payload: check.data as Record<string, unknown> })
+  }
+  return out
+}

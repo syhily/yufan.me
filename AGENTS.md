@@ -1,0 +1,722 @@
+# AGENTS.md
+
+Repository conventions for AI agents and contributors. Read this before
+authoring routes, content loaders, templates, React components, or server
+code.
+
+This file is the **single source of truth** for project conventions.
+`CLAUDE.md` is a `git`-tracked symbolic link to `AGENTS.md` (`ln -s
+AGENTS.md CLAUDE.md`); never edit it separately and never replace it
+with a divergent copy. When a Claude Code session looks for `CLAUDE.md`
+it transparently reads this same file.
+
+## Skills Are the Baseline
+
+The conventions below are calibrated against the agent Skills shipped
+under `.claude/skills/` (Claude Code) and `.agents/skills/` (Cursor /
+generic agent runtimes). The two trees are kept in sync via
+`skills-lock.json`; do not edit one without mirroring the change in the
+other.
+
+| Skill                         | When the agent must read it                                                                                           |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `react-router-framework-mode` | Adding routes, loaders, actions, forms, navigation, error boundaries, sessions, or touching `react-router.config.ts`. |
+| `vercel-react-best-practices` | Writing or refactoring any React/SSR code. The 70 numbered rules are the project's performance baseline.              |
+| `vercel-composition-patterns` | Designing new components, refactoring boolean-prop matrices, or building compound components / context providers.     |
+| `shadcn`                      | Adding, updating, debugging, or styling shadcn/ui components, switching presets, or working with `components.json`.   |
+| `tailwind-design-system`      | Authoring CSS tokens, design-system primitives, or any Tailwind v4 `@theme` change.                                   |
+| `web-design-guidelines`       | Reviewing UI for accessibility, UX, and Web Interface Guidelines compliance.                                          |
+
+Operating rules:
+
+- **Read before authoring.** When a task triggers one of the Skills above
+  (per its `description` frontmatter), open the SKILL.md and any
+  referenced rule files _before_ writing code. Skills are the
+  authoritative source for the conventions they cover.
+- **Skills win on conflict.** If anything in this document contradicts a
+  Skill rule, the Skill wins. Open a PR that fixes this document rather
+  than silently re-introducing the older rule.
+- **Quote the rule id in PR review.** For Vercel rule sets the IDs are
+  stable (e.g. `bundle-barrel-imports`,
+  `architecture-avoid-boolean-props`, `server-no-shared-module-state`).
+  Reviewers cite the id so the rationale is reproducible.
+- **Out-of-scope topics.** When a task is outside every installed Skill
+  (e.g. Drizzle migrations, Fumadocs MDX wiring, Vite+ tooling), fall
+  back to this document and the upstream library docs.
+
+## Stack
+
+- React Router 7 Framework Mode with SSR enabled. `react-router.config.ts`
+  keeps `appDirectory` at `src` and enables `future.v8_middleware`.
+- Vite is the build system. `vite.config.ts` wires React Router, Fumadocs
+  MDX, binary asset imports, path aliases, and dev server settings.
+- Fumadocs MDX compiles `src/content/posts` and `src/content/pages`.
+  Categories, tags, and friend links all live in Postgres now and
+  are edited through `/wp-admin/{categories,tags,friends}`; the
+  legacy `src/content/metas/friends.yaml` is kept only as a
+  historical reference for the initial data set, and `categories.yaml`
+  / `tags.yaml` have been removed entirely.
+- React 19 is the view layer. Route modules and components are TSX/TS
+  only; there are no `.astro`, `astro:*`, or `@astrojs/*` runtime modules.
+- Postgres stores comments, users, likes, and counters. Redis backs
+  sessions, rate limits, avatars, and generated-image caches.
+
+## Architecture
+
+The codebase is organised as four cooperating layers under `src/`. The
+goal is high cohesion within each layer and a one-way import graph
+between them, so the server bundle and the client bundle can be reasoned
+about independently.
+
+```
+src/
+├── routes/           # Pure orchestration: loader / action / meta / component.
+├── server/           # SSR-only logic. *.server.ts files, DB, Redis,
+│                     # session, mail, cache, domain services.
+├── client/           # Browser-side logic. Hooks, fetchers, browser APIs.
+│                     # Heavy third-party widgets (e.g. `qrcode.react`)
+│                     # are imported lazily from `src/ui/` via React.lazy.
+├── ui/               # Pure-props React components. No server imports,
+│                     # no session reads, no environment access.
+├── shared/           # Truly isomorphic modules. Pure utilities that are
+│                     # safe to evaluate in both server and client bundles.
+├── content/          # Fumadocs collections (posts, pages, metas).
+├── assets/           # Static assets (icon SVGs, fonts, styles).
+├── env.d.ts          # Vite-side ambient typings.
+├── react-router.d.ts # React Router framework-mode ambient typings.
+├── routes.ts         # Route manifest (URL → route module).
+└── root.tsx          # The single document shell. Owns global UI.
+```
+
+### `src/routes/` — Orchestration Only
+
+- `src/routes/**/*.tsx` are page route modules with `loader`, `action`,
+  `meta`, and default components as needed.
+- `src/routes/**/*.ts` are resource routes such as feeds, sitemap,
+  generated images, and API/action endpoints.
+- Internal client APIs (comment, like, avatar, admin comment, …) live as
+  Resource Routes under `src/routes/api/actions/<domain>.<name>.ts`.
+  They export only `loader` (GET) or `action` (POST/PATCH/DELETE) and
+  never a default React component. URL paths follow
+  `/api/actions/<domain>/<name>`.
+- Route modules orchestrate: read session/context from the perimeter,
+  call into `server/`, project DTOs through `shared/`, and render with
+  `ui/`. They should not contain DB queries, Redis access, or markdown
+  parsing inline.
+- Public URLs and route module physical paths must stay stable. React
+  Router derives stable route IDs from the file path and breaking those
+  IDs invalidates serialized links and bookmarks.
+
+### `src/server/` — SSR Only
+
+- Every file is server-only. The historical `*.server.ts` suffix is kept
+  as a redundant marker so editors and bundlers can still reject
+  accidental client imports, but the canonical signal is the directory.
+- Sub-areas:
+  - `server/db/` — Drizzle pool, schema, query helpers, migrations.
+  - `server/http/` — Resource-route perimeter (`runApi`,
+    `defineApiAction`, `ok`, `fail`), cache-header profiles, common
+    response helpers.
+  - `server/middleware/` — React Router root middleware. Keep request
+    context population, install gating, WordPress probe interception, and
+    any future server middleware here instead of scattering middleware
+    definitions through domain service files.
+  - `server/auth/*` (or, if merged in a follow-up, `server/session.ts`)
+    — Cookie session, CSRF, request-context provider, login flow, form
+    adapters. Tests treat the file path as a contract (see
+    `tests/contract.cookie.test.ts`); keep them in sync.
+  - `server/catalog/` — Fumadocs-backed content catalog and projections.
+  - `server/comments/`, `server/sidebar/`, `server/feed/`,
+    `server/search/`, `server/seo/`, `server/metrics/` — Domain
+    services. Each domain owns its loader, schema, and helpers.
+  - `server/images/` — OG, calendar, thumbhash, font-asset, compression
+    pipelines.
+  - `server/markdown/` — MDX parser, formatter, rehype plugins, Mermaid,
+    Shiki, TOC.
+  - `server/email/` — SMTP sender + React Email templates.
+  - `server/cache/`, `server/rate-limit.ts` — Redis-backed caches and
+    counters.
+  - `server/env.ts` — `@t3-oss/env-core` schema and exported constants.
+  - `server/logger.ts` — Lightweight structured JSON logger.
+- Server modules can import from `shared/` and from other `server/`
+  files. They must not import from `client/` or `ui/`.
+
+### `src/client/` — Browser Only
+
+- Houses interactive code that runs in the browser bundle. Hooks,
+  `useApiFetcher`, and the `API_ACTIONS` manifest + types.
+- Heavy third-party widgets (e.g. `qrcode.react` for QR rendering) are
+  not vendored here; the consuming component reaches for them through
+  React.lazy + Suspense so they only ship when actually used (see
+  `bundle-dynamic-imports`).
+- Heavy first-party helpers must likewise be reachable through dynamic
+  `import()` from a React component, not via top-level imports.
+- Client modules can import from `shared/` and other `client/` files.
+  They must not import any `*.server.ts`/`server/*` modules or any
+  Node-only API (`node:fs`, `ioredis`, etc.).
+
+### `src/ui/` — Pure-Props Components
+
+- Reusable React components. Each component receives explicit props
+  and does not read sessions, route params, request objects, or
+  environment variables. State is owned by the route module or by the
+  closest interactive parent component.
+- Sub-areas:
+  - `ui/primitives/` — Header, Footer, Image, Tooltip, Popup,
+    QRDialog, ScrollTopButton.
+  - `ui/components/ui/` — shadcn/ui primitives (Base UI variant). The
+    directory layout matches `components.json` so `npx shadcn@latest
+add/diff/--dry-run` works out of the box. Both the public and
+    admin subtrees are free to import from here; visual scoping
+    happens at the stylesheet boundary (only `PublicChrome` imports
+    `globals.css`, only the admin shell carries `data-admin-shell`),
+    not at the component-source boundary.
+  - `ui/post/`, `ui/pagination/`, `ui/toc/`, `ui/sidebar/`,
+    `ui/search/`, `ui/like/`, `ui/comments/`, `ui/admin/` — Domain UIs.
+  - `ui/mdx/` — MDX-only React renderers (CodeBlock, MdxImg,
+    MusicPlayer, Solution, Friends).
+  - `ui/icons/` — Static-export icon library plus the inline SVG
+    pieces.
+  - `ui/lib/` — UI-only utilities such as the `cn()` helper.
+- For raw HTML, use `dangerouslySetInnerHTML` directly on the host
+  element. Do not recreate a generic `Html` wrapper component.
+- For conditional classNames, use `cn()` from `@/ui/lib/cn`. The
+  current implementation composes `clsx` (for falsy short-circuiting,
+  array/object flattening) with the default `twMerge` from
+  `tailwind-merge` (for last-wins deduplication of conflicting
+  Tailwind utilities — `gap-2 gap-4` collapses to `gap-4`,
+  responsive variants like `md:gap-4` are scoped independently).
+  Stage 10 dropped the historical `extendTailwindMerge({ prefix:
+'tw' })` wrapper alongside the `prefix(tw)` Tailwind import option
+  — the global `tw:` prefix was a pre-stage-9 collision-isolation
+  hedge against Bootstrap and is no longer needed. Consult the
+  `tailwind-design-system` Skill before changing the helper, and
+  pin any contract via `tests/unit.cn.test.ts`.
+- Use `<Image />` from `@/ui/primitives/Image` for transformed remote
+  images. Use named imports from `@/ui/icons` for inline SVG instead of
+  string-based `<Icon name="..." />` lookups (string lookups defeat the
+  bundler's static analysis — see Vercel `bundle-analyzable-paths` and
+  the shadcn "Pass icons as objects, not string keys" rule).
+
+### `src/shared/` — Isomorphic Only
+
+- Strictly isomorphic, side-effect-free modules that the server bundle
+  _and_ the client bundle can both pull in.
+- Forbidden inside `shared/`: Node built-ins, `ioredis`,
+  `drizzle-orm`, DOM-only APIs (`window`, `document`), and anything
+  that reads `process.env` directly.
+- Current inventory (see `src/shared/` for the authoritative list —
+  this paragraph is intentionally a one-liner per module so newcomers
+  can grep the codebase without round-tripping through this file):
+  - **Wire & primitives** — `api-actions` (typed API descriptors;
+    feeds `routes.ts` and `useApiFetcher`), `api-envelope`,
+    `api-types`, `urls`, `safe-url`, `request`, `security`,
+    `tools`, `formatter`, `toc`, `images` (URL transform helpers
+    consumed by `<Image />` on both bundles).
+  - **Per-domain DTOs** — `categories`, `comments`, `friends`,
+    `socials`, `tags`, `users`, `cache-types`, `catalog` (each is
+    the isomorphic projection of the matching `@/server/<domain>`
+    module — DTOs returned by loaders, consumed by UI props).
+  - **Settings & blog config** — `settings` (canonical
+    `SETTINGS_SECTIONS` enum + `SECTION_TO_BUNDLE_KEY` /
+    `BUNDLE_KEYS` mapping that the snapshot, registry, and React
+    contexts all derive from), `blog-config` (the `BlogSettingsBundle`
+    DTO + the synchronous in-process snapshot reader; the
+    server-only writer is in `@/server/settings/snapshot`).
+
+  Add new modules here only when at least one server caller and
+  one client caller already exist. The `@/shared/` boundary
+  forbids `pg` / `ioredis` / `node:*` imports — anything that
+  needs them lives in `@/server/`.
+
+## Path Aliases
+
+- `@/*` → `./src/*`
+- `~/*` → `./public/*`
+- `#source/*` → `./.source/*` (Fumadocs-generated content)
+
+Use aliases instead of relative paths. The only allowed relative imports
+are:
+
+- `src/routes.ts` → project code under `src/`, because React Router reads
+  the route manifest before the Vite / tsconfig aliases are available.
+  Any project-code import from `src/routes.ts` must therefore use a
+  relative specifier such as `./shared/api-actions`, not `@/…`, `~/…`, or
+  `#source/…`.
+- `./+types/*` — React Router type codegen colocated with each route
+  module.
+- `vite.config.ts` ↔ `source.config.ts`, which import each other with an
+  explicit `.ts` extension because Vite+'s ESM config loader does not
+  resolve bare TS specifiers (`allowImportingTsExtensions` is enabled
+  in `tsconfig.json` for this reason). `source.config.ts` may also use
+  explicit relative `.ts` imports for config-only markdown plugins that
+  must run during MDX compilation (currently the Mermaid rehype plugin
+  and the cached Shiki rehype-code wrapper).
+
+## Routing And Data
+
+- Use React Router `loader` for render-time data and `action` for route
+  form submissions.
+- Use `redirect`, `data`, `Response`, and thrown responses instead of
+  legacy Astro redirects, rewrites, response mutation, or actions.
+- Keep admin authentication and session reads in loaders/actions. UI
+  components should receive plain DTO props and should not import
+  session or database code.
+- Resource routes replace former `src/pages/**/*.ts` endpoints for
+  feeds, sitemap, Open Graph images, calendar images, and avatar
+  images.
+
+## Content
+
+- Do not use `astro:content`. Fumadocs collections are declared in
+  `source.config.ts`.
+- Posts stay in `src/content/posts/**/*.mdx`; pages stay in
+  `src/content/pages/**/*.mdx`.
+- Categories, tags, and friend links are stored in the `category`,
+  `tag`, and `friend` Postgres tables and managed from
+  `/wp-admin/categories`, `/wp-admin/tags`, and `/wp-admin/friends`
+  respectively. There is no remaining Fumadocs meta collection for
+  taxonomies. MDX frontmatter still references categories and tags
+  by their `name`, so admin renames must stay in sync with author
+  edits in MDX (the catalog throws on cold start when a post
+  references a missing category, and warns when it references a
+  missing tag). Deletion is blocked when any post still references
+  the row — the admin must change the MDX frontmatter first.
+  Initial taxonomy data is seeded directly through the admin UI;
+  the historical YAML files have been removed from the repo.
+- The legacy `src/content/metas/friends.yaml` is kept only as a
+  historical reference for the initial friend data set.
+- Image metadata is owned by the Postgres `image` table and the
+  image library at `/wp-admin/images`. The build-time MDX pipeline no
+  longer reads sidecar JSON files; the runtime
+  (`@/server/images/render-enhance`) post-processes generated HTML for
+  feeds and synchronously resolves `loadImageThumbhash(...)` for cover
+  images by querying the `image` table through a process-level LRU
+  cache.
+
+  The bytes are stored in an S3-compatible bucket. The dispatcher
+  (`@/server/images/storage`) is gated on a single `assets.storage.enabled`
+  toggle persisted in `setting('blog.assets')`:
+  - **Toggle ON (`enabled === true`)** — every PUT/DELETE goes to the
+    configured S3 bucket through `@/server/images/s3-client` (the AWS
+    SDK is loaded lazily through a dynamic `import()` so SSR paths
+    that only need a URL never pull it in). The public URL is
+    `<storage.publicBaseUrl>/<storagePath>`.
+  - **Toggle OFF (default for fresh installs)** — every PUT/DELETE
+    is refused with `ActionFailure(503)`. The `/wp-admin/images`
+    library is read-only in this state; the SSR enhancer still
+    resolves historical rows against the persisted `publicBaseUrl`
+    so older posts keep rendering after the admin pauses uploads.
+    Flipping the toggle back on does not require re-pasting
+    credentials — the form remembers the saved values while the
+    toggle is off.
+
+  Every row in the `image` table represents an object stored in the
+  configured S3 bucket; there is no other origin (the legacy
+  `external` row type and the `image.source` discriminator have both
+  been removed — `storagePath` is always an S3 object key now).
+
+  Adding a new image is a UI workflow (only available when the toggle
+  is ON):
+  1. Open `/wp-admin/images` and upload the file (cropping, rotation,
+     and JPEG re-encoding all happen in-browser before the multipart
+     POST hits the backend).
+  2. The backend re-encodes via `sharp`, computes a `thumbhash`,
+     hands the buffer to the storage dispatcher (S3), and inserts a
+     row into `image`. The uploader's user id is recorded on
+     `image.uploader_id` so the admin library can render the
+     uploader name (LEFT JOIN against `user`; `null` falls back to
+     a `—` placeholder when the user has been hard-deleted).
+  3. The public URL (the dispatcher's `getPublicBaseUrl()` joined
+     with the storage path) can be pasted into MDX / category covers
+     / friend posters as before.
+
+  Category covers (`EditCategoryDialog`) and friend posters
+  (`EditFriendDialog`) ship with an inline upload affordance that
+  targets `images/categories/<slug>.jpg` and `images/links/<host>.jpg`
+  respectively, locked to a 1280×425 crop. Generic uploads land at
+  `images/yyyy/MM/<yyyyMMddHHmmssNN>.jpg` (Go-style timestamp; ms / 100
+  is the closest JS analogue to nanoseconds). The upload button
+  reads the same `storage.enabled` flag and tooltips "S3 上传未开启"
+  when the toggle is off so the operator never has to discover the
+  503 by clicking through.
+
+  The historical `src/content/image-metadata/` sidecar tree has been
+  fully ingested into the `image` table and removed from the repo.
+  Every image referenced from MDX or YAML now resolves through a
+  single DB lookup; new uploads come exclusively from the admin
+  library at `/wp-admin/images`.
+
+- URLs are based on MDX frontmatter `slug`, not physical filenames.
+  Posts render at `/posts/:slug`; pages render at `/:slug`.
+- `visible=false` posts are hidden from the public home listing and
+  random post widgets, but they are intentionally included in
+  `/archives`, `/tags/:slug`, `/search/:keyword`, `sitemap.xml`, all
+  RSS/Atom feeds, category listing pages (`/cats/:slug`), category
+  counts on `/categories`, and tag counts. Future-dated scheduled posts
+  remain excluded from those public archives/tag/search/feed/sitemap
+  listings and counts.
+- The catalog (`@/server/catalog`) returns compiled MDX components
+  through `body`, headings, raw source, and structured data. Do not
+  reintroduce Astro `render()` semantics.
+- Custom MDX components live under `@/ui/mdx`; preserve existing math,
+  Mermaid, heading slug, external link, title figure, and Shiki
+  behavior via `source.config.ts`.
+
+## RSC Layering Rules
+
+These rules are enforced by code review (and, where practical, by lint
+rules and import-boundary tests):
+
+- `server/*` may import from `shared/*` and other `server/*` modules. It
+  may not import from `client/*` or `ui/*`.
+- `client/*` and `ui/*` may import from `shared/*`, `ui/*`, and
+  `client/*`. They may not import from any `server/*` module or any
+  file with a `.server.*` suffix.
+- `shared/*` may import from `shared/*` only. Modules here must run in
+  both the server bundle and the client bundle without polyfills.
+- `routes/*` may import from `server/*`, `client/*`, `ui/*`, and
+  `shared/*`. Components rendered by a route must accept plain props;
+  they should not reach back into `server/*` from inside the JSX tree.
+- `*.server.ts` is a redundant marker for files inside `src/server/`
+  and is required for any module that lives outside `src/server/` but
+  must never reach the client (none should remain by design).
+- Avoid barrel files (`index.ts` that just re-exports its siblings) per
+  Vercel's `bundle-barrel-imports`. Import directly from the file that
+  defines the symbol.
+
+The Vercel React performance Skill catalogues additional rules that
+reviewers reach for during PR review: `server-no-shared-module-state`,
+`server-cache-react`, `bundle-analyzable-paths`,
+`bundle-dynamic-imports`, `rendering-resource-hints`, and
+`rerender-memo`. Quote the rule id when raising a concern.
+
+## Component Rules
+
+- Components should be plain TSX and receive explicit props. Avoid
+  hidden reads from route params, sessions, request objects, or
+  environment variables.
+- Compose with children and slots rather than boolean prop matrices
+  (`vercel-composition-patterns/architecture-avoid-boolean-props`).
+- Prefer compound components over render-prop callbacks for nested
+  pieces of the same widget.
+- Recursive components should recurse by component name.
+- React 19: do not introduce `forwardRef` for new components; refs
+  flow through props.
+
+## Client Interactivity
+
+- React Router hydrates the app. Keep browser behavior in React
+  components or hooks when it is interactive page chrome or progressive
+  enhancement.
+- Interactive components must call stable resource URLs through
+  `API_ACTIONS` (`@/client/api/actions`) and `useApiFetcher`
+  (`@/client/api/fetcher`); they must not import server modules.
+- `src/assets/scripts` is intentionally absent. The legacy Astro
+  browser-script pipeline has been removed; all interactivity lives
+  inside React components/hooks under `@/client/` and `@/ui/`.
+- Avoid adding new client dependencies unless the interaction genuinely
+  needs them.
+
+## Sessions, Env, And Security
+
+- Sessions use React Router `createSessionStorage` with Redis
+  persistence and a signed `__session` cookie. `SESSION_SECRET` is
+  required.
+- Server environment access goes through `@/server/env` (built on
+  `@t3-oss/env-core` + Zod for runtime validation and typed exports).
+- When adding environment variables, update the t3-env schema,
+  `src/env.d.ts`, and `.env.example` together.
+- The image library is fully DB-backed: the master upload toggle
+  (`assets.storage.enabled`), the S3 credentials / bucket / asset
+  CDN host, and the upload limits all live under the
+  `setting('blog.assets')` row and can be edited at
+  `/wp-admin/settings/assets`. There are no longer `ASSET_HOST` /
+  `ASSET_SCHEME` env vars for images. `assets.asset.host` /
+  `assets.asset.scheme` (formerly `localization.asset.*`) is the
+  same CDN host used by both the image library and `<MusicPlayer>`.
+  When the toggle is OFF uploads return `503` and the admin
+  library is read-only, but the SSR enhancer still resolves
+  historical rows against the saved public base URL so flipping
+  the toggle off does not break any already-rendered post.
+- Use `zod` directly; do not import `astro/zod` or deprecated Zod APIs.
+- Security helpers such as CSRF and client-address parsing live in
+  `@/server/auth/*` (server-side wiring) and `@/shared/request`,
+  `@/shared/security` (isomorphic primitives). Keep them
+  framework-neutral where possible.
+
+## Configuration & Install Gate
+
+- The single source of truth for runtime blog config is the
+  `setting` table — **one JSONB row per settings section**, named
+  `scope='blog.<section>'` (e.g. `blog.general`, `blog.assets`,
+  `blog.navigation`, `blog.socials`, `blog.content`, `blog.sidebar`,
+  `blog.comments`, `blog.seo`, `blog.footer`, `blog.mail`,
+  `blog.cache`). The full mapping (section ↔ DB scope ↔ Zod schema
+  ↔ bundle key) lives in `@/server/settings/sections.ts`'s
+  `SECTION_REGISTRY`. Splitting the previously-singleton `blog` row
+  this way means a save to one section never reads, merges, or
+  rewrites the JSONB belonging to any other section, so concurrent
+  edits on different tabs cannot race each other.
+- The in-memory composition of all section rows is `BlogSettingsBundle`
+  (`@/shared/blog-config`): one bucket per section
+  (`siteIdentity`, `assets`, `navigation`, `socials`, `content`,
+  `sidebar`, `comments`, `seo`, `footer`, `mail`, `cache`), each
+  typed independently. `siteIdentity` carries the date/locale fields
+  (`locale`, `timeZone`, `timeFormat`) that used to live in the old
+  `localization` bucket; `assets` carries the CDN host/scheme plus
+  the S3 storage and upload limits that used to live in the old
+  `localization.asset` and `images` buckets respectively. The
+  legacy aggregated `BlogSettings` / `BlogConfig` projection has
+  been removed; SSR call sites pull the bucket they need through
+  `requireBlogSettingsSection('<key>')` and UI call sites use the
+  matching per-section hook (`useSiteIdentity`, `useAssetsSettings`,
+  …).
+- There is no `DEFAULT_SETTINGS` constant; the install flow seeds
+  every section row up front (`blog.general` + `blog.assets` from
+  the stage-2 form, the other 9 sections from per-section
+  `defaults` in `SECTION_REGISTRY`). Pre-install,
+  `getBlogSettingsBundleSync()` returns `null` and
+  `useBlogSettingsBundle()` / the per-section accessors return
+  `undefined`. Post-install, every section bucket is populated, so
+  the strict per-section hooks always resolve. Server code that runs
+  after install should use `requireBlogSettingsSection('<key>')` (or
+  `requireBlogSettingsBundle()` when it genuinely needs more than
+  one bucket); UI code reads only the section it actually needs
+  through one of the per-section hooks (`useSiteIdentity`,
+  `useAssetsSettings`, `useNavigationSettings`, `useSocialsSettings`,
+  `useContentSettings`, `useSidebarSettings`, `useCommentsSettings`,
+  `useSeoSettings`, `useFooterSettings`, `useMailSettings`,
+  `useCacheSettings`). Each hook has a strict variant (throws if the
+  section is unseeded — protects against a partial install or a
+  manually-truncated row) and a `…Optional` variant (returns
+  `undefined`) for the rare rendering paths that need to tolerate a
+  missing bucket.
+- New UI components MUST NOT reach for the aggregated
+  `useBlogSettingsBundle()` / `useBlogSettingsBundleOptional()`
+  helpers. They exist for the admin shell only (which legitimately
+  needs every bucket); reading a slice you do not need re-renders
+  the component on every unrelated section save. Use the matching
+  per-section hook instead.
+- `installGateMiddleware` (`@/server/middleware/install-gate`) registered in
+  `src/root.tsx` reads the install state through `getInstallState()`
+  and routes accordingly:
+  - `noAdmin` (no admin row) → 303 → `/wp-admin/install.php`
+  - `noSettings` (admin row present, but `blog.general` and/or
+    `blog.assets` rows missing) → 303 →
+    `/wp-admin/install/settings.php`
+  - `installed` → through to the matched route.
+    "Installed" requires BOTH the `blog.general` and the
+    `blog.assets` rows. Every other section ships with non-null
+    `defaults` in `SECTION_REGISTRY` (the `blog.assets` row is
+    written from the install form payload — the storage subtree
+    defaults to the upload toggle OFF and every bucket field empty
+    so the admin opens `/wp-admin/settings/assets` to flip the
+    toggle on and supply S3 credentials when they're ready) and is
+    seeded by the same install flow call
+    (`seedInstallSettingsWithSession`); a successful install therefore
+    writes 11 rows. Deployments installed
+    BEFORE this contract are backfilled lazily by `loadSettingsFromDb()`
+    on the next snapshot hydration: any missing optional section is
+    written with the registry default through `upsertSetting`, and the
+    in-memory bundle is populated with the same payload so the SAME
+    hydration call returns a complete snapshot. The backfill is best-effort and
+    swallows DB errors so a transient outage cannot deadlock the site
+    behind the install gate. Static assets, framework internals
+    (`/__manifest`, …) and the auth trio (`/wp-login.php`,
+    `/wp-admin/install.php`, `/wp-admin/install/settings.php`) are
+    exempt from the redirect; the trio drives its own cross-redirect
+    via the matching `ensureInstalledOrRedirect()` /
+    `ensureNoAdminOrRedirect()` / `ensureNoSettingsOrRedirect()`
+    helper. Together they guarantee the snapshot invariant without
+    any chance of a redirect loop (for any state, exactly one helper
+    throws).
+- The install flow is split into two stages so the settings rows
+  write is gated by an admin login:
+  - **Stage 1** — `/wp-admin/install.php` (`signUpAdminSchema`):
+    creates the very first admin row and auto-logs the new user in
+    via `signUpInitialAdminWithSession`. On success the action
+    redirects to stage 2.
+  - **Stage 2** — `/wp-admin/install/settings.php`
+    (`installSettingsSchema`): persists the `blog.general`
+    (title/description/website/keywords/author + locale/timeZone/
+    timeFormat) and `blog.assets` (asset host/scheme + storage
+    defaults + upload defaults) rows from the form, AND seeds the
+    remaining 9 sections (`blog.navigation`, `blog.socials`,
+    `blog.content`, `blog.sidebar`, `blog.comments`, `blog.seo`,
+    `blog.footer`, `blog.mail`, `blog.cache`) from
+    `SECTION_REGISTRY[<section>].defaults` via
+    `seedInstallSettingsWithSession`. 11 rows are written in one go
+    so the very first public render after install can use the strict
+    per-section hooks without throwing on a `null` bucket (the
+    `blog.assets` row defaults to the upload toggle OFF; the admin
+    opts in by flipping the toggle and providing S3 credentials at
+    `/wp-admin/settings/assets` later). The route loader requires
+    an authenticated admin session — if none, it bounces through
+    `/wp-login.php?redirect_to=/wp-admin/install/settings.php`.
+- The legacy "重置为默认" reset action is removed. The admin edits
+  individual sections from `/wp-admin/settings/*` and persists each
+  patch through `API_ACTIONS.admin.updateSettings`. The handler
+  routes the payload through `SECTION_REGISTRY[section].schema` for
+  validation and writes ONLY that one row via
+  `upsertSetting(payload, updatedBy, SECTION_REGISTRY[section].scope)`.
+
+## Assets
+
+- React Router/Vite generated assets are emitted under
+  `build/client/assets`.
+- The production build does not upload generated assets to S3 and does
+  not rewrite generated asset URLs through a build-time CDN base.
+- Docker builds run `npm run build` and copy the local `build/` output
+  into the runtime image.
+- Public files and hard-coded absolute URLs are served as authored.
+
+## Formatting And Lint
+
+- `.ts` and `.tsx` are formatted with `oxfmt` and linted with `oxlint`.
+- `.astro` files do not exist in this project; Astro-specific
+  formatters and lint paths must not be re-added.
+- Git hooks are owned by Vite+ (replacing the legacy `husky` +
+  `lint-staged` setup). Committed hook scripts live in `.vite-hooks/*`
+  (e.g. `.vite-hooks/pre-commit` → `vp staged`); the runtime wrapper
+  under `.vite-hooks/_/` is generated by `vp config` and is gitignored.
+  The `staged` task list is declared in `vite.config.ts` under the
+  `staged` field. `npm install` runs the `prepare` script which calls
+  `vp config` to point `core.hooksPath` at `.vite-hooks/_`. Set
+  `VITE_GIT_HOOKS=0` to skip hook installation (used by the Dockerfile
+  for non-git build contexts).
+
+## Build And Check Commands
+
+- `vp dev` — start the React Router dev server.
+- `vp check` — run formatting, linting, and type checks.
+- `vp test run` — run the test suite once.
+- `vp build` — produce the production React Router build.
+- `npm run preview` and `npm run start` remain runtime entry points
+  for the built server (`react-router-serve ./build/server/index.js`).
+
+## Editing Guidance
+
+- Do not reintroduce `astro.config.ts`, `src/pages`, `.astro` route
+  shells, `src/actions`, `src/middleware`, `src/layouts`,
+  `src/services`, `src/hooks`, or `src/db`. These have been folded
+  into the four-layer architecture above.
+- Do not reintroduce `src/blog.config.ts`, `DEFAULT_SETTINGS`,
+  `BlogConstants`, or any per-section "重置为默认" reset action.
+  Runtime config lives in `setting('blog.<section>')` rows (one per
+  section), the install flow seeds the required two
+  (`blog.general` + `blog.assets`), and the install gate covers
+  the empty-config window.
+- Do not reintroduce a single monolithic `BlogConfigContext` /
+  `<BlogConfigProvider>` on the public tree. The public bundle is
+  exposed through `<BlogSettingsProvider>` which internally nests one
+  React context per section; consumers must subscribe with the
+  per-section hook (e.g. `useFooterSettings`, `useSidebarSettings`)
+  so an unrelated section save does not re-render them.
+- Today's UI utilities live under `@/ui/lib`; do not add a duplicate
+  `src/lib/` in parallel. The shadcn CLI is wired through the
+  repository-root `components.json` whose `aliases.lib` already
+  points at `@/ui/lib`; if you change the alias, migrate the
+  existing files atomically and never split helpers across both
+  directories.
+- The shadcn primitives live at `@/ui/components/ui/` and the admin
+  domain UIs at `@/ui/admin/`; do not reintroduce the legacy
+  `@/ui/admin/shadcn/components/ui/` nesting (the CLI cannot follow
+  it and prior maintenance was hand-paste only). Both public and
+  admin subtrees may import from `@/ui/components/ui/`.
+- Keep server-only imports inside `src/server/` (or behind dynamic
+  imports inside loaders/actions/resource routes if the call site
+  must live elsewhere).
+- Preserve public URLs, feed URLs, image endpoints, WordPress
+  compatibility routes, and pagination routes unless explicitly asked
+  to change them.
+- When moving files, update both imports and documentation in the
+  same change.
+
+## Git And Commits
+
+- Do not create commits unless explicitly asked.
+- Before staging or committing, inspect `git status --short` and avoid
+  mixing unrelated user changes into the commit unless the user asks
+  for them.
+- Commit messages should use semantic commit format by default:
+  `<type>: <summary>`, or `<type>(<scope>): <summary>` when a scope
+  helps. The separator after `feat`, `fix`, `docs`, `refactor`,
+  `test`, `chore`, and other semantic types must be an ASCII English
+  colon followed by one space. Example:
+  `fix: reset public detail island state on route reuse`.
+- Use an imperative, concise English summary. For multi-line messages,
+  leave a blank line after the subject and keep body bullets focused
+  on user-visible or reviewer-relevant changes.
+- For code changes, run or report the relevant Vite+ validation before
+  committing, normally `vp check`, `vp test run`, and `vp build`
+  unless the user requested a narrower flow.
+
+## Vite+, the Unified Toolchain
+
+This project uses Vite+, a unified toolchain built on top of Vite,
+Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps
+runtime management, package management, and frontend tooling in a
+single global CLI called `vp`. Vite+ is distinct from Vite, but it
+invokes Vite through `vp dev` and `vp build`.
+
+### Workflow Cheat Sheet
+
+`vp` is a global binary that handles the full development lifecycle.
+Run `vp help` for the full command list and `vp <command> --help` for
+specifics. The most common commands:
+
+| Command               | Purpose                                                              |
+| --------------------- | -------------------------------------------------------------------- |
+| `vp install` (`vp i`) | Install dependencies                                                 |
+| `vp dev`              | Run the development server                                           |
+| `vp check`            | Run format, lint, and TypeScript checks                              |
+| `vp lint` / `vp fmt`  | Lint or format only                                                  |
+| `vp test`             | Run tests (`vp test run` for one-shot)                               |
+| `vp build`            | Build for production                                                 |
+| `vp preview`          | Preview the production build                                         |
+| `vp run <script>`     | Run a `package.json` script (e.g. `vp run dev` for the orchestrator) |
+| `vp dlx <bin>`        | Execute a package binary without installing it                       |
+
+Dependencies: use `vp add` / `vp remove` / `vp update` instead of
+calling pnpm/npm/yarn directly. Vite+ detects the active package
+manager from `packageManager` in `package.json`.
+
+### Common Pitfalls
+
+- Do not run pnpm, npm, or Yarn directly. Vite+ wraps them.
+- Do not call `vp vitest` / `vp oxlint` — those subcommands do not
+  exist; use `vp test` and `vp lint`.
+- `vp dev`, `vp build`, `vp test` always run the Vite+ tool, never a
+  `package.json` script of the same name. Use `vp run <script>` for
+  custom scripts (e.g. `vp run dev` to start the orchestrator that
+  runs the dev server alongside watchers).
+- Do not install Vitest, Oxlint, Oxfmt, or tsdown directly. Vite+
+  wraps these tools and pins them.
+- Import test utilities from `vite-plus/test`
+  (`import { expect, test, vi } from "vite-plus/test"`), not from
+  `vitest` or `vite`.
+- `vp lint --type-aware` works out of the box; do not install
+  `oxlint-tsgolint`.
+
+### CI Integration
+
+For GitHub Actions, prefer
+[`voidzero-dev/setup-vp`](https://github.com/voidzero-dev/setup-vp) to
+replace separate `actions/setup-node`, package-manager setup, cache,
+and install steps:
+
+```yaml
+- uses: voidzero-dev/setup-vp@v1
+  with:
+    cache: true
+- run: vp check
+- run: vp test
+```
+
+### Review Checklist for Agents
+
+- [ ] Run `vp install` after pulling remote changes and before
+      starting work.
+- [ ] Run `vp check` and `vp test` to validate changes before opening
+      a PR.
