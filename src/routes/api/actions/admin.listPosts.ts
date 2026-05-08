@@ -1,0 +1,27 @@
+import { listPostsSchema } from '@/server/cms/posts/schema'
+import { listPostsForAdmin } from '@/server/cms/posts/service'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
+
+export const loader = defineGuardedApiAction({
+  method: 'GET',
+  input: listPostsSchema,
+  requireRole: 'author',
+  async run({ payload, viewer }) {
+    return listPostsForAdmin(
+      {
+        q: payload.q,
+        deletedStatus: payload.deletedStatus,
+        offset: payload.offset,
+        limit: payload.limit,
+        category: payload.category,
+        tag: payload.tag,
+        published: payload.published,
+        visible: payload.visible,
+        sortBy: payload.sortBy,
+        sortOrder: payload.sortOrder,
+        authorId: payload.authorId,
+      },
+      viewer,
+    )
+  },
+})

@@ -1,0 +1,249 @@
+/* APlayer dark-mode reskin.
+   The library ships a fixed light palette; this file overrides every
+   chrome surface against the project's semantic tokens.
+   Imported by tailwind.css inside @layer(components) so these rules
+   participate in the same cascade as other component styles.
+   Each .dark .aplayer rule is mirrored under a prefers-color-scheme
+   media-query block so noscript visitors on dark OS receive the
+   reskin without relying on a cookie-driven .dark class. */
+
+.dark .aplayer {
+  background: var(--surface);
+  color: var(--ink-2);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 8%);
+  border-radius: var(--radius-sm);
+}
+
+/* Album cover sits on the same dim treatment as content images. The play
+   button child counter-brightens so the white overlay still reads on darker
+   covers. The cover paints via background-image so the image-component dim
+   class does not reach it. */
+.dark .aplayer .aplayer-pic {
+  filter: brightness(0.72) contrast(0.95) saturate(0.9);
+}
+
+.dark .aplayer .aplayer-pic .aplayer-button {
+  filter: brightness(1.35);
+}
+
+.dark .aplayer.aplayer-withlist .aplayer-info {
+  border-bottom-color: var(--line);
+}
+
+.dark .aplayer .aplayer-info .aplayer-music .aplayer-title {
+  color: var(--ink-1);
+}
+
+.dark .aplayer .aplayer-info .aplayer-music .aplayer-author {
+  color: var(--ink-4);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar {
+  background: var(--line-widget);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
+  background: var(--ink-4);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time {
+  color: var(--ink-4);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
+  fill: var(--ink-3);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon:hover path {
+  fill: var(--ink-1);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-volume-wrap .aplayer-volume-bar-wrap .aplayer-volume-bar {
+  background: var(--ink-4);
+}
+
+.dark .aplayer .aplayer-lrc::before {
+  background: linear-gradient(to bottom, var(--surface) 0%, color-mix(in oklab, var(--surface) 0%, transparent) 100%);
+}
+
+.dark .aplayer .aplayer-lrc::after {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--surface) 0%, transparent) 0%,
+    color-mix(in oklab, var(--surface) 80%, transparent) 100%
+  );
+}
+
+.dark .aplayer .aplayer-lrc p {
+  color: var(--ink-4);
+}
+
+.dark .aplayer .aplayer-lrc p.aplayer-lrc-current {
+  color: var(--ink-2);
+}
+
+.dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb {
+  background-color: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb:hover {
+  background-color: var(--line-muted);
+}
+
+.dark .aplayer .aplayer-list ol li {
+  border-top-color: var(--line);
+  color: var(--ink-2);
+}
+
+.dark .aplayer .aplayer-list ol li:hover {
+  background: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-list ol li.aplayer-list-light {
+  background: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-list ol li .aplayer-list-index,
+.dark .aplayer .aplayer-list ol li .aplayer-list-author {
+  color: var(--ink-4);
+}
+
+.dark .aplayer .aplayer-notice {
+  background-color: var(--surface-dim);
+  color: var(--ink-2);
+}
+
+.dark .aplayer .aplayer-miniswitcher {
+  background: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-miniswitcher .aplayer-icon path {
+  fill: var(--ink-3);
+}
+
+.dark .aplayer .aplayer-miniswitcher .aplayer-icon:hover path {
+  fill: var(--ink-1);
+}
+
+/* System preference fallback when no explicit cookie or class is set */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light, .dark) .aplayer {
+    background: var(--surface);
+    color: var(--ink-2);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 8%);
+    border-radius: var(--radius-sm);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-pic {
+    filter: brightness(0.72) contrast(0.95) saturate(0.9);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-pic .aplayer-button {
+    filter: brightness(1.35);
+  }
+
+  :root:not(.light, .dark) .aplayer.aplayer-withlist .aplayer-info {
+    border-bottom-color: var(--line);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-music .aplayer-title {
+    color: var(--ink-1);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-music .aplayer-author {
+    color: var(--ink-4);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar {
+    background: var(--line-widget);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
+    background: var(--ink-4);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-controller .aplayer-time {
+    color: var(--ink-4);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
+    fill: var(--ink-3);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon:hover path {
+    fill: var(--ink-1);
+  }
+
+  :root:not(.light, .dark)
+    .aplayer
+    .aplayer-info
+    .aplayer-controller
+    .aplayer-volume-wrap
+    .aplayer-volume-bar-wrap
+    .aplayer-volume-bar {
+    background: var(--ink-4);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-lrc::before {
+    background: linear-gradient(to bottom, var(--surface) 0%, color-mix(in oklab, var(--surface) 0%, transparent) 100%);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-lrc::after {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--surface) 0%, transparent) 0%,
+      color-mix(in oklab, var(--surface) 80%, transparent) 100%
+    );
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-lrc p {
+    color: var(--ink-4);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-lrc p.aplayer-lrc-current {
+    color: var(--ink-2);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-list ol::-webkit-scrollbar-thumb {
+    background-color: var(--surface-dim);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-list ol::-webkit-scrollbar-thumb:hover {
+    background-color: var(--line-muted);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-list ol li {
+    border-top-color: var(--line);
+    color: var(--ink-2);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-list ol li:hover {
+    background: var(--surface-dim);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-list ol li.aplayer-list-light {
+    background: var(--surface-dim);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-list ol li .aplayer-list-index,
+  :root:not(.light, .dark) .aplayer .aplayer-list ol li .aplayer-list-author {
+    color: var(--ink-4);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-notice {
+    background-color: var(--surface-dim);
+    color: var(--ink-2);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-miniswitcher {
+    background: var(--surface-dim);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-miniswitcher .aplayer-icon path {
+    fill: var(--ink-3);
+  }
+
+  :root:not(.light, .dark) .aplayer .aplayer-miniswitcher .aplayer-icon:hover path {
+    fill: var(--ink-1);
+  }
+}

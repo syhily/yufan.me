@@ -1,0 +1,448 @@
+import { customAlphabet } from 'nanoid'
+
+import type { MusicRow, NewMusic } from '@/server/db/types'
+import type {
+  AdminMusicDto,
+  ListMusicInput,
+  ListMusicOutput,
+  MetingSearchHit,
+  PublicMusicMeta,
+  SearchMusicOutput,
+} from '@/shared/music'
+
+import { type Role } from '@/server/auth/rbac'
+import {
+  type AdminMusicListFilters,
+  countAdminMusic,
+  findAdminMusicRowById,
+  findMusicById,
+  findMusicByPlayerId,
+  findMusicBySourceAndId,
+  insertMusic,
+  listAdminMusicRows,
+  softDeleteMusic,
+  updateMusic,
+} from '@/server/db/query/music'
+import { processImageBuffer } from '@/server/images/process'
+import { getLogger } from '@/server/logger'
+import {
+  getCoverUrl,
+  getLyric,
+  getSong,
+  getStreamUrl,
+  type MetingSearchHit as InternalMetingHit,
+  searchSongsWithPreview,
+} from '@/server/music/meting'
+import {
+  buildMusicPublicUrl,
+  deleteMusicObject,
+  ensureMusicStorageEnabled,
+  putMusicAudio,
+  putMusicCover,
+  safeBuildMusicPublicUrl,
+} from '@/server/music/storage'
+import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ErrorMessages } from '@/server/route-helpers/errors'
+
+// Domain-level entry points for the music admin library. Coordinates
+// the "search → download → process → S3 PUT → DB insert" pipeline
+// when the admin clicks "添加" in the dialog, and exposes the read
+// paths the public `/api/actions/music/get` route and the SSR
+// `<MusicPlayer />` use.
+
+const log = getLogger('music.service')
+
+// `[a-z0-9]{16}` is enough entropy for 80 bits — collisions are
+// astronomically unlikely against the small music corpus, but we
+// still retry on a unique-key violation just to be defensive.
+const generatePlayerId = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16)
+const PLAYER_ID_RETRY_LIMIT = 5
+
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024
+const MAX_COVER_BYTES = 5 * 1024 * 1024
+const COVER_SIZE = 300
+const COVER_JPEG_QUALITY = 85
+
+// ---------------------------------------------------------------------------
+// Read paths
+// ---------------------------------------------------------------------------
+
+export async function listMusicForAdmin(input: ListMusicInput = {}): Promise<ListMusicOutput> {
+  const offset = clampOffset(input.offset)
+  const limit = clampLimit(input.limit)
+
+  const filters: AdminMusicListFilters = {
+    q: input.q,
+    offset,
+    limit,
+  }
+
+  const [rows, total] = await Promise.all([listAdminMusicRows(filters), countAdminMusic({ q: input.q })])
+
+  return {
+    musics: rows.map((row) => toAdminMusicDto(row, row.uploaderName)),
+    total,
+    hasMore: offset + rows.length < total,
+  }
+}
+
+export async function findMusicDtoById(id: bigint): Promise<AdminMusicDto | null> {
+  const row = await findAdminMusicRowById(id)
+  if (row === null) {
+    return null
+  }
+  return toAdminMusicDto(row, row.uploaderName)
+}
+
+/**
+ * Public projection for the SSR `<MusicPlayer />` and the public
+ * `GET music.get` route. Returns `null` when the row is missing or
+ * soft-deleted so the player can render a no-op placeholder.
+ */
+export async function getMusicMetaForPlayer(playerId: string): Promise<PublicMusicMeta | null> {
+  const row = await findMusicByPlayerId(playerId)
+  if (row === null) {
+    return null
+  }
+  const audioUrl = safeBuildMusicPublicUrl(row.audioStoragePath)
+  const coverUrl = safeBuildMusicPublicUrl(row.coverStoragePath)
+  if (audioUrl === null || coverUrl === null) {
+    return null
+  }
+  return {
+    id: row.playerId,
+    name: row.name,
+    artist: row.artist,
+    album: row.album,
+    url: audioUrl,
+    pic: coverUrl,
+    lyric: row.lyric ?? '',
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Write paths
+// ---------------------------------------------------------------------------
+
+export async function searchMusic(keyword: string, limit?: number): Promise<SearchMusicOutput> {
+  const hits = await searchSongsWithPreview(keyword, limit)
+  return {
+    results: hits.map((hit) => ({
+      source: hit.source,
+      sourceId: hit.sourceId,
+      name: hit.name,
+      artist: hit.artist,
+      album: hit.album,
+      coverUrl: hit.coverUrl,
+      previewUrl: hit.previewUrl,
+    })),
+  }
+}
+
+export interface AddMusicInputs {
+  source: 'netease'
+  sourceId: string
+  uploader: { id: bigint; name: string } | null
+  /**
+   * Optional pre-resolved metadata + asset URLs. The historical-import
+   * script preloads this from the legacy
+   * `https://cat.yufan.me/musics/<id>.json` so we don't pay for a full
+   * Meting round-trip on import. Missing fields fall through to the
+   * Meting wrapper.
+   */
+  prefill?: AddMusicPrefill
+}
+
+export interface AddMusicPrefill {
+  name?: string
+  artist?: string[]
+  album?: string
+  audioUrl?: string
+  coverUrl?: string
+  lyric?: string | null
+}
+
+/**
+ * Single source of truth for "add this song to the library". Used by
+ * the admin add-music dialog action AND the historical-import CLI.
+ *
+ * The function is idempotent on `(source, sourceId)`: an already-
+ * imported song returns its existing row instead of re-uploading,
+ * which makes the import script safe to re-run.
+ */
+export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
+  ensureMusicStorageEnabled()
+
+  // Idempotency: skip the whole upload-and-insert dance if we already
+  // imported this song. The caller can decide whether to surface this
+  // as "already exists" (UI) or "skip" (importer).
+  const existing = await findMusicBySourceAndId(input.source, input.sourceId)
+  if (existing !== null && existing.deletedAt === null) {
+    return toAdminMusicDto({ ...existing, uploaderName: input.uploader?.name ?? null }, input.uploader?.name ?? null)
+  }
+
+  // Resolve the canonical Meting hit. Even when the importer supplies
+  // a prefill we still need the upstream id triplet (pic_id, url_id,
+  // lyric_id) to be able to fall back when a prefilled URL 404s.
+  const hit = await getSong(input.sourceId)
+  if (hit === null) {
+    throw new ActionFailure(404, `上游未找到 sourceId=${input.sourceId} 的歌曲`)
+  }
+
+  const metadata = mergeMetadata(hit, input.prefill)
+
+  const playerId = await generateUniquePlayerId()
+  const audioStoragePath = `musics/${playerId}.mp3`
+  const coverStoragePath = `musics/${playerId}.jpg`
+
+  // Resolve URLs, download binaries, and fetch lyric in parallel.
+  const [audioUrl, coverUrl] = await Promise.all([
+    input.prefill?.audioUrl ?? getStreamUrl(hit.urlId),
+    input.prefill?.coverUrl ?? getCoverUrl(hit.picId, COVER_SIZE),
+  ])
+
+  const [audioBuffer, coverSrcBuffer, lyricText] = await Promise.all([
+    downloadBinary(audioUrl, MAX_AUDIO_BYTES, 'audio'),
+    downloadBinary(coverUrl, MAX_COVER_BYTES, 'cover'),
+    input.prefill?.lyric === undefined ? getLyric(hit.lyricId) : input.prefill.lyric,
+  ])
+
+  // Re-encode cover to 300x300 JPEG before uploading.
+  let coverProcessed: Buffer
+  try {
+    const processed = await processImageBuffer({
+      buffer: coverSrcBuffer,
+      jpegQuality: COVER_JPEG_QUALITY,
+      resize: { width: COVER_SIZE, height: COVER_SIZE, fit: 'cover' },
+    })
+    coverProcessed = processed.buffer
+  } catch (error) {
+    log.error('Cover image processing failed', { sourceId: input.sourceId, error })
+    throw error
+  }
+
+  // Upload both assets in parallel.
+  await Promise.all([putMusicAudio(audioStoragePath, audioBuffer), putMusicCover(coverStoragePath, coverProcessed)])
+
+  const newRow: NewMusic = {
+    source: input.source,
+    sourceId: input.sourceId,
+    playerId,
+    name: metadata.name,
+    artist: metadata.artist.join(' / '),
+    album: metadata.album,
+    audioStoragePath,
+    coverStoragePath,
+    lyric: lyricText,
+    uploaderId: input.uploader?.id ?? null,
+  }
+
+  let row: MusicRow
+  try {
+    row = await insertMusic(newRow)
+  } catch (error) {
+    log.error('Music insert failed; rolling back S3 uploads', { sourceId: input.sourceId, playerId, error })
+    await Promise.allSettled([deleteMusicObject(audioStoragePath), deleteMusicObject(coverStoragePath)])
+    throw new ActionFailure(500, '音乐元数据写入失败，请稍后重试')
+  }
+
+  return toAdminMusicDto(row, input.uploader?.name ?? null)
+}
+
+export interface UpdateMusicMetadataInputs {
+  id: bigint
+  name: string
+  artist: string[]
+  album: string
+  /** `null` clears the stored lyric (matches the "no upstream lyric" case). */
+  lyric: string | null
+}
+
+/**
+ * Metadata-only edit for the admin UI. Provider id triplet
+ * (`source`, `sourceId`, `playerId`), audio/cover storage paths,
+ * uploader, and timestamps are intentionally untouched — the
+ * upload pipeline owns those, and they are how MDX references the
+ * row. `artist[]` is packed back to the historical
+ * `'Artist A / Artist B'` row representation; the public
+ * projection unpacks it again on read.
+ */
+export interface MusicViewerContext {
+  userId: string
+  role: Role
+}
+
+export async function updateMusicMetadata(
+  input: UpdateMusicMetadataInputs,
+  viewer?: MusicViewerContext,
+): Promise<AdminMusicDto> {
+  const existing = await findMusicById(input.id)
+  if (existing === null || existing.deletedAt !== null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+  }
+
+  const updated = await updateMusic(input.id, {
+    name: input.name,
+    artist: input.artist.join(' / '),
+    album: input.album,
+    lyric: input.lyric,
+  })
+  if (updated === null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+
+  // Re-fetch through the admin projection so the response carries
+  // the joined `uploaderName` instead of forcing the caller to
+  // re-derive it.
+  const projected = await findAdminMusicRowById(input.id)
+  if (projected === null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+  return toAdminMusicDto(projected, projected.uploaderName)
+}
+
+export async function deleteMusic(id: bigint, viewer?: MusicViewerContext): Promise<void> {
+  const existing = await findMusicById(id)
+  if (existing === null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+  }
+
+  // Mirror the image library: try S3 best-effort, always proceed to
+  // DB soft-delete so the admin table doesn't keep showing a "missing"
+  // row when the delete only fails on the S3 leg.
+  await Promise.allSettled([deleteMusicObject(existing.audioStoragePath), deleteMusicObject(existing.coverStoragePath)])
+
+  const deleted = await softDeleteMusic(id)
+  if (deleted === null) {
+    throw new ActionFailure(404, '音乐不存在')
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function mergeMetadata(
+  hit: InternalMetingHit,
+  prefill: AddMusicPrefill | undefined,
+): { name: string; artist: string[]; album: string } {
+  const name = pickNonEmpty(prefill?.name, hit.name)
+  const album = pickNonEmpty(prefill?.album, hit.album)
+  const artist = prefill?.artist !== undefined && prefill.artist.length > 0 ? prefill.artist : hit.artist
+  return { name, artist, album }
+}
+
+function pickNonEmpty(...values: (string | undefined)[]): string {
+  for (const value of values) {
+    if (value !== undefined && value.trim() !== '') {
+      return value.trim()
+    }
+  }
+  return ''
+}
+
+async function generateUniquePlayerId(): Promise<string> {
+  for (let attempt = 0; attempt < PLAYER_ID_RETRY_LIMIT; attempt += 1) {
+    const candidate = generatePlayerId()
+    const collision = await findMusicByPlayerId(candidate)
+    if (collision === null) {
+      return candidate
+    }
+    log.warn('playerId collision; retrying', { candidate, attempt })
+  }
+  throw new ActionFailure(500, 'playerId 生成失败：连续 5 次冲突')
+}
+
+async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'cover'): Promise<Buffer> {
+  let response: Response
+  try {
+    response = await fetch(url, {
+      headers: {
+        // netease and friends often blacklist the default Node user
+        // agent for direct CDN downloads; spoof a stock browser UA so
+        // we land on the regular CDN path.
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+      },
+    })
+  } catch (error) {
+    log.error('Music asset fetch failed', { url, what, error })
+    throw new ActionFailure(502, `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
+  }
+  if (!response.ok) {
+    log.error('Music asset fetch returned non-2xx', { url, what, status: response.status })
+    throw new ActionFailure(502, `${what === 'audio' ? '下载音频' : '下载封面'}失败：${response.status}`)
+  }
+
+  const length = response.headers.get('content-length')
+  if (length !== null) {
+    const expected = Number.parseInt(length, 10)
+    if (Number.isFinite(expected) && expected > maxBytes) {
+      throw new ActionFailure(413, `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
+    }
+  }
+
+  const arrayBuf = await response.arrayBuffer()
+  if (arrayBuf.byteLength > maxBytes) {
+    throw new ActionFailure(413, `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
+  }
+  return Buffer.from(arrayBuf)
+}
+
+function clampOffset(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value) || value < 0) {
+    return 0
+  }
+  return Math.floor(value)
+}
+
+function clampLimit(value: number | undefined): number {
+  const fallback = 20
+  if (value === undefined || !Number.isFinite(value)) {
+    return fallback
+  }
+  return Math.max(1, Math.min(100, Math.floor(value)))
+}
+
+function toAdminMusicDto(
+  row: MusicRow & { uploaderName?: string | null },
+  uploaderNameOverride?: string | null,
+): AdminMusicDto {
+  const uploaderName = uploaderNameOverride !== undefined ? uploaderNameOverride : (row.uploaderName ?? null)
+  return {
+    id: row.id.toString(),
+    source: row.source as 'netease',
+    sourceId: row.sourceId,
+    playerId: row.playerId,
+    name: row.name,
+    artist: splitArtist(row.artist),
+    album: row.album,
+    audioStoragePath: row.audioStoragePath,
+    audioUrl: buildMusicPublicUrl(row.audioStoragePath),
+    coverStoragePath: row.coverStoragePath,
+    coverUrl: buildMusicPublicUrl(row.coverStoragePath),
+    lyric: row.lyric,
+    uploaderId: row.uploaderId === null ? null : row.uploaderId.toString(),
+    uploaderName,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  }
+}
+
+function splitArtist(packed: string): string[] {
+  return packed
+    .split('/')
+    .map((part) => part.trim())
+    .filter((part) => part !== '')
+}
+
+// Re-export the search hit type so the import script can import it
+// from the same module the route uses, without crossing into the
+// raw Meting wrapper.
+export type { MetingSearchHit }
