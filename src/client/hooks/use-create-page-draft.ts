@@ -151,6 +151,23 @@ export function useCreatePageDraft({ body, meta }: UseCreatePageDraftOptions): U
     }
   }, [key, sessionId, body, meta])
 
+  // Listen for peer-tab `storage` events so a "cleared" event in
+  // another tab updates this tab's `loadedDraft` to null. Body
+  // contents are intentionally not merged — the create flow assumes
+  // one tab owns the draft.
+  useEffect(() => {
+    function onStorage(event: StorageEvent) {
+      if (event.key !== key) {
+        return
+      }
+      if (event.newValue === null) {
+        setLoadedDraft(null)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [key])
+
   const clearDraft = useCallback(() => {
     try {
       window.localStorage.removeItem(key)
