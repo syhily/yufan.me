@@ -56,6 +56,7 @@ export default [
     route('wp-admin/friends', 'routes/wp-admin.friends.tsx'),
     route('wp-admin/categories', 'routes/wp-admin.categories.tsx'),
     route('wp-admin/tags', 'routes/wp-admin.tags.tsx'),
+    route('wp-admin/pages', 'routes/wp-admin.pages.tsx'),
     route('wp-admin/images', 'routes/wp-admin.images.tsx'),
     route('wp-admin/musics', 'routes/wp-admin.musics.tsx'),
     // Settings sub-layout — see _README.md §H.

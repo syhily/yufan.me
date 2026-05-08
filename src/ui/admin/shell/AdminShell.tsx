@@ -1,4 +1,5 @@
 import {
+  FileTextIcon,
   FolderIcon,
   HomeIcon,
   ImagesIcon,
@@ -35,6 +36,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon },
   { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon },
   { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon },
   { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon },
