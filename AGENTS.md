@@ -576,6 +576,32 @@ reviewers reach for during PR review: `server-no-shared-module-state`,
 - `.ts` and `.tsx` are formatted with `oxfmt` and linted with `oxlint`.
 - `.astro` files do not exist in this project; Astro-specific
   formatters and lint paths must not be re-added.
+- Comments inside Tailwind CSS files (`src/assets/styles/*.css`,
+  most importantly `tailwind.css`) MUST stay minimal. Tailwind v4
+  drives a Lightning CSS pipeline through Rolldown that has been
+  observed to choke on heavy comment payloads inside `@theme`,
+  `@utility`, and `@layer` blocks, so historical decision-log
+  comments do not earn their keep here. The rules:
+  - One short ASCII line per region. Allowed only at the top of a
+    structural region as a section header — never mid-rule, never
+    above an individual declaration.
+  - No special characters anywhere inside a CSS comment. Forbidden
+    set: parentheses, square brackets, curly braces, slashes,
+    asterisks beyond the comment delimiters themselves, single and
+    double quotes both ASCII and curly, backticks, tildes, ampersands,
+    pipes, colons, semicolons, plus, equals, less-than, greater-than,
+    Chinese punctuation including 、·，。「」『』（）, and any HTML or
+    Tailwind-specific token such as `@`, `&`, `:where(...)`,
+    `data-[...]`, `--var`, hex colors. The rationale: the CSS pipeline
+    is contractually allowed to misread any of these as live syntax.
+    Stick to plain English or Chinese words plus spaces.
+  - Decision-log narrative belongs in commit messages or this file,
+    never in CSS. If a `tailwind.css` rule needs a "why", the why
+    goes in the PR description and the AGENTS rule that pinned it,
+    not above the selector.
+  - Background context for a token, utility, or selector MAY live in
+    a TS or TSX consumer's comment, where it is parsed by TypeScript
+    and not by the CSS pipeline.
 - Git hooks are owned by Vite+ (replacing the legacy `husky` +
   `lint-staged` setup). Committed hook scripts live in `.vite-hooks/*`
   (e.g. `.vite-hooks/pre-commit` → `vp staged`); the runtime wrapper

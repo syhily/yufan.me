@@ -3,23 +3,7 @@
 
 @source '../..';
 
-/* 1. Project semantic tokens (light) — single source of truth.
- *
- * Stage 11 collapsed the historical three-tier token stack
- * (`raw → shadcn → @theme`) down to two tiers: this `:root` block
- * and the `@theme inline` bridges below. The Bootstrap-era raw
- * layer (`--btn-*`, `--bg-*`, `--border-*`, `--color-{light,dark,
- * muted,secondary,danger,warning,body,light-overlay}`) was a
- * port-from-Bootstrap naming convention that had no semantic
- * meaning of its own — every consumer had to climb back through
- * the alias chain to discover the brand colour was just `#008c95`.
- *
- * Now every hex appears exactly once, on its semantic name. Theme
- * customisation (rebrand, palette swap, …) is a single edit in
- * this block. The shadcn slot vars (`--background`, `--primary`,
- * …) sit alongside the project's own ink/surface/brand vocabulary
- * so the public site and the admin shadcn surface read from the
- * same wells. */
+/* Project semantic tokens light */
 :root {
   /* Brand */
   --brand: #008c95;
@@ -27,7 +11,7 @@
   --brand-darker: #20283b;
   --brand-success: #41d589;
 
-  /* Ink (text colors) */
+  /* Ink */
   --ink-strong: #151b2b;
   --ink-body: #151924;
   --ink-secondary: #404b69;
@@ -45,7 +29,7 @@
   --surface-night: #232327;
   --surface-soft: #eceef1;
 
-  /* Lines / borders */
+  /* Lines */
   --line: #eff3fa;
   --line-muted: #d4ddec;
   --line-widget: #d2e3e4;
@@ -70,9 +54,7 @@
   --z-aside-drawer: 1020;
   text-autospace: normal;
 
-  /* Shadcn semantic slots — light. Public bundle reads these
-   * unscoped; admin shell narrows them with `[data-admin-shell].dark`
-   * below. */
+  /* Shadcn semantic slots light */
   --background: var(--surface-body);
   --foreground: var(--ink-strong);
   --card: var(--canvas);
@@ -117,7 +99,7 @@
   --sidebar-ring: var(--brand);
 }
 
-/* 2. Shadcn semantic tokens (dark — admin shell only) */
+/* Shadcn semantic tokens dark admin shell only */
 [data-admin-shell].dark,
 .dark [data-admin-shell] {
   --background: var(--ink-strong);
@@ -164,7 +146,7 @@
   --sidebar-ring: var(--brand);
 }
 
-/* 3. Tailwind theme bridge — shadcn colour & radius namespace */
+/* Tailwind theme bridge shadcn */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -207,7 +189,7 @@
   --radius-xl: calc(var(--radius) + 2px);
 }
 
-/* 4. Tailwind theme — project tokens, breakpoints, animations */
+/* Tailwind theme project tokens breakpoints animations */
 @theme inline {
   --breakpoint-sm: 576px;
   --breakpoint-md: 768px;
@@ -314,24 +296,15 @@
   }
 }
 
-/* 6. Base layer — Preflight overrides */
+/* Base layer Preflight overrides */
 @layer base {
-  /* Tailwind v4 Preflight resets `svg { display: block }` (cssremedy
-   * §14). That breaks every inline icon in this codebase — lucide
-   * glyphs in buttons, status pills, the like-count heart, social
-   * share icons, etc. all expect to flow with adjacent text. We
-   * default `<svg>` back to `inline-block` and let the few genuinely
-   * block-level SVGs (decorative artwork, hero illustrations) opt in
-   * with a Tailwind `block` utility. MathJax SVGs are scoped under
-   * `.prose` separately and stay `inline-block` for inline equations
-   * via `&.prose :where(mjx-container[jax='SVG']) > :where(svg)`. */
   svg {
     display: inline-block;
     vertical-align: middle;
   }
 }
 
-/* 7. Document chrome — body font / cursors */
+/* Document chrome body font cursors */
 html,
 body {
   overscroll-behavior: none;
@@ -378,34 +351,10 @@ body {
   }
 }
 
-/* 8. Brand typography utility — prose-blog
- *
- * NOTE: Tailwind Typography's `.prose` selector itself sets every
- * `--tw-prose-*` variable to the plugin's gray theme defaults
- * (e.g. `--tw-prose-quote-borders: gray-200`). Both `.prose-blog`
- * and `.prose` resolve to specificity (0,1,0); when both are
- * present on the same element, source order decides the winner —
- * and `@plugin '@tailwindcss/typography'` is emitted *after* user
- * `@utility` blocks, so the plugin's defaults would override our
- * brand vars and `<blockquote>` etc. would render with gray-200.
- * Scoping each var assignment under `&.prose` raises the specificity
- * to (0,2,0) which beats the plugin's `.prose` block.
- */
+/* Brand typography utility prose-blog */
 @utility prose-blog {
+  /* &.prose lifts specificity above the plugin defaults so brand vars win */
   &.prose {
-    /* Brand-tier prose colours, expressed in semantic tokens.
-     *
-     * Stage 11 P7 collapsed the previous 16+16 hand-written light/
-     * invert ladders into a single shared `--prose-blog-*` slot
-     * table, then fanned each slot out to its `--tw-prose-*` and
-     * `--tw-prose-invert-*` consumers. The public site never
-     * renders dark prose, so the invert ladder mirrors the light
-     * ladder by default; an `&.dark { --prose-blog-*: …; }` block
-     * (or specifically the invert vars) can re-enter here if a
-     * dark surface ever lands without rippling through 32 vars.
-     *
-     * Each slot is one project-semantic token, so a brand re-skin
-     * is also a single edit per slot. */
     --prose-blog-body: var(--ink-body);
     --prose-blog-headings: var(--ink-strong);
     --prose-blog-lead: var(--ink-body);

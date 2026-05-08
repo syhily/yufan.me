@@ -50,25 +50,39 @@ export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutPr
         {showFooter && <Footer />}
       </main>
       {/*
-        Fixed-position widget rail anchored bottom-right. Replaces the
-        legacy `.site-fixed-widget { position: fixed; right: 20px;
-        bottom: 0; transform: translateY(-50%); display: block;
-        z-index: 9999 }` rule. `display: block` is the `<ul>` browser
-        default, dropped per Lesson 1. The `9999` z-index is the
-        legacy "above everything" value — kept as the literal
-        `z-[9999]` because no other public widget needs to sit at
-        the same layer (Lesson 8 — sole consumer; promoting it to a
-        named token would only buy verbosity). The `site-fixed-widget`
-        literal is preserved as a WP-compat marker.
+        Fixed-position widget rail anchored bottom-right.
+
+        The legacy `.site-fixed-widget` rule used `bottom: 0;
+        transform: translateY(-50%)` to centre a 44 px button on the
+        viewport's bottom edge — it relied on the fact that 50% of
+        the rail's own height matches half the button. That trick
+        coupled the offset to the button height, made the rail's
+        `transform` fight `transform-gpu` for the same property, and
+        on iOS Safari placed the rail flush against the fold where
+        the URL-bar collapse animation repaints every frame (a
+        reliable rendering-ghost trigger).
+
+        Stage 11 P9 collapsed the trick into a plain `bottom-5`
+        (= 20 px) offset, mirroring `right-5` for visual symmetry
+        and giving the rail a stable resting position that does NOT
+        depend on its own height. `transform-gpu` is now free to
+        own the `transform` property by itself, so iOS Safari
+        keeps the rail on a clean compositor layer through URL-bar
+        collapse and inertial scroll.
+
+        The `9999` z-index is the legacy "above everything" value —
+        kept as a single bare token (`z-9999`) because no other
+        public widget needs to sit at the same layer (Lesson 8 —
+        sole consumer; promoting it to a named token would only
+        buy verbosity).
 
         The legacy `.site-fixed-widget li { margin: 0 0 1rem }`
         per-item bottom-spacing rule is dead today: the only `<li>`
-        in this `<ul>` is `<ScrollTopButton>` (which always also
-        matches `.fixed-gotop` and overrides `margin: 0`). Inlined
-        as a no-op (`<li>` already has `margin: 0` via reset.css's
-        un-layered `li { margin: 0 }` rule).
+        in this `<ul>` is `<ScrollTopButton>`, and `<li>` already
+        starts at `margin: 0` via reset.css's un-layered `li
+        { margin: 0 }` rule.
       */}
-      <ul className="site-fixed-widget fixed right-5 bottom-0 z-[9999] -translate-y-1/2">
+      <ul className="fixed right-5 bottom-5 z-9999 transform-gpu">
         <ScrollTopButton />
       </ul>
     </div>

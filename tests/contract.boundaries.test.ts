@@ -450,10 +450,13 @@ describe('contract: module and bundle boundaries', () => {
     //   - `PostListViews.tsx` owns `listLikeClass`, `listLikeSquareClass`,
     //     `likeCountClass`.
     //   - `BaseLayout.tsx` carries the inline `fixed right-5
-    //     bottom-0 -translate-y-1/2 z-[9999]` chain on the
-    //     `<ul className="site-fixed-widget …">` rail.
-    //   - `ScrollTopButton.tsx` carries the inline `hidden`/
-    //     `block` toggle on its `<li className="fixed-gotop …">`.
+    //     bottom-5 z-9999 transform-gpu` chain on the floating
+    //     widget rail `<ul>`.
+    //   - `ScrollTopButton.tsx` carries the inline opacity /
+    //     `pointer-events-none` toggle (NOT a `display` swap — see
+    //     the file's own write-up on the iOS-Safari rendering ghost)
+    //     on its `<li>`, plus `transform-gpu` for GPU-layer
+    //     promotion.
     //
     // The two `:before` decorations that used to be the lone
     // exceptions — `.widget-title:before` (the 30×2px brand bar
@@ -1112,5 +1115,40 @@ describe('contract: module and bundle boundaries', () => {
         return /absolute top-0 flex size-full items-center justify-center/.test(source)
       })
     expect(offenders).toEqual([])
+  })
+
+  it('keeps ScrollTopButton on the GPU-layer / opacity toggle (mobile rendering-ghost fix)', () => {
+    // iOS Safari and Chromium-on-iOS snapshot `position: fixed`
+    // descendants into the compositor and re-blend them on every
+    // scroll tick. A `display: none ↔ block` toggle invalidates the
+    // layer's box geometry mid-frame, leaving stale tiles behind as
+    // a "rendering ghost" — 100% reproducible during inertial scroll
+    // / URL-bar collapse.
+    //
+    // Pin two invariants so a future refactor can't accidentally
+    // regress to the `display`-toggle shape:
+    //
+    //   1. The visibility flip MUST go through `opacity-0 /
+    //      opacity-100` (and `pointer-events-none` for input
+    //      blocking), NOT through `hidden / block`.
+    //   2. Both the floating widget rail (`<ul>` in `BaseLayout.tsx`)
+    //      AND the back-to-top `<li>` (`ScrollTopButton.tsx`) must
+    //      carry `transform-gpu` so iOS Safari keeps them on the
+    //      GPU compositor across URL-bar resizes.
+    const scrollTop = readFileSync('src/ui/primitives/ScrollTopButton.tsx', 'utf8')
+    expect(scrollTop).toMatch(/\btransform-gpu\b/)
+    expect(scrollTop).toMatch(/\bopacity-0\b/)
+    expect(scrollTop).toMatch(/\bopacity-100\b/)
+    expect(scrollTop).toMatch(/\bpointer-events-none\b/)
+    // The rendered className for the host `<li>` must NOT route
+    // visibility through `display` swaps. Allow `hidden` to appear
+    // freely in comments / strings unrelated to className, but ban
+    // the literal `'block' : 'hidden'` (or vice-versa) ternary
+    // shapes that the previous implementation used.
+    expect(scrollTop).not.toMatch(/show\s*\?\s*'block'\s*:\s*'hidden'/)
+    expect(scrollTop).not.toMatch(/show\s*\?\s*'hidden'\s*:\s*'block'/)
+
+    const baseLayout = readFileSync('src/ui/primitives/BaseLayout.tsx', 'utf8')
+    expect(baseLayout).toMatch(/\btransform-gpu\b/)
   })
 })
