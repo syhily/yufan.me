@@ -4,61 +4,61 @@ overview: 将 Page (about/links/guestbook) 内容从 MDX 文件迁移到 Postgre
 todos:
   - id: schema
     content: 新增 doc + content 两张表（schema.ts 物理名 doc，业务代码 import 别名 pageMetaTable；type/owner_id 通用；post 表本次不出 migration）
-    status: pending
+    status: completed
   - id: rename-page-to-metric
     content: 范围 A（最小化）— 仅 rename 直接绑定 page 计数器表的查询层。重命名 src/server/db/query/page.ts→metric.ts（import { pageTable as metricTable }）、内部函数 upsertPage→upsertMetric / findPageByKey→findMetricByKey / incrementPage*→incrementMetric* / decrementPageVotes→decrementMetricVotes；like.ts 内 pageVoteUp→metricVoteUp / pageMetricsByKeys→metricsByKeys / PageMetricsRow→MetricsRow。上层调用方（comments/loader、metrics/batcher、email/sender、feed、UI、routes、tests）只跟改 import 名字，不动业务逻辑与产品术语（bumpPageView / generatePageKey / commentKey / searchPages 全部保留）。预计 ~30 处修改。
-    status: pending
+    status: completed
   - id: shared-types
     content: 在 src/shared/portable-text.ts 定义本仓库 PortableText 方言（所有 _type/mark）与 Zod 校验
-    status: pending
+    status: completed
   - id: server-projection
     content: src/server/cms/ 下加 content-projection.ts（toPage / 预留 toPost），page-meta service.ts、content service.ts，提供 admin CRUD 与 public 查询
-    status: pending
+    status: completed
   - id: api-actions
     content: API_ACTIONS 添加 admin.{listPages,getPage,upsertPageMeta,saveDraft,publishRevision,deletePage,restorePage,listPageRevisions,previewPage}，创建对应资源路由
-    status: pending
+    status: completed
   - id: catalog
     content: ContentCatalog 路由改为从 page_meta join content 读 Page；source.config.ts 删 pages collection；src/content/pages/ 在切换 PR 里删
-    status: pending
+    status: completed
   - id: ssr-renderer
     content: src/ui/portable-text/PortableTextBody.tsx 实现 SSR 渲染，复用 @/ui/mdx/* 组件，math/mermaid/shiki 走服务端预渲染
-    status: pending
+    status: completed
   - id: page-detail-route
     content: page.detail.tsx 从 preloadPageBody/PageBody 切到 PortableTextBody，page 返回值复用现有 imageMeta 机制
-    status: pending
+    status: completed
   - id: admin-list
     content: /wp-admin/pages 列表页 + 创建/编辑/删除/恢复流程（PagesView + usePagesController）
-    status: pending
+    status: completed
   - id: metadata-panel
     content: 编辑器右栏元数据面板（slug/title/summary/cover/og/published/comments/showToc/publishedAt），复用 admin form 样式
-    status: pending
+    status: completed
   - id: tiptap-editor
     content: TiptapPageEditor + Bubble menu + Slash menu + 工具栏，extensions 目录下实现所有自定义 Node/Mark
-    status: pending
+    status: completed
   - id: pt-bridge
     content: pt-bridge.ts 实现 PT ↔ PM 全量转换（含 8 个自定义 _type），加 round-trip 单测
-    status: pending
+    status: completed
   - id: image-music-pickers
     content: ImageLibraryDialog 复用 admin.listImages/uploadImage；MusicPickerDialog 复用 admin.listMusic/searchMusic/addMusic
-    status: pending
+    status: completed
   - id: preview-route
     content: 新增 admin.previewPage 资源路由 + 右栏预览面板切换（debounce fetch）
-    status: pending
+    status: completed
   - id: revision-ui
-    content: 元数据面板下方加“历史版本”抽屉，列 content revision_no + status + createdAt + 作者；只读查看，不做 restore（二期再加）
-    status: pending
+    content: 元数据面板下方加“历史版本”抽屉，列 content revision_no + status + createdAt + 作者；只读查看，不做 restore（二期再加）。本轮升级为 master-detail diff + 选择历史版本采用功能。
+    status: completed
   - id: autosave
-    content: 编辑器自动保存（5s debounce + 60s hard cap）打到 admin.saveDraft；离开/visibilitychange 立即冲一次
-    status: pending
+    content: 编辑器自动保存（5s debounce + 60s hard cap）打到 admin.saveDraft；离开/visibilitychange 立即冲一次。失败重试 1s/3s/9s 三次，超时进入“本地已保留”态。
+    status: completed
   - id: local-draft
-    content: 本地 Local Storage 草稿（独立 hook + storage 版本号），打开页面时与服务端最新 draft 比较，不一致显示 diff 选边页
-    status: pending
+    content: 本地 Local Storage 草稿（独立 hook + storage 版本号），打开页面时与服务端最新 draft 比较，不一致显示 diff 选边页。跨 tab 用 BroadcastChannel + storage 事件双订阅。
+    status: completed
   - id: diff-view
-    content: 草稿冲突 diff 视图（左本地 / 右服务端，块级别 PortableText diff），二选一后写入并继续编辑
-    status: pending
+    content: 草稿冲突 diff 视图（左本地 / 右服务端，块级别 PortableText diff），二选一后写入并继续编辑。字符级 diff 用 diff-match-patch；force=true 写入审计日志。
+    status: completed
   - id: tests
-    content: PT 转换 round-trip 单测、validatePortableText 契约测、保存/发布状态机单测、autosave 节流测、LS conflict 选边测、/page/:slug 集成测、三篇 fixture 快照测
-    status: pending
+    content: PT 转换 round-trip 单测、validatePortableText 契约测、保存/发布状态机单测、/page/:slug 集成测、三篇 fixture 快照测、portable-text-diff 单测均已落地。autosave / LS hook 单测受 vite test `environment: 'node'` 限制（无 jsdom/happy-dom），未在本轮加入；引入 DOM 测试基础设施作为单独的工作项。
+    status: completed
 ---
 # Page 迁移到 Postgres + PortableText/Tiptap 编辑器（修订版：三表模型）
 

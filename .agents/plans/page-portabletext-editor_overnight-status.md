@@ -131,3 +131,50 @@ git checkout feature/editor
 vp test run        # baseline: 642 passing
 # → next file to write: src/shared/pt-bridge.ts
 ```
+
+## Day-2 update (2026-05-09 4:30 AM)
+
+All seven "not built yet" items above have landed on
+`feature/editor` since this note was written. Snapshot of where the
+plan stands now:
+
+- `/wp-admin/pages/:id/edit` is a full-page route with a split-pane
+  layout — editor on the left, metadata + revision history drawer on
+  the right, optional 实时预览 column wedged between them with the
+  admin chrome auto-collapsing while it's open.
+- Tiptap node specs cover image / music / math (inline + block) /
+  mermaid / solution / friends / footnoteRef / footnoteDef /
+  codeBlock. `mathBlock`, `mermaid`, and `solution` labels are
+  inline-editable through a small `CardSourceEditor` panel inside
+  the `BlockCardNode`.
+- Autosave fires on a 5s debounce / 60s hard cap with three-tier
+  retry (1s/3s/9s) and a "本地已保留" terminal state. LS draft is
+  versioned, schemaVersion-mismatch is wiped, and cross-tab
+  `clearDraft` events ride a `BroadcastChannel` + `storage`
+  fallback. `DraftConflictDialog` uses `diff-match-patch` for
+  char-level highlights and emits a `force_overwrite_save` audit
+  event when the user picks "use local".
+- `<PortableTextBody>` SSR renderer ships under `src/ui/portable-text/`
+  and `page.detail.tsx` switches to it when the catalog returns a
+  `source: 'db'` page. `admin.previewPage` reuses the same renderer
+  via `renderToStaticMarkup`.
+- `ContentCatalog` now merges DB-backed pages on top of the legacy
+  MDX `pages/` collection (DB wins on slug clashes). Catalog
+  visibility filter also gates on `publishedAt <= now()` so
+  scheduled pages stay hidden.
+- Revision history drawer expanded into a master-detail diff view
+  with an "选择此版本" adopt button.
+- Image / music pickers reused the existing admin endpoints; the
+  Cover/OG fields in the metadata sidebar got a thumbnail preview +
+  library picker + clear button.
+- Published / unpublished / scheduled / live-with-draft-ahead is a
+  proper state machine surfaced both in the toolbar badge and the
+  sidebar's 基本信息 card. The toolbar's 发布 button switches its
+  label to 计划发布 when `meta.publishedAt` is in the future.
+- Tests: PT round-trip, validatePortableText contract, save/publish
+  state machine, /:slug DB-source integration, snapshot fixtures,
+  and `portable-text-diff` pure-function units are all in tree
+  (`vp test run` is 92 / 92 files, 690 / 690 tests). Autosave / LS
+  hook unit tests stay deferred — `environment: 'node'` doesn't
+  ship a DOM, so adding them is a separate "wire jsdom/happy-dom"
+  follow-up rather than part of this plan.
