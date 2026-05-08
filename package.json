@@ -32,7 +32,6 @@
     "dev": "react-router dev",
     "fmt": "vp fmt",
     "fmt:check": "vp fmt --check",
-    "import-music": "vp dlx tsx scripts/import-music.ts",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
     "prepare": "command -v vp >/dev/null 2>&1 && vp config || true",
