@@ -28,9 +28,11 @@ import {
   type PageMetaDraft,
 } from '@/ui/admin/pages/MetaSidebar'
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
+import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/components/ui/tabs'
 import { cn } from '@/ui/lib/cn'
 
 const UPSERT_META = API_ACTIONS.admin.upsertPageMeta
@@ -480,19 +482,30 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
           {mode === 'create' ? <CreateModeBanner draftSavedAt={createDraft.loadedDraft?.savedAt ?? null} /> : null}
           <PageBodyEditor initialBody={initialBody} bodyKey={bodyKey} onBodyChange={setBody} disabled={isPending} />
         </div>
-        <aside className="min-h-0 overflow-y-auto pr-1">
-          <MetaSidebar
-            draft={meta}
-            onChange={setMeta}
-            disabled={isPending}
-            extras={
-              isEditing ? (
-                <div className="rounded-md border bg-card p-2">
-                  <RevisionHistoryDrawer pageId={detail.page.id} currentToken={expectedToken} />
-                </div>
-              ) : null
-            }
-          />
+        <aside className="flex min-h-0 flex-col">
+          <Tabs defaultValue="meta" className="min-h-0 grow">
+            <TabsList className="self-start">
+              <TabsTrigger value="meta">页面信息</TabsTrigger>
+              <TabsTrigger value="preview">实时预览</TabsTrigger>
+            </TabsList>
+            <TabsContent value="meta" className="min-h-0 overflow-y-auto pr-1">
+              <MetaSidebar
+                draft={meta}
+                onChange={setMeta}
+                disabled={isPending}
+                extras={
+                  isEditing ? (
+                    <div className="rounded-md border bg-card p-2">
+                      <RevisionHistoryDrawer pageId={detail.page.id} currentToken={expectedToken} />
+                    </div>
+                  ) : null
+                }
+              />
+            </TabsContent>
+            <TabsContent value="preview" className="flex min-h-0 grow flex-col">
+              <PreviewPane body={body} />
+            </TabsContent>
+          </Tabs>
         </aside>
       </div>
       {conflict !== null && isEditing ? (

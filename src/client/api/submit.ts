@@ -15,13 +15,27 @@ import type { ApiEnvelope } from '@/shared/api-envelope'
 // isn't JSON, or `fetch` itself throws) are normalised into the
 // envelope's `error` shape so callers see a single, predictable
 // rejection contract regardless of the failure mode.
-export async function submitApiAction<I, O>(action: ApiActionDescriptor, payload: I): Promise<ApiEnvelope<O>> {
+export interface SubmitApiActionOptions {
+  /**
+   * Optional AbortSignal so callers can cancel an in-flight request.
+   * `fetch` rejects with `AbortError` when the signal fires; the
+   * helper normalises that into the envelope's `error` shape.
+   */
+  signal?: AbortSignal
+}
+
+export async function submitApiAction<I, O>(
+  action: ApiActionDescriptor,
+  payload: I,
+  options: SubmitApiActionOptions = {},
+): Promise<ApiEnvelope<O>> {
   try {
     const response = await fetch(action.path, {
       method: action.method,
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      signal: options.signal,
     })
     const text = await response.text()
     if (text === '') {
