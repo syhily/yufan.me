@@ -1,11 +1,19 @@
-import { ArrowLeftIcon, ExternalLinkIcon, EyeIcon, FileTextIcon, SaveIcon, UploadIcon } from 'lucide-react'
+import {
+  ArrowLeftIcon,
+  CheckCircle2Icon,
+  CircleDashedIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  PencilLineIcon,
+  SaveIcon,
+  UploadIcon,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import type {
   AdminPageDetailDto,
   AdminPageDto,
-  AdminRevisionDto,
   SavePageBodyInput,
   SavePageBodyOutput,
   UpsertPageMetaInput,
@@ -364,22 +372,35 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   }, [publishApi, isEditing, detail, body, expectedToken])
 
   // Cmd/Ctrl-S triggers the appropriate save: create-flow on create,
-  // draft on edit. Publish stays a deliberate click (or
-  // Cmd/Ctrl+Shift+P, see below) — too easy to misfire.
+  // draft on edit. Cmd/Ctrl+Shift+P publishes the latest body.
+  // Both shortcuts also gate on the same enabled-conditions as the
+  // toolbar buttons so a stale `published-current` page can't be
+  // re-published with no edits, etc.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's' && !event.shiftKey) {
+      if (!event.metaKey && !event.ctrlKey) {
+        return
+      }
+      const key = event.key.toLowerCase()
+      if (key === 's' && !event.shiftKey) {
         event.preventDefault()
         if (mode === 'create') {
           void persistCreate()
         } else {
           persistDraft()
         }
+        return
+      }
+      if (key === 'p' && event.shiftKey) {
+        event.preventDefault()
+        if (isEditing) {
+          persistPublish()
+        }
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, persistCreate, persistDraft])
+  }, [mode, isEditing, persistCreate, persistDraft, persistPublish])
 
   const isMetaPending = upsertMetaApi.isPending || isCreatingPage
   const isBodyPending = saveDraftApi.isPending || publishApi.isPending
@@ -406,6 +427,16 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
 
   const canPersistMeta = meta.slug.trim() !== '' && meta.title.trim() !== ''
 
+  const publishState = useMemo<PublishState>(
+    () => (isEditing ? derivePublishState(detail) : { kind: 'not-published-yet' }),
+    [isEditing, detail],
+  )
+  // The publish button is suppressed when the latest revision *is*
+  // already the published one, because publishing again would just
+  // create an empty no-op revision. The user can still re-publish by
+  // making any edit (which moves to `draft-ahead`).
+  const canPublish = isEditing && publishState.kind !== 'published-current'
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 p-4">
       <header className="flex flex-wrap items-center gap-3">
@@ -421,7 +452,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         <div className="flex items-center gap-2">
           <FileTextIcon className="size-4 text-muted-foreground" />
           <h1 className="text-base font-semibold">{mode === 'create' ? '新建页面' : meta.title || '未命名页面'}</h1>
-          {isEditing ? <RevisionStatusBadge revision={detail.latestRevision} /> : null}
+          {isEditing ? <RevisionStatusBadge state={publishState} /> : null}
         </div>
         <div className="ml-auto flex items-center gap-2 text-sm">
           <StatusIndicator status={status} />
@@ -461,7 +492,12 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               <Button variant="outline" size="sm" onClick={persistDraft} disabled={isPending}>
                 <SaveIcon /> 保存草稿
               </Button>
-              <Button size="sm" onClick={persistPublish} disabled={isPending}>
+              <Button
+                size="sm"
+                onClick={persistPublish}
+                disabled={isPending || !canPublish}
+                title={canPublish ? '发布最新内容 (Cmd/Ctrl+Shift+P)' : '当前最新版本已发布'}
+              >
                 <UploadIcon /> 发布
               </Button>
             </>
@@ -571,16 +607,53 @@ function StatusIndicator({ status }: { status: Status }) {
   }
 }
 
-function RevisionStatusBadge({ revision }: { revision: AdminRevisionDto | null }) {
-  if (revision === null) {
-    return <Badge variant="outline">无修订</Badge>
+type PublishState =
+  | { kind: 'not-published-yet' }
+  | { kind: 'published-current'; revisionNo: number }
+  | { kind: 'draft-ahead'; draftRevisionNo: number; publishedRevisionNo: number | null }
+
+function derivePublishState(detail: AdminPageDetailDto): PublishState {
+  const latest = detail.latestRevision
+  const published = detail.publishedRevision
+  if (latest === null) {
+    return { kind: 'not-published-yet' }
   }
-  if (revision.status === 'published') {
-    return <Badge>已发布 R{revision.revisionNo}</Badge>
+  if (latest.status === 'published') {
+    // The latest revision is itself the published row — no newer
+    // draft ahead of it.
+    return { kind: 'published-current', revisionNo: latest.revisionNo }
   }
-  return (
-    <Badge variant="secondary">
-      <EyeIcon /> 草稿 R{revision.revisionNo}
-    </Badge>
-  )
+  // Latest is a draft. There may or may not be a published revision
+  // behind it.
+  return {
+    kind: 'draft-ahead',
+    draftRevisionNo: latest.revisionNo,
+    publishedRevisionNo: published?.revisionNo ?? null,
+  }
+}
+
+function RevisionStatusBadge({ state }: { state: PublishState }) {
+  switch (state.kind) {
+    case 'not-published-yet':
+      return (
+        <Badge variant="outline">
+          <CircleDashedIcon /> 尚未发布
+        </Badge>
+      )
+    case 'published-current':
+      return (
+        <Badge>
+          <CheckCircle2Icon /> 已发布 R{state.revisionNo}
+        </Badge>
+      )
+    case 'draft-ahead':
+      return (
+        <Badge variant="secondary">
+          <PencilLineIcon /> 草稿 R{state.draftRevisionNo}
+          {state.publishedRevisionNo !== null ? (
+            <span className="ml-1 opacity-70">/ R{state.publishedRevisionNo} 已发布</span>
+          ) : null}
+        </Badge>
+      )
+  }
 }
