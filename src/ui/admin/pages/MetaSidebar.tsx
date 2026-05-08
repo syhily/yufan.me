@@ -1,5 +1,10 @@
-import type { AdminPageDto } from '@/shared/cms-pages'
+import { ImageIcon, XIcon } from 'lucide-react'
 
+import type { AdminPageDto } from '@/shared/cms-pages'
+import type { AdminImageDto } from '@/shared/images'
+
+import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
+import { Button } from '@/ui/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/ui/card'
 import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Input } from '@/ui/components/ui/input'
@@ -153,28 +158,25 @@ export function MetaSidebar({ draft, onChange, disabled, extras }: MetaSidebarPr
           <CardTitle className="text-base">封面 / OG 图</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="page-cover">封面图 URL</Label>
-            <Input
-              id="page-cover"
-              value={draft.cover}
-              onChange={(e) => set('cover', e.target.value)}
-              placeholder="https://…"
-              maxLength={500}
-              disabled={disabled}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="page-og">OG 图 URL（可选）</Label>
-            <Input
-              id="page-og"
-              value={draft.og}
-              onChange={(e) => set('og', e.target.value)}
-              placeholder="留空则使用封面图"
-              maxLength={500}
-              disabled={disabled}
-            />
-          </div>
+          <p className="text-xs text-muted-foreground">
+            两项均为可选。封面用于列表与文章顶部展示；OG 图供社交平台分享卡片使用，留空则回退到封面。
+          </p>
+          <ImageField
+            id="page-cover"
+            label="封面图"
+            placeholder="https://… 或从图片库挑选"
+            value={draft.cover}
+            onChange={(value) => set('cover', value)}
+            disabled={disabled}
+          />
+          <ImageField
+            id="page-og"
+            label="OG 图"
+            placeholder="留空则使用封面图"
+            value={draft.og}
+            onChange={(value) => set('og', value)}
+            disabled={disabled}
+          />
         </CardContent>
       </Card>
 
@@ -234,6 +236,82 @@ interface ToggleRowProps {
   checked: boolean
   onCheckedChange: (next: boolean) => void
   disabled?: boolean
+}
+
+interface ImageFieldProps {
+  id: string
+  label: string
+  placeholder: string
+  value: string
+  onChange: (next: string) => void
+  disabled?: boolean
+}
+
+// Combined "URL input + library picker + thumbnail preview + clear"
+// affordance for the cover / OG image fields. Storing a plain URL
+// keeps the existing wire shape (`AdminPageDto.cover`/`og` are
+// strings) and lets operators paste in CDN-hosted assets that
+// aren't tracked in the image library.
+function ImageField({ id, label, placeholder, value, onChange, disabled }: ImageFieldProps) {
+  const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id}>
+          {label} <span className="text-xs font-normal text-muted-foreground">（可选）</span>
+        </Label>
+        <div className="flex items-center gap-1">
+          <ImageLibraryPicker
+            trigger={
+              <Button variant="outline" size="sm" type="button" disabled={disabled}>
+                <ImageIcon /> 从图片库选择
+              </Button>
+            }
+            onPick={handlePick}
+          />
+          {value !== '' ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              title="清空"
+              aria-label={`清空 ${label}`}
+              onClick={() => onChange('')}
+              disabled={disabled}
+            >
+              <XIcon />
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <Input
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        maxLength={500}
+        disabled={disabled}
+      />
+      {value !== '' ? (
+        <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-2">
+          <img
+            src={value}
+            alt={`${label} 预览`}
+            loading="lazy"
+            decoding="async"
+            className="size-16 shrink-0 rounded object-cover"
+            onError={(e) => {
+              ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+            }}
+          />
+          <p className="grow truncate font-mono text-xs text-muted-foreground" title={value}>
+            {value}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
 function ToggleRow({ id, label, description, checked, onCheckedChange, disabled }: ToggleRowProps) {
