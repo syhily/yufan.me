@@ -61,7 +61,12 @@ export default defineConfig({
   staged: {
     '*.{js,jsx,ts,tsx,mjs,cjs}': 'vp fmt && vp lint',
   },
-  plugins: [binary({ gzip: true }), mdxPlugin, ...(reactRouter() as Plugin[]), tailwindcss()] as PluginOption[],
+  plugins: [
+    binary({ gzip: true, excludeAsset: true }),
+    mdxPlugin,
+    ...(reactRouter() as Plugin[]),
+    tailwindcss(),
+  ] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
   },
