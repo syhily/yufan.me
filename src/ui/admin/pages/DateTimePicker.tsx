@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Button } from '@/ui/components/ui/button'
 import { Calendar } from '@/ui/components/ui/calendar'
@@ -29,6 +29,25 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
   const [open, setOpen] = useState(false)
   const parsed = parseLocal(value)
   const triggerId = id ?? 'datetime-picker'
+
+  // Year-dropdown range. The native `<select>` opens scrolled to its
+  // current value, so giving it a generous backward range lets the
+  // operator scroll up to pick older years while the most recent
+  // five (current year + the four before) sit at the bottom of the
+  // initial viewport — matching the "recent 5 by default, scroll for
+  // older" UX brief. We extend the upper bound slightly so a future
+  // 计划发布 can still aim a year or two ahead.
+  const { startMonth, endMonth } = useMemo(() => {
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const selectedYear = parsed?.getFullYear() ?? currentYear
+    const oldestYear = Math.min(currentYear - 30, selectedYear)
+    const newestYear = Math.max(currentYear + 2, selectedYear)
+    return {
+      startMonth: new Date(oldestYear, 0, 1),
+      endMonth: new Date(newestYear, 11, 31),
+    }
+  }, [parsed])
 
   const commit = (next: Date) => {
     onChange(toLocalInputValue(next))
@@ -105,10 +124,21 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
             selected={parsed ?? undefined}
             defaultMonth={parsed ?? undefined}
             captionLayout="dropdown"
+            locale={zhCN}
+            startMonth={startMonth}
+            endMonth={endMonth}
+            // Override the calendar's default `formatMonthDropdown`
+            // (which hardcodes `toLocaleString('default', …)` and
+            // therefore renders English month abbreviations regardless
+            // of the active locale prop) with a zhCN-bound formatter.
+            formatters={{
+              formatMonthDropdown: (date) => format(date, 'LLLL', { locale: zhCN }),
+              formatYearDropdown: (date) => `${date.getFullYear()} 年`,
+            }}
             onSelect={handleDateSelect}
             disabled={disabled}
           />
-          <div className="flex divide-x border-t sm:h-[300px] sm:border-t-0 sm:border-l">
+          <div className="flex divide-x border-t sm:h-75 sm:border-t-0 sm:border-l">
             <ColumnScroller>
               {HOURS_12.map((hour) => (
                 <SlotButton

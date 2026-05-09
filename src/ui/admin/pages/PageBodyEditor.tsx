@@ -10,7 +10,6 @@ import {
   BoldIcon,
   Code2Icon,
   CodeIcon,
-  Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   Heading4Icon,
@@ -44,10 +43,12 @@ import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/pages/MusicPickerDialog'
 import { BlockCardNode } from '@/ui/admin/pages/tiptap/BlockCardNode'
 import { PageBubbleMenu } from '@/ui/admin/pages/tiptap/BubbleMenu'
+import { CodeBlockBubbleMenu } from '@/ui/admin/pages/tiptap/CodeBlockBubbleMenu'
 import { EDITOR_EVENT_OPEN_IMAGE_PICKER, EDITOR_EVENT_OPEN_MUSIC_PICKER } from '@/ui/admin/pages/tiptap/editor-events'
 import { ImageNode } from '@/ui/admin/pages/tiptap/ImageNode'
 import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/pages/tiptap/InlineMarks'
 import { SlashCommandsExtension } from '@/ui/admin/pages/tiptap/SlashMenu'
+import { SolutionNode } from '@/ui/admin/pages/tiptap/SolutionNode'
 import { TableBubbleMenu } from '@/ui/admin/pages/tiptap/TableBubbleMenu'
 import { Button } from '@/ui/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
@@ -74,9 +75,10 @@ export interface PageBodyEditorProps {
 // Tiptap-based PortableText editor. The standard subset (paragraphs /
 // headings / blockquote / lists / inline marks / fenced code /
 // horizontal rule / link / table) is handled by Tiptap extensions;
-// custom block types (musicPlayer, mathBlock, mermaid, solution,
-// footnoteDefinition) round-trip through the generic `blockCard`
-// PM node defined by `pt-bridge`.
+// custom block types: `solution` uses a nested `solution` PM node
+// (blockquote-shaped `block+`); `musicPlayer`, `mathBlock`,
+// `mermaid`, and `footnoteDefinition` round-trip through the generic
+// `blockCard` PM node defined by `pt-bridge`.
 //
 // The user-facing surface area lives in three layers:
 //   * **Toolbar** (this file): mouse-friendly slim row at the top
@@ -125,6 +127,7 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       // every PortableText shape round-trips losslessly through the
       // editor.
       ImageNode,
+      SolutionNode,
       BlockCardNode,
       MathInlineMark,
       FootnoteRefMark,
@@ -158,14 +161,17 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
     editor.setEditable(disabled !== true)
   }, [editor, disabled])
 
-  // Refs to dialog triggers — the slash menu fires global custom
-  // events when the user picks "image" / "music" so we don't have
-  // to teach the suggestion plugin about React state.
-  const imagePickerOpenRef = useRef<() => void>(() => undefined)
-  const musicPickerOpenRef = useRef<() => void>(() => undefined)
+  // Single controlled-open state per picker — the toolbar buttons
+  // and the slash-command events both flip this. Driving the dialog
+  // via state (rather than synthesising a click on the trigger
+  // button) avoids a Base UI focus race where the dialog would
+  // briefly open and then close because the click fired while the
+  // suggestion plugin was tearing down its portal.
+  const [imagePickerOpen, setImagePickerOpen] = useState(false)
+  const [musicPickerOpen, setMusicPickerOpen] = useState(false)
   useEffect(() => {
-    const openImage = () => imagePickerOpenRef.current()
-    const openMusic = () => musicPickerOpenRef.current()
+    const openImage = () => setImagePickerOpen(true)
+    const openMusic = () => setMusicPickerOpen(true)
     document.addEventListener(EDITOR_EVENT_OPEN_IMAGE_PICKER, openImage)
     document.addEventListener(EDITOR_EVENT_OPEN_MUSIC_PICKER, openMusic)
     return () => {
@@ -240,24 +246,27 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
         disabled={disabled}
         density={toolbarDensity}
         onDensityChange={setToolbarDensity}
-        onPickImage={insertImage}
-        onPickMusic={insertMusic}
-        registerImageOpener={(open) => {
-          imagePickerOpenRef.current = open
-        }}
-        registerMusicOpener={(open) => {
-          musicPickerOpenRef.current = open
-        }}
+        onOpenImagePicker={() => setImagePickerOpen(true)}
+        onOpenMusicPicker={() => setMusicPickerOpen(true)}
       />
+      <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertImage} />
+      <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={insertMusic} />
       <PageBubbleMenu editor={editor} />
       <TableBubbleMenu editor={editor} />
-      <div className="grow overflow-auto px-6 py-6">
+      <CodeBlockBubbleMenu editor={editor} />
+      {/* Bottom padding (`pb-[60vh]`) gives the operator a generous
+          scroll runway past the end of the document. Without it the
+          last paragraph hugs the container edge, which leaves the
+          slash menu (anchored below the caret) clipped or overlapped
+          by the surrounding chrome when authoring near the bottom. */}
+      <div className="grow overflow-auto px-6 pt-6 pb-[60vh]">
         <EditorContent
           editor={editor}
           className={cn(
             'prose max-w-none prose-zinc focus:outline-none',
-            'min-h-[480px] [&_.ProseMirror]:min-h-[440px]',
+            'min-h-120 [&_.ProseMirror]:min-h-110',
             '[&_.ProseMirror]:focus:outline-none',
+            '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
             '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
             '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
             '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
@@ -275,10 +284,8 @@ interface ToolbarProps {
   disabled?: boolean
   density: ToolbarDensity
   onDensityChange: (next: ToolbarDensity) => void
-  onPickImage: (image: import('@/shared/images').AdminImageDto) => void
-  onPickMusic: (music: import('@/shared/music').AdminMusicDto) => void
-  registerImageOpener: (open: () => void) => void
-  registerMusicOpener: (open: () => void) => void
+  onOpenImagePicker: () => void
+  onOpenMusicPicker: () => void
 }
 
 // Toolbar layered into a stack of `ToolbarGroup`s so the operator
@@ -328,8 +335,12 @@ function Toolbar(props: ToolbarProps) {
 
   const insertButtons = (
     <>
-      <ImageLibraryTrigger disabled={disabled} onPick={props.onPickImage} registerOpener={props.registerImageOpener} />
-      <MusicPickerTrigger disabled={disabled} onPick={props.onPickMusic} registerOpener={props.registerMusicOpener} />
+      <ToolbarButton title="插入图片" disabled={disabled} onClick={props.onOpenImagePicker}>
+        <ImageIcon />
+      </ToolbarButton>
+      <ToolbarButton title="插入音乐" disabled={disabled} onClick={props.onOpenMusicPicker}>
+        <Music2Icon />
+      </ToolbarButton>
       <ToolbarButton
         title="插入表格 (3×3 含表头)"
         disabled={disabled}
@@ -621,13 +632,12 @@ function ToolbarButton({ title, active, disabled, onClick, children }: ToolbarBu
 
 // Block style values map 1:1 to PortableText `style` values produced
 // by pmDocToBody / consumed by bodyToPmDoc — keep in sync if a new
-// style is ever added to `portableTextBodySchema`. We deliberately
-// stop at h5: emdash and the public renderer agree h6 is rare enough
-// that hiding it from the toolbar is the right default. h6 still
-// round-trips through the bridge if external content provides it.
+// style is ever added to `portableTextBodySchema`. h1 is owned by
+// the page title (rendered in the public layout), so the editor
+// surfaces h2–h5 only; h1 + h6 still round-trip through the bridge
+// if external content provides them.
 const BLOCK_STYLE_OPTIONS: { value: string; label: string }[] = [
   { value: 'normal', label: '正文段落' },
-  { value: 'h1', label: '一级标题' },
   { value: 'h2', label: '二级标题' },
   { value: 'h3', label: '三级标题' },
   { value: 'h4', label: '四级标题' },
@@ -643,7 +653,7 @@ function getActiveBlockStyle(editor: Editor): string {
   if (editor.isActive('blockquote')) {
     return 'blockquote'
   }
-  for (const level of [1, 2, 3, 4, 5] as const) {
+  for (const level of [2, 3, 4, 5] as const) {
     if (editor.isActive('heading', { level })) {
       return `h${level}`
     }
@@ -671,9 +681,9 @@ function applyBlockStyle(editor: Editor, value: string): void {
       }
       return
     default: {
-      const match = /^h([1-5])$/.exec(value)
+      const match = /^h([2-5])$/.exec(value)
       if (match) {
-        const level = Number(match[1]) as 1 | 2 | 3 | 4 | 5
+        const level = Number(match[1]) as 2 | 3 | 4 | 5
         chain.setHeading({ level }).run()
       }
     }
@@ -698,7 +708,16 @@ function BlockStyleSelect({ editor, disabled }: BlockStyleSelectProps) {
       disabled={disabled}
     >
       <SelectTrigger size="sm" className="h-8 min-w-30" aria-label="段落样式">
-        <SelectValue placeholder="段落样式" />
+        {/* Base UI's Select.Value defaults to rendering the raw `value`
+            string (e.g. "h2" / "codeBlock") when no child render
+            function is supplied. We map back to the Chinese label so
+            the trigger matches the dropdown options. */}
+        <SelectValue placeholder="段落样式">
+          {(value) => {
+            const match = BLOCK_STYLE_OPTIONS.find((option) => option.value === value)
+            return match?.label ?? '段落样式'
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {BLOCK_STYLE_OPTIONS.map((option) => (
@@ -721,7 +740,6 @@ interface BlockStyleButtonsProps {
 // the same visual cue regardless of entry point.
 const BLOCK_STYLE_BUTTONS: { value: string; title: string; Icon: typeof PilcrowIcon }[] = [
   { value: 'normal', title: '正文段落', Icon: PilcrowIcon },
-  { value: 'h1', title: '一级标题', Icon: Heading1Icon },
   { value: 'h2', title: '二级标题', Icon: Heading2Icon },
   { value: 'h3', title: '三级标题', Icon: Heading3Icon },
   { value: 'h4', title: '四级标题', Icon: Heading4Icon },
@@ -746,67 +764,5 @@ function BlockStyleButtons({ editor, disabled }: BlockStyleButtonsProps) {
         </ToolbarButton>
       ))}
     </>
-  )
-}
-
-interface ImageLibraryTriggerProps {
-  disabled?: boolean
-  onPick: (image: import('@/shared/images').AdminImageDto) => void
-  registerOpener: (open: () => void) => void
-}
-
-function ImageLibraryTrigger({ disabled, onPick, registerOpener }: ImageLibraryTriggerProps) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  useEffect(() => {
-    registerOpener(() => buttonRef.current?.click())
-  }, [registerOpener])
-  return (
-    <ImageLibraryPicker
-      trigger={
-        <Button
-          ref={buttonRef}
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          title="插入图片"
-          aria-label="插入图片"
-          type="button"
-        >
-          <ImageIcon />
-        </Button>
-      }
-      onPick={onPick}
-    />
-  )
-}
-
-interface MusicPickerTriggerProps {
-  disabled?: boolean
-  onPick: (music: import('@/shared/music').AdminMusicDto) => void
-  registerOpener: (open: () => void) => void
-}
-
-function MusicPickerTrigger({ disabled, onPick, registerOpener }: MusicPickerTriggerProps) {
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
-  useEffect(() => {
-    registerOpener(() => buttonRef.current?.click())
-  }, [registerOpener])
-  return (
-    <MusicPickerDialog
-      trigger={
-        <Button
-          ref={buttonRef}
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          title="插入音乐"
-          aria-label="插入音乐"
-          type="button"
-        >
-          <Music2Icon />
-        </Button>
-      }
-      onPick={onPick}
-    />
   )
 }

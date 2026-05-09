@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { PortableTextBody } from '@/shared/portable-text'
 
-import { arePortableTextBodiesEquivalent, bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
+import { type PmBlockNode, arePortableTextBodiesEquivalent, bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
 
 // PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
 // the canonical shape (validated by the API perimeter); ProseMirror is
@@ -181,7 +181,9 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
 
 describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
   it('musicPlayer blocks round-trip via the blockCard payload slot', () => {
-    const body: PortableTextBody = [{ _type: 'musicPlayer', _key: 'mp-1', playerId: 'abcdef0123456789', auto: true }]
+    const body: PortableTextBody = [
+      { _type: 'musicPlayer', _key: 'mp-1', playerId: 'abcdef0123456789', auto: true, center: true },
+    ]
     const doc = bodyToPmDoc(body)
     expect(doc.content[0].type).toBe('blockCard')
     const back = pmDocToBody(doc)
@@ -197,7 +199,7 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
     expect(back).toEqual(body)
   })
 
-  it('solution blocks round-trip with their nested children intact', () => {
+  it('solution blocks round-trip as a nested PM node (not blockCard)', () => {
     const body: PortableTextBody = [
       {
         _type: 'solution',
@@ -212,8 +214,71 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
         ],
       },
     ]
-    const back = pmDocToBody(bodyToPmDoc(body))
-    expect(back).toEqual(body)
+    const doc = bodyToPmDoc(body)
+    expect(doc.content[0].type).toBe('solution')
+    const back = pmDocToBody(doc)
+    expect(arePortableTextBodiesEquivalent(body, back)).toBe(true)
+    expect(back[0]._type).toBe('solution')
+    if (back[0]._type === 'solution') {
+      expect(back[0]._key).toBe('sol-1')
+      expect(back[0].children[0]).toMatchObject({ _type: 'block', style: 'normal' })
+    }
+  })
+
+  it('round-trips a table nested inside a solution', () => {
+    const tableChild = {
+      _type: 'table' as const,
+      _key: 't-in-sol',
+      hasHeaderRow: true,
+      rows: [
+        {
+          _type: 'tableRow' as const,
+          _key: 'r-1',
+          cells: [
+            {
+              _type: 'tableCell' as const,
+              _key: 'c-1',
+              isHeader: true,
+              content: [{ _type: 'span' as const, _key: 's1', text: 'A' }],
+            },
+            {
+              _type: 'tableCell' as const,
+              _key: 'c-2',
+              isHeader: true,
+              content: [{ _type: 'span' as const, _key: 's2', text: 'B' }],
+            },
+          ],
+        },
+        {
+          _type: 'tableRow' as const,
+          _key: 'r-2',
+          cells: [
+            {
+              _type: 'tableCell' as const,
+              _key: 'c-3',
+              content: [{ _type: 'span' as const, _key: 's3', text: '1' }],
+            },
+            {
+              _type: 'tableCell' as const,
+              _key: 'c-4',
+              content: [{ _type: 'span' as const, _key: 's4', text: '2' }],
+            },
+          ],
+        },
+      ],
+    }
+    const body: PortableTextBody = [
+      {
+        _type: 'solution',
+        _key: 'sol-1',
+        children: [tableChild],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    const innerPm = doc.content[0] as PmBlockNode
+    expect(innerPm.type).toBe('solution')
+    expect(innerPm.content?.some((n) => (n as PmBlockNode).type === 'table')).toBe(true)
+    expect(arePortableTextBodiesEquivalent(body, pmDocToBody(bodyToPmDoc(body)))).toBe(true)
   })
 
   it('footnoteDefinition blocks round-trip preserving index + nested children', () => {
@@ -390,6 +455,32 @@ describe('contract: pt-bridge — nested lists', () => {
       },
     ]
     expect(arePortableTextBodiesEquivalent(implicitTopLevel, explicitTopLevel)).toBe(true)
+  })
+
+  it('treats custom blocks as equivalent when only object property order differs', () => {
+    const a = [{ _type: 'musicPlayer' as const, _key: 'm1', playerId: 'abcd1234abcd1234' }]
+    const b = [{ playerId: 'abcd1234abcd1234', _key: 'm1', _type: 'musicPlayer' as const }]
+    expect(arePortableTextBodiesEquivalent(a, b)).toBe(true)
+  })
+
+  it('treats identical musicPlayer payloads as equivalent when `_key` differs', () => {
+    const a = [{ _type: 'musicPlayer' as const, _key: 'k-local', playerId: 'abcd1234abcd1234' }]
+    const b = [{ _type: 'musicPlayer' as const, _key: 'k-server', playerId: 'abcd1234abcd1234' }]
+    expect(arePortableTextBodiesEquivalent(a, b)).toBe(true)
+  })
+
+  it('ignores highlightedHtml drift when judging equivalence', () => {
+    const a: PortableTextBody = [{ _type: 'code', _key: 'c1', language: 'ts', code: 'const x = 1\n' }]
+    const b: PortableTextBody = [
+      {
+        _type: 'code',
+        _key: 'c2',
+        language: 'ts',
+        code: 'const x = 1\n',
+        highlightedHtml: '<pre class="shiki"><code>...</code></pre>',
+      },
+    ]
+    expect(arePortableTextBodiesEquivalent(a, b)).toBe(true)
   })
 })
 

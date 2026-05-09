@@ -1,5 +1,5 @@
-import { CheckIcon, CopyIcon, ExternalLinkIcon, PencilIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { CheckIcon, CopyIcon, ExternalLinkIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/images'
 
@@ -52,10 +52,8 @@ export function ImageDetailDialog({
 }: ImageDetailDialogProps) {
   const [editingNote, setEditingNote] = useState(false)
   const [noteDraft, setNoteDraft] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  // Reset the edit affordance every time the dialog opens against a
-  // new image. The previous edit state would otherwise leak into the
-  // next dialog if the operator closes mid-edit.
   useEffect(() => {
     if (!open || image === null) {
       setEditingNote(false)
@@ -66,15 +64,36 @@ export function ImageDetailDialog({
     setNoteDraft(image.note ?? '')
   }, [open, image])
 
+  useEffect(() => {
+    if (editingNote) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editingNote])
+
   if (image === null) {
     return null
+  }
+
+  const currentNote = image.note ?? ''
+  const commitNote = () => {
+    const trimmed = noteDraft.trim()
+    const next = trimmed === '' ? null : trimmed
+    if ((next ?? '') !== currentNote) {
+      onSaveNote(image, next)
+    }
+    setEditingNote(false)
+  }
+  const cancelEdit = () => {
+    setNoteDraft(currentNote)
+    setEditingNote(false)
   }
 
   const fileName = image.storagePath.split('/').pop() ?? image.storagePath
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-hidden p-0">
+      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-hidden p-0 outline-none">
         <div className="flex max-h-[calc(100vh-2rem)] flex-col">
           <DialogHeader className="px-6 pt-6">
             <DialogTitle className="truncate">{fileName}</DialogTitle>
@@ -136,59 +155,38 @@ export function ImageDetailDialog({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">备注</Label>
-                {!editingNote ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setEditingNote(true)
-                      setNoteDraft(image.note ?? '')
-                    }}
-                  >
-                    <PencilIcon data-icon /> 编辑
-                  </Button>
-                ) : null}
-              </div>
+              <Label className="text-xs text-muted-foreground">备注</Label>
               {editingNote ? (
-                <div className="flex flex-col gap-2">
-                  <Input
-                    value={noteDraft}
-                    maxLength={200}
-                    onChange={(e) => setNoteDraft(e.target.value)}
-                    placeholder="便于后台搜索（如「2024 年终总结题图」）"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => {
-                        const trimmed = noteDraft.trim()
-                        onSaveNote(image, trimmed === '' ? null : trimmed)
-                        setEditingNote(false)
-                      }}
-                      disabled={isSavingNote}
-                    >
-                      <CheckIcon data-icon /> 保存
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingNote(false)
-                        setNoteDraft(image.note ?? '')
-                      }}
-                      disabled={isSavingNote}
-                    >
-                      取消
-                    </Button>
-                  </div>
-                </div>
+                <Input
+                  ref={inputRef}
+                  value={noteDraft}
+                  maxLength={200}
+                  disabled={isSavingNote}
+                  onChange={(e) => setNoteDraft(e.target.value)}
+                  onBlur={commitNote}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      commitNote()
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault()
+                      cancelEdit()
+                    }
+                  }}
+                  placeholder="便于后台搜索（如「2024 年终总结题图」）"
+                />
               ) : (
-                <p className="text-sm">{image.note || <span className="text-muted-foreground">— 暂无备注 —</span>}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNoteDraft(currentNote)
+                    setEditingNote(true)
+                  }}
+                  className="cursor-text rounded border border-transparent px-2 py-1 text-left text-sm transition-colors outline-none hover:border-input hover:bg-muted/50 focus-visible:border-input focus-visible:bg-muted/50"
+                  title="点击编辑"
+                >
+                  {image.note || <span className="text-muted-foreground">— 点击添加备注 —</span>}
+                </button>
               )}
             </div>
           </div>

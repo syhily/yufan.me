@@ -95,7 +95,7 @@ export function RevisionHistoryDrawer({
           </Button>
         }
       />
-      <SheetContent side="right" className="w-[640px] sm:max-w-[640px]">
+      <SheetContent side="right" className="w-160 sm:max-w-160">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             {selectedRevision !== null ? (

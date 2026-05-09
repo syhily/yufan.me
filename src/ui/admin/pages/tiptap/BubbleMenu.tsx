@@ -51,6 +51,13 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
         if (instance.isActive('table')) {
           return false
         }
+        // Hide inside code blocks — Tiptap's `codeBlock` ignores
+        // every inline mark we offer here, and the dedicated
+        // `CodeBlockBubbleMenu` handles language selection in this
+        // context.
+        if (instance.isActive('codeBlock')) {
+          return false
+        }
         // Hide when an atom node is the active selection (image,
         // blockCard, …). Those nodes own their own NodeView UI for
         // editing — the inline-format affordances in this menu would

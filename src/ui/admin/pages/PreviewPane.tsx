@@ -29,6 +29,8 @@ export interface PreviewPaneProps {
 // (MusicPlayer, Solution, etc.) work in-place — instead of going
 // through a server round-trip + `dangerouslySetInnerHTML`, which
 // dropped a static skeleton with no React lifecycle attached.
+// `suppressMusicAutoplay` keeps the pane silent; `center` on each
+// music block still affects layout like on the published page.
 //
 // `useDeferredValue` keeps typing responsive: the editor's body
 // updates render immediately on the canvas while the preview's heavy
@@ -86,7 +88,7 @@ export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
           )}
         </header>
         <div className="post-content prose-blog prose prose-lg max-w-none">
-          <PortableTextBodyRenderer body={renderedBody} />
+          <PortableTextBodyRenderer body={renderedBody} suppressMusicAutoplay />
         </div>
       </div>
     </div>

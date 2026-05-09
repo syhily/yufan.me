@@ -3,6 +3,7 @@ import { diff_match_patch } from 'diff-match-patch'
 import type { Block, PortableTextBody } from '@/shared/portable-text'
 
 import { bodyToPlainText } from '@/shared/portable-text'
+import { portableTextBlockSemanticFingerprint as anchorFor } from '@/shared/portable-text-semantics'
 import { Badge } from '@/ui/components/ui/badge'
 import { cn } from '@/ui/lib/cn'
 
@@ -178,112 +179,6 @@ function tokenize(text: string): Set<string> {
   return tokens
 }
 
-// Decorator marks are reserved short names (bold, italic, …) that
-// the editor never registers as `markDef`s. Anything else in
-// `marks[]` is a `_key` lookup into the block's own `markDefs[]`.
-const DECORATOR_MARKS = new Set(['strong', 'em', 'underline', 'strike-through', 'code'])
-
-// Replace every span's `marks: ['<key>']` with the inlined markDef
-// (or pass through known decorators), then drop the now-redundant
-// `markDefs[]` array. Two text blocks with the same link href but
-// different synthesised key names produce the same shape after
-// this pass.
-function resolveMarks(block: Block): Block {
-  if (block._type !== 'block') {
-    return block
-  }
-  const markDefs = (block as { markDefs?: ReadonlyArray<{ _key: string } & Record<string, unknown>> }).markDefs ?? []
-  const lookup = new Map<string, Record<string, unknown>>()
-  for (const def of markDefs) {
-    const { _key: _ignored, ...rest } = def
-    lookup.set(def._key, rest)
-  }
-  const resolvedChildren = (block.children ?? []).map((child) => {
-    if (child._type !== 'span') {
-      return child
-    }
-    const original = (child as { marks?: ReadonlyArray<string> }).marks ?? []
-    if (original.length === 0) {
-      return child
-    }
-    const resolved = original.map((name) =>
-      DECORATOR_MARKS.has(name) ? { decorator: name } : (lookup.get(name) ?? { unresolved: name }),
-    )
-    return { ...child, marks: resolved }
-  })
-  // Drop `markDefs` from the canonical view; the resolved marks
-  // already carry every payload `markDefs` contributed.
-  const { markDefs: _drop, ...rest } = block as Record<string, unknown>
-  return { ...rest, children: resolvedChildren } as Block
-}
-
-type Json = string | number | boolean | null | { [k: string]: Json } | Json[]
-
-function canonicalize(value: unknown): Json | undefined {
-  if (Array.isArray(value)) {
-    const items: Json[] = []
-    for (const entry of value) {
-      const normalized = canonicalize(entry)
-      if (normalized !== undefined) {
-        items.push(normalized)
-      }
-    }
-    return items.length === 0 ? undefined : items
-  }
-  if (value !== null && typeof value === 'object') {
-    const out: { [k: string]: Json } = {}
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      if (k === '_key') {
-        continue
-      }
-      const normalized = canonicalize(v)
-      if (normalized === undefined) {
-        continue
-      }
-      out[k] = normalized
-    }
-    return Object.keys(out).length === 0 ? undefined : out
-  }
-  if (value === undefined) {
-    return undefined
-  }
-  return value as Json
-}
-
-function canonicalStringify(value: Json | undefined): string {
-  if (value === undefined) {
-    return ''
-  }
-  if (Array.isArray(value)) {
-    return `[${value.map((entry) => canonicalStringify(entry)).join(',')}]`
-  }
-  if (value !== null && typeof value === 'object') {
-    const keys = Object.keys(value).sort()
-    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalStringify(value[k])}`).join(',')}}`
-  }
-  return JSON.stringify(value)
-}
-
-// Build a per-block anchor used by the LCS pass.
-//
-// The anchor must be **stable across edits we don't care about**
-// (key regeneration, span re-splitting, empty-array vs missing,
-// markDef key reshuffling) and **discriminating enough** that two
-// paragraphs with different visible text don't accidentally fold
-// together. We use the same `canonicalize` + `resolveMarks` pass
-// that `sameBlockContent` uses — so anchor equality and "unchanged"
-// equality are the same predicate. This makes the LCS provably
-// optimal for the unchanged-vs-changed decision: every LCS match
-// emits as `unchanged`, and inserts/deletes/edits land in the gaps.
-//
-// Trade-off: a block whose only change is a typo (text mostly the
-// same, one character different) will NOT anchor and will fall
-// into a gap. The `flushGap` greedy pass below pairs it back up as
-// `changed` so the operator still sees the inline char diff.
-function anchorFor(block: Block): string {
-  return canonicalStringify(canonicalize(resolveMarks(block))) || `empty:${block._type}`
-}
-
 // Hunt–Szymanski-ish LCS: for short anchor sequences (the docs we
 // diff have ≤ a few hundred blocks each) the textbook O(n·m) DP is
 // fast enough and far simpler than the patience / Myers variants.
@@ -365,7 +260,7 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
           >
             <div className="mb-1 flex items-center gap-2">
               <BlockTypeBadge block={block} />
-              <span className="text-[10px] tracking-wide text-muted-foreground uppercase">{entry.status}</span>
+              <span className="text-badge tracking-wide text-muted-foreground uppercase">{entry.status}</span>
             </div>
             {entry.status === 'changed' && entry.leftBlock?._type === 'block' && entry.rightBlock?._type === 'block' ? (
               <BlockInlineDiff leftBlock={entry.leftBlock} rightBlock={entry.rightBlock} side={side} />
@@ -401,7 +296,7 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
   const rightText = bodyToPlainText([rightBlock]).trim()
   const parts = inlineCharDiff(leftText, rightText)
   return (
-    <p className="line-clamp-6 leading-relaxed break-words">
+    <p className="line-clamp-6 leading-relaxed wrap-break-word">
       {parts.map((part, idx) => {
         if (part.op === 0) {
           return <span key={idx}>{part.text}</span>
@@ -432,7 +327,7 @@ function BlockPreview({ block }: { block: Block | null }) {
   }
   if (block._type === 'block') {
     const text = bodyToPlainText([block]).trim()
-    return <span className="line-clamp-3 break-words">{text || '（空文本块）'}</span>
+    return <span className="line-clamp-3 wrap-break-word">{text || '（空文本块）'}</span>
   }
   return (
     <pre className="line-clamp-3 text-xs break-all text-muted-foreground">{JSON.stringify(block).slice(0, 240)}</pre>

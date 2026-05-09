@@ -7,24 +7,25 @@ import {
 import GithubSlugger from 'github-slugger'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
-import type {
-  CodeBlock,
-  FootnoteDefinitionBlock,
-  FootnoteRefMarkDef,
-  HorizontalRuleBlock,
-  ImageBlock,
-  LinkMarkDef,
-  MarkDef,
-  MathBlock,
-  MathInlineMarkDef,
-  MermaidBlock,
-  MusicPlayerBlock,
-  PortableTextBody as PortableTextBodyType,
-  SolutionBlock,
-  Span,
-  TableBlock,
+import {
+  collectHeadingSlotsInPortableTextRenderOrder,
+  type CodeBlock,
+  type FootnoteDefinitionBlock,
+  type FootnoteRefMarkDef,
+  type HorizontalRuleBlock,
+  type ImageBlock,
+  type LinkMarkDef,
+  type MarkDef,
+  type MathBlock,
+  type MathInlineMarkDef,
+  type MermaidBlock,
+  type MusicPlayerBlock,
+  type PortableTextBody as PortableTextBodyType,
+  type SolutionBlock,
+  type Span,
+  type TableBlock,
+  type TextBlock,
 } from '@/shared/portable-text'
-
 import { CodeBlock as CodeBlockComponent } from '@/ui/mdx/CodeBlock'
 import { FootnoteProvider } from '@/ui/mdx/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/mdx/image-meta-context'
@@ -45,9 +46,14 @@ import { Solution } from '@/ui/mdx/solutions/Solution'
 // `@/ui/mdx/*` component so the public site renders bytes-for-bytes
 // (modulo whitespace) like a hand-authored MDX page would.
 //
-// **Anchors**: heading nodes get an `id` derived from `slug`-collected
-// keys (the editor maintains the same slug map via `collectHeadings`),
-// so `/page#anchor` deep links keep working through the migration.
+// **Anchors**: each heading uses the Portable Text block `_key` to look
+// up a stable id. Slots are collected with
+// `collectHeadingSlotsInPortableTextRenderOrder` (same order as this
+// renderer: main column + solution innards + footnotes). Precomputed
+// slugs from the loader zip by index; any gap uses `github-slugger`
+// over the saved **plain** heading text — never `react` children, so
+// SSR and hydration cannot disagree when a heading wraps marks or
+// decorators.
 //
 // **Why a single file?** Splitting per-block components into
 // `components/<type>.tsx` would multiply imports, force barrel files,
@@ -74,6 +80,12 @@ export interface PortableTextBodyProps {
    * always supplies this prop, so the fallback is editor-only.
    */
   headingSlugs?: readonly string[]
+  /**
+   * When true, every `musicPlayer` block renders with autoplay forced
+   * off so admin surfaces (live preview pane, SSR preview HTML) stay
+   * silent while still honouring `center` for layout.
+   */
+  suppressMusicAutoplay?: boolean
 }
 
 // React context fan-out for footnote definitions. Every renderer
@@ -87,48 +99,38 @@ interface FootnoteRefCtx {
 }
 const FootnoteRefContext = createContext<FootnoteRefCtx>({ definitions: new Map() })
 
-// Heading anchor IDs come from one of two channels:
-//
-//   1. **Precomputed** (preferred). The SSR loader runs
-//      `collectHeadings(body, deriveSlug)` and threads the slug
-//      list down via the `headingSlugs` prop. The heading
-//      components consume the next slug from a per-render cursor.
-//      This is the only path that yields pinyin-pro-aware anchors
-//      for Han-text headings, because `pinyin-pro` is a server-only
-//      dependency (the bundle is too heavy for the client).
-//   2. **Local fallback**. When `headingSlugs` is absent (editor
-//      live-preview, snapshot tests with bare bodies), we run a
-//      local `github-slugger` over the raw text. CJK headings keep
-//      their historical (CJK-as-is) slug, ASCII headings stay
-//      byte-identical with the SSR path.
-//
-// Either way the cursor / slugger is reset per render via the
-// `body` identity dependency.
-interface HeadingAnchorCtx {
-  precomputed: readonly string[] | undefined
-  cursor: { i: number }
-  fallback: GithubSlugger
-}
-const HeadingAnchorContext = createContext<HeadingAnchorCtx>({
-  precomputed: undefined,
-  cursor: { i: 0 },
-  fallback: new GithubSlugger(),
-})
+const EMPTY_HEADING_IDS = new Map<string, string>()
 
-export function PortableTextBody({ body, imageMeta, headingSlugs }: PortableTextBodyProps) {
+// Heading ids: precomputed slug list (optional) is zipped to
+// `collectHeadingSlotsInPortableTextRenderOrder`; each block's `_key`
+// maps to its final id. Pure data + pure useMemo — no render-phase
+// counters (Strict Mode / parent re-renders cannot desync SSR/CSR).
+const HeadingIdByBlockKeyContext = createContext<Map<string, string>>(EMPTY_HEADING_IDS)
+
+interface MusicPresentationCtx {
+  suppressAutoplay: boolean
+}
+
+const MusicPresentationContext = createContext<MusicPresentationCtx>({ suppressAutoplay: false })
+
+export function PortableTextBody({ body, imageMeta, headingSlugs, suppressMusicAutoplay }: PortableTextBodyProps) {
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
-  // Reset cursor + slugger whenever the body OR the precomputed
-  // slug list changes. The cursor / slugger are stateful by design
-  // (each heading consumes one entry / runs `slug()` once), so we
-  // need a fresh instance per render to keep anchors stable across
-  // re-renders of the same body. We list `body` explicitly even
-  // though we don't read it inside the initialiser — its identity
-  // change is the trigger we want.
-  const headingCtx = useMemo<HeadingAnchorCtx>(
-    () => ({ precomputed: headingSlugs, cursor: { i: 0 }, fallback: new GithubSlugger() }),
-    // oxlint-disable-next-line exhaustive-deps
-    [body, headingSlugs],
-  )
+
+  const headingIdByBlockKey = useMemo(() => {
+    const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
+    const map = new Map<string, string>()
+    const fallbackSlugger = new GithubSlugger()
+    for (let i = 0; i < slots.length; i += 1) {
+      const slot = slots[i]
+      const pre = headingSlugs?.[i]
+      const id =
+        headingSlugs !== undefined && typeof pre === 'string' && pre.length > 0
+          ? pre
+          : fallbackSlugger.slug(slot.plainText)
+      map.set(slot.blockKey, id)
+    }
+    return map
+  }, [body, headingSlugs])
 
   // Footnote definitions (block type `footnoteDefinition`) are
   // rendered together at the bottom of the body — never inline —
@@ -139,18 +141,25 @@ export function PortableTextBody({ body, imageMeta, headingSlugs }: PortableText
     [body],
   )
 
+  const musicPresentation = useMemo<MusicPresentationCtx>(
+    () => ({ suppressAutoplay: suppressMusicAutoplay === true }),
+    [suppressMusicAutoplay],
+  )
+
   return (
     <ImageMetaProvider value={imageMeta}>
-      <FootnoteProvider>
-        <FootnoteRefContext.Provider value={footnoteCtx}>
-          <HeadingAnchorContext.Provider value={headingCtx}>
-            <div className="portable-text-body">
-              <PortableText value={inlineBody as never} components={portableTextComponents} />
-              {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} /> : null}
-            </div>
-          </HeadingAnchorContext.Provider>
-        </FootnoteRefContext.Provider>
-      </FootnoteProvider>
+      <MusicPresentationContext.Provider value={musicPresentation}>
+        <FootnoteProvider>
+          <FootnoteRefContext.Provider value={footnoteCtx}>
+            <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
+              <div className="portable-text-body">
+                <PortableText value={inlineBody as never} components={portableTextComponents} />
+                {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} /> : null}
+              </div>
+            </HeadingIdByBlockKeyContext.Provider>
+          </FootnoteRefContext.Provider>
+        </FootnoteProvider>
+      </MusicPresentationContext.Provider>
     </ImageMetaProvider>
   )
 }
@@ -169,68 +178,22 @@ function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, Foo
   return out
 }
 
-// Resolve a heading anchor id. Reads from the cursor when SSR
-// supplied a precomputed slug list (the canonical pinyin pipeline);
-// falls back to a local `github-slugger` over the raw text when the
-// list is absent (editor preview before round-tripping through the
-// server). A stale cursor (more headings rendered than the loader
-// declared) silently degrades to the fallback so a mid-edit body
-// with an extra heading still renders.
-function anchorIdFor(text: string, ctx: HeadingAnchorCtx): string {
-  if (ctx.precomputed !== undefined) {
-    const slug = ctx.precomputed[ctx.cursor.i]
-    ctx.cursor.i += 1
-    if (typeof slug === 'string' && slug.length > 0) {
-      return slug
-    }
-  }
-  return ctx.fallback.slug(text)
-}
-
-function nodeText(node: ReactNode): string {
-  // The block component receives the rendered children; we need the
-  // raw text to compute anchor ids. Walk the React node tree pulling
-  // out plain strings/numbers — works for the simple text + decorator
-  // shapes that appear in headings.
-  if (node === null || node === undefined || typeof node === 'boolean') {
-    return ''
-  }
-  if (typeof node === 'string' || typeof node === 'number') {
-    return String(node)
-  }
-  if (Array.isArray(node)) {
-    return node.map(nodeText).join('')
-  }
-  if (typeof node === 'object' && 'props' in (node as { props?: unknown })) {
-    const props = (node as { props?: { children?: ReactNode } }).props
-    return nodeText(props?.children)
-  }
-  return ''
-}
-
 // ---------------------------------------------------------------------------
 // PortableText component map
 // ---------------------------------------------------------------------------
 
-function Heading1({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingAnchorContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx)
-  return <h1 id={id}>{children}</h1>
-}
-function Heading2({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingAnchorContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx)
-  return <h2 id={id}>{children}</h2>
-}
-function Heading3({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingAnchorContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx)
-  return <h3 id={id}>{children}</h3>
-}
-function Heading4({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingAnchorContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx)
-  return <h4 id={id}>{children}</h4>
+function HeadingBlock({
+  children,
+  value,
+  Tag,
+}: {
+  children?: ReactNode
+  value: TextBlock
+  Tag: 'h1' | 'h2' | 'h3' | 'h4'
+}) {
+  const ids = useContext(HeadingIdByBlockKeyContext)
+  const id = ids.get(value._key) ?? ''
+  return <Tag id={id}>{children}</Tag>
 }
 function ParagraphBlock({ children }: { children: ReactNode }) {
   return <p>{children}</p>
@@ -241,10 +204,26 @@ function BlockquoteBlock({ children }: { children: ReactNode }) {
 
 const portableTextComponents: PortableTextComponents = {
   block: {
-    h1: ({ children }) => <Heading1>{children}</Heading1>,
-    h2: ({ children }) => <Heading2>{children}</Heading2>,
-    h3: ({ children }) => <Heading3>{children}</Heading3>,
-    h4: ({ children }) => <Heading4>{children}</Heading4>,
+    h1: ({ children, value }) => (
+      <HeadingBlock Tag="h1" value={value as TextBlock}>
+        {children}
+      </HeadingBlock>
+    ),
+    h2: ({ children, value }) => (
+      <HeadingBlock Tag="h2" value={value as TextBlock}>
+        {children}
+      </HeadingBlock>
+    ),
+    h3: ({ children, value }) => (
+      <HeadingBlock Tag="h3" value={value as TextBlock}>
+        {children}
+      </HeadingBlock>
+    ),
+    h4: ({ children, value }) => (
+      <HeadingBlock Tag="h4" value={value as TextBlock}>
+        {children}
+      </HeadingBlock>
+    ),
     normal: ({ children }) => <ParagraphBlock>{children}</ParagraphBlock>,
     blockquote: ({ children }) => <BlockquoteBlock>{children}</BlockquoteBlock>,
   },
@@ -406,7 +385,14 @@ function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<Horizont
 }
 
 function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPlayerBlock>) {
-  return <MusicPlayer id={value.playerId} auto={value.auto} center={value.center} />
+  const { suppressAutoplay } = useContext(MusicPresentationContext)
+  return (
+    <MusicPlayer
+      id={value.playerId}
+      auto={suppressAutoplay ? false : value.auto === true}
+      center={value.center === true}
+    />
+  )
 }
 
 function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<SolutionBlock>) {

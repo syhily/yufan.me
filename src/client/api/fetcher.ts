@@ -73,7 +73,21 @@ export interface UseApiFetcherResult<I, O> {
   // Latest error envelope (mirrors `fetcher.data?.error`).
   error: { message: string } | undefined
   // True while the underlying fetcher is loading or submitting.
+  // This includes the trailing React Router revalidation phase
+  // that follows every POST (`submitting → loading → idle`), so
+  // it is the right gate for "wait for the server's view of the
+  // world to settle before re-running side effects" (e.g.
+  // autosave coordination).
   isPending: boolean
+  // True ONLY while the network round-trip is in flight
+  // (`fetcher.state === 'submitting'`). Flips back to `false` the
+  // moment the server response is committed, before the trailing
+  // revalidation `loading` phase. Use this as the gate for "block
+  // user input while the user's save is travelling" — typical UI
+  // disable / spinner cases — so the editor surface unfreezes as
+  // soon as the request settles instead of waiting out the
+  // revalidation cycle.
+  isSubmitting: boolean
 }
 
 export type ApiQueryValue = string | number | boolean | null | undefined
@@ -190,5 +204,6 @@ export function useApiFetcher<I, O>(
     data: fetcher.data?.data,
     error: fetcher.data?.error,
     isPending: fetcher.state !== 'idle',
+    isSubmitting: fetcher.state === 'submitting',
   }
 }

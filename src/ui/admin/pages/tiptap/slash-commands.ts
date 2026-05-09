@@ -3,11 +3,12 @@ import type { Editor } from '@tiptap/react'
 
 import {
   CodeIcon,
-  Heading1Icon,
   Heading2Icon,
   Heading3Icon,
+  Heading4Icon,
   ImageIcon,
   ListIcon,
+  ListTreeIcon,
   ListOrderedIcon,
   MinusIcon,
   Music2Icon,
@@ -74,21 +75,11 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     },
   },
   {
-    id: 'h1',
-    title: '一级标题',
-    description: 'H1',
-    icon: Heading1Icon,
-    aliases: ['h1', 'heading1', 'title', '一级标题', '标题1'],
-    command: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setNode('heading', { level: 1 }).run()
-    },
-  },
-  {
     id: 'h2',
     title: '二级标题',
     description: 'H2',
     icon: Heading2Icon,
-    aliases: ['h2', 'heading2', '二级标题', '标题2'],
+    aliases: ['h2', 'heading2', 'title', '二级标题', '标题2'],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).setNode('heading', { level: 2 }).run()
     },
@@ -101,6 +92,16 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     aliases: ['h3', 'heading3', '三级标题', '标题3'],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).setNode('heading', { level: 3 }).run()
+    },
+  },
+  {
+    id: 'h4',
+    title: '四级标题',
+    description: 'H4',
+    icon: Heading4Icon,
+    aliases: ['h4', 'heading4', '四级标题', '标题4'],
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setNode('heading', { level: 4 }).run()
     },
   },
   {
@@ -216,22 +217,27 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   {
     id: 'solution',
     title: '解答块',
-    description: '可折叠的题解 / 提示',
-    icon: SigmaIcon,
+    description: '题解 / 提示（内部可排版，与引用块相同）',
+    icon: ListTreeIcon,
     aliases: ['solution', 'hint', 'answer', '解答', '题解', '提示'],
     command: ({ editor, range }) => {
-      insertCustomBlock(editor, range, {
-        _type: 'solution',
-        _key: generateBlockKey(),
-        children: [
-          {
-            _type: 'block',
-            _key: generateBlockKey(),
-            style: 'normal',
-            children: [{ _type: 'span', _key: generateBlockKey(), text: '在此处填写解答步骤' }],
-          },
-        ],
-      })
+      const key = generateBlockKey()
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: 'solution',
+          attrs: { _key: key },
+          content: [
+            {
+              type: 'paragraph',
+              attrs: { _key: generateBlockKey() },
+              content: [{ type: 'text', text: '在此处填写解答步骤' }],
+            },
+          ],
+        })
+        .run()
     },
   },
   {

@@ -57,6 +57,18 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
   const [jpegQuality, setJpegQuality] = useState<number>(82)
   const [note, setNote] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  // `cropWidth` is the current source-pixel width of the crop
+  // rectangle reported by `<ImageEditorCanvas onCropChange>`. It's
+  // the upper bound for the operator-visible "目标宽度" input below
+  // (resizing larger than the crop would upscale and add nothing).
+  // `targetWidth` is null for "no resize" — the encoder writes the
+  // crop at its native resolution.
+  const [cropWidth, setCropWidth] = useState<number | null>(null)
+  const [targetWidth, setTargetWidth] = useState<number | null>(null)
+  // Operator-visible value for the width input. Kept separate from
+  // the committed `targetWidth` so an in-progress edit (e.g. "12"
+  // on the way to "1280") doesn't immediately clamp / re-encode.
+  const [targetWidthDraft, setTargetWidthDraft] = useState<string>('')
   const encoderRef = useRef<(() => Promise<{ blob: Blob; width: number; height: number }>) | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -94,6 +106,9 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
     setJpegQuality(82)
     setNote('')
     setErrorMessage(null)
+    setCropWidth(null)
+    setTargetWidth(null)
+    setTargetWidthDraft('')
     encoderRef.current = null
     lastHandledData.current = null
   }, [open])
@@ -134,6 +149,39 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
   const handleEncoderReady = useCallback((encoder: () => Promise<{ blob: Blob; width: number; height: number }>) => {
     encoderRef.current = encoder
   }, [])
+
+  // Snap the committed `targetWidth` down whenever the operator
+  // resizes the crop rectangle below it. The draft string is left
+  // alone so a partial edit ("12" on the way to "1280") survives a
+  // crop nudge — the input commits on blur / Enter through the
+  // helper below.
+  const handleCropChange = useCallback((nextCropWidth: number, _nextCropHeight: number) => {
+    const rounded = Math.max(1, Math.round(nextCropWidth))
+    setCropWidth(rounded)
+    setTargetWidth((prev) => (prev !== null && prev > rounded ? rounded : prev))
+  }, [])
+
+  const commitTargetWidth = useCallback(
+    (raw: string) => {
+      const trimmed = raw.trim()
+      if (trimmed === '') {
+        setTargetWidth(null)
+        setTargetWidthDraft('')
+        return
+      }
+      const parsed = Number.parseInt(trimmed, 10)
+      if (!Number.isFinite(parsed) || parsed <= 0) {
+        setTargetWidth(null)
+        setTargetWidthDraft('')
+        return
+      }
+      const cap = cropWidth ?? parsed
+      const clamped = Math.min(parsed, cap)
+      setTargetWidth(clamped)
+      setTargetWidthDraft(String(clamped))
+    },
+    [cropWidth],
+  )
 
   const performUpload = useCallback(async () => {
     if (file === null) {
@@ -236,8 +284,36 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
                   rotation={rotation}
                   jpegQuality={jpegQuality}
                   locked={lockedAspect}
+                  outputWidth={kind.kind === 'generic' && targetWidth !== null ? targetWidth : undefined}
+                  onCropChange={handleCropChange}
                   onReady={handleEncoderReady}
                 />
+                {kind.kind === 'generic' && cropWidth !== null ? (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="upload-target-width">输出宽度（像素，最大 {cropWidth}）</Label>
+                    <Input
+                      id="upload-target-width"
+                      type="number"
+                      min={1}
+                      max={cropWidth}
+                      step={1}
+                      inputMode="numeric"
+                      value={targetWidthDraft}
+                      onChange={(event) => setTargetWidthDraft(event.target.value)}
+                      onBlur={(event) => commitTargetWidth(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          commitTargetWidth((event.target as HTMLInputElement).value)
+                        }
+                      }}
+                      placeholder={`留空则使用裁剪宽度 ${cropWidth}`}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      留空则按裁剪后的原始宽度导出；填入数值会按比例缩放，不能超过裁剪宽度。
+                    </p>
+                  </div>
+                ) : null}
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="upload-quality">JPEG 质量 ({jpegQuality})</Label>
                   <input

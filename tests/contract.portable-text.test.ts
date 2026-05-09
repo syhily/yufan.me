@@ -181,6 +181,32 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
 })
 
 describe('contract: portable-text helpers', () => {
+  it('collectHeadings walks solution innards then later top-level blocks (render order)', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'h-outer-1', style: 'h2', children: [span('A')] },
+      {
+        _type: 'solution',
+        _key: 'sol',
+        children: [{ _type: 'block', _key: 'h-in-sol', style: 'h3', children: [span('B')] }],
+      },
+      { _type: 'block', _key: 'h-outer-2', style: 'h2', children: [span('C')] },
+    ]
+    expect(collectHeadings(body).map((h) => h.text)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('collectHeadings places footnote definition headings after the main column', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'h1', style: 'h2', children: [span('Main')] },
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn1',
+        index: 1,
+        children: [{ _type: 'block', _key: 'h-fn', style: 'h3', children: [span('Note')] }],
+      },
+    ]
+    expect(collectHeadings(body).map((h) => h.text)).toEqual(['Main', 'Note'])
+  })
+
   it('collectHeadings emits depth + text + github-slugger slug for h1-h4 styled blocks only', () => {
     const headings = collectHeadings(FULL_BODY)
     expect(headings).toEqual([{ depth: 2, text: 'Section title', slug: 'section-title' }])

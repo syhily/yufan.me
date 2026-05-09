@@ -1,13 +1,14 @@
 import {
   ArrowLeftIcon,
   ExternalLinkIcon,
-  EyeIcon,
   EyeOffIcon,
+  Loader2Icon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
   SaveIcon,
   SlidersHorizontalIcon,
   UploadIcon,
+  XIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
@@ -15,6 +16,7 @@ import { Link, useNavigate } from 'react-router'
 import type {
   AdminPageDetailDto,
   AdminPageDto,
+  AdminRevisionDto,
   SavePageBodyInput,
   SavePageBodyOutput,
   UnpublishPageInput,
@@ -159,6 +161,35 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   const [expectedToken, setExpectedToken] = useState<string | null>(
     isEditing ? ((detail.latestRevision ?? detail.publishedRevision)?.clientRevisionToken ?? null) : null,
   )
+  // Mirror of `detail.latestRevision` / `detail.publishedRevision`
+  // that follows save/publish round-trips. Without this, the
+  // publish-state projection below stays stuck on the loader
+  // snapshot — e.g. after saving a new draft on top of a published
+  // page, the toolbar would still see "published-current" and keep
+  // 发布 disabled. We update both refs from the save result so the
+  // projection reflects the live server state without forcing a
+  // full route reload.
+  const [latestRevision, setLatestRevision] = useState<AdminRevisionDto | null>(
+    isEditing ? detail.latestRevision : null,
+  )
+  const [publishedRevision, setPublishedRevision] = useState<AdminRevisionDto | null>(
+    isEditing ? detail.publishedRevision : null,
+  )
+  // Mirror of `detail.page.publishedAt` that follows meta save
+  // round-trips. We need it to detect "operator just switched out
+  // of 定时发布 mode" — `meta.publishedAt === ''` is ambiguous on
+  // its own (it also represents an already-published page sitting
+  // in the past, where `metaDraftFromPage` blanks the picker on
+  // purpose). When the persisted value is in the future and the
+  // editor is now showing the empty picker, the unified 保存草稿
+  // flow must send an explicit `publishedAt = now()` so the schedule
+  // is actually cleared server-side; otherwise the upsertMeta payload
+  // omits the field, the server preserves the stale future timestamp,
+  // and the sidebar snaps right back to「已计划发布」after the round
+  // trip.
+  const [serverPublishedAtIso, setServerPublishedAtIso] = useState<string | null>(
+    isEditing ? detail.page.publishedAt : null,
+  )
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
   // Tracks the body that's currently persisted server-side. Seeded
@@ -235,11 +266,17 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   const [isCreatingPage, setIsCreatingPage] = useState(false)
   const upsertMetaApi = useApiFetcher<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
     onSuccess: (payload) => onMetaSaved(payload.page),
-    onError: (error) => setStatus({ kind: 'error', message: error.message }),
+    onError: (error) => {
+      setStatus({ kind: 'error', message: error.message })
+      cancelActionBanner()
+    },
   })
   const saveDraftApi = useApiFetcher<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
     onSuccess: (payload) => onBodySaved(payload),
-    onError: (error) => setStatus({ kind: 'error', message: error.message }),
+    onError: (error) => {
+      setStatus({ kind: 'error', message: error.message })
+      cancelActionBanner()
+    },
   })
   const publishApi = useApiFetcher<SavePageBodyInput, SavePageBodyOutput>(PUBLISH, {
     onSuccess: (payload) => {
@@ -252,12 +289,21 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         setMeta((m) => ({ ...m, published: true }))
       }
     },
-    onError: (error) => setStatus({ kind: 'error', message: error.message }),
+    onError: (error) => {
+      setStatus({ kind: 'error', message: error.message })
+      cancelActionBanner()
+    },
   })
   const unpublishApi = useApiFetcher<UnpublishPageInput, UnpublishPageOutput>(UNPUBLISH, {
     onSuccess: (payload) => {
       setStatus({ kind: 'saved', at: new Date() })
       setMeta(metaDraftFromPage(payload.page))
+      setServerPublishedAtIso(payload.page.publishedAt)
+      // Take the page offline = drop any leftover banner; the
+      // public URL is no longer accessible and the draft preview
+      // is now redundant (the page itself has no `published`
+      // baseline to overlay against).
+      setPreviewBanner(null)
     },
     onError: (error) => setStatus({ kind: 'error', message: error.message }),
   })
@@ -322,18 +368,42 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     // there bypasses this callback by using `submitApiAction`.
     setStatus({ kind: 'saved', at: new Date() })
     setMeta(metaDraftFromPage(saved))
+    setServerPublishedAtIso(saved.publishedAt)
+    // Use the freshly-saved slug for the banner — the operator may
+    // have just renamed the URL via the meta form, in which case
+    // the loader's `detail.page.slug` is now stale.
+    noteActionLegSucceeded(saved.slug)
   }
 
   function onBodySaved(payload: SavePageBodyOutput) {
     if (payload.status === 'conflict') {
       setStatus({ kind: 'conflict', expectedToken: payload.expectedToken })
+      // A conflict means the server rejected the save; revoke the
+      // pending preview-banner intent so the operator doesn't see
+      // a "草稿已保存" toast for content that didn't actually land.
+      cancelActionBanner()
       // The diff resolver UI is a follow-up. For now we stop the
       // flow and surface the conflict so the user knows there's a
       // newer revision they need to rebase against.
       return
     }
     setStatus({ kind: 'saved', at: new Date() })
+    // Body-side success — the slug isn't on the body payload, fall
+    // back to the latest known meta slug (still in `meta.slug`,
+    // which `onMetaSaved` will have refreshed if both legs landed).
+    // `detail` is always defined on the body-save path (edit mode
+    // only); the `?? ''` guard is purely for the TS narrowing.
+    noteActionLegSucceeded(meta.slug.trim() === '' ? (detail?.page.slug ?? '') : meta.slug.trim())
     setExpectedToken(payload.revision.clientRevisionToken)
+    // Mirror the saved revision into local state so the publish
+    // state projection (and therefore the 发布 button's enabled
+    // state) reflects what the server now holds — a fresh draft on
+    // top of a published page must move the toolbar from
+    // `published-current` to `draft-ahead` so 发布 re-enables.
+    setLatestRevision(payload.revision)
+    if (payload.revision.status === 'published') {
+      setPublishedRevision(payload.revision)
+    }
     // Intentionally do NOT bump `bodyKey` here. The editor's
     // content already matches what we just persisted, and any
     // edits the user typed between dispatching the save and the
@@ -422,6 +492,46 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
   }, [isEditing, isCreatingPage, meta, body, createDraft, navigate])
 
+  // Post-action banner: surfaces below the toolbar after a manual
+  // 保存草稿 / 发布草稿 *succeeds*. Two variants:
+  //   - 'draft'     — amber banner, points at `/{slug}?draft=true`.
+  //   - 'published' — green banner, points at `/{slug}`.
+  // The banner stays put until the operator dismisses it (no
+  // auto-hide); a follow-up successful action replaces the
+  // existing one in place. We deliberately don't surface anything
+  // on click — a save that gets rejected (validation error,
+  // conflict, network failure) must NOT advertise a preview link,
+  // otherwise the operator can land on the live page thinking the
+  // latest body was persisted when it wasn't.
+  //
+  // `persistSave` / `persistPublish` may each fan out to multiple
+  // submits in parallel; we only flash the banner once ALL pending
+  // legs of the click have come back successfully, so a body
+  // failure following a meta success doesn't leave a misleading
+  // toast around. `pendingActionRef` records the click intent and
+  // a counter of remaining success callbacks; a failure on any
+  // leg zeros it out and the click silently drops the banner
+  // (the failed leg's own error message takes the surface).
+  const pendingActionRef = useRef<{ kind: 'draft' | 'published'; remaining: number } | null>(null)
+  const [previewBanner, setPreviewBanner] = useState<{ kind: 'draft' | 'published'; slug: string } | null>(null)
+  const dismissPreviewBanner = useCallback(() => setPreviewBanner(null), [])
+  const noteActionLegSucceeded = useCallback((slugForBanner: string) => {
+    const pending = pendingActionRef.current
+    if (pending === null) {
+      return
+    }
+    pending.remaining -= 1
+    if (pending.remaining > 0) {
+      return
+    }
+    const kind = pending.kind
+    pendingActionRef.current = null
+    setPreviewBanner({ kind, slug: slugForBanner })
+  }, [])
+  const cancelActionBanner = useCallback(() => {
+    pendingActionRef.current = null
+  }, [])
+
   // Unified 保存: meta is always pushed (and takes effect
   // immediately on the server), and the body is pushed as a new
   // draft revision only when it diverges from the
@@ -432,7 +542,23 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       return
     }
     setStatus({ kind: 'saving' })
-    const publishedAt = localInputValueToIso(meta.publishedAt)
+    // Resolve the `publishedAt` value to send. The picker's blank
+    // string normally maps to "omit ⇒ leave the persisted value
+    // alone", but that turns the 定时→立即 toggle into a silent
+    // no-op: the operator clears the schedule, hits 保存草稿, and
+    // the next round trip re-hydrates the picker from the still-
+    // future server value, snapping the badge back to「已计划发布」.
+    // When the picker is empty AND the persisted value is in the
+    // future, treat it as an explicit "publish immediately" intent
+    // and stamp `now()` so the schedule is actually cleared.
+    const pickerIso = localInputValueToIso(meta.publishedAt)
+    const serverIsScheduled = serverPublishedAtIso !== null && (Date.parse(serverPublishedAtIso) || 0) > Date.now()
+    const publishedAt = pickerIso !== null ? pickerIso : serverIsScheduled ? new Date().toISOString() : null
+    const bodyDiverged = !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
+    // Mark how many success callbacks must arrive before flashing
+    // the draft-preview banner: meta always submits, body only
+    // when it diverged from the last persisted snapshot.
+    pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
     upsertMetaApi.submit({
       id: detail.page.id,
       ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
@@ -446,14 +572,14 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       showFriends: meta.showFriends,
       ...(publishedAt !== null ? { publishedAt } : {}),
     })
-    if (!arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)) {
+    if (bodyDiverged) {
       saveDraftApi.submit({
         id: detail.page.id,
         body,
         expectedClientRevisionToken: expectedToken,
       })
     }
-  }, [upsertMetaApi, saveDraftApi, isEditing, detail, meta, body, expectedToken])
+  }, [upsertMetaApi, saveDraftApi, isEditing, detail, meta, body, expectedToken, serverPublishedAtIso])
 
   const persistPublish = useCallback(() => {
     if (!isEditing) {
@@ -468,12 +594,21 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     // (`publishedAt <= now()`) hides the page until the time
     // arrives.
     const publishedAtIso = localInputValueToIso(meta.publishedAt)
+    // 发布草稿 only fans out to a single fetcher (`publishApi`),
+    // so the post-action banner is gated on that one success.
+    pendingActionRef.current = { kind: 'published', remaining: 1 }
     publishApi.submit({
       id: detail.page.id,
       body,
       expectedClientRevisionToken: expectedToken,
       ...(publishedAtIso !== null ? { publishedAt: publishedAtIso } : {}),
     })
+    // Mirror what the server is about to stamp: an explicit picker
+    // value lands as-is; the omit path (立即发布) becomes `now()`.
+    // Keeping `serverPublishedAtIso` in sync prevents the next
+    // 保存草稿 from misreading the stale loader snapshot as "still
+    // scheduled" and re-stamping `now()` redundantly.
+    setServerPublishedAtIso(publishedAtIso ?? new Date().toISOString())
   }, [publishApi, isEditing, detail, body, expectedToken, meta.publishedAt])
 
   const persistUnpublish = useCallback(() => {
@@ -484,38 +619,17 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     unpublishApi.submit({ id: detail.page.id })
   }, [unpublishApi, isEditing, detail])
 
-  // Bring a previously taken-offline page back online without
-  // writing a new revision. We piggy-back on `upsertPageMeta` rather
-  // than `publishLatest` because the latest revision is already
-  // promoted — we only need to flip the visibility flag.
-  const persistRepublish = useCallback(() => {
-    if (!isEditing) {
-      return
-    }
-    setStatus({ kind: 'saving' })
-    const publishedAt = localInputValueToIso(meta.publishedAt)
-    upsertMetaApi.submit({
-      id: detail.page.id,
-      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-      title: meta.title.trim(),
-      summary: meta.summary.trim(),
-      cover: meta.cover.trim(),
-      og: meta.og.trim() === '' ? null : meta.og.trim(),
-      published: true,
-      commentsEnabled: meta.commentsEnabled,
-      showToc: meta.showToc,
-      showFriends: meta.showFriends,
-      ...(publishedAt !== null ? { publishedAt } : {}),
-    })
-  }, [upsertMetaApi, isEditing, detail, meta])
-
   const publishState = useMemo<PublishState>(
     // We pass `meta.published` separately because `detail.page.published`
     // is the snapshot from the loader and doesn't follow our
     // post-publish / post-unpublish state updates. The shell owns
-    // the current truth in `meta`.
-    () => (isEditing ? derivePublishState(detail, meta.published) : { kind: 'not-published-yet' }),
-    [isEditing, detail, meta.published],
+    // the current truth in `meta`. `latestRevision` /
+    // `publishedRevision` likewise track save/publish round-trips
+    // so the projection follows real server state, not the loader
+    // snapshot frozen at mount.
+    () =>
+      isEditing ? derivePublishState(latestRevision, publishedRevision, meta.published) : { kind: 'not-published-yet' },
+    [isEditing, latestRevision, publishedRevision, meta.published],
   )
 
   // Visibility-side projection of the page lifecycle. Sits next to
@@ -545,12 +659,14 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     return publishState.kind === 'draft-ahead' ? 'live-with-draft-ahead' : 'live'
   }, [isEditing, publishState, meta.publishedAt])
 
-  // Cmd/Ctrl-S triggers the appropriate save: create-flow on create,
-  // unified meta + draft save on edit. Cmd/Ctrl+Shift+P publishes
-  // the latest body.
-  // Both shortcuts also gate on the same enabled-conditions as the
-  // toolbar buttons so a stale `published-current` page can't be
-  // re-published with no edits, etc.
+  // Cmd/Ctrl-S = 保存草稿 (create-flow on create-mode pages);
+  // Cmd/Ctrl+Shift+P = 发布草稿. Both shortcuts mirror the
+  // toolbar's enabled state — a publish with no draft ahead is a
+  // no-op so the shortcut bails before round-tripping. The
+  // visibility toggles (取消发布 / 重新上线) intentionally have
+  // no shortcut because they're rare destructive ops and we don't
+  // want a slipped Cmd+Shift+P to accidentally take a live page
+  // offline.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (!event.metaKey && !event.ctrlKey) {
@@ -571,36 +687,42 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         if (!isEditing) {
           return
         }
-        // Match the merged toolbar control: a currently-live page
-        // binds the shortcut to 取消发布; an offline-but-promoted
-        // page binds it to the bring-back-online flow (no new
-        // revision); everything else fires a regular publish.
-        if (meta.published) {
-          persistUnpublish()
-        } else if (publishState.kind === 'unpublished') {
-          persistRepublish()
-        } else {
+        // Mirror the toolbar's `canPublish` gate so a stuck
+        // `published-current` page can't fire a no-op publish via
+        // the shortcut.
+        if (publishState.kind !== 'published-current') {
           persistPublish()
         }
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [
-    mode,
-    isEditing,
-    persistCreate,
-    persistSave,
-    persistPublish,
-    persistRepublish,
-    persistUnpublish,
-    publishState,
-    meta.published,
-  ])
+  }, [mode, isEditing, persistCreate, persistSave, persistPublish, publishState])
 
-  const isMetaPending = upsertMetaApi.isPending || isCreatingPage || unpublishApi.isPending
-  const isBodyPending = saveDraftApi.isPending || publishApi.isPending
-  const isPending = isMetaPending || isBodyPending
+  // Editor-surface gate (title / body / meta sidebar). We use
+  // `isSubmitting` rather than `isPending` here so the inputs
+  // unfreeze the moment the network round-trip settles — the
+  // trailing `loading` phase is React Router revalidating route
+  // loaders, which can take seconds on a heavy detail loader and
+  // is perfectly safe to overlap with continued editing. The
+  // toolbar buttons (保存草稿 / 发布草稿 / 取消发布) keep using
+  // this same flag, which is what we want: they're rate-limited
+  // by the actual server round-trip, not by the lingering
+  // revalidation, so a second click is allowed once the first
+  // request has actually been answered.
+  const isSubmittingAny =
+    upsertMetaApi.isSubmitting || saveDraftApi.isSubmitting || publishApi.isSubmitting || unpublishApi.isSubmitting
+  const isPending = isSubmittingAny || isCreatingPage
+  // Per-button spinner flags. 保存草稿 fans out to meta + body, so
+  // it spins while either leg is travelling; 发布草稿 / 取消发布
+  // each track only their own fetcher. We deliberately do NOT
+  // reflect autosave round-trips here — autosave is silent by
+  // contract, the user shouldn't see the publish button briefly
+  // spin because their last keystroke triggered a debounced
+  // background draft.
+  const isSavingDraft = upsertMetaApi.isSubmitting || saveDraftApi.isSubmitting
+  const isPublishing = publishApi.isSubmitting
+  const isUnpublishing = unpublishApi.isSubmitting
 
   // --- Conflict resolution handlers -----------------------------------------
   const adoptLocalDraft = useCallback(async () => {
@@ -754,10 +876,17 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
             disabled={isPending || !canPersistMeta}
             title="保存页面信息并上传当前正文"
           >
-            <UploadIcon /> 创建页面
+            {isCreatingPage ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
+            {isCreatingPage ? '创建中…' : '创建页面'}
           </Button>
         ) : (
           <>
+            {/* Two-step authoring affordance: 保存草稿 always pushes
+             *  meta + body-as-draft, 发布草稿 promotes the latest
+             *  draft to published. Splitting them means the operator
+             *  can iterate on a live page (each save becomes a new
+             *  draft revision) without touching what visitors see,
+             *  and only commits when they explicitly publish. */}
             <Button
               variant="outline"
               size="sm"
@@ -765,52 +894,41 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               disabled={isPending || !canPersistMeta}
               title="保存页面信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)"
             >
-              <SaveIcon /> 保存
+              {isSavingDraft ? <Loader2Icon className="animate-spin" /> : <SaveIcon />}
+              {isSavingDraft ? '保存中…' : '保存草稿'}
             </Button>
-            {/* Single publish toggle. When the page is currently
-             *  visible the button switches to a destructive-styled
-             *  「取消发布」 (offline). When the page is offline OR
-             *  has never been published it shows the publish action
-             *  — wired to `persistRepublish` for the offline case
-             *  (no new revision) and to `persistPublish` otherwise.
-             *  The publish leg disables itself when the latest
-             *  revision is already live (no-op publish would create
-             *  an empty revision). */}
+            <Button
+              size="sm"
+              onClick={persistPublish}
+              disabled={isPending || !canPublish}
+              title={
+                canPublish
+                  ? sidebarPublishStatus === 'scheduled'
+                    ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
+                    : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
+                  : '当前没有待发布的草稿'
+              }
+            >
+              {isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
+              {isPublishing ? '发布中…' : sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
+            </Button>
+            {/* Visibility toggle. Only surfaces when the page is
+             *  currently live (`meta.published === true`). An offline
+             *  or never-published page reaches public visibility
+             *  exclusively through 发布草稿 — there's no separate
+             *  「重新上线」 affordance. */}
             {meta.published ? (
               <Button
                 variant="destructive-soft"
                 size="sm"
                 onClick={persistUnpublish}
                 disabled={isPending}
-                title="将页面下线，公开访问会返回 404；正文不会丢失，重新上线即可恢复"
+                title="将页面下线，公开访问会返回 404；正文不会丢失，再次发布草稿即可恢复"
               >
-                <EyeOffIcon /> 取消发布
+                {isUnpublishing ? <Loader2Icon className="animate-spin" /> : <EyeOffIcon />}
+                {isUnpublishing ? '取消中…' : '取消发布'}
               </Button>
-            ) : publishState.kind === 'unpublished' ? (
-              <Button
-                size="sm"
-                onClick={persistRepublish}
-                disabled={isPending}
-                title="重新上线（不会写入新版本，Cmd/Ctrl+Shift+P）"
-              >
-                <EyeIcon /> 重新上线
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                onClick={persistPublish}
-                disabled={isPending || !canPublish}
-                title={
-                  canPublish
-                    ? sidebarPublishStatus === 'scheduled'
-                      ? '按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                      : '发布最新内容 (Cmd/Ctrl+Shift+P)'
-                    : '当前最新版本已发布'
-                }
-              >
-                <UploadIcon /> {sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布'}
-              </Button>
-            )}
+            ) : null}
           </>
         )}
         <Button
@@ -825,6 +943,10 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
           <SlidersHorizontalIcon /> 元数据
         </Button>
       </header>
+
+      {isEditing && previewBanner !== null ? (
+        <PostActionBanner kind={previewBanner.kind} slug={previewBanner.slug} onClose={dismissPreviewBanner} />
+      ) : null}
 
       {/* Layout grid. Three states drive the column template, picked
        *  to give every visible pane a usable width without forcing
@@ -971,6 +1093,61 @@ function isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi, unpubli
   return upsertMetaApi.isPending || saveDraftApi.isPending || publishApi.isPending || unpublishApi.isPending
 }
 
+interface PostActionBannerProps {
+  kind: 'draft' | 'published'
+  slug: string
+  onClose: () => void
+}
+
+// Persistent banner shown after a manual 保存草稿 / 发布草稿
+// succeeds. Two cosmetic variants share the same shape:
+//   - 'draft'     — amber theme, points at the admin-only
+//                   `?draft=true` overlay URL.
+//   - 'published' — green theme, points at the public URL.
+// Persistence is intentional: the operator may want to copy / open
+// the link multiple times before moving on. Closing is fully
+// manual via the trailing button; a follow-up successful action
+// replaces the banner in place. We don't auto-hide on a timer to
+// avoid the link disappearing mid-action — autosave / further
+// edits don't toggle it either.
+function PostActionBanner({ kind, slug, onClose }: PostActionBannerProps) {
+  const href = kind === 'draft' ? `/${slug}?draft=true` : `/${slug}`
+  const message =
+    kind === 'draft'
+      ? '草稿已保存，可通过下方链接预览最新内容（仅管理员可见草稿）：'
+      : '草稿已发布，可通过下方链接访问最新内容：'
+  const themeClass =
+    kind === 'draft'
+      ? 'border-amber-500/30 bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200'
+      : 'border-emerald-500/30 bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200'
+  const closeBtnClass =
+    kind === 'draft'
+      ? 'text-amber-900/80 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-200/80 dark:hover:text-amber-100'
+      : 'text-emerald-900/80 hover:bg-emerald-500/20 hover:text-emerald-900 dark:text-emerald-200/80 dark:hover:text-emerald-100'
+  return (
+    <div
+      role="status"
+      className={cn('flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-xs', themeClass)}
+    >
+      <span>{message}</span>
+      <Link to={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono underline">
+        <ExternalLinkIcon className="size-3" />
+        {href}
+      </Link>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="关闭提示"
+        title="关闭提示"
+        className={cn('ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5', closeBtnClass)}
+      >
+        <XIcon className="size-3.5" />
+        <span>关闭</span>
+      </button>
+    </div>
+  )
+}
+
 interface CreateModeBannerProps {
   draftSavedAt: number | null
 }
@@ -1067,10 +1244,11 @@ type PublishState =
   // `meta.published` back to true re-shows the page.
   | { kind: 'unpublished'; lastPublishedRevisionNo: number | null }
 
-function derivePublishState(detail: AdminPageDetailDto, visible: boolean): PublishState {
-  const latest = detail.latestRevision
-  const published = detail.publishedRevision
-
+function derivePublishState(
+  latest: AdminRevisionDto | null,
+  published: AdminRevisionDto | null,
+  visible: boolean,
+): PublishState {
   if (latest === null) {
     // No revisions at all — the "尚未发布" badge is correct
     // regardless of `meta.published` (an empty page can't be

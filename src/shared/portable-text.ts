@@ -408,6 +408,69 @@ export interface PortableTextHeading {
   slug: string
 }
 
+/** One heading block in the order `<PortableTextBody>` renders ids (main body, then footnotes). */
+export interface PortableTextHeadingSlot {
+  blockKey: string
+  plainText: string
+  depth: number
+}
+
+function tryPushHeadingSlot(block: TextBlock, out: PortableTextHeadingSlot[]): void {
+  const style = block.style
+  if (style === undefined || style === 'normal' || style === 'blockquote') {
+    return
+  }
+  const depth = headingDepthFromStyle(style)
+  if (depth === null) {
+    return
+  }
+  const plainText = block.children
+    .map((span) => span.text)
+    .join('')
+    .trim()
+  if (plainText.length === 0) {
+    return
+  }
+  out.push({ blockKey: block._key, plainText, depth })
+}
+
+function visitNonRecursiveForHeadings(blocks: readonly NonRecursiveBlock[], out: PortableTextHeadingSlot[]): void {
+  for (const block of blocks) {
+    if (block._type === 'block') {
+      tryPushHeadingSlot(block, out)
+    }
+  }
+}
+
+/**
+ * Heading blocks in **exact** render order for `PortableTextBody`:
+ * top-level main column (skipping `footnoteDefinition` rows), DFS into
+ * each `solution`, then every footnote definition's children in row
+ * order. Matches `@portabletext/react` traversal so `_key` → anchor
+ * maps stay stable across SSR and hydration without render-phase state.
+ */
+export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextBody): PortableTextHeadingSlot[] {
+  const out: PortableTextHeadingSlot[] = []
+  for (const block of body) {
+    if (block._type === 'footnoteDefinition') {
+      continue
+    }
+    if (block._type === 'solution') {
+      visitNonRecursiveForHeadings(block.children, out)
+      continue
+    }
+    if (block._type === 'block') {
+      tryPushHeadingSlot(block, out)
+    }
+  }
+  for (const block of body) {
+    if (block._type === 'footnoteDefinition') {
+      visitNonRecursiveForHeadings(block.children, out)
+    }
+  }
+  return out
+}
+
 /**
  * Return the structured TOC entries this body would render. The slug
  * pipeline matches the one `rehype-slug` uses on the historical MDX
@@ -427,40 +490,20 @@ export interface PortableTextHeading {
  * Without `transform`, behaviour matches the historical
  * github-slugger-only output (Han characters are kept verbatim).
  * With it, you get the project-wide canonical slug — which is what
- * the SSR renderer wants. The slug list returned here is iterated
- * in the same order the renderer walks heading blocks, so callers
- * can pass `headings.map(h => h.slug)` to `<PortableTextBody>` and
- * the heading anchors line up one-for-one without re-running the
- * pipeline at render time.
+ * the SSR renderer wants. Order matches `collectHeadingSlotsInPortableTextRenderOrder`
+ * so callers can pass `headings.map(h => h.slug)` to `<PortableTextBody>`.
  */
 export function collectHeadings(
   body: PortableTextBody,
   transform: (text: string) => string = (text) => text,
 ): PortableTextHeading[] {
   const slugger = new GithubSlugger()
-  const headings: PortableTextHeading[] = []
-  for (const block of body) {
-    if (block._type !== 'block') {
-      continue
-    }
-    const style = block.style
-    if (style === undefined || style === 'normal' || style === 'blockquote') {
-      continue
-    }
-    const depth = headingDepthFromStyle(style)
-    if (depth === null) {
-      continue
-    }
-    const text = block.children
-      .map((span) => span.text)
-      .join('')
-      .trim()
-    if (text.length === 0) {
-      continue
-    }
-    headings.push({ depth, text, slug: slugger.slug(transform(text)) })
-  }
-  return headings
+  const slots = collectHeadingSlotsInPortableTextRenderOrder(body)
+  return slots.map(({ depth, plainText }) => ({
+    depth,
+    text: plainText,
+    slug: slugger.slug(transform(plainText)),
+  }))
 }
 
 function headingDepthFromStyle(style: StandardBlockStyle): number | null {

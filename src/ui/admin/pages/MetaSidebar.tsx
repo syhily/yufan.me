@@ -5,11 +5,10 @@ import {
   EyeOffIcon,
   ImagePlusIcon,
   LinkIcon,
-  PencilLineIcon,
   SparklesIcon,
   XIcon,
 } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 
 import type { AdminPageDto } from '@/shared/cms-pages'
 import type { AdminImageDto } from '@/shared/images'
@@ -208,7 +207,7 @@ export interface MetaSidebarProps {
    * autosave activity in one glance. Shell-owned — the sidebar
    * doesn't model the autosave state machine.
    */
-  statusIndicator?: React.ReactNode
+  statusIndicator?: ReactNode
   /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
@@ -578,6 +577,8 @@ function djb2Short(input: string): string {
 
 interface PublishStatusRowProps {
   status: SidebarPublishStatus
+  revisionSummary: SidebarRevisionSummary | null
+  statusIndicator?: ReactNode
   /** Current `<input type="datetime-local">` value (`''` = unset). */
   publishedAt: string
   onChangePublishedAt: (value: string) => void
@@ -600,16 +601,27 @@ interface PublishStatusRowProps {
 //     operator can pick a future time. Sending that to 发布 parks
 //     the page as "scheduled" — the public site 404s it until the
 //     timestamp arrives.
-function PublishStatusRow({ status, publishedAt, onChangePublishedAt, disabled }: PublishStatusRowProps) {
+function PublishStatusRow({
+  status,
+  revisionSummary,
+  statusIndicator,
+  publishedAt,
+  onChangePublishedAt,
+  disabled,
+}: PublishStatusRowProps) {
   const fieldId = useId()
   const isScheduled = publishedAt !== ''
   const isFuture = isScheduled && (Date.parse(publishedAt) || 0) > Date.now()
 
   return (
     <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布状态</Label>
-        <PublishBadge status={status} isFuture={isFuture} />
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <PublishBadge status={status} isFuture={isFuture} />
+          {statusIndicator}
+          <RevisionSummaryInline summary={revisionSummary} />
+        </div>
       </div>
       <div className="grid gap-2">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布时间</Label>
@@ -663,6 +675,18 @@ function PublishStatusRow({ status, publishedAt, onChangePublishedAt, disabled }
       </div>
     </div>
   )
+}
+
+function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | null }) {
+  const text =
+    summary === null || summary.kind === 'no-revision'
+      ? '当前还没有保存的版本'
+      : summary.kind === 'published-current'
+        ? `R${summary.revisionNo} · 当前版本`
+        : summary.publishedRevisionNo !== null
+          ? `草稿 R${summary.draftRevisionNo} · 已发布 R${summary.publishedRevisionNo}`
+          : `草稿 R${summary.draftRevisionNo} · 尚未发布`
+  return <span className="text-xs text-muted-foreground">{text}</span>
 }
 
 interface PublishModeOptionProps {

@@ -4,7 +4,6 @@ import {
   CheckIcon,
   CodeIcon,
   FunctionSquareIcon,
-  ListTreeIcon,
   Music2Icon,
   PencilIcon,
   SigmaIcon,
@@ -14,9 +13,10 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import type { Block } from '@/shared/portable-text'
+import type { Block, MusicPlayerBlock } from '@/shared/portable-text'
 
 import { Button } from '@/ui/components/ui/button'
+import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'
 import { Textarea } from '@/ui/components/ui/textarea'
@@ -24,10 +24,10 @@ import { cn } from '@/ui/lib/cn'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 
 // Universal "block card" Tiptap node. The PortableText ↔ ProseMirror
-// bridge maps every PT custom block (`musicPlayer`, `mathBlock`,
-// `mermaid`, `solution`, `footnoteDefinition`) to a single
-// `blockCard` PM node carrying the original PT block in
-// `attrs.payload`. This Node spec is what makes the editor round-trip
+// bridge maps opaque PT custom blocks (`musicPlayer`, `mathBlock`,
+// `mermaid`, `footnoteDefinition`) to a single `blockCard` PM node
+// carrying the original PT block in `attrs.payload`. (`solution` uses
+// a dedicated nested node — see `SolutionNode`.) This Node spec is what makes the editor round-trip
 // those blocks safely:
 //
 // * Without a Node spec, Tiptap silently drops unknown PM nodes, so
@@ -123,7 +123,21 @@ function BlockCardView(props: NodeViewProps) {
           {editing && payload !== null ? (
             <CardSourceEditor payload={payload} onCommit={commitPayload} onCancel={() => setEditing(false)} />
           ) : (
-            <CardSummary payload={payload} />
+            <>
+              {payload !== null && payload._type === 'musicPlayer' ? (
+                <MusicPlayerOptions
+                  stableId={attrs._key}
+                  auto={payload.auto === true}
+                  center={payload.center === true}
+                  onFlagChange={(flag, enabled) =>
+                    props.updateAttributes({
+                      payload: stripPrerenderArtifacts(patchMusicPlayerFlag(payload, flag, enabled)),
+                    })
+                  }
+                />
+              ) : null}
+              <CardSummary payload={payload} />
+            </>
           )}
         </div>
         <Button
@@ -142,7 +156,7 @@ function BlockCardView(props: NodeViewProps) {
 }
 
 function isInlineEditable(ptType: string): boolean {
-  return ptType === 'mathBlock' || ptType === 'mermaid' || ptType === 'solution'
+  return ptType === 'mathBlock' || ptType === 'mermaid'
 }
 
 // Drop the cached server-rendered fields when the user mutates the
@@ -158,6 +172,50 @@ function stripPrerenderArtifacts(block: Block): Block {
     return rest as Block
   }
   return block
+}
+
+function patchMusicPlayerFlag(payload: MusicPlayerBlock, flag: 'auto' | 'center', enabled: boolean): Block {
+  const next: MusicPlayerBlock = { ...payload }
+  if (enabled) {
+    next[flag] = true
+  } else {
+    delete next[flag]
+  }
+  return next
+}
+
+interface MusicPlayerOptionsProps {
+  stableId: string
+  auto: boolean
+  center: boolean
+  onFlagChange: (flag: 'auto' | 'center', enabled: boolean) => void
+}
+
+function MusicPlayerOptions({ stableId, auto, center, onFlagChange }: MusicPlayerOptionsProps) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 border-b border-border/80 pb-2">
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`music-auto-${stableId}`}
+          checked={auto}
+          onCheckedChange={(v) => onFlagChange('auto', v === true)}
+        />
+        <Label htmlFor={`music-auto-${stableId}`} className="cursor-pointer text-xs leading-none font-normal">
+          自动播放
+        </Label>
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`music-center-${stableId}`}
+          checked={center}
+          onCheckedChange={(v) => onFlagChange('center', v === true)}
+        />
+        <Label htmlFor={`music-center-${stableId}`} className="cursor-pointer text-xs leading-none font-normal">
+          永远居中
+        </Label>
+      </div>
+    </div>
+  )
 }
 
 interface CardSourceEditorProps {
@@ -187,23 +245,6 @@ function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps
         multiline
         placeholder="graph TD\n  A --> B"
         onCommit={(next) => onCommit({ ...payload, code: next })}
-        onCancel={onCancel}
-      />
-    )
-  }
-  if (payload._type === 'solution') {
-    // Solution blocks have nested PT children which are out of
-    // scope for this inline editor (the round-trip bridge already
-    // preserves them). The only field worth editing in place is
-    // the visible label.
-    const initial = (payload as { label?: string }).label ?? ''
-    return (
-      <SourceForm
-        label="标签文本"
-        initial={initial}
-        multiline={false}
-        placeholder="解答 / 提示"
-        onCommit={(next) => onCommit({ ...payload, label: next } as Block)}
         onCancel={onCancel}
       />
     )
@@ -257,8 +298,6 @@ function CardIcon({ ptType }: { ptType: string }) {
       return <SigmaIcon {...props} />
     case 'mermaid':
       return <WorkflowIcon {...props} />
-    case 'solution':
-      return <ListTreeIcon {...props} />
     case 'footnoteDefinition':
       return <CodeIcon {...props} />
     default:
@@ -274,8 +313,6 @@ function cardTitle(ptType: string): string {
       return '数学公式块'
     case 'mermaid':
       return 'Mermaid 流程图'
-    case 'solution':
-      return '解答块'
     case 'footnoteDefinition':
       return '脚注定义'
     default:
@@ -295,15 +332,13 @@ function CardSummary({ payload }: CardSummaryProps) {
     case 'musicPlayer':
       return (
         <div className="mt-2">
-          <MusicPlayer id={payload.playerId} />
+          <MusicPlayer id={payload.playerId} auto={false} center={payload.center} />
         </div>
       )
     case 'mathBlock':
       return <code className="mt-1 block text-xs text-muted-foreground">{payload.tex}</code>
     case 'mermaid':
       return <pre className="mt-1 max-h-32 overflow-auto text-xs text-muted-foreground">{payload.code}</pre>
-    case 'solution':
-      return <div className="mt-1 text-xs text-muted-foreground">包含 {payload.children.length} 个子块</div>
     case 'footnoteDefinition':
       return <div className="mt-1 text-xs text-muted-foreground">脚注 #{payload.index}</div>
     default:

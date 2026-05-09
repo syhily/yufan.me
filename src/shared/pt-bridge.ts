@@ -6,6 +6,7 @@ import type {
   LinkMarkDef,
   MarkDef,
   PortableTextBody,
+  SolutionBlock,
   Span,
   StandardBlockStyle,
   TableBlock,
@@ -13,6 +14,8 @@ import type {
   TableRow,
   TextBlock,
 } from '@/shared/portable-text'
+
+import { portableTextBlockSemanticFingerprint } from '@/shared/portable-text-semantics'
 
 // PortableText ↔ ProseMirror bridge.
 //
@@ -29,13 +32,12 @@ import type {
 //      blocks (text/marks/lists/headings/blockquote/code/image/
 //      horizontalRule) `bodyToPmDoc(pmDocToBody(x))` MUST equal `x`.
 //      This guarantee is asserted by `tests/contract.pt-bridge.test.ts`.
-//   2. **Custom blocks pass through opaquely.** musicPlayer / solution
-//      / mathBlock / mermaid / footnoteDefinition map to a PM
-//      "block-card" node that carries the original PT block in its
-//      `attrs.payload`. The Tiptap render hooks unpack `payload`; the
-//      reverse path simply re-serialises it. No edit operation ever
-//      mutates `payload` mid-flight, so the round trip stays clean even
-//      when the editor lacks a rich UI for a given custom block.
+//   2. **Custom blocks.** `mathBlock` / `mermaid` / `musicPlayer` /
+//      `footnoteDefinition` map to a PM `blockCard` carrying `attrs.payload`.
+//      **`solution`** is different: it serialises to a nested `solution`
+//      PM node whose `content` is normal `block+` prose (same idea as
+//      `blockquote`) so operators edit the answer body in place. The
+//      reverse path walks nested nodes the same way as the document root.
 //   3. **Keys are preserved on the way in.** The PM node's `attrs._key`
 //      mirrors the PT `_key`. New nodes inserted in the editor get a
 //      fresh key on save (the editor reducer fills missing `_key` via
@@ -199,8 +201,23 @@ function blockToPmNode(block: Block): PmBlockNode {
       return horizontalRuleBlockToPmNode(block)
     case 'table':
       return tableBlockToPmNode(block)
+    case 'solution':
+      return solutionBlockToPmNode(block)
     default:
       return customBlockToPmNode(block)
+  }
+}
+
+function solutionBlockToPmNode(block: SolutionBlock): PmBlockNode {
+  const inner: PmNode[] = []
+  pushBlocks(inner, block.children)
+  if (inner.length === 0) {
+    inner.push({ type: 'paragraph' })
+  }
+  return {
+    type: 'solution',
+    attrs: { _key: block._key },
+    content: inner,
   }
 }
 
@@ -391,9 +408,26 @@ export function canonicalizePortableTextBody(body: PortableTextBody): PortableTe
  *
  * Uses canonical PT forms so equivalent list shapes do not trigger
  * false-positive "content mismatch" prompts.
+ *
+ * Block-wise comparison matches the admin PortableText diff's anchor
+ * construction (`portable-text-diff` ⇆ `@/shared/portable-text-semantics`):
+ * `_key` regeneration, Postgres `jsonb` key reordering, omitted vs
+ * present prerender artefacts (`highlightedHtml`, SVG), and markupDef
+ * key reshuffles must not resurrect spurious mismatches versus what the
+ * operator sees as UNCHANGED rows.
  */
 export function arePortableTextBodiesEquivalent(left: PortableTextBody, right: PortableTextBody): boolean {
-  return JSON.stringify(canonicalizePortableTextBody(left)) === JSON.stringify(canonicalizePortableTextBody(right))
+  const canonLeft = canonicalizePortableTextBody(left)
+  const canonRight = canonicalizePortableTextBody(right)
+  if (canonLeft.length !== canonRight.length) {
+    return false
+  }
+  for (let i = 0; i < canonLeft.length; i++) {
+    if (portableTextBlockSemanticFingerprint(canonLeft[i]) !== portableTextBlockSemanticFingerprint(canonRight[i])) {
+      return false
+    }
+  }
+  return true
 }
 
 function pushPmNode(
@@ -465,6 +499,18 @@ function pushPmNode(
       return
     case 'table': {
       out.push(pmTableToBlock(node, ensureKey))
+      return
+    }
+    case 'solution': {
+      const inner: Block[] = []
+      for (const child of (node.content ?? []).filter(isBlock)) {
+        pushPmNode(inner, child, ensureKey)
+      }
+      out.push({
+        _type: 'solution',
+        _key: ensureKey(node.attrs),
+        children: inner as SolutionBlock['children'],
+      })
       return
     }
     case 'blockCard': {

@@ -1,30 +1,48 @@
-import { Music2Icon, SearchIcon } from 'lucide-react'
+import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import type { AdminMusicDto, ListMusicInput, ListMusicOutput } from '@/shared/music'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { Button } from '@/ui/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/ui/dialog'
 import { Input } from '@/ui/components/ui/input'
 
 const LIST_MUSIC = API_ACTIONS.admin.listMusic
 
-// Music picker. Pulls from the local admin library; new tracks have
-// to be added through `/wp-admin/musics` first (search +
-// `addMusic`). The picker only lists what's already imported, which
-// keeps the editor surface focused.
+// Music picker. Pulls from the local admin library, with an inline
+// "添加音乐" affordance that opens the same `AddMusicDialog` used at
+// `/wp-admin/musics`. Newly added tracks are prepended to the picker
+// list so the operator can pick them straight into the article without
+// leaving the editor — `addMusic` already downloads the audio + cover
+// to S3 and inserts the row before resolving.
 
 export interface MusicPickerDialogProps {
   trigger?: React.ReactNode
   onPick: (music: AdminMusicDto) => void
+  /**
+   * Optional controlled-open pair. Pass when the caller wants to
+   * drive the dialog imperatively (e.g. a slash-command in the
+   * editor) instead of relying on a `trigger` button click.
+   */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function MusicPickerDialog({ trigger, onPick }: MusicPickerDialogProps) {
-  const [open, setOpen] = useState(false)
+export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChange }: MusicPickerDialogProps) {
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (next: boolean) => {
+    if (openProp === undefined) {
+      setOpenInternal(next)
+    }
+    onOpenChange?.(next)
+  }
   const [q, setQ] = useState('')
   const [musics, setMusics] = useState<AdminMusicDto[] | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
 
   const { load } = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST_MUSIC, {
     onSuccess: (payload) => setMusics(payload.musics),
@@ -52,55 +70,80 @@ export function MusicPickerDialog({ trigger, onPick }: MusicPickerDialogProps) {
   }, [q, open, load])
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          trigger !== undefined ? (
-            (trigger as React.ReactElement)
-          ) : (
-            <Button variant="outline" type="button">
-              <Music2Icon /> 选择音乐
-            </Button>
-          )
-        }
-      />
-      <DialogContent className="max-h-[90vh] max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>选择音乐</DialogTitle>
-        </DialogHeader>
-        <div className="flex items-center gap-2">
-          <SearchIcon className="size-4 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="按曲名 / 演唱者搜索"
-            className="max-w-md"
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        {openProp === undefined ? (
+          <DialogTrigger
+            render={
+              trigger !== undefined ? (
+                (trigger as React.ReactElement)
+              ) : (
+                <Button variant="outline" type="button">
+                  <Music2Icon /> 选择音乐
+                </Button>
+              )
+            }
           />
-        </div>
-        <div className="max-h-[60vh] overflow-y-auto">
-          {musics === null ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
-          ) : musics.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              没有匹配的音乐。请先到 /wp-admin/musics 添加。
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-1">
-              {musics.map((music) => (
-                <MusicRow
-                  key={music.id}
-                  music={music}
-                  onClick={() => {
-                    onPick(music)
-                    setOpen(false)
-                  }}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        ) : null}
+        <DialogContent className="max-h-[90vh] max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>选择音乐</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <SearchIcon className="size-4 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="按曲名 / 演唱者搜索"
+              className="max-w-md"
+            />
+            <div className="flex-1" />
+            <Button type="button" variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+              <PlusIcon /> 添加音乐
+            </Button>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto">
+            {musics === null ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
+            ) : musics.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 p-8 text-center text-sm text-muted-foreground">
+                <p>没有匹配的音乐。</p>
+                <Button type="button" variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+                  <PlusIcon /> 通过 NetEase 搜索并添加
+                </Button>
+              </div>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {musics.map((music) => (
+                  <MusicRow
+                    key={music.id}
+                    music={music}
+                    onClick={() => {
+                      onPick(music)
+                      setOpen(false)
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <AddMusicDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={(music) => {
+          // Prepend the freshly-added row so the operator can pick it
+          // immediately. We don't auto-pick so multi-add still works
+          // (matches `MusicsView` behaviour where the dialog stays open
+          // after each successful add).
+          setMusics((prev) => {
+            const next = prev === null ? [] : prev.filter((m) => m.id !== music.id)
+            return [music, ...next]
+          })
+        }}
+      />
+    </>
   )
 }
 
@@ -130,7 +173,7 @@ function MusicRow({ music, onClick }: MusicRowProps) {
             {music.artist.join(', ')} · {music.album}
           </div>
         </div>
-        <code className="font-mono text-[10px] text-muted-foreground">{music.playerId}</code>
+        <code className="font-mono text-badge text-muted-foreground">{music.playerId}</code>
       </button>
     </li>
   )
