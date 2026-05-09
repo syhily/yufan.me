@@ -59,7 +59,12 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
     ])
 
     const result = await loadImageThumbhash('https://stage-asset.yufan.me/images/categories/coding.jpg')
-    expect(result).toEqual({ width: 1280, height: 425, thumbhash: 'cover-hash' })
+    expect(result).toEqual({
+      width: 1280,
+      height: 425,
+      thumbhash: 'cover-hash',
+      publicUrl: 'https://stage-asset.yufan.me/images/categories/coding.jpg?v=1777708800000',
+    })
   })
 
   it('returns null when the URL has no matching row', async () => {
