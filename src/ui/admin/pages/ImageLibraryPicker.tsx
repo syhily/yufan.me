@@ -1,5 +1,5 @@
 import { ImageIcon, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/images'
 
@@ -29,29 +29,33 @@ export function ImageLibraryPicker({ trigger, onPick }: ImageLibraryPickerProps)
   const [q, setQ] = useState('')
   const [images, setImages] = useState<AdminImageDto[] | null>(null)
 
-  const fetcher = useApiFetcher<ListImagesInput, ListImagesOutput>(LIST_IMAGES, {
+  const { load } = useApiFetcher<ListImagesInput, ListImagesOutput>(LIST_IMAGES, {
     onSuccess: (payload) => setImages(payload.images),
   })
 
-  useEffect(() => {
-    if (open && images === null) {
-      fetcher.load({ kind: 'generic', limit: 60 })
-    }
-  }, [open, images, fetcher])
-
-  // Debounced search: re-fetch 300 ms after the last keystroke. The
-  // `images` state is reset to null first so the panel shows a
-  // loading indicator instead of stale results.
+  // Debounced search: refetch 300ms after the last keystroke. We
+  // keep a ref to the last query we issued a fetch for so a setState
+  // round-trip from the response doesn't kick off another fetch.
+  const lastFetchedQRef = useRef<string | null>(null)
   useEffect(() => {
     if (!open) {
+      lastFetchedQRef.current = null
       return
     }
-    const handle = setTimeout(() => {
-      setImages(null)
-      fetcher.load({ kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() })
-    }, 300)
+    const trimmed = q.trim()
+    if (lastFetchedQRef.current === trimmed) {
+      return
+    }
+    const handle = setTimeout(
+      () => {
+        lastFetchedQRef.current = trimmed
+        setImages(null)
+        load({ kind: 'generic', limit: 60, q: trimmed === '' ? undefined : trimmed })
+      },
+      lastFetchedQRef.current === null ? 0 : 300,
+    )
     return () => clearTimeout(handle)
-  }, [q, open, fetcher])
+  }, [q, open, load])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

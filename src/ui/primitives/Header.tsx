@@ -294,6 +294,7 @@ export function Header({ navigation, admin }: HeaderProps) {
         aria-modal={menuOpen ? true : undefined}
         aria-labelledby={menuLabelId}
         aria-hidden={menuOpen ? undefined : true}
+        inert={menuOpen ? undefined : true}
       >
         {/*
          * Overlay is a real button (not a `<div onClick>`) so keyboard

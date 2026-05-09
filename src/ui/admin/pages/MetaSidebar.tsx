@@ -376,7 +376,7 @@ function ImageField({
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={`${id}-url`}>
+        <Label>
           {label} <span className="text-xs font-normal text-muted-foreground">（可选）</span>
         </Label>
         <div className="flex items-center gap-1">

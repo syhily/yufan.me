@@ -284,6 +284,7 @@ function imageBlockToPmNode(block: ImageBlock): PmBlockNode {
       height: block.height,
       thumbhash: block.thumbhash,
       storagePath: block.storagePath,
+      imageId: block.imageId,
     },
   }
 }
@@ -442,6 +443,7 @@ function pushPmNode(
         height: numberAttr(node.attrs, 'height'),
         thumbhash: stringAttr(node.attrs, 'thumbhash'),
         storagePath: stringAttr(node.attrs, 'storagePath'),
+        imageId: stringAttr(node.attrs, 'imageId'),
       })
       return
     case 'codeBlock': {

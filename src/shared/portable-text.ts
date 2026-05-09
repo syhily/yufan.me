@@ -161,6 +161,14 @@ export const imageBlockSchema = z.object({
   thumbhash: z.string().optional(),
   /** When the asset is stored in our S3 bucket, the canonical key. */
   storagePath: z.string().optional(),
+  /**
+   * Set when the block references a row in the `image` table (the
+   * media library). When omitted, the block is an external image —
+   * its `src` is a third-party URL, no thumbhash / dimensions are
+   * resolved at save time, and the block is not added to the
+   * surrounding revision's `image_sources` projection.
+   */
+  imageId: z.string().optional(),
 })
 export type ImageBlock = z.infer<typeof imageBlockSchema>
 

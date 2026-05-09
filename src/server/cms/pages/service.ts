@@ -1,6 +1,7 @@
 import type { ContentRow, PageMetaRow } from '@/server/db/types'
 import type { PortableTextBody } from '@/shared/portable-text'
 
+import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
 import { prerenderPortableTextBody } from '@/server/cms/pages/prerender'
 import {
   toAdminPageDto,
@@ -379,6 +380,12 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   // renderer throws so a single bad block doesn't fail the save.
   const body = parseBodyOrThrow(input.body)
   await prerenderPortableTextBody(body)
+  // Library `image` blocks (those carrying an `imageId`) are
+  // re-resolved from the canonical `image` row so the body stays in
+  // lockstep with the media library; external blocks are stripped of
+  // any incidental `storagePath` so they aren't projected into
+  // `image_sources`. Best-effort — failures don't block the save.
+  await syncLibraryImageBlocks(body).catch(() => undefined)
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 

@@ -26,9 +26,13 @@
 //      or a table can't silently lose content).
 //   4. Resolve cover URL + every inline image URL through
 //      `resolveSrcToStoragePath` + `findImageByStoragePath` so the
-//      saved PortableText carries `storagePath` / width / height /
-//      thumbhash where possible. Misses go in the per-page report
-//      and the bare URL stays in the body.
+//      saved PortableText carries `imageId` / `storagePath` /
+//      width / height / thumbhash where possible — `imageId` is
+//      the canonical reference into the media library; SSR renders
+//      look up the row by id and re-resolve the public URL from
+//      the bucket settings. Misses go in the per-page report and
+//      the bare URL stays in the body as an external image (no
+//      `imageId`, no thumbhash, not added to `image_sources`).
 //   5. Sanity-check every `<MusicPlayer id="...">` against the
 //      `music` table. Misses log a warning but don't abort — the
 //      runtime resolver already 404s gracefully.
@@ -168,6 +172,7 @@ function buildImageResolver(publicBaseUrl: string | null): MigrateMdxOptions['re
     const tail = row.storagePath.startsWith('/') ? row.storagePath.slice(1) : row.storagePath
     const publicUrl = publicBaseUrl === null ? row.storagePath : `${publicBaseUrl}/${tail}?v=${row.updatedAt.getTime()}`
     return {
+      imageId: row.id.toString(),
       storagePath: row.storagePath,
       width: row.width,
       height: row.height,

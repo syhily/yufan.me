@@ -67,6 +67,8 @@ export interface MigrateMdxOptions {
    * the cache or the DB; the converter does not care.
    */
   resolveImageBySrc: (src: string) => Promise<{
+    /** Stringified bigint id of the canonical `image` row. */
+    imageId: string
     storagePath: string
     width: number
     height: number
@@ -427,6 +429,7 @@ async function imageNodeToBlock(node: MdastImage, ctx: ConvertContext): Promise<
     block.thumbhash = meta.thumbhash
   }
   block.storagePath = meta.storagePath
+  block.imageId = meta.imageId
   return block
 }
 

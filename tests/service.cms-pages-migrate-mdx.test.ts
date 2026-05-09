@@ -88,6 +88,7 @@ describe('convertMdxBodyToPortableText', () => {
       resolveImageBySrc: async (src) => {
         if (src === 'https://cat.example.com/foo.jpg') {
           return {
+            imageId: '1',
             storagePath: 'images/2026/05/foo.jpg',
             width: 1280,
             height: 720,

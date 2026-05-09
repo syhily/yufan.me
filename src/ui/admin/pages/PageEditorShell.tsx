@@ -927,7 +927,7 @@ function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: 
         placeholder="页面标题"
         maxLength={200}
         disabled={disabled}
-        className="h-auto border-0 bg-transparent px-0 text-2xl font-semibold shadow-none focus-visible:ring-0 dark:bg-transparent"
+        className="h-auto border-0 bg-transparent px-0 text-4xl leading-tight font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-5xl dark:bg-transparent"
       />
       <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
         <span>/</span>

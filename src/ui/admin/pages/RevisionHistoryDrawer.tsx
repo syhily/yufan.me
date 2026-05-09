@@ -57,7 +57,7 @@ export function RevisionHistoryDrawer({
   const [revisions, setRevisions] = useState<AdminRevisionDto[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const fetcher = useApiFetcher<ListPageRevisionsInput, ListPageRevisionsOutput>(LIST_REVISIONS, {
+  const { submit, isPending } = useApiFetcher<ListPageRevisionsInput, ListPageRevisionsOutput>(LIST_REVISIONS, {
     onSuccess: (payload) => setRevisions(payload.revisions),
   })
 
@@ -65,9 +65,9 @@ export function RevisionHistoryDrawer({
   // refetches through the explicit refresh button.
   useEffect(() => {
     if (open && revisions === null) {
-      fetcher.submit({ id: pageId })
+      submit({ id: pageId })
     }
-  }, [open, revisions, fetcher, pageId])
+  }, [open, revisions, submit, pageId])
 
   // Clear the selected detail view whenever the drawer closes so
   // the next open starts on the list.
@@ -119,11 +119,11 @@ export function RevisionHistoryDrawer({
           <RevisionListView
             revisions={revisions}
             currentToken={currentToken}
-            isFetching={fetcher.isPending}
+            isFetching={isPending}
             onSelect={setSelectedId}
             onRefresh={() => {
               setRevisions(null)
-              fetcher.submit({ id: pageId })
+              submit({ id: pageId })
             }}
           />
         ) : (

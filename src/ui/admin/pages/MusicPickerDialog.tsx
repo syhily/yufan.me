@@ -1,5 +1,5 @@
 import { Music2Icon, SearchIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { AdminMusicDto, ListMusicInput, ListMusicOutput } from '@/shared/music'
 
@@ -26,26 +26,30 @@ export function MusicPickerDialog({ trigger, onPick }: MusicPickerDialogProps) {
   const [q, setQ] = useState('')
   const [musics, setMusics] = useState<AdminMusicDto[] | null>(null)
 
-  const fetcher = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST_MUSIC, {
+  const { load } = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST_MUSIC, {
     onSuccess: (payload) => setMusics(payload.musics),
   })
 
-  useEffect(() => {
-    if (open && musics === null) {
-      fetcher.load({ limit: 60 })
-    }
-  }, [open, musics, fetcher])
-
+  const lastFetchedQRef = useRef<string | null>(null)
   useEffect(() => {
     if (!open) {
+      lastFetchedQRef.current = null
       return
     }
-    const handle = setTimeout(() => {
-      setMusics(null)
-      fetcher.load({ limit: 60, q: q.trim() === '' ? undefined : q.trim() })
-    }, 300)
+    const trimmed = q.trim()
+    if (lastFetchedQRef.current === trimmed) {
+      return
+    }
+    const handle = setTimeout(
+      () => {
+        lastFetchedQRef.current = trimmed
+        setMusics(null)
+        load({ limit: 60, q: trimmed === '' ? undefined : trimmed })
+      },
+      lastFetchedQRef.current === null ? 0 : 300,
+    )
     return () => clearTimeout(handle)
-  }, [q, open, fetcher])
+  }, [q, open, load])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

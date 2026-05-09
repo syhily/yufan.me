@@ -1,122 +1,187 @@
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { CalendarIcon, ChevronDownIcon } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/ui/components/ui/button'
 import { Calendar } from '@/ui/components/ui/calendar'
-import { Field, FieldGroup, FieldLabel } from '@/ui/components/ui/field'
-import { Input } from '@/ui/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
+import { cn } from '@/ui/lib/cn'
 
-// Date + time picker, modelled on shadcn/ui base's Date Picker
-// "Time Picker" recipe (https://ui.shadcn.com/docs/components/base/date-picker).
-// Two side-by-side `Field`s in a `FieldGroup`:
-//   - **Date** — `Popover` + `Calendar` (which is the project's
-//     react-day-picker wrapper). The trigger uses base-ui's `render`
-//     prop, not `asChild`, because shadcn base-vega routes triggers
-//     that way.
-//   - **Time** — native `<input type="time">` with the OS calendar
-//     picker indicator hidden (the date half already covers that).
-//
-// The wire contract stays unchanged from the previous
-// `<input type="datetime-local">`-backed widget: a
-// `YYYY-MM-DDTHH:mm` string flows in/out, empty = "unset".
+// Combined date + time picker, modelled on
+// https://github.com/rudrodip/shadcn-date-time-picker — single Popover
+// holding a `<Calendar>` next to three scroll columns (小时 / 分钟
+// / 上午下午). The AM/PM column is localised to 上午 / 下午 per the
+// review brief; the wire contract stays the 24h `YYYY-MM-DDTHH:mm`
+// string the rest of the editor reads.
 
 export interface DateTimePickerProps {
   value: string
   onChange: (next: string) => void
   disabled?: boolean
-  /** Optional id surfaced on the Date trigger; the time field
-   *  derives its own id from `${id}-time`. */
   id?: string
 }
+
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
+const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
 export function DateTimePicker({ value, onChange, disabled, id }: DateTimePickerProps) {
   const [open, setOpen] = useState(false)
   const parsed = parseLocal(value)
-  const dateOnly = parsed === null ? undefined : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
-  const timeValue = parsed === null ? '09:00' : `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`
+  const triggerId = id ?? 'datetime-picker'
 
-  const dateId = id ?? 'datetime-picker'
-  const timeId = `${dateId}-time`
+  const commit = (next: Date) => {
+    onChange(toLocalInputValue(next))
+  }
 
-  const commitDate = (next: Date | undefined) => {
-    if (next === undefined) {
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (selectedDate === undefined) {
       onChange('')
       return
     }
-    const [h, m] = timeValue.split(':').map((part) => Number.parseInt(part, 10))
-    onChange(toLocalInputValue(next, h ?? 9, m ?? 0))
-    setOpen(false)
+    const base = parsed ?? defaultTime()
+    const next = new Date(selectedDate)
+    next.setHours(base.getHours(), base.getMinutes(), 0, 0)
+    commit(next)
   }
 
-  const commitTime = (next: string) => {
-    const baseDate = dateOnly ?? new Date()
-    const [h, m] = next.split(':').map((part) => Number.parseInt(part, 10))
-    if (Number.isNaN(h) || Number.isNaN(m)) {
-      return
-    }
-    onChange(toLocalInputValue(baseDate, h, m))
+  const handleHour = (hour12: number) => {
+    const base = parsed ?? defaultTime()
+    const next = new Date(base)
+    const isPm = base.getHours() >= 12
+    next.setHours((hour12 % 12) + (isPm ? 12 : 0))
+    commit(next)
   }
+
+  const handleMinute = (minute: number) => {
+    const base = parsed ?? defaultTime()
+    const next = new Date(base)
+    next.setMinutes(minute)
+    commit(next)
+  }
+
+  const handleAmPm = (target: 'am' | 'pm') => {
+    const base = parsed ?? defaultTime()
+    const next = new Date(base)
+    const hours = next.getHours()
+    if (target === 'am' && hours >= 12) {
+      next.setHours(hours - 12)
+    } else if (target === 'pm' && hours < 12) {
+      next.setHours(hours + 12)
+    }
+    commit(next)
+  }
+
+  const display =
+    parsed === null
+      ? '选择日期与时间'
+      : `${format(parsed, 'PPP', { locale: zhCN })} ${parsed.getHours() < 12 ? '上午' : '下午'} ${pad(((parsed.getHours() + 11) % 12) + 1)}:${pad(parsed.getMinutes())}`
+
+  const currentHour12 = parsed === null ? null : ((parsed.getHours() + 11) % 12) + 1
+  const currentMinute = parsed?.getMinutes() ?? null
+  const currentIsPm = parsed === null ? null : parsed.getHours() >= 12
 
   return (
-    <FieldGroup className="flex-row gap-2">
-      <Field className="grow">
-        <FieldLabel htmlFor={dateId} className="sr-only">
-          日期
-        </FieldLabel>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger
-            render={
-              <Button
-                id={dateId}
-                variant="outline"
-                type="button"
-                disabled={disabled}
-                data-empty={dateOnly === undefined}
-                className="w-full justify-between font-normal data-[empty=true]:text-muted-foreground"
-              />
-            }
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            id={triggerId}
+            variant="outline"
+            type="button"
+            disabled={disabled}
+            data-empty={parsed === null}
+            className={cn('w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground')}
           >
-            <span className="inline-flex items-center gap-2">
-              <CalendarIcon className="size-4" />
-              {dateOnly !== undefined ? format(dateOnly, 'PPP', { locale: zhCN }) : '选择日期'}
-            </span>
-            <ChevronDownIcon className="size-4 opacity-60" />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-auto overflow-hidden p-0">
-            <Calendar
-              mode="single"
-              selected={dateOnly}
-              defaultMonth={dateOnly}
-              captionLayout="dropdown"
-              onSelect={commitDate}
-              disabled={disabled}
-            />
-          </PopoverContent>
-        </Popover>
-      </Field>
-      <Field className="w-32">
-        <FieldLabel htmlFor={timeId} className="sr-only">
-          时间
-        </FieldLabel>
-        <Input
-          id={timeId}
-          type="time"
-          step={60}
-          value={timeValue}
-          onChange={(event) => commitTime(event.target.value)}
-          disabled={disabled || dateOnly === undefined}
-          className="appearance-none bg-background font-mono [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-        />
-      </Field>
-    </FieldGroup>
+            <CalendarIcon className="mr-2" />
+            {display}
+          </Button>
+        }
+      />
+      <PopoverContent align="start" className="w-auto overflow-hidden p-0">
+        <div className="flex flex-col sm:flex-row">
+          <Calendar
+            mode="single"
+            selected={parsed ?? undefined}
+            defaultMonth={parsed ?? undefined}
+            captionLayout="dropdown"
+            onSelect={handleDateSelect}
+            disabled={disabled}
+          />
+          <div className="flex divide-x border-t sm:h-[300px] sm:border-t-0 sm:border-l">
+            <ColumnScroller>
+              {HOURS_12.map((hour) => (
+                <SlotButton
+                  key={hour}
+                  active={currentHour12 === hour}
+                  onClick={() => handleHour(hour)}
+                  disabled={disabled}
+                >
+                  {pad(hour)}
+                </SlotButton>
+              ))}
+            </ColumnScroller>
+            <ColumnScroller>
+              {MINUTES.map((minute) => (
+                <SlotButton
+                  key={minute}
+                  active={currentMinute === minute}
+                  onClick={() => handleMinute(minute)}
+                  disabled={disabled}
+                >
+                  {pad(minute)}
+                </SlotButton>
+              ))}
+            </ColumnScroller>
+            <ColumnScroller>
+              <SlotButton active={currentIsPm === false} onClick={() => handleAmPm('am')} disabled={disabled}>
+                上午
+              </SlotButton>
+              <SlotButton active={currentIsPm === true} onClick={() => handleAmPm('pm')} disabled={disabled}>
+                下午
+              </SlotButton>
+            </ColumnScroller>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function ColumnScroller({ children }: { children: React.ReactNode }) {
+  return <div className="flex w-16 flex-col gap-1 overflow-y-auto p-1.5 sm:w-20">{children}</div>
+}
+
+interface SlotButtonProps {
+  active: boolean
+  onClick: () => void
+  disabled?: boolean
+  children: React.ReactNode
+}
+
+function SlotButton({ active, onClick, disabled, children }: SlotButtonProps) {
+  return (
+    <Button
+      type="button"
+      variant={active ? 'default' : 'ghost'}
+      size="sm"
+      onClick={onClick}
+      disabled={disabled}
+      className="w-full shrink-0 font-mono"
+    >
+      {children}
+    </Button>
   )
 }
 
 function pad(n: number): string {
   return n.toString().padStart(2, '0')
+}
+
+function defaultTime(): Date {
+  const d = new Date()
+  d.setHours(9, 0, 0, 0)
+  return d
 }
 
 function parseLocal(value: string): Date | null {
@@ -130,6 +195,6 @@ function parseLocal(value: string): Date | null {
   return new Date(ms)
 }
 
-function toLocalInputValue(date: Date, hours: number, minutes: number): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(hours)}:${pad(minutes)}`
+function toLocalInputValue(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }

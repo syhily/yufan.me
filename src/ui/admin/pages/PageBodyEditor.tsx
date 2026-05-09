@@ -4,13 +4,11 @@ import Placeholder from '@tiptap/extension-placeholder'
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import Typography from '@tiptap/extension-typography'
-import Underline from '@tiptap/extension-underline'
 import { type Editor, EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
   BoldIcon,
   Code2Icon,
-  GripVerticalIcon,
   ImageIcon,
   ItalicIcon,
   LinkIcon,
@@ -38,8 +36,6 @@ import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/pages/MusicPickerDialog'
 import { BlockCardNode } from '@/ui/admin/pages/tiptap/BlockCardNode'
 import { PageBubbleMenu } from '@/ui/admin/pages/tiptap/BubbleMenu'
-import { DragHandlePlugin } from '@/ui/admin/pages/tiptap/drag-handle-plugin'
-import { DragHandle } from '@/ui/admin/pages/tiptap/DragHandle'
 import { EDITOR_EVENT_OPEN_IMAGE_PICKER, EDITOR_EVENT_OPEN_MUSIC_PICKER } from '@/ui/admin/pages/tiptap/editor-events'
 import { ImageNode } from '@/ui/admin/pages/tiptap/ImageNode'
 import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/pages/tiptap/InlineMarks'
@@ -97,12 +93,8 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
     extensions: [
       StarterKit.configure({
         link: false,
-        // Match emdash's drop indicator colour so the visual cue
-        // for "drop here" is consistent across the projects'
-        // editors.
         dropcursor: { color: '#3b82f6', width: 2 },
       }),
-      Underline,
       Typography,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Focus.configure({ className: 'has-focus', mode: 'all' }),
@@ -128,10 +120,7 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       BlockCardNode,
       MathInlineMark,
       FootnoteRefMark,
-      // Slash menu + drag handle are extensions for clean PM-side
-      // wiring (suggestion plugin / DOM event capture).
       SlashCommandsExtension,
-      DragHandlePlugin,
     ],
     content: bodyToPmDoc(initialBody) as never,
     onUpdate({ editor: instance }) {
@@ -177,10 +166,6 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
     }
   }, [])
 
-  // Drag-handle toggle. The UI defaults to enabled but can be
-  // turned off so QA can verify keyboard interactions in isolation.
-  const [dragHandleEnabled, setDragHandleEnabled] = useState(true)
-
   // Toolbar density. `'auto'` lets a CSS @container query at the
   // editor frame decide compact vs full based on the editor pane's
   // own width — which is the right axis (preview / metadata sheet
@@ -209,6 +194,7 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
             height: image.height,
             thumbhash: image.thumbhash ?? undefined,
             storagePath: image.storagePath,
+            imageId: image.id,
           },
         })
         .run()
@@ -246,8 +232,6 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       <Toolbar
         editor={editor}
         disabled={disabled}
-        dragHandleEnabled={dragHandleEnabled}
-        onToggleDragHandle={() => setDragHandleEnabled((on) => !on)}
         density={toolbarDensity}
         onDensityChange={setToolbarDensity}
         onPickImage={insertImage}
@@ -261,23 +245,21 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       />
       <PageBubbleMenu editor={editor} />
       <TableBubbleMenu editor={editor} />
-      <DragHandle editor={editor} enabled={dragHandleEnabled && disabled !== true}>
-        <div className="grow overflow-auto px-6 py-6">
-          <EditorContent
-            editor={editor}
-            className={cn(
-              'prose max-w-none prose-zinc focus:outline-none',
-              'min-h-[480px] [&_.ProseMirror]:min-h-[440px]',
-              '[&_.ProseMirror]:focus:outline-none',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
-            )}
-          />
-        </div>
-      </DragHandle>
+      <div className="grow overflow-auto px-6 py-6">
+        <EditorContent
+          editor={editor}
+          className={cn(
+            'prose max-w-none prose-zinc focus:outline-none',
+            'min-h-[480px] [&_.ProseMirror]:min-h-[440px]',
+            '[&_.ProseMirror]:focus:outline-none',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
+            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
+          )}
+        />
+      </div>
     </div>
   )
 }
@@ -285,8 +267,6 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
 interface ToolbarProps {
   editor: Editor
   disabled?: boolean
-  dragHandleEnabled: boolean
-  onToggleDragHandle: () => void
   density: ToolbarDensity
   onDensityChange: (next: ToolbarDensity) => void
   onPickImage: (image: import('@/shared/images').AdminImageDto) => void
@@ -513,14 +493,6 @@ function Toolbar(props: ToolbarProps) {
         </ToolbarGroup>
       )}
       <ToolbarGroup hideTrailingSeparator>
-        <ToolbarButton
-          title={props.dragHandleEnabled ? '关闭拖拽手柄' : '开启拖拽手柄'}
-          active={props.dragHandleEnabled}
-          disabled={disabled}
-          onClick={props.onToggleDragHandle}
-        >
-          <GripVerticalIcon />
-        </ToolbarButton>
         <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
       </ToolbarGroup>
     </div>
