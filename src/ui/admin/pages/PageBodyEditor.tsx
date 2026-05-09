@@ -92,6 +92,13 @@ export interface PageBodyEditorProps {
   onBodyChange: (body: PortableTextBody) => void
   /** When true, the editor becomes read-only. */
   disabled?: boolean
+  /**
+   * Live preview column layout: keep the formatting toolbar fixed above
+   * the scrollable canvas. When false, the toolbar starts inline at the
+   * top of the scroll stack and a floating duplicate appears at the
+   * bottom center after it scrolls out of view.
+   */
+  livePreviewOpen?: boolean
 }
 
 // Tiptap-based PortableText editor. The standard subset (paragraphs /
@@ -104,8 +111,9 @@ export interface PageBodyEditorProps {
 // refs only; the public page still renders a unified footnotes list from PT.
 //
 // The user-facing surface area lives in three layers:
-//   * **Toolbar** (this file): mouse-friendly slim row at the top
-//     for image / music / link / table / hr + undo/redo.
+//   * **Toolbar** (this file): mouse-friendly row at the top of the
+//     scroll stack in normal mode (duplicates at the bottom center
+//     while scrolled); pinned above the canvas when live preview is on.
 //   * **BubbleMenu** (`tiptap/BubbleMenu.tsx`): inline format affordances
 //     above any selection, including a link popover and inline-mark
 //     editing panels for `mathInline`. Footnote refs open the shell dialog
@@ -119,7 +127,13 @@ export interface PageBodyEditorProps {
 // the editor canvas; the operator can toggle it from the toolbar
 // when QA-ing the page (drag interactions can interfere with
 // keyboard tests).
-export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }: PageBodyEditorProps) {
+export function PageBodyEditor({
+  initialBody,
+  bodyKey,
+  onBodyChange,
+  disabled,
+  livePreviewOpen = false,
+}: PageBodyEditorProps) {
   const onBodyChangeRef = useRef(onBodyChange)
   onBodyChangeRef.current = onBodyChange
 
@@ -425,6 +439,37 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
   // Select. The preference survives navigations via localStorage.
   const [toolbarDensity, setToolbarDensity] = useToolbarDensityPreference()
 
+  const inlineToolbarRef = useRef<HTMLDivElement>(null)
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false)
+
+  useEffect(() => {
+    if (editor === null || livePreviewOpen) {
+      setShowFloatingToolbar(false)
+      return
+    }
+    const target = inlineToolbarRef.current
+    if (target === null) {
+      return
+    }
+    // `AdminShell` lets the document scroll (the `<main>` column is not a
+    // fixed-height scrollport), so our inner `overflow-y-auto` often never
+    // scrolls — `IntersectionObserver` must use the viewport as `root`
+    // or the inline toolbar would always read as "intersecting" and the
+    // floated duplicate would never mount.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry === undefined) {
+          return
+        }
+        setShowFloatingToolbar(!entry.isIntersecting)
+      },
+      { root: null, rootMargin: '0px', threshold: 0 },
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [editor, livePreviewOpen, bodyKey])
+
   const insertImage = useCallback(
     (image: import('@/shared/images').AdminImageDto) => {
       if (editor === null) {
@@ -473,20 +518,83 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
   )
 
   if (editor === null) {
-    return <div className="rounded-md border bg-card p-4 text-sm text-muted-foreground">编辑器正在加载…</div>
+    return (
+      <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border bg-card p-4 text-sm text-muted-foreground">
+        编辑器正在加载…
+      </div>
+    )
   }
 
-  return (
-    <div className="flex min-h-0 w-full min-w-0 flex-col rounded-md border bg-card">
-      <Toolbar
+  const toolbarProps = {
+    editor,
+    disabled,
+    density: toolbarDensity,
+    onDensityChange: setToolbarDensity,
+    onOpenImagePicker: () => setImagePickerOpen(true),
+    onOpenMusicPicker: () => setMusicPickerOpen(true),
+    onOpenFootnoteInsertDialog: openFootnoteInsertDialog,
+  } as const
+
+  const editorCanvas = (
+    <div ref={editorZoomContainerRef}>
+      <EditorContent
         editor={editor}
-        disabled={disabled}
-        density={toolbarDensity}
-        onDensityChange={setToolbarDensity}
-        onOpenImagePicker={() => setImagePickerOpen(true)}
-        onOpenMusicPicker={() => setMusicPickerOpen(true)}
-        onOpenFootnoteInsertDialog={openFootnoteInsertDialog}
+        className={cn(
+          // `post-content` pairs with `@utility prose-blog { &.post-content {…} }`
+          // so code/pre match public page + preview pane typography.
+          // `pt-body-editor` narrows the math-inline chip tint to the Tiptap
+          // canvas only (preview stays on the shared post-content styles).
+          'post-content pt-body-editor prose-blog prose prose-lg max-w-none focus:outline-none',
+          'min-h-120 [&_.ProseMirror]:min-h-110',
+          '[&_.ProseMirror]:focus:outline-none',
+          '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
+          '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-md [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
+          '[&_section[data-pt-two-column]]:relative [&_section[data-pt-two-column]]:my-5 [&_section[data-pt-two-column]]:grid [&_section[data-pt-two-column]]:gap-4 [&_section[data-pt-two-column]]:rounded-lg [&_section[data-pt-two-column]]:border-2 [&_section[data-pt-two-column]]:border-dashed [&_section[data-pt-two-column]]:border-border [&_section[data-pt-two-column]]:bg-muted/30 [&_section[data-pt-two-column]]:p-3 [&_section[data-pt-two-column]]:shadow-sm [&_section[data-pt-two-column]]:md:grid-cols-2',
+          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
+          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
+          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
+          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
+          '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
+        )}
       />
+    </div>
+  )
+
+  return (
+    <div className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-md border bg-card">
+      {livePreviewOpen ? (
+        <>
+          <div className="shrink-0 border-b bg-card">
+            <Toolbar {...toolbarProps} />
+          </div>
+          {/* Bottom padding (`pb-[60vh]`) gives the operator a generous
+              scroll runway past the end of the document. Without it the
+              last paragraph hugs the container edge, which leaves the
+              slash menu (anchored below the caret) clipped or overlapped
+              by the surrounding chrome when authoring near the bottom. */}
+          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 pt-6 pb-[60vh]">{editorCanvas}</div>
+        </>
+      ) : (
+        <>
+          <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+            <div
+              ref={inlineToolbarRef}
+              className="shrink-0 border-b bg-card"
+              inert={showFloatingToolbar ? true : undefined}
+            >
+              <Toolbar {...toolbarProps} />
+            </div>
+            <div className="min-h-0 grow px-6 pt-6 pb-[60vh]">{editorCanvas}</div>
+          </div>
+          {showFloatingToolbar ? (
+            <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-3 sm:bottom-8">
+              <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
+                <Toolbar {...toolbarProps} className="border-b-0" />
+              </div>
+            </div>
+          ) : null}
+        </>
+      )}
       <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertImage} />
       <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={insertMusic} />
       <FootnoteEditorDialog
@@ -500,35 +608,6 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       <PageBubbleMenu editor={editor} />
       <TableBubbleMenu editor={editor} />
       <CodeBlockBubbleMenu editor={editor} />
-      {/* Bottom padding (`pb-[60vh]`) gives the operator a generous
-          scroll runway past the end of the document. Without it the
-          last paragraph hugs the container edge, which leaves the
-          slash menu (anchored below the caret) clipped or overlapped
-          by the surrounding chrome when authoring near the bottom. */}
-      <div className="grow overflow-auto px-6 pt-6 pb-[60vh]">
-        <div ref={editorZoomContainerRef}>
-          <EditorContent
-            editor={editor}
-            className={cn(
-              // `post-content` pairs with `@utility prose-blog { &.post-content {…} }`
-              // so code/pre match public page + preview pane typography.
-              // `pt-body-editor` narrows the math-inline chip tint to the Tiptap
-              // canvas only (preview stays on the shared post-content styles).
-              'post-content pt-body-editor prose-blog prose prose-lg max-w-none focus:outline-none',
-              'min-h-120 [&_.ProseMirror]:min-h-110',
-              '[&_.ProseMirror]:focus:outline-none',
-              '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
-              '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-md [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
-              '[&_section[data-pt-two-column]]:relative [&_section[data-pt-two-column]]:my-5 [&_section[data-pt-two-column]]:grid [&_section[data-pt-two-column]]:gap-4 [&_section[data-pt-two-column]]:rounded-lg [&_section[data-pt-two-column]]:border-2 [&_section[data-pt-two-column]]:border-dashed [&_section[data-pt-two-column]]:border-border [&_section[data-pt-two-column]]:bg-muted/30 [&_section[data-pt-two-column]]:p-3 [&_section[data-pt-two-column]]:shadow-sm [&_section[data-pt-two-column]]:md:grid-cols-2',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
-              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
-            )}
-          />
-        </div>
-      </div>
     </div>
   )
 }
@@ -541,6 +620,8 @@ interface ToolbarProps {
   onOpenImagePicker: () => void
   onOpenMusicPicker: () => void
   onOpenFootnoteInsertDialog: () => void
+  /** Merged onto the outer toolbar row (e.g. floated duplicate drops `border-b`). */
+  className?: string
 }
 
 // Toolbar layered into a stack of `ToolbarGroup`s (see groups below).
@@ -564,7 +645,7 @@ interface ToolbarProps {
 // looks self-evidently capable on first open.
 
 function Toolbar(props: ToolbarProps) {
-  const { editor, disabled, density } = props
+  const { editor, disabled, density, className } = props
 
   const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)
 
@@ -770,7 +851,9 @@ function Toolbar(props: ToolbarProps) {
   const densityRail = <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
 
   return (
-    <div className="flex w-full max-w-full min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
+    <div
+      className={cn('flex w-full max-w-full min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2', className)}
+    >
       {groups}
       <ToolbarGroup hideTrailingSeparator className="ml-auto">
         {densityRail}
