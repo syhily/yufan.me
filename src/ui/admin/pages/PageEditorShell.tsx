@@ -130,7 +130,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // breathing room. When off, the layout is the default
   // `[editor | meta]` and the rail comes back. State lives here so
   // it survives metadata edits but resets on route navigation.
-  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewOpen, setPreviewOpenState] = useState(false)
   useAdminChromeFocus(previewOpen)
 
   // Metadata visibility: docked inline by default, collapses into a
@@ -143,12 +143,20 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // (`lg:` breakpoint) and falls back to the Sheet otherwise — see
   // the layout block below.
   const [metaOpen, setMetaOpen] = useState(true)
-  useEffect(() => {
-    // Auto-collapse when entering preview mode; auto-expand when
-    // leaving it. Anything the user does on top of that wins until
-    // the next preview toggle.
-    setMetaOpen(!previewOpen)
-  }, [previewOpen])
+  // We sync `metaOpen` ↔ `previewOpen` synchronously inside the
+  // toggle setter rather than via `useEffect`. An effect-driven sync
+  // would render once with `previewOpen=true` while `metaOpen` is
+  // still the stale `true`, briefly mounting `<Sheet open>` and
+  // leaving Base UI's backdrop attached after the close animation —
+  // which blocks every click on the page underneath. See the bug
+  // report on the live-preview backdrop persisting in the editor.
+  const setPreviewOpen = useCallback((updater: boolean | ((prev: boolean) => boolean)) => {
+    setPreviewOpenState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      setMetaOpen(!next)
+      return next
+    })
+  }, [])
 
   // The token the next save/publish must echo. Starts at the latest
   // revision's token; every successful save updates it.

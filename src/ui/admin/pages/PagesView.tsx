@@ -145,7 +145,7 @@ export function PagesView() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="pl-4">slug / 标题</TableHead>
+                  <TableHead className="pl-4">标题</TableHead>
                   <TableHead className="hidden md:table-cell">摘要</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">更新时间</TableHead>
