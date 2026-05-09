@@ -48,7 +48,7 @@ describe('diffBodies', () => {
     expect(leftOnly.leftBlock).not.toBeNull()
   })
 
-  it('flags _keys present only on the right as "rightOnly", appended after the left iteration', () => {
+  it('flags _keys present only on the right as "rightOnly" at their actual position', () => {
     const left: PortableTextBody = [p('a', 'shared')]
     const right: PortableTextBody = [p('a', 'shared'), p('b', 'server-only')]
     const diff = diffBodies(left, right)
@@ -58,16 +58,53 @@ describe('diffBodies', () => {
     expect(rightOnly.rightBlock).not.toBeNull()
   })
 
-  it('preserves the left body iteration order and appends right-only blocks at the end', () => {
-    // Even when right reorders + adds a new key, the diff lists
-    // the left order verbatim then tacks on the new right key.
-    // (Block reorders that share `_key` therefore look "unchanged"
-    // — that's a deliberate simplification for our small bodies.)
+  it('places a block inserted in the middle as a single rightOnly entry between the unchanged anchors', () => {
+    // Regression: previously the LCS-by-key alignment was a
+    // simple per-key map, so an inserted block in the middle
+    // pushed every later block off-by-one and they all rendered
+    // as changed/added. The LCS pass keeps the surrounding
+    // blocks as `unchanged` and emits the insertion in place.
     const left: PortableTextBody = [p('a', 'A'), p('b', 'B'), p('c', 'C')]
-    const right: PortableTextBody = [p('c', 'C'), p('b', 'B'), p('a', 'A'), p('d', 'D')]
+    const right: PortableTextBody = [p('a', 'A'), p('inserted', 'NEW'), p('b', 'B'), p('c', 'C')]
     const diff = diffBodies(left, right)
-    expect(diff.map((e) => e.key)).toEqual(['a', 'b', 'c', 'd'])
-    expect(diff.map((e) => e.status)).toEqual(['unchanged', 'unchanged', 'unchanged', 'rightOnly'])
+    expect(diff.map((e) => e.status)).toEqual(['unchanged', 'rightOnly', 'unchanged', 'unchanged'])
+    expect(diff.map((e) => e.key)).toEqual(['a', 'inserted', 'b', 'c'])
+  })
+
+  it('places a block deleted from the middle as a single leftOnly entry in position', () => {
+    const left: PortableTextBody = [p('a', 'A'), p('b', 'B'), p('c', 'C')]
+    const right: PortableTextBody = [p('a', 'A'), p('c', 'C')]
+    const diff = diffBodies(left, right)
+    expect(diff.map((e) => e.status)).toEqual(['unchanged', 'leftOnly', 'unchanged'])
+    expect(diff.map((e) => e.key)).toEqual(['a', 'b', 'c'])
+  })
+
+  it('anchors blocks by content fingerprint when the editor regenerated their _key', () => {
+    // Tiptap can reissue `_key`s on save when a block round-trips
+    // through PM. We anchor by content fingerprint so identical
+    // text still aligns even with fresh keys, leaving only the
+    // genuinely-inserted block as `rightOnly`.
+    const left: PortableTextBody = [p('a', 'first'), p('b', 'second'), p('c', 'third')]
+    const right: PortableTextBody = [p('a2', 'first'), p('inserted', 'NEW'), p('b2', 'second'), p('c2', 'third')]
+    const diff = diffBodies(left, right)
+    expect(diff.map((e) => e.status)).toEqual(['unchanged', 'rightOnly', 'unchanged', 'unchanged'])
+  })
+
+  it('treats a moved block as delete + insert rather than silently calling it unchanged', () => {
+    // A real reorder (not a typo'd insert) should surface as
+    // `leftOnly` at the old position and `rightOnly` at the new
+    // one — the operator deserves to see both halves of the move
+    // instead of having it disappear into "unchanged".
+    const left: PortableTextBody = [p('a', 'A'), p('b', 'B'), p('c', 'C')]
+    const right: PortableTextBody = [p('c', 'C'), p('a', 'A'), p('b', 'B')]
+    const diff = diffBodies(left, right)
+    // Either {a,b unchanged, c moved} or {b,c unchanged, a moved}
+    // is acceptable — assert that *some* leftOnly + rightOnly
+    // entry exists for the moved block, and that the unchanged
+    // count equals the LCS length (2).
+    expect(diff.filter((e) => e.status === 'unchanged')).toHaveLength(2)
+    expect(diff.some((e) => e.status === 'leftOnly')).toBe(true)
+    expect(diff.some((e) => e.status === 'rightOnly')).toBe(true)
   })
 
   it('treats custom-typed blocks (image/code/mermaid…) as full-block replacements', () => {
@@ -98,6 +135,143 @@ describe('diffBodies', () => {
 
   it('produces an empty list when both bodies are empty', () => {
     expect(diffBodies([], [])).toEqual([])
+  })
+
+  it('treats blocks that only differ by empty-array vs missing-array as unchanged', () => {
+    // Regression: the editor's PT serializer omits `markDefs` /
+    // `marks` when empty, but DB-stored bodies may carry an empty
+    // array. Two such blocks render identically and must not flip
+    // every block on the page to `changed`.
+    const left: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'a',
+        style: 'normal',
+        markDefs: [],
+        children: [{ _type: 'span', _key: 'a-s', text: 'hello', marks: [] }],
+      } as Block,
+    ]
+    const right: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'a',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 'a-s', text: 'hello' }],
+      } as Block,
+    ]
+    expect(diffBodies(left, right)[0].status).toBe('unchanged')
+  })
+
+  it('treats blocks that only differ by span / markDef / block _key as unchanged', () => {
+    // The Tiptap → PT round-trip regenerates span and markDef keys
+    // (`s-1`, `s-2`, …). Two structurally-equal blocks with fresh
+    // keys must still anchor and render as `unchanged`.
+    const left: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'old-block-key',
+        style: 'normal',
+        children: [
+          { _type: 'span', _key: 'old-span-1', text: 'hello ' },
+          { _type: 'span', _key: 'old-span-2', text: 'world', marks: ['old-link'] },
+        ],
+        markDefs: [{ _type: 'link', _key: 'old-link', href: 'https://example.com' }],
+      } as Block,
+    ]
+    const right: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'new-block-key',
+        style: 'normal',
+        children: [
+          { _type: 'span', _key: 's-1', text: 'hello ' },
+          { _type: 'span', _key: 's-2', text: 'world', marks: ['new-link'] },
+        ],
+        markDefs: [{ _type: 'link', _key: 'new-link', href: 'https://example.com' }],
+      } as Block,
+    ]
+    expect(diffBodies(left, right)[0].status).toBe('unchanged')
+  })
+
+  it('user scenario: left=[A,B,C,D,E] right=[A,C,D,E] with preserved keys → only B is leftOnly', () => {
+    const left: PortableTextBody = [p('a', 'A'), p('b', 'B'), p('c', 'C'), p('d', 'D'), p('e', 'E')]
+    const right: PortableTextBody = [p('a', 'A'), p('c', 'C'), p('d', 'D'), p('e', 'E')]
+    const diff = diffBodies(left, right)
+    expect(diff.map((e) => ({ status: e.status, key: e.leftBlock?._key ?? e.rightBlock?._key }))).toEqual([
+      { status: 'unchanged', key: 'a' },
+      { status: 'leftOnly', key: 'b' },
+      { status: 'unchanged', key: 'c' },
+      { status: 'unchanged', key: 'd' },
+      { status: 'unchanged', key: 'e' },
+    ])
+  })
+
+  it('places a deleted middle block as a single leftOnly even when every surviving block has a regenerated _key', () => {
+    // Regression: the user reported "the deleted text AND every
+    // block after it shows as deleted on the left, with the
+    // matching after-blocks shown as added on the right". Root
+    // cause: the editor's PT serializer can re-issue `_key`s on
+    // save (Tiptap regenerates them when a structural reducer
+    // touches the doc), so a key-based anchor pass would have
+    // *every* surviving block on the right look like a brand new
+    // block, cascading into one giant delete + insert. The LCS
+    // pass must anchor on canonical content so the surviving
+    // blocks still pair up.
+    const left: PortableTextBody = [
+      p('orig-a', 'paragraph A'),
+      p('orig-b', 'paragraph B that gets deleted'),
+      p('orig-c', 'paragraph C'),
+      p('orig-d', 'paragraph D'),
+      p('orig-e', 'paragraph E'),
+    ]
+    const right: PortableTextBody = [
+      p('pm-1', 'paragraph A'),
+      p('pm-2', 'paragraph C'),
+      p('pm-3', 'paragraph D'),
+      p('pm-4', 'paragraph E'),
+    ]
+    const diff = diffBodies(left, right)
+    const statuses = diff.map((entry) => entry.status)
+    expect(statuses.filter((s) => s === 'unchanged')).toHaveLength(4)
+    expect(statuses.filter((s) => s === 'leftOnly')).toHaveLength(1)
+    expect(statuses.filter((s) => s === 'rightOnly')).toHaveLength(0)
+    expect(statuses.filter((s) => s === 'changed')).toHaveLength(0)
+  })
+
+  it('places an inserted middle block as a single rightOnly even when every surviving block has a regenerated _key', () => {
+    const left: PortableTextBody = [p('orig-a', 'paragraph A'), p('orig-b', 'paragraph B'), p('orig-c', 'paragraph C')]
+    const right: PortableTextBody = [
+      p('pm-1', 'paragraph A'),
+      p('pm-2', 'NEW paragraph in the middle'),
+      p('pm-3', 'paragraph B'),
+      p('pm-4', 'paragraph C'),
+    ]
+    const diff = diffBodies(left, right)
+    const statuses = diff.map((entry) => entry.status)
+    expect(statuses.filter((s) => s === 'unchanged')).toHaveLength(3)
+    expect(statuses.filter((s) => s === 'rightOnly')).toHaveLength(1)
+    expect(statuses.filter((s) => s === 'leftOnly')).toHaveLength(0)
+    expect(statuses.filter((s) => s === 'changed')).toHaveLength(0)
+  })
+
+  it('still surfaces a real edit (different decorator) as changed even with regenerated keys', () => {
+    const left: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'k1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: 'hello' }],
+      } as Block,
+    ]
+    const right: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'k2',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's2', text: 'hello', marks: ['strong'] }],
+      } as Block,
+    ]
+    expect(diffBodies(left, right)[0].status).toBe('changed')
   })
 })
 

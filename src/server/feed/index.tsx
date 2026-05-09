@@ -42,14 +42,19 @@ export async function feedResponse(
   return new Response(body, { headers: feedHeaders(kind) })
 }
 
+function isPage(entry: Post | Page): entry is Page {
+  return Array.isArray((entry as Page).body)
+}
+
 async function renderEntryContent(entry: Post | Page): Promise<string> {
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
   // the body but skip the image-enhancement pipeline: feed readers don't
   // need thumbhash placeholders or DB-resolved dimensions.
   const bundle = requireBlogSettingsBundle()
-  // Pages can be sourced from MDX or from the DB during the migration.
-  // The Post type stays MDX-only for now.
-  if ('source' in entry && entry.source === 'db') {
+  // Pages live in Postgres and carry a PortableText body; posts still
+  // compile through the Fumadocs MDX pipeline and render their body
+  // as a React component.
+  if (isPage(entry)) {
     return prerenderToHtml(
       <BlogSettingsProvider value={bundle}>
         <PortableTextBody body={entry.body} headingSlugs={entry.headings.map((h) => h.slug)} />

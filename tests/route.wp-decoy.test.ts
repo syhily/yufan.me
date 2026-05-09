@@ -25,7 +25,7 @@ const session = regularSession()
 
 const fixtures = vi.hoisted(() => ({
   samplePost: { slug: 'hello', mdxPath: '2024/2024-01-01-hello.mdx' } as Record<string, unknown>,
-  samplePage: { slug: 'about', mdxPath: 'about.mdx' } as Record<string, unknown>,
+  samplePage: { slug: 'about' } as Record<string, unknown>,
 }))
 fixtures.samplePost = {
   ...makePost({ slug: 'hello', alias: ['hello-old'] }),
@@ -33,7 +33,7 @@ fixtures.samplePost = {
   body: () => null,
   imageSources: [],
 }
-fixtures.samplePage = { ...makePage({ slug: 'about' }), mdxPath: 'about.mdx', body: () => null, imageSources: [] }
+fixtures.samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
 
 vi.mock('@/server/session', async () => {
   const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
@@ -74,9 +74,11 @@ vi.mock('@/server/catalog', () => ({
 
 vi.mock('@/ui/mdx/MdxContent', () => ({
   PostBody: () => null,
-  PageBody: () => null,
   preloadPostBody: vi.fn(async () => undefined),
-  preloadPageBody: vi.fn(async () => undefined),
+}))
+
+vi.mock('@/ui/portable-text/PortableTextBody', () => ({
+  PortableTextBody: () => null,
 }))
 
 vi.mock('@/server/comments/page-data', () => ({

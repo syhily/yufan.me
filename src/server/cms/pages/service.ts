@@ -118,6 +118,55 @@ export async function loadCatalogPageBySlug(slug: string): Promise<CmsPage | nul
   return toCmsPage(meta, revision)
 }
 
+/**
+ * Result of `loadPageDraftPreviewBySlug`. The caller (the page-detail
+ * route) picks the on-screen draft marker from the combination of
+ * `page.published` and `hasNewerDraft`:
+ *
+ *   - unpublished page                      → 【草稿】
+ *   - published page + hasNewerDraft        → 【未发布的草稿】
+ *   - published page + !hasNewerDraft       → 【已发布的草稿】
+ *
+ * Soft-deleted rows still return `null`.
+ */
+export interface PageDraftPreview {
+  page: CmsPage
+  /**
+   * True when the page has a `status='draft'` revision newer than its
+   * `publishedRevisionId`. The body returned in `page` is the draft
+   * one when this is true.
+   */
+  hasNewerDraft: boolean
+}
+
+/**
+ * Admin-only single-page lookup that surfaces draft / unpublished /
+ * scheduled rows so an authenticated admin can preview the page
+ * exactly as it would render once published — and, on already-live
+ * pages, can preview the in-progress draft via `?draft=true`.
+ *
+ * Body resolution: the latest `status='draft'` revision wins when
+ * one exists (the admin is mid-edit). Otherwise the published
+ * revision wins (the page is steady-state). When neither exists
+ * (a freshly-created page that hasn't been saved yet) the body is
+ * the empty array and `hasNewerDraft` is `false`.
+ *
+ * Soft-deleted rows still return `null`: an admin who wants the
+ * deleted page back must restore it first from `/wp-admin/pages`.
+ */
+export async function loadPageDraftPreviewBySlug(slug: string): Promise<PageDraftPreview | null> {
+  const meta = await findPublicPageMetaBySlug(slug)
+  if (meta === null) {
+    return null
+  }
+  const draft = await findLatestDraft('page', meta.id)
+  let revision: ContentRow | null = draft
+  if (revision === null && meta.publishedRevisionId !== null) {
+    revision = await findContentById(meta.publishedRevisionId)
+  }
+  return { page: toCmsPage(meta, revision), hasNewerDraft: draft !== null }
+}
+
 // --- Admin list / get ------------------------------------------------------
 
 export interface AdminPagesListResult {

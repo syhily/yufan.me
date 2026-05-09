@@ -22,10 +22,18 @@ import type {
 
 import { generateBlockKey } from '@/shared/portable-text'
 
-// One-off MDX → PortableText converter for the small static-page
-// corpus that lives under `src/content/pages/**/*.mdx` (about /
-// guestbook / links). Driven by `scripts/migrate-mdx-pages.mjs` and
-// **only** intended to handle the constructs those three pages use:
+// MDX → PortableText converter used by the page-import migration
+// (`scripts/migrate/pages/cli.ts`). It runs against any MDX corpus
+// the operator points the CLI at — historically the deleted
+// `src/content/pages/*.mdx` (about / guestbook / links), and now
+// any external MDX dump shipped in for production import.
+//
+// Lives under `scripts/migrate/pages/` (not `src/server/cms/pages/`)
+// so the SSR bundle does not pay the `remark` / `mdast` dependency
+// cost. Only the CLI and its tests should import from this file.
+//
+// The converter is intentionally narrow and **only** handles the
+// constructs the original three pages use:
 //
 //   * paragraph, heading (#-####), thematic break, bullet/ordered list,
 //     blockquote
@@ -51,11 +59,10 @@ import { generateBlockKey } from '@/shared/portable-text'
 // missing the construct. Extending the converter is a localised
 // change in this file.
 //
-// We do NOT depend on `remark-mdx`. The single JSX-flavoured construct
-// the corpus uses today (`<MusicPlayer>`) is matched as a raw `html`
-// mdast node (remark's default behaviour for HTML-shaped inline /
-// block fragments), so we skip ~250KB of MDX-grammar deps for a
-// script that runs once.
+// We do NOT depend on `remark-mdx`. The single JSX-flavoured
+// construct the corpus uses (`<MusicPlayer>`) is matched as a raw
+// `html` mdast node (remark's default behaviour for HTML-shaped
+// inline / block fragments), so we skip ~250KB of MDX-grammar deps.
 
 export interface MigrateMdxOptions {
   /**

@@ -57,7 +57,7 @@ import { Solution } from '@/ui/mdx/solutions/Solution'
 
 export interface PortableTextBodyProps {
   body: PortableTextBodyType
-  /** Optional thumbhash hydration map. Mirrors the MDX `<PageBody>` prop. */
+  /** Optional thumbhash hydration map. Mirrors the MDX `<PostBody>` prop. */
   imageMeta?: ImageMetaMap
   /**
    * Precomputed heading anchor IDs, in the order this body's heading

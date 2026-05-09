@@ -1,6 +1,6 @@
 import type { TOCItemType } from 'fumadocs-core/toc'
 
-import { pages as pageEntries, posts as postEntries } from '#source/server'
+import { posts as postEntries } from '#source/server'
 import { isValidElement, type ReactNode } from 'react'
 
 import type {
@@ -46,7 +46,6 @@ interface PublicTagEntry {
 const log = getLogger('content.catalog')
 
 type SourcePost = (typeof postEntries)[number]
-type SourcePage = (typeof pageEntries)[number]
 
 // Lookup `keys` against `items` and return the matching values in the
 // requested key order. Missing keys are silently dropped — callers want a
@@ -115,12 +114,17 @@ function compiledToc(entry: { toc: unknown; _exports?: Record<string, unknown> }
 }
 
 // Promote a `CmsPage` (DB-backed projection) into the catalog's
-// internal `Page` shape. Pages with no published revision still surface
-// so editors can link to them while drafting; the public detail route
-// renders an empty body in that case.
-function buildDbPage(page: CmsPage): Page {
+// internal `Page` shape. Pages with no published revision still
+// surface so editors can link to them while drafting; the public
+// detail route renders an empty body in that case.
+//
+// Exported because the page-detail route needs to project a draft
+// `CmsPage` (returned by `loadPageDraftPreviewBySlug`) into the
+// same `Page` shape the public branch consumes — so the JSX tree
+// reads the same loader payload regardless of whether the page
+// came from the catalog or from the admin preview path.
+export function buildDbPage(page: CmsPage): Page {
   return {
-    source: 'db',
     title: page.title,
     date: page.date,
     updated: page.updated,
@@ -140,34 +144,6 @@ function buildDbPage(page: CmsPage): Page {
     body: page.body,
     imageSources: page.imageSources,
     publishedRevisionId: page.publishedRevisionId,
-  }
-}
-
-function buildPage(page: SourcePage): Page {
-  const slug = page.slug
-  return {
-    source: 'mdx',
-    title: page.title,
-    date: page.date,
-    updated: page.updated,
-    comments: page.comments ?? true,
-    cover: page.cover,
-    og: page.og,
-    published: page.published ?? true,
-    summary: page.summary ?? '',
-    toc: page.toc ?? false,
-    // MDX pages embed `<Friends />` in their body directly (see
-    // `src/content/pages/links.mdx`); the meta toggle is a DB-only
-    // affordance, so MDX-sourced pages always read `false`. The
-    // detail route therefore won't double up — the body's
-    // `<Friends />` keeps rendering as before.
-    showFriends: false,
-    slug,
-    permalink: `/${slug}`,
-    body: page.body,
-    headings: toHeadings(compiledToc(page)),
-    mdxPath: page.info.path,
-    imageSources: (page._exports?.imageSources as string[] | undefined) ?? [],
   }
 }
 
@@ -265,29 +241,28 @@ export class ContentCatalog {
       poster: row.poster,
     }))
 
-    // Pages can be sourced from MDX (legacy) or from the `page` +
-    // `content` Postgres tables (the new editor). DB pages take
-    // precedence: if a DB row exists with the same slug as an MDX
-    // file, the MDX file is dropped from the catalog so the admin's
-    // live edit always wins. The dev environment keeps unpublished
-    // pages visible (matching the historical behaviour) so authors
-    // can preview drafts without flipping `published=true`.
-    let dbPages: Page[] = []
+    // Pages live exclusively in the `page` + `content` Postgres
+    // tables and are edited through `/wp-admin/pages`. The catalog
+    // ONLY exposes published, non-deleted, non-future-scheduled
+    // rows — `loadCatalogPages()` enforces all three gates in the
+    // service layer. There is intentionally no dev-only backdoor
+    // for unpublished pages: admin preview goes through a separate
+    // path (`loadPageDraftPreviewBySlug` + the page-detail loader's
+    // admin branch) so an authenticated admin can see what they
+    // just unpublished — and on already-live pages can preview the
+    // latest draft via `?draft=true` — while anonymous visitors keep
+    // getting 404 / the published version in every environment.
+    //
+    // A Postgres outage degrades to an empty page list — the
+    // public site still renders posts and taxonomies — so a
+    // transient DB failure can't take the whole surface offline.
+    let pages: Page[] = []
     try {
       const cmsPages = await loadCatalogPages()
-      dbPages = cmsPages.map(buildDbPage).filter((page) => page.published || !import.meta.env.PROD)
+      pages = cmsPages.map(buildDbPage)
     } catch (error) {
-      // Swallow DB outages so static MDX content can still render
-      // when Postgres is unreachable. The error is logged so an
-      // operator can see it in the structured log.
       log.warn('catalog.db_pages.load_failed', { error: String(error) })
     }
-    const dbPageSlugs = new Set(dbPages.map((page) => page.slug))
-    const mdxPages = pageEntries
-      .map(buildPage)
-      .filter((page) => !dbPageSlugs.has(page.slug))
-      .filter((page) => page.published || !import.meta.env.PROD)
-    const pages: Page[] = [...dbPages, ...mdxPages]
 
     const allPosts = postEntries
       .map(buildPost)
@@ -632,6 +607,15 @@ async function hydrateImages<
       if (dims.heightKey !== undefined) {
         dimWritable[dims.heightKey as PropertyKey] = lookup?.height
       }
+      // Re-stamp the cover URL with the live `?v=<updatedAtMs>` cache
+      // buster taken from the current `image` row. Without this, a
+      // re-upload of the same library image (which only mutates the
+      // S3 object + bumps `image.updatedAt`) would never reach
+      // browsers because the page / post / friend row still stores
+      // the URL snapshot from the original pick.
+      if (lookup?.publicUrl !== undefined && lookup.publicUrl !== null) {
+        ;(item as Record<SrcKey, string>)[srcKey] = lookup.publicUrl
+      }
     }),
   )
 }
@@ -671,12 +655,11 @@ function indexPosts(posts: Post[]) {
 
 // Cross-table fence for the global page↔post slug namespace.
 //
-// Page slugs come from two emitters: the DB `page` table (admin-
-// edited via `/wp-admin/pages/...`) and MDX page frontmatter
-// (`src/content/pages/**/*.mdx`). The DB-level `UNIQUE(slug)` on
-// the `page` table only catches page↔page collisions; the
-// page-service's pre-save `findPageMetaBySlug` check is also
-// page↔page only. **This is the only place the codebase
+// Page slugs come from a single emitter: the DB `page` table
+// (admin-edited via `/wp-admin/pages/...`). The DB-level
+// `UNIQUE(slug)` on that table only catches page↔page collisions,
+// and the page-service's pre-save `findPageMetaBySlug` check is
+// also page↔page only. **This is the only place the codebase
 // validates that no page slug collides with a post slug or post
 // alias.**
 //

@@ -46,9 +46,7 @@ export interface ClientPage {
    * at the bottom of the body. The grid lives **outside** the body —
    * the PortableText dialect deliberately has no friends block, so
    * the operator can flip this on/off from the editor's right
-   * sidebar without re-publishing the body. Always `false` for
-   * MDX-sourced pages (those still embed `<Friends />` inline as an
-   * MDX component when they want the grid).
+   * sidebar without re-publishing the body.
    */
   showFriends: boolean
   slug: string

@@ -16,7 +16,7 @@ const samplePost = {
   body: () => null,
   imageSources: [],
 }
-const samplePage = { ...makePage({ slug: 'about' }), mdxPath: 'about.mdx', body: () => null, imageSources: [] }
+const samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
 const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 const sidebarSamples = makePostList(3, { slug: 'sidebar' })
@@ -68,9 +68,11 @@ vi.mock('@/server/catalog', () => ({
 
 vi.mock('@/ui/mdx/MdxContent', () => ({
   PostBody: () => null,
-  PageBody: () => null,
   preloadPostBody: vi.fn(async () => undefined),
-  preloadPageBody: vi.fn(async () => undefined),
+}))
+
+vi.mock('@/ui/portable-text/PortableTextBody', () => ({
+  PortableTextBody: () => null,
 }))
 
 vi.mock('@/server/comments/page-data', () => ({

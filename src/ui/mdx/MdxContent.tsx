@@ -2,20 +2,22 @@ import type { MDXComponents } from 'mdx/types'
 
 import browserCollections from '#source/browser'
 
-import type { Friend } from '@/shared/catalog'
-
 import { CodeBlock } from '@/ui/mdx/CodeBlock'
 import { FootnoteDefinition, FootnoteProvider, FootnoteReference } from '@/ui/mdx/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/mdx/image-meta-context'
 import { MdxImg } from '@/ui/mdx/MdxImg'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
-import { Friends } from '@/ui/mdx/page/Friends'
 import { Solution } from '@/ui/mdx/solutions/Solution'
 
 // Shared MDX component map for posts. The `img` override routes every
 // compiled `<img>` through `<MdxImg>`, which attaches the thumbhash
 // background placeholder and lazily resolves missing hashes at hydration
 // time for historical MDX builds.
+//
+// Pages used to live in a sibling Fumadocs collection with a similar
+// renderer (`pageClientLoader` / `<PageBody>`); they're now served
+// out of Postgres through `<PortableTextBody>`, so the only MDX
+// renderer left is the post one.
 const POST_MDX_COMPONENTS: MDXComponents = {
   MusicPlayer,
   Solution,
@@ -25,36 +27,6 @@ const POST_MDX_COMPONENTS: MDXComponents = {
   sup: FootnoteReference,
 }
 
-// `pageComponents` is called on every MDX body render, but `friends` is
-// loader-stable (the catalog reuses the same array reference across
-// revalidations). Cache the components map by friends reference so the
-// MDX subtree gets the same `MDXComponents` object — and the same inline
-// `Friends` component — across re-renders. That keeps `<Body components={…}/>`
-// from forcing every child component to reconcile against a fresh prop
-// identity on each parent render.
-const pageComponentsCache = new WeakMap<readonly Friend[], MDXComponents>()
-
-function pageComponents(friends: readonly Friend[]): MDXComponents {
-  const cached = pageComponentsCache.get(friends)
-  if (cached !== undefined) {
-    return cached
-  }
-
-  const friendsArray = [...friends]
-  const FriendsComponent = () => <Friends friends={friendsArray} />
-  const components: MDXComponents = {
-    MusicPlayer,
-    Solution,
-    img: MdxImg,
-    li: FootnoteDefinition,
-    pre: CodeBlock,
-    sup: FootnoteReference,
-    Friends: FriendsComponent,
-  }
-  pageComponentsCache.set(friends, components)
-  return components
-}
-
 const postClientLoader = browserCollections.posts.createClientLoader({
   id: 'posts',
   component(loaded) {
@@ -62,22 +34,6 @@ const postClientLoader = browserCollections.posts.createClientLoader({
     return (
       <FootnoteProvider>
         <Body components={POST_MDX_COMPONENTS} />
-      </FootnoteProvider>
-    )
-  },
-})
-
-interface PageLoaderProps {
-  friends: readonly Friend[]
-}
-
-const pageClientLoader = browserCollections.pages.createClientLoader<PageLoaderProps>({
-  id: 'pages',
-  component(loaded, props) {
-    const Body = loaded.default
-    return (
-      <FootnoteProvider>
-        <Body components={pageComponents(props.friends)} />
       </FootnoteProvider>
     )
   },
@@ -96,23 +52,6 @@ export function PostBody({ path, imageMeta }: PostBodyProps) {
   return <ImageMetaProvider value={imageMeta}>{postClientLoader.useContent(path)}</ImageMetaProvider>
 }
 
-export interface PageBodyProps {
-  path: string
-  friends: readonly Friend[]
-  imageMeta?: ImageMetaMap
-}
-
-// Render a page MDX body. Pages can embed `<Friends />`, so we pass the
-// friends list through as props instead of reading the catalog singleton
-// from inside the MDX components (which wouldn't serialize to the client).
-export function PageBody({ path, friends, imageMeta }: PageBodyProps) {
-  return <ImageMetaProvider value={imageMeta}>{pageClientLoader.useContent(path, { friends })}</ImageMetaProvider>
-}
-
 export async function preloadPostBody(path: string): Promise<void> {
   await postClientLoader.preload(path)
-}
-
-export async function preloadPageBody(path: string): Promise<void> {
-  await pageClientLoader.preload(path)
 }

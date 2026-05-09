@@ -5,6 +5,7 @@ import {
   EyeOffIcon,
   ImagePlusIcon,
   LinkIcon,
+  PencilLineIcon,
   SparklesIcon,
   XIcon,
 } from 'lucide-react'
@@ -128,6 +129,26 @@ export function localInputValueToIso(value: string): string | null {
   return new Date(ms).toISOString()
 }
 
+/**
+ * Revision-side projection of where the page sits in its versioning
+ * lifecycle. Built by the editor shell from `detail.latestRevision` /
+ * `detail.publishedRevision` and threaded into the sidebar so the
+ * 发布状态 card can show 「当前草稿 R11 · 已发布 R10」 without the
+ * sidebar reaching back into server DTOs. Independent of
+ * `SidebarPublishStatus` — that one tracks visibility (offline /
+ * scheduled / live), this one tracks the draft↔published version
+ * relationship.
+ */
+export type SidebarRevisionSummary =
+  | { kind: 'no-revision' }
+  // Latest committed revision *is* the currently-promoted one — no
+  // newer draft sitting on top.
+  | { kind: 'published-current'; revisionNo: number }
+  // A draft revision is ahead of the (possibly missing) published
+  // revision. Both numbers are surfaced in the UI so the operator
+  // can instantly compare 草稿 vs 已发布.
+  | { kind: 'draft-ahead'; draftRevisionNo: number; publishedRevisionNo: number | null }
+
 // High-level "where is this page in its lifecycle?" used to render
 // the badge inside the 基本信息 card. The shell derives the value
 // from server state + `meta.published` + `meta.publishedAt` and
@@ -173,6 +194,22 @@ export interface MetaSidebarProps {
    */
   ogPreviewSlug?: string | null
   /**
+   * Revision-versioning summary rendered alongside the visibility
+   * badge inside 发布状态. `null` ⇒ create mode / no revision yet,
+   * which renders as 「当前还没有保存的版本」 inline. The shell owns
+   * the projection because it has direct access to
+   * `detail.latestRevision` / `publishedRevision`; the sidebar is
+   * pure-props.
+   */
+  revisionSummary?: SidebarRevisionSummary | null
+  /**
+   * Inline autosave / 已保存 indicator. Rendered next to the
+   * visibility badge so the operator sees publish lifecycle and
+   * autosave activity in one glance. Shell-owned — the sidebar
+   * doesn't model the autosave state machine.
+   */
+  statusIndicator?: React.ReactNode
+  /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
    * once a page has been saved (creating mode renders nothing).
@@ -183,7 +220,16 @@ export interface MetaSidebarProps {
 // Right-pane metadata panel for the page editor. Lives in its own
 // component so the editor route can swap the right pane between this
 // (default) and a live preview without re-mounting the editor.
-export function MetaSidebar({ draft, onChange, disabled, publishStatus, ogPreviewSlug, extras }: MetaSidebarProps) {
+export function MetaSidebar({
+  draft,
+  onChange,
+  disabled,
+  publishStatus,
+  ogPreviewSlug,
+  revisionSummary,
+  statusIndicator,
+  extras,
+}: MetaSidebarProps) {
   const set = <K extends keyof PageMetaDraft>(key: K, value: PageMetaDraft[K]) => onChange({ ...draft, [key]: value })
 
   return (
@@ -195,6 +241,8 @@ export function MetaSidebar({ draft, onChange, disabled, publishStatus, ogPrevie
         <CardContent className="grid gap-4">
           <PublishStatusRow
             status={publishStatus ?? 'never-saved'}
+            revisionSummary={revisionSummary ?? null}
+            statusIndicator={statusIndicator}
             publishedAt={draft.publishedAt}
             onChangePublishedAt={(value) => set('publishedAt', value)}
             disabled={disabled}

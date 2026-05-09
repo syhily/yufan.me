@@ -44,11 +44,19 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
         placement: 'top',
         offset: 8,
       }}
-      shouldShow={({ editor: instance, from, to }) => {
+      shouldShow={({ editor: instance, state, from, to }) => {
         if (!instance.isEditable) {
           return false
         }
         if (instance.isActive('table')) {
+          return false
+        }
+        // Hide when an atom node is the active selection (image,
+        // blockCard, …). Those nodes own their own NodeView UI for
+        // editing — the inline-format affordances in this menu would
+        // float uselessly above them and trap focus.
+        const nodeSelection = (state.selection as { node?: { isAtom?: boolean } }).node
+        if (nodeSelection?.isAtom === true) {
           return false
         }
         // Hide on collapsed selections unless the cursor sits inside

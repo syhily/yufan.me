@@ -39,36 +39,290 @@ export function inlineCharDiff(left: string, right: string): InlineDiffPart[] {
   return result.map(([op, text]) => ({ op: op as -1 | 0 | 1, text }))
 }
 
-// Align two bodies by `_key`. The output preserves the order in which
-// each block first appears, leaning on the **left** body for shared
-// blocks (so the caller renders the side they care most about on the
-// left). This is intentionally simpler than a Myers diff — for the
-// small bodies we care about (≤ a few hundred blocks) the per-key
-// alignment is good enough and renders predictably.
+// Align two bodies in-order so inserted / deleted blocks render at
+// their actual position. Strategy, in priority order:
+//
+//   1. Compute the longest common subsequence (LCS) over a per-block
+//      "anchor" — the `_key` if both sides agree on it, otherwise a
+//      content fingerprint (`_type` + normalised text / JSON). This
+//      anchors blocks that survived a Tiptap → PT round-trip even
+//      when the editor regenerated a key on save.
+//   2. Walk both sides in order. Anchored pairs become `unchanged`
+//      (or `changed` when the JSON differs but the anchor matches).
+//      The blocks between two consecutive anchors form a "gap"; we
+//      pair them up greedily as `changed` (when the per-block text
+//      similarity is high enough to be a clear edit), and emit any
+//      remainder as `leftOnly` / `rightOnly` interleaved at the gap
+//      position.
+//
+// This mirrors what jsdiff / react-diff-viewer / VS Code's diff
+// editor do at the line level — a Myers/Hunt LCS gives you the
+// proper inline placement of an inserted run instead of pushing
+// every later block off-by-one. Bodies are small (≤ a few hundred
+// blocks) so the O(n·m) LCS table is comfortably fine.
 export function diffBodies(leftBody: PortableTextBody, rightBody: PortableTextBody): DiffEntry[] {
-  const rightByKey = new Map(rightBody.map((block) => [block._key, block]))
-  const leftByKey = new Map(leftBody.map((block) => [block._key, block]))
+  const leftAnchors = leftBody.map((block) => anchorFor(block))
+  const rightAnchors = rightBody.map((block) => anchorFor(block))
+  const matches = lcsMatches(leftAnchors, rightAnchors)
+
   const entries: DiffEntry[] = []
-  for (const block of leftBody) {
-    const counterpart = rightByKey.get(block._key) ?? null
-    if (counterpart === null) {
-      entries.push({ key: block._key, status: 'leftOnly', leftBlock: block, rightBlock: null })
-    } else if (sameBlock(block, counterpart)) {
-      entries.push({ key: block._key, status: 'unchanged', leftBlock: block, rightBlock: counterpart })
-    } else {
-      entries.push({ key: block._key, status: 'changed', leftBlock: block, rightBlock: counterpart })
-    }
+  let li = 0
+  let ri = 0
+  for (const [matchedLeft, matchedRight] of matches) {
+    flushGap(leftBody.slice(li, matchedLeft), rightBody.slice(ri, matchedRight), entries)
+    const left = leftBody[matchedLeft]
+    const right = rightBody[matchedRight]
+    // LCS-matched anchors are equal under `canonicalize` /
+    // `resolveMarks`, so the rendered content matches by construction.
+    entries.push({ key: left._key, status: 'unchanged', leftBlock: left, rightBlock: right })
+    li = matchedLeft + 1
+    ri = matchedRight + 1
   }
-  for (const block of rightBody) {
-    if (!leftByKey.has(block._key)) {
-      entries.push({ key: block._key, status: 'rightOnly', leftBlock: null, rightBlock: block })
-    }
-  }
+  flushGap(leftBody.slice(li), rightBody.slice(ri), entries)
   return entries
 }
 
-function sameBlock(left: Block, right: Block): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
+// Pair up the blocks inside a single gap between two LCS anchors.
+// Same-position blocks with high textual similarity become `changed`
+// (typing inside an existing block); the leftover tail emits in
+// place as `leftOnly` / `rightOnly` so an inserted run shows up as
+// a contiguous green strip on the right and a matching dashed
+// placeholder on the left.
+function flushGap(leftGap: Block[], rightGap: Block[], entries: DiffEntry[]): void {
+  const pairs = Math.min(leftGap.length, rightGap.length)
+  let paired = 0
+  while (paired < pairs) {
+    const left = leftGap[paired]
+    const right = rightGap[paired]
+    if (!shouldPairAsChanged(left, right)) {
+      break
+    }
+    entries.push({ key: left._key, status: 'changed', leftBlock: left, rightBlock: right })
+    paired += 1
+  }
+  for (let i = paired; i < leftGap.length; i++) {
+    const block = leftGap[i]
+    entries.push({ key: block._key, status: 'leftOnly', leftBlock: block, rightBlock: null })
+  }
+  for (let i = paired; i < rightGap.length; i++) {
+    const block = rightGap[i]
+    entries.push({ key: block._key, status: 'rightOnly', leftBlock: null, rightBlock: block })
+  }
+}
+
+// Two blocks are paired as a `changed` edit (rather than rendered
+// as a delete + insert) when their types match AND we can argue
+// they're the "same" block at different states. Different `_type`s
+// always split. Same-`_key` always pairs (the editor explicitly
+// kept the identity). Otherwise text blocks pair when they share a
+// reasonable token overlap so a paragraph rewrite still shows
+// inline char-level diff instead of a wholesale red/green swap.
+function shouldPairAsChanged(left: Block, right: Block): boolean {
+  if (left._type !== right._type) {
+    return false
+  }
+  if (left._key === right._key) {
+    return true
+  }
+  if (left._type === 'block' && right._type === 'block') {
+    const leftText = bodyToPlainText([left]).trim()
+    const rightText = bodyToPlainText([right]).trim()
+    return textSimilarity(leftText, rightText) >= 0.5
+  }
+  return false
+}
+
+// Cheap Sørensen–Dice over the union of word tokens. Returns 1 for
+// identical strings and 0 for fully disjoint ones. Good enough to
+// distinguish "small edit on the same paragraph" from "two
+// unrelated paragraphs that happened to land in the same gap".
+function textSimilarity(a: string, b: string): number {
+  if (a === b) {
+    return 1
+  }
+  if (a === '' || b === '') {
+    return 0
+  }
+  const aTokens = tokenize(a)
+  const bTokens = tokenize(b)
+  if (aTokens.size === 0 || bTokens.size === 0) {
+    return 0
+  }
+  let intersection = 0
+  for (const token of aTokens) {
+    if (bTokens.has(token)) {
+      intersection += 1
+    }
+  }
+  return (2 * intersection) / (aTokens.size + bTokens.size)
+}
+
+function tokenize(text: string): Set<string> {
+  const tokens = new Set<string>()
+  for (const word of text.toLowerCase().split(/[\s\p{P}]+/u)) {
+    if (word !== '') {
+      tokens.add(word)
+    }
+  }
+  // Add CJK character bigrams so similarity works on Chinese text
+  // that has no spaces. ASCII words above already cover Latin prose.
+  const cjk = text.match(/[\p{Script=Han}]+/gu) ?? []
+  for (const run of cjk) {
+    for (let i = 0; i < run.length - 1; i++) {
+      tokens.add(run.slice(i, i + 2))
+    }
+    if (run.length === 1) {
+      tokens.add(run)
+    }
+  }
+  return tokens
+}
+
+// Decorator marks are reserved short names (bold, italic, …) that
+// the editor never registers as `markDef`s. Anything else in
+// `marks[]` is a `_key` lookup into the block's own `markDefs[]`.
+const DECORATOR_MARKS = new Set(['strong', 'em', 'underline', 'strike-through', 'code'])
+
+// Replace every span's `marks: ['<key>']` with the inlined markDef
+// (or pass through known decorators), then drop the now-redundant
+// `markDefs[]` array. Two text blocks with the same link href but
+// different synthesised key names produce the same shape after
+// this pass.
+function resolveMarks(block: Block): Block {
+  if (block._type !== 'block') {
+    return block
+  }
+  const markDefs = (block as { markDefs?: ReadonlyArray<{ _key: string } & Record<string, unknown>> }).markDefs ?? []
+  const lookup = new Map<string, Record<string, unknown>>()
+  for (const def of markDefs) {
+    const { _key: _ignored, ...rest } = def
+    lookup.set(def._key, rest)
+  }
+  const resolvedChildren = (block.children ?? []).map((child) => {
+    if (child._type !== 'span') {
+      return child
+    }
+    const original = (child as { marks?: ReadonlyArray<string> }).marks ?? []
+    if (original.length === 0) {
+      return child
+    }
+    const resolved = original.map((name) =>
+      DECORATOR_MARKS.has(name) ? { decorator: name } : (lookup.get(name) ?? { unresolved: name }),
+    )
+    return { ...child, marks: resolved }
+  })
+  // Drop `markDefs` from the canonical view; the resolved marks
+  // already carry every payload `markDefs` contributed.
+  const { markDefs: _drop, ...rest } = block as Record<string, unknown>
+  return { ...rest, children: resolvedChildren } as Block
+}
+
+type Json = string | number | boolean | null | { [k: string]: Json } | Json[]
+
+function canonicalize(value: unknown): Json | undefined {
+  if (Array.isArray(value)) {
+    const items: Json[] = []
+    for (const entry of value) {
+      const normalized = canonicalize(entry)
+      if (normalized !== undefined) {
+        items.push(normalized)
+      }
+    }
+    return items.length === 0 ? undefined : items
+  }
+  if (value !== null && typeof value === 'object') {
+    const out: { [k: string]: Json } = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (k === '_key') {
+        continue
+      }
+      const normalized = canonicalize(v)
+      if (normalized === undefined) {
+        continue
+      }
+      out[k] = normalized
+    }
+    return Object.keys(out).length === 0 ? undefined : out
+  }
+  if (value === undefined) {
+    return undefined
+  }
+  return value as Json
+}
+
+function canonicalStringify(value: Json | undefined): string {
+  if (value === undefined) {
+    return ''
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => canonicalStringify(entry)).join(',')}]`
+  }
+  if (value !== null && typeof value === 'object') {
+    const keys = Object.keys(value).sort()
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalStringify(value[k])}`).join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
+// Build a per-block anchor used by the LCS pass.
+//
+// The anchor must be **stable across edits we don't care about**
+// (key regeneration, span re-splitting, empty-array vs missing,
+// markDef key reshuffling) and **discriminating enough** that two
+// paragraphs with different visible text don't accidentally fold
+// together. We use the same `canonicalize` + `resolveMarks` pass
+// that `sameBlockContent` uses — so anchor equality and "unchanged"
+// equality are the same predicate. This makes the LCS provably
+// optimal for the unchanged-vs-changed decision: every LCS match
+// emits as `unchanged`, and inserts/deletes/edits land in the gaps.
+//
+// Trade-off: a block whose only change is a typo (text mostly the
+// same, one character different) will NOT anchor and will fall
+// into a gap. The `flushGap` greedy pass below pairs it back up as
+// `changed` so the operator still sees the inline char diff.
+function anchorFor(block: Block): string {
+  return canonicalStringify(canonicalize(resolveMarks(block))) || `empty:${block._type}`
+}
+
+// Hunt–Szymanski-ish LCS: for short anchor sequences (the docs we
+// diff have ≤ a few hundred blocks each) the textbook O(n·m) DP is
+// fast enough and far simpler than the patience / Myers variants.
+// Returns the matched index pairs in left-then-right order.
+function lcsMatches(left: readonly string[], right: readonly string[]): Array<[number, number]> {
+  const n = left.length
+  const m = right.length
+  if (n === 0 || m === 0) {
+    return []
+  }
+  const dp: number[] = Array.from({ length: (n + 1) * (m + 1) }, () => 0)
+  const stride = m + 1
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (left[i - 1] === right[j - 1]) {
+        dp[i * stride + j] = dp[(i - 1) * stride + (j - 1)] + 1
+      } else {
+        const up = dp[(i - 1) * stride + j]
+        const leftCell = dp[i * stride + (j - 1)]
+        dp[i * stride + j] = up >= leftCell ? up : leftCell
+      }
+    }
+  }
+  const matches: Array<[number, number]> = []
+  let i = n
+  let j = m
+  while (i > 0 && j > 0) {
+    if (left[i - 1] === right[j - 1]) {
+      matches.push([i - 1, j - 1])
+      i -= 1
+      j -= 1
+    } else if (dp[(i - 1) * stride + j] >= dp[i * stride + (j - 1)]) {
+      i -= 1
+    } else {
+      j -= 1
+    }
+  }
+  matches.reverse()
+  return matches
 }
 
 export interface DiffPanelProps {

@@ -1,29 +1,39 @@
-// One-shot CLI: migrate `src/content/pages/*.mdx` into the
-// DB-backed `page` + `content` tables.
+// CLI: migrate an MDX page corpus into the DB-backed `page` +
+// `content` tables.
 //
 // Run with:
 //
-//   vp dlx vite-node --env-file=.env scripts/migrate-mdx-pages.ts          # dry run
-//   vp dlx vite-node --env-file=.env scripts/migrate-mdx-pages.ts --apply  # actually write
-//   vp dlx vite-node --env-file=.env scripts/migrate-mdx-pages.ts --apply --force  # ignore the "already in DB" idempotency guard
+//   vp dlx vite-node --env-file=.env scripts/migrate/pages/cli.ts \
+//     --source-dir <abs-path>                                     # dry run
+//   vp dlx vite-node --env-file=.env scripts/migrate/pages/cli.ts \
+//     --source-dir <abs-path> --apply                             # actually write
+//   vp dlx vite-node --env-file=.env scripts/migrate/pages/cli.ts \
+//     --source-dir <abs-path> --apply --force                     # ignore the "already in DB" idempotency guard
 //
-// The script never deletes the source MDX file — the catalog already
-// prefers DB rows over MDX of the same slug
-// (`buildDbPage(...).filter((p) => !dbPageSlugs.has(p.slug))` in
-// `@/server/catalog/catalog`), so the MDX stays as a fail-safe in
-// case the migration needs to be re-run or rolled back.
+// `--source-dir` points at a directory of `*.mdx` files (top-level,
+// non-recursive — the historical static-page corpus had no
+// subdirectories). It is required: the project no longer ships an
+// in-tree `src/content/pages` collection, so the operator must
+// physically stage the input next to the production environment
+// before importing.
+//
+// The script never deletes the source MDX file. Re-running with
+// the same input is safe: the slug-already-exists guard turns
+// every previously-imported page into a `skipped`, and `--force`
+// only opts a known slug back into the dry-run preview (it does
+// NOT update an existing row).
 //
 // What this script does:
 //
-//   1. Walk every `src/content/pages/*.mdx`.
+//   1. Walk every `*.mdx` file in `--source-dir`.
 //   2. Parse YAML frontmatter (title / slug / date / cover / summary
 //      / published / comments / toc / og).
-//   3. Run the body through `convertMdxBodyToPortableText` from
-//      `@/server/cms/pages/migrate-mdx`. The converter knows about
-//      paragraphs, headings, lists, blockquotes, images,
-//      `<MusicPlayer>` and `<Friends />`, and throws on anything
-//      richer (so a future MDX page that grows a fenced code block
-//      or a table can't silently lose content).
+//   3. Run the body through `convertMdxBodyToPortableText` from the
+//      sibling `mdx-to-portable-text.ts`. The converter knows about
+//      paragraphs, headings, lists, blockquotes, images and
+//      `<MusicPlayer>`, and throws on anything richer (so a future
+//      MDX page that grows a fenced code block or a table can't
+//      silently lose content).
 //   4. Resolve cover URL + every inline image URL through
 //      `resolveSrcToStoragePath` + `findImageByStoragePath` so the
 //      saved PortableText carries `imageId` / `storagePath` /
@@ -44,10 +54,8 @@
 
 import { readFile, readdir } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { parse as parseYaml } from 'yaml'
 
-import { convertMdxBodyToPortableText, type MigrateMdxOptions } from '@/server/cms/pages/migrate-mdx'
 import { findPageMetaBySlug } from '@/server/cms/pages/repository'
 import { createPage, publishLatest } from '@/server/cms/pages/service'
 import { findImageByStoragePath } from '@/server/db/query/image'
@@ -57,7 +65,9 @@ import { getPublicBaseUrl } from '@/server/images/storage'
 import { getLogger } from '@/server/logger'
 import { hydrateBlogSettings } from '@/server/settings/snapshot'
 
-const log = getLogger('scripts.migrate-mdx-pages')
+import { convertMdxBodyToPortableText, type MigrateMdxOptions } from './mdx-to-portable-text.ts'
+
+const log = getLogger('scripts.migrate.pages')
 
 interface MdxFrontmatter {
   title: string
@@ -94,12 +104,20 @@ interface PerPageReport {
 interface CliFlags {
   apply: boolean
   force: boolean
+  sourceDir: string
 }
 
 function parseCliFlags(argv: readonly string[]): CliFlags {
   const apply = argv.includes('--apply')
   const force = argv.includes('--force')
-  return { apply, force }
+  const sourceDirIdx = argv.indexOf('--source-dir')
+  if (sourceDirIdx === -1 || sourceDirIdx === argv.length - 1) {
+    throw new Error(
+      '`--source-dir <abs-path>` is required. Point it at a directory of MDX files exported from the legacy site.',
+    )
+  }
+  const sourceDir = path.resolve(argv[sourceDirIdx + 1])
+  return { apply, force, sourceDir }
 }
 
 async function listMdxFiles(dir: string): Promise<string[]> {
@@ -373,17 +391,14 @@ async function main(): Promise<void> {
     })
   }
 
-  const here = path.dirname(fileURLToPath(import.meta.url))
-  const repoRoot = path.resolve(here, '..')
-  const pagesDir = path.join(repoRoot, 'src/content/pages')
-
-  const files = await listMdxFiles(pagesDir)
+  const files = await listMdxFiles(flags.sourceDir)
   if (files.length === 0) {
-    log.info('migrate.no_pages', { pagesDir })
+    log.info('migrate.no_pages', { sourceDir: flags.sourceDir })
     return
   }
 
   log.info('migrate.start', {
+    sourceDir: flags.sourceDir,
     pages: files.length,
     apply: flags.apply,
     force: flags.force,

@@ -10,13 +10,13 @@ import { defineConfig } from 'vite-plus'
 
 import oxfmtConfig from './oxfmt.config.ts'
 import oxlintConfig from './oxlint.config.ts'
-import sourceConfig, { pages, posts } from './source.config.ts'
+import sourceConfig, { posts } from './source.config.ts'
 
 // Vite+ reads `fmt` / `lint` / `staged` only from a static `defineConfig({...})`
 // export (functional / async configs are not supported — see
 // https://viteplus.dev/guide/troubleshooting). `mdx()` returns a Promise, so
 // we resolve it at the module level via top-level `await`.
-const mdxPlugin = await mdx({ default: sourceConfig, pages, posts })
+const mdxPlugin = await mdx({ default: sourceConfig, posts })
 
 export default defineConfig({
   fmt: oxfmtConfig as OxfmtConfig,

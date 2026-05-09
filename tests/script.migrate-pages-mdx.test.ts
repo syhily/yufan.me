@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { Block, ImageBlock, MusicPlayerBlock, TextBlock } from '@/shared/portable-text'
 
-import { convertMdxBodyToPortableText } from '@/server/cms/pages/migrate-mdx'
 import { validatePortableTextBody } from '@/shared/portable-text'
 
+import { convertMdxBodyToPortableText } from '../scripts/migrate/pages/mdx-to-portable-text.ts'
+
 // Unit tests for the MDX → PortableText converter that powers the
-// one-shot `scripts/migrate-mdx-pages.mjs` runner. The converter is
-// intentionally narrow (handles only the constructs the small static-
-// page corpus uses), so the tests focus on:
+// page-import migration CLI (`scripts/migrate/pages/cli.ts`). The
+// converter is intentionally narrow (handles only the constructs
+// the original static-page corpus used), so the tests focus on:
 //
 //   1. Each supported mdast construct projects to the expected PT
 //      block / span shape.

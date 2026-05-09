@@ -6,12 +6,10 @@ import { makePage } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
 import { regularSession } from './_helpers/session'
 
-// Plan §八.集成 calls for an end-to-end sanity check that a Page
-// served from the new `page + content` tables flows through the
-// `page.detail` loader the same way an MDX-backed Page does — same
-// SEO bundle, same comments wiring, same shell — but with a
-// PortableText body in the loader payload that the React component
-// then routes to `<PortableTextBody>`.
+// Pages live exclusively in the `page` + `content` Postgres tables,
+// so this test pins the contract that the `page.detail` loader
+// returns the row's PortableText body straight through (the React
+// component renders it via `<PortableTextBody>`).
 
 const session = regularSession()
 
@@ -50,7 +48,6 @@ const dbPage = {
     comments: false,
     toc: false,
   }),
-  source: 'db' as const,
   body: dbPageBody,
   imageSources: ['https://cdn.example.com/photo.jpg'],
   publishedRevisionId: 42n,
@@ -136,10 +133,10 @@ beforeEach(() => {
 })
 
 describe('routes/page.detail loader (DB-backed page)', () => {
-  it('routes a DB-source Page to the PortableText body branch', async () => {
+  it('returns the page row body as PortableText', async () => {
     const result = unwrapLoaderData<{
       page: { permalink: string; title: string }
-      bodyData: { source: 'mdx' | 'db'; body?: PortableTextBody; mdxPath?: string }
+      body: PortableTextBody
       imageMeta: Record<string, unknown>
     }>(
       await pageRoute.loader(
@@ -152,9 +149,8 @@ describe('routes/page.detail loader (DB-backed page)', () => {
     )
 
     expect(result.page.permalink).toBe('/about')
-    expect(result.bodyData.source).toBe('db')
     // The PortableText body shape is preserved end-to-end.
-    expect(result.bodyData.body).toEqual(dbPageBody)
+    expect(result.body).toEqual(dbPageBody)
     // Image meta resolution still happens (mocked to empty), proving
     // the loader doesn't short-circuit it for DB pages.
     expect(result.imageMeta).toEqual({})

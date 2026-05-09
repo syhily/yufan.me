@@ -19,23 +19,13 @@ export type {
   Tag,
 } from '@/shared/catalog'
 
-// Page entries can come from two sources during the MDX → PortableText
-// migration: the historical Fumadocs MDX collection and the new
-// `page` + `content` Postgres tables. The `source` discriminator
-// lets the detail route pick the right renderer; everything else
-// (URLs, SEO, comment threading) is identical because both sources
-// project into the same `ClientPage` shape.
-export type MdxPage = ClientPage & {
-  source: 'mdx'
-  body: MDXContent
-  /** Path into the Fumadocs MDX browser collection (e.g. "about.mdx"). */
-  mdxPath: string
-  /** Image URLs discovered at build time from the MDX AST. */
-  imageSources: string[]
-}
-
-export type DbPage = ClientPage & {
-  source: 'db'
+// Pages live exclusively in the `page` + `content` Postgres tables
+// and are edited through `/wp-admin/pages`. The historical Fumadocs
+// MDX collection (`src/content/pages/*.mdx`) and its discriminated
+// `MdxPage | DbPage` union were retired together with the one-shot
+// migration script; the catalog projects each `page` row directly
+// into this single shape.
+export type Page = ClientPage & {
   /** PortableText body of the published revision (empty when the page has no published revision yet). */
   body: PortableTextBody
   /** S3 storage paths referenced by `image` blocks in the body. */
@@ -43,8 +33,6 @@ export type DbPage = ClientPage & {
   /** `content.id` of the published revision, used as a cache key. */
   publishedRevisionId: bigint | null
 }
-
-export type Page = MdxPage | DbPage
 
 export type Post = ClientPost & {
   body: MDXContent
@@ -61,10 +49,6 @@ export function toClientPost(post: Post): ClientPost {
 }
 
 export function toClientPage(page: Page): ClientPage {
-  if (page.source === 'mdx') {
-    const { source: _source, body: _body, mdxPath: _mdxPath, imageSources: _imageSources, ...rest } = page
-    return rest
-  }
-  const { source: _source, body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = page
+  const { body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = page
   return rest
 }

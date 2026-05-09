@@ -57,17 +57,21 @@ export function RevisionHistoryDrawer({
   const [revisions, setRevisions] = useState<AdminRevisionDto[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const { submit, isPending } = useApiFetcher<ListPageRevisionsInput, ListPageRevisionsOutput>(LIST_REVISIONS, {
+  const { load, isPending } = useApiFetcher<ListPageRevisionsInput, ListPageRevisionsOutput>(LIST_REVISIONS, {
     onSuccess: (payload) => setRevisions(payload.revisions),
   })
 
   // Fetch on first open. Re-opening reuses the cache; the operator
-  // refetches through the explicit refresh button.
+  // refetches through the explicit refresh button. The endpoint is
+  // GET-only — `load(query)` URL-encodes `id` into the search params,
+  // which is the channel the loader (`readSearchInput`) expects.
+  // Calling `submit({ id })` would route through React Router's JSON
+  // body channel which is invalid for GET and surfaces as a 400/500.
   useEffect(() => {
     if (open && revisions === null) {
-      submit({ id: pageId })
+      load({ id: pageId })
     }
-  }, [open, revisions, submit, pageId])
+  }, [open, revisions, load, pageId])
 
   // Clear the selected detail view whenever the drawer closes so
   // the next open starts on the list.
@@ -123,7 +127,7 @@ export function RevisionHistoryDrawer({
             onSelect={setSelectedId}
             onRefresh={() => {
               setRevisions(null)
-              submit({ id: pageId })
+              load({ id: pageId })
             }}
           />
         ) : (
@@ -264,9 +268,7 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 rounded-md border bg-card p-3 text-xs text-muted-foreground">
-        <span>
-          选择此版本会用历史正文替换编辑器内容；更改不会立刻保存到服务器，需要再点一次「保存草稿」或「发布」。
-        </span>
+        <span>选择此版本会用历史正文替换编辑器内容；更改不会立刻保存到服务器，需要再点一次「保存」或「发布」。</span>
         <Button onClick={onAdopt} disabled={isCurrent} title={isCurrent ? '当前正在编辑此版本' : '使用此版本'}>
           <CheckIcon /> {isCurrent ? '当前' : '选择此版本'}
         </Button>

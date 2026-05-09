@@ -1,5 +1,6 @@
 import type { ActionFunctionArgs } from 'react-router'
 
+import { ContentCatalog } from '@/server/catalog'
 import { uploadImageMetadataSchema } from '@/server/images/schema'
 import { uploadImage } from '@/server/images/service'
 import {
@@ -59,8 +60,9 @@ export async function action(args: ActionFunctionArgs) {
 
     const uploader = { id: BigInt(adminUser.id), name: adminUser.name }
 
+    let image
     if (metadata.kind === 'generic') {
-      const image = await uploadImage({
+      image = await uploadImage({
         kind: { kind: 'generic' },
         buffer,
         note: metadata.note ?? null,
@@ -68,11 +70,8 @@ export async function action(args: ActionFunctionArgs) {
         maxBytes: settings.upload.maxBytes,
         jpegQuality: settings.upload.jpegQuality,
       })
-      return { image }
-    }
-
-    if (metadata.kind === 'category') {
-      const image = await uploadImage({
+    } else if (metadata.kind === 'category') {
+      image = await uploadImage({
         kind: { kind: 'category', slug: metadata.slug },
         buffer,
         note: metadata.note ?? null,
@@ -80,17 +79,26 @@ export async function action(args: ActionFunctionArgs) {
         maxBytes: settings.upload.maxBytes,
         jpegQuality: settings.upload.jpegQuality,
       })
-      return { image }
+    } else {
+      image = await uploadImage({
+        kind: { kind: 'friend', host: metadata.host },
+        buffer,
+        note: metadata.note ?? null,
+        uploader,
+        maxBytes: settings.upload.maxBytes,
+        jpegQuality: settings.upload.jpegQuality,
+      })
     }
 
-    const image = await uploadImage({
-      kind: { kind: 'friend', host: metadata.host },
-      buffer,
-      note: metadata.note ?? null,
-      uploader,
-      maxBytes: settings.upload.maxBytes,
-      jpegQuality: settings.upload.jpegQuality,
-    })
+    // Re-uploads to a state-keyed slot (category cover / friend
+    // poster) overwrite the same S3 object, so the URL stored on the
+    // referencing rows doesn't change — but `image.updatedAt` does.
+    // Reset the catalog so the next render rebuilds with the fresh
+    // `?v=` cache buster derived from the new `updatedAt`. Generic
+    // re-uploads land at a fresh key and don't strictly need this,
+    // but keeping the reset unconditional is the simpler contract.
+    ContentCatalog.reset()
+
     return { image }
   })
 }

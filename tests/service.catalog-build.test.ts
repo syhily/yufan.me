@@ -78,22 +78,11 @@ vi.mock('#source/server', () => {
         info: { path: 'hidden.mdx', fullPath: '/x' },
       },
     ],
-    pages: [
-      {
-        slug: 'about',
-        title: 'About',
-        date: new Date('2023-01-01T00:00:00.000Z'),
-        updated: new Date('2023-01-01T00:00:00.000Z'),
-        cover: '',
-        og: undefined,
-        published: true,
-        comments: true,
-        toc: false,
-        summary: '',
-        body: () => null as never,
-        info: { path: 'about.mdx', fullPath: '/x' },
-      },
-    ],
+    // Pages used to live as a sibling Fumadocs collection here;
+    // they're now sourced exclusively from the `page` + `content`
+    // Postgres tables, so this mock no longer carries a `pages`
+    // entry. The DB-backed loader is mocked further down via
+    // `loadCatalogPagesMock`.
   }
 })
 
@@ -227,6 +216,28 @@ describe('services/catalog/ContentCatalog.build', () => {
   })
 
   it('permalinks set is the union of post and page permalinks', async () => {
+    const dbAboutDate = new Date('2026-05-01T00:00:00.000Z')
+    loadCatalogPagesMock.mockImplementationOnce(async () => [
+      {
+        title: 'About',
+        date: dbAboutDate,
+        updated: dbAboutDate,
+        comments: true,
+        cover: '',
+        og: undefined,
+        published: true,
+        summary: '',
+        toc: false,
+        showFriends: false,
+        slug: 'about',
+        permalink: '/about',
+        headings: [],
+        body: [],
+        imageSources: [],
+        publishedRevisionId: null,
+      },
+    ])
+    ContentCatalog.reset()
     const catalog = await ContentCatalog.get()
     expect(catalog.permalinks.has('/posts/hello')).toBe(true)
     expect(catalog.permalinks.has('/about')).toBe(true)
@@ -238,7 +249,7 @@ describe('services/catalog/ContentCatalog.build', () => {
     expect(a).toBe(b)
   })
 
-  it('DB-backed pages take precedence over MDX pages sharing the same slug', async () => {
+  it('projects DB pages straight into the catalog', async () => {
     const dbAboutDate = new Date('2026-05-01T00:00:00.000Z')
     loadCatalogPagesMock.mockImplementationOnce(async () => [
       {
@@ -271,23 +282,17 @@ describe('services/catalog/ContentCatalog.build', () => {
     const catalog = await ContentCatalog.get()
     const aboutPage = catalog.getPage('about')
     expect(aboutPage).toBeDefined()
-    expect(aboutPage?.source).toBe('db')
     expect(aboutPage?.title).toBe('About (DB)')
-    // The MDX `about.mdx` row is intentionally NOT exposed when
-    // a DB row covers the same slug — only one page surfaces per
-    // slug to avoid two competing renderings.
-    const mdxStillRendered = catalog.pages.filter((page) => page.slug === 'about' && page.source === 'mdx')
-    expect(mdxStillRendered).toEqual([])
+    expect(catalog.pages.map((page) => page.slug)).toEqual(['about'])
   })
 
-  it('falls back to MDX pages when the DB-page loader throws', async () => {
+  it('degrades to an empty page list when the DB-page loader throws', async () => {
     loadCatalogPagesMock.mockImplementationOnce(async () => {
       throw new Error('postgres unreachable')
     })
     ContentCatalog.reset()
     const catalog = await ContentCatalog.get()
-    const aboutPage = catalog.getPage('about')
-    expect(aboutPage).toBeDefined()
-    expect(aboutPage?.source).toBe('mdx')
+    expect(catalog.pages).toEqual([])
+    expect(catalog.getPage('about')).toBeUndefined()
   })
 })

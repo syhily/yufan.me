@@ -336,8 +336,7 @@ export const music = pgTable(
 //
 //   IMPORTANT: page slugs share **a single global namespace** with
 //   post slugs (`src/content/posts/**/*.mdx` frontmatter `slug` plus
-//   the `alias[]` aliases) and MDX page slugs
-//   (`src/content/pages/**/*.mdx` frontmatter `slug`). Even though
+//   the `alias[]` aliases). Even though
 //   the routes physically separate them (`/posts/:slug` vs
 //   `/:slug`), every catalog-side lookup —
 //   `getCatalog().getPost(slug) ?? getCatalog().getPage(slug)`,

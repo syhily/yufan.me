@@ -170,9 +170,9 @@ interface ResolvedSrc {
   storagePath: string
 }
 
-// Exported so one-off scripts (e.g. `scripts/migrate-mdx-pages.mjs`)
-// and any future server-side resolver can share the exact same
-// rule the SSR enhancer uses. Pure, no side effects.
+// Exported so the page-import migrator (`scripts/migrate/pages/cli.ts`)
+// and any future server-side resolver can share the exact same rule
+// the SSR enhancer uses. Pure, no side effects.
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (src.startsWith('http://') || src.startsWith('https://')) {
     if (publicBaseUrl !== null) {
@@ -309,6 +309,20 @@ export interface ImageThumbhashLookup {
   width: number
   height: number
   thumbhash?: string
+  /**
+   * Cache-busted public URL derived from the live `image` row's
+   * `updatedAt`. Callers that store covers as a frozen URL snapshot
+   * (page `cover`, post frontmatter `cover`, friend `poster`, …)
+   * should overwrite their stored URL with this value at render
+   * time so a re-upload to the same `image` row immediately
+   * invalidates browser / CDN caches without forcing the operator
+   * to re-pick the cover from the library.
+   *
+   * `null` when the storage section is unconfigured (no
+   * `publicBaseUrl` to join against) — callers should keep their
+   * original `src` in that case.
+   */
+  publicUrl: string | null
 }
 
 /**
@@ -351,6 +365,7 @@ export async function loadImageThumbhash(src: string): Promise<ImageThumbhashLoo
     width: meta.width,
     height: meta.height,
     thumbhash: meta.thumbhash ?? undefined,
+    publicUrl: publicBaseUrl === null ? null : resolvePublicUrl(meta, publicBaseUrl),
   }
 }
 

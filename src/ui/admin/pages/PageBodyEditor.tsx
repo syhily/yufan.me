@@ -9,6 +9,12 @@ import StarterKit from '@tiptap/starter-kit'
 import {
   BoldIcon,
   Code2Icon,
+  CodeIcon,
+  Heading1Icon,
+  Heading2Icon,
+  Heading3Icon,
+  Heading4Icon,
+  Heading5Icon,
   ImageIcon,
   ItalicIcon,
   LinkIcon,
@@ -18,7 +24,9 @@ import {
   MinimizeIcon,
   MinusIcon,
   Music2Icon,
+  PilcrowIcon,
   PlusIcon,
+  QuoteIcon,
   Redo2Icon,
   StrikethroughIcon,
   TableIcon,
@@ -166,14 +174,12 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
     }
   }, [])
 
-  // Toolbar density. `'auto'` lets a CSS @container query at the
-  // editor frame decide compact vs full based on the editor pane's
-  // own width — which is the right axis (preview / metadata sheet
-  // toggles narrow the editor, viewport doesn't). The two explicit
-  // overrides (`'compact'` / `'full'`) give the operator a manual
-  // pin that survives navigations via localStorage. The auto path
-  // is the default because most users never want to think about
-  // this knob.
+  // Toolbar density. Two-state toggle: `'full'` renders every group
+  // inline (the toolbar still wraps to multiple rows on its own when
+  // horizontal space is tight); `'compact'` collapses the inserts
+  // group into a single 「插入 ▼」Popover and the block-style group
+  // into a Select. The preference survives navigations via
+  // localStorage.
   const [toolbarDensity, setToolbarDensity] = useToolbarDensityPreference()
 
   const insertImage = useCallback(
@@ -277,13 +283,18 @@ interface ToolbarProps {
 
 // Toolbar layered into a stack of `ToolbarGroup`s so the operator
 // can reach every common authoring action without leaving the canvas:
-//   1. History — undo / redo.
+//   1. History — undo / redo (full mode only).
 //   2. Block style — single Select covering paragraph / H1–H5 /
 //      blockquote / code block.
 //   3. Inline marks — bold / italic / underline / strike / inline code.
 //   4. Lists — bullet / ordered.
 //   5. Inserts — image / music / table / link / hr.
 //   6. Editor toggles — drag handle, density.
+// Undo / redo only render in 'full' density. Tiptap's History
+// extension wires Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z in every mode, so
+// 'compact' falls back to the keyboard to save the two slots —
+// 'full' surfaces the buttons because they doubled as a live
+// "history is reachable" affordance for mouse-first operators.
 // Wrapping rules: the outer container is `flex flex-wrap` so the
 // toolbar grows to a second / third row when a row can no longer
 // fit. Each `ToolbarGroup` is itself `flex flex-nowrap` and carries
@@ -293,54 +304,27 @@ interface ToolbarProps {
 // `gap-y-1` keeps the row rhythm tight even with two or three rows
 // of buttons.
 //
-// Density modes:
-// - 'full' (manual): every group renders inline.
-// - 'compact' (manual): the Inserts group collapses into a single
-//   「插入 ▼」Popover whose body carries the SAME buttons. Saves
-//   ~5 button-widths and dodges a wrap row when the editor pane is
-//   squeezed by preview / metadata sheet toggles.
-// - 'auto' (the default): a `ResizeObserver` watches the toolbar
-//   wrapper and switches to compact below `TOOLBAR_COMPACT_THRESHOLD`,
-//   reverts to full above. The observer is debounced via the browser's
-//   batching, so the only React re-render happens on the threshold
-//   crossing — not on every pixel of resize.
+// Density modes (two-state toggle — no automatic mode):
+// - 'full': every group renders inline. The outer `flex flex-wrap`
+//   container handles overflow naturally — toolbar grows to a 2nd or
+//   3rd row when a row can no longer fit, breaking only between
+//   groups.
+// - 'compact': the Inserts group collapses into a single 「插入 ▼」
+//   Popover whose body carries the SAME buttons; the Block-style
+//   group falls back to a Select. Saves ~5 button-widths.
 //
 // The picker triggers (image / music) own their own picker dialogs,
 // so we MUST mount the inserts buttons exactly once per render to
-// avoid duplicate dialog state. That's why we resolve the
-// `effectiveDensity` first and pick a single branch, instead of
-// rendering both branches and toggling visibility with CSS.
+// avoid duplicate dialog state. That's why we branch on `density`
+// first and pick a single branch, instead of rendering both
+// branches and toggling visibility with CSS.
 //
 // The slash menu (`/`) and bubble menu still cover the same surface
 // for keyboard-first authoring; the toolbar exists so the editor
 // looks self-evidently capable on first open.
-const TOOLBAR_COMPACT_THRESHOLD = 720
 
 function Toolbar(props: ToolbarProps) {
   const { editor, disabled, density } = props
-  const wrapperRef = useRef<HTMLDivElement | null>(null)
-  const [autoCompact, setAutoCompact] = useState(false)
-  useEffect(() => {
-    if (density !== 'auto' || wrapperRef.current === null || typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const el = wrapperRef.current
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry === undefined) {
-        return
-      }
-      // Use `contentBoxSize` when available (consistent across
-      // browsers), fall back to `contentRect.width` for Safari.
-      const width = entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width
-      setAutoCompact(width < TOOLBAR_COMPACT_THRESHOLD)
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [density])
-
-  const effectiveDensity: 'compact' | 'full' =
-    density === 'compact' ? 'compact' : density === 'full' ? 'full' : autoCompact ? 'compact' : 'full'
 
   const insertButtons = (
     <>
@@ -383,26 +367,38 @@ function Toolbar(props: ToolbarProps) {
   )
 
   return (
-    <div ref={wrapperRef} className="flex flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
-      <ToolbarGroup>
-        <ToolbarButton
-          title="撤销 (Cmd/Ctrl+Z)"
-          disabled={disabled || !editor.can().undo()}
-          onClick={() => editor.chain().focus().undo().run()}
-        >
-          <Undo2Icon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="重做 (Cmd/Ctrl+Shift+Z)"
-          disabled={disabled || !editor.can().redo()}
-          onClick={() => editor.chain().focus().redo().run()}
-        >
-          <Redo2Icon />
-        </ToolbarButton>
-      </ToolbarGroup>
-      <ToolbarGroup>
-        <BlockStyleSelect editor={editor} disabled={disabled} />
-      </ToolbarGroup>
+    <div className="flex flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
+      {density === 'full' ? (
+        <ToolbarGroup>
+          <ToolbarButton
+            title="撤销 (Cmd/Ctrl+Z)"
+            disabled={disabled || !editor.can().undo()}
+            onClick={() => editor.chain().focus().undo().run()}
+          >
+            <Undo2Icon />
+          </ToolbarButton>
+          <ToolbarButton
+            title="重做 (Cmd/Ctrl+Shift+Z)"
+            disabled={disabled || !editor.can().redo()}
+            onClick={() => editor.chain().focus().redo().run()}
+          >
+            <Redo2Icon />
+          </ToolbarButton>
+        </ToolbarGroup>
+      ) : null}
+      {/* Block style: in 'full' mode each option renders as its own
+          toggle button so the operator hits paragraph / a heading
+          level / blockquote / code block in a single click. The
+          compact mode keeps the Select to save horizontal space. */}
+      {density === 'full' ? (
+        <ToolbarGroup>
+          <BlockStyleButtons editor={editor} disabled={disabled} />
+        </ToolbarGroup>
+      ) : (
+        <ToolbarGroup>
+          <BlockStyleSelect editor={editor} disabled={disabled} />
+        </ToolbarGroup>
+      )}
       <ToolbarGroup>
         <ToolbarButton
           title="加粗 (Cmd/Ctrl+B)"
@@ -467,7 +463,7 @@ function Toolbar(props: ToolbarProps) {
           a 「插入」Popover (compact mode). Single-mount so the
           picker triggers don't end up with two `<ImageLibraryPicker>`
           dialogs in the tree. */}
-      {effectiveDensity === 'full' ? (
+      {density === 'full' ? (
         <ToolbarGroup>{insertButtons}</ToolbarGroup>
       ) : (
         <ToolbarGroup>
@@ -492,7 +488,7 @@ function Toolbar(props: ToolbarProps) {
           </Popover>
         </ToolbarGroup>
       )}
-      <ToolbarGroup hideTrailingSeparator>
+      <ToolbarGroup hideTrailingSeparator className="ml-auto">
         <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
       </ToolbarGroup>
     </div>
@@ -530,18 +526,19 @@ function ToolbarGroup({ children, hideTrailingSeparator, className }: ToolbarGro
   )
 }
 
-export type ToolbarDensity = 'auto' | 'compact' | 'full'
+export type ToolbarDensity = 'compact' | 'full'
 
 const TOOLBAR_DENSITY_STORAGE_KEY = 'yufan.me/admin/page-editor/toolbar-density'
 
-// Persistent toolbar density preference. Defaults to `'auto'` so a
-// fresh visit lets the @container query make the call. Wrapped in
-// `useState` + a `useEffect` write because we need lazy SSR-safe
-// initialisation; reading localStorage synchronously inside the
-// initialiser would crash during hydration if the value type drifts
-// — the guard inside `readDensity` covers that.
+// Persistent toolbar density preference. Defaults to `'full'` so a
+// fresh visit shows every group inline; the outer flex-wrap container
+// handles overflow on its own. Wrapped in `useState` + a `useEffect`
+// write because we need lazy SSR-safe initialisation; reading
+// localStorage synchronously inside the initialiser would crash
+// during hydration if the value type drifts — the guard inside
+// `readDensity` covers that.
 function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
-  const [density, setDensityState] = useState<ToolbarDensity>('auto')
+  const [density, setDensityState] = useState<ToolbarDensity>('full')
   useEffect(() => {
     setDensityState(readDensity())
   }, [])
@@ -562,17 +559,17 @@ function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) 
 
 function readDensity(): ToolbarDensity {
   if (typeof window === 'undefined') {
-    return 'auto'
+    return 'full'
   }
   try {
     const raw = window.localStorage.getItem(TOOLBAR_DENSITY_STORAGE_KEY)
-    if (raw === 'compact' || raw === 'full' || raw === 'auto') {
+    if (raw === 'compact' || raw === 'full') {
       return raw
     }
   } catch {
     // ignore — return the safe default.
   }
-  return 'auto'
+  return 'full'
 }
 
 interface DensityToggleButtonProps {
@@ -581,21 +578,17 @@ interface DensityToggleButtonProps {
   disabled?: boolean
 }
 
-// Three-state cycle: auto → full → compact → auto …
-// `auto` is the recommended state so we surface it as the default
-// label. The icon flips to MaximizeIcon when the user has pinned
-// to full and MinimizeIcon when pinned to compact.
+// Two-state toggle: full ↔ compact. The icon mirrors the action that
+// firing the button will perform — when expanded ('full') we show the
+// "collapse inward" chevron; when collapsed ('compact') we show the
+// "expand outward" chevron. The toolbar itself flex-wraps when space
+// runs out, so density is purely an operator-driven affordance.
 function DensityToggleButton({ density, onChange, disabled }: DensityToggleButtonProps) {
-  const next: ToolbarDensity = density === 'auto' ? 'full' : density === 'full' ? 'compact' : 'auto'
-  const title =
-    density === 'auto'
-      ? '工具栏密度：自动 (点击切到 完整)'
-      : density === 'full'
-        ? '工具栏密度：完整 (点击切到 精简)'
-        : '工具栏密度：精简 (点击切到 自动)'
-  const Icon = density === 'compact' ? MinimizeIcon : MaximizeIcon
+  const next: ToolbarDensity = density === 'full' ? 'compact' : 'full'
+  const title = density === 'full' ? '收起工具栏' : '展开工具栏'
+  const Icon = density === 'full' ? MinimizeIcon : MaximizeIcon
   return (
-    <ToolbarButton title={title} active={density !== 'auto'} disabled={disabled} onClick={() => onChange(next)}>
+    <ToolbarButton title={title} disabled={disabled} onClick={() => onChange(next)}>
       <Icon />
     </ToolbarButton>
   )
@@ -715,6 +708,44 @@ function BlockStyleSelect({ editor, disabled }: BlockStyleSelectProps) {
         ))}
       </SelectContent>
     </Select>
+  )
+}
+
+interface BlockStyleButtonsProps {
+  editor: Editor
+  disabled?: boolean
+}
+
+// Inline button row mirror of `BlockStyleSelect`. The icons follow
+// the same conventions used by the slash menu so the operator gets
+// the same visual cue regardless of entry point.
+const BLOCK_STYLE_BUTTONS: { value: string; title: string; Icon: typeof PilcrowIcon }[] = [
+  { value: 'normal', title: '正文段落', Icon: PilcrowIcon },
+  { value: 'h1', title: '一级标题', Icon: Heading1Icon },
+  { value: 'h2', title: '二级标题', Icon: Heading2Icon },
+  { value: 'h3', title: '三级标题', Icon: Heading3Icon },
+  { value: 'h4', title: '四级标题', Icon: Heading4Icon },
+  { value: 'h5', title: '五级标题', Icon: Heading5Icon },
+  { value: 'blockquote', title: '引用', Icon: QuoteIcon },
+  { value: 'codeBlock', title: '代码块', Icon: CodeIcon },
+]
+
+function BlockStyleButtons({ editor, disabled }: BlockStyleButtonsProps) {
+  const active = getActiveBlockStyle(editor)
+  return (
+    <>
+      {BLOCK_STYLE_BUTTONS.map(({ value, title, Icon }) => (
+        <ToolbarButton
+          key={value}
+          title={title}
+          disabled={disabled}
+          active={active === value}
+          onClick={() => applyBlockStyle(editor, value)}
+        >
+          <Icon />
+        </ToolbarButton>
+      ))}
+    </>
   )
 }
 

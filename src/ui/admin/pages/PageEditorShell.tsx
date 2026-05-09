@@ -1,14 +1,10 @@
 import {
   ArrowLeftIcon,
-  CheckCircle2Icon,
-  CircleDashedIcon,
   ExternalLinkIcon,
   EyeIcon,
   EyeOffIcon,
-  FileTextIcon,
   PanelRightCloseIcon,
   PanelRightOpenIcon,
-  PencilLineIcon,
   SaveIcon,
   SlidersHorizontalIcon,
   UploadIcon,
@@ -43,12 +39,12 @@ import {
   MetaSidebar,
   type PageMetaDraft,
   type SidebarPublishStatus,
+  type SidebarRevisionSummary,
 } from '@/ui/admin/pages/MetaSidebar'
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
 import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import { useAdminChromeFocus } from '@/ui/admin/shell/AdminShell'
-import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/ui/sheet'
@@ -164,6 +160,16 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     isEditing ? ((detail.latestRevision ?? detail.publishedRevision)?.clientRevisionToken ?? null) : null,
   )
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+
+  // Tracks the body that's currently persisted server-side. Seeded
+  // from the initially-loaded revision and updated after every
+  // successful save (manual, autosave, or history-adoption push).
+  // The unified 保存 button compares the live `body` against this
+  // ref to decide whether the body half of the save round-trip
+  // needs to run — when the editor's content equals the last
+  // persisted body we skip `saveDraft` entirely so no empty
+  // duplicate revision is created.
+  const lastSavedBodyRef = useRef<PortableTextBody>(initialBody)
 
   // --- Local Storage draft persistence --------------------------------------
   // Edit mode keys on `(pageId, clientRevisionToken)` so adopting a
@@ -328,32 +334,22 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     }
     setStatus({ kind: 'saved', at: new Date() })
     setExpectedToken(payload.revision.clientRevisionToken)
-    setBodyKey(`${detail?.page.id ?? 'new'}:${payload.revision.clientRevisionToken}`)
+    // Intentionally do NOT bump `bodyKey` here. The editor's
+    // content already matches what we just persisted, and any
+    // edits the user typed between dispatching the save and the
+    // server's reply are still in `body`. Bumping `bodyKey`
+    // would re-fire `<PageBodyEditor>`'s reset effect, which
+    // would call `setContent(bodyToPmDoc(initialBody))` — but
+    // `initialBody` is the page-load snapshot, not the live
+    // body — and silently wipe every keystroke since open. The
+    // `bodyKey` lever is reserved for explicit content swaps:
+    // adopting a remote revision, accepting a local draft from
+    // the conflict resolver, restoring the create-mode LS slot,
+    // or rewinding to a history revision.
+    lastSavedBodyRef.current = payload.revision.body
   }
 
   // --- Save handlers ------------------------------------------------------
-
-  const persistMeta = useCallback(() => {
-    if (!isEditing) {
-      // Edit mode reaches this through `persistCreate` instead.
-      return
-    }
-    setStatus({ kind: 'saving' })
-    const publishedAt = localInputValueToIso(meta.publishedAt)
-    upsertMetaApi.submit({
-      id: detail.page.id,
-      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-      title: meta.title.trim(),
-      summary: meta.summary.trim(),
-      cover: meta.cover.trim(),
-      og: meta.og.trim() === '' ? null : meta.og.trim(),
-      published: meta.published,
-      commentsEnabled: meta.commentsEnabled,
-      showToc: meta.showToc,
-      showFriends: meta.showFriends,
-      ...(publishedAt !== null ? { publishedAt } : {}),
-    })
-  }, [upsertMetaApi, isEditing, detail, meta])
 
   // Two-step "create page" flow: upsert metadata to assign an id,
   // then push the locally-authored body to the brand-new page in a
@@ -419,24 +415,45 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     // the edit-mode shape so a refresh on the edit screen still
     // loads the just-saved body without showing a conflict.
     createDraft.migrateToEditKey(savedPage.id, draftEnvelope.data.revision.clientRevisionToken, body)
+    lastSavedBodyRef.current = draftEnvelope.data.revision.body
 
     setStatus({ kind: 'saved', at: new Date() })
     setIsCreatingPage(false)
     void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
   }, [isEditing, isCreatingPage, meta, body, createDraft, navigate])
 
-  const persistDraft = useCallback(() => {
+  // Unified 保存: meta is always pushed (and takes effect
+  // immediately on the server), and the body is pushed as a new
+  // draft revision only when it diverges from the
+  // last-known-persisted body. The two round-trips run in parallel
+  // and are tracked independently by their `useApiFetcher` slots.
+  const persistSave = useCallback(() => {
     if (!isEditing) {
-      setStatus({ kind: 'error', message: '请先保存页面信息再编辑正文。' })
       return
     }
     setStatus({ kind: 'saving' })
-    saveDraftApi.submit({
+    const publishedAt = localInputValueToIso(meta.publishedAt)
+    upsertMetaApi.submit({
       id: detail.page.id,
-      body,
-      expectedClientRevisionToken: expectedToken,
+      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
+      title: meta.title.trim(),
+      summary: meta.summary.trim(),
+      cover: meta.cover.trim(),
+      og: meta.og.trim() === '' ? null : meta.og.trim(),
+      published: meta.published,
+      commentsEnabled: meta.commentsEnabled,
+      showToc: meta.showToc,
+      showFriends: meta.showFriends,
+      ...(publishedAt !== null ? { publishedAt } : {}),
     })
-  }, [saveDraftApi, isEditing, detail, body, expectedToken])
+    if (!arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)) {
+      saveDraftApi.submit({
+        id: detail.page.id,
+        body,
+        expectedClientRevisionToken: expectedToken,
+      })
+    }
+  }, [upsertMetaApi, saveDraftApi, isEditing, detail, meta, body, expectedToken])
 
   const persistPublish = useCallback(() => {
     if (!isEditing) {
@@ -501,14 +518,13 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     [isEditing, detail, meta.published],
   )
 
-  // Sidebar status badge has slightly different cuts than the
-  // toolbar's `RevisionStatusBadge`: it also surfaces "scheduled"
-  // (i.e. `published === true` but `publishedAt > now()`), which
-  // the toolbar collapses into the live-state because the toolbar
-  // tracks the **revision** lifecycle whereas the sidebar tracks
-  // the **visibility** lifecycle. We compute it here from the
-  // shell-owned `meta` + the loader-supplied `detail` so the
-  // sidebar stays a pure-props view.
+  // Visibility-side projection of the page lifecycle. Sits next to
+  // `sidebarRevisionSummary` (which tracks the draft↔published
+  // version delta) inside 发布状态 — together they replace the two
+  // competing badges that used to live on the toolbar's first row
+  // and inside 基本信息. We compute it here from the shell-owned
+  // `meta` + the loader-supplied `detail` so the sidebar stays a
+  // pure-props view.
   const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(() => {
     if (!isEditing) {
       return 'never-saved'
@@ -530,7 +546,8 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   }, [isEditing, publishState, meta.publishedAt])
 
   // Cmd/Ctrl-S triggers the appropriate save: create-flow on create,
-  // draft on edit. Cmd/Ctrl+Shift+P publishes the latest body.
+  // unified meta + draft save on edit. Cmd/Ctrl+Shift+P publishes
+  // the latest body.
   // Both shortcuts also gate on the same enabled-conditions as the
   // toolbar buttons so a stale `published-current` page can't be
   // re-published with no edits, etc.
@@ -545,7 +562,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         if (mode === 'create') {
           void persistCreate()
         } else {
-          persistDraft()
+          persistSave()
         }
         return
       }
@@ -554,11 +571,13 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         if (!isEditing) {
           return
         }
-        // Match the visible toolbar control: an offline-but-promoted
-        // page binds the shortcut to the bring-back-online flow,
-        // not a fresh publish (which would create an empty no-op
-        // revision on top of the existing published one).
-        if (publishState.kind === 'unpublished') {
+        // Match the merged toolbar control: a currently-live page
+        // binds the shortcut to 取消发布; an offline-but-promoted
+        // page binds it to the bring-back-online flow (no new
+        // revision); everything else fires a regular publish.
+        if (meta.published) {
+          persistUnpublish()
+        } else if (publishState.kind === 'unpublished') {
           persistRepublish()
         } else {
           persistPublish()
@@ -567,7 +586,17 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [mode, isEditing, persistCreate, persistDraft, persistPublish, persistRepublish, publishState])
+  }, [
+    mode,
+    isEditing,
+    persistCreate,
+    persistSave,
+    persistPublish,
+    persistRepublish,
+    persistUnpublish,
+    publishState,
+    meta.published,
+  ])
 
   const isMetaPending = upsertMetaApi.isPending || isCreatingPage || unpublishApi.isPending
   const isBodyPending = saveDraftApi.isPending || publishApi.isPending
@@ -605,6 +634,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   const adoptServerVersion = useCallback(() => {
     setBody(initialBody)
     setBodyKey(`${detail?.page.id ?? 'new'}:adopt-server:${Date.now()}`)
+    lastSavedBodyRef.current = initialBody
     clearDraft()
     setConflict(null)
     setConflictResolved(true)
@@ -612,7 +642,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
 
   // Pull a historical revision's body into the editor pane. We do
   // NOT call the server here — the operator still has to hit
-  // 保存草稿 / 发布 to persist the adopted body, the same way they
+  // 保存 / 发布 to persist the adopted body, the same way they
   // would after manually editing. This keeps "selecting a history
   // entry" reversible: closing the tab without saving discards the
   // adoption and the live page stays on whatever the published
@@ -627,7 +657,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       // Surface a hint so the operator notices the editor was
       // rewound — easy to miss otherwise because the body just
       // appears to "change" in the panel.
-      setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存草稿或发布以生效。` })
+      setStatus({ kind: 'info', message: `已载入 R${revision.revisionNo}，记得保存或发布以生效。` })
     },
     [isEditing, detail],
   )
@@ -643,12 +673,48 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // any edit (which moves to `draft-ahead`) or by hitting 取消发布
   // first and 发布 again.
   const canPublish = isEditing && publishState.kind !== 'published-current'
-  // 取消发布 only makes sense when the page is currently visible.
-  const canUnpublish = isEditing && meta.published
+
+  // Project the shell-owned `PublishState` (which mixes visibility +
+  // revision lifecycle into one tagged union) into the
+  // visibility-free `SidebarRevisionSummary` the sidebar consumes.
+  // This is the single point where 「草稿 R11 / 已发布 R10」 gets
+  // computed; the unified 发布状态 card inside 基本信息 reads it
+  // alongside `sidebarPublishStatus` to render one cohesive block
+  // instead of two competing badges.
+  const sidebarRevisionSummary = useMemo<SidebarRevisionSummary | null>(() => {
+    if (!isEditing) {
+      return null
+    }
+    switch (publishState.kind) {
+      case 'not-published-yet':
+        return { kind: 'no-revision' }
+      case 'published-current':
+        return { kind: 'published-current', revisionNo: publishState.revisionNo }
+      case 'unpublished':
+        return publishState.lastPublishedRevisionNo !== null
+          ? { kind: 'published-current', revisionNo: publishState.lastPublishedRevisionNo }
+          : { kind: 'no-revision' }
+      case 'draft-ahead':
+        return {
+          kind: 'draft-ahead',
+          draftRevisionNo: publishState.draftRevisionNo,
+          publishedRevisionNo: publishState.publishedRevisionNo,
+        }
+    }
+  }, [isEditing, publishState])
+
+  const statusIndicator = <StatusIndicator status={status} />
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 p-4">
-      <header className="flex flex-wrap items-center gap-3">
+      {/* Single wrapping toolbar. 返回列表 leads, every other control
+          flows after it on the same row, and the whole strip wraps
+          flush-left on narrower viewports. The page identity (title +
+          revision badge + autosave indicator) used to live here on a
+          dedicated first row; it now docks inside MetaSidebar's
+          基本信息 card via the `identityHeader` prop so the toolbar
+          stays focused on actions. */}
+      <header className="flex flex-wrap items-center gap-2 text-sm">
         <Button
           variant="ghost"
           size="sm"
@@ -658,102 +724,106 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
             </Link>
           }
         />
-        <div className="flex items-center gap-2">
-          <FileTextIcon className="size-4 text-muted-foreground" />
-          <h1 className="text-base font-semibold">{mode === 'create' ? '新建页面' : meta.title || '未命名页面'}</h1>
-          {isEditing ? <RevisionStatusBadge state={publishState} /> : null}
-        </div>
-        <div className="ml-auto flex items-center gap-2 text-sm">
-          <StatusIndicator status={status} />
-          {isEditing ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              render={
-                <Link to={`/${detail.page.slug}`} target="_blank" rel="noreferrer">
-                  <ExternalLinkIcon /> 公开预览
-                </Link>
-              }
-            />
-          ) : null}
+        {isEditing ? (
           <Button
-            variant={previewOpen ? 'default' : 'outline'}
+            variant="ghost"
             size="sm"
-            onClick={() => setPreviewOpen((open) => !open)}
-            title={previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
-            aria-pressed={previewOpen}
+            render={
+              <Link to={`/${detail.page.slug}`} target="_blank" rel="noreferrer">
+                <ExternalLinkIcon /> 公开预览
+              </Link>
+            }
+          />
+        ) : null}
+        <Button
+          variant={previewOpen ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setPreviewOpen((open) => !open)}
+          title={previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
+          aria-pressed={previewOpen}
+          className={cn(previewOpen && 'border border-transparent')}
+        >
+          {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />} 实时预览
+        </Button>
+        {mode === 'create' ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              void persistCreate()
+            }}
+            disabled={isPending || !canPersistMeta}
+            title="保存页面信息并上传当前正文"
           >
-            {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />} 实时预览
+            <UploadIcon /> 创建页面
           </Button>
-          {mode === 'create' ? (
+        ) : (
+          <>
             <Button
+              variant="outline"
               size="sm"
-              onClick={() => {
-                void persistCreate()
-              }}
+              onClick={persistSave}
               disabled={isPending || !canPersistMeta}
-              title="保存页面信息并上传当前正文"
+              title="保存页面信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)"
             >
-              <UploadIcon /> 创建页面
+              <SaveIcon /> 保存
             </Button>
-          ) : (
-            <>
+            {/* Single publish toggle. When the page is currently
+             *  visible the button switches to a destructive-styled
+             *  「取消发布」 (offline). When the page is offline OR
+             *  has never been published it shows the publish action
+             *  — wired to `persistRepublish` for the offline case
+             *  (no new revision) and to `persistPublish` otherwise.
+             *  The publish leg disables itself when the latest
+             *  revision is already live (no-op publish would create
+             *  an empty revision). */}
+            {meta.published ? (
               <Button
-                variant="outline"
+                variant="destructive-soft"
                 size="sm"
-                onClick={persistMeta}
-                disabled={isPending || !canPersistMeta}
-                title="保存页面信息"
+                onClick={persistUnpublish}
+                disabled={isPending}
+                title="将页面下线，公开访问会返回 404；正文不会丢失，重新上线即可恢复"
               >
-                <SaveIcon /> 保存信息
+                <EyeOffIcon /> 取消发布
               </Button>
-              <Button variant="outline" size="sm" onClick={persistDraft} disabled={isPending}>
-                <SaveIcon /> 保存草稿
+            ) : publishState.kind === 'unpublished' ? (
+              <Button
+                size="sm"
+                onClick={persistRepublish}
+                disabled={isPending}
+                title="重新上线（不会写入新版本，Cmd/Ctrl+Shift+P）"
+              >
+                <EyeIcon /> 重新上线
               </Button>
-              {publishState.kind === 'unpublished' ? (
-                <Button size="sm" onClick={persistRepublish} disabled={isPending} title="重新上线（不会写入新版本）">
-                  <EyeIcon /> 重新上线
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={persistPublish}
-                  disabled={isPending || !canPublish}
-                  title={
-                    canPublish
-                      ? sidebarPublishStatus === 'scheduled'
-                        ? '按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                        : '发布最新内容 (Cmd/Ctrl+Shift+P)'
-                      : '当前最新版本已发布'
-                  }
-                >
-                  <UploadIcon /> {sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布'}
-                </Button>
-              )}
-              {canUnpublish ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={persistUnpublish}
-                  disabled={isPending}
-                  title="将页面下线，公开访问会返回 404；正文不会丢失，重新上线即可恢复"
-                >
-                  <EyeOffIcon /> 取消发布
-                </Button>
-              ) : null}
-            </>
-          )}
-          <Button
-            variant={metaOpen ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={() => setMetaOpen((open) => !open)}
-            title={metaOpen ? '隐藏页面信息面板' : '展开页面信息面板'}
-            aria-pressed={metaOpen}
-            aria-label="切换页面信息面板"
-          >
-            <SlidersHorizontalIcon /> 元数据
-          </Button>
-        </div>
+            ) : (
+              <Button
+                size="sm"
+                onClick={persistPublish}
+                disabled={isPending || !canPublish}
+                title={
+                  canPublish
+                    ? sidebarPublishStatus === 'scheduled'
+                      ? '按计划时间上线 (Cmd/Ctrl+Shift+P)'
+                      : '发布最新内容 (Cmd/Ctrl+Shift+P)'
+                    : '当前最新版本已发布'
+                }
+              >
+                <UploadIcon /> {sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布'}
+              </Button>
+            )}
+          </>
+        )}
+        <Button
+          variant={metaOpen ? 'secondary' : 'outline'}
+          size="sm"
+          onClick={() => setMetaOpen((open) => !open)}
+          title={metaOpen ? '隐藏页面信息面板' : '展开页面信息面板'}
+          aria-pressed={metaOpen}
+          aria-label="切换页面信息面板"
+          className={cn(metaOpen && 'border border-transparent')}
+        >
+          <SlidersHorizontalIcon /> 元数据
+        </Button>
       </header>
 
       {/* Layout grid. Three states drive the column template, picked
@@ -778,18 +848,26 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       >
         <div className="flex min-h-0 flex-col gap-2">
           {mode === 'create' ? <CreateModeBanner draftSavedAt={createDraft.loadedDraft?.savedAt ?? null} /> : null}
-          <TitleSlugStrip
-            title={meta.title}
-            slug={meta.slug}
-            onTitleChange={(value) => setMeta((m) => ({ ...m, title: value }))}
-            onSlugChange={(value) => setMeta((m) => ({ ...m, slug: value }))}
-            disabled={isPending}
-          />
+          {/* Title + slug strip is suppressed in live-preview mode.
+           *  The editor canvas then begins with the body's first
+           *  block, lining up with the preview pane's mirrored
+           *  title row on the right; the operator edits the title
+           *  and slug from the floating 页面信息 sheet (or from
+           *  the basic-info card inline) instead. */}
+          {!previewOpen ? (
+            <TitleSlugStrip
+              title={meta.title}
+              slug={meta.slug}
+              onTitleChange={(value) => setMeta((m) => ({ ...m, title: value }))}
+              onSlugChange={(value) => setMeta((m) => ({ ...m, slug: value }))}
+              disabled={isPending}
+            />
+          ) : null}
           <PageBodyEditor initialBody={initialBody} bodyKey={bodyKey} onBodyChange={setBody} disabled={isPending} />
         </div>
         {previewOpen ? (
           <section aria-label="实时预览" className="flex min-h-0 flex-col">
-            <PreviewPane body={body} />
+            <PreviewPane body={body} title={meta.title} slug={meta.slug} />
           </section>
         ) : null}
         {/* Inline metadata rail. Only renders in the 2-column
@@ -804,6 +882,8 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               disabled={isPending}
               publishStatus={sidebarPublishStatus}
               ogPreviewSlug={isEditing ? detail.page.slug : null}
+              revisionSummary={sidebarRevisionSummary}
+              statusIndicator={statusIndicator}
               extras={
                 isEditing ? (
                   <div className="rounded-md border bg-card p-2">
@@ -840,6 +920,8 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                 disabled={isPending}
                 publishStatus={sidebarPublishStatus}
                 ogPreviewSlug={isEditing ? detail.page.slug : null}
+                revisionSummary={sidebarRevisionSummary}
+                statusIndicator={statusIndicator}
                 extras={
                   isEditing ? (
                     <div className="rounded-md border bg-card p-2">
@@ -922,7 +1004,7 @@ interface TitleSlugStripProps {
 // canvas, not buried in a side panel. The values are mirrored into
 // `meta` (the `MetaSidebar` form state), so editing here updates
 // the metadata draft the same way the sidebar does — the next
-// 保存信息 / 创建页面 / 重新上线 click pushes both fields to the
+// 保存 / 创建页面 / 重新上线 click pushes both fields to the
 // server. The sidebar's URL slug input still works as a secondary
 // surface for operators who land in 页面信息 first.
 function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: TitleSlugStripProps) {
@@ -935,7 +1017,7 @@ function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: 
         placeholder="页面标题"
         maxLength={200}
         disabled={disabled}
-        className="h-auto border-0 bg-transparent px-0 text-4xl leading-tight font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-5xl dark:bg-transparent"
+        className="h-auto border-0 bg-transparent px-0 text-2xl leading-tight font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-3xl dark:bg-transparent"
       />
       <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
         <span>/</span>
@@ -1010,40 +1092,5 @@ function derivePublishState(detail: AdminPageDetailDto, visible: boolean): Publi
     kind: 'draft-ahead',
     draftRevisionNo: latest.revisionNo,
     publishedRevisionNo: published?.revisionNo ?? null,
-  }
-}
-
-function RevisionStatusBadge({ state }: { state: PublishState }) {
-  switch (state.kind) {
-    case 'not-published-yet':
-      return (
-        <Badge variant="outline">
-          <CircleDashedIcon /> 尚未发布
-        </Badge>
-      )
-    case 'unpublished':
-      return (
-        <Badge variant="outline" className="border-destructive/40 text-destructive">
-          <EyeOffIcon /> 已取消发布
-          {state.lastPublishedRevisionNo !== null ? (
-            <span className="ml-1 opacity-70">（曾发布 R{state.lastPublishedRevisionNo}）</span>
-          ) : null}
-        </Badge>
-      )
-    case 'published-current':
-      return (
-        <Badge>
-          <CheckCircle2Icon /> 已发布 R{state.revisionNo}
-        </Badge>
-      )
-    case 'draft-ahead':
-      return (
-        <Badge variant="secondary">
-          <PencilLineIcon /> 草稿 R{state.draftRevisionNo}
-          {state.publishedRevisionNo !== null ? (
-            <span className="ml-1 opacity-70">/ R{state.publishedRevisionNo} 已发布</span>
-          ) : null}
-        </Badge>
-      )
   }
 }
