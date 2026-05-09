@@ -807,7 +807,7 @@ function CreateModeBanner({ draftSavedAt }: CreateModeBannerProps) {
   // Once a previous local draft has been restored we surface the
   // timestamp so the user can verify nothing was lost.
   return (
-    <div className="flex items-center justify-between rounded-md border border-dashed bg-card/50 px-3 py-2 text-xs text-muted-foreground">
+    <div className="flex items-center justify-between rounded-md border border-destructive/10 bg-destructive/5 px-3 py-2 text-xs text-muted-foreground">
       <span>新页面正文仅本地保留，点击「创建页面」后才会同步到服务器。</span>
       {draftSavedAt !== null ? (
         <span className="font-mono">已恢复本地草稿 · {new Date(draftSavedAt).toLocaleTimeString('zh-CN')}</span>
