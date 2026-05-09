@@ -13,6 +13,7 @@ const settingQueries = await import('@/server/db/query/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/settings/snapshot')
 const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { requireBlogSettingsSection } = await import('@/shared/blog-config')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section
 // (`blog.general`, `blog.assets`, …) so `bundleRows()` projects this
@@ -645,5 +646,28 @@ describe('services/settings — snapshot reader', () => {
     expect(live?.siteIdentity?.title).toBe('snapshot title')
     expect(live?.assets?.asset.host).toBe('cdn.example.com')
     expect(live?.siteIdentity?.locale).toBe('zh-CN')
+  })
+
+  it('requireBlogSettingsSection(cache) backfills missing bucket slots with fallbacks', () => {
+    const legacyCache = {
+      og: { prefix: 'legacy-og-', ttlSeconds: 1234 },
+      calendar: { prefix: 'legacy-calendar-', ttlSeconds: 5678 },
+      avatar: { prefix: 'legacy-avatar-', ttlSeconds: 4321 },
+    } as unknown as NonNullable<BlogSettingsBundle['cache']>['cache']
+
+    const legacyLikeBundle: BlogSettingsBundle = {
+      ...fixtureBundle,
+      cache: {
+        cache: legacyCache,
+      },
+    }
+    setBlogSettingsBundleForTests(legacyLikeBundle)
+
+    const cache = requireBlogSettingsSection('cache').cache
+    expect(cache.og).toEqual({ prefix: 'legacy-og-', ttlSeconds: 1234 })
+    expect(cache.calendar).toEqual({ prefix: 'legacy-calendar-', ttlSeconds: 5678 })
+    expect(cache.avatar).toEqual({ prefix: 'legacy-avatar-', ttlSeconds: 4321 })
+    expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
+    expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
   })
 })

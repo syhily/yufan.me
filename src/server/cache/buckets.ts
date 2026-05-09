@@ -36,50 +36,35 @@ const BUCKET_META = [
     label: 'OG 图缓存',
     description:
       '/images/og/:slug.png 的渲染结果，键形如 ${prefix}${slug}-${hash}。修改 OG 尺寸或文章封面 / 摘要后清理。',
-    fallback: { prefix: 'og-', ttlSeconds: 60 * 60 * 24 },
   },
   {
     id: 'calendar',
     label: '侧边栏日历缓存',
     description: '/images/calendar/:date.png 的渲染结果，键形如 ${prefix}${yyyy-MM-dd}。一天后会自动失效。',
-    fallback: { prefix: 'calendar-image-', ttlSeconds: 60 * 60 * 24 },
   },
   {
     id: 'avatar',
     label: 'Gravatar 头像缓存',
     description:
       '/images/avatar/:hash.png 缓存的头像字节，键形如 ${prefix}${hash}。用户更换头像后清理可让访客立即看到新头像。',
-    fallback: { prefix: 'avatar-image-', ttlSeconds: 60 * 60 * 24 },
   },
   {
     id: 'imageMeta',
     label: '图片元数据缓存',
     description:
       'SSR 渲染时 storagePath → image 行的查询结果（宽 / 高 / thumbhash），键形如 ${prefix}${storagePath}。在图片库批量上传或导入旧站数据后清理一次即可。',
-    fallback: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
   },
   {
     id: 'commentsMd',
     label: '评论 Markdown 渲染缓存',
     description:
       '评论与分类描述经 marked + shiki + sanitize 后的 HTML，键形如 ${prefix}${sha256(content)}。修改 shiki 主题或安全白名单后清理一次即可。',
-    fallback: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
   },
 ] as const satisfies readonly {
   id: CacheBucketId
   label: string
   description: string
-  fallback: { prefix: string; ttlSeconds: number }
 }[]
-
-function isCacheSlotLike(value: unknown): value is { prefix: string; ttlSeconds: number } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { prefix?: unknown }).prefix === 'string' &&
-    typeof (value as { ttlSeconds?: unknown }).ttlSeconds === 'number'
-  )
-}
 
 /**
  * Build the bucket list from the live blog-settings snapshot. Reading
@@ -90,15 +75,7 @@ function isCacheSlotLike(value: unknown): value is { prefix: string; ttlSeconds:
 export function getCacheBuckets(): CacheBucket[] {
   const cache = requireBlogSettingsSection('cache').cache
   return BUCKET_META.map((meta) => {
-    const configuredSlot = cache[meta.id]
-    const slot = isCacheSlotLike(configuredSlot) ? configuredSlot : meta.fallback
-    if (!isCacheSlotLike(configuredSlot)) {
-      log.warn('Cache bucket settings slot missing or invalid; fallback applied', {
-        bucket: meta.id,
-        fallbackPrefix: slot.prefix,
-        fallbackTtlSeconds: slot.ttlSeconds,
-      })
-    }
+    const slot = cache[meta.id]
     return {
       id: meta.id,
       label: meta.label,

@@ -19,6 +19,8 @@
 // `setBlogSettingsBundleForTests(custom)` in their own `beforeEach`.
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
+import { CACHE_BUCKET_FALLBACKS } from '@/shared/cache-types'
+
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {
     title: '且听书吟',
@@ -87,11 +89,11 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' } },
   cache: {
     cache: {
-      og: { prefix: 'og-', ttlSeconds: 60 * 60 * 24 * 7 },
-      calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 * 24 },
-      avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 7 },
-      imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-      commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+      og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },
+      calendar: { ...CACHE_BUCKET_FALLBACKS.calendar, ttlSeconds: 60 * 60 * 24 },
+      avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
+      imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
+      commentsMd: { ...CACHE_BUCKET_FALLBACKS.commentsMd },
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds
