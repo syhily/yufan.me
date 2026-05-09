@@ -2,7 +2,6 @@ import { Node } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import {
   CheckIcon,
-  CodeIcon,
   FunctionSquareIcon,
   Music2Icon,
   PencilIcon,
@@ -13,8 +12,9 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import type { Block, MusicPlayerBlock } from '@/shared/portable-text'
+import type { Block, MathBlock, MermaidBlock, MusicPlayerBlock } from '@/shared/portable-text'
 
+import { useAdminMathPreview } from '@/ui/admin/pages/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/ui/button'
 import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Input } from '@/ui/components/ui/input'
@@ -25,9 +25,11 @@ import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 
 // Universal "block card" Tiptap node. The PortableText ↔ ProseMirror
 // bridge maps opaque PT custom blocks (`musicPlayer`, `mathBlock`,
-// `mermaid`, `footnoteDefinition`) to a single `blockCard` PM node
-// carrying the original PT block in `attrs.payload`. (`solution` uses
-// a dedicated nested node — see `SolutionNode`.) This Node spec is what makes the editor round-trip
+// `mermaid`) to a single `blockCard` PM node carrying the original PT
+// block in `attrs.payload`. **`solution`** uses a dedicated nested PM node
+// (`SolutionNode`). **`footnoteDefinition`** is omitted from the admin page
+// editor PM doc — see `@/shared/portable-text-footnote-merge`.
+// This Node spec is what makes the editor round-trip
 // those blocks safely:
 //
 // * Without a Node spec, Tiptap silently drops unknown PM nodes, so
@@ -136,6 +138,17 @@ function BlockCardView(props: NodeViewProps) {
                   }
                 />
               ) : null}
+              {payload !== null && payload._type === 'mermaid' ? (
+                <MermaidBlockOptions
+                  stableId={attrs._key}
+                  center={payload.center === true}
+                  onCenterChange={(enabled) =>
+                    props.updateAttributes({
+                      payload: stripPrerenderArtifacts(patchMermaidCenterFlag(payload, enabled)),
+                    })
+                  }
+                />
+              ) : null}
               <CardSummary payload={payload} />
             </>
           )}
@@ -184,6 +197,16 @@ function patchMusicPlayerFlag(payload: MusicPlayerBlock, flag: 'auto' | 'center'
   return next
 }
 
+function patchMermaidCenterFlag(payload: MermaidBlock, enabled: boolean): Block {
+  const next: MermaidBlock = { ...payload }
+  if (enabled) {
+    next.center = true
+  } else {
+    delete next.center
+  }
+  return next
+}
+
 interface MusicPlayerOptionsProps {
   stableId: string
   auto: boolean
@@ -218,6 +241,29 @@ function MusicPlayerOptions({ stableId, auto, center, onFlagChange }: MusicPlaye
   )
 }
 
+interface MermaidBlockOptionsProps {
+  stableId: string
+  center: boolean
+  onCenterChange: (enabled: boolean) => void
+}
+
+function MermaidBlockOptions({ stableId, center, onCenterChange }: MermaidBlockOptionsProps) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 border-b border-border/80 pb-2">
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`mermaid-center-${stableId}`}
+          checked={center}
+          onCheckedChange={(v) => onCenterChange(v === true)}
+        />
+        <Label htmlFor={`mermaid-center-${stableId}`} className="cursor-pointer text-xs leading-none font-normal">
+          永远居中
+        </Label>
+      </div>
+    </div>
+  )
+}
+
 interface CardSourceEditorProps {
   payload: Block
   onCommit: (next: Block) => void
@@ -226,16 +272,7 @@ interface CardSourceEditorProps {
 
 function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps) {
   if (payload._type === 'mathBlock') {
-    return (
-      <SourceForm
-        label="TeX 源"
-        initial={payload.tex}
-        multiline
-        placeholder="\\frac{a}{b}"
-        onCommit={(next) => onCommit({ ...payload, tex: next })}
-        onCancel={onCancel}
-      />
-    )
+    return <MathBlockSourceEditor payload={payload} onCommit={onCommit} onCancel={onCancel} />
   }
   if (payload._type === 'mermaid') {
     return (
@@ -250,6 +287,66 @@ function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps
     )
   }
   return null
+}
+
+interface MathBlockSourceEditorProps {
+  payload: MathBlock
+  onCommit: (next: Block) => void
+  onCancel: () => void
+}
+
+function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceEditorProps) {
+  const [draft, setDraft] = useState(payload.tex)
+  const { previewHtml, renderError, showSpinner } = useAdminMathPreview(draft, true)
+
+  return (
+    <div className="mt-2 flex w-full max-w-full flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs">公式块 TeX</Label>
+        {renderError !== null ? (
+          <span className="shrink-0 text-xs text-destructive">语法错误：{renderError}</span>
+        ) : null}
+      </div>
+      <p className="text-xs leading-snug text-muted-foreground">
+        独占行或多行环境（align、gather 等）。预览与发布后正文一致（MathJax）。
+      </p>
+      <Textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder={'\\begin{align*}\n    a &= b\\\\\n    c &= d\n\\end{align*}'}
+        rows={8}
+        className="font-mono text-xs"
+      />
+      <div className="rounded-sm border bg-muted/30 px-2 py-2 text-sm">
+        <span className="text-xs text-muted-foreground">预览：</span>
+        {showSpinner ? (
+          <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
+        ) : (
+          <div
+            className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
+            dangerouslySetInnerHTML={{ __html: previewHtml }}
+          />
+        )}
+      </div>
+      <div className="flex justify-end gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          onClick={() => {
+            setDraft(payload.tex)
+            onCancel()
+          }}
+          title="取消"
+        >
+          <XIcon /> 取消
+        </Button>
+        <Button size="sm" type="button" onClick={() => onCommit({ ...payload, tex: draft })} title="保存编辑">
+          <CheckIcon /> 保存
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 interface SourceFormProps {
@@ -278,10 +375,19 @@ function SourceForm({ label, initial, multiline, placeholder, onCommit, onCancel
         <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={placeholder} />
       )}
       <div className="flex justify-end gap-1">
-        <Button variant="ghost" size="sm" onClick={onCancel} title="取消">
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          onClick={() => {
+            setDraft(initial)
+            onCancel()
+          }}
+          title="取消"
+        >
           <XIcon /> 取消
         </Button>
-        <Button size="sm" onClick={() => onCommit(draft)} title="保存编辑">
+        <Button size="sm" type="button" onClick={() => onCommit(draft)} title="保存编辑">
           <CheckIcon /> 保存
         </Button>
       </div>
@@ -298,8 +404,6 @@ function CardIcon({ ptType }: { ptType: string }) {
       return <SigmaIcon {...props} />
     case 'mermaid':
       return <WorkflowIcon {...props} />
-    case 'footnoteDefinition':
-      return <CodeIcon {...props} />
     default:
       return <FunctionSquareIcon {...props} />
   }
@@ -313,8 +417,6 @@ function cardTitle(ptType: string): string {
       return '数学公式块'
     case 'mermaid':
       return 'Mermaid 流程图'
-    case 'footnoteDefinition':
-      return '脚注定义'
     default:
       return `自定义块 (${ptType})`
   }
@@ -336,11 +438,31 @@ function CardSummary({ payload }: CardSummaryProps) {
         </div>
       )
     case 'mathBlock':
-      return <code className="mt-1 block text-xs text-muted-foreground">{payload.tex}</code>
-    case 'mermaid':
-      return <pre className="mt-1 max-h-32 overflow-auto text-xs text-muted-foreground">{payload.code}</pre>
-    case 'footnoteDefinition':
-      return <div className="mt-1 text-xs text-muted-foreground">脚注 #{payload.index}</div>
+      return payload.svg !== undefined && payload.svg !== '' ? (
+        <div
+          className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:max-w-none"
+          // MathJax SVG from the same prerender pipeline as publish / preview.
+          dangerouslySetInnerHTML={{ __html: payload.svg }}
+        />
+      ) : (
+        <code className="mt-1 block text-xs text-muted-foreground">{payload.tex}</code>
+      )
+    case 'mermaid': {
+      const center = payload.center === true
+      const inner =
+        payload.svg !== undefined && payload.svg !== '' ? (
+          <div
+            className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
+            dangerouslySetInnerHTML={{ __html: payload.svg }}
+          />
+        ) : (
+          <pre className="mt-1 max-h-32 shrink-0 overflow-auto text-xs text-muted-foreground">{payload.code}</pre>
+        )
+      if (!center) {
+        return inner
+      }
+      return <div className="flex max-w-full justify-center overflow-x-auto">{inner}</div>
+    }
     default:
       return <div className="mt-1 text-xs text-muted-foreground">_type: {(payload as { _type: string })._type}</div>
   }

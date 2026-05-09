@@ -35,7 +35,7 @@ describe('PortableTextBody SSR renderer', () => {
     const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
     expect(html).toContain('<h2 id="')
     expect(html).toContain('我的标题</h2>')
-    expect(html).toContain('<p>Hello <strong>world</strong></p>')
+    expect(html).toMatch(/<strong[^>]*>world<\/strong>/)
   })
 
   it('renders custom blocks with the right wrappers', () => {
@@ -66,7 +66,7 @@ describe('PortableTextBody SSR renderer', () => {
       { _type: 'horizontalRule', _key: 'hr1' },
     ]
     const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
-    expect(html).toContain('<figure>')
+    expect(html).toMatch(/<figure[^>]*>/)
     expect(html).toContain('<figcaption>caption text</figcaption>')
     expect(html).toMatch(/class="[^"]*math-display[^"]*"/)
     expect(html).toContain('class="mermaid"')
@@ -122,7 +122,7 @@ describe('PortableTextBody SSR renderer', () => {
     expect(html).toContain('<table class="pt-table">')
     expect(html).toContain('<thead>')
     expect(html).toContain('<th>名称</th>')
-    expect(html).toContain('<a href="https://example.com">site</a>')
+    expect(html).toMatch(/<a href="https:\/\/example\.com"[^>]*>site<\/a>/)
   })
 
   it('renders nested bullet lists with a 2-level hierarchy', () => {
@@ -193,7 +193,41 @@ describe('PortableTextBody SSR renderer', () => {
     expect(html).toContain('href="#user-content-fn-1"')
     // Definition section appended at the end.
     expect(html).toContain('class="footnotes"')
+    expect(html).toContain('id="footnotes-section-heading"')
+    expect(html).toContain('尾声礼记')
     expect(html).toContain('id="user-content-fn-1"')
     expect(html).toContain('脚注内容')
+    expect(html).toMatch(/<p>[^]*脚注内容[^]*href="#user-content-fnref-1"/)
+  })
+
+  it('renders twoColumn as a responsive grid with both panes', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'twoColumn',
+        _key: 'tc',
+        left: [
+          {
+            _type: 'block',
+            _key: 'l',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's1', text: 'Alpha' }],
+          },
+        ],
+        right: [
+          {
+            _type: 'block',
+            _key: 'r',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's2', text: 'Beta' }],
+          },
+        ],
+      },
+    ]
+    const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
+    expect(html).toContain('data-pt-two-column')
+    expect(html).toContain('Alpha')
+    expect(html).toContain('Beta')
+    expect(html).toMatch(/grid-cols-1/)
+    expect(html).toMatch(/md:grid-cols-2/)
   })
 })

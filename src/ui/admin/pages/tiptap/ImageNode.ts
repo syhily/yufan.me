@@ -55,6 +55,7 @@ export const ImageNode = Image.extend({
       thumbhash: { default: undefined },
       storagePath: { default: undefined },
       imageId: { default: undefined },
+      layout: { default: undefined },
     }
   },
   addNodeView() {

@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { PortableTextBody } from '@/shared/portable-text'
 
-import { type PmBlockNode, arePortableTextBodiesEquivalent, bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
+import {
+  type PmBlockNode,
+  arePortableTextBodiesEquivalent,
+  bodyToPmDoc,
+  pmDocToBody,
+  synchronizeFootnoteIndices,
+} from '@/shared/pt-bridge'
 
 // PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
 // the canonical shape (validated by the API perimeter); ProseMirror is
@@ -153,6 +159,7 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
         height: 720,
         thumbhash: 'tt',
         storagePath: 'images/2026/05/example.jpg',
+        layout: 'left',
       },
     ]
     const back = pmDocToBody(bodyToPmDoc(body))
@@ -193,10 +200,45 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
   it('mathBlock and mermaid round-trip identically', () => {
     const body: PortableTextBody = [
       { _type: 'mathBlock', _key: 'mb-1', tex: 'E=mc^2' },
-      { _type: 'mermaid', _key: 'mr-1', code: 'graph TD;A-->B;' },
+      { _type: 'mermaid', _key: 'mr-1', code: 'graph TD;A-->B;', center: true },
     ]
     const back = pmDocToBody(bodyToPmDoc(body))
     expect(back).toEqual(body)
+  })
+
+  it('twoColumn blocks round-trip as nested PM nodes', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'twoColumn',
+        _key: 'tc-1',
+        left: [
+          {
+            _type: 'block',
+            _key: 'l1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 'ls', text: 'left text' }],
+          },
+        ],
+        right: [
+          {
+            _type: 'block',
+            _key: 'r1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 'rs', text: 'right text' }],
+          },
+        ],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    expect(doc.content[0].type).toBe('twoColumn')
+    const back = pmDocToBody(doc)
+    expect(arePortableTextBodiesEquivalent(body, back)).toBe(true)
+    expect(back[0]._type).toBe('twoColumn')
+    if (back[0]._type === 'twoColumn') {
+      expect(back[0]._key).toBe('tc-1')
+      expect(back[0].left[0]).toMatchObject({ _type: 'block', style: 'normal' })
+      expect(back[0].right[0]).toMatchObject({ _type: 'block', style: 'normal' })
+    }
   })
 
   it('solution blocks round-trip as a nested PM node (not blockCard)', () => {
@@ -297,8 +339,9 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
         ],
       },
     ]
-    const back = pmDocToBody(bodyToPmDoc(body))
-    expect(back).toEqual(body)
+    const doc = bodyToPmDoc(body)
+    expect(doc.content[0].type).toBe('footnoteDefinition')
+    expect(arePortableTextBodiesEquivalent(body, pmDocToBody(doc))).toBe(true)
   })
 
   it('mathInline mark def round-trips through the markDefs slot', () => {
@@ -340,6 +383,66 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
       _type: 'block',
       markDefs: [{ _type: 'footnoteRef', targetKey: 'fn-target', index: 7 }],
     })
+  })
+
+  it('synchronizeFootnoteIndices numbers footnotes by first citation order', () => {
+    const fnBChildren = [
+      {
+        _type: 'block' as const,
+        _key: 'fnb-p',
+        style: 'normal' as const,
+        children: [{ _type: 'span' as const, _key: 'fnb-s', text: 'b' }],
+      },
+    ]
+    const fnAChildren = [
+      {
+        _type: 'block' as const,
+        _key: 'fna-p',
+        style: 'normal' as const,
+        children: [{ _type: 'span' as const, _key: 'fna-s', text: 'a' }],
+      },
+    ]
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'p1',
+        style: 'normal',
+        markDefs: [
+          { _type: 'footnoteRef', _key: 'fr-b', targetKey: 'fn-b', index: 2 },
+          { _type: 'footnoteRef', _key: 'fr-a', targetKey: 'fn-a', index: 1 },
+        ],
+        children: [
+          { _type: 'span', _key: 's1', text: '2', marks: ['fr-b'] },
+          { _type: 'span', _key: 's2', text: ' ', marks: undefined },
+          { _type: 'span', _key: 's3', text: '1', marks: ['fr-a'] },
+        ],
+      },
+      { _type: 'footnoteDefinition', _key: 'fn-a', index: 1, children: fnAChildren },
+      { _type: 'footnoteDefinition', _key: 'fn-b', index: 2, children: fnBChildren },
+    ]
+    const synced = synchronizeFootnoteIndices(body)
+    const para = synced[0]
+    expect(para?._type).toBe('block')
+    if (para === undefined || para._type !== 'block') {
+      throw new Error('expected paragraph block')
+    }
+    const frB = para.markDefs?.find((m) => m._type === 'footnoteRef' && m._key === 'fr-b')
+    const frA = para.markDefs?.find((m) => m._type === 'footnoteRef' && m._key === 'fr-a')
+    if (frB === undefined || frB._type !== 'footnoteRef') {
+      throw new Error('expected fr-b footnoteRef')
+    }
+    if (frA === undefined || frA._type !== 'footnoteRef') {
+      throw new Error('expected fr-a footnoteRef')
+    }
+    expect(frB.index).toBe(1)
+    expect(frA.index).toBe(2)
+    expect(para.children.find((s) => s.marks?.includes('fr-b'))?.text).toBe('1')
+    expect(para.children.find((s) => s.marks?.includes('fr-a'))?.text).toBe('2')
+    const syncedDefs = synced.filter((b) => b._type === 'footnoteDefinition')
+    expect(syncedDefs[0]?._key).toBe('fn-b')
+    expect(syncedDefs[0]?.index).toBe(1)
+    expect(syncedDefs[1]?._key).toBe('fn-a')
+    expect(syncedDefs[1]?.index).toBe(2)
   })
 })
 

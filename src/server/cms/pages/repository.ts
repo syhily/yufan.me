@@ -1,7 +1,9 @@
 import { and, desc, eq, isNull, max, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
+import { isDeepStrictEqual } from 'node:util'
 
 import type { ContentRow, NewContent, NewPageMeta, PageMetaRow } from '@/server/db/types'
+import type { PortableTextBody } from '@/shared/portable-text'
 
 import { db } from '@/server/db/pool'
 // Use module-local aliases (`pageMetaTable`, `contentTable`) so the
@@ -11,6 +13,7 @@ import { db } from '@/server/db/pool'
 // avoid colliding with parameter / local names (`page`, `content`)
 // that show up throughout the service layer.
 import { content as contentTable, page as pageMetaTable } from '@/server/db/schema'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt-bridge'
 
 // --- Reads -------------------------------------------------------------------
 
@@ -237,7 +240,11 @@ export type SaveDraftResult =
  *   - Find the latest revision for `(type='page', ownerId)`.
  *   - When that revision is **already published** *or* there is no
  *     revision yet, INSERT a fresh draft with `revision_no = max+1`
- *     and a freshly minted `client_revision_token`.
+ *     and a freshly minted `client_revision_token` — **unless** the
+ *     incoming snapshot is semantically identical to that published row
+ *     (body + image_sources + headings), in which case return the
+ *     published row without writing (avoids spurious drafts after
+ *     publish when autosave fires with no edits).
  *   - When that revision is a draft, optionally verify the client's
  *     `expectedClientRevisionToken` matches; if not, return `conflict`.
  *     Otherwise UPDATE the draft in place (still rotating
@@ -309,6 +316,16 @@ export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraf
       // The client thought there was a different latest revision; bail
       // before mutating so the UI can surface the conflict diff.
       return { status: 'conflict' as const, latest, expectedToken: latest.clientRevisionToken }
+    }
+
+    if (
+      latest !== undefined &&
+      latest.status === 'published' &&
+      arePortableTextBodiesEquivalent(input.body as PortableTextBody, latest.body as PortableTextBody) &&
+      isDeepStrictEqual(input.imageSources, latest.imageSources) &&
+      isDeepStrictEqual(input.headings, latest.headings)
+    ) {
+      return { status: 'saved' as const, row: latest }
     }
 
     const nextRevisionNo = (latest?.revisionNo ?? 0) + 1

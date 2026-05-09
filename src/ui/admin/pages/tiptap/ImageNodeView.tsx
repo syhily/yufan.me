@@ -2,10 +2,13 @@ import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
 import { ImageOffIcon, LinkIcon, RotateCcwIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 
+import type { ImageBlockLayout } from '@/shared/portable-text'
+
 import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
 import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/ui/components/ui/radio-group'
 import { cn } from '@/ui/lib/cn'
 
 // React NodeView for the image block. Replaces the bare `<img>` that
@@ -30,6 +33,7 @@ export function ImageNodeView(props: NodeViewProps) {
     storagePath?: string
     thumbhash?: string
     imageId?: string
+    layout?: ImageBlockLayout
   }
   const [alt, setAlt] = useState(attrs.alt ?? '')
   const [caption, setCaption] = useState(attrs.caption ?? '')
@@ -46,6 +50,15 @@ export function ImageNodeView(props: NodeViewProps) {
   const commitCaption = (value: string) => {
     setCaption(value)
     props.updateAttributes({ caption: value })
+  }
+  const pos = props.getPos()
+
+  const resolvedLayout: ImageBlockLayout = attrs.layout === 'left' || attrs.layout === 'right' ? attrs.layout : 'center'
+
+  const setLayout = (next: ImageBlockLayout) => {
+    props.updateAttributes({
+      layout: next === 'center' ? undefined : next,
+    })
   }
   const commitExternalUrl = (value: string) => {
     props.updateAttributes({
@@ -110,13 +123,20 @@ export function ImageNodeView(props: NodeViewProps) {
       </div>
 
       {attrs.src !== undefined && attrs.src !== '' ? (
-        <div className="relative">
+        <div
+          className={cn(
+            'relative w-fit max-w-full',
+            resolvedLayout === 'left' && 'mr-auto ml-0',
+            resolvedLayout === 'center' && 'mx-auto',
+            resolvedLayout === 'right' && 'mr-0 ml-auto',
+          )}
+        >
           <img
             src={attrs.src}
             alt={alt}
             width={attrs.width}
             height={attrs.height}
-            className="mx-auto max-h-72 w-auto rounded object-contain"
+            className="max-h-72 w-auto rounded object-contain"
             draggable={false}
           />
           <span className="absolute top-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
@@ -129,14 +149,40 @@ export function ImageNodeView(props: NodeViewProps) {
         </div>
       )}
 
+      <div className="grid gap-1.5">
+        <Label className="text-xs">布局</Label>
+        <RadioGroup
+          value={resolvedLayout}
+          onValueChange={(v) => {
+            if (v === 'left' || v === 'center' || v === 'right') {
+              setLayout(v)
+            }
+          }}
+          className="flex flex-row flex-wrap gap-x-4 gap-y-2"
+        >
+          <label htmlFor={`img-${pos}-layout-left`} className="flex cursor-pointer items-center gap-2 text-xs">
+            <RadioGroupItem id={`img-${pos}-layout-left`} value="left" />
+            <span>居左</span>
+          </label>
+          <label htmlFor={`img-${pos}-layout-center`} className="flex cursor-pointer items-center gap-2 text-xs">
+            <RadioGroupItem id={`img-${pos}-layout-center`} value="center" />
+            <span>居中</span>
+          </label>
+          <label htmlFor={`img-${pos}-layout-right`} className="flex cursor-pointer items-center gap-2 text-xs">
+            <RadioGroupItem id={`img-${pos}-layout-right`} value="right" />
+            <span>居右</span>
+          </label>
+        </RadioGroup>
+      </div>
+
       {showExternalForm ? (
         <div className="grid gap-1.5">
-          <Label className="text-xs" htmlFor={`img-${props.getPos()}-ext`}>
+          <Label className="text-xs" htmlFor={`img-${pos}-ext`}>
             外部图片链接（不会写入媒体库）
           </Label>
           <div className="flex gap-2">
             <Input
-              id={`img-${props.getPos()}-ext`}
+              id={`img-${pos}-ext`}
               value={externalUrl}
               placeholder="https://example.com/image.jpg"
               onChange={(event) => setExternalUrl(event.target.value)}
@@ -157,22 +203,22 @@ export function ImageNodeView(props: NodeViewProps) {
       ) : null}
 
       <div className="grid gap-1.5">
-        <Label className="text-xs" htmlFor={`img-${props.getPos()}-alt`}>
+        <Label className="text-xs" htmlFor={`img-${pos}-alt`}>
           替代文本（alt）
         </Label>
         <Input
-          id={`img-${props.getPos()}-alt`}
+          id={`img-${pos}-alt`}
           value={alt}
           placeholder="无障碍说明，搜索引擎也会读取"
           onChange={(event) => commitAlt(event.target.value)}
         />
       </div>
       <div className="grid gap-1.5">
-        <Label className="text-xs" htmlFor={`img-${props.getPos()}-caption`}>
+        <Label className="text-xs" htmlFor={`img-${pos}-caption`}>
           图说（caption）
         </Label>
         <Input
-          id={`img-${props.getPos()}-caption`}
+          id={`img-${pos}-caption`}
           value={caption}
           placeholder="可选，渲染为 <figcaption>"
           onChange={(event) => commitCaption(event.target.value)}

@@ -5,26 +5,25 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import { LinkPopover } from '@/ui/admin/pages/tiptap/LinkPopover'
 
-// LinkPopover is the BubbleMenu's link-editing affordance. The full
-// interactive surface needs a DOM (focus, keydown, button presses),
-// which would require pulling in @testing-library; we keep the
-// dependency footprint minimal and instead verify the static SSR
-// shape + the editor command surface contract via a stub editor.
+// LinkPopover is shared by the toolbar (insert at caret) and the
+// BubbleMenu (wrap / edit selection). Static SSR checks keep the
+// dependency footprint minimal vs @testing-library.
 //
-// What this guards against: the popover MUST render an URL input
-// with the current href, expose 应用 / 取消 / 移除 buttons in the
-// initial-edit case, and only show 移除 when an existing link
-// is in edit mode.
+// Guards: correct labels per variant, URL input shape, 移除 only when
+// editing an existing link in selection mode, and 插入 vs 应用 copy.
 
 interface LinkChain {
   focus: () => LinkChain
   extendMarkRange: (mark: string) => LinkChain
-  setLink: (attrs: { href: string }) => LinkChain
+  setLink: (attrs: { href: string; rel?: string; target?: string }) => LinkChain
   unsetLink: () => LinkChain
   run: () => boolean
 }
 
-function stubEditor(initialHref: string): {
+function stubEditor(
+  initialHref: string,
+  target?: string,
+): {
   editor: Editor
   calls: Array<string>
 } {
@@ -38,8 +37,8 @@ function stubEditor(initialHref: string): {
       calls.push(`extendMarkRange:${mark}`)
       return this
     },
-    setLink({ href }) {
-      calls.push(`setLink:${href}`)
+    setLink(attrs) {
+      calls.push(`setLink:${attrs.href}:${attrs.target ?? ''}:${attrs.rel ?? ''}`)
       return this
     },
     unsetLink() {
@@ -53,7 +52,7 @@ function stubEditor(initialHref: string): {
   })
   const editor = {
     getAttributes(_mark: string) {
-      return { href: initialHref }
+      return { href: initialHref, target }
     },
     chain,
   } as unknown as Editor
@@ -61,34 +60,42 @@ function stubEditor(initialHref: string): {
 }
 
 describe('LinkPopover', () => {
-  it('renders 移除 button when editing an existing link', () => {
-    const { editor } = stubEditor('https://example.com')
-    const html = renderToStaticMarkup(<LinkPopover editor={editor} onClose={() => undefined} />)
-    expect(html).toContain('链接 URL')
+  it('selection: renders 移除 when editing an existing link', () => {
+    const { editor } = stubEditor('https://example.com', '_blank')
+    const html = renderToStaticMarkup(<LinkPopover variant="selection" editor={editor} onClose={() => undefined} />)
+    expect(html).toContain('链接地址')
     expect(html).toContain('value="https://example.com"')
     expect(html).toContain('移除')
     expect(html).toContain('应用')
     expect(html).toContain('取消')
+    expect(html).toContain('在新标签页中打开')
   })
 
-  it('hides 移除 button when authoring a fresh link', () => {
+  it('selection: hides 移除 when authoring a fresh link', () => {
     const { editor } = stubEditor('')
-    const html = renderToStaticMarkup(<LinkPopover editor={editor} onClose={() => undefined} />)
-    expect(html).not.toContain('>移除<')
+    const html = renderToStaticMarkup(<LinkPopover variant="selection" editor={editor} onClose={() => undefined} />)
+    expect(html).not.toContain('移除')
     expect(html).toContain('应用')
   })
 
-  it('marks the input as type=url so mobile keyboards show the URL row', () => {
+  it('toolbar: shows display text + insert label', () => {
     const { editor } = stubEditor('')
-    const html = renderToStaticMarkup(<LinkPopover editor={editor} onClose={() => undefined} />)
+    const html = renderToStaticMarkup(<LinkPopover variant="toolbar" editor={editor} onClose={() => undefined} />)
+    expect(html).toContain('显示文字')
+    expect(html).toContain('链接地址')
+    expect(html).toContain('插入')
+    expect(html).not.toContain('应用')
+  })
+
+  it('marks the URL input as type=url so mobile keyboards show the URL row', () => {
+    const { editor } = stubEditor('')
+    const html = renderToStaticMarkup(<LinkPopover variant="selection" editor={editor} onClose={() => undefined} />)
     expect(html).toMatch(/type="url"/)
   })
 
-  it('exposes the contract used by the apply path (smoke check)', () => {
-    // Smoke-test the chain wiring shape: when the apply path runs
-    // we expect focus → extendMarkRange('link') → setLink → run.
+  it('exposes the chain wiring shape used by the selection apply path (smoke check)', () => {
     const { editor, calls } = stubEditor('')
     editor.chain().focus().extendMarkRange('link').setLink({ href: 'https://x.test' }).run()
-    expect(calls).toEqual(['focus', 'extendMarkRange:link', 'setLink:https://x.test', 'run'])
+    expect(calls).toEqual(['focus', 'extendMarkRange:link', 'setLink:https://x.test::', 'run'])
   })
 })

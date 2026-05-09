@@ -1,12 +1,16 @@
 import type {
   Block,
   CodeBlock,
+  FootnoteDefinitionBlock,
+  FootnoteRefMarkDef,
   HorizontalRuleBlock,
   ImageBlock,
   LinkMarkDef,
   MarkDef,
+  NonRecursiveBlock,
   PortableTextBody,
   SolutionBlock,
+  TwoColumnBlock,
   Span,
   StandardBlockStyle,
   TableBlock,
@@ -32,11 +36,12 @@ import { portableTextBlockSemanticFingerprint } from '@/shared/portable-text-sem
 //      blocks (text/marks/lists/headings/blockquote/code/image/
 //      horizontalRule) `bodyToPmDoc(pmDocToBody(x))` MUST equal `x`.
 //      This guarantee is asserted by `tests/contract.pt-bridge.test.ts`.
-//   2. **Custom blocks.** `mathBlock` / `mermaid` / `musicPlayer` /
-//      `footnoteDefinition` map to a PM `blockCard` carrying `attrs.payload`.
-//      **`solution`** is different: it serialises to a nested `solution`
-//      PM node whose `content` is normal `block+` prose (same idea as
-//      `blockquote`) so operators edit the answer body in place. The
+//   2. **Custom blocks.** `mathBlock` / `mermaid` / `musicPlayer` map to a PM
+//      `blockCard` carrying `attrs.payload`. **`solution`** / **`twoColumn`**
+//      serialise to nested PM nodes (`block+` / paired panes). **`footnoteDefinition`** uses the
+//      same nested PM shape for full-document round-trip in tests/tools; the
+//      admin page editor strips those rows before `bodyToPmDoc` and merges
+//      them back on save (`@/shared/portable-text-footnote-merge`). The
 //      reverse path walks nested nodes the same way as the document root.
 //   3. **Keys are preserved on the way in.** The PM node's `attrs._key`
 //      mirrors the PT `_key`. New nodes inserted in the editor get a
@@ -203,6 +208,10 @@ function blockToPmNode(block: Block): PmBlockNode {
       return tableBlockToPmNode(block)
     case 'solution':
       return solutionBlockToPmNode(block)
+    case 'twoColumn':
+      return twoColumnBlockToPmNode(block)
+    case 'footnoteDefinition':
+      return footnoteDefinitionBlockToPmNode(block)
     default:
       return customBlockToPmNode(block)
   }
@@ -217,6 +226,49 @@ function solutionBlockToPmNode(block: SolutionBlock): PmBlockNode {
   return {
     type: 'solution',
     attrs: { _key: block._key },
+    content: inner,
+  }
+}
+
+function twoColumnBlockToPmNode(block: TwoColumnBlock): PmBlockNode {
+  const leftInner: PmNode[] = []
+  const rightInner: PmNode[] = []
+  pushBlocks(leftInner, block.left)
+  pushBlocks(rightInner, block.right)
+  if (leftInner.length === 0) {
+    leftInner.push({ type: 'paragraph' })
+  }
+  if (rightInner.length === 0) {
+    rightInner.push({ type: 'paragraph' })
+  }
+  const baseKey = block._key
+  return {
+    type: 'twoColumn',
+    attrs: { _key: baseKey },
+    content: [
+      {
+        type: 'twoColumnPane',
+        attrs: { _key: `${baseKey}-pane-L`, side: 'left' },
+        content: leftInner,
+      },
+      {
+        type: 'twoColumnPane',
+        attrs: { _key: `${baseKey}-pane-R`, side: 'right' },
+        content: rightInner,
+      },
+    ],
+  }
+}
+
+function footnoteDefinitionBlockToPmNode(block: FootnoteDefinitionBlock): PmBlockNode {
+  const inner: PmNode[] = []
+  pushBlocks(inner, block.children)
+  if (inner.length === 0) {
+    inner.push({ type: 'paragraph' })
+  }
+  return {
+    type: 'footnoteDefinition',
+    attrs: { _key: block._key, index: block.index },
     content: inner,
   }
 }
@@ -290,6 +342,7 @@ function spanMarkToPmMark(markName: string, markDefs: readonly MarkDef[]): PmMar
 }
 
 function imageBlockToPmNode(block: ImageBlock): PmBlockNode {
+  const layout = block.layout === 'left' || block.layout === 'right' ? block.layout : undefined
   return {
     type: 'image',
     attrs: {
@@ -297,6 +350,7 @@ function imageBlockToPmNode(block: ImageBlock): PmBlockNode {
       src: block.src,
       alt: block.alt,
       caption: block.caption,
+      layout,
       width: block.width,
       height: block.height,
       thumbhash: block.thumbhash,
@@ -373,6 +427,233 @@ function headingLevelFromStyle(style: StandardBlockStyle | undefined): number | 
 
 // --- PM → PT ----------------------------------------------------------------
 
+function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: string, index: number) => void): void {
+  function scanSpans(spans: readonly Span[], markDefs: readonly MarkDef[] | undefined): void {
+    if (markDefs === undefined || markDefs.length === 0) {
+      return
+    }
+    const refByMarkKey = new Map<string, FootnoteRefMarkDef>()
+    for (const m of markDefs) {
+      if (m._type === 'footnoteRef') {
+        refByMarkKey.set(m._key, m)
+      }
+    }
+    for (const span of spans) {
+      for (const mk of span.marks ?? []) {
+        const def = refByMarkKey.get(mk)
+        if (def !== undefined) {
+          visit(def.targetKey, def.index)
+        }
+      }
+    }
+  }
+
+  function visitNonRecursive(nr: NonRecursiveBlock): void {
+    switch (nr._type) {
+      case 'block':
+        scanSpans(nr.children, nr.markDefs)
+        return
+      case 'table':
+        for (const row of nr.rows ?? []) {
+          for (const cell of row.cells) {
+            scanSpans(cell.content, cell.markDefs ?? [])
+          }
+        }
+        return
+      default:
+        return
+    }
+  }
+
+  for (const block of body) {
+    if (block._type === 'footnoteDefinition') {
+      continue
+    }
+    if (block._type === 'solution') {
+      for (const child of block.children) {
+        visitNonRecursive(child)
+      }
+      continue
+    }
+    if (block._type === 'twoColumn') {
+      for (const child of block.left) {
+        visitNonRecursive(child)
+      }
+      for (const child of block.right) {
+        visitNonRecursive(child)
+      }
+      continue
+    }
+    visitNonRecursive(block as NonRecursiveBlock)
+  }
+}
+
+function collectReferencedFootnoteTargetKeys(body: PortableTextBody): Set<string> {
+  const keys = new Set<string>()
+  walkMainColumnFootnoteRefs(body, (targetKey) => {
+    keys.add(targetKey)
+  })
+  return keys
+}
+
+/** Definition `_key` values in **first citation order** (main column + solutions), then orphan defs. */
+function collectFootnoteCitationOrder(body: PortableTextBody): string[] {
+  const order: string[] = []
+  const seen = new Set<string>()
+  walkMainColumnFootnoteRefs(body, (targetKey) => {
+    if (seen.has(targetKey)) {
+      return
+    }
+    seen.add(targetKey)
+    order.push(targetKey)
+  })
+  for (const block of body) {
+    if (block._type === 'footnoteDefinition' && !seen.has(block._key)) {
+      seen.add(block._key)
+      order.push(block._key)
+    }
+  }
+  return order
+}
+
+/** Snapshot of inline footnote markers + definition indices for editor reconciliation. */
+export function footnoteSyncSignature(body: PortableTextBody): string {
+  const occurrences: string[] = []
+  walkMainColumnFootnoteRefs(body, (targetKey, index) => {
+    occurrences.push(`${targetKey}:${index}`)
+  })
+  const defs = body
+    .filter((b): b is FootnoteDefinitionBlock => b._type === 'footnoteDefinition')
+    .map((b) => `${b._key}@${b.index}`)
+    .sort()
+  return `${occurrences.join('\u001f')}\u001e${defs.join('\u001f')}`
+}
+
+function syncMarkDefs(markDefs: MarkDef[] | undefined, keyToIndex: Map<string, number>): MarkDef[] | undefined {
+  if (markDefs === undefined || markDefs.length === 0) {
+    return markDefs
+  }
+  return markDefs.map((m) => {
+    if (m._type !== 'footnoteRef') {
+      return m
+    }
+    const idx = keyToIndex.get(m.targetKey)
+    if (idx === undefined) {
+      return m
+    }
+    if (m.index === idx) {
+      return m
+    }
+    return { ...m, index: idx }
+  })
+}
+
+/** Keeps superscript digit text aligned with `footnoteRef.index` after renumbering (editor PM shows span text). */
+function syncFootnoteDigitsInSpans(
+  spans: readonly Span[],
+  markDefs: readonly MarkDef[] | undefined,
+  keyToIndex: Map<string, number>,
+): Span[] {
+  if (markDefs === undefined || markDefs.length === 0) {
+    return [...spans]
+  }
+  const refByMarkKey = new Map<string, FootnoteRefMarkDef>()
+  for (const m of markDefs) {
+    if (m._type === 'footnoteRef') {
+      refByMarkKey.set(m._key, m)
+    }
+  }
+  if (refByMarkKey.size === 0) {
+    return [...spans]
+  }
+  return spans.map((span) => {
+    for (const mk of span.marks ?? []) {
+      const def = refByMarkKey.get(mk)
+      if (def !== undefined) {
+        const idx = keyToIndex.get(def.targetKey) ?? def.index
+        return { ...span, text: String(idx) }
+      }
+    }
+    return span
+  })
+}
+
+function syncBlock(block: Block, keyToIndex: Map<string, number>): Block {
+  switch (block._type) {
+    case 'footnoteDefinition': {
+      const idx = keyToIndex.get(block._key)
+      const index = idx ?? block.index
+      return {
+        ...block,
+        index,
+        children: block.children.map((c) => syncBlock(c, keyToIndex)) as FootnoteDefinitionBlock['children'],
+      }
+    }
+    case 'solution':
+      return {
+        ...block,
+        children: block.children.map((c) => syncBlock(c, keyToIndex)) as SolutionBlock['children'],
+      }
+    case 'twoColumn':
+      return {
+        ...block,
+        left: block.left.map((c) => syncBlock(c, keyToIndex)) as TwoColumnBlock['left'],
+        right: block.right.map((c) => syncBlock(c, keyToIndex)) as TwoColumnBlock['right'],
+      }
+    case 'block': {
+      const nextDefs = syncMarkDefs(block.markDefs, keyToIndex)
+      return {
+        ...block,
+        markDefs: nextDefs,
+        children: syncFootnoteDigitsInSpans(block.children, nextDefs, keyToIndex),
+      }
+    }
+    case 'table':
+      return {
+        ...block,
+        rows: block.rows.map((row) => ({
+          ...row,
+          cells: row.cells.map((cell) => {
+            const nextCellDefs = syncMarkDefs(cell.markDefs, keyToIndex) as TableCell['markDefs']
+            return {
+              ...cell,
+              markDefs: nextCellDefs,
+              content: syncFootnoteDigitsInSpans(cell.content, nextCellDefs ?? undefined, keyToIndex),
+            }
+          }),
+        })),
+      }
+    default:
+      return block
+  }
+}
+
+/** Renumber `footnoteDefinition.index` + `footnoteRef.index` by **first citation order** in the main column (and solutions). Appends orphan defs. Skips when there are no defs or a ref targets a missing definition (preserves prose-only round-trips). */
+export function synchronizeFootnoteIndices(body: PortableTextBody): PortableTextBody {
+  const defKeys = new Set(
+    body.filter((b): b is FootnoteDefinitionBlock => b._type === 'footnoteDefinition').map((b) => b._key),
+  )
+  if (defKeys.size === 0) {
+    return body
+  }
+  const referenced = collectReferencedFootnoteTargetKeys(body)
+  for (const key of referenced) {
+    if (!defKeys.has(key)) {
+      return body
+    }
+  }
+  const order = collectFootnoteCitationOrder(body)
+  if (order.length === 0) {
+    return body
+  }
+  const keyToIndex = new Map(order.map((k, i) => [k, i + 1]))
+  const synced = body.map((b) => syncBlock(b, keyToIndex))
+  const defs = synced.filter((b): b is FootnoteDefinitionBlock => b._type === 'footnoteDefinition')
+  const prose = synced.filter((b) => b._type !== 'footnoteDefinition')
+  defs.sort((a, b) => a.index - b.index)
+  return [...prose, ...defs]
+}
+
 /** Convert a ProseMirror `doc` node back into a PortableText body. */
 export function pmDocToBody(doc: PmDoc): PortableTextBody {
   const out: Block[] = []
@@ -388,7 +669,7 @@ export function pmDocToBody(doc: PmDoc): PortableTextBody {
   for (const node of doc.content) {
     pushPmNode(out, node, ensureKey)
   }
-  return out
+  return synchronizeFootnoteIndices(out)
 }
 
 /**
@@ -466,13 +747,16 @@ function pushPmNode(
       flattenList(node, out, ensureKey, 1)
       return
     }
-    case 'image':
+    case 'image': {
+      const layoutRaw = stringAttr(node.attrs, 'layout')
+      const layout = layoutRaw === 'left' || layoutRaw === 'right' ? layoutRaw : undefined
       out.push({
         _type: 'image',
         _key: ensureKey(node.attrs),
         src: typeof node.attrs?.src === 'string' ? node.attrs.src : '',
         alt: stringAttr(node.attrs, 'alt'),
         caption: stringAttr(node.attrs, 'caption'),
+        ...(layout !== undefined ? { layout } : {}),
         width: numberAttr(node.attrs, 'width'),
         height: numberAttr(node.attrs, 'height'),
         thumbhash: stringAttr(node.attrs, 'thumbhash'),
@@ -480,6 +764,7 @@ function pushPmNode(
         imageId: stringAttr(node.attrs, 'imageId'),
       })
       return
+    }
     case 'codeBlock': {
       const text = (node.content ?? [])
         .filter((child): child is PmInlineNode => isInline(child))
@@ -510,6 +795,49 @@ function pushPmNode(
         _type: 'solution',
         _key: ensureKey(node.attrs),
         children: inner as SolutionBlock['children'],
+      })
+      return
+    }
+    case 'twoColumn': {
+      const panes = (node.content ?? []).filter(isBlock).filter((c) => c.type === 'twoColumnPane')
+      const pickPane = (side: 'left' | 'right'): PmBlockNode | undefined => {
+        const byAttr = panes.find((p) => stringAttr(p.attrs, 'side') === side)
+        return byAttr ?? (side === 'left' ? panes[0] : panes[1])
+      }
+      const leftPane = pickPane('left')
+      const rightPane = pickPane('right')
+      const leftBlocks: Block[] = []
+      const rightBlocks: Block[] = []
+      const collectPane = (pane: PmBlockNode | undefined, target: Block[]): void => {
+        if (pane === undefined) {
+          return
+        }
+        for (const child of (pane.content ?? []).filter(isBlock)) {
+          pushPmNode(target, child, ensureKey)
+        }
+      }
+      collectPane(leftPane, leftBlocks)
+      collectPane(rightPane, rightBlocks)
+      out.push({
+        _type: 'twoColumn',
+        _key: ensureKey(node.attrs),
+        left: leftBlocks as TwoColumnBlock['left'],
+        right: rightBlocks as TwoColumnBlock['right'],
+      })
+      return
+    }
+    case 'footnoteDefinition': {
+      const inner: Block[] = []
+      for (const child of (node.content ?? []).filter(isBlock)) {
+        pushPmNode(inner, child, ensureKey)
+      }
+      const rawIndex = node.attrs?.index
+      const idx = typeof rawIndex === 'number' && Number.isFinite(rawIndex) ? Math.floor(rawIndex) : 1
+      out.push({
+        _type: 'footnoteDefinition',
+        _key: ensureKey(node.attrs),
+        index: idx >= 1 ? idx : 1,
+        children: inner as FootnoteDefinitionBlock['children'],
       })
       return
     }

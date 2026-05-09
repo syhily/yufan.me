@@ -123,6 +123,11 @@ export const contentSchema = z.object({
     sort: sortOrderSchema,
     feature: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
   }),
+  footnotes: z
+    .object({
+      sectionTitle: z.string().trim().min(1).max(120),
+    })
+    .default({ sectionTitle: '尾声礼记' }),
 })
 export type ContentInput = z.infer<typeof contentSchema>
 

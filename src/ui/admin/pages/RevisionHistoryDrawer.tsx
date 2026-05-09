@@ -1,5 +1,5 @@
 import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AdminRevisionDto, ListPageRevisionsInput, ListPageRevisionsOutput } from '@/shared/cms-pages'
 import type { PortableTextBody } from '@/shared/portable-text'
@@ -95,8 +95,8 @@ export function RevisionHistoryDrawer({
           </Button>
         }
       />
-      <SheetContent side="right" className="w-160 sm:max-w-160">
-        <SheetHeader>
+      <SheetContent side="right" className="flex min-h-0 w-160 flex-col sm:max-w-160">
+        <SheetHeader className="shrink-0">
           <SheetTitle className="flex items-center gap-2">
             {selectedRevision !== null ? (
               <>
@@ -119,28 +119,30 @@ export function RevisionHistoryDrawer({
             )}
           </SheetTitle>
         </SheetHeader>
-        {selectedRevision === null ? (
-          <RevisionListView
-            revisions={revisions}
-            currentToken={currentToken}
-            isFetching={isPending}
-            onSelect={setSelectedId}
-            onRefresh={() => {
-              setRevisions(null)
-              load({ id: pageId })
-            }}
-          />
-        ) : (
-          <RevisionDetailView
-            revision={selectedRevision}
-            currentBody={currentBody}
-            isCurrent={selectedRevision.clientRevisionToken === currentToken}
-            onAdopt={() => {
-              onAdoptRevision(selectedRevision)
-              setOpen(false)
-            }}
-          />
-        )}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {selectedRevision === null ? (
+            <RevisionListView
+              revisions={revisions}
+              currentToken={currentToken}
+              isFetching={isPending}
+              onSelect={setSelectedId}
+              onRefresh={() => {
+                setRevisions(null)
+                load({ id: pageId })
+              }}
+            />
+          ) : (
+            <RevisionDetailView
+              revision={selectedRevision}
+              currentBody={currentBody}
+              isCurrent={selectedRevision.clientRevisionToken === currentToken}
+              onAdopt={() => {
+                onAdoptRevision(selectedRevision)
+                setOpen(false)
+              }}
+            />
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   )
@@ -158,8 +160,8 @@ interface RevisionListViewProps {
 
 function RevisionListView({ revisions, currentToken, isFetching, onSelect, onRefresh }: RevisionListViewProps) {
   return (
-    <>
-      <div className="flex items-center justify-between p-4 pt-0">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center justify-between p-4 pt-0">
         <span className="text-xs text-muted-foreground">
           {revisions !== null ? `${revisions.length} 个修订` : '加载中…'}
         </span>
@@ -167,7 +169,7 @@ function RevisionListView({ revisions, currentToken, isFetching, onSelect, onRef
           <RefreshCcwIcon /> 刷新
         </Button>
       </div>
-      <ol className="flex flex-col gap-2 px-4 pb-4">
+      <ol className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-4">
         {revisions?.map((revision) => (
           <RevisionRow
             key={revision.id}
@@ -180,7 +182,7 @@ function RevisionListView({ revisions, currentToken, isFetching, onSelect, onRef
           <li className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">暂无历史</li>
         ) : null}
       </ol>
-    </>
+    </div>
   )
 }
 
@@ -244,6 +246,52 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
   const diff = useMemo(() => diffBodies(revision.body, currentBody), [revision.body, currentBody])
   const changedCount = diff.filter((entry) => entry.status !== 'unchanged').length
 
+  const leftScrollRef = useRef<HTMLDivElement>(null)
+  const rightScrollRef = useRef<HTMLDivElement>(null)
+  const syncScrollLockRef = useRef(false)
+
+  useEffect(() => {
+    const left = leftScrollRef.current
+    const right = rightScrollRef.current
+    if (!left || !right) {
+      return
+    }
+    left.scrollTop = 0
+    right.scrollTop = 0
+  }, [revision.id])
+
+  useEffect(() => {
+    const left = leftScrollRef.current
+    const right = rightScrollRef.current
+    if (!left || !right) {
+      return
+    }
+
+    const onLeftScroll = () => {
+      if (syncScrollLockRef.current) {
+        return
+      }
+      syncScrollLockRef.current = true
+      right.scrollTop = left.scrollTop
+      syncScrollLockRef.current = false
+    }
+    const onRightScroll = () => {
+      if (syncScrollLockRef.current) {
+        return
+      }
+      syncScrollLockRef.current = true
+      left.scrollTop = right.scrollTop
+      syncScrollLockRef.current = false
+    }
+
+    left.addEventListener('scroll', onLeftScroll, { passive: true })
+    right.addEventListener('scroll', onRightScroll, { passive: true })
+    return () => {
+      left.removeEventListener('scroll', onLeftScroll)
+      right.removeEventListener('scroll', onRightScroll)
+    }
+  }, [diff])
+
   return (
     <div className="flex min-h-0 grow flex-col gap-3 overflow-hidden px-4 pb-4">
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -256,13 +304,13 @@ function RevisionDetailView({ revision, currentBody, isCurrent, onAdopt }: Revis
       <div className="grid min-h-0 grow grid-cols-2 gap-2 overflow-hidden rounded-md border bg-card">
         <div className="flex min-h-0 flex-col border-r">
           <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">历史版本</div>
-          <div className="min-h-0 grow overflow-y-auto p-2">
+          <div ref={leftScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
             <DiffPanel diff={diff} side="left" />
           </div>
         </div>
         <div className="flex min-h-0 flex-col">
           <div className="border-b bg-muted/50 px-2 py-1 text-xs font-medium text-muted-foreground">当前正文</div>
-          <div className="min-h-0 grow overflow-y-auto p-2">
+          <div ref={rightScrollRef} className="min-h-0 grow overflow-y-auto overscroll-contain p-2">
             <DiffPanel diff={diff} side="right" />
           </div>
         </div>

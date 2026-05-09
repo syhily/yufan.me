@@ -14,6 +14,7 @@
 
 export const EDITOR_EVENT_OPEN_IMAGE_PICKER = 'yufan:open-image-picker'
 export const EDITOR_EVENT_OPEN_MUSIC_PICKER = 'yufan:open-music-picker'
+export const EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG = 'yufan:open-footnote-dialog'
 
 export function dispatchOpenImagePicker(): void {
   if (typeof document === 'undefined') {
@@ -27,4 +28,11 @@ export function dispatchOpenMusicPicker(): void {
     return
   }
   document.dispatchEvent(new CustomEvent(EDITOR_EVENT_OPEN_MUSIC_PICKER))
+}
+
+export function dispatchOpenFootnoteDialog(): void {
+  if (typeof document === 'undefined') {
+    return
+  }
+  document.dispatchEvent(new CustomEvent(EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG))
 }

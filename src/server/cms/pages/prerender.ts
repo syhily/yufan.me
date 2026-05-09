@@ -107,6 +107,14 @@ function collectBlock(
         }
       }
       return
+    case 'twoColumn':
+      for (const child of block.left) {
+        collectBlock(child as Block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
+      }
+      for (const child of block.right) {
+        collectBlock(child as Block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
+      }
+      return
     case 'table':
       // Tables only carry inline span content per
       // `tableCellSchema`'s contract — no nested code / math /

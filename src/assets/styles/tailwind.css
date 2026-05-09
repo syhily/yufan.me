@@ -50,6 +50,8 @@
   /* Misc primitives */
   --font-code: 'Iosevka', monospace;
   --bg-shiki-light: rgb(253, 246, 227);
+  --fg-inline-code-on-shiki-bg: #24292e;
+  --border-inline-code-on-shiki-bg: color-mix(in oklab, var(--bg-shiki-light) 68%, white 32%);
   --size-empty-state: 50vh;
   --z-aside-drawer: 1020;
   text-autospace: normal;
@@ -374,6 +376,28 @@ body {
       font-weight: 400;
       background-color: var(--surface);
       border-radius: var(--radius-sm);
+      quotes: none;
+      display: flow-root;
+      padding-block: 1rem;
+      padding-inline-end: 1.25rem;
+    }
+
+    &.prose-lg :where(blockquote),
+    &.prose-sm :where(blockquote) {
+      padding-inline-start: 1.25rem;
+    }
+
+    :where(blockquote) > :where(:first-child) {
+      margin-top: 0;
+    }
+
+    :where(blockquote) > :where(:last-child) {
+      margin-bottom: 0;
+    }
+
+    :where(blockquote) :where(p:first-of-type)::before,
+    :where(blockquote) :where(p:last-of-type)::after {
+      content: none;
     }
 
     :where(mjx-container[jax='SVG']) > :where(svg) {
@@ -386,7 +410,12 @@ body {
       overflow-y: hidden;
       padding-bottom: 0.125rem;
       -webkit-overflow-scrolling: touch;
+      text-align: center;
     }
+  }
+
+  &.prose.max-w-none :where(code):not(:where(pre *)) {
+    font-weight: 400;
   }
 
   :where(code, pre, kbd, samp) {
@@ -394,11 +423,40 @@ body {
   }
 
   &.post-content {
-    :where(:not(pre) > code) {
-      padding: 0.08em 0.32em 0.1em;
-      margin: 0 0.06em;
-      border-radius: 0.1875rem;
+    :where(code) {
+      background-color: var(--bg-shiki-light);
+      color: var(--fg-inline-code-on-shiki-bg);
+      border: 1px solid var(--border-inline-code-on-shiki-bg);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      border-radius: var(--radius-md);
+      font-size: 0.875em;
       box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    :where(span[data-math-inline]) {
+      background-color: var(--bg-shiki-light);
+      color: var(--fg-inline-code-on-shiki-bg);
+      border: 1px solid var(--border-inline-code-on-shiki-bg);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      border-radius: var(--radius-md);
+      font-size: 0.875em;
+      font-family: var(--font-code);
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    &.pt-body-editor :where(span[data-math-inline]) {
+      background-color: color-mix(in oklab, rgb(59 130 246) 16%, var(--canvas));
+      color: var(--ink-body);
+      border: 1px solid color-mix(in oklab, rgb(59 130 246) 8%, var(--canvas));
+    }
+
+    :where(code)::before,
+    :where(code)::after {
+      content: none;
     }
 
     :where(pre) {
@@ -425,7 +483,13 @@ body {
     :where(pre) > :where(code) {
       color: inherit;
       background: transparent;
-      padding-top: 0 !important;
+      border: none;
+      padding: 0 !important;
+      margin: 0;
+      border-radius: 0;
+      font-size: inherit;
+      box-decoration-break: unset;
+      -webkit-box-decoration-break: unset;
       display: block;
       min-width: 100%;
       width: max-content;
@@ -436,6 +500,23 @@ body {
   }
 
   &.comment-content {
+    :where(code) {
+      background-color: var(--bg-shiki-light);
+      color: var(--fg-inline-code-on-shiki-bg);
+      border: 1px solid var(--border-inline-code-on-shiki-bg);
+      padding: 0.2em 0.4em;
+      margin: 0;
+      border-radius: var(--radius-md);
+      font-size: 0.875em;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+
+    :where(code)::before,
+    :where(code)::after {
+      content: none;
+    }
+
     :where(pre) {
       font-size: 0.875rem;
       line-height: 1.7;
@@ -466,15 +547,23 @@ body {
       line-height: inherit;
       color: inherit;
       background: transparent;
+      border: none;
       padding: 0;
+      margin: 0;
+      border-radius: 0;
+      box-decoration-break: unset;
+      -webkit-box-decoration-break: unset;
       white-space: pre;
       word-break: normal;
       overflow-wrap: normal;
     }
+  }
+}
 
-    :where(code:not(pre > code)) {
-      padding: 0.125rem 0.25rem;
-      border-radius: 0.25rem;
-    }
+@layer utilities {
+  /* medium-zoom stack admin chrome under overlay popovers above */
+  .medium-zoom-overlay,
+  .medium-zoom-image--opened {
+    z-index: 45;
   }
 }

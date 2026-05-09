@@ -23,6 +23,7 @@ interface FormState {
   feedSize: number
   postSort: 'asc' | 'desc'
   postFeature: string[]
+  footnotesSectionTitle: string
 }
 
 const SORT_ITEMS = [
@@ -46,6 +47,7 @@ export function ContentForm({ content }: ContentFormProps) {
       feedSize: source.feed.size,
       postSort: source.post.sort,
       postFeature: [...(source.post.feature ?? [])],
+      footnotesSectionTitle: source.footnotes?.sectionTitle ?? '尾声礼记',
     }),
     fromState: (state) => {
       const cleanedFeature = state.postFeature.map((value) => value.trim()).filter((value) => value.length > 0)
@@ -61,6 +63,7 @@ export function ContentForm({ content }: ContentFormProps) {
           sort: state.postSort,
           ...(cleanedFeature.length > 0 ? { feature: cleanedFeature } : {}),
         },
+        footnotes: { sectionTitle: state.footnotesSectionTitle.trim() || '尾声礼记' },
       }
     },
   })
@@ -204,6 +207,22 @@ export function ContentForm({ content }: ContentFormProps) {
               添加精选 slug
             </Button>
           </div>
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection
+        title="脚注汇总标题"
+        description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。不影响 MDX 文章页的脚注样式。"
+      >
+        <SettingsRow label="标题文案" htmlFor="content-footnotes-section-title">
+          <Input
+            id="content-footnotes-section-title"
+            type="text"
+            maxLength={120}
+            value={draft.footnotesSectionTitle}
+            onChange={(e) => setDraft((prev) => ({ ...prev, footnotesSectionTitle: e.target.value }))}
+            required
+          />
         </SettingsRow>
       </SettingsSection>
 

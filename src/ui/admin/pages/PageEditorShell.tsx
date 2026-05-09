@@ -38,10 +38,12 @@ import {
   EMPTY_META_DRAFT,
   localInputValueToIso,
   metaDraftFromPage,
+  metaDraftsEqual,
   MetaSidebar,
   type PageMetaDraft,
   type SidebarPublishStatus,
   type SidebarRevisionSummary,
+  type SidebarSaveStatus,
 } from '@/ui/admin/pages/MetaSidebar'
 import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
 import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
@@ -191,6 +193,17 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     isEditing ? detail.page.publishedAt : null,
   )
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+  const [displaySaveAtMs, setDisplaySaveAtMs] = useState<number | null>(() => {
+    if (!isEditing || detail === undefined) {
+      return null
+    }
+    const iso = (detail.latestRevision ?? detail.publishedRevision)?.updatedAt ?? detail.page.updatedAt
+    const ms = Date.parse(iso)
+    return Number.isNaN(ms) ? null : ms
+  })
+  const lastPersistedMetaRef = useRef<PageMetaDraft>(
+    isEditing && detail !== undefined ? metaDraftFromPage(detail.page) : { ...EMPTY_META_DRAFT },
+  )
 
   // Tracks the body that's currently persisted server-side. Seeded
   // from the initially-loaded revision and updated after every
@@ -297,6 +310,11 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   const unpublishApi = useApiFetcher<UnpublishPageInput, UnpublishPageOutput>(UNPUBLISH, {
     onSuccess: (payload) => {
       setStatus({ kind: 'saved', at: new Date() })
+      lastPersistedMetaRef.current = metaDraftFromPage(payload.page)
+      const saveMs = Date.parse(payload.page.updatedAt)
+      if (!Number.isNaN(saveMs)) {
+        setDisplaySaveAtMs(saveMs)
+      }
       setMeta(metaDraftFromPage(payload.page))
       setServerPublishedAtIso(payload.page.publishedAt)
       // Take the page offline = drop any leftover banner; the
@@ -367,6 +385,11 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     // routes through `persistCreate()` instead — the `submit()` call
     // there bypasses this callback by using `submitApiAction`.
     setStatus({ kind: 'saved', at: new Date() })
+    lastPersistedMetaRef.current = metaDraftFromPage(saved)
+    const saveMs = Date.parse(saved.updatedAt)
+    if (!Number.isNaN(saveMs)) {
+      setDisplaySaveAtMs(saveMs)
+    }
     setMeta(metaDraftFromPage(saved))
     setServerPublishedAtIso(saved.publishedAt)
     // Use the freshly-saved slug for the banner — the operator may
@@ -388,6 +411,10 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       return
     }
     setStatus({ kind: 'saved', at: new Date() })
+    const saveMs = Date.parse(payload.revision.updatedAt)
+    if (!Number.isNaN(saveMs)) {
+      setDisplaySaveAtMs(saveMs)
+    }
     // Body-side success — the slug isn't on the body payload, fall
     // back to the latest known meta slug (still in `meta.slug`,
     // which `onMetaSaved` will have refreshed if both legs landed).
@@ -632,11 +659,20 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     [isEditing, latestRevision, publishedRevision, meta.published],
   )
 
+  const showPreviewPublicSyncHint = useMemo(() => {
+    if (!isEditing) {
+      return false
+    }
+    if (publishState.kind === 'draft-ahead') {
+      return true
+    }
+    return !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
+  }, [isEditing, body, publishState])
+
   // Visibility-side projection of the page lifecycle. Sits next to
-  // `sidebarRevisionSummary` (which tracks the draft↔published
-  // version delta) inside 发布状态 — together they replace the two
-  // competing badges that used to live on the toolbar's first row
-  // and inside 基本信息. We compute it here from the shell-owned
+  // `sidebarRevisionSummary` (for the no-saved-revision hint) inside
+  // 发布状态 — together they replace the two competing badges that
+  // used to live on the toolbar's first row and inside 基本信息. We compute it here from the shell-owned
   // `meta` + the loader-supplied `detail` so the sidebar stays a
   // pure-props view.
   const sidebarPublishStatus = useMemo<SidebarPublishStatus | null>(() => {
@@ -799,10 +835,9 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // Project the shell-owned `PublishState` (which mixes visibility +
   // revision lifecycle into one tagged union) into the
   // visibility-free `SidebarRevisionSummary` the sidebar consumes.
-  // This is the single point where 「草稿 R11 / 已发布 R10」 gets
-  // computed; the unified 发布状态 card inside 基本信息 reads it
-  // alongside `sidebarPublishStatus` to render one cohesive block
-  // instead of two competing badges.
+  // Derived here alongside `sidebarPublishStatus`; `RevisionSummaryInline`
+  // only surfaces 「当前还没有保存的版本」 when applicable — revision
+  // numbers stay off the 基本信息 card (badges carry lifecycle state).
   const sidebarRevisionSummary = useMemo<SidebarRevisionSummary | null>(() => {
     if (!isEditing) {
       return null
@@ -825,17 +860,40 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     }
   }, [isEditing, publishState])
 
-  const statusIndicator = <StatusIndicator status={status} />
+  const isBodyDirty = !arePortableTextBodiesEquivalent(body, lastSavedBodyRef.current)
+  const isMetaDirty = !metaDraftsEqual(meta, lastPersistedMetaRef.current)
+  const sidebarSaveStatus = useMemo<SidebarSaveStatus>(() => {
+    if (status.kind === 'saving') {
+      return { kind: 'saving' }
+    }
+    if (status.kind === 'error') {
+      return { kind: 'error', message: status.message }
+    }
+    if (status.kind === 'conflict') {
+      return { kind: 'conflict' }
+    }
+    if (status.kind === 'info') {
+      return { kind: 'info', message: status.message }
+    }
+    if (!isEditing) {
+      return { kind: 'unsaved' }
+    }
+    if (isBodyDirty || isMetaDirty) {
+      return { kind: 'unsaved' }
+    }
+    if (displaySaveAtMs !== null) {
+      return { kind: 'saved', atMs: displaySaveAtMs }
+    }
+    return { kind: 'unsaved' }
+  }, [status, isEditing, isBodyDirty, isMetaDirty, displaySaveAtMs])
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 p-4">
       {/* Single wrapping toolbar. 返回列表 leads, every other control
           flows after it on the same row, and the whole strip wraps
           flush-left on narrower viewports. The page identity (title +
-          revision badge + autosave indicator) used to live here on a
-          dedicated first row; it now docks inside MetaSidebar's
-          基本信息 card via the `identityHeader` prop so the toolbar
-          stays focused on actions. */}
+          revision badge) docks inside MetaSidebar's 基本信息 card so the
+          toolbar stays focused on actions. */}
       <header className="flex flex-wrap items-center gap-2 text-sm">
         <Button
           variant="ghost"
@@ -989,7 +1047,12 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
         </div>
         {previewOpen ? (
           <section aria-label="实时预览" className="flex min-h-0 flex-col">
-            <PreviewPane body={body} title={meta.title} slug={meta.slug} />
+            <PreviewPane
+              body={body}
+              title={meta.title}
+              slug={meta.slug}
+              showPublicSyncHint={showPreviewPublicSyncHint}
+            />
           </section>
         ) : null}
         {/* Inline metadata rail. Only renders in the 2-column
@@ -1005,7 +1068,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               publishStatus={sidebarPublishStatus}
               ogPreviewSlug={isEditing ? detail.page.slug : null}
               revisionSummary={sidebarRevisionSummary}
-              statusIndicator={statusIndicator}
+              saveStatus={sidebarSaveStatus}
               extras={
                 isEditing ? (
                   <div className="rounded-md border bg-card p-2">
@@ -1043,7 +1106,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                 publishStatus={sidebarPublishStatus}
                 ogPreviewSlug={isEditing ? detail.page.slug : null}
                 revisionSummary={sidebarRevisionSummary}
-                statusIndicator={statusIndicator}
+                saveStatus={sidebarSaveStatus}
                 extras={
                   isEditing ? (
                     <div className="rounded-md border bg-card p-2">
@@ -1210,23 +1273,6 @@ function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: 
       </div>
     </div>
   )
-}
-
-function StatusIndicator({ status }: { status: Status }) {
-  switch (status.kind) {
-    case 'idle':
-      return null
-    case 'saving':
-      return <span className="text-muted-foreground">保存中…</span>
-    case 'saved':
-      return <span className="text-muted-foreground">已保存 {status.at.toLocaleTimeString('zh-CN')}</span>
-    case 'error':
-      return <span className="text-destructive">{status.message}</span>
-    case 'conflict':
-      return <span className="text-destructive">检测到云端有更新的修订，请刷新后再保存。</span>
-    case 'info':
-      return <span className="text-amber-600 dark:text-amber-400">{status.message}</span>
-  }
 }
 
 type PublishState =

@@ -65,6 +65,21 @@ export const EMPTY_META_DRAFT: PageMetaDraft = {
   publishedAt: '',
 }
 
+export function metaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean {
+  return (
+    a.slug === b.slug &&
+    a.title === b.title &&
+    a.summary === b.summary &&
+    a.cover === b.cover &&
+    a.og === b.og &&
+    a.published === b.published &&
+    a.commentsEnabled === b.commentsEnabled &&
+    a.showToc === b.showToc &&
+    a.showFriends === b.showFriends &&
+    a.publishedAt === b.publishedAt
+  )
+}
+
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
   return {
     slug: page.slug,
@@ -132,8 +147,8 @@ export function localInputValueToIso(value: string): string | null {
  * Revision-side projection of where the page sits in its versioning
  * lifecycle. Built by the editor shell from `detail.latestRevision` /
  * `detail.publishedRevision` and threaded into the sidebar so the
- * 发布状态 card can show 「当前草稿 R11 · 已发布 R10」 without the
- * sidebar reaching back into server DTOs. Independent of
+ * 发布状态 card can surface 「当前还没有保存的版本」 when applicable,
+ * without the sidebar reaching back into server DTOs. Independent of
  * `SidebarPublishStatus` — that one tracks visibility (offline /
  * scheduled / live), this one tracks the draft↔published version
  * relationship.
@@ -144,14 +159,22 @@ export type SidebarRevisionSummary =
   // newer draft sitting on top.
   | { kind: 'published-current'; revisionNo: number }
   // A draft revision is ahead of the (possibly missing) published
-  // revision. Both numbers are surfaced in the UI so the operator
-  // can instantly compare 草稿 vs 已发布.
+  // revision. Carried for shell-side derivations; not shown inline.
   | { kind: 'draft-ahead'; draftRevisionNo: number; publishedRevisionNo: number | null }
 
 // High-level "where is this page in its lifecycle?" used to render
 // the badge inside the 基本信息 card. The shell derives the value
 // from server state + `meta.published` + `meta.publishedAt` and
 // hands it in; the sidebar stays free of any business logic.
+/** Right-rail save-state line — derived in `PageEditorShell`, rendered under 发布状态. */
+export type SidebarSaveStatus =
+  | { kind: 'unsaved' }
+  | { kind: 'saving' }
+  | { kind: 'saved'; atMs: number }
+  | { kind: 'error'; message: string }
+  | { kind: 'conflict' }
+  | { kind: 'info'; message: string }
+
 export type SidebarPublishStatus =
   // No revisions exist yet (create mode or a page that's never been
   // saved to the server).
@@ -194,26 +217,22 @@ export interface MetaSidebarProps {
   ogPreviewSlug?: string | null
   /**
    * Revision-versioning summary rendered alongside the visibility
-   * badge inside 发布状态. `null` ⇒ create mode / no revision yet,
-   * which renders as 「当前还没有保存的版本」 inline. The shell owns
+   * badge inside 发布状态. `null` or `no-revision` renders as
+   * 「当前还没有保存的版本」 inline; other kinds omit extra copy (the
+   * badge already reflects draft vs live). The shell owns
    * the projection because it has direct access to
    * `detail.latestRevision` / `publishedRevision`; the sidebar is
    * pure-props.
    */
   revisionSummary?: SidebarRevisionSummary | null
-  /**
-   * Inline autosave / 已保存 indicator. Rendered next to the
-   * visibility badge so the operator sees publish lifecycle and
-   * autosave activity in one glance. Shell-owned — the sidebar
-   * doesn't model the autosave state machine.
-   */
-  statusIndicator?: ReactNode
+  /** Shell-derived draft / persist lifecycle for the 保存状态 row under 发布状态. */
+  saveStatus: SidebarSaveStatus
   /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
    * once a page has been saved (creating mode renders nothing).
    */
-  extras?: React.ReactNode
+  extras?: ReactNode
 }
 
 // Right-pane metadata panel for the page editor. Lives in its own
@@ -226,7 +245,7 @@ export function MetaSidebar({
   publishStatus,
   ogPreviewSlug,
   revisionSummary,
-  statusIndicator,
+  saveStatus,
   extras,
 }: MetaSidebarProps) {
   const set = <K extends keyof PageMetaDraft>(key: K, value: PageMetaDraft[K]) => onChange({ ...draft, [key]: value })
@@ -241,7 +260,7 @@ export function MetaSidebar({
           <PublishStatusRow
             status={publishStatus ?? 'never-saved'}
             revisionSummary={revisionSummary ?? null}
-            statusIndicator={statusIndicator}
+            saveStatus={saveStatus}
             publishedAt={draft.publishedAt}
             onChangePublishedAt={(value) => set('publishedAt', value)}
             disabled={disabled}
@@ -377,7 +396,7 @@ interface ImageFieldProps {
    * on it to override. When omitted, the empty-state shows a
    * plus-icon placeholder.
    */
-  emptyContent?: React.ReactNode
+  emptyContent?: ReactNode
   /**
    * One-line hint rendered below the click target. Cover and OG use
    * this to explain the click affordance and (for OG) to clarify
@@ -575,10 +594,33 @@ function djb2Short(input: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0').slice(0, 8)
 }
 
+function formatSavedAtLocal(ms: number): string {
+  const d = new Date(ms)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
+  switch (status.kind) {
+    case 'unsaved':
+      return <span className="text-xs text-muted-foreground">未保存</span>
+    case 'saving':
+      return <span className="text-xs text-muted-foreground">保存中…</span>
+    case 'saved':
+      return <span className="text-xs text-muted-foreground">{formatSavedAtLocal(status.atMs)}</span>
+    case 'error':
+      return <span className="text-xs text-destructive">{status.message}</span>
+    case 'conflict':
+      return <span className="text-xs text-destructive">检测到云端有更新的修订，请刷新后再保存。</span>
+    case 'info':
+      return <span className="text-xs text-amber-600 dark:text-amber-400">{status.message}</span>
+  }
+}
+
 interface PublishStatusRowProps {
   status: SidebarPublishStatus
   revisionSummary: SidebarRevisionSummary | null
-  statusIndicator?: ReactNode
+  saveStatus: SidebarSaveStatus
   /** Current `<input type="datetime-local">` value (`''` = unset). */
   publishedAt: string
   onChangePublishedAt: (value: string) => void
@@ -588,8 +630,8 @@ interface PublishStatusRowProps {
 // "Publish status + publish time" widget shown at the top of 基本信息.
 //
 // The status badge tells the operator where the page sits in its
-// lifecycle ("尚未保存" / "已下线" / "已计划" / "已发布" / "草稿
-// 领先"). The publish-time radio toggles between two presets:
+// lifecycle ("尚未保存" / "已下线" / "已计划" / "已发布" /
+// "已发布（有未发布草稿）"). The publish-time radio toggles between two presets:
 //
 //   - 立即发布 — `publishedAt` is cleared. The publish action
 //     reads "no override" and the server stamps `now()`. (For an
@@ -604,7 +646,7 @@ interface PublishStatusRowProps {
 function PublishStatusRow({
   status,
   revisionSummary,
-  statusIndicator,
+  saveStatus,
   publishedAt,
   onChangePublishedAt,
   disabled,
@@ -615,13 +657,16 @@ function PublishStatusRow({
 
   return (
     <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="grid gap-1">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布状态</Label>
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <PublishBadge status={status} isFuture={isFuture} />
-          {statusIndicator}
           <RevisionSummaryInline summary={revisionSummary} />
         </div>
+      </div>
+      <div className="grid gap-1 border-t border-border/60 pt-3">
+        <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">保存状态</Label>
+        <SaveStatusLine status={saveStatus} />
       </div>
       <div className="grid gap-2">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布时间</Label>
@@ -668,9 +713,9 @@ function PublishStatusRow({
         <p className="text-xs text-muted-foreground">
           {isScheduled
             ? isFuture
-              ? '点击「发布」会按上述时间上线，到时间前公网会返回 404。'
-              : '已选择的时间不在未来，点击「发布」会立刻上线。'
-            : '点击「发布」会立刻上线，并使用当前时间作为对外展示的发布日期。'}
+              ? '点击「发布草稿」会按上述时间上线，到时间前公网会返回 404。'
+              : '已选择的时间不在未来，点击「发布草稿」会立刻上线。'
+            : '点击「发布草稿」会立刻上线，并使用当前时间作为对外展示的发布日期。'}
         </p>
       </div>
     </div>
@@ -678,15 +723,10 @@ function PublishStatusRow({
 }
 
 function RevisionSummaryInline({ summary }: { summary: SidebarRevisionSummary | null }) {
-  const text =
-    summary === null || summary.kind === 'no-revision'
-      ? '当前还没有保存的版本'
-      : summary.kind === 'published-current'
-        ? `R${summary.revisionNo} · 当前版本`
-        : summary.publishedRevisionNo !== null
-          ? `草稿 R${summary.draftRevisionNo} · 已发布 R${summary.publishedRevisionNo}`
-          : `草稿 R${summary.draftRevisionNo} · 尚未发布`
-  return <span className="text-xs text-muted-foreground">{text}</span>
+  if (summary === null || summary.kind === 'no-revision') {
+    return <span className="text-xs text-muted-foreground">当前还没有保存的版本</span>
+  }
+  return null
 }
 
 interface PublishModeOptionProps {
@@ -719,19 +759,28 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
   switch (status) {
     case 'never-saved':
       return (
-        <Badge variant="outline">
+        <Badge
+          variant="outline"
+          className="border-slate-300 bg-slate-50 text-slate-800 dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-200"
+        >
           <CircleDashedIcon /> 尚未保存
         </Badge>
       )
     case 'offline':
       return (
-        <Badge variant="outline" className="border-destructive/40 text-destructive">
+        <Badge
+          variant="outline"
+          className="border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/50 dark:text-red-100"
+        >
           <EyeOffIcon /> 已取消发布
         </Badge>
       )
     case 'scheduled':
       return (
-        <Badge variant="secondary">
+        <Badge
+          variant="outline"
+          className="border-sky-400 bg-sky-50 text-sky-950 dark:border-sky-600 dark:bg-sky-950/55 dark:text-sky-100"
+        >
           <CalendarClockIcon /> 已计划发布
         </Badge>
       )
@@ -744,13 +793,19 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       // picker.
       void isFuture
       return (
-        <Badge>
+        <Badge
+          variant="outline"
+          className="border-emerald-500 bg-emerald-50 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/45 dark:text-emerald-100"
+        >
           <CheckCircle2Icon /> 已发布
         </Badge>
       )
     case 'live-with-draft-ahead':
       return (
-        <Badge variant="secondary">
+        <Badge
+          variant="outline"
+          className="border-amber-500 bg-amber-50 text-amber-950 dark:border-amber-600 dark:bg-amber-950/45 dark:text-amber-100"
+        >
           <CheckCircle2Icon /> 已发布（有未发布草稿）
         </Badge>
       )

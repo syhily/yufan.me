@@ -14,16 +14,27 @@ import {
   Music2Icon,
   QuoteIcon,
   SigmaIcon,
+  SuperscriptIcon,
   type LucideIcon,
   TableIcon,
   Type as TypeIcon,
   WorkflowIcon,
+  Columns2Icon,
 } from 'lucide-react'
 
 import type { Block } from '@/shared/portable-text'
 
 import { generateBlockKey } from '@/shared/portable-text'
-import { dispatchOpenImagePicker, dispatchOpenMusicPicker } from '@/ui/admin/pages/tiptap/editor-events'
+import {
+  dispatchOpenFootnoteDialog,
+  dispatchOpenImagePicker,
+  dispatchOpenMusicPicker,
+} from '@/ui/admin/pages/tiptap/editor-events'
+
+// Default `mathBlock` TeX when inserting from `/` — mirrors typical lecture
+// notes (`align*` derivations) rather than a one-line identity; authors
+// replace the placeholder lines or switch to `gather*` etc.
+const DEFAULT_MATH_BLOCK_TEX = ['\\begin{align*}', '    a &= b\\\\', '    c &= d', '\\end{align*}'].join('\n')
 
 // Slash menu command catalogue. Each entry knows how to filter
 // itself against a query string + how to mutate the editor when
@@ -189,14 +200,14 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   {
     id: 'math-block',
     title: '公式块',
-    description: 'TeX block math',
+    description: '独占行 TeX（align、gather 等多行环境）',
     icon: SigmaIcon,
-    aliases: ['math', 'mathblock', 'tex', 'katex', '公式', '数学'],
+    aliases: ['math', 'mathblock', 'tex', 'katex', '公式', '数学', 'align'],
     command: ({ editor, range }) => {
       insertCustomBlock(editor, range, {
         _type: 'mathBlock',
         _key: generateBlockKey(),
-        tex: 'a^2 + b^2 = c^2',
+        tex: DEFAULT_MATH_BLOCK_TEX,
       })
     },
   },
@@ -212,6 +223,49 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
         _key: generateBlockKey(),
         code: 'graph TD\n  A --> B',
       })
+    },
+  },
+  {
+    id: 'two-columns',
+    title: '左右分栏',
+    description: '两栏并排，每栏内容独立编辑',
+    icon: Columns2Icon,
+    aliases: ['columns', 'split', 'two', '分栏', '双栏', '两栏', 'column'],
+    command: ({ editor, range }) => {
+      const key = generateBlockKey()
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: 'twoColumn',
+          attrs: { _key: key },
+          content: [
+            {
+              type: 'twoColumnPane',
+              attrs: { _key: `${key}-pane-L`, side: 'left' },
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { _key: generateBlockKey() },
+                  content: [{ type: 'text', text: '左侧内容' }],
+                },
+              ],
+            },
+            {
+              type: 'twoColumnPane',
+              attrs: { _key: `${key}-pane-R`, side: 'right' },
+              content: [
+                {
+                  type: 'paragraph',
+                  attrs: { _key: generateBlockKey() },
+                  content: [{ type: 'text', text: '右侧内容' }],
+                },
+              ],
+            },
+          ],
+        })
+        .run()
     },
   },
   {
@@ -242,24 +296,13 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   },
   {
     id: 'footnote',
-    title: '脚注定义',
-    description: '插入页底脚注块',
-    icon: SigmaIcon,
-    aliases: ['footnote', 'fn', '脚注'],
+    title: '脚注引用',
+    description: '行内上标；可用 ^ 空格触发；弹窗填写正文（文末列表由渲染生成）',
+    icon: SuperscriptIcon,
+    aliases: ['footnote', 'fn', '脚注', '^', 'caret'],
     command: ({ editor, range }) => {
-      insertCustomBlock(editor, range, {
-        _type: 'footnoteDefinition',
-        _key: generateBlockKey(),
-        index: 1,
-        children: [
-          {
-            _type: 'block',
-            _key: generateBlockKey(),
-            style: 'normal',
-            children: [{ _type: 'span', _key: generateBlockKey(), text: '脚注内容' }],
-          },
-        ],
-      })
+      editor.chain().focus().deleteRange(range).run()
+      dispatchOpenFootnoteDialog()
     },
   },
 ]

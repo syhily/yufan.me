@@ -79,6 +79,13 @@ export interface ContentSettings {
     sort: 'asc' | 'desc'
     feature?: string[]
   }
+  /**
+   * Legacy rows may omit this bucket until the admin saves 「内容与分页」.
+   * Runtime renders fall back to 「尾声礼记」 via `@/shared/footnotes-section-title`.
+   */
+  footnotes?: {
+    sectionTitle: string
+  }
 }
 
 export interface SidebarSettings {

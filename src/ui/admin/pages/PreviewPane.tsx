@@ -1,12 +1,20 @@
-import { useDeferredValue, useMemo } from 'react'
+import { useDeferredValue, useMemo, useRef } from 'react'
 
 import type { PortableTextBody } from '@/shared/portable-text'
 
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
+import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
+import { useContentSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody as PortableTextBodyRenderer } from '@/ui/portable-text/PortableTextBody'
 
 export interface PreviewPaneProps {
   body: PortableTextBody
+  /**
+   * When true, the preview body can differ from what anonymous visitors
+   * see: either the editor has **unsaved** local changes, or the server
+   * holds a **draft-ahead** revision that has not been published yet.
+   */
+  showPublicSyncHint?: boolean
   /**
    * Page title mirrored from the metadata draft. Rendered above the
    * body so the preview's first visible line is the title, matching
@@ -37,6 +45,9 @@ export interface PreviewPaneProps {
 // re-render is deprioritised. Without it a large preview tree could
 // stall keystrokes on the editor side.
 export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
+  const previewPostContentRef = useRef<HTMLDivElement>(null)
+  useMediumZoom(previewPostContentRef)
+
   const deferredBody = useDeferredValue(body)
   const isStale = deferredBody !== body
   // Stable identity for the renderer's `body` prop until the deferred
@@ -45,6 +56,7 @@ export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
   const renderedBody = useMemo(() => deferredBody, [deferredBody])
 
   const { website } = useSiteIdentity()
+  const content = useContentSettings()
   const trimmedTitle = title.trim()
   const trimmedSlug = slug.trim()
   // `website` is stored without a trailing slash (see `seo.meta`,
@@ -56,9 +68,11 @@ export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
 
   return (
     <div className="flex min-h-0 flex-col gap-2 rounded-md border bg-card p-3">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>实时预览</span>
-        {isStale ? <span className="font-mono">渲染中…</span> : null}
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span>实时预览</span>
+          {isStale ? <span className="font-mono">渲染中…</span> : null}
+        </div>
       </div>
       <div className="min-h-0 grow overflow-y-auto">
         {/* Mirror of the title + slug surfaces that normally live
@@ -87,8 +101,12 @@ export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
             </a>
           )}
         </header>
-        <div className="post-content prose-blog prose prose-lg max-w-none">
-          <PortableTextBodyRenderer body={renderedBody} suppressMusicAutoplay />
+        <div ref={previewPostContentRef} className="post-content prose-blog prose prose-lg max-w-none">
+          <PortableTextBodyRenderer
+            body={renderedBody}
+            suppressMusicAutoplay
+            footnotesSectionTitle={resolveFootnotesSectionTitle(content)}
+          />
         </div>
       </div>
     </div>

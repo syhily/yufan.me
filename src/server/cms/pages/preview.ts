@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import type { PortableTextBody } from '@/shared/portable-text'
 
 import { deriveSlug } from '@/server/slug'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { collectHeadings } from '@/shared/portable-text'
 import { PortableTextBody as PortableTextBodyComponent } from '@/ui/portable-text/PortableTextBody'
 
@@ -21,6 +23,12 @@ import { PortableTextBody as PortableTextBodyComponent } from '@/ui/portable-tex
 // renders, no chrome.
 export async function renderPortableTextToHtml(body: PortableTextBody): Promise<string> {
   const headingSlugs = collectHeadings(body, deriveSlug).map((h) => h.slug)
-  const element = createElement(PortableTextBodyComponent, { body, headingSlugs, suppressMusicAutoplay: true })
+  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
+  const element = createElement(PortableTextBodyComponent, {
+    body,
+    headingSlugs,
+    suppressMusicAutoplay: true,
+    footnotesSectionTitle,
+  })
   return renderToStaticMarkup(element)
 }

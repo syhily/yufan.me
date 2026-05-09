@@ -81,6 +81,22 @@ export function FootnoteReference({ children, ...props }: ComponentProps<'sup'>)
   )
 }
 
+export function FootnotePreviewRegistrar({ anchorId, preview }: { anchorId: string; preview: ReactNode }) {
+  const register = useContext(FootnoteRegisterContext)
+  const previewRef = useRef(preview)
+  previewRef.current = preview
+
+  useEffect(() => {
+    if (register === null) {
+      return
+    }
+    const href = `#${anchorId}`
+    return register(href, previewRef.current)
+  }, [anchorId, register])
+
+  return null
+}
+
 export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'li'>) {
   const register = useContext(FootnoteRegisterContext)
   const isFootnote = typeof id === 'string' && id.startsWith(FOOTNOTE_ID_PREFIX)
@@ -120,13 +136,15 @@ function footnoteReferenceHref(node: ReactNode): string | undefined {
   }
 
   const { href, id, children } = node.props
-  if (
-    typeof href === 'string' &&
-    href.startsWith('#user-content-fn-') &&
-    typeof id === 'string' &&
-    id.startsWith(FOOTNOTE_REF_ID_PREFIX)
-  ) {
-    return href
+  const tag = typeof node.type === 'string' ? node.type : ''
+  if (typeof href === 'string' && href.startsWith(`#${FOOTNOTE_ID_PREFIX}`)) {
+    if (typeof id === 'string' && id.startsWith(FOOTNOTE_REF_ID_PREFIX)) {
+      return href
+    }
+    // Portable Text footnotes: `<sup id="user-content-fnref-N"><a href="#user-content-fn-N">`.
+    if (tag === 'a') {
+      return href
+    }
   }
   return footnoteReferenceHref(children)
 }

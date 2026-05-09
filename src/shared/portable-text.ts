@@ -14,7 +14,7 @@ import { z } from 'zod'
 // `strike-through`), `link` markDefs, and the canonical block styles
 // (`normal` / `h1`-`h4` / `blockquote`); on top of that we add a
 // hand-picked set of custom block types (`image`, `code`, `mathBlock`,
-// `mermaid`, `horizontalRule`, `musicPlayer`, `solution`)
+// `mermaid`, `horizontalRule`, `musicPlayer`, `solution`, `twoColumn`)
 // and two custom inline marks (`mathInline`, `footnoteRef`) that
 // each map 1:1 onto an existing MDX-side React component.
 //
@@ -150,12 +150,17 @@ export type TextBlock = z.infer<typeof textBlockSchema>
 // `imagePath` is the S3 storagePath this row references, which the
 // `image_sources` projection on `content` writes out for the
 // thumbhash-resolution enhancer.
+export const IMAGE_BLOCK_LAYOUT = ['left', 'center', 'right'] as const
+export type ImageBlockLayout = (typeof IMAGE_BLOCK_LAYOUT)[number]
+
 export const imageBlockSchema = z.object({
   _type: z.literal('image'),
   _key: NON_EMPTY_KEY,
   src: z.string(),
   alt: z.string().optional(),
   caption: z.string().optional(),
+  /** Horizontal alignment; omit or `center` for default centered figure. */
+  layout: z.enum(IMAGE_BLOCK_LAYOUT).optional(),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
   thumbhash: z.string().optional(),
@@ -207,6 +212,8 @@ export const mermaidBlockSchema = z.object({
   _key: NON_EMPTY_KEY,
   code: z.string(),
   svg: z.string().optional(),
+  /** When true the diagram is horizontally centered (same flag as `musicPlayer`). */
+  center: z.boolean().optional(),
 })
 export type MermaidBlock = z.infer<typeof mermaidBlockSchema>
 
@@ -295,6 +302,15 @@ export type SolutionBlock = {
   children: NonRecursiveBlock[]
 }
 
+// 响应式左右两栏；每栏内容为一层 NonRecursiveBlock（不可再嵌套 twoColumn
+// 或 footnoteDefinition，与 `solution` 相同的一侧递归边界）。
+export type TwoColumnBlock = {
+  _type: 'twoColumn'
+  _key: string
+  left: NonRecursiveBlock[]
+  right: NonRecursiveBlock[]
+}
+
 // `<li id="user-content-fn-N">` GFM footnote definition. Held as a
 // dedicated block so the SSR renderer can collect them at the bottom
 // of the body without inferring "this is a footnote" from heading
@@ -309,9 +325,9 @@ export type FootnoteDefinitionBlock = {
 }
 
 /** Subset of `Block` that's allowed inside `solution.children` /
- *  `footnoteDefinition.children`. Same as `Block` minus the recursive
- *  variants; declared as its own union so the recursion stays
- *  one-deep and Zod's discriminated union doesn't choke on the cycle. */
+ *  `footnoteDefinition.children` / `twoColumn.left|right`. Same as `Block`
+ *  minus the recursive variants; declared as its own union so the recursion
+ *  stays one-deep and Zod's discriminated union doesn't choke on the cycle. */
 export type NonRecursiveBlock =
   | TextBlock
   | ImageBlock
@@ -339,6 +355,13 @@ export const solutionBlockSchema = z.object({
   children: z.array(nonRecursiveBlockSchema),
 }) satisfies z.ZodType<SolutionBlock>
 
+export const twoColumnBlockSchema = z.object({
+  _type: z.literal('twoColumn'),
+  _key: NON_EMPTY_KEY,
+  left: z.array(nonRecursiveBlockSchema),
+  right: z.array(nonRecursiveBlockSchema),
+}) satisfies z.ZodType<TwoColumnBlock>
+
 export const footnoteDefinitionBlockSchema = z.object({
   _type: z.literal('footnoteDefinition'),
   _key: NON_EMPTY_KEY,
@@ -348,7 +371,7 @@ export const footnoteDefinitionBlockSchema = z.object({
 
 // --- Block discriminated union ----------------------------------------------
 
-export type Block = NonRecursiveBlock | SolutionBlock | FootnoteDefinitionBlock
+export type Block = NonRecursiveBlock | SolutionBlock | TwoColumnBlock | FootnoteDefinitionBlock
 
 export const blockSchema = z.discriminatedUnion('_type', [
   textBlockSchema,
@@ -359,6 +382,7 @@ export const blockSchema = z.discriminatedUnion('_type', [
   horizontalRuleBlockSchema,
   musicPlayerBlockSchema,
   solutionBlockSchema,
+  twoColumnBlockSchema,
   footnoteDefinitionBlockSchema,
   tableBlockSchema,
 ]) satisfies z.ZodType<Block>
@@ -445,7 +469,8 @@ function visitNonRecursiveForHeadings(blocks: readonly NonRecursiveBlock[], out:
 /**
  * Heading blocks in **exact** render order for `PortableTextBody`:
  * top-level main column (skipping `footnoteDefinition` rows), DFS into
- * each `solution`, then every footnote definition's children in row
+ * each `solution` and each `twoColumn` (left then right), then every footnote
+ * definition's children in row
  * order. Matches `@portabletext/react` traversal so `_key` → anchor
  * maps stay stable across SSR and hydration without render-phase state.
  */
@@ -457,6 +482,11 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
     }
     if (block._type === 'solution') {
       visitNonRecursiveForHeadings(block.children, out)
+      continue
+    }
+    if (block._type === 'twoColumn') {
+      visitNonRecursiveForHeadings(block.left, out)
+      visitNonRecursiveForHeadings(block.right, out)
       continue
     }
     if (block._type === 'block') {
@@ -539,6 +569,16 @@ function walkBlockForImages(block: Block, sink: Set<string>): void {
     for (const child of block.children) {
       walkBlockForImages(child, sink)
     }
+    return
+  }
+  if (block._type === 'twoColumn') {
+    for (const child of block.left) {
+      walkBlockForImages(child, sink)
+    }
+    for (const child of block.right) {
+      walkBlockForImages(child, sink)
+    }
+    return
   }
 }
 
@@ -582,6 +622,16 @@ function pushBlockText(block: Block, out: string[]): void {
     for (const child of block.children) {
       pushBlockText(child, out)
     }
+    return
+  }
+  if (block._type === 'twoColumn') {
+    for (const child of block.left) {
+      pushBlockText(child, out)
+    }
+    for (const child of block.right) {
+      pushBlockText(child, out)
+    }
+    return
   }
 }
 

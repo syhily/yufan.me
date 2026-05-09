@@ -73,5 +73,15 @@ function collectImageBlocks(block: Block, out: ImageBlock[]): void {
     for (const child of block.children) {
       collectImageBlocks(child, out)
     }
+    return
+  }
+  if (block._type === 'twoColumn') {
+    for (const child of block.left) {
+      collectImageBlocks(child, out)
+    }
+    for (const child of block.right) {
+      collectImageBlocks(child, out)
+    }
+    return
   }
 }

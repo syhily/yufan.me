@@ -1,94 +1,209 @@
 import type { Editor } from '@tiptap/core'
 
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { Button } from '@/ui/components/ui/button'
+import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'
 
-// Inline link editing form. Lives inside the BubbleMenu so the
-// link href can be authored / edited / removed without leaving the
-// editor selection. The previous `window.prompt`-based affordance
-// was hostile to keyboard navigation and broke focus tracking on
-// macOS Safari (the prompt dialog steals selection).
-//
-// `apply` writes a link mark over the *extended* mark range so
-// editing a partial selection still updates the whole link span.
-// `remove` does the equivalent unset, keeping the inline text
-// intact.
+/** Toolbar: insert linked text at caret. Bubble: set link on current selection (or edit existing). */
+export type LinkPopoverVariant = 'selection' | 'toolbar'
 
 export interface LinkPopoverProps {
   editor: Editor
-  /** Called by the parent to dismiss the popover. */
+  variant: LinkPopoverVariant
   onClose: () => void
 }
 
-export function LinkPopover({ editor, onClose }: LinkPopoverProps) {
-  const initial = (editor.getAttributes('link').href as string | undefined) ?? ''
-  const [value, setValue] = useState<string>(initial)
-  const inputRef = useRef<HTMLInputElement | null>(null)
-  // Focus the input when the popover mounts so keyboard users can
-  // start typing immediately.
+function isNewTabTarget(target: string | null | undefined): boolean {
+  return target === '_blank'
+}
+
+/** Attributes for Tiptap `link` / `setLink`. Pass null for same-tab so PM clears attrs instead of keeping schema defaults. */
+function linkMarkAttributes(
+  href: string,
+  openInNewTab: boolean,
+): { href: string; rel: string | null; target: string | null } {
+  if (!openInNewTab) {
+    return { href, target: null, rel: null }
+  }
+  return { href, target: '_blank', rel: 'noreferrer noopener' }
+}
+
+export function LinkPopover({ editor, variant, onClose }: LinkPopoverProps) {
+  const linkAttrs = editor.getAttributes('link') as { href?: string; rel?: string; target?: string }
+  const initialHref = linkAttrs.href ?? ''
+  const initialNewTab = isNewTabTarget(linkAttrs.target)
+
+  const [linkText, setLinkText] = useState('')
+  const [href, setHref] = useState(initialHref)
+  const [openInNewTab, setOpenInNewTab] = useState(
+    variant === 'toolbar' ? true : initialHref === '' ? true : initialNewTab,
+  )
+
+  const firstFieldRef = useRef<HTMLInputElement | null>(null)
+  const newTabFieldId = useId()
+
   useEffect(() => {
-    inputRef.current?.focus()
-    inputRef.current?.select()
+    firstFieldRef.current?.focus()
+    firstFieldRef.current?.select()
   }, [])
 
-  const apply = () => {
-    const href = value.trim()
-    if (href === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-    } else {
-      editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+  const applyToolbar = () => {
+    const text = linkText.trim()
+    const url = href.trim()
+    if (text === '' || url === '') {
+      return
     }
+    const attrs = linkMarkAttributes(url, openInNewTab)
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: 'text',
+        text,
+        marks: [{ type: 'link', attrs }],
+      })
+      .run()
     onClose()
   }
 
-  const remove = () => {
+  const applySelection = () => {
+    const url = href.trim()
+    if (url === '') {
+      if (editor.isActive('link')) {
+        editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      }
+      onClose()
+      return
+    }
+    const chain = editor.chain().focus()
+    if (editor.isActive('link')) {
+      chain.extendMarkRange('link')
+    }
+    chain.setLink(linkMarkAttributes(url, openInNewTab)).run()
+    onClose()
+  }
+
+  const removeLink = () => {
     editor.chain().focus().extendMarkRange('link').unsetLink().run()
     onClose()
   }
 
+  const onSubmit = () => {
+    if (variant === 'toolbar') {
+      applyToolbar()
+    } else {
+      applySelection()
+    }
+  }
+
+  const showRemove = variant === 'selection' && initialHref !== ''
+
   return (
     <div
-      className="flex w-80 flex-col gap-2 rounded-md border bg-popover p-3 text-sm shadow-md"
+      className="flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-md border bg-popover p-3 text-sm shadow-md"
       onMouseDown={(event) => {
-        // Keep the editor selection alive; without this the button
-        // mousedown would blur the editor before the chain runs and
-        // the `setLink` call would lose its anchor.
         event.preventDefault()
       }}
     >
-      <Label className="text-xs">链接 URL</Label>
-      <Input
-        ref={inputRef}
-        type="url"
-        inputMode="url"
-        value={value}
-        placeholder="https://"
-        onChange={(event) => setValue(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            event.preventDefault()
-            apply()
-          } else if (event.key === 'Escape') {
-            event.preventDefault()
-            onClose()
-          }
-        }}
-      />
-      <div className="flex justify-end gap-1">
-        {initial !== '' ? (
-          <Button variant="ghost" size="sm" type="button" onClick={remove} title="移除链接">
+      {variant === 'toolbar' ? (
+        <>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs" htmlFor="link-popover-text">
+              显示文字
+            </Label>
+            <Input
+              ref={firstFieldRef}
+              id="link-popover-text"
+              type="text"
+              value={linkText}
+              placeholder="链接显示的文字"
+              onChange={(event) => setLinkText(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  onSubmit()
+                } else if (event.key === 'Escape') {
+                  event.preventDefault()
+                  onClose()
+                }
+              }}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs" htmlFor="link-popover-href-toolbar">
+              链接地址
+            </Label>
+            <Input
+              id="link-popover-href-toolbar"
+              type="url"
+              inputMode="url"
+              value={href}
+              placeholder="https://"
+              onChange={(event) => setHref(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  onSubmit()
+                } else if (event.key === 'Escape') {
+                  event.preventDefault()
+                  onClose()
+                }
+              }}
+            />
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs" htmlFor="link-popover-href-selection">
+            链接地址
+          </Label>
+          <Input
+            ref={firstFieldRef}
+            id="link-popover-href-selection"
+            type="url"
+            inputMode="url"
+            value={href}
+            placeholder="https://"
+            onChange={(event) => setHref(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                onSubmit()
+              } else if (event.key === 'Escape') {
+                event.preventDefault()
+                onClose()
+              }
+            }}
+          />
+        </div>
+      )}
+
+      <label className="flex cursor-pointer items-center gap-2 text-xs" htmlFor={newTabFieldId}>
+        <Checkbox
+          id={newTabFieldId}
+          checked={openInNewTab}
+          onCheckedChange={(value) => {
+            setOpenInNewTab(value === true)
+          }}
+        />
+        <span>在新标签页中打开</span>
+      </label>
+
+      <div className="flex flex-wrap justify-end gap-1">
+        {showRemove ? (
+          <Button variant="ghost" size="sm" type="button" onClick={removeLink} title="移除链接">
             <Trash2Icon /> 移除
           </Button>
         ) : null}
         <Button variant="ghost" size="sm" type="button" onClick={onClose} title="取消">
           <XIcon /> 取消
         </Button>
-        <Button size="sm" type="button" onClick={apply} title="应用">
-          <CheckIcon /> 应用
+        <Button size="sm" type="button" onClick={onSubmit} title={variant === 'toolbar' ? '插入' : '应用'}>
+          <CheckIcon /> {variant === 'toolbar' ? '插入' : '应用'}
         </Button>
       </div>
     </div>

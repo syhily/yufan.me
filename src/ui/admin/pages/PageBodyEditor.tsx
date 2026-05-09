@@ -1,3 +1,5 @@
+import type { EditorView } from '@tiptap/pm/view'
+
 import Focus from '@tiptap/extension-focus'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -28,28 +30,48 @@ import {
   QuoteIcon,
   Redo2Icon,
   StrikethroughIcon,
+  SuperscriptIcon,
   TableIcon,
   Undo2Icon,
   UnderlineIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/portable-text'
-import type { PmDoc } from '@/shared/pt-bridge'
-
-import { generateBlockKey } from '@/shared/portable-text'
-import { bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
+import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
+import { generateBlockKey, type FootnoteDefinitionBlock, type PortableTextBody } from '@/shared/portable-text'
+import {
+  extractFootnoteDefinitionBlocks,
+  footnoteChildrenToPlainText,
+  mergeProseBodyWithFootnoteDefinitions,
+  plainTextToFootnoteChildren,
+  stripFootnoteDefinitionsForEditor,
+} from '@/shared/portable-text-footnote-merge'
+import { bodyToPmDoc, footnoteSyncSignature, pmDocToBody, type PmDoc } from '@/shared/pt-bridge'
+import { FootnoteEditorDialog } from '@/ui/admin/pages/FootnoteEditorDialog'
 import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/pages/MusicPickerDialog'
 import { BlockCardNode } from '@/ui/admin/pages/tiptap/BlockCardNode'
 import { PageBubbleMenu } from '@/ui/admin/pages/tiptap/BubbleMenu'
 import { CodeBlockBubbleMenu } from '@/ui/admin/pages/tiptap/CodeBlockBubbleMenu'
-import { EDITOR_EVENT_OPEN_IMAGE_PICKER, EDITOR_EVENT_OPEN_MUSIC_PICKER } from '@/ui/admin/pages/tiptap/editor-events'
+import {
+  EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG,
+  EDITOR_EVENT_OPEN_IMAGE_PICKER,
+  EDITOR_EVENT_OPEN_MUSIC_PICKER,
+} from '@/ui/admin/pages/tiptap/editor-events'
+import { FootnoteCaretTriggerExtension } from '@/ui/admin/pages/tiptap/footnote-caret-trigger'
 import { ImageNode } from '@/ui/admin/pages/tiptap/ImageNode'
 import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/pages/tiptap/InlineMarks'
+import {
+  canInsertFootnoteMark,
+  computeNextFootnoteIndex,
+  insertFootnoteReferenceAtCaret,
+  removeFootnoteReferencesToTargetKey,
+} from '@/ui/admin/pages/tiptap/insert-inline-footnote'
+import { LinkPopover } from '@/ui/admin/pages/tiptap/LinkPopover'
 import { SlashCommandsExtension } from '@/ui/admin/pages/tiptap/SlashMenu'
 import { SolutionNode } from '@/ui/admin/pages/tiptap/SolutionNode'
 import { TableBubbleMenu } from '@/ui/admin/pages/tiptap/TableBubbleMenu'
+import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/pages/tiptap/TwoColumnNode'
 import { Button } from '@/ui/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
@@ -75,19 +97,23 @@ export interface PageBodyEditorProps {
 // Tiptap-based PortableText editor. The standard subset (paragraphs /
 // headings / blockquote / lists / inline marks / fenced code /
 // horizontal rule / link / table) is handled by Tiptap extensions;
-// custom block types: `solution` uses a nested `solution` PM node
-// (blockquote-shaped `block+`); `musicPlayer`, `mathBlock`,
-// `mermaid`, and `footnoteDefinition` round-trip through the generic
-// `blockCard` PM node defined by `pt-bridge`.
+// custom block types: `solution` uses a nested PM node; `musicPlayer`,
+// `mathBlock`, and `mermaid` round-trip through `blockCard`.
+// `footnoteDefinition` rows are **not** loaded into PM — they merge on
+// save beside the prose slice so footnotes are authored via dialog + inline
+// refs only; the public page still renders a unified footnotes list from PT.
 //
 // The user-facing surface area lives in three layers:
 //   * **Toolbar** (this file): mouse-friendly slim row at the top
 //     for image / music / link / table / hr + undo/redo.
 //   * **BubbleMenu** (`tiptap/BubbleMenu.tsx`): inline format affordances
 //     above any selection, including a link popover and inline-mark
-//     editing panels for `mathInline` / `footnoteRef`.
+//     editing panels for `mathInline`. Footnote refs open the shell dialog
+//     when clicked in the canvas (`handleClick`).
 //   * **SlashMenu** (`tiptap/SlashMenu.tsx`): keyboard-driven `/`
 //     command launcher covering every block type.
+//   * Inline triggers: `` `…` `` → code, `$…$` → math (`InlineMarks`), `^ `
+//     → footnote dialog (`footnote-caret-trigger`).
 //
 // A custom drag handle (`tiptap/DragHandle.tsx`) is mounted around
 // the editor canvas; the operator can toggle it from the toolbar
@@ -97,9 +123,107 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
   const onBodyChangeRef = useRef(onBodyChange)
   onBodyChangeRef.current = onBodyChange
 
+  const editorZoomContainerRef = useRef<HTMLDivElement>(null)
+  useMediumZoom(editorZoomContainerRef)
+
+  // `handleClick` must read the live `Editor` from a ref: `editorProps`
+  // is fixed at mount but `useEditor` returns `null` on the first render.
+  const mathInlineClickEditorRef = useRef<Editor | null>(null)
+
+  const [footnoteDefs, setFootnoteDefs] = useState<FootnoteDefinitionBlock[]>(() =>
+    extractFootnoteDefinitionBlocks(initialBody),
+  )
+  const footnoteDefsRef = useRef(footnoteDefs)
+  footnoteDefsRef.current = footnoteDefs
+
+  const editorFootnoteSigRef = useRef<string | null>(null)
+
+  const [footnoteDialogOpen, setFootnoteDialogOpen] = useState(false)
+  const [footnoteDialogMode, setFootnoteDialogMode] = useState<'create' | 'edit'>('create')
+  const [footnoteDialogInitialText, setFootnoteDialogInitialText] = useState('')
+  const footnoteEditTargetKeyRef = useRef<string | null>(null)
+
+  const openFootnoteInsertDialog = useCallback(() => {
+    footnoteEditTargetKeyRef.current = null
+    setFootnoteDialogMode('create')
+    setFootnoteDialogInitialText('')
+    setFootnoteDialogOpen(true)
+  }, [])
+
+  const openFootnoteEditDialog = useCallback((targetKey: string) => {
+    const def = footnoteDefsRef.current.find((d) => d._key === targetKey)
+    footnoteEditTargetKeyRef.current = targetKey
+    setFootnoteDialogMode('edit')
+    setFootnoteDialogInitialText(def !== undefined ? footnoteChildrenToPlainText(def.children) : '')
+    setFootnoteDialogOpen(true)
+  }, [])
+
+  const openFootnoteEditDialogRef = useRef(openFootnoteEditDialog)
+  openFootnoteEditDialogRef.current = openFootnoteEditDialog
+
+  const tiptapEditorProps = useMemo(
+    () => ({
+      handleClick(view: EditorView, pos: number, event: MouseEvent): boolean {
+        if (!view.editable) {
+          return false
+        }
+        if (!(event.target instanceof Element)) {
+          return false
+        }
+        const ed = mathInlineClickEditorRef.current
+        if (ed === null) {
+          return false
+        }
+
+        if (event.target.closest('[data-math-inline]')) {
+          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY })
+          const base = coords?.pos ?? pos
+          const docSize = view.state.doc.content.size
+          for (const anchor of [base, base - 1, base + 1]) {
+            if (anchor < 0 || anchor > docSize) {
+              continue
+            }
+            ed.chain().focus().setTextSelection({ from: anchor, to: anchor }).extendMarkRange('mathInline').run()
+            const { from, to } = ed.state.selection
+            if (ed.isActive('mathInline') && from < to) {
+              return true
+            }
+          }
+          return false
+        }
+
+        if (event.target.closest('[data-footnote-ref], sup.footnote-ref')) {
+          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY })
+          const base = coords?.pos ?? pos
+          const docSize = view.state.doc.content.size
+          for (const anchor of [base, base - 1, base + 1]) {
+            if (anchor < 0 || anchor > docSize) {
+              continue
+            }
+            ed.chain().focus().setTextSelection({ from: anchor, to: anchor }).extendMarkRange('footnoteRef').run()
+            const { from, to } = ed.state.selection
+            if (ed.isActive('footnoteRef') && from < to) {
+              const attrs = ed.getAttributes('footnoteRef') as { targetKey?: string }
+              const tk = attrs.targetKey ?? ''
+              if (tk !== '') {
+                openFootnoteEditDialogRef.current(tk)
+                return true
+              }
+            }
+          }
+          return false
+        }
+
+        return false
+      },
+    }),
+    [],
+  )
+
   const editor = useEditor({
     immediatelyRender: false,
     editable: disabled !== true,
+    editorProps: tiptapEditorProps,
     extensions: [
       StarterKit.configure({
         link: false,
@@ -111,10 +235,12 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       Link.configure({
         openOnClick: false,
         autolink: true,
-        HTMLAttributes: { rel: 'noreferrer noopener', target: '_blank' },
+        // Upstream defaults force target _blank on every link; override so same-tab
+        // is the default and operators opt into new-tab explicitly in LinkPopover.
+        HTMLAttributes: { class: null, target: null, rel: null },
       }),
       Placeholder.configure({
-        placeholder: '在此处开始编写内容…（输入 / 唤出命令菜单）',
+        placeholder: '在此处开始编写内容…（/ 命令菜单，^ 空格插入脚注）',
       }),
       // Tables use the upstream Tiptap extensions; resizable=false
       // keeps the column-width UX out of scope for this iteration
@@ -127,17 +253,109 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       // every PortableText shape round-trips losslessly through the
       // editor.
       ImageNode,
+      TwoColumnPaneNode,
+      TwoColumnNode,
       SolutionNode,
       BlockCardNode,
       MathInlineMark,
       FootnoteRefMark,
+      FootnoteCaretTriggerExtension,
       SlashCommandsExtension,
     ],
-    content: bodyToPmDoc(initialBody) as never,
+    content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(initialBody)) as never,
     onUpdate({ editor: instance }) {
-      onBodyChangeRef.current(pmDocToBody(instance.getJSON() as PmDoc))
+      const merged = mergeProseBodyWithFootnoteDefinitions(
+        pmDocToBody(instance.getJSON() as PmDoc),
+        footnoteDefsRef.current,
+      )
+      const nextDefs = extractFootnoteDefinitionBlocks(merged)
+      if (JSON.stringify(nextDefs) !== JSON.stringify(footnoteDefsRef.current)) {
+        setFootnoteDefs(nextDefs)
+        footnoteDefsRef.current = nextDefs
+      }
+      const fp = footnoteSyncSignature(merged)
+      if (fp !== editorFootnoteSigRef.current) {
+        editorFootnoteSigRef.current = fp
+        instance.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(merged)) as never, {
+          emitUpdate: false,
+        })
+      }
+      onBodyChangeRef.current(merged)
     },
   })
+
+  const confirmFootnoteDialog = useCallback(
+    (plainText: string) => {
+      if (editor === null) {
+        return
+      }
+      const editKey = footnoteEditTargetKeyRef.current
+      if (editKey !== null) {
+        const nextDefs = footnoteDefsRef.current.map((d) =>
+          d._key === editKey ? { ...d, children: plainTextToFootnoteChildren(plainText) } : d,
+        )
+        setFootnoteDefs(nextDefs)
+        footnoteDefsRef.current = nextDefs
+        onBodyChangeRef.current(mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs))
+        footnoteEditTargetKeyRef.current = null
+        return
+      }
+      if (!canInsertFootnoteMark(editor)) {
+        return
+      }
+      const nextIndex = computeNextFootnoteIndex(editor, footnoteDefsRef.current)
+      const defKey = generateBlockKey()
+      const refMarkKey = generateBlockKey()
+      const newDef: FootnoteDefinitionBlock = {
+        _type: 'footnoteDefinition',
+        _key: defKey,
+        index: nextIndex,
+        children: plainTextToFootnoteChildren(plainText),
+      }
+      const nextDefs = [...footnoteDefsRef.current, newDef]
+      setFootnoteDefs(nextDefs)
+      footnoteDefsRef.current = nextDefs
+      insertFootnoteReferenceAtCaret(editor, { defKey, refMarkKey, index: nextIndex })
+      onBodyChangeRef.current(mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs))
+    },
+    [editor],
+  )
+
+  const deleteFootnoteFromDialog = useCallback(() => {
+    if (editor === null) {
+      return
+    }
+    const targetKey = footnoteEditTargetKeyRef.current
+    if (targetKey === null || targetKey === '') {
+      return
+    }
+    removeFootnoteReferencesToTargetKey(editor, targetKey)
+    const nextDefs = footnoteDefsRef.current.filter((d) => d._key !== targetKey)
+    footnoteEditTargetKeyRef.current = null
+
+    const merged = mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs)
+    const syncedDefs = extractFootnoteDefinitionBlocks(merged)
+    setFootnoteDefs(syncedDefs)
+    footnoteDefsRef.current = syncedDefs
+
+    const fp = footnoteSyncSignature(merged)
+    if (fp !== editorFootnoteSigRef.current) {
+      editorFootnoteSigRef.current = fp
+      editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(merged)) as never, {
+        emitUpdate: false,
+      })
+    }
+    onBodyChangeRef.current(merged)
+  }, [editor])
+
+  useEffect(() => {
+    mathInlineClickEditorRef.current = editor
+    return () => {
+      if (mathInlineClickEditorRef.current === editor) {
+        mathInlineClickEditorRef.current = null
+      }
+    }
+  }, [editor])
 
   // Reset content whenever the upstream `bodyKey` changes.
   const lastResetKey = useRef<string | null>(null)
@@ -149,7 +367,15 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       return
     }
     lastResetKey.current = bodyKey
-    editor.commands.setContent(bodyToPmDoc(initialBody) as never, { emitUpdate: false })
+    const defs = extractFootnoteDefinitionBlocks(initialBody)
+    const mergedCanon = mergeProseBodyWithFootnoteDefinitions(stripFootnoteDefinitionsForEditor(initialBody), defs)
+    const syncedDefs = extractFootnoteDefinitionBlocks(mergedCanon)
+    setFootnoteDefs(syncedDefs)
+    footnoteDefsRef.current = syncedDefs
+    editorFootnoteSigRef.current = footnoteSyncSignature(mergedCanon)
+    editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(mergedCanon)) as never, {
+      emitUpdate: false,
+    })
   }, [editor, bodyKey, initialBody])
 
   // Keep `editable` in sync with the disabled prop. Tiptap exposes this
@@ -172,13 +398,16 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
   useEffect(() => {
     const openImage = () => setImagePickerOpen(true)
     const openMusic = () => setMusicPickerOpen(true)
+    const openFootnote = () => openFootnoteInsertDialog()
     document.addEventListener(EDITOR_EVENT_OPEN_IMAGE_PICKER, openImage)
     document.addEventListener(EDITOR_EVENT_OPEN_MUSIC_PICKER, openMusic)
+    document.addEventListener(EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG, openFootnote)
     return () => {
       document.removeEventListener(EDITOR_EVENT_OPEN_IMAGE_PICKER, openImage)
       document.removeEventListener(EDITOR_EVENT_OPEN_MUSIC_PICKER, openMusic)
+      document.removeEventListener(EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG, openFootnote)
     }
-  }, [])
+  }, [openFootnoteInsertDialog])
 
   // Toolbar density. Two-state toggle: `'full'` renders every group
   // inline (the toolbar still wraps to multiple rows on its own when
@@ -248,9 +477,18 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
         onDensityChange={setToolbarDensity}
         onOpenImagePicker={() => setImagePickerOpen(true)}
         onOpenMusicPicker={() => setMusicPickerOpen(true)}
+        onOpenFootnoteInsertDialog={openFootnoteInsertDialog}
       />
       <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertImage} />
       <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={insertMusic} />
+      <FootnoteEditorDialog
+        open={footnoteDialogOpen}
+        onOpenChange={setFootnoteDialogOpen}
+        mode={footnoteDialogMode}
+        initialPlainText={footnoteDialogInitialText}
+        onConfirm={confirmFootnoteDialog}
+        onDelete={footnoteDialogMode === 'edit' ? deleteFootnoteFromDialog : undefined}
+      />
       <PageBubbleMenu editor={editor} />
       <TableBubbleMenu editor={editor} />
       <CodeBlockBubbleMenu editor={editor} />
@@ -260,20 +498,28 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
           slash menu (anchored below the caret) clipped or overlapped
           by the surrounding chrome when authoring near the bottom. */}
       <div className="grow overflow-auto px-6 pt-6 pb-[60vh]">
-        <EditorContent
-          editor={editor}
-          className={cn(
-            'prose max-w-none prose-zinc focus:outline-none',
-            'min-h-120 [&_.ProseMirror]:min-h-110',
-            '[&_.ProseMirror]:focus:outline-none',
-            '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
-            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
-            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
-            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
-            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
-            '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
-          )}
-        />
+        <div ref={editorZoomContainerRef}>
+          <EditorContent
+            editor={editor}
+            className={cn(
+              // `post-content` pairs with `@utility prose-blog { &.post-content {…} }`
+              // so code/pre match public page + preview pane typography.
+              // `pt-body-editor` narrows the math-inline chip tint to the Tiptap
+              // canvas only (preview stays on the shared post-content styles).
+              'post-content pt-body-editor prose-blog prose prose-lg max-w-none focus:outline-none',
+              'min-h-120 [&_.ProseMirror]:min-h-110',
+              '[&_.ProseMirror]:focus:outline-none',
+              '[&_blockquote[data-pt-solution]]:relative [&_blockquote[data-pt-solution]]:my-4 [&_blockquote[data-pt-solution]]:border-l-4 [&_blockquote[data-pt-solution]]:border-brand/40 [&_blockquote[data-pt-solution]]:bg-muted/25 [&_blockquote[data-pt-solution]]:py-3 [&_blockquote[data-pt-solution]]:pl-4',
+              '[&_[data-pt-two-column-pane]]:min-w-0 [&_[data-pt-two-column-pane]]:rounded-md [&_[data-pt-two-column-pane]]:border [&_[data-pt-two-column-pane]]:border-dashed [&_[data-pt-two-column-pane]]:border-muted-foreground/45 [&_[data-pt-two-column-pane]]:bg-background/85 [&_[data-pt-two-column-pane]]:p-3',
+              '[&_section[data-pt-two-column]]:relative [&_section[data-pt-two-column]]:my-5 [&_section[data-pt-two-column]]:grid [&_section[data-pt-two-column]]:gap-4 [&_section[data-pt-two-column]]:rounded-lg [&_section[data-pt-two-column]]:border-2 [&_section[data-pt-two-column]]:border-dashed [&_section[data-pt-two-column]]:border-border [&_section[data-pt-two-column]]:bg-muted/30 [&_section[data-pt-two-column]]:p-3 [&_section[data-pt-two-column]]:shadow-sm [&_section[data-pt-two-column]]:md:grid-cols-2',
+              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:text-muted-foreground',
+              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)]',
+              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none',
+              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left',
+              '[&_.ProseMirror_p.is-editor-empty:first-child::before]:h-0',
+            )}
+          />
+        </div>
       </div>
     </div>
   )
@@ -286,6 +532,7 @@ interface ToolbarProps {
   onDensityChange: (next: ToolbarDensity) => void
   onOpenImagePicker: () => void
   onOpenMusicPicker: () => void
+  onOpenFootnoteInsertDialog: () => void
 }
 
 // Toolbar layered into a stack of `ToolbarGroup`s so the operator
@@ -332,6 +579,7 @@ interface ToolbarProps {
 
 function Toolbar(props: ToolbarProps) {
   const { editor, disabled, density } = props
+  const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)
 
   const insertButtons = (
     <>
@@ -348,25 +596,48 @@ function Toolbar(props: ToolbarProps) {
       >
         <TableIcon />
       </ToolbarButton>
-      <ToolbarButton
-        title="链接（在浮动菜单中编辑）"
-        disabled={disabled}
-        active={editor.isActive('link')}
-        onClick={() => {
-          // The BubbleMenu's link popover handles authoring + edit;
-          // here we just nudge the selection so the BubbleMenu has
-          // something to anchor to. If the cursor is inside an
-          // existing link mark, extend the range so the popover
-          // initialises with the current href.
-          if (editor.isActive('link')) {
-            editor.chain().focus().extendMarkRange('link').run()
-          } else {
+      <Popover
+        open={linkToolbarOpen}
+        onOpenChange={(open) => {
+          if (open) {
             editor.chain().focus().run()
           }
+          setLinkToolbarOpen(open)
         }}
       >
-        <LinkIcon />
-      </ToolbarButton>
+        <PopoverTrigger
+          disabled={disabled}
+          render={
+            <Button
+              type="button"
+              variant={editor.isActive('link') ? 'secondary' : 'ghost'}
+              size="sm"
+              disabled={disabled}
+              title="链接"
+              aria-label="链接"
+              aria-pressed={editor.isActive('link')}
+              onMouseDownCapture={(event) => {
+                // Match BubbleMenu / LinkPopover: keep ProseMirror selection
+                // when the trigger is pressed so setLink still has a range.
+                event.preventDefault()
+              }}
+            >
+              <LinkIcon />
+            </Button>
+          }
+        />
+        <PopoverContent align="start" sideOffset={6} className="w-auto border-0 bg-transparent p-0 shadow-none">
+          {linkToolbarOpen ? (
+            <LinkPopover
+              variant="toolbar"
+              editor={editor}
+              onClose={() => {
+                setLinkToolbarOpen(false)
+              }}
+            />
+          ) : null}
+        </PopoverContent>
+      </Popover>
       <ToolbarButton
         title="水平分隔线"
         disabled={disabled}
@@ -450,6 +721,13 @@ function Toolbar(props: ToolbarProps) {
           onClick={() => editor.chain().focus().toggleCode().run()}
         >
           <Code2Icon />
+        </ToolbarButton>
+        <ToolbarButton
+          title="脚注引用（^ 空格快捷插入；行内上标；表格与代码块内不可用）"
+          disabled={disabled || !canInsertFootnoteMark(editor)}
+          onClick={() => props.onOpenFootnoteInsertDialog()}
+        >
+          <SuperscriptIcon />
         </ToolbarButton>
       </ToolbarGroup>
       <ToolbarGroup>

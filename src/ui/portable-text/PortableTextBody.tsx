@@ -14,31 +14,48 @@ import {
   type FootnoteRefMarkDef,
   type HorizontalRuleBlock,
   type ImageBlock,
+  type ImageBlockLayout,
   type LinkMarkDef,
   type MarkDef,
   type MathBlock,
   type MathInlineMarkDef,
   type MermaidBlock,
   type MusicPlayerBlock,
+  type NonRecursiveBlock,
   type PortableTextBody as PortableTextBodyType,
   type SolutionBlock,
   type Span,
   type TableBlock,
   type TextBlock,
+  type TwoColumnBlock,
 } from '@/shared/portable-text'
+import { cn } from '@/ui/lib/cn'
 import { CodeBlock as CodeBlockComponent } from '@/ui/mdx/CodeBlock'
-import { FootnoteProvider } from '@/ui/mdx/Footnotes'
+import { FootnoteProvider, FootnotePreviewRegistrar, FootnoteReference } from '@/ui/mdx/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/mdx/image-meta-context'
 import { MdxImg } from '@/ui/mdx/MdxImg'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Solution } from '@/ui/mdx/solutions/Solution'
+
+// Decorator marks carry their own Tailwind classes so inline emphasis stays
+// visible even when `.prose` typography rules lose the cascade (shadcn
+// `text-*` inheritance, nested shells, or `post-content` rules not applying).
+const PT_INLINE = {
+  strong: 'font-semibold text-ink-strong',
+  em: 'italic',
+  underline: 'underline underline-offset-2',
+  strike: 'line-through text-ink-secondary',
+  code: 'rounded bg-muted/80 px-1 py-0.5 font-mono text-[0.875em] text-ink-secondary',
+  link: 'text-brand underline decoration-brand/40 underline-offset-2',
+  mathTex: 'math-inline rounded bg-muted/50 px-0.5 font-mono text-ink-secondary',
+} as const
 
 // SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
 // composable component map so the standard text/list/heading/decorator
 // pipeline (including consecutive list-item folding) is delegated to the
 // official toolkit, while every yufan.me-specific block / mark
 // (`image`, `code`, `mathBlock`, `mermaid`, `horizontalRule`,
-// `musicPlayer`, `solution`, `footnoteDefinition`, `table`,
+// `musicPlayer`, `solution`, `twoColumn`, `footnoteDefinition`, `table`,
 // plus `mathInline` / `footnoteRef` mark defs) is handled by an
 // inline component declared in this file.
 //
@@ -49,7 +66,8 @@ import { Solution } from '@/ui/mdx/solutions/Solution'
 // **Anchors**: each heading uses the Portable Text block `_key` to look
 // up a stable id. Slots are collected with
 // `collectHeadingSlotsInPortableTextRenderOrder` (same order as this
-// renderer: main column + solution innards + footnotes). Precomputed
+// renderer: main column + solution innards + twoColumn (left then right)
+// + footnotes). Precomputed
 // slugs from the loader zip by index; any gap uses `github-slugger`
 // over the saved **plain** heading text — never `react` children, so
 // SSR and hydration cannot disagree when a heading wraps marks or
@@ -86,6 +104,8 @@ export interface PortableTextBodyProps {
    * silent while still honouring `center` for layout.
    */
   suppressMusicAutoplay?: boolean
+  /** Visible `<h3>` above the footnotes list; defaults to 「尾声礼记」 when omitted. */
+  footnotesSectionTitle?: string
 }
 
 // React context fan-out for footnote definitions. Every renderer
@@ -113,7 +133,15 @@ interface MusicPresentationCtx {
 
 const MusicPresentationContext = createContext<MusicPresentationCtx>({ suppressAutoplay: false })
 
-export function PortableTextBody({ body, imageMeta, headingSlugs, suppressMusicAutoplay }: PortableTextBodyProps) {
+const FOOTNOTES_SECTION_FALLBACK_TITLE = '尾声礼记'
+
+export function PortableTextBody({
+  body,
+  imageMeta,
+  headingSlugs,
+  suppressMusicAutoplay,
+  footnotesSectionTitle,
+}: PortableTextBodyProps) {
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
 
   const headingIdByBlockKey = useMemo(() => {
@@ -146,6 +174,11 @@ export function PortableTextBody({ body, imageMeta, headingSlugs, suppressMusicA
     [suppressMusicAutoplay],
   )
 
+  const resolvedFootnotesHeading =
+    footnotesSectionTitle !== undefined && footnotesSectionTitle.trim().length > 0
+      ? footnotesSectionTitle.trim()
+      : FOOTNOTES_SECTION_FALLBACK_TITLE
+
   return (
     <ImageMetaProvider value={imageMeta}>
       <MusicPresentationContext.Provider value={musicPresentation}>
@@ -154,7 +187,9 @@ export function PortableTextBody({ body, imageMeta, headingSlugs, suppressMusicA
             <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
               <div className="portable-text-body">
                 <PortableText value={inlineBody as never} components={portableTextComponents} />
-                {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} /> : null}
+                {footnotes.length > 0 ? (
+                  <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
+                ) : null}
               </div>
             </HeadingIdByBlockKeyContext.Provider>
           </FootnoteRefContext.Provider>
@@ -242,11 +277,11 @@ const portableTextComponents: PortableTextComponents = {
     number: ({ children }) => <li>{children}</li>,
   },
   marks: {
-    strong: ({ children }) => <strong>{children}</strong>,
-    em: ({ children }) => <em>{children}</em>,
-    underline: ({ children }) => <u>{children}</u>,
-    'strike-through': ({ children }) => <s>{children}</s>,
-    code: ({ children }) => <code>{children}</code>,
+    strong: ({ children }) => <strong className={PT_INLINE.strong}>{children}</strong>,
+    em: ({ children }) => <em className={PT_INLINE.em}>{children}</em>,
+    underline: ({ children }) => <u className={PT_INLINE.underline}>{children}</u>,
+    'strike-through': ({ children }) => <s className={PT_INLINE.strike}>{children}</s>,
+    code: ({ children }) => <code className={PT_INLINE.code}>{children}</code>,
     link: LinkMark,
     mathInline: MathInlineMarkRenderer,
     footnoteRef: FootnoteRefMarkRenderer,
@@ -259,6 +294,7 @@ const portableTextComponents: PortableTextComponents = {
     horizontalRule: HorizontalRuleComponent,
     musicPlayer: MusicPlayerComponent,
     solution: SolutionBlockComponent,
+    twoColumn: TwoColumnBlockComponent,
     table: TableBlockComponent,
   },
   hardBreak: () => <br />,
@@ -292,42 +328,52 @@ function LinkMark({ value, children }: PortableTextMarkComponentProps<LinkMarkDe
     return <>{children}</>
   }
   return (
-    <a href={def.href} rel={def.rel} target={def.target}>
+    <a href={def.href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
       {children}
     </a>
   )
 }
 
-function MathInlineMarkRenderer({ value }: PortableTextMarkComponentProps<MathInlineMarkDef>) {
+function MathInlineMarkRenderer({ value, children }: PortableTextMarkComponentProps<MathInlineMarkDef>) {
   const def = value
   if (def === undefined) {
-    return null
+    return <>{children}</>
   }
   if (def.svg !== undefined && def.svg !== '') {
-    return <span className="math-inline" dangerouslySetInnerHTML={{ __html: def.svg }} />
+    return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: def.svg }} />
   }
-  return <code className="math-inline">{def.tex}</code>
+  return <code className={cn(PT_INLINE.mathTex, 'inline-block align-middle')}>{def.tex}</code>
 }
 
-function FootnoteRefMarkRenderer({ value }: PortableTextMarkComponentProps<FootnoteRefMarkDef>) {
+function FootnoteRefMarkRenderer({ value, children }: PortableTextMarkComponentProps<FootnoteRefMarkDef>) {
   const def = value
   if (def === undefined) {
-    return null
+    return <>{children}</>
   }
   return (
-    <sup id={`user-content-fnref-${def.index}`} data-footnote-ref="">
+    <FootnoteReference id={`user-content-fnref-${def.index}`} data-footnote-ref="">
       <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
         {def.index}
       </a>
-    </sup>
+    </FootnoteReference>
   )
 }
 
 // --- Custom-block renderers -------------------------------------------------
 
+function imageFigureLayoutClass(layout: ImageBlock['layout']): string {
+  const l: ImageBlockLayout = layout ?? 'center'
+  return cn(
+    'block max-w-full',
+    l === 'left' && 'mr-auto ml-0 w-fit',
+    l === 'center' && 'mx-auto w-fit',
+    l === 'right' && 'mr-0 ml-auto w-fit',
+  )
+}
+
 function ImageBlockComponent({ value }: PortableTextTypeComponentProps<ImageBlock>) {
   return (
-    <figure>
+    <figure className={imageFigureLayoutClass(value.layout)}>
       <MdxImg
         src={value.src}
         alt={value.alt ?? ''}
@@ -345,6 +391,7 @@ function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps<CodeBl
     return (
       <CodeBlockComponent
         className={value.language !== undefined ? `language-${value.language}` : undefined}
+        copyText={value.code}
         data-language={value.language}
         dangerouslySetInnerHTML={{ __html: value.highlightedHtml }}
       />
@@ -364,7 +411,8 @@ function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps<CodeBl
 
 function MathBlockComponent({ value }: PortableTextTypeComponentProps<MathBlock>) {
   if (value.svg !== undefined && value.svg !== '') {
-    return <div className="math math-display" dangerouslySetInnerHTML={{ __html: value.svg }} />
+    // Display MathJax SVG is inline-block; center so gather and align match editor intent.
+    return <div className="math math-display text-center" dangerouslySetInnerHTML={{ __html: value.svg }} />
   }
   return (
     <pre className="math math-display">
@@ -374,10 +422,23 @@ function MathBlockComponent({ value }: PortableTextTypeComponentProps<MathBlock>
 }
 
 function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<MermaidBlock>) {
+  const center = value.center === true
+
   if (value.svg !== undefined && value.svg !== '') {
-    return <div className="mermaid" dangerouslySetInnerHTML={{ __html: value.svg }} />
+    const inner = (
+      <div className={cn('mermaid', center && '[&_svg]:max-w-none')} dangerouslySetInnerHTML={{ __html: value.svg }} />
+    )
+    if (!center) {
+      return inner
+    }
+    return <div className="flex max-w-full justify-center overflow-x-auto">{inner}</div>
   }
-  return <pre className="mermaid">{value.code}</pre>
+
+  const fallback = <pre className="mermaid">{value.code}</pre>
+  if (!center) {
+    return fallback
+  }
+  return <div className="flex max-w-full justify-center overflow-x-auto">{fallback}</div>
 }
 
 function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<HorizontalRuleBlock>) {
@@ -403,6 +464,19 @@ function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<Soluti
     <Solution>
       <PortableText value={value.children as never} components={portableTextComponents} />
     </Solution>
+  )
+}
+
+function TwoColumnBlockComponent({ value }: PortableTextTypeComponentProps<TwoColumnBlock>) {
+  return (
+    <section className="my-6 grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8" data-pt-two-column="">
+      <div className="min-w-0" data-pt-two-column-pane="" data-side="left">
+        <PortableText value={value.left as never} components={portableTextComponents} />
+      </div>
+      <div className="min-w-0" data-pt-two-column-pane="" data-side="right">
+        <PortableText value={value.right as never} components={portableTextComponents} />
+      </div>
+    </section>
   )
 }
 
@@ -466,15 +540,15 @@ function SpanInline({ span, markDefs }: { span: Span; markDefs: readonly MarkDef
 function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly MarkDef[]): ReactNode {
   switch (markName) {
     case 'strong':
-      return <strong>{node}</strong>
+      return <strong className={PT_INLINE.strong}>{node}</strong>
     case 'em':
-      return <em>{node}</em>
+      return <em className={PT_INLINE.em}>{node}</em>
     case 'underline':
-      return <u>{node}</u>
+      return <u className={PT_INLINE.underline}>{node}</u>
     case 'strike-through':
-      return <s>{node}</s>
+      return <s className={PT_INLINE.strike}>{node}</s>
     case 'code':
-      return <code>{node}</code>
+      return <code className={PT_INLINE.code}>{node}</code>
   }
   const def = markDefs.find((entry) => entry._key === markName)
   if (def === undefined) {
@@ -483,48 +557,102 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
   switch (def._type) {
     case 'link':
       return (
-        <a href={def.href} rel={def.rel} target={def.target}>
+        <a href={def.href} rel={def.rel} target={def.target} className={PT_INLINE.link}>
           {node}
         </a>
       )
     case 'mathInline':
       if (def.svg !== undefined && def.svg !== '') {
-        return <span className="math-inline" dangerouslySetInnerHTML={{ __html: def.svg }} />
+        return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: def.svg }} />
       }
-      return <code className="math-inline">{def.tex}</code>
+      return <code className={cn(PT_INLINE.mathTex, 'inline-block align-middle')}>{def.tex}</code>
     case 'footnoteRef':
       return (
-        <sup id={`user-content-fnref-${def.index}`} data-footnote-ref="">
+        <FootnoteReference id={`user-content-fnref-${def.index}`} data-footnote-ref="">
           <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
             {def.index}
           </a>
-        </sup>
+        </FootnoteReference>
       )
   }
 }
 
 // --- Footnotes section ------------------------------------------------------
 
-function FootnotesSection({ definitions }: { definitions: readonly FootnoteDefinitionBlock[] }) {
+function lastNormalParagraphKey(children: readonly NonRecursiveBlock[]): string | null {
+  for (let i = children.length - 1; i >= 0; i--) {
+    const b = children[i]
+    if (b._type === 'block' && b.style === 'normal') {
+      return b._key
+    }
+  }
+  return null
+}
+
+function FootnoteBackrefLink({ footnoteIndex }: { footnoteIndex: number }) {
   return (
-    <section className="footnotes" data-footnotes="">
-      <h2 className="sr-only" id="footnote-label">
-        Footnotes
-      </h2>
+    <a
+      href={`#user-content-fnref-${footnoteIndex}`}
+      data-footnote-backref=""
+      aria-label="返回引用"
+      className="data-footnote-backref"
+    >
+      ↩
+    </a>
+  )
+}
+
+function footnotesPortableComponents(lastParagraphKey: string | null, footnoteIndex: number): PortableTextComponents {
+  return {
+    ...portableTextComponents,
+    block: {
+      ...portableTextComponents.block,
+      normal: ({ children, value }) => {
+        const tb = value as TextBlock
+        if (lastParagraphKey !== null && tb._key === lastParagraphKey) {
+          return (
+            <p>
+              {children}
+              <FootnoteBackrefLink footnoteIndex={footnoteIndex} />
+            </p>
+          )
+        }
+        return <ParagraphBlock>{children}</ParagraphBlock>
+      },
+    },
+  } as PortableTextComponents
+}
+
+function FootnotesSection({
+  definitions,
+  sectionTitle,
+}: {
+  definitions: readonly FootnoteDefinitionBlock[]
+  sectionTitle: string
+}) {
+  return (
+    <section className="footnotes" data-footnotes="" aria-labelledby="footnotes-section-heading">
+      <h3 id="footnotes-section-heading" className="mt-10 mb-3 scroll-mt-20 text-lg font-semibold text-ink-strong">
+        {sectionTitle}
+      </h3>
       <ol>
-        {definitions.map((definition) => (
-          <li key={definition._key} id={`user-content-fn-${definition.index}`}>
-            <PortableText value={definition.children as never} components={portableTextComponents} />
-            <a
-              href={`#user-content-fnref-${definition.index}`}
-              data-footnote-backref=""
-              aria-label="Back to reference"
-              className="data-footnote-backref"
-            >
-              ↩
-            </a>
-          </li>
-        ))}
+        {definitions.map((definition) => {
+          const anchorId = `user-content-fn-${definition.index}`
+          const lastPk = lastNormalParagraphKey(definition.children)
+          const comps = footnotesPortableComponents(lastPk, definition.index)
+          const preview = <PortableText value={definition.children as never} components={portableTextComponents} />
+          return (
+            <li key={definition._key} id={anchorId}>
+              <FootnotePreviewRegistrar anchorId={anchorId} preview={preview} />
+              <PortableText value={definition.children as never} components={comps} />
+              {lastPk === null ? (
+                <p>
+                  <FootnoteBackrefLink footnoteIndex={definition.index} />
+                </p>
+              ) : null}
+            </li>
+          )
+        })}
       </ol>
     </section>
   )

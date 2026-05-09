@@ -74,6 +74,13 @@ const SOLUTION: Block = {
   ],
 }
 
+const TWO_COLUMN: Block = {
+  _type: 'twoColumn',
+  _key: 'tc1',
+  left: [{ _type: 'block', _key: 'tcl', style: 'normal', children: [span('L')] }],
+  right: [{ _type: 'block', _key: 'tcr', style: 'normal', children: [span('R')] }],
+}
+
 const FOOTNOTE_DEF: Block = {
   _type: 'footnoteDefinition',
   _key: 'fn1',
@@ -100,6 +107,7 @@ const FULL_BODY: PortableTextBody = [
   { _type: 'horizontalRule', _key: 'hr-1' },
   MUSIC,
   SOLUTION,
+  TWO_COLUMN,
   FOOTNOTE_DEF,
 ]
 
@@ -178,6 +186,22 @@ describe('contract: portable-text dialect — rejects unknown shapes', () => {
     }
     expect(safeValidatePortableTextBody([bad]).ok).toBe(false)
   })
+
+  it('rejects a twoColumn that nests another twoColumn', () => {
+    const inner: Block = {
+      _type: 'twoColumn',
+      _key: 'tc-inner',
+      left: [{ _type: 'block', _key: 'x', style: 'normal', children: [span('x')] }],
+      right: [],
+    }
+    const bad: Block = {
+      _type: 'twoColumn',
+      _key: 'tc-outer',
+      left: [inner as never],
+      right: [],
+    }
+    expect(safeValidatePortableTextBody([bad]).ok).toBe(false)
+  })
 })
 
 describe('contract: portable-text helpers', () => {
@@ -192,6 +216,20 @@ describe('contract: portable-text helpers', () => {
       { _type: 'block', _key: 'h-outer-2', style: 'h2', children: [span('C')] },
     ]
     expect(collectHeadings(body).map((h) => h.text)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('collectHeadings walks twoColumn left then right before later top-level blocks', () => {
+    const body: PortableTextBody = [
+      { _type: 'block', _key: 'h0', style: 'h2', children: [span('Outer')] },
+      {
+        _type: 'twoColumn',
+        _key: 'tc',
+        left: [{ _type: 'block', _key: 'hl', style: 'h3', children: [span('Left col')] }],
+        right: [{ _type: 'block', _key: 'hr', style: 'h3', children: [span('Right col')] }],
+      },
+      { _type: 'block', _key: 'hlast', style: 'h2', children: [span('After')] },
+    ]
+    expect(collectHeadings(body).map((h) => h.text)).toEqual(['Outer', 'Left col', 'Right col', 'After'])
   })
 
   it('collectHeadings places footnote definition headings after the main column', () => {

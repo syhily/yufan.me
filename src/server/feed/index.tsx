@@ -3,6 +3,7 @@ import { Feed } from 'feed'
 import { ContentCatalog, type Page, type Post } from '@/server/catalog'
 import { prerenderToHtml } from '@/server/catalog/render'
 import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/blog-config'
+import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { joinUrl } from '@/shared/urls'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
@@ -51,13 +52,18 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
   // the body but skip the image-enhancement pipeline: feed readers don't
   // need thumbhash placeholders or DB-resolved dimensions.
   const bundle = requireBlogSettingsBundle()
+  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
   // Pages live in Postgres and carry a PortableText body; posts still
   // compile through the Fumadocs MDX pipeline and render their body
   // as a React component.
   if (isPage(entry)) {
     return prerenderToHtml(
       <BlogSettingsProvider value={bundle}>
-        <PortableTextBody body={entry.body} headingSlugs={entry.headings.map((h) => h.slug)} />
+        <PortableTextBody
+          body={entry.body}
+          headingSlugs={entry.headings.map((h) => h.slug)}
+          footnotesSectionTitle={footnotesSectionTitle}
+        />
       </BlogSettingsProvider>,
     )
   }

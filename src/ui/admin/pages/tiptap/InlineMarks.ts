@@ -1,4 +1,13 @@
-import { Mark } from '@tiptap/core'
+import { Mark, markInputRule, markPasteRule } from '@tiptap/core'
+
+import { generateBlockKey } from '@/shared/portable-text'
+
+// Mirrors `@tiptap/extension-code`: last capture group is the marked span.
+// Opening `$` must not be `$$` (display math). Closing `$` must not be `$$`.
+// `(?!\$)` after each delimiter avoids matching `$$` display math.
+// Prefix `(^|[^\\$])` skips an opening `$` right after `\` (so `\$` in prose does not start a span).
+const mathInlineInputRegex = /(^|[^\\$])\$(?!\$)([^$\n]+)\$(?!\$)$/
+const mathInlinePasteRegex = /(^|[^\\$])\$(?!\$)([^$\n]+)\$(?!\$)/g
 
 // Tiptap mark spec for `mathInline`. The PT mark def carries `tex`
 // (always present) and `svg` (set when the editor pre-rendered the
@@ -24,16 +33,37 @@ export const MathInlineMark = Mark.create({
   renderHTML({ HTMLAttributes }) {
     return ['span', { 'data-math-inline': '', class: 'math math-inline', ...HTMLAttributes }, 0]
   },
+  addInputRules() {
+    return [
+      markInputRule({
+        find: mathInlineInputRegex,
+        type: this.type,
+        getAttributes: (match) => {
+          const tex = match[match.length - 1] ?? ''
+          return { tex, _key: generateBlockKey() }
+        },
+      }),
+    ]
+  },
+  addPasteRules() {
+    return [
+      markPasteRule({
+        find: mathInlinePasteRegex,
+        type: this.type,
+        getAttributes: (match) => {
+          const tex = match[match.length - 1] ?? ''
+          return { tex, _key: generateBlockKey() }
+        },
+      }),
+    ]
+  },
 })
 
-// Footnote reference mark. The PT body keeps the definition body in a
-// separate `footnoteDefinition` block; this mark is the inline anchor
-// that points back at it via `targetKey`. Like `mathInline` we register
-// the Mark spec so the round-trip stays clean even when the editor's
-// rich UI for footnotes is still pending.
+// Footnote reference mark. Authoring insert: Toolbar / `/脚注` / typing `^ `
+// (see `footnote-caret-trigger`). PT keeps defs beside prose — see merge layer.
 export const FootnoteRefMark = Mark.create({
   name: 'footnoteRef',
-  inclusive: false,
+  inclusive: true,
   addAttributes() {
     return {
       _key: { default: '' },

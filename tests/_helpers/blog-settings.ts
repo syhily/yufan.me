@@ -77,6 +77,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     pagination: { posts: 6, category: 7, tags: 7, search: 7 },
     feed: { full: true, size: 20 },
     post: { sort: 'desc' },
+    footnotes: { sectionTitle: '尾声礼记' },
   },
   sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 10 } },
   comments: { comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 } } },

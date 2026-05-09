@@ -75,6 +75,7 @@ const contentDefaults = {
   pagination: { posts: 10, category: 10, tags: 10, search: 10 },
   feed: { full: false, size: 20 },
   post: { sort: 'desc' as const },
+  footnotes: { sectionTitle: '尾声礼记' },
 } as const
 const sidebarDefaults = {
   sidebar: { calendar: false, search: true, comment: 5, post: 5, tag: 20 },

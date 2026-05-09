@@ -35,7 +35,7 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
         offset: 8,
       }}
       shouldShow={({ editor: instance }) => instance.isEditable && instance.isActive('table')}
-      className="rounded-md border bg-popover text-popover-foreground shadow-md"
+      className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md"
     >
       <div className="flex flex-wrap items-center gap-0.5 px-1 py-1">
         <TableButton

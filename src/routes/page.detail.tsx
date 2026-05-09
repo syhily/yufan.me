@@ -11,6 +11,8 @@ import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/ro
 import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
 import { isAdmin, resolveSessionContext, tryGetSessionContext } from '@/server/session'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { Friends } from '@/ui/mdx/page/Friends'
 import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 import { type DraftMarker, PageDetailBody } from '@/ui/post/post/PageDetailBody'
@@ -101,6 +103,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   // extra round trip.
   const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePage.imageSources))
   const body = sourcePage.body
+  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
   const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
@@ -125,6 +128,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       draftMarker,
       detail,
       imageMeta,
+      footnotesSectionTitle,
     },
     { headers: { 'Set-Cookie': commentCsrfSetCookie } },
   )
@@ -139,7 +143,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { page, body, friends, showFriends, draftMarker, detail, imageMeta } = loaderData
+  const { page, body, friends, showFriends, draftMarker, detail, imageMeta, footnotesSectionTitle } = loaderData
   return (
     <PageDetailBody
       page={page}
@@ -151,7 +155,12 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
       commentsPromise={detail.comments}
       currentUser={detail.currentUser}
     >
-      <PortableTextBody body={body} imageMeta={imageMeta} headingSlugs={page.headings.map((h) => h.slug)} />
+      <PortableTextBody
+        body={body}
+        imageMeta={imageMeta}
+        headingSlugs={page.headings.map((h) => h.slug)}
+        footnotesSectionTitle={footnotesSectionTitle}
+      />
       {/*
         Meta-driven friends grid. Renders **after** the body so the
         operator can opt into the section without touching the
