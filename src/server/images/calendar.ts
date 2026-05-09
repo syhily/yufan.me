@@ -1,8 +1,8 @@
 import type { SKRSContext2D } from '@napi-rs/canvas'
-import type { DateTime } from 'luxon'
 import type { Buffer } from 'node:buffer'
 
 import { createCanvas, GlobalFonts } from '@napi-rs/canvas'
+import { format, getDate, getISODay, getMonth, getYear } from 'date-fns'
 import { Solar } from 'lunar-typescript'
 
 import { oppoSerif } from '@/server/images/assets'
@@ -17,8 +17,8 @@ function ensureFonts(): void {
   }
 }
 
-async function fetchDailyQuote(date: DateTime) {
-  const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${date.toFormat('yyyy-MM-dd')}`
+async function fetchDailyQuote(date: Date) {
+  const url = `https://apiv3.shanbay.com/weapps/dailyquote/quote?date=${format(date, 'yyyy-MM-dd')}`
   const res = await fetch(url)
   if (!res.ok) {
     throw new Error(`API 请求失败: ${res.status}`)
@@ -26,27 +26,32 @@ async function fetchDailyQuote(date: DateTime) {
   return res.json() as Promise<{ content: string; translation: string; author: string }>
 }
 
-function getMonthLabel(date: DateTime) {
+function getMonthLabel(date: Date) {
   const months = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月']
-  return months[date.month - 1]
+  // `date-fns` `getMonth` is 0-indexed (matches `Date.prototype.getMonth`),
+  // so the array index is `getMonth(date)` directly — no `- 1` offset
+  // like the previous `luxon.month` (1-indexed) needed.
+  return months[getMonth(date)]
 }
 
-function getWeekdayLabel(date: DateTime) {
+function getWeekdayLabel(date: Date) {
   const weekdays = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日']
-  return weekdays[date.weekday - 1]
+  // ISO day-of-week: 1 = Monday … 7 = Sunday. Same convention as the
+  // previous `luxon.weekday`, so the `- 1` offset stays the same.
+  return weekdays[getISODay(date) - 1]
 }
 
-function getLunarLabel(date: DateTime) {
-  const solar = Solar.fromYmd(date.year, date.month, date.day)
+function getLunarLabel(date: Date) {
+  const solar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date))
   const lunar = solar.getLunar()
   return `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`
 }
 
-function getDailyAuspiciousLabel(date: DateTime) {
-  const solar = Solar.fromYmd(date.year, date.month, date.day)
+function getDailyAuspiciousLabel(date: Date) {
+  const solar = Solar.fromYmd(getYear(date), getMonth(date) + 1, getDate(date))
   const lunar = solar.getLunar()
   const auspicious = lunar.getDayYi()
-  return `宜${auspicious[Math.floor(date.day % auspicious.length)]}`
+  return `宜${auspicious[Math.floor(getDate(date) % auspicious.length)]}`
 }
 
 function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number) {
@@ -73,7 +78,7 @@ function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number) {
   return lines
 }
 
-export async function renderCalendar(date: DateTime): Promise<Buffer> {
+export async function renderCalendar(date: Date): Promise<Buffer> {
   ensureFonts()
 
   // Generate the required data from date.
@@ -116,7 +121,7 @@ export async function renderCalendar(date: DateTime): Promise<Buffer> {
   ctx.textBaseline = 'middle'
   ctx.font = '400px OPPOSerif'
   const dayY = 320
-  ctx.fillText(String(date.day), WIDTH / 2, dayY)
+  ctx.fillText(String(getDate(date)), WIDTH / 2, dayY)
 
   ctx.font = '50px OPPOSerif'
   const auspiciousY = dayY + 220

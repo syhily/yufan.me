@@ -78,22 +78,11 @@ vi.mock('#source/server', () => {
         info: { path: 'hidden.mdx', fullPath: '/x' },
       },
     ],
-    pages: [
-      {
-        slug: 'about',
-        title: 'About',
-        date: new Date('2023-01-01T00:00:00.000Z'),
-        updated: new Date('2023-01-01T00:00:00.000Z'),
-        cover: '',
-        og: undefined,
-        published: true,
-        comments: true,
-        toc: false,
-        summary: '',
-        body: () => null as never,
-        info: { path: 'about.mdx', fullPath: '/x' },
-      },
-    ],
+    // Pages used to live as a sibling Fumadocs collection here;
+    // they're now sourced exclusively from the `page` + `content`
+    // Postgres tables, so this mock no longer carries a `pages`
+    // entry. The DB-backed loader is mocked further down via
+    // `loadCatalogPagesMock`.
   }
 })
 
@@ -145,6 +134,17 @@ vi.mock('@/server/friends/service', () => ({
 vi.mock('@/server/images/render-enhance', () => ({
   loadImageThumbhash: vi.fn(async () => undefined),
   clearImageEnhanceCache: vi.fn(),
+}))
+
+// CMS pages service is consulted at catalog build time so DB-backed
+// pages can supersede MDX pages with the same slug. The default mock
+// returns the empty list — individual specs override the mock when
+// they want to exercise the merge path.
+const loadCatalogPagesMock = vi.fn(
+  async () => [] as Awaited<ReturnType<typeof import('@/server/cms/pages/service').loadCatalogPages>>,
+)
+vi.mock('@/server/cms/pages/service', () => ({
+  loadCatalogPages: loadCatalogPagesMock,
 }))
 
 // Avoid the real markdown parser cold-load when categories have descriptions.
@@ -216,6 +216,28 @@ describe('services/catalog/ContentCatalog.build', () => {
   })
 
   it('permalinks set is the union of post and page permalinks', async () => {
+    const dbAboutDate = new Date('2026-05-01T00:00:00.000Z')
+    loadCatalogPagesMock.mockImplementationOnce(async () => [
+      {
+        title: 'About',
+        date: dbAboutDate,
+        updated: dbAboutDate,
+        comments: true,
+        cover: '',
+        og: undefined,
+        published: true,
+        summary: '',
+        toc: false,
+        showFriends: false,
+        slug: 'about',
+        permalink: '/about',
+        headings: [],
+        body: [],
+        imageSources: [],
+        publishedRevisionId: null,
+      },
+    ])
+    ContentCatalog.reset()
     const catalog = await ContentCatalog.get()
     expect(catalog.permalinks.has('/posts/hello')).toBe(true)
     expect(catalog.permalinks.has('/about')).toBe(true)
@@ -225,5 +247,52 @@ describe('services/catalog/ContentCatalog.build', () => {
     const a = await ContentCatalog.get()
     const b = await ContentCatalog.get()
     expect(a).toBe(b)
+  })
+
+  it('projects DB pages straight into the catalog', async () => {
+    const dbAboutDate = new Date('2026-05-01T00:00:00.000Z')
+    loadCatalogPagesMock.mockImplementationOnce(async () => [
+      {
+        title: 'About (DB)',
+        date: dbAboutDate,
+        updated: dbAboutDate,
+        comments: true,
+        cover: '',
+        og: undefined,
+        published: true,
+        summary: 'db summary',
+        toc: false,
+        showFriends: false,
+        slug: 'about',
+        permalink: '/about',
+        headings: [],
+        body: [
+          {
+            _type: 'block',
+            _key: 'p1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 's1', text: 'Hello from DB' }],
+          },
+        ],
+        imageSources: [],
+        publishedRevisionId: 1n,
+      },
+    ])
+    ContentCatalog.reset()
+    const catalog = await ContentCatalog.get()
+    const aboutPage = catalog.getPage('about')
+    expect(aboutPage).toBeDefined()
+    expect(aboutPage?.title).toBe('About (DB)')
+    expect(catalog.pages.map((page) => page.slug)).toEqual(['about'])
+  })
+
+  it('degrades to an empty page list when the DB-page loader throws', async () => {
+    loadCatalogPagesMock.mockImplementationOnce(async () => {
+      throw new Error('postgres unreachable')
+    })
+    ContentCatalog.reset()
+    const catalog = await ContentCatalog.get()
+    expect(catalog.pages).toEqual([])
+    expect(catalog.getPage('about')).toBeUndefined()
   })
 })

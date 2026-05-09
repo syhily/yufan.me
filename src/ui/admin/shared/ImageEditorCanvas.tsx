@@ -40,6 +40,22 @@ export interface ImageEditorCanvasProps {
    */
   locked?: LockedAspect
   /**
+   * Free-aspect output width override (source pixels). Ignored when
+   * `locked` is set. When provided and strictly smaller than the
+   * current crop width, the encoder downscales the cropped region to
+   * exactly this width, preserving the crop's aspect ratio. Values
+   * `>= cropWidth` are treated as "no resize" and the encoder writes
+   * the crop at its native resolution.
+   */
+  outputWidth?: number
+  /**
+   * Reports the current crop rectangle (source pixels). Fires after
+   * every crop mutation so the parent can clamp a target-width input
+   * to "at most the current crop width" without duplicating the crop
+   * state machine.
+   */
+  onCropChange?: (cropWidth: number, cropHeight: number) => void
+  /**
    * Imperative handle: parent calls this to read the current encoded
    * blob. Returning a Promise lets us defer the canvas → blob work to
    * the moment the operator clicks "上传".
@@ -75,7 +91,15 @@ function rotatedDimensions(width: number, height: number, rotation: number): { w
   return rotation === 90 || rotation === 270 ? { width: height, height: width } : { width, height }
 }
 
-export function ImageEditorCanvas({ file, rotation, jpegQuality, locked, onReady }: ImageEditorCanvasProps) {
+export function ImageEditorCanvas({
+  file,
+  rotation,
+  jpegQuality,
+  locked,
+  outputWidth,
+  onCropChange,
+  onReady,
+}: ImageEditorCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [source, setSource] = useState<SourceBitmap | null>(null)
   const [crop, setCrop] = useState<CropRect | null>(null)
@@ -183,6 +207,19 @@ export function ImageEditorCanvas({ file, rotation, jpegQuality, locked, onReady
     })
   }, [displayLayout, locked])
 
+  // Stash the latest `onCropChange` in a ref so the report effect
+  // below can stay keyed on the crop rectangle alone. Parents
+  // typically pass an inline arrow; including it in the dep list
+  // would re-fire the callback on every parent render.
+  const onCropChangeRef = useRef(onCropChange)
+  onCropChangeRef.current = onCropChange
+  useEffect(() => {
+    if (crop === null) {
+      return
+    }
+    onCropChangeRef.current?.(crop.width, crop.height)
+  }, [crop])
+
   // Paint the canvas: clear, apply rotation, draw the bitmap, then
   // overlay the crop rectangle dimming.
   useEffect(() => {
@@ -234,16 +271,25 @@ export function ImageEditorCanvas({ file, rotation, jpegQuality, locked, onReady
       throw new Error('图片尚未加载完成')
     }
 
-    let outputWidth = Math.round(crop.width)
-    let outputHeight = Math.round(crop.height)
+    let encodedWidth = Math.round(crop.width)
+    let encodedHeight = Math.round(crop.height)
     if (locked !== undefined) {
-      outputWidth = locked.width
-      outputHeight = locked.height
+      encodedWidth = locked.width
+      encodedHeight = locked.height
+    } else if (outputWidth !== undefined && outputWidth > 0 && outputWidth < crop.width) {
+      // Resize proportionally so the encoded width matches the
+      // operator's target. Height is derived from the crop's aspect
+      // ratio to avoid stretching. Values at or above `crop.width`
+      // are treated as "no resize" — the operator's intent is "cap
+      // the width", not "upscale".
+      const ratio = crop.height / crop.width
+      encodedWidth = Math.round(outputWidth)
+      encodedHeight = Math.max(1, Math.round(encodedWidth * ratio))
     }
 
     const offscreen = document.createElement('canvas')
-    offscreen.width = outputWidth
-    offscreen.height = outputHeight
+    offscreen.width = encodedWidth
+    offscreen.height = encodedHeight
     const ctx = offscreen.getContext('2d')
     if (ctx === null) {
       throw new Error('浏览器不支持 Canvas')
@@ -263,7 +309,7 @@ export function ImageEditorCanvas({ file, rotation, jpegQuality, locked, onReady
     workingCtx.rotate((rotation * Math.PI) / 180)
     workingCtx.drawImage(source.bitmap, -source.width / 2, -source.height / 2, source.width, source.height)
 
-    ctx.drawImage(working, crop.x, crop.y, crop.width, crop.height, 0, 0, outputWidth, outputHeight)
+    ctx.drawImage(working, crop.x, crop.y, crop.width, crop.height, 0, 0, encodedWidth, encodedHeight)
 
     return new Promise((resolve, reject) => {
       offscreen.toBlob(
@@ -271,14 +317,14 @@ export function ImageEditorCanvas({ file, rotation, jpegQuality, locked, onReady
           if (blob === null) {
             reject(new Error('图片导出失败'))
           } else {
-            resolve({ blob, width: outputWidth, height: outputHeight })
+            resolve({ blob, width: encodedWidth, height: encodedHeight })
           }
         },
         'image/jpeg',
         Math.max(0.4, Math.min(1, jpegQuality / 100)),
       )
     })
-  }, [source, crop, displayLayout, rotation, locked, jpegQuality])
+  }, [source, crop, displayLayout, rotation, locked, outputWidth, jpegQuality])
 
   // Expose the encoder to the parent. Re-runs whenever any input
   // changes so the parent always sees an up-to-date snapshot.

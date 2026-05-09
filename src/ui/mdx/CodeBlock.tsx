@@ -142,7 +142,10 @@ const LANGUAGE_MAP: Record<string, string> = {
   editorconfig: 'EditorConfig',
 }
 
-type CodeBlockProps = ComponentProps<'pre'>
+type CodeBlockProps = ComponentProps<'pre'> & {
+  /** Raw source for the copy button when markup is injected via `dangerouslySetInnerHTML` (e.g. Shiki HTML includes its own `<pre>`). */
+  copyText?: string
+}
 
 interface CodeElementProps {
   className?: string
@@ -150,12 +153,12 @@ interface CodeElementProps {
   children?: ReactNode
 }
 
-export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
+export function CodeBlock({ children, className, copyText, dangerouslySetInnerHTML, ...props }: CodeBlockProps) {
   const [label, setLabel] = useState(COPY_LABEL)
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const language = getCodeLanguage(className, children)
   const displayLanguage = getLanguageLabel(language)
-  const text = textFromReactNode(children)
+  const text = copyText !== undefined ? copyText : textFromReactNode(children)
 
   useEffect(() => {
     return () => {
@@ -213,21 +216,35 @@ export function CodeBlock({ children, className, ...props }: CodeBlockProps) {
           {label}
         </button>
       </div>
-      <pre
-        {...props}
-        // Resets the parent prose `:where(pre)` margins / top-radius so the
-        // pre tucks flush under `.code-header`. Mirrors the legacy
-        // `.code-block-wrapper > pre` and `.code-header + pre` rules.
-        // The utilities below land in `@layer utilities`, which beats
-        // `@tailwindcss/typography`'s prose styles in `@layer components`
-        // per the W3C cascade-layers spec — so no `!` is needed (Stage
-        // 11 P2). Inside `.comment-content` the wrapper already
-        // collapses pre margins to 0.
-        className={cn(className, 'mt-0 mb-0 rounded-t-none border-t-0', 'in-[.comment-content]:m-0')}
-        data-language={language}
-      >
-        {children}
-      </pre>
+      {dangerouslySetInnerHTML !== undefined ? (
+        // Shiki `codeToHtml` already emits `<pre class="shiki">…</pre>` — host
+        // it in a div so we do not nest `<pre>` inside `<pre>`.
+        <div
+          className={cn(
+            '[&>pre]:mt-0 [&>pre]:mb-0 [&>pre]:rounded-t-none [&>pre]:border-t-0',
+            'in-[.comment-content]:[&>pre]:m-0',
+            className,
+          )}
+          data-language={language}
+          dangerouslySetInnerHTML={dangerouslySetInnerHTML}
+        />
+      ) : (
+        <pre
+          {...props}
+          // Resets the parent prose `:where(pre)` margins / top-radius so the
+          // pre tucks flush under `.code-header`. Mirrors the legacy
+          // `.code-block-wrapper > pre` and `.code-header + pre` rules.
+          // The utilities below land in `@layer utilities`, which beats
+          // `@tailwindcss/typography`'s prose styles in `@layer components`
+          // per the W3C cascade-layers spec — so no `!` is needed (Stage
+          // 11 P2). Inside `.comment-content` the wrapper already
+          // collapses pre margins to 0.
+          className={cn(className, 'mt-0 mb-0 rounded-t-none border-t-0', 'in-[.comment-content]:m-0')}
+          data-language={language}
+        >
+          {children}
+        </pre>
+      )}
     </div>
   )
 }

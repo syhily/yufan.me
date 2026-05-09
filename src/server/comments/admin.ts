@@ -29,7 +29,7 @@ export async function approveComment(rid: string) {
   await approveCommentById(id)
   const c = await findCommentWithUserAndPage(id)
   if (c) {
-    void sendApprovedComment(c.comment, c.user, c.page).catch((error) => {
+    void sendApprovedComment(c.comment, c.user, c.metric).catch((error) => {
       log.error('failed to send approved comment email', { error })
     })
   }

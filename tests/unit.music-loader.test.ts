@@ -5,7 +5,7 @@ import { API_ACTIONS } from '@/shared/api-actions'
 
 // `loadMusic` is the browser-side resolver fed straight into APlayer.
 // It MUST go through the internal API so feed-cache headers and the
-// install-gate stay in effect; the legacy `cat.yufan.me/musics/<id>.json`
+// install-gate stay in effect; the legacy `stage-asset.yufan.me/musics/<id>.json`
 // origin lookup is gone.
 
 const originalFetch = globalThis.fetch

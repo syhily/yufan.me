@@ -1,6 +1,18 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { parseContent } from '@/server/markdown/parser'
+import { mockRedis } from './_helpers/redis'
+
+// Stub `@/server/cache/storage` so the parser's Redis-backed cache writes
+// land in an in-memory map instead of attempting a real ioredis connect.
+const fakeStorage = mockRedis()
+vi.mock('@/server/cache/storage', () => ({
+  storage: fakeStorage,
+  redisInstance: () => fakeStorage,
+}))
+
+const { parseContent } = await import('@/server/markdown/parser')
+const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
 // Comment markdown is rendered server-side and embedded into post detail
 // HTML; any sanitisation regression instantly becomes a stored XSS hole.
@@ -8,6 +20,11 @@ import { parseContent } from '@/server/markdown/parser'
 // know about should land here as a regression test.
 
 describe('services/markdown/parser — XSS / injection battery', () => {
+  beforeEach(() => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    fakeStorage.reset()
+  })
+
   // Cold-load of marked + shiki + ultrahtml routinely exceeds 5s on the
   // first call; once warm, every other case here completes in milliseconds.
   it('strips bare <script> tags', { timeout: 30_000 }, async () => {

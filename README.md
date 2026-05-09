@@ -28,9 +28,10 @@ edited from a built-in `/wp-admin` admin shell.
   tsdown, Oxlint, Oxfmt, package management, and git-hook installation.
   See `vp help` for the full surface; this README only covers the
   commands you need to ship.
-- **Fumadocs MDX** compiles `src/content/posts` and `src/content/pages`
-  with project-customised math, Mermaid, Shiki, heading slug, external
-  link, and title-figure rehype plugins (see `source.config.ts`).
+- **Fumadocs MDX** compiles `src/content/posts` with project-customised
+  math, Mermaid, Shiki, heading slug, external link, and title-figure
+  rehype plugins (see `source.config.ts`). Pages live in Postgres and
+  are edited through `/wp-admin/pages`, then rendered as PortableText.
 - **Drizzle ORM** over a Postgres pool. Schema in
   `src/server/db/schema.ts`; SQL migrations live in `drizzle/` and run
   automatically on server startup.
@@ -166,7 +167,7 @@ row, edited from the admin shell:
 | Surface    | Source                                    | URL                             |
 | ---------- | ----------------------------------------- | ------------------------------- |
 | Posts      | `src/content/posts/**/*.mdx`              | `/posts/:slug`                  |
-| Pages      | `src/content/pages/**/*.mdx`              | `/:slug`                        |
+| Pages      | `page` table → `/wp-admin/pages`          | `/:slug`                        |
 | Categories | `category` table → `/wp-admin/categories` | `/cats/:slug`                   |
 | Tags       | `tag` table → `/wp-admin/tags`            | `/tags/:slug`                   |
 | Friends    | `friend` table → `/wp-admin/friends`      | rendered via `<Friends />` MDX  |

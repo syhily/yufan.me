@@ -1,4 +1,5 @@
 import {
+  FileTextIcon,
   FolderIcon,
   HomeIcon,
   ImagesIcon,
@@ -11,7 +12,16 @@ import {
   TagsIcon,
   UsersIcon,
 } from 'lucide-react'
-import { type ComponentType, type ReactNode, useState } from 'react'
+import {
+  createContext,
+  type ComponentType,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Form, NavLink, useLocation } from 'react-router'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
@@ -35,6 +45,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon },
   { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon },
   { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon },
   { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon },
@@ -124,32 +135,91 @@ function UserMenu({ id, name, email }: { id: string; name: string; email: string
   )
 }
 
+// "Focus mode" lets a child route (currently the page editor) ask the
+// admin shell to collapse its left navigation rail and drop the
+// content `max-width` cap, giving the editor the full viewport for
+// its editor + live-preview + metadata three-pane layout. The flag
+// lives in shell-scoped React state so a route opt-in is simple
+// (`useAdminChromeFocus(true)` while mounted) and so the next route
+// navigation automatically resets it (the unmount cleanup flips it
+// back to `false`). Keeping it in context — instead of, say, a
+// `data-admin-focused` attribute on `<html>` — also means the shell
+// can apply Tailwind utilities directly off `focused` without
+// recomputing on every paint.
+interface AdminChromeContextValue {
+  focused: boolean
+  setFocused: (next: boolean) => void
+}
+
+const AdminChromeContext = createContext<AdminChromeContextValue | null>(null)
+
+export function useAdminChrome(): AdminChromeContextValue {
+  const ctx = useContext(AdminChromeContext)
+  if (ctx === null) {
+    throw new Error('useAdminChrome must be used inside <AdminShell>')
+  }
+  return ctx
+}
+
+/**
+ * Convenience hook used by routes that want to enter focus mode for
+ * the duration of a UI state. Pass `true` to collapse the chrome,
+ * `false` to restore it. The unmount cleanup always restores so
+ * routes that forget to flip the flag back don't leak focus mode
+ * into the next navigation.
+ */
+export function useAdminChromeFocus(active: boolean): void {
+  const { setFocused } = useAdminChrome()
+  useEffect(() => {
+    setFocused(active)
+    return () => setFocused(false)
+  }, [active, setFocused])
+}
+
 export function AdminShell({ currentUser, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const mainScrollRef = useRef<HTMLElement | null>(null)
+  const chromeValue = useMemo<AdminChromeContextValue>(() => ({ focused, setFocused }), [focused])
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-card px-4 lg:px-6">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger
-            render={
-              <Button variant="ghost" size="icon" className="lg:hidden" aria-label="打开菜单">
-                <MenuIcon data-icon="lg" />
-              </Button>
-            }
-          />
-          <SheetContent side="left" className="w-72 p-0">
-            <SheetHeader>
-              <SheetTitle>管理后台</SheetTitle>
-            </SheetHeader>
-            <Separator />
-            <div className="py-2">
-              <NavList onNavigate={() => setMobileOpen(false)} />
-            </div>
-          </SheetContent>
-        </Sheet>
-        <a href="/wp-admin/comments" className="flex items-center gap-2 text-base font-semibold text-foreground">
-          {/* `style` carries the LOGO size instead of relying on `h-7
+    <AdminChromeContext.Provider value={chromeValue}>
+      <div
+        className={cn(
+          'flex flex-col bg-background text-foreground',
+          // Viewport lock + `<main>` scroll only while the page editor is in
+          // focus mode (live preview). Other admin routes keep the relaxed
+          // `min-h-screen` document flow so list pages and the non-preview
+          // editor do not look cramped.
+          focused ? 'h-dvh max-h-dvh min-h-0 overflow-hidden' : 'min-h-screen',
+        )}
+      >
+        <header
+          className={cn(
+            'z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4 lg:px-6',
+            !focused && 'sticky top-0',
+          )}
+        >
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger
+              render={
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="打开菜单">
+                  <MenuIcon data-icon="lg" />
+                </Button>
+              }
+            />
+            <SheetContent side="left" className="w-72 p-0">
+              <SheetHeader>
+                <SheetTitle>管理后台</SheetTitle>
+              </SheetHeader>
+              <Separator />
+              <div className="py-2">
+                <NavList onNavigate={() => setMobileOpen(false)} />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <a href="/wp-admin/comments" className="flex items-center gap-2 text-base font-semibold text-foreground">
+            {/* `style` carries the LOGO size instead of relying on `h-7
               w-auto`. When the user arrives here through a *client-side*
               SPA navigation from the public site, React Router keeps the
               public `public.css` `<link>` attached to `<head>` for the
@@ -165,14 +235,14 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
               the LOGO stays at 28px regardless of which stylesheets currently
               sit in `<head>`. The `h-7 w-auto` classes remain so the
               intent reads correctly in JSX. */}
-          <img
-            src="/logo-large.svg"
-            alt="且听书吟"
-            className="h-7 w-auto"
-            style={{ height: '1.75rem', width: 'auto' }}
-          />
-        </a>
-        {/* Quick "back to public site" affordance. Wrapped in a ghost
+            <img
+              src="/logo-large.svg"
+              alt="且听书吟"
+              className="h-7 w-auto"
+              style={{ height: '1.75rem', width: 'auto' }}
+            />
+          </a>
+          {/* Quick "back to public site" affordance. Wrapped in a ghost
             Button so the hit target / focus ring / hover background match
             the logout button on the right edge of the header — the two
             controls form a visual pair (icon-button on the left, icon
@@ -182,35 +252,44 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
             Full-page nav (not SPA) is intentional: admin shell and
             public chrome live in different stylesheet layers — see
             `use-detach-public-css`. */}
-        <Button
-          variant="ghost"
-          size="icon"
-          title="返回主页"
-          className="text-foreground hover:text-primary focus-visible:text-primary"
-          render={<a href="/" aria-label="返回主页" />}
-        >
-          <HomeIcon data-icon />
-        </Button>
-        <div className="flex-1" />
-        <UserMenu id={currentUser.id} name={currentUser.name} email={currentUser.email} />
-      </header>
-      <div className="flex min-h-0 flex-1">
-        {/* Pin the desktop nav under the sticky 56px (`h-14`) header so
-            it stays visible while the main column scrolls. `sticky +
-            top-14` (instead of position:fixed) keeps the layout flow
-            intact, so the right-hand `<main>` still gets its natural
-            width without an extra margin offset. `h-[calc(100vh-3.5rem)]`
-            caps the aside to the visible area beneath the header so its
-            own `overflow-y-auto` kicks in for tall menus. `z-20` keeps
-            the aside under the `z-30` header but above page chrome. */}
-        <aside className="sticky top-14 z-20 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 flex-col self-start overflow-y-auto border-r bg-sidebar py-4 text-sidebar-foreground lg:flex">
-          <NavList />
-        </aside>
-        <main className="min-w-0 flex-1 overflow-x-hidden">
-          <div className="mx-auto w-full max-w-7xl p-4 lg:p-6">{children}</div>
-        </main>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="返回主页"
+            className="text-foreground hover:text-primary focus-visible:text-primary"
+            render={<a href="/" aria-label="返回主页" />}
+          >
+            <HomeIcon data-icon />
+          </Button>
+          <div className="flex-1" />
+          <UserMenu id={currentUser.id} name={currentUser.name} email={currentUser.email} />
+        </header>
+        <div className={cn('flex min-h-0 flex-1', focused && 'overflow-hidden')}>
+          <aside
+            className={cn(
+              'z-20 hidden w-60 shrink-0 flex-col overflow-y-auto border-r bg-sidebar py-4 text-sidebar-foreground lg:flex',
+              focused ? 'min-h-0' : 'sticky top-14 h-[calc(100vh-3.5rem)] self-start',
+              focused && 'lg:hidden',
+            )}
+          >
+            <NavList />
+          </aside>
+          <main
+            ref={mainScrollRef}
+            className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden', focused && 'overflow-y-auto')}
+          >
+            <div
+              className={cn(
+                focused && 'flex min-h-0 flex-1 flex-col',
+                focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-7xl p-4 lg:p-6',
+              )}
+            >
+              {children}
+            </div>
+          </main>
+        </div>
+        <AdminScrollTopButton {...(focused ? { scrollRootRef: mainScrollRef } : {})} />
       </div>
-      <AdminScrollTopButton />
-    </div>
+    </AdminChromeContext.Provider>
   )
 }

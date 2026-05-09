@@ -38,6 +38,8 @@
 
 import type { BlogSettingsBundle } from '@/shared/blog-config-types'
 
+import { CACHE_BUCKET_FALLBACKS, type CacheBucketSlot } from '@/shared/cache-types'
+
 export type {
   AssetsSettings,
   BlogSettingsBundle,
@@ -60,6 +62,33 @@ export type {
 const globalForSnapshot = globalThis as unknown as {
   blogSettingsSnapshot: BlogSettingsBundle | null | undefined
   blogSettingsHydration: Promise<BlogSettingsBundle | null> | undefined
+}
+
+type CacheSettingsNonNull = NonNullable<BlogSettingsBundle['cache']>
+type CacheBucketKey = keyof CacheSettingsNonNull['cache']
+
+function isCacheBucketSlotLike(value: unknown): value is CacheBucketSlot {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { prefix?: unknown }).prefix === 'string' &&
+    typeof (value as { ttlSeconds?: unknown }).ttlSeconds === 'number'
+  )
+}
+
+function withCacheFallbacks(value: CacheSettingsNonNull): CacheSettingsNonNull {
+  const cache = value.cache as Partial<CacheSettingsNonNull['cache']>
+  const fallback = CACHE_BUCKET_FALLBACKS as Record<CacheBucketKey, CacheBucketSlot>
+  return {
+    ...value,
+    cache: {
+      og: isCacheBucketSlotLike(cache.og) ? cache.og : fallback.og,
+      calendar: isCacheBucketSlotLike(cache.calendar) ? cache.calendar : fallback.calendar,
+      avatar: isCacheBucketSlotLike(cache.avatar) ? cache.avatar : fallback.avatar,
+      imageMeta: isCacheBucketSlotLike(cache.imageMeta) ? cache.imageMeta : fallback.imageMeta,
+      commentsMd: isCacheBucketSlotLike(cache.commentsMd) ? cache.commentsMd : fallback.commentsMd,
+    },
+  }
 }
 
 // `BLOG_SETTINGS_SNAPSHOT_SLOT` is the cross-module bridge between the
@@ -142,9 +171,11 @@ export function requireBlogSettingsBundle(): BlogSettingsBundle {
  *   const content = requireBlogSettingsSection('content')
  *   const total = content.pagination.posts
  */
-export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(
+export function requireBlogSettingsSection(section: 'cache'): NonNullable<BlogSettingsBundle['cache']>
+export function requireBlogSettingsSection<K extends Exclude<keyof BlogSettingsBundle, 'cache'>>(
   section: K,
-): NonNullable<BlogSettingsBundle[K]> {
+): NonNullable<BlogSettingsBundle[K]>
+export function requireBlogSettingsSection(section: keyof BlogSettingsBundle) {
   const value = requireBlogSettingsBundle()[section]
   if (value === null) {
     throw new Error(
@@ -153,5 +184,8 @@ export function requireBlogSettingsSection<K extends keyof BlogSettingsBundle>(
         'means a row was manually truncated. Re-run install or restore from backup.',
     )
   }
-  return value as NonNullable<BlogSettingsBundle[K]>
+  if (section === 'cache') {
+    return withCacheFallbacks(value as CacheSettingsNonNull)
+  }
+  return value
 }

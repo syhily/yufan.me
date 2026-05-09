@@ -1,18 +1,22 @@
 import type { Highlighter } from 'shiki'
 
-import { LRUCache } from 'lru-cache'
 import { Marked } from 'marked'
 import markedShiki from 'marked-shiki'
+import { createHash } from 'node:crypto'
 import { bundledLanguages, createHighlighter } from 'shiki'
 import { COMMENT_NODE, ELEMENT_NODE, transform, walk } from 'ultrahtml'
 import sanitize from 'ultrahtml/transformers/sanitize'
 
+import { storage } from '@/server/cache/storage'
+import { getLogger } from '@/server/logger'
 import { SHIKI_THEME, shikiTransformers } from '@/server/markdown/shiki'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+
+const log = getLogger('markdown.parser')
 
 const globalForMarkdown = globalThis as unknown as {
   yufanCommentHighlighterPromise: Promise<Highlighter> | null | undefined
   yufanCommentMarkedPromise: Promise<Marked> | null | undefined
-  yufanCommentMarkdownCache: LRUCache<string, Promise<string>> | undefined
 }
 
 // Lazily create the shiki highlighter the first time we parse a snippet.
@@ -53,18 +57,38 @@ function getMarked(): Promise<Marked> {
   return globalForMarkdown.yufanCommentMarkedPromise
 }
 
-// Bounded LRU keyed by raw content. parseContent is called from
-// `loader.server.ts` for every comment render and from category descriptions
-// on cold start; both have a small working set that benefits from a tiny cache
-// without growing unbounded under traffic.
-const CACHE_LIMIT = 256
-const cache = (globalForMarkdown.yufanCommentMarkdownCache ??= new LRUCache<string, Promise<string>>({
-  max: CACHE_LIMIT,
-}))
+// Cache layout — replaces the historical bounded `lru-cache(max:256)`.
+//
+// Routing through Redis means every SSR replica shares the warm
+// rendered HTML (a deploy or new pod no longer has to re-render the
+// same comment N times) AND the admin can blow the bucket from
+// `/wp-admin/settings/cache` after a shiki theme / sanitize allowlist
+// change. The key is `${prefix}${sha256(content)}` — hashing keeps
+// the Redis key bounded regardless of comment length and sidesteps
+// the "binary in a Redis key" problem that the raw content would
+// have otherwise introduced.
+//
+// The historical LRU also implicitly deduped concurrent renders for
+// the same content by storing the in-flight `Promise<string>` (a
+// re-entrant call would hit the same `Promise` and await it). Redis
+// only stores the final string, so we re-introduce the in-process
+// dedup with a `Map<keyHash, Promise<string>>` — same bytes-on-the-
+// wire savings without a process-local cache size limit (the map is
+// emptied on every settled render via `.finally`).
+function bucket(): { prefix: string; ttlSeconds: number } {
+  return requireBlogSettingsSection('cache').cache.commentsMd
+}
+function hashContent(normalized: string): string {
+  return createHash('sha256').update(normalized).digest('hex')
+}
+function cacheKey(hash: string): string {
+  return `${bucket().prefix}${hash}`
+}
+const inflight = new Map<string, Promise<string>>()
 
 // Server-rendered placeholder for empty/missing comment bodies. Rendering
 // "该留言内容为空" through marked + shiki + sanitize is wasteful (the result
-// is always the same `<p>...</p>`), and it also pollutes the LRU cache with a
+// is always the same `<p>...</p>`), and it also pollutes the cache with a
 // hot key that pushes useful entries out. Returning a constant short-circuits
 // the entire pipeline.
 export const EMPTY_COMMENT_RAW = '该留言内容为空'
@@ -79,15 +103,35 @@ export async function parseContent(content: string | null | undefined): Promise<
   if (normalized === '' || normalized === EMPTY_COMMENT_RAW) {
     return EMPTY_COMMENT_HTML
   }
-  const cached = cache.get(normalized)
-  if (cached) {
-    return cached
+
+  const hash = hashContent(normalized)
+  const pending = inflight.get(hash)
+  if (pending !== undefined) {
+    return pending
   }
 
-  const promise = renderContent(normalized)
-  cache.set(normalized, promise)
-  // Evict on failure so a transient parse error isn't pinned in the cache.
-  promise.catch(() => cache.delete(normalized))
+  const promise = (async () => {
+    let cached: string | null = null
+    try {
+      cached = await storage.getItem<string>(cacheKey(hash))
+    } catch (error) {
+      log.warn('Failed to read comments-md cache; rendering fresh', { error })
+    }
+    if (typeof cached === 'string') {
+      return cached
+    }
+    const html = await renderContent(normalized)
+    try {
+      await storage.setItem(cacheKey(hash), html, { ttl: bucket().ttlSeconds })
+    } catch (error) {
+      log.warn('Failed to write comments-md cache; continuing', { error })
+    }
+    return html
+  })().finally(() => {
+    inflight.delete(hash)
+  })
+
+  inflight.set(hash, promise)
   return promise
 }
 

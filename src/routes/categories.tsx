@@ -8,7 +8,7 @@ import type { Route } from './+types/categories'
 export async function loader(_: Route.LoaderArgs) {
   const catalog = await getCatalog()
   return {
-    categories: catalog.categoriesByCount,
+    categories: catalog.categories,
   }
 }
 

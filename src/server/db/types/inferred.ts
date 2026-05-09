@@ -1,9 +1,11 @@
 import type {
   category,
   comment,
+  content,
   friend,
   image,
   like,
+  metric,
   music,
   page,
   setting,
@@ -13,7 +15,7 @@ import type {
 } from '@/server/db/schema'
 
 // Types for insert
-export type NewPage = typeof page.$inferInsert
+export type NewMetric = typeof metric.$inferInsert
 export type NewUser = typeof user.$inferInsert
 export type NewLike = typeof like.$inferInsert
 export type NewComment = typeof comment.$inferInsert
@@ -24,9 +26,11 @@ export type NewCategory = typeof category.$inferInsert
 export type NewTag = typeof tag.$inferInsert
 export type NewImage = typeof image.$inferInsert
 export type NewMusic = typeof music.$inferInsert
+export type NewPageMeta = typeof page.$inferInsert
+export type NewContent = typeof content.$inferInsert
 
 // Types for select
-export type Page = typeof page.$inferSelect
+export type MetricRow = typeof metric.$inferSelect
 export type User = typeof user.$inferSelect
 export type Like = typeof like.$inferSelect
 export type Comment = typeof comment.$inferSelect
@@ -47,3 +51,7 @@ export type ImageRow = typeof image.$inferSelect
 // `MusicRow` ditto: the public `AdminMusicDto` from `@/shared/music`
 // is the projection consumed by UI; the row stays server-side only.
 export type MusicRow = typeof music.$inferSelect
+// `PageMetaRow` / `ContentRow` are the schema-projected row types for
+// the page / content tables.
+export type PageMetaRow = typeof page.$inferSelect
+export type ContentRow = typeof content.$inferSelect

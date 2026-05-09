@@ -262,7 +262,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     title: 'Yufan Blog',
     website: 'https://yufan.me',
     authorEmail: 'mailbox@yufan.me',
-    assetHost: 'cat.yufan.me',
+    assetHost: 'stage-asset.yufan.me',
     assetScheme: 'https' as const,
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
@@ -347,7 +347,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
 
     const assets = byScope.get('blog.assets')
     expect(assets).toBeDefined()
-    expect(assets?.data.asset).toEqual({ host: 'cat.yufan.me', scheme: 'https' })
+    expect(assets?.data.asset).toEqual({ host: 'stage-asset.yufan.me', scheme: 'https' })
     // The install seed contributes the conservative S3 defaults
     // (toggle OFF, every bucket field empty) alongside the
     // user-supplied asset host. The admin opts into S3 later from

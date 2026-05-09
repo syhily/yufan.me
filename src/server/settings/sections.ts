@@ -75,6 +75,7 @@ const contentDefaults = {
   pagination: { posts: 10, category: 10, tags: 10, search: 10 },
   feed: { full: false, size: 20 },
   post: { sort: 'desc' as const },
+  footnotes: { sectionTitle: '尾声礼记' },
 } as const
 const sidebarDefaults = {
   sidebar: { calendar: false, search: true, comment: 5, post: 5, tag: 20 },
@@ -115,13 +116,22 @@ const mailDefaults = {
 // `:`-suffixed prefixes are the safe shape: the cache schema rejects
 // any prefix that's a strict prefix of (or equal to) another bucket's
 // prefix, AND any prefix that collides with the reserved `session:` /
-// `rate-limit:` / `avatar-status-` surfaces. `og:`, `calendar:`, and
-// `avatar:` clear both bars without overlapping each other.
+// `rate-limit:` / `avatar-status-` surfaces. The five default
+// prefixes below clear both bars without overlapping each other.
+//
+// `image-meta:` and `comments-md:` are routed through Redis so SSR
+// replicas share warmth and so admins can clear them from
+// `/wp-admin/settings/cache`. The 5-minute LRU these replaced was a
+// process-local safety net — bumping the floor to 1 hour matches the
+// schema bound and is fine because both writers explicitly invalidate
+// on the underlying mutation (image upload / N/A respectively).
 const cacheDefaults = {
   cache: {
     og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
     calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
     avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
+    imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+    commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
   },
 } as const
 // Rate-limit defaults mirror the historical hard-coded values that

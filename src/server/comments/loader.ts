@@ -17,7 +17,7 @@ import {
   pendingComments as pendingCommentsRepo,
   recentCommentsForUserDedupe,
 } from '@/server/db/query/comment'
-import { findPageByKey, upsertPage } from '@/server/db/query/page'
+import { findMetricByKey, upsertMetric } from '@/server/db/query/metric'
 import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
@@ -76,7 +76,7 @@ export async function loadComments(
   // both fan out in parallel with the page upsert and root listing. Child
   // comments depend on the root id list, so they're issued afterwards.
   const [, counts, rootComments] = await Promise.all([
-    ensurePage ? upsertPage(key, title) : Promise.resolve(null),
+    ensurePage ? upsertMetric(key, title) : Promise.resolve(null),
     countCommentsAndRoots(key, pendingArray),
     findRootComments(key, pendingArray, offset, requireBlogSettingsSection('comments').comments.size),
   ])
@@ -94,7 +94,7 @@ export async function loadComments(
 }
 
 export async function ensureCommentPage(key: string, title: string | null) {
-  await upsertPage(key, title)
+  await upsertMetric(key, title)
 }
 
 export async function createComment(
@@ -104,7 +104,7 @@ export async function createComment(
   session: BlogSession,
 ): Promise<CommentAndUser> {
   // Check page key
-  const p = await findPageByKey(commentReq.page_key)
+  const p = await findMetricByKey(commentReq.page_key)
   if (p === null) {
     throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
   }

@@ -41,6 +41,14 @@ export interface ClientPage {
   published: boolean
   summary: string
   toc: boolean
+  /**
+   * When true the public detail route appends the global friends grid
+   * at the bottom of the body. The grid lives **outside** the body —
+   * the PortableText dialect deliberately has no friends block, so
+   * the operator can flip this on/off from the editor's right
+   * sidebar without re-publishing the body.
+   */
+  showFriends: boolean
   slug: string
   permalink: string
   headings: MarkdownHeading[]

@@ -1,6 +1,6 @@
 import type { TOCItemType } from 'fumadocs-core/toc'
 
-import { pages as pageEntries, posts as postEntries } from '#source/server'
+import { posts as postEntries } from '#source/server'
 import { isValidElement, type ReactNode } from 'react'
 
 import type {
@@ -17,6 +17,7 @@ import type {
 } from '@/server/catalog/schema'
 
 import { toClientPost } from '@/server/catalog/schema'
+import { loadCatalogPages, type CmsPage } from '@/server/cms/pages/service'
 import { queryMetadata } from '@/server/comments/likes'
 import { listPublicCategoryRows } from '@/server/db/query/category'
 import { listPublicTagRows } from '@/server/db/query/tag'
@@ -24,6 +25,7 @@ import { listPublicFriends } from '@/server/friends/service'
 import { loadImageThumbhash } from '@/server/images/render-enhance'
 import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
+import { deriveSlug } from '@/server/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 // Inline projection types so the catalog does not have to import the
@@ -44,7 +46,6 @@ interface PublicTagEntry {
 const log = getLogger('content.catalog')
 
 type SourcePost = (typeof postEntries)[number]
-type SourcePage = (typeof pageEntries)[number]
 
 // Lookup `keys` against `items` and return the matching values in the
 // requested key order. Missing keys are silently dropped — callers want a
@@ -112,24 +113,37 @@ function compiledToc(entry: { toc: unknown; _exports?: Record<string, unknown> }
   return entry._exports?.toc ?? entry.toc
 }
 
-function buildPage(page: SourcePage): Page {
-  const slug = page.slug
+// Promote a `CmsPage` (DB-backed projection) into the catalog's
+// internal `Page` shape. Pages with no published revision still
+// surface so editors can link to them while drafting; the public
+// detail route renders an empty body in that case.
+//
+// Exported because the page-detail route needs to project a draft
+// `CmsPage` (returned by `loadPageDraftPreviewBySlug`) into the
+// same `Page` shape the public branch consumes — so the JSX tree
+// reads the same loader payload regardless of whether the page
+// came from the catalog or from the admin preview path.
+export function buildDbPage(page: CmsPage): Page {
   return {
     title: page.title,
     date: page.date,
     updated: page.updated,
-    comments: page.comments ?? true,
+    comments: page.comments,
     cover: page.cover,
+    coverThumbhash: page.coverThumbhash,
+    coverWidth: page.coverWidth,
+    coverHeight: page.coverHeight,
     og: page.og,
-    published: page.published ?? true,
-    summary: page.summary ?? '',
-    toc: page.toc ?? false,
-    slug,
-    permalink: `/${slug}`,
+    published: page.published,
+    summary: page.summary,
+    toc: page.toc,
+    showFriends: page.showFriends,
+    slug: page.slug,
+    permalink: page.permalink,
+    headings: page.headings,
     body: page.body,
-    headings: toHeadings(compiledToc(page)),
-    mdxPath: page.info.path,
-    imageSources: (page._exports?.imageSources as string[] | undefined) ?? [],
+    imageSources: page.imageSources,
+    publishedRevisionId: page.publishedRevisionId,
   }
 }
 
@@ -161,22 +175,22 @@ function buildPost(post: SourcePost): Post {
 
 // Best-effort runtime fallback for tags that appear in a post but aren't
 // declared in the `tag` table. Canonical slugs for declared tags are
-// produced server-side via `pinyin-pro` in `@/server/tags/service`, so
-// this path should only fire when an author references a brand-new tag
-// from a post without adding the matching row through `/wp-admin/tags`.
-// Falling back to a kebab-cased ASCII slug keeps the page accessible
-// without bundling `pinyin-pro` into the SSR build.
+// produced server-side via `deriveSlug` in `@/server/tags/service`,
+// so this path should only fire when an author references a brand-new
+// tag from a post without adding the matching row through
+// `/wp-admin/tags`. Routing through `deriveSlug` gives Han-only tag
+// names a pinyin slug here too, matching what the admin would write
+// — `pinyin-pro` only ships server-side so this stays out of the
+// client bundle.
 function fallbackTagSlug(name: string): string {
-  const trimmed = name.trim().toLowerCase()
-  // Replace any non-ASCII letter or digit with `-`, collapse repeats, trim.
-  const slug = trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  const slug = deriveSlug(name)
   if (slug !== '') {
     return slug
   }
-  // Pure non-ASCII tags fall through here; encodeURIComponent keeps the URL
-  // legal even if it isn't pretty. Authors should add the entry to
-  // `tags.yaml` to fix this properly.
-  return encodeURIComponent(trimmed)
+  // Pure non-ASCII / emoji tags fall through here; encodeURIComponent
+  // keeps the URL legal even if it isn't pretty. Authors should add
+  // the entry through `/wp-admin/tags` to fix it properly.
+  return encodeURIComponent(name.trim().toLowerCase())
 }
 
 interface CatalogInput {
@@ -184,7 +198,6 @@ interface CatalogInput {
   pages: Page[]
   allPosts: Post[]
   categories: Category[]
-  categoriesByCount: Category[]
   categoryLinkByName: Map<string, string>
   tags: Tag[]
   bySlug: Map<string, Post>
@@ -228,7 +241,28 @@ export class ContentCatalog {
       poster: row.poster,
     }))
 
-    const pages = pageEntries.map(buildPage).filter((page) => page.published || !import.meta.env.PROD)
+    // Pages live exclusively in the `page` + `content` Postgres
+    // tables and are edited through `/wp-admin/pages`. The catalog
+    // ONLY exposes published, non-deleted, non-future-scheduled
+    // rows — `loadCatalogPages()` enforces all three gates in the
+    // service layer. There is intentionally no dev-only backdoor
+    // for unpublished pages: admin preview goes through a separate
+    // path (`loadPageDraftPreviewBySlug` + the page-detail loader's
+    // admin branch) so an authenticated admin can see what they
+    // just unpublished — and on already-live pages can preview the
+    // latest draft via `?draft=true` — while anonymous visitors keep
+    // getting 404 / the published version in every environment.
+    //
+    // A Postgres outage degrades to an empty page list — the
+    // public site still renders posts and taxonomies — so a
+    // transient DB failure can't take the whole surface offline.
+    let pages: Page[] = []
+    try {
+      const cmsPages = await loadCatalogPages()
+      pages = cmsPages.map(buildDbPage)
+    } catch (error) {
+      log.warn('catalog.db_pages.load_failed', { error: String(error) })
+    }
 
     const allPosts = postEntries
       .map(buildPost)
@@ -290,10 +324,6 @@ export class ContentCatalog {
     const tagBySlug = new Map(tags.map((tag) => [tag.slug, tag]))
     const permalinks = new Set([...allPosts.map((post) => post.permalink), ...pages.map((page) => page.permalink)])
 
-    // Pre-sort once at build so the categories listing route can return the
-    // pre-sorted view without an additional `.slice().sort()` per request.
-    const categoriesByCount = [...categories].sort((a, b) => b.counts - a.counts)
-
     // Direct name → permalink lookup for the home/listing routes that need to
     // attach a category breadcrumb chip per post. The previous implementation
     // built a `new Set(...)` + `getCategoriesByName` round-trip per request;
@@ -305,7 +335,6 @@ export class ContentCatalog {
       pages,
       allPosts,
       categories,
-      categoriesByCount,
       categoryLinkByName,
       tags,
       bySlug,
@@ -325,7 +354,6 @@ export class ContentCatalog {
   readonly pages!: Page[]
   readonly allPosts!: Post[]
   readonly categories!: Category[]
-  readonly categoriesByCount!: Category[]
   readonly categoryLinkByName!: Map<string, string>
   readonly tags!: Tag[]
   readonly permalinks!: Set<string>
@@ -579,10 +607,29 @@ async function hydrateImages<
       if (dims.heightKey !== undefined) {
         dimWritable[dims.heightKey as PropertyKey] = lookup?.height
       }
+      // Re-stamp the cover URL with the live `?v=<updatedAtMs>` cache
+      // buster taken from the current `image` row. Without this, a
+      // re-upload of the same library image (which only mutates the
+      // S3 object + bumps `image.updatedAt`) would never reach
+      // browsers because the page / post / friend row still stores
+      // the URL snapshot from the original pick.
+      if (lookup?.publicUrl !== undefined && lookup.publicUrl !== null) {
+        ;(item as Record<SrcKey, string>)[srcKey] = lookup.publicUrl
+      }
     }),
   )
 }
 
+// Build the post-slug index. The returned `postSlugs` set is the
+// **canonical source of truth** for the post half of the global
+// slug namespace shared with pages — `validatePageSlugs` below
+// reads it to enforce the cross-table invariant. Each post
+// contributes its own `slug` plus every entry in `alias[]`; both
+// occupy slots in the same namespace, so an alias colliding with
+// another post's slug is already caught here too. Post-side
+// duplicates abort cold start with a clear `Duplicate post slug`
+// error, which is preferable to letting an ambiguous lookup land
+// on a random row at request time.
 function indexPosts(posts: Post[]) {
   const postSlugs = new Set<string>()
   const bySlug = new Map<string, Post>()
@@ -606,6 +653,24 @@ function indexPosts(posts: Post[]) {
   return { bySlug, byAlias, postSlugs }
 }
 
+// Cross-table fence for the global page↔post slug namespace.
+//
+// Page slugs come from a single emitter: the DB `page` table
+// (admin-edited via `/wp-admin/pages/...`). The DB-level
+// `UNIQUE(slug)` on that table only catches page↔page collisions,
+// and the page-service's pre-save `findPageMetaBySlug` check is
+// also page↔page only. **This is the only place the codebase
+// validates that no page slug collides with a post slug or post
+// alias.**
+//
+// Failure mode: throws and refuses to boot the server. The
+// catalog is loaded synchronously at cold start (and rebuilt
+// after every admin save via `ContentCatalog.reset()`), so a
+// freshly-saved colliding page surfaces as a 500 on the next
+// request rather than at save time. Consequence: any new code
+// path that introduces another slug emitter MUST be folded into
+// either `postSlugs` or this validator — otherwise the global
+// invariant silently degrades.
 function validatePageSlugs(pages: Page[], postSlugs: Set<string>): void {
   for (const page of pages) {
     if (postSlugs.has(page.slug)) {

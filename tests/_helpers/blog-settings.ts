@@ -19,6 +19,8 @@
 // `setBlogSettingsBundleForTests(custom)` in their own `beforeEach`.
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
+import { CACHE_BUCKET_FALLBACKS } from '@/shared/cache-types'
+
 export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   siteIdentity: {
     title: '且听书吟',
@@ -35,7 +37,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   // exercise the "uploads enabled" path by default and switch the
   // toggle off in individual tests as needed.
   assets: {
-    asset: { host: 'cat.yufan.me', scheme: 'https' },
+    asset: { host: 'stage-asset.yufan.me', scheme: 'https' },
     storage: {
       enabled: true,
       endpoint: 'https://s3.example.com',
@@ -75,6 +77,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     pagination: { posts: 6, category: 7, tags: 7, search: 7 },
     feed: { full: true, size: 20 },
     post: { sort: 'desc' },
+    footnotes: { sectionTitle: '尾声礼记' },
   },
   sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 10 } },
   comments: { comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 } } },
@@ -87,9 +90,11 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' } },
   cache: {
     cache: {
-      og: { prefix: 'og-', ttlSeconds: 60 * 60 * 24 * 7 },
-      calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 * 24 },
-      avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 7 },
+      og: { ...CACHE_BUCKET_FALLBACKS.og, ttlSeconds: 60 * 60 * 24 * 7 },
+      calendar: { ...CACHE_BUCKET_FALLBACKS.calendar, ttlSeconds: 60 * 60 * 24 },
+      avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
+      imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
+      commentsMd: { ...CACHE_BUCKET_FALLBACKS.commentsMd },
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds

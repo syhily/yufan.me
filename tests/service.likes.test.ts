@@ -4,23 +4,23 @@ vi.mock('@/server/db/query/like', () => ({
   recordLikeAndCount: vi.fn(async () => 0),
   existsActiveLikeToken: vi.fn(),
   consumeActiveLikeToken: vi.fn(),
-  pageVoteUp: vi.fn(),
-  pageMetricsByKeys: vi.fn(),
+  metricVoteUp: vi.fn(),
+  metricsByKeys: vi.fn(),
   commentCountsByPageKeys: vi.fn(),
   purgeOldLikeTokens: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/db/query/page', () => ({
-  decrementPageVotes: vi.fn(async () => undefined),
+vi.mock('@/server/db/query/metric', () => ({
+  decrementMetricVotes: vi.fn(async () => undefined),
 }))
 
 const likeQueries = await import('@/server/db/query/like')
-const pageQueries = await import('@/server/db/query/page')
+const metricQueries = await import('@/server/db/query/metric')
 const { increaseLikes, decreaseLikes, purgeStaleLikeTokens, queryLikes, queryMetadata, validateLikeToken } =
   await import('@/server/comments/likes')
 
 beforeEach(() => {
-  for (const fn of Object.values({ ...likeQueries, ...pageQueries })) {
+  for (const fn of Object.values({ ...likeQueries, ...metricQueries })) {
     if (typeof fn === 'function' && 'mockReset' in fn) {
       ;(fn as ReturnType<typeof vi.fn>).mockReset()
     }
@@ -63,7 +63,7 @@ describe('services/comments/likes — decreaseLikes', () => {
       expect.stringMatching(/\/posts\/hello\/$/),
       'stale-token',
     )
-    expect(pageQueries.decrementPageVotes).not.toHaveBeenCalled()
+    expect(metricQueries.decrementMetricVotes).not.toHaveBeenCalled()
   })
 
   it('decrements the page counter only when the token is consumed', async () => {
@@ -75,19 +75,19 @@ describe('services/comments/likes — decreaseLikes', () => {
       expect.stringMatching(/\/posts\/hello\/$/),
       'good-token',
     )
-    expect(pageQueries.decrementPageVotes).toHaveBeenCalledOnce()
+    expect(metricQueries.decrementMetricVotes).toHaveBeenCalledOnce()
   })
 })
 
 describe('services/comments/likes — queryLikes', () => {
-  it('delegates to pageVoteUp with the canonical page key', async () => {
-    vi.mocked(likeQueries.pageVoteUp).mockResolvedValue(11)
+  it('delegates to metricVoteUp with the canonical page key', async () => {
+    vi.mocked(likeQueries.metricVoteUp).mockResolvedValue(11)
 
     const count = await queryLikes('/posts/hello')
 
     expect(count).toBe(11)
-    expect(likeQueries.pageVoteUp).toHaveBeenCalledOnce()
-    const key = vi.mocked(likeQueries.pageVoteUp).mock.calls[0][0]
+    expect(likeQueries.metricVoteUp).toHaveBeenCalledOnce()
+    const key = vi.mocked(likeQueries.metricVoteUp).mock.calls[0][0]
     // The key always ends with a trailing "/" — pin that contract since
     // existing rows in production rely on it.
     expect(key.endsWith('/')).toBe(true)
@@ -99,12 +99,12 @@ describe('services/comments/likes — queryMetadata', () => {
     const result = await queryMetadata([], { likes: true, views: true, comments: true })
 
     expect(result.size).toBe(0)
-    expect(likeQueries.pageMetricsByKeys).not.toHaveBeenCalled()
+    expect(likeQueries.metricsByKeys).not.toHaveBeenCalled()
     expect(likeQueries.commentCountsByPageKeys).not.toHaveBeenCalled()
   })
 
   it('aggregates likes/views/comments per permalink, defaulting missing rows to 0', async () => {
-    vi.mocked(likeQueries.pageMetricsByKeys).mockResolvedValue([
+    vi.mocked(likeQueries.metricsByKeys).mockResolvedValue([
       { key: 'https://yufan.me/posts/a/', like: 5, view: 100 },
       // /posts/b has zero metrics — we still include it in the result map.
     ])
@@ -124,7 +124,7 @@ describe('services/comments/likes — queryMetadata', () => {
   })
 
   it('skips the comment-count query when comments=false (perf knob)', async () => {
-    vi.mocked(likeQueries.pageMetricsByKeys).mockResolvedValue([])
+    vi.mocked(likeQueries.metricsByKeys).mockResolvedValue([])
 
     await queryMetadata(['/posts/a'], { likes: true, views: true, comments: false })
 

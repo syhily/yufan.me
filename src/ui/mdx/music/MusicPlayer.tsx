@@ -82,22 +82,39 @@ export function scheduleMusicPlayerInit(
 // cover URL pair against the configured S3 public base URL on the
 // server side. The client never has to know about asset hosts or
 // storage settings.
+//
+// **Autoplay scheduling**: `scheduleMusicPlayerInit` defers onto
+// `requestIdleCallback` (with a timeout), which can land hundreds of ms
+// to seconds after navigation. Chromium treats audibly starting media
+// that late as unrelated to user activation and blocks `audio.play()`
+// even though APlayer passes `autoplay: true`. When `auto` is set we
+// therefore skip idle deferral entirely and initialise on the earliest
+// async turn (still one animation frame wait for DOM layout — same idea
+// as `FloatingMusicPlayer`).
 export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const container = containerRef.current
-    if (!container || !id) {
+    if (!id) {
       return
     }
     let cancelled = false
     let destroy: (() => void) | undefined
 
-    const cancelInit = scheduleMusicPlayerInit(() => {
+    const waitForPaint = (): Promise<void> =>
+      new Promise((resolve) => {
+        const host = typeof window !== 'undefined' ? window : undefined
+        if (host?.requestAnimationFrame !== undefined) {
+          host.requestAnimationFrame(() => resolve())
+          return
+        }
+        resolve()
+      })
+
+    const bootstrap = (): void => {
       if (cancelled) {
         return
       }
-
       void (async () => {
         const [{ default: APlayer }, meta] = await Promise.all([
           import('aplayer-ts'),
@@ -105,6 +122,12 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
           import('aplayer-ts/src/css/base.css'),
         ])
         if (cancelled || meta === null) {
+          return
+        }
+
+        await waitForPaint()
+        const container = containerRef.current
+        if (cancelled || container === null) {
           return
         }
 
@@ -132,11 +155,18 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
           }
         }
       })()
-    })
+    }
+
+    let cancelScheduled: (() => void) | undefined
+    if (auto === true) {
+      bootstrap()
+    } else {
+      cancelScheduled = scheduleMusicPlayerInit(bootstrap)
+    }
 
     return () => {
       cancelled = true
-      cancelInit()
+      cancelScheduled?.()
       destroy?.()
     }
   }, [id, auto])

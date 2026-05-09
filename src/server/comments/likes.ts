@@ -1,15 +1,15 @@
-import { DateTime } from 'luxon'
+import { startOfDay, subDays } from 'date-fns'
 
 import {
   commentCountsByPageKeys,
   consumeActiveLikeToken,
   existsActiveLikeToken,
-  pageMetricsByKeys,
-  pageVoteUp,
+  metricsByKeys,
+  metricVoteUp,
   purgeOldLikeTokens,
   recordLikeAndCount,
 } from '@/server/db/query/like'
-import { decrementPageVotes } from '@/server/db/query/page'
+import { decrementMetricVotes } from '@/server/db/query/metric'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { makeToken } from '@/shared/security'
 import { joinUrl } from '@/shared/urls'
@@ -32,12 +32,12 @@ export async function decreaseLikes(permalink: string, token: string) {
   const pageKey = generatePageKey(permalink)
   const consumed = await consumeActiveLikeToken(pageKey, token)
   if (consumed) {
-    await decrementPageVotes(pageKey)
+    await decrementMetricVotes(pageKey)
   }
 }
 
 export async function queryLikes(permalink: string): Promise<number> {
-  return pageVoteUp(generatePageKey(permalink))
+  return metricVoteUp(generatePageKey(permalink))
 }
 
 export async function queryMetadata(
@@ -49,7 +49,7 @@ export async function queryMetadata(
   }
   const pageKeys = permalinks.map((permalink) => generatePageKey(permalink))
   const [likesAndViewsRows, commentRows] = await Promise.all([
-    pageMetricsByKeys(pageKeys),
+    metricsByKeys(pageKeys),
     options.comments ? commentCountsByPageKeys(pageKeys) : Promise.resolve([]),
   ])
 
@@ -90,7 +90,7 @@ export async function validateLikeToken(permalink: string, token: string): Promi
  * call from a cron job; also invoked by the in-process sweep below.
  */
 export async function purgeStaleLikeTokens(): Promise<void> {
-  const thirtyDaysAgo = DateTime.now().minus({ days: 30 }).startOf('day').toJSDate()
+  const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
   await purgeOldLikeTokens(thirtyDaysAgo)
 }
 

@@ -60,6 +60,7 @@ export function makePage(overrides: Partial<ClientPage> = {}): ClientPage {
     published: overrides.published ?? true,
     summary: overrides.summary ?? '',
     toc: overrides.toc ?? false,
+    showFriends: overrides.showFriends ?? false,
     slug,
     permalink: overrides.permalink ?? `/${slug}`,
     headings: overrides.headings ?? [],

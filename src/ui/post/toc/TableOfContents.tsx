@@ -173,13 +173,54 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
   // strict-mode double mounts and leaked when the post route unmounted.
 
   const onToggle = useCallback(() => setVisible((prev) => !prev), [])
-  const onMouseEnter = useCallback(() => setHovered(true), [])
-  const onMouseLeave = useCallback(() => setHovered(false), [])
+  // Only real mouse / pen pointers count as "hover". Touch pointers
+  // (`pointerType === 'touch'`) synthesise a `mouseenter` on tap that
+  // is never paired with a matching `mouseleave` until the user taps
+  // somewhere else, which used to leave `hovered === true` after the
+  // drawer closed and kept `document.body.style.overflow = 'hidden'`
+  // pinned — the page would refuse to scroll. Mobile browsers do not
+  // need the pre-click "grow the disc" affordance anyway, since there
+  // is no cursor to telegraph intent with.
+  const onPointerEnter = useCallback((event: React.PointerEvent) => {
+    if (event.pointerType === 'touch') {
+      return
+    }
+    setHovered(true)
+  }, [])
+  const onPointerLeave = useCallback((event: React.PointerEvent) => {
+    if (event.pointerType === 'touch') {
+      return
+    }
+    setHovered(false)
+  }, [])
+  // Defensive reset: any time both flags are false (drawer closed and
+  // not actively hovered), wipe any lingering scroll-lock styles. The
+  // primary cleanup runs inside the effect below; this runs the same
+  // teardown synchronously when the component unmounts mid-toggle (e.g.
+  // SPA route change with the drawer half-open) so the next page is
+  // never inherited with `overflow: hidden`.
+  useEffect(() => {
+    return () => {
+      if (typeof document === 'undefined') {
+        return
+      }
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+      document.body.style.removeProperty('--scrollbar-width')
+    }
+  }, [])
 
   // Scroll-lock the page while the toggle is hovered (so a stray click
   // near the right edge cannot land on the native scrollbar instead of
   // the button) or while the drawer is open (so the page does not scroll
-  // behind the backdrop). Two compensations run in lockstep:
+  // behind the backdrop). `hovered` is wired exclusively to mouse / pen
+  // pointers (see `onPointerEnter` / `onPointerLeave` above) so on touch
+  // devices the only thing that flips `lock` is `visible` — the close
+  // tap therefore deterministically releases the body scroll. Without
+  // that filter, mobile Safari's synthesised `mouseenter` would set
+  // `hovered = true` on the open tap and never clear it on the close
+  // tap, leaving the page un-scrollable after the drawer collapsed.
+  // Two compensations run in lockstep:
   //
   //   1. `body.padding-right` takes back the horizontal space that
   //      disappeared with the scrollbar, so document-flow content does
@@ -224,8 +265,8 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
         aria-label={visible ? '关闭文章目录' : '展开文章目录'}
         aria-expanded={visible}
         onClick={onToggle}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
       >
         <span data-state={state} className={tocToggleIconWrapperClass} aria-hidden>
           <ChevronLeftIcon className="text-md" size="1em" />

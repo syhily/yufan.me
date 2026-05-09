@@ -37,9 +37,10 @@ runtimes), kept in sync via `skills-lock.json`.
 - Vite (via Vite+) is the build system. `vite.config.ts` wires React
   Router, Fumadocs MDX, binary asset imports, path aliases, and dev
   server settings.
-- Fumadocs MDX compiles `src/content/posts` and `src/content/pages`.
-  Categories, tags, and friend links live in Postgres and are edited
-  through `/wp-admin/{categories,tags,friends}`.
+- Fumadocs MDX compiles `src/content/posts` only — pages live in the
+  `page` + `content` Postgres tables and are edited through
+  `/wp-admin/pages`. Categories, tags, and friend links live in
+  Postgres and are edited through `/wp-admin/{categories,tags,friends}`.
 - React 19 view layer. TSX/TS only.
 - Postgres for users, comments, likes, counters, settings, taxonomies,
   images, music. Redis for sessions, rate limits, avatars, and
@@ -198,21 +199,80 @@ Use aliases instead of relative paths. The only allowed relative imports:
 
 ## Content
 
-- Fumadocs collections are declared in `source.config.ts`. Posts in
-  `src/content/posts/**/*.mdx`; pages in `src/content/pages/**/*.mdx`.
-  No `astro:content`.
-- URLs use MDX frontmatter `slug`, not physical filenames. Posts render
-  at `/posts/:slug`; pages render at `/:slug`.
+- Fumadocs collections are declared in `source.config.ts`. Posts live
+  under `src/content/posts/**/*.mdx`. No `astro:content`.
+- Pages live exclusively in the `page` + `content` Postgres tables.
+  The historical Fumadocs `pages` collection has been retired — every
+  page is edited through `/wp-admin/pages` and rendered through
+  `<PortableTextBody>`. The three legacy MDX files
+  (`src/content/pages/{about,guestbook,links}.mdx`) are kept on disk
+  as **frozen migration source material** so the importer
+  (`scripts/migrate/pages/cli.ts`) can be pointed at them on a fresh
+  production deployment; they are NOT walked by `source.config.ts`,
+  do NOT ship in the SSR bundle, and must NOT be edited to "update
+  content" — see `src/content/pages/_README.md` and
+  `scripts/migrate/README.md` for the operator workflow.
+- URLs use MDX frontmatter `slug` (posts) or the `page` table's `slug`
+  column (pages), not physical filenames. Posts render at
+  `/posts/:slug`; pages render at `/:slug`.
 - The catalog (`@/server/catalog`) returns compiled MDX components
-  through `body`, headings, raw source, and structured data. Custom MDX
-  components live under `@/ui/mdx`; preserve math, Mermaid, heading
-  slug, external link, title figure, and Shiki behavior via
+  through `body`, headings, raw source, and structured data for posts;
+  pages carry a PortableText `body` instead. Custom MDX components
+  live under `@/ui/mdx`; preserve math, Mermaid, heading slug,
+  external link, title figure, and Shiki behavior via
   `source.config.ts`.
 - `visible=false` posts are hidden from the public home and random-post
   widgets but are intentionally included in `/archives`, `/tags/:slug`,
   `/search/:keyword`, `sitemap.xml`, all RSS/Atom feeds, category
   listing pages, and category/tag counts. Future-dated scheduled posts
   remain excluded from those listings and counts.
+
+### Importing MDX pages from an external dump
+
+- The page-import migrator lives under `scripts/migrate/pages/` and
+  is preserved (not retired) so a production deployment can stage
+  an external MDX dump and walk it into the `page` + `content`
+  tables in one shot.
+- `scripts/migrate/pages/cli.ts` is the operator-facing entry point;
+  `scripts/migrate/pages/mdx-to-portable-text.ts` is the pure
+  mdast → PortableText converter the unit tests drive against
+  (`tests/script.migrate-pages-mdx.test.ts`). Heavy dependencies
+  (`remark`, `mdast`, `yaml`) live here and never reach the SSR
+  bundle.
+- Run with `vp dlx vite-node --env-file=.env scripts/migrate/pages/cli.ts
+--source-dir <abs-path>` for a dry run, append `--apply` to write,
+  and `--apply --force` to re-emit the dry-run preview for slugs
+  that already exist (the script never updates an existing row).
+- Resource handling: cover URL + every inline `![alt](url)` go
+  through `resolveSrcToStoragePath` + `findImageByStoragePath`. A
+  hit fills the saved PortableText image block with `imageId` /
+  `storagePath` / width / height / thumbhash and the cache-busted
+  public URL; a miss leaves the bare URL on the block and surfaces
+  in the per-page report so the operator can backfill the row in
+  `/wp-admin/images`. Every `<MusicPlayer id="…">` is sanity-checked
+  against `findMusicByPlayerId` — missing rows log a warning but
+  don't abort (the runtime resolver handles unknown ids gracefully).
+- `<Friends />` auto-toggle: when the migration script's
+  `stripFriendsTag` pass detects a `<Friends />` JSX tag in the raw
+  MDX it removes the tag from the source AND pre-toggles
+  `page.show_friends=true` on the inserted row so the meta switch
+  reproduces the original visual outcome. The PortableText body
+  itself never carries a `friends` block (that block type was
+  retired together with the meta toggle).
+- The mdast → PortableText converter is intentionally narrow: it
+  handles paragraphs, headings (h1-h4), lists (one level of
+  nesting), blockquotes, images, links, decorators, and the
+  `<MusicPlayer>` JSX-shaped HTML. Anything richer (fenced code
+  blocks, math, mermaid, tables, footnotes, custom Solution
+  blocks, multi-level lists, **`<Friends />`**) throws so a future
+  MDX page that grows a richer construct cannot silently lose
+  content. The `<Friends />` strip happens upstream in the CLI, so
+  by the time the converter runs no friends JSX survives the input.
+- A future post-import migrator will sit alongside the pages one
+  under `scripts/migrate/posts/` and follow the same conventions
+  (CLI + pure converter split, idempotency-by-slug, per-row
+  report). See `scripts/migrate/README.md` for the per-migrator
+  contract.
 
 ### Taxonomies (categories, tags, friends)
 
@@ -225,6 +285,133 @@ Use aliases instead of relative paths. The only allowed relative imports:
   warns when it references a missing tag.
 - Deletion is blocked while any post still references the row — the
   admin must change the MDX frontmatter first.
+
+### Slug derivation
+
+- One canonical helper for every URL slug in the project lives at
+  `@/server/slug.ts::deriveSlug(text)`. The pipeline is
+  `pinyin-pro` → whitespace-collapse → `github-slugger`, with a
+  post-pass that collapses runs of dashes and trims leading /
+  trailing dashes, so the output always satisfies `SLUG_PATTERN`
+  (`^[a-z0-9]+(?:-[a-z0-9]+)*$`).
+- Server-only — `pinyin-pro` ships ~150KB of CJK lookup tables and
+  must NOT reach the client bundle. The shared / client trees never
+  import `@/server/slug`; admin forms send `slug?: string` and the
+  service derives from the entity name / title when the field is
+  blank.
+- Every authoring surface follows the same contract: tag, category,
+  page, and heading-anchor slugs all flow through `deriveSlug`. Page
+  schema still permits `[._-]` separators in user-supplied slugs so
+  legacy URLs like `archives.html` survive, but the derived value is
+  always plain kebab-case ASCII.
+- Heading anchors for DB-backed pages: SSR loaders pre-compute
+  `collectHeadings(body, deriveSlug).map(h => h.slug)` and pass the
+  list to `<PortableTextBody headingSlugs>`. The renderer consumes
+  one slug per heading via a per-render cursor; with the prop absent
+  (editor live-preview before the server round-trip) it falls back
+  to a local `github-slugger` over the raw text. MDX posts stay on
+  `rehype-slug` and produce byte-identical anchors for ASCII
+  headings.
+
+### Slug uniqueness — page ↔ post is global
+
+- **Page slugs and post slugs share a single namespace.** Even
+  though the public routes physically separate them
+  (`/posts/:slug` vs `/:slug`), the catalog, OG image generator
+  (`/images/og/:slug.png`), comment threading (keyed on
+  permalink), and sitemap all key on the slug independent of the
+  prefix. A page slug equal to a post slug (or to any post
+  `alias[]` value) is a violation of the global invariant.
+- **The three emitters in this namespace** are the DB `page` table
+  (`slug` column), MDX post frontmatter
+  (`src/content/posts/**/*.mdx` `slug`), and MDX post `alias[]`.
+- **Enforcement is split across two layers.** The DB-level
+  `UNIQUE(slug)` on the `page` table and `findPageMetaBySlug` in
+  `@/server/cms/pages/service` only catch page↔page collisions
+  inside the `page` table. The cross-table page↔post fence lives
+  in `@/server/catalog/catalog::validatePageSlugs`, which runs at
+  catalog cold start and after every admin save. A colliding save
+  succeeds at save time and surfaces as a 500 on the next
+  catalog rebuild — keep this asymmetry in mind when changing
+  the page-service or catalog code paths.
+- **Adding a new slug emitter** (a future `note` collection, a
+  redirect table, …) MUST be folded into either `postSlugs` or
+  `validatePageSlugs` (depending on which side of the namespace it
+  lives on). Otherwise the global invariant silently degrades and
+  `getCatalog().getPost(slug) ?? getCatalog().getPage(slug)`
+  starts returning the wrong row.
+
+### Page draft preview
+
+- `routes/page.detail.tsx` resolves a page through one of two
+  branches and paints a red admin-only badge next to the title via
+  `PageDetailBody`'s `draftMarker` prop:
+  - **Catalog miss** (`page.published=false`, scheduled, or
+    "never published") — anonymous visitors get 404 in every
+    environment. Logged-in admins fall back to
+    `loadPageDraftPreviewBySlug` (latest draft preferred over
+    published) and the title shows red **【草稿】**.
+  - **Catalog hit + `?draft=true`** — anonymous visitors and
+    non-admin sessions ignore the query parameter and see the
+    published body. Logged-in admins enter the draft-overlay
+    branch:
+    - newer draft exists → body swaps to the draft, title shows
+      red **【未发布的草稿】**.
+    - no newer draft (latest revision IS the published one) →
+      body stays on the published revision, title shows red
+      **【已发布的草稿】** (confirms parity).
+- The marker discriminator is
+  `'draft' | 'unpublished-draft' | 'published-draft' | null` and
+  lives in `@/ui/post/post/PageDetailBody`. The single service
+  function `loadPageDraftPreviewBySlug` returns
+  `{ page, hasNewerDraft }`; the route picks the marker from
+  `(meta.published, hasNewerDraft)` so the UI never has to know
+  about the publication state machine.
+
+### Page meta toggles
+
+- The `page` table carries a small set of operator-facing booleans
+  edited from the right sidebar of `/wp-admin/pages/edit/:id`
+  (`MetaSidebar`'s 展示选项 card). Each one drives a render-time
+  branch in `routes/page.detail.tsx`, **never** a body mutation, so
+  the operator can flip it on/off without re-publishing the
+  PortableText document.
+  - `comments_enabled` — render the comment thread under the body.
+  - `show_toc` — render the right-rail Table of Contents.
+  - `show_friends` — append the global friends grid (the same one
+    the legacy `<Friends />` MDX component renders) to the bottom
+    of the body, before the Like button. The PortableText dialect
+    deliberately has no `friends` block — flipping this toggle is
+    the only way to surface the grid, so an editor can opt in /
+    out without re-publishing the body.
+- Adding a new toggle is a small, mechanical change that has to
+  travel six layers in lockstep:
+  1. `src/server/db/schema.ts` — column + comment.
+  2. A drizzle migration directory under `drizzle/` with both
+     `migration.sql` (`ALTER TABLE … ADD COLUMN IF NOT EXISTS …`)
+     and a freshly-cloned `snapshot.json` (the old snapshot, with
+     a new `entityType: 'columns'` entry inserted next to the
+     existing toggles, a fresh `id`, and the previous id appended
+     to `prevIds`).
+  3. `src/server/cms/pages/projection.ts` (`toCmsPage` and
+     `toAdminPageDto`).
+  4. `src/server/cms/pages/service.ts` (`createPage` default,
+     `updatePageMeta` fallback) and the matching Zod field in
+     `src/server/cms/pages/schema.ts`.
+  5. `src/shared/cms-pages.ts` (`AdminPageDto`,
+     `UpsertPageMetaInput`) and `src/shared/catalog.ts`
+     (`ClientPage` if the toggle has a public effect).
+  6. `src/ui/admin/pages/MetaSidebar.tsx` (`PageMetaDraft`,
+     `EMPTY_META_DRAFT`, `metaDraftFromPage`, plus a `<ToggleRow>`)
+     and the matching `meta.<flag>` echo in
+     `src/ui/admin/pages/PageEditorShell.tsx` (three call sites:
+     create, edit-meta, publish).
+- The `CreateDraftMeta` shape in
+  `src/client/hooks/use-create-page-draft.ts` is a structural
+  mirror of `PageMetaDraft` — adding a field requires updating
+  both. The duplication is intentional (the `client` layer can't
+  reach into `ui`); test fixtures (`tests/_helpers/catalog.ts`,
+  `tests/service.cms-pages*.test.ts`) need the new default too.
 
 ### Images
 
@@ -265,6 +452,62 @@ Use aliases instead of relative paths. The only allowed relative imports:
 sourceId)` is a unique key and `source` is reserved as varchar so
   additional providers can be added later without a migration. Lyrics
   live in `music.lyric` so the player never makes a second round trip.
+
+### PortableText editor
+
+- Pages and posts persist their body as PortableText (PT). The Zod
+  dialect lives in `@/shared/portable-text` (standard text /
+  list / heading / blockquote + custom blocks `image`, `code`,
+  `mathBlock`, `mermaid`, `horizontalRule`, `musicPlayer`,
+  `solution`, `footnoteDefinition`, `table`). The friends grid is
+  intentionally NOT a body block — it's a meta toggle on the
+  `page` row (`page.show_friends`) rendered by
+  `routes/page.detail.tsx` after the body. See
+  `### Page meta toggles`.
+- The PT ↔ ProseMirror bridge is `@/shared/pt-bridge` — single
+  file by design. Standard blocks map onto Tiptap's built-in nodes;
+  custom blocks ride a generic `blockCard` PM node so the bridge
+  doesn't need an extension per type. Round-trip is contract-tested
+  in `tests/contract.pt-bridge.test.ts`.
+- SSR rendering goes through `@/ui/portable-text/PortableTextBody`,
+  which composes `@portabletext/react`'s component map with our
+  custom-block React components from `@/ui/mdx/*`. Heading anchor
+  ids match the MDX path so deep links survive the migration.
+- The admin Tiptap editor is `@/ui/admin/pages/PageBodyEditor`. UX
+  surface area lives in three layers, in this order:
+  1. **Toolbar** (in `PageBodyEditor.tsx`): mouse-driven access to
+     the image library, music picker, link, table, hr, undo/redo,
+     plus the drag-handle on/off toggle.
+  2. **`tiptap/BubbleMenu`** + `tiptap/TableBubbleMenu`: floating
+     inline-format menus. The first owns text selections (B/I/U +
+     code + link popover + `mathInline` / `footnoteRef` editing
+     panels); the second owns table selections (rows / columns /
+     header / merge / split / delete). They are mutually exclusive —
+     `BubbleMenu.shouldShow` hides itself inside tables.
+  3. **`tiptap/SlashMenu`** (`/`-driven launcher): mounts via
+     `@tiptap/suggestion`. The catalogue lives in
+     `tiptap/slash-commands.ts`; pickers (image / music) dispatch
+     `CustomEvent`s defined in `tiptap/editor-events.ts` so the
+     suggestion plugin doesn't need direct refs into React state.
+- The image block uses a React NodeView (`tiptap/ImageNodeView`) so
+  alt + caption are editable inline and the operator can re-pick or
+  delete the image without leaving the canvas.
+- Top-level block drag-and-drop is hand-rolled on dnd-kit
+  (`tiptap/drag-handle-plugin.ts` + `tiptap/DragHandle.tsx`). Limit:
+  reorder at depth 1 only — items inside lists / tables stay where
+  they are because dropping them between top-level paragraphs would
+  corrupt the surrounding container.
+- **Table dialect**: cells are restricted to inline spans only — no
+  nested blocks, lists, code blocks, math blocks, or footnote refs.
+  The only mark-def allowed in a cell is `link`. The bridge enforces
+  this on PM → PT conversion. The slash-menu / toolbar shortcut
+  inserts a 3×3 table with a header row by default.
+- Floating popups in the editor anchor with `position: fixed` driven
+  off the suggestion plugin's `clientRect` (slash menu) or Tiptap's
+  built-in `BubbleMenu` positioner. Do **not** add `@floating-ui/*`
+  as a direct dep — `@base-ui/react` already pulls it in
+  transitively for shadcn primitives, and editor menus don't need a
+  third positioning library.
 
 ## RSC Layering Rules
 

@@ -238,6 +238,23 @@ export function Header({ navigation, admin }: HeaderProps) {
   // `<header>` host can drive the cascade for every nested chrome
   // piece via the named-group variants.
   const [menuOpen, setMenuOpen] = useState(false)
+  // Track whether we're at the desktop breakpoint (`>=lg`, 1024px). The
+  // `<header>` doubles as a modal dialog on `<lg` and as a non-modal
+  // sticky sidebar on `>=lg`; the dialog-only ARIA attributes
+  // (`role="dialog"`, `aria-modal`, `aria-hidden`, and especially
+  // `inert`) MUST NOT apply on desktop, otherwise the always-visible
+  // sidebar becomes non-interactive (links / search / socials all
+  // dead). Default to `true` so the SSR HTML doesn't ship `inert` on
+  // the desktop sidebar — the first client paint reconciles the value
+  // from `matchMedia`.
+  const [isDesktop, setIsDesktop] = useState(true)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const update = () => setIsDesktop(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
   // Reference to the trigger button so we can return focus to it when
   // the dialog closes — without this, keyboard users land at the top of
   // the document on Escape, which violates WAI-ARIA APG §"Restoring
@@ -290,10 +307,11 @@ export function Header({ navigation, admin }: HeaderProps) {
         // virtual focus (along with `inert` on background content,
         // which the `data-state="open"` overlay above already
         // covers visually).
-        role="dialog"
-        aria-modal={menuOpen ? true : undefined}
+        role={isDesktop ? undefined : 'dialog'}
+        aria-modal={!isDesktop && menuOpen ? true : undefined}
         aria-labelledby={menuLabelId}
-        aria-hidden={menuOpen ? undefined : true}
+        aria-hidden={!isDesktop && !menuOpen ? true : undefined}
+        inert={!isDesktop && !menuOpen ? true : undefined}
       >
         {/*
          * Overlay is a real button (not a `<div onClick>`) so keyboard

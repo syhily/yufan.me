@@ -1,6 +1,6 @@
 import { vi } from 'vite-plus/test'
 
-import type { Comment, Like, NewComment, NewUser, Page, User } from '@/server/db/types'
+import type { Comment, Like, MetricRow, NewComment, NewUser, User } from '@/server/db/types'
 
 // Drizzle is fluent: `db.select().from(t).where(c).limit(n).orderBy(o)` etc.
 // The chain methods all return `this`-ish builders that the caller eventually
@@ -212,7 +212,7 @@ export function seedLikes(specs: Partial<Like>[]): Like[] {
   return specs.map((spec) => seedLike(spec))
 }
 
-export function seedPage(overrides: Partial<Page> = {}): Page {
+export function seedMetric(overrides: Partial<MetricRow> = {}): MetricRow {
   const now = overrides.createdAt ?? new Date('2024-01-01T00:00:00.000Z')
   return {
     id: overrides.id ?? nextBigInt(),
@@ -223,7 +223,7 @@ export function seedPage(overrides: Partial<Page> = {}): Page {
     createdAt: now,
     updatedAt: overrides.updatedAt ?? now,
     deletedAt: overrides.deletedAt ?? null,
-  } as Page
+  } as MetricRow
 }
 
 // Re-export NewUser/NewComment so a test can import the seed helpers and

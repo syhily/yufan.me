@@ -49,7 +49,25 @@ export function useDetachPublicCss(): void {
     })
     return () => {
       for (const { node, nextSibling, parent } of detached) {
-        parent.insertBefore(node, nextSibling)
+        // The DOM may have shifted while the admin tree was mounted
+        // (Vite HMR re-injecting public.css, React Router stream
+        // chunks landing late, an error boundary unmounting the
+        // shell mid-flight). Re-anchor defensively: only insertBefore
+        // when `nextSibling` is still a real child of `parent`,
+        // otherwise fall back to append. Skip entirely when the node
+        // has somehow been re-attached elsewhere.
+        if (node.parentNode !== null) {
+          continue
+        }
+        try {
+          if (nextSibling !== null && nextSibling.parentNode === parent) {
+            parent.insertBefore(node, nextSibling)
+          } else {
+            parent.appendChild(node)
+          }
+        } catch {
+          // ignore — re-attachment is best-effort.
+        }
       }
     }
   }, [])

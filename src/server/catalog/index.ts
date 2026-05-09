@@ -13,7 +13,7 @@ import { cache } from 'react'
 import { ContentCatalog } from '@/server/catalog/catalog'
 
 export { ContentCatalog } from '@/server/catalog/catalog'
-export { getClientPostsWithMetadata } from '@/server/catalog/catalog'
+export { buildDbPage, getClientPostsWithMetadata } from '@/server/catalog/catalog'
 export type {
   Category,
   ClientCategory,

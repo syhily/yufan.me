@@ -13,6 +13,7 @@ const settingQueries = await import('@/server/db/query/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/settings/snapshot')
 const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { requireBlogSettingsSection } = await import('@/shared/blog-config')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section
 // (`blog.general`, `blog.assets`, …) so `bundleRows()` projects this
@@ -70,6 +71,8 @@ const fixtureBundle: BlogSettingsBundle = {
       og: { prefix: 'og:', ttlSeconds: 3600 },
       calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+      imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
+      commentsMd: { prefix: 'comments-md-', ttlSeconds: 3600 },
     },
   },
   rateLimit: {
@@ -471,6 +474,8 @@ describe('services/settings — cache section', () => {
           og: { prefix: 'opengraph-', ttlSeconds: 60 * 60 * 24 * 14 },
           calendar: { prefix: 'cal:', ttlSeconds: 60 * 60 * 12 },
           avatar: { prefix: 'gravatar-', ttlSeconds: 60 * 60 * 24 * 3 },
+          imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+          commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
         },
       },
       null,
@@ -495,6 +500,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'shared-', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'shared-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -514,6 +521,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'og-', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'og-foo-', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -533,6 +542,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'session:', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -551,6 +562,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'rate-', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -569,6 +582,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'ogkey', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -587,6 +602,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'og-', ttlSeconds: 60 },
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -601,6 +618,8 @@ describe('services/settings — cache section', () => {
             og: { prefix: 'og-', ttlSeconds: 60 * 60 },
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 365 },
+            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,
@@ -627,5 +646,62 @@ describe('services/settings — snapshot reader', () => {
     expect(live?.siteIdentity?.title).toBe('snapshot title')
     expect(live?.assets?.asset.host).toBe('cdn.example.com')
     expect(live?.siteIdentity?.locale).toBe('zh-CN')
+  })
+
+  it('requireBlogSettingsSection(cache) backfills missing bucket slots with fallbacks', () => {
+    const legacyCache = {
+      og: { prefix: 'legacy-og-', ttlSeconds: 1234 },
+      calendar: { prefix: 'legacy-calendar-', ttlSeconds: 5678 },
+      avatar: { prefix: 'legacy-avatar-', ttlSeconds: 4321 },
+    } as unknown as NonNullable<BlogSettingsBundle['cache']>['cache']
+
+    const legacyLikeBundle: BlogSettingsBundle = {
+      ...fixtureBundle,
+      cache: {
+        cache: legacyCache,
+      },
+    }
+    setBlogSettingsBundleForTests(legacyLikeBundle)
+
+    const cache = requireBlogSettingsSection('cache').cache
+    expect(cache.og).toEqual({ prefix: 'legacy-og-', ttlSeconds: 1234 })
+    expect(cache.calendar).toEqual({ prefix: 'legacy-calendar-', ttlSeconds: 5678 })
+    expect(cache.avatar).toEqual({ prefix: 'legacy-avatar-', ttlSeconds: 4321 })
+    expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
+    expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
+  })
+
+  it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
+    // Reproduces the prod crash where a legacy `blog.cache` row stored
+    // before `imageMeta` / `commentsMd` were added passed the old
+    // (object-only) probe, then crashed `<BucketCard>` on
+    // `allBuckets.imageMeta.prefix`. The strengthened probe rejects
+    // the row, the bucket is left null after the SELECT pass, and the
+    // backfill path writes the registry default in its place.
+    const legacyRow: Setting = {
+      id: 99n,
+      scope: 'blog.cache',
+      data: {
+        cache: {
+          og: { prefix: 'og:', ttlSeconds: 3600 },
+          calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
+          avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+        },
+      } as unknown as Record<string, unknown>,
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting
+    const completeRows = bundleRows(fixtureBundle).filter((row) => row.scope !== 'blog.cache')
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([...completeRows, legacyRow])
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+
+    const dto = await getAdminBlogSettings()
+
+    expect(dto.bundle).not.toBeNull()
+    const cache = dto.bundle!.cache!.cache
+    expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
+    expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
+    const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
+    expect(upsertCalls.some((call) => call[2] === 'blog.cache')).toBe(true)
   })
 })

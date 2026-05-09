@@ -11,6 +11,7 @@ import {
   type SettingsSection,
 } from '@/server/settings/sections'
 import { BLOG_SETTINGS_SNAPSHOT_SLOT, getBlogSettingsBundleSync, requireBlogSettingsBundle } from '@/shared/blog-config'
+import { CACHE_BUCKET_IDS } from '@/shared/cache-types'
 import { BUNDLE_KEYS } from '@/shared/settings'
 
 const log = getLogger('settings.snapshot')
@@ -111,7 +112,32 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     value.og !== null,
   footer: (value) => typeof value.footer === 'object' && value.footer !== null,
   mail: (value) => typeof value.mail === 'object' && value.mail !== null,
-  cache: (value) => typeof value.cache === 'object' && value.cache !== null,
+  // Each cache bucket carries `prefix` + `ttlSeconds`. Probe walks
+  // every required bucket so a row missing newer surfaces (e.g. a
+  // legacy install written before `imageMeta` / `commentsMd` were
+  // added) falls through and gets repaired by the registry-default
+  // backfill — same pattern as the `rateLimit` probe below. Without
+  // this, the admin cache form would crash with
+  // `Cannot read properties of undefined (reading 'prefix')` because
+  // the editor reads the bundle directly without going through
+  // `requireBlogSettingsSection('cache')`'s fallback wrap.
+  cache: (value) => {
+    if (typeof value.cache !== 'object' || value.cache === null) {
+      return false
+    }
+    const buckets = value.cache as Record<string, unknown>
+    for (const id of CACHE_BUCKET_IDS) {
+      const slot = buckets[id]
+      if (typeof slot !== 'object' || slot === null) {
+        return false
+      }
+      const entry = slot as Record<string, unknown>
+      if (typeof entry.prefix !== 'string' || typeof entry.ttlSeconds !== 'number') {
+        return false
+      }
+    }
+    return true
+  },
   // Each rate-limit bucket carries `windowSeconds` + `maxAttempts`.
   // Probe walks every required bucket so a row missing the new
   // `likeIncreaseIp` surface (e.g. someone hand-edited the JSONB)

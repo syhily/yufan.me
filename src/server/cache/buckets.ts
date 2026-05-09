@@ -48,7 +48,23 @@ const BUCKET_META = [
     description:
       '/images/avatar/:hash.png 缓存的头像字节，键形如 ${prefix}${hash}。用户更换头像后清理可让访客立即看到新头像。',
   },
-] as const satisfies readonly { id: CacheBucketId; label: string; description: string }[]
+  {
+    id: 'imageMeta',
+    label: '图片元数据缓存',
+    description:
+      'SSR 渲染时 storagePath → image 行的查询结果（宽 / 高 / thumbhash），键形如 ${prefix}${storagePath}。在图片库批量上传或导入旧站数据后清理一次即可。',
+  },
+  {
+    id: 'commentsMd',
+    label: '评论 Markdown 渲染缓存',
+    description:
+      '评论与分类描述经 marked + shiki + sanitize 后的 HTML，键形如 ${prefix}${sha256(content)}。修改 shiki 主题或安全白名单后清理一次即可。',
+  },
+] as const satisfies readonly {
+  id: CacheBucketId
+  label: string
+  description: string
+}[]
 
 /**
  * Build the bucket list from the live blog-settings snapshot. Reading

@@ -36,10 +36,13 @@ export interface ListCategoriesOutput {
 
 // `id` absent → create a new row. Present → update the matching row.
 // `description` defaults to "" and `sortOrder` to 0 on create.
+// `slug` is wire-optional: when omitted (or empty), the server derives
+// one from `name` via `deriveSlug` (pinyin-pro -> github-slugger),
+// matching the tag and page flows.
 export interface UpsertCategoryInput {
   id?: string
   name: string
-  slug: string
+  slug?: string
   cover: string
   description?: string
   sortOrder?: number

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { CacheBucketId } from '@/shared/cache-types'
+
 import { isSupportedTimeZone } from '@/server/settings/timezones'
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/socials'
@@ -121,6 +123,11 @@ export const contentSchema = z.object({
     sort: sortOrderSchema,
     feature: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
   }),
+  footnotes: z
+    .object({
+      sectionTitle: z.string().trim().min(1).max(120),
+    })
+    .default({ sectionTitle: '尾声礼记' }),
 })
 export type ContentInput = z.infer<typeof contentSchema>
 
@@ -242,14 +249,26 @@ export const cacheSchema = z
       og: cacheBucketSchema,
       calendar: cacheBucketSchema,
       avatar: cacheBucketSchema,
+      // Image metadata lookups (storagePath → ImageRow) and comment
+      // markdown render results both used to live in a process-local
+      // `lru-cache`, which meant every server replica re-warmed the
+      // same data and a deploy nuked them entirely. Routing them
+      // through Redis like the other buckets gives us shared warmth
+      // and one-click admin invalidation; the writers still front the
+      // network round-trip with `createInflight` so concurrent
+      // requests for the same key collapse to a single load.
+      imageMeta: cacheBucketSchema,
+      commentsMd: cacheBucketSchema,
     }),
   })
   .superRefine((value, ctx) => {
     const buckets = value.cache
-    const entries: { id: 'og' | 'calendar' | 'avatar'; prefix: string }[] = [
+    const entries: { id: CacheBucketId; prefix: string }[] = [
       { id: 'og', prefix: buckets.og.prefix },
       { id: 'calendar', prefix: buckets.calendar.prefix },
       { id: 'avatar', prefix: buckets.avatar.prefix },
+      { id: 'imageMeta', prefix: buckets.imageMeta.prefix },
+      { id: 'commentsMd', prefix: buckets.commentsMd.prefix },
     ]
 
     // Two prefixes "collide" if either is a strict prefix of the other.
