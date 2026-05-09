@@ -187,7 +187,7 @@ async function resolveCover(rawCover: string | undefined, publicBaseUrl: string 
   const storagePath = resolveSrcToStoragePath(rawCover, publicBaseUrl)
   if (storagePath === null) {
     // Cover URL doesn't match any S3 host — keep verbatim. The
-    // historical MDX corpus uses absolute `cat.yufan.me` URLs which
+    // historical MDX corpus uses absolute `stage-asset.yufan.me` URLs which
     // do match the S3 host, so this branch is rare.
     return rawCover
   }

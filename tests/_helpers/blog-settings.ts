@@ -37,7 +37,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   // exercise the "uploads enabled" path by default and switch the
   // toggle off in individual tests as needed.
   assets: {
-    asset: { host: 'cat.yufan.me', scheme: 'https' },
+    asset: { host: 'stage-asset.yufan.me', scheme: 'https' },
     storage: {
       enabled: true,
       endpoint: 'https://s3.example.com',

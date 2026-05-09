@@ -58,12 +58,12 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
       },
     ])
 
-    const result = await loadImageThumbhash('https://cat.yufan.me/images/categories/coding.jpg')
+    const result = await loadImageThumbhash('https://stage-asset.yufan.me/images/categories/coding.jpg')
     expect(result).toEqual({ width: 1280, height: 425, thumbhash: 'cover-hash' })
   })
 
   it('returns null when the URL has no matching row', async () => {
-    expect(await loadImageThumbhash('https://cat.yufan.me/images/no-such.jpg')).toBeNull()
+    expect(await loadImageThumbhash('https://stage-asset.yufan.me/images/no-such.jpg')).toBeNull()
   })
 
   it('serves a second hit from the Redis cache (no second DB call)', async () => {
@@ -84,8 +84,8 @@ describe('server/images/render-enhance — loadImageThumbhash', () => {
       },
     ])
 
-    await loadImageThumbhash('https://cat.yufan.me/images/categories/coding.jpg')
-    await loadImageThumbhash('https://cat.yufan.me/images/categories/coding.jpg')
+    await loadImageThumbhash('https://stage-asset.yufan.me/images/categories/coding.jpg')
+    await loadImageThumbhash('https://stage-asset.yufan.me/images/categories/coding.jpg')
 
     expect(vi.mocked(queryImageMock.findImagesByStoragePaths)).toHaveBeenCalledTimes(1)
   })
