@@ -141,3 +141,7 @@ export const renderMathSchema = z.object({
   tex: z.string().max(4 * 1024, 'TeX 表达式过长'),
   display: z.coerce.boolean(),
 })
+
+export const renderMermaidSchema = z.object({
+  code: z.string().max(64 * 1024, 'Mermaid 源码过长'),
+})

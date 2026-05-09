@@ -14,10 +14,12 @@ import { useState } from 'react'
 
 import type { Block, MathBlock, MermaidBlock, MusicPlayerBlock } from '@/shared/portable-text'
 
+import { fetchRenderMath } from '@/client/api/render-math-fetch'
+import { fetchRenderMermaid } from '@/client/api/render-mermaid-fetch'
 import { useAdminMathPreview } from '@/ui/admin/pages/tiptap/use-admin-math-preview'
+import { useAdminMermaidPreview } from '@/ui/admin/pages/tiptap/use-admin-mermaid-preview'
 import { Button } from '@/ui/components/ui/button'
 import { Checkbox } from '@/ui/components/ui/checkbox'
-import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'
 import { Textarea } from '@/ui/components/ui/textarea'
 import { cn } from '@/ui/lib/cn'
@@ -86,11 +88,11 @@ function BlockCardView(props: NodeViewProps) {
   const [editing, setEditing] = useState(false)
   const editable = payload !== null && isInlineEditable(payload._type)
 
-  const commitPayload = (next: Block) => {
-    // Drop any pre-rendered fields when the source changes — the
-    // server will repopulate them on save (see prerender.ts). This
-    // keeps the editor honest about "preview matches the source".
-    const cleaned = stripPrerenderArtifacts(next)
+  const commitPayload = (next: Block, editorSvg?: string) => {
+    let cleaned = stripPrerenderArtifacts(next)
+    if ((cleaned._type === 'mathBlock' || cleaned._type === 'mermaid') && editorSvg !== undefined && editorSvg !== '') {
+      cleaned = { ...cleaned, svg: editorSvg }
+    }
     props.updateAttributes({ payload: cleaned })
     setEditing(false)
   }
@@ -144,7 +146,7 @@ function BlockCardView(props: NodeViewProps) {
                   center={payload.center === true}
                   onCenterChange={(enabled) =>
                     props.updateAttributes({
-                      payload: stripPrerenderArtifacts(patchMermaidCenterFlag(payload, enabled)),
+                      payload: patchMermaidCenterFlag(payload, enabled),
                     })
                   }
                 />
@@ -175,6 +177,10 @@ function isInlineEditable(ptType: string): boolean {
 // Drop the cached server-rendered fields when the user mutates the
 // source. The save path repopulates them; leaving stale renders in
 // place would silently desync source and preview.
+//
+// Exception: `commitPayload` may attach a fresh `svg` immediately after
+// `fetchRenderMath` / `fetchRenderMermaid` when saving a math or Mermaid
+// block so the card shows server-rendered output instead of raw source.
 function stripPrerenderArtifacts(block: Block): Block {
   if (block._type === 'mathBlock' || block._type === 'mermaid') {
     const { svg: _ignored, ...rest } = block as { svg?: string } & Block
@@ -266,7 +272,7 @@ function MermaidBlockOptions({ stableId, center, onCenterChange }: MermaidBlockO
 
 interface CardSourceEditorProps {
   payload: Block
-  onCommit: (next: Block) => void
+  onCommit: (next: Block, editorSvg?: string) => void
   onCancel: () => void
 }
 
@@ -275,29 +281,37 @@ function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps
     return <MathBlockSourceEditor payload={payload} onCommit={onCommit} onCancel={onCancel} />
   }
   if (payload._type === 'mermaid') {
-    return (
-      <SourceForm
-        label="Mermaid 源"
-        initial={payload.code}
-        multiline
-        placeholder="graph TD\n  A --> B"
-        onCommit={(next) => onCommit({ ...payload, code: next })}
-        onCancel={onCancel}
-      />
-    )
+    return <MermaidBlockSourceEditor payload={payload} onCommit={onCommit} onCancel={onCancel} />
   }
   return null
 }
 
 interface MathBlockSourceEditorProps {
   payload: MathBlock
-  onCommit: (next: Block) => void
+  onCommit: (next: Block, editorSvg?: string) => void
   onCancel: () => void
 }
 
 function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceEditorProps) {
   const [draft, setDraft] = useState(payload.tex)
+  const [saving, setSaving] = useState(false)
   const { previewHtml, renderError, showSpinner } = useAdminMathPreview(draft, true)
+
+  const handleSave = async () => {
+    const trimmed = draft.trim()
+    if (trimmed === '') {
+      onCommit({ ...payload, tex: draft })
+      return
+    }
+    setSaving(true)
+    try {
+      const out = await fetchRenderMath({ tex: draft, display: true })
+      const svg = out.error === null && out.svg !== '' ? out.svg : ''
+      onCommit({ ...payload, tex: draft }, svg)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="mt-2 flex w-full max-w-full flex-col gap-2">
@@ -333,6 +347,7 @@ function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceE
           variant="ghost"
           size="sm"
           type="button"
+          disabled={saving}
           onClick={() => {
             setDraft(payload.tex)
             onCancel()
@@ -341,54 +356,112 @@ function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceE
         >
           <XIcon /> 取消
         </Button>
-        <Button size="sm" type="button" onClick={() => onCommit({ ...payload, tex: draft })} title="保存编辑">
-          <CheckIcon /> 保存
+        <Button
+          size="sm"
+          type="button"
+          disabled={saving}
+          onClick={() => {
+            void handleSave()
+          }}
+          title="保存编辑"
+        >
+          <CheckIcon /> {saving ? '保存中…' : '保存'}
         </Button>
       </div>
     </div>
   )
 }
 
-interface SourceFormProps {
-  label: string
-  initial: string
-  multiline: boolean
-  placeholder: string
-  onCommit: (next: string) => void
+interface MermaidBlockSourceEditorProps {
+  payload: MermaidBlock
+  onCommit: (next: Block, editorSvg?: string) => void
   onCancel: () => void
 }
 
-function SourceForm({ label, initial, multiline, placeholder, onCommit, onCancel }: SourceFormProps) {
-  const [draft, setDraft] = useState(initial)
+function MermaidBlockSourceEditor({ payload, onCommit, onCancel }: MermaidBlockSourceEditorProps) {
+  const [draft, setDraft] = useState(payload.code)
+  const [saving, setSaving] = useState(false)
+  const center = payload.center === true
+  const { previewHtml, renderError, showSpinner } = useAdminMermaidPreview(draft)
+
+  const handleSave = async () => {
+    const trimmed = draft.trim()
+    if (trimmed === '') {
+      onCommit({ ...payload, code: draft })
+      return
+    }
+    setSaving(true)
+    try {
+      const out = await fetchRenderMermaid({ code: draft })
+      const svg = out.error === null && out.svg !== '' ? out.svg : ''
+      onCommit({ ...payload, code: draft }, svg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const previewInner =
+    previewHtml !== '' ? (
+      <div
+        className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
+        dangerouslySetInnerHTML={{ __html: previewHtml }}
+      />
+    ) : (
+      <span className="ml-2 text-xs text-muted-foreground">输入源码后显示预览</span>
+    )
+
   return (
-    <div className="mt-2 flex flex-col gap-2">
-      <Label className="text-xs">{label}</Label>
-      {multiline ? (
-        <Textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder={placeholder}
-          rows={5}
-          className="font-mono text-xs"
-        />
-      ) : (
-        <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder={placeholder} />
-      )}
+    <div className="mt-2 flex w-full max-w-full flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs">Mermaid 源</Label>
+        {renderError !== null ? (
+          <span className="shrink-0 text-xs text-destructive">语法错误：{renderError}</span>
+        ) : null}
+      </div>
+      <p className="text-xs leading-snug text-muted-foreground">
+        预览与发布后正文一致（beautiful-mermaid）。保存时会写入与正文相同的 SVG。
+      </p>
+      <Textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder={'graph TD\n  A --> B'}
+        rows={8}
+        className="font-mono text-xs"
+      />
+      <div className="rounded-sm border bg-muted/30 px-2 py-2 text-sm">
+        <span className="text-xs text-muted-foreground">预览：</span>
+        {showSpinner ? (
+          <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
+        ) : center ? (
+          <div className="flex max-w-full justify-center overflow-x-auto">{previewInner}</div>
+        ) : (
+          previewInner
+        )}
+      </div>
       <div className="flex justify-end gap-1">
         <Button
           variant="ghost"
           size="sm"
           type="button"
+          disabled={saving}
           onClick={() => {
-            setDraft(initial)
+            setDraft(payload.code)
             onCancel()
           }}
           title="取消"
         >
           <XIcon /> 取消
         </Button>
-        <Button size="sm" type="button" onClick={() => onCommit(draft)} title="保存编辑">
-          <CheckIcon /> 保存
+        <Button
+          size="sm"
+          type="button"
+          disabled={saving}
+          onClick={() => {
+            void handleSave()
+          }}
+          title="保存编辑"
+        >
+          <CheckIcon /> {saving ? '保存中…' : '保存'}
         </Button>
       </div>
     </div>
@@ -445,23 +518,29 @@ function CardSummary({ payload }: CardSummaryProps) {
           dangerouslySetInnerHTML={{ __html: payload.svg }}
         />
       ) : (
-        <code className="mt-1 block text-xs text-muted-foreground">{payload.tex}</code>
+        <p className="mt-2 text-xs text-muted-foreground">
+          暂无预览图。打开「编辑源」保存一次即可生成与正文一致的 SVG。
+        </p>
       )
     case 'mermaid': {
       const center = payload.center === true
-      const inner =
-        payload.svg !== undefined && payload.svg !== '' ? (
+      if (payload.svg !== undefined && payload.svg !== '') {
+        const inner = (
           <div
             className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
             dangerouslySetInnerHTML={{ __html: payload.svg }}
           />
-        ) : (
-          <pre className="mt-1 max-h-32 shrink-0 overflow-auto text-xs text-muted-foreground">{payload.code}</pre>
         )
-      if (!center) {
-        return inner
+        if (!center) {
+          return inner
+        }
+        return <div className="flex max-w-full justify-center overflow-x-auto">{inner}</div>
       }
-      return <div className="flex max-w-full justify-center overflow-x-auto">{inner}</div>
+      return (
+        <p className="mt-2 text-xs text-muted-foreground">
+          暂无预览图。打开「编辑源」保存一次即可生成与正文一致的 SVG。
+        </p>
+      )
     }
     default:
       return <div className="mt-1 text-xs text-muted-foreground">_type: {(payload as { _type: string })._type}</div>

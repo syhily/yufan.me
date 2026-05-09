@@ -332,8 +332,8 @@ body {
     --prose-blog-code: var(--ink-secondary);
     --prose-blog-pre-code: var(--shiki-light);
     --prose-blog-pre-bg: var(--bg-shiki-light);
-    --prose-blog-th-borders: var(--line);
-    --prose-blog-td-borders: var(--line);
+    --prose-blog-th-borders: var(--line-muted);
+    --prose-blog-td-borders: var(--line-muted);
 
     --tw-prose-body: var(--prose-blog-body);
     --tw-prose-headings: var(--prose-blog-headings);
@@ -423,6 +423,10 @@ body {
   }
 
   &.post-content {
+    --prose-blog-table-border: color-mix(in oklab, var(--line-muted) 78%, var(--ink-muted) 22%);
+    --prose-blog-table-header-bg: var(--surface);
+    --prose-blog-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
+
     :where(code) {
       background-color: var(--bg-shiki-light);
       color: var(--fg-inline-code-on-shiki-bg);
@@ -446,12 +450,6 @@ body {
       font-family: var(--font-code);
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
-    }
-
-    &.pt-body-editor :where(span[data-math-inline]) {
-      background-color: color-mix(in oklab, rgb(59 130 246) 16%, var(--canvas));
-      color: var(--ink-body);
-      border: 1px solid color-mix(in oklab, rgb(59 130 246) 8%, var(--canvas));
     }
 
     :where(code)::before,
@@ -496,6 +494,52 @@ body {
       white-space: pre;
       word-break: normal;
       overflow-wrap: normal;
+    }
+
+    /* Mermaid diagrams shrink to column width like images */
+    :where(.flex:has(> .mermaid)) {
+      min-width: 0;
+    }
+
+    :where(.mermaid) {
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    :where(.mermaid) :where(svg) {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    :where(svg):not(:where(mjx-container *)) {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Editor canvas tweaks */
+    &.pt-body-editor :where(span[data-math-inline]) {
+      background-color: color-mix(in oklab, rgb(59 130 246) 16%, var(--canvas));
+      color: var(--ink-body);
+      border: 1px solid color-mix(in oklab, rgb(59 130 246) 8%, var(--canvas));
+    }
+
+    &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input']) {
+      background-color: var(--background);
+      color: var(--ink-body);
+      caret-color: var(--ink-body);
+      -webkit-text-fill-color: var(--ink-body);
+    }
+
+    &.pt-body-editor :where(.react-renderer.node-image) :where(input[data-slot='input'])::placeholder {
+      color: var(--muted-foreground);
+      opacity: 1;
+      -webkit-text-fill-color: var(--muted-foreground);
+    }
+
+    &.pt-body-editor :where(.react-renderer.node-image) :where(label[data-slot='label']) {
+      color: var(--ink-body);
     }
   }
 
@@ -565,5 +609,35 @@ body {
   .medium-zoom-overlay,
   .medium-zoom-image--opened {
     z-index: 45;
+  }
+
+  /* Portable Text tables grid overrides typography prose table borders */
+  .post-content.prose-blog.prose table.pt-table {
+    border-collapse: collapse;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--prose-blog-table-border, var(--line-muted));
+  }
+
+  .post-content.prose-blog.prose table.pt-table :is(thead, tfoot, tbody tr) {
+    border-width: 0;
+    border-style: none;
+  }
+
+  .post-content.prose-blog.prose table.pt-table :is(th, td) {
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--prose-blog-table-border, var(--line-muted));
+    padding-block: 0.75em;
+    padding-inline: 0.875em;
+  }
+
+  .post-content.prose-blog.prose table.pt-table thead th,
+  .post-content.prose-blog.prose table.pt-table tbody tr:first-child th {
+    background-color: var(--prose-blog-table-header-bg);
+  }
+
+  .post-content.prose-blog.prose table.pt-table tbody tr:nth-child(even) td {
+    background-color: var(--prose-blog-table-stripe);
   }
 }

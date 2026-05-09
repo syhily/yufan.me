@@ -322,6 +322,37 @@ const portableTextComponents: PortableTextComponents = {
 
 // --- Mark renderers ---------------------------------------------------------
 
+function renderMathJaxSvgOrTexFallback(tex: string, svg: string | undefined, layout: 'inline' | 'display'): ReactNode {
+  if (svg !== undefined && svg !== '') {
+    if (layout === 'inline') {
+      return (
+        <span
+          className="math-inline inline-block align-middle [&_svg]:block"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+      )
+    }
+    return (
+      <div
+        className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
+        dangerouslySetInnerHTML={{ __html: svg }}
+      />
+    )
+  }
+  if (layout === 'inline') {
+    return (
+      <span className="math-inline inline-block align-middle">
+        <code className={cn(PT_INLINE.mathTex)}>{tex}</code>
+      </span>
+    )
+  }
+  return (
+    <pre className="math math-display">
+      <code>{tex}</code>
+    </pre>
+  )
+}
+
 function LinkMark({ value, children }: PortableTextMarkComponentProps<LinkMarkDef>) {
   const def = value
   if (def === undefined) {
@@ -339,10 +370,7 @@ function MathInlineMarkRenderer({ value, children }: PortableTextMarkComponentPr
   if (def === undefined) {
     return <>{children}</>
   }
-  if (def.svg !== undefined && def.svg !== '') {
-    return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: def.svg }} />
-  }
-  return <code className={cn(PT_INLINE.mathTex, 'inline-block align-middle')}>{def.tex}</code>
+  return renderMathJaxSvgOrTexFallback(def.tex, def.svg, 'inline')
 }
 
 function FootnoteRefMarkRenderer({ value, children }: PortableTextMarkComponentProps<FootnoteRefMarkDef>) {
@@ -410,15 +438,7 @@ function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps<CodeBl
 }
 
 function MathBlockComponent({ value }: PortableTextTypeComponentProps<MathBlock>) {
-  if (value.svg !== undefined && value.svg !== '') {
-    // Display MathJax SVG is inline-block; center so gather and align match editor intent.
-    return <div className="math math-display text-center" dangerouslySetInnerHTML={{ __html: value.svg }} />
-  }
-  return (
-    <pre className="math math-display">
-      <code>{value.tex}</code>
-    </pre>
-  )
+  return renderMathJaxSvgOrTexFallback(value.tex, value.svg, 'display')
 }
 
 function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<MermaidBlock>) {
@@ -562,10 +582,7 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
         </a>
       )
     case 'mathInline':
-      if (def.svg !== undefined && def.svg !== '') {
-        return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: def.svg }} />
-      }
-      return <code className={cn(PT_INLINE.mathTex, 'inline-block align-middle')}>{def.tex}</code>
+      return renderMathJaxSvgOrTexFallback(def.tex, def.svg, 'inline')
     case 'footnoteRef':
       return (
         <FootnoteReference id={`user-content-fnref-${def.index}`} data-footnote-ref="">

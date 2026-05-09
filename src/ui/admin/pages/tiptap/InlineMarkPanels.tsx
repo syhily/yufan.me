@@ -4,6 +4,7 @@ import { getMarkRange } from '@tiptap/core'
 import { CheckIcon, EraserIcon, XIcon } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 
+import { fetchRenderMath } from '@/client/api/render-math-fetch'
 import { generateBlockKey } from '@/shared/portable-text'
 import { useAdminMathPreview } from '@/ui/admin/pages/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/ui/button'
@@ -42,6 +43,7 @@ function snapshotMathInlineTex(ed: Editor): string {
 
 export function MathInlinePanel({ editor }: MathInlinePanelProps) {
   const [tex, setTex] = useState('')
+  const [applying, setApplying] = useState(false)
   // TeX when this editing session began (caret last matched the formula in PM).
   // While focus sits in the textarea, PM selection can drift; cancel restores
   // this baseline and re-syncs the textarea + preview.
@@ -59,21 +61,42 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
   }, [editor])
 
   const apply = () => {
-    editor.chain().focus().extendMarkRange('mathInline').run()
-    const prev = editor.getAttributes('mathInline') as { _key?: string }
-    const nextKey = prev._key !== undefined && prev._key !== '' ? prev._key : generateBlockKey()
+    void (async () => {
+      editor.chain().focus().extendMarkRange('mathInline').run()
+      const prev = editor.getAttributes('mathInline') as { _key?: string }
+      const nextKey = prev._key !== undefined && prev._key !== '' ? prev._key : generateBlockKey()
 
-    editor
-      .chain()
-      .focus()
-      .deleteSelection()
-      .insertContent({
-        type: 'text',
-        text: tex,
-        marks: [{ type: 'mathInline', attrs: { _key: nextKey, tex } }],
-      })
-      .run()
-    baselineTexRef.current = tex
+      let svg: string | undefined
+      const trimmed = tex.trim()
+      if (trimmed !== '') {
+        setApplying(true)
+        try {
+          const out = await fetchRenderMath({ tex, display: false })
+          if (out.error === null && out.svg !== '') {
+            svg = out.svg
+          }
+        } finally {
+          setApplying(false)
+        }
+      }
+
+      const attrs: Record<string, string> = { _key: nextKey, tex }
+      if (svg !== undefined) {
+        attrs.svg = svg
+      }
+
+      editor
+        .chain()
+        .focus()
+        .deleteSelection()
+        .insertContent({
+          type: 'text',
+          text: tex,
+          marks: [{ type: 'mathInline', attrs }],
+        })
+        .run()
+      baselineTexRef.current = tex
+    })()
   }
   const remove = () => {
     editor.chain().focus().extendMarkRange('mathInline').unsetMark('mathInline').run()
@@ -125,14 +148,14 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
         )}
       </div>
       <div className="flex justify-end gap-1">
-        <Button variant="ghost" size="sm" type="button" onClick={cancel}>
+        <Button variant="ghost" size="sm" type="button" disabled={applying} onClick={cancel}>
           <XIcon /> 取消
         </Button>
-        <Button variant="ghost" size="sm" type="button" onClick={remove}>
+        <Button variant="ghost" size="sm" type="button" disabled={applying} onClick={remove}>
           <EraserIcon /> 移除公式
         </Button>
-        <Button size="sm" type="button" onClick={apply}>
-          <CheckIcon /> 应用
+        <Button size="sm" type="button" disabled={applying} onClick={apply}>
+          <CheckIcon /> {applying ? '应用中…' : '应用'}
         </Button>
       </div>
     </div>

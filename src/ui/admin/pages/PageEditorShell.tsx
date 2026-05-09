@@ -1026,7 +1026,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
           previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
         )}
       >
-        <div className="flex min-h-0 flex-col gap-2">
+        <div className="flex min-h-0 min-w-0 flex-col gap-2">
           {mode === 'create' ? <CreateModeBanner draftSavedAt={createDraft.loadedDraft?.savedAt ?? null} /> : null}
           {/* Title + slug strip is suppressed in live-preview mode.
            *  The editor canvas then begins with the body's first

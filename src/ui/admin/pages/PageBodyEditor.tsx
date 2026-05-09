@@ -231,7 +231,8 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       }),
       Typography,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Focus.configure({ className: 'has-focus', mode: 'all' }),
+      // TipTap Focus decorations must not use the bare token has-focus (Tailwind has variant collision risk).
+      Focus.configure({ className: 'tiptap-focus-node', mode: 'all' }),
       Link.configure({
         openOnClick: false,
         autolink: true,
@@ -245,7 +246,16 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
       // Tables use the upstream Tiptap extensions; resizable=false
       // keeps the column-width UX out of scope for this iteration
       // (handled by future work per plan §六).
-      Table.configure({ resizable: false, HTMLAttributes: { class: 'pt-table' } }),
+      //
+      // `View: null` disables the default TableView node view. TableView
+      // builds the DOM with createElement and never applies
+      // `HTMLAttributes.class`, so our portable-text stylesheet hook
+      // `table.pt-table` never matched in the editor canvas.
+      Table.configure({
+        resizable: false,
+        View: null,
+        HTMLAttributes: { class: 'pt-table' },
+      }),
       TableRow,
       TableHeader,
       TableCell,
@@ -409,12 +419,10 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
     }
   }, [openFootnoteInsertDialog])
 
-  // Toolbar density. Two-state toggle: `'full'` renders every group
-  // inline (the toolbar still wraps to multiple rows on its own when
-  // horizontal space is tight); `'compact'` collapses the inserts
-  // group into a single 「插入 ▼」Popover and the block-style group
-  // into a Select. The preference survives navigations via
-  // localStorage.
+  // Toolbar density. Two-state toggle: `'full'` shows block style and
+  // inserts as buttons (toolbar wraps to more rows when narrow);
+  // `'compact'` collapses inserts into 「插入 ▼」 and block style into a
+  // Select. The preference survives navigations via localStorage.
   const [toolbarDensity, setToolbarDensity] = useToolbarDensityPreference()
 
   const insertImage = useCallback(
@@ -469,7 +477,7 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
   }
 
   return (
-    <div className="flex min-h-0 flex-col rounded-md border bg-card">
+    <div className="flex min-h-0 w-full min-w-0 flex-col rounded-md border bg-card">
       <Toolbar
         editor={editor}
         disabled={disabled}
@@ -535,38 +543,16 @@ interface ToolbarProps {
   onOpenFootnoteInsertDialog: () => void
 }
 
-// Toolbar layered into a stack of `ToolbarGroup`s so the operator
-// can reach every common authoring action without leaving the canvas:
-//   1. History — undo / redo (full mode only).
-//   2. Block style — single Select covering paragraph / H1–H5 /
-//      blockquote / code block.
-//   3. Inline marks — bold / italic / underline / strike / inline code.
-//   4. Lists — bullet / ordered.
-//   5. Inserts — image / music / table / link / hr.
-//   6. Editor toggles — drag handle, density.
+// Toolbar layered into a stack of `ToolbarGroup`s (see groups below).
 // Undo / redo only render in 'full' density. Tiptap's History
 // extension wires Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z in every mode, so
-// 'compact' falls back to the keyboard to save the two slots —
-// 'full' surfaces the buttons because they doubled as a live
-// "history is reachable" affordance for mouse-first operators.
-// Wrapping rules: the outer container is `flex flex-wrap` so the
-// toolbar grows to a second / third row when a row can no longer
-// fit. Each `ToolbarGroup` is itself `flex flex-nowrap` and carries
-// its own trailing separator, so when wrapping happens it always
-// breaks BETWEEN groups — a button is never split off from its
-// sibling and a separator never floats to the start of a new row.
-// `gap-y-1` keeps the row rhythm tight even with two or three rows
-// of buttons.
+// 'compact' falls back to the keyboard to save the two slots.
 //
-// Density modes (two-state toggle — no automatic mode):
-// - 'full': every group renders inline. The outer `flex flex-wrap`
-//   container handles overflow naturally — toolbar grows to a 2nd or
-//   3rd row when a row can no longer fit, breaking only between
-//   groups.
-// - 'compact': the Inserts group collapses into a single 「插入 ▼」
-//   Popover whose body carries the SAME buttons; the Block-style
-//   group falls back to a Select. Saves ~5 button-widths.
+// Full density: the outer container is `flex flex-wrap` so groups
+// flow to extra rows when space is tight (whole groups stay together).
+// Compact density uses the same wrap rules with Select + 「插入」Popover.
 //
+// Each `ToolbarGroup` is `flex flex-nowrap` with a trailing separator.
 // The picker triggers (image / music) own their own picker dialogs,
 // so we MUST mount the inserts buttons exactly once per render to
 // avoid duplicate dialog state. That's why we branch on `density`
@@ -579,6 +565,7 @@ interface ToolbarProps {
 
 function Toolbar(props: ToolbarProps) {
   const { editor, disabled, density } = props
+
   const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)
 
   const insertButtons = (
@@ -648,8 +635,8 @@ function Toolbar(props: ToolbarProps) {
     </>
   )
 
-  return (
-    <div className="flex flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
+  const groups = (
+    <>
       {density === 'full' ? (
         <ToolbarGroup>
           <ToolbarButton
@@ -777,8 +764,16 @@ function Toolbar(props: ToolbarProps) {
           </Popover>
         </ToolbarGroup>
       )}
+    </>
+  )
+
+  const densityRail = <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
+
+  return (
+    <div className="flex w-full max-w-full min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
+      {groups}
       <ToolbarGroup hideTrailingSeparator className="ml-auto">
-        <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
+        {densityRail}
       </ToolbarGroup>
     </div>
   )
@@ -820,8 +815,9 @@ export type ToolbarDensity = 'compact' | 'full'
 const TOOLBAR_DENSITY_STORAGE_KEY = 'yufan.me/admin/page-editor/toolbar-density'
 
 // Persistent toolbar density preference. Defaults to `'full'` so a
-// fresh visit shows every group inline; the outer flex-wrap container
-// handles overflow on its own. Wrapped in `useState` + a `useEffect`
+// fresh visit shows every group inline; the outer `flex-wrap` container
+// grows to more rows when space is tight. Compact mode uses Select +
+// 「插入」Popover. Wrapped in `useState` + a `useEffect`
 // write because we need lazy SSR-safe initialisation; reading
 // localStorage synchronously inside the initialiser would crash
 // during hydration if the value type drifts — the guard inside
@@ -870,8 +866,8 @@ interface DensityToggleButtonProps {
 // Two-state toggle: full ↔ compact. The icon mirrors the action that
 // firing the button will perform — when expanded ('full') we show the
 // "collapse inward" chevron; when collapsed ('compact') we show the
-// "expand outward" chevron. The toolbar itself flex-wraps when space
-// runs out, so density is purely an operator-driven affordance.
+// "expand outward" chevron. Full mode wraps groups across rows;
+// compact collapses inserts and block style into menus.
 function DensityToggleButton({ density, onChange, disabled }: DensityToggleButtonProps) {
   const next: ToolbarDensity = density === 'full' ? 'compact' : 'full'
   const title = density === 'full' ? '收起工具栏' : '展开工具栏'

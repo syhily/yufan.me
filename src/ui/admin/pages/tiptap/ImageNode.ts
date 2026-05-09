@@ -59,6 +59,12 @@ export const ImageNode = Image.extend({
     }
   },
   addNodeView() {
-    return ReactNodeViewRenderer(ImageNodeView)
+    return ReactNodeViewRenderer(ImageNodeView, {
+      // `ProseMirror-selectednode` is applied to this outer shell — not
+      // `NodeViewWrapper`. Pin readable ink + input chrome here so prose /
+      // selection cascades cannot wash fields out to white-on-light.
+      className:
+        '!text-ink-body [&_[data-slot=input]]:!bg-background [&_[data-slot=input]]:!text-ink-body [&_[data-slot=input]]:!caret-ink-body',
+    })
   },
 })

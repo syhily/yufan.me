@@ -102,6 +102,7 @@ export const API_ACTIONS = {
     unpublishPage: defineApiAction('api/actions/admin/unpublishPage', 'POST'),
     previewPage: defineApiAction('api/actions/admin/previewPage', 'POST'),
     renderMath: defineApiAction('api/actions/admin/renderMath', 'POST'),
+    renderMermaid: defineApiAction('api/actions/admin/renderMermaid', 'POST'),
   },
 } as const
 

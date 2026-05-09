@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
+import { fetchRenderMath } from '@/client/api/render-math-fetch'
 import { generateBlockKey } from '@/shared/portable-text'
 import { MathInlinePanel } from '@/ui/admin/pages/tiptap/InlineMarkPanels'
 import { LinkPopover } from '@/ui/admin/pages/tiptap/LinkPopover'
@@ -208,7 +209,9 @@ function ActionRow({ editor, sigmaToggleActive, onLink }: ActionRowProps) {
       <Toggle
         title="行内公式（大分式请加 \\displaystyle；多行用 / 公式块）"
         active={sigmaToggleActive}
-        onClick={() => insertMathInline(editor)}
+        onClick={() => {
+          void insertMathInline(editor)
+        }}
       >
         <SigmaIcon />
       </Toggle>
@@ -263,15 +266,28 @@ function Toggle({ title, active, onClick, disabled, children }: ToggleProps) {
 // route through the existing `MathInlineMark` spec so the round-trip
 // stays clean even when the operator never opens the inline-mark
 // panel to edit the TeX source.
-function insertMathInline(editor: Editor) {
+async function insertMathInline(editor: Editor) {
   if (mathInlinePanelApplies(editor)) {
     return
   }
   const { from, to } = editor.state.selection
   const hasRange = from < to
   const selected = hasRange ? editor.state.doc.textBetween(from, to, '\n') : ''
-  const tex = selected.trim() === '' ? 'a^2' : selected
+  const tex = selected.trim() === '' ? 'a^2' : selected.trim()
   const markKey = generateBlockKey()
+
+  let svg: string | undefined
+  if (tex.trim() !== '') {
+    const out = await fetchRenderMath({ tex, display: false })
+    if (out.error === null && out.svg !== '') {
+      svg = out.svg
+    }
+  }
+
+  const attrs: Record<string, string> = { tex, _key: markKey }
+  if (svg !== undefined) {
+    attrs.svg = svg
+  }
 
   const chain = editor.chain().focus()
   if (hasRange) {
@@ -281,7 +297,7 @@ function insertMathInline(editor: Editor) {
     .insertContent({
       type: 'text',
       text: tex,
-      marks: [{ type: 'mathInline', attrs: { tex, _key: markKey } }],
+      marks: [{ type: 'mathInline', attrs }],
     })
     .run()
 
