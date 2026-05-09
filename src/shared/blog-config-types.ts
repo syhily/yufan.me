@@ -137,15 +137,20 @@ export interface MailSettings {
   }
 }
 
-// Per-bucket Redis cache configuration. The bucket id (`og` /
-// `calendar` / `avatar`) is hard-coded in the writers, but the key
-// PREFIX and TTL are runtime-editable so an admin can rename a
-// colliding prefix or shorten / lengthen a TTL without redeploying.
+// Per-bucket Redis cache configuration. Bucket ids are hard-coded
+// in the writers — `og` / `calendar` / `avatar` for binary
+// generated-image surfaces, plus `image-meta` and `comments-md`
+// (the two former `lru-cache` instances now routed through Redis so
+// every replica shares warmth). The key PREFIX and TTL are
+// runtime-editable so an admin can rename a colliding prefix or
+// shorten / lengthen a TTL without redeploying.
 export interface CacheSettings {
   cache: {
     og: { prefix: string; ttlSeconds: number }
     calendar: { prefix: string; ttlSeconds: number }
     avatar: { prefix: string; ttlSeconds: number }
+    'image-meta': { prefix: string; ttlSeconds: number }
+    'comments-md': { prefix: string; ttlSeconds: number }
   }
 }
 

@@ -266,6 +266,58 @@ sourceId)` is a unique key and `source` is reserved as varchar so
   additional providers can be added later without a migration. Lyrics
   live in `music.lyric` so the player never makes a second round trip.
 
+### PortableText editor
+
+- Pages and posts persist their body as PortableText (PT). The Zod
+  dialect lives in `@/shared/portable-text` (standard text /
+  list / heading / blockquote + custom blocks `image`, `code`,
+  `mathBlock`, `mermaid`, `horizontalRule`, `musicPlayer`,
+  `solution`, `friends`, `footnoteDefinition`, `table`).
+- The PT ↔ ProseMirror bridge is `@/shared/pt-bridge` — single
+  file by design. Standard blocks map onto Tiptap's built-in nodes;
+  custom blocks ride a generic `blockCard` PM node so the bridge
+  doesn't need an extension per type. Round-trip is contract-tested
+  in `tests/contract.pt-bridge.test.ts`.
+- SSR rendering goes through `@/ui/portable-text/PortableTextBody`,
+  which composes `@portabletext/react`'s component map with our
+  custom-block React components from `@/ui/mdx/*`. Heading anchor
+  ids match the MDX path so deep links survive the migration.
+- The admin Tiptap editor is `@/ui/admin/pages/PageBodyEditor`. UX
+  surface area lives in three layers, in this order:
+  1. **Toolbar** (in `PageBodyEditor.tsx`): mouse-driven access to
+     the image library, music picker, link, table, hr, undo/redo,
+     plus the drag-handle on/off toggle.
+  2. **`tiptap/BubbleMenu`** + `tiptap/TableBubbleMenu`: floating
+     inline-format menus. The first owns text selections (B/I/U +
+     code + link popover + `mathInline` / `footnoteRef` editing
+     panels); the second owns table selections (rows / columns /
+     header / merge / split / delete). They are mutually exclusive —
+     `BubbleMenu.shouldShow` hides itself inside tables.
+  3. **`tiptap/SlashMenu`** (`/`-driven launcher): mounts via
+     `@tiptap/suggestion`. The catalogue lives in
+     `tiptap/slash-commands.ts`; pickers (image / music) dispatch
+     `CustomEvent`s defined in `tiptap/editor-events.ts` so the
+     suggestion plugin doesn't need direct refs into React state.
+- The image block uses a React NodeView (`tiptap/ImageNodeView`) so
+  alt + caption are editable inline and the operator can re-pick or
+  delete the image without leaving the canvas.
+- Top-level block drag-and-drop is hand-rolled on dnd-kit
+  (`tiptap/drag-handle-plugin.ts` + `tiptap/DragHandle.tsx`). Limit:
+  reorder at depth 1 only — items inside lists / tables stay where
+  they are because dropping them between top-level paragraphs would
+  corrupt the surrounding container.
+- **Table dialect**: cells are restricted to inline spans only — no
+  nested blocks, lists, code blocks, math blocks, or footnote refs.
+  The only mark-def allowed in a cell is `link`. The bridge enforces
+  this on PM → PT conversion. The slash-menu / toolbar shortcut
+  inserts a 3×3 table with a header row by default.
+- Floating popups in the editor anchor with `position: fixed` driven
+  off the suggestion plugin's `clientRect` (slash menu) or Tiptap's
+  built-in `BubbleMenu` positioner. Do **not** add `@floating-ui/*`
+  as a direct dep — `@base-ui/react` already pulls it in
+  transitively for shadcn primitives, and editor menus don't need a
+  third positioning library.
+
 ## RSC Layering Rules
 
 Enforced by code review and (where practical) lint and import-boundary

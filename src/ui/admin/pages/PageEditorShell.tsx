@@ -10,6 +10,7 @@ import {
   PanelRightOpenIcon,
   PencilLineIcon,
   SaveIcon,
+  SlidersHorizontalIcon,
   UploadIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -49,6 +50,7 @@ import { useAdminChromeFocus } from '@/ui/admin/shell/AdminShell'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/ui/sheet'
 import { cn } from '@/ui/lib/cn'
 
 const UPSERT_META = API_ACTIONS.admin.upsertPageMeta
@@ -129,6 +131,23 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // it survives metadata edits but resets on route navigation.
   const [previewOpen, setPreviewOpen] = useState(false)
   useAdminChromeFocus(previewOpen)
+
+  // Metadata visibility: docked inline by default, collapses into a
+  // right-side `Sheet` when the operator clicks the toolbar toggle
+  // OR whenever live preview is on (three columns at once is too
+  // cramped on a 13" laptop). Toggling preview on/off automatically
+  // sets a sane default for `metaOpen`, but the user can override
+  // it any time via the toolbar button. When `metaOpen` flips back
+  // to `true` the panel re-docks inline if the layout has room
+  // (`lg:` breakpoint) and falls back to the Sheet otherwise — see
+  // the layout block below.
+  const [metaOpen, setMetaOpen] = useState(true)
+  useEffect(() => {
+    // Auto-collapse when entering preview mode; auto-expand when
+    // leaving it. Anything the user does on top of that wins until
+    // the next preview toggle.
+    setMetaOpen(!previewOpen)
+  }, [previewOpen])
 
   // The token the next save/publish must echo. Starts at the latest
   // revision's token; every successful save updates it.
@@ -709,23 +728,37 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               ) : null}
             </>
           )}
+          <Button
+            variant={metaOpen ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => setMetaOpen((open) => !open)}
+            title={metaOpen ? '隐藏页面信息面板' : '展开页面信息面板'}
+            aria-pressed={metaOpen}
+            aria-label="切换页面信息面板"
+          >
+            <SlidersHorizontalIcon /> 元数据
+          </Button>
         </div>
       </header>
 
+      {/* Layout grid. Three states drive the column template, picked
+       *  to give every visible pane a usable width without forcing
+       *  the operator to scroll horizontally:
+       *    - preview off + meta open  → [editor | meta]      (2 col)
+       *    - preview off + meta hidden → [editor]              (1 col)
+       *    - preview on               → [editor | preview]    (2 col)
+       *      meta is moved into a `Sheet` overlay so the third
+       *      column doesn't squeeze the editor and preview to ~33%
+       *      each on 13" laptops.
+       *  The Sheet renders on every viewport when `previewOpen`, so
+       *  the answer to "metadata is unreachable when previewing" is
+       *  always one click on the toolbar's 元数据 button. */}
       <div
         className={cn(
           'grid min-h-0 grow gap-4',
-          // Default: editor flex-grows on the left, fixed metadata
-          // rail on the right. On smaller screens the metadata
-          // panel drops below the editor.
-          !previewOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
-          // Preview mode: the editor and live preview share the
-          // available width 1:1 with the metadata rail pinned to
-          // the far right. The admin shell's left navigation
-          // collapses while this layout is mounted (see
-          // `useAdminChromeFocus(previewOpen)` above) so all three
-          // columns get usable widths even on a 13" laptop.
-          previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]',
+          !previewOpen && metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
+          !previewOpen && !metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
+          previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
         )}
       >
         <div className="flex min-h-0 flex-col gap-2">
@@ -744,27 +777,69 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
             <PreviewPane body={body} />
           </section>
         ) : null}
-        <aside className="flex min-h-0 flex-col overflow-y-auto pr-1">
-          <MetaSidebar
-            draft={meta}
-            onChange={setMeta}
-            disabled={isPending}
-            publishStatus={sidebarPublishStatus}
-            extras={
-              isEditing ? (
-                <div className="rounded-md border bg-card p-2">
-                  <RevisionHistoryDrawer
-                    pageId={detail.page.id}
-                    currentToken={expectedToken}
-                    currentBody={body}
-                    onAdoptRevision={adoptRevisionFromHistory}
-                  />
-                </div>
-              ) : null
-            }
-          />
-        </aside>
+        {/* Inline metadata rail. Only renders in the 2-column
+         *  `[editor | meta]` layout — preview mode hands the panel
+         *  off to the Sheet below so the editor + preview keep
+         *  full width. */}
+        {!previewOpen && metaOpen ? (
+          <aside className="flex min-h-0 flex-col overflow-y-auto pr-1">
+            <MetaSidebar
+              draft={meta}
+              onChange={setMeta}
+              disabled={isPending}
+              publishStatus={sidebarPublishStatus}
+              extras={
+                isEditing ? (
+                  <div className="rounded-md border bg-card p-2">
+                    <RevisionHistoryDrawer
+                      pageId={detail.page.id}
+                      currentToken={expectedToken}
+                      currentBody={body}
+                      onAdoptRevision={adoptRevisionFromHistory}
+                    />
+                  </div>
+                ) : null
+              }
+            />
+          </aside>
+        ) : null}
       </div>
+      {/* Floating metadata sheet — the panel is identical to the
+       *  inline `<aside>` above (same `MetaSidebar` props) so the
+       *  operator's mental model doesn't shift when previewing. We
+       *  render the Sheet markup whenever `previewOpen` is true so
+       *  the open/close transition can animate; visibility is
+       *  controlled by `metaOpen`. */}
+      {previewOpen ? (
+        <Sheet open={metaOpen} onOpenChange={setMetaOpen}>
+          <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
+            <SheetHeader className="border-b">
+              <SheetTitle>页面信息</SheetTitle>
+              <SheetDescription>编辑标题、Slug、SEO、发布时间等元数据。</SheetDescription>
+            </SheetHeader>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+              <MetaSidebar
+                draft={meta}
+                onChange={setMeta}
+                disabled={isPending}
+                publishStatus={sidebarPublishStatus}
+                extras={
+                  isEditing ? (
+                    <div className="rounded-md border bg-card p-2">
+                      <RevisionHistoryDrawer
+                        pageId={detail.page.id}
+                        currentToken={expectedToken}
+                        currentBody={body}
+                        onAdoptRevision={adoptRevisionFromHistory}
+                      />
+                    </div>
+                  ) : null
+                }
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : null}
       {conflict !== null && isEditing ? (
         <DraftConflictDialog
           open={true}

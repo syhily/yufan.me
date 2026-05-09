@@ -1,11 +1,11 @@
-import { LRUCache } from 'lru-cache'
-
 import type { ImageRow } from '@/server/db/types'
 
+import { storage } from '@/server/cache/storage'
 import { findImagesByStoragePaths } from '@/server/db/query/image'
 import { getPublicBaseUrl } from '@/server/images/storage'
 import { getLogger } from '@/server/logger'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 // Image metadata resolver. Looks up matching `image` rows by
 // `storagePath` and returns width, height, thumbhash, and the
@@ -17,38 +17,144 @@ import { ActionFailure } from '@/server/route-helpers/api-handler'
 // The `publicBaseUrl` is honoured even after the admin flips
 // `storage.enabled` off so historical rows keep rendering. Absolute
 // URLs whose host no longer matches the current asset host but whose
-// path still points at `/images/...` are also resolved as S3 keys,
+// path still points at `/images/...` are also resolved as S3 keys.
 //
-// The lookup is fronted by a process-level LRU keyed on the resolved
-// `storagePath` so a hot post never hammers the DB. The upload service
-// invalidates entries when an image is created/updated/deleted.
+// The lookup is fronted by a Redis-backed cache (the `image-meta`
+// bucket, manageable from `/wp-admin/settings/cache`) so a hot post
+// never hammers the DB AND so multiple SSR replicas share the warm
+// rows. Concurrent loads for the same `storagePath` collapse to a
+// single DB round-trip via `createInflight` — the per-process layer
+// that the old `lru-cache` happened to also provide. The upload
+// service still calls `invalidateImageEnhanceCacheFor` after
+// create / update / delete; that just deletes the key in Redis.
 
 const log = getLogger('images.render-enhance')
 
-const RESOLUTION_CACHE_TTL_MS = 5 * 60 * 1000
+// Slim shape we cache. Keeping the Redis payload to the four fields
+// this module actually reads (a) shrinks the bytes on the wire, (b)
+// sidesteps the `bigint` (`id`, `byteSize`, `uploaderId`) and `Date`
+// (`createdAt`, `updatedAt`, `deletedAt`) JSON serialisation traps
+// on `ImageRow`, and (c) makes "we asked the DB and there's no row"
+// trivially expressible as `{ found: false }`.
+interface CachedImageMetaPresent {
+  found: true
+  storagePath: string
+  width: number
+  height: number
+  thumbhash: string | null
+  updatedAtMs: number
+}
+interface CachedImageMetaMissing {
+  found: false
+}
+type CachedImageMeta = CachedImageMetaPresent | CachedImageMetaMissing
 
-// LRUCache requires a non-nullish value type, but we genuinely want to
-// cache "we asked the DB and there's no row" so the next render also
-// skips the lookup. Wrap the row in a single-property holder so the
-// cache value type is always non-null; readers unwrap `.row`.
-interface CachedImageRow {
-  row: ImageRow | null
+function rowToCached(row: ImageRow): CachedImageMetaPresent {
+  return {
+    found: true,
+    storagePath: row.storagePath,
+    width: row.width,
+    height: row.height,
+    thumbhash: row.thumbhash,
+    updatedAtMs: row.updatedAt.getTime(),
+  }
 }
 
-const resolutionCache = new LRUCache<string, CachedImageRow>({
-  max: 5000,
-  ttl: RESOLUTION_CACHE_TTL_MS,
-  allowStale: false,
-})
+// Bucket prefix + TTL pulled from the live snapshot so an admin
+// rename in `/wp-admin/settings/cache` applies on the next read /
+// write. Old keys under the previous prefix age out at their stored
+// TTL — there's no migration step.
+function bucket(): { prefix: string; ttlSeconds: number } {
+  return requireBlogSettingsSection('cache').cache['image-meta']
+}
+
+function cacheKey(storagePath: string): string {
+  return `${bucket().prefix}${storagePath}`
+}
+
+// In-process coalescer. The historical `lru-cache` provided this for
+// free because lookups were synchronous; with Redis fronting the
+// store we need an explicit inflight map so a burst of concurrent
+// requests for the same `storagePath` collapses to one DB call
+// instead of N parallel ones — the worst case the old design quietly
+// avoided.
+const requests = new Map<string, Promise<CachedImageMeta>>()
+
+async function readMeta(storagePath: string): Promise<CachedImageMeta> {
+  const pending = requests.get(storagePath)
+  if (pending !== undefined) {
+    return pending
+  }
+  const promise = (async () => {
+    try {
+      const cached = await storage.getItem<CachedImageMeta>(cacheKey(storagePath))
+      if (cached !== null) {
+        return cached
+      }
+      const rows = await findImagesByStoragePaths([storagePath])
+      const row = rows[0] ?? null
+      const value: CachedImageMeta = row !== null ? rowToCached(row) : { found: false }
+      try {
+        await storage.setItem(cacheKey(storagePath), value, { ttl: bucket().ttlSeconds })
+      } catch (error) {
+        log.warn('Failed to write image-meta cache; continuing without warmth', { storagePath, error })
+      }
+      return value
+    } finally {
+      requests.delete(storagePath)
+    }
+  })()
+  requests.set(storagePath, promise)
+  return promise
+}
+
+async function readManyMeta(storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
+  // Parallelise so a 30-image post warms up in one tick instead of
+  // 30 sequential round-trips. The inflight map dedupes within the
+  // batch, and `Promise.all` lets us pipeline the Redis reads.
+  const out = new Map<string, CachedImageMeta>()
+  await Promise.all(
+    storagePaths.map(async (storagePath) => {
+      out.set(storagePath, await readMeta(storagePath))
+    }),
+  )
+  return out
+}
 
 /** Drop a single entry from the resolution cache (called by the upload service after a write). */
-export function invalidateImageEnhanceCacheFor(storagePath: string): void {
-  resolutionCache.delete(storagePath)
+export async function invalidateImageEnhanceCacheFor(storagePath: string): Promise<void> {
+  requests.delete(storagePath)
+  try {
+    await storage.removeItem(cacheKey(storagePath))
+  } catch (error) {
+    log.warn('Failed to invalidate image-meta cache key', { storagePath, error })
+  }
 }
 
-/** Drop the entire cache (used by tests + the rare "rotate publicBaseUrl" path). */
-export function clearImageEnhanceCache(): void {
-  resolutionCache.clear()
+/**
+ * Drop every key under the configured `image-meta` prefix. Used by
+ * tests + the rare "I just batch-imported 10k rows from the legacy
+ * site, don't trust the cache" admin flow. Production callers should
+ * prefer `clearBucket` from `@/server/cache/buckets` so the admin
+ * panel's per-bucket UI stays the single source of truth.
+ */
+export async function clearImageEnhanceCache(): Promise<void> {
+  requests.clear()
+  // Match the SCAN+UNLINK shape used by `server/cache/buckets.ts`
+  // rather than depending on it (would create a server→server cycle
+  // the `cache.buckets` module doesn't have today). Test usage is
+  // the dominant caller, so a slow O(n) sweep is acceptable.
+  const prefix = bucket().prefix
+  const keys = await storage.getKeys(prefix)
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        await storage.removeItem(key)
+      } catch (error) {
+        log.warn('Failed to clear image-meta key', { key, error })
+      }
+    }),
+  )
 }
 
 interface ImageEnhancement {
@@ -132,66 +238,43 @@ async function resolveSources(links: string[]): Promise<Map<string, ImageEnhance
     return out
   }
 
-  // Split candidates by cache hit/miss so we only round-trip to the DB
-  // for paths we haven't seen recently.
-  const missing: string[] = []
-  const cachedRows = new Map<string, ImageRow | null>()
-  for (const { storagePath } of candidates) {
-    const hit = resolutionCache.get(storagePath)
-    if (hit === undefined) {
-      missing.push(storagePath)
-    } else {
-      cachedRows.set(storagePath, hit.row)
-    }
-  }
-
-  if (missing.length > 0) {
-    try {
-      const rows = await findImagesByStoragePaths(missing)
-      const found = new Map<string, ImageRow>()
-      for (const row of rows) {
-        found.set(row.storagePath, row)
-      }
-      for (const storagePath of missing) {
-        const row = found.get(storagePath) ?? null
-        resolutionCache.set(storagePath, { row })
-        cachedRows.set(storagePath, row)
-      }
-    } catch (error) {
-      log.warn('Failed to resolve image metadata; rendering naked images', { error })
-      // Don't poison the cache on transient DB errors.
-    }
+  let cached: Map<string, CachedImageMeta>
+  try {
+    cached = await readManyMeta(candidates.map((c) => c.storagePath))
+  } catch (error) {
+    log.warn('Failed to resolve image metadata; rendering naked images', { error })
+    return out
   }
 
   for (const { src, storagePath } of candidates) {
-    const row = cachedRows.get(storagePath)
-    if (row === undefined || row === null) {
+    const meta = cached.get(storagePath)
+    if (meta === undefined || !meta.found) {
       continue
     }
-    out.set(src, toEnhancement(row, publicBaseUrl))
+    out.set(src, toEnhancement(meta, publicBaseUrl))
   }
 
   return out
 }
 
-function toEnhancement(row: ImageRow, publicBaseUrl: string | null): ImageEnhancement {
+function toEnhancement(meta: CachedImageMetaPresent, publicBaseUrl: string | null): ImageEnhancement {
   return {
-    width: row.width,
-    height: row.height,
-    thumbhash: row.thumbhash,
-    publicUrl: resolvePublicUrl(row, publicBaseUrl),
+    width: meta.width,
+    height: meta.height,
+    thumbhash: meta.thumbhash,
+    publicUrl: resolvePublicUrl(meta, publicBaseUrl),
   }
 }
 
-function resolvePublicUrl(row: ImageRow, publicBaseUrl: string | null): string {
+function resolvePublicUrl(meta: CachedImageMetaPresent, publicBaseUrl: string | null): string {
   // `buildPublicUrl` reads the live settings; passing the cached
   // `publicBaseUrl` keeps the join consistent with what the resolver
   // matched against.
   if (publicBaseUrl === null) {
-    return row.storagePath
+    return meta.storagePath
   }
-  const tail = row.storagePath.startsWith('/') ? row.storagePath.slice(1) : row.storagePath
-  return appendCacheBuster(`${publicBaseUrl}/${tail}`, row.updatedAt.getTime())
+  const tail = meta.storagePath.startsWith('/') ? meta.storagePath.slice(1) : meta.storagePath
+  return appendCacheBuster(`${publicBaseUrl}/${tail}`, meta.updatedAtMs)
 }
 
 function appendCacheBuster(url: string, version: number): string {
@@ -227,9 +310,9 @@ export interface ImageThumbhashLookup {
 
 /**
  * Resolve a single image URL (post cover, friend poster, …) to its
- * width / height / thumbhash. Hits the same DB-backed LRU as the HTML
- * enhancer above, so cover lookups during catalog hydration share the
- * cache with body-image lookups during render.
+ * width / height / thumbhash. Hits the same Redis-backed cache as
+ * the HTML enhancer above, so cover lookups during catalog hydration
+ * share warmth with body-image lookups during render.
  *
  * Returns `null` when the URL doesn't resolve to any `image` row.
  */
@@ -250,28 +333,21 @@ export async function loadImageThumbhash(src: string): Promise<ImageThumbhashLoo
     return null
   }
 
-  const cached = resolutionCache.get(storagePath)
-  let row: ImageRow | null
-  if (cached !== undefined) {
-    row = cached.row
-  } else {
-    try {
-      const rows = await findImagesByStoragePaths([storagePath])
-      row = rows[0] ?? null
-      resolutionCache.set(storagePath, { row })
-    } catch (error) {
-      log.warn('Failed to resolve image metadata for cover', { src, error })
-      return null
-    }
+  let meta: CachedImageMeta
+  try {
+    meta = await readMeta(storagePath)
+  } catch (error) {
+    log.warn('Failed to resolve image metadata for cover', { src, error })
+    return null
   }
 
-  if (row === null) {
+  if (!meta.found) {
     return null
   }
   return {
-    width: row.width,
-    height: row.height,
-    thumbhash: row.thumbhash ?? undefined,
+    width: meta.width,
+    height: meta.height,
+    thumbhash: meta.thumbhash ?? undefined,
   }
 }
 

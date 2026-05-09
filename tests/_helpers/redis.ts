@@ -33,6 +33,7 @@ export interface MockRedis {
   setItemRaw: ReturnType<typeof vi.fn>
   removeItem: ReturnType<typeof vi.fn<(key: string) => Promise<void>>>
   hasItem: ReturnType<typeof vi.fn<(key: string) => Promise<boolean>>>
+  getKeys: ReturnType<typeof vi.fn<(prefix?: string) => Promise<string[]>>>
   // test inspection
   store: Map<string, Entry>
   /** Snapshot the current key→value map (after TTL expiration). */
@@ -186,6 +187,21 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
     store.delete(key)
   })
   const hasItem = vi.fn(async (key: string) => read(key) !== null)
+  // unstorage's `getKeys(prefix)` returns every key whose name starts
+  // with the prefix string. We mirror that contract (prefix-match,
+  // not glob) so test stubs of cache writers can iterate via the same
+  // API path the production code uses against `unstorage`.
+  const getKeys = vi.fn(async (prefix?: string) => {
+    const t = now()
+    const out: string[] = []
+    for (const [key, entry] of store.entries()) {
+      if (isExpired(entry, t)) continue
+      if (prefix === undefined || key.startsWith(prefix)) {
+        out.push(key)
+      }
+    }
+    return out
+  })
 
   return {
     get,
@@ -201,6 +217,7 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
     setItemRaw,
     removeItem,
     hasItem,
+    getKeys,
     store,
     dump() {
       const out: Record<string, unknown> = {}

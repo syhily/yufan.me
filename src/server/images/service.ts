@@ -112,7 +112,7 @@ export async function uploadImage(input: UploadImageInputs): Promise<AdminImageD
     })
   }
 
-  invalidateImageEnhanceCacheFor(row.storagePath)
+  await invalidateImageEnhanceCacheFor(row.storagePath)
 
   return toAdminImageDto(row, input.uploader?.name ?? null)
 }
@@ -166,7 +166,7 @@ export async function deleteImage(id: bigint): Promise<void> {
   if (deleted === null) {
     throw new ActionFailure(404, '图片不存在')
   }
-  invalidateImageEnhanceCacheFor(deleted.storagePath)
+  await invalidateImageEnhanceCacheFor(deleted.storagePath)
 }
 
 export async function updateImageNote(id: bigint, note: string | null): Promise<AdminImageDto> {
@@ -213,7 +213,7 @@ export async function recalculateImageThumbhash(id: bigint): Promise<AdminImageD
     throw new ActionFailure(404, '图片不存在')
   }
 
-  invalidateImageEnhanceCacheFor(existing.storagePath)
+  await invalidateImageEnhanceCacheFor(existing.storagePath)
 
   return toAdminImageDto(updated, updated.uploaderName)
 }

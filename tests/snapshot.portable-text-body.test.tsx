@@ -73,6 +73,83 @@ describe('PortableTextBody SSR renderer', () => {
     expect(html).toContain('<hr/>')
   })
 
+  it('renders a table block with header row + inline link in cell', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'table',
+        _key: 'tbl1',
+        hasHeaderRow: true,
+        rows: [
+          {
+            _type: 'tableRow',
+            _key: 'r0',
+            cells: [
+              {
+                _type: 'tableCell',
+                _key: 'r0c0',
+                isHeader: true,
+                content: [{ _type: 'span', _key: 's', text: '名称' }],
+              },
+              {
+                _type: 'tableCell',
+                _key: 'r0c1',
+                isHeader: true,
+                content: [{ _type: 'span', _key: 's', text: '链接' }],
+              },
+            ],
+          },
+          {
+            _type: 'tableRow',
+            _key: 'r1',
+            cells: [
+              {
+                _type: 'tableCell',
+                _key: 'r1c0',
+                content: [{ _type: 'span', _key: 's', text: '示例' }],
+              },
+              {
+                _type: 'tableCell',
+                _key: 'r1c1',
+                content: [{ _type: 'span', _key: 's', text: 'site', marks: ['lk'] }],
+                markDefs: [{ _type: 'link', _key: 'lk', href: 'https://example.com' }],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
+    expect(html).toContain('<table class="pt-table">')
+    expect(html).toContain('<thead>')
+    expect(html).toContain('<th>名称</th>')
+    expect(html).toContain('<a href="https://example.com">site</a>')
+  })
+
+  it('renders nested bullet lists with a 2-level hierarchy', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'l1',
+        listItem: 'bullet',
+        level: 1,
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's', text: 'parent' }],
+      },
+      {
+        _type: 'block',
+        _key: 'l2',
+        listItem: 'bullet',
+        level: 2,
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's', text: 'child' }],
+      },
+    ]
+    const html = stableHtml(renderInRouter(<PortableTextBodyComponent body={body} />))
+    expect(html).toContain('parent')
+    expect(html).toContain('child')
+    expect(html.indexOf('<ul>')).toBeGreaterThanOrEqual(0)
+  })
+
   it('renders footnote definitions in a single trailing section', () => {
     const body: PortableTextBody = [
       {

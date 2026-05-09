@@ -1,10 +1,13 @@
-import type { ReactNode } from 'react'
-
-import { Fragment } from 'react'
+import {
+  PortableText,
+  type PortableTextComponents,
+  type PortableTextMarkComponentProps,
+  type PortableTextTypeComponentProps,
+} from '@portabletext/react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
 import type { Friend } from '@/shared/catalog'
 import type {
-  Block,
   CodeBlock,
   FootnoteDefinitionBlock,
   FootnoteRefMarkDef,
@@ -20,7 +23,7 @@ import type {
   PortableTextBody as PortableTextBodyType,
   SolutionBlock,
   Span,
-  TextBlock,
+  TableBlock,
 } from '@/shared/portable-text'
 
 import { CodeBlock as CodeBlockComponent } from '@/ui/mdx/CodeBlock'
@@ -31,28 +34,28 @@ import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 import { Friends } from '@/ui/mdx/page/Friends'
 import { Solution } from '@/ui/mdx/solutions/Solution'
 
-// SSR/CSR renderer that turns a PortableText body into a React tree.
-// Designed to be a drop-in replacement for the existing MDX `<PageBody>`
-// surface so `page.detail.tsx` can swap source representations without
-// changing the surrounding document chrome.
+// SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
+// composable component map so the standard text/list/heading/decorator
+// pipeline (including consecutive list-item folding) is delegated to the
+// official toolkit, while every yufan.me-specific block / mark
+// (`image`, `code`, `mathBlock`, `mermaid`, `horizontalRule`,
+// `musicPlayer`, `solution`, `friends`, `footnoteDefinition`, `table`,
+// plus `mathInline` / `footnoteRef` mark defs) is handled by an
+// inline component declared in this file.
 //
 // **Component reuse**: every custom block type maps onto an existing
 // `@/ui/mdx/*` component so the public site renders bytes-for-bytes
 // (modulo whitespace) like a hand-authored MDX page would.
-//   - `image`              → `<MdxImg>` (thumbhash placeholder + lazy meta resolve)
-//   - `code`               → `<CodeBlock>` (Shiki-pre-rendered or plain `<pre><code>`)
-//   - `mathBlock` / `mathInline` → inline SVG when `svg` was pre-rendered at save time;
-//     fallback to a `<code>` showing the raw TeX otherwise.
-//   - `mermaid`            → inline SVG; fallback to `<pre class="mermaid">` so an
-//     opt-in client-side mermaid script can still hydrate it.
-//   - `musicPlayer`        → `<MusicPlayer>` (the same MDX widget)
-//   - `solution`           → `<Solution>` wrapping the recursive children
-//   - `friends`            → `<Friends>` driven by the loader's friends prop
-//   - `footnoteDefinition` → `<li>` inside the auto-collected footnote list
 //
 // **Anchors**: heading nodes get an `id` derived from `slug`-collected
 // keys (the editor maintains the same slug map via `collectHeadings`),
 // so `/page#anchor` deep links keep working through the migration.
+//
+// **Why a single file?** Splitting per-block components into
+// `components/<type>.tsx` would multiply imports, force barrel files,
+// and rerun `@portabletext/react`'s map merge on every render. Keeping
+// it inline keeps the renderer one-pass with no barrel risk
+// (AGENTS.md `bundle-barrel-imports`).
 
 export interface PortableTextBodyProps {
   body: PortableTextBodyType
@@ -62,41 +65,76 @@ export interface PortableTextBodyProps {
   imageMeta?: ImageMetaMap
 }
 
+// React context fan-out for friends + footnotes. Every renderer component
+// reads what it needs through these contexts instead of the previous
+// "RenderCtx" prop drilling, which doesn't compose with the
+// `@portabletext/react` component map (the library only passes the
+// node + its index to each component).
+
+interface FriendsCtx {
+  friends: readonly Friend[]
+}
+const FriendsContext = createContext<FriendsCtx>({ friends: [] })
+
+interface FootnoteRefCtx {
+  definitions: ReadonlyMap<string, FootnoteDefinitionBlock>
+}
+const FootnoteRefContext = createContext<FootnoteRefCtx>({ definitions: new Map() })
+
+// Heading anchor IDs disambiguate against earlier headings in the same
+// body. We track that through a context whose value is mutated as the
+// renderer walks blocks — the alternative (computing slugs upfront via
+// `collectHeadings` then keying into them) would require knowing the
+// block index at render time, which `@portabletext/react` does pass
+// (`PortableTextComponentProps.index`), but a stateful tracker keeps
+// the API surface smaller and matches GitHub-slugger semantics that
+// rehype-slug uses on the historical MDX path.
+interface HeadingIndexCtx {
+  index: Map<string, number>
+}
+const HeadingIndexContext = createContext<HeadingIndexCtx>({ index: new Map() })
+
 export function PortableTextBody({ body, friends, imageMeta }: PortableTextBodyProps) {
-  const ctx: RenderCtx = {
-    headingIndex: new Map(),
-    friends: friends ?? [],
-    footnoteDefinitions: collectFootnoteDefinitions(body),
-  }
+  const friendsCtx = useMemo<FriendsCtx>(() => ({ friends: friends ?? [] }), [friends])
+  const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
+  // A fresh heading-index map per render so anchor ids are stable
+  // across renders that share the same body. The map is identity-
+  // bound to the `body` value, so listing it as a dependency is
+  // intentional even though we don't read from it inside the
+  // initializer.
+  // oxlint-disable-next-line exhaustive-deps
+  const headingCtx = useMemo<HeadingIndexCtx>(() => ({ index: new Map() }), [body])
+
   // Footnote definitions (block type `footnoteDefinition`) are
   // rendered together at the bottom of the body — never inline —
   // matching the GFM `<section data-footnotes>` convention.
-  const inlineBody = body.filter((block) => block._type !== 'footnoteDefinition')
-  const footnotes = body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition')
+  const inlineBody = useMemo(() => body.filter((block) => block._type !== 'footnoteDefinition'), [body])
+  const footnotes = useMemo(
+    () => body.filter((block): block is FootnoteDefinitionBlock => block._type === 'footnoteDefinition'),
+    [body],
+  )
 
   return (
     <ImageMetaProvider value={imageMeta}>
       <FootnoteProvider>
-        <div className="portable-text-body">
-          {inlineBody.map((block) => (
-            <RenderBlock key={block._key} block={block} ctx={ctx} />
-          ))}
-          {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} ctx={ctx} /> : null}
-        </div>
+        <FriendsContext.Provider value={friendsCtx}>
+          <FootnoteRefContext.Provider value={footnoteCtx}>
+            <HeadingIndexContext.Provider value={headingCtx}>
+              <div className="portable-text-body">
+                <PortableText value={inlineBody as never} components={portableTextComponents} />
+                {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} /> : null}
+              </div>
+            </HeadingIndexContext.Provider>
+          </FootnoteRefContext.Provider>
+        </FriendsContext.Provider>
       </FootnoteProvider>
     </ImageMetaProvider>
   )
 }
 
-// --- Internals ---------------------------------------------------------------
-
-interface RenderCtx {
-  /** Tracks heading text → next disambiguation suffix for stable anchors. */
-  headingIndex: Map<string, number>
-  friends: readonly Friend[]
-  /** All footnote definitions, indexed by `_key`, used by ref hover previews. */
-  footnoteDefinitions: ReadonlyMap<string, FootnoteDefinitionBlock>
-}
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, FootnoteDefinitionBlock> {
   const out = new Map<string, FootnoteDefinitionBlock>()
@@ -108,102 +146,319 @@ function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, Foo
   return out
 }
 
-interface RenderBlockProps {
-  block: Block
-  ctx: RenderCtx
+function anchorIdFor(text: string, index: Map<string, number>): string {
+  // Slug = lowercase alphanumerics + dashes. Mirrors `github-slugger`'s
+  // behaviour (used by `collectHeadings`) but only as a fallback —
+  // ideally the upstream loader passes a pre-computed slug map.
+  const base = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  if (base === '') {
+    return ''
+  }
+  const seen = index.get(base) ?? 0
+  index.set(base, seen + 1)
+  return seen === 0 ? base : `${base}-${seen}`
 }
 
-function RenderBlock({ block, ctx }: RenderBlockProps): ReactNode {
-  switch (block._type) {
-    case 'block':
-      return <TextBlockNode block={block} ctx={ctx} />
-    case 'image':
-      return <ImageBlockNode block={block} />
-    case 'code':
-      return <CodeBlockNode block={block} />
-    case 'mathBlock':
-      return <MathBlockNode block={block} />
-    case 'mermaid':
-      return <MermaidBlockNode block={block} />
-    case 'horizontalRule':
-      return <HorizontalRuleNode block={block} />
-    case 'musicPlayer':
-      return <MusicPlayerNode block={block} />
-    case 'solution':
-      return <SolutionBlockNode block={block} ctx={ctx} />
-    case 'friends':
-      return <FriendsBlockNode block={block} ctx={ctx} />
-    case 'footnoteDefinition':
-      // Rendered separately at the bottom; if a stray definition
-      // shows up inline (e.g. inside a `solution`), drop it — the
-      // collector above would have already pulled it.
-      return null
+function nodeText(node: ReactNode): string {
+  // The block component receives the rendered children; we need the
+  // raw text to compute anchor ids. Walk the React node tree pulling
+  // out plain strings/numbers — works for the simple text + decorator
+  // shapes that appear in headings.
+  if (node === null || node === undefined || typeof node === 'boolean') {
+    return ''
   }
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node)
+  }
+  if (Array.isArray(node)) {
+    return node.map(nodeText).join('')
+  }
+  if (typeof node === 'object' && 'props' in (node as { props?: unknown })) {
+    const props = (node as { props?: { children?: ReactNode } }).props
+    return nodeText(props?.children)
+  }
+  return ''
 }
 
-// --- Text blocks -------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// PortableText component map
+// ---------------------------------------------------------------------------
 
-interface TextBlockNodeProps {
-  block: TextBlock
-  ctx: RenderCtx
+function Heading1({ children }: { children: ReactNode }) {
+  const ctx = useContext(HeadingIndexContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  return <h1 id={id}>{children}</h1>
+}
+function Heading2({ children }: { children: ReactNode }) {
+  const ctx = useContext(HeadingIndexContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  return <h2 id={id}>{children}</h2>
+}
+function Heading3({ children }: { children: ReactNode }) {
+  const ctx = useContext(HeadingIndexContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  return <h3 id={id}>{children}</h3>
+}
+function Heading4({ children }: { children: ReactNode }) {
+  const ctx = useContext(HeadingIndexContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  return <h4 id={id}>{children}</h4>
+}
+function ParagraphBlock({ children }: { children: ReactNode }) {
+  return <p>{children}</p>
+}
+function BlockquoteBlock({ children }: { children: ReactNode }) {
+  return <blockquote>{children}</blockquote>
 }
 
-function TextBlockNode({ block, ctx }: TextBlockNodeProps): ReactNode {
-  const inline = renderSpans(block.children, block.markDefs ?? [], ctx)
-  if (block.style === 'blockquote') {
-    return <blockquote>{inline}</blockquote>
+const portableTextComponents: PortableTextComponents = {
+  block: {
+    h1: ({ children }) => <Heading1>{children}</Heading1>,
+    h2: ({ children }) => <Heading2>{children}</Heading2>,
+    h3: ({ children }) => <Heading3>{children}</Heading3>,
+    h4: ({ children }) => <Heading4>{children}</Heading4>,
+    normal: ({ children }) => <ParagraphBlock>{children}</ParagraphBlock>,
+    blockquote: ({ children }) => <BlockquoteBlock>{children}</BlockquoteBlock>,
+  },
+  // `@portabletext/react` collapses consecutive list items sharing the
+  // same `listItem` + `level` into a single `<ul>` / `<ol>` for us;
+  // we just declare the wrapper. Nested lists are handled because the
+  // bridge writes higher-level items into `level: 2 / 3 / …` — the
+  // toolkit nests them automatically when `listNestingMode` is the
+  // default `html`.
+  list: {
+    bullet: ({ children }) => <ul>{children}</ul>,
+    number: ({ children }) => <ol>{children}</ol>,
+  },
+  listItem: {
+    bullet: ({ children }) => <li>{children}</li>,
+    number: ({ children }) => <li>{children}</li>,
+  },
+  marks: {
+    strong: ({ children }) => <strong>{children}</strong>,
+    em: ({ children }) => <em>{children}</em>,
+    underline: ({ children }) => <u>{children}</u>,
+    'strike-through': ({ children }) => <s>{children}</s>,
+    code: ({ children }) => <code>{children}</code>,
+    link: LinkMark,
+    mathInline: MathInlineMarkRenderer,
+    footnoteRef: FootnoteRefMarkRenderer,
+  },
+  types: {
+    image: ImageBlockComponent,
+    code: CodeBlockNodeComponent,
+    mathBlock: MathBlockComponent,
+    mermaid: MermaidBlockComponent,
+    horizontalRule: HorizontalRuleComponent,
+    musicPlayer: MusicPlayerComponent,
+    solution: SolutionBlockComponent,
+    friends: FriendsBlockComponent,
+    table: TableBlockComponent,
+  },
+  hardBreak: () => <br />,
+  unknownType: ({ value }) => {
+    if (typeof console !== 'undefined') {
+      console.warn('[PortableTextBody] unknown block type:', (value as { _type?: string })._type)
+    }
+    return null
+  },
+  unknownMark: ({ children, markType }) => {
+    if (typeof console !== 'undefined') {
+      console.warn('[PortableTextBody] unknown mark type:', markType)
+    }
+    return <>{children}</>
+  },
+  unknownBlockStyle: ({ children, value }) => {
+    if (typeof console !== 'undefined') {
+      console.warn('[PortableTextBody] unknown block style:', (value as { style?: string }).style)
+    }
+    return <p>{children}</p>
+  },
+  unknownList: ({ children }) => <ul>{children}</ul>,
+  unknownListItem: ({ children }) => <li>{children}</li>,
+}
+
+// --- Mark renderers ---------------------------------------------------------
+
+function LinkMark({ value, children }: PortableTextMarkComponentProps<LinkMarkDef>) {
+  const def = value
+  if (def === undefined) {
+    return <>{children}</>
   }
-  if (block.style === 'h1' || block.style === 'h2' || block.style === 'h3' || block.style === 'h4') {
-    const Tag = block.style as 'h1' | 'h2' | 'h3' | 'h4'
-    const text = block.children
-      .map((span) => span.text)
-      .join('')
-      .trim()
-    const id = anchorIdFor(text, ctx)
-    return <Tag id={id}>{inline}</Tag>
+  return (
+    <a href={def.href} rel={def.rel} target={def.target}>
+      {children}
+    </a>
+  )
+}
+
+function MathInlineMarkRenderer({ value }: PortableTextMarkComponentProps<MathInlineMarkDef>) {
+  const def = value
+  if (def === undefined) {
+    return null
   }
-  // Lists are not flattened into a wrapping `<ul>` / `<ol>` here —
-  // we emit each item as its own `<ul>` / `<ol>` containing one
-  // `<li>`. The CSS resets margin between adjacent lists of the same
-  // kind so the visual is identical; it keeps the renderer one-pass.
-  if (block.listItem === 'bullet' || block.listItem === 'number') {
-    const Wrapper = block.listItem === 'bullet' ? 'ul' : 'ol'
+  if (def.svg !== undefined && def.svg !== '') {
+    return <span className="math-inline" dangerouslySetInnerHTML={{ __html: def.svg }} />
+  }
+  return <code className="math-inline">{def.tex}</code>
+}
+
+function FootnoteRefMarkRenderer({ value }: PortableTextMarkComponentProps<FootnoteRefMarkDef>) {
+  const def = value
+  if (def === undefined) {
+    return null
+  }
+  return (
+    <sup id={`user-content-fnref-${def.index}`} data-footnote-ref="">
+      <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
+        {def.index}
+      </a>
+    </sup>
+  )
+}
+
+// --- Custom-block renderers -------------------------------------------------
+
+function ImageBlockComponent({ value }: PortableTextTypeComponentProps<ImageBlock>) {
+  return (
+    <figure>
+      <MdxImg
+        src={value.src}
+        alt={value.alt ?? ''}
+        width={value.width}
+        height={value.height}
+        data-thumbhash={value.thumbhash}
+      />
+      {value.caption !== undefined && value.caption !== '' ? <figcaption>{value.caption}</figcaption> : null}
+    </figure>
+  )
+}
+
+function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps<CodeBlock>) {
+  if (value.highlightedHtml !== undefined && value.highlightedHtml !== '') {
     return (
-      <Wrapper>
-        <li>{inline}</li>
-      </Wrapper>
+      <CodeBlockComponent
+        className={value.language !== undefined ? `language-${value.language}` : undefined}
+        data-language={value.language}
+        dangerouslySetInnerHTML={{ __html: value.highlightedHtml }}
+      />
     )
   }
-  return <p>{inline}</p>
+  return (
+    <CodeBlockComponent>
+      <code
+        className={value.language !== undefined ? `language-${value.language}` : undefined}
+        data-language={value.language}
+      >
+        {value.code}
+      </code>
+    </CodeBlockComponent>
+  )
 }
 
-function renderSpans(spans: readonly Span[], markDefs: readonly MarkDef[], ctx: RenderCtx): ReactNode {
-  return spans.map((span) => <SpanNode key={span._key} span={span} markDefs={markDefs} ctx={ctx} />)
+function MathBlockComponent({ value }: PortableTextTypeComponentProps<MathBlock>) {
+  if (value.svg !== undefined && value.svg !== '') {
+    return <div className="math math-display" dangerouslySetInnerHTML={{ __html: value.svg }} />
+  }
+  return (
+    <pre className="math math-display">
+      <code>{value.tex}</code>
+    </pre>
+  )
 }
 
-interface SpanNodeProps {
-  span: Span
-  markDefs: readonly MarkDef[]
-  ctx: RenderCtx
+function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<MermaidBlock>) {
+  if (value.svg !== undefined && value.svg !== '') {
+    return <div className="mermaid" dangerouslySetInnerHTML={{ __html: value.svg }} />
+  }
+  return <pre className="mermaid">{value.code}</pre>
 }
 
-function SpanNode({ span, markDefs, ctx }: SpanNodeProps): ReactNode {
+function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<HorizontalRuleBlock>) {
+  return <hr />
+}
+
+function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPlayerBlock>) {
+  return <MusicPlayer id={value.playerId} auto={value.auto} center={value.center} />
+}
+
+function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<SolutionBlock>) {
+  // Solution children are themselves a (one-deep) PortableText body.
+  // Recurse through `<PortableText>` so list-folding etc. continue to
+  // work inside the solution wrapper.
+  return (
+    <Solution>
+      <PortableText value={value.children as never} components={portableTextComponents} />
+    </Solution>
+  )
+}
+
+function FriendsBlockComponent(_props: PortableTextTypeComponentProps<FriendsBlock>) {
+  const ctx = useContext(FriendsContext)
+  return <Friends friends={[...ctx.friends]} />
+}
+
+function TableBlockComponent({ value }: PortableTextTypeComponentProps<TableBlock>) {
+  const rows = value.rows ?? []
+  const hasHeader = value.hasHeaderRow ?? false
+  const headRows = hasHeader ? rows.slice(0, 1) : []
+  const bodyRows = hasHeader ? rows.slice(1) : rows
+  return (
+    <div className="pt-table-wrapper overflow-x-auto">
+      <table className="pt-table">
+        {headRows.length > 0 ? (
+          <thead>
+            {headRows.map((row) => (
+              <tr key={row._key}>
+                {row.cells.map((cell) => (
+                  <th key={cell._key}>{renderSpansInline(cell.content, cell.markDefs ?? [])}</th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+        ) : null}
+        <tbody>
+          {bodyRows.map((row) => (
+            <tr key={row._key}>
+              {row.cells.map((cell) => {
+                const Tag = cell.isHeader === true ? 'th' : 'td'
+                return <Tag key={cell._key}>{renderSpansInline(cell.content, cell.markDefs ?? [])}</Tag>
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// Render a flat span list (with an outer markDefs registry) without
+// going through `<PortableText>` itself — table cells are NOT block
+// arrays in our dialect (they only carry inline spans + mark defs),
+// so wrapping them in a virtual block just to feed them back through
+// the toolkit would be wasteful and would also force a `<p>` wrapper.
+function renderSpansInline(spans: readonly Span[], markDefs: readonly MarkDef[]): ReactNode {
+  return spans.map((span) => <SpanInline key={span._key} span={span} markDefs={markDefs} />)
+}
+
+function SpanInline({ span, markDefs }: { span: Span; markDefs: readonly MarkDef[] }) {
   const marks = span.marks ?? []
   if (marks.length === 0) {
-    return span.text
+    return <>{span.text}</>
   }
-  // Build innermost-out so the last mark is the outermost wrapper.
-  // Decorator marks (bold, italic, …) wrap from the inside; markDef
-  // marks (link, mathInline, footnoteRef) become the outermost wrapper
-  // so a `<a>` containing `<strong>` is the natural shape.
+  // Wrap innermost-out so the last mark name becomes the outermost
+  // wrapper, matching the toolkit's mark stacking semantics.
   let node: ReactNode = span.text
-  for (const mark of marks) {
-    node = applyMark(node, mark, markDefs, ctx)
+  for (const markName of marks) {
+    node = applyInlineMark(node, markName, markDefs)
   }
-  return node
+  return <>{node}</>
 }
 
-function applyMark(node: ReactNode, markName: string, markDefs: readonly MarkDef[], ctx: RenderCtx): ReactNode {
+function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly MarkDef[]): ReactNode {
   switch (markName) {
     case 'strong':
       return <strong>{node}</strong>
@@ -216,137 +471,36 @@ function applyMark(node: ReactNode, markName: string, markDefs: readonly MarkDef
     case 'code':
       return <code>{node}</code>
   }
-  // markDef reference.
   const def = markDefs.find((entry) => entry._key === markName)
   if (def === undefined) {
-    return <Fragment>{node}</Fragment>
+    return node
   }
   switch (def._type) {
     case 'link':
-      return <LinkMark def={def}>{node}</LinkMark>
+      return (
+        <a href={def.href} rel={def.rel} target={def.target}>
+          {node}
+        </a>
+      )
     case 'mathInline':
-      return <MathInlineMark def={def} />
+      if (def.svg !== undefined && def.svg !== '') {
+        return <span className="math-inline" dangerouslySetInnerHTML={{ __html: def.svg }} />
+      }
+      return <code className="math-inline">{def.tex}</code>
     case 'footnoteRef':
-      return <FootnoteRefMark def={def} ctx={ctx} />
+      return (
+        <sup id={`user-content-fnref-${def.index}`} data-footnote-ref="">
+          <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
+            {def.index}
+          </a>
+        </sup>
+      )
   }
 }
 
-function LinkMark({ def, children }: { def: LinkMarkDef; children: ReactNode }) {
-  return (
-    <a href={def.href} rel={def.rel} target={def.target}>
-      {children}
-    </a>
-  )
-}
+// --- Footnotes section ------------------------------------------------------
 
-function MathInlineMark({ def }: { def: MathInlineMarkDef }) {
-  if (def.svg !== undefined && def.svg !== '') {
-    return <span className="math-inline" dangerouslySetInnerHTML={{ __html: def.svg }} />
-  }
-  return <code className="math-inline">{def.tex}</code>
-}
-
-function FootnoteRefMark({ def }: { def: FootnoteRefMarkDef; ctx: RenderCtx }) {
-  // Render the bare `<sup><a href="#fn-N">[N]</a></sup>` markup.
-  // The `<FootnoteProvider>` upstream wires hover previews, but only
-  // for `<sup>` elements that render the same `data-footnote-ref`
-  // anchor convention as historical MDX — we emit the same shape so
-  // existing CSS + JS continues to work.
-  return (
-    <sup id={`user-content-fnref-${def.index}`} data-footnote-ref="">
-      <a href={`#user-content-fn-${def.index}`} className="footnote-ref">
-        {def.index}
-      </a>
-    </sup>
-  )
-}
-
-// --- Custom blocks -----------------------------------------------------------
-
-function ImageBlockNode({ block }: { block: ImageBlock }) {
-  return (
-    <figure>
-      <MdxImg
-        src={block.src}
-        alt={block.alt ?? ''}
-        width={block.width}
-        height={block.height}
-        data-thumbhash={block.thumbhash}
-      />
-      {block.caption !== undefined && block.caption !== '' ? <figcaption>{block.caption}</figcaption> : null}
-    </figure>
-  )
-}
-
-function CodeBlockNode({ block }: { block: CodeBlock }) {
-  // When the editor pre-rendered Shiki HTML at save time we trust it
-  // and emit it via `dangerouslySetInnerHTML`; otherwise fall back to
-  // a plain `<pre><code>` that `<CodeBlock>` will style via the
-  // language label + copy button.
-  if (block.highlightedHtml !== undefined && block.highlightedHtml !== '') {
-    return (
-      <CodeBlockComponent
-        className={block.language !== undefined ? `language-${block.language}` : undefined}
-        data-language={block.language}
-        dangerouslySetInnerHTML={{ __html: block.highlightedHtml }}
-      />
-    )
-  }
-  return (
-    <CodeBlockComponent>
-      <code
-        className={block.language !== undefined ? `language-${block.language}` : undefined}
-        data-language={block.language}
-      >
-        {block.code}
-      </code>
-    </CodeBlockComponent>
-  )
-}
-
-function MathBlockNode({ block }: { block: MathBlock }) {
-  if (block.svg !== undefined && block.svg !== '') {
-    return <div className="math math-display" dangerouslySetInnerHTML={{ __html: block.svg }} />
-  }
-  return (
-    <pre className="math math-display">
-      <code>{block.tex}</code>
-    </pre>
-  )
-}
-
-function MermaidBlockNode({ block }: { block: MermaidBlock }) {
-  if (block.svg !== undefined && block.svg !== '') {
-    return <div className="mermaid" dangerouslySetInnerHTML={{ __html: block.svg }} />
-  }
-  return <pre className="mermaid">{block.code}</pre>
-}
-
-function HorizontalRuleNode({ block: _block }: { block: HorizontalRuleBlock }) {
-  return <hr />
-}
-
-function MusicPlayerNode({ block }: { block: MusicPlayerBlock }) {
-  return <MusicPlayer id={block.playerId} auto={block.auto} center={block.center} />
-}
-
-function SolutionBlockNode({ block, ctx }: { block: SolutionBlock; ctx: RenderCtx }) {
-  return (
-    <Solution>
-      {block.children.map((child) => (
-        <RenderBlock key={child._key} block={child} ctx={ctx} />
-      ))}
-    </Solution>
-  )
-}
-
-function FriendsBlockNode({ block: _block, ctx }: { block: FriendsBlock; ctx: RenderCtx }) {
-  return <Friends friends={[...ctx.friends]} />
-}
-
-// --- Footnotes section -------------------------------------------------------
-
-function FootnotesSection({ definitions, ctx }: { definitions: readonly FootnoteDefinitionBlock[]; ctx: RenderCtx }) {
+function FootnotesSection({ definitions }: { definitions: readonly FootnoteDefinitionBlock[] }) {
   return (
     <section className="footnotes" data-footnotes="">
       <h2 className="sr-only" id="footnote-label">
@@ -355,9 +509,7 @@ function FootnotesSection({ definitions, ctx }: { definitions: readonly Footnote
       <ol>
         {definitions.map((definition) => (
           <li key={definition._key} id={`user-content-fn-${definition.index}`}>
-            {definition.children.map((child) => (
-              <RenderBlock key={child._key} block={child} ctx={ctx} />
-            ))}
+            <PortableText value={definition.children as never} components={portableTextComponents} />
             <a
               href={`#user-content-fnref-${definition.index}`}
               data-footnote-backref=""
@@ -371,22 +523,4 @@ function FootnotesSection({ definitions, ctx }: { definitions: readonly Footnote
       </ol>
     </section>
   )
-}
-
-// --- Heading anchor IDs ------------------------------------------------------
-
-function anchorIdFor(text: string, ctx: RenderCtx): string {
-  // Slug = lowercase alphanumerics + dashes. Mirrors `github-slugger`'s
-  // behaviour (used by `collectHeadings`) but only as a fallback —
-  // ideally the upstream loader passes a pre-computed slug map.
-  const base = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  if (base === '') {
-    return ''
-  }
-  const seen = ctx.headingIndex.get(base) ?? 0
-  ctx.headingIndex.set(base, seen + 1)
-  return seen === 0 ? base : `${base}-${seen}`
 }

@@ -3,10 +3,14 @@ import type {
   CodeBlock,
   HorizontalRuleBlock,
   ImageBlock,
+  LinkMarkDef,
   MarkDef,
   PortableTextBody,
   Span,
   StandardBlockStyle,
+  TableBlock,
+  TableCell,
+  TableRow,
   TextBlock,
 } from '@/shared/portable-text'
 
@@ -90,42 +94,97 @@ export function bodyToPmDoc(body: PortableTextBody): PmDoc {
 }
 
 function pushBlocks(out: PmNode[], blocks: readonly Block[]): void {
-  // Lists need to be folded into a single PM `bulletList` /
-  // `orderedList` node when consecutive PT text blocks share the same
-  // `listItem`. We accumulate then flush.
-  let listKind: 'bullet' | 'number' | null = null
-  let listLevel = 1
-  let listItems: PmNode[] = []
-
-  function flushList() {
-    if (listKind === null) {
-      return
-    }
-    out.push({
-      type: listKind === 'bullet' ? 'bulletList' : 'orderedList',
-      content: listItems,
-    })
-    listKind = null
-    listLevel = 1
-    listItems = []
-  }
-
-  for (const block of blocks) {
-    if (block._type === 'block' && block.listItem) {
-      const kind = block.listItem === 'bullet' ? 'bullet' : 'number'
-      const level = block.level ?? 1
-      if (listKind !== kind || listLevel !== level) {
-        flushList()
-        listKind = kind
-        listLevel = level
-      }
-      listItems.push({ type: 'listItem', content: [textBlockToPmNode(block, /* asListItemChild */ true)] })
+  // PortableText represents lists as a flat sequence of `block`s
+  // tagged with `listItem` (`bullet` | `number`) + a `level` (1 …).
+  // ProseMirror needs them as nested `bulletList` / `orderedList`
+  // trees. The state machine here scans consecutive list items and
+  // emits a single root list node per "list streak" with deeper
+  // levels nested inside the previous level's last `<li>`.
+  //
+  // Two streaks are joined into the same root list as long as the
+  // root-level kind matches; switching from `bullet` to `number` at
+  // level 1 starts a new root node. The same rule applies at deeper
+  // levels — switching kinds at level 2 means the new sub-list lives
+  // alongside (not inside) the previous one.
+  let i = 0
+  while (i < blocks.length) {
+    const block = blocks[i]
+    if (block._type === 'block' && block.listItem !== undefined) {
+      const consumed = consumeListStreak(out, blocks, i)
+      i += consumed
       continue
     }
-    flushList()
     out.push(blockToPmNode(block))
+    i += 1
   }
-  flushList()
+}
+
+interface PmListNode extends PmBlockNode {
+  type: 'bulletList' | 'orderedList'
+  content: PmNode[]
+}
+
+function consumeListStreak(out: PmNode[], blocks: readonly Block[], start: number): number {
+  const first = blocks[start] as TextBlock
+  const rootKind: 'bullet' | 'number' = first.listItem === 'bullet' ? 'bullet' : 'number'
+  const root: PmListNode = {
+    type: rootKind === 'bullet' ? 'bulletList' : 'orderedList',
+    content: [],
+  }
+  // `stack[i]` is the active list at level `i + 1`. When we encounter
+  // a deeper item we push a new sub-list inside the previous level's
+  // last `<li>`; when we encounter a shallower item we pop back to
+  // its level. When the root kind changes we stop the streak.
+  const stack: PmListNode[] = [root]
+  let i = start
+  while (i < blocks.length) {
+    const block = blocks[i]
+    if (block._type !== 'block' || block.listItem === undefined) {
+      break
+    }
+    const kind: 'bullet' | 'number' = block.listItem === 'bullet' ? 'bullet' : 'number'
+    const level = Math.max(1, block.level ?? 1)
+    if (level === 1 && kind !== rootKind) {
+      break
+    }
+    while (stack.length > level) {
+      stack.pop()
+    }
+    while (stack.length < level) {
+      // Need to dive into a nested list. Attach it inside the last
+      // `<li>` of the current top-of-stack list. If there isn't one
+      // (malformed body that starts at level > 1), wrap with a
+      // synthetic empty paragraph so the schema stays valid.
+      const parentList = stack[stack.length - 1]
+      let parentItem = parentList.content[parentList.content.length - 1] as PmBlockNode | undefined
+      if (parentItem === undefined || parentItem.type !== 'listItem') {
+        parentItem = { type: 'listItem', content: [{ type: 'paragraph' }] }
+        parentList.content.push(parentItem)
+      }
+      const subKind: 'bullet' | 'number' = level === stack.length + 1 ? kind : 'bullet'
+      const sub: PmListNode = {
+        type: subKind === 'bullet' ? 'bulletList' : 'orderedList',
+        content: [],
+      }
+      parentItem.content = [...(parentItem.content ?? []), sub]
+      stack.push(sub)
+    }
+    // After level-walking, the top of stack must match the kind we
+    // want at this level. If not, close the streak — we'll re-enter
+    // for the new flavour as a sibling of the root list.
+    const target = stack[stack.length - 1]
+    const wanted = kind === 'bullet' ? 'bulletList' : 'orderedList'
+    if (target.type !== wanted) {
+      break
+    }
+    target.content.push({
+      type: 'listItem',
+      content: [textBlockToPmNode(block as TextBlock, /* asListItemChild */ true)],
+    })
+    i += 1
+  }
+  out.push(root)
+  return i - start
 }
 
 function blockToPmNode(block: Block): PmBlockNode {
@@ -138,6 +197,8 @@ function blockToPmNode(block: Block): PmBlockNode {
       return codeBlockToPmNode(block)
     case 'horizontalRule':
       return horizontalRuleBlockToPmNode(block)
+    case 'table':
+      return tableBlockToPmNode(block)
     default:
       return customBlockToPmNode(block)
   }
@@ -239,6 +300,34 @@ function horizontalRuleBlockToPmNode(_block: HorizontalRuleBlock): PmBlockNode {
   return { type: 'horizontalRule', attrs: { _key: _block._key } }
 }
 
+function tableBlockToPmNode(block: TableBlock): PmBlockNode {
+  // Tiptap's table extension expects:
+  //   table → tableRow* → (tableHeader | tableCell)+
+  // Each header/cell must contain at least one block child;
+  // we wrap the cell's inline spans in a single `paragraph`.
+  const hasHeaderRow = block.hasHeaderRow ?? false
+  return {
+    type: 'table',
+    attrs: { _key: block._key, hasHeaderRow },
+    content: block.rows.map((row, rowIndex) => ({
+      type: 'tableRow',
+      attrs: { _key: row._key },
+      content: row.cells.map((cell) => {
+        const inlines: PmInlineNode[] = []
+        for (const span of cell.content) {
+          pushSpan(inlines, span, cell.markDefs ?? [])
+        }
+        const isHeader = cell.isHeader === true || (hasHeaderRow && rowIndex === 0)
+        return {
+          type: isHeader ? 'tableHeader' : 'tableCell',
+          attrs: { _key: cell._key },
+          content: [{ type: 'paragraph', content: inlines }],
+        }
+      }),
+    })),
+  }
+}
+
 function customBlockToPmNode(block: Block): PmBlockNode {
   // Pass-through node. Tiptap renders these with a generic
   // "block-card" view that reads `attrs.payload` and dispatches to
@@ -317,21 +406,7 @@ function pushPmNode(
     }
     case 'bulletList':
     case 'orderedList': {
-      const kind = node.type === 'bulletList' ? 'bullet' : 'number'
-      const items = (node.content ?? []).filter(isBlock).filter((c) => c.type === 'listItem')
-      for (const item of items) {
-        const itemContent = (item.content ?? []).filter(isBlock)
-        for (const para of itemContent) {
-          if (para.type !== 'paragraph') {
-            continue
-          }
-          out.push({
-            ...paragraphToTextBlock(para, ensureKey, 'normal'),
-            listItem: kind,
-            level: 1,
-          })
-        }
-      }
+      flattenList(node, out, ensureKey, 1)
       return
     }
     case 'image':
@@ -364,6 +439,10 @@ function pushPmNode(
     case 'horizontalRule':
       out.push({ _type: 'horizontalRule', _key: ensureKey(node.attrs) })
       return
+    case 'table': {
+      out.push(pmTableToBlock(node, ensureKey))
+      return
+    }
     case 'blockCard': {
       // Pass-through custom node. Trust the payload — the editor's
       // schema guarantees it's a `Block` (the `payload` attribute is
@@ -376,6 +455,135 @@ function pushPmNode(
       }
       return
     }
+  }
+}
+
+function flattenList(
+  node: PmBlockNode,
+  out: Block[],
+  ensureKey: (attrs: Record<string, unknown> | undefined) => string,
+  level: number,
+): void {
+  const kind: 'bullet' | 'number' = node.type === 'bulletList' ? 'bullet' : 'number'
+  const items = (node.content ?? []).filter(isBlock).filter((c) => c.type === 'listItem')
+  for (const item of items) {
+    const itemContent = (item.content ?? []).filter(isBlock)
+    for (const child of itemContent) {
+      if (child.type === 'paragraph') {
+        out.push({
+          ...paragraphToTextBlock(child, ensureKey, 'normal'),
+          listItem: kind,
+          level,
+        })
+        continue
+      }
+      if (child.type === 'bulletList' || child.type === 'orderedList') {
+        flattenList(child, out, ensureKey, level + 1)
+        continue
+      }
+      // Drop other block types (the editor never inserts them inside
+      // a list item, but PM JSON from a paste could contain them).
+    }
+  }
+}
+
+function pmTableToBlock(
+  node: PmBlockNode,
+  ensureKey: (attrs: Record<string, unknown> | undefined) => string,
+): TableBlock {
+  const rowNodes = (node.content ?? []).filter(isBlock).filter((c) => c.type === 'tableRow')
+  const rows: TableRow[] = []
+  let firstRowAllHeader = true
+  let nonEmptyRows = false
+  rowNodes.forEach((rowNode, rowIndex) => {
+    nonEmptyRows = true
+    const cellNodes = (rowNode.content ?? [])
+      .filter(isBlock)
+      .filter((c) => c.type === 'tableHeader' || c.type === 'tableCell')
+    const cells: TableCell[] = cellNodes.map((cellNode) => pmCellToTableCell(cellNode, ensureKey))
+    if (rowIndex === 0) {
+      firstRowAllHeader = cells.length > 0 && cells.every((cell) => cell.isHeader === true)
+    }
+    rows.push({ _type: 'tableRow', _key: ensureKey(rowNode.attrs), cells })
+  })
+  // `hasHeaderRow` derived from the first row when the editor toggled
+  // the header-row affordance. Saving it explicitly keeps the SSR
+  // renderer cheap (it can pull `<thead>` from a single field instead
+  // of scanning every cell). When the explicit attr is present on
+  // the PM node we trust it, otherwise we infer from the cells.
+  const explicit = node.attrs?.hasHeaderRow
+  const hasHeaderRow = typeof explicit === 'boolean' ? explicit : nonEmptyRows && firstRowAllHeader
+  // When the explicit `hasHeaderRow` is true and the first row's
+  // cells weren't all marked `isHeader`, normalise so the SSR
+  // renderer's "first row to thead" lift works regardless. When
+  // explicit is false, drop any per-cell `isHeader` lingering on
+  // row 0.
+  if (rows.length > 0) {
+    if (hasHeaderRow) {
+      rows[0].cells = rows[0].cells.map((cell) => ({ ...cell, isHeader: true }))
+    }
+  }
+  return {
+    _type: 'table',
+    _key: ensureKey(node.attrs),
+    rows,
+    ...(hasHeaderRow ? { hasHeaderRow: true } : {}),
+  }
+}
+
+function pmCellToTableCell(
+  node: PmBlockNode,
+  ensureKey: (attrs: Record<string, unknown> | undefined) => string,
+): TableCell {
+  const isHeader = node.type === 'tableHeader'
+  // The cell's first paragraph carries the inline content; ignore
+  // additional block children (tables in our dialect can't nest
+  // blocks inside cells — anything else is editor noise the user
+  // can't produce through the supplied UI).
+  const firstParagraph = (node.content ?? []).filter(isBlock).find((c) => c.type === 'paragraph')
+  const content: Span[] = []
+  const markDefs: LinkMarkDef[] = []
+  let nextSpanKey = 0
+  if (firstParagraph !== undefined) {
+    const inlines = (firstParagraph.content ?? []).filter(isInline)
+    for (const inline of inlines) {
+      nextSpanKey += 1
+      const spanKey = `s-${nextSpanKey.toString(36)}`
+      const marks: string[] = []
+      for (const mark of inline.marks ?? []) {
+        const conv = pmMarkToSpanMark(mark)
+        if (conv === null) {
+          continue
+        }
+        if ('decorator' in conv) {
+          marks.push(conv.decorator)
+          continue
+        }
+        // Cells only allow link mark defs — drop mathInline /
+        // footnoteRef so the cell stays valid against the strict
+        // table-cell schema.
+        if (conv.def._type !== 'link') {
+          continue
+        }
+        marks.push(conv.def._key)
+        if (!markDefs.some((existing) => existing._key === conv.def._key)) {
+          markDefs.push(conv.def)
+        }
+      }
+      content.push({
+        _type: 'span',
+        _key: spanKey,
+        text: inline.text,
+        marks: marks.length > 0 ? marks : undefined,
+      })
+    }
+  }
+  return {
+    _type: 'tableCell',
+    _key: ensureKey(node.attrs),
+    content,
+    ...(isHeader ? { isHeader: true } : {}),
+    ...(markDefs.length > 0 ? { markDefs } : {}),
   }
 }
 
@@ -436,7 +644,15 @@ function pmMarkToSpanMark(mark: PmMark): { decorator: string } | { def: MarkDef 
       return { decorator: 'code' }
     case 'link': {
       const href = stringAttr(mark.attrs, 'href') ?? ''
-      const key = stringAttr(mark.attrs, '_key') ?? `lk-${href.length.toString(36)}-${href.slice(0, 4)}`
+      // Reuse the editor-provided `_key` when the user merely
+      // re-applies an existing link mark; otherwise derive a stable
+      // key from the href so two spans inside the same paragraph
+      // pointing at the same URL share a single `markDefs` entry
+      // (the dedup happens inside `paragraphToTextBlock` keyed on
+      // `_key`). Hashing the href avoids the previous "always equal
+      // length-prefix" collision and keeps keys URL-safe.
+      const explicit = stringAttr(mark.attrs, '_key')
+      const key = explicit !== undefined && explicit !== '' ? explicit : `lk-${hashLinkHref(href)}`
       return {
         def: {
           _type: 'link',
@@ -502,4 +718,17 @@ function numberAttr(attrs: Record<string, unknown> | undefined, key: string): nu
   }
   const value = attrs[key]
   return typeof value === 'number' ? value : undefined
+}
+
+// FNV-1a 32-bit hash. Plenty of collision resistance for the
+// per-paragraph markDefs registry (a paragraph rarely carries more
+// than a handful of links). We use base36 to keep `_key`s short and
+// URL-safe.
+function hashLinkHref(href: string): string {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < href.length; i += 1) {
+    hash ^= href.charCodeAt(i)
+    hash = Math.imul(hash, 0x01000193) >>> 0
+  }
+  return hash.toString(36)
 }

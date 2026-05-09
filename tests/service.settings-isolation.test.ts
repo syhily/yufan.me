@@ -60,6 +60,8 @@ describe('services/settings — write isolation', () => {
             og: { prefix: 'og-bucket:', ttlSeconds: 60 * 60 * 24 },
             calendar: { prefix: 'cal-bucket:', ttlSeconds: 60 * 60 * 24 },
             avatar: { prefix: 'av-bucket:', ttlSeconds: 60 * 60 * 24 },
+            'image-meta': { prefix: 'image-meta-bucket:', ttlSeconds: 60 * 60 * 24 },
+            'comments-md': { prefix: 'comments-md-bucket:', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,

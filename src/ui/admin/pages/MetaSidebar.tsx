@@ -4,6 +4,7 @@ import { useId } from 'react'
 import type { AdminPageDto } from '@/shared/cms-pages'
 import type { AdminImageDto } from '@/shared/images'
 
+import { DateTimePicker } from '@/ui/admin/pages/DateTimePicker'
 import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
@@ -11,7 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/ui/car
 import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/ui/components/ui/radio-group'
 import { Textarea } from '@/ui/components/ui/textarea'
+import { cn } from '@/ui/lib/cn'
 
 // Editable subset of `AdminPageDto`. The body is owned by the editor
 // pane separately, so this state is purely metadata.
@@ -168,29 +171,6 @@ export function MetaSidebar({ draft, onChange, disabled, publishStatus, extras }
             disabled={disabled}
           />
           <div className="grid gap-2">
-            <Label htmlFor="page-title">标题</Label>
-            <Input
-              id="page-title"
-              value={draft.title}
-              onChange={(e) => set('title', e.target.value)}
-              placeholder="关于我"
-              maxLength={200}
-              disabled={disabled}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="page-slug">URL slug</Label>
-            <Input
-              id="page-slug"
-              value={draft.slug}
-              onChange={(e) => set('slug', e.target.value)}
-              placeholder="about"
-              maxLength={80}
-              disabled={disabled}
-            />
-            <p className="font-mono text-xs text-muted-foreground">/{draft.slug || 'slug'}</p>
-          </div>
-          <div className="grid gap-2">
             <Label htmlFor="page-summary">摘要</Label>
             <Textarea
               id="page-summary"
@@ -199,6 +179,7 @@ export function MetaSidebar({ draft, onChange, disabled, publishStatus, extras }
               rows={3}
               maxLength={500}
               disabled={disabled}
+              placeholder="可选，用于列表与社交分享卡片。"
             />
           </div>
         </CardContent>
@@ -374,55 +355,52 @@ function PublishStatusRow({ status, publishedAt, onChangePublishedAt, disabled }
   const isFuture = isScheduled && (Date.parse(publishedAt) || 0) > Date.now()
 
   return (
-    <div className="grid gap-2 rounded-md border bg-muted/30 p-3">
+    <div className="grid gap-3 rounded-md border bg-muted/30 p-3">
       <div className="flex items-center gap-2">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布状态</Label>
         <PublishBadge status={status} isFuture={isFuture} />
       </div>
       <div className="grid gap-2">
         <Label className="text-xs font-medium tracking-wide text-muted-foreground uppercase">发布时间</Label>
-        <div className="flex items-center gap-3 text-sm">
-          <label className="flex cursor-pointer items-center gap-1.5">
-            <input
-              type="radio"
-              name={`${fieldId}-mode`}
-              checked={!isScheduled}
-              onChange={() => onChangePublishedAt('')}
-              disabled={disabled}
-            />
-            立即发布
-          </label>
-          <label className="flex cursor-pointer items-center gap-1.5">
-            <input
-              type="radio"
-              name={`${fieldId}-mode`}
-              checked={isScheduled}
-              onChange={() => {
-                if (isScheduled) {
-                  return
-                }
-                // Default to "tomorrow at 09:00 local" when the
-                // operator first switches into schedule mode, so
-                // the picker isn't fighting with the "now" they
-                // just opted out of.
-                const d = new Date()
-                d.setDate(d.getDate() + 1)
-                d.setHours(9, 0, 0, 0)
-                onChangePublishedAt(dateToLocalInputValue(d))
-              }}
-              disabled={disabled}
-            />
-            定时发布
-          </label>
-        </div>
-        {isScheduled ? (
-          <Input
-            id={`${fieldId}-at`}
-            type="datetime-local"
-            value={publishedAt}
-            onChange={(e) => onChangePublishedAt(e.target.value)}
-            disabled={disabled}
+        <RadioGroup
+          value={isScheduled ? 'scheduled' : 'now'}
+          onValueChange={(next) => {
+            if (next === 'now') {
+              onChangePublishedAt('')
+              return
+            }
+            if (isScheduled) {
+              return
+            }
+            // Default to "tomorrow at 09:00 local" when the
+            // operator first switches into schedule mode, so
+            // the picker isn't fighting with the "now" they
+            // just opted out of.
+            const d = new Date()
+            d.setDate(d.getDate() + 1)
+            d.setHours(9, 0, 0, 0)
+            onChangePublishedAt(dateToLocalInputValue(d))
+          }}
+          disabled={disabled}
+          className="grid-cols-2 gap-2"
+        >
+          <PublishModeOption
+            id={`${fieldId}-now`}
+            value="now"
+            active={!isScheduled}
+            label="立即发布"
+            description="使用当前时间"
           />
+          <PublishModeOption
+            id={`${fieldId}-scheduled`}
+            value="scheduled"
+            active={isScheduled}
+            label="定时发布"
+            description="到点上线"
+          />
+        </RadioGroup>
+        {isScheduled ? (
+          <DateTimePicker id={`${fieldId}-at`} value={publishedAt} onChange={onChangePublishedAt} disabled={disabled} />
         ) : null}
         <p className="text-xs text-muted-foreground">
           {isScheduled
@@ -433,6 +411,32 @@ function PublishStatusRow({ status, publishedAt, onChangePublishedAt, disabled }
         </p>
       </div>
     </div>
+  )
+}
+
+interface PublishModeOptionProps {
+  id: string
+  value: string
+  active: boolean
+  label: string
+  description: string
+}
+
+function PublishModeOption({ id, value, active, label, description }: PublishModeOptionProps) {
+  return (
+    <label
+      htmlFor={id}
+      className={cn(
+        'flex cursor-pointer items-start gap-2 rounded-md border bg-background p-2 transition-colors',
+        active ? 'border-primary ring-1 ring-primary/30' : 'hover:bg-accent/40',
+      )}
+    >
+      <RadioGroupItem id={id} value={value} className="mt-0.5" />
+      <div className="grid gap-0.5 text-sm leading-tight">
+        <span className="font-medium">{label}</span>
+        <span className="text-xs text-muted-foreground">{description}</span>
+      </div>
+    </label>
   )
 }
 

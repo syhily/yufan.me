@@ -60,6 +60,8 @@ const fixture: BlogSettingsBundle = {
       og: { prefix: 'og:', ttlSeconds: 3600 },
       calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+      'image-meta': { prefix: 'image-meta:', ttlSeconds: 3600 },
+      'comments-md': { prefix: 'comments-md:', ttlSeconds: 3600 },
     },
   },
   rateLimit: {

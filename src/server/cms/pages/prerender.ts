@@ -107,6 +107,15 @@ function collectBlock(
         }
       }
       return
+    case 'table':
+      // Tables only carry inline span content per
+      // `tableCellSchema`'s contract — no nested code / math /
+      // mermaid blocks, and `mathInline` / `footnoteRef` mark defs
+      // are stripped by the bridge before they reach storage. So
+      // the prerender pass has no work to do, but we still claim
+      // the case explicitly to avoid an "unknown block type"
+      // warning if a stricter `default` ever gets added.
+      return
     default:
       return
   }

@@ -215,4 +215,320 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
     const back = pmDocToBody(bodyToPmDoc(body))
     expect(back).toEqual(body)
   })
+
+  it('friends blocks round-trip via the blockCard payload slot', () => {
+    const body: PortableTextBody = [{ _type: 'friends', _key: 'fr-1' }]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back).toEqual(body)
+  })
+
+  it('footnoteDefinition blocks round-trip preserving index + nested children', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'footnoteDefinition',
+        _key: 'fn-1',
+        index: 1,
+        children: [
+          {
+            _type: 'block',
+            _key: 'fn-1-b1',
+            style: 'normal',
+            children: [{ _type: 'span', _key: 'fn-1-s1', text: 'definition body' }],
+          },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back).toEqual(body)
+  })
+
+  it('mathInline mark def round-trips through the markDefs slot', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        markDefs: [{ _type: 'mathInline', _key: 'mi-1', tex: 'a^2', svg: '<svg>a^2</svg>' }],
+        children: [
+          { _type: 'span', _key: 's1', text: 'see ' },
+          { _type: 'span', _key: 's2', text: 'a^2', marks: ['mi-1'] },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back[0]).toMatchObject({
+      _type: 'block',
+      markDefs: [{ _type: 'mathInline', tex: 'a^2', svg: '<svg>a^2</svg>' }],
+    })
+    expect(back[0]._type === 'block' && back[0].children[1].marks?.length).toBe(1)
+  })
+
+  it('footnoteRef mark def round-trips with index + targetKey preserved', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        markDefs: [{ _type: 'footnoteRef', _key: 'fr-1', targetKey: 'fn-target', index: 7 }],
+        children: [
+          { _type: 'span', _key: 's1', text: 'note' },
+          { _type: 'span', _key: 's2', text: '7', marks: ['fr-1'] },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back[0]).toMatchObject({
+      _type: 'block',
+      markDefs: [{ _type: 'footnoteRef', targetKey: 'fn-target', index: 7 }],
+    })
+  })
+})
+
+describe('contract: pt-bridge — nested lists', () => {
+  it('round-trips a 2-level bullet list (nested under the parent <li>)', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'l1',
+        style: 'normal',
+        listItem: 'bullet',
+        level: 1,
+        children: [{ _type: 'span', _key: 's1', text: 'top' }],
+      },
+      {
+        _type: 'block',
+        _key: 'l2',
+        style: 'normal',
+        listItem: 'bullet',
+        level: 2,
+        children: [{ _type: 'span', _key: 's2', text: 'inner' }],
+      },
+      {
+        _type: 'block',
+        _key: 'l3',
+        style: 'normal',
+        listItem: 'bullet',
+        level: 1,
+        children: [{ _type: 'span', _key: 's3', text: 'tail' }],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    expect(doc.content.length).toBe(1)
+    expect(doc.content[0].type).toBe('bulletList')
+    const back = pmDocToBody(doc)
+    expect(back.map((b) => (b._type === 'block' ? b.level : null))).toEqual([1, 2, 1])
+    expect(back.map((b) => (b._type === 'block' ? b.listItem : null))).toEqual(['bullet', 'bullet', 'bullet'])
+  })
+
+  it('round-trips a mixed bullet → ordered nested list', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'a',
+        style: 'normal',
+        listItem: 'bullet',
+        level: 1,
+        children: [{ _type: 'span', _key: 's1', text: 'parent' }],
+      },
+      {
+        _type: 'block',
+        _key: 'b',
+        style: 'normal',
+        listItem: 'number',
+        level: 2,
+        children: [{ _type: 'span', _key: 's2', text: 'sub-1' }],
+      },
+      {
+        _type: 'block',
+        _key: 'c',
+        style: 'normal',
+        listItem: 'number',
+        level: 2,
+        children: [{ _type: 'span', _key: 's3', text: 'sub-2' }],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    expect(doc.content.length).toBe(1)
+    const root = doc.content[0]
+    expect(root.type).toBe('bulletList')
+    const firstItem = (root as { content: { content: { type: string }[] }[] }).content[0]
+    const nestedKinds = firstItem.content.map((c) => c.type)
+    expect(nestedKinds).toContain('orderedList')
+    const back = pmDocToBody(doc)
+    expect(back.map((b) => (b._type === 'block' ? b.listItem : null))).toEqual(['bullet', 'number', 'number'])
+    expect(back.map((b) => (b._type === 'block' ? b.level : null))).toEqual([1, 2, 2])
+  })
+})
+
+describe('contract: pt-bridge — link markDef dedup', () => {
+  it('shares a single markDefs entry when the same href appears twice in the same paragraph', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        markDefs: [{ _type: 'link', _key: 'lk-shared', href: 'https://yufan.me' }],
+        children: [
+          { _type: 'span', _key: 's1', text: 'go ' },
+          { _type: 'span', _key: 's2', text: 'home', marks: ['lk-shared'] },
+          { _type: 'span', _key: 's3', text: ' or ' },
+          { _type: 'span', _key: 's4', text: 'home again', marks: ['lk-shared'] },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back[0]._type).toBe('block')
+    if (back[0]._type !== 'block') {
+      return
+    }
+    expect(back[0].markDefs?.length).toBe(1)
+    expect(back[0].markDefs?.[0]).toMatchObject({ _type: 'link', href: 'https://yufan.me' })
+  })
+
+  it('keeps two markDefs when the hrefs differ even if the visible text is identical', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        markDefs: [
+          { _type: 'link', _key: 'lk-a', href: 'https://a.example' },
+          { _type: 'link', _key: 'lk-b', href: 'https://b.example' },
+        ],
+        children: [
+          { _type: 'span', _key: 's1', text: 'a', marks: ['lk-a'] },
+          { _type: 'span', _key: 's2', text: ' and ' },
+          { _type: 'span', _key: 's3', text: 'b', marks: ['lk-b'] },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back[0]._type).toBe('block')
+    if (back[0]._type !== 'block') {
+      return
+    }
+    expect(back[0].markDefs?.length).toBe(2)
+    const hrefs = (back[0].markDefs ?? []).map((m) => (m._type === 'link' ? m.href : ''))
+    expect(hrefs.sort()).toEqual(['https://a.example', 'https://b.example'])
+  })
+})
+
+describe('contract: pt-bridge — table round-trip', () => {
+  it('round-trips a 2x2 table with header row', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'table',
+        _key: 't-1',
+        hasHeaderRow: true,
+        rows: [
+          {
+            _type: 'tableRow',
+            _key: 'r-1',
+            cells: [
+              {
+                _type: 'tableCell',
+                _key: 'c-1',
+                isHeader: true,
+                content: [{ _type: 'span', _key: 's1', text: 'h1' }],
+              },
+              {
+                _type: 'tableCell',
+                _key: 'c-2',
+                isHeader: true,
+                content: [{ _type: 'span', _key: 's2', text: 'h2' }],
+              },
+            ],
+          },
+          {
+            _type: 'tableRow',
+            _key: 'r-2',
+            cells: [
+              {
+                _type: 'tableCell',
+                _key: 'c-3',
+                content: [{ _type: 'span', _key: 's3', text: 'a' }],
+              },
+              {
+                _type: 'tableCell',
+                _key: 'c-4',
+                content: [{ _type: 'span', _key: 's4', text: 'b' }],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    expect(doc.content[0].type).toBe('table')
+    const back = pmDocToBody(doc)
+    expect(back[0]._type).toBe('table')
+    if (back[0]._type !== 'table') {
+      return
+    }
+    expect(back[0].hasHeaderRow).toBe(true)
+    expect(back[0].rows.length).toBe(2)
+    expect(back[0].rows[0].cells[0].isHeader).toBe(true)
+    expect(back[0].rows[1].cells[0].isHeader).toBeUndefined()
+    expect(back[0].rows[0].cells[0].content[0]?.text).toBe('h1')
+    expect(back[0].rows[1].cells[1].content[0]?.text).toBe('b')
+  })
+
+  it('round-trips a table without header row, preserving cell text', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'table',
+        _key: 't-1',
+        rows: [
+          {
+            _type: 'tableRow',
+            _key: 'r-1',
+            cells: [
+              {
+                _type: 'tableCell',
+                _key: 'c-1',
+                content: [{ _type: 'span', _key: 's1', text: 'one' }],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    expect(back[0]._type).toBe('table')
+    if (back[0]._type !== 'table') {
+      return
+    }
+    expect(back[0].hasHeaderRow).toBeUndefined()
+    expect(back[0].rows[0].cells[0].content[0]?.text).toBe('one')
+  })
+
+  it('preserves a link mark def inside a cell while stripping mathInline marks', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'table',
+        _key: 't-1',
+        rows: [
+          {
+            _type: 'tableRow',
+            _key: 'r-1',
+            cells: [
+              {
+                _type: 'tableCell',
+                _key: 'c-1',
+                markDefs: [{ _type: 'link', _key: 'lk-1', href: 'https://yufan.me' }],
+                content: [{ _type: 'span', _key: 's1', text: 'home', marks: ['lk-1'] }],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const back = pmDocToBody(bodyToPmDoc(body))
+    if (back[0]._type !== 'table') {
+      return
+    }
+    const cell = back[0].rows[0].cells[0]
+    expect(cell.markDefs?.length).toBe(1)
+    expect(cell.markDefs?.[0]).toMatchObject({ _type: 'link', href: 'https://yufan.me' })
+  })
 })

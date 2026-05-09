@@ -1,6 +1,24 @@
-import { describe, expect, it } from 'vite-plus/test'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { parseContent } from '@/server/markdown/parser'
+import { mockRedis } from './_helpers/redis'
+
+// Stand-in for the unstorage `storage` export so the parser's
+// Redis-backed cache writes / reads round-trip through an in-memory
+// map. Without this mock the test would still pass (the parser
+// catches Redis errors and renders fresh) but the "LRU hit" case
+// below would no longer verify the cache contract — it would just
+// check that two independent renders happen to produce the same
+// string. We want the cache hit to be observable via referential
+// equality, hence the deterministic in-memory backend.
+const fakeStorage = mockRedis()
+vi.mock('@/server/cache/storage', () => ({
+  storage: fakeStorage,
+  redisInstance: () => fakeStorage,
+}))
+
+const { parseContent } = await import('@/server/markdown/parser')
+const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
+const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
 // Safety net for the comment markdown pipeline. `parseContent` runs on
 // untrusted user input (comments) and on category descriptions, so any
@@ -11,6 +29,11 @@ import { parseContent } from '@/server/markdown/parser'
 // default 5s budget on the first call; subsequent assertions run against the
 // warmed pipeline and are fast.
 describe('services/markdown/parser', () => {
+  beforeEach(() => {
+    setBlogSettingsBundleForTests(TEST_BLOG_SETTINGS_BUNDLE)
+    fakeStorage.reset()
+  })
+
   it('strips <script> tags from user content', { timeout: 30_000 }, async () => {
     const html = await parseContent('hello <script>alert(1)</script> world')
     expect(html.toLowerCase()).not.toContain('<script')
@@ -30,7 +53,7 @@ describe('services/markdown/parser', () => {
     expect(html).not.toContain('target="_blank"')
   })
 
-  it('returns the same rendered HTML on repeated calls (LRU hit)', async () => {
+  it('returns the same rendered HTML on repeated calls (Redis cache hit)', async () => {
     const a = await parseContent('# cache me')
     const b = await parseContent('# cache me')
     expect(b).toBe(a)

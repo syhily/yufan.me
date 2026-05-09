@@ -90,6 +90,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       og: { prefix: 'og-', ttlSeconds: 60 * 60 * 24 * 7 },
       calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 * 24 },
       avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 7 },
+      'image-meta': { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+      'comments-md': { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds

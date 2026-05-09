@@ -232,6 +232,56 @@ export const friendsBlockSchema = z.object({
 })
 export type FriendsBlock = z.infer<typeof friendsBlockSchema>
 
+// --- Table block ------------------------------------------------------------
+
+// Table cells carry inline content only. We deliberately restrict
+// `content` to `spans` (with the standard decorator + link `markDef`
+// allowed) — no nested PT blocks. Reasons:
+//   * Upstream PortableText (and emdash) treat tables this way; the
+//     `@portabletext/react` toolkit doesn't recurse into table cells
+//     either, so keeping cells flat avoids a renderer mismatch.
+//   * Nesting blocks inside cells would require recursive Zod schemas
+//     for cell content + extra round-trip rules in the bridge for
+//     every block type the cell could contain (mathBlock inside a
+//     table is a poor authoring experience anyway).
+//   * The Tiptap editor side stays simple: each cell is a single
+//     `<paragraph>` whose children are the inline runs.
+//
+// `mathInline` and `footnoteRef` mark defs are intentionally **not**
+// projected into table cells — the bridge strips them on PM → PT
+// because the editor cannot reasonably let the operator manage cross-
+// cell footnote registries, and lined formulas inside a cell quickly
+// become unreadable. The standard `link` mark def is still allowed.
+export const tableCellSchema = z.object({
+  _type: z.literal('tableCell'),
+  _key: NON_EMPTY_KEY,
+  /** When true the cell renders as `<th>` instead of `<td>`. */
+  isHeader: z.boolean().optional(),
+  content: z.array(spanSchema),
+  /** Standard `link` markDefs only (mathInline / footnoteRef are
+   *  forbidden in cells; see comment above). */
+  markDefs: z.array(linkMarkDefSchema).optional(),
+})
+export type TableCell = z.infer<typeof tableCellSchema>
+
+export const tableRowSchema = z.object({
+  _type: z.literal('tableRow'),
+  _key: NON_EMPTY_KEY,
+  cells: z.array(tableCellSchema),
+})
+export type TableRow = z.infer<typeof tableRowSchema>
+
+export const tableBlockSchema = z.object({
+  _type: z.literal('table'),
+  _key: NON_EMPTY_KEY,
+  rows: z.array(tableRowSchema),
+  /** First row is rendered as `<thead><th>…` when set. Equivalent to
+   *  setting `isHeader: true` on every cell of `rows[0]` but cheaper
+   *  to project and easier to toggle from the editor's BubbleMenu. */
+  hasHeaderRow: z.boolean().optional(),
+})
+export type TableBlock = z.infer<typeof tableBlockSchema>
+
 // `<Solution>` blockquote-with-flourish (the solutions MDX component).
 // The `children` field is a nested PortableText body (text blocks,
 // images, code, etc.) so the solution can hold the same set of
@@ -272,6 +322,7 @@ export type NonRecursiveBlock =
   | HorizontalRuleBlock
   | MusicPlayerBlock
   | FriendsBlock
+  | TableBlock
 
 const nonRecursiveBlockSchema = z.discriminatedUnion('_type', [
   textBlockSchema,
@@ -282,6 +333,7 @@ const nonRecursiveBlockSchema = z.discriminatedUnion('_type', [
   horizontalRuleBlockSchema,
   musicPlayerBlockSchema,
   friendsBlockSchema,
+  tableBlockSchema,
 ])
 
 export const solutionBlockSchema = z.object({
@@ -312,6 +364,7 @@ export const blockSchema = z.discriminatedUnion('_type', [
   solutionBlockSchema,
   friendsBlockSchema,
   footnoteDefinitionBlockSchema,
+  tableBlockSchema,
 ]) satisfies z.ZodType<Block>
 
 // --- Body --------------------------------------------------------------------
@@ -454,6 +507,14 @@ function pushBlockText(block: Block, out: string[]): void {
   if (block._type === 'image') {
     if (block.alt !== undefined && block.alt !== '') {
       out.push(block.alt)
+    }
+    return
+  }
+  if (block._type === 'table') {
+    for (const row of block.rows) {
+      for (const cell of row.cells) {
+        out.push(cell.content.map((span) => span.text).join(''))
+      }
     }
     return
   }

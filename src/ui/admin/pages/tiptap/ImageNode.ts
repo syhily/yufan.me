@@ -1,4 +1,7 @@
 import Image from '@tiptap/extension-image'
+import { ReactNodeViewRenderer } from '@tiptap/react'
+
+import { ImageNodeView } from '@/ui/admin/pages/tiptap/ImageNodeView'
 
 // PortableText `image` blocks carry richer metadata than the default
 // Tiptap image node: a caption, intrinsic width/height (so the viewer
@@ -9,7 +12,12 @@ import Image from '@tiptap/extension-image'
 // Extending `@tiptap/extension-image` keeps the toolbar / drag-and-drop
 // behaviour the upstream extension provides and only adds attributes;
 // the bridge already projects them in/out of `attrs` round-trippably.
+//
+// The React NodeView (`ImageNodeView`) replaces the bare `<img>` in
+// the editor canvas so the operator can edit alt + caption inline
+// and swap the bytes via the existing image library picker.
 export const ImageNode = Image.extend({
+  draggable: true,
   addAttributes() {
     const parent = this.parent?.() ?? {}
     return {
@@ -47,5 +55,8 @@ export const ImageNode = Image.extend({
       thumbhash: { default: undefined },
       storagePath: { default: undefined },
     }
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageNodeView)
   },
 })
