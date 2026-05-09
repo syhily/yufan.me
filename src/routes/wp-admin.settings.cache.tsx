@@ -1,9 +1,6 @@
-import { useOutletContext } from 'react-router'
-
-import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
-
 import { getAdminCacheStats } from '@/server/cache/admin'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 
 import type { Route } from './+types/wp-admin.settings.cache'
@@ -16,14 +13,18 @@ export function meta({ matches }: Route.MetaArgs) {
 // The snapshot is small (one count per bucket) and the read is
 // independent of the parent layout's settings snapshot, so we don't
 // hoist it into the layout loader. The editable cache slice itself
-// (prefixes / TTLs) does come from the parent layout via outlet
-// context — see the component below.
+// (prefixes / TTLs) is also re-read here — through
+// `requireBlogSettingsSection('cache')` so legacy rows missing newer
+// buckets (e.g. `imageMeta` / `commentsMd`) are transparently filled
+// in by `withCacheFallbacks()`. Going through the outlet's raw
+// `bundle.cache.cache` would skip that safety net and crash the form
+// on a stale-shape DB row before backfill rewrites it.
 export async function loader(_args: Route.LoaderArgs) {
   const stats = await getAdminCacheStats()
-  return { stats }
+  const cache = requireBlogSettingsSection('cache').cache
+  return { stats, cache }
 }
 
 export default function WpAdminSettingsCacheRoute({ loaderData }: Route.ComponentProps) {
-  const { bundle } = useOutletContext<SettingsOutletContext>()
-  return <CacheView stats={loaderData.stats} cache={bundle.cache.cache} />
+  return <CacheView stats={loaderData.stats} cache={loaderData.cache} />
 }

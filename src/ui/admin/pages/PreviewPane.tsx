@@ -81,7 +81,10 @@ export function PreviewPane({ body, debounceMs = 500 }: PreviewPaneProps) {
         {isStale ? <span className="font-mono">渲染中…</span> : null}
         {error !== null ? <span className="text-destructive">{error}</span> : null}
       </div>
-      <div className="prose-blog min-h-0 grow overflow-y-auto" dangerouslySetInnerHTML={{ __html: html }} />
+      <div
+        className="post-content prose-blog prose prose-lg min-h-0 max-w-none grow overflow-y-auto"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </div>
   )
 }

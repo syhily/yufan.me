@@ -670,4 +670,38 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
     expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
   })
+
+  it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
+    // Reproduces the prod crash where a legacy `blog.cache` row stored
+    // before `imageMeta` / `commentsMd` were added passed the old
+    // (object-only) probe, then crashed `<BucketCard>` on
+    // `allBuckets.imageMeta.prefix`. The strengthened probe rejects
+    // the row, the bucket is left null after the SELECT pass, and the
+    // backfill path writes the registry default in its place.
+    const legacyRow: Setting = {
+      id: 99n,
+      scope: 'blog.cache',
+      data: {
+        cache: {
+          og: { prefix: 'og:', ttlSeconds: 3600 },
+          calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
+          avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
+        },
+      } as unknown as Record<string, unknown>,
+      updatedAt: new Date(),
+      updatedBy: null,
+    } as Setting
+    const completeRows = bundleRows(fixtureBundle).filter((row) => row.scope !== 'blog.cache')
+    vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([...completeRows, legacyRow])
+    vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
+
+    const dto = await getAdminBlogSettings()
+
+    expect(dto.bundle).not.toBeNull()
+    const cache = dto.bundle!.cache!.cache
+    expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
+    expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
+    const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
+    expect(upsertCalls.some((call) => call[2] === 'blog.cache')).toBe(true)
+  })
 })
