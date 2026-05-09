@@ -62,6 +62,23 @@ const BUCKET_META = [
   },
 ] as const satisfies readonly { id: CacheBucketId; label: string; description: string }[]
 
+const FALLBACK_BUCKET_SLOTS: Record<CacheBucketId, { prefix: string; ttlSeconds: number }> = {
+  og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
+  calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
+  avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
+  imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+  commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+}
+
+function isCacheSlotLike(value: unknown): value is { prefix: string; ttlSeconds: number } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { prefix?: unknown }).prefix === 'string' &&
+    typeof (value as { ttlSeconds?: unknown }).ttlSeconds === 'number'
+  )
+}
+
 /**
  * Build the bucket list from the live blog-settings snapshot. Reading
  * fresh on every call is intentional — it costs nothing (in-process
@@ -71,7 +88,15 @@ const BUCKET_META = [
 export function getCacheBuckets(): CacheBucket[] {
   const cache = requireBlogSettingsSection('cache').cache
   return BUCKET_META.map((meta) => {
-    const slot = cache[meta.id]
+    const configuredSlot = cache[meta.id]
+    const slot = isCacheSlotLike(configuredSlot) ? configuredSlot : FALLBACK_BUCKET_SLOTS[meta.id]
+    if (!isCacheSlotLike(configuredSlot)) {
+      log.warn('Cache bucket settings slot missing or invalid; fallback applied', {
+        bucket: meta.id,
+        fallbackPrefix: slot.prefix,
+        fallbackTtlSeconds: slot.ttlSeconds,
+      })
+    }
     return {
       id: meta.id,
       label: meta.label,
