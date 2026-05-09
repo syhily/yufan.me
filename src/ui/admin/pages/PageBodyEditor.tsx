@@ -564,7 +564,9 @@ export function PageBodyEditor({
     <div className="relative flex min-h-0 w-full min-w-0 flex-1 flex-col rounded-md border bg-card">
       {livePreviewOpen ? (
         <>
-          <div className="shrink-0 border-b bg-card">
+          {/* Sticks to the top of the wp-admin `<main>` scrollport; canvas
+              scrolls in the sibling below. */}
+          <div className="sticky top-0 z-20 shrink-0 border-b bg-card">
             <Toolbar {...toolbarProps} />
           </div>
           {/* Bottom padding (`pb-[60vh]`) gives the operator a generous

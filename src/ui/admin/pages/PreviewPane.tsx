@@ -67,7 +67,7 @@ export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
   const fullUrl = trimmedSlug === '' ? `${siteOrigin}/` : `${siteOrigin}/${trimmedSlug}`
 
   return (
-    <div className="flex min-h-0 flex-col gap-2 rounded-md border bg-card p-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 rounded-md border bg-card p-3">
       <div className="flex flex-col gap-1 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
           <span>实时预览</span>

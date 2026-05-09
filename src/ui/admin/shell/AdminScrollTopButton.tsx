@@ -1,18 +1,24 @@
+import type { RefObject } from 'react'
+
 import { ArrowUpIcon } from 'lucide-react'
 
 import { useShowOnScroll } from '@/client/hooks/use-show-on-scroll'
 import { Button } from '@/ui/components/ui/button'
 import { cn } from '@/ui/lib/cn'
 
+export interface AdminScrollTopButtonProps {
+  /** When set (live preview / focus mode), depth is read from `<main>` instead of `window`. */
+  scrollRootRef?: RefObject<HTMLElement | null>
+}
+
 // Floating "back to top" button for the wp-admin SPA. Mirrors the public
 // site's `ScrollTopButton` but is rebuilt on shadcn primitives so it
 // stays Bootstrap-free (the wp-admin chunk does not load `public.css`).
 //
-// Visibility is gated on `window.scrollY > 300` via the shared
-// `useShowOnScroll` hook so both the public and admin widgets stay
-// lockstep on identical scroll thresholds and rAF throttling.
-export function AdminScrollTopButton() {
-  const show = useShowOnScroll()
+// Visibility follows `window` by default, or the wp-admin `<main>`
+// scrollport when `scrollRootRef` is passed (live preview focus mode).
+export function AdminScrollTopButton({ scrollRootRef }: AdminScrollTopButtonProps) {
+  const show = useShowOnScroll(300, scrollRootRef)
 
   return (
     <Button
@@ -29,7 +35,14 @@ export function AdminScrollTopButton() {
       variant="ghost"
       size="icon"
       aria-label="回到顶部"
-      onClick={() => window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })}
+      onClick={() => {
+        const main = scrollRootRef?.current
+        if (main) {
+          main.scrollTo({ top: 0, behavior: 'smooth' })
+        } else {
+          window.scrollTo({ left: 0, top: 0, behavior: 'smooth' })
+        }
+      }}
       className={cn(
         'fixed right-4 bottom-4 z-40 lg:right-6 lg:bottom-6',
         // 44×44 (2.75rem) matches `.btn-icon.btn-lg`, fully rounded

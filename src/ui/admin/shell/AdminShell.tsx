@@ -12,7 +12,16 @@ import {
   TagsIcon,
   UsersIcon,
 } from 'lucide-react'
-import { createContext, type ComponentType, type ReactNode, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  type ComponentType,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Form, NavLink, useLocation } from 'react-router'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
@@ -170,12 +179,27 @@ export function useAdminChromeFocus(active: boolean): void {
 export function AdminShell({ currentUser, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [focused, setFocused] = useState(false)
+  const mainScrollRef = useRef<HTMLElement | null>(null)
   const chromeValue = useMemo<AdminChromeContextValue>(() => ({ focused, setFocused }), [focused])
 
   return (
     <AdminChromeContext.Provider value={chromeValue}>
-      <div className="flex min-h-screen flex-col bg-background text-foreground">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-card px-4 lg:px-6">
+      <div
+        className={cn(
+          'flex flex-col bg-background text-foreground',
+          // Viewport lock + `<main>` scroll only while the page editor is in
+          // focus mode (live preview). Other admin routes keep the relaxed
+          // `min-h-screen` document flow so list pages and the non-preview
+          // editor do not look cramped.
+          focused ? 'h-dvh max-h-dvh min-h-0 overflow-hidden' : 'min-h-screen',
+        )}
+      >
+        <header
+          className={cn(
+            'z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4 lg:px-6',
+            !focused && 'sticky top-0',
+          )}
+        >
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
@@ -240,36 +264,31 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
           <div className="flex-1" />
           <UserMenu id={currentUser.id} name={currentUser.name} email={currentUser.email} />
         </header>
-        <div className="flex min-h-0 flex-1">
-          {/* Pin the desktop nav under the sticky 56px (`h-14`) header so
-            it stays visible while the main column scrolls. `sticky +
-            top-14` (instead of position:fixed) keeps the layout flow
-            intact, so the right-hand `<main>` still gets its natural
-            width without an extra margin offset. `h-[calc(100vh-3.5rem)]`
-            caps the aside to the visible area beneath the header so its
-            own `overflow-y-auto` kicks in for tall menus. `z-20` keeps
-            the aside under the `z-30` header but above page chrome. */}
+        <div className={cn('flex min-h-0 flex-1', focused && 'overflow-hidden')}>
           <aside
             className={cn(
-              'sticky top-14 z-20 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 flex-col self-start overflow-y-auto border-r bg-sidebar py-4 text-sidebar-foreground lg:flex',
-              // Focus mode hides the desktop nav rail. The mobile
-              // `Sheet` trigger above stays available so operators on
-              // small screens can still navigate, and the unmount
-              // cleanup in `useAdminChromeFocus` flips this back the
-              // moment they leave the editor.
+              'z-20 hidden w-60 shrink-0 flex-col overflow-y-auto border-r bg-sidebar py-4 text-sidebar-foreground lg:flex',
+              focused ? 'min-h-0' : 'sticky top-14 h-[calc(100vh-3.5rem)] self-start',
               focused && 'lg:hidden',
             )}
           >
             <NavList />
           </aside>
-          <main className="min-w-0 flex-1 overflow-x-hidden">
-            {/* Focus mode drops the centred max-width container so
-              child routes (currently the page editor) can use the
-              full viewport width for their multi-pane layouts. */}
-            <div className={cn(focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-7xl p-4 lg:p-6')}>{children}</div>
+          <main
+            ref={mainScrollRef}
+            className={cn('flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden', focused && 'overflow-y-auto')}
+          >
+            <div
+              className={cn(
+                focused && 'flex min-h-0 flex-1 flex-col',
+                focused ? 'w-full p-2 lg:p-4' : 'mx-auto w-full max-w-7xl p-4 lg:p-6',
+              )}
+            >
+              {children}
+            </div>
           </main>
         </div>
-        <AdminScrollTopButton />
+        <AdminScrollTopButton {...(focused ? { scrollRootRef: mainScrollRef } : {})} />
       </div>
     </AdminChromeContext.Provider>
   )

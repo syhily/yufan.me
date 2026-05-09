@@ -888,7 +888,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   }, [status, isEditing, isBodyDirty, isMetaDirty, displaySaveAtMs])
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 p-4">
+    <div className={cn('flex flex-col gap-4 p-4', previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]')}>
       {/* Single wrapping toolbar. 返回列表 leads, every other control
           flows after it on the same row, and the whole strip wraps
           flush-left on narrower viewports. The page identity (title +
@@ -1020,7 +1020,8 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
        *  always one click on the toolbar's 元数据 button. */}
       <div
         className={cn(
-          'grid min-h-0 grow gap-4',
+          'grid min-h-0 gap-4',
+          previewOpen ? 'flex-1' : 'grow',
           !previewOpen && metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
           !previewOpen && !metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
           previewOpen && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
@@ -1052,7 +1053,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
           />
         </div>
         {previewOpen ? (
-          <section aria-label="实时预览" className="flex min-h-0 flex-col">
+          <section aria-label="实时预览" className="flex min-h-0 min-w-0 flex-1 flex-col">
             <PreviewPane
               body={body}
               title={meta.title}
