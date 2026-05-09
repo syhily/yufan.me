@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { PortableTextBody } from '@/shared/portable-text'
 
-import { bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
+import { arePortableTextBodiesEquivalent, bodyToPmDoc, pmDocToBody } from '@/shared/pt-bridge'
 
 // PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
 // the canonical shape (validated by the API perimeter); ProseMirror is
@@ -351,6 +351,45 @@ describe('contract: pt-bridge — nested lists', () => {
     const back = pmDocToBody(doc)
     expect(back.map((b) => (b._type === 'block' ? b.listItem : null))).toEqual(['bullet', 'number', 'number'])
     expect(back.map((b) => (b._type === 'block' ? b.level : null))).toEqual([1, 2, 2])
+  })
+
+  it('treats implicit level=1 and explicit level=1 as equivalent for mixed lists', () => {
+    const implicitTopLevel: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'a',
+        style: 'normal',
+        listItem: 'bullet',
+        children: [{ _type: 'span', _key: 's1', text: 'parent' }],
+      },
+      {
+        _type: 'block',
+        _key: 'b',
+        style: 'normal',
+        listItem: 'number',
+        level: 2,
+        children: [{ _type: 'span', _key: 's2', text: 'sub-1' }],
+      },
+    ]
+    const explicitTopLevel: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'a',
+        style: 'normal',
+        listItem: 'bullet',
+        level: 1,
+        children: [{ _type: 'span', _key: 's1', text: 'parent' }],
+      },
+      {
+        _type: 'block',
+        _key: 'b',
+        style: 'normal',
+        listItem: 'number',
+        level: 2,
+        children: [{ _type: 'span', _key: 's2', text: 'sub-1' }],
+      },
+    ]
+    expect(arePortableTextBodiesEquivalent(implicitTopLevel, explicitTopLevel)).toBe(true)
   })
 })
 

@@ -34,6 +34,7 @@ import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt-bridge'
 import { DraftConflictDialog } from '@/ui/admin/pages/DraftConflictDialog'
 import {
   EMPTY_META_DRAFT,
@@ -205,10 +206,9 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     if (loadedDraft === null) {
       return
     }
-    // Compare structurally — same `JSON.stringify` semantics as the
-    // diff resolver so the "they're equal" branch matches the
-    // resolver's notion of equality.
-    if (JSON.stringify(loadedDraft.body) === JSON.stringify(initialBody)) {
+    // Compare on canonical PT shape so semantically equivalent list
+    // bodies (e.g. mixed-list representations) do not false-positive.
+    if (arePortableTextBodiesEquivalent(loadedDraft.body, initialBody)) {
       return
     }
     setConflict({ localBody: loadedDraft.body, localSavedAt: loadedDraft.savedAt })

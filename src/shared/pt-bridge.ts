@@ -373,6 +373,28 @@ export function pmDocToBody(doc: PmDoc): PortableTextBody {
   return out
 }
 
+/**
+ * Canonicalise a PortableText body through the PT↔PM bridge.
+ *
+ * This collapses representational differences that are semantically
+ * equivalent in the editor/runtime (for example list `level` omitted
+ * vs. explicit `level: 1`, or mixed-list nesting expressed through
+ * different intermediate PM trees).
+ */
+export function canonicalizePortableTextBody(body: PortableTextBody): PortableTextBody {
+  return pmDocToBody(bodyToPmDoc(body))
+}
+
+/**
+ * Semantic equality helper for conflict detection / "dirty" checks.
+ *
+ * Uses canonical PT forms so equivalent list shapes do not trigger
+ * false-positive "content mismatch" prompts.
+ */
+export function arePortableTextBodiesEquivalent(left: PortableTextBody, right: PortableTextBody): boolean {
+  return JSON.stringify(canonicalizePortableTextBody(left)) === JSON.stringify(canonicalizePortableTextBody(right))
+}
+
 function pushPmNode(
   out: Block[],
   node: PmNode,
