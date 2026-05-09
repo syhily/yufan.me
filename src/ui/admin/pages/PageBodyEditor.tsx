@@ -16,8 +16,11 @@ import {
   LinkIcon,
   ListIcon,
   ListOrderedIcon,
+  MaximizeIcon,
+  MinimizeIcon,
   MinusIcon,
   Music2Icon,
+  PlusIcon,
   Redo2Icon,
   StrikethroughIcon,
   TableIcon,
@@ -43,6 +46,7 @@ import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/pages/tiptap/InlineM
 import { SlashCommandsExtension } from '@/ui/admin/pages/tiptap/SlashMenu'
 import { TableBubbleMenu } from '@/ui/admin/pages/tiptap/TableBubbleMenu'
 import { Button } from '@/ui/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
 import { Separator } from '@/ui/components/ui/separator'
 import { cn } from '@/ui/lib/cn'
@@ -67,8 +71,8 @@ export interface PageBodyEditorProps {
 // headings / blockquote / lists / inline marks / fenced code /
 // horizontal rule / link / table) is handled by Tiptap extensions;
 // custom block types (musicPlayer, mathBlock, mermaid, solution,
-// friends, footnoteDefinition) round-trip through the generic
-// `blockCard` PM node defined by `pt-bridge`.
+// footnoteDefinition) round-trip through the generic `blockCard`
+// PM node defined by `pt-bridge`.
 //
 // The user-facing surface area lives in three layers:
 //   * **Toolbar** (this file): mouse-friendly slim row at the top
@@ -177,6 +181,16 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
   // turned off so QA can verify keyboard interactions in isolation.
   const [dragHandleEnabled, setDragHandleEnabled] = useState(true)
 
+  // Toolbar density. `'auto'` lets a CSS @container query at the
+  // editor frame decide compact vs full based on the editor pane's
+  // own width — which is the right axis (preview / metadata sheet
+  // toggles narrow the editor, viewport doesn't). The two explicit
+  // overrides (`'compact'` / `'full'`) give the operator a manual
+  // pin that survives navigations via localStorage. The auto path
+  // is the default because most users never want to think about
+  // this knob.
+  const [toolbarDensity, setToolbarDensity] = useToolbarDensityPreference()
+
   const insertImage = useCallback(
     (image: import('@/shared/images').AdminImageDto) => {
       if (editor === null) {
@@ -234,6 +248,8 @@ export function PageBodyEditor({ initialBody, bodyKey, onBodyChange, disabled }:
         disabled={disabled}
         dragHandleEnabled={dragHandleEnabled}
         onToggleDragHandle={() => setDragHandleEnabled((on) => !on)}
+        density={toolbarDensity}
+        onDensityChange={setToolbarDensity}
         onPickImage={insertImage}
         onPickMusic={insertMusic}
         registerImageOpener={(open) => {
@@ -271,6 +287,8 @@ interface ToolbarProps {
   disabled?: boolean
   dragHandleEnabled: boolean
   onToggleDragHandle: () => void
+  density: ToolbarDensity
+  onDensityChange: (next: ToolbarDensity) => void
   onPickImage: (image: import('@/shared/images').AdminImageDto) => void
   onPickMusic: (music: import('@/shared/music').AdminMusicDto) => void
   registerImageOpener: (open: () => void) => void
@@ -285,7 +303,7 @@ interface ToolbarProps {
 //   3. Inline marks — bold / italic / underline / strike / inline code.
 //   4. Lists — bullet / ordered.
 //   5. Inserts — image / music / table / link / hr.
-//   6. Editor toggles — drag handle.
+//   6. Editor toggles — drag handle, density.
 // Wrapping rules: the outer container is `flex flex-wrap` so the
 // toolbar grows to a second / third row when a row can no longer
 // fit. Each `ToolbarGroup` is itself `flex flex-nowrap` and carries
@@ -294,13 +312,98 @@ interface ToolbarProps {
 // sibling and a separator never floats to the start of a new row.
 // `gap-y-1` keeps the row rhythm tight even with two or three rows
 // of buttons.
+//
+// Density modes:
+// - 'full' (manual): every group renders inline.
+// - 'compact' (manual): the Inserts group collapses into a single
+//   「插入 ▼」Popover whose body carries the SAME buttons. Saves
+//   ~5 button-widths and dodges a wrap row when the editor pane is
+//   squeezed by preview / metadata sheet toggles.
+// - 'auto' (the default): a `ResizeObserver` watches the toolbar
+//   wrapper and switches to compact below `TOOLBAR_COMPACT_THRESHOLD`,
+//   reverts to full above. The observer is debounced via the browser's
+//   batching, so the only React re-render happens on the threshold
+//   crossing — not on every pixel of resize.
+//
+// The picker triggers (image / music) own their own picker dialogs,
+// so we MUST mount the inserts buttons exactly once per render to
+// avoid duplicate dialog state. That's why we resolve the
+// `effectiveDensity` first and pick a single branch, instead of
+// rendering both branches and toggling visibility with CSS.
+//
 // The slash menu (`/`) and bubble menu still cover the same surface
 // for keyboard-first authoring; the toolbar exists so the editor
 // looks self-evidently capable on first open.
+const TOOLBAR_COMPACT_THRESHOLD = 720
+
 function Toolbar(props: ToolbarProps) {
-  const { editor, disabled } = props
+  const { editor, disabled, density } = props
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const [autoCompact, setAutoCompact] = useState(false)
+  useEffect(() => {
+    if (density !== 'auto' || wrapperRef.current === null || typeof ResizeObserver === 'undefined') {
+      return
+    }
+    const el = wrapperRef.current
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry === undefined) {
+        return
+      }
+      // Use `contentBoxSize` when available (consistent across
+      // browsers), fall back to `contentRect.width` for Safari.
+      const width = entry.contentBoxSize?.[0]?.inlineSize ?? entry.contentRect.width
+      setAutoCompact(width < TOOLBAR_COMPACT_THRESHOLD)
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [density])
+
+  const effectiveDensity: 'compact' | 'full' =
+    density === 'compact' ? 'compact' : density === 'full' ? 'full' : autoCompact ? 'compact' : 'full'
+
+  const insertButtons = (
+    <>
+      <ImageLibraryTrigger disabled={disabled} onPick={props.onPickImage} registerOpener={props.registerImageOpener} />
+      <MusicPickerTrigger disabled={disabled} onPick={props.onPickMusic} registerOpener={props.registerMusicOpener} />
+      <ToolbarButton
+        title="插入表格 (3×3 含表头)"
+        disabled={disabled}
+        onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+      >
+        <TableIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        title="链接（在浮动菜单中编辑）"
+        disabled={disabled}
+        active={editor.isActive('link')}
+        onClick={() => {
+          // The BubbleMenu's link popover handles authoring + edit;
+          // here we just nudge the selection so the BubbleMenu has
+          // something to anchor to. If the cursor is inside an
+          // existing link mark, extend the range so the popover
+          // initialises with the current href.
+          if (editor.isActive('link')) {
+            editor.chain().focus().extendMarkRange('link').run()
+          } else {
+            editor.chain().focus().run()
+          }
+        }}
+      >
+        <LinkIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        title="水平分隔线"
+        disabled={disabled}
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+      >
+        <MinusIcon />
+      </ToolbarButton>
+    </>
+  )
+
   return (
-    <div className="flex flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
+    <div ref={wrapperRef} className="flex flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2">
       <ToolbarGroup>
         <ToolbarButton
           title="撤销 (Cmd/Ctrl+Z)"
@@ -380,47 +483,35 @@ function Toolbar(props: ToolbarProps) {
           <ListOrderedIcon />
         </ToolbarButton>
       </ToolbarGroup>
-      <ToolbarGroup>
-        <ImageLibraryTrigger
-          disabled={disabled}
-          onPick={props.onPickImage}
-          registerOpener={props.registerImageOpener}
-        />
-        <MusicPickerTrigger disabled={disabled} onPick={props.onPickMusic} registerOpener={props.registerMusicOpener} />
-        <ToolbarButton
-          title="插入表格 (3×3 含表头)"
-          disabled={disabled}
-          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-        >
-          <TableIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="链接（在浮动菜单中编辑）"
-          disabled={disabled}
-          active={editor.isActive('link')}
-          onClick={() => {
-            // The BubbleMenu's link popover handles authoring + edit;
-            // here we just nudge the selection so the BubbleMenu has
-            // something to anchor to. If the cursor is inside an
-            // existing link mark, extend the range so the popover
-            // initialises with the current href.
-            if (editor.isActive('link')) {
-              editor.chain().focus().extendMarkRange('link').run()
-            } else {
-              editor.chain().focus().run()
-            }
-          }}
-        >
-          <LinkIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="水平分隔线"
-          disabled={disabled}
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        >
-          <MinusIcon />
-        </ToolbarButton>
-      </ToolbarGroup>
+      {/* Inserts: rendered as either an inline group (full mode) or
+          a 「插入」Popover (compact mode). Single-mount so the
+          picker triggers don't end up with two `<ImageLibraryPicker>`
+          dialogs in the tree. */}
+      {effectiveDensity === 'full' ? (
+        <ToolbarGroup>{insertButtons}</ToolbarGroup>
+      ) : (
+        <ToolbarGroup>
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={disabled}
+                  title="插入图片 / 音乐 / 表格 / 链接 / 分隔线"
+                  aria-label="插入元素"
+                >
+                  <PlusIcon /> 插入
+                </Button>
+              }
+            />
+            <PopoverContent align="start" sideOffset={6} className="w-auto p-1">
+              <div className="flex flex-wrap items-center gap-0.5">{insertButtons}</div>
+            </PopoverContent>
+          </Popover>
+        </ToolbarGroup>
+      )}
       <ToolbarGroup hideTrailingSeparator>
         <ToolbarButton
           title={props.dragHandleEnabled ? '关闭拖拽手柄' : '开启拖拽手柄'}
@@ -430,6 +521,7 @@ function Toolbar(props: ToolbarProps) {
         >
           <GripVerticalIcon />
         </ToolbarButton>
+        <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
       </ToolbarGroup>
     </div>
   )
@@ -446,16 +538,94 @@ interface ToolbarGroupProps {
    * leaving a separator marooned at row start or row end.
    */
   hideTrailingSeparator?: boolean
+  /**
+   * Extra classes — used by the Toolbar to flip a group between
+   * inline (`flex`) and hidden (`hidden`) variants for the
+   * full / compact density swap. The default `flex` is overridden
+   * if the caller provides `flex` or `hidden` of their own.
+   */
+  className?: string
 }
 
-function ToolbarGroup({ children, hideTrailingSeparator }: ToolbarGroupProps) {
+function ToolbarGroup({ children, hideTrailingSeparator, className }: ToolbarGroupProps) {
   return (
-    <div className="flex flex-nowrap items-center gap-0.5">
+    <div className={cn('flex flex-nowrap items-center gap-0.5', className)}>
       {children}
       {hideTrailingSeparator !== true ? (
         <Separator orientation="vertical" className="mx-1 h-6" aria-hidden="true" />
       ) : null}
     </div>
+  )
+}
+
+export type ToolbarDensity = 'auto' | 'compact' | 'full'
+
+const TOOLBAR_DENSITY_STORAGE_KEY = 'yufan.me/admin/page-editor/toolbar-density'
+
+// Persistent toolbar density preference. Defaults to `'auto'` so a
+// fresh visit lets the @container query make the call. Wrapped in
+// `useState` + a `useEffect` write because we need lazy SSR-safe
+// initialisation; reading localStorage synchronously inside the
+// initialiser would crash during hydration if the value type drifts
+// — the guard inside `readDensity` covers that.
+function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
+  const [density, setDensityState] = useState<ToolbarDensity>('auto')
+  useEffect(() => {
+    setDensityState(readDensity())
+  }, [])
+  const setDensity = useCallback((next: ToolbarDensity) => {
+    setDensityState(next)
+    if (typeof window === 'undefined') {
+      return
+    }
+    try {
+      window.localStorage.setItem(TOOLBAR_DENSITY_STORAGE_KEY, next)
+    } catch {
+      // localStorage may throw in private mode / quota-exceeded; the
+      // preference is best-effort, so silently move on.
+    }
+  }, [])
+  return [density, setDensity]
+}
+
+function readDensity(): ToolbarDensity {
+  if (typeof window === 'undefined') {
+    return 'auto'
+  }
+  try {
+    const raw = window.localStorage.getItem(TOOLBAR_DENSITY_STORAGE_KEY)
+    if (raw === 'compact' || raw === 'full' || raw === 'auto') {
+      return raw
+    }
+  } catch {
+    // ignore — return the safe default.
+  }
+  return 'auto'
+}
+
+interface DensityToggleButtonProps {
+  density: ToolbarDensity
+  onChange: (next: ToolbarDensity) => void
+  disabled?: boolean
+}
+
+// Three-state cycle: auto → full → compact → auto …
+// `auto` is the recommended state so we surface it as the default
+// label. The icon flips to MaximizeIcon when the user has pinned
+// to full and MinimizeIcon when pinned to compact.
+function DensityToggleButton({ density, onChange, disabled }: DensityToggleButtonProps) {
+  const next: ToolbarDensity = density === 'auto' ? 'full' : density === 'full' ? 'compact' : 'auto'
+  const title =
+    density === 'auto'
+      ? '工具栏密度：自动 (点击切到 完整)'
+      : density === 'full'
+        ? '工具栏密度：完整 (点击切到 精简)'
+        : '工具栏密度：精简 (点击切到 自动)'
+  const Icon = density === 'compact' ? MinimizeIcon : MaximizeIcon
+  return (
+    <ToolbarButton title={title} active={density !== 'auto'} disabled={disabled} onClick={() => onChange(next)}>
+      <Icon />
+    </ToolbarButton>
   )
 }
 

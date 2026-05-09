@@ -30,8 +30,8 @@ import type {
 //      horizontalRule) `bodyToPmDoc(pmDocToBody(x))` MUST equal `x`.
 //      This guarantee is asserted by `tests/contract.pt-bridge.test.ts`.
 //   2. **Custom blocks pass through opaquely.** musicPlayer / solution
-//      / mathBlock / mermaid / friends / footnoteDefinition map to a
-//      PM "block-card" node that carries the original PT block in its
+//      / mathBlock / mermaid / footnoteDefinition map to a PM
+//      "block-card" node that carries the original PT block in its
 //      `attrs.payload`. The Tiptap render hooks unpack `payload`; the
 //      reverse path simply re-serialises it. No edit operation ever
 //      mutates `payload` mid-flight, so the round trip stays clean even

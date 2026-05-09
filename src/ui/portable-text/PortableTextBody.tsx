@@ -4,14 +4,13 @@ import {
   type PortableTextMarkComponentProps,
   type PortableTextTypeComponentProps,
 } from '@portabletext/react'
+import GithubSlugger from 'github-slugger'
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 
-import type { Friend } from '@/shared/catalog'
 import type {
   CodeBlock,
   FootnoteDefinitionBlock,
   FootnoteRefMarkDef,
-  FriendsBlock,
   HorizontalRuleBlock,
   ImageBlock,
   LinkMarkDef,
@@ -31,7 +30,6 @@ import { FootnoteProvider } from '@/ui/mdx/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/mdx/image-meta-context'
 import { MdxImg } from '@/ui/mdx/MdxImg'
 import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
-import { Friends } from '@/ui/mdx/page/Friends'
 import { Solution } from '@/ui/mdx/solutions/Solution'
 
 // SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
@@ -39,7 +37,7 @@ import { Solution } from '@/ui/mdx/solutions/Solution'
 // pipeline (including consecutive list-item folding) is delegated to the
 // official toolkit, while every yufan.me-specific block / mark
 // (`image`, `code`, `mathBlock`, `mermaid`, `horizontalRule`,
-// `musicPlayer`, `solution`, `friends`, `footnoteDefinition`, `table`,
+// `musicPlayer`, `solution`, `footnoteDefinition`, `table`,
 // plus `mathInline` / `footnoteRef` mark defs) is handled by an
 // inline component declared in this file.
 //
@@ -59,51 +57,78 @@ import { Solution } from '@/ui/mdx/solutions/Solution'
 
 export interface PortableTextBodyProps {
   body: PortableTextBodyType
-  /** Loader-supplied friends list, consumed by `friends` blocks. */
-  friends?: readonly Friend[]
   /** Optional thumbhash hydration map. Mirrors the MDX `<PageBody>` prop. */
   imageMeta?: ImageMetaMap
+  /**
+   * Precomputed heading anchor IDs, in the order this body's heading
+   * blocks appear. SSR loaders pass `collectHeadings(body, deriveSlug)
+   * .map(h => h.slug)` so anchors line up with the canonical pinyin
+   * pipeline (and stay byte-identical to the MDX `rehype-slug` output
+   * for ASCII headings).
+   *
+   * When omitted (e.g. editor live-preview before the
+   * server round-trip), the renderer falls back to a local
+   * `github-slugger` pass over the raw text — the anchor still
+   * disambiguates duplicates, but Han-only headings degrade to the
+   * historical CJK-as-is slug instead of pinyin. The full SSR path
+   * always supplies this prop, so the fallback is editor-only.
+   */
+  headingSlugs?: readonly string[]
 }
 
-// React context fan-out for friends + footnotes. Every renderer component
-// reads what it needs through these contexts instead of the previous
-// "RenderCtx" prop drilling, which doesn't compose with the
+// React context fan-out for footnote definitions. Every renderer
+// component reads what it needs through this context instead of the
+// previous "RenderCtx" prop drilling, which doesn't compose with the
 // `@portabletext/react` component map (the library only passes the
 // node + its index to each component).
-
-interface FriendsCtx {
-  friends: readonly Friend[]
-}
-const FriendsContext = createContext<FriendsCtx>({ friends: [] })
 
 interface FootnoteRefCtx {
   definitions: ReadonlyMap<string, FootnoteDefinitionBlock>
 }
 const FootnoteRefContext = createContext<FootnoteRefCtx>({ definitions: new Map() })
 
-// Heading anchor IDs disambiguate against earlier headings in the same
-// body. We track that through a context whose value is mutated as the
-// renderer walks blocks — the alternative (computing slugs upfront via
-// `collectHeadings` then keying into them) would require knowing the
-// block index at render time, which `@portabletext/react` does pass
-// (`PortableTextComponentProps.index`), but a stateful tracker keeps
-// the API surface smaller and matches GitHub-slugger semantics that
-// rehype-slug uses on the historical MDX path.
-interface HeadingIndexCtx {
-  index: Map<string, number>
+// Heading anchor IDs come from one of two channels:
+//
+//   1. **Precomputed** (preferred). The SSR loader runs
+//      `collectHeadings(body, deriveSlug)` and threads the slug
+//      list down via the `headingSlugs` prop. The heading
+//      components consume the next slug from a per-render cursor.
+//      This is the only path that yields pinyin-pro-aware anchors
+//      for Han-text headings, because `pinyin-pro` is a server-only
+//      dependency (the bundle is too heavy for the client).
+//   2. **Local fallback**. When `headingSlugs` is absent (editor
+//      live-preview, snapshot tests with bare bodies), we run a
+//      local `github-slugger` over the raw text. CJK headings keep
+//      their historical (CJK-as-is) slug, ASCII headings stay
+//      byte-identical with the SSR path.
+//
+// Either way the cursor / slugger is reset per render via the
+// `body` identity dependency.
+interface HeadingAnchorCtx {
+  precomputed: readonly string[] | undefined
+  cursor: { i: number }
+  fallback: GithubSlugger
 }
-const HeadingIndexContext = createContext<HeadingIndexCtx>({ index: new Map() })
+const HeadingAnchorContext = createContext<HeadingAnchorCtx>({
+  precomputed: undefined,
+  cursor: { i: 0 },
+  fallback: new GithubSlugger(),
+})
 
-export function PortableTextBody({ body, friends, imageMeta }: PortableTextBodyProps) {
-  const friendsCtx = useMemo<FriendsCtx>(() => ({ friends: friends ?? [] }), [friends])
+export function PortableTextBody({ body, imageMeta, headingSlugs }: PortableTextBodyProps) {
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
-  // A fresh heading-index map per render so anchor ids are stable
-  // across renders that share the same body. The map is identity-
-  // bound to the `body` value, so listing it as a dependency is
-  // intentional even though we don't read from it inside the
-  // initializer.
-  // oxlint-disable-next-line exhaustive-deps
-  const headingCtx = useMemo<HeadingIndexCtx>(() => ({ index: new Map() }), [body])
+  // Reset cursor + slugger whenever the body OR the precomputed
+  // slug list changes. The cursor / slugger are stateful by design
+  // (each heading consumes one entry / runs `slug()` once), so we
+  // need a fresh instance per render to keep anchors stable across
+  // re-renders of the same body. We list `body` explicitly even
+  // though we don't read it inside the initialiser — its identity
+  // change is the trigger we want.
+  const headingCtx = useMemo<HeadingAnchorCtx>(
+    () => ({ precomputed: headingSlugs, cursor: { i: 0 }, fallback: new GithubSlugger() }),
+    // oxlint-disable-next-line exhaustive-deps
+    [body, headingSlugs],
+  )
 
   // Footnote definitions (block type `footnoteDefinition`) are
   // rendered together at the bottom of the body — never inline —
@@ -117,16 +142,14 @@ export function PortableTextBody({ body, friends, imageMeta }: PortableTextBodyP
   return (
     <ImageMetaProvider value={imageMeta}>
       <FootnoteProvider>
-        <FriendsContext.Provider value={friendsCtx}>
-          <FootnoteRefContext.Provider value={footnoteCtx}>
-            <HeadingIndexContext.Provider value={headingCtx}>
-              <div className="portable-text-body">
-                <PortableText value={inlineBody as never} components={portableTextComponents} />
-                {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} /> : null}
-              </div>
-            </HeadingIndexContext.Provider>
-          </FootnoteRefContext.Provider>
-        </FriendsContext.Provider>
+        <FootnoteRefContext.Provider value={footnoteCtx}>
+          <HeadingAnchorContext.Provider value={headingCtx}>
+            <div className="portable-text-body">
+              <PortableText value={inlineBody as never} components={portableTextComponents} />
+              {footnotes.length > 0 ? <FootnotesSection definitions={footnotes} /> : null}
+            </div>
+          </HeadingAnchorContext.Provider>
+        </FootnoteRefContext.Provider>
       </FootnoteProvider>
     </ImageMetaProvider>
   )
@@ -146,20 +169,22 @@ function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, Foo
   return out
 }
 
-function anchorIdFor(text: string, index: Map<string, number>): string {
-  // Slug = lowercase alphanumerics + dashes. Mirrors `github-slugger`'s
-  // behaviour (used by `collectHeadings`) but only as a fallback —
-  // ideally the upstream loader passes a pre-computed slug map.
-  const base = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  if (base === '') {
-    return ''
+// Resolve a heading anchor id. Reads from the cursor when SSR
+// supplied a precomputed slug list (the canonical pinyin pipeline);
+// falls back to a local `github-slugger` over the raw text when the
+// list is absent (editor preview before round-tripping through the
+// server). A stale cursor (more headings rendered than the loader
+// declared) silently degrades to the fallback so a mid-edit body
+// with an extra heading still renders.
+function anchorIdFor(text: string, ctx: HeadingAnchorCtx): string {
+  if (ctx.precomputed !== undefined) {
+    const slug = ctx.precomputed[ctx.cursor.i]
+    ctx.cursor.i += 1
+    if (typeof slug === 'string' && slug.length > 0) {
+      return slug
+    }
   }
-  const seen = index.get(base) ?? 0
-  index.set(base, seen + 1)
-  return seen === 0 ? base : `${base}-${seen}`
+  return ctx.fallback.slug(text)
 }
 
 function nodeText(node: ReactNode): string {
@@ -188,23 +213,23 @@ function nodeText(node: ReactNode): string {
 // ---------------------------------------------------------------------------
 
 function Heading1({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingIndexContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  const ctx = useContext(HeadingAnchorContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx)
   return <h1 id={id}>{children}</h1>
 }
 function Heading2({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingIndexContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  const ctx = useContext(HeadingAnchorContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx)
   return <h2 id={id}>{children}</h2>
 }
 function Heading3({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingIndexContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  const ctx = useContext(HeadingAnchorContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx)
   return <h3 id={id}>{children}</h3>
 }
 function Heading4({ children }: { children: ReactNode }) {
-  const ctx = useContext(HeadingIndexContext)
-  const id = anchorIdFor(nodeText(children).trim(), ctx.index)
+  const ctx = useContext(HeadingAnchorContext)
+  const id = anchorIdFor(nodeText(children).trim(), ctx)
   return <h4 id={id}>{children}</h4>
 }
 function ParagraphBlock({ children }: { children: ReactNode }) {
@@ -255,7 +280,6 @@ const portableTextComponents: PortableTextComponents = {
     horizontalRule: HorizontalRuleComponent,
     musicPlayer: MusicPlayerComponent,
     solution: SolutionBlockComponent,
-    friends: FriendsBlockComponent,
     table: TableBlockComponent,
   },
   hardBreak: () => <br />,
@@ -394,11 +418,6 @@ function SolutionBlockComponent({ value }: PortableTextTypeComponentProps<Soluti
       <PortableText value={value.children as never} components={portableTextComponents} />
     </Solution>
   )
-}
-
-function FriendsBlockComponent(_props: PortableTextTypeComponentProps<FriendsBlock>) {
-  const ctx = useContext(FriendsContext)
-  return <Friends friends={[...ctx.friends]} />
 }
 
 function TableBlockComponent({ value }: PortableTextTypeComponentProps<TableBlock>) {

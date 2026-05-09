@@ -105,10 +105,13 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
         <form
           onSubmit={(e) => {
             e.preventDefault()
+            const trimmedSlug = draft.slug.trim()
             const payload: UpsertCategoryInput = {
               ...(isEditing && category ? { id: category.id } : {}),
               name: draft.name.trim(),
-              slug: draft.slug.trim(),
+              // Only forward `slug` when the operator typed something.
+              // An empty value means "let the server derive it from name".
+              ...(trimmedSlug !== '' ? { slug: trimmedSlug } : {}),
               cover: draft.cover.trim(),
               description: draft.description,
               sortOrder: draft.sortOrder,
@@ -137,11 +140,10 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
               value={draft.slug}
               onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
               maxLength={80}
-              required
-              placeholder="例：coding"
+              placeholder="留空将从名称推导（拼音）"
               pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
             />
-            <p className="text-xs text-muted-foreground">仅允许小写字母、数字、短横线；用于 /cats/:slug。</p>
+            <p className="text-xs text-muted-foreground">仅允许小写字母、数字、短横线；留空时按拼音从名称自动生成。</p>
           </div>
           <div className="sm:col-span-2">
             <CoverInputRow

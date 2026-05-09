@@ -61,8 +61,6 @@ const MUSIC: Block = {
   center: true,
 }
 
-const FRIENDS: Block = { _type: 'friends', _key: 'f1' }
-
 const SOLUTION: Block = {
   _type: 'solution',
   _key: 'sol1',
@@ -102,7 +100,6 @@ const FULL_BODY: PortableTextBody = [
   { _type: 'horizontalRule', _key: 'hr-1' },
   MUSIC,
   SOLUTION,
-  FRIENDS,
   FOOTNOTE_DEF,
 ]
 

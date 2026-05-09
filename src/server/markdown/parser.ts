@@ -76,7 +76,7 @@ function getMarked(): Promise<Marked> {
 // wire savings without a process-local cache size limit (the map is
 // emptied on every settled render via `.finally`).
 function bucket(): { prefix: string; ttlSeconds: number } {
-  return requireBlogSettingsSection('cache').cache['comments-md']
+  return requireBlogSettingsSection('cache').cache.commentsMd
 }
 function hashContent(normalized: string): string {
   return createHash('sha256').update(normalized).digest('hex')

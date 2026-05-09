@@ -1,4 +1,5 @@
-import { DateTime } from 'luxon'
+import { TZDate } from '@date-fns/tz'
+import { getYear } from 'date-fns'
 import { Body, Container, Html, Img, Link, Section, Text } from 'react-email'
 
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -11,7 +12,12 @@ interface Props {
 
 export function EmailLayout({ receiver, children }: Props) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const year = DateTime.now().setZone(siteIdentity.timeZone).year
+  // Render the year in the site's configured timezone — important
+  // around midnight for sites whose timezone differs from the SSR
+  // host. `TZDate` from `@date-fns/tz` re-interprets the supplied
+  // instant against the IANA zone, so `getYear` reads the wall-clock
+  // year that user would see in their inbox.
+  const year = getYear(new TZDate(Date.now(), siteIdentity.timeZone))
   return (
     <Html lang="en">
       <Body style={body}>

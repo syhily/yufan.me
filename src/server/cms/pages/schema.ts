@@ -6,6 +6,7 @@ import type {
   ListPageRevisionsInput,
   ListPagesInput,
   PreviewPageBodyInput,
+  RenderMathInput,
   RestorePageInput,
   SavePageBodyInput,
   UnpublishPageInput,
@@ -22,6 +23,7 @@ export type {
   ListPageRevisionsInput,
   ListPagesInput,
   PreviewPageBodyInput,
+  RenderMathInput,
   RestorePageInput,
   SavePageBodyInput,
   UnpublishPageInput,
@@ -32,7 +34,10 @@ export type {
 // at the business-logic layer. Validation happens here too so the API
 // envelope speaks Zod's vocabulary on a malformed input — the service
 // layer's own check is a defence-in-depth fallback (callers can save
-// and bypass HTTP).
+// and bypass HTTP). Pages historically allowed `[._-]` separators (so
+// `archives.html` and `about_us` legacy URLs survive the migration);
+// the auto-derived value (`deriveSlug(title)`) only emits `-`, which
+// is a strict subset of the allowed shape.
 const slugSchema = z
   .string()
   .trim()
@@ -71,9 +76,15 @@ export const listPageRevisionsSchema = idSchema
 // so the service layer's UpsertPageMetaInput always sees fully-shaped
 // values. `cover` is allowed to be empty (admin can publish a page
 // without a cover image — covers are optional in `ClientPage`).
+//
+// `slug` is wire-optional. When omitted (or empty), the service
+// derives one from `title` via `deriveSlug` — the same pinyin-pro ->
+// github-slugger pipeline tags and categories use. Authors only have
+// to think about a slug when they want a custom URL (e.g. `about-us`
+// for a page titled "我们是谁").
 export const upsertPageMetaSchema = z.object({
   id: z.string().min(1).optional(),
-  slug: slugSchema,
+  slug: slugSchema.optional(),
   title: z.string().trim().min(1).max(200),
   summary: optionalText(500),
   cover: z.string().trim().max(500).optional().default(''),
@@ -90,6 +101,7 @@ export const upsertPageMetaSchema = z.object({
   published: z.coerce.boolean().optional(),
   commentsEnabled: z.coerce.boolean().optional(),
   showToc: z.coerce.boolean().optional(),
+  showFriends: z.coerce.boolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })
 
@@ -117,4 +129,15 @@ export const savePageBodySchema = z.object({
 // body validator because the editor sends the whole document.
 export const previewPageBodySchema = z.object({
   body: portableTextBodySchema,
+})
+
+// Editor inline-math preview. The bubble-menu panel debounces and POSTs
+// the typing buffer here. The 4KB cap is generous: even a multi-line
+// `align*` block tops out a few hundred bytes; nothing legitimately
+// math-related approaches the limit. Anything longer than that is
+// either a malformed input (the editor's own popover would refuse to
+// open) or a payload-flood attempt — both of which deserve a 400.
+export const renderMathSchema = z.object({
+  tex: z.string().max(4 * 1024, 'TeX 表达式过长'),
+  display: z.coerce.boolean(),
 })

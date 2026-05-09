@@ -1,6 +1,6 @@
-export type CacheBucketId = 'og' | 'calendar' | 'avatar' | 'image-meta' | 'comments-md'
+export type CacheBucketId = 'og' | 'calendar' | 'avatar' | 'imageMeta' | 'commentsMd'
 
-export const CACHE_BUCKET_IDS = ['og', 'calendar', 'avatar', 'image-meta', 'comments-md'] as const satisfies readonly [
+export const CACHE_BUCKET_IDS = ['og', 'calendar', 'avatar', 'imageMeta', 'commentsMd'] as const satisfies readonly [
   CacheBucketId,
   ...CacheBucketId[],
 ]

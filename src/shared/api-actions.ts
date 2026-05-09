@@ -101,6 +101,7 @@ export const API_ACTIONS = {
     publishLatest: defineApiAction('api/actions/admin/publishLatest', 'POST'),
     unpublishPage: defineApiAction('api/actions/admin/unpublishPage', 'POST'),
     previewPage: defineApiAction('api/actions/admin/previewPage', 'POST'),
+    renderMath: defineApiAction('api/actions/admin/renderMath', 'POST'),
   },
 } as const
 

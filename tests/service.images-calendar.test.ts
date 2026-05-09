@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon'
+import { parseISO } from 'date-fns'
 import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
@@ -32,7 +32,7 @@ afterEach(() => {
 
 describe('services/images/calendar — renderCalendar', () => {
   it('returns a 600×880 PNG buffer for an arbitrary date', { timeout: 30_000 }, async () => {
-    const buffer = await renderCalendar(DateTime.fromISO('2024-04-24'))
+    const buffer = await renderCalendar(parseISO('2024-04-24'))
 
     expect(Buffer.isBuffer(buffer)).toBe(true)
     // PNG magic bytes
@@ -47,13 +47,13 @@ describe('services/images/calendar — renderCalendar', () => {
   it('propagates upstream API failures (no half-rendered image)', { timeout: 30_000 }, async () => {
     globalThis.fetch = vi.fn(async () => new Response('nope', { status: 500 })) as never
 
-    await expect(renderCalendar(DateTime.fromISO('2024-04-24'))).rejects.toThrow(/API 请求失败/)
+    await expect(renderCalendar(parseISO('2024-04-24'))).rejects.toThrow(/API 请求失败/)
   })
 
   it('encodes lunar dates for traditional Chinese New Year correctly', { timeout: 30_000 }, async () => {
     // Smoke-test a date that's known to convert to Lunar New Year's eve in
     // Asia/Shanghai — this exercises the Solar→Lunar branch end-to-end.
-    const buffer = await renderCalendar(DateTime.fromISO('2024-02-09'))
+    const buffer = await renderCalendar(parseISO('2024-02-09'))
     expect(buffer.byteLength).toBeGreaterThan(0)
   })
 })

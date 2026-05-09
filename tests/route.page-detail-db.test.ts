@@ -7,7 +7,7 @@ import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
 import { regularSession } from './_helpers/session'
 
 // Plan §八.集成 calls for an end-to-end sanity check that a Page
-// served from the new `doc + content` tables flows through the
+// served from the new `page + content` tables flows through the
 // `page.detail` loader the same way an MDX-backed Page does — same
 // SEO bundle, same comments wiring, same shell — but with a
 // PortableText body in the loader payload that the React component

@@ -65,7 +65,7 @@ function rowToCached(row: ImageRow): CachedImageMetaPresent {
 // write. Old keys under the previous prefix age out at their stored
 // TTL — there's no migration step.
 function bucket(): { prefix: string; ttlSeconds: number } {
-  return requireBlogSettingsSection('cache').cache['image-meta']
+  return requireBlogSettingsSection('cache').cache.imageMeta
 }
 
 function cacheKey(storagePath: string): string {
@@ -170,7 +170,10 @@ interface ResolvedSrc {
   storagePath: string
 }
 
-function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
+// Exported so one-off scripts (e.g. `scripts/migrate-mdx-pages.mjs`)
+// and any future server-side resolver can share the exact same
+// rule the SSR enhancer uses. Pure, no side effects.
+export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (src.startsWith('http://') || src.startsWith('https://')) {
     if (publicBaseUrl !== null) {
       if (src.startsWith(`${publicBaseUrl}/`)) {

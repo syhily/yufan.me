@@ -34,6 +34,7 @@ import {
 } from '@/server/cms/pages/repository'
 import { getLogger } from '@/server/logger'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { deriveSlug } from '@/server/slug'
 import { collectHeadings, collectImageStoragePaths, validatePortableTextBody } from '@/shared/portable-text'
 
 // Audit logger for force-overwrite saves. Emits at info level so
@@ -159,8 +160,14 @@ export async function listRevisionsForAdmin(id: bigint): Promise<AdminRevisionDt
 
 const RESERVED_PAGE_SLUGS = new Set<string>([
   // Reserve slugs that already drive top-level routing on the public
-  // site so an admin can't shadow `/posts/...`, `/cats/...`, etc. with
-  // a page row.
+  // site so an admin can't shadow `/posts/...`, `/cats/...`, etc.
+  // with a page row.
+  //
+  // Note: this is the *route-prefix* fence, NOT the page↔post
+  // uniqueness fence. The latter is enforced at catalog cold start
+  // by `validatePageSlugs` (page slugs and post slugs share a
+  // single global namespace — see the page table comment in
+  // `@/server/db/schema`).
   'posts',
   'cats',
   'tags',
@@ -178,7 +185,13 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:[._-][a-z0-9]+)*$/
 export interface UpsertPageMetaInput {
   /** Existing page id; omitted on create. */
   id?: bigint
-  slug: string
+  /**
+   * Explicit URL slug. Optional — when omitted (or empty), the
+   * service derives one from `title` via `deriveSlug` (the canonical
+   * pinyin -> github-slugger pipeline). Authors only set this when
+   * they want a custom URL like `about-us` for a Han-titled page.
+   */
+  slug?: string
   title: string
   summary?: string
   cover?: string
@@ -186,6 +199,12 @@ export interface UpsertPageMetaInput {
   published?: boolean
   commentsEnabled?: boolean
   showToc?: boolean
+  /**
+   * Render the global friends grid at the bottom of the page (see
+   * `routes/page.detail.tsx`). Defaults to `false` on create — only
+   * the legacy `links` page typically opts in.
+   */
+  showFriends?: boolean
   publishedAt?: Date
 }
 
@@ -201,15 +220,42 @@ function ensureSlugLegal(slug: string): void {
   }
 }
 
+// Resolve the effective slug. An explicit non-empty value wins; an
+// empty / missing value falls back to `deriveSlug(title)`. Pages that
+// can't produce a slug from their title (e.g. emoji-only titles) get
+// a friendly 400 instead of falling through to the regex check with
+// the empty string.
+function resolveSlugForPage(explicit: string | undefined, title: string): string {
+  if (typeof explicit === 'string' && explicit.trim() !== '') {
+    return explicit.trim()
+  }
+  const derived = deriveSlug(title)
+  if (derived === '') {
+    throw new ActionFailure(400, '无法从标题推导出 slug，请手动填写。', [
+      { message: '标题推导出空 slug，请手动填写', path: ['slug'] },
+    ])
+  }
+  return derived
+}
+
 export async function createPage(input: UpsertPageMetaInput, _authorId: bigint | null): Promise<AdminPageDto> {
-  ensureSlugLegal(input.slug)
-  const collision = await findPageMetaBySlug(input.slug)
+  const slug = resolveSlugForPage(input.slug, input.title)
+  ensureSlugLegal(slug)
+  // SLUG NAMESPACE — global across DB pages, MDX pages, and posts
+  // (incl. post `alias[]`). This collision check only consults the
+  // `page` table, so it cannot catch a clash with a post slug
+  // declared in `src/content/posts/**/*.mdx`. The catalog's cold
+  // start (`validatePageSlugs` in `@/server/catalog/catalog`) is
+  // the cross-table fence — saving a colliding page succeeds here
+  // and the failure surfaces on the next catalog rebuild. See
+  // `src/server/db/schema.ts` page table for the full invariant.
+  const collision = await findPageMetaBySlug(slug)
   if (collision !== null) {
-    throw new ActionFailure(409, `slug "${input.slug}" 已被其它页面占用。`)
+    throw new ActionFailure(409, `slug "${slug}" 已被其它页面占用。`)
   }
   const now = new Date()
   const row = await insertPageMeta({
-    slug: input.slug,
+    slug,
     title: input.title,
     summary: input.summary ?? '',
     cover: input.cover ?? '',
@@ -221,6 +267,7 @@ export async function createPage(input: UpsertPageMetaInput, _authorId: bigint |
     published: input.published ?? false,
     commentsEnabled: input.commentsEnabled ?? true,
     showToc: input.showToc ?? false,
+    showFriends: input.showFriends ?? false,
     publishedAt: input.publishedAt ?? now,
   })
   return toAdminPageDto(row)
@@ -230,19 +277,23 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
   if (input.id === undefined) {
     throw new ActionFailure(400, 'updatePageMeta requires an id')
   }
-  ensureSlugLegal(input.slug)
+  const slug = resolveSlugForPage(input.slug, input.title)
+  ensureSlugLegal(slug)
   const existing = await findPageMetaById(input.id)
   if (existing === null) {
     throw new ActionFailure(404, '页面不存在或已被删除。')
   }
-  if (existing.slug !== input.slug) {
-    const collision = await findPageMetaBySlug(input.slug)
+  if (existing.slug !== slug) {
+    // Same caveat as `createPage`: this only catches page↔page
+    // collisions inside the `page` table. The page↔post invariant
+    // is fenced by `validatePageSlugs` at catalog cold start.
+    const collision = await findPageMetaBySlug(slug)
     if (collision !== null && collision.id !== input.id) {
-      throw new ActionFailure(409, `slug "${input.slug}" 已被其它页面占用。`)
+      throw new ActionFailure(409, `slug "${slug}" 已被其它页面占用。`)
     }
   }
   const updated = await updatePageMetaById(input.id, {
-    slug: input.slug,
+    slug,
     title: input.title,
     summary: input.summary ?? existing.summary,
     cover: input.cover ?? existing.cover,
@@ -250,6 +301,7 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
     published: input.published ?? existing.published,
     commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
     showToc: input.showToc ?? existing.showToc,
+    showFriends: input.showFriends ?? existing.showFriends,
     publishedAt: input.publishedAt ?? existing.publishedAt,
   })
   if (updated === null) {
@@ -313,9 +365,9 @@ export type SavePageResult =
     }
 
 async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'publish'): Promise<SavePageResult> {
-  // Ensure the doc row exists before we open a transaction. Doing it
-  // upfront produces a friendly 404 instead of a transaction-rollback
-  // error on the operator's screen.
+  // Ensure the page row exists before we open a transaction. Doing
+  // it upfront produces a friendly 404 instead of a transaction-
+  // rollback error on the operator's screen.
   const meta = await findPageMetaById(input.pageId)
   if (meta === null) {
     throw new ActionFailure(404, '页面不存在或已被删除。')
@@ -328,7 +380,7 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   const body = parseBodyOrThrow(input.body)
   await prerenderPortableTextBody(body)
   const imageSources = collectImageStoragePaths(body)
-  const headings = collectHeadings(body)
+  const headings = collectHeadings(body, deriveSlug)
 
   // Capture the row that's about to be overwritten when force=true,
   // so we can record an audit trail even though the repo already

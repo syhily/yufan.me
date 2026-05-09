@@ -45,6 +45,7 @@ function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
     published: overrides.published ?? true,
     commentsEnabled: overrides.commentsEnabled ?? true,
     showToc: overrides.showToc ?? false,
+    showFriends: overrides.showFriends ?? false,
     publishedAt: overrides.publishedAt ?? now,
     publishedRevisionId: overrides.publishedRevisionId ?? null,
     createdAt: now,

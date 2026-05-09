@@ -180,10 +180,6 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
 // MathJax — block + inline math
 // ---------------------------------------------------------------------------
 
-interface MathjaxRenderer {
-  render: (tex: string, display: boolean) => string
-}
-
 async function runMathjaxPasses(
   blocks: { tex: string; svg?: string }[],
   inlines: { tex: string; svg?: string }[],
@@ -191,9 +187,14 @@ async function runMathjaxPasses(
   if (blocks.length === 0 && inlines.length === 0) {
     return
   }
-  let renderer: MathjaxRenderer | null = null
+  // Lazy-loaded process-level singleton — see
+  // `@/server/markdown/mathjax-renderer` for the rationale. The first
+  // save in a process pays the ~100ms engine boot; subsequent saves
+  // and editor previews re-use the same renderer.
+  let renderer: import('@/server/markdown/mathjax-renderer').MathjaxRenderer
   try {
-    renderer = await createMathjaxRenderer()
+    const { getMathjaxRenderer } = await import('@/server/markdown/mathjax-renderer')
+    renderer = await getMathjaxRenderer()
   } catch {
     return
   }
@@ -211,36 +212,6 @@ async function runMathjaxPasses(
       // Leave svg unset.
     }
   }
-}
-
-async function createMathjaxRenderer(): Promise<MathjaxRenderer> {
-  const [{ liteAdaptor }, { RegisterHTMLHandler }, { TeX }, { AllPackages }, { mathjax }, { SVG }] = await Promise.all([
-    import('mathjax-full/js/adaptors/liteAdaptor.js'),
-    import('mathjax-full/js/handlers/html.js'),
-    import('mathjax-full/js/input/tex.js'),
-    import('mathjax-full/js/input/tex/AllPackages.js'),
-    import('mathjax-full/js/mathjax.js'),
-    import('mathjax-full/js/output/svg.js'),
-  ])
-
-  const adaptor = liteAdaptor()
-  const handler = RegisterHTMLHandler(adaptor)
-  const document = mathjax.document('', {
-    InputJax: new TeX({ packages: AllPackages }),
-    OutputJax: new SVG({ fontCache: 'none' }),
-  })
-
-  return {
-    render(tex: string, display: boolean): string {
-      const node = document.convert(tex, { display })
-      return adaptor.outerHTML(node)
-    },
-  }
-  // We deliberately don't unregister the handler — the renderer is
-  // single-use per save and the caller's process churns the doc on
-  // the next save anyway. Mass-unregistering would also break any
-  // concurrent save running on the same process.
-  void handler
 }
 
 // ---------------------------------------------------------------------------

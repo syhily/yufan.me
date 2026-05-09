@@ -25,6 +25,7 @@ import { listPublicFriends } from '@/server/friends/service'
 import { loadImageThumbhash } from '@/server/images/render-enhance'
 import { getLogger } from '@/server/logger'
 import { parseContent } from '@/server/markdown/parser'
+import { deriveSlug } from '@/server/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 // Inline projection types so the catalog does not have to import the
@@ -132,6 +133,7 @@ function buildDbPage(page: CmsPage): Page {
     published: page.published,
     summary: page.summary,
     toc: page.toc,
+    showFriends: page.showFriends,
     slug: page.slug,
     permalink: page.permalink,
     headings: page.headings,
@@ -154,6 +156,12 @@ function buildPage(page: SourcePage): Page {
     published: page.published ?? true,
     summary: page.summary ?? '',
     toc: page.toc ?? false,
+    // MDX pages embed `<Friends />` in their body directly (see
+    // `src/content/pages/links.mdx`); the meta toggle is a DB-only
+    // affordance, so MDX-sourced pages always read `false`. The
+    // detail route therefore won't double up — the body's
+    // `<Friends />` keeps rendering as before.
+    showFriends: false,
     slug,
     permalink: `/${slug}`,
     body: page.body,
@@ -191,22 +199,22 @@ function buildPost(post: SourcePost): Post {
 
 // Best-effort runtime fallback for tags that appear in a post but aren't
 // declared in the `tag` table. Canonical slugs for declared tags are
-// produced server-side via `pinyin-pro` in `@/server/tags/service`, so
-// this path should only fire when an author references a brand-new tag
-// from a post without adding the matching row through `/wp-admin/tags`.
-// Falling back to a kebab-cased ASCII slug keeps the page accessible
-// without bundling `pinyin-pro` into the SSR build.
+// produced server-side via `deriveSlug` in `@/server/tags/service`,
+// so this path should only fire when an author references a brand-new
+// tag from a post without adding the matching row through
+// `/wp-admin/tags`. Routing through `deriveSlug` gives Han-only tag
+// names a pinyin slug here too, matching what the admin would write
+// — `pinyin-pro` only ships server-side so this stays out of the
+// client bundle.
 function fallbackTagSlug(name: string): string {
-  const trimmed = name.trim().toLowerCase()
-  // Replace any non-ASCII letter or digit with `-`, collapse repeats, trim.
-  const slug = trimmed.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  const slug = deriveSlug(name)
   if (slug !== '') {
     return slug
   }
-  // Pure non-ASCII tags fall through here; encodeURIComponent keeps the URL
-  // legal even if it isn't pretty. Authors should add the entry to
-  // `tags.yaml` to fix this properly.
-  return encodeURIComponent(trimmed)
+  // Pure non-ASCII / emoji tags fall through here; encodeURIComponent
+  // keeps the URL legal even if it isn't pretty. Authors should add
+  // the entry through `/wp-admin/tags` to fix it properly.
+  return encodeURIComponent(name.trim().toLowerCase())
 }
 
 interface CatalogInput {
@@ -257,7 +265,7 @@ export class ContentCatalog {
       poster: row.poster,
     }))
 
-    // Pages can be sourced from MDX (legacy) or from the `doc` +
+    // Pages can be sourced from MDX (legacy) or from the `page` +
     // `content` Postgres tables (the new editor). DB pages take
     // precedence: if a DB row exists with the same slug as an MDX
     // file, the MDX file is dropped from the catalog so the admin's
@@ -628,6 +636,16 @@ async function hydrateImages<
   )
 }
 
+// Build the post-slug index. The returned `postSlugs` set is the
+// **canonical source of truth** for the post half of the global
+// slug namespace shared with pages — `validatePageSlugs` below
+// reads it to enforce the cross-table invariant. Each post
+// contributes its own `slug` plus every entry in `alias[]`; both
+// occupy slots in the same namespace, so an alias colliding with
+// another post's slug is already caught here too. Post-side
+// duplicates abort cold start with a clear `Duplicate post slug`
+// error, which is preferable to letting an ambiguous lookup land
+// on a random row at request time.
 function indexPosts(posts: Post[]) {
   const postSlugs = new Set<string>()
   const bySlug = new Map<string, Post>()
@@ -651,6 +669,25 @@ function indexPosts(posts: Post[]) {
   return { bySlug, byAlias, postSlugs }
 }
 
+// Cross-table fence for the global page↔post slug namespace.
+//
+// Page slugs come from two emitters: the DB `page` table (admin-
+// edited via `/wp-admin/pages/...`) and MDX page frontmatter
+// (`src/content/pages/**/*.mdx`). The DB-level `UNIQUE(slug)` on
+// the `page` table only catches page↔page collisions; the
+// page-service's pre-save `findPageMetaBySlug` check is also
+// page↔page only. **This is the only place the codebase
+// validates that no page slug collides with a post slug or post
+// alias.**
+//
+// Failure mode: throws and refuses to boot the server. The
+// catalog is loaded synchronously at cold start (and rebuilt
+// after every admin save via `ContentCatalog.reset()`), so a
+// freshly-saved colliding page surfaces as a 500 on the next
+// request rather than at save time. Consequence: any new code
+// path that introduces another slug emitter MUST be folded into
+// either `postSlugs` or this validator — otherwise the global
+// invariant silently degrades.
 function validatePageSlugs(pages: Page[], postSlugs: Set<string>): void {
   for (const page of pages) {
     if (postSlugs.has(page.slug)) {

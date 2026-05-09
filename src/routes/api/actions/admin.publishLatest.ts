@@ -5,9 +5,9 @@ import { publishLatest } from '@/server/cms/pages/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 
 // Publish atomically: save the editor body as a draft, mark that
-// revision as published, and point `doc.published_revision_id` at it
-// — all in one transaction. Same conflict semantics as `saveDraft`
-// (token mismatch returns `conflict` unless `force=true`).
+// revision as published, and point `page.published_revision_id` at
+// it — all in one transaction. Same conflict semantics as
+// `saveDraft` (token mismatch returns `conflict` unless `force=true`).
 //
 // On success the in-process catalog snapshot is reset so the next
 // public render reflects the new body.

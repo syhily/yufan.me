@@ -37,6 +37,7 @@ export interface CreateDraftMeta {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  showFriends: boolean
   publishedAt: string
 }
 

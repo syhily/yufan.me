@@ -15,6 +15,7 @@ import {
   updateCategory,
 } from '@/server/db/query/category'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { deriveSlug } from '@/server/slug'
 
 // Wire-format DTO returned by every admin category endpoint. Bigint
 // id stringified so the browser bundle never touches BigInt. The
@@ -60,7 +61,13 @@ export async function listCategoriesForAdmin(filters: AdminCategoriesListFilters
 export interface UpsertCategoryInputs {
   id?: bigint
   name: string
-  slug: string
+  /**
+   * Explicit URL slug. Optional — when omitted (or the empty string),
+   * the service derives one via `deriveSlug(name)` (pinyin-pro ->
+   * github-slugger), matching the tag flow so admins can rely on
+   * "leave blank to auto-derive".
+   */
+  slug?: string
   cover: string
   description: string
   sortOrder: number
@@ -72,11 +79,18 @@ export interface UpsertCategoryInputs {
 // pre-flight lookup so the editor sees a friendly 409 instead of the
 // raw Drizzle constraint error.
 export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<AdminCategoryDto> {
+  // Resolve the effective slug: an explicit non-empty value wins, an
+  // empty / missing value falls back to the canonical pinyin pipeline
+  // applied to the category name. We treat `''` the same as missing
+  // because the admin form posts an empty string when the input is
+  // cleared (Zod has already trimmed by the time we land here).
+  const slug = resolveSlugForCategory(input.slug, input.name)
+
   if (input.id === undefined) {
-    await ensureUniqueOnCreate(input.name, input.slug)
+    await ensureUniqueOnCreate(input.name, slug)
     const row = await insertCategory({
       name: input.name,
-      slug: input.slug,
+      slug,
       cover: input.cover,
       description: input.description,
       sortOrder: input.sortOrder,
@@ -89,10 +103,10 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   if (existing === null) {
     throw new ActionFailure(404, '分类不存在')
   }
-  await ensureUniqueOnUpdate(input.id, input.name, existing.name, input.slug, existing.slug)
+  await ensureUniqueOnUpdate(input.id, input.name, existing.name, slug, existing.slug)
   const updated = await updateCategory(input.id, {
     name: input.name,
-    slug: input.slug,
+    slug,
     cover: input.cover,
     description: input.description,
     sortOrder: input.sortOrder,
@@ -102,6 +116,23 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   }
   const countOf = await categoryPostCounter()
   return toAdminCategoryDto(updated, countOf(updated.name))
+}
+
+function resolveSlugForCategory(explicit: string | undefined, name: string): string {
+  if (typeof explicit === 'string' && explicit.trim() !== '') {
+    return explicit.trim()
+  }
+  const derived = deriveSlug(name)
+  if (derived === '') {
+    // `deriveSlug` strips everything to ASCII alphanumerics + dashes;
+    // a name made entirely of punctuation / emoji can collapse to an
+    // empty string. Refuse the save with a friendly hint instead of
+    // letting the DB throw a NOT NULL violation downstream.
+    throw new ActionFailure(400, '无法从名称推导出 slug，请手动填写。', [
+      { message: '名称推导出空 slug，请手动填写', path: ['slug'] },
+    ])
+  }
+  return derived
 }
 
 // Drag-to-reorder. Validates that the submitted id set matches the

@@ -1,10 +1,7 @@
 import { and, count, eq, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm'
 
 import { db } from '@/server/db/pool'
-// `metric` aliases the page-counter table the same way
-// `@/server/db/query/metric` does — keeping every "this query touches
-// the metric table" statement self-evident from the import.
-import { comment, like, page as metric } from '@/server/db/schema'
+import { comment, like, metric } from '@/server/db/schema'
 
 /**
  * Atomic "register like + bump counter + read fresh count" in one transaction.

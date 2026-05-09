@@ -16,7 +16,6 @@ import {
   type LucideIcon,
   TableIcon,
   Type as TypeIcon,
-  UsersIcon,
   WorkflowIcon,
 } from 'lucide-react'
 
@@ -233,16 +232,6 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
           },
         ],
       })
-    },
-  },
-  {
-    id: 'friends',
-    title: '友链网格',
-    description: '渲染 Friends 组件',
-    icon: UsersIcon,
-    aliases: ['friends', 'links', '友链'],
-    command: ({ editor, range }) => {
-      insertCustomBlock(editor, range, { _type: 'friends', _key: generateBlockKey() })
     },
   },
   {

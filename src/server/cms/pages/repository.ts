@@ -4,11 +4,13 @@ import { randomUUID } from 'node:crypto'
 import type { ContentRow, NewContent, NewPageMeta, PageMetaRow } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
-// `doc` is the temporary schema-level name for the future `page` table
-// (see schema.ts and AGENTS.md). Throughout the CMS service layer we
-// import it under the business name `pageMetaTable` so the only line
-// that knows about the placeholder lives here.
-import { content as contentTable, doc as pageMetaTable } from '@/server/db/schema'
+// Use module-local aliases (`pageMetaTable`, `contentTable`) so the
+// many call sites below read in business terms — `pageMetaTable` is
+// the metadata row the editor's right-hand panel mutates, while the
+// actual revision payload lives in `contentTable`. The aliases also
+// avoid colliding with parameter / local names (`page`, `content`)
+// that show up throughout the service layer.
+import { content as contentTable, page as pageMetaTable } from '@/server/db/schema'
 
 // --- Reads -------------------------------------------------------------------
 
@@ -115,7 +117,7 @@ export async function findContentById(id: bigint): Promise<ContentRow | null> {
 /**
  * Latest revision (any status) for `(type, ownerId)`. Returns `null`
  * when the owner has no revisions at all (e.g. a freshly created
- * `doc` row before its first save).
+ * `page` row before its first save).
  */
 export async function findLatestRevision(type: ContentType, ownerId: bigint): Promise<ContentRow | null> {
   const rows = await db
@@ -213,9 +215,10 @@ export interface SaveDraftInput {
   /**
    * Optimistic lock token the client received with the editor state.
    * When provided, the save is rejected unless the latest revision's
-   * `client_revision_token` matches. Pass `undefined` to opt out (e.g.
-   * the very first save on a freshly created doc with no revisions yet).
-   * Pass `null` to allow the save when there's no existing revision.
+   * `client_revision_token` matches. Pass `undefined` to opt out
+   * (e.g. the very first save on a freshly created page with no
+   * revisions yet). Pass `null` to allow the save when there's no
+   * existing revision.
    */
   expectedClientRevisionToken?: string | null
   /** When true, ignore `expectedClientRevisionToken` mismatch (force save). */
@@ -229,31 +232,31 @@ export type SaveDraftResult =
 /**
  * Save-draft state machine, transactionally:
  *
- *   - Acquire `FOR UPDATE` lock on the doc row so two concurrent saves
- *     serialise on the same revision number computation.
+ *   - Acquire `FOR UPDATE` lock on the page row so two concurrent
+ *     saves serialise on the same revision number computation.
  *   - Find the latest revision for `(type='page', ownerId)`.
  *   - When that revision is **already published** *or* there is no
- *     revision yet, INSERT a fresh draft with `revision_no = max+1` and
- *     a freshly minted `client_revision_token`.
+ *     revision yet, INSERT a fresh draft with `revision_no = max+1`
+ *     and a freshly minted `client_revision_token`.
  *   - When that revision is a draft, optionally verify the client's
  *     `expectedClientRevisionToken` matches; if not, return `conflict`.
  *     Otherwise UPDATE the draft in place (still rotating
  *     `client_revision_token` so the editor's next save passes the
  *     fresh token).
  *
- * The doc row's `updated_at` is bumped so the admin list reflects
+ * The page row's `updated_at` is bumped so the admin list reflects
  * recent activity.
  */
 export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraftResult> {
   return db.transaction(async (tx) => {
-    // Lock the doc row so concurrent saves can't both compute the same
-    // `MAX(revision_no) + 1` and trip `uq_content_owner_revision`.
-    const docLockRows = await tx
+    // Lock the page row so concurrent saves can't both compute the
+    // same `MAX(revision_no) + 1` and trip `uq_content_owner_revision`.
+    const pageLockRows = await tx
       .select({ id: pageMetaTable.id })
       .from(pageMetaTable)
       .where(eq(pageMetaTable.id, input.ownerId))
       .for('update')
-    if (docLockRows.length === 0) {
+    if (pageLockRows.length === 0) {
       throw new Error(`page meta row ${input.ownerId} not found`)
     }
 
@@ -328,7 +331,7 @@ export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraf
 
 export interface PublishLatestInput extends SaveDraftInput {
   /**
-   * Publish target stamped on `doc.published_at`. Defaults to the
+   * Publish target stamped on `page.published_at`. Defaults to the
    * write timestamp (`now()`) so publishes are immediate. A future
    * value parks the page as "scheduled" — `published = true` but
    * the public catalog filters on `published_at <= now()` so it
@@ -343,10 +346,10 @@ export type PublishLatestResult =
 
 /**
  * Publish state machine: save the editor body **then** mark the saved
- * revision as `published` and point `doc.published_revision_id` at it,
- * all in one transaction. The save half follows the same conflict
- * rules as `saveDraftRevision` (token mismatch returns `conflict`
- * unless `force=true`).
+ * revision as `published` and point `page.published_revision_id` at
+ * it, all in one transaction. The save half follows the same
+ * conflict rules as `saveDraftRevision` (token mismatch returns
+ * `conflict` unless `force=true`).
  */
 export async function publishLatestRevision(input: PublishLatestInput): Promise<PublishLatestResult> {
   return db.transaction(async (tx) => {

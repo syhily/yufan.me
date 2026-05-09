@@ -216,12 +216,6 @@ describe('contract: pt-bridge — custom blocks pass through opaquely', () => {
     expect(back).toEqual(body)
   })
 
-  it('friends blocks round-trip via the blockCard payload slot', () => {
-    const body: PortableTextBody = [{ _type: 'friends', _key: 'fr-1' }]
-    const back = pmDocToBody(bodyToPmDoc(body))
-    expect(back).toEqual(body)
-  })
-
   it('footnoteDefinition blocks round-trip preserving index + nested children', () => {
     const body: PortableTextBody = [
       {

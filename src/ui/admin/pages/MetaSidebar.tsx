@@ -1,5 +1,14 @@
-import { CalendarClockIcon, CheckCircle2Icon, CircleDashedIcon, EyeOffIcon, ImageIcon, XIcon } from 'lucide-react'
-import { useId } from 'react'
+import {
+  CalendarClockIcon,
+  CheckCircle2Icon,
+  CircleDashedIcon,
+  EyeOffIcon,
+  ImagePlusIcon,
+  LinkIcon,
+  SparklesIcon,
+  XIcon,
+} from 'lucide-react'
+import { useId, useState } from 'react'
 
 import type { AdminPageDto } from '@/shared/cms-pages'
 import type { AdminImageDto } from '@/shared/images'
@@ -28,6 +37,13 @@ export interface PageMetaDraft {
   commentsEnabled: boolean
   showToc: boolean
   /**
+   * Render the global friends grid at the bottom of the page. Lives on
+   * the meta row (not in the body), so toggling it on/off doesn't
+   * require re-publishing the body. See `routes/page.detail.tsx`
+   * for the rendering site.
+   */
+  showFriends: boolean
+  /**
    * `<input type="datetime-local">` value (no timezone). Kept as a
    * raw string so the sidebar doesn't have to round-trip through the
    * Date constructor on every keystroke. Empty string ⇒ "leave the
@@ -45,6 +61,7 @@ export const EMPTY_META_DRAFT: PageMetaDraft = {
   published: true,
   commentsEnabled: true,
   showToc: false,
+  showFriends: false,
   publishedAt: '',
 }
 
@@ -58,6 +75,7 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     published: page.published,
     commentsEnabled: page.commentsEnabled,
     showToc: page.showToc,
+    showFriends: page.showFriends,
     // The picker treats the non-empty datetime-local string as "the
     // operator has opted into 定时发布 mode". For an already-published
     // page sitting in the past, leaving the string non-empty would
@@ -115,7 +133,7 @@ export function localInputValueToIso(value: string): string | null {
 // from server state + `meta.published` + `meta.publishedAt` and
 // hands it in; the sidebar stays free of any business logic.
 export type SidebarPublishStatus =
-  // No revisions exist yet (create mode or a doc that's never been
+  // No revisions exist yet (create mode or a page that's never been
   // saved to the server).
   | 'never-saved'
   // Latest revision exists but the page is offline (`published =
@@ -144,6 +162,17 @@ export interface MetaSidebarProps {
    */
   publishStatus?: SidebarPublishStatus | null
   /**
+   * Persisted slug of the page being edited, used to render the
+   * generated `/images/og/:slug.png` preview when the OG override is
+   * empty. We deliberately read the *server-side* slug rather than
+   * `draft.slug` so the preview keeps pointing at a working URL even
+   * while the operator is mid-typing a new slug — the preview tile
+   * would 404 on every keystroke otherwise. `null` (create mode or
+   * before first save) collapses the OG empty-state into a static
+   * placeholder explaining "save first to preview".
+   */
+  ogPreviewSlug?: string | null
+  /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
    * once a page has been saved (creating mode renders nothing).
@@ -154,7 +183,7 @@ export interface MetaSidebarProps {
 // Right-pane metadata panel for the page editor. Lives in its own
 // component so the editor route can swap the right pane between this
 // (default) and a live preview without re-mounting the editor.
-export function MetaSidebar({ draft, onChange, disabled, publishStatus, extras }: MetaSidebarProps) {
+export function MetaSidebar({ draft, onChange, disabled, publishStatus, ogPreviewSlug, extras }: MetaSidebarProps) {
   const set = <K extends keyof PageMetaDraft>(key: K, value: PageMetaDraft[K]) => onChange({ ...draft, [key]: value })
 
   return (
@@ -191,23 +220,41 @@ export function MetaSidebar({ draft, onChange, disabled, publishStatus, extras }
         </CardHeader>
         <CardContent className="grid gap-4">
           <p className="text-xs text-muted-foreground">
-            两项均为可选。封面用于列表与文章顶部展示；OG 图供社交平台分享卡片使用，留空则回退到封面。
+            两项均为可选。封面用于列表与文章顶部展示；OG 图供社交平台分享卡片使用，留空则回退到默认生成的 OG 卡片。
           </p>
           <ImageField
             id="page-cover"
             label="封面图"
-            placeholder="https://… 或从图片库挑选"
             value={draft.cover}
             onChange={(value) => set('cover', value)}
             disabled={disabled}
+            aspect="aspect-[16/9]"
+            urlPlaceholder="https://… 或从图片库挑选"
+            emptyHint="点击此处上传封面，或粘贴一张图片 URL。"
           />
           <ImageField
             id="page-og"
             label="OG 图"
-            placeholder="留空则使用封面图"
             value={draft.og}
             onChange={(value) => set('og', value)}
             disabled={disabled}
+            aspect="aspect-[1200/630]"
+            urlPlaceholder="留空则使用默认生成的 OG"
+            emptyContent={
+              ogPreviewSlug !== null && ogPreviewSlug !== undefined && ogPreviewSlug !== '' ? (
+                <GeneratedOgPreview
+                  slug={ogPreviewSlug}
+                  cover={draft.cover}
+                  title={draft.title}
+                  summary={draft.summary}
+                />
+              ) : undefined
+            }
+            emptyHint={
+              ogPreviewSlug !== null && ogPreviewSlug !== undefined && ogPreviewSlug !== ''
+                ? '当前展示的是默认生成的 OG。点击图片可上传一张专属 OG 覆盖。'
+                : '页面首次保存后，这里会展示默认生成的 OG 预览。也可现在点击上传一张专属 OG。'
+            }
           />
         </CardContent>
       </Card>
@@ -233,6 +280,14 @@ export function MetaSidebar({ draft, onChange, disabled, publishStatus, extras }
             onCheckedChange={(value) => set('showToc', value)}
             disabled={disabled}
           />
+          <ToggleRow
+            id="page-friends"
+            label="开启友链"
+            description="启用后页面正文末尾会追加全站友链网格。"
+            checked={draft.showFriends}
+            onCheckedChange={(value) => set('showFriends', value)}
+            disabled={disabled}
+          />
         </CardContent>
       </Card>
       {extras !== undefined ? extras : null}
@@ -252,36 +307,92 @@ interface ToggleRowProps {
 interface ImageFieldProps {
   id: string
   label: string
-  placeholder: string
+  /** Current override URL. Empty string ⇒ "use default / unset". */
   value: string
   onChange: (next: string) => void
   disabled?: boolean
+  /**
+   * Tailwind aspect class controlling the click-target shape. Cover
+   * fields use `aspect-[16/9]` (the list-card preview shape); OG
+   * fields use `aspect-[1200/630]` (the default OG render dimensions
+   * declared in `setting('blog.seo')`). Hard-coding the aspect at
+   * the call site keeps every preview tile pixel-perfect for its
+   * downstream surface.
+   */
+  aspect: string
+  /** Placeholder shown inside the collapsed "粘贴 URL" `<input>`. */
+  urlPlaceholder: string
+  /**
+   * Optional empty-state surface rendered *inside* the click target
+   * when `value === ''`. The OG field uses this to drop the live
+   * `<GeneratedOgPreview />` underneath the click overlay so the
+   * operator sees the auto-generated OG card and can click anywhere
+   * on it to override. When omitted, the empty-state shows a
+   * plus-icon placeholder.
+   */
+  emptyContent?: React.ReactNode
+  /**
+   * One-line hint rendered below the click target. Cover and OG use
+   * this to explain the click affordance and (for OG) to clarify
+   * whether the displayed preview is a generated default or the
+   * operator's override.
+   */
+  emptyHint?: string
 }
 
-// Combined "URL input + library picker + thumbnail preview + clear"
-// affordance for the cover / OG image fields. Storing a plain URL
+// Image-first metadata field: the entire aspect-ratio'd surface is a
+// click target that opens the library picker. Storing a plain URL
 // keeps the existing wire shape (`AdminPageDto.cover`/`og` are
-// strings) and lets operators paste in CDN-hosted assets that
-// aren't tracked in the image library.
-function ImageField({ id, label, placeholder, value, onChange, disabled }: ImageFieldProps) {
+// strings) and lets operators paste a CDN-hosted asset that isn't
+// tracked in the image library by toggling the "粘贴 URL" affordance
+// in the header.
+//
+// State machine:
+//   1. `value !== ''`         → render the override image, full bleed.
+//                                Header shows 替换 / 清空; clicking the
+//                                image surface opens the picker.
+//   2. `value === ''` + `emptyContent` provided → render `emptyContent`
+//                                 (the generated-OG preview, in our
+//                                 OG case) under a transparent click
+//                                 overlay; header shows 替换 only.
+//   3. `value === ''` + no `emptyContent` → dashed placeholder with a
+//                                 plus icon; entire surface clicks
+//                                 through to the picker.
+function ImageField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  aspect,
+  urlPlaceholder,
+  emptyContent,
+  emptyHint,
+}: ImageFieldProps) {
+  const [showUrl, setShowUrl] = useState(false)
   const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
+  const hasValue = value !== ''
 
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={id}>
+        <Label htmlFor={`${id}-url`}>
           {label} <span className="text-xs font-normal text-muted-foreground">（可选）</span>
         </Label>
         <div className="flex items-center gap-1">
-          <ImageLibraryPicker
-            trigger={
-              <Button variant="outline" size="sm" type="button" disabled={disabled}>
-                <ImageIcon /> 从图片库选择
-              </Button>
-            }
-            onPick={handlePick}
-          />
-          {value !== '' ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            title={showUrl ? '收起 URL 输入' : '粘贴 URL'}
+            aria-label={showUrl ? `收起 ${label} 的 URL 输入` : `粘贴 ${label} 的 URL`}
+            aria-pressed={showUrl}
+            onClick={() => setShowUrl((prev) => !prev)}
+            disabled={disabled}
+          >
+            <LinkIcon />
+          </Button>
+          {hasValue ? (
             <Button
               variant="ghost"
               size="icon"
@@ -296,33 +407,125 @@ function ImageField({ id, label, placeholder, value, onChange, disabled }: Image
           ) : null}
         </div>
       </div>
-      <Input
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        maxLength={500}
-        disabled={disabled}
+      <ImageLibraryPicker
+        trigger={
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={hasValue ? `替换 ${label}` : `选择 ${label}`}
+            className={cn(
+              'group relative block w-full overflow-hidden rounded-md border bg-muted/30',
+              aspect,
+              'transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+              disabled
+                ? 'cursor-not-allowed opacity-60'
+                : 'cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30',
+            )}
+          >
+            {hasValue ? (
+              <img
+                src={value}
+                alt={`${label} 预览`}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+                }}
+              />
+            ) : emptyContent !== undefined ? (
+              emptyContent
+            ) : (
+              <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImagePlusIcon className="size-6" />
+                <span className="text-xs">点击选择 / 上传</span>
+              </span>
+            )}
+            <span
+              className={cn(
+                'pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-medium text-white opacity-0 transition',
+                'group-hover:opacity-100 group-focus-visible:opacity-100',
+              )}
+            >
+              {hasValue ? '点击替换' : '点击选择'}
+            </span>
+          </button>
+        }
+        onPick={handlePick}
       />
-      {value !== '' ? (
-        <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-2">
-          <img
-            src={value}
-            alt={`${label} 预览`}
-            loading="lazy"
-            decoding="async"
-            className="size-16 shrink-0 rounded object-cover"
-            onError={(e) => {
-              ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
-            }}
-          />
-          <p className="grow truncate font-mono text-xs text-muted-foreground" title={value}>
-            {value}
-          </p>
-        </div>
+      {!hasValue && emptyHint !== undefined ? <p className="text-xs text-muted-foreground">{emptyHint}</p> : null}
+      {showUrl ? (
+        <Input
+          id={`${id}-url`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={urlPlaceholder}
+          maxLength={500}
+          disabled={disabled}
+        />
+      ) : hasValue ? (
+        <p className="truncate font-mono text-xs text-muted-foreground" title={value}>
+          {value}
+        </p>
       ) : null}
     </div>
   )
+}
+
+interface GeneratedOgPreviewProps {
+  /** Persisted slug of the page (the URL slot of `/images/og/:slug.png`). */
+  slug: string
+  /** Editor-side cover URL — folded into the cache-buster so the preview refreshes when the operator swaps covers. */
+  cover: string
+  /** Editor-side title — folded into the cache-buster for the same reason as `cover`. */
+  title: string
+  /** Editor-side summary — same reason. */
+  summary: string
+}
+
+// Live preview of the auto-generated OG card. Rendered inside the
+// OG `ImageField`'s empty-state slot. The image source includes a
+// `?_=<short-hash>` cache-buster derived from the editor draft so a
+// title / summary / cover change in the metadata pane forces the
+// browser to fetch the freshly-generated OG instead of reusing the
+// previous tile (the server-side cache already keys on the same
+// inputs via `ogCacheKey`, so this just bypasses the browser's
+// memory cache, not the Redis layer).
+function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgPreviewProps) {
+  const buster = djb2Short(`${title}\u0001${summary}\u0001${cover}`)
+  const src = `/images/og/${encodeURIComponent(slug)}.png?_=${buster}`
+  return (
+    <>
+      <img
+        src={src}
+        alt="默认生成的 OG 预览"
+        loading="lazy"
+        decoding="async"
+        className="size-full object-cover"
+        onError={(e) => {
+          ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+        }}
+      />
+      <Badge variant="secondary" className="pointer-events-none absolute top-1.5 left-1.5 gap-1">
+        <SparklesIcon className="size-3" /> 默认生成
+      </Badge>
+    </>
+  )
+}
+
+// Tiny non-cryptographic hash used purely as a per-input browser
+// cache buster for the generated OG preview. We deliberately avoid
+// importing a crypto helper here because the value is never compared
+// against anything server-side — collisions only cause a missed
+// preview refresh, which the operator can fix by re-clicking the
+// image. djb2 is constant-memory, ~20 LOC, and produces 8 hex chars
+// which is plenty of entropy for a debounce-grade buster.
+function djb2Short(input: string): string {
+  let hash = 5381
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 33) ^ input.charCodeAt(i)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0').slice(0, 8)
 }
 
 interface PublishStatusRowProps {

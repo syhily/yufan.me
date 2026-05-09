@@ -251,6 +251,7 @@ describe('services/catalog/ContentCatalog.build', () => {
         published: true,
         summary: 'db summary',
         toc: false,
+        showFriends: false,
         slug: 'about',
         permalink: '/about',
         headings: [],

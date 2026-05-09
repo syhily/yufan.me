@@ -195,7 +195,9 @@ export function mockRedis(now: () => number = Date.now): MockRedis {
     const t = now()
     const out: string[] = []
     for (const [key, entry] of store.entries()) {
-      if (isExpired(entry, t)) continue
+      if (isExpired(entry, t)) {
+        continue
+      }
       if (prefix === undefined || key.startsWith(prefix)) {
         out.push(key)
       }

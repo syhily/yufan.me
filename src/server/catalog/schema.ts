@@ -21,10 +21,10 @@ export type {
 
 // Page entries can come from two sources during the MDX → PortableText
 // migration: the historical Fumadocs MDX collection and the new
-// `doc` + `content` Postgres tables. The `source` discriminator lets
-// the detail route pick the right renderer; everything else (URLs,
-// SEO, comment threading) is identical because both sources project
-// into the same `ClientPage` shape.
+// `page` + `content` Postgres tables. The `source` discriminator
+// lets the detail route pick the right renderer; everything else
+// (URLs, SEO, comment threading) is identical because both sources
+// project into the same `ClientPage` shape.
 export type MdxPage = ClientPage & {
   source: 'mdx'
   body: MDXContent
@@ -36,7 +36,7 @@ export type MdxPage = ClientPage & {
 
 export type DbPage = ClientPage & {
   source: 'db'
-  /** PortableText body of the published revision (empty when the doc has no published revision yet). */
+  /** PortableText body of the published revision (empty when the page has no published revision yet). */
   body: PortableTextBody
   /** S3 storage paths referenced by `image` blocks in the body. */
   imageSources: string[]

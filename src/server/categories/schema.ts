@@ -16,9 +16,10 @@ const optionalText = (max: number) =>
     .optional()
     .transform((value) => value ?? '')
 
-// `slug()` enforces the same kebab-case-ASCII shape as the historical
-// `source.config.ts` regex so URLs stay legal regardless of which
-// authoring channel produced the row (CLI seeder vs admin form).
+// `slug()` enforces the same kebab-case-ASCII shape `deriveSlug`
+// produces, so URLs stay legal regardless of which authoring channel
+// produced the row (CLI seeder, admin form, or auto-derived from the
+// category name when the form leaves it blank).
 const slugSchema = z
   .string()
   .trim()
@@ -40,7 +41,11 @@ export const upsertCategorySchema = z.object({
   // surfaces (`AdminUserDto.id`, `AdminFriendDto.id`, …).
   id: z.string().min(1).optional(),
   name: z.string().trim().min(1).max(20),
-  slug: slugSchema,
+  // `slug` is optional on the wire; the service derives it via
+  // `deriveSlug(name)` (pinyin-pro -> github-slugger) when blank,
+  // matching the tag flow so admins can always rely on "leave blank
+  // to auto-derive".
+  slug: slugSchema.optional(),
   cover: z.url().max(500),
   description: optionalText(999),
   sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),

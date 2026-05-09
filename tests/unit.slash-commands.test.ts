@@ -21,7 +21,7 @@ describe('slash-commands', () => {
 
   it('includes media + custom-block pickers', () => {
     const ids = SLASH_COMMANDS.map((cmd) => cmd.id)
-    for (const expected of ['image', 'music', 'math-block', 'mermaid', 'solution', 'friends', 'footnote']) {
+    for (const expected of ['image', 'music', 'math-block', 'mermaid', 'solution', 'footnote']) {
       expect(ids).toContain(expected)
     }
   })

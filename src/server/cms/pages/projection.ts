@@ -20,7 +20,7 @@ export interface CmsPage extends ClientPage {
 }
 
 // `toCmsPage` is the catalog-facing projection: it accepts the meta
-// row joined with the published revision (or null when the doc has
+// row joined with the published revision (or null when the page has
 // never been published) and produces the public DTO. Pages without a
 // published revision still surface in the catalog (so the admin can
 // link to them while drafting), but with an empty body and no
@@ -51,6 +51,7 @@ export function toCmsPage(
     published: meta.published,
     summary: meta.summary,
     toc: meta.showToc,
+    showFriends: meta.showFriends,
     slug: meta.slug,
     permalink: `/${meta.slug}`,
     headings,
@@ -88,6 +89,7 @@ export interface AdminPageDto {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  showFriends: boolean
   publishedAt: string
   publishedRevisionId: string | null
   createdAt: string
@@ -106,6 +108,7 @@ export function toAdminPageDto(row: PageMetaRow): AdminPageDto {
     published: row.published,
     commentsEnabled: row.commentsEnabled,
     showToc: row.showToc,
+    showFriends: row.showFriends,
     publishedAt: row.publishedAt.toISOString(),
     publishedRevisionId: row.publishedRevisionId === null ? null : String(row.publishedRevisionId),
     createdAt: row.createdAt.toISOString(),

@@ -1,6 +1,6 @@
 import { vi } from 'vite-plus/test'
 
-import type { Comment, Like, NewComment, NewUser, Page as MetricRow, User } from '@/server/db/types'
+import type { Comment, Like, MetricRow, NewComment, NewUser, User } from '@/server/db/types'
 
 // Drizzle is fluent: `db.select().from(t).where(c).limit(n).orderBy(o)` etc.
 // The chain methods all return `this`-ish builders that the caller eventually

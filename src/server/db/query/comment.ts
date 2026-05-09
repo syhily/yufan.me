@@ -3,7 +3,7 @@ import { and, count, desc, eq, gte, ilike, inArray, isNull, sql } from 'drizzle-
 import type { Comment, NewComment } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
-import { comment, page, user } from '@/server/db/schema'
+import { comment, metric, user } from '@/server/db/schema'
 
 // Common projection: every comment column we expose to the application,
 // joined with the public user attributes. Keep the shape stable here so the
@@ -60,12 +60,12 @@ export async function pendingComments(limit: number): Promise<PendingCommentRow[
     .select({
       id: comment.id,
       page: comment.pageKey,
-      title: page.title,
+      title: metric.title,
       author: user.name,
       authorLink: user.link,
     })
     .from(comment)
-    .innerJoin(page, eq(comment.pageKey, page.key))
+    .innerJoin(metric, eq(comment.pageKey, metric.key))
     .innerJoin(user, eq(comment.userId, user.id))
     .where(eq(comment.isPending, true))
     .orderBy(desc(comment.id))
@@ -110,12 +110,12 @@ export async function commentsByIds(ids: bigint[], limit: number): Promise<Pendi
     .select({
       id: comment.id,
       page: comment.pageKey,
-      title: page.title,
+      title: metric.title,
       author: user.name,
       authorLink: user.link,
     })
     .from(comment)
-    .innerJoin(page, eq(comment.pageKey, page.key))
+    .innerJoin(metric, eq(comment.pageKey, metric.key))
     .innerJoin(user, eq(comment.userId, user.id))
     .where(inArray(comment.id, ids))
     .orderBy(desc(comment.id))
@@ -178,7 +178,7 @@ export async function findCommentWithUserAndPage(id: bigint) {
     .select()
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .innerJoin(page, eq(comment.pageKey, page.key))
+    .innerJoin(metric, eq(comment.pageKey, metric.key))
     .where(eq(comment.id, id))
     .limit(1)
   return rows[0] ?? null
@@ -250,27 +250,28 @@ export interface PageOption {
 }
 
 // Page-title autocomplete for the comment-moderation filter Combobox.
-// `q` is matched case-insensitively against `page.title`. Empty `q` is
-// allowed and returns the most recent N pages so the dropdown can show
-// a reasonable default the moment the user opens it. The caller-side
-// `limit` is bounded to a server-side hard cap upstream (see schema).
+// `q` is matched case-insensitively against the metric table's
+// denormalised `title`. Empty `q` is allowed and returns the most
+// recent N rows so the dropdown can show a reasonable default the
+// moment the user opens it. The caller-side `limit` is bounded to a
+// server-side hard cap upstream (see schema).
 //
 // When `keys` is supplied we instead do an exact key-match — this is
 // the "rehydrate selection from URL" path where the client only knows
 // the page key (e.g. from `?pageKey=https://yufan.me/about/`) and
 // needs the matching `title` to render in the Combobox trigger.
 export async function searchPages(q: string | undefined, limit: number, keys?: string[]): Promise<PageOption[]> {
-  const conditions = [isNull(page.deletedAt)]
+  const conditions = [isNull(metric.deletedAt)]
   if (keys && keys.length > 0) {
-    conditions.push(inArray(page.key, keys))
+    conditions.push(inArray(metric.key, keys))
   } else if (q) {
-    conditions.push(ilike(page.title, `%${q}%`))
+    conditions.push(ilike(metric.title, `%${q}%`))
   }
   return db
-    .select({ key: page.key, title: page.title })
-    .from(page)
+    .select({ key: metric.key, title: metric.title })
+    .from(metric)
     .where(and(...conditions))
-    .orderBy(desc(page.id))
+    .orderBy(desc(metric.id))
     .limit(limit)
 }
 
@@ -342,10 +343,10 @@ export async function countAllComments(filters: AdminListFilters): Promise<numbe
 export async function listAdminComments(offset: number, limit: number, filters: AdminListFilters) {
   const conditions = buildAdminListConditions(filters)
   return db
-    .select({ ...commentWithUser, pageTitle: page.title })
+    .select({ ...commentWithUser, pageTitle: metric.title })
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .leftJoin(page, eq(comment.pageKey, page.key))
+    .leftJoin(metric, eq(comment.pageKey, metric.key))
     .where(and(...conditions))
     .orderBy(desc(comment.createdAt))
     .limit(limit)

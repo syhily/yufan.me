@@ -106,8 +106,8 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       { id: 'og', prefix: allBuckets.og.prefix },
       { id: 'calendar', prefix: allBuckets.calendar.prefix },
       { id: 'avatar', prefix: allBuckets.avatar.prefix },
-      { id: 'image-meta', prefix: allBuckets['image-meta'].prefix },
-      { id: 'comments-md', prefix: allBuckets['comments-md'].prefix },
+      { id: 'imageMeta', prefix: allBuckets.imageMeta.prefix },
+      { id: 'commentsMd', prefix: allBuckets.commentsMd.prefix },
     ]
     return all.filter((entry) => entry.id !== bucket.id)
   }, [allBuckets, bucket.id])

@@ -9,7 +9,6 @@ import {
   PencilIcon,
   SigmaIcon,
   TrashIcon,
-  UsersIcon,
   WorkflowIcon,
   XIcon,
 } from 'lucide-react'
@@ -26,7 +25,7 @@ import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 
 // Universal "block card" Tiptap node. The PortableText ↔ ProseMirror
 // bridge maps every PT custom block (`musicPlayer`, `mathBlock`,
-// `mermaid`, `solution`, `friends`, `footnoteDefinition`) to a single
+// `mermaid`, `solution`, `footnoteDefinition`) to a single
 // `blockCard` PM node carrying the original PT block in
 // `attrs.payload`. This Node spec is what makes the editor round-trip
 // those blocks safely:
@@ -260,8 +259,6 @@ function CardIcon({ ptType }: { ptType: string }) {
       return <WorkflowIcon {...props} />
     case 'solution':
       return <ListTreeIcon {...props} />
-    case 'friends':
-      return <UsersIcon {...props} />
     case 'footnoteDefinition':
       return <CodeIcon {...props} />
     default:
@@ -279,8 +276,6 @@ function cardTitle(ptType: string): string {
       return 'Mermaid 流程图'
     case 'solution':
       return '解答块'
-    case 'friends':
-      return '友链网格'
     case 'footnoteDefinition':
       return '脚注定义'
     default:
@@ -309,8 +304,6 @@ function CardSummary({ payload }: CardSummaryProps) {
       return <pre className="mt-1 max-h-32 overflow-auto text-xs text-muted-foreground">{payload.code}</pre>
     case 'solution':
       return <div className="mt-1 text-xs text-muted-foreground">包含 {payload.children.length} 个子块</div>
-    case 'friends':
-      return <div className="mt-1 text-xs text-muted-foreground">渲染时使用 catalog 友链</div>
     case 'footnoteDefinition':
       return <div className="mt-1 text-xs text-muted-foreground">脚注 #{payload.index}</div>
     default:

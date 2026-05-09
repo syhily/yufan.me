@@ -11,6 +11,16 @@ import { rehypeCodeWithGlobalCache } from './src/server/markdown/rehype-code.ts'
 import rehypeMathjax from './src/server/markdown/rehype-mathjax.ts'
 import remarkCollectImages from './src/server/markdown/remark-collect-images.ts'
 
+// SLUG NAMESPACE — global. Every value emitted by `contentSlug()`
+// (post `slug`, post `alias[]`, page `slug`) lives in **one**
+// namespace shared with the DB-side `page` table's `slug` column
+// (`src/server/db/schema.ts`). The public routes physically
+// separate posts (`/posts/:slug`) from pages (`/:slug`), but the
+// catalog, OG generator, comment threading and sitemap all key
+// on the slug independent of the prefix. Catalog cold start
+// fences this with `validatePageSlugs` / `indexPosts` in
+// `@/server/catalog/catalog`; refuse to introduce another slug
+// emitter without first reading those validators.
 function contentSlug() {
   return z
     .string()
@@ -25,6 +35,9 @@ const postSchema = z.object({
   date: z.coerce.date(),
   updated: z.coerce.date().optional(),
   comments: z.boolean().optional().default(true),
+  // Each alias also occupies a slot in the global slug namespace
+  // documented above. Aliases let an old permalink keep resolving
+  // after a rename without breaking inbound links.
   alias: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().default([]),
   category: z.string(),

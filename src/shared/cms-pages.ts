@@ -21,6 +21,14 @@ export interface AdminPageDto {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  /**
+   * Render the global friends grid at the bottom of the page detail
+   * route. Toggled from the editor's metadata sidebar; the grid is
+   * **not** part of the body (the PortableText dialect has no
+   * friends block), so flipping this on/off does not require
+   * re-publishing the body.
+   */
+  showFriends: boolean
   /** ISO-8601. Editable from the metadata panel. */
   publishedAt: string
   /** `null` while the page has never been published. */
@@ -96,9 +104,13 @@ export interface ListPageRevisionsOutput {
 // `id` absent → create a new row. Present → update the matching row.
 // All optional fields fall back to defaults on create or to existing
 // values on update.
+//
+// `slug` is wire-optional: when omitted (or empty), the server derives
+// one from `title` via `deriveSlug` (pinyin-pro -> github-slugger),
+// matching the tag and category flows.
 export interface UpsertPageMetaInput {
   id?: string
-  slug: string
+  slug?: string
   title: string
   summary?: string
   cover?: string
@@ -106,6 +118,11 @@ export interface UpsertPageMetaInput {
   published?: boolean
   commentsEnabled?: boolean
   showToc?: boolean
+  /**
+   * Toggle the page-bottom friends grid. See `AdminPageDto.showFriends`
+   * for the full semantics. Defaults to `false` on create.
+   */
+  showFriends?: boolean
   /** ISO-8601 string; admin date-picker sets this on a re-publish. */
   publishedAt?: string
 }
@@ -191,4 +208,39 @@ export interface PreviewPageBodyOutput {
   /** Rendered HTML for the preview pane. */
   html: string
   headings: MarkdownHeading[]
+}
+
+// --- math (editor preview) ------------------------------------------------
+
+// Editor inline-math preview. The bubble menu's "行内 TeX" panel POSTs
+// the typing buffer here on every keystroke (debounced) and renders
+// whatever SVG comes back. Going through the same MathJax engine the
+// prerender pass uses guarantees the preview cannot drift from what
+// the published page will show on save.
+export interface RenderMathInput {
+  /** Raw TeX source. Length-bounded by `renderMathSchema`. */
+  tex: string
+  /**
+   * `true` for `$$ … $$` block math (centred, larger glyphs);
+   * `false` for inline `$ … $`. Mirrors the `display` flag MathJax's
+   * `convert(...)` accepts and the prerender pass passes per block /
+   * mark def.
+   */
+  display: boolean
+}
+
+export interface RenderMathOutput {
+  /**
+   * MathJax-rendered SVG, or an empty string when MathJax threw.
+   * The editor surfaces the empty case as an inline syntax-error
+   * badge while continuing to show the last successful render so
+   * the preview pane never flashes blank mid-typing.
+   */
+  svg: string
+  /**
+   * Server-side error message when MathJax refused to render the
+   * input (typically a TeX syntax error). `null` on success. The
+   * editor reads this to decide whether to flip the error badge.
+   */
+  error: string | null
 }

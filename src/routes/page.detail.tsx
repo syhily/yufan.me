@@ -10,6 +10,7 @@ import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/ro
 import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
 import { PageBody, preloadPageBody } from '@/ui/mdx/MdxContent'
+import { Friends } from '@/ui/mdx/page/Friends'
 import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 import { PageDetailBody } from '@/ui/post/post/PageDetailBody'
 
@@ -77,6 +78,13 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       page,
       bodyData,
       friends: catalog.friends,
+      // Lifted out of `page` so the loader can pass the boolean to the
+      // component without growing `DetailPageShell` (the chrome
+      // doesn't care about this — only the body rendering does).
+      // MDX-sourced pages always read `false` here because they
+      // already embed `<Friends />` inline when they want the grid
+      // (see `buildPage` in `@/server/catalog/catalog`).
+      showFriends: sourcePage.showFriends,
       detail,
       imageMeta,
     },
@@ -93,7 +101,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { page, bodyData, friends, detail, imageMeta } = loaderData
+  const { page, bodyData, friends, showFriends, detail, imageMeta } = loaderData
   return (
     <PageDetailBody
       page={page}
@@ -107,8 +115,17 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
       {bodyData.source === 'mdx' ? (
         <PageBody path={bodyData.mdxPath} friends={friends} imageMeta={imageMeta} />
       ) : (
-        <PortableTextBody body={bodyData.body} friends={friends} imageMeta={imageMeta} />
+        <PortableTextBody body={bodyData.body} imageMeta={imageMeta} headingSlugs={page.headings.map((h) => h.slug)} />
       )}
+      {/*
+        Meta-driven friends grid. Renders **after** the body so the
+        operator can opt into the section without touching the
+        PortableText document (and without re-publishing). MDX-sourced
+        pages already embed `<Friends />` inline when they want it, so
+        `loader` forces `showFriends=false` for them — the catalog
+        contract keeps the two paths from double-rendering.
+      */}
+      {showFriends && <Friends friends={[...friends]} />}
     </PageDetailBody>
   )
 }

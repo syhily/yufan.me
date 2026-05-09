@@ -149,8 +149,8 @@ export interface CacheSettings {
     og: { prefix: string; ttlSeconds: number }
     calendar: { prefix: string; ttlSeconds: number }
     avatar: { prefix: string; ttlSeconds: number }
-    'image-meta': { prefix: string; ttlSeconds: number }
-    'comments-md': { prefix: string; ttlSeconds: number }
+    imageMeta: { prefix: string; ttlSeconds: number }
+    commentsMd: { prefix: string; ttlSeconds: number }
   }
 }
 

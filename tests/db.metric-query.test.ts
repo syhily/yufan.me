@@ -34,7 +34,7 @@ describe('db/query/metric', () => {
     const compiled = new PgDialect().sqlToQuery(query)
 
     expect(compiled.sql).toContain('($1::varchar(255), $2::bigint), ($3::varchar(255), $4::bigint)')
-    expect(compiled.sql).toContain('COALESCE("page"."pv", 0) + v.delta')
+    expect(compiled.sql).toContain('COALESCE("metric"."pv", 0) + v.delta')
     expect(compiled.params).toEqual(['https://yufan.me/posts/a/', 1, 'https://yufan.me/posts/b/', 2])
   })
 

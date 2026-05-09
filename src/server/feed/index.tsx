@@ -52,7 +52,7 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
   if ('source' in entry && entry.source === 'db') {
     return prerenderToHtml(
       <BlogSettingsProvider value={bundle}>
-        <PortableTextBody body={entry.body} />
+        <PortableTextBody body={entry.body} headingSlugs={entry.headings.map((h) => h.slug)} />
       </BlogSettingsProvider>,
     )
   }

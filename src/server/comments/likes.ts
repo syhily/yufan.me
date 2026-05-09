@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon'
+import { startOfDay, subDays } from 'date-fns'
 
 import {
   commentCountsByPageKeys,
@@ -90,7 +90,7 @@ export async function validateLikeToken(permalink: string, token: string): Promi
  * call from a cron job; also invoked by the in-process sweep below.
  */
 export async function purgeStaleLikeTokens(): Promise<void> {
-  const thirtyDaysAgo = DateTime.now().minus({ days: 30 }).startOf('day').toJSDate()
+  const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
   await purgeOldLikeTokens(thirtyDaysAgo)
 }
 

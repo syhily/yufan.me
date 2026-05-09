@@ -252,8 +252,8 @@ export const cacheSchema = z
       // and one-click admin invalidation; the writers still front the
       // network round-trip with `createInflight` so concurrent
       // requests for the same key collapse to a single load.
-      'image-meta': cacheBucketSchema,
-      'comments-md': cacheBucketSchema,
+      imageMeta: cacheBucketSchema,
+      commentsMd: cacheBucketSchema,
     }),
   })
   .superRefine((value, ctx) => {
@@ -262,8 +262,8 @@ export const cacheSchema = z
       { id: 'og', prefix: buckets.og.prefix },
       { id: 'calendar', prefix: buckets.calendar.prefix },
       { id: 'avatar', prefix: buckets.avatar.prefix },
-      { id: 'image-meta', prefix: buckets['image-meta'].prefix },
-      { id: 'comments-md', prefix: buckets['comments-md'].prefix },
+      { id: 'imageMeta', prefix: buckets.imageMeta.prefix },
+      { id: 'commentsMd', prefix: buckets.commentsMd.prefix },
     ]
 
     // Two prefixes "collide" if either is a strict prefix of the other.

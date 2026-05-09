@@ -1,5 +1,6 @@
 import { previewPageBodySchema } from '@/server/cms/pages/schema'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/portable-text'
 
 // Render the supplied body to a stand-alone HTML fragment for the
@@ -25,7 +26,7 @@ export const action = defineApiAction({
   async run({ payload }) {
     const { renderPortableTextToHtml } = await import('@/server/cms/pages/preview')
     const html = await renderPortableTextToHtml(payload.body)
-    const headings = collectHeadings(payload.body)
+    const headings = collectHeadings(payload.body, deriveSlug)
     return { html, headings }
   },
 })

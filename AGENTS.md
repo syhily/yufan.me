@@ -214,6 +214,58 @@ Use aliases instead of relative paths. The only allowed relative imports:
   listing pages, and category/tag counts. Future-dated scheduled posts
   remain excluded from those listings and counts.
 
+### Migrating MDX pages into the DB
+
+- The static pages under `src/content/pages/*.mdx` (about, guestbook,
+  links, …) historically render through the Fumadocs MDX pipeline.
+  Once the page editor is preferred, the one-shot script
+  `scripts/migrate-mdx-pages.ts` walks every MDX page and writes it
+  into the `page` + `content` tables via the same `createPage` +
+  `publishLatest` service paths the admin UI uses.
+- Run it with `vp dlx vite-node --env-file=.env scripts/migrate-mdx-pages.ts`
+  for a dry run (default — no DB writes), and `--apply` to actually
+  write. Add `--force` to skip the "slug already in `page` table"
+  idempotency guard (the script still won't update an existing row;
+  `--force` only opts a known slug back into the dry-run preview).
+- Resource handling: cover URL + every inline `![alt](url)` go through
+  `resolveSrcToStoragePath` + `findImageByStoragePath`. A hit fills
+  the saved PortableText image block with `storagePath` / width /
+  height / thumbhash and the cache-busted public URL; a miss leaves
+  the bare URL on the block and surfaces in the per-page report so
+  the operator can backfill the row in `/wp-admin/images`. Every
+  `<MusicPlayer id="…">` is sanity-checked against `findMusicByPlayerId`
+  — missing rows log a warning but don't abort (the runtime resolver
+  handles unknown ids gracefully).
+- `<Friends />` auto-toggle: when the migration script's
+  `stripFriendsTag` pass detects a `<Friends />` JSX tag in the raw
+  MDX it removes the tag from the source AND pre-toggles
+  `page.show_friends=true` on the inserted row so the meta switch
+  reproduces the original visual outcome. The PortableText body
+  itself never carries a `friends` block (that block type was
+  retired together with the meta toggle). The
+  `migrate.report.show_friends_auto` warning surfaces every page
+  the script touched so the operator can confirm the toggle in
+  `/wp-admin/pages` afterward.
+- The script never deletes the source MDX. The catalog already
+  prefers DB rows over MDX of the same slug
+  (`buildDbPage(...).filter((p) => !dbPageSlugs.has(p.slug))` in
+  `@/server/catalog/catalog`), so a successful migration is
+  reversible by deleting the `page` row from `/wp-admin/pages` —
+  the MDX takes over again.
+- The mdast → PortableText converter at
+  `@/server/cms/pages/migrate-mdx` is intentionally narrow: it
+  handles paragraphs, headings (h1-h4), lists (one level of
+  nesting), blockquotes, images, links, decorators, and the
+  `<MusicPlayer>` JSX-shaped HTML. Anything richer (fenced code
+  blocks, math, mermaid, tables, footnotes, custom Solution
+  blocks, multi-level lists, **`<Friends />`**) throws so a future
+  MDX page that grows a richer construct cannot silently lose
+  content. The `<Friends />` strip happens upstream in the
+  migration script, so by the time the converter runs no friends
+  JSX survives the input.
+  Extending the converter is a localised change in that one file
+  (and one round of tests in `tests/service.cms-pages-migrate-mdx.test.ts`).
+
 ### Taxonomies (categories, tags, friends)
 
 - Stored in the `category` / `tag` / `friend` Postgres tables, edited
@@ -225,6 +277,112 @@ Use aliases instead of relative paths. The only allowed relative imports:
   warns when it references a missing tag.
 - Deletion is blocked while any post still references the row — the
   admin must change the MDX frontmatter first.
+
+### Slug derivation
+
+- One canonical helper for every URL slug in the project lives at
+  `@/server/slug.ts::deriveSlug(text)`. The pipeline is
+  `pinyin-pro` → whitespace-collapse → `github-slugger`, with a
+  post-pass that collapses runs of dashes and trims leading /
+  trailing dashes, so the output always satisfies `SLUG_PATTERN`
+  (`^[a-z0-9]+(?:-[a-z0-9]+)*$`).
+- Server-only — `pinyin-pro` ships ~150KB of CJK lookup tables and
+  must NOT reach the client bundle. The shared / client trees never
+  import `@/server/slug`; admin forms send `slug?: string` and the
+  service derives from the entity name / title when the field is
+  blank.
+- Every authoring surface follows the same contract: tag, category,
+  page, and heading-anchor slugs all flow through `deriveSlug`. Page
+  schema still permits `[._-]` separators in user-supplied slugs so
+  legacy URLs like `archives.html` survive, but the derived value is
+  always plain kebab-case ASCII.
+- Heading anchors for DB-backed pages: SSR loaders pre-compute
+  `collectHeadings(body, deriveSlug).map(h => h.slug)` and pass the
+  list to `<PortableTextBody headingSlugs>`. The renderer consumes
+  one slug per heading via a per-render cursor; with the prop absent
+  (editor live-preview before the server round-trip) it falls back
+  to a local `github-slugger` over the raw text. MDX pages stay on
+  `rehype-slug` and produce byte-identical anchors for ASCII
+  headings.
+
+### Slug uniqueness — page ↔ post is global
+
+- **Page slugs and post slugs share a single namespace.** Even
+  though the public routes physically separate them
+  (`/posts/:slug` vs `/:slug`), the catalog, OG image generator
+  (`/images/og/:slug.png`), comment threading (keyed on
+  permalink), and sitemap all key on the slug independent of the
+  prefix. A page slug equal to a post slug (or to any post
+  `alias[]` value) is a violation of the global invariant.
+- **The four emitters in this namespace** are the DB `page` table
+  (`slug` column), MDX page frontmatter
+  (`src/content/pages/**/*.mdx` `slug`), MDX post frontmatter
+  (`src/content/posts/**/*.mdx` `slug`), and MDX post `alias[]`.
+- **Enforcement is split across two layers.** The DB-level
+  `UNIQUE(slug)` on the `page` table and `findPageMetaBySlug` in
+  `@/server/cms/pages/service` only catch page↔page collisions
+  inside the `page` table. The cross-table page↔post fence lives
+  in `@/server/catalog/catalog::validatePageSlugs`, which runs at
+  catalog cold start and after every admin save. A colliding save
+  succeeds at save time and surfaces as a 500 on the next
+  catalog rebuild — keep this asymmetry in mind when changing
+  the page-service or catalog code paths.
+- **Adding a new slug emitter** (a future `note` collection, a
+  redirect table, …) MUST be folded into either `postSlugs` or
+  `validatePageSlugs` (depending on which side of the namespace it
+  lives on). Otherwise the global invariant silently degrades and
+  `getCatalog().getPost(slug) ?? getCatalog().getPage(slug)`
+  starts returning the wrong row.
+
+### Page meta toggles
+
+- The `page` table carries a small set of operator-facing booleans
+  edited from the right sidebar of `/wp-admin/pages/edit/:id`
+  (`MetaSidebar`'s 展示选项 card). Each one drives a render-time
+  branch in `routes/page.detail.tsx`, **never** a body mutation, so
+  the operator can flip it on/off without re-publishing the
+  PortableText document.
+  - `comments_enabled` — render the comment thread under the body.
+  - `show_toc` — render the right-rail Table of Contents.
+  - `show_friends` — append the global friends grid (the same one
+    the legacy `<Friends />` MDX component renders) to the bottom
+    of the body, before the Like button. MDX-sourced pages always
+    read `false` here (`buildPage` in `@/server/catalog/catalog`
+    forces it) because they still embed `<Friends />` inline; the
+    grid is rendered by the body's React component, not by the
+    meta switch. The migration script strips `<Friends />` from
+    the source and pre-toggles `show_friends=true` on the inserted
+    DB row so DB-backed pages reproduce the same visual outcome
+    without a body-side `friends` block (the PortableText dialect
+    no longer carries one).
+- Adding a new toggle is a small, mechanical change that has to
+  travel six layers in lockstep:
+  1. `src/server/db/schema.ts` — column + comment.
+  2. A drizzle migration directory under `drizzle/` with both
+     `migration.sql` (`ALTER TABLE … ADD COLUMN IF NOT EXISTS …`)
+     and a freshly-cloned `snapshot.json` (the old snapshot, with
+     a new `entityType: 'columns'` entry inserted next to the
+     existing toggles, a fresh `id`, and the previous id appended
+     to `prevIds`).
+  3. `src/server/cms/pages/projection.ts` (`toCmsPage` and
+     `toAdminPageDto`).
+  4. `src/server/cms/pages/service.ts` (`createPage` default,
+     `updatePageMeta` fallback) and the matching Zod field in
+     `src/server/cms/pages/schema.ts`.
+  5. `src/shared/cms-pages.ts` (`AdminPageDto`,
+     `UpsertPageMetaInput`) and `src/shared/catalog.ts`
+     (`ClientPage` if the toggle has a public effect).
+  6. `src/ui/admin/pages/MetaSidebar.tsx` (`PageMetaDraft`,
+     `EMPTY_META_DRAFT`, `metaDraftFromPage`, plus a `<ToggleRow>`)
+     and the matching `meta.<flag>` echo in
+     `src/ui/admin/pages/PageEditorShell.tsx` (three call sites:
+     create, edit-meta, publish).
+- The `CreateDraftMeta` shape in
+  `src/client/hooks/use-create-page-draft.ts` is a structural
+  mirror of `PageMetaDraft` — adding a field requires updating
+  both. The duplication is intentional (the `client` layer can't
+  reach into `ui`); test fixtures (`tests/_helpers/catalog.ts`,
+  `tests/service.cms-pages*.test.ts`) need the new default too.
 
 ### Images
 
@@ -272,7 +430,11 @@ sourceId)` is a unique key and `source` is reserved as varchar so
   dialect lives in `@/shared/portable-text` (standard text /
   list / heading / blockquote + custom blocks `image`, `code`,
   `mathBlock`, `mermaid`, `horizontalRule`, `musicPlayer`,
-  `solution`, `friends`, `footnoteDefinition`, `table`).
+  `solution`, `footnoteDefinition`, `table`). The friends grid is
+  intentionally NOT a body block — it's a meta toggle on the
+  `page` row (`page.show_friends`) rendered by
+  `routes/page.detail.tsx` after the body. See
+  `### Page meta toggles`.
 - The PT ↔ ProseMirror bridge is `@/shared/pt-bridge` — single
   file by design. Standard blocks map onto Tiptap's built-in nodes;
   custom blocks ride a generic `blockCard` PM node so the bridge

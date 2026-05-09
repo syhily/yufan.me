@@ -334,7 +334,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     const publishedAt = localInputValueToIso(meta.publishedAt)
     upsertMetaApi.submit({
       id: detail.page.id,
-      slug: meta.slug.trim(),
+      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
       title: meta.title.trim(),
       summary: meta.summary.trim(),
       cover: meta.cover.trim(),
@@ -342,6 +342,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: meta.published,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      showFriends: meta.showFriends,
       ...(publishedAt !== null ? { publishedAt } : {}),
     })
   }, [upsertMetaApi, isEditing, detail, meta])
@@ -360,7 +361,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
 
     const publishedAt = localInputValueToIso(meta.publishedAt)
     const metaEnvelope = await submitApiAction<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
-      slug: meta.slug.trim(),
+      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
       title: meta.title.trim(),
       summary: meta.summary.trim(),
       cover: meta.cover.trim(),
@@ -368,6 +369,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: meta.published,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      showFriends: meta.showFriends,
       ...(publishedAt !== null ? { publishedAt } : {}),
     })
     if (!('data' in metaEnvelope) || metaEnvelope.data === undefined) {
@@ -469,7 +471,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     const publishedAt = localInputValueToIso(meta.publishedAt)
     upsertMetaApi.submit({
       id: detail.page.id,
-      slug: meta.slug.trim(),
+      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
       title: meta.title.trim(),
       summary: meta.summary.trim(),
       cover: meta.cover.trim(),
@@ -477,6 +479,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: true,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      showFriends: meta.showFriends,
       ...(publishedAt !== null ? { publishedAt } : {}),
     })
   }, [upsertMetaApi, isEditing, detail, meta])
@@ -621,7 +624,11 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
     [isEditing, detail],
   )
 
-  const canPersistMeta = meta.slug.trim() !== '' && meta.title.trim() !== ''
+  // Title is the only mandatory field at this layer. Slug is optional —
+  // the server falls back to `deriveSlug(title)` (pinyin-pro ->
+  // github-slugger) when blank, so the editor doesn't have to ship a
+  // 150KB pinyin table just to preview the auto-derived value.
+  const canPersistMeta = meta.title.trim() !== ''
   // The publish button is suppressed when the latest revision *is*
   // already the published one (publishing again would create an
   // empty no-op revision). The user can still re-publish by making
@@ -788,6 +795,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               onChange={setMeta}
               disabled={isPending}
               publishStatus={sidebarPublishStatus}
+              ogPreviewSlug={isEditing ? detail.page.slug : null}
               extras={
                 isEditing ? (
                   <div className="rounded-md border bg-card p-2">
@@ -823,6 +831,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
                 onChange={setMeta}
                 disabled={isPending}
                 publishStatus={sidebarPublishStatus}
+                ogPreviewSlug={isEditing ? detail.page.slug : null}
                 extras={
                   isEditing ? (
                     <div className="rounded-md border bg-card p-2">
@@ -926,7 +935,7 @@ function TitleSlugStrip({ title, slug, onTitleChange, onSlugChange, disabled }: 
           aria-label="URL slug"
           value={slug}
           onChange={(e) => onSlugChange(e.target.value)}
-          placeholder="slug"
+          placeholder="留空将根据标题按拼音生成"
           maxLength={80}
           disabled={disabled}
           className="h-7 grow border-0 bg-transparent px-0 text-xs shadow-none focus-visible:ring-0 dark:bg-transparent"

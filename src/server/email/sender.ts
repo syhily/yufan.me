@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { render } from 'react-email'
 
 import type { CommentAndUser } from '@/server/comments/types'
-import type { Comment, Page, User } from '@/server/db/types'
+import type { Comment, MetricRow, User } from '@/server/db/types'
 
 import ApprovedComment from '@/server/email/templates/ApprovedComment'
 import NewComment from '@/server/email/templates/NewComment'
@@ -119,7 +119,7 @@ async function internalSend(to: string, subject: string, html: string): Promise<
 }
 
 // Sent to the administrator whenever a new comment is posted.
-export async function sendNewComment(commentInfo: CommentAndUser, page: Page): Promise<SendResult> {
+export async function sendNewComment(commentInfo: CommentAndUser, page: MetricRow): Promise<SendResult> {
   const html = await render(
     createElement(NewComment, {
       postTitle: page.title,
@@ -138,7 +138,7 @@ export async function sendNewReply(
   sourceUser: User,
   source: Comment,
   reply: CommentAndUser,
-  page: Page,
+  page: MetricRow,
 ): Promise<SendResult> {
   const html = await render(
     createElement(NewReply, {
@@ -158,7 +158,7 @@ export async function sendNewReply(
 }
 
 // Sent to the commenter when an admin approves their previously pending comment.
-export async function sendApprovedComment(comment: Comment, user: User, page: Page): Promise<SendResult> {
+export async function sendApprovedComment(comment: Comment, user: User, page: MetricRow): Promise<SendResult> {
   const html = await render(
     createElement(ApprovedComment, {
       receiver: user.name,
