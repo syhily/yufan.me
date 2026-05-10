@@ -346,9 +346,9 @@ export const music = pgTable(
 //   the admin flips without writing a new revision (these are
 //   metadata, not body), so they live on `page` rather than
 //   `content`.
-// - `published_at` is the canonical "first published" timestamp shown
-//   in the public footer / `<time>`. It defaults to the row's create
-//   time if the operator forgets to set it explicitly.
+// - `published_at` schedules visibility (`published_at <= now()` for the
+//   catalog) and updates on republish; public `<time>` uses
+//   `first_published_at` when set.
 // - `published_revision_id` is a foreign key into `content.id`. NULL
 //   means "never published yet" — the public catalog hides such
 //   rows. We deliberately don't enforce the FK in DDL because the

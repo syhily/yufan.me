@@ -80,10 +80,9 @@ export async function listPublicPostsWithContent(
 
 // --- Lightweight projection (no content join) --------------------------------
 
-/** `listingDate: 'firstPublished'` — archives group by first publication, not `published_at` after republish. */
-function toClientPostFromMeta(meta: PostMetaRow, options?: { listingDate: 'firstPublished' }): ClientPost {
-  const date =
-    options?.listingDate === 'firstPublished' ? (meta.firstPublishedAt ?? meta.publishedAt) : meta.publishedAt
+/** Public `date` is first publication time; falls back to `published_at` before the first publish. */
+function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
+  const date = meta.firstPublishedAt ?? meta.publishedAt
   return {
     id: String(meta.id),
     title: meta.title,
@@ -228,7 +227,7 @@ export async function listAllPosts(options?: PostVisibilityOptions): Promise<Pos
 export async function listClientPosts(options?: PostVisibilityOptions): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts({ ...filters })
-  return metas.map((meta) => toClientPostFromMeta(meta, { listingDate: 'firstPublished' }))
+  return metas.map((meta) => toClientPostFromMeta(meta))
 }
 
 // --- Metadata ----------------------------------------------------------------

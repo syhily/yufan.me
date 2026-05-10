@@ -41,7 +41,7 @@ export function toCmsPage(
   return {
     id: String(meta.id),
     title: meta.title,
-    date: meta.publishedAt,
+    date: meta.firstPublishedAt ?? meta.publishedAt,
     updated: meta.updatedAt,
     comments: meta.commentsEnabled,
     cover: meta.cover,

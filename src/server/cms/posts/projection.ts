@@ -28,7 +28,7 @@ export function toCmsPost(
   return {
     id: String(meta.id),
     title: meta.title,
-    date: meta.publishedAt,
+    date: meta.firstPublishedAt ?? meta.publishedAt,
     updated: meta.updatedAt,
     comments: meta.commentsEnabled,
     alias: (meta.alias as string[]) ?? [],
@@ -75,6 +75,8 @@ export interface AdminPostDto {
   authorId: string | null
   authorName: string | null
   pinnedAt: string | null
+  /** Null until the first successful publish. */
+  firstPublishedAt: string | null
 }
 
 export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }): AdminPostDto {
@@ -100,6 +102,7 @@ export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }
     authorId: row.authorId === null ? null : String(row.authorId),
     authorName: (row as { authorName?: string | null }).authorName ?? null,
     pinnedAt: row.pinnedAt === null ? null : row.pinnedAt.toISOString(),
+    firstPublishedAt: row.firstPublishedAt === null ? null : row.firstPublishedAt.toISOString(),
   }
 }
 

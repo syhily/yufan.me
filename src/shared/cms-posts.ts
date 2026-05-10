@@ -23,6 +23,8 @@ export interface AdminPostDto {
   authorId: string | null
   authorName: string | null
   pinnedAt: string | null
+  /** Null until the first successful publish. */
+  firstPublishedAt: string | null
 }
 
 export interface AdminRevisionDto {

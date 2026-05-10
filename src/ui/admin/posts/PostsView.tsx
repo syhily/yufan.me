@@ -465,7 +465,7 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
         <StatusBadge post={post} />
       </TableCell>
       <TableCell className="hidden align-top text-sm lg:table-cell">
-        {new Date(post.publishedAt).toLocaleString('zh-CN')}
+        {new Date(post.firstPublishedAt ?? post.publishedAt).toLocaleString('zh-CN')}
       </TableCell>
       <TableCell className="pr-4 text-right align-top">
         <div className="flex justify-end gap-2">
