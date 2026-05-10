@@ -87,7 +87,7 @@ function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
     id: String(meta.id),
     title: meta.title,
     date,
-    updated: meta.updatedAt,
+    updated: meta.publishedAt,
     comments: meta.commentsEnabled,
     alias: (meta.alias as string[]) ?? [],
     tags: (meta.tags as string[]) ?? [],

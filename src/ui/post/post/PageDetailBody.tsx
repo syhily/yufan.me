@@ -78,6 +78,9 @@ export function PageDetailBody({
   const markerLabel = draftMarker !== null ? DRAFT_MARKER_LABELS[draftMarker] : null
   const postContentRef = useRef<HTMLDivElement>(null)
   useMediumZoom(postContentRef)
+  const publishedIso = page.date.toISOString()
+  const updatedAt = page.updated ?? page.date
+  const updatedIso = updatedAt.toISOString()
   return (
     <div className="flex flex-wrap">
       <div className="box-border w-full max-w-full shrink-0 xl:w-2/3">
@@ -92,9 +95,20 @@ export function PageDetailBody({
             {page.title}
           </h1>
           <div className={cn(postMetaClass, 'mt-3 mb-4 text-sm text-ink-muted')}>
-            <time className={postMetaDateClass}>
-              {formatLocalDate(page.updated ?? page.date, 'yyyy-MM-dd HH:mm', config)}
-            </time>
+            <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap gap-x-4 gap-y-1')}>
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                <span className="shrink-0">初次发布：</span>
+                <time dateTime={publishedIso} className="tabular-nums">
+                  {formatLocalDate(page.date, 'yyyy-MM-dd HH:mm', config)}
+                </time>
+              </div>
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                <span className="shrink-0">最近修改：</span>
+                <time dateTime={updatedIso} className="tabular-nums">
+                  {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', config)}
+                </time>
+              </div>
+            </div>
             {admin && (
               <Link
                 to={`/wp-admin/pages/${page.id}/edit`}

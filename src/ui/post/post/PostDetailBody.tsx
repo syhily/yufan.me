@@ -48,6 +48,9 @@ export function PostDetailBody({
   const config = useSiteIdentity()
   const postContentRef = useRef<HTMLDivElement>(null)
   useMediumZoom(postContentRef)
+  const publishedIso = post.date.toISOString()
+  const updatedAt = post.updated ?? post.date
+  const updatedIso = updatedAt.toISOString()
   return (
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
@@ -63,9 +66,20 @@ export function PostDetailBody({
             <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
               <h1 className={cn(postTitleClass, 'font-bold')}>{post.title}</h1>
               <div className={cn(postMetaClass, 'mt-4 mb-6 text-sm text-ink-muted')}>
-                <time className={postMetaDateClass}>
-                  {formatLocalDate(post.updated ?? post.date, 'yyyy-MM-dd HH:mm', config)}
-                </time>
+                <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap gap-x-4 gap-y-1')}>
+                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                    <span className="shrink-0">初次发布：</span>
+                    <time dateTime={publishedIso} className="tabular-nums">
+                      {formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}
+                    </time>
+                  </div>
+                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                    <span className="shrink-0">最近修改：</span>
+                    <time dateTime={updatedIso} className="tabular-nums">
+                      {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', config)}
+                    </time>
+                  </div>
+                </div>
                 {admin && (
                   <Link
                     to={`/wp-admin/posts/${post.id}/edit`}

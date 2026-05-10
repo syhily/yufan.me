@@ -31,6 +31,7 @@ export interface ClientPage {
   id: string
   title: string
   date: Date
+  /** When present from catalog hydration: `published_at` (last publish / go-live), not `updated_at`. */
   updated?: Date
   comments: boolean
   cover: string
@@ -59,6 +60,7 @@ export interface ClientPost {
   id: string
   title: string
   date: Date
+  /** When present from catalog hydration: `published_at` (last publish / go-live), not `updated_at`. */
   updated?: Date
   comments: boolean
   alias: string[]
@@ -125,6 +127,7 @@ export interface DetailPostShell {
   category: string
   tags: string[]
   date: Date
+  /** Catalog: `published_at` for 「最近修改」, not row `updated_at`. */
   updated?: Date
   og?: string
   comments: boolean
@@ -144,6 +147,7 @@ export interface DetailPageShell {
   coverHeight?: number
   permalink: string
   date: Date
+  /** Catalog: `published_at` for 「最近修改」, not row `updated_at`. */
   updated?: Date
   og?: string
   comments: boolean
