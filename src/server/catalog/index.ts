@@ -24,6 +24,7 @@ export {
   findTagByName,
   findTagBySlug,
   getCategoryLink,
+  getCategoryLinks,
   getTagsByNames,
   listAllCategories,
   listAllFriends,

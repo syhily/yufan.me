@@ -1,7 +1,7 @@
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 import type { SidebarData } from '@/ui/sidebar/Sidebar'
 
-import { getCategoryLink, listAllTags } from '@/server/catalog'
+import { getCategoryLinks, listAllTags } from '@/server/catalog'
 import { selectFeaturePosts, selectSidebarPosts } from '@/server/posts/query'
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
@@ -60,12 +60,8 @@ export async function loader({
     metadata: { likes: true, views: true, comments: true },
     seoMode: 'skip-on-first-page',
     computeExtra: async ({ resolvedPosts }) => {
-      const categoryLinks: Record<string, string> = {}
-      for (const post of resolvedPosts) {
-        if (post.category && !categoryLinks[post.category]) {
-          categoryLinks[post.category] = await getCategoryLink(post.category)
-        }
-      }
+      const uniqueCategories = [...new Set(resolvedPosts.map((p) => p.category).filter(Boolean))]
+      const categoryLinks = await getCategoryLinks(uniqueCategories)
 
       const [featurePosts, sidebar, tags] = await Promise.all([featurePromise, sidebarPromise, tagsPromise])
 

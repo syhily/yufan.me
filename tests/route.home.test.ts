@@ -57,6 +57,9 @@ vi.mock('@/server/catalog', () => ({
   listClientPosts: mocks.listClientPosts,
   listAllTags: mocks.listAllTags,
   getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
+  getCategoryLinks: vi.fn(async (names: string[]) =>
+    Object.fromEntries(names.filter((n) => n === sampleCategory.name).map((n) => [n, sampleCategory.permalink])),
+  ),
   toClientPost: (p: unknown) => p,
   toListingPostCard: (p: unknown) => p,
   toSidebarPostLink: (p: unknown) => p,
