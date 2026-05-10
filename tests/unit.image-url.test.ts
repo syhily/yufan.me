@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import { getImageUrl, isTransformableRemoteImage } from '@/shared/images'
 
 describe('shared/images — getImageUrl', () => {
-  const assetHost = 'stage-asset.yufan.me'
+  const assetHost = 'cat.yufan.me'
 
   it('returns src unchanged when the host does not match', () => {
     const src = 'https://other.cdn.com/image.jpg'
@@ -13,12 +13,12 @@ describe('shared/images — getImageUrl', () => {
   })
 
   it('returns src unchanged when the template is empty', () => {
-    const src = 'https://stage-asset.yufan.me/image.jpg'
+    const src = 'https://cat.yufan.me/image.jpg'
     expect(getImageUrl({ src, width: 300, height: 300, assetHost, urlTemplate: '' })).toBe(src)
   })
 
   it('appends the template to the src path', () => {
-    const src = 'https://stage-asset.yufan.me/image.jpg'
+    const src = 'https://cat.yufan.me/image.jpg'
     const result = getImageUrl({
       src,
       width: 300,
@@ -27,11 +27,11 @@ describe('shared/images — getImageUrl', () => {
       assetHost,
       urlTemplate: '!upyun520/both/{width}x{height}/format/webp/quality/{quality}',
     })
-    expect(result).toBe('https://stage-asset.yufan.me/image.jpg!upyun520/both/300x300/format/webp/quality/80')
+    expect(result).toBe('https://cat.yufan.me/image.jpg!upyun520/both/300x300/format/webp/quality/80')
   })
 
   it('moves query params to the end when there is no {src} placeholder', () => {
-    const src = 'https://stage-asset.yufan.me/image.jpg?v=1778083370885'
+    const src = 'https://cat.yufan.me/image.jpg?v=1778083370885'
     const result = getImageUrl({
       src,
       width: 300,
@@ -40,11 +40,11 @@ describe('shared/images — getImageUrl', () => {
       assetHost,
       urlTemplate: '!upyun520/both/{width}x{height}',
     })
-    expect(result).toBe('https://stage-asset.yufan.me/image.jpg!upyun520/both/300x300?v=1778083370885')
+    expect(result).toBe('https://cat.yufan.me/image.jpg!upyun520/both/300x300?v=1778083370885')
   })
 
   it('moves query params to the end when the template contains {src}', () => {
-    const src = 'https://stage-asset.yufan.me/image.jpg?v=1778083370885'
+    const src = 'https://cat.yufan.me/image.jpg?v=1778083370885'
     const result = getImageUrl({
       src,
       width: 300,
@@ -52,11 +52,11 @@ describe('shared/images — getImageUrl', () => {
       assetHost,
       urlTemplate: 'https://wsrv.nl/?url={src}&w={width}',
     })
-    expect(result).toBe('https://wsrv.nl/?url=https://stage-asset.yufan.me/image.jpg&w=300&v=1778083370885')
+    expect(result).toBe('https://wsrv.nl/?url=https://cat.yufan.me/image.jpg&w=300&v=1778083370885')
   })
 
   it('uses & instead of ? when the rendered template already has a query string', () => {
-    const src = 'https://stage-asset.yufan.me/image.jpg?v=123'
+    const src = 'https://cat.yufan.me/image.jpg?v=123'
     const result = getImageUrl({
       src,
       width: 300,
@@ -64,11 +64,11 @@ describe('shared/images — getImageUrl', () => {
       assetHost,
       urlTemplate: 'https://wsrv.nl/?url={src}&w={width}',
     })
-    expect(result).toBe('https://wsrv.nl/?url=https://stage-asset.yufan.me/image.jpg&w=300&v=123')
+    expect(result).toBe('https://wsrv.nl/?url=https://cat.yufan.me/image.jpg&w=300&v=123')
   })
 
   it('preserves multiple query params from src', () => {
-    const src = 'https://stage-asset.yufan.me/image.jpg?v=123&foo=bar'
+    const src = 'https://cat.yufan.me/image.jpg?v=123&foo=bar'
     const result = getImageUrl({
       src,
       width: 300,
@@ -76,24 +76,24 @@ describe('shared/images — getImageUrl', () => {
       assetHost,
       urlTemplate: '!upyun520/both/{width}x{height}',
     })
-    expect(result).toBe('https://stage-asset.yufan.me/image.jpg!upyun520/both/300x300?v=123&foo=bar')
+    expect(result).toBe('https://cat.yufan.me/image.jpg!upyun520/both/300x300?v=123&foo=bar')
   })
 })
 
 describe('shared/images — isTransformableRemoteImage', () => {
   it('returns false for data URLs', () => {
-    expect(isTransformableRemoteImage('data:image/png;base64,abc', 'stage-asset.yufan.me')).toBe(false)
+    expect(isTransformableRemoteImage('data:image/png;base64,abc', 'cat.yufan.me')).toBe(false)
   })
 
   it('returns false for malformed URLs', () => {
-    expect(isTransformableRemoteImage('not-a-url', 'stage-asset.yufan.me')).toBe(false)
+    expect(isTransformableRemoteImage('not-a-url', 'cat.yufan.me')).toBe(false)
   })
 
   it('returns true for matching host', () => {
-    expect(isTransformableRemoteImage('https://stage-asset.yufan.me/image.jpg', 'stage-asset.yufan.me')).toBe(true)
+    expect(isTransformableRemoteImage('https://cat.yufan.me/image.jpg', 'cat.yufan.me')).toBe(true)
   })
 
   it('returns false for mismatched host', () => {
-    expect(isTransformableRemoteImage('https://other.com/image.jpg', 'stage-asset.yufan.me')).toBe(false)
+    expect(isTransformableRemoteImage('https://other.com/image.jpg', 'cat.yufan.me')).toBe(false)
   })
 })
