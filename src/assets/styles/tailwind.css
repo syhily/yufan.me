@@ -431,6 +431,70 @@ body {
     --prose-blog-table-header-bg: var(--surface);
     --prose-blog-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
 
+    /*
+     * Article headings: scale down from @tailwindcss/typography prose-lg defaults.
+     * Baseline: h1 = 1.75rem; h2–h5 step down in ~0.125–0.25rem tiers.
+     * Colour: project token --surface-secondary (#283149), deep blue vs body ink.
+     */
+    &.prose-lg
+      :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      color: var(--surface-secondary);
+    }
+    &.prose-lg :where(h1):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      font-size: 1.75rem;
+      line-height: 1.3;
+    }
+    &.prose-lg :where(h2):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      position: relative;
+      padding: 0 0 0 1.5rem;
+      font-size: 1.5rem;
+      line-height: 1.32;
+    }
+    /* Bar vertical position: tie to line box (`lh`), not fixed px — matches font-size + line-height. */
+    &.prose-lg :where(h2):not(:where([class~='not-prose'], [class~='not-prose'] *))::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: calc(0.5lh - 11px);
+      width: 6px;
+      height: 22px;
+      background-color: var(--primary);
+    }
+    &.prose-lg :where(h3):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      position: relative;
+      padding: 0 0 0 1.5rem;
+      font-size: 1.25rem;
+      line-height: 1.38;
+    }
+    &.prose-lg :where(h3):not(:where([class~='not-prose'], [class~='not-prose'] *))::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: calc(0.5lh - 8px);
+      width: 5px;
+      height: 16px;
+      background-color: var(--primary);
+    }
+    &.prose-lg :where(h4):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      position: relative;
+      padding: 0 0 0 1.5rem;
+      font-size: 1.125rem;
+      line-height: 1.42;
+    }
+    &.prose-lg :where(h4):not(:where([class~='not-prose'], [class~='not-prose'] *))::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: calc(0.5lh - 2.5px);
+      width: 5px;
+      height: 5px;
+      background-color: var(--primary);
+    }
+    &.prose-lg :where(h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
     :where(code) {
       background-color: var(--bg-shiki-light);
       color: var(--fg-inline-code-on-shiki-bg);
