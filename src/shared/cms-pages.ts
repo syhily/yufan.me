@@ -70,8 +70,8 @@ export interface AdminPageDetailDto {
 
 export interface ListPagesInput {
   q?: string
-  /** When `true`, soft-deleted rows appear in the listing. */
-  includeDeleted?: boolean
+  /** Deletion state filter. */
+  deletedStatus?: 'all' | 'deleted' | 'normal'
   /** Zero-based offset for pagination. */
   offset?: number
   /** Page size; capped server-side. */

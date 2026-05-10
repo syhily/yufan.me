@@ -9,7 +9,7 @@ export const loader = defineApiAction({
   async run({ payload }) {
     return listPagesForAdmin({
       q: payload.q,
-      includeDeleted: payload.includeDeleted,
+      deletedStatus: payload.deletedStatus,
       offset: payload.offset,
       limit: payload.limit,
     })

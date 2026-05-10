@@ -200,7 +200,7 @@ describe('cms/pages/service — saveDraft / publishLatest body validation', () =
     ]
     await service.saveDraft({ pageId: 1n, body, authorId: 42n })
 
-    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][0]
+    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][1]
     expect(arg.ownerId).toBe(1n)
     expect(arg.imageSources).toEqual(['images/2026/05/foo.jpg'])
     expect(arg.headings).toEqual([{ depth: 2, text: 'Hello', slug: 'hello' }])
@@ -265,7 +265,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       expectedClientRevisionToken: 'expected-token-abc',
     })
 
-    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][0]
+    const arg = vi.mocked(repo.saveDraftRevision).mock.calls[0][1]
     expect(arg.expectedClientRevisionToken).toBe('expected-token-abc')
     expect(arg.force).toBeUndefined()
   })
@@ -296,7 +296,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       force: true,
     })
 
-    const repoArg = vi.mocked(repo.saveDraftRevision).mock.calls[0][0]
+    const repoArg = vi.mocked(repo.saveDraftRevision).mock.calls[0][1]
     expect(repoArg.force).toBe(true)
 
     // Audit log line emitted exactly once for the genuine overwrite.
@@ -373,7 +373,7 @@ describe('cms/pages/service — saveDraft / publishLatest CAS + force', () => {
       expect(result.expectedToken).toBe('newer-than-client')
     }
 
-    const repoArg = vi.mocked(repo.publishLatestRevision).mock.calls[0][0]
+    const repoArg = vi.mocked(repo.publishLatestRevision).mock.calls[0][1]
     expect(repoArg.force).toBe(false)
     expect(repoArg.expectedClientRevisionToken).toBe('stale-client')
   })

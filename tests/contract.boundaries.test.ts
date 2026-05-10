@@ -672,7 +672,6 @@ describe('contract: module and bundle boundaries', () => {
 
   it('keeps source relative imports inside the documented allowlist', () => {
     const explicitAllowed = [
-      { key: 'vite.config.ts -> ./source.config.ts', file: 'vite.config.ts', specifier: './source.config.ts' },
       // Vite+'s `defineConfig({ fmt, lint })` only accepts inline objects
       // (the toolchain reads them statically — see
       // https://viteplus.dev/guide/troubleshooting). The Oxfmt/Oxlint
@@ -681,26 +680,6 @@ describe('contract: module and bundle boundaries', () => {
       // be resolved too late by Vite+'s config loader.
       { key: 'vite.config.ts -> ./oxfmt.config.ts', file: 'vite.config.ts', specifier: './oxfmt.config.ts' },
       { key: 'vite.config.ts -> ./oxlint.config.ts', file: 'vite.config.ts', specifier: './oxlint.config.ts' },
-      {
-        key: 'source.config.ts -> mermaid rehype plugin',
-        file: 'source.config.ts',
-        specifier: './src/server/markdown/mermaid/index.ts',
-      },
-      {
-        key: 'source.config.ts -> rehype code wrapper',
-        file: 'source.config.ts',
-        specifier: './src/server/markdown/rehype-code.ts',
-      },
-      {
-        key: 'source.config.ts -> rehype mathjax',
-        file: 'source.config.ts',
-        specifier: './src/server/markdown/rehype-mathjax.ts',
-      },
-      {
-        key: 'source.config.ts -> remark collect images',
-        file: 'source.config.ts',
-        specifier: './src/server/markdown/remark-collect-images.ts',
-      },
       {
         key: 'brand-social-icons.tsx -> icon-props',
         file: 'src/ui/icons/brand-social-icons.tsx',
@@ -736,16 +715,7 @@ describe('contract: module and bundle boundaries', () => {
 
     const offenders: string[] = []
     const importRe = /from\s+["'](\.{1,2}\/[^"']+)["']|import\(\s*["'](\.{1,2}\/[^"']+)["']\s*\)/g
-    for (const file of files(
-      'src',
-      'source.config.ts',
-      'vite.config.ts',
-      'react-router.config.ts',
-      '-g',
-      '*.ts',
-      '-g',
-      '*.tsx',
-    )) {
+    for (const file of files('src', 'vite.config.ts', 'react-router.config.ts', '-g', '*.ts', '-g', '*.tsx')) {
       const source = readFileSync(file, 'utf8')
       let match: RegExpExecArray | null
       while ((match = importRe.exec(source)) !== null) {
@@ -764,7 +734,7 @@ describe('contract: module and bundle boundaries', () => {
     const source = readFileSync('src/routes.ts', 'utf8')
     const importSpecifiers = [...source.matchAll(/(?:from\s+|import\(\s*)["']([^"']+)["']/g)].map((match) => match[1])
     const aliasedProjectImports = importSpecifiers.filter(
-      (specifier) => specifier.startsWith('@/') || specifier.startsWith('~/') || specifier.startsWith('#source/'),
+      (specifier) => specifier.startsWith('@/') || specifier.startsWith('~/'),
     )
 
     expect(aliasedProjectImports).toEqual([])

@@ -30,6 +30,11 @@ export interface PreviewPaneProps {
    * the page will live publicly without leaving the editor.
    */
   slug: string
+  /**
+   * Ref to the scrollable container so the parent shell can wire
+   * bidirectional scroll sync with the editor pane.
+   */
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>
 }
 
 // Right-pane live preview. Renders the same `<PortableTextBody>`
@@ -44,7 +49,7 @@ export interface PreviewPaneProps {
 // updates render immediately on the canvas while the preview's heavy
 // re-render is deprioritised. Without it a large preview tree could
 // stall keystrokes on the editor side.
-export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
+export function PreviewPane({ body, title, slug, scrollContainerRef }: PreviewPaneProps) {
   const previewPostContentRef = useRef<HTMLDivElement>(null)
   useMediumZoom(previewPostContentRef)
 
@@ -74,7 +79,7 @@ export function PreviewPane({ body, title, slug }: PreviewPaneProps) {
           {isStale ? <span className="font-mono">渲染中…</span> : null}
         </div>
       </div>
-      <div className="min-h-0 grow overflow-y-auto">
+      <div ref={scrollContainerRef} className="min-h-0 grow overflow-y-auto">
         {/* Mirror of the title + slug surfaces that normally live
          *  above the editor. While live preview is on, the editor
          *  hides its own strip and the operator edits the values via

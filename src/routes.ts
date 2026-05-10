@@ -59,6 +59,9 @@ export default [
     route('wp-admin/pages', 'routes/wp-admin.pages.tsx'),
     route('wp-admin/pages/new', 'routes/wp-admin.pages.new.tsx'),
     route('wp-admin/pages/:id/edit', 'routes/wp-admin.pages.edit.tsx'),
+    route('wp-admin/posts', 'routes/wp-admin.posts.tsx'),
+    route('wp-admin/posts/new', 'routes/wp-admin.posts.new.tsx'),
+    route('wp-admin/posts/:id/edit', 'routes/wp-admin.posts.edit.tsx'),
     route('wp-admin/images', 'routes/wp-admin.images.tsx'),
     route('wp-admin/musics', 'routes/wp-admin.musics.tsx'),
     // Settings sub-layout — see _README.md §H.

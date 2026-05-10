@@ -6,13 +6,13 @@ interface PagesState {
   rows: AdminPageDto[]
   total: number
   q: string
-  includeDeleted: boolean
+  deletedStatus: 'all' | 'deleted' | 'normal'
 }
 
 type PagesAction =
   | { type: 'loaded'; rows: AdminPageDto[]; total: number }
   | { type: 'setQ'; value: string }
-  | { type: 'setIncludeDeleted'; value: boolean }
+  | { type: 'setDeletedStatus'; value: 'all' | 'deleted' | 'normal' }
   | { type: 'patchPage'; page: AdminPageDto }
   | { type: 'removePage'; id: string }
   | { type: 'prependPage'; page: AdminPageDto }
@@ -23,8 +23,8 @@ function pagesReducer(state: PagesState, action: PagesAction): PagesState {
       return { ...state, rows: action.rows, total: action.total }
     case 'setQ':
       return { ...state, q: action.value }
-    case 'setIncludeDeleted':
-      return { ...state, includeDeleted: action.value }
+    case 'setDeletedStatus':
+      return { ...state, deletedStatus: action.value }
     case 'patchPage':
       return {
         ...state,
@@ -46,7 +46,7 @@ export function usePagesController() {
     rows: [],
     total: 0,
     q: '',
-    includeDeleted: false,
+    deletedStatus: 'normal',
   })
   return { state, dispatch }
 }

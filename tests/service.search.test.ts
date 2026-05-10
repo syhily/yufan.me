@@ -1,5 +1,3 @@
-import type { StructuredData } from 'fumadocs-core/mdx-plugins'
-
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { Post } from '@/server/catalog'
@@ -18,16 +16,11 @@ vi.mock('@/server/catalog', () => ({
 
 const { resetSearchIndexForTest, searchPostOptions, searchPosts } = await import('@/server/search')
 
-// Build a Post-shaped record by reusing the shared ClientPost helper and
-// attaching the search-only fields (`structuredData`, body) the new
-// fumadocs-flexsearch indexer reads.
-function makeIndexablePost(overrides: Partial<Post> & { structuredData?: StructuredData } = {}): Post {
-  const { body: _body, structuredData, mdxPath: _mdxPath, ...client } = overrides
+// Build a Post-shaped record by reusing the shared ClientPost helper.
+function makeIndexablePost(overrides: Partial<Post> = {}): Post {
   return {
-    ...makePost(client),
-    body: (() => null) as unknown as Post['body'],
-    structuredData: structuredData ?? { headings: [], contents: [] },
-    mdxPath: overrides.mdxPath ?? `${client.slug ?? 'test'}.mdx`,
+    ...makePost(overrides),
+    body: [],
     imageSources: overrides.imageSources ?? [],
   }
 }
@@ -83,11 +76,7 @@ describe('services/search — searchPosts', () => {
       makeIndexablePost({
         slug: 'post-with-phrase',
         title: '标题甲',
-        summary: '',
-        structuredData: {
-          headings: [{ id: 'section-1', content: '第一节' }],
-          contents: [{ heading: 'section-1', content: '这里讨论了向量数据库的实现细节' }],
-        },
+        summary: '这里讨论了向量数据库的实现细节',
       }),
       // A post that only contains the individual characters of the query
       // scattered across the body must NOT match — the query string is treated
@@ -95,14 +84,7 @@ describe('services/search — searchPosts', () => {
       makeIndexablePost({
         slug: 'post-with-scattered-chars',
         title: '标题乙',
-        summary: '',
-        structuredData: {
-          headings: [],
-          contents: [
-            { heading: undefined, content: '我们用向日葵装饰会场，并测量了灯光的数值据点' },
-            { heading: undefined, content: '图书馆藏书丰富。' },
-          ],
-        },
+        summary: '我们用向日葵装饰会场，并测量了灯光的数值据点。图书馆藏书丰富。',
       }),
     ])
     mocks.contentCatalogGet.mockResolvedValue({ getPosts })

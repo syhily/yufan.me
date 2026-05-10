@@ -4,19 +4,11 @@ import type { Plugin, PluginOption } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
-import mdx from 'fumadocs-mdx/vite'
 import binary from 'vite-plugin-binary'
 import { defineConfig } from 'vite-plus'
 
 import oxfmtConfig from './oxfmt.config.ts'
 import oxlintConfig from './oxlint.config.ts'
-import sourceConfig, { posts } from './source.config.ts'
-
-// Vite+ reads `fmt` / `lint` / `staged` only from a static `defineConfig({...})`
-// export (functional / async configs are not supported — see
-// https://viteplus.dev/guide/troubleshooting). `mdx()` returns a Promise, so
-// we resolve it at the module level via top-level `await`.
-const mdxPlugin = await mdx({ default: sourceConfig, posts })
 
 export default defineConfig({
   fmt: oxfmtConfig as OxfmtConfig,
@@ -63,7 +55,6 @@ export default defineConfig({
   },
   plugins: [
     binary({ gzip: true, excludeAsset: true }),
-    mdxPlugin,
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
   ] as PluginOption[],

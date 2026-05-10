@@ -1,14 +1,8 @@
-import type { TOCItemType } from 'fumadocs-core/toc'
-
-import { posts as postEntries } from '#source/server'
-import { isValidElement, type ReactNode } from 'react'
-
 import type {
   Category,
   ClientPost,
   Friend,
   LoadPostsWithMetadataOptions,
-  MarkdownHeading,
   Page,
   Post,
   PostMetadata,
@@ -18,6 +12,7 @@ import type {
 
 import { toClientPost } from '@/server/catalog/schema'
 import { loadCatalogPages, type CmsPage } from '@/server/cms/pages/service'
+import { loadCatalogPostMetas } from '@/server/cms/posts/service'
 import { queryMetadata } from '@/server/comments/likes'
 import { listPublicCategoryRows } from '@/server/db/query/category'
 import { listPublicTagRows } from '@/server/db/query/tag'
@@ -45,8 +40,6 @@ interface PublicTagEntry {
 
 const log = getLogger('content.catalog')
 
-type SourcePost = (typeof postEntries)[number]
-
 // Lookup `keys` against `items` and return the matching values in the
 // requested key order. Missing keys are silently dropped — callers want a
 // stable iteration order, not strict validation.
@@ -59,58 +52,6 @@ function valuesByKeys<T>(items: ReadonlyMap<string, T>, keys: readonly string[])
     }
   }
   return values
-}
-
-function headingText(title: ReactNode): string {
-  if (typeof title === 'string') {
-    return title
-  }
-  if (typeof title === 'number') {
-    return `${title}`
-  }
-  if (Array.isArray(title)) {
-    return title.map((item) => headingText(item)).join('')
-  }
-  if (isValidElement(title)) {
-    const props = title.props as { children?: ReactNode }
-    return headingText(props.children)
-  }
-  return ''
-}
-
-function toHeadings(toc: unknown): MarkdownHeading[] {
-  const items = normalizeTocItems(toc)
-  return items
-    .map((item) => {
-      const slug = item.url.startsWith('#') ? item.url.slice(1) : item.url
-      return {
-        depth: item.depth,
-        slug,
-        text: headingText(item.title),
-      }
-    })
-    .filter((item) => item.slug !== '' && item.text !== '')
-}
-
-function isTocItem(value: unknown): value is TOCItemType {
-  if (typeof value !== 'object' || value === null) {
-    return false
-  }
-  const item = value as Record<string, unknown>
-  return typeof item.url === 'string' && typeof item.depth === 'number'
-}
-
-function normalizeTocItems(toc: unknown): TOCItemType[] {
-  const candidates = Array.isArray(toc)
-    ? toc
-    : typeof toc === 'object' && toc !== null && Array.isArray((toc as { items?: unknown }).items)
-      ? (toc as { items: unknown[] }).items
-      : []
-  return candidates.filter(isTocItem)
-}
-
-function compiledToc(entry: { toc: unknown; _exports?: Record<string, unknown> }): unknown {
-  return entry._exports?.toc ?? entry.toc
 }
 
 // Promote a `CmsPage` (DB-backed projection) into the catalog's
@@ -144,32 +85,6 @@ export function buildDbPage(page: CmsPage): Page {
     body: page.body,
     imageSources: page.imageSources,
     publishedRevisionId: page.publishedRevisionId,
-  }
-}
-
-function buildPost(post: SourcePost): Post {
-  const slug = post.slug
-  return {
-    title: post.title,
-    date: post.date,
-    updated: post.updated,
-    comments: post.comments ?? true,
-    alias: post.alias ?? [],
-    tags: post.tags ?? [],
-    category: post.category,
-    summary: post.summary ?? '',
-    cover: post.cover ?? '',
-    og: post.og,
-    published: post.published ?? true,
-    visible: post.visible ?? true,
-    toc: post.toc ?? false,
-    slug,
-    permalink: `/posts/${slug}`,
-    body: post.body,
-    headings: toHeadings(compiledToc(post)),
-    structuredData: post.structuredData,
-    mdxPath: post.info.path,
-    imageSources: (post._exports?.imageSources as string[] | undefined) ?? [],
   }
 }
 
@@ -264,14 +179,12 @@ export class ContentCatalog {
       log.warn('catalog.db_pages.load_failed', { error: String(error) })
     }
 
-    const allPosts = postEntries
-      .map(buildPost)
-      .filter((post) => post.published || !import.meta.env.PROD)
-      .sort((left, right) => {
-        const a = left.date.getTime()
-        const b = right.date.getTime()
-        return requireBlogSettingsSection('content').post.sort === 'asc' ? a - b : b - a
-      })
+    let allPosts: Post[] = []
+    try {
+      allPosts = await loadCatalogPostMetas()
+    } catch (error) {
+      log.warn('catalog.db_posts.load_failed', { error: String(error) })
+    }
 
     const now = new Date()
     const categoryVisiblePosts = allPosts.filter((post) => post.date <= now)

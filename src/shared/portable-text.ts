@@ -131,12 +131,16 @@ export type Span = z.infer<typeof spanSchema>
 
 // --- Standard text block -----------------------------------------------------
 
+export const TEXT_ALIGN_VALUES = ['left', 'center', 'right'] as const
+export type TextAlignValue = (typeof TEXT_ALIGN_VALUES)[number]
+
 export const textBlockSchema = z.object({
   _type: z.literal('block'),
   _key: NON_EMPTY_KEY,
   style: z.enum(STANDARD_BLOCK_STYLES).optional(),
   listItem: z.enum(STANDARD_LIST_ITEMS).optional(),
   level: z.number().int().min(1).max(6).optional(),
+  align: z.enum(TEXT_ALIGN_VALUES).optional(),
   children: z.array(spanSchema),
   markDefs: z.array(markDefSchema).optional(),
 })
@@ -616,6 +620,18 @@ function pushBlockText(block: Block, out: string[]): void {
         out.push(cell.content.map((span) => span.text).join(''))
       }
     }
+    return
+  }
+  if (block._type === 'mermaid') {
+    out.push(block.code)
+    return
+  }
+  if (block._type === 'horizontalRule') {
+    out.push('---')
+    return
+  }
+  if (block._type === 'musicPlayer') {
+    out.push(`[Music: ${block.playerId}]`)
     return
   }
   if (block._type === 'solution' || block._type === 'footnoteDefinition') {

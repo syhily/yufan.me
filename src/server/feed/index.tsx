@@ -6,9 +6,6 @@ import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { joinUrl } from '@/shared/urls'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
-import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
-import { Friends } from '@/ui/mdx/page/Friends'
-import { Solution } from '@/ui/mdx/solutions/Solution'
 import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 
 export interface FeedOptions {
@@ -43,34 +40,24 @@ export async function feedResponse(
   return new Response(body, { headers: feedHeaders(kind) })
 }
 
-function isPage(entry: Post | Page): entry is Page {
-  return Array.isArray((entry as Page).body)
-}
-
 async function renderEntryContent(entry: Post | Page): Promise<string> {
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
   // the body but skip the image-enhancement pipeline: feed readers don't
   // need thumbhash placeholders or DB-resolved dimensions.
+  //
+  // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
+  // so feed readers without JavaScript still get meaningful content.
   const bundle = requireBlogSettingsBundle()
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-  // Pages live in Postgres and carry a PortableText body; posts still
-  // compile through the Fumadocs MDX pipeline and render their body
-  // as a React component.
-  if (isPage(entry)) {
-    return prerenderToHtml(
-      <BlogSettingsProvider value={bundle}>
-        <PortableTextBody
-          body={entry.body}
-          headingSlugs={entry.headings.map((h) => h.slug)}
-          footnotesSectionTitle={footnotesSectionTitle}
-        />
-      </BlogSettingsProvider>,
-    )
-  }
-  const Body = entry.body
+  // Both pages and posts now live in Postgres and carry a PortableText body.
   return prerenderToHtml(
     <BlogSettingsProvider value={bundle}>
-      <Body components={{ Friends, MusicPlayer, Solution }} />
+      <PortableTextBody
+        body={entry.body}
+        headingSlugs={entry.headings.map((h) => h.slug)}
+        footnotesSectionTitle={footnotesSectionTitle}
+        rssMode
+      />
     </BlogSettingsProvider>,
   )
 }
@@ -142,7 +129,9 @@ export async function generateFeeds(options: FeedOptions = {}) {
         },
       ],
       date: post.date,
-      image: joinUrl(siteIdentity.website, `/images/og/${post.slug}.png`),
+      image: post.og
+        ? joinUrl(siteIdentity.website, post.og)
+        : joinUrl(siteIdentity.website, `/images/og/${post.slug}.png`),
       category: itemCategories,
     })
   }

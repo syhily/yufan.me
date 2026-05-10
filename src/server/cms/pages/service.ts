@@ -177,7 +177,8 @@ export interface AdminPagesListResult {
 
 export async function listPagesForAdmin(filters: ListPagesFilters = {}): Promise<AdminPagesListResult> {
   const offset = filters.offset ?? 0
-  const [rows, total] = await Promise.all([listPageMetas(filters), countPageMetas(filters)])
+  const limit = filters.limit ?? 100
+  const [rows, total] = await Promise.all([listPageMetas({ ...filters, limit, offset }), countPageMetas(filters)])
   return {
     pages: rows.map(toAdminPageDto),
     total,
@@ -457,11 +458,11 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
 
   const result =
     mode === 'draft'
-      ? await saveDraftRevision(repoInput)
+      ? await saveDraftRevision('page', repoInput)
       : // Publish path: pass through the optional `publishedAt`. The
         // repo defaults to `now()` when undefined, so omitting it from
         // the wire = "publish immediately".
-        await publishLatestRevision({ ...repoInput, publishedAt: input.publishedAt })
+        await publishLatestRevision('page', { ...repoInput, publishedAt: input.publishedAt })
   // Repository status is `'saved'` for drafts and `'published'` for
   // publishes — both indicate a successful write that the audit
   // trail should observe.

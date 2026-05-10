@@ -12,8 +12,7 @@ import { regularSession } from './_helpers/session'
 const session = regularSession()
 const samplePost = {
   ...makePost({ slug: 'hello', alias: ['hello-old'] }),
-  mdxPath: '2024/2024-01-01-hello.mdx',
-  body: () => null,
+  body: [],
   imageSources: [],
 }
 const samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
@@ -138,7 +137,7 @@ describe('routes/post.detail loader', () => {
   it('returns the canonical post payload for a real slug', async () => {
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
-      mdxPath: string
+      body: unknown[]
     }>(
       await postRoute.loader(
         makeLoaderArgs({
@@ -151,7 +150,7 @@ describe('routes/post.detail loader', () => {
 
     expect(data.post.title).toBe(samplePost.title)
     expect(data.post.permalink).toBe('/posts/hello')
-    expect(data.mdxPath).toBe(samplePost.mdxPath)
+    expect(data.body).toEqual([])
   })
 })
 

@@ -21,9 +21,9 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Card } from '@/ui/components/ui/card'
-import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
 import { Skeleton } from '@/ui/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/ui/table'
 
@@ -31,11 +31,12 @@ const LIST = API_ACTIONS.admin.listPages
 const DELETE = API_ACTIONS.admin.deletePage
 const RESTORE = API_ACTIONS.admin.restorePage
 
-// Pages admin list. New + edit both navigate to a dedicated full-page
-// route (/wp-admin/pages/new and /wp-admin/pages/:id/edit) — page
-// authoring is too heavy for a modal, and switching between metadata
-// + body editing in a side-panel-on-page-route layout matches the
-// product requirement of "left editor / right metadata".
+const DELETED_STATUS_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'normal', label: '正常' },
+  { value: 'deleted', label: '已删除' },
+]
+
 export function PagesView() {
   const { state, dispatch } = usePagesController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
@@ -49,9 +50,9 @@ export function PagesView() {
   const reload = useCallback(() => {
     loadPages({
       q: state.q || undefined,
-      includeDeleted: state.includeDeleted || undefined,
+      deletedStatus: state.deletedStatus,
     })
-  }, [loadPages, state.q, state.includeDeleted])
+  }, [loadPages, state.q, state.deletedStatus])
 
   const deleteApi = useApiFetcher<DeletePageInput, DeletePageOutput>(DELETE, {
     onSuccess: () => reload(),
@@ -127,16 +128,26 @@ export function PagesView() {
                 </InputGroup>
               </AdminListPage.FilterField>
             </div>
-            <div className="flex items-end gap-2 text-sm">
-              <Checkbox
-                id="pages-include-deleted"
-                checked={state.includeDeleted}
-                onCheckedChange={(value) => dispatch({ type: 'setIncludeDeleted', value: value === true })}
-              />
-              <label htmlFor="pages-include-deleted" className="text-sm select-none">
-                包含已删除页面
-              </label>
-            </div>
+            <AdminListPage.FilterField label="删除状态">
+              <Select
+                items={DELETED_STATUS_OPTIONS}
+                value={state.deletedStatus}
+                onValueChange={(value) =>
+                  dispatch({ type: 'setDeletedStatus', value: (value ?? 'normal') as 'all' | 'deleted' | 'normal' })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DELETED_STATUS_OPTIONS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </AdminListPage.FilterField>
           </div>
         </AdminListPage.Toolbar>
 

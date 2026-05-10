@@ -8,6 +8,7 @@ import type {
   metric,
   music,
   page,
+  post,
   setting,
   tag,
   user,
@@ -27,6 +28,7 @@ export type NewTag = typeof tag.$inferInsert
 export type NewImage = typeof image.$inferInsert
 export type NewMusic = typeof music.$inferInsert
 export type NewPageMeta = typeof page.$inferInsert
+export type NewPostMeta = typeof post.$inferInsert
 export type NewContent = typeof content.$inferInsert
 
 // Types for select
@@ -54,4 +56,5 @@ export type MusicRow = typeof music.$inferSelect
 // `PageMetaRow` / `ContentRow` are the schema-projected row types for
 // the page / content tables.
 export type PageMetaRow = typeof page.$inferSelect
+export type PostMetaRow = typeof post.$inferSelect
 export type ContentRow = typeof content.$inferSelect
