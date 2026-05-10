@@ -7,16 +7,18 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 // the RSS/Atom output that downstream subscribers depend on.
 
 const mocks = vi.hoisted(() => ({
-  contentCatalogGet: vi.fn(),
+  listAllPosts: vi.fn(),
+  listPostsByCategory: vi.fn(),
+  listPostsByTag: vi.fn(),
+  findCategoryBySlug: vi.fn(),
+  findCategoryByName: vi.fn(),
+  findTagBySlug: vi.fn(),
+  findTagByName: vi.fn(),
+  listAllCategories: vi.fn(),
+  getTagsByNames: vi.fn(),
 }))
 
-vi.mock('@/server/catalog', () => {
-  return {
-    ContentCatalog: {
-      get: mocks.contentCatalogGet,
-    },
-  }
-})
+vi.mock('@/server/catalog', () => mocks)
 
 const { feedResponse, generateFeeds } = await import('@/server/feed')
 
@@ -29,23 +31,26 @@ function fakeCatalog(
 ) {
   const categories = opts.categories ?? []
   const tags = opts.tags ?? []
-  const catalog = {
-    getPosts: vi.fn(() => opts.posts ?? []),
-    getPostsByTaxonomy: vi.fn(() => []),
-    getCategoryByName: vi.fn((name: string) => categories.find((cat) => cat.name === name)),
-    getCategoryBySlug: vi.fn((slug: string) => categories.find((cat) => cat.slug === slug)),
-    getTagByName: vi.fn((name: string) => tags.find((tag) => tag.name === name)),
-    getTagBySlug: vi.fn((slug: string) => tags.find((tag) => tag.slug === slug)),
-    getTagsByName: vi.fn(() => []),
-    categories,
-    tags,
+  mocks.listAllPosts.mockResolvedValue(opts.posts ?? [])
+  mocks.listPostsByCategory.mockResolvedValue(opts.posts ?? [])
+  mocks.listPostsByTag.mockResolvedValue(opts.posts ?? [])
+  mocks.findCategoryBySlug.mockImplementation((slug: string) => categories.find((cat) => cat.slug === slug))
+  mocks.findCategoryByName.mockImplementation((name: string) => categories.find((cat) => cat.name === name))
+  mocks.findTagBySlug.mockImplementation((slug: string) => tags.find((tag) => tag.slug === slug))
+  mocks.findTagByName.mockImplementation((name: string) => tags.find((tag) => tag.name === name))
+  mocks.listAllCategories.mockResolvedValue(categories)
+  mocks.getTagsByNames.mockResolvedValue([])
+  return {
+    listAllPosts: mocks.listAllPosts,
+    listPostsByCategory: mocks.listPostsByCategory,
+    listPostsByTag: mocks.listPostsByTag,
   }
-  mocks.contentCatalogGet.mockResolvedValue(catalog as never)
-  return catalog
 }
 
 beforeEach(() => {
-  mocks.contentCatalogGet.mockReset()
+  for (const mock of Object.values(mocks)) {
+    mock.mockReset()
+  }
 })
 
 describe('services/feed — generateFeeds (channel envelope)', () => {
@@ -78,7 +83,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
     await generateFeeds()
 
-    expect(catalog.getPosts).toHaveBeenCalledWith({
+    expect(catalog.listAllPosts).toHaveBeenCalledWith({
       includeHidden: true,
       includeScheduled: false,
     })
@@ -92,17 +97,14 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
     await generateFeeds({ category: 'tech' })
 
-    expect(catalog.getPostsByTaxonomy).toHaveBeenLastCalledWith(
-      { categoryName: '技术' },
-      { includeHidden: true, includeScheduled: false },
-    )
+    expect(catalog.listPostsByCategory).toHaveBeenLastCalledWith('技术', {
+      includeHidden: true,
+      includeScheduled: false,
+    })
 
     await generateFeeds({ tag: 'react' })
 
-    expect(catalog.getPostsByTaxonomy).toHaveBeenLastCalledWith(
-      { tagName: 'React' },
-      { includeHidden: true, includeScheduled: false },
-    )
+    expect(catalog.listPostsByTag).toHaveBeenLastCalledWith('React', { includeHidden: true, includeScheduled: false })
   })
 
   it('does not emit `xml-stylesheet` (client XSLT is deprecated in browsers)', async () => {
@@ -125,7 +127,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
   })
 
   it('uses /cats/<slug>/feed and /cats/<slug>/feed/atom URLs when scoped to a category', async () => {
-    fakeCatalog()
+    fakeCatalog({ categories: [{ name: '技术', slug: 'tech' }] })
     const feeds = await generateFeeds({ category: 'tech' })
     // The feedLinks self-references appear in the channel header.
     expect(feeds.atom).toContain('/cats/tech/feed')

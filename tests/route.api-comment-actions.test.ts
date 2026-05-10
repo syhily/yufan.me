@@ -64,15 +64,11 @@ vi.mock('@/server/comments/likes', () => ({
   increaseLikes: vi.fn(async () => ({ token: 'tok-test', likes: 1 })),
 }))
 
-// `permalinkKeySchema` validates the `key` against
-// `(await getCatalog()).permalinks.has(value)`. The action tests want
-// the schema to pass for our test fixture key without standing up the
-// real catalog (which would need MDX, SSR, etc.). The mocked catalog
-// only needs the `permalinks` Set the schema reads.
+// `permalinkKeySchema` validates the `key` against `buildPermalinkSet()`.
+// The action tests want the schema to pass for our test fixture key
+// without standing up the real catalog.
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    permalinks: new Set<string>(['/posts/hello/']),
-  })),
+  buildPermalinkSet: vi.fn(async () => new Set<string>(['/posts/hello/'])),
 }))
 
 const userQuery = await import('@/server/db/query/user')

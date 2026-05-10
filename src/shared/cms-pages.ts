@@ -37,6 +37,8 @@ export interface AdminPageDto {
   updatedAt: string
   /** When non-null the row is soft-deleted. */
   deletedAt: string | null
+  authorId: string | null
+  authorName: string | null
 }
 
 export interface AdminRevisionDto {

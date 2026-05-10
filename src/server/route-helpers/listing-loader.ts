@@ -1,13 +1,12 @@
 import type { MetaDescriptor } from 'react-router'
 
-import type { ListingPostCard, ListingPostCardWithMetadata } from '@/server/catalog'
 import type { FeedLinkOptions } from '@/server/seo/meta'
+import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/catalog'
 
-import { getClientPostsWithMetadata } from '@/server/catalog'
+import { getClientPostsWithMetadata } from '@/server/posts/query'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parseListingPage, redirectListingOverflow } from '@/server/route-helpers/pagination'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
-import { slicePosts } from '@/shared/formatter'
 
 // Shared loader-return shape for every listing route (`/`, `/cats/:slug`,
 // `/tags/:slug`, `/search/:keyword`). Components destructure the same fields
@@ -46,6 +45,18 @@ const DEFAULT_LISTING_METADATA: Required<ListingMetadataFlags> = {
 // (the root `meta()` already provides the site default).
 export type ListingSeoMode = 'always' | 'skip-on-first-page'
 
+function calculateTotalPages(postCount: number, pageSize: number, mergeTailThreshold: number): number {
+  const naturalTotalPage = Math.ceil(postCount / pageSize)
+  if (mergeTailThreshold <= 0 || naturalTotalPage < 2) {
+    return naturalTotalPage
+  }
+  const tailSize = postCount - (naturalTotalPage - 1) * pageSize
+  if (tailSize < mergeTailThreshold) {
+    return naturalTotalPage - 1
+  }
+  return naturalTotalPage
+}
+
 // Listing routes (`/`, `/cats/:slug`, `/tags/:slug`) share the same loader
 // skeleton: slice & resolve posts, redirect on overflow, and emit canonical/
 // prev/next SEO. This helper centralises the pattern so each route only
@@ -60,7 +71,8 @@ export type ListingSeoMode = 'always' | 'skip-on-first-page'
 // the client bundle.
 export async function listingLoader<TExtra = undefined>({
   rawNum,
-  posts,
+  totalPosts,
+  fetchPage,
   rootPath,
   title,
   description,
@@ -74,18 +86,20 @@ export async function listingLoader<TExtra = undefined>({
   extra,
 }: {
   rawNum: string | undefined
-  posts: ListingPostCard[]
+  totalPosts: number
+  fetchPage: (pageNum: number, pageSize: number) => Promise<ListingPostCard[]>
   rootPath: string
   title?: string
   description?: string
   pageSize?: number
   /**
-   * Optional tail-merge guard threaded through to `slicePosts`. When set,
-   * a natural last page that would render fewer than this many posts is
-   * folded into its predecessor; the predecessor then renders the orphan
-   * posts inline and the URL space loses one page. Defaults to undefined
-   * disabled. The home route opts in with `pageSize - 2`; every other
-   * listing route keeps the legacy behaviour.
+   * Optional tail-merge guard. When set to a positive integer M and the
+   * natural last page would render fewer than M posts, that last page is
+   * merged into its predecessor i.e. the predecessor absorbs the orphan
+   * posts via the existing "the last page is open-ended" branch below.
+   * The result is a smaller totalPage and a fatter last page; the route
+   * helper then 301-redirects any out-of-range :num back to the new last
+   * page through the shared overflow handler.
    */
   mergeTailWhenLessThan?: number
   forceNoindex?: boolean
@@ -107,19 +121,24 @@ export async function listingLoader<TExtra = undefined>({
   extra?: TExtra
 }): Promise<ListingPageLoaderData<TExtra>> {
   const pageNum = parseListingPage(rawNum, rootPath)
+  const effectivePageSize = pageSize ?? requireBlogSettingsSection('content').pagination.posts
+  const totalPage = calculateTotalPages(totalPosts, effectivePageSize, mergeTailWhenLessThan ?? 0)
 
-  const { currentPosts, totalPage } = slicePosts(
-    posts,
-    pageNum,
-    pageSize ?? requireBlogSettingsSection('content').pagination.posts,
-    { mergeTailWhenLessThan },
-  )
+  redirectListingOverflow(rawNum, pageNum, totalPage, rootPath)
+
+  const currentPosts =
+    totalPage === 0 || pageNum > totalPage
+      ? []
+      : await fetchPage(
+          pageNum,
+          // On the last page, expand the limit so tail-merged posts aren't truncated.
+          pageNum === totalPage ? totalPosts - (pageNum - 1) * effectivePageSize : effectivePageSize,
+        )
+
   const resolvedPosts = await getClientPostsWithMetadata(currentPosts, {
     ...DEFAULT_LISTING_METADATA,
     ...metadata,
   })
-
-  redirectListingOverflow(rawNum, pageNum, totalPage, rootPath)
 
   const resolvedExtra: TExtra =
     computeExtra !== undefined ? await computeExtra({ resolvedPosts, pageNum, totalPage }) : (extra as TExtra)

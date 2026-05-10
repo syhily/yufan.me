@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, max, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, max, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 
@@ -12,10 +12,12 @@ import { db } from '@/server/db/pool'
 // actual revision payload lives in `contentTable`. The aliases also
 // avoid colliding with parameter / local names (`page`, `content`)
 // that show up throughout the service layer.
-import { content as contentTable, page as pageMetaTable, post as postMetaTable } from '@/server/db/schema'
+import { content as contentTable, page as pageMetaTable, post as postMetaTable, user } from '@/server/db/schema'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt-bridge'
 
 // --- Reads -------------------------------------------------------------------
+
+export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
 
 export interface ListPagesFilters {
   /** Free-text query matched case-insensitively against `slug` and `title`. */
@@ -50,11 +52,17 @@ function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
   return and(...conditions)
 }
 
-export async function listPageMetas(filters: ListPagesFilters = {}): Promise<PageMetaRow[]> {
+export async function listPageMetas(filters: ListPagesFilters = {}): Promise<PageMetaWithAuthor[]> {
   const where = buildPagesWhere(filters)
-  let q = where
-    ? db.select().from(pageMetaTable).where(where).orderBy(desc(pageMetaTable.updatedAt))
-    : db.select().from(pageMetaTable).orderBy(desc(pageMetaTable.updatedAt))
+  const base = db
+    .select({
+      ...getTableColumns(pageMetaTable),
+      authorName: user.name,
+    })
+    .from(pageMetaTable)
+    .leftJoin(user, eq(user.id, pageMetaTable.authorId))
+    .orderBy(desc(pageMetaTable.updatedAt))
+  let q = where ? base.where(where) : base
   if (filters.limit !== undefined) {
     q = q.limit(filters.limit) as typeof q
   }
@@ -107,7 +115,11 @@ export async function findPublicPageMetaBySlug(slug: string): Promise<PageMetaRo
 
 /** All non-deleted page meta rows; cataloged at startup. */
 export async function listPublicPageMetas(): Promise<PageMetaRow[]> {
-  return db.select().from(pageMetaTable).where(isNull(pageMetaTable.deletedAt)).orderBy(desc(pageMetaTable.publishedAt))
+  return db
+    .select()
+    .from(pageMetaTable)
+    .where(isNull(pageMetaTable.deletedAt))
+    .orderBy(desc(pageMetaTable.firstPublishedAt))
 }
 
 // --- Content (revision) reads -----------------------------------------------
@@ -117,6 +129,13 @@ export type ContentType = 'page' | 'post'
 export async function findContentById(id: bigint): Promise<ContentRow | null> {
   const rows = await db.select().from(contentTable).where(eq(contentTable.id, id)).limit(1)
   return rows[0] ?? null
+}
+
+export async function findContentsByIds(ids: bigint[]): Promise<ContentRow[]> {
+  if (ids.length === 0) {
+    return []
+  }
+  return db.select().from(contentTable).where(inArray(contentTable.id, ids))
 }
 
 /**
@@ -262,7 +281,7 @@ export async function saveDraftRevision(type: ContentType, input: SaveDraftInput
     // Lock the meta row so concurrent saves can't both compute the
     // same `MAX(revision_no) + 1` and trip `uq_content_owner_revision`.
     const lockRows = await tx
-      .select({ id: metaTable.id })
+      .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
       .from(metaTable)
       .where(eq(metaTable.id, input.ownerId))
       .for('update')
@@ -378,7 +397,7 @@ export async function publishLatestRevision(
   const metaTable = type === 'page' ? pageMetaTable : postMetaTable
   return db.transaction(async (tx) => {
     const lockRows = await tx
-      .select({ id: metaTable.id })
+      .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
       .from(metaTable)
       .where(eq(metaTable.id, input.ownerId))
       .for('update')
@@ -452,6 +471,7 @@ export async function publishLatestRevision(
         publishedRevisionId: savedRow.id,
         published: true,
         publishedAt: input.publishedAt ?? now,
+        firstPublishedAt: lockRows[0]?.firstPublishedAt ?? input.publishedAt ?? now,
         updatedAt: now,
       })
       .where(eq(metaTable.id, input.ownerId))

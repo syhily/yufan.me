@@ -53,6 +53,7 @@ import { useAdminChromeFocus } from '@/ui/admin/shell/AdminShell'
 import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/ui/sheet'
+import { useContentSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 
 const UPSERT_META = API_ACTIONS.admin.upsertPostMeta
@@ -100,6 +101,9 @@ export function PostEditorShell({ mode, detail }: PostEditorShellProps) {
 
   // Metadata draft mirrors the right-pane form. Initial state matches
   // the loaded DTO (edit) or the empty default (create).
+  const contentSettings = useContentSettings()
+  const featureEnabled = contentSettings.post.featureEnabled
+
   const [meta, setMeta] = useState<PostMetaDraft>(isEditing ? metaDraftFromPost(detail.post) : EMPTY_POST_META_DRAFT)
 
   // Body draft mirrors the editor pane. Falls back to the latest
@@ -476,6 +480,7 @@ export function PostEditorShell({ mode, detail }: PostEditorShellProps) {
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
       visible: meta.visible,
+      pinnedAt: meta.pinned ? new Date().toISOString() : null,
       category: meta.category,
       tags: meta.tags,
       alias: meta.alias,
@@ -605,6 +610,7 @@ export function PostEditorShell({ mode, detail }: PostEditorShellProps) {
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
       visible: meta.visible,
+      pinnedAt: meta.pinned ? new Date().toISOString() : null,
       category: meta.category,
       tags: meta.tags,
       alias: meta.alias,
@@ -1089,6 +1095,7 @@ export function PostEditorShell({ mode, detail }: PostEditorShellProps) {
               ogPreviewSlug={isEditing ? detail.post.slug : null}
               revisionSummary={sidebarRevisionSummary}
               saveStatus={sidebarSaveStatus}
+              featureEnabled={featureEnabled}
               extras={
                 isEditing ? (
                   <div className="rounded-md border bg-card p-2">
@@ -1127,6 +1134,7 @@ export function PostEditorShell({ mode, detail }: PostEditorShellProps) {
                 ogPreviewSlug={isEditing ? detail.post.slug : null}
                 revisionSummary={sidebarRevisionSummary}
                 saveStatus={sidebarSaveStatus}
+                featureEnabled={featureEnabled}
                 extras={
                   isEditing ? (
                     <div className="rounded-md border bg-card p-2">

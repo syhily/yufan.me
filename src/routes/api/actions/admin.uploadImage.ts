@@ -1,6 +1,5 @@
 import type { ActionFunctionArgs } from 'react-router'
 
-import { ContentCatalog } from '@/server/catalog'
 import { uploadImageMetadataSchema } from '@/server/images/schema'
 import { uploadImage } from '@/server/images/service'
 import {
@@ -97,7 +96,6 @@ export async function action(args: ActionFunctionArgs) {
     // `?v=` cache buster derived from the new `updatedAt`. Generic
     // re-uploads land at a fresh key and don't strictly need this,
     // but keeping the reset unconditional is the simpler contract.
-    ContentCatalog.reset()
 
     return { image }
   })

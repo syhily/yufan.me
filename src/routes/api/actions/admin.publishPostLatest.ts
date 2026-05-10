@@ -1,5 +1,4 @@
 import { userSession } from '@/server/auth/primitives'
-import { ContentCatalog } from '@/server/catalog'
 import { savePostBodySchema } from '@/server/cms/posts/schema'
 import { publishLatest } from '@/server/cms/posts/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -23,7 +22,6 @@ export const action = defineApiAction({
       publishedAt: payload.publishedAt !== undefined ? new Date(payload.publishedAt) : undefined,
     })
     if (result.status === 'saved') {
-      ContentCatalog.reset()
     }
     return result
   },

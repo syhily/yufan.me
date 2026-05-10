@@ -16,6 +16,7 @@ import {
 import {
   countPostMetas,
   findContentById,
+  findContentsByIds,
   findLatestDraft,
   findLatestRevision,
   findPostMetaById,
@@ -37,6 +38,7 @@ import { getLogger } from '@/server/logger'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
 import { derivedTagSlug } from '@/server/tags/slug'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { collectHeadings, collectImageStoragePaths, validatePortableTextBody } from '@/shared/portable-text'
 
 const auditLog = getLogger('audit.cms.posts')
@@ -64,19 +66,52 @@ function isCatalogVisible(meta: PostMetaRow, asOf: Date = new Date()): boolean {
   return true
 }
 
+// Process-level cache for catalog post metas. Eliminates the repeated
+// full-table rebuild that made the home / listing routes unbearably slow
+// after the in-memory catalog singleton was removed. TTL is short (10 s)
+// so dev edits and admin publishes surface quickly without an explicit
+// invalidation channel in development.
+let cachedPostMetas: CmsPost[] | null = null
+let cachedPostMetasAt = 0
+const POST_META_CACHE_TTL_MS = 10_000
+
 export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
-  const metas = await listPublicPostMetas()
+  const now = Date.now()
+  if (cachedPostMetas !== null && now - cachedPostMetasAt < POST_META_CACHE_TTL_MS) {
+    return cachedPostMetas.map((p) => ({ ...p }))
+  }
+
+  const contentSettings = requireBlogSettingsSection('content')
+  const sortBy = contentSettings.post.sortBy ?? 'publishedAt'
+  const metas = await listPublicPostMetas(sortBy)
   const asOf = new Date()
   const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
   if (visible.length === 0) {
     return []
   }
-  const revisions = await Promise.all(
-    visible.map((meta) =>
-      meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
-    ),
-  )
-  return visible.map((meta, idx) => toCmsPost(meta, revisions[idx]))
+  const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
+  const revisionMap = new Map<bigint, ContentRow>()
+  if (revisionIds.length > 0) {
+    const rows = await findContentsByIds(revisionIds)
+    for (const row of rows) {
+      revisionMap.set(row.id, row)
+    }
+  }
+  const result = visible.map((meta) => {
+    const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
+    return toCmsPost(meta, revision)
+  })
+
+  cachedPostMetas = result
+  cachedPostMetasAt = now
+  return result.map((p) => ({ ...p }))
+}
+
+/** Drop the in-process catalog cache. Call after any admin write that
+ *  mutates post visibility, publication state, or slug. */
+export function invalidateCatalogPostCache(): void {
+  cachedPostMetas = null
+  cachedPostMetasAt = 0
 }
 
 export async function loadCatalogPostBySlug(slug: string): Promise<CmsPost | null> {
@@ -176,6 +211,7 @@ export interface UpsertPostMetaInput {
   commentsEnabled?: boolean
   showToc?: boolean
   visible?: boolean
+  pinnedAt?: Date | null
   category?: string
   tags?: string[]
   alias?: string[]
@@ -226,6 +262,7 @@ export async function createPost(input: UpsertPostMetaInput, authorId: bigint | 
     commentsEnabled: input.commentsEnabled ?? true,
     showToc: input.showToc ?? false,
     visible: input.visible ?? true,
+    pinnedAt: input.pinnedAt === undefined ? null : input.pinnedAt,
     category: input.category ?? '',
     tags: input.tags ?? [],
     alias: input.alias ?? [],
@@ -262,6 +299,7 @@ export async function updatePostMeta(input: UpsertPostMetaInput): Promise<AdminP
     commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
     showToc: input.showToc ?? existing.showToc,
     visible: input.visible ?? existing.visible,
+    pinnedAt: input.pinnedAt === undefined ? existing.pinnedAt : input.pinnedAt,
     category: input.category ?? existing.category,
     tags: input.tags ?? existing.tags,
     alias: input.alias ?? existing.alias,

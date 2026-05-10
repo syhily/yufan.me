@@ -1,5 +1,4 @@
 import { userSession } from '@/server/auth/primitives'
-import { ContentCatalog } from '@/server/catalog'
 import { upsertPostMetaSchema } from '@/server/cms/posts/schema'
 import { createPost, updatePostMeta } from '@/server/cms/posts/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -30,7 +29,6 @@ export const action = defineApiAction({
       payload.id === undefined
         ? await createPost(meta, sessionUserId)
         : await updatePostMeta({ id: BigInt(payload.id), ...meta })
-    ContentCatalog.reset()
     return { post }
   },
 })

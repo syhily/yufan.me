@@ -32,6 +32,7 @@ export function makeCategory(overrides: Partial<ClientCategory> = {}): ClientCat
 export function makePost(overrides: Partial<ClientPost> = {}): ClientPost {
   const slug = overrides.slug ?? nextId('post')
   return {
+    id: overrides.id ?? nextId('post-id'),
     title: overrides.title ?? `Post ${slug}`,
     date: overrides.date ?? new Date('2024-01-01T00:00:00.000Z'),
     comments: overrides.comments ?? true,
@@ -53,6 +54,7 @@ export function makePost(overrides: Partial<ClientPost> = {}): ClientPost {
 export function makePage(overrides: Partial<ClientPage> = {}): ClientPage {
   const slug = overrides.slug ?? nextId('page')
   return {
+    id: overrides.id ?? nextId('page-id'),
     title: overrides.title ?? `Page ${slug}`,
     date: overrides.date ?? new Date('2024-01-01T00:00:00.000Z'),
     comments: overrides.comments ?? false,
@@ -69,11 +71,14 @@ export function makePage(overrides: Partial<ClientPage> = {}): ClientPage {
 }
 
 export function makePostList(count: number, overrides: Partial<ClientPost> = {}): ClientPost[] {
-  return Array.from({ length: count }, (_, i) =>
-    makePost({
-      ...overrides,
-      slug: overrides.slug ? `${overrides.slug}-${i}` : undefined,
-      title: overrides.title ? `${overrides.title} ${i}` : undefined,
-    }),
-  )
+  return Array.from({ length: count }, (_, i) => {
+    const itemOverrides: Partial<ClientPost> = { ...overrides }
+    if (overrides.slug) {
+      itemOverrides.slug = `${overrides.slug}-${i}`
+    }
+    if (overrides.title) {
+      itemOverrides.title = `${overrides.title} ${i}`
+    }
+    return makePost(itemOverrides)
+  })
 }

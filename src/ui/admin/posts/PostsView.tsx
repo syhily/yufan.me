@@ -3,6 +3,7 @@ import {
   ArrowUpIcon,
   ExternalLinkIcon,
   FilePenIcon,
+  PinIcon,
   PlusIcon,
   RefreshCwIcon,
   SearchIcon,
@@ -35,6 +36,7 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Card } from '@/ui/components/ui/card'
+import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/ui/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
@@ -54,10 +56,11 @@ const DELETED_STATUS_OPTIONS = [
   { value: 'deleted', label: '已删除' },
 ]
 
-const PUBLISHED_OPTIONS = [
+const STATUS_OPTIONS = [
   { value: 'all', label: '全部' },
-  { value: 'true', label: '已发布' },
-  { value: 'false', label: '未发布' },
+  { value: 'published', label: '已发布' },
+  { value: 'draft', label: '未发布' },
+  { value: 'hidden', label: '隐藏' },
 ]
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100].map((n) => ({
@@ -94,6 +97,7 @@ export function PostsView() {
       category: state.category || undefined,
       tag: state.tag || undefined,
       published: state.published,
+      visible: state.visible,
       sortBy: state.sortBy,
       sortOrder: state.sortOrder,
       authorId: state.authorId || undefined,
@@ -107,6 +111,7 @@ export function PostsView() {
     state.category,
     state.tag,
     state.published,
+    state.visible,
     state.sortBy,
     state.sortOrder,
     state.authorId,
@@ -157,7 +162,7 @@ export function PostsView() {
   useEffect(() => {
     categoriesApi.load({})
     tagsApi.load({ limit: 100 })
-    usersApi.load({ limit: 100 })
+    usersApi.load({ limit: 100, hasPosts: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -175,10 +180,7 @@ export function PostsView() {
     () => [{ value: '', label: '全部分类' }, ...categories.map((c) => ({ value: c.name, label: c.name }))],
     [categories],
   )
-  const tagOptions = useMemo(
-    () => [{ value: '', label: '全部标签' }, ...tags.map((t) => ({ value: t.name, label: t.name }))],
-    [tags],
-  )
+  const tagNames = useMemo(() => ['', ...tags.map((t) => t.name)], [tags])
   const authorOptions = useMemo(
     () => [{ value: '', label: '全部作者' }, ...users.map((u: AdminUserDto) => ({ value: u.id, label: u.name }))],
     [users],
@@ -245,21 +247,17 @@ export function PostsView() {
             </AdminListPage.FilterField>
             <AdminListPage.FilterField label="发布状态">
               <Select
-                items={PUBLISHED_OPTIONS}
-                value={state.published === undefined ? 'all' : String(state.published)}
+                items={STATUS_OPTIONS}
+                value={state.status}
                 onValueChange={(value) => {
-                  const v = value ?? 'all'
-                  dispatch({
-                    type: 'setPublished',
-                    value: v === 'all' ? undefined : v === 'true',
-                  })
+                  dispatch({ type: 'setStatus', value: (value ?? 'all') as 'all' | 'published' | 'draft' | 'hidden' })
                 }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PUBLISHED_OPTIONS.map((item) => (
+                  {STATUS_OPTIONS.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
                       {item.label}
                     </SelectItem>
@@ -306,22 +304,22 @@ export function PostsView() {
               </Select>
             </AdminListPage.FilterField>
             <AdminListPage.FilterField label="标签">
-              <Select
-                items={tagOptions}
+              <Combobox
+                items={tagNames}
                 value={state.tag}
                 onValueChange={(value) => dispatch({ type: 'setTag', value: value ?? '' })}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {tagOptions.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <ComboboxTrigger className="w-full">
+                  <ComboboxValue placeholder="全部标签" />
+                </ComboboxTrigger>
+                <ComboboxContent<string> inputPlaceholder="搜索标签…" emptyMessage="无匹配标签">
+                  {(item) => (
+                    <ComboboxItem key={item} value={item}>
+                      {item === '' ? '全部标签' : item}
+                    </ComboboxItem>
+                  )}
+                </ComboboxContent>
+              </Combobox>
             </AdminListPage.FilterField>
             <AdminListPage.FilterField label="作者">
               <Select
@@ -382,6 +380,7 @@ export function PostsView() {
                 <TableRow>
                   <TableHead className="pl-4">标题</TableHead>
                   <TableHead className="hidden md:table-cell">分类</TableHead>
+                  <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">发布时间</TableHead>
                   <TableHead className="w-44 pr-4 text-right">操作</TableHead>
@@ -392,7 +391,7 @@ export function PostsView() {
                   <PostsSkeleton />
                 ) : state.rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="p-0">
+                    <TableCell colSpan={6} className="p-0">
                       <Empty className="border-0">
                         <EmptyHeader>
                           <EmptyMedia variant="icon">
@@ -449,11 +448,21 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
   return (
     <TableRow className={isDeleted ? 'opacity-60' : undefined}>
       <TableCell className="pl-4 align-top">
-        <div className="font-medium">{post.title}</div>
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium">{post.title}</span>
+          {post.pinnedAt !== null && (
+            <span title="已置顶">
+              <PinIcon className="size-3.5 text-amber-500" />
+            </span>
+          )}
+        </div>
         <div className="font-mono text-xs text-muted-foreground">/posts/{post.slug}</div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
         <p className="text-sm text-muted-foreground">{post.category || '—'}</p>
+      </TableCell>
+      <TableCell className="hidden w-24 text-center align-top md:table-cell">
+        <p className="text-sm text-muted-foreground">{post.authorName || '—'}</p>
       </TableCell>
       <TableCell className="text-center align-top">
         <StatusBadge post={post} />
@@ -526,6 +535,9 @@ function PostsSkeleton() {
           </TableCell>
           <TableCell className="hidden md:table-cell">
             <Skeleton className="h-3 w-full" />
+          </TableCell>
+          <TableCell className="hidden md:table-cell">
+            <Skeleton className="mx-auto h-3 w-16" />
           </TableCell>
           <TableCell>
             <Skeleton className="mx-auto h-5 w-16" />

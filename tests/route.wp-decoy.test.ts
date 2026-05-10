@@ -51,25 +51,14 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    tags: [],
-    categories: [],
-    friends: [],
-    getPosts: vi.fn(() => []),
-    getClientPosts: vi.fn(() => []),
-    getPost: vi.fn((slug: string) => (slug === 'hello' ? fixtures.samplePost : undefined)),
-    getPage: vi.fn((slug: string) => (slug === 'about' ? fixtures.samplePage : undefined)),
-    getTagsByName: vi.fn(() => []),
-    toClientPost: (p: unknown) => p,
-    toClientPage: (p: unknown) => p,
-  })),
+  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
+  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
+  listAllFriends: vi.fn(async () => []),
   toClientPost: (p: unknown) => p,
   toClientPage: (p: unknown) => p,
-  toListingPostCard: (p: unknown) => p,
   toDetailPostShell: (p: unknown) => p,
   toDetailPageShell: (p: unknown) => p,
   toSidebarPostLink: (p: unknown) => p,
-  ContentCatalog: class {},
 }))
 
 vi.mock('@/ui/mdx/MdxContent', () => ({

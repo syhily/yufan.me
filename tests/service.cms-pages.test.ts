@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import type { ContentRow, PageMetaRow } from '@/server/db/types'
+import type { PageMetaWithAuthor } from '@/server/cms/pages/repository'
+import type { ContentRow } from '@/server/db/types'
 
 // CMS page service — drives the save/publish state machine through
 // the repository's mocked transactional helpers. The repository
@@ -33,7 +34,7 @@ const repo = await import('@/server/cms/pages/repository')
 const { ActionFailure } = await import('@/server/route-helpers/api-handler')
 const service = await import('@/server/cms/pages/service')
 
-function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
+function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')
   return {
     id: overrides.id ?? 1n,
@@ -48,9 +49,12 @@ function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
     showFriends: overrides.showFriends ?? false,
     publishedAt: overrides.publishedAt ?? now,
     publishedRevisionId: overrides.publishedRevisionId ?? null,
+    firstPublishedAt: overrides.firstPublishedAt ?? null,
+    authorId: overrides.authorId ?? null,
     createdAt: now,
     updatedAt: overrides.updatedAt ?? now,
     deletedAt: overrides.deletedAt ?? null,
+    authorName: overrides.authorName ?? null,
   }
 }
 

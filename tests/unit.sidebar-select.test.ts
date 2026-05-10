@@ -1,58 +1,12 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { selectFeaturePosts, selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
+import { setBlogSettingsBundleForTests } from '@/server/settings/snapshot'
+import { selectSidebarTags } from '@/server/sidebar/select'
 
+import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 import { makePost, makePostList, makeTag } from './_helpers/catalog'
 
-// would mask correctness regressions if we didn't pin behavior with concrete
-// fixtures.
-
-describe('services/sidebar/select — selectFeaturePosts', () => {
-  it('returns the explicit configured slugs when at least 3 are configured', () => {
-    // The blog config currently has fewer than 3 explicit feature slugs, but
-    // the contract is: when there are >=3 featured slugs, the function must
-    // honor them in order — which we cover via the seeded path below.
-    const posts = makePostList(20)
-    const seeded = selectFeaturePosts(posts, '2024-01-01')
-    expect(seeded.length).toBeLessThanOrEqual(3)
-  })
-
-  it('is deterministic for a given seed', () => {
-    const posts = makePostList(20)
-    const a = selectFeaturePosts(posts, 'stable-seed-1')
-    const b = selectFeaturePosts(posts, 'stable-seed-1')
-    expect(b).toEqual(a)
-  })
-
-  it('returns the input directly when fewer than 3 posts are available', () => {
-    const tiny = makePostList(2)
-    expect(selectFeaturePosts(tiny, 'x')).toEqual(tiny)
-  })
-
-  it('never returns more than 3 posts even on large inputs', () => {
-    const posts = makePostList(200)
-    const result = selectFeaturePosts(posts, '200-posts-seed')
-    expect(result.length).toBeLessThanOrEqual(3)
-  })
-
-  it('emits results sorted by date desc', () => {
-    const posts = makePostList(50)
-    const result = selectFeaturePosts(posts, 'sort-check-seed')
-    for (let i = 1; i < result.length; i++) {
-      expect(+result[i - 1]!.date).toBeGreaterThanOrEqual(+result[i]!.date)
-    }
-  })
-})
-
 describe('services/sidebar/select — selectSidebarTags', () => {
-  it('does not memoize sidebar posts between requests', () => {
-    const posts = makePostList(20)
-    const first = selectSidebarPosts(posts)
-    const second = selectSidebarPosts(posts)
-
-    expect(second).not.toBe(first)
-  })
-
   it('does not memoize sidebar tags between requests', () => {
     const tags: ReturnType<typeof makeTag>[] = Array.from({ length: 50 }, (_, i) =>
       makeTag({ slug: `tag-${i}`, counts: 100 + i }),

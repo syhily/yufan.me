@@ -158,6 +158,7 @@ export function PagesView() {
                 <TableRow>
                   <TableHead className="pl-4">标题</TableHead>
                   <TableHead className="hidden md:table-cell">摘要</TableHead>
+                  <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">更新时间</TableHead>
                   <TableHead className="w-44 pr-4 text-right">操作</TableHead>
@@ -168,7 +169,7 @@ export function PagesView() {
                   <PagesSkeleton />
                 ) : state.rows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="p-0">
+                    <TableCell colSpan={6} className="p-0">
                       <Empty className="border-0">
                         <EmptyHeader>
                           <EmptyMedia variant="icon">
@@ -224,6 +225,9 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
       </TableCell>
       <TableCell className="hidden max-w-md md:table-cell">
         <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary || '—'}</p>
+      </TableCell>
+      <TableCell className="hidden w-24 text-center align-top md:table-cell">
+        <p className="text-sm text-muted-foreground">{page.authorName || '—'}</p>
       </TableCell>
       <TableCell className="text-center align-top">
         <StatusBadge page={page} />
@@ -293,6 +297,9 @@ function PagesSkeleton() {
           </TableCell>
           <TableCell className="hidden md:table-cell">
             <Skeleton className="h-3 w-full" />
+          </TableCell>
+          <TableCell className="hidden md:table-cell">
+            <Skeleton className="mx-auto h-3 w-16" />
           </TableCell>
           <TableCell>
             <Skeleton className="mx-auto h-5 w-16" />

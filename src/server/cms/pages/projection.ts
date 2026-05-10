@@ -39,6 +39,7 @@ export function toCmsPage(
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []
 
   return {
+    id: String(meta.id),
     title: meta.title,
     date: meta.publishedAt,
     updated: meta.updatedAt,
@@ -95,9 +96,11 @@ export interface AdminPageDto {
   createdAt: string
   updatedAt: string
   deletedAt: string | null
+  authorId: string | null
+  authorName: string | null
 }
 
-export function toAdminPageDto(row: PageMetaRow): AdminPageDto {
+export function toAdminPageDto(row: PageMetaRow & { authorName?: string | null }): AdminPageDto {
   return {
     id: String(row.id),
     slug: row.slug,
@@ -114,6 +117,8 @@ export function toAdminPageDto(row: PageMetaRow): AdminPageDto {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
+    authorId: row.authorId === null ? null : String(row.authorId),
+    authorName: (row as { authorName?: string | null }).authorName ?? null,
   }
 }
 

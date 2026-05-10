@@ -1,7 +1,19 @@
 import { Feed } from 'feed'
 
-import { ContentCatalog, type Page, type Post } from '@/server/catalog'
-import { prerenderToHtml } from '@/server/catalog/render'
+import {
+  findCategoryByName,
+  findCategoryBySlug,
+  findTagByName,
+  findTagBySlug,
+  getTagsByNames,
+  listAllCategories,
+  listAllPosts,
+  listPostsByCategory,
+  listPostsByTag,
+  type Page,
+  type Post,
+} from '@/server/catalog'
+import { prerenderToHtml } from '@/server/render/prerender'
 import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { joinUrl } from '@/shared/urls'
@@ -70,8 +82,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
   if (category !== undefined && tag !== undefined) {
     throw new Error('Category and tag cannot be specified at the same time')
   }
-  const catalog = await ContentCatalog.get()
-  const filtered = selectFeedPosts(catalog, { includeHidden, includeScheduled, category, tag })
+  const filtered = await selectFeedPosts({ includeHidden, includeScheduled, category, tag })
   const feedPosts = filtered.slice(0, size)
 
   // Start to build the feed.
@@ -100,14 +111,14 @@ export async function generateFeeds(options: FeedOptions = {}) {
   })
 
   for (const post of feedPosts) {
-    const itemCategories = catalog.getTagsByName(post.tags).map((t) => ({
+    const itemCategories = (await getTagsByNames(post.tags)).map((t) => ({
       name: t.name,
       domain: joinUrl(siteIdentity.website, `/tags/${t.slug}`),
       scheme: 'https',
       term: t.name,
     }))
-    const postCategory = catalog.getCategoryByName(post.category)
-    if (postCategory !== undefined) {
+    const postCategory = await findCategoryByName(post.category)
+    if (postCategory !== null) {
       itemCategories.push({
         name: postCategory.name,
         domain: joinUrl(siteIdentity.website, `/cats/${postCategory.slug}`),
@@ -136,7 +147,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
     })
   }
 
-  for (const cat of catalog.categories) {
+  for (const cat of await listAllCategories()) {
     feed.addCategory(cat.name)
   }
 
@@ -152,33 +163,32 @@ export async function generateFeeds(options: FeedOptions = {}) {
   }
 }
 
-function selectFeedPosts(
-  catalog: ContentCatalog,
+async function selectFeedPosts(
   options: Pick<FeedOptions, 'category' | 'tag'> & {
     includeHidden: boolean
     includeScheduled: boolean
   },
-): Post[] {
+): Promise<Post[]> {
   const visibility = {
     includeHidden: options.includeHidden,
     includeScheduled: options.includeScheduled,
   }
 
   if (options.category !== undefined) {
-    const category = catalog.getCategoryBySlug(options.category) ?? catalog.getCategoryByName(options.category)
-    if (category === undefined) {
+    const category = (await findCategoryBySlug(options.category)) ?? (await findCategoryByName(options.category))
+    if (category === null) {
       return []
     }
-    return catalog.getPostsByTaxonomy({ categoryName: category.name }, visibility)
+    return listPostsByCategory(category.name, visibility)
   }
 
   if (options.tag !== undefined) {
-    const tag = catalog.getTagBySlug(options.tag) ?? catalog.getTagByName(options.tag)
-    if (tag === undefined) {
+    const tag = (await findTagBySlug(options.tag)) ?? (await findTagByName(options.tag))
+    if (tag === null) {
       return []
     }
-    return catalog.getPostsByTaxonomy({ tagName: tag.name }, visibility)
+    return listPostsByTag(tag.name, visibility)
   }
 
-  return catalog.getPosts(visibility)
+  return listAllPosts(visibility)
 }

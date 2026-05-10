@@ -74,7 +74,7 @@ const socialsDefaults = { socials: [] } as const
 const contentDefaults = {
   pagination: { posts: 10, category: 10, tags: 10, search: 10 },
   feed: { full: false, size: 20 },
-  post: { sort: 'desc' as const },
+  post: { sort: 'desc' as const, sortBy: 'publishedAt' as const, featureEnabled: false },
   footnotes: { sectionTitle: '尾声礼记' },
 } as const
 const sidebarDefaults = {

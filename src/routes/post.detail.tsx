@@ -1,11 +1,14 @@
 import { data } from 'react-router'
 
-import { getCatalog, toDetailPostShell } from '@/server/catalog'
+import { findPostBySlug, getTagsByNames, listAllTags } from '@/server/catalog'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
+import { selectSidebarPosts } from '@/server/posts/query'
 import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/route-helpers/detail-loader'
 import { canonicalPostPath } from '@/server/route-helpers/paths'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/seo/meta'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { toClientPost, toDetailPostShell } from '@/shared/catalog'
 import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 import { PostDetailBody } from '@/ui/post/post/PostDetailBody'
 
@@ -15,18 +18,19 @@ export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const catalog = await getCatalog()
-  const sourcePost = requireDetailSource(catalog.getPost(params.slug))
-  const clientPost = catalog.toClientPost(sourcePost)
+  const sourcePost = requireDetailSource((await findPostBySlug(params.slug)) ?? undefined)
+  const clientPost = toClientPost(sourcePost)
   const canonical = canonicalPostPath(params.slug, clientPost.slug)
   if (canonical !== undefined) {
     redirectPermanent(canonical)
   }
 
   const post = toDetailPostShell(clientPost)
-  const visibleTags = catalog.getTagsByName(post.tags)
+  const visibleTags = await getTagsByNames(post.tags)
 
   const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePost.imageSources))
+
+  const sidebarTags = await listAllTags()
 
   const { detail, sidebar, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
@@ -35,8 +39,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     title: post.title,
     preload: () => Promise.resolve(),
     sidebar: {
-      posts: catalog.getClientPosts({ includeHidden: false, includeScheduled: false }),
-      tags: catalog.tags,
+      posts: await selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),
+      tags: sidebarTags,
     },
   })
 

@@ -38,6 +38,7 @@ export interface CreatePostDraftMeta {
   commentsEnabled: boolean
   showToc: boolean
   visible: boolean
+  pinned: boolean
   category: string
   tags: string[]
   alias: string[]

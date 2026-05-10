@@ -402,8 +402,16 @@ export const page = pgTable(
       .notNull()
       .$defaultFn(() => new Date()),
     publishedRevisionId: bigint('published_revision_id', { mode: 'bigint' }),
+    /** The timestamp of the first publication. Immutable after set. */
+    firstPublishedAt: timestamp('first_published_at', { withTimezone: true, mode: 'date' }),
+    /** Author who created the page. NULL for legacy migrated pages. */
+    authorId: bigint('author_id', { mode: 'bigint' }),
   },
-  (table) => [index('idx_page_slug').on(table.slug), index('idx_page_deleted_at').on(table.deletedAt)],
+  (table) => [
+    index('idx_page_slug').on(table.slug),
+    index('idx_page_deleted_at').on(table.deletedAt),
+    index('idx_page_first_published_at').on(table.firstPublishedAt),
+  ],
 )
 
 export const post = pgTable(
@@ -430,6 +438,8 @@ export const post = pgTable(
       .notNull()
       .$defaultFn(() => new Date()),
     publishedRevisionId: bigint('published_revision_id', { mode: 'bigint' }),
+    /** The timestamp of the first publication. Immutable after set. */
+    firstPublishedAt: timestamp('first_published_at', { withTimezone: true, mode: 'date' }),
     /** Author who created the post. NULL for legacy migrated posts. */
     authorId: bigint('author_id', { mode: 'bigint' }),
     // Post-specific taxonomy fields
@@ -440,12 +450,16 @@ export const post = pgTable(
     alias: jsonb('alias')
       .notNull()
       .default(sql`'[]'::jsonb`),
+    /** When set, the post is pinned to the home feature area. */
+    pinnedAt: timestamp('pinned_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => [
     index('idx_post_slug').on(table.slug),
     index('idx_post_deleted_at').on(table.deletedAt),
     index('idx_post_category').on(table.category),
     index('idx_post_published_at').on(table.publishedAt),
+    index('idx_post_first_published_at').on(table.firstPublishedAt),
+    index('idx_post_pinned_at').on(table.pinnedAt),
   ],
 )
 

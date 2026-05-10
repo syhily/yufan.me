@@ -2,6 +2,8 @@ import { useReducer } from 'react'
 
 import type { AdminPostDto } from '@/shared/cms-posts'
 
+export type PostStatusFilter = 'all' | 'published' | 'draft' | 'hidden'
+
 interface PostsState {
   rows: AdminPostDto[]
   total: number
@@ -9,7 +11,11 @@ interface PostsState {
   deletedStatus: 'all' | 'deleted' | 'normal'
   currentPage: number
   pageSize: number
-  published: boolean | undefined
+  status: PostStatusFilter
+  /** Derived from `status`; present so the list API payload can read it directly. */
+  published?: boolean
+  /** Derived from `status`; present so the list API payload can read it directly. */
+  visible?: boolean
   category: string
   tag: string
   authorId: string
@@ -23,7 +29,7 @@ type PostsAction =
   | { type: 'setDeletedStatus'; value: 'all' | 'deleted' | 'normal' }
   | { type: 'setCurrentPage'; value: number }
   | { type: 'setPageSize'; value: number }
-  | { type: 'setPublished'; value: boolean | undefined }
+  | { type: 'setStatus'; value: PostStatusFilter }
   | { type: 'setCategory'; value: string }
   | { type: 'setTag'; value: string }
   | { type: 'setAuthorId'; value: string }
@@ -45,8 +51,22 @@ function postsReducer(state: PostsState, action: PostsAction): PostsState {
       return { ...state, currentPage: action.value }
     case 'setPageSize':
       return { ...state, pageSize: action.value, currentPage: 0 }
-    case 'setPublished':
-      return { ...state, published: action.value, currentPage: 0 }
+    case 'setStatus': {
+      const statusMap: Record<PostStatusFilter, { published?: boolean; visible?: boolean }> = {
+        all: {},
+        published: { published: true, visible: true },
+        draft: { published: false },
+        hidden: { published: true, visible: false },
+      }
+      const map = statusMap[action.value]
+      return {
+        ...state,
+        status: action.value,
+        published: map.published,
+        visible: map.visible,
+        currentPage: 0,
+      }
+    }
     case 'setCategory':
       return { ...state, category: action.value, currentPage: 0 }
     case 'setTag':
@@ -80,8 +100,8 @@ export function usePostsController() {
     q: '',
     deletedStatus: 'normal',
     currentPage: 0,
-    pageSize: 20,
-    published: undefined,
+    pageSize: 10,
+    status: 'all' as PostStatusFilter,
     category: '',
     tag: '',
     authorId: '',

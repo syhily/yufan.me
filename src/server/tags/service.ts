@@ -1,7 +1,7 @@
 import type { TagRow } from '@/server/db/types'
 import type { AdminTagDto } from '@/shared/tags'
 
-import { ContentCatalog } from '@/server/catalog'
+import { listPostsByTag } from '@/server/catalog'
 import { formatBlockMessage } from '@/server/categories/service'
 import {
   type AdminTagsListFilters,
@@ -43,10 +43,8 @@ export interface AdminTagsListResult {
 // Single catalog snapshot + per-row map lookup. Counts include
 // hidden + scheduled posts so the column matches what the
 // delete-block guard sees.
-async function tagPostCounter(): Promise<(name: string) => number> {
-  const catalog = await ContentCatalog.get()
-  return (name: string) =>
-    catalog.getPostsByTaxonomy({ tagName: name }, { includeHidden: true, includeScheduled: true }).length
+async function tagPostCounter(): Promise<(name: string) => Promise<number>> {
+  return async (name: string) => (await listPostsByTag(name, { includeHidden: true, includeScheduled: true })).length
 }
 
 // Server-side pagination: parallel `[rows, total, postCounter]` so we
@@ -62,7 +60,7 @@ export async function listTagsForAdmin(filters: AdminTagsListFilters): Promise<A
     tagPostCounter(),
   ])
   return {
-    tags: rows.map((row) => toAdminTagDto(row, countOf(row.name))),
+    tags: await Promise.all(rows.map(async (row) => toAdminTagDto(row, await countOf(row.name)))),
     total,
     hasMore: offset + rows.length < total,
   }
@@ -81,7 +79,7 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
     await ensureUniqueOnCreate(input.name, slug)
     const row = await insertTag({ name: input.name, slug })
     const countOf = await tagPostCounter()
-    return toAdminTagDto(row, countOf(row.name))
+    return toAdminTagDto(row, await countOf(row.name))
   }
 
   const existing = await findTagById(input.id)
@@ -94,7 +92,7 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
     throw new ActionFailure(404, '标签不存在')
   }
   const countOf = await tagPostCounter()
-  return toAdminTagDto(updated, countOf(updated.name))
+  return toAdminTagDto(updated, await countOf(updated.name))
 }
 
 // Block-only deletion. Same contract as `deleteAdminCategory`: refuse
@@ -106,11 +104,7 @@ export async function deleteAdminTag(id: bigint): Promise<boolean> {
     return false
   }
 
-  const catalog = await ContentCatalog.get()
-  const referencing = catalog.getPostsByTaxonomy(
-    { tagName: existing.name },
-    { includeHidden: true, includeScheduled: true },
-  )
+  const referencing = await listPostsByTag(existing.name, { includeHidden: true, includeScheduled: true })
   if (referencing.length > 0) {
     throw new ActionFailure(
       409,

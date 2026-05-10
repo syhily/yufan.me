@@ -21,6 +21,8 @@ export interface AdminPostDto {
   tags: string[]
   alias: string[]
   authorId: string | null
+  authorName: string | null
+  pinnedAt: string | null
 }
 
 export interface AdminRevisionDto {
@@ -50,6 +52,7 @@ export interface ListPostsInput {
   category?: string
   tag?: string
   published?: boolean
+  visible?: boolean
   sortBy?: 'publishedAt' | 'updatedAt'
   sortOrder?: 'asc' | 'desc'
   authorId?: string
@@ -90,6 +93,7 @@ export interface UpsertPostMetaInput {
   category?: string
   tags?: string[]
   alias?: string[]
+  pinnedAt?: string | null
 }
 
 export interface UpsertPostMetaOutput {

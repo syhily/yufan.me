@@ -26,6 +26,7 @@ export function toCmsPost(
   const headings = publishedRevision !== null ? readHeadings(publishedRevision.headings) : []
 
   return {
+    id: String(meta.id),
     title: meta.title,
     date: meta.publishedAt,
     updated: meta.updatedAt,
@@ -46,6 +47,7 @@ export function toCmsPost(
     body,
     imageSources,
     publishedRevisionId: meta.publishedRevisionId,
+    pinnedAt: meta.pinnedAt ?? undefined,
   }
 }
 
@@ -71,9 +73,11 @@ export interface AdminPostDto {
   tags: string[]
   alias: string[]
   authorId: string | null
+  authorName: string | null
+  pinnedAt: string | null
 }
 
-export function toAdminPostDto(row: PostMetaRow): AdminPostDto {
+export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }): AdminPostDto {
   return {
     id: String(row.id),
     slug: row.slug,
@@ -94,6 +98,8 @@ export function toAdminPostDto(row: PostMetaRow): AdminPostDto {
     tags: (row.tags as string[]) ?? [],
     alias: (row.alias as string[]) ?? [],
     authorId: row.authorId === null ? null : String(row.authorId),
+    authorName: (row as { authorName?: string | null }).authorName ?? null,
+    pinnedAt: row.pinnedAt === null ? null : row.pinnedAt.toISOString(),
   }
 }
 

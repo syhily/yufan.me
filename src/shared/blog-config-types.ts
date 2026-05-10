@@ -77,7 +77,8 @@ export interface ContentSettings {
   }
   post: {
     sort: 'asc' | 'desc'
-    feature?: string[]
+    sortBy: 'publishedAt' | 'updatedAt'
+    featureEnabled: boolean
   }
   /**
    * Legacy rows may omit this bucket until the admin saves 「内容与分页」.

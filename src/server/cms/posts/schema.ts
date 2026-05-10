@@ -39,7 +39,14 @@ export const listPostsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
   category: z.string().trim().max(20).optional(),
   tag: z.string().trim().max(20).optional(),
-  published: z.coerce.boolean().optional(),
+  published: z
+    .union([z.literal('true'), z.literal('false'), z.boolean()])
+    .transform((v) => (v === 'true' ? true : v === 'false' ? false : v))
+    .optional(),
+  visible: z
+    .union([z.literal('true'), z.literal('false'), z.boolean()])
+    .transform((v) => (v === 'true' ? true : v === 'false' ? false : v))
+    .optional(),
   sortBy: z.enum(['publishedAt', 'updatedAt']).optional().default('publishedAt'),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
   authorId: z.coerce.bigint().optional(),
@@ -68,6 +75,7 @@ export const upsertPostMetaSchema = z.object({
   commentsEnabled: z.coerce.boolean().optional(),
   showToc: z.coerce.boolean().optional(),
   visible: z.coerce.boolean().optional(),
+  pinnedAt: z.iso.datetime({ offset: true }).nullable().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
   category: z.string().trim().max(20).optional().default(''),
   tags: z.array(z.string().trim().max(20)).optional().default([]),

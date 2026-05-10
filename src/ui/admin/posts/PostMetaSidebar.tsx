@@ -26,6 +26,7 @@ import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/ui/components/ui/radio-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
 import { Textarea } from '@/ui/components/ui/textarea'
 import { cn } from '@/ui/lib/cn'
 
@@ -41,6 +42,7 @@ export interface PostMetaDraft {
   commentsEnabled: boolean
   showToc: boolean
   visible: boolean
+  pinned: boolean
   category: string
   tags: string[]
   alias: string[]
@@ -63,6 +65,7 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   commentsEnabled: true,
   showToc: false,
   visible: true,
+  pinned: false,
   category: '',
   tags: [],
   alias: [],
@@ -80,6 +83,7 @@ export function metaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
     a.commentsEnabled === b.commentsEnabled &&
     a.showToc === b.showToc &&
     a.visible === b.visible &&
+    a.pinned === b.pinned &&
     a.category === b.category &&
     JSON.stringify(a.tags) === JSON.stringify(b.tags) &&
     JSON.stringify(a.alias) === JSON.stringify(b.alias) &&
@@ -98,6 +102,7 @@ export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
     commentsEnabled: post.commentsEnabled,
     showToc: post.showToc,
     visible: post.visible,
+    pinned: post.pinnedAt !== null,
     category: post.category,
     tags: post.tags,
     alias: post.alias,
@@ -238,6 +243,11 @@ export interface MetaSidebarProps {
   /** Shell-derived draft / persist lifecycle for the 保存状态 row under 发布状态. */
   saveStatus: SidebarSaveStatus
   /**
+   * Whether the feature-post (pinning) toggle is shown in the sidebar.
+   * Driven by the `blog.content` `post.featureEnabled` setting.
+   */
+  featureEnabled?: boolean
+  /**
    * Optional extra slot rendered at the bottom of the panel. Used by
    * the editor shell to mount the revision history drawer trigger
    * once a post has been saved (creating mode renders nothing).
@@ -256,6 +266,7 @@ export function PostMetaSidebar({
   ogPreviewSlug,
   revisionSummary,
   saveStatus,
+  featureEnabled,
   extras,
 }: MetaSidebarProps) {
   const set = <K extends keyof PostMetaDraft>(key: K, value: PostMetaDraft[K]) => onChange({ ...draft, [key]: value })
@@ -367,6 +378,16 @@ export function PostMetaSidebar({
             onCheckedChange={(value) => set('visible', value)}
             disabled={disabled}
           />
+          {featureEnabled ? (
+            <ToggleRow
+              id="post-pinned"
+              label="置顶到首页"
+              description="置顶的文章会出现在首页精选区，最多展示 3 篇。"
+              checked={draft.pinned}
+              onCheckedChange={(value) => set('pinned', value)}
+              disabled={disabled}
+            />
+          ) : null}
         </CardContent>
       </Card>
       {extras !== undefined ? extras : null}
@@ -874,20 +895,19 @@ function CategoryField({ value, onChange, disabled }: CategoryFieldProps) {
   return (
     <div className="grid gap-2">
       <Label htmlFor="post-category">分类</Label>
-      <select
-        id="post-category"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <option value="">— 无分类 —</option>
-        {categories.map((cat) => (
-          <option key={cat.id} value={cat.name}>
-            {cat.name}
-          </option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={(v) => onChange(v ?? '')} disabled={disabled}>
+        <SelectTrigger id="post-category" className="w-full">
+          <SelectValue placeholder="— 无分类 —" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">— 无分类 —</SelectItem>
+          {categories.map((cat) => (
+            <SelectItem key={cat.id} value={cat.name}>
+              {cat.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <p className="text-xs text-muted-foreground">选择文章所属分类。若列表为空，请先在分类管理中创建。</p>
     </div>
   )

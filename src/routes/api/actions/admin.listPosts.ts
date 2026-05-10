@@ -15,6 +15,7 @@ export const loader = defineApiAction({
       category: payload.category,
       tag: payload.tag,
       published: payload.published,
+      visible: payload.visible,
       sortBy: payload.sortBy,
       sortOrder: payload.sortOrder,
       authorId: payload.authorId,

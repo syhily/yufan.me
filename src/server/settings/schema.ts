@@ -121,7 +121,8 @@ export const contentSchema = z.object({
   }),
   post: z.object({
     sort: sortOrderSchema,
-    feature: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
+    sortBy: z.enum(['publishedAt', 'updatedAt']).default('publishedAt'),
+    featureEnabled: z.coerce.boolean().default(false),
   }),
   footnotes: z
     .object({

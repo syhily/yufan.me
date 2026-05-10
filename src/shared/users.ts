@@ -8,6 +8,7 @@ export interface ListUsersInput {
   role?: 'all' | 'admin' | 'normal'
   includeDeleted?: boolean | 'true' | 'false'
   sortBy?: UserSortOrder
+  hasPosts?: boolean | 'true' | 'false'
 }
 
 export interface UserIdInput {

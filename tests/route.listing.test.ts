@@ -30,28 +30,41 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    tags: [sampleTag],
-    categories: [sampleCategory],
-    getPosts: vi.fn(() => samplePosts),
-    getClientPosts: vi.fn(() => samplePosts),
-    getPostsBy: vi.fn(() => samplePosts),
-    getPostsByTaxonomy: vi.fn((_filter, options) => (options.includeHidden ? samplePosts : publicPosts)),
-    getPostsBySlugs: vi.fn((_slugs, options) => (options.includeHidden ? samplePosts : publicPosts)),
-    getCategoryBySlug: vi.fn((slug: string) => (slug === 'general' ? sampleCategory : undefined)),
-    getCategoryByName: vi.fn(() => sampleCategory),
-    getCategoriesByName: vi.fn(() => [sampleCategory]),
-    getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
-    getTagBySlug: vi.fn((slug: string) => (slug === 'typescript' ? sampleTag : undefined)),
-    getTagByName: vi.fn(() => sampleTag),
-    toClientPost: (p: unknown) => p,
-  })),
+  findCategoryBySlug: vi.fn(async (slug: string) => (slug === 'general' ? sampleCategory : null)),
+  findTagBySlug: vi.fn(async (slug: string) => (slug === 'typescript' ? sampleTag : null)),
+  listPostsByCategory: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
+    options?.includeHidden ? samplePosts : publicPosts,
+  ),
+  listPostsByTag: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
+    options?.includeHidden ? samplePosts : publicPosts,
+  ),
+  getPostsBySlugs: vi.fn(async (_slugs: string[], options: { includeHidden?: boolean }) =>
+    options?.includeHidden ? samplePosts : publicPosts,
+  ),
   getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
-    (posts as Array<{ slug: string }>).map((p) => ({ ...p, likes: 0, views: 0, comments: 0 })),
+    (posts as Array<{ slug: string }>).map((p) => ({ ...p, meta: { likes: 0, views: 0, comments: 0 } })),
   ),
   toClientPost: (p: unknown) => p,
   toListingPostCard: (p: unknown) => p,
-  ContentCatalog: class {},
+}))
+
+vi.mock('@/server/posts/query', () => ({
+  countPublicPosts: vi.fn(async (_filters: { includeHidden?: boolean; category?: string; tag?: string }) =>
+    _filters?.includeHidden ? samplePosts.length : publicPosts.length,
+  ),
+  listPublicPostCardsPaginated: vi.fn(
+    async (
+      _pageNum: number,
+      _pageSize: number,
+      options: { includeHidden?: boolean; category?: string; tag?: string },
+    ) => {
+      const posts = options?.includeHidden ? samplePosts : publicPosts
+      return { posts, total: posts.length }
+    },
+  ),
+  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
+    (posts as Array<{ slug: string }>).map((p) => ({ ...p, meta: { likes: 0, views: 0, comments: 0 } })),
+  ),
 }))
 
 vi.mock('@/server/sidebar/load', () => ({

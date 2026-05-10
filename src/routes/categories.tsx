@@ -1,4 +1,4 @@
-import { getCatalog } from '@/server/catalog'
+import { listAllCategories } from '@/server/catalog'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { CategoriesBody } from '@/ui/post/categories/CategoriesBody'
@@ -6,9 +6,9 @@ import { CategoriesBody } from '@/ui/post/categories/CategoriesBody'
 import type { Route } from './+types/categories'
 
 export async function loader(_: Route.LoaderArgs) {
-  const catalog = await getCatalog()
+  const categories = await listAllCategories()
   return {
-    categories: catalog.categories,
+    categories,
   }
 }
 

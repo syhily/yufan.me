@@ -3,7 +3,7 @@ import { createTokenizer } from '@orama/tokenizers/mandarin'
 
 import type { PostVisibilityOptions } from '@/server/catalog'
 
-import { ContentCatalog } from '@/server/catalog'
+import { listAllPosts } from '@/server/catalog'
 import { hydrateBlogSettings } from '@/server/settings/snapshot'
 
 // Search should only index posts that can also be rendered by the route.
@@ -46,8 +46,8 @@ async function buildServer(): Promise<SearchDB | null> {
     return null
   }
 
-  const catalog = await ContentCatalog.get()
-  const docs: SearchDoc[] = catalog.getPosts(searchPostOptions()).map((post) => ({
+  const posts = await listAllPosts(searchPostOptions())
+  const docs: SearchDoc[] = posts.map((post) => ({
     id: post.slug,
     url: post.slug,
     title: post.title,

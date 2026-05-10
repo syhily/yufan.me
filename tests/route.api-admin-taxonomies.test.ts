@@ -54,32 +54,17 @@ const queryTagMock = {
 
 vi.mock('@/server/db/query/tag', () => queryTagMock)
 
-// `deleteAdmin{Category,Tag}` consult the live catalog to check
-// post-references. Mock it so each test can declare which posts
+// `deleteAdmin{Category,Tag}` consults `listPostsByCategory` / `listPostsByTag`
+// to check post-references. Mock them so each test can declare which posts
 // still reference the row under test.
 const catalogState = {
   postsByCategory: new Map<string, { title: string }[]>(),
   postsByTag: new Map<string, { title: string }[]>(),
-  resetCalls: 0,
 }
 
 vi.mock('@/server/catalog', () => ({
-  ContentCatalog: {
-    get: vi.fn(async () => ({
-      getPostsByTaxonomy: ({ categoryName, tagName }: { categoryName?: string; tagName?: string }) => {
-        if (categoryName !== undefined) {
-          return catalogState.postsByCategory.get(categoryName) ?? []
-        }
-        if (tagName !== undefined) {
-          return catalogState.postsByTag.get(tagName) ?? []
-        }
-        return []
-      },
-    })),
-    reset: vi.fn(() => {
-      catalogState.resetCalls += 1
-    }),
-  },
+  listPostsByCategory: vi.fn(async (name: string) => catalogState.postsByCategory.get(name) ?? []),
+  listPostsByTag: vi.fn(async (name: string) => catalogState.postsByTag.get(name) ?? []),
 }))
 
 const { makeLoaderArgs } = await import('./_helpers/context')
@@ -124,7 +109,6 @@ beforeEach(() => {
   queryTagMock.seedTagIfMissing.mockImplementation(async () => true)
   catalogState.postsByCategory = new Map()
   catalogState.postsByTag = new Map()
-  catalogState.resetCalls = 0
 })
 
 describe('routes/api/actions/admin.listCategories', () => {
@@ -206,7 +190,6 @@ describe('routes/api/actions/admin.upsertCategory', () => {
     expect(response.status).toBe(200)
     const body = (await response.json()) as { data: { category: { id: string; name: string } } }
     expect(body.data.category.name).toBe('New')
-    expect(catalogState.resetCalls).toBe(1)
   })
 
   it('rejects a create with a duplicate name (HTTP 409 + Zod-style issue)', async () => {
@@ -227,7 +210,6 @@ describe('routes/api/actions/admin.upsertCategory', () => {
     const body = (await response.json()) as { error: { message: string; issues?: unknown[] } }
     expect(body.error.message).toContain('已存在同名分类')
     expect(body.error.issues?.length ?? 0).toBeGreaterThan(0)
-    expect(catalogState.resetCalls).toBe(0)
   })
 
   it('updates an existing category by id', async () => {
@@ -280,10 +262,9 @@ describe('routes/api/actions/admin.deleteCategory', () => {
     expect(body.error.message).toContain('Post A')
     expect(body.error.message).toContain('Post B')
     expect(queryCategoryMock.deleteCategory).not.toHaveBeenCalled()
-    expect(catalogState.resetCalls).toBe(0)
   })
 
-  it('deletes when no post references the category and resets the catalog', async () => {
+  it('deletes when no post references the category', async () => {
     queryCategoryMock.findCategoryById.mockResolvedValueOnce(makeCategoryRow({ id: 4n, name: '空' }))
     queryCategoryMock.deleteCategory.mockResolvedValueOnce(true)
 
@@ -300,7 +281,6 @@ describe('routes/api/actions/admin.deleteCategory', () => {
 
     expect(response.status).toBe(200)
     expect(queryCategoryMock.deleteCategory).toHaveBeenCalledWith(4n)
-    expect(catalogState.resetCalls).toBe(1)
   })
 
   it('returns 404 when the row does not exist', async () => {
@@ -358,7 +338,6 @@ describe('routes/api/actions/admin.reorderCategories', () => {
       ['1', 1],
       ['2', 2],
     ])
-    expect(catalogState.resetCalls).toBe(1)
   })
 
   it('rejects (409) when the submitted id set does not match the live row set', async () => {
@@ -382,7 +361,6 @@ describe('routes/api/actions/admin.reorderCategories', () => {
 
     expect(response.status).toBe(409)
     expect(queryCategoryMock.reorderCategories).not.toHaveBeenCalled()
-    expect(catalogState.resetCalls).toBe(0)
   })
 
   it('rejects (400) when orderedIds contains duplicates', async () => {
@@ -481,7 +459,6 @@ describe('routes/api/actions/admin.upsertTag', () => {
     expect(body.data.tag.name).toBe('编程')
     // pinyin-pro -> "bian-cheng"
     expect(body.data.tag.slug).toBe('bian-cheng')
-    expect(catalogState.resetCalls).toBe(1)
   })
 
   it('uses an explicit slug when provided', async () => {
@@ -528,7 +505,7 @@ describe('routes/api/actions/admin.deleteTag', () => {
     expect(queryTagMock.deleteTag).not.toHaveBeenCalled()
   })
 
-  it('deletes orphaned tags and resets the catalog', async () => {
+  it('deletes orphaned tags', async () => {
     queryTagMock.findTagById.mockResolvedValueOnce(makeTagRow({ id: 21n, name: 'orphan' }))
     queryTagMock.deleteTag.mockResolvedValueOnce(true)
 
@@ -545,6 +522,5 @@ describe('routes/api/actions/admin.deleteTag', () => {
 
     expect(response.status).toBe(200)
     expect(queryTagMock.deleteTag).toHaveBeenCalledWith(21n)
-    expect(catalogState.resetCalls).toBe(1)
   })
 })

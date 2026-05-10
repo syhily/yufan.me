@@ -7,21 +7,21 @@ import { makePage, makePost } from './_helpers/catalog'
 // behaviour, ordering) Search Console takes weeks to recover. Pin both the
 // content set and the wrapping <urlset> envelope.
 
-vi.mock('@/server/catalog', () => ({
-  // We only need `getCatalog`; the route module doesn't import anything else
-  // from this entry. Keeping the mock minimal avoids dragging the real MDX +
-  // YAML loaders in (which would fail to parse during a unit test run).
-  getCatalog: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  listAllPosts: vi.fn(),
+  listAllPages: vi.fn(),
 }))
 
-const catalog = await import('@/server/catalog')
+vi.mock('@/server/catalog', () => ({
+  listAllPosts: mocks.listAllPosts,
+  listAllPages: mocks.listAllPages,
+}))
+
 const { loader } = await import('@/routes/sitemap')
 
 function fakeCatalog(opts: { posts: ReturnType<typeof makePost>[]; pages: ReturnType<typeof makePage>[] }) {
-  vi.mocked(catalog.getCatalog).mockResolvedValue({
-    getPosts: vi.fn(() => opts.posts),
-    pages: opts.pages,
-  } as never)
+  mocks.listAllPosts.mockResolvedValue(opts.posts)
+  mocks.listAllPages.mockResolvedValue(opts.pages)
 }
 
 describe('routes/sitemap loader', () => {
@@ -74,15 +74,12 @@ describe('routes/sitemap loader', () => {
   })
 
   it('asks the catalog for hidden-inclusive, non-scheduled posts', async () => {
-    const getPosts = vi.fn(() => [])
-    vi.mocked(catalog.getCatalog).mockResolvedValue({
-      getPosts,
-      pages: [],
-    } as never)
+    mocks.listAllPosts.mockResolvedValue([])
+    mocks.listAllPages.mockResolvedValue([])
 
     await loader({ request: new Request('http://x/sitemap.xml') } as never)
 
-    expect(getPosts).toHaveBeenCalledWith({
+    expect(mocks.listAllPosts).toHaveBeenCalledWith({
       includeHidden: true,
       includeScheduled: false,
     })

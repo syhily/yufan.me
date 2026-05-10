@@ -2,7 +2,7 @@ import { redirect } from 'react-router'
 
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 
-import { getCatalog, getClientPostsWithMetadata, toListingPostCard } from '@/server/catalog'
+import { getPostsBySlugs, toClientPost, toListingPostCard, getClientPostsWithMetadata } from '@/server/catalog'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parseListingPage } from '@/server/route-helpers/pagination'
 import { pagePath, searchRootPath } from '@/server/route-helpers/paths'
@@ -26,11 +26,6 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
   const pageSize = requireBlogSettingsSection('content').pagination.search
   const { hits, page, totalPages } = await searchPosts(query, pageSize, (pageNum - 1) * pageSize)
 
-  // Search uses its own pagination shape (FlexSearch returns the total page
-  // count up front), so we hand-roll the overflow/empty redirects rather
-  // than calling `redirectListingOverflow` (which expects a single page
-  // number and treats `totalPage === 0` as a 404). For search we always
-  // redirect home on empty results to preserve the historical UX.
   if (params.num !== undefined) {
     if (totalPages === 0) {
       throw redirect('/', { status: 302 })
@@ -40,10 +35,7 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
     }
   }
 
-  const catalog = await getCatalog()
-  const posts = catalog
-    .getPostsBySlugs(hits, searchPostOptions())
-    .map((p) => toListingPostCard(catalog.toClientPost(p)))
+  const posts = (await getPostsBySlugs(hits, searchPostOptions())).map((p) => toListingPostCard(toClientPost(p)))
   const resolvedPosts = await getClientPostsWithMetadata(posts, {
     likes: true,
     views: true,

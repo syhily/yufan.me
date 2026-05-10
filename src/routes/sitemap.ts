@@ -1,4 +1,4 @@
-import { getCatalog } from '@/server/catalog'
+import { listAllPages, listAllPosts } from '@/server/catalog'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { joinUrl } from '@/shared/urls'
 
@@ -12,9 +12,8 @@ export function headers() {
 }
 
 export async function loader(_: Route.LoaderArgs) {
-  const catalog = await getCatalog()
-  const posts = catalog.getPosts({ includeHidden: true, includeScheduled: false })
-  const pages = catalog.pages
+  const posts = await listAllPosts({ includeHidden: true, includeScheduled: false })
+  const pages = await listAllPages()
 
   // Build via array join so the response starts with `<?xml ... ?>` on the
   // first byte. The previous template-literal version left a leading newline
