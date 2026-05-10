@@ -1,11 +1,8 @@
-import { Trash2Icon } from 'lucide-react'
-
 import type { ContentSettings } from '@/shared/blog-config'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
 
@@ -22,13 +19,19 @@ interface FormState {
   feedFull: boolean
   feedSize: number
   postSort: 'asc' | 'desc'
-  postFeature: string[]
+  postSortBy: 'publishedAt' | 'updatedAt'
+  postFeatureEnabled: boolean
   footnotesSectionTitle: string
 }
 
-const SORT_ITEMS = [
+const SORT_DIR_ITEMS = [
   { value: 'desc', label: '最新优先（desc）' },
   { value: 'asc', label: '最旧优先（asc）' },
+]
+
+const SORT_BY_ITEMS = [
+  { value: 'publishedAt', label: '首次发布时间' },
+  { value: 'updatedAt', label: '最近更新时间' },
 ]
 
 export function ContentForm({ content }: ContentFormProps) {
@@ -46,11 +49,11 @@ export function ContentForm({ content }: ContentFormProps) {
       feedFull: source.feed.full,
       feedSize: source.feed.size,
       postSort: source.post.sort,
-      postFeature: [...(source.post.feature ?? [])],
+      postSortBy: source.post.sortBy,
+      postFeatureEnabled: source.post.featureEnabled ?? false,
       footnotesSectionTitle: source.footnotes?.sectionTitle ?? '尾声礼记',
     }),
     fromState: (state) => {
-      const cleanedFeature = state.postFeature.map((value) => value.trim()).filter((value) => value.length > 0)
       return {
         pagination: {
           posts: state.pagPosts,
@@ -61,24 +64,13 @@ export function ContentForm({ content }: ContentFormProps) {
         feed: { full: state.feedFull, size: state.feedSize },
         post: {
           sort: state.postSort,
-          ...(cleanedFeature.length > 0 ? { feature: cleanedFeature } : {}),
+          sortBy: state.postSortBy,
+          featureEnabled: state.postFeatureEnabled,
         },
         footnotes: { sectionTitle: state.footnotesSectionTitle.trim() || '尾声礼记' },
       }
     },
   })
-
-  const updateFeature = (index: number, value: string) => {
-    setDraft((prev) => {
-      const next = [...prev.postFeature]
-      next[index] = value
-      return { ...prev, postFeature: next }
-    })
-  }
-  const removeFeature = (index: number) => {
-    setDraft((prev) => ({ ...prev, postFeature: prev.postFeature.filter((_, i) => i !== index) }))
-  }
-  const addFeature = () => setDraft((prev) => ({ ...prev, postFeature: [...prev.postFeature, ''] }))
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
@@ -156,19 +148,21 @@ export function ContentForm({ content }: ContentFormProps) {
 
       <SettingsSection
         title="文章排序与置顶"
-        description="文章列表的默认排序方向。`feature` 列表里的 slug 会出现在侧边栏推荐中。"
+        description="文章列表的默认排序方向。开启置顶后，可在文章编辑页将文章置顶到首页精选区。"
       >
-        <SettingsRow label="排序方向" htmlFor="content-post-sort">
+        <SettingsRow label="排序字段" htmlFor="content-post-sort-by">
           <Select
-            value={draft.postSort}
-            items={SORT_ITEMS}
-            onValueChange={(value) => setDraft((prev) => ({ ...prev, postSort: (value ?? 'desc') as 'asc' | 'desc' }))}
+            value={draft.postSortBy}
+            items={SORT_BY_ITEMS}
+            onValueChange={(value) =>
+              setDraft((prev) => ({ ...prev, postSortBy: (value ?? 'publishedAt') as 'publishedAt' | 'updatedAt' }))
+            }
           >
-            <SelectTrigger id="content-post-sort" className="w-full">
+            <SelectTrigger id="content-post-sort-by" className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORT_ITEMS.map((option) => (
+              {SORT_BY_ITEMS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -176,38 +170,32 @@ export function ContentForm({ content }: ContentFormProps) {
             </SelectContent>
           </Select>
         </SettingsRow>
-        <SettingsRow label="精选文章 slug 列表" hint="按顺序在侧边栏「精选」区显示，最多 20 个。每行一个 slug。">
-          <div className="flex flex-col gap-2">
-            {draft.postFeature.map((slug, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={slug}
-                  onChange={(e) => updateFeature(index, e.target.value)}
-                  maxLength={200}
-                  placeholder="post-slug"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="删除"
-                  onClick={() => removeFeature(index)}
-                >
-                  <Trash2Icon data-icon />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addFeature}
-              disabled={draft.postFeature.length >= 20}
-            >
-              添加精选 slug
-            </Button>
-          </div>
+        <SettingsRow label="排序方向" htmlFor="content-post-sort">
+          <Select
+            value={draft.postSort}
+            items={SORT_DIR_ITEMS}
+            onValueChange={(value) => setDraft((prev) => ({ ...prev, postSort: (value ?? 'desc') as 'asc' | 'desc' }))}
+          >
+            <SelectTrigger id="content-post-sort" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_DIR_ITEMS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </SettingsRow>
+        <SettingsCheckboxRow
+          id="content-post-feature-enabled"
+          rowLabel="开启置顶功能"
+          checkboxLabel="首页展示置顶文章"
+          hint="关闭后首页不展示精选文章，文章编辑页也不显示置顶开关。"
+          checked={draft.postFeatureEnabled}
+          onCheckedChange={(value) => setDraft((prev) => ({ ...prev, postFeatureEnabled: value }))}
+        />
       </SettingsSection>
 
       <SettingsSection

@@ -15,6 +15,7 @@ import {
 import {
   countPageMetas,
   findContentById,
+  findContentsByIds,
   findLatestDraft,
   findLatestRevision,
   findPageMetaById,
@@ -93,12 +94,18 @@ export async function loadCatalogPages(): Promise<CmsPage[]> {
   if (visible.length === 0) {
     return []
   }
-  const revisions = await Promise.all(
-    visible.map((meta) =>
-      meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
-    ),
-  )
-  return visible.map((meta, idx) => toCmsPage(meta, revisions[idx]))
+  const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
+  const revisionMap = new Map<bigint, ContentRow>()
+  if (revisionIds.length > 0) {
+    const rows = await findContentsByIds(revisionIds)
+    for (const row of rows) {
+      revisionMap.set(row.id, row)
+    }
+  }
+  return visible.map((meta) => {
+    const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
+    return toCmsPage(meta, revision)
+  })
 }
 
 /**
@@ -177,7 +184,8 @@ export interface AdminPagesListResult {
 
 export async function listPagesForAdmin(filters: ListPagesFilters = {}): Promise<AdminPagesListResult> {
   const offset = filters.offset ?? 0
-  const [rows, total] = await Promise.all([listPageMetas(filters), countPageMetas(filters)])
+  const limit = filters.limit ?? 100
+  const [rows, total] = await Promise.all([listPageMetas({ ...filters, limit, offset }), countPageMetas(filters)])
   return {
     pages: rows.map(toAdminPageDto),
     total,
@@ -288,7 +296,7 @@ function resolveSlugForPage(explicit: string | undefined, title: string): string
   return derived
 }
 
-export async function createPage(input: UpsertPageMetaInput, _authorId: bigint | null): Promise<AdminPageDto> {
+export async function createPage(input: UpsertPageMetaInput, authorId: bigint | null): Promise<AdminPageDto> {
   const slug = resolveSlugForPage(input.slug, input.title)
   ensureSlugLegal(slug)
   // SLUG NAMESPACE — global across DB pages, MDX pages, and posts
@@ -319,6 +327,7 @@ export async function createPage(input: UpsertPageMetaInput, _authorId: bigint |
     showToc: input.showToc ?? false,
     showFriends: input.showFriends ?? false,
     publishedAt: input.publishedAt ?? now,
+    authorId,
   })
   return toAdminPageDto(row)
 }
@@ -457,11 +466,11 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
 
   const result =
     mode === 'draft'
-      ? await saveDraftRevision(repoInput)
+      ? await saveDraftRevision('page', repoInput)
       : // Publish path: pass through the optional `publishedAt`. The
         // repo defaults to `now()` when undefined, so omitting it from
         // the wire = "publish immediately".
-        await publishLatestRevision({ ...repoInput, publishedAt: input.publishedAt })
+        await publishLatestRevision('page', { ...repoInput, publishedAt: input.publishedAt })
   // Repository status is `'saved'` for drafts and `'published'` for
   // publishes — both indicate a successful write that the audit
   // trail should observe.

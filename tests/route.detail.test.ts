@@ -12,8 +12,7 @@ import { regularSession } from './_helpers/session'
 const session = regularSession()
 const samplePost = {
   ...makePost({ slug: 'hello', alias: ['hello-old'] }),
-  mdxPath: '2024/2024-01-01-hello.mdx',
-  body: () => null,
+  body: [],
   imageSources: [],
 }
 const samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
@@ -37,26 +36,22 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    tags: [sampleTag],
-    categories: [sampleCategory],
-    friends: [],
-    getPosts: vi.fn(() => sidebarSamples),
-    getClientPosts: vi.fn(() => sidebarSamples),
-    getPost: vi.fn((slug: string) => {
-      if (slug === 'hello') {
-        return samplePost
-      }
-      if (slug === 'hello-old') {
-        return samplePost
-      } // alias resolves to canonical
-      return undefined
-    }),
-    getPage: vi.fn((slug: string) => (slug === 'about' ? samplePage : undefined)),
-    getTagsByName: vi.fn(() => [sampleTag]),
-    toClientPost: (p: unknown) => p,
-    toClientPage: (p: unknown) => p,
-  })),
+  findPostBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello' || slug === 'hello-old') {
+      return samplePost
+    }
+    return null
+  }),
+  findPageBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'about') {
+      return samplePage
+    }
+    return null
+  }),
+  listAllFriends: vi.fn(async () => []),
+  getTagsByNames: vi.fn(async () => [sampleTag]),
+  listClientPosts: vi.fn(async () => sidebarSamples),
+  listAllTags: vi.fn(async () => [sampleTag]),
   toClientPost: (p: unknown) => p,
   toClientPage: (p: unknown) => p,
   toListingPostCard: (p: unknown) => p,
@@ -138,7 +133,7 @@ describe('routes/post.detail loader', () => {
   it('returns the canonical post payload for a real slug', async () => {
     const data = unwrapLoaderData<{
       post: { title: string; permalink: string }
-      mdxPath: string
+      body: unknown[]
     }>(
       await postRoute.loader(
         makeLoaderArgs({
@@ -151,7 +146,7 @@ describe('routes/post.detail loader', () => {
 
     expect(data.post.title).toBe(samplePost.title)
     expect(data.post.permalink).toBe('/posts/hello')
-    expect(data.mdxPath).toBe(samplePost.mdxPath)
+    expect(data.body).toEqual([])
   })
 })
 

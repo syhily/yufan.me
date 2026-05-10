@@ -42,26 +42,40 @@ const allPosts = makePostList(10, { slug: 'post' })
 const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 
+const mocks = vi.hoisted(() => ({
+  listClientPosts: vi.fn(),
+  listAllTags: vi.fn(),
+  postCount: 10,
+  paginatedPosts: vi.fn(async (pageNum: number, pageSize: number) => {
+    const posts = mocks.listClientPosts() ?? []
+    const start = (pageNum - 1) * pageSize
+    return { posts: posts.slice(start, start + pageSize), total: posts.length }
+  }),
+}))
+
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    tags: [sampleTag],
-    getPosts: vi.fn(() => allPosts),
-    getClientPosts: vi.fn(() => allPosts),
-    getCategoriesByName: vi.fn(() => [sampleCategory]),
-    getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
-  })),
-  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
-    (posts as Array<{ slug: string; permalink: string }>).map((p) => ({
-      ...p,
-      likes: 0,
-      views: 0,
-      comments: 0,
-    })),
+  listClientPosts: mocks.listClientPosts,
+  listAllTags: mocks.listAllTags,
+  getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
+  getCategoryLinks: vi.fn(async (names: string[]) =>
+    Object.fromEntries(names.filter((n) => n === sampleCategory.name).map((n) => [n, sampleCategory.permalink])),
   ),
   toClientPost: (p: unknown) => p,
   toListingPostCard: (p: unknown) => p,
   toSidebarPostLink: (p: unknown) => p,
-  ContentCatalog: class {},
+}))
+
+vi.mock('@/server/posts/query', () => ({
+  countPublicPosts: vi.fn(async () => mocks.postCount),
+  listPublicPostCardsPaginated: mocks.paginatedPosts,
+  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
+    (posts as Array<{ slug: string; permalink: string }>).map((p) => ({
+      ...p,
+      meta: { likes: 0, views: 0, comments: 0 },
+    })),
+  ),
+  selectFeaturePosts: vi.fn(async () => []),
+  selectSidebarPosts: vi.fn(async () => []),
 }))
 
 vi.mock('@/server/sidebar/load', () => ({
@@ -76,6 +90,8 @@ const { loader } = await import('@/routes/home')
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.listClientPosts.mockReturnValue(allPosts)
+  mocks.listAllTags.mockReturnValue([sampleTag])
 })
 
 describe('routes/home loader', () => {
@@ -157,19 +173,9 @@ describe('routes/home loader', () => {
 // with a smaller list to exercise the merge branch.
 describe('routes/home loader — tail-merge guard', () => {
   it('absorbs a 1-post tail into the previous page so /page/2 redirects to /', async () => {
-    const { getCatalog } = await import('@/server/catalog')
-    const catalogMock = vi.mocked(getCatalog)
     const sevenPosts = makePostList(7, { slug: 'short' })
-    catalogMock.mockImplementationOnce(
-      async () =>
-        ({
-          tags: [sampleTag],
-          getPosts: vi.fn(() => sevenPosts),
-          getClientPosts: vi.fn(() => sevenPosts),
-          getCategoriesByName: vi.fn(() => [sampleCategory]),
-          getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
-        }) as never,
-    )
+    mocks.listClientPosts.mockReturnValue(sevenPosts)
+    mocks.postCount = 7
 
     // 7 posts at pageSize 6 naturally split 6 + 1; threshold = 4; merge
     // collapses the trailing single post into page 1 so /page/2 now
@@ -187,19 +193,9 @@ describe('routes/home loader — tail-merge guard', () => {
   })
 
   it('returns all posts on / when the merge collapses the full catalogue into one page', async () => {
-    const { getCatalog } = await import('@/server/catalog')
-    const catalogMock = vi.mocked(getCatalog)
     const sevenPosts = makePostList(7, { slug: 'short' })
-    catalogMock.mockImplementationOnce(
-      async () =>
-        ({
-          tags: [sampleTag],
-          getPosts: vi.fn(() => sevenPosts),
-          getClientPosts: vi.fn(() => sevenPosts),
-          getCategoriesByName: vi.fn(() => [sampleCategory]),
-          getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
-        }) as never,
-    )
+    mocks.listClientPosts.mockReturnValue(sevenPosts)
+    mocks.postCount = 7
 
     const result = await loader(
       makeLoaderArgs({

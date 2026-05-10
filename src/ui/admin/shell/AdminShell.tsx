@@ -8,6 +8,7 @@ import {
   MenuIcon,
   MessageSquareIcon,
   Music2Icon,
+  NotebookPenIcon,
   SettingsIcon,
   TagsIcon,
   UsersIcon,
@@ -45,13 +46,14 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon },
   { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon },
+  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon },
   { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon },
   { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon },
   { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon },
   { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon },
   { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon },
-  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon },
   { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users' },
   {
     to: '/wp-admin/settings/general',

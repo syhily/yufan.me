@@ -23,10 +23,8 @@ const samplePost = makePost({ slug: 'hello', title: 'Hello', summary: 'summary',
 const samplePage = makePage({ slug: 'about', title: 'About', summary: '', cover: '/c.png' })
 
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    getPost: vi.fn((slug: string) => (slug === 'hello' ? samplePost : undefined)),
-    getPage: vi.fn((slug: string) => (slug === 'about' ? samplePage : undefined)),
-  })),
+  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? samplePost : null)),
+  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? samplePage : null)),
 }))
 
 const { loader: ogLoader } = await import('@/routes/image.og')

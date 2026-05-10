@@ -1,3 +1,5 @@
+import type { DropdownProps } from 'react-day-picker'
+
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
@@ -6,6 +8,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/ui/components/ui/button'
 import { Calendar } from '@/ui/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
 import { cn } from '@/ui/lib/cn'
 
 // Combined date + time picker, modelled on
@@ -135,6 +138,9 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
               formatMonthDropdown: (date) => format(date, 'LLLL', { locale: zhCN }),
               formatYearDropdown: (date) => `${date.getFullYear()} 年`,
             }}
+            components={{
+              Dropdown: CalendarDropdown,
+            }}
             onSelect={handleDateSelect}
             disabled={disabled}
           />
@@ -175,6 +181,34 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
         </div>
       </PopoverContent>
     </Popover>
+  )
+}
+
+function CalendarDropdown({ options, className: _className, ...selectProps }: DropdownProps) {
+  const selected = options?.find(({ value }) => value === selectProps.value)
+  return (
+    <span data-disabled={selectProps.disabled} className="relative">
+      <Select
+        value={String(selectProps.value ?? '')}
+        onValueChange={(v) => {
+          selectProps.onChange?.({
+            target: { value: Number(v), name: selectProps.name },
+          } as unknown as React.ChangeEvent<HTMLSelectElement>)
+        }}
+        disabled={selectProps.disabled}
+      >
+        <SelectTrigger className="h-8 w-auto gap-1 px-2 text-sm">
+          <SelectValue placeholder={selected?.label} />
+        </SelectTrigger>
+        <SelectContent>
+          {options?.map(({ value, label, disabled }) => (
+            <SelectItem key={value} value={String(value)} disabled={disabled}>
+              {label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </span>
   )
 }
 

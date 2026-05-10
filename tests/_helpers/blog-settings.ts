@@ -76,7 +76,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   content: {
     pagination: { posts: 6, category: 7, tags: 7, search: 7 },
     feed: { full: true, size: 20 },
-    post: { sort: 'desc' },
+    post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
     footnotes: { sectionTitle: '尾声礼记' },
   },
   sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 10 } },

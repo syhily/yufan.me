@@ -1,3 +1,4 @@
+import { PencilIcon } from 'lucide-react'
 import { type ReactNode, Suspense, useRef } from 'react'
 import { Await, Link } from 'react-router'
 
@@ -62,7 +63,19 @@ export function PostDetailBody({
             <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
               <h1 className={cn(postTitleClass, 'font-bold')}>{post.title}</h1>
               <div className={cn(postMetaClass, 'mt-4 mb-6 text-sm text-ink-muted')}>
-                <time className={postMetaDateClass}>{formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}</time>
+                <time className={postMetaDateClass}>
+                  {formatLocalDate(post.updated ?? post.date, 'yyyy-MM-dd HH:mm', config)}
+                </time>
+                {admin && (
+                  <Link
+                    to={`/wp-admin/posts/${post.id}/edit`}
+                    className="hover:bg-surface-hover hover:text-ink-primary ml-3 inline-flex items-center gap-1 rounded-md bg-surface-soft px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors"
+                    prefetch="intent"
+                  >
+                    <PencilIcon className="size-3" />
+                    编辑
+                  </Link>
+                )}
                 {visibleTags.length > 0 && (
                   <div className={postMetaTagsClass}>
                     {visibleTags.map((tag) => (

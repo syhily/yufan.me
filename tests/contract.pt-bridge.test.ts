@@ -89,6 +89,46 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
     expect(back[0]).toMatchObject({ style: 'blockquote' })
   })
 
+  it('round-trips text alignment on paragraphs, headings and blockquotes', () => {
+    const body: PortableTextBody = [
+      {
+        _type: 'block',
+        _key: 'p1',
+        style: 'normal',
+        align: 'center',
+        children: [{ _type: 'span', _key: 's1', text: 'centered' }],
+      },
+      {
+        _type: 'block',
+        _key: 'h1',
+        style: 'h1',
+        align: 'right',
+        children: [{ _type: 'span', _key: 's2', text: 'right' }],
+      },
+      {
+        _type: 'block',
+        _key: 'q1',
+        style: 'blockquote',
+        align: 'left',
+        children: [{ _type: 'span', _key: 's3', text: 'left' }],
+      },
+    ]
+    const doc = bodyToPmDoc(body)
+    // Paragraph align stored on paragraph node
+    expect((doc.content[0] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({ textAlign: 'center' })
+    // Heading align stored on heading node
+    expect((doc.content[1] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({ textAlign: 'right' })
+    // Blockquote align stored on blockquote node, paragraph inside has no align
+    expect((doc.content[2] as { attrs?: Record<string, unknown> }).attrs).toMatchObject({ textAlign: 'left' })
+
+    const back = pmDocToBody(doc)
+    expect(back.map((b) => (b._type === 'block' ? { align: b.align, style: b.style } : null))).toEqual([
+      { align: 'center', style: 'normal' },
+      { align: 'right', style: 'h1' },
+      { align: 'left', style: 'blockquote' },
+    ])
+  })
+
   it('round-trips bullet lists and ordered lists, folding consecutive items', () => {
     const body: PortableTextBody = [
       {

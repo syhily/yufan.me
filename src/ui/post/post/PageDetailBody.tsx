@@ -1,15 +1,18 @@
+import { PencilIcon } from 'lucide-react'
 import { type ReactNode, Suspense, useRef } from 'react'
-import { Await } from 'react-router'
+import { Await, Link } from 'react-router'
 
 import type { CommentFormUser, DetailPageShell, MarkdownHeading } from '@/shared/catalog'
 import type { DetailPageComments } from '@/shared/comments'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
+import { formatLocalDate } from '@/shared/formatter'
 import { Comments } from '@/ui/comments/Comments'
 import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
+import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { LikeButton } from '@/ui/like/LikeActions'
-import { postTitleClass } from '@/ui/post/postChrome'
+import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/post/postChrome'
 import { TableOfContents } from '@/ui/post/toc/TableOfContents'
 import { Footer } from '@/ui/primitives/Footer'
 import { Image } from '@/ui/primitives/Image'
@@ -55,6 +58,7 @@ export interface PageDetailBodyProps {
   commentCsrfToken: string
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
+  admin?: boolean
   children: ReactNode
 }
 
@@ -67,8 +71,10 @@ export function PageDetailBody({
   commentCsrfToken,
   commentsPromise,
   currentUser,
+  admin,
   children,
 }: PageDetailBodyProps) {
+  const config = useSiteIdentity()
   const markerLabel = draftMarker !== null ? DRAFT_MARKER_LABELS[draftMarker] : null
   const postContentRef = useRef<HTMLDivElement>(null)
   useMediumZoom(postContentRef)
@@ -85,6 +91,21 @@ export function PageDetailBody({
             )}
             {page.title}
           </h1>
+          <div className={cn(postMetaClass, 'mt-3 mb-4 text-sm text-ink-muted')}>
+            <time className={postMetaDateClass}>
+              {formatLocalDate(page.updated ?? page.date, 'yyyy-MM-dd HH:mm', config)}
+            </time>
+            {admin && (
+              <Link
+                to={`/wp-admin/pages/${page.id}/edit`}
+                className="hover:bg-surface-hover hover:text-ink-primary ml-3 inline-flex items-center gap-1 rounded-md bg-surface-soft px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors"
+                prefetch="intent"
+              >
+                <PencilIcon className="size-3" />
+                编辑
+              </Link>
+            )}
+          </div>
           <TableOfContents headings={headings} toc={page.toc} />
           <div className="mt-4 xl:mt-6">
             {/* `post-content` is the compound suffix targeted by

@@ -1,14 +1,14 @@
-import type { ListingPostCard } from '@/server/catalog'
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 import type { SidebarData } from '@/ui/sidebar/Sidebar'
 
-import { getCatalog, toListingPostCard } from '@/server/catalog'
+import { getCategoryLinks, listAllTags } from '@/server/catalog'
+import { selectFeaturePosts, selectSidebarPosts } from '@/server/posts/query'
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { metaWithFallback } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
-import { selectFeaturePosts, selectSidebarPosts, selectSidebarTags } from '@/server/sidebar/select'
+import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { formatLocalDate } from '@/shared/formatter'
 import { HomeLayoutBody } from '@/ui/post/post/PostListViews'
@@ -17,7 +17,7 @@ import type { Route } from './+types/home'
 
 interface HomeExtra {
   categoryLinks: Record<string, string>
-  featurePosts: ListingPostCard[]
+  featurePosts: import('@/shared/catalog').ListingPostCard[]
   admin: boolean
   sidebar: SidebarData
 }
@@ -28,57 +28,64 @@ export async function loader({
   params,
 }: Route.LoaderArgs): Promise<ListingPageLoaderData<HomeExtra>> {
   const { session } = getRouteRequestContext({ request, context })
-  const catalog = await getCatalog()
-  const allPosts = catalog.getClientPosts({
+
+  const content = requireBlogSettingsSection('content')
+  const homePageSize = content.pagination.posts
+  const mergeTailWhenLessThan = Math.max(0, homePageSize - 2)
+
+  const { listPublicPostCardsPaginated, countPublicPosts } = await import('@/server/posts/query')
+  const filters = {
     includeHidden: false,
     includeScheduled: import.meta.env.DEV,
-  })
+  }
 
-  // Sidebar fetch is independent of post pagination, so kick it off in
-  // parallel with the listing pipeline. The sidebar reads the in-process
-  // recent-comment cache + Redis admin flag — both bounded — so the parallel
-  // path is the historical hot path.
-  const sidebarPromise = loadSidebarData(session)
+  const [totalPosts, sidebarPromise, featureSeed] = await Promise.all([
+    countPublicPosts(filters),
+    loadSidebarData(session),
+    Promise.resolve(formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity'))),
+  ])
 
-  // Home opts into the tail-merge guard so a near-empty last page never
-  // renders alone with one or two cards stranded under the hero — the
-  // visual rhythm of the grid breaks down at that count and the empty
-  // sidebar gutter looks broken. With threshold = pageSize - 2 a tail
-  // of pageSize - 3 or fewer posts collapses into the previous page;
-  // any orphan stub of pageSize - 2 or larger keeps its own page.
-  // Out-of-range :num still 301-redirects to the new last page through
-  // the shared overflow handler in `redirectListingOverflow`.
-  const homePageSize = requireBlogSettingsSection('content').pagination.posts
-  const mergeTailWhenLessThan = Math.max(0, homePageSize - 2)
+  // Kick off independent queries in parallel with the listing pipeline.
+  const featurePromise = selectFeaturePosts(featureSeed)
+  const sidebarPostsPromise = selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post)
+  const tagsPromise = listAllTags()
 
   return listingLoader<HomeExtra>({
     rawNum: params.num,
-    posts: allPosts.map(toListingPostCard),
+    totalPosts,
+    fetchPage: (pageNum, pageSize) =>
+      listPublicPostCardsPaginated(pageNum, pageSize, {
+        ...filters,
+        offset: (pageNum - 1) * homePageSize,
+      }).then((r) => r.posts),
     rootPath: '/',
     pageSize: homePageSize,
     mergeTailWhenLessThan,
     metadata: { likes: true, views: true, comments: true },
     seoMode: 'skip-on-first-page',
     computeExtra: async ({ resolvedPosts }) => {
-      // One-pass: every post needs a category breadcrumb chip; pull the
-      // permalink from the catalog's pre-computed name → permalink Map
-      // instead of round-tripping through a Set + getCategoriesByName.
-      const categoryLinks: Record<string, string> = {}
-      for (const post of resolvedPosts) {
-        if (categoryLinks[post.category] === undefined) {
-          categoryLinks[post.category] = catalog.getCategoryLink(post.category)
-        }
-      }
+      const uniqueCategories = [...new Set(resolvedPosts.map((p) => p.category).filter(Boolean))]
+      const categoryLinks = await getCategoryLinks(uniqueCategories)
 
-      const featureSeed = formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity'))
-      const sidebar = await sidebarPromise
+      const [featurePosts, sidebar, tags] = await Promise.all([featurePromise, sidebarPromise, tagsPromise])
+
       return {
         categoryLinks,
-        featurePosts: selectFeaturePosts(allPosts, featureSeed).map(toListingPostCard),
+        featurePosts: featurePosts.map((post) => ({
+          slug: post.slug,
+          title: post.title,
+          summary: post.summary,
+          cover: post.cover,
+          coverThumbhash: post.coverThumbhash,
+          permalink: post.permalink,
+          category: post.category,
+          date: post.date,
+          published: post.published,
+        })),
         admin: sidebar.admin,
         sidebar: {
-          posts: selectSidebarPosts(allPosts),
-          tags: selectSidebarTags(catalog.tags),
+          posts: await sidebarPostsPromise,
+          tags: selectSidebarTags(tags),
           recentComments: sidebar.recentComments,
           pendingComments: sidebar.pendingComments,
         },
@@ -91,9 +98,6 @@ export const headers = listingHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
-  // Page 1 ships `seo: []` so the home view stays as light as possible;
-  // `metaWithFallback` reaches into the root match to hydrate the
-  // shared snapshot before falling back to the site-default tags.
   return metaWithFallback({ loaderData, matches })
 }
 

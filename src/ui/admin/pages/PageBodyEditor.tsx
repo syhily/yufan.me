@@ -9,6 +9,9 @@ import Typography from '@tiptap/extension-typography'
 import { type Editor, EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
+  AlignCenterIcon,
+  AlignLeftIcon,
+  AlignRightIcon,
   BoldIcon,
   Code2Icon,
   CodeIcon,
@@ -99,6 +102,11 @@ export interface PageBodyEditorProps {
    * bottom center after it scrolls out of view.
    */
   livePreviewOpen?: boolean
+  /**
+   * Ref to the scrollable container so the parent shell can wire
+   * bidirectional scroll sync with the live-preview pane.
+   */
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>
 }
 
 // Tiptap-based PortableText editor. The standard subset (paragraphs /
@@ -133,6 +141,7 @@ export function PageBodyEditor({
   onBodyChange,
   disabled,
   livePreviewOpen = false,
+  scrollContainerRef,
 }: PageBodyEditorProps) {
   const onBodyChangeRef = useRef(onBodyChange)
   onBodyChangeRef.current = onBodyChange
@@ -244,7 +253,7 @@ export function PageBodyEditor({
         dropcursor: { color: '#3b82f6', width: 2 },
       }),
       Typography,
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      TextAlign.configure({ types: ['heading', 'paragraph', 'blockquote'] }),
       // TipTap Focus decorations must not use the bare token has-focus (Tailwind has variant collision risk).
       Focus.configure({ className: 'tiptap-focus-node', mode: 'all' }),
       Link.configure({
@@ -574,11 +583,16 @@ export function PageBodyEditor({
               last paragraph hugs the container edge, which leaves the
               slash menu (anchored below the caret) clipped or overlapped
               by the surrounding chrome when authoring near the bottom. */}
-          <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 pt-6 pb-[60vh]">{editorCanvas}</div>
+          <div
+            ref={scrollContainerRef}
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 pt-6 pb-[60vh]"
+          >
+            {editorCanvas}
+          </div>
         </>
       ) : (
         <>
-          <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+          <div ref={scrollContainerRef} className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
             <div
               ref={inlineToolbarRef}
               className="shrink-0 border-b bg-card"
@@ -751,6 +765,38 @@ function Toolbar(props: ToolbarProps) {
           <BlockStyleSelect editor={editor} disabled={disabled} />
         </ToolbarGroup>
       )}
+      {density === 'full' ? (
+        <ToolbarGroup>
+          <ToolbarButton
+            title="居左"
+            disabled={disabled}
+            active={editor.isActive({ textAlign: 'left' })}
+            onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          >
+            <AlignLeftIcon />
+          </ToolbarButton>
+          <ToolbarButton
+            title="居中"
+            disabled={disabled}
+            active={editor.isActive({ textAlign: 'center' })}
+            onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          >
+            <AlignCenterIcon />
+          </ToolbarButton>
+          <ToolbarButton
+            title="居右"
+            disabled={disabled}
+            active={editor.isActive({ textAlign: 'right' })}
+            onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          >
+            <AlignRightIcon />
+          </ToolbarButton>
+        </ToolbarGroup>
+      ) : (
+        <ToolbarGroup>
+          <AlignSelect editor={editor} disabled={disabled} />
+        </ToolbarGroup>
+      )}
       <ToolbarGroup>
         <ToolbarButton
           title="加粗 (Cmd/Ctrl+B)"
@@ -852,12 +898,18 @@ function Toolbar(props: ToolbarProps) {
 
   const densityRail = <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
 
+  const isCompact = density === 'compact'
+
   return (
     <div
-      className={cn('flex w-full max-w-full min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 border-b p-2', className)}
+      className={cn(
+        'flex w-full max-w-full min-w-0 items-center gap-x-0.5 border-b p-2',
+        isCompact ? 'flex-nowrap overflow-x-auto' : 'flex-wrap gap-y-1',
+        className,
+      )}
     >
       {groups}
-      <ToolbarGroup hideTrailingSeparator className="ml-auto">
+      <ToolbarGroup hideTrailingSeparator className="ml-auto shrink-0">
         {densityRail}
       </ToolbarGroup>
     </div>
@@ -1047,6 +1099,72 @@ function applyBlockStyle(editor: Editor, value: string): void {
       }
     }
   }
+}
+
+interface AlignSelectProps {
+  editor: Editor
+  disabled?: boolean
+}
+
+const ALIGN_OPTIONS = [
+  { value: 'left', label: '居左', Icon: AlignLeftIcon },
+  { value: 'center', label: '居中', Icon: AlignCenterIcon },
+  { value: 'right', label: '居右', Icon: AlignRightIcon },
+] as const
+
+function getActiveAlign(editor: Editor): string {
+  for (const opt of ALIGN_OPTIONS) {
+    if (editor.isActive({ textAlign: opt.value })) {
+      return opt.value
+    }
+  }
+  return 'left'
+}
+
+function AlignSelect({ editor, disabled }: AlignSelectProps) {
+  const active = getActiveAlign(editor)
+  return (
+    <Select
+      value={active}
+      onValueChange={(value: string | null) => {
+        if (typeof value === 'string') {
+          editor
+            .chain()
+            .focus()
+            .setTextAlign(value as 'left' | 'center' | 'right')
+            .run()
+        }
+      }}
+      disabled={disabled}
+    >
+      <SelectTrigger size="sm" className="h-8 min-w-24" aria-label="对齐方式">
+        <SelectValue placeholder="对齐">
+          {(value) => {
+            const match = ALIGN_OPTIONS.find((option) => option.value === value)
+            if (match === undefined) {
+              return '对齐'
+            }
+            return (
+              <span className="flex items-center gap-1.5">
+                <match.Icon className="h-4 w-4" />
+                {match.label}
+              </span>
+            )
+          }}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {ALIGN_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            <span className="flex items-center gap-2">
+              <option.Icon className="h-4 w-4" />
+              {option.label}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
 }
 
 interface BlockStyleSelectProps {

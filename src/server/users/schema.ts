@@ -25,6 +25,10 @@ export const listUsersSchema = z.object({
     .transform((value) => value === 'true')
     .optional(),
   sortBy: z.enum(userSortOrders).default('recent').optional(),
+  hasPosts: z
+    .enum(['true', 'false'])
+    .transform((value) => value === 'true')
+    .optional(),
 })
 
 export const userIdSchema = z.object({

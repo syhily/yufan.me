@@ -1,19 +1,35 @@
-// Public surface of the content catalog. Two design rules:
-//
-// 1. The `ContentCatalog` singleton is the only source of truth — anything
-//    you'd reach for via a wrapper (`getPosts`, `getCategoryByName`, ...) is
-//    a method on the resolved instance. Use `getCatalog()` to await it once
-//    per loader and call methods directly afterwards.
-// 2. Schema types and DTO converters are re-exported here so call sites can
-//    import everything they need from `@/server/catalog` without crossing
-//    private file boundaries.
+// Public surface of the content catalog. Re-exports from the new query layers
+// so existing call sites can keep importing from `@/server/catalog`.
+// New code should import directly from `@/server/posts/query` or `@/server/pages/query`.
 
-import { cache } from 'react'
-
-import { ContentCatalog } from '@/server/catalog/catalog'
-
-export { ContentCatalog } from '@/server/catalog/catalog'
-export { buildDbPage, getClientPostsWithMetadata } from '@/server/catalog/catalog'
+export { buildDbPage, findPageBySlug, listAllPages } from '@/server/pages/query'
+export {
+  buildPermalinkSet,
+  findPostBySlug,
+  findPostBySlugForAdmin,
+  getClientPostsWithMetadata,
+  getPostsBySlugs,
+  listAllPosts,
+  listClientPosts,
+  listPostsByCategory,
+  listPostsByTag,
+  listPublicPostCards,
+  listPublicPostCardsPaginated,
+  selectFeaturePosts,
+  selectSidebarPosts,
+} from '@/server/posts/query'
+export {
+  findCategoryByName,
+  findCategoryBySlug,
+  findTagByName,
+  findTagBySlug,
+  getCategoryLink,
+  getCategoryLinks,
+  getTagsByNames,
+  listAllCategories,
+  listAllFriends,
+  listAllTags,
+} from '@/server/catalog/queries'
 export type {
   Category,
   ClientCategory,
@@ -22,36 +38,23 @@ export type {
   ClientPostWithMetadata,
   ClientTag,
   Friend,
+  ListingPostCard,
+  ListingPostCardWithMetadata,
   LoadPostsWithMetadataOptions,
   MarkdownHeading,
   Page,
   Post,
   PostMetadata,
   PostVisibilityOptions,
-  Tag,
-} from '@/server/catalog/schema'
-export { toClientPage, toClientPost } from '@/server/catalog/schema'
-export type {
-  CommentFormUser,
-  DetailPageShell,
-  DetailPostShell,
-  ListingPostCard,
-  ListingPostCardWithMetadata,
   SidebarPostLink,
   SidebarTagLink,
-} from '@/server/catalog/projections'
+  Tag,
+} from '@/shared/catalog'
 export {
+  toClientPage,
+  toClientPost,
   toDetailPageShell,
   toDetailPostShell,
   toListingPostCard,
   toSidebarPostLink,
-} from '@/server/catalog/projections'
-
-// Resolve the singleton once per request via `React.cache` (the
-// `vercel-react-best-practices/server-cache-react` rule). The underlying
-// `ContentCatalog.get()` is already a process-wide singleton — wrapping it
-// with `cache()` is therefore a no-op on the cold path, but it gives every
-// in-render call site (loaders, child resource routes, MDX components) the
-// same identity-stable promise, which lets the SSR pass dedupe transparently
-// even if catalog hydration ever becomes per-request (e.g. preview drafts).
-export const getCatalog = cache(() => ContentCatalog.get())
+} from '@/shared/catalog'

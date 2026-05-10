@@ -4,9 +4,8 @@ import { makePost } from './_helpers/catalog'
 import { emptySession } from './_helpers/session'
 
 const mocks = vi.hoisted(() => ({
-  getCatalog: vi.fn(),
-  getPosts: vi.fn(),
-  getClientPosts: vi.fn(),
+  listClientPosts: vi.fn(),
+  listAllPosts: vi.fn(),
   getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) => posts),
 }))
 
@@ -23,7 +22,8 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  getCatalog: mocks.getCatalog,
+  listClientPosts: mocks.listClientPosts,
+  listAllPosts: mocks.listAllPosts,
   getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,
   toClientPost: (post: unknown) => post,
   toListingPostCard: (post: unknown) => post,
@@ -36,12 +36,7 @@ const hiddenPost = makePost({ slug: 'hidden-post', visible: false })
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.getPosts.mockReturnValue([visiblePost, hiddenPost])
-  mocks.getClientPosts.mockReturnValue([visiblePost, hiddenPost])
-  mocks.getCatalog.mockResolvedValue({
-    getPosts: mocks.getPosts,
-    getClientPosts: mocks.getClientPosts,
-  })
+  mocks.listClientPosts.mockResolvedValue([visiblePost, hiddenPost])
 })
 
 describe('routes/archives loader', () => {
@@ -50,7 +45,7 @@ describe('routes/archives loader', () => {
       request: new Request('http://localhost/archives'),
     } as never)) as { resolvedPosts: Array<{ slug: string }> }
 
-    expect(mocks.getClientPosts).toHaveBeenCalledWith({
+    expect(mocks.listClientPosts).toHaveBeenCalledWith({
       includeHidden: true,
       includeScheduled: false,
     })

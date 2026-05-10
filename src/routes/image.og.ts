@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 
 import { loadBuffer } from '@/server/cache/image'
-import { getCatalog } from '@/server/catalog'
+import { findPostBySlug, findPageBySlug } from '@/server/catalog'
 import { drawOpenGraph } from '@/server/images/og'
 import { pngResponse } from '@/server/route-helpers/http'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -47,8 +47,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   // any positive integer; the schema bounds it to 1h–30d.
   const ttl = requireBlogSettingsSection('cache').cache.og.ttlSeconds
 
-  const catalog = await getCatalog()
-  const post = catalog.getPost(slug)
+  const post = await findPostBySlug(slug)
   if (post) {
     const buffer = await loadBuffer(
       ogCacheKey(slug, post.title, post.summary, post.cover),
@@ -58,7 +57,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     return pngResponse(buffer, PNG_HEADERS)
   }
 
-  const page = catalog.getPage(slug)
+  const page = await findPageBySlug(slug)
   if (!page) {
     return fallback()
   }

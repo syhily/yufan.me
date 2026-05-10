@@ -28,6 +28,7 @@ export interface Tag {
 }
 
 export interface ClientPage {
+  id: string
   title: string
   date: Date
   updated?: Date
@@ -55,6 +56,7 @@ export interface ClientPage {
 }
 
 export interface ClientPost {
+  id: string
   title: string
   date: Date
   updated?: Date
@@ -72,6 +74,7 @@ export interface ClientPost {
   slug: string
   permalink: string
   headings: MarkdownHeading[]
+  pinnedAt?: Date
 }
 
 export type ClientCategory = Category
@@ -112,6 +115,7 @@ export interface ListingPostCard {
 export type ListingPostCardWithMetadata = ListingPostCard & { meta: PostMetadata }
 
 export interface DetailPostShell {
+  id: string
   slug: string
   title: string
   summary: string
@@ -129,6 +133,7 @@ export interface DetailPostShell {
 }
 
 export interface DetailPageShell {
+  id: string
   slug: string
   title: string
   summary: string
@@ -165,4 +170,88 @@ export interface CommentFormUser {
   email: string
   website: string | null
   admin: boolean
+}
+
+// Types that need PortableTextBody (isomorphic)
+export type { PortableTextBody } from '@/shared/portable-text'
+
+export interface Post extends ClientPost {
+  body: import('@/shared/portable-text').PortableTextBody
+  imageSources: string[]
+}
+
+export interface Page extends ClientPage {
+  body: import('@/shared/portable-text').PortableTextBody
+  imageSources: string[]
+  publishedRevisionId: bigint | null
+}
+
+export function toClientPost(post: Post): ClientPost {
+  const { body: _body, imageSources: _imageSources, ...rest } = post
+  return rest
+}
+
+export function toClientPage(page: Page): ClientPage {
+  const { body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = page
+  return rest
+}
+
+// --- Projections ------------------------------------------------------------
+
+export function toListingPostCard(post: ClientPost): ListingPostCard {
+  return {
+    slug: post.slug,
+    title: post.title,
+    summary: post.summary,
+    cover: post.cover,
+    coverThumbhash: post.coverThumbhash,
+    permalink: post.permalink,
+    category: post.category,
+    date: post.date,
+    published: post.published,
+  }
+}
+
+export function toDetailPostShell(post: ClientPost): DetailPostShell {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    summary: post.summary,
+    cover: post.cover,
+    coverThumbhash: post.coverThumbhash,
+    permalink: post.permalink,
+    category: post.category,
+    tags: post.tags,
+    date: post.date,
+    updated: post.updated,
+    og: post.og,
+    comments: post.comments,
+    toc: post.toc,
+    headings: post.headings,
+  }
+}
+
+export function toDetailPageShell(page: ClientPage): DetailPageShell {
+  return {
+    id: page.id,
+    slug: page.slug,
+    title: page.title,
+    summary: page.summary,
+    cover: page.cover,
+    coverThumbhash: page.coverThumbhash,
+    coverWidth: page.coverWidth,
+    coverHeight: page.coverHeight,
+    permalink: page.permalink,
+    date: page.date,
+    updated: page.updated,
+    og: page.og,
+    comments: page.comments,
+    toc: page.toc,
+    headings: page.headings,
+  }
+}
+
+export function toSidebarPostLink(post: ClientPost): SidebarPostLink {
+  return { slug: post.slug, title: post.title, permalink: post.permalink }
 }

@@ -31,6 +31,7 @@ import { submitApiAction } from '@/client/api/submit'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
+import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt-bridge'
 import { DraftConflictDialog } from '@/ui/admin/pages/DraftConflictDialog'
@@ -132,6 +133,10 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
   // it survives metadata edits but resets on route navigation.
   const [previewOpen, setPreviewOpenState] = useState(false)
   useAdminChromeFocus(previewOpen)
+
+  const editorScrollRef = useRef<HTMLDivElement>(null)
+  const previewScrollRef = useRef<HTMLDivElement>(null)
+  useSyncScroll({ editorRef: editorScrollRef, previewRef: previewScrollRef, enabled: previewOpen })
 
   // Metadata visibility: docked inline by default, collapses into a
   // right-side `Sheet` when the operator clicks the toolbar toggle
@@ -1050,6 +1055,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
             onBodyChange={setBody}
             disabled={isPending}
             livePreviewOpen={previewOpen}
+            scrollContainerRef={editorScrollRef}
           />
         </div>
         {previewOpen ? (
@@ -1059,6 +1065,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
               title={meta.title}
               slug={meta.slug}
               showPublicSyncHint={showPreviewPublicSyncHint}
+              scrollContainerRef={previewScrollRef}
             />
           </section>
         ) : null}

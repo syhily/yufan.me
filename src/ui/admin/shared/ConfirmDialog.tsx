@@ -62,7 +62,7 @@ export function ConfirmDialog({ state, onClose }: ConfirmDialogProps) {
     renderState?.actionIcon ?? (renderState?.destructive ? <Trash2Icon data-icon /> : <CheckIcon data-icon />)
   return (
     <AlertDialog open={state !== null} onOpenChange={(next) => !next && onClose()}>
-      <AlertDialogContent>
+      <AlertDialogContent className="sm:max-w-sm">
         <AlertDialogHeader>
           <AlertDialogTitle>{renderState?.title}</AlertDialogTitle>
           <AlertDialogDescription>{renderState?.description}</AlertDialogDescription>

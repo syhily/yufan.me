@@ -1,14 +1,23 @@
 import { Feed } from 'feed'
 
-import { ContentCatalog, type Page, type Post } from '@/server/catalog'
-import { prerenderToHtml } from '@/server/catalog/render'
+import {
+  findCategoryByName,
+  findCategoryBySlug,
+  findTagByName,
+  findTagBySlug,
+  getTagsByNames,
+  listAllCategories,
+  listAllPosts,
+  listPostsByCategory,
+  listPostsByTag,
+  type Page,
+  type Post,
+} from '@/server/catalog'
+import { prerenderToHtml } from '@/server/render/prerender'
 import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { joinUrl } from '@/shared/urls'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
-import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
-import { Friends } from '@/ui/mdx/page/Friends'
-import { Solution } from '@/ui/mdx/solutions/Solution'
 import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 
 export interface FeedOptions {
@@ -43,34 +52,24 @@ export async function feedResponse(
   return new Response(body, { headers: feedHeaders(kind) })
 }
 
-function isPage(entry: Post | Page): entry is Page {
-  return Array.isArray((entry as Page).body)
-}
-
 async function renderEntryContent(entry: Post | Page): Promise<string> {
   // Feed items ship as HTML (RSS/Atom can't carry a React tree). We prerender
   // the body but skip the image-enhancement pipeline: feed readers don't
   // need thumbhash placeholders or DB-resolved dimensions.
+  //
+  // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
+  // so feed readers without JavaScript still get meaningful content.
   const bundle = requireBlogSettingsBundle()
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-  // Pages live in Postgres and carry a PortableText body; posts still
-  // compile through the Fumadocs MDX pipeline and render their body
-  // as a React component.
-  if (isPage(entry)) {
-    return prerenderToHtml(
-      <BlogSettingsProvider value={bundle}>
-        <PortableTextBody
-          body={entry.body}
-          headingSlugs={entry.headings.map((h) => h.slug)}
-          footnotesSectionTitle={footnotesSectionTitle}
-        />
-      </BlogSettingsProvider>,
-    )
-  }
-  const Body = entry.body
+  // Both pages and posts now live in Postgres and carry a PortableText body.
   return prerenderToHtml(
     <BlogSettingsProvider value={bundle}>
-      <Body components={{ Friends, MusicPlayer, Solution }} />
+      <PortableTextBody
+        body={entry.body}
+        headingSlugs={entry.headings.map((h) => h.slug)}
+        footnotesSectionTitle={footnotesSectionTitle}
+        rssMode
+      />
     </BlogSettingsProvider>,
   )
 }
@@ -83,8 +82,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
   if (category !== undefined && tag !== undefined) {
     throw new Error('Category and tag cannot be specified at the same time')
   }
-  const catalog = await ContentCatalog.get()
-  const filtered = selectFeedPosts(catalog, { includeHidden, includeScheduled, category, tag })
+  const filtered = await selectFeedPosts({ includeHidden, includeScheduled, category, tag })
   const feedPosts = filtered.slice(0, size)
 
   // Start to build the feed.
@@ -113,14 +111,14 @@ export async function generateFeeds(options: FeedOptions = {}) {
   })
 
   for (const post of feedPosts) {
-    const itemCategories = catalog.getTagsByName(post.tags).map((t) => ({
+    const itemCategories = (await getTagsByNames(post.tags)).map((t) => ({
       name: t.name,
       domain: joinUrl(siteIdentity.website, `/tags/${t.slug}`),
       scheme: 'https',
       term: t.name,
     }))
-    const postCategory = catalog.getCategoryByName(post.category)
-    if (postCategory !== undefined) {
+    const postCategory = await findCategoryByName(post.category)
+    if (postCategory !== null) {
       itemCategories.push({
         name: postCategory.name,
         domain: joinUrl(siteIdentity.website, `/cats/${postCategory.slug}`),
@@ -142,12 +140,14 @@ export async function generateFeeds(options: FeedOptions = {}) {
         },
       ],
       date: post.date,
-      image: joinUrl(siteIdentity.website, `/images/og/${post.slug}.png`),
+      image: post.og
+        ? joinUrl(siteIdentity.website, post.og)
+        : joinUrl(siteIdentity.website, `/images/og/${post.slug}.png`),
       category: itemCategories,
     })
   }
 
-  for (const cat of catalog.categories) {
+  for (const cat of await listAllCategories()) {
     feed.addCategory(cat.name)
   }
 
@@ -163,33 +163,32 @@ export async function generateFeeds(options: FeedOptions = {}) {
   }
 }
 
-function selectFeedPosts(
-  catalog: ContentCatalog,
+async function selectFeedPosts(
   options: Pick<FeedOptions, 'category' | 'tag'> & {
     includeHidden: boolean
     includeScheduled: boolean
   },
-): Post[] {
+): Promise<Post[]> {
   const visibility = {
     includeHidden: options.includeHidden,
     includeScheduled: options.includeScheduled,
   }
 
   if (options.category !== undefined) {
-    const category = catalog.getCategoryBySlug(options.category) ?? catalog.getCategoryByName(options.category)
-    if (category === undefined) {
+    const category = (await findCategoryBySlug(options.category)) ?? (await findCategoryByName(options.category))
+    if (category === null) {
       return []
     }
-    return catalog.getPostsByTaxonomy({ categoryName: category.name }, visibility)
+    return listPostsByCategory(category.name, visibility)
   }
 
   if (options.tag !== undefined) {
-    const tag = catalog.getTagBySlug(options.tag) ?? catalog.getTagByName(options.tag)
-    if (tag === undefined) {
+    const tag = (await findTagBySlug(options.tag)) ?? (await findTagByName(options.tag))
+    if (tag === null) {
       return []
     }
-    return catalog.getPostsByTaxonomy({ tagName: tag.name }, visibility)
+    return listPostsByTag(tag.name, visibility)
   }
 
-  return catalog.getPosts(visibility)
+  return listAllPosts(visibility)
 }

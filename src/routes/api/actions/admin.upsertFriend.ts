@@ -1,4 +1,3 @@
-import { ContentCatalog } from '@/server/catalog'
 import { upsertFriendSchema } from '@/server/friends/schema'
 import { upsertAdminFriend } from '@/server/friends/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -20,7 +19,6 @@ export const action = defineApiAction({
     // Invalidate the in-process catalog so the very next public render
     // (and the thumbhash hydration that piggybacks on it) sees the
     // fresh row instead of the stale snapshot from process start.
-    ContentCatalog.reset()
     return { friend }
   },
 })

@@ -1,4 +1,3 @@
-import { ContentCatalog } from '@/server/catalog'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { upsertTagSchema } from '@/server/tags/schema'
 import { upsertAdminTag } from '@/server/tags/service'
@@ -13,7 +12,6 @@ export const action = defineApiAction({
       name: payload.name,
       slug: payload.slug,
     })
-    ContentCatalog.reset()
     return { tag }
   },
 })

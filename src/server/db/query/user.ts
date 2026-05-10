@@ -4,7 +4,7 @@ import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
 import type { NewUser, User } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
-import { comment, user } from '@/server/db/schema'
+import { comment, post, user } from '@/server/db/schema'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 
 const PASSWORD_HASH_ROUNDS = 12
@@ -126,6 +126,7 @@ export interface AdminUsersListFilters {
   q?: string
   role?: UserRoleFilter
   includeDeleted?: boolean
+  hasPosts?: boolean
 }
 
 export interface AdminUserRow {
@@ -163,6 +164,9 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
   if (filters.q && filters.q.trim() !== '') {
     const like = `%${filters.q.trim()}%`
     conditions.push(or(sql`${user.name} ILIKE ${like}`, sql`${user.email} ILIKE ${like}`))
+  }
+  if (filters.hasPosts) {
+    conditions.push(sql`EXISTS (SELECT 1 FROM ${post} WHERE ${eq(post.authorId, user.id)})`)
   }
   return conditions
 }

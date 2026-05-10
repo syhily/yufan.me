@@ -284,7 +284,7 @@ function textBlockToPmNode(block: TextBlock, asListItemChild: boolean): PmBlockN
   if (block.style === 'blockquote') {
     return {
       type: 'blockquote',
-      attrs: { _key: block._key },
+      attrs: { _key: block._key, ...(block.align ? { textAlign: block.align } : {}) },
       content: [{ type: 'paragraph', content: inlines }],
     }
   }
@@ -292,11 +292,15 @@ function textBlockToPmNode(block: TextBlock, asListItemChild: boolean): PmBlockN
   if (headingLevel !== null) {
     return {
       type: 'heading',
-      attrs: { _key: block._key, level: headingLevel },
+      attrs: { _key: block._key, level: headingLevel, ...(block.align ? { textAlign: block.align } : {}) },
       content: inlines,
     }
   }
-  return { type: 'paragraph', attrs: { _key: block._key }, content: inlines }
+  return {
+    type: 'paragraph',
+    attrs: { _key: block._key, ...(block.align ? { textAlign: block.align } : {}) },
+    content: inlines,
+  }
 }
 
 function pushSpan(out: PmInlineNode[], span: Span, markDefs: readonly MarkDef[]): void {
@@ -737,8 +741,15 @@ function pushPmNode(
       // adjacency).
       const child = (node.content ?? []).filter(isBlock)
       const key = ensureKey(node.attrs)
+      const textAlign = node.attrs?.textAlign as string | undefined
       for (const para of child) {
-        out.push(paragraphToTextBlock({ ...para, attrs: { ...para.attrs, _key: key } }, ensureKey, 'blockquote'))
+        out.push(
+          paragraphToTextBlock(
+            { ...para, attrs: { ...para.attrs, _key: key, ...(textAlign ? { textAlign } : {}) } },
+            ensureKey,
+            'blockquote',
+          ),
+        )
       }
       return
     }
@@ -1019,10 +1030,12 @@ function paragraphToTextBlock(
       marks: marks.length > 0 ? marks : undefined,
     })
   }
+  const align = node.attrs?.textAlign as string | undefined
   return {
     _type: 'block',
     _key: ensureKey(node.attrs),
     style,
+    ...(align === 'left' || align === 'center' || align === 'right' ? { align } : {}),
     children,
     markDefs: markDefs.length > 0 ? markDefs : undefined,
   }

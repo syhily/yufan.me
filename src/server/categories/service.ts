@@ -1,7 +1,7 @@
 import type { CategoryRow } from '@/server/db/types'
 import type { AdminCategoryDto } from '@/shared/categories'
 
-import { ContentCatalog } from '@/server/catalog'
+import { listPostsByCategory } from '@/server/catalog'
 import {
   type AdminCategoriesListFilters,
   deleteCategory as deleteCategoryRow,
@@ -47,15 +47,17 @@ export interface AdminCategoriesListResult {
 // even on large lists (the in-process `postsByCategory` map is already
 // computed on catalog build). Counts include hidden + scheduled posts
 // so the column matches what the delete-block guard sees.
-async function categoryPostCounter(): Promise<(name: string) => number> {
-  const catalog = await ContentCatalog.get()
-  return (name: string) =>
-    catalog.getPostsByTaxonomy({ categoryName: name }, { includeHidden: true, includeScheduled: true }).length
+async function categoryPostCounter(): Promise<(name: string) => Promise<number>> {
+  return async (name: string) =>
+    (await listPostsByCategory(name, { includeHidden: true, includeScheduled: true })).length
 }
 
 export async function listCategoriesForAdmin(filters: AdminCategoriesListFilters): Promise<AdminCategoriesListResult> {
   const [rows, countOf] = await Promise.all([listAdminCategoryRows(filters), categoryPostCounter()])
-  return { categories: rows.map((row) => toAdminCategoryDto(row, countOf(row.name))), total: rows.length }
+  return {
+    categories: await Promise.all(rows.map(async (row) => toAdminCategoryDto(row, await countOf(row.name)))),
+    total: rows.length,
+  }
 }
 
 export interface UpsertCategoryInputs {
@@ -96,7 +98,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
       sortOrder: input.sortOrder,
     })
     const countOf = await categoryPostCounter()
-    return toAdminCategoryDto(row, countOf(row.name))
+    return toAdminCategoryDto(row, await countOf(row.name))
   }
 
   const existing = await findCategoryById(input.id)
@@ -115,7 +117,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
     throw new ActionFailure(404, '分类不存在')
   }
   const countOf = await categoryPostCounter()
-  return toAdminCategoryDto(updated, countOf(updated.name))
+  return toAdminCategoryDto(updated, await countOf(updated.name))
 }
 
 function resolveSlugForCategory(explicit: string | undefined, name: string): string {
@@ -167,7 +169,7 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
 
   const updated = await reorderCategoryRows(orderedIds.map((id) => BigInt(id)))
   const countOf = await categoryPostCounter()
-  return updated.map((row) => toAdminCategoryDto(row, countOf(row.name)))
+  return await Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
 }
 
 // Block-only deletion: refuse to delete a category any post still
@@ -183,11 +185,7 @@ export async function deleteAdminCategory(id: bigint): Promise<boolean> {
     return false
   }
 
-  const catalog = await ContentCatalog.get()
-  const referencing = catalog.getPostsByTaxonomy(
-    { categoryName: existing.name },
-    { includeHidden: true, includeScheduled: true },
-  )
+  const referencing = await listPostsByCategory(existing.name, { includeHidden: true, includeScheduled: true })
   if (referencing.length > 0) {
     throw new ActionFailure(
       409,

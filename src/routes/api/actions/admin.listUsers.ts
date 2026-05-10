@@ -14,6 +14,7 @@ export const loader = defineApiAction({
         q: payload.q,
         role: payload.role ?? 'all',
         includeDeleted: payload.includeDeleted ?? false,
+        hasPosts: payload.hasPosts ?? false,
       },
       payload.sortBy ?? 'recent',
     )

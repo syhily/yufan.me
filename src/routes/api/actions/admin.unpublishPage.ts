@@ -1,4 +1,3 @@
-import { ContentCatalog } from '@/server/catalog'
 import { unpublishPageSchema } from '@/server/cms/pages/schema'
 import { unpublishPage } from '@/server/cms/pages/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -14,7 +13,6 @@ export const action = defineApiAction({
   requireAdmin: true,
   async run({ payload }) {
     const page = await unpublishPage(BigInt(payload.id))
-    ContentCatalog.reset()
     return { page }
   },
 })

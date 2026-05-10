@@ -1,4 +1,3 @@
-import { ContentCatalog } from '@/server/catalog'
 import { deletePageSchema } from '@/server/cms/pages/schema'
 import { deletePage } from '@/server/cms/pages/service'
 import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
@@ -16,7 +15,6 @@ export const action = defineApiAction({
     if (!result.deleted) {
       throw new ActionFailure(404, '页面不存在或已被删除。')
     }
-    ContentCatalog.reset()
     return { success: true } as const
   },
 })

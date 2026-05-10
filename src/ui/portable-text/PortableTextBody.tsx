@@ -106,6 +106,12 @@ export interface PortableTextBodyProps {
   suppressMusicAutoplay?: boolean
   /** Visible `<h3>` above the footnotes list; defaults to 「尾声礼记」 when omitted. */
   footnotesSectionTitle?: string
+  /**
+   * When true, interactive blocks (musicPlayer, etc.) degrade to
+   * static HTML so the output is safe for RSS/Atom feed readers that
+   * don't execute JavaScript.
+   */
+  rssMode?: boolean
 }
 
 // React context fan-out for footnote definitions. Every renderer
@@ -132,6 +138,7 @@ interface MusicPresentationCtx {
 }
 
 const MusicPresentationContext = createContext<MusicPresentationCtx>({ suppressAutoplay: false })
+const RssModeContext = createContext<boolean>(false)
 
 const FOOTNOTES_SECTION_FALLBACK_TITLE = '尾声礼记'
 
@@ -141,6 +148,7 @@ export function PortableTextBody({
   headingSlugs,
   suppressMusicAutoplay,
   footnotesSectionTitle,
+  rssMode,
 }: PortableTextBodyProps) {
   const footnoteCtx = useMemo<FootnoteRefCtx>(() => ({ definitions: collectFootnoteDefinitions(body) }), [body])
 
@@ -182,18 +190,20 @@ export function PortableTextBody({
   return (
     <ImageMetaProvider value={imageMeta}>
       <MusicPresentationContext.Provider value={musicPresentation}>
-        <FootnoteProvider>
-          <FootnoteRefContext.Provider value={footnoteCtx}>
-            <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
-              <div className="portable-text-body">
-                <PortableText value={inlineBody as never} components={portableTextComponents} />
-                {footnotes.length > 0 ? (
-                  <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
-                ) : null}
-              </div>
-            </HeadingIdByBlockKeyContext.Provider>
-          </FootnoteRefContext.Provider>
-        </FootnoteProvider>
+        <RssModeContext.Provider value={rssMode === true}>
+          <FootnoteProvider>
+            <FootnoteRefContext.Provider value={footnoteCtx}>
+              <HeadingIdByBlockKeyContext.Provider value={headingIdByBlockKey}>
+                <div className="portable-text-body">
+                  <PortableText value={inlineBody as never} components={portableTextComponents} />
+                  {footnotes.length > 0 ? (
+                    <FootnotesSection definitions={footnotes} sectionTitle={resolvedFootnotesHeading} />
+                  ) : null}
+                </div>
+              </HeadingIdByBlockKeyContext.Provider>
+            </FootnoteRefContext.Provider>
+          </FootnoteProvider>
+        </RssModeContext.Provider>
       </MusicPresentationContext.Provider>
     </ImageMetaProvider>
   )
@@ -217,6 +227,19 @@ function collectFootnoteDefinitions(body: PortableTextBodyType): Map<string, Foo
 // PortableText component map
 // ---------------------------------------------------------------------------
 
+function alignClass(align: string | undefined): string | undefined {
+  if (align === 'center') {
+    return 'text-center'
+  }
+  if (align === 'right') {
+    return 'text-right'
+  }
+  if (align === 'left') {
+    return 'text-left'
+  }
+  return undefined
+}
+
 function HeadingBlock({
   children,
   value,
@@ -228,13 +251,20 @@ function HeadingBlock({
 }) {
   const ids = useContext(HeadingIdByBlockKeyContext)
   const id = ids.get(value._key) ?? ''
-  return <Tag id={id}>{children}</Tag>
+  const cls = alignClass(value.align)
+  return (
+    <Tag id={id} className={cls}>
+      {children}
+    </Tag>
+  )
 }
-function ParagraphBlock({ children }: { children: ReactNode }) {
-  return <p>{children}</p>
+function ParagraphBlock({ value, children }: { value: TextBlock; children: ReactNode }) {
+  const cls = alignClass(value.align)
+  return <p className={cls}>{children}</p>
 }
-function BlockquoteBlock({ children }: { children: ReactNode }) {
-  return <blockquote>{children}</blockquote>
+function BlockquoteBlock({ value, children }: { value: TextBlock; children: ReactNode }) {
+  const cls = alignClass(value.align)
+  return <blockquote className={cls}>{children}</blockquote>
 }
 
 const portableTextComponents: PortableTextComponents = {
@@ -259,8 +289,8 @@ const portableTextComponents: PortableTextComponents = {
         {children}
       </HeadingBlock>
     ),
-    normal: ({ children }) => <ParagraphBlock>{children}</ParagraphBlock>,
-    blockquote: ({ children }) => <BlockquoteBlock>{children}</BlockquoteBlock>,
+    normal: ({ children, value }) => <ParagraphBlock value={value as TextBlock}>{children}</ParagraphBlock>,
+    blockquote: ({ children, value }) => <BlockquoteBlock value={value as TextBlock}>{children}</BlockquoteBlock>,
   },
   // `@portabletext/react` collapses consecutive list items sharing the
   // same `listItem` + `level` into a single `<ul>` / `<ol>` for us;
@@ -467,6 +497,10 @@ function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<Horizont
 
 function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPlayerBlock>) {
   const { suppressAutoplay } = useContext(MusicPresentationContext)
+  const isRss = useContext(RssModeContext)
+  if (isRss) {
+    return <p className="my-4 text-center text-ink-secondary">🎵 此文章包含音乐播放器，请访问原文收听。</p>
+  }
   return (
     <MusicPlayer
       id={value.playerId}
@@ -634,7 +668,7 @@ function footnotesPortableComponents(lastParagraphKey: string | null, footnoteIn
             </p>
           )
         }
-        return <ParagraphBlock>{children}</ParagraphBlock>
+        return <ParagraphBlock value={value as TextBlock}>{children}</ParagraphBlock>
       },
     },
   } as PortableTextComponents

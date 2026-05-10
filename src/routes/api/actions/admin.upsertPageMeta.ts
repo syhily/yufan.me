@@ -1,5 +1,4 @@
 import { userSession } from '@/server/auth/primitives'
-import { ContentCatalog } from '@/server/catalog'
 import { upsertPageMetaSchema } from '@/server/cms/pages/schema'
 import { createPage, updatePageMeta } from '@/server/cms/pages/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -30,7 +29,6 @@ export const action = defineApiAction({
       payload.id === undefined
         ? await createPage(meta, sessionUserId)
         : await updatePageMeta({ id: BigInt(payload.id), ...meta })
-    ContentCatalog.reset()
     return { page }
   },
 })

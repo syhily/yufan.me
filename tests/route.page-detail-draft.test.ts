@@ -75,31 +75,13 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  getCatalog: vi.fn(async () => ({
-    tags: [],
-    categories: [],
-    friends: [],
-    getPosts: vi.fn(() => []),
-    getClientPosts: vi.fn(() => []),
-    getPost: vi.fn(() => undefined),
-    // Catalog only contains published pages — `secret` always misses.
-    getPage: vi.fn((slug: string) => (slug === 'about' ? publishedPage : undefined)),
-    getTagsByName: vi.fn(() => []),
-    toClientPost: (p: unknown) => p,
-    toClientPage: (p: unknown) => p,
-  })),
-  // The route projects a `CmsPage` returned from the service back into
-  // the catalog `Page` shape via `buildDbPage`. The fixtures already
-  // share that shape, so an identity projection keeps the test honest
-  // without dragging in the real catalog module.
+  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? publishedPage : null)),
+  findPostBySlug: vi.fn(async () => null),
+  listAllFriends: vi.fn(async () => []),
   buildDbPage: (p: unknown) => p,
-  toClientPost: (p: unknown) => p,
   toClientPage: (p: unknown) => p,
-  toListingPostCard: (p: unknown) => p,
-  toDetailPostShell: (p: unknown) => p,
   toDetailPageShell: (p: unknown) => p,
-  toSidebarPostLink: (p: unknown) => p,
-  ContentCatalog: class {},
+  toDetailPostShell: (p: unknown) => p,
 }))
 
 vi.mock('@/server/cms/pages/service', () => ({

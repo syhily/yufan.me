@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, max, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, max, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 
@@ -12,16 +12,18 @@ import { db } from '@/server/db/pool'
 // actual revision payload lives in `contentTable`. The aliases also
 // avoid colliding with parameter / local names (`page`, `content`)
 // that show up throughout the service layer.
-import { content as contentTable, page as pageMetaTable } from '@/server/db/schema'
+import { content as contentTable, page as pageMetaTable, post as postMetaTable, user } from '@/server/db/schema'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt-bridge'
 
 // --- Reads -------------------------------------------------------------------
 
+export type PageMetaWithAuthor = PageMetaRow & { authorName: string | null }
+
 export interface ListPagesFilters {
   /** Free-text query matched case-insensitively against `slug` and `title`. */
   q?: string
-  /** When false (default) soft-deleted rows are excluded. */
-  includeDeleted?: boolean
+  /** Deletion state filter. */
+  deletedStatus?: 'all' | 'deleted' | 'normal'
   /** Zero-based offset for pagination. */
   offset?: number
   /** Page size. When undefined every match is returned. */
@@ -30,7 +32,9 @@ export interface ListPagesFilters {
 
 function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
   const conditions: SQL[] = []
-  if (!filters.includeDeleted) {
+  if (filters.deletedStatus === 'deleted') {
+    conditions.push(isNotNull(pageMetaTable.deletedAt))
+  } else if (filters.deletedStatus === 'normal') {
     conditions.push(isNull(pageMetaTable.deletedAt))
   }
   if (filters.q && filters.q.trim() !== '') {
@@ -48,11 +52,17 @@ function buildPagesWhere(filters: ListPagesFilters): SQL | undefined {
   return and(...conditions)
 }
 
-export async function listPageMetas(filters: ListPagesFilters = {}): Promise<PageMetaRow[]> {
+export async function listPageMetas(filters: ListPagesFilters = {}): Promise<PageMetaWithAuthor[]> {
   const where = buildPagesWhere(filters)
-  let q = where
-    ? db.select().from(pageMetaTable).where(where).orderBy(desc(pageMetaTable.updatedAt))
-    : db.select().from(pageMetaTable).orderBy(desc(pageMetaTable.updatedAt))
+  const base = db
+    .select({
+      ...getTableColumns(pageMetaTable),
+      authorName: user.name,
+    })
+    .from(pageMetaTable)
+    .leftJoin(user, eq(user.id, pageMetaTable.authorId))
+    .orderBy(desc(pageMetaTable.updatedAt))
+  let q = where ? base.where(where) : base
   if (filters.limit !== undefined) {
     q = q.limit(filters.limit) as typeof q
   }
@@ -105,7 +115,11 @@ export async function findPublicPageMetaBySlug(slug: string): Promise<PageMetaRo
 
 /** All non-deleted page meta rows; cataloged at startup. */
 export async function listPublicPageMetas(): Promise<PageMetaRow[]> {
-  return db.select().from(pageMetaTable).where(isNull(pageMetaTable.deletedAt)).orderBy(desc(pageMetaTable.publishedAt))
+  return db
+    .select()
+    .from(pageMetaTable)
+    .where(isNull(pageMetaTable.deletedAt))
+    .orderBy(desc(pageMetaTable.firstPublishedAt))
 }
 
 // --- Content (revision) reads -----------------------------------------------
@@ -115,6 +129,13 @@ export type ContentType = 'page' | 'post'
 export async function findContentById(id: bigint): Promise<ContentRow | null> {
   const rows = await db.select().from(contentTable).where(eq(contentTable.id, id)).limit(1)
   return rows[0] ?? null
+}
+
+export async function findContentsByIds(ids: bigint[]): Promise<ContentRow[]> {
+  if (ids.length === 0) {
+    return []
+  }
+  return db.select().from(contentTable).where(inArray(contentTable.id, ids))
 }
 
 /**
@@ -254,23 +275,24 @@ export type SaveDraftResult =
  * The page row's `updated_at` is bumped so the admin list reflects
  * recent activity.
  */
-export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraftResult> {
+export async function saveDraftRevision(type: ContentType, input: SaveDraftInput): Promise<SaveDraftResult> {
+  const metaTable = type === 'page' ? pageMetaTable : postMetaTable
   return db.transaction(async (tx) => {
-    // Lock the page row so concurrent saves can't both compute the
+    // Lock the meta row so concurrent saves can't both compute the
     // same `MAX(revision_no) + 1` and trip `uq_content_owner_revision`.
-    const pageLockRows = await tx
-      .select({ id: pageMetaTable.id })
-      .from(pageMetaTable)
-      .where(eq(pageMetaTable.id, input.ownerId))
+    const lockRows = await tx
+      .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
+      .from(metaTable)
+      .where(eq(metaTable.id, input.ownerId))
       .for('update')
-    if (pageLockRows.length === 0) {
-      throw new Error(`page meta row ${input.ownerId} not found`)
+    if (lockRows.length === 0) {
+      throw new Error(`${type} meta row ${input.ownerId} not found`)
     }
 
     const latestRows = await tx
       .select()
       .from(contentTable)
-      .where(and(eq(contentTable.type, 'page'), eq(contentTable.ownerId, input.ownerId)))
+      .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, input.ownerId)))
       .orderBy(desc(contentTable.revisionNo))
       .limit(1)
     const latest = latestRows[0]
@@ -302,7 +324,7 @@ export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraf
         })
         .where(eq(contentTable.id, latest.id))
         .returning()
-      await tx.update(pageMetaTable).set({ updatedAt: now }).where(eq(pageMetaTable.id, input.ownerId))
+      await tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId))
       return { status: 'saved' as const, row: updated[0] }
     }
 
@@ -330,7 +352,7 @@ export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraf
 
     const nextRevisionNo = (latest?.revisionNo ?? 0) + 1
     const insert: NewContent = {
-      type: 'page',
+      type,
       ownerId: input.ownerId,
       revisionNo: nextRevisionNo,
       status: 'draft',
@@ -341,7 +363,7 @@ export async function saveDraftRevision(input: SaveDraftInput): Promise<SaveDraf
       clientRevisionToken: nextToken,
     }
     const inserted = await tx.insert(contentTable).values(insert).returning()
-    await tx.update(pageMetaTable).set({ updatedAt: now }).where(eq(pageMetaTable.id, input.ownerId))
+    await tx.update(metaTable).set({ updatedAt: now }).where(eq(metaTable.id, input.ownerId))
     return { status: 'saved' as const, row: inserted[0] }
   })
 }
@@ -368,21 +390,25 @@ export type PublishLatestResult =
  * conflict rules as `saveDraftRevision` (token mismatch returns
  * `conflict` unless `force=true`).
  */
-export async function publishLatestRevision(input: PublishLatestInput): Promise<PublishLatestResult> {
+export async function publishLatestRevision(
+  type: ContentType,
+  input: PublishLatestInput,
+): Promise<PublishLatestResult> {
+  const metaTable = type === 'page' ? pageMetaTable : postMetaTable
   return db.transaction(async (tx) => {
-    const docLockRows = await tx
-      .select({ id: pageMetaTable.id })
-      .from(pageMetaTable)
-      .where(eq(pageMetaTable.id, input.ownerId))
+    const lockRows = await tx
+      .select({ id: metaTable.id, firstPublishedAt: metaTable.firstPublishedAt })
+      .from(metaTable)
+      .where(eq(metaTable.id, input.ownerId))
       .for('update')
-    if (docLockRows.length === 0) {
-      throw new Error(`page meta row ${input.ownerId} not found`)
+    if (lockRows.length === 0) {
+      throw new Error(`${type} meta row ${input.ownerId} not found`)
     }
 
     const latestRows = await tx
       .select()
       .from(contentTable)
-      .where(and(eq(contentTable.type, 'page'), eq(contentTable.ownerId, input.ownerId)))
+      .where(and(eq(contentTable.type, type), eq(contentTable.ownerId, input.ownerId)))
       .orderBy(desc(contentTable.revisionNo))
       .limit(1)
     const latest = latestRows[0]
@@ -425,7 +451,7 @@ export async function publishLatestRevision(input: PublishLatestInput): Promise<
       }
       const nextRevisionNo = (latest?.revisionNo ?? 0) + 1
       const insert: NewContent = {
-        type: 'page',
+        type,
         ownerId: input.ownerId,
         revisionNo: nextRevisionNo,
         status: 'published',
@@ -439,30 +465,16 @@ export async function publishLatestRevision(input: PublishLatestInput): Promise<
       savedRow = inserted[0]
     }
 
-    // `publishLatestRevision` is the single transition that flips a
-    // page from "draft-only" to "live". Setting `published = true`
-    // alongside `published_revision_id` means a fresh page (created
-    // with `published = false` so saving stays save-only) becomes
-    // public the moment the operator hits "发布", and stays public
-    // across subsequent re-publishes. Operators take it back offline
-    // through `unpublishPage` (which flips `published` to false
-    // without touching the content row).
-    //
-    // `publishedAt` is the public-facing "first published" timestamp.
-    // We rewrite it on every publish so a republish refreshes the
-    // visible date (operators don't have a separate edit-then-stamp
-    // affordance) and so a future timestamp can park the page as
-    // "scheduled" — `published = true` but hidden from the catalog
-    // until the timestamp arrives.
     await tx
-      .update(pageMetaTable)
+      .update(metaTable)
       .set({
         publishedRevisionId: savedRow.id,
         published: true,
         publishedAt: input.publishedAt ?? now,
+        firstPublishedAt: lockRows[0]?.firstPublishedAt ?? input.publishedAt ?? now,
         updatedAt: now,
       })
-      .where(eq(pageMetaTable.id, input.ownerId))
+      .where(eq(metaTable.id, input.ownerId))
 
     return { status: 'published' as const, row: savedRow }
   })
