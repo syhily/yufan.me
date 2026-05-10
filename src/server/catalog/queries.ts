@@ -189,7 +189,8 @@ export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
   if (tagRows.length === 0) return []
 
   // Query 2: counts for these specific tags only.
-  const namesJson = JSON.stringify(uniqueNames)
+  // NOTE: We aggregate ALL tags in one shot and pick the ones we need in JS,
+  // rather than using jsonb overlap (&&) which is not universally available.
   const countsResult = await db.execute<{ tag_name: string; counts: number }>(sql`
     SELECT jsonb_array_elements_text(${postMetaTable.tags}) AS tag_name,
            COUNT(*)::int AS counts
@@ -198,7 +199,6 @@ export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
       AND ${postMetaTable.published} = true
       AND ${postMetaTable.visible} = true
       AND ${postMetaTable.publishedAt} <= ${now}
-      AND ${postMetaTable.tags} && ${namesJson}::jsonb
     GROUP BY jsonb_array_elements_text(${postMetaTable.tags})
   `)
 
