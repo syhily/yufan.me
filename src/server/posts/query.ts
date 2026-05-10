@@ -100,9 +100,18 @@ export async function listPublicPostCards(
 export async function listPublicPostCardsPaginated(
   pageNum: number,
   pageSize: number,
-  options?: PostVisibilityOptions & { sortBy?: 'publishedAt' | 'updatedAt'; category?: string; tag?: string },
+  options?: PostVisibilityOptions & {
+    sortBy?: 'publishedAt' | 'updatedAt'
+    category?: string
+    tag?: string
+    /** Override the default offset (`(pageNum - 1) * pageSize`). Used when the
+        caller's pagination logic expands the last-page limit (tail-merge) so
+        the offset must still be based on the original page size. */
+    offset?: number
+  },
 ): Promise<{ posts: ListingPostCard[]; total: number }> {
   const filters = buildPublicPostFilters(options)
+  const offset = options?.offset ?? (pageNum - 1) * pageSize
   const [metas, total] = await Promise.all([
     listPublicPosts({
       ...filters,
@@ -110,7 +119,7 @@ export async function listPublicPostCardsPaginated(
       category: options?.category,
       tag: options?.tag,
       limit: pageSize,
-      offset: (pageNum - 1) * pageSize,
+      offset,
     }),
     countPublicPosts({ ...filters, category: options?.category, tag: options?.tag }),
   ])

@@ -53,7 +53,11 @@ export async function loader({
   return listingLoader<HomeExtra>({
     rawNum: params.num,
     totalPosts,
-    fetchPage: (pageNum, pageSize) => listPublicPostCardsPaginated(pageNum, pageSize, filters).then((r) => r.posts),
+    fetchPage: (pageNum, pageSize) =>
+      listPublicPostCardsPaginated(pageNum, pageSize, {
+        ...filters,
+        offset: (pageNum - 1) * homePageSize,
+      }).then((r) => r.posts),
     rootPath: '/',
     pageSize: homePageSize,
     mergeTailWhenLessThan,
