@@ -21,6 +21,7 @@ describe('snapshot: PostListingBody (search variant)', () => {
         totalPage={0}
         rootPath="/search/react"
         alwaysRenderPagination={false}
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()
@@ -45,6 +46,7 @@ describe('snapshot: PostListingBody (search variant)', () => {
         totalPage={1}
         rootPath="/search/react"
         alwaysRenderPagination={false}
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()

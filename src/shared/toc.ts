@@ -1,7 +1,6 @@
-// Mirrors the heading shape produced by Fumadocs/MDX. Kept here (rather than
-// re-exporting from the server catalog) so this module stays isomorphic and
-// can be imported from UI components without reaching into a server-only
-// barrel.
+// Flat heading list produced by the MDX pipeline (`MarkdownHeading`). Kept
+// isomorphic (no server-only re-export) so UI can build TOCs without importing
+// the catalog.
 export interface MarkdownHeading {
   depth: number
   slug: string

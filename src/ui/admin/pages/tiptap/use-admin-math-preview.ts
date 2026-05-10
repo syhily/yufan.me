@@ -8,7 +8,7 @@ import { API_ACTIONS } from '@/shared/api-actions'
 const DEBOUNCE_MS = 200
 
 /**
- * Debounced `admin.renderMath` preview — same MathJax engine as inline math
+ * Debounced `admin.renderMath` preview — same KaTeX renderer as inline math
  * (`MathInlinePanel`) and the save-time prerender pass (`display` mirrors
  * inline vs block math).
  */
@@ -20,8 +20,8 @@ export function useAdminMathPreview(
   renderError: string | null
   showSpinner: boolean
 } {
-  const lastValidSvg = useRef('')
-  const [previewSvg, setPreviewSvg] = useState('')
+  const lastValidMathml = useRef('')
+  const [previewMathml, setPreviewMathml] = useState('')
   const [renderError, setRenderError] = useState<string | null>(null)
 
   const renderMath = useApiFetcher<RenderMathInput, RenderMathOutput>(API_ACTIONS.admin.renderMath, {
@@ -31,8 +31,8 @@ export function useAdminMathPreview(
         return
       }
       setRenderError(null)
-      lastValidSvg.current = result.svg
-      setPreviewSvg(result.svg)
+      lastValidMathml.current = result.mathml
+      setPreviewMathml(result.mathml)
     },
     onError: () => {
       setRenderError('渲染服务暂不可用')
@@ -41,8 +41,8 @@ export function useAdminMathPreview(
 
   useEffect(() => {
     if (tex.trim() === '') {
-      lastValidSvg.current = ''
-      setPreviewSvg('')
+      lastValidMathml.current = ''
+      setPreviewMathml('')
       setRenderError(null)
       return
     }
@@ -55,8 +55,8 @@ export function useAdminMathPreview(
     // oxlint-disable-next-line exhaustive-deps
   }, [tex, display, renderMath.submit])
 
-  const showSpinner = previewSvg === '' && renderMath.isPending
-  const previewHtml = previewSvg !== '' ? previewSvg : lastValidSvg.current
+  const showSpinner = previewMathml === '' && renderMath.isPending
+  const previewHtml = previewMathml !== '' ? previewMathml : lastValidMathml.current
 
   return { previewHtml, renderError, showSpinner }
 }

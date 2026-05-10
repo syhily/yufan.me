@@ -15,6 +15,7 @@ import { PostListingBody } from '@/ui/post/post/PostListViews'
 import type { Route } from './+types/search.list'
 
 export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageLoaderData> {
+  const listingNowIso = new Date().toISOString()
   const query = params.keyword?.trim() ?? ''
   if (query === '') {
     throw redirect('/')
@@ -59,6 +60,7 @@ export async function loader({ params }: Route.LoaderArgs): Promise<ListingPageL
     title,
     seo,
     extra: undefined,
+    listingNowIso,
   }
 }
 
@@ -78,6 +80,7 @@ export default function SearchListRoute({ loaderData }: Route.ComponentProps) {
       totalPage={loaderData.totalPage}
       rootPath={loaderData.rootPath}
       alwaysRenderPagination={false}
+      listingNowIso={loaderData.listingNowIso}
     />
   )
 }

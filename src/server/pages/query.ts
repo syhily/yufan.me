@@ -14,9 +14,15 @@ function isCatalogVisible(
   meta: { deletedAt: Date | null; published: boolean; publishedAt: Date },
   asOf: Date = new Date(),
 ): boolean {
-  if (meta.deletedAt !== null) return false
-  if (!meta.published) return false
-  if (meta.publishedAt.getTime() > asOf.getTime()) return false
+  if (meta.deletedAt !== null) {
+    return false
+  }
+  if (!meta.published) {
+    return false
+  }
+  if (meta.publishedAt.getTime() > asOf.getTime()) {
+    return false
+  }
   return true
 }
 
@@ -29,7 +35,9 @@ async function hydratePageImages(pages: Page[]): Promise<void> {
     page.coverThumbhash = lookup?.thumbhash
     page.coverWidth = lookup?.width
     page.coverHeight = lookup?.height
-    if (lookup?.publicUrl != null) page.cover = lookup.publicUrl
+    if (lookup?.publicUrl != null) {
+      page.cover = lookup.publicUrl
+    }
   }
 }
 
@@ -61,7 +69,9 @@ export function buildDbPage(page: CmsPage): Page {
 
 export async function findPageBySlug(slug: string): Promise<Page | null> {
   const meta = await findPublicPageMetaBySlug(slug)
-  if (meta === null || !isCatalogVisible(meta)) return null
+  if (meta === null || !isCatalogVisible(meta)) {
+    return null
+  }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
   const page = buildDbPage(toCmsPage(meta, revision))
   await hydratePageImages([page])
@@ -72,13 +82,17 @@ export async function listAllPages(): Promise<Page[]> {
   const metas = await listPublicPageMetas()
   const asOf = new Date()
   const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
-  if (visible.length === 0) return []
+  if (visible.length === 0) {
+    return []
+  }
 
   const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
   const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
   if (revisionIds.length > 0) {
     const rows = await findContentsByIds(revisionIds)
-    for (const row of rows) revisionMap.set(row.id, row)
+    for (const row of rows) {
+      revisionMap.set(row.id, row)
+    }
   }
 
   const pages = visible.map((meta) => {

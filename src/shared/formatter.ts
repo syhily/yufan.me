@@ -13,7 +13,7 @@
 // formatLocalDate(post.date, undefined, requireBlogSettingsSection('siteIdentity'))
 // // UI components
 // const siteIdentity = useSiteIdentity()
-// formatShowDate(post.date, siteIdentity)
+// formatShowDate(post.date, siteIdentity, loaderListingNowIso?)
 // ```
 //
 // Either a `SiteIdentitySettings` (flat — only `locale` / `timeZone` /
@@ -165,11 +165,13 @@ function applyTailMerge(postCount: number, pageSize: number, naturalTotalPage: n
   return naturalTotalPage
 }
 
-export function formatShowDate(date: Date, config: FormatterLocale) {
+/** `now` defaults to the runtime clock; pass an ISO string from the route loader so SSR and hydration agree. */
+export function formatShowDate(date: Date, config: FormatterLocale, now?: Date | string) {
   const { locale, timeZone } = pickLocale(config)
   const source = localDateParts(date, locale, timeZone)
-  const now = localDateParts(new Date(), locale, timeZone)
-  const deltaDays = dayNumber(now) - dayNumber(source)
+  const nowInstant = now === undefined ? new Date() : new Date(now)
+  const nowParts = localDateParts(nowInstant, locale, timeZone)
+  const deltaDays = dayNumber(nowParts) - dayNumber(source)
 
   if (deltaDays < 1) {
     return '今天'
@@ -178,9 +180,9 @@ export function formatShowDate(date: Date, config: FormatterLocale) {
   } else if (deltaDays < 7) {
     return `${deltaDays} 天前`
   } else if (deltaDays < 30) {
-    return `${Math.floor((weekStartDay(now) - weekStartDay(source)) / 7)} 周前`
+    return `${Math.floor((weekStartDay(nowParts) - weekStartDay(source)) / 7)} 周前`
   } else if (deltaDays < 210) {
-    const months = (now.year - source.year) * 12 + now.month - source.month
+    const months = (nowParts.year - source.year) * 12 + nowParts.month - source.month
     return `${months} 月前`
   } else {
     return formatLocalDate(date, undefined, config)

@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
 import type { AdminUserDto, ListUsersInput, ListUsersOutput } from '@/shared/api-types'
-import type { AdminCategoryDto, ListCategoriesInput, ListCategoriesOutput } from '@/shared/categories'
+import type { ListCategoriesInput, ListCategoriesOutput } from '@/shared/categories'
 import type {
   AdminPostDto,
   DeletePostInput,
@@ -24,13 +24,12 @@ import type {
   RestorePostInput,
   RestorePostOutput,
 } from '@/shared/cms-posts'
-import type { AdminTagDto, ListTagsInput, ListTagsOutput } from '@/shared/tags'
+import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
-import { AdminPagination } from '@/ui/admin/shared/AdminPagination'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Badge } from '@/ui/components/ui/badge'
@@ -71,11 +70,6 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100].map((n) => ({
 const SORT_BY_OPTIONS = [
   { value: 'publishedAt', label: '首次发布时间' },
   { value: 'updatedAt', label: '最近更新时间' },
-]
-
-const SORT_ORDER_OPTIONS = [
-  { value: 'desc', label: '降序' },
-  { value: 'asc', label: '升序' },
 ]
 
 export function PostsView() {
@@ -172,17 +166,20 @@ export function PostsView() {
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
-  const categories = categoriesApi.data?.categories ?? []
-  const tags = tagsApi.data?.tags ?? []
-  const users = usersApi.data?.users ?? []
+  const categories = categoriesApi.data?.categories
+  const tags = tagsApi.data?.tags
+  const users = usersApi.data?.users
 
   const categoryOptions = useMemo(
-    () => [{ value: '', label: '全部分类' }, ...categories.map((c) => ({ value: c.name, label: c.name }))],
+    () => [{ value: '', label: '全部分类' }, ...(categories ?? []).map((c) => ({ value: c.name, label: c.name }))],
     [categories],
   )
-  const tagNames = useMemo(() => ['', ...tags.map((t) => t.name)], [tags])
+  const tagNames = useMemo(() => ['', ...(tags ?? []).map((t) => t.name)], [tags])
   const authorOptions = useMemo(
-    () => [{ value: '', label: '全部作者' }, ...users.map((u: AdminUserDto) => ({ value: u.id, label: u.name }))],
+    () => [
+      { value: '', label: '全部作者' },
+      ...(users ?? []).map((u: AdminUserDto) => ({ value: u.id, label: u.name })),
+    ],
     [users],
   )
 

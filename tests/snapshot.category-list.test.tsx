@@ -39,6 +39,7 @@ describe('snapshot: PostListingBody (category variant)', () => {
         pageNum={1}
         totalPage={2}
         rootPath="/cats/tech"
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()
@@ -56,7 +57,14 @@ describe('snapshot: PostListingBody (category variant)', () => {
       ),
     ]
     const html = renderInRouter(
-      <PostListingBody title="技术" resolvedPosts={posts} pageNum={2} totalPage={2} rootPath="/cats/tech" />,
+      <PostListingBody
+        title="技术"
+        resolvedPosts={posts}
+        pageNum={2}
+        totalPage={2}
+        rootPath="/cats/tech"
+        listingNowIso="2026-04-25T12:00:00.000Z"
+      />,
     )
     expect(html).toMatchSnapshot()
   })

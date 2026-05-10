@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { setBlogSettingsBundleForTests } from '@/server/settings/snapshot'
 import { selectSidebarTags } from '@/server/sidebar/select'
 
-import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
-import { makePost, makePostList, makeTag } from './_helpers/catalog'
+import { makePost, makeTag } from './_helpers/catalog'
 
 describe('services/sidebar/select — selectSidebarTags', () => {
   it('does not memoize sidebar tags between requests', () => {

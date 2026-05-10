@@ -1,6 +1,6 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { asc, inArray, sql } from 'drizzle-orm'
 
-import type { Category, ClientPost, Friend, Page, Post, PostVisibilityOptions, Tag } from '@/shared/catalog'
+import type { Category, Friend, Tag } from '@/shared/catalog'
 
 import { createInflight } from '@/server/cache/inflight'
 import { db } from '@/server/db/pool'
@@ -56,12 +56,16 @@ async function hydrateCategoryImages(categories: Category[]): Promise<void> {
   for (const category of categories) {
     const lookup = category.cover === '' ? null : (lookupMap.get(category.cover) ?? null)
     category.coverThumbhash = lookup?.thumbhash
-    if (lookup?.publicUrl != null) category.cover = lookup.publicUrl
+    if (lookup?.publicUrl != null) {
+      category.cover = lookup.publicUrl
+    }
   }
 }
 
 async function parseCategoryDescription(description: string): Promise<string> {
-  if (description === '') return ''
+  if (description === '') {
+    return ''
+  }
   const { parseContent } = await import('@/server/markdown/parser')
   return parseContent(description)
 }
@@ -176,7 +180,9 @@ export async function listAllTags(): Promise<Tag[]> {
 export { findTagByName, findTagBySlug }
 
 export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
-  if (names.length === 0) return []
+  if (names.length === 0) {
+    return []
+  }
   const uniqueNames = [...new Set(names)]
   const now = new Date()
 
@@ -186,7 +192,9 @@ export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
 
-  if (tagRows.length === 0) return []
+  if (tagRows.length === 0) {
+    return []
+  }
 
   // Query 2: counts for these specific tags only.
   // NOTE: We aggregate ALL tags in one shot and pick the ones we need in JS,
@@ -224,7 +232,9 @@ export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
 
 export async function getCategoryLinks(names: readonly string[]): Promise<Record<string, string>> {
   const uniqueNames = [...new Set(names.filter((n): n is string => Boolean(n)))]
-  if (uniqueNames.length === 0) return {}
+  if (uniqueNames.length === 0) {
+    return {}
+  }
 
   const rows = await db
     .select({ name: categoryTable.name, slug: categoryTable.slug })
@@ -247,7 +257,9 @@ async function hydrateFriendImages(friends: Friend[]): Promise<void> {
   for (const friend of friends) {
     const lookup = friend.poster === '' ? null : (lookupMap.get(friend.poster) ?? null)
     friend.posterThumbhash = lookup?.thumbhash
-    if (lookup?.publicUrl != null) friend.poster = lookup.publicUrl
+    if (lookup?.publicUrl != null) {
+      friend.poster = lookup.publicUrl
+    }
   }
 }
 

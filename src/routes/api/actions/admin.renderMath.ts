@@ -5,22 +5,18 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 
 // Editor inline-math preview endpoint. The bubble-menu panel POSTs
 // `{ tex, display }` here on every keystroke (debounced); the response
-// carries the MathJax-rendered SVG that the prerender pass would write
+// carries the KaTeX-rendered MathML that the prerender pass would write
 // on save, so the preview cannot drift from the published rendering.
 //
-// Why an admin endpoint instead of bundling MathJax client-side: the
-// `mathjax-full` package is ~1MB+ gzipped — the editor route is
-// admin-only and we'd rather not spend that budget for a popover that
-// renders one to a few characters at a time. The render itself is
-// cheap once the engine is warm (single-digit ms per call) and the
-// admin session is already a network-tight context.
+// Why an admin endpoint instead of bundling another renderer client-side:
+// the save path must use the same server implementation, and the admin
+// session is already a network-tight context.
 //
-// MathJax errors do NOT translate to HTTP 500: a TeX syntax error mid-
+// KaTeX errors do NOT translate to HTTP 500: a TeX syntax error mid-
 // typing is the *expected* state of the editor most of the time. We
-// surface the error inside the JSON envelope as `{ svg: '', error }`
+// surface the error inside the JSON envelope as `{ mathml: '', error }`
 // so the client can keep rendering its last successful preview while
-// flipping a small "syntax error" badge — same UX the previous KaTeX
-// path implemented locally.
+// flipping a small "syntax error" badge.
 //
 // 4KB body cap is enforced via Zod (`renderMathSchema.tex.max`). The
 // `defineApiAction` Content-Length pre-flight guards against runaway
@@ -36,29 +32,25 @@ export const action = defineApiAction({
   async run({ payload }): Promise<RenderMathOutput> {
     const tex = payload.tex
     if (tex.trim() === '') {
-      // Empty input is a no-op, not an error. Returning an empty SVG
+      // Empty input is a no-op, not an error. Returning empty MathML
       // saves the client the round-trip-and-render dance for a value
       // that wouldn't paint anything anyway.
-      return { svg: '', error: null }
+      return { mathml: '', error: null }
     }
-    let renderer: import('@/server/markdown/mathjax-renderer').MathjaxRenderer
+    let renderer: import('@/server/markdown/katex-renderer').KatexRenderer
     try {
-      // Lazy + singleton — see `@/server/markdown/mathjax-renderer`.
-      // The first preview-popover open in a process pays the ~100ms
-      // engine boot; subsequent calls (and the save-time prerender
-      // pass) re-use the same renderer.
-      const { getMathjaxRenderer } = await import('@/server/markdown/mathjax-renderer')
-      renderer = await getMathjaxRenderer()
+      const { getKatexRenderer } = await import('@/server/markdown/katex-renderer')
+      renderer = await getKatexRenderer()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'MathJax 加载失败'
-      return { svg: '', error: message }
+      const message = err instanceof Error ? err.message : 'KaTeX 加载失败'
+      return { mathml: '', error: message }
     }
     try {
-      const svg = renderer.render(tex, payload.display)
-      return { svg, error: null }
+      const mathml = await renderer.render(tex, payload.display)
+      return { mathml, error: null }
     } catch (err) {
       const message = err instanceof Error ? err.message : '公式渲染失败'
-      return { svg: '', error: message }
+      return { mathml: '', error: message }
     }
   },
 })

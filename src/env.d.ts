@@ -5,3 +5,5 @@ declare module 'unstorage/drivers/redis' {
 
   export default function redisDriver(options?: unknown): Driver
 }
+
+declare module 'katex/contrib/mhchem' {}

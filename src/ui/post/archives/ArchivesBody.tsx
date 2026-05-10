@@ -7,9 +7,10 @@ import { postTitleClass } from '@/ui/post/postChrome'
 
 export interface ArchivesBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]
+  listingNowIso: string
 }
 
-export function ArchivesBody({ resolvedPosts }: ArchivesBodyProps) {
+export function ArchivesBody({ resolvedPosts, listingNowIso }: ArchivesBodyProps) {
   const groupedPosts = groupBy(resolvedPosts, (post) => {
     const date = new Date(post.date)
     return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月`
@@ -31,7 +32,7 @@ export function ArchivesBody({ resolvedPosts }: ArchivesBodyProps) {
             </div>
             <div className="-mx-1 -mt-2 flex flex-wrap md:-mx-2 md:-mt-4 2xl:-mx-3 2xl:-mt-6">
               {posts.map((post, i) => (
-                <PostSquare key={post.slug} post={post} first={i === 0} />
+                <PostSquare key={post.slug} post={post} first={i === 0} listingNowIso={listingNowIso} />
               ))}
             </div>
           </div>

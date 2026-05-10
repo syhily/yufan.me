@@ -170,9 +170,8 @@ interface ResolvedSrc {
   storagePath: string
 }
 
-// Exported so the page-import migrator (`scripts/migrate/pages/cli.ts`)
-// and any future server-side resolver can share the exact same rule
-// the SSR enhancer uses. Pure, no side effects.
+// Exported for page-import scripts under `scripts/` and any server-side
+// resolver that must mirror the SSR enhancer rule set. Pure, no side effects.
 export function resolveSrcToStoragePath(src: string, publicBaseUrl: string | null): string | null {
   if (src.startsWith('http://') || src.startsWith('https://')) {
     if (publicBaseUrl !== null) {

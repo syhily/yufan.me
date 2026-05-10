@@ -98,6 +98,7 @@ describe('snapshot: PostListingBody (category/tag/search)', () => {
         totalPage={0}
         rootPath="/tags/rust"
         alwaysRenderPagination={false}
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()
@@ -123,7 +124,14 @@ describe('snapshot: PostListingBody (category/tag/search)', () => {
       ),
     ]
     const html = renderInRouter(
-      <PostListingBody title="分类：技术" resolvedPosts={posts} pageNum={1} totalPage={3} rootPath="/cats/tech" />,
+      <PostListingBody
+        title="分类：技术"
+        resolvedPosts={posts}
+        pageNum={1}
+        totalPage={3}
+        rootPath="/cats/tech"
+        listingNowIso="2026-04-25T12:00:00.000Z"
+      />,
     )
     expect(html).toMatchSnapshot()
   })
@@ -139,7 +147,7 @@ describe('snapshot: PostSquare card', () => {
         date: new Date('2024-03-01T00:00:00.000Z'),
       }),
     )
-    const html = renderInRouter(<PostSquare post={post} first />)
+    const html = renderInRouter(<PostSquare post={post} first listingNowIso="2026-04-25T12:00:00.000Z" />)
     expect(html).toMatchSnapshot()
   })
 
@@ -152,7 +160,7 @@ describe('snapshot: PostSquare card', () => {
         date: new Date('2024-03-02T00:00:00.000Z'),
       }),
     )
-    const html = renderInRouter(<PostSquare post={post} first={false} />)
+    const html = renderInRouter(<PostSquare post={post} first={false} listingNowIso="2026-04-25T12:00:00.000Z" />)
     expect(html).toMatchSnapshot()
   })
 })

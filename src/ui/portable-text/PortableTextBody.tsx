@@ -93,8 +93,8 @@ export interface PortableTextBodyProps {
    * When omitted (e.g. editor live-preview before the
    * server round-trip), the renderer falls back to a local
    * `github-slugger` pass over the raw text — the anchor still
-   * disambiguates duplicates, but Han-only headings degrade to the
-   * historical CJK-as-is slug instead of pinyin. The full SSR path
+   * disambiguates duplicates, but Han-only headings keep glyphs verbatim
+   * instead of pinyin. The full SSR path
    * always supplies this prop, so the fallback is editor-only.
    */
   headingSlugs?: readonly string[]
@@ -352,20 +352,21 @@ const portableTextComponents: PortableTextComponents = {
 
 // --- Mark renderers ---------------------------------------------------------
 
-function renderMathJaxSvgOrTexFallback(tex: string, svg: string | undefined, layout: 'inline' | 'display'): ReactNode {
-  if (svg !== undefined && svg !== '') {
+function renderMathMarkupOrTexFallback(
+  tex: string,
+  mathml: string | undefined,
+  legacySvg: string | undefined,
+  layout: 'inline' | 'display',
+): ReactNode {
+  const markup = mathml !== undefined && mathml !== '' ? mathml : legacySvg
+  if (markup !== undefined && markup !== '') {
     if (layout === 'inline') {
-      return (
-        <span
-          className="math-inline inline-block align-middle [&_svg]:block"
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
-      )
+      return <span className="math-inline inline-block align-middle" dangerouslySetInnerHTML={{ __html: markup }} />
     }
     return (
       <div
         className="math math-display text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
-        dangerouslySetInnerHTML={{ __html: svg }}
+        dangerouslySetInnerHTML={{ __html: markup }}
       />
     )
   }
@@ -400,7 +401,7 @@ function MathInlineMarkRenderer({ value, children }: PortableTextMarkComponentPr
   if (def === undefined) {
     return <>{children}</>
   }
-  return renderMathJaxSvgOrTexFallback(def.tex, def.svg, 'inline')
+  return renderMathMarkupOrTexFallback(def.tex, def.mathml, def.svg, 'inline')
 }
 
 function FootnoteRefMarkRenderer({ value, children }: PortableTextMarkComponentProps<FootnoteRefMarkDef>) {
@@ -468,7 +469,7 @@ function CodeBlockNodeComponent({ value }: PortableTextTypeComponentProps<CodeBl
 }
 
 function MathBlockComponent({ value }: PortableTextTypeComponentProps<MathBlock>) {
-  return renderMathJaxSvgOrTexFallback(value.tex, value.svg, 'display')
+  return renderMathMarkupOrTexFallback(value.tex, value.mathml, value.svg, 'display')
 }
 
 function MermaidBlockComponent({ value }: PortableTextTypeComponentProps<MermaidBlock>) {
@@ -616,7 +617,7 @@ function applyInlineMark(node: ReactNode, markName: string, markDefs: readonly M
         </a>
       )
     case 'mathInline':
-      return renderMathJaxSvgOrTexFallback(def.tex, def.svg, 'inline')
+      return renderMathMarkupOrTexFallback(def.tex, def.mathml, def.svg, 'inline')
     case 'footnoteRef':
       return (
         <FootnoteReference id={`user-content-fnref-${def.index}`} data-footnote-ref="">

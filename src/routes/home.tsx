@@ -39,7 +39,7 @@ export async function loader({
     includeScheduled: import.meta.env.DEV,
   }
 
-  const [totalPosts, sidebarPromise, featureSeed] = await Promise.all([
+  const [totalPosts, sidebar, featureSeed] = await Promise.all([
     countPublicPosts(filters),
     loadSidebarData(session),
     Promise.resolve(formatLocalDate(new Date(), 'yyyy-MM-dd', requireBlogSettingsSection('siteIdentity'))),
@@ -65,9 +65,11 @@ export async function loader({
     seoMode: 'skip-on-first-page',
     computeExtra: async ({ resolvedPosts }) => {
       const uniqueCategories = [...new Set(resolvedPosts.map((p) => p.category).filter(Boolean))]
-      const categoryLinks = await getCategoryLinks(uniqueCategories)
-
-      const [featurePosts, sidebar, tags] = await Promise.all([featurePromise, sidebarPromise, tagsPromise])
+      const [categoryLinks, featurePosts, tags] = await Promise.all([
+        getCategoryLinks(uniqueCategories),
+        featurePromise,
+        tagsPromise,
+      ])
 
       return {
         categoryLinks,
@@ -112,6 +114,7 @@ export default function HomeRoute({ loaderData }: Route.ComponentProps) {
       featurePosts={extra.featurePosts}
       admin={extra.admin}
       sidebar={extra.sidebar}
+      listingNowIso={loaderData.listingNowIso}
     />
   )
 }

@@ -21,6 +21,8 @@ export interface HomeLayoutBodyProps {
   featurePosts: ListingPostCard[]
   admin: boolean
   sidebar: SidebarData
+  /** From `loaderData.listingNowIso` — stabilises relative dates across SSR + hydration. */
+  listingNowIso: string
   children?: ReactNode
 }
 
@@ -32,6 +34,7 @@ export function HomeLayoutBody({
   featurePosts,
   admin,
   sidebar,
+  listingNowIso,
   children,
 }: HomeLayoutBodyProps) {
   return (
@@ -39,7 +42,13 @@ export function HomeLayoutBody({
       {pageNum === 1 && <FeaturePosts posts={featurePosts} />}
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="-mx-3 flex flex-wrap">
-          <PostCards pageNum={pageNum} posts={resolvedPosts} totalPage={totalPage} categoryLinks={categoryLinks} />
+          <PostCards
+            pageNum={pageNum}
+            posts={resolvedPosts}
+            totalPage={totalPage}
+            categoryLinks={categoryLinks}
+            listingNowIso={listingNowIso}
+          />
           <Sidebar data={sidebar} admin={admin} />
         </div>
       </div>
@@ -56,6 +65,7 @@ export interface PostListingBodyProps {
   totalPage: number
   rootPath: string
   alwaysRenderPagination?: boolean
+  listingNowIso: string
 }
 
 export function PostListingBody({
@@ -66,6 +76,7 @@ export function PostListingBody({
   totalPage,
   rootPath,
   alwaysRenderPagination = true,
+  listingNowIso,
 }: PostListingBodyProps) {
   return (
     <div className="py-4 md:py-6 lg:px-2 2xl:px-12 2xl:py-12">
@@ -89,7 +100,7 @@ export function PostListingBody({
           <>
             <div className="-mx-1 -mt-2 flex flex-wrap md:-mx-2 md:-mt-4 2xl:-mx-3 2xl:-mt-6">
               {resolvedPosts.map((post, index) => (
-                <PostSquare key={post.slug} post={post} first={index === 0} />
+                <PostSquare key={post.slug} post={post} first={index === 0} listingNowIso={listingNowIso} />
               ))}
             </div>
             {(alwaysRenderPagination || totalPage > 1) && (
@@ -175,9 +186,10 @@ export interface PostCardsProps {
   pageNum: number
   totalPage: number
   categoryLinks: Record<string, string>
+  listingNowIso: string
 }
 
-export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCardsProps) {
+export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNowIso }: PostCardsProps) {
   const config = useSiteIdentity()
   return (
     <div className="box-border w-full max-w-full shrink-0 px-3 xl:w-[71%]">
@@ -235,7 +247,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks }: PostCard
               </div>
               <div>
                 <div className="flex flex-1 items-center text-sm text-ink-muted">
-                  <div className="hidden flex-1 md:block">{formatShowDate(post.date, config)}</div>
+                  <div className="hidden flex-1 md:block">{formatShowDate(post.date, config, listingNowIso)}</div>
                   <ListMetric value={post.meta.views}>
                     <EyeIcon className="text-md" size="1em" aria-hidden />
                   </ListMetric>
@@ -288,9 +300,10 @@ function ListMetric({ children, value }: { children: ReactNode; value: number })
 export interface PostSquareProps {
   post: ListingPostCardWithMetadata
   first: boolean
+  listingNowIso: string
 }
 
-export function PostSquare({ post, first }: PostSquareProps) {
+export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
   const config = useSiteIdentity()
   return (
     <div
@@ -323,7 +336,7 @@ export function PostSquare({ post, first }: PostSquareProps) {
               {post.title}
             </div>
             <div className="font-number flex flex-1 text-sm text-ink-overlay">
-              <span className="inline-block">{formatShowDate(post.date, config)}</span>
+              <span className="inline-block">{formatShowDate(post.date, config, listingNowIso)}</span>
               <div className="flex-1" />
               <SquareMetric value={post.meta.views}>
                 <EyeIcon className="text-md" size="1em" aria-hidden />

@@ -336,7 +336,7 @@ function spanMarkToPmMark(markName: string, markDefs: readonly MarkDef[]): PmMar
         attrs: { _key: def._key, href: def.href, rel: def.rel, target: def.target },
       }
     case 'mathInline':
-      return { type: 'mathInline', attrs: { _key: def._key, tex: def.tex, svg: def.svg } }
+      return { type: 'mathInline', attrs: { _key: def._key, tex: def.tex, mathml: def.mathml, svg: def.svg } }
     case 'footnoteRef':
       return {
         type: 'footnoteRef',
@@ -1078,7 +1078,13 @@ function pmMarkToSpanMark(mark: PmMark): { decorator: string } | { def: MarkDef 
       const tex = stringAttr(mark.attrs, 'tex') ?? ''
       const key = stringAttr(mark.attrs, '_key') ?? `mi-${tex.length.toString(36)}`
       return {
-        def: { _type: 'mathInline', _key: key, tex, svg: stringAttr(mark.attrs, 'svg') },
+        def: {
+          _type: 'mathInline',
+          _key: key,
+          tex,
+          mathml: stringAttr(mark.attrs, 'mathml'),
+          svg: stringAttr(mark.attrs, 'svg'),
+        },
       }
     }
     case 'footnoteRef': {

@@ -27,19 +27,19 @@ runtimes), kept in sync via `skills-lock.json`.
   re-introducing an older rule.
 - **Quote stable rule ids in PR review** (e.g. `bundle-barrel-imports`,
   `architecture-avoid-boolean-props`, `server-no-shared-module-state`).
-- **Out-of-scope topics** (Drizzle migrations, Fumadocs MDX wiring,
-  Vite+ tooling) fall back to this document and upstream library docs.
+- **Out-of-scope topics** (Drizzle migrations, deep MDX / `source.config.ts`
+  wiring, Vite+ tooling) fall back to this document and upstream library docs.
 
 ## Stack
 
 - React Router 7 Framework Mode with SSR. `react-router.config.ts` keeps
   `appDirectory` at `src` and enables `future.v8_middleware`.
 - Vite (via Vite+) is the build system. `vite.config.ts` wires React
-  Router, Fumadocs MDX, binary asset imports, path aliases, and dev
-  server settings.
-- Fumadocs MDX compiles `src/content/posts` only — pages live in the
-  `page` + `content` Postgres tables and are edited through
-  `/wp-admin/pages`. Categories, tags, and friend links live in
+  Router, the MDX post pipeline (`source.config.ts`), binary asset imports,
+  path aliases, and dev server settings.
+- Posts are MDX under `src/content/posts`, compiled into the catalog at build
+  time. Site pages live in the `page` + `content` Postgres tables and are
+  edited through `/wp-admin/pages`. Categories, tags, and friends live in
   Postgres and are edited through `/wp-admin/{categories,tags,friends}`.
 - React 19 view layer. TSX/TS only.
 - Postgres for users, comments, likes, counters, settings, taxonomies,
@@ -58,7 +58,7 @@ src/
 ├── client/           # Browser-side logic. Hooks, fetchers, browser APIs.
 ├── ui/               # Pure-props React components.
 ├── shared/           # Isomorphic, side-effect-free modules.
-├── content/          # Fumadocs collections (posts, pages).
+├── content/          # Post MDX sources + LICENSE (not DB pages).
 ├── assets/           # Static assets (icon SVGs, fonts, styles).
 ├── env.d.ts
 ├── react-router.d.ts
@@ -94,7 +94,7 @@ src/
   - `server/auth/` + `server/session.ts` — Cookie session, CSRF,
     request context, login flow. `tests/contract.cookie.test.ts` treats
     these file paths as a contract; keep them in sync.
-  - `server/catalog/` — Fumadocs-backed content catalog and projections.
+  - `server/catalog/` — Content catalog (posts + pages) and projections.
   - `server/comments/`, `server/sidebar/`, `server/feed/`,
     `server/search/`, `server/seo/`, `server/metrics/`, `server/music/`,
     `server/categories/`, `server/tags/`, `server/friends/`,
@@ -175,7 +175,7 @@ src/
 
 - `@/*` → `./src/*`
 - `~/*` → `./public/*`
-- `#source/*` → `./.source/*` (Fumadocs-generated content)
+- `#source/*` → `./.source/*` (generated MDX collection output for the build)
 
 Use aliases instead of relative paths. The only allowed relative imports:
 
@@ -199,92 +199,50 @@ Use aliases instead of relative paths. The only allowed relative imports:
 
 ## Content
 
-- Fumadocs collections are declared in `source.config.ts`. Posts live
-  under `src/content/posts/**/*.mdx`. No `astro:content`.
-- Pages live exclusively in the `page` + `content` Postgres tables.
-  The historical Fumadocs `pages` collection has been retired — every
-  page is edited through `/wp-admin/pages` and rendered through
-  `<PortableTextBody>`. The three legacy MDX files
-  (`src/content/pages/{about,guestbook,links}.mdx`) are kept on disk
-  as **frozen migration source material** so the importer
-  (`scripts/migrate/pages/cli.ts`) can be pointed at them on a fresh
-  production deployment; they are NOT walked by `source.config.ts`,
-  do NOT ship in the SSR bundle, and must NOT be edited to "update
-  content" — see `src/content/pages/_README.md` and
-  `scripts/migrate/README.md` for the operator workflow.
-- URLs use MDX frontmatter `slug` (posts) or the `page` table's `slug`
-  column (pages), not physical filenames. Posts render at
-  `/posts/:slug`; pages render at `/:slug`.
-- The catalog (`@/server/catalog`) returns compiled MDX components
-  through `body`, headings, raw source, and structured data for posts;
-  pages carry a PortableText `body` instead. Custom MDX components
-  live under `@/ui/mdx`; preserve math, Mermaid, heading slug,
-  external link, title figure, and Shiki behavior via
-  `source.config.ts`.
-- `visible=false` posts are hidden from the public home and random-post
-  widgets but are intentionally included in `/archives`, `/tags/:slug`,
-  `/search/:keyword`, `sitemap.xml`, all RSS/Atom feeds, category
-  listing pages, and category/tag counts. Future-dated scheduled posts
-  remain excluded from those listings and counts.
+### Posts (MDX)
 
-### Importing MDX pages from an external dump
+- Authors edit `src/content/posts/**/*.mdx`. `source.config.ts` declares the
+  collection and wires plugins (math, Mermaid, Shiki, heading slugs, external
+  links, title figures).
+- Frontmatter carries `slug`, categories/tags by name, visibility flags, etc.
+  Public URLs use `slug`, not filenames (`/posts/:slug`).
+- `@/server/catalog` serves compiled MDX (`body`, headings, raw source,
+  listing fields). Custom components live under `@/ui/mdx`.
 
-- The page-import migrator lives under `scripts/migrate/pages/` and
-  is preserved (not retired) so a production deployment can stage
-  an external MDX dump and walk it into the `page` + `content`
-  tables in one shot.
-- `scripts/migrate/pages/cli.ts` is the operator-facing entry point;
-  `scripts/migrate/pages/mdx-to-portable-text.ts` is the pure
-  mdast → PortableText converter the unit tests drive against
-  (`tests/script.migrate-pages-mdx.test.ts`). Heavy dependencies
-  (`remark`, `mdast`, `yaml`) live here and never reach the SSR
-  bundle.
-- Run with `vp dlx vite-node --env-file=.env scripts/migrate/pages/cli.ts
---source-dir <abs-path>` for a dry run, append `--apply` to write,
-  and `--apply --force` to re-emit the dry-run preview for slugs
-  that already exist (the script never updates an existing row).
-- Resource handling: cover URL + every inline `![alt](url)` go
-  through `resolveSrcToStoragePath` + `findImageByStoragePath`. A
-  hit fills the saved PortableText image block with `imageId` /
-  `storagePath` / width / height / thumbhash and the cache-busted
-  public URL; a miss leaves the bare URL on the block and surfaces
-  in the per-page report so the operator can backfill the row in
-  `/wp-admin/images`. Every `<MusicPlayer id="…">` is sanity-checked
-  against `findMusicByPlayerId` — missing rows log a warning but
-  don't abort (the runtime resolver handles unknown ids gracefully).
-- `<Friends />` auto-toggle: when the migration script's
-  `stripFriendsTag` pass detects a `<Friends />` JSX tag in the raw
-  MDX it removes the tag from the source AND pre-toggles
-  `page.show_friends=true` on the inserted row so the meta switch
-  reproduces the original visual outcome. The PortableText body
-  itself never carries a `friends` block (that block type was
-  retired together with the meta toggle).
-- The mdast → PortableText converter is intentionally narrow: it
-  handles paragraphs, headings (h1-h4), lists (one level of
-  nesting), blockquotes, images, links, decorators, and the
-  `<MusicPlayer>` JSX-shaped HTML. Anything richer (fenced code
-  blocks, math, mermaid, tables, footnotes, custom Solution
-  blocks, multi-level lists, **`<Friends />`**) throws so a future
-  MDX page that grows a richer construct cannot silently lose
-  content. The `<Friends />` strip happens upstream in the CLI, so
-  by the time the converter runs no friends JSX survives the input.
-- A future post-import migrator will sit alongside the pages one
-  under `scripts/migrate/posts/` and follow the same conventions
-  (CLI + pure converter split, idempotency-by-slug, per-row
-  report). See `scripts/migrate/README.md` for the per-migrator
-  contract.
+### Pages (Postgres)
+
+- Stored in `page` + `content`, edited at `/wp-admin/pages`, rendered with
+  `<PortableTextBody>` (`/:slug` from the `page.slug` column).
+- MDX under `src/content/pages/` is **not** walked by `source.config.ts` and does
+  not ship in the SSR bundle. Production pages are edited in `/wp-admin/pages`;
+  disk MDX there is only useful if your deployment still runs a bulk importer
+  from `scripts/` (see that script’s header for usage).
+
+### Listing rules
+
+- `visible=false` posts are hidden from the public home and random-post widgets
+  but stay in `/archives`, `/tags/:slug`, `/search/:keyword`, `sitemap.xml`,
+  feeds, and category/tag listings and counts. Future-dated posts stay
+  excluded until publish time.
+
+### Page MDX → Postgres import (optional)
+
+- One-shot MDX → `page` / `content` tooling, when needed, lives next to its
+  entry script under `scripts/` (paths change between refactors — read the file
+  header and inline help).
+- Typical expectations: resolve image/music references, strip or toggle
+  `<Friends />`, convert through a **narrow** mdast → PortableText path so
+  unsupported constructs throw instead of dropping silently.
+- Pure conversion logic may be covered by `tests/script.migrate-pages-mdx.test.ts`
+  when that module is still wired in the tree.
 
 ### Taxonomies (categories, tags, friends)
 
-- Stored in the `category` / `tag` / `friend` Postgres tables, edited
-  from `/wp-admin/{categories,tags,friends}`. No Fumadocs meta
-  collection for taxonomies.
-- MDX frontmatter references categories and tags by `name`, so admin
-  renames must stay in sync with author edits in MDX. The catalog
-  throws on cold start when a post references a missing category and
-  warns when it references a missing tag.
-- Deletion is blocked while any post still references the row — the
-  admin must change the MDX frontmatter first.
+- Postgres tables edited from `/wp-admin/{categories,tags,friends}`.
+- MDX references categories and tags by `name`. The catalog throws on cold
+  start if a category is missing and warns on a missing tag; keep admin names
+  aligned with repo MDX.
+- Deletion is blocked while a post still references the row — update MDX first.
 
 ### Slug derivation
 
@@ -322,9 +280,8 @@ Use aliases instead of relative paths. The only allowed relative imports:
   permalink), and sitemap all key on the slug independent of the
   prefix. A page slug equal to a post slug (or to any post
   `alias[]` value) is a violation of the global invariant.
-- **The three emitters in this namespace** are the DB `page` table
-  (`slug` column), MDX post frontmatter
-  (`src/content/posts/**/*.mdx` `slug`), and MDX post `alias[]`.
+- **The three emitters in this namespace** are the DB `page` table (`slug`
+  column), MDX post frontmatter `slug`, and MDX post `alias[]`.
 - **Enforcement is split across two layers.** The DB-level
   `UNIQUE(slug)` on the `page` table and `findPageMetaBySlug` in
   `@/server/cms/pages/service` only catch page↔page collisions
@@ -378,8 +335,8 @@ Use aliases instead of relative paths. The only allowed relative imports:
   PortableText document.
   - `comments_enabled` — render the comment thread under the body.
   - `show_toc` — render the right-rail Table of Contents.
-  - `show_friends` — append the global friends grid (the same one
-    the legacy `<Friends />` MDX component renders) to the bottom
+  - `show_friends` — append the global friends grid (same surface as optional
+    `<Friends />` in post MDX) to the bottom
     of the body, before the Like button. The PortableText dialect
     deliberately has no `friends` block — flipping this toggle is
     the only way to surface the grid, so an editor can opt in /
@@ -472,7 +429,7 @@ sourceId)` is a unique key and `source` is reserved as varchar so
 - SSR rendering goes through `@/ui/portable-text/PortableTextBody`,
   which composes `@portabletext/react`'s component map with our
   custom-block React components from `@/ui/mdx/*`. Heading anchor
-  ids match the MDX path so deep links survive the migration.
+  ids align with MDX post anchors for stable deep links.
 - The admin Tiptap editor is `@/ui/admin/pages/PageBodyEditor`. UX
   surface area lives in three layers, in this order:
   1. **Toolbar** (in `PageBodyEditor.tsx`): mouse-driven access to

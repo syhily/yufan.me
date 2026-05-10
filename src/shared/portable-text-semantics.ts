@@ -8,7 +8,7 @@ import type { Block } from '@/shared/portable-text'
 
 const DECORATOR_MARKS = new Set(['strong', 'em', 'underline', 'strike-through', 'code'])
 
-const PRERENDER_ARTIFACT_KEYS = new Set(['highlightedHtml', 'svg'])
+const PRERENDER_ARTIFACT_KEYS = new Set(['highlightedHtml', 'mathml', 'svg'])
 
 type Json = string | number | boolean | null | { [k: string]: Json } | Json[]
 

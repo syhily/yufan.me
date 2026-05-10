@@ -78,8 +78,8 @@ export function loader({ request, context }: Route.LoaderArgs) {
 
   // The DB-backed blog config is serialised once per top-level request so
   // every UI component can read the live snapshot through the
-  // per-section accessors. All fields (including the historically-static
-  // asset / locale ones) now come from the in-process settings
+  // per-section accessors. All fields (including asset / locale slices) come
+  // from the in-process settings
   // snapshot, which is hydrated on server start and refreshed on every
   // admin save. The wire shape is `BlogSettingsBundle` (one bucket per
   // section) so the client provider can hand each section to its own

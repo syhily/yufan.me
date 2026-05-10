@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-// Drive `ContentCatalog.build` end-to-end with synthetic Fumadocs collections,
-// asserting the post / page / category / tag / alias / image-hydration
-// invariants that downstream loaders rely on.
-//
-// TODO: rewrite these tests to mock `@/server/cms/posts/service` instead of
-// `#source/server` now that posts are loaded from Postgres.
+// Skipped placeholder: catalog build tests used to mock `#source/server`.
+// Rewrite against `@/server/cms/posts/service` (or the live catalog fixture)
+// when reviving this suite.
 describe.skip('services/catalog/ContentCatalog.build', () => {
   it('placeholder', () => {
     expect(true).toBe(true)
@@ -85,19 +82,14 @@ vi.mock('#source/server', () => {
         info: { path: 'hidden.mdx', fullPath: '/x' },
       },
     ],
-    // Pages used to live as a sibling Fumadocs collection here;
-    // they're now sourced exclusively from the `page` + `content`
-    // Postgres tables, so this mock no longer carries a `pages`
-    // entry. The DB-backed loader is mocked further down via
-    // `loadCatalogPagesMock`.
+    // Pages come from Postgres (`page` + `content`); this mock has no `pages`.
   }
 })
 
-// Categories used to live alongside the other meta collections in
-// `#source/server`. Now they're loaded from Postgres at catalog build
-// time. The catalog talks directly to the query layer (not the
-// service) to avoid the circular dependency that the
-// `delete-block-when-referenced` guard would otherwise introduce —
+// Categories load from Postgres at catalog build time. The catalog talks
+// directly to the query layer (not the service) to avoid the circular
+// dependency that the `delete-block-when-referenced` guard would otherwise
+// introduce —
 // so the mock targets `@/server/db/query/category`.
 vi.mock('@/server/db/query/category', () => ({
   listPublicCategoryRows: vi.fn(async () => [

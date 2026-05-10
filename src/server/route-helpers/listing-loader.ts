@@ -22,6 +22,8 @@ export interface ListingPageLoaderData<TExtra = undefined> {
   /** Pre-computed `MetaDescriptor[]` ready to return from `meta()`. */
   seo: MetaDescriptor[]
   extra: TExtra
+  /** ISO instant captured once per loader run; thread into `formatShowDate` so SSR matches hydration. */
+  listingNowIso: string
 }
 
 // Per-page metadata fan-out. Defaults match the historical category/tag
@@ -120,6 +122,7 @@ export async function listingLoader<TExtra = undefined>({
   /** Static extra payload, used when no async work is needed. */
   extra?: TExtra
 }): Promise<ListingPageLoaderData<TExtra>> {
+  const listingNowIso = new Date().toISOString()
   const pageNum = parseListingPage(rawNum, rootPath)
   const effectivePageSize = pageSize ?? requireBlogSettingsSection('content').pagination.posts
   const totalPage = calculateTotalPages(totalPosts, effectivePageSize, mergeTailWhenLessThan ?? 0)
@@ -165,6 +168,7 @@ export async function listingLoader<TExtra = undefined>({
     description,
     seo,
     extra: resolvedExtra,
+    listingNowIso,
   }
 }
 

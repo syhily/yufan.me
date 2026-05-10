@@ -139,10 +139,8 @@ export const verification = pgTable('verification', {
     .$defaultFn(() => new Date()),
 })
 
-// Friendly link entries shown by the `<Friends />` MDX component on
-// `/links`. Migrated from the historical `friends.yaml` so admins can
-// edit the list (CRUD + temporary hide) from `/wp-admin/friends`
-// without redeploying the site.
+// Friend links for the public grid (`<Friends />` in posts, `show_friends` on
+// pages). CRUD at `/wp-admin/friends`.
 //
 // Field design:
 // - No `slug`: the YAML's `slug` was an authoring shorthand only — the
@@ -175,13 +173,9 @@ export const friend = pgTable(
   (table) => [index('idx_friend_visible').on(table.visible), index('idx_friend_homepage').on(table.homepage)],
 )
 
-// Post category. Migrated from the historical `categories.yaml` so
-// admins can edit the list (CRUD) from `/wp-admin/categories` without
-// redeploying the site. The MDX frontmatter still references a
-// category by its `name` (the natural key surfaced to authors), so
-// `name` is `UNIQUE`. `slug` drives the public `/cats/:slug` URL and
-// is also `UNIQUE`. `sort_order` lets admins control the listing
-// order on `/categories` without an extra drag handle on every row.
+// Post category. CRUD at `/wp-admin/categories`. MDX references categories by
+// `name` (`UNIQUE`). `slug` drives `/cats/:slug` (`UNIQUE`). `sort_order`
+// orders `/categories`.
 //
 // Counters (`counts` on the public DTO) stay derived in
 // `ContentCatalog` from the post bucket — they are NOT stored here so
@@ -206,11 +200,8 @@ export const category = pgTable(
   (table) => [index('idx_category_slug').on(table.slug), index('idx_category_sort_order').on(table.sortOrder)],
 )
 
-// Post tag. Migrated from the historical `tags.yaml` so admins can
-// edit the list (CRUD) from `/wp-admin/tags` without redeploying the
-// site. As with `category`, the MDX frontmatter references a tag by
-// its `name` so the `UNIQUE (name)` is the integrity invariant; the
-// `slug` drives `/tags/:slug` and is also `UNIQUE`.
+// Post tag. CRUD at `/wp-admin/tags`. MDX references tags by `name` (`UNIQUE`);
+// `slug` drives `/tags/:slug` (`UNIQUE`).
 export const tag = pgTable(
   'tag',
   {
@@ -334,9 +325,8 @@ export const music = pgTable(
 //   ceiling enforced on category/tag slugs and is plenty for human-
 //   chosen handles like `about` / `friends` / `guestbook`).
 //
-//   IMPORTANT: page slugs share **a single global namespace** with
-//   post slugs (`src/content/posts/**/*.mdx` frontmatter `slug` plus
-//   the `alias[]` aliases). Even though
+//   IMPORTANT: page slugs share **a single global namespace** with MDX post
+//   `slug` and `alias[]`. Even though
 //   the routes physically separate them (`/posts/:slug` vs
 //   `/:slug`), every catalog-side lookup —
 //   `getCatalog().getPost(slug) ?? getCatalog().getPage(slug)`,
@@ -350,10 +340,8 @@ export const music = pgTable(
 //   create a colliding page therefore see the failure on the next
 //   catalog rebuild rather than at save time — keep this in mind
 //   when adding new slug emitters anywhere in the codebase.
-// - `title` / `summary` / `cover` / `og` are the same surface the
-//   catalog has historically projected from MDX frontmatter —
-//   keeping them on the meta row means listing pages and feeds never
-//   need to join `content`.
+// - `title` / `summary` / `cover` / `og` mirror the post card surface — kept on
+//   the meta row so listings and feeds avoid joining `content`.
 // - `published` / `comments_enabled` / `show_toc` are boolean toggles
 //   the admin flips without writing a new revision (these are
 //   metadata, not body), so they live on `page` rather than
@@ -389,14 +377,9 @@ export const page = pgTable(
     published: boolean('published').notNull().default(true),
     commentsEnabled: boolean('comments_enabled').notNull().default(true),
     showToc: boolean('show_toc').notNull().default(false),
-    // When true the public detail route appends the global friends
-    // grid (the same grid the legacy `<Friends />` MDX component
-    // rendered) at the bottom of the page body. Driven by a meta
-    // toggle in the editor's right sidebar so the operator doesn't
-    // have to re-publish the body just to turn the section on/off.
-    // Defaults to false because most pages (about, single-purpose
-    // landing pages) don't want the grid; the `links` page is the
-    // canonical opt-in.
+    // When true, append the global friends grid (same as optional `<Friends />`
+    // in post MDX). Controlled from the editor meta sidebar without republishing
+    // the body. Defaults false; `links` is the usual opt-in.
     showFriends: boolean('show_friends').notNull().default(false),
     publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' })
       .notNull()

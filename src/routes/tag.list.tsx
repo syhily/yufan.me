@@ -49,6 +49,7 @@ export default function TagListRoute({ loaderData }: Route.ComponentProps) {
       pageNum={loaderData.pageNum}
       totalPage={loaderData.totalPage}
       rootPath={loaderData.rootPath}
+      listingNowIso={loaderData.listingNowIso}
     />
   )
 }

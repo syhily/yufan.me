@@ -1,7 +1,7 @@
 import { RouterContextProvider } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { makeCategory, makePage, makePost, makePostList, makeTag } from './_helpers/catalog'
+import { makePage, makePost, makePostList, makeTag } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
 import { regularSession } from './_helpers/session'
 
@@ -16,7 +16,6 @@ const samplePost = {
   imageSources: [],
 }
 const samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
-const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 

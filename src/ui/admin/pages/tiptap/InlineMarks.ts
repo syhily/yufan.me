@@ -10,13 +10,11 @@ const mathInlineInputRegex = /(^|[^\\$])\$(?!\$)([^$\n]+)\$(?!\$)$/
 const mathInlinePasteRegex = /(^|[^\\$])\$(?!\$)([^$\n]+)\$(?!\$)/g
 
 // Tiptap mark spec for `mathInline`. The PT mark def carries `tex`
-// (always present) and `svg` (set when the editor pre-rendered the
-// formula at save time). Without this Mark spec Tiptap silently strips
+// (always present), `mathml` for new KaTeX renders, and `svg` for
+// historical renders. Without this Mark spec Tiptap silently strips
 // the surrounding mark on any text node, which would corrupt every PT
-// body containing inline math on the first save. Render it as an
-// `<span class="math math-inline">` with the rendered SVG as the
-// background — the editor copy stays inert and shows the source TeX
-// for editability.
+// body containing inline math on the first save. The editor copy stays
+// inert and shows the source TeX for editability.
 export const MathInlineMark = Mark.create({
   name: 'mathInline',
   inclusive: false,
@@ -24,6 +22,7 @@ export const MathInlineMark = Mark.create({
     return {
       _key: { default: '' },
       tex: { default: '' },
+      mathml: { default: undefined },
       svg: { default: undefined },
     }
   },

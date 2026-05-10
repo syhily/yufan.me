@@ -6,6 +6,7 @@ import { ArchivesBody } from '@/ui/post/archives/ArchivesBody'
 import type { Route } from './+types/archives'
 
 export async function loader(_: Route.LoaderArgs) {
+  const listingNowIso = new Date().toISOString()
   const posts = (await listClientPosts({ includeHidden: true, includeScheduled: false })).map(toListingPostCard)
   const resolvedPosts = await getClientPostsWithMetadata(posts, {
     likes: true,
@@ -14,6 +15,7 @@ export async function loader(_: Route.LoaderArgs) {
   })
   return {
     resolvedPosts,
+    listingNowIso,
   }
 }
 
@@ -25,5 +27,5 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function ArchivesRoute({ loaderData }: Route.ComponentProps) {
-  return <ArchivesBody resolvedPosts={loaderData.resolvedPosts} />
+  return <ArchivesBody resolvedPosts={loaderData.resolvedPosts} listingNowIso={loaderData.listingNowIso} />
 }

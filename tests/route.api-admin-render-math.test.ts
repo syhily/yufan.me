@@ -4,32 +4,30 @@ import { adminSession, regularSession } from './_helpers/session'
 
 // Drive the editor's inline-math preview endpoint
 // (`/api/actions/admin/renderMath`) end-to-end through the
-// `defineApiAction` perimeter. We mock only the MathJax renderer
-// singleton so the test stays fast (no ~100ms engine boot per case)
-// and hermetic (the engine has external font / glyph dependencies
-// that are out of scope for endpoint-shape assertions).
+// `defineApiAction` perimeter. We mock only the KaTeX renderer singleton
+// so the test stays fast and hermetic.
 //
 // The endpoint contract under test:
 //   - POST-only; GET / PATCH / DELETE return 405.
 //   - Admin-gated; non-admin sessions get 403.
-//   - Empty `tex` short-circuits to `{ svg: '', error: null }` and
+//   - Empty `tex` short-circuits to `{ mathml: '', error: null }` and
 //     never invokes the renderer (saves a wasted call when the user
 //     clears the field mid-typing).
-//   - On success, returns the SVG string the renderer produced and
+//   - On success, returns the MathML string the renderer produced and
 //     `error: null`.
 //   - On a TeX error, returns the renderer's error message in
-//     `error` with `svg: ''` — explicitly NOT a 500. This is the
+//     `error` with `mathml: ''` — explicitly NOT a 500. This is the
 //     contract the `MathInlinePanel` UI depends on so it can flip a
 //     "syntax error" badge without breaking the network channel.
 //   - The `display` flag is forwarded verbatim so block math (`$$`)
-//     and inline math (`$`) reach the right MathJax pass.
+//     and inline math (`$`) reach the right KaTeX pass.
 //   - Bodies over the schema's 4KB ceiling are rejected with 400
 //     (Zod) before the renderer is touched.
 
-const renderMock = vi.fn<(tex: string, display: boolean) => string>()
+const renderMock = vi.fn<(tex: string, display: boolean) => Promise<string>>()
 
-vi.mock('@/server/markdown/mathjax-renderer', () => ({
-  getMathjaxRenderer: vi.fn(async () => ({
+vi.mock('@/server/markdown/katex-renderer', () => ({
+  getKatexRenderer: vi.fn(async () => ({
     render: (tex: string, display: boolean) => renderMock(tex, display),
   })),
 }))
@@ -51,21 +49,21 @@ beforeEach(() => {
 })
 
 describe('routes/api/actions/admin.renderMath', () => {
-  it('returns the MathJax SVG and clears the error envelope on success', async () => {
-    renderMock.mockReturnValueOnce('<svg data-mathjax="ok">x = 1</svg>')
+  it('returns the KaTeX MathML and clears the error envelope on success', async () => {
+    renderMock.mockResolvedValueOnce('<math data-katex="ok"><mi>x</mi></math>')
 
     const { action } = await import('@/routes/api/actions/admin.renderMath')
     const response = await action(ADMIN_ARGS(makePostRequest({ tex: 'x = 1', display: false })))
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
-      data: { svg: '<svg data-mathjax="ok">x = 1</svg>', error: null },
+      data: { mathml: '<math data-katex="ok"><mi>x</mi></math>', error: null },
     })
     expect(renderMock).toHaveBeenCalledWith('x = 1', false)
   })
 
-  it('forwards `display: true` so block-math previews hit the right MathJax pass', async () => {
-    renderMock.mockReturnValueOnce('<svg data-display="true" />')
+  it('forwards `display: true` so block-math previews hit the right KaTeX pass', async () => {
+    renderMock.mockResolvedValueOnce('<math display="block" />')
 
     const { action } = await import('@/routes/api/actions/admin.renderMath')
     await action(ADMIN_ARGS(makePostRequest({ tex: '\\int_0^1 x', display: true })))
@@ -79,22 +77,20 @@ describe('routes/api/actions/admin.renderMath', () => {
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
-      data: { svg: '', error: null },
+      data: { mathml: '', error: null },
     })
     expect(renderMock).not.toHaveBeenCalled()
   })
 
   it('returns the renderer error in the envelope (not as HTTP 500) so the UI can show a syntax-error badge', async () => {
-    renderMock.mockImplementationOnce(() => {
-      throw new Error('Undefined control sequence: \\foo')
-    })
+    renderMock.mockRejectedValueOnce(new Error('Undefined control sequence: \\foo'))
 
     const { action } = await import('@/routes/api/actions/admin.renderMath')
     const response = await action(ADMIN_ARGS(makePostRequest({ tex: '\\foo', display: false })))
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({
-      data: { svg: '', error: 'Undefined control sequence: \\foo' },
+      data: { mathml: '', error: 'Undefined control sequence: \\foo' },
     })
   })
 

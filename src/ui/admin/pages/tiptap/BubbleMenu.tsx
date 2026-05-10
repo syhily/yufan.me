@@ -276,17 +276,17 @@ async function insertMathInline(editor: Editor) {
   const tex = selected.trim() === '' ? 'a^2' : selected.trim()
   const markKey = generateBlockKey()
 
-  let svg: string | undefined
+  let mathml: string | undefined
   if (tex.trim() !== '') {
     const out = await fetchRenderMath({ tex, display: false })
-    if (out.error === null && out.svg !== '') {
-      svg = out.svg
+    if (out.error === null && out.mathml !== '') {
+      mathml = out.mathml
     }
   }
 
   const attrs: Record<string, string> = { tex, _key: markKey }
-  if (svg !== undefined) {
-    attrs.svg = svg
+  if (mathml !== undefined) {
+    attrs.mathml = mathml
   }
 
   const chain = editor.chain().focus()

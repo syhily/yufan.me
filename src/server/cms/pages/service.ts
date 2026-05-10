@@ -70,9 +70,8 @@ const auditLog = getLogger('audit.cms.pages')
 //      this, but we re-check for defence in depth).
 //   2. `published === true` (operator hasn't taken it offline).
 //   3. `publishedAt <= now()` (i.e. not scheduled for the future).
-// Future-dated rows mirror the Fumadocs convention for posts: the
-// row is fully promoted, but stays hidden from listings, feeds and
-// the detail route until the time arrives.
+// Future-dated rows behave like scheduled posts: promoted in the DB but hidden
+// from listings, feeds, and the public detail route until `publishedAt`.
 function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
   if (meta.deletedAt !== null) {
     return false
@@ -112,8 +111,8 @@ export async function loadCatalogPages(): Promise<CmsPage[]> {
  * Single-page lookup for the public detail route. Returns `null` when
  * the slug is unknown, soft-deleted, taken offline, or scheduled for
  * the future. Soft-deleted pages 404; pages with `published=false`
- * on the meta row also 404 — matching the historical Fumadocs
- * `published` frontmatter behaviour. Scheduled (future-dated) pages
+ * on the meta row also 404 — same semantics as MDX `published` on posts.
+ * Scheduled (future-dated) pages
  * 404 too so the catalog stays consistent with `loadCatalogPages()`.
  */
 export async function loadCatalogPageBySlug(slug: string): Promise<CmsPage | null> {
@@ -299,10 +298,9 @@ function resolveSlugForPage(explicit: string | undefined, title: string): string
 export async function createPage(input: UpsertPageMetaInput, authorId: bigint | null): Promise<AdminPageDto> {
   const slug = resolveSlugForPage(input.slug, input.title)
   ensureSlugLegal(slug)
-  // SLUG NAMESPACE — global across DB pages, MDX pages, and posts
-  // (incl. post `alias[]`). This collision check only consults the
-  // `page` table, so it cannot catch a clash with a post slug
-  // declared in `src/content/posts/**/*.mdx`. The catalog's cold
+  // SLUG NAMESPACE — global across DB pages and MDX posts (incl. `alias[]`).
+  // This collision check only consults the `page` table, so it cannot catch a
+  // clash with a post slug from repo MDX. The catalog's cold
   // start (`validatePageSlugs` in `@/server/catalog/catalog`) is
   // the cross-table fence — saving a colliding page succeeds here
   // and the failure surfaces on the next catalog rebuild. See
@@ -431,7 +429,7 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   if (meta === null) {
     throw new ActionFailure(404, '页面不存在或已被删除。')
   }
-  // Validate body + pre-render heavy blocks (Shiki / MathJax /
+  // Validate body + pre-render heavy blocks (Shiki / KaTeX /
   // Mermaid) so SSR public renders stay cheap. The pre-render is
   // best-effort: it mutates the validated body in place, leaving
   // already-rendered fields alone and skipping blocks whose

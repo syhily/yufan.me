@@ -82,18 +82,18 @@ export const linkMarkDefSchema = z.object({
 export type LinkMarkDef = z.infer<typeof linkMarkDefSchema>
 
 // `mathInline` payload is a TeX expression (already validated by the
-// editor) plus the pre-rendered SVG produced server-side at save time
-// (so SSR doesn't re-run MathJax for every public render). The SVG is
-// the canonical render; clients without JS still get pretty math.
+// editor) plus the pre-rendered MathML produced server-side at save
+// time. `svg` is retained for historical pre-rendered revisions.
 export const mathInlineMarkDefSchema = z.object({
   _type: z.literal('mathInline'),
   _key: NON_EMPTY_KEY,
   tex: z.string(),
+  mathml: z.string().optional(),
   svg: z.string().optional(),
 })
 export type MathInlineMarkDef = z.infer<typeof mathInlineMarkDefSchema>
 
-// `footnoteRef` matches `<sup>` in the historical MDX. The `targetKey`
+// `footnoteRef` matches `<sup>` in post MDX. The `targetKey`
 // is the `_key` of the `footnoteDefinition` block this reference
 // points at, so the SSR renderer can resolve a hover preview without
 // scanning the entire body.
@@ -149,7 +149,7 @@ export type TextBlock = z.infer<typeof textBlockSchema>
 // --- Custom block types -----------------------------------------------------
 
 // Image block. `assetSrc` is the resolved public URL (matches the
-// historical MDX `<img src="…">`) so the SSR renderer doesn't have to
+// MDX `<img src="…">`) so the SSR renderer doesn't have to
 // resolve an asset reference on the hot path; the optional
 // `imagePath` is the S3 storagePath this row references, which the
 // `image_sources` projection on `content` writes out for the
@@ -195,13 +195,15 @@ export const codeBlockSchema = z.object({
 })
 export type CodeBlock = z.infer<typeof codeBlockSchema>
 
-// Block-level math. `tex` is the raw TeX, `svg` is the MathJax-rendered
-// SVG (saved alongside so SSR doesn't depend on MathJax at request
-// time). Inline math lives in `mathInlineMarkDef`.
+// Block-level math. `tex` is the raw TeX, `mathml` is the KaTeX-rendered
+// MathML saved alongside so SSR doesn't render math at request time.
+// `svg` is retained for historical pre-rendered revisions. Inline
+// math lives in `mathInlineMarkDef`.
 export const mathBlockSchema = z.object({
   _type: z.literal('mathBlock'),
   _key: NON_EMPTY_KEY,
   tex: z.string(),
+  mathml: z.string().optional(),
   svg: z.string().optional(),
 })
 export type MathBlock = z.infer<typeof mathBlockSchema>
@@ -507,7 +509,7 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
 
 /**
  * Return the structured TOC entries this body would render. The slug
- * pipeline matches the one `rehype-slug` uses on the historical MDX
+ * pipeline matches the one `rehype-slug` uses on MDX posts
  * path so heading anchors stay stable when a page migrates from MDX
  * into the new editor:
  *
@@ -521,8 +523,8 @@ export function collectHeadingSlotsInPortableTextRenderOrder(body: PortableTextB
  *     into `-`, and dedups within the same body (`foo`, `foo-1`,
  *     `foo-2`, …).
  *
- * Without `transform`, behaviour matches the historical
- * github-slugger-only output (Han characters are kept verbatim).
+ * Without `transform`, behaviour matches github-slugger-only output (Han
+ * characters kept verbatim).
  * With it, you get the project-wide canonical slug — which is what
  * the SSR renderer wants. Order matches `collectHeadingSlotsInPortableTextRenderOrder`
  * so callers can pass `headings.map(h => h.slug)` to `<PortableTextBody>`.

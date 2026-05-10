@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, getTableColumns, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, getColumns, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
 
 import type { NewPostMeta, PostMetaRow } from '@/server/db/types'
 
@@ -91,7 +91,7 @@ export async function listPostMetas(filters: ListPostsFilters = {}): Promise<Pos
   const where = buildPostsWhere(filters)
   const base = db
     .select({
-      ...getTableColumns(postMetaTable),
+      ...getColumns(postMetaTable),
       authorName: user.name,
     })
     .from(postMetaTable)

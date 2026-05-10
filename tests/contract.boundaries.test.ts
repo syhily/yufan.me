@@ -886,20 +886,16 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps solution math scrollable instead of clipping long formulas', () => {
-    // The MathJax overflow rule used to live in `public.css`'s
-    // `.post-content mjx-container[jax='SVG'][display='true']` block,
-    // alongside the rest of the post / comment chrome. That block has
-    // since migrated into the `@utility prose-blog` tree in
-    // `tailwind.css` (keyed off `&.post-content :where(mjx-container…)`)
-    // so the brand typography utility owns the whole post-content
-    // surface in one place. The MDX `<Solution>` clip-on-hidden rule
-    // must never come back in either file.
+    // Display math overflow lives in the `@utility prose-blog` tree in
+    // `tailwind.css`, so the brand typography utility owns the whole
+    // post-content surface in one place. The MDX `<Solution>` clip-on-hidden
+    // rule must never come back in either file.
     const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
 
     expect(publicCss).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
     expect(tailwindCss).not.toMatch(/\.post-content \.solution\s*{[^}]*overflow:\s*hidden/s)
-    expect(tailwindCss).toContain("mjx-container[jax='SVG'][display='true']")
+    expect(tailwindCss).toContain(':where(.math-display)')
     expect(tailwindCss).toContain('overflow-x: auto')
   })
 

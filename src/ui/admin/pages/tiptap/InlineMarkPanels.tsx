@@ -15,7 +15,7 @@ import { Textarea } from '@/ui/components/ui/textarea'
 // active selection sits on a `mathInline` mark.
 //
 // Live preview uses `useAdminMathPreview` → `admin.renderMath` (same
-// MathJax stack as the save-time prerender pass).
+// KaTeX renderer as the save-time prerender pass).
 
 interface MathInlinePanelProps {
   editor: Editor
@@ -66,14 +66,14 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
       const prev = editor.getAttributes('mathInline') as { _key?: string }
       const nextKey = prev._key !== undefined && prev._key !== '' ? prev._key : generateBlockKey()
 
-      let svg: string | undefined
+      let mathml: string | undefined
       const trimmed = tex.trim()
       if (trimmed !== '') {
         setApplying(true)
         try {
           const out = await fetchRenderMath({ tex, display: false })
-          if (out.error === null && out.svg !== '') {
-            svg = out.svg
+          if (out.error === null && out.mathml !== '') {
+            mathml = out.mathml
           }
         } finally {
           setApplying(false)
@@ -81,8 +81,8 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
       }
 
       const attrs: Record<string, string> = { _key: nextKey, tex }
-      if (svg !== undefined) {
-        attrs.svg = svg
+      if (mathml !== undefined) {
+        attrs.mathml = mathml
       }
 
       editor
@@ -142,7 +142,7 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
           <span
-            className="ml-2 inline-flex min-h-[1.25em] max-w-full items-center overflow-x-auto align-middle [&_svg]:block"
+            className="ml-2 inline-flex min-h-[1.25em] max-w-full items-center overflow-x-auto align-middle"
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         )}

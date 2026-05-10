@@ -3,13 +3,12 @@ import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/porta
 // Server-side pre-renderer for PortableText bodies.
 //
 // Why: the public SSR PortableText renderer expects pre-rendered
-// HTML / SVG for the heavy custom blocks (`code`, `mathBlock`,
+// HTML / MathML / SVG for the heavy custom blocks (`code`, `mathBlock`,
 // `mermaid`) and inline marks (`mathInline`). Putting Shiki +
-// MathJax + Mermaid on the request path of every public page render
+// KaTeX + Mermaid on the request path of every public page render
 // would dwarf the actual rendering work — Shiki alone takes 80ms+
-// to bootstrap, and MathJax's adaptor isn't reusable across
-// requests without leaks. So we run them once at save / publish
-// time and cache the output inside the saved PortableText.
+// to bootstrap. So we run them once at save / publish time and cache
+// the output inside the saved PortableText.
 //
 // What this does for each block / mark:
 //
@@ -17,16 +16,13 @@ import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/porta
 //     use the same theme + transformer stack as the comment / MDX
 //     pipeline so the editor preview, the public site, and the
 //     archive feeds all look identical.
-//   - `mathBlock` → fill `svg` with a MathJax-rendered SVG. The
-//     LiteAdaptor pipeline runs entirely in JS so this works on any
-//     SSR target (Node, Vercel, etc.).
+//   - `mathBlock` → fill `mathml` with KaTeX-rendered MathML.
 //   - `mermaid` → fill `svg` with a beautiful-mermaid-rendered SVG.
 //     Renderer is slow on cold start (~500ms), so we run all
 //     mermaid blocks in parallel and accept that "save with many
 //     diagrams" can take a couple of seconds.
-//   - `mathInline` mark defs → fill `svg` with a MathJax-rendered
-//     SVG so the public renderer can drop the SVG straight into
-//     the run.
+//   - `mathInline` mark defs → fill `mathml` with KaTeX-rendered
+//     MathML so the public renderer can drop it straight into the run.
 //
 // All renderers swallow errors and leave the source field intact.
 // The public renderer falls back gracefully — `<pre class="mermaid">`
@@ -42,9 +38,9 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
   // Collect work first so we can run code / math / mermaid renders
   // in parallel.
   const codeBlocks: { _type: 'code'; _key: string; code: string; language?: string; highlightedHtml?: string }[] = []
-  const mathBlocks: { _type: 'mathBlock'; _key: string; tex: string; svg?: string }[] = []
+  const mathBlocks: { _type: 'mathBlock'; _key: string; tex: string; mathml?: string; svg?: string }[] = []
   const mermaidBlocks: { _type: 'mermaid'; _key: string; code: string; svg?: string }[] = []
-  const mathInlineDefs: { _type: 'mathInline'; _key: string; tex: string; svg?: string }[] = []
+  const mathInlineDefs: { _type: 'mathInline'; _key: string; tex: string; mathml?: string; svg?: string }[] = []
 
   for (const block of body) {
     collectBlock(block, codeBlocks, mathBlocks, mermaidBlocks, mathInlineDefs)
@@ -59,7 +55,7 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
 
   await Promise.all([
     runShikiPasses(codeBlocks),
-    runMathjaxPasses(mathBlocks, mathInlineDefs),
+    runKatexPasses(mathBlocks, mathInlineDefs),
     runMermaidPasses(mermaidBlocks),
   ])
 
@@ -73,9 +69,9 @@ export async function prerenderPortableTextBody(body: PortableTextBody): Promise
 function collectBlock(
   block: Block,
   codeBlocks: { _type: 'code'; code: string; language?: string; highlightedHtml?: string }[],
-  mathBlocks: { _type: 'mathBlock'; tex: string; svg?: string }[],
+  mathBlocks: { _type: 'mathBlock'; tex: string; mathml?: string; svg?: string }[],
   mermaidBlocks: { _type: 'mermaid'; code: string; svg?: string }[],
-  mathInlineDefs: { _type: 'mathInline'; tex: string; svg?: string }[],
+  mathInlineDefs: { _type: 'mathInline'; tex: string; mathml?: string; svg?: string }[],
 ): void {
   switch (block._type) {
     case 'code':
@@ -84,7 +80,7 @@ function collectBlock(
       }
       return
     case 'mathBlock':
-      if (block.tex !== '' && (block.svg === undefined || block.svg === '')) {
+      if (block.tex !== '' && (block.mathml === undefined || block.mathml === '')) {
         mathBlocks.push(block)
       }
       return
@@ -131,13 +127,13 @@ function collectBlock(
 
 function collectFromTextBlock(
   block: TextBlock,
-  mathInlineDefs: { _type: 'mathInline'; tex: string; svg?: string }[],
+  mathInlineDefs: { _type: 'mathInline'; tex: string; mathml?: string; svg?: string }[],
 ): void {
   if (!Array.isArray(block.markDefs)) {
     return
   }
   for (const def of block.markDefs as MarkDef[]) {
-    if (def._type === 'mathInline' && def.tex !== '' && (def.svg === undefined || def.svg === '')) {
+    if (def._type === 'mathInline' && def.tex !== '' && (def.mathml === undefined || def.mathml === '')) {
       mathInlineDefs.push(def)
     }
   }
@@ -185,39 +181,37 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
 }
 
 // ---------------------------------------------------------------------------
-// MathJax — block + inline math
+// KaTeX — block + inline math
 // ---------------------------------------------------------------------------
 
-async function runMathjaxPasses(
-  blocks: { tex: string; svg?: string }[],
-  inlines: { tex: string; svg?: string }[],
+async function runKatexPasses(
+  blocks: { tex: string; mathml?: string }[],
+  inlines: { tex: string; mathml?: string }[],
 ): Promise<void> {
   if (blocks.length === 0 && inlines.length === 0) {
     return
   }
-  // Lazy-loaded process-level singleton — see
-  // `@/server/markdown/mathjax-renderer` for the rationale. The first
-  // save in a process pays the ~100ms engine boot; subsequent saves
-  // and editor previews re-use the same renderer.
-  let renderer: import('@/server/markdown/mathjax-renderer').MathjaxRenderer
+  // Lazy-loaded process-level singleton. The first math render in a
+  // process loads KaTeX; subsequent saves and editor previews re-use it.
+  let renderer: import('@/server/markdown/katex-renderer').KatexRenderer
   try {
-    const { getMathjaxRenderer } = await import('@/server/markdown/mathjax-renderer')
-    renderer = await getMathjaxRenderer()
+    const { getKatexRenderer } = await import('@/server/markdown/katex-renderer')
+    renderer = await getKatexRenderer()
   } catch {
     return
   }
   for (const block of blocks) {
     try {
-      block.svg = renderer.render(block.tex, true)
+      block.mathml = await renderer.render(block.tex, true)
     } catch {
-      // Leave svg unset; renderer will fall back to raw text.
+      // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
     }
   }
   for (const def of inlines) {
     try {
-      def.svg = renderer.render(def.tex, false)
+      def.mathml = await renderer.render(def.tex, false)
     } catch {
-      // Leave svg unset.
+      // Leave mathml unset.
     }
   }
 }

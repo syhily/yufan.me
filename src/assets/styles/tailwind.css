@@ -400,17 +400,21 @@ body {
       content: none;
     }
 
-    :where(mjx-container[jax='SVG']) > :where(svg) {
+    :where(.math) :where(math) {
       max-width: none;
     }
 
-    :where(mjx-container[jax='SVG'][display='true']) {
+    :where(.math-display) {
       max-width: 100%;
       overflow-x: auto;
       overflow-y: hidden;
       padding-bottom: 0.125rem;
       -webkit-overflow-scrolling: touch;
       text-align: center;
+    }
+
+    :where(.math-display) :where(math[display='block']) {
+      margin-inline: auto;
     }
   }
 
@@ -512,7 +516,7 @@ body {
       height: auto;
     }
 
-    :where(svg):not(:where(mjx-container *)) {
+    :where(svg) {
       display: block;
       max-width: 100%;
       height: auto;

@@ -14,7 +14,7 @@ import { pinyin } from 'pinyin-pro'
 //      or get lost depending on locale, and the tone signal is rarely
 //      worth the URL noise.
 //   2. `GithubSlugger().slug(text)` is the same algorithm
-//      `rehype-slug` uses on the historical MDX path: lowercases,
+//      `rehype-slug` uses on MDX posts: lowercases,
 //      collapses runs of non-alphanumerics into `-`, trims leading /
 //      trailing dashes, and Unicode-folds. Routing through it after
 //      pinyin means a Han-text input and an ASCII input go through

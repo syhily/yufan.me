@@ -1,4 +1,4 @@
-import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, max, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, getColumns, inArray, isNotNull, isNull, max, sql, type SQL } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 
@@ -56,7 +56,7 @@ export async function listPageMetas(filters: ListPagesFilters = {}): Promise<Pag
   const where = buildPagesWhere(filters)
   const base = db
     .select({
-      ...getTableColumns(pageMetaTable),
+      ...getColumns(pageMetaTable),
       authorName: user.name,
     })
     .from(pageMetaTable)

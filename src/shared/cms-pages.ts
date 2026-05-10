@@ -216,16 +216,15 @@ export interface PreviewPageBodyOutput {
 
 // Editor inline-math preview. The bubble menu's "行内 TeX" panel POSTs
 // the typing buffer here on every keystroke (debounced) and renders
-// whatever SVG comes back. Going through the same MathJax engine the
+// whatever MathML comes back. Going through the same KaTeX renderer the
 // prerender pass uses guarantees the preview cannot drift from what
 // the published page will show on save.
 export interface RenderMathInput {
   /** Raw TeX source. Length-bounded by `renderMathSchema`. */
   tex: string
   /**
-   * `true` for `$$ … $$` block math (centred, larger glyphs);
-   * `false` for inline `$ … $`. Mirrors the `display` flag MathJax's
-   * `convert(...)` accepts and the prerender pass passes per block /
+   * `true` for `$$ … $$` block math; `false` for inline `$ … $`.
+   * Mirrors the display flag passed to the prerenderer per block /
    * mark def.
    */
   display: boolean
@@ -233,14 +232,14 @@ export interface RenderMathInput {
 
 export interface RenderMathOutput {
   /**
-   * MathJax-rendered SVG, or an empty string when MathJax threw.
+   * KaTeX-rendered MathML, or an empty string when KaTeX threw.
    * The editor surfaces the empty case as an inline syntax-error
    * badge while continuing to show the last successful render so
    * the preview pane never flashes blank mid-typing.
    */
-  svg: string
+  mathml: string
   /**
-   * Server-side error message when MathJax refused to render the
+   * Server-side error message when KaTeX refused to render the
    * input (typically a TeX syntax error). `null` on success. The
    * editor reads this to decide whether to flip the error badge.
    */

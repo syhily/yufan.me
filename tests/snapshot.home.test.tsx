@@ -43,6 +43,7 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         featurePosts={featurePosts}
         admin={false}
         sidebar={sidebar}
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()
@@ -66,6 +67,7 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         featurePosts={featurePosts}
         admin={false}
         sidebar={sidebar}
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()
@@ -88,6 +90,7 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         featurePosts={[]}
         admin={false}
         sidebar={sidebar}
+        listingNowIso="2026-04-25T12:00:00.000Z"
       />,
     )
     expect(html).toMatchSnapshot()

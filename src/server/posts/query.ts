@@ -17,7 +17,7 @@ import { db } from '@/server/db/pool'
 import { post as postMetaTable } from '@/server/db/schema'
 import { loadImageThumbhash } from '@/server/images/render-enhance'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
-import { toClientPost, toListingPostCard, toSidebarPostLink } from '@/shared/catalog'
+import { toListingPostCard, toSidebarPostLink } from '@/shared/catalog'
 import { shuffle } from '@/shared/tools'
 
 // --- Hydration ---------------------------------------------------------------
@@ -29,13 +29,17 @@ async function hydratePostImages(posts: Post[]): Promise<void> {
   for (const post of posts) {
     const lookup = post.cover === '' ? null : (lookupMap.get(post.cover) ?? null)
     post.coverThumbhash = lookup?.thumbhash
-    if (lookup?.publicUrl != null) post.cover = lookup.publicUrl
+    if (lookup?.publicUrl != null) {
+      post.cover = lookup.publicUrl
+    }
   }
 }
 
 /** Join published `content` rows so callers receive a real `Post` with `body` (RSS, detail routes, etc.). */
 async function hydratePostMetasToFullPosts(metas: PostMetaRow[]): Promise<Post[]> {
-  if (metas.length === 0) return []
+  if (metas.length === 0) {
+    return []
+  }
   const revisionIds = metas.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
   const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
   if (revisionIds.length > 0) {
@@ -115,7 +119,9 @@ function buildPublicPostFilters(
 
 export async function findPostBySlug(slug: string): Promise<Post | null> {
   const meta = await findPublicPostMetaBySlug(slug)
-  if (meta === null) return null
+  if (meta === null) {
+    return null
+  }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
   const post = toCmsPost(meta, revision) as unknown as Post
   await hydratePostImages([post])
@@ -124,7 +130,9 @@ export async function findPostBySlug(slug: string): Promise<Post | null> {
 
 export async function findPostBySlugForAdmin(slug: string): Promise<Post | null> {
   const meta = await findPostMetaBySlug(slug)
-  if (meta === null) return null
+  if (meta === null) {
+    return null
+  }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
   const post = toCmsPost(meta, revision) as unknown as Post
   await hydratePostImages([post])
@@ -138,7 +146,7 @@ export async function listPublicPostCards(
 ): Promise<ListingPostCard[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts({ ...filters, sortBy: options?.sortBy })
-  return metas.map(toClientPostFromMeta).map(toListingPostCard)
+  return metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
 }
 
 export async function listPublicPostCardsPaginated(
@@ -167,7 +175,7 @@ export async function listPublicPostCardsPaginated(
     }),
     countPublicPosts({ ...filters, category: options?.category, tag: options?.tag }),
   ])
-  return { posts: metas.map(toClientPostFromMeta).map(toListingPostCard), total }
+  return { posts: metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard), total }
 }
 
 export async function listPostsByCategory(category: string, options?: PostVisibilityOptions): Promise<Post[]> {
@@ -187,7 +195,9 @@ export async function listPostsByTag(tag: string, options?: PostVisibilityOption
 }
 
 export async function getPostsBySlugs(slugs: readonly string[], options?: PostVisibilityOptions): Promise<Post[]> {
-  if (slugs.length === 0) return []
+  if (slugs.length === 0) {
+    return []
+  }
   const filters = buildPublicPostFilters(options)
   const rows = await db
     .select()
@@ -227,7 +237,9 @@ export async function getClientPostsWithMetadata<PostLike extends { permalink: s
   posts: PostLike[],
   options: { likes: boolean; views: boolean; comments: boolean },
 ): Promise<(PostLike & { meta: { likes: number; views: number; comments: number } })[]> {
-  if (posts.length === 0) return []
+  if (posts.length === 0) {
+    return []
+  }
   const metas = await queryMetadata(
     posts.map((post) => post.permalink),
     options,
@@ -244,7 +256,9 @@ const FEATURE_POST_COUNT = 3
 
 export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
   const content = requireBlogSettingsSection('content')
-  if (!content.post.featureEnabled) return []
+  if (!content.post.featureEnabled) {
+    return []
+  }
 
   const now = new Date()
   const publicWhere = and(
@@ -262,8 +276,10 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
     .orderBy(desc(postMetaTable.pinnedAt))
     .limit(FEATURE_POST_COUNT)
 
-  const pinned = pinnedMetas.map(toClientPostFromMeta)
-  if (pinned.length === FEATURE_POST_COUNT) return pinned
+  const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta))
+  if (pinned.length === FEATURE_POST_COUNT) {
+    return pinned
+  }
 
   // 2. Recent window to exclude
   const pageSize = content.pagination.posts
@@ -287,7 +303,7 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
   const pinnedSlugs = new Set(pinned.map((p) => p.slug))
   const candidates = allWithCover
     .filter((m) => !pinnedSlugs.has(m.slug) && !recentIds.has(m.id))
-    .map(toClientPostFromMeta)
+    .map((meta) => toClientPostFromMeta(meta))
 
   const withCover = candidates.filter((post) => post.cover)
   const pool = withCover.length >= FEATURE_POST_COUNT - pinned.length ? withCover : candidates
@@ -304,7 +320,9 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
 }
 
 export async function selectSidebarPosts(count: number): Promise<SidebarPostLink[]> {
-  if (count <= 0) return []
+  if (count <= 0) {
+    return []
+  }
   const metas = await db
     .select()
     .from(postMetaTable)
@@ -318,7 +336,7 @@ export async function selectSidebarPosts(count: number): Promise<SidebarPostLink
     )
     .orderBy(sql`RANDOM()`)
     .limit(count)
-  return metas.map(toClientPostFromMeta).map(toSidebarPostLink)
+  return metas.map((meta) => toClientPostFromMeta(meta)).map(toSidebarPostLink)
 }
 
 // --- Permalink set -----------------------------------------------------------

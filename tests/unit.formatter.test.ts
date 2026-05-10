@@ -134,6 +134,12 @@ describe('services/markdown/formatter — date formatting', () => {
     expect(formatShowDate(threeDaysAgo, config)).toMatch(/^[1-6] 天前$/)
   })
 
+  it('formatShowDate uses the optional reference instant instead of the runtime clock', () => {
+    const postDay = new Date('2024-06-10T16:00:00.000Z')
+    expect(formatShowDate(postDay, config, '2024-06-11T16:00:00.000Z')).toBe('昨天')
+    expect(formatShowDate(postDay, config, '2024-06-12T16:00:00.000Z')).toBe('2 天前')
+  })
+
   it('formatLocalDate honours an explicit format string', () => {
     const date = new Date('2024-05-15T12:34:56.000Z')
     expect(formatLocalDate(date, 'yyyy-LL-dd', config)).toBe('2024-05-15')

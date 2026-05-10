@@ -18,16 +18,16 @@ export async function fetchRenderMath(input: RenderMathInput): Promise<RenderMat
   try {
     envelope = (await res.json()) as ApiEnvelope<RenderMathOutput>
   } catch {
-    return { svg: '', error: 'Invalid JSON response' }
+    return { mathml: '', error: 'Invalid JSON response' }
   }
   if (!res.ok || envelope.error !== undefined) {
     return {
-      svg: '',
+      mathml: '',
       error: envelope.error?.message ?? `HTTP ${res.status}`,
     }
   }
   if (envelope.data === undefined) {
-    return { svg: '', error: 'Empty envelope' }
+    return { mathml: '', error: 'Empty envelope' }
   }
   return envelope.data
 }

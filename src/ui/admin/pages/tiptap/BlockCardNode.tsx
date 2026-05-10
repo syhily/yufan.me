@@ -88,10 +88,13 @@ function BlockCardView(props: NodeViewProps) {
   const [editing, setEditing] = useState(false)
   const editable = payload !== null && isInlineEditable(payload._type)
 
-  const commitPayload = (next: Block, editorSvg?: string) => {
+  const commitPayload = (next: Block, editorRender?: string) => {
     let cleaned = stripPrerenderArtifacts(next)
-    if ((cleaned._type === 'mathBlock' || cleaned._type === 'mermaid') && editorSvg !== undefined && editorSvg !== '') {
-      cleaned = { ...cleaned, svg: editorSvg }
+    if (cleaned._type === 'mathBlock' && editorRender !== undefined && editorRender !== '') {
+      cleaned = { ...cleaned, mathml: editorRender }
+    }
+    if (cleaned._type === 'mermaid' && editorRender !== undefined && editorRender !== '') {
+      cleaned = { ...cleaned, svg: editorRender }
     }
     props.updateAttributes({ payload: cleaned })
     setEditing(false)
@@ -178,11 +181,15 @@ function isInlineEditable(ptType: string): boolean {
 // source. The save path repopulates them; leaving stale renders in
 // place would silently desync source and preview.
 //
-// Exception: `commitPayload` may attach a fresh `svg` immediately after
-// `fetchRenderMath` / `fetchRenderMermaid` when saving a math or Mermaid
-// block so the card shows server-rendered output instead of raw source.
+// Exception: `commitPayload` may attach a fresh math render immediately
+// after `fetchRenderMath` / `fetchRenderMermaid` so the card shows
+// server-rendered output instead of raw source.
 function stripPrerenderArtifacts(block: Block): Block {
-  if (block._type === 'mathBlock' || block._type === 'mermaid') {
+  if (block._type === 'mathBlock') {
+    const { mathml: _mathml, svg: _svg, ...rest } = block as { mathml?: string; svg?: string } & Block
+    return rest as Block
+  }
+  if (block._type === 'mermaid') {
     const { svg: _ignored, ...rest } = block as { svg?: string } & Block
     return rest as Block
   }
@@ -272,7 +279,7 @@ function MermaidBlockOptions({ stableId, center, onCenterChange }: MermaidBlockO
 
 interface CardSourceEditorProps {
   payload: Block
-  onCommit: (next: Block, editorSvg?: string) => void
+  onCommit: (next: Block, editorRender?: string) => void
   onCancel: () => void
 }
 
@@ -288,7 +295,7 @@ function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps
 
 interface MathBlockSourceEditorProps {
   payload: MathBlock
-  onCommit: (next: Block, editorSvg?: string) => void
+  onCommit: (next: Block, editorRender?: string) => void
   onCancel: () => void
 }
 
@@ -306,8 +313,8 @@ function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceE
     setSaving(true)
     try {
       const out = await fetchRenderMath({ tex: draft, display: true })
-      const svg = out.error === null && out.svg !== '' ? out.svg : ''
-      onCommit({ ...payload, tex: draft }, svg)
+      const mathml = out.error === null && out.mathml !== '' ? out.mathml : ''
+      onCommit({ ...payload, tex: draft }, mathml)
     } finally {
       setSaving(false)
     }
@@ -322,7 +329,7 @@ function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceE
         ) : null}
       </div>
       <p className="text-xs leading-snug text-muted-foreground">
-        独占行或多行环境（align、gather 等）。预览与发布后正文一致（MathJax）。
+        独占行或多行环境（align、gather 等）。预览与发布后正文一致（KaTeX MathML）。
       </p>
       <Textarea
         value={draft}
@@ -337,7 +344,7 @@ function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceE
           <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
         ) : (
           <div
-            className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:mx-auto [&_svg]:block [&_svg]:max-w-none"
+            className="math math-display mt-2 max-w-full overflow-x-auto text-center"
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         )}
@@ -374,7 +381,7 @@ function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceE
 
 interface MermaidBlockSourceEditorProps {
   payload: MermaidBlock
-  onCommit: (next: Block, editorSvg?: string) => void
+  onCommit: (next: Block, editorRender?: string) => void
   onCancel: () => void
 }
 
@@ -511,15 +518,19 @@ function CardSummary({ payload }: CardSummaryProps) {
         </div>
       )
     case 'mathBlock':
-      return payload.svg !== undefined && payload.svg !== '' ? (
+      return payload.mathml !== undefined && payload.mathml !== '' ? (
+        <div
+          className="math math-display mt-2 max-w-full overflow-x-auto text-center"
+          dangerouslySetInnerHTML={{ __html: payload.mathml }}
+        />
+      ) : payload.svg !== undefined && payload.svg !== '' ? (
         <div
           className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:max-w-none"
-          // MathJax SVG from the same prerender pipeline as publish / preview.
           dangerouslySetInnerHTML={{ __html: payload.svg }}
         />
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">
-          暂无预览图。打开「编辑源」保存一次即可生成与正文一致的 SVG。
+          暂无预览。打开「编辑源」保存一次即可生成与正文一致的 MathML。
         </p>
       )
     case 'mermaid': {
