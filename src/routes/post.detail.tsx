@@ -7,6 +7,7 @@ import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/
 import { canonicalPostPath } from '@/server/route-helpers/paths'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/seo/meta'
+import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { toClientPost, toDetailPostShell } from '@/shared/catalog'
 import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
@@ -30,7 +31,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePost.imageSources))
 
-  const sidebarTags = await listAllTags()
+  const sidebarTags = selectSidebarTags(await listAllTags())
 
   const { detail, sidebar, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
