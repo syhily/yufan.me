@@ -30,15 +30,9 @@
     "check": "vp lint && vp run typecheck && vp test run",
     "db:generate": "vp exec drizzle-kit generate",
     "dev": "react-router dev",
-    "fmt": "vp fmt",
-    "fmt:check": "vp fmt --check",
-    "lint": "vp lint",
-    "lint:fix": "vp lint --fix",
     "prepare": "command -v vp >/dev/null 2>&1 && vp config || true",
     "preview": "react-router-serve ./build/server/index.js",
     "start": "react-router-serve ./build/server/index.js",
-    "test": "vp test run",
-    "test:watch": "vp test",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
