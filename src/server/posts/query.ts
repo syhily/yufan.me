@@ -3,7 +3,7 @@ import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { PostMetaRow } from '@/server/db/types'
 import type { ClientPost, ListingPostCard, Post, PostVisibilityOptions, SidebarPostLink } from '@/shared/catalog'
 
-import { findContentById, listPublicPageMetas } from '@/server/cms/pages/repository'
+import { findContentById, findContentsByIds, listPublicPageMetas } from '@/server/cms/pages/repository'
 import { toCmsPost } from '@/server/cms/posts/projection'
 import {
   countPublicPosts,
@@ -31,6 +31,47 @@ async function hydratePostImages(posts: Post[]): Promise<void> {
     post.coverThumbhash = lookup?.thumbhash
     if (lookup?.publicUrl != null) post.cover = lookup.publicUrl
   }
+}
+
+/** Join published `content` rows so callers receive a real `Post` with `body` (RSS, detail routes, etc.). */
+async function hydratePostMetasToFullPosts(metas: PostMetaRow[]): Promise<Post[]> {
+  if (metas.length === 0) return []
+  const revisionIds = metas.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
+  const revisionMap = new Map<bigint, Awaited<ReturnType<typeof findContentsByIds>>[number]>()
+  if (revisionIds.length > 0) {
+    const rows = await findContentsByIds(revisionIds)
+    for (const row of rows) {
+      revisionMap.set(row.id, row)
+    }
+  }
+  const posts = metas.map((meta) => {
+    const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
+    return toCmsPost(meta, revision) as unknown as Post
+  })
+  await hydratePostImages(posts)
+  return posts
+}
+
+/**
+ * Like {@link listAllPosts} but loads Portable Text bodies + headings from the
+ * published `content` revision. Prefer this when rendering post HTML (feeds);
+ * use {@link listAllPosts} when only metadata is needed (sitemap, search index).
+ */
+export async function listPublicPostsWithContent(
+  options?: PostVisibilityOptions & {
+    category?: string
+    tag?: string
+    sortBy?: 'publishedAt' | 'updatedAt'
+  },
+): Promise<Post[]> {
+  const filters = buildPublicPostFilters(options)
+  const metas = await listPublicPosts({
+    ...filters,
+    category: options?.category,
+    tag: options?.tag,
+    sortBy: options?.sortBy,
+  })
+  return hydratePostMetasToFullPosts(metas)
 }
 
 // --- Lightweight projection (no content join) --------------------------------

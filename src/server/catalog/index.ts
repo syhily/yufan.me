@@ -15,6 +15,7 @@ export {
   listPostsByTag,
   listPublicPostCards,
   listPublicPostCardsPaginated,
+  listPublicPostsWithContent,
   selectFeaturePosts,
   selectSidebarPosts,
 } from '@/server/posts/query'

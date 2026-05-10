@@ -7,9 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 // the RSS/Atom output that downstream subscribers depend on.
 
 const mocks = vi.hoisted(() => ({
-  listAllPosts: vi.fn(),
-  listPostsByCategory: vi.fn(),
-  listPostsByTag: vi.fn(),
+  listPublicPostsWithContent: vi.fn(),
   findCategoryBySlug: vi.fn(),
   findCategoryByName: vi.fn(),
   findTagBySlug: vi.fn(),
@@ -31,9 +29,7 @@ function fakeCatalog(
 ) {
   const categories = opts.categories ?? []
   const tags = opts.tags ?? []
-  mocks.listAllPosts.mockResolvedValue(opts.posts ?? [])
-  mocks.listPostsByCategory.mockResolvedValue(opts.posts ?? [])
-  mocks.listPostsByTag.mockResolvedValue(opts.posts ?? [])
+  mocks.listPublicPostsWithContent.mockResolvedValue(opts.posts ?? [])
   mocks.findCategoryBySlug.mockImplementation((slug: string) => categories.find((cat) => cat.slug === slug))
   mocks.findCategoryByName.mockImplementation((name: string) => categories.find((cat) => cat.name === name))
   mocks.findTagBySlug.mockImplementation((slug: string) => tags.find((tag) => tag.slug === slug))
@@ -41,9 +37,7 @@ function fakeCatalog(
   mocks.listAllCategories.mockResolvedValue(categories)
   mocks.getTagsByNames.mockResolvedValue([])
   return {
-    listAllPosts: mocks.listAllPosts,
-    listPostsByCategory: mocks.listPostsByCategory,
-    listPostsByTag: mocks.listPostsByTag,
+    listPublicPostsWithContent: mocks.listPublicPostsWithContent,
   }
 }
 
@@ -83,7 +77,7 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
     await generateFeeds()
 
-    expect(catalog.listAllPosts).toHaveBeenCalledWith({
+    expect(catalog.listPublicPostsWithContent).toHaveBeenCalledWith({
       includeHidden: true,
       includeScheduled: false,
     })
@@ -97,14 +91,19 @@ describe('services/feed — generateFeeds (channel envelope)', () => {
 
     await generateFeeds({ category: 'tech' })
 
-    expect(catalog.listPostsByCategory).toHaveBeenLastCalledWith('技术', {
+    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith({
       includeHidden: true,
       includeScheduled: false,
+      category: '技术',
     })
 
     await generateFeeds({ tag: 'react' })
 
-    expect(catalog.listPostsByTag).toHaveBeenLastCalledWith('React', { includeHidden: true, includeScheduled: false })
+    expect(catalog.listPublicPostsWithContent).toHaveBeenLastCalledWith({
+      includeHidden: true,
+      includeScheduled: false,
+      tag: 'React',
+    })
   })
 
   it('does not emit `xml-stylesheet` (client XSLT is deprecated in browsers)', async () => {

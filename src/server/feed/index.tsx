@@ -7,9 +7,7 @@ import {
   findTagBySlug,
   getTagsByNames,
   listAllCategories,
-  listAllPosts,
-  listPostsByCategory,
-  listPostsByTag,
+  listPublicPostsWithContent,
   type Page,
   type Post,
 } from '@/server/catalog'
@@ -179,7 +177,7 @@ async function selectFeedPosts(
     if (category === null) {
       return []
     }
-    return listPostsByCategory(category.name, visibility)
+    return listPublicPostsWithContent({ ...visibility, category: category.name })
   }
 
   if (options.tag !== undefined) {
@@ -187,8 +185,8 @@ async function selectFeedPosts(
     if (tag === null) {
       return []
     }
-    return listPostsByTag(tag.name, visibility)
+    return listPublicPostsWithContent({ ...visibility, tag: tag.name })
   }
 
-  return listAllPosts(visibility)
+  return listPublicPostsWithContent(visibility)
 }
