@@ -307,6 +307,13 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
         type="button"
         className={cn(commentFooterButtonClass, 'hover:text-brand')}
         data-rid={comment.id}
+        // Keep the currently-focused reply/edit editor focused while the
+        // click resolves. Without this, mousedown blurs the
+        // contenteditable, `:focus-within` on the editor wrapper drops,
+        // the toolbar collapses from `flex` to `hidden`, and the layout
+        // shift between mousedown and mouseup makes the click miss the
+        // button — the user has to click "回复" twice.
+        onMouseDown={(event) => event.preventDefault()}
         onClick={handleReply}
       >
         回复
