@@ -5,6 +5,7 @@ import { findPostBySlug, getTagsByNames, listAllTags } from '@/server/catalog'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
 import { selectSidebarPosts } from '@/server/posts/query'
 import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/route-helpers/detail-loader'
+import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpers/etag'
 import { canonicalPostPath } from '@/server/route-helpers/paths'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/seo/meta'
@@ -27,6 +28,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   }
 
   const post = toDetailPostShell(clientPost)
+
+  const etag = weakEtag(['post', clientPost.id, post.updated])
+  if (ifNoneMatch(request, etag)) {
+    throw notModifiedResponse(etag)
+  }
+
   const visibleTags = await getTagsByNames(post.tags)
 
   const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePost.imageSources))
@@ -55,7 +62,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       detail,
       imageMeta,
     },
-    { headers: { 'Set-Cookie': commentCsrfSetCookie } },
+    { headers: { 'Set-Cookie': commentCsrfSetCookie, ETag: etag } },
   )
 }
 

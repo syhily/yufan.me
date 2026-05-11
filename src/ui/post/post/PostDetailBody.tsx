@@ -64,32 +64,32 @@ export function PostDetailBody({
                 inner wrapper's `flex-1` / `p-4 md:p-8` utilities
                 migrated to the same element. */}
             <div className="relative mb-5 flex min-w-0 flex-col bg-canvas p-4 wrap-break-word shadow-card md:p-8">
+              {admin && (
+                <Link
+                  to={`/wp-admin/posts/${post.id}/edit`}
+                  className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-soft hover:text-ink-strong md:top-4 md:right-4"
+                  aria-label="编辑"
+                  title="编辑"
+                  prefetch="intent"
+                >
+                  <PencilIcon className="size-4" />
+                </Link>
+              )}
               <h1 className={cn(postTitleClass, 'font-bold')}>{post.title}</h1>
-              <div className={cn(postMetaClass, 'mt-4 mb-6 text-sm text-ink-muted')}>
-                <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap gap-x-4 gap-y-1')}>
-                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-                    <span className="shrink-0">初次发布：</span>
-                    <time dateTime={publishedIso} className="tabular-nums">
-                      {formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}
-                    </time>
-                  </div>
-                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-                    <span className="shrink-0">最近修改：</span>
-                    <time dateTime={updatedIso} className="tabular-nums">
-                      {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', config)}
-                    </time>
-                  </div>
+              <div className={cn(postMetaClass, 'mt-4 mb-3 text-sm text-ink-muted')}>
+                <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1')}>
+                  <time dateTime={publishedIso} className="tabular-nums">
+                    {formatLocalDate(post.date, 'yyyy-MM-dd HH:mm', config)}
+                  </time>
+                  {post.showUpdated && (
+                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                      <span className="shrink-0">修改于</span>
+                      <time dateTime={updatedIso} className="tabular-nums">
+                        {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', config)}
+                      </time>
+                    </div>
+                  )}
                 </div>
-                {admin && (
-                  <Link
-                    to={`/wp-admin/posts/${post.id}/edit`}
-                    className="hover:bg-surface-hover hover:text-ink-primary ml-3 inline-flex items-center gap-1 rounded-md bg-surface-soft px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors"
-                    prefetch="intent"
-                  >
-                    <PencilIcon className="size-3" />
-                    编辑
-                  </Link>
-                )}
                 {visibleTags.length > 0 && (
                   <div className={postMetaTagsClass}>
                     {visibleTags.map((tag) => (

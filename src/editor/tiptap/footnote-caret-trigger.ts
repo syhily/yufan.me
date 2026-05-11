@@ -1,6 +1,5 @@
 import { Extension, InputRule } from '@tiptap/core'
 
-import { dispatchOpenFootnoteDialog } from '@/editor/tiptap/editor-events'
 import { canInsertFootnoteMark } from '@/editor/tiptap/insert-inline-footnote'
 
 // Footnote insert shortcut: caret + ASCII space, aligned with backtick code and $ math.
@@ -25,7 +24,7 @@ export const FootnoteCaretTriggerExtension = Extension.create({
           }
           const deleteFrom = range.from + prefix.length
           chain().focus().deleteRange({ from: deleteFrom, to: range.to }).run()
-          dispatchOpenFootnoteDialog()
+          editor.storage.editorActions?.openFootnoteDialog?.()
         },
       }),
     ]

@@ -24,11 +24,6 @@ import {
 
 import type { Block } from '@/pt/schema'
 
-import {
-  dispatchOpenFootnoteDialog,
-  dispatchOpenImagePicker,
-  dispatchOpenMusicPicker,
-} from '@/editor/tiptap/editor-events'
 import { generateBlockKey } from '@/pt/schema'
 
 // Default `mathBlock` TeX when inserting from `/` — mirrors typical lecture
@@ -173,7 +168,7 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     aliases: ['image', 'img', 'picture', '图片', '图'],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run()
-      dispatchOpenImagePicker()
+      editor.storage.editorActions?.openImagePicker?.()
     },
   },
   {
@@ -184,7 +179,7 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     aliases: ['music', 'audio', 'song', '音乐', '播放器'],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run()
-      dispatchOpenMusicPicker()
+      editor.storage.editorActions?.openMusicPicker?.()
     },
   },
   {
@@ -302,7 +297,7 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     aliases: ['footnote', 'fn', '脚注', '^', 'caret'],
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run()
-      dispatchOpenFootnoteDialog()
+      editor.storage.editorActions?.openFootnoteDialog?.()
     },
   },
 ]

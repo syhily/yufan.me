@@ -19,6 +19,7 @@ import type {
   TextBlock,
 } from '@/pt/schema'
 
+import { validatePortableTextBody } from '@/pt/schema'
 import { portableTextBlockSemanticFingerprint } from '@/pt/semantics'
 
 // PortableText ↔ ProseMirror bridge.
@@ -86,6 +87,15 @@ export interface PmMark {
 }
 
 // --- PT → PM ----------------------------------------------------------------
+
+/**
+ * Validate and convert untyped input into a ProseMirror `doc` node.
+ * Use at editor mount when loading historical data; raw `bodyToPmDoc`
+ * skips schema validation for hot-path round-trips.
+ */
+export function parsePortableTextBodyForEditor(input: unknown): PmDoc {
+  return bodyToPmDoc(validatePortableTextBody(input))
+}
 
 /** Convert a PortableText body into a ProseMirror `doc` node. */
 export function bodyToPmDoc(body: PortableTextBody): PmDoc {

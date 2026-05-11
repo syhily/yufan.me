@@ -26,6 +26,21 @@ export async function issueCsrfToken(): Promise<IssuedCsrfToken> {
   return { token, setCookie }
 }
 
+export interface ReusedCsrfToken {
+  token: string
+  /** Empty when the existing cookie is reused; populated only on a fresh issue. */
+  setCookie: string
+}
+
+export async function reuseOrIssueCsrfToken(request: Request): Promise<ReusedCsrfToken> {
+  const cookieHeader = request.headers.get('Cookie')
+  const existing = (await csrfCookie.parse(cookieHeader)) as string | null
+  if (existing !== null && existing !== '') {
+    return { token: existing, setCookie: '' }
+  }
+  return issueCsrfToken()
+}
+
 export async function validateRequestCsrf(request: Request, formToken: string | undefined): Promise<[boolean, string]> {
   if (formToken === undefined || formToken === '') {
     return [false, 'Missing CSRF token in form submission']

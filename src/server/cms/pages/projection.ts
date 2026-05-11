@@ -53,6 +53,7 @@ export function toCmsPage(
     published: meta.published,
     summary: meta.summary,
     toc: meta.showToc,
+    showUpdated: meta.showUpdated,
     showFriends: meta.showFriends,
     slug: meta.slug,
     permalink: `/${meta.slug}`,
@@ -91,6 +92,7 @@ export interface AdminPageDto {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  showUpdated: boolean
   showFriends: boolean
   publishedAt: string
   publishedRevisionId: string | null
@@ -112,6 +114,7 @@ export function toAdminPageDto(row: PageMetaRow & { authorName?: string | null }
     published: row.published,
     commentsEnabled: row.commentsEnabled,
     showToc: row.showToc,
+    showUpdated: row.showUpdated,
     showFriends: row.showFriends,
     publishedAt: row.publishedAt.toISOString(),
     publishedRevisionId: row.publishedRevisionId === null ? null : String(row.publishedRevisionId),

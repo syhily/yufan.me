@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(grep -E \"\\\\.ts$|\\\\.tsx$\")",
-      "Bash(grep -E \"^[^.].*\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"^[^.].*\\\\.\\(tsx|ts\\)$\")",
+      "Bash(vp lint *)",
+      "Bash(node *)",
+      "Bash(vp run *)",
+      "Bash(vp test *)"
     ]
   }
 }

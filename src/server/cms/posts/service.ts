@@ -210,6 +210,11 @@ export interface UpsertPostMetaInput {
   published?: boolean
   commentsEnabled?: boolean
   showToc?: boolean
+  /**
+   * Opt the post into rendering the「修改于 XXXX」secondary timestamp
+   * on the public detail page. Defaults `false` on create.
+   */
+  showUpdated?: boolean
   visible?: boolean
   pinnedAt?: Date | null
   category?: string
@@ -261,6 +266,7 @@ export async function createPost(input: UpsertPostMetaInput, authorId: bigint | 
     published: input.published ?? false,
     commentsEnabled: input.commentsEnabled ?? true,
     showToc: input.showToc ?? false,
+    showUpdated: input.showUpdated ?? false,
     visible: input.visible ?? true,
     pinnedAt: input.pinnedAt === undefined ? null : input.pinnedAt,
     category: input.category ?? '',
@@ -299,6 +305,7 @@ export async function updatePostMeta(input: UpsertPostMetaInput): Promise<AdminP
     published: input.published ?? existing.published,
     commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
     showToc: input.showToc ?? existing.showToc,
+    showUpdated: input.showUpdated ?? existing.showUpdated,
     visible: input.visible ?? existing.visible,
     pinnedAt: input.pinnedAt === undefined ? existing.pinnedAt : input.pinnedAt,
     category: input.category ?? existing.category,

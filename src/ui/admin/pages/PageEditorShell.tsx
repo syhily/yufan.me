@@ -475,6 +475,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: meta.published,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      showUpdated: meta.showUpdated,
       showFriends: meta.showFriends,
       ...(publishedAt !== null ? { publishedAt } : {}),
     })
@@ -601,6 +602,7 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
       published: meta.published,
       commentsEnabled: meta.commentsEnabled,
       showToc: meta.showToc,
+      showUpdated: meta.showUpdated,
       showFriends: meta.showFriends,
       ...(publishedAt !== null ? { publishedAt } : {}),
     })

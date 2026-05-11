@@ -3,7 +3,7 @@ import { data, Outlet, redirect } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { getRouteRequestContext, issueCsrfToken } from '@/server/session'
+import { getRouteRequestContext, reuseOrIssueCsrfToken } from '@/server/session'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
 import type { Route } from './+types/wp-admin.layout'
@@ -22,10 +22,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     throw redirect(`/wp-login.php?redirect_to=${encodeURIComponent(url.pathname)}`)
   }
 
-  // Reissue a CSRF token at the layout level so every child page (and
-  // every modal/form mounted under the SPA shell) shares the same
-  // freshly-rotated token without each route having to ask for it again.
-  const issued = await issueCsrfToken()
+  // Reuse the existing CSRF cookie within its TTL window; only mint a fresh
+  // token (and Set-Cookie) when the cookie is missing or expired.
+  const issued = await reuseOrIssueCsrfToken(request)
   return data(
     {
       currentUser: {
@@ -35,7 +34,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       },
       csrfToken: issued.token,
     },
-    { headers: { 'Set-Cookie': issued.setCookie } },
+    issued.setCookie === '' ? undefined : { headers: { 'Set-Cookie': issued.setCookie } },
   )
 }
 

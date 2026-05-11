@@ -57,6 +57,7 @@ export function buildDbPage(page: CmsPage): Page {
     published: page.published,
     summary: page.summary,
     toc: page.toc,
+    showUpdated: page.showUpdated,
     showFriends: page.showFriends,
     slug: page.slug,
     permalink: page.permalink,

@@ -40,6 +40,7 @@ export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
     published: page.published,
     commentsEnabled: page.commentsEnabled,
     showToc: page.showToc,
+    showUpdated: page.showUpdated,
     showFriends: page.showFriends,
     // The picker treats the non-empty datetime-local string as "the
     // operator has opted into 定时发布 mode". For an already-published
@@ -294,6 +295,14 @@ export function MetaSidebar({
             description="启用后右侧会渲染基于二级标题的 TOC。"
             checked={draft.showToc}
             onCheckedChange={(value) => set('showToc', value)}
+            disabled={disabled}
+          />
+          <ToggleRow
+            id="page-show-updated"
+            label="显示修改时间"
+            description="启用后页面正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。"
+            checked={draft.showUpdated}
+            onCheckedChange={(value) => set('showUpdated', value)}
             disabled={disabled}
           />
           <ToggleRow

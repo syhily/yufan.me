@@ -19,6 +19,7 @@ export const action = defineApiAction({
       published: payload.published,
       commentsEnabled: payload.commentsEnabled,
       showToc: payload.showToc,
+      showUpdated: payload.showUpdated,
       visible: payload.visible,
       category: payload.category,
       tags: payload.tags,

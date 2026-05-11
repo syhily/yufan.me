@@ -47,11 +47,7 @@ import { MusicPickerDialog } from '@/editor/pickers/MusicPickerDialog'
 import { BlockCardNode } from '@/editor/tiptap/BlockCardNode'
 import { PageBubbleMenu } from '@/editor/tiptap/BubbleMenu'
 import { CodeBlockBubbleMenu } from '@/editor/tiptap/CodeBlockBubbleMenu'
-import {
-  EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG,
-  EDITOR_EVENT_OPEN_IMAGE_PICKER,
-  EDITOR_EVENT_OPEN_MUSIC_PICKER,
-} from '@/editor/tiptap/editor-events'
+import { EditorActionsExtension } from '@/editor/tiptap/editor-actions'
 import { FootnoteCaretTriggerExtension } from '@/editor/tiptap/footnote-caret-trigger'
 import { ImageNode } from '@/editor/tiptap/ImageNode'
 import { FootnoteRefMark, MathInlineMark } from '@/editor/tiptap/InlineMarks'
@@ -74,7 +70,12 @@ import {
   plainTextToFootnoteChildren,
   stripFootnoteDefinitionsForEditor,
 } from '@/pt/footnote-merge'
-import { generateBlockKey, type FootnoteDefinitionBlock, type PortableTextBody } from '@/pt/schema'
+import {
+  generateBlockKey,
+  validatePortableTextBody,
+  type FootnoteDefinitionBlock,
+  type PortableTextBody,
+} from '@/pt/schema'
 import { Button } from '@/ui/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
@@ -294,8 +295,9 @@ export function PageBodyEditor({
       FootnoteRefMark,
       FootnoteCaretTriggerExtension,
       SlashCommandsExtension,
+      EditorActionsExtension,
     ],
-    content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(initialBody)) as never,
+    content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(validatePortableTextBody(initialBody))) as never,
     onUpdate({ editor: instance }) {
       const merged = mergeProseBodyWithFootnoteDefinitions(
         pmDocToBody(instance.getJSON() as PmDoc),
@@ -429,18 +431,22 @@ export function PageBodyEditor({
   const [imagePickerOpen, setImagePickerOpen] = useState(false)
   const [musicPickerOpen, setMusicPickerOpen] = useState(false)
   useEffect(() => {
-    const openImage = () => setImagePickerOpen(true)
-    const openMusic = () => setMusicPickerOpen(true)
-    const openFootnote = () => openFootnoteInsertDialog()
-    document.addEventListener(EDITOR_EVENT_OPEN_IMAGE_PICKER, openImage)
-    document.addEventListener(EDITOR_EVENT_OPEN_MUSIC_PICKER, openMusic)
-    document.addEventListener(EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG, openFootnote)
-    return () => {
-      document.removeEventListener(EDITOR_EVENT_OPEN_IMAGE_PICKER, openImage)
-      document.removeEventListener(EDITOR_EVENT_OPEN_MUSIC_PICKER, openMusic)
-      document.removeEventListener(EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG, openFootnote)
+    if (editor === null) {
+      return
     }
-  }, [openFootnoteInsertDialog])
+    const actions = editor.storage.editorActions
+    if (actions === undefined) {
+      return
+    }
+    actions.openImagePicker = () => setImagePickerOpen(true)
+    actions.openMusicPicker = () => setMusicPickerOpen(true)
+    actions.openFootnoteDialog = () => openFootnoteInsertDialog()
+    return () => {
+      actions.openImagePicker = undefined
+      actions.openMusicPicker = undefined
+      actions.openFootnoteDialog = undefined
+    }
+  }, [editor, openFootnoteInsertDialog])
 
   // Toolbar density. Two-state toggle: `'full'` shows block style and
   // inserts as buttons (toolbar wraps to more rows when narrow);

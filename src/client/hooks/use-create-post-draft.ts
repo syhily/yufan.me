@@ -37,6 +37,7 @@ export interface CreatePostDraftMeta {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  showUpdated: boolean
   visible: boolean
   pinned: boolean
   category: string

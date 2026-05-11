@@ -46,6 +46,7 @@ function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAutho
     published: overrides.published ?? true,
     commentsEnabled: overrides.commentsEnabled ?? true,
     showToc: overrides.showToc ?? false,
+    showUpdated: overrides.showUpdated ?? false,
     showFriends: overrides.showFriends ?? false,
     publishedAt: overrides.publishedAt ?? now,
     publishedRevisionId: overrides.publishedRevisionId ?? null,

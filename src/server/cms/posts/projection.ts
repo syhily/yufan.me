@@ -42,6 +42,7 @@ export function toCmsPost(
     published: meta.published,
     visible: meta.visible,
     toc: meta.showToc,
+    showUpdated: meta.showUpdated,
     slug: meta.slug,
     permalink: `/posts/${meta.slug}`,
     headings,
@@ -64,6 +65,7 @@ export interface AdminPostDto {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  showUpdated: boolean
   visible: boolean
   publishedAt: string
   publishedRevisionId: string | null
@@ -91,6 +93,7 @@ export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }
     published: row.published,
     commentsEnabled: row.commentsEnabled,
     showToc: row.showToc,
+    showUpdated: row.showUpdated,
     visible: row.visible,
     publishedAt: row.publishedAt.toISOString(),
     publishedRevisionId: row.publishedRevisionId === null ? null : String(row.publishedRevisionId),

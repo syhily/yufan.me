@@ -331,10 +331,12 @@ export const music = pgTable(
 //   every catalog snapshot rebuild (`@/server/catalog/fence`).
 // - `title` / `summary` / `cover` / `og` mirror the post card surface — kept on
 //   the meta row so listings and feeds avoid joining `content`.
-// - `published` / `comments_enabled` / `show_toc` are boolean toggles
-//   the admin flips without writing a new revision (these are
-//   metadata, not body), so they live on `page` rather than
-//   `content`.
+// - `published` / `comments_enabled` / `show_toc` / `show_updated` are
+//   boolean toggles the admin flips without writing a new revision
+//   (these are metadata, not body), so they live on `page` rather than
+//   `content`. `show_updated` opts into rendering the「修改于 XXXX」
+//   secondary timestamp next to the first-publish date on the public
+//   detail page; defaults false so most pages stay single-date.
 // - `published_at` schedules visibility (`published_at <= now()` for the
 //   catalog) and updates on republish; public `<time>` uses
 //   `first_published_at` when set.
@@ -366,6 +368,11 @@ export const page = pgTable(
     published: boolean('published').notNull().default(true),
     commentsEnabled: boolean('comments_enabled').notNull().default(true),
     showToc: boolean('show_toc').notNull().default(false),
+    // When true the public detail route renders the「修改于 XXXX」
+    // secondary timestamp alongside the first-publish date. Defaults
+    // false so most pages stay single-date — operators opt in per page
+    // from the meta sidebar (next to the TOC toggle).
+    showUpdated: boolean('show_updated').notNull().default(false),
     // When true, append the global friends grid (same as optional `<Friends />`
     // in post MDX). Controlled from the editor meta sidebar without republishing
     // the body. Defaults false; `links` is the usual opt-in.
@@ -405,6 +412,10 @@ export const post = pgTable(
     published: boolean('published').notNull().default(true),
     commentsEnabled: boolean('comments_enabled').notNull().default(true),
     showToc: boolean('show_toc').notNull().default(false),
+    // Same semantics as `page.show_updated` — defaults false; flip on
+    // for the rare post that wants its「修改于 XXXX」 secondary date
+    // displayed in the meta row.
+    showUpdated: boolean('show_updated').notNull().default(false),
     visible: boolean('visible').notNull().default(true),
     publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' })
       .notNull()

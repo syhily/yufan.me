@@ -44,6 +44,12 @@ export interface ClientPage {
   summary: string
   toc: boolean
   /**
+   * When true the public detail route renders the「修改于 XXXX」
+   * secondary timestamp next to the first-publish date. Operators flip
+   * it from the editor meta sidebar without re-publishing the body.
+   */
+  showUpdated: boolean
+  /**
    * When true the public detail route appends the global friends grid
    * at the bottom of the body. The grid lives **outside** the body —
    * the PortableText dialect deliberately has no friends block, so
@@ -73,6 +79,8 @@ export interface ClientPost {
   published: boolean
   visible: boolean
   toc: boolean
+  /** See `ClientPage.showUpdated`. Toggles「修改于 XXXX」on the public detail. */
+  showUpdated: boolean
   slug: string
   permalink: string
   headings: MarkdownHeading[]
@@ -132,6 +140,8 @@ export interface DetailPostShell {
   og?: string
   comments: boolean
   toc: boolean
+  /** See `ClientPost.showUpdated`. */
+  showUpdated: boolean
   headings: MarkdownHeading[]
 }
 
@@ -152,6 +162,8 @@ export interface DetailPageShell {
   og?: string
   comments: boolean
   toc: boolean
+  /** See `ClientPage.showUpdated`. */
+  showUpdated: boolean
   headings: MarkdownHeading[]
 }
 
@@ -232,6 +244,7 @@ export function toDetailPostShell(post: ClientPost): DetailPostShell {
     og: post.og,
     comments: post.comments,
     toc: post.toc,
+    showUpdated: post.showUpdated,
     headings: post.headings,
   }
 }
@@ -252,6 +265,7 @@ export function toDetailPageShell(page: ClientPage): DetailPageShell {
     og: page.og,
     comments: page.comments,
     toc: page.toc,
+    showUpdated: page.showUpdated,
     headings: page.headings,
   }
 }

@@ -23,6 +23,8 @@ export const action = defineApiAction({
       published: payload.published,
       commentsEnabled: payload.commentsEnabled,
       showToc: payload.showToc,
+      showUpdated: payload.showUpdated,
+      showFriends: payload.showFriends,
       publishedAt: payload.publishedAt === undefined ? undefined : new Date(payload.publishedAt),
     }
     const page =

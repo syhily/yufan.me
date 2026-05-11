@@ -7,6 +7,7 @@ import { buildDbPage, findPageBySlug, getEntryBySlug, listAllFriends } from '@/s
 import { loadPageDraftPreviewBySlug } from '@/server/cms/pages/service'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
 import { loadPublicDetailData, redirectPermanent } from '@/server/route-helpers/detail-loader'
+import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpers/etag'
 import { notFound } from '@/server/route-helpers/http'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
@@ -64,6 +65,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     notFound()
   }
 
+  const publicEtag =
+    draftMarker === null ? weakEtag(['page', sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated]) : null
+  if (publicEtag !== null && ifNoneMatch(request, publicEtag)) {
+    throw notModifiedResponse(publicEtag)
+  }
+
   const page = {
     id: sourcePage.id,
     slug: sourcePage.slug,
@@ -79,6 +86,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     og: sourcePage.og,
     comments: sourcePage.comments,
     toc: sourcePage.toc,
+    showUpdated: sourcePage.showUpdated,
     headings: sourcePage.headings,
   }
 
@@ -105,7 +113,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       imageMeta,
       footnotesSectionTitle,
     },
-    { headers: { 'Set-Cookie': commentCsrfSetCookie } },
+    {
+      headers:
+        publicEtag === null
+          ? { 'Set-Cookie': commentCsrfSetCookie }
+          : { 'Set-Cookie': commentCsrfSetCookie, ETag: publicEtag },
+    },
   )
 }
 

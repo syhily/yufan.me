@@ -98,6 +98,7 @@ function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
     published: meta.published,
     visible: meta.visible,
     toc: meta.showToc,
+    showUpdated: meta.showUpdated,
     slug: meta.slug,
     permalink: `/posts/${meta.slug}`,
     headings: [],

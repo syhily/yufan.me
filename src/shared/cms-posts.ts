@@ -11,6 +11,12 @@ export interface AdminPostDto {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  /**
+   * Opt the post into rendering「修改于 XXXX」next to the first-publish
+   * date on the public detail page. Toggled from the editor meta sidebar
+   * (next to the TOC toggle); defaults `false`.
+   */
+  showUpdated: boolean
   visible: boolean
   publishedAt: string
   publishedRevisionId: string | null
@@ -90,6 +96,11 @@ export interface UpsertPostMetaInput {
   published?: boolean
   commentsEnabled?: boolean
   showToc?: boolean
+  /**
+   * Toggle the「修改于 XXXX」secondary timestamp on the public detail
+   * page. Defaults `false` on create.
+   */
+  showUpdated?: boolean
   visible?: boolean
   publishedAt?: string
   category?: string

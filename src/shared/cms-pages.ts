@@ -22,6 +22,12 @@ export interface AdminPageDto {
   commentsEnabled: boolean
   showToc: boolean
   /**
+   * Render the「修改于 XXXX」secondary timestamp on the public detail
+   * page next to the first-publish date. Toggled from the meta sidebar
+   * next to the TOC toggle; defaults `false` so most pages stay single-date.
+   */
+  showUpdated: boolean
+  /**
    * Render the global friends grid at the bottom of the page detail
    * route. Toggled from the editor's metadata sidebar; the grid is
    * **not** part of the body (the PortableText dialect has no
@@ -121,6 +127,11 @@ export interface UpsertPageMetaInput {
   commentsEnabled?: boolean
   showToc?: boolean
   /**
+   * Toggle the「修改于 XXXX」secondary timestamp on the public detail page.
+   * See `AdminPageDto.showUpdated`. Defaults to `false` on create.
+   */
+  showUpdated?: boolean
+  /**
    * Toggle the page-bottom friends grid. See `AdminPageDto.showFriends`
    * for the full semantics. Defaults to `false` on create.
    */
@@ -146,6 +157,7 @@ export interface PageMetaDraft {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  showUpdated: boolean
   showFriends: boolean
   /** `<input type="datetime-local">` value (no timezone). Empty = leave server publishedAt alone. */
   publishedAt: string
@@ -160,6 +172,7 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   published: true,
   commentsEnabled: true,
   showToc: false,
+  showUpdated: false,
   showFriends: false,
   publishedAt: '',
 }
@@ -174,6 +187,7 @@ export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean
     a.published === b.published &&
     a.commentsEnabled === b.commentsEnabled &&
     a.showToc === b.showToc &&
+    a.showUpdated === b.showUpdated &&
     a.showFriends === b.showFriends &&
     a.publishedAt === b.publishedAt
   )

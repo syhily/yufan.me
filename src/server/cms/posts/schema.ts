@@ -74,6 +74,7 @@ export const upsertPostMetaSchema = z.object({
   published: z.coerce.boolean().optional(),
   commentsEnabled: z.coerce.boolean().optional(),
   showToc: z.coerce.boolean().optional(),
+  showUpdated: z.coerce.boolean().optional(),
   visible: z.coerce.boolean().optional(),
   pinnedAt: z.iso.datetime({ offset: true }).nullable().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),

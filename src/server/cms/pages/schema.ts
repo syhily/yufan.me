@@ -101,6 +101,7 @@ export const upsertPageMetaSchema = z.object({
   published: z.coerce.boolean().optional(),
   commentsEnabled: z.coerce.boolean().optional(),
   showToc: z.coerce.boolean().optional(),
+  showUpdated: z.coerce.boolean().optional(),
   showFriends: z.coerce.boolean().optional(),
   publishedAt: z.iso.datetime({ offset: true }).optional(),
 })

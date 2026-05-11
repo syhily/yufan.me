@@ -16,6 +16,7 @@ describe('cms-pages meta shape contract', () => {
       published: true,
       commentsEnabled: true,
       showToc: true,
+      showUpdated: true,
       showFriends: true,
       publishedAt: true,
     }
@@ -39,6 +40,7 @@ describe('cms-pages meta shape contract', () => {
       published: draft.published,
       commentsEnabled: draft.commentsEnabled,
       showToc: draft.showToc,
+      showUpdated: draft.showUpdated,
       showFriends: draft.showFriends,
       publishedAt: draft.publishedAt === '' ? undefined : draft.publishedAt,
     }

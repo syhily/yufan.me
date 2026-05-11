@@ -4,8 +4,8 @@ export { commitSession, destroySession, getRequestSession, getSession } from '@/
 export type { SessionContext } from '@/server/auth/primitives'
 export { isAdmin, login, logout, resolveSessionContext, userSession } from '@/server/auth/primitives'
 
-export type { IssuedCsrfToken } from '@/server/auth/csrf'
-export { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
+export type { IssuedCsrfToken, ReusedCsrfToken } from '@/server/auth/csrf'
+export { clearCsrfCookie, issueCsrfToken, reuseOrIssueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
 
 export type { RequestContextValue, RouteRequestContext } from '@/server/auth/context'
 export {

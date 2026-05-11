@@ -84,7 +84,18 @@ export function PageDetailBody({
   return (
     <div className="flex flex-wrap">
       <div className="box-border w-full max-w-full shrink-0 xl:w-2/3">
-        <div className="p-4 md:p-12">
+        <div className="relative p-4 md:p-12">
+          {admin && (
+            <Link
+              to={`/wp-admin/pages/${page.id}/edit`}
+              className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-soft hover:text-ink-strong md:top-4 md:right-4"
+              aria-label="编辑"
+              title="编辑"
+              prefetch="intent"
+            >
+              <PencilIcon className="size-4" />
+            </Link>
+          )}
           <h1 className={cn(postTitleClass, 'font-bold')}>
             {markerLabel !== null && (
               <span className="text-alert">
@@ -95,30 +106,19 @@ export function PageDetailBody({
             {page.title}
           </h1>
           <div className={cn(postMetaClass, 'mt-3 mb-4 text-sm text-ink-muted')}>
-            <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap gap-x-4 gap-y-1')}>
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-                <span className="shrink-0">初次发布：</span>
-                <time dateTime={publishedIso} className="tabular-nums">
-                  {formatLocalDate(page.date, 'yyyy-MM-dd HH:mm', config)}
-                </time>
-              </div>
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
-                <span className="shrink-0">最近修改：</span>
-                <time dateTime={updatedIso} className="tabular-nums">
-                  {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', config)}
-                </time>
-              </div>
+            <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1')}>
+              <time dateTime={publishedIso} className="tabular-nums">
+                {formatLocalDate(page.date, 'yyyy-MM-dd HH:mm', config)}
+              </time>
+              {page.showUpdated && (
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+                  <span className="shrink-0">修改于</span>
+                  <time dateTime={updatedIso} className="tabular-nums">
+                    {formatLocalDate(updatedAt, 'yyyy-MM-dd HH:mm', config)}
+                  </time>
+                </div>
+              )}
             </div>
-            {admin && (
-              <Link
-                to={`/wp-admin/pages/${page.id}/edit`}
-                className="hover:bg-surface-hover hover:text-ink-primary ml-3 inline-flex items-center gap-1 rounded-md bg-surface-soft px-2.5 py-1 text-xs font-medium text-ink-secondary transition-colors"
-                prefetch="intent"
-              >
-                <PencilIcon className="size-3" />
-                编辑
-              </Link>
-            )}
           </div>
           <TableOfContents headings={headings} toc={page.toc} />
           <div className="mt-4 xl:mt-6">

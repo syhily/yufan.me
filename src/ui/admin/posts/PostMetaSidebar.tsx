@@ -41,6 +41,11 @@ export interface PostMetaDraft {
   published: boolean
   commentsEnabled: boolean
   showToc: boolean
+  /**
+   * Opt the post into the「修改于 XXXX」secondary timestamp on the
+   * public detail page. Defaults `false` so most posts stay single-date.
+   */
+  showUpdated: boolean
   visible: boolean
   pinned: boolean
   category: string
@@ -64,6 +69,7 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   published: true,
   commentsEnabled: true,
   showToc: false,
+  showUpdated: false,
   visible: true,
   pinned: false,
   category: '',
@@ -82,6 +88,7 @@ export function metaDraftsEqual(a: PostMetaDraft, b: PostMetaDraft): boolean {
     a.published === b.published &&
     a.commentsEnabled === b.commentsEnabled &&
     a.showToc === b.showToc &&
+    a.showUpdated === b.showUpdated &&
     a.visible === b.visible &&
     a.pinned === b.pinned &&
     a.category === b.category &&
@@ -101,6 +108,7 @@ export function metaDraftFromPost(post: AdminPostDto): PostMetaDraft {
     published: post.published,
     commentsEnabled: post.commentsEnabled,
     showToc: post.showToc,
+    showUpdated: post.showUpdated,
     visible: post.visible,
     pinned: post.pinnedAt !== null,
     category: post.category,
@@ -368,6 +376,14 @@ export function PostMetaSidebar({
             description="启用后右侧会渲染基于二级标题的 TOC。"
             checked={draft.showToc}
             onCheckedChange={(value) => set('showToc', value)}
+            disabled={disabled}
+          />
+          <ToggleRow
+            id="post-show-updated"
+            label="显示修改时间"
+            description="启用后文章正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。"
+            checked={draft.showUpdated}
+            onCheckedChange={(value) => set('showUpdated', value)}
             disabled={disabled}
           />
           <ToggleRow

@@ -271,6 +271,11 @@ export interface UpsertPageMetaInput {
   commentsEnabled?: boolean
   showToc?: boolean
   /**
+   * Render the「修改于 XXXX」secondary timestamp on the public detail
+   * page. Defaults `false` on create so most pages stay single-date.
+   */
+  showUpdated?: boolean
+  /**
    * Render the global friends grid at the bottom of the page (see
    * `routes/page.detail.tsx`). Defaults to `false` on create — only
    * the legacy `links` page typically opts in.
@@ -332,6 +337,7 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
     published: input.published ?? false,
     commentsEnabled: input.commentsEnabled ?? true,
     showToc: input.showToc ?? false,
+    showUpdated: input.showUpdated ?? false,
     showFriends: input.showFriends ?? false,
     publishedAt: input.publishedAt ?? now,
     authorId,
@@ -365,6 +371,7 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
     published: input.published ?? existing.published,
     commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
     showToc: input.showToc ?? existing.showToc,
+    showUpdated: input.showUpdated ?? existing.showUpdated,
     showFriends: input.showFriends ?? existing.showFriends,
     publishedAt: input.publishedAt ?? existing.publishedAt,
   })
