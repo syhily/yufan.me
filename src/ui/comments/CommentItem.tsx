@@ -307,6 +307,13 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
         type="button"
         className={cn(commentFooterButtonClass, 'hover:text-brand')}
         data-rid={comment.id}
+        // Keep the currently-focused reply/edit editor focused while the
+        // click resolves. Without this, mousedown blurs the
+        // contenteditable, `:focus-within` on the editor wrapper drops,
+        // the toolbar collapses from `flex` to `hidden`, and the layout
+        // shift between mousedown and mouseup makes the click miss the
+        // button — the user has to click "回复" twice.
+        onMouseDown={(event) => event.preventDefault()}
         onClick={handleReply}
       >
         回复
@@ -317,6 +324,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
             type="button"
             className={cn(commentFooterButtonClass, 'hover:text-alert')}
             data-rid={comment.id}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={onEdit}
           >
             编辑
@@ -326,6 +334,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
               type="button"
               className={cn(commentFooterButtonClass, 'text-warn')}
               data-rid={comment.id}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={handleApprove}
               disabled={approve.isPending}
             >
@@ -336,6 +345,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
             type="button"
             className={cn(commentFooterButtonClass, 'text-alert')}
             data-rid={comment.id}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={handleDelete}
             disabled={remove.isPending}
           >
@@ -419,6 +429,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
         <button
           type="button"
           className={publicButtonVariants({ variant: 'primary' })}
+          onMouseDown={(event) => event.preventDefault()}
           onClick={handleSave}
           disabled={!loaded || saving}
         >
@@ -427,6 +438,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
         <button
           type="button"
           className={publicButtonVariants({ variant: 'light' })}
+          onMouseDown={(event) => event.preventDefault()}
           onClick={onCancel}
           disabled={saving}
         >
