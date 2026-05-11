@@ -32,7 +32,7 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
 
   const input = text.replaceAll('\n', ' ').slice(0, 8000)
   try {
-    const response = await client.embeddings.create({ model, input })
+    const response = await client.embeddings.create({ model, input, dimensions: 1536 })
     const embedding = response.data?.[0]?.embedding
     if (!Array.isArray(embedding) || embedding.length === 0) {
       getLogger('search.openai').error('Embedding generation returned invalid data', {

@@ -231,7 +231,7 @@ export function SearchForm({ search }: SearchFormProps) {
         <SettingsRow
           label="模型"
           htmlFor="search-model"
-          hint="默认 text-embedding-3-small，性价比最高。text-embedding-3-large 质量更好但成本更高。"
+          hint="默认 text-embedding-3-small，性价比最高。text-embedding-3-large 质量更好但成本更高。系统固定请求 1536 维向量输出，请确保所选模型支持 dimensions 参数或本身输出 1536 维。"
         >
           <Input
             id="search-model"
