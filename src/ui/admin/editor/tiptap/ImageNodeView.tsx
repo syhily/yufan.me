@@ -1,6 +1,6 @@
 import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
 import { ImageOffIcon, LinkIcon, RotateCcwIcon, TrashIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { ImageBlockLayout } from '@/shared/pt/schema'
 
@@ -43,13 +43,40 @@ export function ImageNodeView(props: NodeViewProps) {
   const [showExternalForm, setShowExternalForm] = useState(false)
   const isLibrary = attrs.imageId !== undefined && attrs.imageId !== ''
 
+  const latestPropsRef = useRef(props)
+  latestPropsRef.current = props
+
+  const altTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const captionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (altTimeoutRef.current) {
+        clearTimeout(altTimeoutRef.current)
+      }
+      if (captionTimeoutRef.current) {
+        clearTimeout(captionTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const commitAlt = (value: string) => {
     setAlt(value)
-    props.updateAttributes({ alt: value })
+    if (altTimeoutRef.current) {
+      clearTimeout(altTimeoutRef.current)
+    }
+    altTimeoutRef.current = setTimeout(() => {
+      latestPropsRef.current.updateAttributes({ alt: value })
+    }, 300)
   }
   const commitCaption = (value: string) => {
     setCaption(value)
-    props.updateAttributes({ caption: value })
+    if (captionTimeoutRef.current) {
+      clearTimeout(captionTimeoutRef.current)
+    }
+    captionTimeoutRef.current = setTimeout(() => {
+      latestPropsRef.current.updateAttributes({ caption: value })
+    }, 300)
   }
   const pos = props.getPos()
 

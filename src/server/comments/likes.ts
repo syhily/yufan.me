@@ -13,7 +13,10 @@ import {
 } from '@/server/db/query/like'
 import { decrementMetricVotes } from '@/server/db/query/metric'
 import { targetKey } from '@/server/db/target'
+import { getLogger } from '@/server/logger'
 import { makeToken } from '@/shared/security'
+
+const log = getLogger('comments.likes')
 
 export async function increaseLikes(target: EntityTarget): Promise<{ likes: number; token: string }> {
   // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
@@ -128,7 +131,7 @@ function ensureLikeTokenSweepStarted(): void {
   }
   slot[SWEEP_KEY] = setInterval(() => {
     void purgeStaleLikeTokens().catch((err) => {
-      console.warn('[likes] background sweep failed', err)
+      log.warn('background sweep failed', { error: err })
     })
   }, SWEEP_INTERVAL_MS)
   // Don't pin the Node event loop — the timer is purely opportunistic.

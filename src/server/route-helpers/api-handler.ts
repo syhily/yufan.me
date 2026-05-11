@@ -3,6 +3,7 @@ import type { ZodError, ZodType } from 'zod'
 
 import type { BlogSession } from '@/server/session'
 
+import { getLogger } from '@/server/logger'
 import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/route-helpers/errors'
 import { getRouteRequestContext, isAdmin } from '@/server/session'
 
@@ -12,6 +13,8 @@ import { getRouteRequestContext, isAdmin } from '@/server/session'
 // `@/server/route-helpers/api-handler` is what most resource-route modules
 // import from.
 export { ActionFailure, domainStatus } from '@/server/route-helpers/errors'
+
+const log = getLogger('api.handler')
 
 // ---------------------------------------------------------------------------
 // Response envelope helpers
@@ -221,7 +224,7 @@ export async function runApi<O>(args: RunApiArgs, handler: ApiHandler<O>): Promi
       return fail(domainStatus(error), error.message)
     }
     const requestId = crypto.randomUUID()
-    console.error('[api] unexpected error', { requestId, error })
+    log.error('unexpected error', { requestId, error })
     return jsonResponse(
       { error: { message: '服务器内部错误' } },
       { status: 500, headers: { 'X-Request-Id': requestId } },

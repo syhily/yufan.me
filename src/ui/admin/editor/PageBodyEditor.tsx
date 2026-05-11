@@ -41,20 +41,9 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { bodyToPmDoc, footnoteSyncSignature, pmDocToBody, type PmDoc } from '@/shared/pt/bridge'
-import {
-  extractFootnoteDefinitionBlocks,
-  footnoteChildrenToPlainText,
-  mergeProseBodyWithFootnoteDefinitions,
-  plainTextToFootnoteChildren,
-  stripFootnoteDefinitionsForEditor,
-} from '@/shared/pt/footnote-merge'
-import {
-  generateBlockKey,
-  validatePortableTextBody,
-  type FootnoteDefinitionBlock,
-  type PortableTextBody,
-} from '@/shared/pt/schema'
+import { bodyToPmDoc } from '@/shared/pt/bridge'
+import { stripFootnoteDefinitionsForEditor } from '@/shared/pt/footnote-merge'
+import { generateBlockKey, validatePortableTextBody, type PortableTextBody } from '@/shared/pt/schema'
 import { FootnoteEditorDialog } from '@/ui/admin/editor/FootnoteEditorDialog'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
@@ -65,17 +54,13 @@ import { EditorActionsExtension } from '@/ui/admin/editor/tiptap/editor-actions'
 import { FootnoteCaretTriggerExtension } from '@/ui/admin/editor/tiptap/footnote-caret-trigger'
 import { ImageNode } from '@/ui/admin/editor/tiptap/ImageNode'
 import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
-import {
-  canInsertFootnoteMark,
-  computeNextFootnoteIndex,
-  insertFootnoteReferenceAtCaret,
-  removeFootnoteReferencesToTargetKey,
-} from '@/ui/admin/editor/tiptap/insert-inline-footnote'
+import { canInsertFootnoteMark } from '@/ui/admin/editor/tiptap/insert-inline-footnote'
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
 import { SolutionNode } from '@/ui/admin/editor/tiptap/SolutionNode'
 import { TableBubbleMenu } from '@/ui/admin/editor/tiptap/TableBubbleMenu'
 import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/editor/tiptap/TwoColumnNode'
+import { useEditorFootnotes } from '@/ui/admin/editor/tiptap/use-editor-footnotes'
 import { Button } from '@/ui/components/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -131,11 +116,6 @@ export interface PageBodyEditorProps {
 //     command launcher covering every block type.
 //   * Inline triggers: `` `…` `` → code, `$…$` → math (`InlineMarks`), `^ `
 //     → footnote dialog (`footnote-caret-trigger`).
-//
-// A custom drag handle (`tiptap/DragHandle.tsx`) is mounted around
-// the editor canvas; the operator can toggle it from the toolbar
-// when QA-ing the page (drag interactions can interfere with
-// keyboard tests).
 export function PageBodyEditor({
   initialBody,
   bodyKey,
@@ -154,36 +134,7 @@ export function PageBodyEditor({
   // is fixed at mount but `useEditor` returns `null` on the first render.
   const mathInlineClickEditorRef = useRef<Editor | null>(null)
 
-  const [footnoteDefs, setFootnoteDefs] = useState<FootnoteDefinitionBlock[]>(() =>
-    extractFootnoteDefinitionBlocks(initialBody),
-  )
-  const footnoteDefsRef = useRef(footnoteDefs)
-  footnoteDefsRef.current = footnoteDefs
-
-  const editorFootnoteSigRef = useRef<string | null>(null)
-
-  const [footnoteDialogOpen, setFootnoteDialogOpen] = useState(false)
-  const [footnoteDialogMode, setFootnoteDialogMode] = useState<'create' | 'edit'>('create')
-  const [footnoteDialogInitialText, setFootnoteDialogInitialText] = useState('')
-  const footnoteEditTargetKeyRef = useRef<string | null>(null)
-
-  const openFootnoteInsertDialog = useCallback(() => {
-    footnoteEditTargetKeyRef.current = null
-    setFootnoteDialogMode('create')
-    setFootnoteDialogInitialText('')
-    setFootnoteDialogOpen(true)
-  }, [])
-
-  const openFootnoteEditDialog = useCallback((targetKey: string) => {
-    const def = footnoteDefsRef.current.find((d) => d._key === targetKey)
-    footnoteEditTargetKeyRef.current = targetKey
-    setFootnoteDialogMode('edit')
-    setFootnoteDialogInitialText(def !== undefined ? footnoteChildrenToPlainText(def.children) : '')
-    setFootnoteDialogOpen(true)
-  }, [])
-
-  const openFootnoteEditDialogRef = useRef(openFootnoteEditDialog)
-  openFootnoteEditDialogRef.current = openFootnoteEditDialog
+  const openFootnoteEditDialogRef = useRef<(targetKey: string) => void>(() => {})
 
   const tiptapEditorProps = useMemo(
     () => ({
@@ -299,89 +250,32 @@ export function PageBodyEditor({
     ],
     content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(validatePortableTextBody(initialBody))) as never,
     onUpdate({ editor: instance }) {
-      const merged = mergeProseBodyWithFootnoteDefinitions(
-        pmDocToBody(instance.getJSON() as PmDoc),
-        footnoteDefsRef.current,
-      )
-      const nextDefs = extractFootnoteDefinitionBlocks(merged)
-      if (JSON.stringify(nextDefs) !== JSON.stringify(footnoteDefsRef.current)) {
-        setFootnoteDefs(nextDefs)
-        footnoteDefsRef.current = nextDefs
-      }
-      const fp = footnoteSyncSignature(merged)
-      if (fp !== editorFootnoteSigRef.current) {
-        editorFootnoteSigRef.current = fp
-        instance.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(merged)) as never, {
-          emitUpdate: false,
-        })
-      }
+      const merged = footnotes.handleEditorUpdate(instance)
       onBodyChangeRef.current(merged)
     },
   })
 
+  const footnotes = useEditorFootnotes(editor)
+  openFootnoteEditDialogRef.current = footnotes.openEditDialog
+
   const confirmFootnoteDialog = useCallback(
     (plainText: string) => {
-      if (editor === null) {
-        return
+      const merged = footnotes.insertFootnote(plainText)
+      if (merged !== null) {
+        onBodyChangeRef.current(merged)
       }
-      const editKey = footnoteEditTargetKeyRef.current
-      if (editKey !== null) {
-        const nextDefs = footnoteDefsRef.current.map((d) =>
-          d._key === editKey ? { ...d, children: plainTextToFootnoteChildren(plainText) } : d,
-        )
-        setFootnoteDefs(nextDefs)
-        footnoteDefsRef.current = nextDefs
-        onBodyChangeRef.current(mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs))
-        footnoteEditTargetKeyRef.current = null
-        return
-      }
-      if (!canInsertFootnoteMark(editor)) {
-        return
-      }
-      const nextIndex = computeNextFootnoteIndex(editor, footnoteDefsRef.current)
-      const defKey = generateBlockKey()
-      const refMarkKey = generateBlockKey()
-      const newDef: FootnoteDefinitionBlock = {
-        _type: 'footnoteDefinition',
-        _key: defKey,
-        index: nextIndex,
-        children: plainTextToFootnoteChildren(plainText),
-      }
-      const nextDefs = [...footnoteDefsRef.current, newDef]
-      setFootnoteDefs(nextDefs)
-      footnoteDefsRef.current = nextDefs
-      insertFootnoteReferenceAtCaret(editor, { defKey, refMarkKey, index: nextIndex })
-      onBodyChangeRef.current(mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs))
     },
-    [editor],
+    [footnotes],
   )
 
   const deleteFootnoteFromDialog = useCallback(() => {
-    if (editor === null) {
-      return
+    const targetKey = footnotes.editTargetKey
+    if (targetKey === null) return
+    const merged = footnotes.removeFootnote(targetKey)
+    if (merged !== null) {
+      onBodyChangeRef.current(merged)
     }
-    const targetKey = footnoteEditTargetKeyRef.current
-    if (targetKey === null || targetKey === '') {
-      return
-    }
-    removeFootnoteReferencesToTargetKey(editor, targetKey)
-    const nextDefs = footnoteDefsRef.current.filter((d) => d._key !== targetKey)
-    footnoteEditTargetKeyRef.current = null
-
-    const merged = mergeProseBodyWithFootnoteDefinitions(pmDocToBody(editor.getJSON() as PmDoc), nextDefs)
-    const syncedDefs = extractFootnoteDefinitionBlocks(merged)
-    setFootnoteDefs(syncedDefs)
-    footnoteDefsRef.current = syncedDefs
-
-    const fp = footnoteSyncSignature(merged)
-    if (fp !== editorFootnoteSigRef.current) {
-      editorFootnoteSigRef.current = fp
-      editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(merged)) as never, {
-        emitUpdate: false,
-      })
-    }
-    onBodyChangeRef.current(merged)
-  }, [editor])
+  }, [footnotes])
 
   useEffect(() => {
     mathInlineClickEditorRef.current = editor
@@ -402,16 +296,9 @@ export function PageBodyEditor({
       return
     }
     lastResetKey.current = bodyKey
-    const defs = extractFootnoteDefinitionBlocks(initialBody)
-    const mergedCanon = mergeProseBodyWithFootnoteDefinitions(stripFootnoteDefinitionsForEditor(initialBody), defs)
-    const syncedDefs = extractFootnoteDefinitionBlocks(mergedCanon)
-    setFootnoteDefs(syncedDefs)
-    footnoteDefsRef.current = syncedDefs
-    editorFootnoteSigRef.current = footnoteSyncSignature(mergedCanon)
-    editor.commands.setContent(bodyToPmDoc(stripFootnoteDefinitionsForEditor(mergedCanon)) as never, {
-      emitUpdate: false,
-    })
-  }, [editor, bodyKey, initialBody])
+    const mergedCanon = footnotes.resetFootnotes(initialBody)
+    onBodyChangeRef.current(mergedCanon)
+  }, [editor, bodyKey, initialBody, footnotes])
 
   // Keep `editable` in sync with the disabled prop. Tiptap exposes this
   // imperatively rather than as a reactive option.
@@ -440,13 +327,13 @@ export function PageBodyEditor({
     }
     actions.openImagePicker = () => setImagePickerOpen(true)
     actions.openMusicPicker = () => setMusicPickerOpen(true)
-    actions.openFootnoteDialog = () => openFootnoteInsertDialog()
+    actions.openFootnoteDialog = () => footnotes.openInsertDialog()
     return () => {
       actions.openImagePicker = undefined
       actions.openMusicPicker = undefined
       actions.openFootnoteDialog = undefined
     }
-  }, [editor, openFootnoteInsertDialog])
+  }, [editor, footnotes])
 
   // Toolbar density. Two-state toggle: `'full'` shows block style and
   // inserts as buttons (toolbar wraps to more rows when narrow);
@@ -547,7 +434,7 @@ export function PageBodyEditor({
     onDensityChange: setToolbarDensity,
     onOpenImagePicker: () => setImagePickerOpen(true),
     onOpenMusicPicker: () => setMusicPickerOpen(true),
-    onOpenFootnoteInsertDialog: openFootnoteInsertDialog,
+    onOpenFootnoteInsertDialog: footnotes.openInsertDialog,
   } as const
 
   const editorCanvas = (
@@ -620,12 +507,12 @@ export function PageBodyEditor({
       <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertImage} />
       <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={insertMusic} />
       <FootnoteEditorDialog
-        open={footnoteDialogOpen}
-        onOpenChange={setFootnoteDialogOpen}
-        mode={footnoteDialogMode}
-        initialPlainText={footnoteDialogInitialText}
+        open={footnotes.dialogOpen}
+        onOpenChange={footnotes.setDialogOpen}
+        mode={footnotes.dialogMode}
+        initialPlainText={footnotes.dialogInitialText}
         onConfirm={confirmFootnoteDialog}
-        onDelete={footnoteDialogMode === 'edit' ? deleteFootnoteFromDialog : undefined}
+        onDelete={footnotes.dialogMode === 'edit' ? deleteFootnoteFromDialog : undefined}
       />
       <PageBubbleMenu editor={editor} />
       <TableBubbleMenu editor={editor} />

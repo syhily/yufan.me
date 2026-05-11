@@ -1,11 +1,12 @@
 import type { CatalogEntry, CatalogSnapshot } from '@/server/catalog/snapshot'
 
 import { buildCatalogSnapshot } from '@/server/catalog/build'
-import { subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
+import { getCatalogVersion, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 
 let cached: CatalogSnapshot | null = null
 let inflight: Promise<CatalogSnapshot> | null = null
 let dirty = false
+let localVersion = 0
 
 subscribeCatalogInvalidate(() => {
   dirty = true
@@ -13,17 +14,24 @@ subscribeCatalogInvalidate(() => {
 
 export async function getCatalog(): Promise<CatalogSnapshot> {
   if (cached !== null && !dirty) {
-    return cached
+    const sharedVersion = await getCatalogVersion()
+    if (sharedVersion <= localVersion) {
+      return cached
+    }
+    dirty = true
   }
   if (inflight !== null) {
     return inflight
   }
-  inflight = buildCatalogSnapshot().then((snap) => {
+  inflight = (async () => {
+    const targetVersion = await getCatalogVersion()
+    const snap = await buildCatalogSnapshot()
     cached = snap
     dirty = false
+    localVersion = targetVersion
     inflight = null
     return snap
-  })
+  })()
   return inflight
 }
 

@@ -8,7 +8,7 @@ import { findCategoryByName, findCategoryBySlug } from '@/server/db/query/catego
 import { findTagByName, findTagBySlug } from '@/server/db/query/tag'
 import { category as categoryTable, post as postMetaTable, tag as tagTable } from '@/server/db/schema'
 import { listPublicFriends } from '@/server/friends/service'
-import { loadImageThumbhash } from '@/server/images/render-enhance'
+import { hydrateImageRefs } from '@/server/images/render-enhance'
 import { buildDbPage, findPageBySlug, listAllPages } from '@/server/pages/query'
 import {
   buildPermalinkSet,
@@ -50,16 +50,16 @@ export { buildDbPage, findPageBySlug, listAllPages }
 // --- Categories --------------------------------------------------------------
 
 async function hydrateCategoryImages(categories: Category[]): Promise<void> {
-  const uniqueCovers = [...new Set(categories.map((c) => c.cover).filter((c) => c !== ''))]
-  const lookups = await Promise.all(uniqueCovers.map((cover) => loadImageThumbhash(cover)))
-  const lookupMap = new Map(uniqueCovers.map((c, i) => [c, lookups[i]]))
-  for (const category of categories) {
-    const lookup = category.cover === '' ? null : (lookupMap.get(category.cover) ?? null)
-    category.coverThumbhash = lookup?.thumbhash
-    if (lookup?.publicUrl != null) {
-      category.cover = lookup.publicUrl
-    }
-  }
+  await hydrateImageRefs(
+    categories,
+    (c) => c.cover,
+    (c, lookup) => {
+      c.coverThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        c.cover = lookup.publicUrl
+      }
+    },
+  )
 }
 
 export async function listAllCategories(): Promise<Category[]> {
@@ -243,16 +243,16 @@ export async function getCategoryLinks(names: readonly string[]): Promise<Record
 // --- Friends -----------------------------------------------------------------
 
 async function hydrateFriendImages(friends: Friend[]): Promise<void> {
-  const uniquePosters = [...new Set(friends.map((f) => f.poster).filter((p) => p !== ''))]
-  const lookups = await Promise.all(uniquePosters.map((poster) => loadImageThumbhash(poster)))
-  const lookupMap = new Map(uniquePosters.map((p, i) => [p, lookups[i]]))
-  for (const friend of friends) {
-    const lookup = friend.poster === '' ? null : (lookupMap.get(friend.poster) ?? null)
-    friend.posterThumbhash = lookup?.thumbhash
-    if (lookup?.publicUrl != null) {
-      friend.poster = lookup.publicUrl
-    }
-  }
+  await hydrateImageRefs(
+    friends,
+    (f) => f.poster,
+    (f, lookup) => {
+      f.posterThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        f.poster = lookup.publicUrl
+      }
+    },
+  )
 }
 
 export async function listAllFriends(): Promise<Friend[]> {

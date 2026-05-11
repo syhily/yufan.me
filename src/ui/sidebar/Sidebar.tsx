@@ -307,6 +307,9 @@ function TodayCalendar() {
   return (
     <div className={widgetClass}>
       <WidgetTitle tooltip="时光只解催人老，不信多情，长恨离亭。">时光只言</WidgetTitle>
+      {/* The calendar image is served from the site's own static directory
+          (`public/images/calendar`) and is not stored on the CDN transform
+          domain, so a plain `<img>` is sufficient. */}
       <img loading="lazy" decoding="async" src={calendarImage} width={600} height={880} alt="今日日历" />
     </div>
   )

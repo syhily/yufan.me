@@ -211,7 +211,11 @@ export function MusicsView() {
                     <TableRow key={row.id}>
                       <TableCell className="pl-4">
                         {row.coverUrl !== '' ? (
-                          <img src={row.coverUrl} alt="" className="size-10 rounded object-cover" loading="lazy" />
+                          <>
+                            {/* Admin table thumbnail: the cover is already a public S3 URL
+                                and does not need CDN transform for a 40×40 list preview. */}
+                            <img src={row.coverUrl} alt="" className="size-10 rounded object-cover" loading="lazy" />
+                          </>
                         ) : (
                           <div className="size-10 rounded bg-muted" />
                         )}

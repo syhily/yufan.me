@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
+import { storage } from '@/server/cache/storage'
 import { findSettingsByScopePrefix, upsertSetting } from '@/server/db/query/setting'
 import { getLogger } from '@/server/logger'
 import {
@@ -15,6 +16,19 @@ import { CACHE_BUCKET_IDS } from '@/shared/cache-types'
 import { BUNDLE_KEYS } from '@/shared/settings'
 
 const log = getLogger('settings.snapshot')
+
+const SETTINGS_VERSION_KEY = 'settings:snapshot:version'
+let localSettingsVersion = 0
+
+async function bumpSettingsVersion(): Promise<void> {
+  const now = Date.now()
+  await storage.setItem(SETTINGS_VERSION_KEY, now, { ttl: 60 * 60 * 24 * 7 })
+}
+
+async function getSettingsVersion(): Promise<number> {
+  const value = await storage.getItem<number>(SETTINGS_VERSION_KEY)
+  return value ?? 0
+}
 
 // Server-only writer for the in-process blog settings snapshot. Owns
 // the DB read, the lazy hydration on first access, and the explicit
@@ -290,25 +304,37 @@ async function backfillMissingSectionDefaults(bundle: BlogSettingsBundle): Promi
  * the cached promise is cleared so the next caller can retry instead of
  * being permanently pinned at the failure.
  */
-export function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> {
-  let pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
-  if (!pending) {
-    pending = loadSettingsFromDb()
-      .then((value) => {
-        BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
-        return value
-      })
-      .catch((error) => {
-        // Evict the failed promise so a follow-up request retries.
-        // We rethrow so the caller can decide what to do (the install
-        // gate logs and lets the request through; the search warmup
-        // logs and skips index construction).
-        BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-        throw error
-      })
-    BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(pending)
+export async function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> {
+  const pending = BLOG_SETTINGS_SNAPSHOT_SLOT.readHydration()
+  if (pending) {
+    const cached = BLOG_SETTINGS_SNAPSHOT_SLOT.read()
+    if (cached === null) {
+      return pending
+    }
+    const sharedVersion = await getSettingsVersion()
+    if (sharedVersion <= localSettingsVersion) {
+      return pending
+    }
   }
-  return pending
+
+  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
+  const targetVersion = await getSettingsVersion()
+  const newPending = loadSettingsFromDb()
+    .then((value) => {
+      BLOG_SETTINGS_SNAPSHOT_SLOT.write(value)
+      localSettingsVersion = targetVersion
+      return value
+    })
+    .catch((error) => {
+      // Evict the failed promise so a follow-up request retries.
+      // We rethrow so the caller can decide what to do (the install
+      // gate logs and lets the request through; the search warmup
+      // logs and skips index construction).
+      BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
+      throw error
+    })
+  BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(newPending)
+  return newPending
 }
 
 /**
@@ -318,7 +344,9 @@ export function hydrateBlogSettings(): Promise<BlogSettingsBundle | null> {
  */
 export async function refreshBlogSettings(): Promise<BlogSettingsBundle | null> {
   BLOG_SETTINGS_SNAPSHOT_SLOT.writeHydration(undefined)
-  return hydrateBlogSettings()
+  const result = await hydrateBlogSettings()
+  await bumpSettingsVersion()
+  return result
 }
 
 // Re-export the synchronous readers from the shared module so existing

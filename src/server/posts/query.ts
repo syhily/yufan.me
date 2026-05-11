@@ -15,7 +15,7 @@ import {
 import { queryMetadata } from '@/server/comments/likes'
 import { db } from '@/server/db/pool'
 import { post as postMetaTable } from '@/server/db/schema'
-import { loadImageThumbhash } from '@/server/images/render-enhance'
+import { hydrateImageRefs } from '@/server/images/render-enhance'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/catalog'
 import { shuffle } from '@/shared/tools'
@@ -23,16 +23,16 @@ import { shuffle } from '@/shared/tools'
 // --- Hydration ---------------------------------------------------------------
 
 async function hydratePostImages(posts: Post[]): Promise<void> {
-  const uniqueCovers = [...new Set(posts.map((p) => p.cover).filter((c) => c !== ''))]
-  const lookups = await Promise.all(uniqueCovers.map((cover) => loadImageThumbhash(cover)))
-  const lookupMap = new Map(uniqueCovers.map((c, i) => [c, lookups[i]]))
-  for (const post of posts) {
-    const lookup = post.cover === '' ? null : (lookupMap.get(post.cover) ?? null)
-    post.coverThumbhash = lookup?.thumbhash
-    if (lookup?.publicUrl != null) {
-      post.cover = lookup.publicUrl
-    }
-  }
+  await hydrateImageRefs(
+    posts,
+    (p) => p.cover,
+    (p, lookup) => {
+      p.coverThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        p.cover = lookup.publicUrl
+      }
+    },
+  )
 }
 
 /** Join published `content` rows so callers receive a real `Post` with `body` (RSS, detail routes, etc.). */

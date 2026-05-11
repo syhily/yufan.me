@@ -1,6 +1,7 @@
 import { data } from 'react-router'
 
-import { findPostBySlug, getTagsByNames, listAllTags } from '@/server/catalog'
+import { findPostBySlug } from '@/server/catalog'
+import { getTagsByNames, listAllTags } from '@/server/catalog'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
 import { selectSidebarPosts } from '@/server/posts/query'
 import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/route-helpers/detail-loader'

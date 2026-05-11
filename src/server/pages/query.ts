@@ -8,7 +8,7 @@ import {
   findPublicPageMetaBySlug,
   listPublicPageMetas,
 } from '@/server/cms/pages/repository'
-import { loadImageThumbhash } from '@/server/images/render-enhance'
+import { hydrateImageRefs } from '@/server/images/render-enhance'
 
 function isCatalogVisible(
   meta: { deletedAt: Date | null; published: boolean; publishedAt: Date },
@@ -27,18 +27,18 @@ function isCatalogVisible(
 }
 
 async function hydratePageImages(pages: Page[]): Promise<void> {
-  const uniqueCovers = [...new Set(pages.map((p) => p.cover).filter((c) => c !== ''))]
-  const lookups = await Promise.all(uniqueCovers.map((cover) => loadImageThumbhash(cover)))
-  const lookupMap = new Map(uniqueCovers.map((c, i) => [c, lookups[i]]))
-  for (const page of pages) {
-    const lookup = page.cover === '' ? null : (lookupMap.get(page.cover) ?? null)
-    page.coverThumbhash = lookup?.thumbhash
-    page.coverWidth = lookup?.width
-    page.coverHeight = lookup?.height
-    if (lookup?.publicUrl != null) {
-      page.cover = lookup.publicUrl
-    }
-  }
+  await hydrateImageRefs(
+    pages,
+    (p) => p.cover,
+    (p, lookup) => {
+      p.coverThumbhash = lookup?.thumbhash
+      p.coverWidth = lookup?.width
+      p.coverHeight = lookup?.height
+      if (lookup?.publicUrl != null) {
+        p.cover = lookup.publicUrl
+      }
+    },
+  )
 }
 
 // Promote a `CmsPage` (DB-backed projection) into the public `Page` shape.

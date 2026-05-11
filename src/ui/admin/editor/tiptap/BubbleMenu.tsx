@@ -76,12 +76,14 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
   // BubbleMenu portals its children without a React parent update: the menu
   // chrome repositions via ProseMirror, but `mathInlinePanelApplies` would
   // otherwise read stale closures unless we subscribe to transactions.
-  const bubbleSnapshot = useEditorState({
+  // Each selector returns a primitive so referential equality is stable.
+  const showMathPanel = useEditorState({
     editor,
-    selector: ({ editor: ed }) => ({
-      showMathPanel: mathInlinePanelApplies(ed),
-      sigmaToggleActive: ed.isActive('mathInline'),
-    }),
+    selector: ({ editor: ed }) => mathInlinePanelApplies(ed),
+  })
+  const sigmaToggleActive = useEditorState({
+    editor,
+    selector: ({ editor: ed }) => ed.isActive('mathInline'),
   })
 
   return (
@@ -139,14 +141,10 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
       >
         {linkOpen ? (
           <LinkPopover variant="selection" editor={editor} onClose={() => setLinkOpen(false)} />
-        ) : bubbleSnapshot.showMathPanel ? (
+        ) : showMathPanel ? (
           <MathInlinePanel editor={editor} />
         ) : (
-          <ActionRow
-            editor={editor}
-            sigmaToggleActive={bubbleSnapshot.sigmaToggleActive}
-            onLink={() => setLinkOpen(true)}
-          />
+          <ActionRow editor={editor} sigmaToggleActive={sigmaToggleActive} onLink={() => setLinkOpen(true)} />
         )}
       </div>
     </BubbleMenu>

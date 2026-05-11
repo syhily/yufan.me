@@ -444,8 +444,7 @@ sourceId)` is a unique key and `source` is reserved as varchar so
   `portable-text-diff`, `tiptap/`, `pickers/`) live alongside it.
   UX surface area lives in three layers, in this order:
   1. **Toolbar** (in `PageBodyEditor.tsx`): mouse-driven access to
-     the image library, music picker, link, table, hr, undo/redo,
-     plus the drag-handle on/off toggle.
+     the image library, music picker, link, table, hr, undo/redo.
   2. **`tiptap/BubbleMenu`** + `tiptap/TableBubbleMenu`: floating
      inline-format menus. The first owns text selections (B/I/U +
      code + link popover + `mathInline` / `footnoteRef` editing
@@ -460,11 +459,6 @@ sourceId)` is a unique key and `source` is reserved as varchar so
 - The image block uses a React NodeView (`tiptap/ImageNodeView`) so
   alt + caption are editable inline and the operator can re-pick or
   delete the image without leaving the canvas.
-- Top-level block drag-and-drop is hand-rolled on dnd-kit
-  (`tiptap/drag-handle-plugin.ts` + `tiptap/DragHandle.tsx`). Limit:
-  reorder at depth 1 only — items inside lists / tables stay where
-  they are because dropping them between top-level paragraphs would
-  corrupt the surrounding container.
 - **Table dialect**: cells are restricted to inline spans only — no
   nested blocks, lists, code blocks, math blocks, or footnote refs.
   The only mark-def allowed in a cell is `link`. The bridge enforces
