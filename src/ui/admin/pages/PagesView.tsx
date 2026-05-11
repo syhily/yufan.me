@@ -23,7 +23,6 @@ import type {
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { joinUrl } from '@/shared/urls'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -36,7 +35,6 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const LIST = API_ACTIONS.admin.listPages
 const DELETE = API_ACTIONS.admin.deletePage
@@ -172,7 +170,7 @@ export function PagesView() {
                   <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">更新时间</TableHead>
-                  <TableHead className="w-44 pr-4 text-right">操作</TableHead>
+                  <TableHead className="w-56 pr-4 text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -228,23 +226,11 @@ interface PageRowProps {
 
 function PageRow({ page, onDelete, onRestore }: PageRowProps) {
   const isDeleted = page.deletedAt !== null
-  const { website } = useSiteIdentity()
-  const pageKey = joinUrl(website, `/${page.slug}`, '/')
   return (
     <TableRow className={isDeleted ? 'opacity-60' : undefined}>
       <TableCell className="pl-4 align-top">
         <div className="font-medium">{page.title}</div>
-        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
-          <span>/{page.slug}</span>
-          <Link
-            to={`/wp-admin/comments?pageKey=${encodeURIComponent(pageKey)}`}
-            title="查看评论"
-            className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted hover:text-foreground"
-          >
-            <MessageSquareIcon className="size-3.5" />
-            {page.commentCount}
-          </Link>
-        </div>
+        <div className="font-mono text-xs text-muted-foreground">/{page.slug}</div>
       </TableCell>
       <TableCell className="hidden max-w-md md:table-cell">
         <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary || '—'}</p>
@@ -269,6 +255,16 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
                 render={
                   <Link to={`/${page.slug}`} target="_blank" rel="noreferrer">
                     <ExternalLinkIcon />
+                  </Link>
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                title="查看评论"
+                render={
+                  <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}>
+                    <MessageSquareIcon /> {page.commentCount}
                   </Link>
                 }
               />

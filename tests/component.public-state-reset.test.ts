@@ -5,7 +5,7 @@ import type { CommentItem } from '@/shared/comments'
 import { commentTreeReducer, createCommentTreeState } from '@/ui/comments/Comments'
 import { createLikeButtonState, likeButtonReducer } from '@/ui/like/LikeActions'
 
-function makeComment(id: bigint, pageKey: string, name = 'Alice'): CommentItem {
+function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
   return {
     id,
     createAt: new Date('2024-01-15T08:30:00.000Z'),
@@ -13,7 +13,8 @@ function makeComment(id: bigint, pageKey: string, name = 'Alice'): CommentItem {
     deleteAt: null,
     content: null,
     body: [{ _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hello.' }] }],
-    pageKey,
+    type: 'post',
+    ownerId,
     userId: 42n,
     isVerified: true,
     ua: '',
@@ -55,22 +56,19 @@ describe('public detail island state reset', () => {
   })
 
   it('resets the comment tree and clears active replies for another comment key', () => {
-    const first = makeComment(1n, 'https://yufan.me/posts/first/')
-    const second = makeComment(2n, 'https://yufan.me/posts/second/', 'Bob')
+    const first = makeComment(1n, 1n)
+    const second = makeComment(2n, 2n, 'Bob')
 
     let state = createCommentTreeState([first], 3)
     state = commentTreeReducer(state, { type: 'setReplyTo', rid: 1 })
     state = commentTreeReducer(state, {
       type: 'append',
-      items: [makeComment(3n, 'https://yufan.me/posts/first/', 'Carol')],
+      items: [makeComment(3n, 1n, 'Carol')],
       rootsLoaded: 2,
     })
 
     expect(state.replyToId).toBe(1)
-    expect(state.items.map((item) => item.pageKey)).toEqual([
-      'https://yufan.me/posts/first/',
-      'https://yufan.me/posts/first/',
-    ])
+    expect(state.items.map((item) => item.ownerId)).toEqual([1n, 1n])
 
     state = commentTreeReducer(state, {
       type: 'reset',

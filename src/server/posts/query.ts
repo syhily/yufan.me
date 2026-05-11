@@ -233,20 +233,22 @@ export async function listClientPosts(options?: PostVisibilityOptions): Promise<
 
 // --- Metadata ----------------------------------------------------------------
 
-export async function getClientPostsWithMetadata<PostLike extends { permalink: string }>(
+export async function getClientPostsWithMetadata<PostLike extends { id: string }>(
   posts: PostLike[],
   options: { likes: boolean; views: boolean; comments: boolean },
 ): Promise<(PostLike & { meta: { likes: number; views: number; comments: number } })[]> {
   if (posts.length === 0) {
     return []
   }
+  // All inputs are public posts → target type is constant.
   const metas = await queryMetadata(
-    posts.map((post) => post.permalink),
+    posts.map((post) => ({ type: 'post' as const, ownerId: BigInt(post.id) })),
     options,
   )
   return posts.map((post) => {
-    const meta = metas.get(post.permalink) ?? { likes: 0, views: 0, comments: 0 }
-    return { ...post, meta }
+    const key = `post:${post.id}`
+    const meta = metas.get(key) ?? { likes: 0, views: 0, comments: 0, publicId: '' }
+    return { ...post, meta: { likes: meta.likes, views: meta.views, comments: meta.comments } }
   })
 }
 

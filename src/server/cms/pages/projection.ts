@@ -102,16 +102,22 @@ export interface AdminPageDto {
   authorId: string | null
   authorName: string | null
   /**
-   * Approved comment count keyed on the page's `commentKey` (full URL).
-   * Populated by `listPagesForAdmin`; defaults to `0` on detail/save paths
-   * that don't need to fan out an extra query.
+   * Approved comment count for this page's metric row. Populated by
+   * `listPagesForAdmin`; defaults to `0` on detail / save paths.
    */
   commentCount: number
+  /**
+   * The page's `metric.public_id` UUID — the opaque wire identifier the
+   * admin comment-count link uses to deep-link into
+   * `/wp-admin/comments?pageKey=<uuid>`. Empty string on detail / save
+   * paths that don't fan out a metric upsert.
+   */
+  commentPublicId: string
 }
 
 export function toAdminPageDto(
   row: PageMetaRow & { authorName?: string | null },
-  options: { commentCount?: number } = {},
+  options: { commentCount?: number; commentPublicId?: string } = {},
 ): AdminPageDto {
   return {
     id: String(row.id),
@@ -133,6 +139,7 @@ export function toAdminPageDto(
     authorId: row.authorId === null ? null : String(row.authorId),
     authorName: (row as { authorName?: string | null }).authorName ?? null,
     commentCount: options.commentCount ?? 0,
+    commentPublicId: options.commentPublicId ?? '',
   }
 }
 

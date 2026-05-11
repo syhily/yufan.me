@@ -237,7 +237,7 @@ export function AdminCommentRow({
                     <span>来自：</span>
                     <button
                       type="button"
-                      onClick={() => onFilterByPage(comment.pageKey, comment.pageTitle ?? comment.pageKey)}
+                      onClick={() => onFilterByPage(comment.pagePublicId ?? '', comment.pageTitle ?? '')}
                       title={`仅查看《${comment.pageTitle}》的评论`}
                       className="max-w-full cursor-pointer truncate text-left text-primary hover:text-primary/80 hover:underline focus-visible:underline focus-visible:outline-none"
                     >

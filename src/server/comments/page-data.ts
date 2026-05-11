@@ -1,3 +1,4 @@
+import type { EntityTarget } from '@/server/db/target'
 import type { BlogSession, SessionUser } from '@/server/session'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { DetailPageComments } from '@/shared/comments'
@@ -7,8 +8,6 @@ import { ensureCommentPage, loadComments, parseComments } from '@/server/comment
 import { bumpPageView } from '@/server/metrics/batcher'
 import { isAdmin, userSession } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
-import { requireBlogSettingsSection } from '@/shared/blog-config'
-import { joinUrl } from '@/shared/urls'
 
 // `SessionUser` already only carries id/name/email/website/admin, but the
 // reply form is the only consumer in the public bundle. Projecting through
@@ -34,12 +33,8 @@ export type { DetailPageComments } from '@/shared/comments'
 // renders immediately. PT bodies are stored pre-rendered, so the
 // per-row work in `parseComments` is now just projection — but the
 // network/DB round-trip is still worth deferring.
-async function loadCommentsAndItems(
-  session: BlogSession,
-  commentKey: string,
-  title: string,
-): Promise<DetailPageComments> {
-  const commentData = await loadComments(session, commentKey, title, 0, { ensurePage: false })
+async function loadCommentsAndItems(session: BlogSession, target: EntityTarget): Promise<DetailPageComments> {
+  const commentData = await loadComments(session, target, 0, { ensurePage: false })
   const commentItems = commentData && commentData.comments.length > 0 ? await parseComments(commentData.comments) : []
   return { commentData, commentItems }
 }
@@ -50,29 +45,27 @@ async function loadCommentsAndItems(
 // alongside the SSR HTML.
 export async function loadDetailPageCritical(
   session: BlogSession,
-  permalink: string,
-  title: string,
+  target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
   const currentUser = toCommentFormUser(userSession(session))
   const admin = isAdmin(session)
-  const commentKey = joinUrl(requireBlogSettingsSection('siteIdentity').website, permalink, '/')
   const trackView = options?.trackView ?? true
 
   // Keep counting out of the critical path; this is fire-and-forget and
   // callers can disable it for non-navigation requests (e.g. prefetch).
   if (!admin && trackView) {
-    bumpPageView(commentKey)
+    bumpPageView(target)
   }
 
-  const [, likes, sidebar] = await Promise.all([
-    ensureCommentPage(commentKey, title),
-    queryLikes(permalink),
+  const [metricRow, likes, sidebar] = await Promise.all([
+    ensureCommentPage(target),
+    queryLikes(target),
     loadSidebarData(session),
   ])
 
   return {
-    commentKey,
+    commentKey: metricRow.publicId,
     likes,
     currentUser,
     ...sidebar,
@@ -83,12 +76,11 @@ export async function loadDetailPageCritical(
 // React Router's `defer`-style return + `<Await>` consumer.
 export async function loadDetailPageStreaming(
   session: BlogSession,
-  permalink: string,
-  title: string,
+  target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
-  const critical = await loadDetailPageCritical(session, permalink, title, options)
-  const comments = loadCommentsAndItems(session, critical.commentKey, title)
+  const critical = await loadDetailPageCritical(session, target, options)
+  const comments = loadCommentsAndItems(session, target)
   return { critical, comments }
 }
 
@@ -98,28 +90,26 @@ export async function loadDetailPageStreaming(
 // fully-resolved shape.
 export async function loadDetailPageData(
   session: BlogSession,
-  permalink: string,
-  title: string,
+  target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
   const currentUser = toCommentFormUser(userSession(session))
   const admin = isAdmin(session)
-  const commentKey = joinUrl(requireBlogSettingsSection('siteIdentity').website, permalink, '/')
   const trackView = options?.trackView ?? true
 
   if (!admin && trackView) {
-    bumpPageView(commentKey)
+    bumpPageView(target)
   }
 
-  const [, comments, likes, sidebar] = await Promise.all([
-    ensureCommentPage(commentKey, title),
-    loadCommentsAndItems(session, commentKey, title),
-    queryLikes(permalink),
+  const [metricRow, comments, likes, sidebar] = await Promise.all([
+    ensureCommentPage(target),
+    loadCommentsAndItems(session, target),
+    queryLikes(target),
     loadSidebarData(session),
   ])
 
   return {
-    commentKey,
+    commentKey: metricRow.publicId,
     likes,
     commentData: comments.commentData,
     commentItems: comments.commentItems,

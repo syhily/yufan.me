@@ -110,6 +110,9 @@ export interface LoadPostsWithMetadataOptions {
 }
 
 export interface ListingPostCard {
+  /** Stringified `post.id` — used by the metric-metadata fan-out helper to key
+   * counter rows by `(type='post', owner_id=BigInt(id))`. */
+  id: string
   slug: string
   title: string
   summary: string
@@ -216,6 +219,7 @@ export function toClientPage(page: Page): ClientPage {
 
 export function toListingPostCard(post: ClientPost): ListingPostCard {
   return {
+    id: post.id,
     slug: post.slug,
     title: post.title,
     summary: post.summary,

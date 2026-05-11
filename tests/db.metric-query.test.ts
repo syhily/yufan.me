@@ -23,8 +23,8 @@ describe('db/query/metric', () => {
   it('casts batched view values to stable postgres types', async () => {
     await incrementMetricPvBatch(
       new Map([
-        ['https://yufan.me/posts/a/', 1],
-        ['https://yufan.me/posts/b/', 2],
+        ['post:1', 1],
+        ['page:2', 2],
       ]),
     )
 
@@ -33,19 +33,32 @@ describe('db/query/metric', () => {
     const [query] = dbMocks.execute.mock.calls[0]!
     const compiled = new PgDialect().sqlToQuery(query)
 
-    expect(compiled.sql).toContain('($1::varchar(255), $2::bigint), ($3::varchar(255), $4::bigint)')
+    expect(compiled.sql).toContain(
+      '($1::varchar(16), $2::bigint, $3::bigint), ($4::varchar(16), $5::bigint, $6::bigint)',
+    )
     expect(compiled.sql).toContain('COALESCE("metric"."pv", 0) + v.delta')
-    expect(compiled.params).toEqual(['https://yufan.me/posts/a/', 1, 'https://yufan.me/posts/b/', 2])
+    expect(compiled.params).toEqual(['post', '1', 1, 'page', '2', 2])
   })
 
   it('skips empty and non-positive batched view deltas', async () => {
     await incrementMetricPvBatch(
       new Map([
-        ['https://yufan.me/posts/a/', 0],
-        ['https://yufan.me/posts/b/', -1],
+        ['post:1', 0],
+        ['page:2', -1],
       ]),
     )
 
+    expect(dbMocks.execute).not.toHaveBeenCalled()
+  })
+
+  it('skips malformed composite keys (no colon, unknown type, empty id)', async () => {
+    await incrementMetricPvBatch(
+      new Map([
+        ['notarget', 5],
+        ['note:42', 5],
+        ['post:', 5],
+      ]),
+    )
     expect(dbMocks.execute).not.toHaveBeenCalled()
   })
 })

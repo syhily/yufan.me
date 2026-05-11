@@ -43,8 +43,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { detail, sidebar, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
     context,
-    permalink: post.permalink,
-    title: post.title,
+    target: { type: 'post', ownerId: BigInt(post.id) },
     preload: () => Promise.resolve(),
     sidebar: {
       posts: await selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),

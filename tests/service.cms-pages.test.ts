@@ -30,6 +30,19 @@ vi.mock('@/server/cms/pages/repository', () => ({
   updatePageMetaById: vi.fn(),
 }))
 
+// `listPagesForAdmin` ensures a metric row per listed page and reads
+// counter rows back. Stub those out so this test focuses on repository
+// orchestration without needing the metric DB.
+vi.mock('@/server/db/query/metric', () => ({
+  ensureMetric: vi.fn(async () => ({})),
+  findMetricByPublicId: vi.fn(),
+  findMetricByTarget: vi.fn(),
+}))
+vi.mock('@/server/db/query/like', () => ({
+  metricsByOwnerIds: vi.fn(async () => []),
+  commentCountsByOwnerIds: vi.fn(async () => []),
+}))
+
 const repo = await import('@/server/cms/pages/repository')
 const { ActionFailure } = await import('@/server/route-helpers/api-handler')
 const service = await import('@/server/cms/pages/service')

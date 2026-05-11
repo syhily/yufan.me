@@ -6,6 +6,15 @@ function nextId(prefix: string): string {
   return `${prefix}-${counter}`
 }
 
+// Post / page ids are numeric strings (stringified bigints from the DB).
+// Tests can mostly pin them but the detail loader now `BigInt(post.id)`s
+// the value to build the metric target, so generated ids MUST be numeric.
+let idCounter = 1_000_000
+function nextNumericId(): string {
+  idCounter += 1
+  return String(idCounter)
+}
+
 export function makeTag(overrides: Partial<ClientTag> = {}): ClientTag {
   const slug = overrides.slug ?? nextId('tag')
   return {
@@ -32,7 +41,7 @@ export function makeCategory(overrides: Partial<ClientCategory> = {}): ClientCat
 export function makePost(overrides: Partial<ClientPost> = {}): ClientPost {
   const slug = overrides.slug ?? nextId('post')
   return {
-    id: overrides.id ?? nextId('post-id'),
+    id: overrides.id ?? nextNumericId(),
     title: overrides.title ?? `Post ${slug}`,
     date: overrides.date ?? new Date('2024-01-01T00:00:00.000Z'),
     comments: overrides.comments ?? true,
@@ -55,7 +64,7 @@ export function makePost(overrides: Partial<ClientPost> = {}): ClientPost {
 export function makePage(overrides: Partial<ClientPage> = {}): ClientPage {
   const slug = overrides.slug ?? nextId('page')
   return {
-    id: overrides.id ?? nextId('page-id'),
+    id: overrides.id ?? nextNumericId(),
     title: overrides.title ?? `Page ${slug}`,
     date: overrides.date ?? new Date('2024-01-01T00:00:00.000Z'),
     comments: overrides.comments ?? false,

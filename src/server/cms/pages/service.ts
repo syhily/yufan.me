@@ -34,14 +34,13 @@ import {
   type PublishLatestResult,
   type SaveDraftResult,
 } from '@/server/cms/pages/repository'
-import { commentCountsByPageKeys } from '@/server/db/query/like'
+import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/db/query/like'
+import { ensureMetric } from '@/server/db/query/metric'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
-import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
-import { joinUrl } from '@/shared/urls'
 
 // Audit logger for force-overwrite saves. Emits at info level so
 // admin actions stay visible in production without being noisy in
@@ -209,12 +208,28 @@ export async function listPagesForAdmin(filters: ListPagesFilters = {}): Promise
   const offset = filters.offset ?? 0
   const limit = filters.limit ?? 100
   const [rows, total] = await Promise.all([listPageMetas({ ...filters, limit, offset }), countPageMetas(filters)])
-  const website = requireBlogSettingsSection('siteIdentity').website
-  const pageKeys = rows.map((row) => joinUrl(website, `/${row.slug}`, '/'))
-  const countRows = await commentCountsByPageKeys(pageKeys)
-  const countByKey = new Map(countRows.map((r) => [r.pageKey, r.count]))
+  if (rows.length === 0) {
+    return { pages: [], total, hasMore: false }
+  }
+  // Ensure every listed page has a `metric` row so the admin
+  // comment-count link can compose `?pageKey=<publicId>` even before
+  // the page has been visited publicly. The upsert is idempotent and
+  // batched in a single Promise.all.
+  const ownerIds = rows.map((row) => row.id)
+  await Promise.all(rows.map((row) => ensureMetric({ type: 'page', ownerId: row.id })))
+  const [metrics, countRows] = await Promise.all([
+    metricsByOwnerIds('page', ownerIds),
+    commentCountsByOwnerIds('page', ownerIds),
+  ])
+  const publicIdByOwner = new Map(metrics.map((m) => [String(m.ownerId), m.publicId]))
+  const countByOwner = new Map(countRows.map((r) => [String(r.ownerId), r.count]))
   return {
-    pages: rows.map((row, i) => toAdminPageDto(row, { commentCount: countByKey.get(pageKeys[i]) ?? 0 })),
+    pages: rows.map((row) =>
+      toAdminPageDto(row, {
+        commentCount: countByOwner.get(String(row.id)) ?? 0,
+        commentPublicId: publicIdByOwner.get(String(row.id)) ?? '',
+      }),
+    ),
     total,
     hasMore: offset + rows.length < total,
   }

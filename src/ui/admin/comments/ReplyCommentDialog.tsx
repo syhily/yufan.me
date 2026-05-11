@@ -91,9 +91,13 @@ export function ReplyCommentDialog({
               window.alert('无法获取管理员邮箱，请刷新页面重试')
               return
             }
+            if (!comment.pagePublicId) {
+              window.alert('该评论缺少有效的目标页面标识，无法回复')
+              return
+            }
             void fetcher.submit(
               {
-                page_key: comment.pageKey,
+                page_key: comment.pagePublicId,
                 name: authorName,
                 email: authorEmail,
                 content: value,

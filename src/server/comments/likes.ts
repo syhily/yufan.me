@@ -1,75 +1,93 @@
 import { startOfDay, subDays } from 'date-fns'
 
+import type { EntityTarget } from '@/server/db/target'
+
 import {
-  commentCountsByPageKeys,
+  commentCountsByOwnerIds,
   consumeActiveLikeToken,
   existsActiveLikeToken,
-  metricsByKeys,
+  metricsByOwnerIds,
   metricVoteUp,
   purgeOldLikeTokens,
   recordLikeAndCount,
 } from '@/server/db/query/like'
 import { decrementMetricVotes } from '@/server/db/query/metric'
-import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { targetKey } from '@/server/db/target'
 import { makeToken } from '@/shared/security'
-import { joinUrl } from '@/shared/urls'
 
-const generatePageKey = (permalink: string): string =>
-  joinUrl(requireBlogSettingsSection('siteIdentity').website, permalink, '/')
-
-export async function increaseLikes(permalink: string): Promise<{ likes: number; token: string }> {
-  const pageKey = generatePageKey(permalink)
+export async function increaseLikes(target: EntityTarget): Promise<{ likes: number; token: string }> {
   // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
   const token = makeToken(64)
   // Transactional: insert + bump + RETURNING new count run as one statement
   // pair so a concurrent decrement can't race in between and return us
   // yesterday's number.
-  const likes = await recordLikeAndCount(token, pageKey)
+  const likes = await recordLikeAndCount(token, target)
   return { likes, token }
 }
 
-export async function decreaseLikes(permalink: string, token: string) {
-  const pageKey = generatePageKey(permalink)
-  const consumed = await consumeActiveLikeToken(pageKey, token)
+export async function decreaseLikes(target: EntityTarget, token: string) {
+  const consumed = await consumeActiveLikeToken(target, token)
   if (consumed) {
-    await decrementMetricVotes(pageKey)
+    await decrementMetricVotes(target)
   }
 }
 
-export async function queryLikes(permalink: string): Promise<number> {
-  return metricVoteUp(generatePageKey(permalink))
+export async function queryLikes(target: EntityTarget): Promise<number> {
+  return metricVoteUp(target)
 }
 
+/**
+ * Batch metric read for a list of entity targets. Fans out per-type so
+ * Drizzle stays on the cheap `eq + inArray` path. The returned map is
+ * keyed on `targetKey(target)` so callers look up an entry without
+ * juggling `(type, ownerId)` tuples; each value also carries the
+ * metric `publicId` UUID for downstream wire-format usage.
+ */
 export async function queryMetadata(
-  permalinks: string[],
+  targets: EntityTarget[],
   options: { likes: boolean; views: boolean; comments: boolean },
-): Promise<Map<string, { likes: number; views: number; comments: number }>> {
-  if (permalinks.length === 0) {
+): Promise<Map<string, { likes: number; views: number; comments: number; publicId: string }>> {
+  if (targets.length === 0) {
     return new Map()
   }
-  const pageKeys = permalinks.map((permalink) => generatePageKey(permalink))
-  const [likesAndViewsRows, commentRows] = await Promise.all([
-    metricsByKeys(pageKeys),
-    options.comments ? commentCountsByPageKeys(pageKeys) : Promise.resolve([]),
+  const postIds = targets.filter((t) => t.type === 'post').map((t) => t.ownerId)
+  const pageIds = targets.filter((t) => t.type === 'page').map((t) => t.ownerId)
+
+  const [postMetrics, pageMetrics, postCommentCounts, pageCommentCounts] = await Promise.all([
+    metricsByOwnerIds('post', postIds),
+    metricsByOwnerIds('page', pageIds),
+    options.comments ? commentCountsByOwnerIds('post', postIds) : Promise.resolve([]),
+    options.comments ? commentCountsByOwnerIds('page', pageIds) : Promise.resolve([]),
   ])
 
-  const likesAndViewsByKey = new Map(likesAndViewsRows.map((row) => [row.key, row]))
-  const commentsByKey = new Map(commentRows.map((row) => [row.pageKey, row]))
-
-  const results = new Map<string, { likes: number; views: number; comments: number }>()
-  for (const permalink of permalinks) {
-    const pageKey = generatePageKey(permalink)
-    const likesAndView = likesAndViewsByKey.get(pageKey)
-    const commentCount = commentsByKey.get(pageKey)
-
-    results.set(permalink, {
-      likes: likesAndView?.like ?? 0,
-      views: likesAndView?.view ?? 0,
-      comments: commentCount?.count ?? 0,
-    })
+  const metricByTarget = new Map<string, { like: number | null; view: number | null; publicId: string }>()
+  for (const row of postMetrics) {
+    metricByTarget.set(targetKey(row), row)
+  }
+  for (const row of pageMetrics) {
+    metricByTarget.set(targetKey(row), row)
   }
 
-  return results
+  const commentCountByTarget = new Map<string, number>()
+  for (const row of postCommentCounts) {
+    commentCountByTarget.set(targetKey({ type: 'post', ownerId: row.ownerId }), row.count)
+  }
+  for (const row of pageCommentCounts) {
+    commentCountByTarget.set(targetKey({ type: 'page', ownerId: row.ownerId }), row.count)
+  }
+
+  const out = new Map<string, { likes: number; views: number; comments: number; publicId: string }>()
+  for (const target of targets) {
+    const key = targetKey(target)
+    const m = metricByTarget.get(key)
+    out.set(key, {
+      likes: m?.like ?? 0,
+      views: m?.view ?? 0,
+      comments: commentCountByTarget.get(key) ?? 0,
+      publicId: m?.publicId ?? '',
+    })
+  }
+  return out
 }
 
 /**
@@ -80,9 +98,9 @@ export async function queryMetadata(
  * pays a `Math.random()` + opportunistic table scan per call. Dedicated
  * cron jobs can still invoke `purgeStaleLikeTokens()` directly.
  */
-export async function validateLikeToken(permalink: string, token: string): Promise<boolean> {
+export async function validateLikeToken(target: EntityTarget, token: string): Promise<boolean> {
   ensureLikeTokenSweepStarted()
-  return existsActiveLikeToken(generatePageKey(permalink), token)
+  return existsActiveLikeToken(target, token)
 }
 
 /**

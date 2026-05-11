@@ -562,9 +562,9 @@ export function UserDetailView({ userId }: { userId: string }) {
                     {comments.map((c) => (
                       <li key={idStr(c.id)} className="border-b pb-3 last:border-b-0 last:pb-0">
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          {c.pageTitle && (
+                          {c.pageTitle && c.pagePublicId && (
                             <Link
-                              to={`/wp-admin/comments?pageKey=${encodeURIComponent(c.pageKey)}`}
+                              to={`/wp-admin/comments?pageKey=${encodeURIComponent(c.pagePublicId)}`}
                               className="font-medium hover:underline"
                             >
                               {c.pageTitle}

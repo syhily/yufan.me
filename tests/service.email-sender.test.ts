@@ -19,6 +19,17 @@ vi.mock('@/server/pt/comment-to-html', () => ({
   commentBodyToHtml: vi.fn(() => '<p>stub</p>'),
 }))
 
+// `sender.ts` resolves the entity's current slug + title at send time.
+// Stub the lookup so the test doesn't need a real DB; the e2e tests pin
+// the full resolver path.
+vi.mock('@/server/comments/url', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/server/comments/url')>()
+  return {
+    ...actual,
+    findEntitySlugTitle: vi.fn(async () => ({ slug: 'hi', title: 'Hi' })),
+  }
+})
+
 const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
 const { sendNewComment, sendTestMail } = await import('@/server/email/sender')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
@@ -60,12 +71,12 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     isPending: false,
     user: { id: 1n, name: 'visitor', email: 'visitor@example.com' },
   } as never
-  const page = { key: 'https://example.com/posts/hi', title: 'Hi' } as never
+  const target = { type: 'post' as const, ownerId: 1n }
 
   it('skips with reason=disabled when the master switch is off', async () => {
     setMail({ enabled: false, host: 'api.zeabur.com', apiKey: 'KEY', sender: 'noreply@example.com' })
 
-    const result = await sendNewComment(commentInfo, page)
+    const result = await sendNewComment(commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -77,7 +88,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
   it('skips with reason=unconfigured when API key is empty even if enabled', async () => {
     setMail({ enabled: true, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' })
 
-    const result = await sendNewComment(commentInfo, page)
+    const result = await sendNewComment(commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
@@ -90,7 +101,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 200 }))
 
-    const result = await sendNewComment(commentInfo, page)
+    const result = await sendNewComment(commentInfo, target)
 
     expect(result.ok).toBe(true)
     expect(fetchMock).toHaveBeenCalledOnce()
@@ -108,7 +119,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
     fetchMock.mockResolvedValueOnce(new Response('quota exceeded', { status: 429, statusText: 'Too Many Requests' }))
 
-    const result = await sendNewComment(commentInfo, page)
+    const result = await sendNewComment(commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false && result.reason === 'upstream') {
@@ -124,7 +135,7 @@ describe('email/sender — internalSend (via sendNewComment)', () => {
     setMail({ enabled: true, host: 'api.zeabur.com', apiKey: 'SECRET', sender: 'noreply@example.com' })
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'))
 
-    const result = await sendNewComment(commentInfo, page)
+    const result = await sendNewComment(commentInfo, target)
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {

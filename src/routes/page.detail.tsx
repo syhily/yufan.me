@@ -97,8 +97,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
     context,
-    permalink: page.permalink,
-    title: page.title,
+    target: { type: 'page', ownerId: BigInt(page.id) },
     preload: () => Promise.resolve(),
   })
 

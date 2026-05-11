@@ -26,7 +26,15 @@ export interface CommentAndUser {
    * before serialising to the wire).
    */
   content: string | null
-  pageKey: string
+  /**
+   * Polymorphic entity reference. `'post' | 'page'` (no DB enum,
+   * mirrors the `content` table convention). `ownerId` is the
+   * stringified bigint pointing at `post.id` / `page.id`. Both are
+   * nullable to accommodate legacy / orphan rows that have not yet
+   * been backfilled by the metric-key migration.
+   */
+  type: 'post' | 'page' | null
+  ownerId: bigint | null
   userId: bigint
   isVerified: boolean | null
   ua: string | null
@@ -59,6 +67,13 @@ export interface Comments {
 
 export interface AdminComment extends CommentAndUser {
   pageTitle: string | null
+  /**
+   * The metric's `public_id` UUID for the page the comment belongs
+   * to. Drives the admin moderation filter Combobox (`?pageKey=<uuid>`)
+   * and the per-comment "filter by page" affordance. `null` for
+   * orphaned comments whose metric row is missing.
+   */
+  pagePublicId: string | null
 }
 
 export interface AdminCommentsResult {
