@@ -1,3 +1,5 @@
+import { renderMermaidSVGAsync } from 'beautiful-mermaid'
+
 import type { RenderMermaidOutput } from '@/shared/cms-pages'
 
 import { renderMermaidSchema } from '@/server/cms/pages/schema'
@@ -16,7 +18,6 @@ export const action = defineApiAction({
       return { svg: '', error: null }
     }
     try {
-      const { renderMermaidSVGAsync } = await import('beautiful-mermaid')
       const svg = await renderMermaidSVGAsync(code)
       return { svg, error: null }
     } catch (err) {

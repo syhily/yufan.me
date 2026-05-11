@@ -1,3 +1,4 @@
+import { renderPortableTextToHtml } from '@/server/cms/pages/preview'
 import { previewPageBodySchema } from '@/server/cms/pages/schema'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
@@ -9,9 +10,6 @@ import { collectHeadings } from '@/shared/pt/schema'
 // headings are extracted server-side so the preview pane can render
 // the same TOC the published page would.
 //
-// HTML rendering goes through the dedicated SSR PortableText renderer,
-// imported lazily so this resource route doesn't pay the renderer's
-// startup cost on cold boot when the editor isn't open.
 // 1MB ceiling on the inbound PortableText body. PT bodies are JSON
 // arrays of plain text + a sprinkle of metadata; even a 50K-word
 // post stays well under 200KB. 1MB is comfortably above that and
@@ -24,7 +22,6 @@ export const action = defineApiAction({
   requireAdmin: true,
   maxBodyBytes: MAX_BODY_BYTES,
   async run({ payload }) {
-    const { renderPortableTextToHtml } = await import('@/server/cms/pages/preview')
     const html = await renderPortableTextToHtml(payload.body)
     const headings = collectHeadings(payload.body, deriveSlug)
     return { html, headings }

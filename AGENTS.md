@@ -379,8 +379,7 @@ Use aliases instead of relative paths. The only allowed relative imports:
   `<storage.publicBaseUrl>/<storagePath>`.
 - The dispatcher (`@/server/images/storage`) is gated on the single
   `assets.storage.enabled` toggle in `setting('blog.assets')`:
-  - **ON** — PUT/DELETE go through `@/server/images/s3-client` (the
-    AWS SDK is loaded lazily so URL-only paths don't pull it in).
+  - **ON** — PUT/DELETE go through `@/server/images/s3-client`.
   - **OFF** (default for fresh installs) — PUT/DELETE return
     `ActionFailure(503)`. The library is read-only; the SSR enhancer
     still resolves historical rows against the saved `publicBaseUrl`.

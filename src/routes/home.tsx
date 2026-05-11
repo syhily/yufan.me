@@ -2,7 +2,12 @@ import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loade
 import type { SidebarData } from '@/ui/sidebar/Sidebar'
 
 import { getCategoryLinks, listAllTags } from '@/server/catalog'
-import { selectFeaturePosts, selectSidebarPosts } from '@/server/posts/query'
+import {
+  countPublicPosts,
+  listPublicPostCardsPaginated,
+  selectFeaturePosts,
+  selectSidebarPosts,
+} from '@/server/posts/query'
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { metaWithFallback } from '@/server/seo/meta'
@@ -33,7 +38,6 @@ export async function loader({
   const homePageSize = content.pagination.posts
   const mergeTailWhenLessThan = Math.max(0, homePageSize - 2)
 
-  const { listPublicPostCardsPaginated, countPublicPosts } = await import('@/server/posts/query')
   const filters = {
     includeHidden: false,
     includeScheduled: import.meta.env.DEV,
