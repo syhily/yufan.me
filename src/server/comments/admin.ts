@@ -1,7 +1,9 @@
 import type { AdminCommentsResult } from '@/server/comments/types'
 import type { AdminListFilters } from '@/server/db/query/comment'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
+import { canonicalizeCommentBody } from '@/server/comments/canonicalize'
 import {
   approveCommentById,
   countAllComments,
@@ -11,11 +13,10 @@ import {
   listAdminComments,
   searchCommentAuthors,
   searchPages,
-  updateCommentContent,
+  updateCommentBodyAndContent,
 } from '@/server/db/query/comment'
 import { sendApprovedComment } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
-import { parseContent } from '@/server/markdown/parser'
 
 // Admin-only helpers for the moderation panel. Split out of `loader.server.ts`
 // so the public detail-route bundle no longer drags in the admin-list query
@@ -43,17 +44,17 @@ export async function getCommentById(rid: string) {
   return findCommentWithUserById(BigInt(rid))
 }
 
-export async function updateComment(rid: string, newContent: string) {
+export async function updateComment(rid: string, newBody: CommentBody) {
   const id = BigInt(rid)
-  await updateCommentContent(id, newContent)
+  const { body, content } = await canonicalizeCommentBody(newBody)
+  await updateCommentBodyAndContent(id, body, content)
 
   const r = await findCommentWithUserById(id)
   if (r === null) {
     return null
   }
 
-  r.content = await parseContent(r.content)
-  return withCommentBadgeTextColor(r)
+  return { ...withCommentBadgeTextColor(r), content: null }
 }
 
 // Server-side autocomplete: invoked by the moderation Combobox filters
@@ -101,13 +102,13 @@ export async function loadAllComments(
   const total = status === 'pending' ? pendingCount : status === 'approved' ? approvedCount : allCount
 
   return {
-    comments: await Promise.all(
-      comments.map(async (c) => ({
-        ...withCommentBadgeTextColor(c),
-        content: await parseContent(c.content),
-        pageTitle: c.pageTitle,
-      })),
-    ),
+    comments: comments.map((c) => ({
+      ...withCommentBadgeTextColor(c),
+      // Strip the server-only markdown snapshot from the admin DTO so
+      // the moderation UI renders directly from the canonical `body`.
+      content: null,
+      pageTitle: c.pageTitle,
+    })),
     total,
     hasMore: offset + limit < total,
     statusCounts: { all: allCount, pending: pendingCount, approved: approvedCount },

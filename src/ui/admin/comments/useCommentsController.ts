@@ -37,7 +37,7 @@ type CommentsAction =
   | { type: 'loaded'; comments: AdminComment[]; total: number; hasMore: boolean; statusCounts: StatusCounts }
   | { type: 'removeComment'; id: string }
   | { type: 'approveComment'; id: string }
-  | { type: 'updateCommentContent'; id: string; content: string }
+  | { type: 'updateCommentContent'; id: string; body: import('@/shared/pt/comment-schema').CommentBody }
   | { type: 'setFilterStatus'; value: FilterStatus }
   | { type: 'setFilterPage'; value: FilterItem | null }
   | { type: 'setFilterAuthor'; value: FilterItem | null }
@@ -69,7 +69,7 @@ function commentsReducer(state: CommentsState, action: CommentsAction): Comments
       return {
         ...state,
         comments: state.comments.map((comment) =>
-          idStr(comment.id) === action.id ? { ...comment, content: action.content } : comment,
+          idStr(comment.id) === action.id ? { ...comment, body: action.body } : comment,
         ),
       }
     case 'setFilterStatus':

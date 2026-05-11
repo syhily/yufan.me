@@ -14,6 +14,7 @@ const commentWithUser = {
   updatedAt: comment.updatedAt,
   deleteAt: comment.deletedAt,
   content: comment.content,
+  body: comment.body,
   pageKey: comment.pageKey,
   userId: comment.userId,
   isVerified: comment.isVerified,
@@ -232,6 +233,14 @@ export async function findCommentWithUserById(id: bigint) {
 
 export async function updateCommentContent(id: bigint, content: string): Promise<void> {
   await db.update(comment).set({ content }).where(eq(comment.id, id))
+}
+
+export async function updateCommentBodyAndContent(
+  id: bigint,
+  body: NewComment['body'],
+  content: string,
+): Promise<void> {
+  await db.update(comment).set({ body, content }).where(eq(comment.id, id))
 }
 
 export async function findCommentWithSourceUser(id: bigint) {

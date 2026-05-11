@@ -5,11 +5,26 @@ export interface LatestComment {
   permalink: string
 }
 
+import type { CommentBody } from '@/shared/pt/comment-schema'
+
 export interface CommentAndUser {
   id: bigint
   createAt: Date
   updatedAt: Date
   deleteAt: Date | null
+  /**
+   * Canonical PortableText body. Rendered by `<PortableTextBody>` on
+   * the public site. The DB also retains a markdown projection of this
+   * field under `comment.content`, but that's server-only and is NOT
+   * projected into client DTOs (loaders strip it out).
+   */
+  body: CommentBody
+  /**
+   * Plain-text / markdown rollback snapshot. Present on server-side
+   * `CommentAndUser` values (since the DB query selects it), null on
+   * client-projected `CommentItem` values (the SSR loader nulls it out
+   * before serialising to the wire).
+   */
   content: string | null
   pageKey: string
   userId: bigint
@@ -68,7 +83,7 @@ export interface CommentReq {
   name: string
   email: string
   link?: string
-  content: string
+  body: CommentBody
   rid?: number
 }
 

@@ -13,7 +13,15 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
     createAt: new Date('2024-01-15T08:30:00.000Z'),
     updatedAt: new Date('2024-01-15T08:30:00.000Z'),
     deleteAt: null,
-    content: '<p>Hello, world.</p>',
+    content: null,
+    body: [
+      {
+        _type: 'block',
+        _key: 'b1',
+        style: 'normal',
+        children: [{ _type: 'span', _key: 's1', text: 'Hello, world.' }],
+      },
+    ],
     pageKey: '/posts/hello',
     userId: 42n,
     isVerified: true,

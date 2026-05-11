@@ -8,7 +8,7 @@ export const action = defineApiAction({
   input: commentEditSchema,
   requireAdmin: true,
   async run({ payload }) {
-    const updated = await updateComment(payload.rid, payload.content)
+    const updated = await updateComment(payload.rid, payload.body)
     if (!updated) {
       throw new ActionFailure(500, '更新评论失败')
     }

@@ -12,6 +12,6 @@ export const loader = defineApiAction({
     if (!comment) {
       throw new ActionFailure(404, '评论不存在')
     }
-    return { content: comment.content }
+    return { body: comment.body }
   },
 })

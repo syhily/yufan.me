@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { useFetcher } from 'react-router'
+import { useRef, useState } from 'react'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { FindAvatarInput, FindAvatarOutput, ReplyCommentOutput } from '@/shared/api-types'
+import type { FindAvatarInput, FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/api-types'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
 import { cn } from '@/ui/lib/cn'
 import { publicButtonVariants } from '@/ui/primitives/btn'
 import { formControlVariants } from '@/ui/primitives/formControl'
@@ -23,23 +24,16 @@ export interface CommentReplyFormProps {
   replyToId: number
   /** Resolved reply target (for the quoted-author overlay). */
   replyTarget?: CommentItemType
-  /** External ref so the parent `<Comments>` island can focus the textarea. */
-  textareaRef?: React.RefObject<HTMLTextAreaElement | null>
   onCancel: () => void
   onReplied: (comment: CommentItemType, rid: number) => void
 }
 
-const REPLY = API_ACTIONS.comment.replyComment
-
-// Reply form goes through React Router's `<fetcher.Form>` pipeline:
-// the browser submits a regular form-encoded POST to the resource route, the
-// `defineApiAction` perimeter parses + validates the body via the same Zod
-// schema as the legacy JSON channel, and the response envelope flows back
-// through `fetcher.data` so the parent `<Comments>` island can splice the new
-// comment into local state without a page refresh.
-//
-// Avatar lookup intentionally stays on the JSON channel (typed callback,
-// fires on email blur) since it's not a form submission.
+// Reply form — body is authored in the simplified Tiptap editor and
+// submitted as JSON to `comment.replyComment`. The legacy
+// `<fetcher.Form>` path was retired alongside the markdown pipeline:
+// PortableText bodies can't be cleanly form-encoded, and the editor
+// already lifts the body up as React state, so going through
+// `useApiFetcher` is both simpler and lighter-weight.
 export function CommentReplyForm({
   commentKey,
   csrfToken,
@@ -47,56 +41,42 @@ export function CommentReplyForm({
   user,
   replyToId,
   replyTarget,
-  textareaRef,
   onCancel,
   onReplied,
 }: CommentReplyFormProps) {
-  const fetcher = useFetcher<ApiEnvelope<ReplyCommentOutput>>()
+  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  // Bumping `bodyKey` forces the editor to reset its internal PM doc
+  // from `initialBody` (used to clear after a successful submit).
+  const [bodyKey, setBodyKey] = useState(0)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
   const [avatarSrc, setAvatarSrc] = useState<string>(() =>
     user?.admin ? joinUrl('/images/avatar', `${user.id}.png`) : '/images/default-avatar.png',
   )
 
-  // Pin the latest callbacks so the result-draining effect doesn't fan out a
-  // fresh subscription on every parent rerender.
-  const latest = useRef({ onReplied, onCsrfRotated, replyToId })
-  latest.current = { onReplied, onCsrfRotated, replyToId }
-
-  // Drain `fetcher.data` once per response, then clear the textarea so the
-  // next submission starts empty.
-  const lastHandled = useRef<unknown>(null)
-  useEffect(() => {
-    const data = fetcher.data
-    if (fetcher.state !== 'idle' || !data) {
-      return
-    }
-    if (data === lastHandled.current) {
-      return
-    }
-    lastHandled.current = data
-    if (data.error) {
-      console.error(`[api] ${REPLY.method} ${REPLY.path} failed`, data.error)
-      return
-    }
-    if (data.data === undefined) {
-      return
-    }
-    if (data.data.csrfToken) {
-      latest.current.onCsrfRotated(data.data.csrfToken)
-    }
-    latest.current.onReplied(data.data.comment, latest.current.replyToId)
-    const textarea = formRef.current?.querySelector<HTMLTextAreaElement>('textarea[name="content"]')
-    if (textarea) {
-      textarea.value = ''
-    }
-  }, [fetcher.state, fetcher.data])
+  const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(API_ACTIONS.comment.replyComment, {
+    onSuccess: (data) => {
+      setSubmitError(null)
+      if (data.csrfToken) {
+        onCsrfRotated(data.csrfToken)
+      }
+      onReplied(data.comment, replyToId)
+      // Clear the editor + remount via bodyKey bump.
+      setBody(EMPTY_COMMENT_BODY)
+      setBodyKey((k) => k + 1)
+      formRef.current?.reset()
+    },
+    onError: (error) => {
+      setSubmitError(error.message)
+    },
+  })
 
   const avatar = useApiFetcher<FindAvatarInput, FindAvatarOutput>(API_ACTIONS.comment.findAvatar, {
     onSuccess: (payload) => setAvatarSrc(payload.avatar),
   })
 
   const admin = user?.admin === true
-  const isPending = fetcher.state !== 'idle'
+  const isPending = reply.isPending
   const isReplying = replyToId !== 0 && replyTarget !== undefined
 
   const onEmailBlur = (event: React.FocusEvent<HTMLInputElement>) => {
@@ -111,10 +91,35 @@ export function CommentReplyForm({
     }
   }
 
+  const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (isCommentBodyBlank(body)) {
+      setSubmitError('请输入评论内容。')
+      return
+    }
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const name = readFormString(data, 'name') ?? user?.name ?? ''
+    const email = readFormString(data, 'email') ?? user?.email ?? ''
+    const link = readFormString(data, 'link') ?? ''
+    const subtitle = readFormString(data, 'subtitle') ?? ''
+    const payload: ReplyCommentInput = {
+      page_key: commentKey,
+      name,
+      email,
+      link: link !== '' ? link : undefined,
+      body,
+      csrf: csrfToken,
+      rid: replyToId === 0 ? undefined : replyToId,
+      subtitle: subtitle === '' ? undefined : subtitle,
+    }
+    setSubmitError(null)
+    reply.submit(payload)
+  }
+
   return (
     <div id="respond" className="mb-4 md:mb-6">
-      <fetcher.Form ref={formRef} method={REPLY.method} action={REPLY.path} id="commentForm" className="flex flex-1">
-        <input name="csrf" type="hidden" value={csrfToken} />
+      <form ref={formRef} id="commentForm" className="flex flex-1" onSubmit={handleSubmit}>
         <div className="relative mr-[15px] flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7">
           <img
             alt="头像"
@@ -127,29 +132,23 @@ export function CommentReplyForm({
         </div>
         <div className="flex-1">
           <div className="relative mb-4">
-            <textarea
-              id="content"
-              name="content"
-              ref={textareaRef}
-              className={cn(
-                formControlVariants({ control: 'textarea' }),
-                // 40 px (= 2.5 rem) top inset reserves room for the
-                // absolutely-positioned `<ReplyOverlay>` chip rendered
-                // just below this textarea when a reply is staged.
-                isReplying && 'pt-10',
-              )}
-              rows={3}
-              required
+            <CommentBodyEditor
+              initialBody={EMPTY_COMMENT_BODY}
+              bodyKey={`reply-${bodyKey}`}
+              onBodyChange={setBody}
+              disabled={isPending}
+              className={isReplying ? 'pt-10' : undefined}
             />
             {isReplying && (
               <ReplyOverlay
                 authorName={replyTarget.name}
-                originalContent={(replyTarget.content ?? '').replace(/<[^>]+>/g, '').trim()}
+                originalContent={bodyToPlainText(replyTarget.body).slice(0, 200).trim()}
               />
             )}
           </div>
           <CommentFormFields user={user} commentKey={commentKey} replyToId={replyToId} onEmailBlur={onEmailBlur} />
           {!admin && <CommentFormHoneypot />}
+          {submitError && <div className="mb-2 text-xs text-alert">{submitError}</div>}
           <div className="flex justify-end gap-2">
             {replyToId !== 0 && (
               <button
@@ -172,9 +171,14 @@ export function CommentReplyForm({
             </button>
           </div>
         </div>
-      </fetcher.Form>
+      </form>
     </div>
   )
+}
+
+function readFormString(data: FormData, name: string): string | undefined {
+  const value = data.get(name)
+  return typeof value === 'string' ? value : undefined
 }
 
 interface ReplyOverlayProps {
@@ -182,15 +186,11 @@ interface ReplyOverlayProps {
   originalContent: string
 }
 
-// The "回复 @name: …" chip floats over the staged reply textarea,
+// The "回复 @name: …" chip floats over the staged reply editor,
 // pinned 0.4 rem from the top and 0.75 rem from each horizontal
-// edge. The brand-tinted background (#008c95 @ 5 %) and ink-muted
-// text (#495057 @ 95 %) are arbitrary literals here because they
-// have a single consumer; if a second site location ever needs the
-// `tailwind.css @theme inline` as `--color-overlay-brand` /
-// `--color-ink-muted-soft`. `pointer-events-none` keeps the chip
-// click-through so the textarea below stays interactive even when
-// the overlay extends beyond a single line.
+// edge. `pointer-events-none` keeps the chip click-through so the
+// editor below stays focusable even when the overlay extends beyond
+// a single line.
 const replyingToOverlayClass = cn(
   'pointer-events-none absolute top-[0.4rem] right-3 left-3 z-2',
   'flex items-center gap-1',
@@ -210,10 +210,6 @@ function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
 
 /** Off-screen honeypot: humans never see it; bots that fill every input trip schema validation. */
 function CommentFormHoneypot() {
-  // `left-[-10000px]` parks the input far off-screen instead of
-  // `display: none` (which screen-reader-equipped bots could detect
-  // and skip). `size-px` collapses the box to 1×1 so even probes
-  // that ignore `left` still get nothing useful.
   return (
     <div className="absolute left-[-10000px] size-px overflow-hidden" aria-hidden="true">
       <label htmlFor="comment-subtitle">Subtitle</label>
@@ -271,8 +267,6 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
         </div>
       )}
       <input hidden name="page_key" type="text" defaultValue={commentKey} />
-      {/* `rid` rides along with the form submission so the resource-route
-          action receives the reply target without a separate hidden control. */}
       <input hidden name="rid" type="text" value={String(replyToId)} readOnly />
       {admin ? (
         <input

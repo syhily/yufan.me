@@ -47,7 +47,6 @@
     "@orama/orama": "^3.1.18",
     "@orama/tokenizers": "^3.1.18",
     "@portabletext/react": "^6.2.0",
-    "@portabletext/types": "^4.0.2",
     "@react-router/node": "^7.15.0",
     "@react-router/serve": "^7.15.0",
     "@shikijs/transformers": "^4.0.2",
@@ -107,6 +106,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@portabletext/types": "^4.0.2",
     "@react-router/dev": "^7.15.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",

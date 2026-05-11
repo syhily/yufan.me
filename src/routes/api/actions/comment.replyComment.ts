@@ -5,13 +5,14 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure, DomainError } from '@/server/route-helpers/errors'
 import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/session'
 
-// Accepts either form-encoded (`<fetcher.Form>` submissions from the public
-// bodies (admin reply card still posts JSON). Dispatching on
-// `Content-Type` per request keeps the same endpoint working for both shapes.
+// Accepts JSON only — PortableText bodies aren't form-encodable, so
+// the public reply form posts JSON through `useApiFetcher` (the
+// legacy `<fetcher.Form>` path was retired with the markdown
+// pipeline).
 export const action = defineApiAction({
   method: 'POST',
   input: commentReplySchema,
-  inputSource: 'auto',
+  inputSource: 'json',
   run: async ({ ctx, payload, isAdmin }) => {
     const [csrfOk] = await validateRequestCsrf(ctx.request, payload.csrf)
     if (!csrfOk) {

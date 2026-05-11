@@ -1,5 +1,6 @@
 import type { ClearCacheInput, ClearCacheResultDto, AdminCacheStatsDto } from '@/shared/cache-types'
 import type { AdminComment, CommentItem } from '@/shared/comments'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { UpdateSettingsInput } from '@/shared/settings'
 import type { AdminUserDto, ListUsersInput, MuteUserInput, UserIdInput } from '@/shared/users'
 
@@ -60,7 +61,7 @@ export interface CommentReplyInput {
   name: string
   email: string
   link?: string
-  content: string
+  body: CommentBody
   csrf: string
   rid?: number
   subtitle?: string
@@ -73,7 +74,7 @@ export interface CommentRidInput {
 }
 
 export interface CommentEditInput extends CommentRidInput {
-  content: string
+  body: CommentBody
 }
 
 export interface LoadCommentsInput {
@@ -112,7 +113,7 @@ export interface LoadCommentsOutput {
 }
 
 export interface CommentRawOutput {
-  content: string
+  body: CommentBody
 }
 
 export interface SearchPagesOutput {

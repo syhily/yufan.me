@@ -419,7 +419,7 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
         onClose={() => setEditTarget(null)}
         onSaved={(c) => {
           if (editTarget) {
-            dispatch({ type: 'updateCommentContent', id: idStr(editTarget.id), content: c.content })
+            dispatch({ type: 'updateCommentContent', id: idStr(editTarget.id), body: c.body })
           }
           setEditTarget(null)
         }}

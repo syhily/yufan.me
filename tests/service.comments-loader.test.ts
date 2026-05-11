@@ -62,7 +62,15 @@ function row(overrides: Record<string, unknown> = {}) {
     createAt: new Date('2024-01-01T00:00:00.000Z'),
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
-    content: '<p>x</p>',
+    content: 'x',
+    body: [
+      {
+        _type: 'block' as const,
+        _key: 'b1',
+        style: 'normal' as const,
+        children: [{ _type: 'span' as const, _key: 's1', text: 'x' }],
+      },
+    ],
     pageKey: '/posts/hello',
     userId: 7n,
     isVerified: true,

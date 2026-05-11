@@ -3,6 +3,7 @@ import type { PendingCommentRow } from '@/server/db/query/comment'
 import type { NewComment } from '@/server/db/types'
 
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
+import { canonicalizeCommentBody } from '@/server/comments/canonicalize'
 import {
   adminUserIds,
   commentsByIds,
@@ -21,7 +22,6 @@ import { findMetricByKey, upsertMetric } from '@/server/db/query/metric'
 import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
-import { parseContent } from '@/server/markdown/parser'
 import { DomainError } from '@/server/route-helpers/errors'
 import { isAdmin, userSession, type BlogSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -142,13 +142,21 @@ export async function createComment(
     throw new DomainError('FORBIDDEN', '您的评论功能已被管理员禁用，如有疑问请联系站长。')
   }
 
+  // Canonicalise the incoming PT body: validate the comment-scoped
+  // schema, prerender heavy assets (Shiki + KaTeX), and derive the
+  // markdown rollback snapshot that gets stored alongside the JSONB
+  // representation in `comment.content`.
+  const { body: canonicalBody, content: markdownSnapshot } = await canonicalizeCommentBody(commentReq.body)
+
   // Query the existing comments for the user for deduplication. Scoped to
   // (userId, last 7 days). Admins are exempt because they may legitimately
-  // post the same canned reply on different threads.
+  // post the same canned reply on different threads. Dedupe compares the
+  // markdown snapshot — comparing JSON would defeat the check because
+  // each save mints fresh `_key` nanoids on every block.
   if (!u.isAdmin) {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const recent = await recentCommentsForUserDedupe(u.id, since, 20)
-    if (recent.some((c) => c.content === commentReq.content)) {
+    if (recent.some((c) => c.content === markdownSnapshot)) {
       throw new DomainError('CONFLICT', '重复评论，你已经有了相同的留言，如果在页面看不到，说明它正在等待站长审核。')
     }
   }
@@ -170,7 +178,8 @@ export async function createComment(
 
   // Insert the comment
   const newComment: NewComment = {
-    content: commentReq.content,
+    content: markdownSnapshot,
+    body: canonicalBody,
     pageKey: commentReq.page_key,
     userId: u.id,
     isVerified: u.emailVerified,
@@ -188,8 +197,6 @@ export async function createComment(
   if (cr === null) {
     throw new DomainError('INTERNAL', '系统错误，评论创建失败。')
   }
-
-  cr.content = await parseContent(cr.content)
 
   const { createdAt, deletedAt, ...commentRest } = cr
   const info = withCommentBadgeTextColor({
@@ -224,18 +231,21 @@ export async function createComment(
 }
 
 export async function parseComments(comments: CommentAndUser[]): Promise<CommentItem[]> {
-  const parsedComments = await Promise.all(
-    comments.map(async (comment) => ({
-      ...withCommentBadgeTextColor(comment),
-      content: await parseContent(comment.content),
-    })),
-  )
+  // PT bodies are stored pre-rendered (Shiki/KaTeX MathML baked into
+  // `body` at save time), so the public projection just strips the
+  // server-only `content` markdown snapshot and adds the badge text
+  // colour. The function stays `async` so the existing `await` call
+  // sites don't need to change.
+  const projected = comments.map((comment) => ({
+    ...withCommentBadgeTextColor(comment),
+    content: null,
+  }))
   const childComments = groupBy(
-    parsedComments.filter((comment) => !rootCommentFilter(comment)),
+    projected.filter((comment) => !rootCommentFilter(comment)),
     (c) => String(c.rid),
   )
 
-  return parsedComments.filter(rootCommentFilter).map((comment) => commentItems(comment, childComments))
+  return projected.filter(rootCommentFilter).map((comment) => commentItems(comment, childComments))
 }
 
 function rootCommentFilter(comment: CommentAndUser): boolean {
