@@ -1,89 +1,137 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import type { Post } from '@/server/catalog'
-
-import { makePost } from './_helpers/catalog'
-
 const mocks = vi.hoisted(() => ({
-  listAllPosts: vi.fn(),
+  dbSelect: vi.fn(),
+  getBlogSettingsBundleSync: vi.fn(),
+  generateEmbedding: vi.fn(),
 }))
 
-vi.mock('@/server/catalog', () => mocks)
+vi.mock('@/server/db/pool', () => ({
+  db: { select: mocks.dbSelect },
+}))
 
-const { resetSearchIndexForTest, searchPostOptions, searchPosts } = await import('@/server/search')
+vi.mock('@/shared/blog-config', () => ({
+  getBlogSettingsBundleSync: mocks.getBlogSettingsBundleSync,
+}))
 
-// Build a Post-shaped record by reusing the shared ClientPost helper.
-function makeIndexablePost(overrides: Partial<Post> = {}): Post {
-  return {
-    ...makePost(overrides),
-    body: [],
-    imageSources: overrides.imageSources ?? [],
+vi.mock('@/server/search/openai', () => ({
+  generateEmbedding: mocks.generateEmbedding,
+}))
+
+function chainable(rows: unknown[]) {
+  const handle = Promise.resolve(rows) as unknown as {
+    from: () => typeof handle
+    innerJoin: () => typeof handle
+    where: () => typeof handle
+    orderBy: () => typeof handle
+    limit: () => typeof handle
+    then: Promise<unknown[]>['then']
   }
+  handle.from = () => handle
+  handle.innerJoin = () => handle
+  handle.where = () => handle
+  handle.orderBy = () => handle
+  handle.limit = () => handle
+  return handle
 }
 
+const { searchPostOptions, searchPosts } = await import('@/server/search')
+
 beforeEach(() => {
-  mocks.listAllPosts.mockReset()
-  resetSearchIndexForTest()
+  mocks.dbSelect.mockReset()
+  mocks.getBlogSettingsBundleSync.mockReset()
+  mocks.generateEmbedding.mockReset()
+
+  // Default: LIKE mode (no vector)
+  mocks.getBlogSettingsBundleSync.mockReturnValue({
+    search: {
+      search: {
+        enabled: false,
+        mode: 'like',
+        endpoint: '',
+        apiKey: '',
+        model: 'text-embedding-3-small',
+        similarityThreshold: 0.5,
+      },
+    },
+  })
 })
 
 describe('services/search — searchPosts', () => {
-  it('builds the index from the same hidden-inclusive options used by the route', async () => {
-    mocks.listAllPosts.mockResolvedValue([
-      makeIndexablePost({
-        slug: 'visible-react',
-        title: 'Visible React',
-        tags: ['react'],
-      }),
-    ])
+  it('returns empty results for empty query', async () => {
+    const result = await searchPosts('', 10)
+    expect(result.hits).toEqual([])
+    expect(result.totalPages).toBe(0)
+  })
 
-    await searchPosts('React', 10)
+  it('uses LIKE mode by default', async () => {
+    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'post-with-phrase' }, { slug: 'another-post' }]))
 
-    expect(mocks.listAllPosts).toHaveBeenCalledWith(searchPostOptions())
+    const result = await searchPosts('向量数据库', 10)
+
+    expect(result.hits).toEqual(['post-with-phrase', 'another-post'])
+    expect(result.totalPages).toBe(1)
+    expect(mocks.generateEmbedding).not.toHaveBeenCalled()
+  })
+
+  it('paginates LIKE results', async () => {
+    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'post-a' }, { slug: 'post-b' }, { slug: 'post-c' }]))
+
+    const result = await searchPosts('query', 2, 1)
+
+    expect(result.hits).toEqual(['post-b', 'post-c'])
+    expect(result.page).toBe(1)
+    expect(result.totalPages).toBe(2)
+  })
+
+  it('uses vector mode when enabled and embedding succeeds', async () => {
+    mocks.getBlogSettingsBundleSync.mockReturnValue({
+      search: {
+        search: {
+          enabled: true,
+          mode: 'vector',
+          endpoint: '',
+          apiKey: 'sk-test',
+          model: 'text-embedding-3-small',
+          similarityThreshold: 0.5,
+        },
+      },
+    })
+    mocks.generateEmbedding.mockResolvedValue([0.1, 0.2, 0.3])
+    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'vector-match-1' }, { slug: 'vector-match-2' }]))
+
+    const result = await searchPosts('semantic query', 10)
+
+    expect(mocks.generateEmbedding).toHaveBeenCalledWith('semantic query')
+    expect(result.hits).toEqual(['vector-match-1', 'vector-match-2'])
+  })
+
+  it('falls back to LIKE when vector mode is enabled but embedding fails', async () => {
+    mocks.getBlogSettingsBundleSync.mockReturnValue({
+      search: {
+        search: {
+          enabled: true,
+          mode: 'vector',
+          endpoint: '',
+          apiKey: 'sk-test',
+          model: 'text-embedding-3-small',
+          similarityThreshold: 0.5,
+        },
+      },
+    })
+    mocks.generateEmbedding.mockResolvedValue(null)
+    mocks.dbSelect.mockImplementation(() => chainable([{ slug: 'like-fallback' }]))
+
+    const result = await searchPosts('query', 10)
+
+    expect(mocks.generateEmbedding).toHaveBeenCalled()
+    expect(result.hits).toEqual(['like-fallback'])
+  })
+
+  it('exposes searchPostOptions with correct visibility flags', () => {
     expect(searchPostOptions()).toEqual({
       includeHidden: true,
       includeScheduled: import.meta.env.DEV,
     })
-  })
-
-  it('paginates over hidden posts returned by the catalog query', async () => {
-    mocks.listAllPosts.mockResolvedValue([
-      makeIndexablePost({ slug: 'visible-react', title: 'Visible React', tags: ['react'] }),
-      makeIndexablePost({
-        slug: 'hidden-react',
-        title: 'Hidden React',
-        tags: ['react'],
-        visible: false,
-      }),
-      makeIndexablePost({ slug: 'other-topic', title: 'Other Topic', tags: ['misc'] }),
-    ])
-
-    const result = await searchPosts('React', 10)
-
-    expect(result.hits).toEqual(expect.arrayContaining(['visible-react', 'hidden-react']))
-    expect(result.hits).not.toContain('other-topic')
-    expect(result.hits).toHaveLength(2)
-    expect(result.totalPages).toBe(1)
-  })
-
-  it('matches CJK queries as a phrase against structuredData paragraph content', async () => {
-    mocks.listAllPosts.mockResolvedValue([
-      makeIndexablePost({
-        slug: 'post-with-phrase',
-        title: '标题甲',
-        summary: '这里讨论了向量数据库的实现细节',
-      }),
-      // A post that only contains the individual characters of the query
-      // scattered across the body must NOT match — the query string is treated
-      // as one phrase, not tokenized per character.
-      makeIndexablePost({
-        slug: 'post-with-scattered-chars',
-        title: '标题乙',
-        summary: '我们用向日葵装饰会场，并测量了灯光的数值据点。图书馆藏书丰富。',
-      }),
-    ])
-
-    const result = await searchPosts('向量数据库', 10)
-
-    expect(result.hits).toEqual(['post-with-phrase'])
   })
 })

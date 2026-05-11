@@ -70,6 +70,16 @@ const fixture: BlogSettingsBundle = {
     commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
   },
+  search: {
+    search: {
+      enabled: false,
+      mode: 'like',
+      endpoint: '',
+      apiKey: '',
+      model: 'text-embedding-3-small',
+      similarityThreshold: 0.5,
+    },
+  },
 }
 
 beforeAll(() => {

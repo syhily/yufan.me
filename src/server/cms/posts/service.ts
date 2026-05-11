@@ -39,6 +39,7 @@ import { seedTagIfMissing } from '@/server/db/query/tag'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { indexPost, removePostIndex } from '@/server/search/indexer'
 import { deriveSlug } from '@/server/slug'
 import { derivedTagSlug } from '@/server/tags/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -346,6 +347,7 @@ export async function deletePost(id: bigint): Promise<{ deleted: boolean }> {
   const deleted = await softDeletePostMeta(id)
   if (deleted) {
     invalidateCatalog('post')
+    await removePostIndex(id).catch(() => undefined)
   }
   return { deleted }
 }
@@ -354,6 +356,13 @@ export async function restorePost(id: bigint): Promise<{ restored: boolean }> {
   const restored = await restorePostMeta(id)
   if (restored) {
     invalidateCatalog('post')
+    const meta = await findPostMetaById(id)
+    if (meta !== null && meta.published && meta.publishedRevisionId !== null) {
+      const revision = await findContentById(meta.publishedRevisionId)
+      if (revision !== null) {
+        await indexPost(meta.id, meta.title, meta.summary, revision.body as PortableTextBody).catch(() => undefined)
+      }
+    }
   }
   return { restored }
 }
@@ -368,6 +377,7 @@ export async function unpublishPost(id: bigint): Promise<AdminPostDto> {
     throw new ActionFailure(404, '文章不存在或已被删除。')
   }
   invalidateCatalog('post')
+  await removePostIndex(id).catch(() => undefined)
   return toAdminPostDto(updated)
 }
 
@@ -436,6 +446,18 @@ async function savePostBodyInternal(input: SavePostBodyInput, mode: 'draft' | 'p
   }
   if (mode === 'publish' && wroteSuccessfully) {
     invalidateCatalog('post')
+    const publishedRevision = await findContentById(result.row.id)
+    if (publishedRevision !== null) {
+      const postMeta = await findPostMetaById(input.postId)
+      if (postMeta !== null) {
+        await indexPost(
+          postMeta.id,
+          postMeta.title,
+          postMeta.summary,
+          publishedRevision.body as PortableTextBody,
+        ).catch(() => undefined)
+      }
+    }
   }
   return projectSaveResult(result)
 }

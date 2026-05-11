@@ -624,6 +624,7 @@ describe('contract: module and bundle boundaries', () => {
       'src/ui/admin/settings/FooterForm.tsx',
       'src/ui/admin/settings/GeneralForm.tsx',
       'src/ui/admin/settings/MailForm.tsx',
+      'src/ui/admin/settings/SearchForm.tsx',
       'src/ui/admin/settings/SeoForm.tsx',
       'src/ui/admin/settings/SidebarForm.tsx',
     ]

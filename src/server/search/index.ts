@@ -1,99 +1,26 @@
-import { create, insertMultiple, search as oramaSearch } from '@orama/orama'
-import { createTokenizer } from '@orama/tokenizers/mandarin'
+import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizzle-orm'
 
-import type { PostVisibilityOptions } from '@/server/catalog'
+import { db } from '@/server/db/pool'
+import { post, postSearchIndex } from '@/server/db/schema'
+import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 
-import { listAllPosts } from '@/server/catalog'
-import { subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
-import { hydrateBlogSettings } from '@/server/settings/snapshot'
+import { generateEmbedding } from './openai'
+import { searchPostOptions } from './options'
 
-// Search should only index posts that can also be rendered by the route.
-// Hidden posts are intentionally searchable; scheduled posts stay dev-only for
-// authoring checks and are excluded from production search results.
-export function searchPostOptions(): PostVisibilityOptions {
-  return { includeHidden: true, includeScheduled: import.meta.env.DEV }
+export { searchPostOptions }
+
+const DEFAULT_SEARCH_SETTINGS = {
+  enabled: false,
+  mode: 'like' as const,
+  apiKey: '',
+  model: 'text-embedding-3-small',
+  similarityThreshold: 0.5,
 }
 
-interface SearchDoc {
-  id: string
-  url: string
-  title: string
-  description: string
+function getSearchSettings() {
+  const bundle = getBlogSettingsBundleSync()
+  return bundle?.search?.search ?? DEFAULT_SEARCH_SETTINGS
 }
-
-type SearchDB = ReturnType<typeof createSearchDB>
-
-function createSearchDB() {
-  return create({
-    schema: {
-      id: 'string',
-      url: 'string',
-      title: 'string',
-      description: 'string',
-    } as const,
-    components: {
-      tokenizer: createTokenizer(),
-    },
-  })
-}
-
-// Lazily build the Orama search index on first query and cache the resulting
-// Promise so concurrent requests share one build.
-let serverPromise: Promise<SearchDB | null> | null = null
-
-async function buildServer(): Promise<SearchDB | null> {
-  const settings = await hydrateBlogSettings()
-  if (settings === null) {
-    return null
-  }
-
-  const posts = await listAllPosts(searchPostOptions())
-  const docs: SearchDoc[] = posts.map((post) => ({
-    id: post.slug,
-    url: post.slug,
-    title: post.title,
-    description: post.summary,
-  }))
-
-  const db = createSearchDB()
-  if (docs.length > 0) {
-    await insertMultiple(db, docs)
-  }
-  return db
-}
-
-function getServer(): Promise<SearchDB | null> {
-  if (serverPromise === null) {
-    serverPromise = buildServer().catch((error) => {
-      serverPromise = null
-      throw error
-    })
-  }
-  return serverPromise
-}
-
-export function resetSearchIndexForTest(): void {
-  serverPromise = null
-}
-
-subscribeCatalogInvalidate((kind) => {
-  if (kind === 'post' || kind === 'taxonomy') {
-    serverPromise = null
-  }
-})
-
-// Pre-build the index at module import so production never pays the cost on
-// the first search request.
-void getServer().then(
-  (server) => {
-    if (server === null) {
-      serverPromise = null
-    }
-  },
-  (err) => {
-    console.error('[search] warmup failed', err)
-  },
-)
 
 export async function searchPosts(
   query: string,
@@ -104,23 +31,64 @@ export async function searchPosts(
   page: number
   totalPages: number
 }> {
-  const db = await getServer()
-  if (db === null) {
+  const settings = getSearchSettings()
+  const trimmed = query.trim()
+  if (trimmed === '') {
     return { hits: [], page: 1, totalPages: 0 }
   }
 
-  const results = await oramaSearch(db, {
-    term: query,
-    properties: ['title', 'description'],
-    limit: 100,
-    threshold: 0,
-    tolerance: 0,
-  })
+  // --- Vector mode ---
+  if (settings.enabled && settings.mode === 'vector') {
+    const embedding = await generateEmbedding(trimmed)
+    if (embedding !== null) {
+      const similarity = sql<number>`1 - (${cosineDistance(postSearchIndex.embedding, embedding)})`
+      const rows = await db
+        .select({ slug: post.slug, similarity })
+        .from(post)
+        .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+        .where(and(isNull(post.deletedAt), eq(post.published, true), gt(similarity, settings.similarityThreshold)))
+        .orderBy(desc(similarity))
+        .limit(limit + offset)
 
-  const hits = results.hits.map((hit) => hit.document.id)
+      const hits = rows.slice(offset).map((r) => r.slug)
+      const total = rows.length
+      return {
+        hits,
+        page: Math.floor(offset / limit) + 1,
+        totalPages: Math.ceil(total / Math.max(limit, 1)),
+      }
+    }
+    // embedding generation failed → fall through to LIKE
+  }
+
+  // --- LIKE fallback ---
+  // Search across title, summary, and plain text body. Use LEFT JOIN so
+  // posts that haven't been indexed yet (no row in post_search_index)
+  // are still discoverable via their title / summary.
+  const pattern = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
+  const rows = await db
+    .select({ slug: post.slug })
+    .from(post)
+    .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+    .where(
+      and(
+        isNull(post.deletedAt),
+        eq(post.published, true),
+        or(
+          ilike(post.title, pattern),
+          ilike(post.summary, pattern),
+          ilike(sql`COALESCE(${postSearchIndex.plainText}, '')`, pattern),
+        ),
+      ),
+    )
+    .orderBy(desc(post.publishedAt))
+    .limit(limit + offset)
+
+  const hits = rows.slice(offset).map((r) => r.slug)
+  const total = rows.length
   return {
-    hits: hits.slice(offset, offset + limit),
+    hits,
     page: Math.floor(offset / limit) + 1,
-    totalPages: Math.ceil(hits.length / Math.max(limit, 1)),
+    totalPages: Math.ceil(total / Math.max(limit, 1)),
   }
 }

@@ -81,6 +81,16 @@ const fixtureBundle: BlogSettingsBundle = {
     commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
   },
+  search: {
+    search: {
+      enabled: false,
+      mode: 'like',
+      endpoint: '',
+      apiKey: '',
+      model: 'text-embedding-3-small',
+      similarityThreshold: 0.5,
+    },
+  },
 }
 
 // Decompose the bundle into the actual `Setting[]` rows the DB would
@@ -99,6 +109,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     mail: 'blog.mail',
     cache: 'blog.cache',
     rateLimit: 'blog.rateLimit',
+    search: 'blog.search',
   }
   const rows: Setting[] = []
   let id = 1n

@@ -52,6 +52,7 @@ export type {
   NavigationSettings,
   RateLimitBucket,
   RateLimitSettings,
+  SearchSettings,
   SeoSettings,
   SidebarSettings,
   SiteIdentitySettings,

@@ -11,6 +11,7 @@ export const SETTINGS_SECTIONS = [
   'mail',
   'cache',
   'rateLimit',
+  'search',
 ] as const
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
@@ -41,6 +42,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   mail: 'mail',
   cache: 'cache',
   rateLimit: 'rateLimit',
+  search: 'search',
 } as const satisfies Record<SettingsSection, string>
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
@@ -91,6 +93,11 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     to: '/wp-admin/settings/rate-limit',
     label: '流控设置',
     description: '登录、评论、点赞按 IP / 邮箱的限流策略',
+  },
+  search: {
+    to: '/wp-admin/settings/search',
+    label: '文章搜索',
+    description: 'AI 向量搜索与关键词搜索切换、OpenAI 配置',
   },
 }
 

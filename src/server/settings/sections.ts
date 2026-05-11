@@ -12,6 +12,7 @@ import {
   mailSchema,
   navigationSchema,
   rateLimitSchema,
+  searchSchema,
   seoSchema,
   sidebarSchema,
   socialsSchema,
@@ -185,6 +186,21 @@ export const SECTION_REGISTRY = {
     schema: rateLimitSchema,
     key: 'rateLimit',
     defaults: rateLimitDefaults,
+  },
+  search: {
+    scope: 'blog.search',
+    schema: searchSchema,
+    key: 'search',
+    defaults: {
+      search: {
+        enabled: false,
+        mode: 'like',
+        endpoint: '',
+        apiKey: '',
+        model: 'text-embedding-3-small',
+        similarityThreshold: 0.5,
+      },
+    },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>
 

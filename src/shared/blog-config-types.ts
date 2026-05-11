@@ -251,6 +251,23 @@ export interface RateLimitSettings {
   likeIncreaseIp: RateLimitBucket
 }
 
+export interface SearchSettings {
+  search: {
+    /** Master switch: when false, search falls back to plain LIKE. */
+    enabled: boolean
+    /** 'vector' = OpenAI embedding + pgvector; 'like' = Postgres ILIKE on plainText. */
+    mode: 'vector' | 'like'
+    /** OpenAI-compatible API endpoint. Empty string means use the official OpenAI endpoint. */
+    endpoint: string
+    /** OpenAI API key. Stored as plaintext like mail.apiKey. */
+    apiKey: string
+    /** Embedding model. Defaults to text-embedding-3-small (cheap, CJK-friendly). */
+    model: string
+    /** Cosine similarity threshold (0–1). Only results ≥ this score are returned. */
+    similarityThreshold: number
+  }
+}
+
 // Composed bundle of every section. Each field is `null` until the
 // corresponding `setting('blog.<section>')` row has been seeded by the
 // install flow or the admin panel. A "fully installed" deployment has
@@ -275,4 +292,5 @@ export interface BlogSettingsBundle {
   mail: MailSettings | null
   cache: CacheSettings | null
   rateLimit: RateLimitSettings | null
+  search: SearchSettings | null
 }
