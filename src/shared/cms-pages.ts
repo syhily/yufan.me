@@ -45,6 +45,11 @@ export interface AdminPageDto {
   deletedAt: string | null
   authorId: string | null
   authorName: string | null
+  /**
+   * Approved comment count for this page's `commentKey` (full URL).
+   * Populated by the admin list endpoint; `0` on detail / save paths.
+   */
+  commentCount: number
 }
 
 export interface AdminRevisionDto {

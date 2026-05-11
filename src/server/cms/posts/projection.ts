@@ -80,9 +80,18 @@ export interface AdminPostDto {
   pinnedAt: string | null
   /** Null until the first successful publish. */
   firstPublishedAt: string | null
+  /**
+   * Approved comment count keyed on the post's `commentKey` (full URL).
+   * Populated by `listPostsForAdmin`; defaults to `0` on detail/save paths
+   * that don't need to fan out an extra query.
+   */
+  commentCount: number
 }
 
-export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }): AdminPostDto {
+export function toAdminPostDto(
+  row: PostMetaRow & { authorName?: string | null },
+  options: { commentCount?: number } = {},
+): AdminPostDto {
   return {
     id: String(row.id),
     slug: row.slug,
@@ -107,6 +116,7 @@ export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }
     authorName: (row as { authorName?: string | null }).authorName ?? null,
     pinnedAt: row.pinnedAt === null ? null : row.pinnedAt.toISOString(),
     firstPublishedAt: row.firstPublishedAt === null ? null : row.firstPublishedAt.toISOString(),
+    commentCount: options.commentCount ?? 0,
   }
 }
 

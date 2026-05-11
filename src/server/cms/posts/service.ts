@@ -33,6 +33,7 @@ import {
   updatePostMetaById,
   type ListPostsFilters,
 } from '@/server/cms/posts/repository'
+import { commentCountsByPageKeys } from '@/server/db/query/like'
 import { seedTagIfMissing } from '@/server/db/query/tag'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
@@ -41,6 +42,7 @@ import { deriveSlug } from '@/server/slug'
 import { derivedTagSlug } from '@/server/tags/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
+import { joinUrl } from '@/shared/urls'
 
 const auditLog = getLogger('audit.cms.posts')
 
@@ -155,8 +157,12 @@ export async function listPostsForAdmin(filters: ListPostsFilters = {}): Promise
   const offset = filters.offset ?? 0
   const limit = filters.limit ?? 20
   const [rows, total] = await Promise.all([listPostMetas({ ...filters, limit, offset }), countPostMetas(filters)])
+  const website = requireBlogSettingsSection('siteIdentity').website
+  const pageKeys = rows.map((row) => joinUrl(website, `/posts/${row.slug}`, '/'))
+  const countRows = await commentCountsByPageKeys(pageKeys)
+  const countByKey = new Map(countRows.map((r) => [r.pageKey, r.count]))
   return {
-    posts: rows.map(toAdminPostDto),
+    posts: rows.map((row, i) => toAdminPostDto(row, { commentCount: countByKey.get(pageKeys[i]) ?? 0 })),
     total,
     hasMore: offset + rows.length < total,
   }

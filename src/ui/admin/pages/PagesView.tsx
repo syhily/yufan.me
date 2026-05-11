@@ -1,4 +1,13 @@
-import { ExternalLinkIcon, FilePenIcon, PlusIcon, RefreshCwIcon, SearchIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
+import {
+  ExternalLinkIcon,
+  FilePenIcon,
+  MessageSquareIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  Trash2Icon,
+  Undo2Icon,
+} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
@@ -14,6 +23,7 @@ import type {
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { joinUrl } from '@/shared/urls'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -26,6 +36,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const LIST = API_ACTIONS.admin.listPages
 const DELETE = API_ACTIONS.admin.deletePage
@@ -217,22 +228,34 @@ interface PageRowProps {
 
 function PageRow({ page, onDelete, onRestore }: PageRowProps) {
   const isDeleted = page.deletedAt !== null
+  const { website } = useSiteIdentity()
+  const pageKey = joinUrl(website, `/${page.slug}`, '/')
   return (
     <TableRow className={isDeleted ? 'opacity-60' : undefined}>
       <TableCell className="pl-4 align-top">
         <div className="font-medium">{page.title}</div>
-        <div className="font-mono text-xs text-muted-foreground">/{page.slug}</div>
+        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+          <span>/{page.slug}</span>
+          <Link
+            to={`/wp-admin/comments?pageKey=${encodeURIComponent(pageKey)}`}
+            title="查看评论"
+            className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted hover:text-foreground"
+          >
+            <MessageSquareIcon className="size-3.5" />
+            {page.commentCount}
+          </Link>
+        </div>
       </TableCell>
       <TableCell className="hidden max-w-md md:table-cell">
         <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary || '—'}</p>
       </TableCell>
-      <TableCell className="hidden w-24 text-center align-top md:table-cell">
+      <TableCell className="hidden w-24 text-center align-middle md:table-cell">
         <p className="text-sm text-muted-foreground">{page.authorName || '—'}</p>
       </TableCell>
-      <TableCell className="text-center align-top">
+      <TableCell className="text-center align-middle">
         <StatusBadge page={page} />
       </TableCell>
-      <TableCell className="hidden align-top text-sm lg:table-cell">
+      <TableCell className="hidden align-middle text-sm lg:table-cell">
         {new Date(page.updatedAt).toLocaleString('zh-CN')}
       </TableCell>
       <TableCell className="pr-4 text-right align-top">

@@ -101,9 +101,18 @@ export interface AdminPageDto {
   deletedAt: string | null
   authorId: string | null
   authorName: string | null
+  /**
+   * Approved comment count keyed on the page's `commentKey` (full URL).
+   * Populated by `listPagesForAdmin`; defaults to `0` on detail/save paths
+   * that don't need to fan out an extra query.
+   */
+  commentCount: number
 }
 
-export function toAdminPageDto(row: PageMetaRow & { authorName?: string | null }): AdminPageDto {
+export function toAdminPageDto(
+  row: PageMetaRow & { authorName?: string | null },
+  options: { commentCount?: number } = {},
+): AdminPageDto {
   return {
     id: String(row.id),
     slug: row.slug,
@@ -123,6 +132,7 @@ export function toAdminPageDto(row: PageMetaRow & { authorName?: string | null }
     deletedAt: row.deletedAt === null ? null : row.deletedAt.toISOString(),
     authorId: row.authorId === null ? null : String(row.authorId),
     authorName: (row as { authorName?: string | null }).authorName ?? null,
+    commentCount: options.commentCount ?? 0,
   }
 }
 

@@ -31,6 +31,11 @@ export interface AdminPostDto {
   pinnedAt: string | null
   /** Null until the first successful publish. */
   firstPublishedAt: string | null
+  /**
+   * Approved comment count for this post's `commentKey` (full URL).
+   * Populated by the admin list endpoint; `0` on detail / save paths.
+   */
+  commentCount: number
 }
 
 export interface AdminRevisionDto {

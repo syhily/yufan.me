@@ -3,6 +3,7 @@ import {
   ArrowUpIcon,
   ExternalLinkIcon,
   FilePenIcon,
+  MessageSquareIcon,
   PinIcon,
   PlusIcon,
   RefreshCwIcon,
@@ -28,6 +29,7 @@ import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { joinUrl } from '@/shared/urls'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -41,6 +43,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
+import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const LIST = API_ACTIONS.admin.listPosts
 const DELETE = API_ACTIONS.admin.deletePost
@@ -442,6 +445,8 @@ interface PostRowProps {
 
 function PostRow({ post, onDelete, onRestore }: PostRowProps) {
   const isDeleted = post.deletedAt !== null
+  const { website } = useSiteIdentity()
+  const pageKey = joinUrl(website, `/posts/${post.slug}`, '/')
   return (
     <TableRow className={isDeleted ? 'opacity-60' : undefined}>
       <TableCell className="pl-4 align-top">
@@ -453,18 +458,28 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
             </span>
           )}
         </div>
-        <div className="font-mono text-xs text-muted-foreground">/posts/{post.slug}</div>
+        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+          <span>/posts/{post.slug}</span>
+          <Link
+            to={`/wp-admin/comments?pageKey=${encodeURIComponent(pageKey)}`}
+            title="查看评论"
+            className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted hover:text-foreground"
+          >
+            <MessageSquareIcon className="size-3.5" />
+            {post.commentCount}
+          </Link>
+        </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
         <p className="text-sm text-muted-foreground">{post.category || '—'}</p>
       </TableCell>
-      <TableCell className="hidden w-24 text-center align-top md:table-cell">
+      <TableCell className="hidden w-24 text-center align-middle md:table-cell">
         <p className="text-sm text-muted-foreground">{post.authorName || '—'}</p>
       </TableCell>
-      <TableCell className="text-center align-top">
+      <TableCell className="text-center align-middle">
         <StatusBadge post={post} />
       </TableCell>
-      <TableCell className="hidden align-top text-sm lg:table-cell">
+      <TableCell className="hidden align-middle text-sm lg:table-cell">
         {new Date(post.firstPublishedAt ?? post.publishedAt).toLocaleString('zh-CN')}
       </TableCell>
       <TableCell className="pr-4 text-right align-top">
