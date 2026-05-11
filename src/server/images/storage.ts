@@ -18,9 +18,16 @@ import { requireBlogSettingsSection } from '@/shared/blog-config'
 //                  so flipping the toggle off does not break public
 //                  pages that already reference uploaded images.
 //
-// The S3 client lives behind a dynamic `import()` so call sites that
-// only need the public-URL shape (the SSR enhancer, the Vitest worker
-// covering `getPublicBaseUrl`, …) never load the AWS SDK ESM tree.
+// `@/server/images/s3-client` is loaded behind a dynamic `import()`
+// because `@aws-sdk/core` ships an ESM index that does
+// `import './emitWarningIfUnsupportedVersion'` without the `.js`
+// extension. Node ESM (and the Vitest SSR loader) reject that import
+// at module-eval time. Rolldown bundles the SDK in `vp build` so
+// production never sees it, but every test file that transitively
+// touches storage.ts would otherwise fail to load. The `@aws-sdk/client-s3`
+// dependency itself is statically imported inside s3-client.ts, so it
+// is correctly declared in `dependencies` — only the evaluation is
+// deferred here.
 
 const UPLOAD_DISABLED_MESSAGE = '图片上传未开启；请到 /wp-admin/settings/assets 打开「启用 S3 上传」并填写存储桶配置。'
 

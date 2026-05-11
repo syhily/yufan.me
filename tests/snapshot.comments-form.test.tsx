@@ -64,7 +64,15 @@ describe('snapshot: Comments form variants', () => {
       createAt: new Date('2024-04-18T13:06:00.000Z'),
       updatedAt: new Date('2024-04-18T13:06:00.000Z'),
       deleteAt: null,
-      content: '<p>谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。</p>',
+      content: null,
+      body: [
+        {
+          _type: 'block',
+          _key: 'b1',
+          style: 'normal',
+          children: [{ _type: 'span', _key: 's1', text: '谢谢告知，目前 RSS 在 Next.js 下面使用起来比较困难。' }],
+        },
+      ],
       pageKey: '/posts/hello',
       userId: 1n,
       isVerified: true,
@@ -99,15 +107,12 @@ describe('snapshot: Comments form variants', () => {
       />,
     )
 
-    // The reply textarea flips on extra padding-top (`pt-10`) when a
-    // reply is staged so the absolutely-positioned `<ReplyOverlay>`
-    // doesn't sit on top of the user's caret. Stage 11 P9 dropped
-    // the legacy `comment-reply-textarea` WP-compat marker, so this
-    // assertion keys off the `pt-10` utility instead. The
-    // `<ReplyOverlay>` `<div>` is identified by its `pointer-events-
-    // none absolute top-[0.4rem]` chain (also from stage 11 P9 — the
-    // legacy `replying-to-overlay` marker is gone).
-    expect(html).toMatch(/<textarea[^>]*class="[^"]*\bpt-10\b/u)
+    // The reply editor container flips on extra padding-top (`pt-10`)
+    // when a reply is staged so the absolutely-positioned
+    // `<ReplyOverlay>` doesn't sit on top of the user's caret. The
+    // editor is a `<div>` wrapper around the Tiptap content area,
+    // so the assertion keys off the `pt-10` utility on that wrapper.
+    expect(html).toMatch(/<div[^>]*class="[^"]*\bpt-10\b/u)
     expect(html).toMatch(/<div class="[^"]*\bpointer-events-none\b[^"]*\babsolute\b[^"]*\btop-\[0\.4rem\]/u)
     expect(html).toContain('回复 @雨帆')
   })

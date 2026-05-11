@@ -194,14 +194,17 @@ function CommentsRoot({
   const containerRef = useRef<HTMLDivElement | null>(null)
   useIosNoZoomOnFocus(containerRef)
 
-  // Focus the reply form's textarea after a Reply click. The form is
-  // rendered through React, so we thread a ref into `<CommentReplyForm>`
-  // and let it expose the node.
-  const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  // Scroll the reply form into view after a Reply click. The Tiptap
+  // editor inside the form auto-focuses on mount; we just need to
+  // surface its container so the operator sees the staged reply box.
   const focusReplyForm = useCallback(() => {
-    const textarea = replyTextareaRef.current
-    textarea?.focus({ preventScroll: true })
-    textarea?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof document === 'undefined') {
+      return
+    }
+    const respond = document.getElementById('respond')
+    respond?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const editable = respond?.querySelector<HTMLElement>('[contenteditable="true"]')
+    editable?.focus({ preventScroll: true })
   }, [])
 
   const onReply = useCallback(
@@ -238,7 +241,6 @@ function CommentsRoot({
       user={user}
       onCancel={onCancelReply}
       onReplied={onReplied}
-      textareaRef={replyTextareaRef}
     />
   )
 

@@ -26,7 +26,7 @@ import { adminSession, regularSession } from './_helpers/session'
 
 const renderMock = vi.fn<(tex: string, display: boolean) => Promise<string>>()
 
-vi.mock('@/server/markdown/katex-renderer', () => ({
+vi.mock('@/server/pt/katex-renderer', () => ({
   getKatexRenderer: vi.fn(async () => ({
     render: (tex: string, display: boolean) => renderMock(tex, display),
   })),

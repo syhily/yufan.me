@@ -6,8 +6,23 @@ import Suggestion, { type SuggestionProps, type SuggestionKeyDownProps } from '@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 
-import { filterSlashCommands, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
+import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
 import { cn } from '@/ui/lib/cn'
+
+// Re-export the command shape so embedders building a custom catalogue
+// (e.g. the public comment editor) can share the type without pulling
+// in the admin command implementations.
+export type { SlashCommand }
+
+interface SlashCommandsExtensionOptions {
+  /**
+   * Catalogue to filter against. Defaults to the full admin catalogue
+   * (`SLASH_COMMANDS`); pass a curated subset to scope the menu — the
+   * comment editor uses this to omit image/music/table/footnote
+   * commands without forking the renderer.
+   */
+  commands: readonly SlashCommand[]
+}
 
 // Slash command extension for Tiptap. The wiring is the standard
 // `@tiptap/suggestion` pattern:
@@ -39,16 +54,20 @@ interface SlashMenuRendererRef {
 
 const SLASH_PLUGIN_NAME = 'slashSuggestion'
 
-export const SlashCommandsExtension = Extension.create({
+export const SlashCommandsExtension = Extension.create<SlashCommandsExtensionOptions>({
   name: SLASH_PLUGIN_NAME,
+  addOptions() {
+    return { commands: SLASH_COMMANDS }
+  },
   addProseMirrorPlugins() {
+    const catalogue = this.options.commands
     return [
       Suggestion<SlashCommand>({
         editor: this.editor,
         char: '/',
         startOfLine: false,
         allowSpaces: false,
-        items: ({ query }) => [...filterSlashCommands(query)],
+        items: ({ query }) => [...filterSlashCommands(query, catalogue)],
         command: ({ editor, range, props }) => {
           // Suggestion's `command` runs the user's chosen slash
           // command. Each entry in `slash-commands.ts` is responsible

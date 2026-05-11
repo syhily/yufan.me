@@ -1,6 +1,7 @@
 import type { RenderMathOutput } from '@/shared/cms-pages'
 
 import { renderMathSchema } from '@/server/cms/pages/schema'
+import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 
 // Editor inline-math preview endpoint. The bubble-menu panel POSTs
@@ -37,9 +38,8 @@ export const action = defineApiAction({
       // that wouldn't paint anything anyway.
       return { mathml: '', error: null }
     }
-    let renderer: import('@/server/markdown/katex-renderer').KatexRenderer
+    let renderer: KatexRenderer
     try {
-      const { getKatexRenderer } = await import('@/server/markdown/katex-renderer')
       renderer = await getKatexRenderer()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'KaTeX 加载失败'

@@ -29,13 +29,11 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
 
 export type { DetailPageComments } from '@/shared/comments'
 
-// Comments are the slowest dependency on a typical detail page — they read
-// the comment row, page row, and route every body through the markdown
-// parser. Splitting them out lets the loader stream comments via React
-// Router's `<Await>` while the rest of the detail (likes, sidebar,
-// post body) renders immediately. Empty comment payloads short-circuit the
-// marked round-trip through `parseContent` for every "该留言内容为空"
-// placeholder.
+// Comments split out so the loader can stream them via React Router's
+// `<Await>` while the rest of the detail (likes, sidebar, post body)
+// renders immediately. PT bodies are stored pre-rendered, so the
+// per-row work in `parseComments` is now just projection — but the
+// network/DB round-trip is still worth deferring.
 async function loadCommentsAndItems(
   session: BlogSession,
   commentKey: string,

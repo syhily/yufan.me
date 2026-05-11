@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/components/dropdown-menu'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -247,10 +248,9 @@ export function AdminCommentRow({
               </div>
             </div>
           </div>
-          <div
-            className="mt-3 text-sm leading-relaxed text-foreground"
-            dangerouslySetInnerHTML={{ __html: comment.content ?? '' }}
-          />
+          <div className="prose prose-sm mt-3 max-w-none text-sm leading-relaxed text-foreground">
+            <PortableTextBody body={comment.body} />
+          </div>
           {(truncatedUa || comment.ip) && (
             <div className="mt-3 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
               {truncatedUa && <span>UA: {truncatedUa}</span>}

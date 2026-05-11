@@ -303,17 +303,22 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
 ]
 
 /**
- * Filter the slash command catalogue against a query. Matching is
+ * Filter a slash command catalogue against a query. Matching is
  * case-insensitive against the title + aliases. An empty query
  * returns the whole catalogue, which lets the menu open immediately
- * after `/` and let the user arrow through it.
+ * after `/` and let the user arrow through it. `catalogue` defaults
+ * to the admin command set; the comment editor passes its own
+ * curated subset.
  */
-export function filterSlashCommands(query: string): readonly SlashCommand[] {
+export function filterSlashCommands(
+  query: string,
+  catalogue: readonly SlashCommand[] = SLASH_COMMANDS,
+): readonly SlashCommand[] {
   const trimmed = query.trim().toLowerCase()
   if (trimmed === '') {
-    return SLASH_COMMANDS
+    return catalogue
   }
-  return SLASH_COMMANDS.filter((cmd) => {
+  return catalogue.filter((cmd) => {
     if (cmd.title.toLowerCase().includes(trimmed)) {
       return true
     }

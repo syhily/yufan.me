@@ -15,8 +15,8 @@ vi.mock('@/server/email/templates/ApprovedComment', () => ({
 vi.mock('react-email', () => ({
   render: vi.fn(async () => '<p>stub</p>'),
 }))
-vi.mock('@/server/markdown/parser', () => ({
-  parseContent: vi.fn(async (raw: string) => `<p>${raw}</p>`),
+vi.mock('@/server/pt/comment-to-html', () => ({
+  commentBodyToHtml: vi.fn(() => '<p>stub</p>'),
 }))
 
 const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')

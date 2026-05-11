@@ -52,7 +52,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                     </Link>
                     <div className="mt-2 hidden text-md text-ink-secondary md:block">
                       <div className="line-clamp-2">
-                        <span dangerouslySetInnerHTML={{ __html: category.description }} />
+                        <span>{category.description}</span>
                       </div>
                     </div>
                   </div>

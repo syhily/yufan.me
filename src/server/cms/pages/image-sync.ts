@@ -1,6 +1,7 @@
 import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { findImageById, updateImageNote } from '@/server/db/query/image'
+import { getPublicBaseUrl } from '@/server/images/storage'
 
 // Two-step sync for `image` blocks at save time.
 //
@@ -51,7 +52,6 @@ export async function syncLibraryImageBlocks(body: PortableTextBody): Promise<vo
     }
     // Keep `src` in sync with the bucket's canonical public URL so
     // the body still renders even when the SSR enhancer can't run.
-    const { getPublicBaseUrl } = await import('@/server/images/storage')
     const base = getPublicBaseUrl()
     if (base !== null) {
       target.src = `${base}/${row.storagePath}`

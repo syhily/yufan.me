@@ -2,17 +2,19 @@ import { useContext, useEffect, useState } from 'react'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/api-types'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
 import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { publicButtonVariants } from '@/ui/primitives/btn'
-import { formControlVariants } from '@/ui/primitives/formControl'
+import { PortableTextBody } from '@/ui/pt/render'
 
 export interface CommentItemProps {
   depth: number
@@ -247,10 +249,12 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
           {pending ? (
             <div className={commentContentClass(depth)}>
               <p className="tip-comment-check text-xs text-alert">您的评论正在等待审核中...</p>
-              <div dangerouslySetInnerHTML={{ __html: comment.content ?? '' }} />
+              <PortableTextBody body={comment.body} />
             </div>
           ) : (
-            <div className={commentContentClass(depth)} dangerouslySetInnerHTML={{ __html: comment.content ?? '' }} />
+            <div className={commentContentClass(depth)}>
+              <PortableTextBody body={comment.body} />
+            </div>
           )}
           {editing && (
             <CommentEditArea
@@ -364,12 +368,17 @@ interface CommentEditAreaProps {
 
 function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps) {
   const leaf = useCommentsLeafContext(undefined)
-  const [value, setValue] = useState<string>('')
+  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
   const raw = useApiFetcher<never, CommentRawOutput>(API_ACTIONS.comment.getRaw, {
     onSuccess: (payload) => {
-      setValue(payload.content || '')
+      const loadedBody = (payload.body ?? []) as CommentBody
+      setInitialBody(loadedBody)
+      setBody(loadedBody)
+      setBodyKey((k) => k + 1)
       setLoaded(true)
     },
   })
@@ -383,7 +392,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
     },
   })
 
-  // Load the raw markdown source on first mount.
+  // Load the raw PT body on first mount.
   const rawLoad = raw.load
   useEffect(() => {
     rawLoad({ rid: String(commentId) })
@@ -392,19 +401,18 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   const saving = editAction.isPending
 
   const handleSave = () => {
-    if (!value.trim()) {
+    if (isCommentBodyBlank(body)) {
       return
     }
-    editAction.submit({ rid: String(commentId), content: value })
+    editAction.submit({ rid: String(commentId), body })
   }
 
   return (
     <div className="mt-2 block w-full">
-      <textarea
-        className={formControlVariants({ control: 'textarea' })}
-        rows={4}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
+      <CommentBodyEditor
+        initialBody={initialBody}
+        bodyKey={`edit-${commentId}-${bodyKey}`}
+        onBodyChange={setBody}
         disabled={!loaded || saving}
       />
       <div className="mt-2 flex justify-end gap-2">

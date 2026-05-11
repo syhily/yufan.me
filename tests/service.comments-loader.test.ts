@@ -48,10 +48,6 @@ vi.mock('@/server/email/sender', () => ({
   sendNewReply: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/markdown/parser', () => ({
-  parseContent: vi.fn(async (content: string) => content),
-}))
-
 const queries = await import('@/server/db/query/comment')
 const metricQueries = await import('@/server/db/query/metric')
 const { loadComments, latestComments, pendingComments, parseComments } = await import('@/server/comments/loader')
@@ -62,7 +58,15 @@ function row(overrides: Record<string, unknown> = {}) {
     createAt: new Date('2024-01-01T00:00:00.000Z'),
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
     deleteAt: null,
-    content: '<p>x</p>',
+    content: 'x',
+    body: [
+      {
+        _type: 'block' as const,
+        _key: 'b1',
+        style: 'normal' as const,
+        children: [{ _type: 'span' as const, _key: 's1', text: 'x' }],
+      },
+    ],
     pageKey: '/posts/hello',
     userId: 7n,
     isVerified: true,

@@ -15,6 +15,8 @@ import {
 } from 'drizzle-orm/pg-core'
 import { randomUUID } from 'node:crypto'
 
+import type { CommentBody } from '@/shared/pt/comment-schema'
+
 // Per-page metric counters keyed on the canonical permalink (`key`).
 // One row per public URL the like / view / comment-count widgets need
 // to track. Counters move with single-row UPDATEs from the comment +
@@ -68,6 +70,10 @@ export const comment = pgTable(
       .$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     content: text('content').default(''),
+    body: jsonb('body')
+      .$type<CommentBody>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     pageKey: varchar('page_key', { length: 255 }).notNull(),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),
     isVerified: boolean('is_verified').default(false),

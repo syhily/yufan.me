@@ -1,6 +1,7 @@
 import { format, isValid, parse } from 'date-fns'
 
 import { loadBuffer } from '@/server/cache/image'
+import { renderCalendar } from '@/server/images/calendar'
 import { notFound, pngResponse } from '@/server/route-helpers/http'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
@@ -30,7 +31,6 @@ export async function loader({ params }: Route.LoaderArgs) {
     notFound()
   }
 
-  const { renderCalendar } = await import('@/server/images/calendar')
   // Read prefix + TTL from the live snapshot so admin renames in
   // `/wp-admin/settings/cache` apply to the very next render.
   const cache = requireBlogSettingsSection('cache').cache.calendar

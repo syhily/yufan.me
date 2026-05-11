@@ -1,4 +1,10 @@
+import { renderMermaidSVGAsync } from 'beautiful-mermaid'
+import { bundledLanguages, createHighlighter } from 'shiki'
+
 import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
+
+import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
+import { SHIKI_THEME, shikiTransformers } from '@/server/pt/shiki'
 
 // Server-side pre-renderer for PortableText bodies.
 //
@@ -149,8 +155,6 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
   }
   let highlight: ((code: string, lang?: string) => Promise<string>) | null = null
   try {
-    const { bundledLanguages, createHighlighter } = await import('shiki')
-    const { SHIKI_THEME, shikiTransformers } = await import('@/server/markdown/shiki')
     const highlighter = await createHighlighter({
       langs: Object.keys(bundledLanguages),
       themes: [SHIKI_THEME],
@@ -164,7 +168,7 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
         }),
       )
   } catch {
-    // Shiki failed to load — leave the blocks raw and let the
+    // Highlighter bootstrap failed — leave the blocks raw and let the
     // public renderer's fallback render plain `<pre><code>`.
     return
   }
@@ -191,11 +195,10 @@ async function runKatexPasses(
   if (blocks.length === 0 && inlines.length === 0) {
     return
   }
-  // Lazy-loaded process-level singleton. The first math render in a
-  // process loads KaTeX; subsequent saves and editor previews re-use it.
-  let renderer: import('@/server/markdown/katex-renderer').KatexRenderer
+  // Process-level singleton. The first math render in a process
+  // initialises KaTeX; subsequent saves and editor previews re-use it.
+  let renderer: KatexRenderer
   try {
-    const { getKatexRenderer } = await import('@/server/markdown/katex-renderer')
     renderer = await getKatexRenderer()
   } catch {
     return
@@ -224,17 +227,10 @@ async function runMermaidPasses(blocks: { code: string; svg?: string }[]): Promi
   if (blocks.length === 0) {
     return
   }
-  let renderer: ((code: string) => Promise<string>) | null = null
-  try {
-    const beautifulMermaid = await import('beautiful-mermaid')
-    renderer = (code: string) => beautifulMermaid.renderMermaidSVGAsync(code)
-  } catch {
-    return
-  }
   await Promise.all(
     blocks.map(async (block) => {
       try {
-        block.svg = await renderer!(block.code)
+        block.svg = await renderMermaidSVGAsync(block.code)
       } catch {
         // Leave svg unset; the renderer falls back to a `<pre>`
         // mermaid placeholder so the diagram source is still
