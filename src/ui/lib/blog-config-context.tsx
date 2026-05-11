@@ -10,6 +10,7 @@ import type {
   MailSettings,
   NavigationSettings,
   RateLimitSettings,
+  SearchSettings,
   SeoSettings,
   SidebarSettings,
   SiteIdentitySettings,
@@ -54,6 +55,7 @@ const SECTION_CONTEXTS: SectionContextMap = {
   mail: makeContext('mail'),
   cache: makeContext('cache'),
   rateLimit: makeContext('rateLimit'),
+  search: makeContext('search'),
 }
 
 interface BlogSettingsProviderProps {
@@ -198,4 +200,11 @@ export function useRateLimitSettings(): RateLimitSettings {
 }
 export function useRateLimitSettingsOptional(): RateLimitSettings | undefined {
   return useSectionOptional('rateLimit')
+}
+
+export function useSearchSettings(): SearchSettings {
+  return useSection('useSearchSettings', 'search')
+}
+export function useSearchSettingsOptional(): SearchSettings | undefined {
+  return useSectionOptional('search')
 }

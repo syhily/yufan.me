@@ -1,99 +1,173 @@
-import { create, insertMultiple, search as oramaSearch } from '@orama/orama'
-import { createTokenizer } from '@orama/tokenizers/mandarin'
+import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizzle-orm'
+import { createHash } from 'node:crypto'
 
-import type { PostVisibilityOptions } from '@/server/catalog'
+import { storage } from '@/server/cache/storage'
+import { db } from '@/server/db/pool'
+import { post, postSearchIndex } from '@/server/db/schema'
+import { getLogger } from '@/server/logger'
+import { getBlogSettingsBundleSync } from '@/shared/blog-config'
+import { CACHE_BUCKET_FALLBACKS } from '@/shared/cache-types'
 
-import { listAllPosts } from '@/server/catalog'
-import { subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
-import { hydrateBlogSettings } from '@/server/settings/snapshot'
+import { generateEmbedding } from './openai'
+import { searchPostOptions } from './options'
 
-// Search should only index posts that can also be rendered by the route.
-// Hidden posts are intentionally searchable; scheduled posts stay dev-only for
-// authoring checks and are excluded from production search results.
-export function searchPostOptions(): PostVisibilityOptions {
-  return { includeHidden: true, includeScheduled: import.meta.env.DEV }
+export { searchPostOptions }
+
+const DEFAULT_SEARCH_SETTINGS = {
+  enabled: false,
+  mode: 'like' as const,
+  apiKey: '',
+  model: 'text-embedding-3-small',
+  similarityThreshold: 0.5,
 }
 
-interface SearchDoc {
-  id: string
-  url: string
-  title: string
-  description: string
+function getSearchSettings() {
+  const bundle = getBlogSettingsBundleSync()
+  return bundle?.search?.search ?? DEFAULT_SEARCH_SETTINGS
 }
 
-type SearchDB = ReturnType<typeof createSearchDB>
+// ---------------------------------------------------------------------------
+// Search-result cache
+//
+// The full ordered slug list for a query is cached so pagination never
+// re-runs the embedding API or the database query.  The cache key
+// incorporates every input that could change the result set:
+//   - search mode (vector vs like)
+//   - query text
+//   - similarity threshold (vector mode only)
+//   - embedding model (vector mode only)
+//
+// Value is JSON.stringify(slugs[]) — short strings, negligible overhead.
+// ---------------------------------------------------------------------------
 
-function createSearchDB() {
-  return create({
-    schema: {
-      id: 'string',
-      url: 'string',
-      title: 'string',
-      description: 'string',
-    } as const,
-    components: {
-      tokenizer: createTokenizer(),
-    },
-  })
-}
-
-// Lazily build the Orama search index on first query and cache the resulting
-// Promise so concurrent requests share one build.
-let serverPromise: Promise<SearchDB | null> | null = null
-
-async function buildServer(): Promise<SearchDB | null> {
-  const settings = await hydrateBlogSettings()
-  if (settings === null) {
-    return null
+function searchCacheKey(settings: ReturnType<typeof getSearchSettings>, query: string): string {
+  const bundle = getBlogSettingsBundleSync()
+  const prefix = bundle?.cache?.cache.searchResult?.prefix ?? CACHE_BUCKET_FALLBACKS.searchResult.prefix
+  const hashInput = [settings.mode, query, String(settings.similarityThreshold)]
+  if (settings.mode === 'vector') {
+    hashInput.push(settings.model)
   }
-
-  const posts = await listAllPosts(searchPostOptions())
-  const docs: SearchDoc[] = posts.map((post) => ({
-    id: post.slug,
-    url: post.slug,
-    title: post.title,
-    description: post.summary,
-  }))
-
-  const db = createSearchDB()
-  if (docs.length > 0) {
-    await insertMultiple(db, docs)
-  }
-  return db
+  return `${prefix}${createHash('sha256').update(hashInput.join('|')).digest('hex')}`
 }
 
-function getServer(): Promise<SearchDB | null> {
-  if (serverPromise === null) {
-    serverPromise = buildServer().catch((error) => {
-      serverPromise = null
-      throw error
-    })
-  }
-  return serverPromise
-}
-
-export function resetSearchIndexForTest(): void {
-  serverPromise = null
-}
-
-subscribeCatalogInvalidate((kind) => {
-  if (kind === 'post' || kind === 'taxonomy') {
-    serverPromise = null
-  }
-})
-
-// Pre-build the index at module import so production never pays the cost on
-// the first search request.
-void getServer().then(
-  (server) => {
-    if (server === null) {
-      serverPromise = null
+async function getCachedSearchResult(key: string): Promise<string[] | null> {
+  const raw = await storage.getItem(key)
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (Array.isArray(parsed) && parsed.every((s) => typeof s === 'string')) {
+        return parsed as string[]
+      }
+    } catch {
+      // stale or corrupted — treat as miss
     }
-  },
-  (err) => {
-    console.error('[search] warmup failed', err)
-  },
-)
+  }
+  return null
+}
+
+async function setCachedSearchResult(key: string, slugs: string[], ttlSeconds: number): Promise<void> {
+  if (slugs.length === 0) {
+    return
+  }
+  await storage.setItem(key, JSON.stringify(slugs), { ttl: ttlSeconds })
+}
+
+// ---------------------------------------------------------------------------
+// Core search execution (no pagination — returns the full ordered list)
+// ---------------------------------------------------------------------------
+
+async function executeSearch(settings: ReturnType<typeof getSearchSettings>, query: string): Promise<string[]> {
+  const trimmed = query.trim()
+  const pattern = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
+  const baseWhere = and(isNull(post.deletedAt), eq(post.published, true))
+  const likeWhere = and(
+    baseWhere,
+    or(
+      ilike(post.title, pattern),
+      ilike(post.summary, pattern),
+      ilike(sql`COALESCE(${postSearchIndex.plainText}, '')`, pattern),
+    ),
+  )
+
+  // --- Vector mode ---
+  if (settings.enabled && settings.mode === 'vector') {
+    const embedding = await generateEmbedding(trimmed)
+    getLogger('search.vector').info('Search vector query', {
+      query: trimmed,
+      hasEmbedding: embedding !== null,
+      dimensions: embedding?.length ?? 0,
+      threshold: settings.similarityThreshold,
+    })
+
+    if (embedding !== null) {
+      const similarity = sql<number>`1 - (${cosineDistance(postSearchIndex.embedding, embedding)})`
+
+      const [vectorRows, likeRows] = await Promise.all([
+        db
+          .select({ slug: post.slug, similarity })
+          .from(post)
+          .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+          .where(and(baseWhere, gt(similarity, settings.similarityThreshold)))
+          .orderBy(desc(similarity)),
+        db
+          .select({ slug: post.slug })
+          .from(post)
+          .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+          .where(likeWhere)
+          .orderBy(desc(post.publishedAt)),
+      ])
+
+      getLogger('search.vector').info('Search vector results', {
+        query: trimmed,
+        rawRows: vectorRows.length,
+        threshold: settings.similarityThreshold,
+        topSimilarity: vectorRows[0]?.similarity ?? null,
+      })
+
+      getLogger('search.like').info('Search LIKE results', {
+        query: trimmed,
+        rawRows: likeRows.length,
+      })
+
+      // Merge: vector results first, then LIKE results deduplicated
+      const seen = new Set<string>()
+      const merged: string[] = []
+      for (const row of vectorRows) {
+        if (!seen.has(row.slug)) {
+          seen.add(row.slug)
+          merged.push(row.slug)
+        }
+      }
+      for (const row of likeRows) {
+        if (!seen.has(row.slug)) {
+          seen.add(row.slug)
+          merged.push(row.slug)
+        }
+      }
+      return merged
+    }
+    // embedding generation failed → fall through to LIKE
+  }
+
+  // --- LIKE fallback ---
+  const rows = await db
+    .select({ slug: post.slug })
+    .from(post)
+    .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+    .where(likeWhere)
+    .orderBy(desc(post.publishedAt))
+
+  getLogger('search.like').info('Search LIKE results', {
+    query: trimmed,
+    rawRows: rows.length,
+  })
+
+  return rows.map((r) => r.slug)
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 export async function searchPosts(
   query: string,
@@ -104,23 +178,40 @@ export async function searchPosts(
   page: number
   totalPages: number
 }> {
-  const db = await getServer()
-  if (db === null) {
+  const trimmed = query.trim()
+  if (trimmed === '') {
     return { hits: [], page: 1, totalPages: 0 }
   }
 
-  const results = await oramaSearch(db, {
-    term: query,
-    properties: ['title', 'description'],
-    limit: 100,
-    threshold: 0,
-    tolerance: 0,
-  })
+  const settings = getSearchSettings()
+  const cacheKey = searchCacheKey(settings, trimmed)
 
-  const hits = results.hits.map((hit) => hit.document.id)
+  // Try cache first
+  const cached = await getCachedSearchResult(cacheKey)
+  if (cached !== null) {
+    getLogger('search.result').info('Search result cache hit', { query: trimmed, total: cached.length })
+    const hits = cached.slice(offset, offset + limit)
+    return {
+      hits,
+      page: Math.floor(offset / limit) + 1,
+      totalPages: Math.ceil(cached.length / Math.max(limit, 1)),
+    }
+  }
+
+  // Execute full search
+  const allSlugs = await executeSearch(settings, trimmed)
+
+  // Write cache (only when non-empty, as requested)
+  if (allSlugs.length > 0) {
+    const bundle = getBlogSettingsBundleSync()
+    const ttl = bundle?.cache?.cache.searchResult?.ttlSeconds ?? CACHE_BUCKET_FALLBACKS.searchResult.ttlSeconds
+    await setCachedSearchResult(cacheKey, allSlugs, ttl)
+  }
+
+  const hits = allSlugs.slice(offset, offset + limit)
   return {
-    hits: hits.slice(offset, offset + limit),
+    hits,
     page: Math.floor(offset / limit) + 1,
-    totalPages: Math.ceil(hits.length / Math.max(limit, 1)),
+    totalPages: Math.ceil(allSlugs.length / Math.max(limit, 1)),
   }
 }

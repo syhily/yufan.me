@@ -62,6 +62,8 @@ const fixture: BlogSettingsBundle = {
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
       imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
       commentsMd: { prefix: 'comments-md-', ttlSeconds: 3600 },
+      embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+      searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
   },
   rateLimit: {
@@ -69,6 +71,16 @@ const fixture: BlogSettingsBundle = {
     commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
     commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
+  },
+  search: {
+    search: {
+      enabled: false,
+      mode: 'like',
+      endpoint: '',
+      apiKey: '',
+      model: 'text-embedding-3-small',
+      similarityThreshold: 0.5,
+    },
   },
 }
 

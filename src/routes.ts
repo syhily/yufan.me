@@ -79,6 +79,7 @@ export default [
       route('wp-admin/settings/mail', 'routes/wp-admin.settings.mail.tsx'),
       route('wp-admin/settings/cache', 'routes/wp-admin.settings.cache.tsx'),
       route('wp-admin/settings/rate-limit', 'routes/wp-admin.settings.rate-limit.tsx'),
+      route('wp-admin/settings/search', 'routes/wp-admin.settings.search.tsx'),
     ]),
   ]),
 ] satisfies RouteConfig

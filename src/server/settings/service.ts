@@ -76,6 +76,9 @@ async function applySectionPatch(
   if (section === 'assets') {
     return applyAssetsPatch(validated)
   }
+  if (section === 'search') {
+    return applySearchPatch(validated)
+  }
   return validated
 }
 
@@ -123,4 +126,22 @@ async function applyAssetsPatch(validated: Record<string, unknown>): Promise<Rec
     secretAccessKey: previousSecret,
   }
   return { ...validated, storage: nextStorage }
+}
+
+async function applySearchPatch(validated: Record<string, unknown>): Promise<Record<string, unknown>> {
+  // Preserve the existing OpenAI API key when the editor omits the field.
+  const incomingSearch = (validated.search as Record<string, unknown>) ?? {}
+  if ('apiKey' in incomingSearch && incomingSearch.apiKey !== undefined) {
+    return validated
+  }
+
+  const existingRow = await findSettingByScope(SECTION_REGISTRY.search.scope)
+  const existingSearch = (existingRow?.data as Record<string, unknown> | undefined)?.search as
+    | Record<string, unknown>
+    | undefined
+  const nextSearch: Record<string, unknown> = {
+    ...incomingSearch,
+    apiKey: typeof existingSearch?.apiKey === 'string' ? existingSearch.apiKey : '',
+  }
+  return { search: nextSearch }
 }

@@ -52,6 +52,7 @@ export type {
   NavigationSettings,
   RateLimitBucket,
   RateLimitSettings,
+  SearchSettings,
   SeoSettings,
   SidebarSettings,
   SiteIdentitySettings,
@@ -87,6 +88,8 @@ function withCacheFallbacks(value: CacheSettingsNonNull): CacheSettingsNonNull {
       avatar: isCacheBucketSlotLike(cache.avatar) ? cache.avatar : fallback.avatar,
       imageMeta: isCacheBucketSlotLike(cache.imageMeta) ? cache.imageMeta : fallback.imageMeta,
       commentsMd: isCacheBucketSlotLike(cache.commentsMd) ? cache.commentsMd : fallback.commentsMd,
+      embeddingSearch: isCacheBucketSlotLike(cache.embeddingSearch) ? cache.embeddingSearch : fallback.embeddingSearch,
+      searchResult: isCacheBucketSlotLike(cache.searchResult) ? cache.searchResult : fallback.searchResult,
     },
   }
 }

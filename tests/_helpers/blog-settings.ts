@@ -95,6 +95,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
       imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
       commentsMd: { ...CACHE_BUCKET_FALLBACKS.commentsMd },
+      embeddingSearch: { ...CACHE_BUCKET_FALLBACKS.embeddingSearch },
+      searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds
@@ -108,5 +110,15 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
     commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
+  },
+  search: {
+    search: {
+      enabled: false,
+      mode: 'like',
+      endpoint: '',
+      apiKey: '',
+      model: 'text-embedding-3-small',
+      similarityThreshold: 0.5,
+    },
   },
 }

@@ -1,5 +1,4 @@
 import {
-  ExternalLinkIcon,
   FilePenIcon,
   MessageSquareIcon,
   PlusIcon,
@@ -230,7 +229,12 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
     <TableRow className={isDeleted ? 'opacity-60' : undefined}>
       <TableCell className="pl-4 align-top">
         <div className="font-medium">{page.title}</div>
-        <div className="font-mono text-xs text-muted-foreground">/{page.slug}</div>
+        <Link
+          to={`/${page.slug}`}
+          className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+        >
+          /{page.slug}
+        </Link>
       </TableCell>
       <TableCell className="hidden max-w-md md:table-cell">
         <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary || '—'}</p>
@@ -251,17 +255,8 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                title="在新窗口预览"
-                render={
-                  <Link to={`/${page.slug}`} target="_blank" rel="noreferrer">
-                    <ExternalLinkIcon />
-                  </Link>
-                }
-              />
-              <Button
-                variant="ghost"
-                size="sm"
                 title="查看评论"
+                className="w-20 justify-start"
                 render={
                   <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}>
                     <MessageSquareIcon /> {page.commentCount}

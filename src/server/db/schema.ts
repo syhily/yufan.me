@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid,
   varchar,
+  vector,
 } from 'drizzle-orm/pg-core'
 import { randomUUID } from 'node:crypto'
 
@@ -577,6 +578,22 @@ export const setting = pgTable('setting', {
     .$defaultFn(() => new Date()),
   updatedBy: bigint('updated_by', { mode: 'bigint' }),
 })
+
+// Search index for posts: plain text extracted from PortableText bodies,
+// plus an optional OpenAI embedding for vector similarity search.
+// Kept in a separate table so the main `post` table stays narrow.
+export const postSearchIndex = pgTable(
+  'post_search_index',
+  {
+    postId: bigint('post_id', { mode: 'bigint' }).primaryKey().notNull(),
+    plainText: text('plain_text').notNull().default(''),
+    embedding: vector('embedding', { dimensions: 1536 }),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index('idx_post_search_embedding').using('hnsw', table.embedding.op('vector_cosine_ops'))],
+)
 
 export type PageMetaRow = typeof page.$inferSelect
 export type NewPageMeta = typeof page.$inferInsert

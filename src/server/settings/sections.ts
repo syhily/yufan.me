@@ -12,6 +12,7 @@ import {
   mailSchema,
   navigationSchema,
   rateLimitSchema,
+  searchSchema,
   seoSchema,
   sidebarSchema,
   socialsSchema,
@@ -132,6 +133,8 @@ const cacheDefaults = {
     avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
     imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
     commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+    embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+    searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
   },
 } as const
 // Rate-limit defaults mirror the historical hard-coded values that
@@ -185,6 +188,21 @@ export const SECTION_REGISTRY = {
     schema: rateLimitSchema,
     key: 'rateLimit',
     defaults: rateLimitDefaults,
+  },
+  search: {
+    scope: 'blog.search',
+    schema: searchSchema,
+    key: 'search',
+    defaults: {
+      search: {
+        enabled: false,
+        mode: 'like',
+        endpoint: '',
+        apiKey: '',
+        model: 'text-embedding-3-small',
+        similarityThreshold: 0.5,
+      },
+    },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>
 

@@ -156,6 +156,13 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     }
     return true
   },
+  search: (value) =>
+    typeof value.search === 'object' &&
+    value.search !== null &&
+    typeof (value.search as Record<string, unknown>).enabled === 'boolean' &&
+    typeof (value.search as Record<string, unknown>).mode === 'string' &&
+    typeof (value.search as Record<string, unknown>).model === 'string' &&
+    typeof (value.search as Record<string, unknown>).similarityThreshold === 'number',
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)

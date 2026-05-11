@@ -73,6 +73,8 @@ const fixtureBundle: BlogSettingsBundle = {
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
       imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
       commentsMd: { prefix: 'comments-md-', ttlSeconds: 3600 },
+      embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+      searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
   },
   rateLimit: {
@@ -80,6 +82,16 @@ const fixtureBundle: BlogSettingsBundle = {
     commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
     commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
+  },
+  search: {
+    search: {
+      enabled: false,
+      mode: 'like',
+      endpoint: '',
+      apiKey: '',
+      model: 'text-embedding-3-small',
+      similarityThreshold: 0.5,
+    },
   },
 }
 
@@ -99,6 +111,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     mail: 'blog.mail',
     cache: 'blog.cache',
     rateLimit: 'blog.rateLimit',
+    search: 'blog.search',
   }
   const rows: Setting[] = []
   let id = 1n
@@ -476,6 +489,8 @@ describe('services/settings — cache section', () => {
           avatar: { prefix: 'gravatar-', ttlSeconds: 60 * 60 * 24 * 3 },
           imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
           commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+          embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+          searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
         },
       },
       null,
@@ -502,6 +517,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -523,6 +539,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'og-foo-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -544,6 +561,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -564,6 +582,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -584,6 +603,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -604,6 +624,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -620,6 +641,7 @@ describe('services/settings — cache section', () => {
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 365 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
             commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
         null,
@@ -669,6 +691,8 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.avatar).toEqual({ prefix: 'legacy-avatar-', ttlSeconds: 4321 })
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
     expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
+    expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
+    expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {

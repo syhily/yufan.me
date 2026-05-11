@@ -1,14 +1,25 @@
-export type CacheBucketId = 'og' | 'calendar' | 'avatar' | 'imageMeta' | 'commentsMd'
+export type CacheBucketId =
+  | 'og'
+  | 'calendar'
+  | 'avatar'
+  | 'imageMeta'
+  | 'commentsMd'
+  | 'embeddingSearch'
+  | 'searchResult'
 
 export interface CacheBucketSlot {
   prefix: string
   ttlSeconds: number
 }
 
-export const CACHE_BUCKET_IDS = ['og', 'calendar', 'avatar', 'imageMeta', 'commentsMd'] as const satisfies readonly [
-  CacheBucketId,
-  ...CacheBucketId[],
-]
+export const CACHE_BUCKET_IDS = [
+  'og',
+  'calendar',
+  'avatar',
+  'imageMeta',
+  'commentsMd',
+  'embeddingSearch',
+] as const satisfies readonly [CacheBucketId, ...CacheBucketId[]]
 
 export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
   og: { prefix: 'og-', ttlSeconds: 60 * 60 * 24 },
@@ -16,6 +27,8 @@ export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
   avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 },
   imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
   commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+  embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+  searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
 }
 
 export interface CacheBucket {

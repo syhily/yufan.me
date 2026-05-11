@@ -113,6 +113,7 @@ export const API_ACTIONS = {
     previewPost: defineApiAction('api/actions/admin/previewPost', 'POST'),
     renderMath: defineApiAction('api/actions/admin/renderMath', 'POST'),
     renderMermaid: defineApiAction('api/actions/admin/renderMermaid', 'POST'),
+    reindexSearch: defineApiAction('api/actions/admin/reindexSearch', 'POST'),
   },
 } as const
 
