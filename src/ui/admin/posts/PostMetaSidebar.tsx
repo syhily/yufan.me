@@ -15,9 +15,10 @@ import type { AdminPostDto } from '@/shared/cms-posts'
 import type { AdminImageDto } from '@/shared/images'
 import type { AdminTagDto, ListTagsOutput } from '@/shared/tags'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { ImageLibraryPicker } from '@/editor/pickers/ImageLibraryPicker'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { POST_META_TOGGLE_FIELDS } from '@/shared/cms-posts'
 import { DateTimePicker } from '@/ui/admin/pages/DateTimePicker'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
@@ -362,48 +363,19 @@ export function PostMetaSidebar({
           <CardTitle className="text-base">展示选项</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <ToggleRow
-            id="post-comments"
-            label="开启评论"
-            description="关闭后文章底部不再渲染评论区。"
-            checked={draft.commentsEnabled}
-            onCheckedChange={(value) => set('commentsEnabled', value)}
-            disabled={disabled}
-          />
-          <ToggleRow
-            id="post-toc"
-            label="显示目录"
-            description="启用后右侧会渲染基于二级标题的 TOC。"
-            checked={draft.showToc}
-            onCheckedChange={(value) => set('showToc', value)}
-            disabled={disabled}
-          />
-          <ToggleRow
-            id="post-show-updated"
-            label="显示修改时间"
-            description="启用后文章正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。"
-            checked={draft.showUpdated}
-            onCheckedChange={(value) => set('showUpdated', value)}
-            disabled={disabled}
-          />
-          <ToggleRow
-            id="post-visible"
-            label="文章可见"
-            description="关闭后文章不在首页和随机文章组件中展示，但仍可通过链接访问。"
-            checked={draft.visible}
-            onCheckedChange={(value) => set('visible', value)}
-            disabled={disabled}
-          />
-          {featureEnabled ? (
-            <ToggleRow
-              id="post-pinned"
-              label="置顶到首页"
-              description="置顶的文章会出现在首页精选区，最多展示 3 篇。"
-              checked={draft.pinned}
-              onCheckedChange={(value) => set('pinned', value)}
-              disabled={disabled}
-            />
-          ) : null}
+          {POST_META_TOGGLE_FIELDS.filter((field) => field.featureGate !== 'featurePosts' || featureEnabled).map(
+            (field) => (
+              <ToggleRow
+                key={field.key}
+                id={field.id}
+                label={field.label}
+                description={field.description}
+                checked={draft[field.key]}
+                onCheckedChange={(value) => set(field.key, value)}
+                disabled={disabled}
+              />
+            ),
+          )}
         </CardContent>
       </Card>
       {extras !== undefined ? extras : null}
@@ -899,7 +871,7 @@ interface CategoryFieldProps {
 
 function CategoryField({ value, onChange, disabled }: CategoryFieldProps) {
   const [categories, setCategories] = useState<AdminCategoryDto[]>([])
-  const listApi = useApiFetcher<Record<string, never>, ListCategoriesOutput>(API_ACTIONS.admin.listCategories, {
+  const listApi = useAdminMutation<Record<string, never>, ListCategoriesOutput>(API_ACTIONS.admin.listCategories, {
     onSuccess: (payload) => setCategories(payload.categories),
   })
 
@@ -940,7 +912,7 @@ interface TagsFieldProps {
 function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const [input, setInput] = useState('')
   const [tags, setTags] = useState<AdminTagDto[]>([])
-  const listApi = useApiFetcher<Record<string, never>, ListTagsOutput>(API_ACTIONS.admin.listTags, {
+  const listApi = useAdminMutation<Record<string, never>, ListTagsOutput>(API_ACTIONS.admin.listTags, {
     onSuccess: (payload) => setTags(payload.tags),
   })
 

@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vite-plus/test'
 import type { PageMetaDraft, UpsertPageMetaInput } from '@/shared/cms-pages'
 
 import { upsertPageMetaSchema } from '@/server/cms/pages/schema'
-import { EMPTY_PAGE_META_DRAFT, pageMetaDraftsEqual } from '@/shared/cms-pages'
+import { EMPTY_PAGE_META_DRAFT, PAGE_META_TOGGLE_FIELDS, pageMetaDraftsEqual } from '@/shared/cms-pages'
+import { POST_META_TOGGLE_FIELDS } from '@/shared/cms-posts'
 
 describe('cms-pages meta shape contract', () => {
   it('EMPTY_PAGE_META_DRAFT carries every PageMetaDraft key', () => {
@@ -57,5 +58,23 @@ describe('cms-pages meta shape contract', () => {
   it('pageMetaDraftsEqual flags any single-field change', () => {
     const mutated: PageMetaDraft = { ...EMPTY_PAGE_META_DRAFT, title: 'Different' }
     expect(pageMetaDraftsEqual(EMPTY_PAGE_META_DRAFT, mutated)).toBe(false)
+  })
+
+  it('PAGE_META_TOGGLE_FIELDS keys exist on PageMetaDraft and ids are unique', () => {
+    const ids = new Set<string>()
+    for (const field of PAGE_META_TOGGLE_FIELDS) {
+      expect(field.key in EMPTY_PAGE_META_DRAFT).toBe(true)
+      expect(typeof (EMPTY_PAGE_META_DRAFT as unknown as Record<string, unknown>)[field.key]).toBe('boolean')
+      expect(ids.has(field.id)).toBe(false)
+      ids.add(field.id)
+    }
+  })
+
+  it('POST_META_TOGGLE_FIELDS ids are unique', () => {
+    const ids = new Set<string>()
+    for (const field of POST_META_TOGGLE_FIELDS) {
+      expect(ids.has(field.id)).toBe(false)
+      ids.add(field.id)
+    }
   })
 })

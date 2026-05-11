@@ -740,69 +740,9 @@ function Toolbar(props: ToolbarProps) {
 
   const groups = (
     <>
-      {density === 'full' ? (
-        <ToolbarGroup>
-          <ToolbarButton
-            title="撤销 (Cmd/Ctrl+Z)"
-            disabled={disabled || !editor.can().undo()}
-            onClick={() => editor.chain().focus().undo().run()}
-          >
-            <Undo2Icon />
-          </ToolbarButton>
-          <ToolbarButton
-            title="重做 (Cmd/Ctrl+Shift+Z)"
-            disabled={disabled || !editor.can().redo()}
-            onClick={() => editor.chain().focus().redo().run()}
-          >
-            <Redo2Icon />
-          </ToolbarButton>
-        </ToolbarGroup>
-      ) : null}
-      {/* Block style: in 'full' mode each option renders as its own
-          toggle button so the operator hits paragraph / a heading
-          level / blockquote / code block in a single click. The
-          compact mode keeps the Select to save horizontal space. */}
-      {density === 'full' ? (
-        <ToolbarGroup>
-          <BlockStyleButtons editor={editor} disabled={disabled} />
-        </ToolbarGroup>
-      ) : (
-        <ToolbarGroup>
-          <BlockStyleSelect editor={editor} disabled={disabled} />
-        </ToolbarGroup>
-      )}
-      {density === 'full' ? (
-        <ToolbarGroup>
-          <ToolbarButton
-            title="居左"
-            disabled={disabled}
-            active={editor.isActive({ textAlign: 'left' })}
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          >
-            <AlignLeftIcon />
-          </ToolbarButton>
-          <ToolbarButton
-            title="居中"
-            disabled={disabled}
-            active={editor.isActive({ textAlign: 'center' })}
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          >
-            <AlignCenterIcon />
-          </ToolbarButton>
-          <ToolbarButton
-            title="居右"
-            disabled={disabled}
-            active={editor.isActive({ textAlign: 'right' })}
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          >
-            <AlignRightIcon />
-          </ToolbarButton>
-        </ToolbarGroup>
-      ) : (
-        <ToolbarGroup>
-          <AlignSelect editor={editor} disabled={disabled} />
-        </ToolbarGroup>
-      )}
+      {density === 'full' ? <UndoRedoGroup editor={editor} disabled={disabled} /> : null}
+      <BlockStyleGroup editor={editor} disabled={disabled} density={density} />
+      <AlignGroup editor={editor} disabled={disabled} density={density} />
       <ToolbarGroup>
         <ToolbarButton
           title="加粗 (Cmd/Ctrl+B)"
@@ -870,35 +810,9 @@ function Toolbar(props: ToolbarProps) {
           <ListOrderedIcon />
         </ToolbarButton>
       </ToolbarGroup>
-      {/* Inserts: rendered as either an inline group (full mode) or
-          a 「插入」Popover (compact mode). Single-mount so the
-          picker triggers don't end up with two `<ImageLibraryPicker>`
-          dialogs in the tree. */}
-      {density === 'full' ? (
-        <ToolbarGroup>{insertButtons}</ToolbarGroup>
-      ) : (
-        <ToolbarGroup>
-          <Popover>
-            <PopoverTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={disabled}
-                  title="插入图片 / 音乐 / 表格 / 链接 / 分隔线"
-                  aria-label="插入元素"
-                >
-                  <PlusIcon /> 插入
-                </Button>
-              }
-            />
-            <PopoverContent align="start" sideOffset={6} className="w-auto p-1">
-              <div className="flex flex-wrap items-center gap-0.5">{insertButtons}</div>
-            </PopoverContent>
-          </Popover>
-        </ToolbarGroup>
-      )}
+      <InsertsGroup density={density} disabled={disabled}>
+        {insertButtons}
+      </InsertsGroup>
     </>
   )
 
@@ -950,6 +864,121 @@ function ToolbarGroup({ children, hideTrailingSeparator, className }: ToolbarGro
         <Separator orientation="vertical" className="mx-1 h-6" aria-hidden="true" />
       ) : null}
     </div>
+  )
+}
+
+interface GroupProps {
+  editor: Editor
+  disabled?: boolean
+}
+
+interface DensityGroupProps extends GroupProps {
+  density: ToolbarDensity
+}
+
+function UndoRedoGroup({ editor, disabled }: GroupProps) {
+  return (
+    <ToolbarGroup>
+      <ToolbarButton
+        title="撤销 (Cmd/Ctrl+Z)"
+        disabled={disabled || !editor.can().undo()}
+        onClick={() => editor.chain().focus().undo().run()}
+      >
+        <Undo2Icon />
+      </ToolbarButton>
+      <ToolbarButton
+        title="重做 (Cmd/Ctrl+Shift+Z)"
+        disabled={disabled || !editor.can().redo()}
+        onClick={() => editor.chain().focus().redo().run()}
+      >
+        <Redo2Icon />
+      </ToolbarButton>
+    </ToolbarGroup>
+  )
+}
+
+function BlockStyleGroup({ editor, disabled, density }: DensityGroupProps) {
+  return (
+    <ToolbarGroup>
+      {density === 'full' ? (
+        <BlockStyleButtons editor={editor} disabled={disabled} />
+      ) : (
+        <BlockStyleSelect editor={editor} disabled={disabled} />
+      )}
+    </ToolbarGroup>
+  )
+}
+
+function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
+  if (density === 'compact') {
+    return (
+      <ToolbarGroup>
+        <AlignSelect editor={editor} disabled={disabled} />
+      </ToolbarGroup>
+    )
+  }
+  return (
+    <ToolbarGroup>
+      <ToolbarButton
+        title="居左"
+        disabled={disabled}
+        active={editor.isActive({ textAlign: 'left' })}
+        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+      >
+        <AlignLeftIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        title="居中"
+        disabled={disabled}
+        active={editor.isActive({ textAlign: 'center' })}
+        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+      >
+        <AlignCenterIcon />
+      </ToolbarButton>
+      <ToolbarButton
+        title="居右"
+        disabled={disabled}
+        active={editor.isActive({ textAlign: 'right' })}
+        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+      >
+        <AlignRightIcon />
+      </ToolbarButton>
+    </ToolbarGroup>
+  )
+}
+
+interface InsertsGroupProps {
+  density: ToolbarDensity
+  disabled?: boolean
+  children: React.ReactNode
+}
+
+function InsertsGroup({ density, disabled, children }: InsertsGroupProps) {
+  if (density === 'full') {
+    return <ToolbarGroup>{children}</ToolbarGroup>
+  }
+  return (
+    <ToolbarGroup>
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={disabled}
+              title="插入图片 / 音乐 / 表格 / 链接 / 分隔线"
+              aria-label="插入元素"
+            >
+              <PlusIcon /> 插入
+            </Button>
+          }
+        />
+        <PopoverContent align="start" sideOffset={6} className="w-auto p-1">
+          <div className="flex flex-wrap items-center gap-0.5">{children}</div>
+        </PopoverContent>
+      </Popover>
+    </ToolbarGroup>
   )
 }
 

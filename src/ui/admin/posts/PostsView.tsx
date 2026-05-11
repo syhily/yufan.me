@@ -26,7 +26,7 @@ import type {
 } from '@/shared/cms-posts'
 import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -76,9 +76,9 @@ export function PostsView() {
   const { state, dispatch } = usePostsController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useApiFetcher<ListPostsInput, ListPostsOutput>(LIST, {
+  const listApi = useAdminMutation<ListPostsInput, ListPostsOutput>(LIST, {
     onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.posts, total: payload.total }),
-    onError: (error) => console.error('[admin] list posts failed', error),
+    errorMessage: '加载文章列表失败',
   })
   const { load: loadPosts, isPending: isListPending } = listApi
 
@@ -111,7 +111,7 @@ export function PostsView() {
     state.authorId,
   ])
 
-  const deleteApi = useApiFetcher<DeletePostInput, DeletePostOutput>(DELETE, {
+  const deleteApi = useAdminMutation<DeletePostInput, DeletePostOutput>(DELETE, {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({
@@ -124,7 +124,7 @@ export function PostsView() {
   })
   const { submit: submitDelete } = deleteApi
 
-  const restoreApi = useApiFetcher<RestorePostInput, RestorePostOutput>(RESTORE, {
+  const restoreApi = useAdminMutation<RestorePostInput, RestorePostOutput>(RESTORE, {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({
@@ -143,13 +143,13 @@ export function PostsView() {
   })
 
   // Load filter option data
-  const categoriesApi = useApiFetcher<ListCategoriesInput, ListCategoriesOutput>(LIST_CATEGORIES, {
+  const categoriesApi = useAdminMutation<ListCategoriesInput, ListCategoriesOutput>(LIST_CATEGORIES, {
     onSuccess: () => undefined,
   })
-  const tagsApi = useApiFetcher<ListTagsInput, ListTagsOutput>(LIST_TAGS, {
+  const tagsApi = useAdminMutation<ListTagsInput, ListTagsOutput>(LIST_TAGS, {
     onSuccess: () => undefined,
   })
-  const usersApi = useApiFetcher<ListUsersInput, ListUsersOutput>(LIST_USERS, {
+  const usersApi = useAdminMutation<ListUsersInput, ListUsersOutput>(LIST_USERS, {
     onSuccess: () => undefined,
   })
 

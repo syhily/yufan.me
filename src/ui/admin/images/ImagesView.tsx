@@ -14,7 +14,7 @@ import type {
   UpdateImageNoteOutput,
 } from '@/shared/images'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { ImageCard } from '@/ui/admin/images/ImageCard'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
@@ -65,10 +65,10 @@ export function ImagesView() {
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const listApi = useApiFetcher<ListImagesInput, ListImagesOutput>(LIST, {
+  const listApi = useAdminMutation<ListImagesInput, ListImagesOutput>(LIST, {
     onSuccess: (payload) =>
       dispatch({ type: 'loaded', rows: payload.images, total: payload.total, hasMore: payload.hasMore }),
-    onError: (error) => console.error('[admin] list images failed', error),
+    errorMessage: '加载图片列表失败',
   })
   const { load: loadImages, isPending: isListPending } = listApi
 
@@ -81,13 +81,13 @@ export function ImagesView() {
     })
   }, [loadImages, state.q, state.kind, state.currentPage, state.pageSize])
 
-  const deleteApi = useApiFetcher<DeleteImageInput, DeleteImageOutput>(DELETE, {
+  const deleteApi = useAdminMutation<DeleteImageInput, DeleteImageOutput>(DELETE, {
     onSuccess: () => undefined,
-    onError: (error) => console.error('[admin] delete image failed', error),
+    errorMessage: '删除图片失败',
   })
   const { submit: submitDelete } = deleteApi
 
-  const updateNoteApi = useApiFetcher<UpdateImageNoteInput, UpdateImageNoteOutput>(UPDATE_NOTE, {
+  const updateNoteApi = useAdminMutation<UpdateImageNoteInput, UpdateImageNoteOutput>(UPDATE_NOTE, {
     onSuccess: (payload) => {
       dispatch({ type: 'patchImage', image: payload.image })
       // Refresh the dialog selection so the dialog renders the latest
@@ -95,17 +95,20 @@ export function ImagesView() {
       // own copy of the row.
       setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
     },
-    onError: (error) => console.error('[admin] update image note failed', error),
+    errorMessage: '更新图片备注失败',
   })
   const { submit: submitUpdateNote, isPending: isUpdatingNote } = updateNoteApi
 
-  const recalculateApi = useApiFetcher<RecalculateThumbhashInput, RecalculateThumbhashOutput>(RECALCULATE_THUMBHASH, {
-    onSuccess: (payload) => {
-      dispatch({ type: 'patchImage', image: payload.image })
-      setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
+  const recalculateApi = useAdminMutation<RecalculateThumbhashInput, RecalculateThumbhashOutput>(
+    RECALCULATE_THUMBHASH,
+    {
+      onSuccess: (payload) => {
+        dispatch({ type: 'patchImage', image: payload.image })
+        setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
+      },
+      errorMessage: '重新计算缩略图失败',
     },
-    onError: (error) => console.error('[admin] recalculate thumbhash failed', error),
-  })
+  )
   const { submit: submitRecalculate, isPending: isRecalculating } = recalculateApi
 
   const [qInput, setQInput] = useDebouncedSearch({

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import type { AdminCategoryDto, UpsertCategoryInput, UpsertCategoryOutput } from '@/shared/categories'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
@@ -44,12 +44,16 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const upsertApi = useApiFetcher<UpsertCategoryInput, UpsertCategoryOutput>(UPSERT, {
+  const upsertApi = useAdminMutation<UpsertCategoryInput, UpsertCategoryOutput>(UPSERT, {
+    successMessage: '分类已保存',
     onSuccess: (payload) => {
       setErrorMessage(null)
       onSaved(payload.category)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { submit, isPending } = upsertApi
 

@@ -13,7 +13,7 @@ import type {
   UserIdInput,
 } from '@/shared/api-types'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -40,13 +40,13 @@ export function UsersView() {
   const config = useSiteIdentity()
   const { state, dispatch } = useUsersController()
 
-  const listApi = useApiFetcher<ListUsersInput, ListUsersOutput>(LIST, {
-    onError: (error) => console.error('[admin] list users failed', error),
+  const listApi = useAdminMutation<ListUsersInput, ListUsersOutput>(LIST, {
+    errorMessage: '加载用户列表失败',
     onSuccess: (payload) => {
       dispatch({ type: 'loaded', rows: payload.users, total: payload.total, hasMore: payload.hasMore })
     },
   })
-  const muteApi = useApiFetcher<MuteUserInput, MuteUserOutput>(MUTE, {
+  const muteApi = useAdminMutation<MuteUserInput, MuteUserOutput>(MUTE, {
     onSuccess: (payload) => {
       dispatch({ type: 'patchUser', user: payload.user })
     },
@@ -72,10 +72,10 @@ export function UsersView() {
     })
   }, [loadUsers, state.currentPage, state.pageSize, state.q, state.role, state.includeDeleted, state.sortBy])
 
-  const deleteApi = useApiFetcher<UserIdInput, AdminMutationSuccessOutput>(SOFT_DELETE, { onSuccess: reload })
-  const restoreApi = useApiFetcher<UserIdInput, AdminMutationSuccessOutput>(RESTORE, { onSuccess: reload })
-  const bulkApproveApi = useApiFetcher<UserIdInput, BulkApproveOutput>(BULK_APPROVE, { onSuccess: reload })
-  const bulkDeleteApi = useApiFetcher<UserIdInput, BulkSoftDeleteOutput>(BULK_DELETE, { onSuccess: reload })
+  const deleteApi = useAdminMutation<UserIdInput, AdminMutationSuccessOutput>(SOFT_DELETE, { onSuccess: reload })
+  const restoreApi = useAdminMutation<UserIdInput, AdminMutationSuccessOutput>(RESTORE, { onSuccess: reload })
+  const bulkApproveApi = useAdminMutation<UserIdInput, BulkApproveOutput>(BULK_APPROVE, { onSuccess: reload })
+  const bulkDeleteApi = useAdminMutation<UserIdInput, BulkSoftDeleteOutput>(BULK_DELETE, { onSuccess: reload })
   const { submit: submitDeleteApi } = deleteApi
   const { submit: submitRestoreApi } = restoreApi
   const { submit: submitBulkApproveApi } = bulkApproveApi

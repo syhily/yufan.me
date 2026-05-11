@@ -24,6 +24,7 @@ import {
   useState,
 } from 'react'
 import { Form, NavLink, useLocation } from 'react-router'
+import { Toaster } from 'sonner'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/ui/avatar'
@@ -291,6 +292,7 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
           </main>
         </div>
         <AdminScrollTopButton {...(focused ? { scrollRootRef: mainScrollRef } : {})} />
+        <Toaster position="top-center" richColors closeButton />
       </div>
     </AdminChromeContext.Provider>
   )

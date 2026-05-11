@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import type { AdminFriendDto, UpsertFriendInput, UpsertFriendOutput } from '@/shared/friends'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { buildPublicBaseUrlFromStorage, extractFriendHostSafe } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
@@ -47,12 +47,16 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const upsertApi = useApiFetcher<UpsertFriendInput, UpsertFriendOutput>(UPSERT, {
+  const upsertApi = useAdminMutation<UpsertFriendInput, UpsertFriendOutput>(UPSERT, {
+    successMessage: '友链已保存',
     onSuccess: (payload) => {
       setErrorMessage(null)
       onSaved(payload.friend)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { submit, isPending } = upsertApi
 

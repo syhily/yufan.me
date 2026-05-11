@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PortableTextBody } from '@/pt/schema'
 import type { AdminRevisionDto, ListPageRevisionsInput, ListPageRevisionsOutput } from '@/shared/cms-pages'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { diffBodies, DiffPanel } from '@/editor/portable-text-diff'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Badge } from '@/ui/components/ui/badge'
@@ -57,8 +57,9 @@ export function RevisionHistoryDrawer({
   const [revisions, setRevisions] = useState<AdminRevisionDto[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const { load, isPending } = useApiFetcher<ListPageRevisionsInput, ListPageRevisionsOutput>(LIST_REVISIONS, {
+  const { load, isPending } = useAdminMutation<ListPageRevisionsInput, ListPageRevisionsOutput>(LIST_REVISIONS, {
     onSuccess: (payload) => setRevisions(payload.revisions),
+    errorMessage: '加载历史版本失败',
   })
 
   // Fetch on first open. Re-opening reuses the cache; the operator

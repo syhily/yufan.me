@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 
 import type { AdminMusicDto, UpdateMusicInput, UpdateMusicOutput } from '@/shared/music'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/ui/button'
 import {
@@ -50,12 +50,16 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
   const [draft, setDraft] = useState<MusicDraft>(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const updateApi = useApiFetcher<UpdateMusicInput, UpdateMusicOutput>(UPDATE, {
+  const updateApi = useAdminMutation<UpdateMusicInput, UpdateMusicOutput>(UPDATE, {
+    successMessage: '音乐已更新',
     onSuccess: (payload) => {
       setErrorMessage(null)
       onSaved(payload.music)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { submit, isPending } = updateApi
 

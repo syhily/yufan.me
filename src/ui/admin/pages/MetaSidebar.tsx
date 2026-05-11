@@ -14,7 +14,7 @@ import type { AdminPageDto, PageMetaDraft } from '@/shared/cms-pages'
 import type { AdminImageDto } from '@/shared/images'
 
 import { ImageLibraryPicker } from '@/editor/pickers/ImageLibraryPicker'
-import { EMPTY_PAGE_META_DRAFT, pageMetaDraftsEqual } from '@/shared/cms-pages'
+import { EMPTY_PAGE_META_DRAFT, PAGE_META_TOGGLE_FIELDS, pageMetaDraftsEqual } from '@/shared/cms-pages'
 import { DateTimePicker } from '@/ui/admin/pages/DateTimePicker'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
@@ -281,38 +281,17 @@ export function MetaSidebar({
           <CardTitle className="text-base">展示选项</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <ToggleRow
-            id="page-comments"
-            label="开启评论"
-            description="关闭后页面底部不再渲染评论区。"
-            checked={draft.commentsEnabled}
-            onCheckedChange={(value) => set('commentsEnabled', value)}
-            disabled={disabled}
-          />
-          <ToggleRow
-            id="page-toc"
-            label="显示目录"
-            description="启用后右侧会渲染基于二级标题的 TOC。"
-            checked={draft.showToc}
-            onCheckedChange={(value) => set('showToc', value)}
-            disabled={disabled}
-          />
-          <ToggleRow
-            id="page-show-updated"
-            label="显示修改时间"
-            description="启用后页面正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。"
-            checked={draft.showUpdated}
-            onCheckedChange={(value) => set('showUpdated', value)}
-            disabled={disabled}
-          />
-          <ToggleRow
-            id="page-friends"
-            label="开启友链"
-            description="启用后页面正文末尾会追加全站友链网格。"
-            checked={draft.showFriends}
-            onCheckedChange={(value) => set('showFriends', value)}
-            disabled={disabled}
-          />
+          {PAGE_META_TOGGLE_FIELDS.map((field) => (
+            <ToggleRow
+              key={field.key}
+              id={field.id}
+              label={field.label}
+              description={field.description}
+              checked={draft[field.key]}
+              onCheckedChange={(value) => set(field.key, value)}
+              disabled={disabled}
+            />
+          ))}
         </CardContent>
       </Card>
       {extras !== undefined ? extras : null}

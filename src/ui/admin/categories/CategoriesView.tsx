@@ -11,7 +11,7 @@ import type {
   ReorderCategoriesOutput,
 } from '@/shared/categories'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
@@ -43,9 +43,9 @@ export function CategoriesView() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
-  const listApi = useApiFetcher<ListCategoriesInput, ListCategoriesOutput>(LIST, {
+  const listApi = useAdminMutation<ListCategoriesInput, ListCategoriesOutput>(LIST, {
     onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.categories, total: payload.total }),
-    onError: (error) => console.error('[admin] list categories failed', error),
+    errorMessage: '加载分类失败',
   })
   const { load: loadCategories, isPending: isListPending } = listApi
 
@@ -53,23 +53,25 @@ export function CategoriesView() {
     loadCategories({ q: state.q || undefined })
   }, [loadCategories, state.q])
 
-  const deleteApi = useApiFetcher<DeleteCategoryInput, DeleteCategoryOutput>(DELETE, {
-    onSuccess: () => undefined,
-    // The service blocks deletion when posts still reference the
-    // category (HTTP 409). Surface the message in a confirm-like
-    // alert dialog so the admin sees which posts to fix.
-    onError: (error) =>
+  const deleteApi = useAdminMutation<DeleteCategoryInput, DeleteCategoryOutput>(DELETE, {
+    successMessage: '已删除分类',
+    onError: (error) => {
+      // The service blocks deletion when posts still reference the
+      // category (HTTP 409). Surface the message in a confirm-like
+      // alert dialog so the admin sees which posts to fix.
       setConfirm({
         title: '无法删除分类',
         description: error.message,
         actionLabel: '我知道了',
         destructive: false,
         onConfirm: () => undefined,
-      }),
+      })
+      return true
+    },
   })
   const { submit: submitDelete } = deleteApi
 
-  const reorderApi = useApiFetcher<ReorderCategoriesInput, ReorderCategoriesOutput>(REORDER, {
+  const reorderApi = useAdminMutation<ReorderCategoriesInput, ReorderCategoriesOutput>(REORDER, {
     onSuccess: (payload) => dispatch({ type: 'replaceRows', rows: payload.categories }),
     onError: (error) => {
       // Rollback to the canonical server state so the optimistic
@@ -83,6 +85,7 @@ export function CategoriesView() {
         onConfirm: () => undefined,
       })
       reload()
+      return true
     },
   })
   const { submit: submitReorder } = reorderApi

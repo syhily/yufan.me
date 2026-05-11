@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 
 import type { AdminPostDetailDto, GetPostInput } from '@/shared/cms-posts'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 import { Button } from '@/ui/components/ui/button'
@@ -20,12 +20,15 @@ export function PostEditorRoute({ postId }: PostEditorRouteProps) {
   const [detail, setDetail] = useState<AdminPostDetailDto | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const getPostApi = useApiFetcher<GetPostInput, AdminPostDetailDto>(GET_POST, {
+  const getPostApi = useAdminMutation<GetPostInput, AdminPostDetailDto>(GET_POST, {
     onSuccess: (payload) => {
       setDetail(payload)
       setErrorMessage(null)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { load } = getPostApi
 

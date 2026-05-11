@@ -12,7 +12,7 @@ import type {
 import type { AdminComment } from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
@@ -83,8 +83,8 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
     initialStatus,
   })
 
-  const loadApi = useApiFetcher<LoadAllInput, LoadAllOutput>(LOAD_ALL, {
-    onError: (error) => console.error('[admin] load failed', error),
+  const loadApi = useAdminMutation<LoadAllInput, LoadAllOutput>(LOAD_ALL, {
+    errorMessage: '加载评论列表失败',
     onSuccess: (payload) => {
       dispatch({
         type: 'loaded',
@@ -95,9 +95,9 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
       })
     },
   })
-  const pagesApi = useApiFetcher<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES)
-  const authorsApi = useApiFetcher<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS)
-  const authorRehydrateApi = useApiFetcher<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS, {
+  const pagesApi = useAdminMutation<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES)
+  const authorsApi = useAdminMutation<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS)
+  const authorRehydrateApi = useAdminMutation<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS, {
     onSuccess: (payload) => {
       const fetched = payload.authors
       if (fetched.length === 0) {
@@ -110,7 +110,7 @@ export function CommentsView({ commentCsrfToken, currentUserName, currentUserEma
       dispatch({ type: 'renameFilterAuthor', label: fetched[0].name })
     },
   })
-  const pageRehydrateApi = useApiFetcher<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES, {
+  const pageRehydrateApi = useAdminMutation<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES, {
     onSuccess: (payload) => {
       const fetched = payload.pages
       if (fetched.length === 0) {

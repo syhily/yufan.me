@@ -19,7 +19,7 @@ import type {
   ListFriendsOutput,
 } from '@/shared/friends'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { safeHref } from '@/shared/safe-url'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
@@ -66,10 +66,10 @@ export function FriendsView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useApiFetcher<ListFriendsInput, ListFriendsOutput>(LIST, {
+  const listApi = useAdminMutation<ListFriendsInput, ListFriendsOutput>(LIST, {
     onSuccess: (payload) =>
       dispatch({ type: 'loaded', rows: payload.friends, total: payload.total, hasMore: payload.hasMore }),
-    onError: (error) => console.error('[admin] list friends failed', error),
+    errorMessage: '加载友链列表失败',
   })
   const { load: loadFriends, isPending: isListPending } = listApi
 
@@ -82,13 +82,13 @@ export function FriendsView() {
     })
   }, [loadFriends, state.q, state.includeHidden, state.currentPage, state.pageSize])
 
-  const deleteApi = useApiFetcher<DeleteFriendInput, DeleteFriendOutput>(DELETE, {
+  const deleteApi = useAdminMutation<DeleteFriendInput, DeleteFriendOutput>(DELETE, {
     // Optimistic-ish: drop the row from local state on success so we
     // don't pay the round-trip to refetch the full list. The catalog
     // reset on the server side keeps the public site in sync; the
     // admin list cares only about its own snapshot.
     onSuccess: () => undefined,
-    onError: (error) => console.error('[admin] delete friend failed', error),
+    errorMessage: '删除友链失败',
   })
   const { submit: submitDelete } = deleteApi
 

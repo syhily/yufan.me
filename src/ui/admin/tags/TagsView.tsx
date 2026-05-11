@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { DeleteTagInput, DeleteTagOutput, ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -40,10 +40,10 @@ export function TagsView() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const listApi = useApiFetcher<ListTagsInput, ListTagsOutput>(LIST, {
+  const listApi = useAdminMutation<ListTagsInput, ListTagsOutput>(LIST, {
     onSuccess: (payload) =>
       dispatch({ type: 'loaded', rows: payload.tags, total: payload.total, hasMore: payload.hasMore }),
-    onError: (error) => console.error('[admin] list tags failed', error),
+    errorMessage: '加载标签列表失败',
   })
   const { load: loadTags, isPending: isListPending } = listApi
 
@@ -63,7 +63,7 @@ export function TagsView() {
   // because in that case the row stays put and the error message is
   // surfaced through the confirm dialog.
   const pendingDeleteIdRef = useRef<string | null>(null)
-  const deleteApi = useApiFetcher<DeleteTagInput, DeleteTagOutput>(DELETE, {
+  const deleteApi = useAdminMutation<DeleteTagInput, DeleteTagOutput>(DELETE, {
     onSuccess: () => {
       const id = pendingDeleteIdRef.current
       pendingDeleteIdRef.current = null

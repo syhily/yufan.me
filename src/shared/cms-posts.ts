@@ -157,3 +157,48 @@ export interface PreviewPostBodyOutput {
   html: string
   headings: MarkdownHeading[]
 }
+
+export type PostMetaToggleKey = 'commentsEnabled' | 'showToc' | 'showUpdated' | 'visible' | 'pinned'
+
+export interface PostMetaToggleField {
+  key: PostMetaToggleKey
+  id: string
+  label: string
+  description: string
+  /** When set, the toggle is only rendered if the feature flag is enabled. */
+  featureGate?: 'featurePosts'
+}
+
+export const POST_META_TOGGLE_FIELDS: ReadonlyArray<PostMetaToggleField> = [
+  {
+    key: 'commentsEnabled',
+    id: 'post-comments',
+    label: '开启评论',
+    description: '关闭后文章底部不再渲染评论区。',
+  },
+  {
+    key: 'showToc',
+    id: 'post-toc',
+    label: '显示目录',
+    description: '启用后右侧会渲染基于二级标题的 TOC。',
+  },
+  {
+    key: 'showUpdated',
+    id: 'post-show-updated',
+    label: '显示修改时间',
+    description: '启用后文章正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。',
+  },
+  {
+    key: 'visible',
+    id: 'post-visible',
+    label: '文章可见',
+    description: '关闭后文章不在首页和随机文章组件中展示，但仍可通过链接访问。',
+  },
+  {
+    key: 'pinned',
+    id: 'post-pinned',
+    label: '置顶到首页',
+    description: '置顶的文章会出现在首页精选区，最多展示 3 篇。',
+    featureGate: 'featurePosts',
+  },
+]

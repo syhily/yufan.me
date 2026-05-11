@@ -18,7 +18,7 @@ import type {
   ListMusicOutput,
 } from '@/shared/music'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'
@@ -57,10 +57,10 @@ export function MusicsView() {
   const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null)
   const [playingTrack, setPlayingTrack] = useState<FloatingMusicPlayerTrack | null>(null)
 
-  const listApi = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST, {
+  const listApi = useAdminMutation<ListMusicInput, ListMusicOutput>(LIST, {
     onSuccess: (payload) =>
       dispatch({ type: 'loaded', rows: payload.musics, total: payload.total, hasMore: payload.hasMore }),
-    onError: (error) => console.error('[admin] list music failed', error),
+    errorMessage: '加载音乐列表失败',
   })
   const { load: loadMusic, isPending: isListPending } = listApi
 
@@ -72,7 +72,7 @@ export function MusicsView() {
     })
   }, [loadMusic, state.q, state.currentPage, state.pageSize])
 
-  const deleteApi = useApiFetcher<DeleteMusicInput, DeleteMusicOutput>(DELETE, {
+  const deleteApi = useAdminMutation<DeleteMusicInput, DeleteMusicOutput>(DELETE, {
     onSuccess: () => undefined,
     onError: (error) =>
       setConfirm({

@@ -10,7 +10,7 @@ import type {
   SearchMusicOutput,
 } from '@/shared/music'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/ui/button'
 import {
@@ -98,16 +98,20 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const searchApi = useApiFetcher<SearchMusicInput, SearchMusicOutput>(SEARCH, {
+  const searchApi = useAdminMutation<SearchMusicInput, SearchMusicOutput>(SEARCH, {
     onSuccess: (payload) => {
       setErrorMessage(null)
       setResults(payload.results)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { load: loadSearch, isPending: isSearching } = searchApi
 
-  const addApi = useApiFetcher<AddMusicInput, AddMusicOutput>(ADD, {
+  const addApi = useAdminMutation<AddMusicInput, AddMusicOutput>(ADD, {
+    successMessage: '音乐已添加',
     onSuccess: (payload) => {
       setErrorMessage(null)
       setAddingSourceId(null)
@@ -121,6 +125,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
     onError: (error) => {
       setAddingSourceId(null)
       setErrorMessage(error.message)
+      return true
     },
   })
   const { submit: submitAdd } = addApi

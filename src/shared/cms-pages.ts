@@ -193,6 +193,46 @@ export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean
   )
 }
 
+// Field metadata for the 展示选项 card in `MetaSidebar`. Pure data — the
+// component maps over this array to render rows. Adding a toggle is
+// (1) extend `PageMetaDraft` / `EMPTY_PAGE_META_DRAFT` / `pageMetaDraftsEqual`
+// (2) add a row here. Schema / DB / projection layers stay in their own files.
+export type PageMetaToggleKey = 'commentsEnabled' | 'showToc' | 'showUpdated' | 'showFriends'
+
+export interface PageMetaToggleField {
+  key: PageMetaToggleKey
+  id: string
+  label: string
+  description: string
+}
+
+export const PAGE_META_TOGGLE_FIELDS: ReadonlyArray<PageMetaToggleField> = [
+  {
+    key: 'commentsEnabled',
+    id: 'page-comments',
+    label: '开启评论',
+    description: '关闭后页面底部不再渲染评论区。',
+  },
+  {
+    key: 'showToc',
+    id: 'page-toc',
+    label: '显示目录',
+    description: '启用后右侧会渲染基于二级标题的 TOC。',
+  },
+  {
+    key: 'showUpdated',
+    id: 'page-show-updated',
+    label: '显示修改时间',
+    description: '启用后页面正文上方会展示「修改于 XXXX」，否则只展示首次发布时间。',
+  },
+  {
+    key: 'showFriends',
+    id: 'page-friends',
+    label: '开启友链',
+    description: '启用后页面正文末尾会追加全站友链网格。',
+  },
+]
+
 // --- delete / restore -----------------------------------------------------
 
 export interface DeletePageInput {

@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 
 import type { AdminPageDetailDto, GetPageInput } from '@/shared/cms-pages'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 import { Button } from '@/ui/components/ui/button'
@@ -24,12 +24,15 @@ export function PageEditorRoute({ pageId }: PageEditorRouteProps) {
   const [detail, setDetail] = useState<AdminPageDetailDto | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const getPageApi = useApiFetcher<GetPageInput, AdminPageDetailDto>(GET_PAGE, {
+  const getPageApi = useAdminMutation<GetPageInput, AdminPageDetailDto>(GET_PAGE, {
     onSuccess: (payload) => {
       setDetail(payload)
       setErrorMessage(null)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { load } = getPageApi
 

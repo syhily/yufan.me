@@ -12,7 +12,7 @@ import type {
   RestorePageOutput,
 } from '@/shared/cms-pages'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -41,9 +41,9 @@ export function PagesView() {
   const { state, dispatch } = usePagesController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useApiFetcher<ListPagesInput, ListPagesOutput>(LIST, {
+  const listApi = useAdminMutation<ListPagesInput, ListPagesOutput>(LIST, {
     onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.pages, total: payload.total }),
-    onError: (error) => console.error('[admin] list pages failed', error),
+    errorMessage: '加载页面列表失败',
   })
   const { load: loadPages, isPending: isListPending } = listApi
 
@@ -54,7 +54,7 @@ export function PagesView() {
     })
   }, [loadPages, state.q, state.deletedStatus])
 
-  const deleteApi = useApiFetcher<DeletePageInput, DeletePageOutput>(DELETE, {
+  const deleteApi = useAdminMutation<DeletePageInput, DeletePageOutput>(DELETE, {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({
@@ -67,7 +67,7 @@ export function PagesView() {
   })
   const { submit: submitDelete } = deleteApi
 
-  const restoreApi = useApiFetcher<RestorePageInput, RestorePageOutput>(RESTORE, {
+  const restoreApi = useAdminMutation<RestorePageInput, RestorePageOutput>(RESTORE, {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({

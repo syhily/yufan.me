@@ -3,7 +3,7 @@ import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'reac
 
 import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
@@ -117,12 +117,16 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
     nameInputRef.current?.focus()
   }, [])
 
-  const upsertApi = useApiFetcher<UpsertTagInput, UpsertTagOutput>(UPSERT, {
+  const upsertApi = useAdminMutation<UpsertTagInput, UpsertTagOutput>(UPSERT, {
+    successMessage: '标签已保存',
     onSuccess: (payload) => {
       setErrorMessage(null)
       onSaved(payload.tag)
     },
-    onError: (error) => setErrorMessage(error.message),
+    onError: (error) => {
+      setErrorMessage(error.message)
+      return true
+    },
   })
   const { submit, isPending } = upsertApi
 
