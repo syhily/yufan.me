@@ -169,7 +169,7 @@ export function CommentBodyEditor({
       <EditorContent
         editor={editor}
         className={cn(
-          'prose prose-sm max-w-none px-3 py-2',
+          'prose-blog prose prose-sm max-w-none px-3 py-2',
           'min-h-[6rem]',
           'wrap-break-word whitespace-normal',
           // Tiptap injects `.ProseMirror` on the contenteditable host.

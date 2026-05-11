@@ -220,8 +220,6 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
   const leaf = useCommentsLeafContext(propAdmin)
   const isMyComment = leaf.myCommentIds.has(asKey(comment.id))
   const isPending = pending ?? comment.isPending ?? false
-  const expiresAt = leaf.myCommentExpiresAt.get(asKey(comment.id))
-  const canEdit = expiresAt === undefined || expiresAt > Date.now()
   return (
     <li
       id={`user-comment-${comment.id}`}
@@ -272,9 +270,9 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               </span>
             )}
           </div>
-          {isMyComment && canEdit && (
+          {isMyComment && (
             <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
-              <span className="flex-1">{editableHint(expiresAt, isPending)}</span>
+              <span className="flex-1">{editableHint(leaf.myCommentExpiresAt.get(asKey(comment.id)), isPending)}</span>
               <button
                 type="button"
                 onClick={() => leaf.onDismissMyComment(comment.id)}
@@ -286,7 +284,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               </button>
             </div>
           )}
-          {isPending && (!isMyComment || !canEdit) && (
+          {isPending && !isMyComment && (
             <div className={commentContentClass(depth)}>
               <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                 <span>您的评论正在等待审核中...</span>
@@ -294,7 +292,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               <PortableTextBody body={comment.body} />
             </div>
           )}
-          {(!isPending || (isMyComment && canEdit)) && (
+          {(!isPending || isMyComment) && (
             <div className={commentContentClass(depth)}>
               <PortableTextBody body={comment.body} />
             </div>
