@@ -26,7 +26,7 @@ vi.mock('@/server/db/query/comment', () => ({
   recentCommentsForUserDedupe: vi.fn(),
   findCommentRootId: vi.fn(),
   findCommentWithSourceUser: vi.fn(),
-  findCommentWithUserAndPage: vi.fn(),
+  findCommentWithUserAndTarget: vi.fn(),
   findCommentWithUserById: vi.fn(),
   updateCommentContent: vi.fn(),
   searchCommentAuthors: vi.fn(),
@@ -34,8 +34,9 @@ vi.mock('@/server/db/query/comment', () => ({
 }))
 
 vi.mock('@/server/db/query/metric', () => ({
-  upsertMetric: vi.fn(async () => undefined),
-  findMetricByKey: vi.fn(),
+  ensureMetric: vi.fn(async () => seedMetric()),
+  findMetricByPublicId: vi.fn(),
+  findMetricByTarget: vi.fn(),
 }))
 
 vi.mock('@/server/metrics/batcher', () => ({
@@ -48,9 +49,31 @@ vi.mock('@/server/email/sender', () => ({
   sendNewReply: vi.fn(async () => undefined),
 }))
 
+// `loader.ts`'s sidebar-row → permalink projection reads
+// `siteIdentity.website` via the blog-config bundle. Stub it so the
+// public detail loader produces deterministic URLs.
+vi.mock('@/shared/blog-config', () => ({
+  requireBlogSettingsSection: (key: string) => {
+    if (key === 'siteIdentity') {
+      return { website: 'https://yufan.me', title: 'Yufan' }
+    }
+    if (key === 'sidebar') {
+      return { sidebar: { comment: 5 } }
+    }
+    if (key === 'comments') {
+      return { comments: { size: 20 } }
+    }
+    return {}
+  },
+}))
+
 const queries = await import('@/server/db/query/comment')
 const metricQueries = await import('@/server/db/query/metric')
 const { loadComments, latestComments, pendingComments, parseComments } = await import('@/server/comments/loader')
+
+const POST_HELLO = { type: 'post' as const, ownerId: 1n }
+const POST_NEW = { type: 'post' as const, ownerId: 2n }
+const POST_PARALLEL = { type: 'post' as const, ownerId: 3n }
 
 function row(overrides: Record<string, unknown> = {}) {
   return {
@@ -67,7 +90,8 @@ function row(overrides: Record<string, unknown> = {}) {
         children: [{ _type: 'span' as const, _key: 's1', text: 'x' }],
       },
     ],
-    pageKey: '/posts/hello',
+    type: 'post' as const,
+    ownerId: 1n,
     userId: 7n,
     isVerified: true,
     ua: '',
@@ -103,22 +127,24 @@ describe('services/comments/loader — loadComments', () => {
     vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
     vi.mocked(queries.findRootComments).mockResolvedValue([])
     vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    await loadComments(regularSession(), '/posts/hello', 'Hello', 0)
+    await loadComments(regularSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith('/posts/hello', [false])
-    expect(queries.findRootComments).toHaveBeenCalledWith('/posts/hello', [false], 0, expect.any(Number))
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false])
+    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false], 0, expect.any(Number))
   })
 
   it('admins additionally see pending comments (pending=[false,true])', async () => {
     vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
     vi.mocked(queries.findRootComments).mockResolvedValue([])
     vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    await loadComments(adminSession(), '/posts/hello', 'Hello', 0)
+    await loadComments(adminSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith('/posts/hello', [false, true])
-    expect(queries.findRootComments).toHaveBeenCalledWith('/posts/hello', [false, true], 0, expect.any(Number))
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false, true])
+    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false, true], 0, expect.any(Number))
   })
 
   it('returns the union of root + child comments and the aggregated counts', async () => {
@@ -129,27 +155,29 @@ describe('services/comments/loader — loadComments', () => {
       row({ id: 4n, rid: 1, rootId: 1n }),
       row({ id: 5n, rid: 2, rootId: 2n }),
     ])
+    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    const result = await loadComments(regularSession(), '/posts/hello', 'Hello', 0)
+    const result = await loadComments(regularSession(), POST_HELLO, 0)
 
     expect(result?.count).toBe(5)
     expect(result?.roots_count).toBe(2)
     expect(result?.comments).toHaveLength(5)
     // Verify the join: child fetch was called with the root ids only.
-    expect(queries.findChildComments).toHaveBeenCalledWith('/posts/hello', [false], [1n, 2n])
+    expect(queries.findChildComments).toHaveBeenCalledWith(POST_HELLO, [false], [1n, 2n])
   })
 
-  it('upserts the page even when the page has zero comments', async () => {
+  it('upserts the metric even when the page has zero comments', async () => {
     vi.mocked(queries.countCommentsAndRoots).mockResolvedValue({ total: 0, roots: 0 })
     vi.mocked(queries.findRootComments).mockResolvedValue([])
     vi.mocked(queries.findChildComments).mockResolvedValue([])
+    vi.mocked(metricQueries.ensureMetric).mockResolvedValue(seedMetric())
 
-    await loadComments(regularSession(), '/posts/new', 'New post', 0)
+    await loadComments(regularSession(), POST_NEW, 0)
 
-    expect(metricQueries.upsertMetric).toHaveBeenCalledWith('/posts/new', 'New post')
+    expect(metricQueries.ensureMetric).toHaveBeenCalledWith(POST_NEW)
   })
 
-  it('issues page upsert + counts + root listing in parallel (single tick)', async () => {
+  it('issues metric upsert + counts + root listing in parallel (single tick)', async () => {
     let inflight = 0
     let peak = 0
     function tracked<T>(value: T) {
@@ -162,14 +190,12 @@ describe('services/comments/loader — loadComments', () => {
         }, 20)
       })
     }
-    vi.mocked(metricQueries.upsertMetric).mockImplementation((key, title) =>
-      tracked(seedMetric({ key, title: title ?? '无标题' })),
-    )
+    vi.mocked(metricQueries.ensureMetric).mockImplementation(() => tracked(seedMetric()))
     vi.mocked(queries.countCommentsAndRoots).mockImplementation(() => tracked({ total: 0, roots: 0 }))
     vi.mocked(queries.findRootComments).mockImplementation(() => tracked([]))
     vi.mocked(queries.findChildComments).mockResolvedValue([])
 
-    await loadComments(regularSession(), '/posts/parallel', 'Parallel', 0)
+    await loadComments(regularSession(), POST_PARALLEL, 0)
 
     expect(peak).toBe(3)
   })
@@ -180,8 +206,8 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     vi.mocked(queries.adminUserIds).mockResolvedValue([99n])
     vi.mocked(queries.latestDistinctCommentIds).mockResolvedValue([10n, 20n])
     vi.mocked(queries.commentsByIds).mockResolvedValue([
-      { id: 10n, page: '/posts/a', title: 'A', author: 'Alice', authorLink: '' },
-      { id: 20n, page: '/posts/b', title: null, author: null, authorLink: null },
+      { id: 10n, type: 'post', ownerId: 1n, slug: 'a', title: 'A', author: 'Alice', authorLink: '' },
+      { id: 20n, type: 'post', ownerId: 2n, slug: 'b', title: null, author: null, authorLink: null },
     ])
 
     const list = await latestComments()
@@ -189,7 +215,7 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     expect(queries.adminUserIds).toHaveBeenCalledOnce()
     expect(queries.latestDistinctCommentIds).toHaveBeenCalledWith([99n], expect.any(Number))
     expect(list).toHaveLength(2)
-    expect(list[0].permalink).toBe('/posts/a#user-comment-10')
+    expect(list[0].permalink).toBe('https://yufan.me/posts/a/#user-comment-10')
     // Null author/title fall back to empty string (sidebar must never crash).
     expect(list[1].author).toBe('')
     expect(list[1].title).toBe('')

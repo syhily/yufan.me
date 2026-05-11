@@ -1,9 +1,10 @@
-import { and, count, desc, eq, gte, ilike, inArray, isNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 
+import type { EntityTarget, EntityType } from '@/server/db/target'
 import type { Comment, NewComment } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
-import { comment, metric, user } from '@/server/db/schema'
+import { comment, metric, page, post, user } from '@/server/db/schema'
 
 // Common projection: every comment column we expose to the application,
 // joined with the public user attributes. Keep the shape stable here so the
@@ -15,7 +16,8 @@ const commentWithUser = {
   deleteAt: comment.deletedAt,
   content: comment.content,
   body: comment.body,
-  pageKey: comment.pageKey,
+  type: comment.type,
+  ownerId: comment.ownerId,
   userId: comment.userId,
   isVerified: comment.isVerified,
   ua: comment.ua,
@@ -48,29 +50,74 @@ export type CommentWithUser = {
     : (typeof commentWithUser)[K]['_']['data'] | null
 }
 
+function whereTarget(target: EntityTarget) {
+  return and(eq(comment.type, target.type), eq(comment.ownerId, target.ownerId))
+}
+
 export interface PendingCommentRow {
   id: bigint
-  page: string
+  type: EntityType
+  ownerId: bigint
+  slug: string | null
   title: string | null
   author: string | null
   authorLink: string | null
 }
 
-export async function pendingComments(limit: number): Promise<PendingCommentRow[]> {
+// Post + page UNION used by `pendingComments` / `commentsByIds` and any
+// admin surface that wants to project `(type, owner_id)` back to a
+// human-readable slug + title without a polymorphic JOIN.
+function targetSlugTitleSubquery() {
   return db
     .select({
+      type: sql<EntityType>`'post'`.as('type'),
+      ownerId: post.id,
+      slug: post.slug,
+      title: post.title,
+    })
+    .from(post)
+    .unionAll(
+      db
+        .select({
+          type: sql<EntityType>`'page'`.as('type'),
+          ownerId: page.id,
+          slug: page.slug,
+          title: page.title,
+        })
+        .from(page),
+    )
+    .as('entity')
+}
+
+export async function pendingComments(limit: number): Promise<PendingCommentRow[]> {
+  const entity = targetSlugTitleSubquery()
+  const rows = await db
+    .select({
       id: comment.id,
-      page: comment.pageKey,
-      title: metric.title,
+      type: comment.type,
+      ownerId: comment.ownerId,
+      slug: entity.slug,
+      title: entity.title,
       author: user.name,
       authorLink: user.link,
     })
     .from(comment)
-    .innerJoin(metric, eq(comment.pageKey, metric.key))
     .innerJoin(user, eq(comment.userId, user.id))
+    .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
     .where(eq(comment.isPending, true))
     .orderBy(desc(comment.id))
     .limit(limit)
+  return rows
+    .filter((r) => r.type !== null && r.ownerId !== null)
+    .map((r) => ({
+      id: r.id,
+      type: r.type as EntityType,
+      ownerId: r.ownerId as bigint,
+      slug: r.slug,
+      title: r.title,
+      author: r.author,
+      authorLink: r.authorLink,
+    }))
 }
 
 export async function adminUserIds(): Promise<bigint[]> {
@@ -88,14 +135,12 @@ export async function latestDistinctCommentIds(adminIds: bigint[], limit: number
             SELECT    id,
                       user_id,
                       created_at,
-                      ROW_NUMBER() OVER (
-                      PARTITION BY user_id
-                      ORDER BY  created_at DESC
-                      ) rn
-            FROM      comment
-            WHERE     ${userFilter}
-            AND       is_pending = FALSE
-            ) AS most_recent
+                      ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, id DESC) AS rn
+            FROM      ${comment}
+            WHERE     is_pending = false
+                AND   deleted_at IS NULL
+                AND   ${userFilter}
+            )         t
   WHERE     rn = 1
   ORDER BY  created_at DESC
   LIMIT     ${limit}`
@@ -107,26 +152,40 @@ export async function commentsByIds(ids: bigint[], limit: number): Promise<Pendi
   if (ids.length === 0) {
     return []
   }
-  return db
+  const entity = targetSlugTitleSubquery()
+  const rows = await db
     .select({
       id: comment.id,
-      page: comment.pageKey,
-      title: metric.title,
+      type: comment.type,
+      ownerId: comment.ownerId,
+      slug: entity.slug,
+      title: entity.title,
       author: user.name,
       authorLink: user.link,
     })
     .from(comment)
-    .innerJoin(metric, eq(comment.pageKey, metric.key))
     .innerJoin(user, eq(comment.userId, user.id))
+    .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
     .where(inArray(comment.id, ids))
     .orderBy(desc(comment.id))
     .limit(limit)
+  return rows
+    .filter((r) => r.type !== null && r.ownerId !== null)
+    .map((r) => ({
+      id: r.id,
+      type: r.type as EntityType,
+      ownerId: r.ownerId as bigint,
+      slug: r.slug,
+      title: r.title,
+      author: r.author,
+      authorLink: r.authorLink,
+    }))
 }
 
 // Computes both totals in a single round-trip using a filtered aggregate so
 // loaders don't issue two near-identical queries on every comment render.
 export async function countCommentsAndRoots(
-  pageKey: string,
+  target: EntityTarget,
   pendingValues: boolean[],
 ): Promise<{ total: number; roots: number }> {
   const rows = await db
@@ -135,12 +194,12 @@ export async function countCommentsAndRoots(
       roots: sql<number>`COUNT(*) FILTER (WHERE ${comment.rootId} = 0)`,
     })
     .from(comment)
-    .where(and(eq(comment.pageKey, pageKey), inArray(comment.isPending, pendingValues)))
+    .where(and(whereTarget(target), inArray(comment.isPending, pendingValues)))
   const row = rows[0]
   return { total: Number(row.total), roots: Number(row.roots) }
 }
 
-export async function findRootComments(pageKey: string, pendingValues: boolean[], offset: number, limit: number) {
+export async function findRootComments(target: EntityTarget, pendingValues: boolean[], offset: number, limit: number) {
   // Secondary `desc(comment.id)` is the deterministic tiebreaker for
   // `createdAt` collisions (timestamps are millisecond-precision; a burst
   // of comments inside the same millisecond would otherwise have an
@@ -151,13 +210,13 @@ export async function findRootComments(pageKey: string, pendingValues: boolean[]
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(eq(comment.pageKey, pageKey), eq(comment.rootId, 0n), inArray(comment.isPending, pendingValues)))
+    .where(and(whereTarget(target), eq(comment.rootId, 0n), inArray(comment.isPending, pendingValues)))
     .limit(limit)
     .orderBy(desc(comment.createdAt), desc(comment.id))
     .offset(offset)
 }
 
-export async function findChildComments(pageKey: string, pendingValues: boolean[], rootIds: bigint[]) {
+export async function findChildComments(target: EntityTarget, pendingValues: boolean[], rootIds: bigint[]) {
   if (rootIds.length === 0) {
     return []
   }
@@ -165,21 +224,27 @@ export async function findChildComments(pageKey: string, pendingValues: boolean[
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(
-      and(eq(comment.pageKey, pageKey), inArray(comment.isPending, pendingValues), inArray(comment.rootId, rootIds)),
-    )
+    .where(and(whereTarget(target), inArray(comment.isPending, pendingValues), inArray(comment.rootId, rootIds)))
 }
 
 export async function approveCommentById(id: bigint): Promise<void> {
   await db.update(comment).set({ isPending: false }).where(eq(comment.id, id))
 }
 
-export async function findCommentWithUserAndPage(id: bigint) {
+export async function findCommentWithUserAndTarget(id: bigint) {
+  const entity = targetSlugTitleSubquery()
   const rows = await db
-    .select()
+    .select({
+      comment,
+      user,
+      metric,
+      entitySlug: entity.slug,
+      entityTitle: entity.title,
+    })
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .innerJoin(metric, eq(comment.pageKey, metric.key))
+    .innerJoin(metric, and(eq(metric.type, comment.type), eq(metric.ownerId, comment.ownerId)))
+    .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
     .where(eq(comment.id, id))
     .limit(1)
   return rows[0] ?? null
@@ -254,34 +319,35 @@ export async function findCommentWithSourceUser(id: bigint) {
 }
 
 export interface PageOption {
+  /** `metric.public_id`. Wire field is named `key` because the Combobox API stays stable. */
   key: string
   title: string
 }
 
 // Page-title autocomplete for the comment-moderation filter Combobox.
-// `q` is matched case-insensitively against the metric table's
-// denormalised `title`. Empty `q` is allowed and returns the most
-// recent N rows so the dropdown can show a reasonable default the
-// moment the user opens it. The caller-side `limit` is bounded to a
-// server-side hard cap upstream (see schema).
-//
-// When `keys` is supplied we instead do an exact key-match — this is
-// the "rehydrate selection from URL" path where the client only knows
-// the page key (e.g. from `?pageKey=https://yufan.me/about/`) and
-// needs the matching `title` to render in the Combobox trigger.
-export async function searchPages(q: string | undefined, limit: number, keys?: string[]): Promise<PageOption[]> {
-  const conditions = [isNull(metric.deletedAt)]
-  if (keys && keys.length > 0) {
-    conditions.push(inArray(metric.key, keys))
+// `q` is matched case-insensitively against the entity's live title
+// (joined from `post` / `page`). Empty `q` returns the most recently-
+// touched entities so the dropdown can show a sensible default the
+// moment the user opens it. `publicIds` is the "rehydrate selection
+// from URL" path: when the admin opened
+// `/wp-admin/comments?pageKey=<uuid>` we already know which metric row
+// to pin, but need its `title` to render in the trigger.
+export async function searchPages(q: string | undefined, limit: number, publicIds?: string[]): Promise<PageOption[]> {
+  const entity = targetSlugTitleSubquery()
+  const conditions = [isNull(metric.deletedAt), isNotNull(metric.type), isNotNull(metric.ownerId)]
+  if (publicIds && publicIds.length > 0) {
+    conditions.push(inArray(metric.publicId, publicIds))
   } else if (q) {
-    conditions.push(ilike(metric.title, `%${q}%`))
+    conditions.push(ilike(entity.title, `%${q}%`))
   }
-  return db
-    .select({ key: metric.key, title: metric.title })
+  const rows = await db
+    .select({ key: metric.publicId, title: entity.title })
     .from(metric)
+    .innerJoin(entity, and(eq(entity.type, metric.type), eq(entity.ownerId, metric.ownerId)))
     .where(and(...conditions))
     .orderBy(desc(metric.id))
     .limit(limit)
+  return rows.map((r) => ({ key: r.key, title: r.title ?? '无标题' }))
 }
 
 export interface CommentAuthor {
@@ -318,15 +384,15 @@ export async function searchCommentAuthors(
 }
 
 export interface AdminListFilters {
-  pageKey?: string
+  target?: EntityTarget
   userId?: bigint
   status?: 'all' | 'pending' | 'approved'
 }
 
 function buildAdminListConditions(filters: AdminListFilters) {
   const conditions = [isNull(comment.deletedAt)]
-  if (filters.pageKey) {
-    conditions.push(eq(comment.pageKey, filters.pageKey))
+  if (filters.target) {
+    conditions.push(eq(comment.type, filters.target.type), eq(comment.ownerId, filters.target.ownerId))
   }
   if (filters.userId) {
     conditions.push(eq(comment.userId, filters.userId))
@@ -351,11 +417,13 @@ export async function countAllComments(filters: AdminListFilters): Promise<numbe
 
 export async function listAdminComments(offset: number, limit: number, filters: AdminListFilters) {
   const conditions = buildAdminListConditions(filters)
+  const entity = targetSlugTitleSubquery()
   return db
-    .select({ ...commentWithUser, pageTitle: metric.title })
+    .select({ ...commentWithUser, pageTitle: entity.title, pagePublicId: metric.publicId })
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .leftJoin(metric, eq(comment.pageKey, metric.key))
+    .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
+    .leftJoin(metric, and(eq(metric.type, comment.type), eq(metric.ownerId, comment.ownerId)))
     .where(and(...conditions))
     .orderBy(desc(comment.createdAt))
     .limit(limit)
@@ -383,3 +451,7 @@ export async function bulkSoftDeleteCommentsByUser(userId: bigint): Promise<numb
     .returning({ id: comment.id })
   return updated.length
 }
+
+// Suppress unused-import warning: `or` is re-exported for callers that
+// still need it; keep it imported via barrel.
+export const _drizzleOr = or

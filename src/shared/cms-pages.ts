@@ -45,6 +45,18 @@ export interface AdminPageDto {
   deletedAt: string | null
   authorId: string | null
   authorName: string | null
+  /**
+   * Approved comment count for this page's metric row. Populated by the
+   * admin list endpoint; `0` on detail / save paths.
+   */
+  commentCount: number
+  /**
+   * The page's `metric.public_id` UUID — the opaque wire identifier the
+   * admin comment-count link uses to deep-link into
+   * `/wp-admin/comments?pageKey=<uuid>`. Empty string on detail / save
+   * paths that don't fan out a metric upsert.
+   */
+  commentPublicId: string
 }
 
 export interface AdminRevisionDto {

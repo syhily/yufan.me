@@ -1,95 +1,120 @@
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
+import type { EntityTarget } from '@/server/db/target'
 import type { MetricRow, NewMetric } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
 import { metric } from '@/server/db/schema'
+import { targetKey } from '@/server/db/target'
 
 export type { MetricRow } from '@/server/db/types'
 
+// Filter clause used everywhere we look up a metric by entity target.
+// Drizzle's `and(eq, eq)` plus the partial-unique index
+// `uq_metric_owner` (on `(type, owner_id) WHERE … NOT NULL`) keeps
+// reads index-only.
+function whereTarget(target: EntityTarget) {
+  return and(eq(metric.type, target.type), eq(metric.ownerId, target.ownerId))
+}
+
 /**
- * Atomic upsert of a metric counter row by its unique `key`.
+ * Atomic upsert of a metric row keyed on the entity target. Returns
+ * the canonical row, including the auto-generated `publicId` UUID
+ * that the public API surfaces in place of an URL.
  *
- * - When the row does not yet exist we insert defaults.
- * - When it already exists and a non-null title is supplied we refresh the
- *   title (so a renamed post propagates to the metric table).
- * - When the row exists and `title` is null we touch `updated_at` so the
- *   RETURNING clause works without changing semantics.
- *
- * Implemented as a single `INSERT ... ON CONFLICT` to remove the previous
- * read-then-write race.
+ * - When the row does not yet exist we insert defaults; the
+ *   schema's `$defaultFn` mints a fresh `publicId`.
+ * - When it already exists we touch `updatedAt` so the RETURNING
+ *   clause hands the caller back a fresh row without changing
+ *   semantics. (No counter or `publicId` rewrite — those are
+ *   handled by their own paths.)
  */
-export async function upsertMetric(key: string, title: string | null): Promise<MetricRow> {
-  const np: NewMetric = { title: title ?? '无标题', key, voteUp: 0, voteDown: 0, pv: 0 }
-  const insert = db.insert(metric).values(np)
-  const result =
-    title !== null
-      ? await insert
-          .onConflictDoUpdate({
-            target: metric.key,
-            set: { title, updatedAt: new Date() },
-          })
-          .returning()
-      : await insert
-          .onConflictDoUpdate({
-            target: metric.key,
-            set: { updatedAt: sql`${metric.updatedAt}` },
-          })
-          .returning()
+export async function ensureMetric(target: EntityTarget): Promise<MetricRow> {
+  const np: NewMetric = {
+    type: target.type,
+    ownerId: target.ownerId,
+    voteUp: 0,
+    voteDown: 0,
+    pv: 0,
+  }
+  const result = await db
+    .insert(metric)
+    .values(np)
+    .onConflictDoUpdate({
+      target: [metric.type, metric.ownerId],
+      set: { updatedAt: sql`${metric.updatedAt}` },
+    })
+    .returning()
   return result[0]
 }
 
-export async function findMetricByKey(key: string): Promise<MetricRow | null> {
-  const rows = await db.select().from(metric).where(eq(metric.key, key)).limit(1)
+export async function findMetricByPublicId(publicId: string): Promise<MetricRow | null> {
+  const rows = await db.select().from(metric).where(eq(metric.publicId, publicId)).limit(1)
   return rows[0] ?? null
 }
 
-export async function incrementMetricPv(key: string, delta = 1): Promise<void> {
+export async function findMetricByTarget(target: EntityTarget): Promise<MetricRow | null> {
+  const rows = await db.select().from(metric).where(whereTarget(target)).limit(1)
+  return rows[0] ?? null
+}
+
+export async function incrementMetricPv(target: EntityTarget, delta = 1): Promise<void> {
   if (delta <= 0) {
     return
   }
   await db
     .update(metric)
     .set({ pv: sql`${metric.pv} + ${delta}` })
-    .where(eq(metric.key, key))
+    .where(whereTarget(target))
 }
 
 /**
  * Apply many `pv += delta` updates in a single SQL statement using
- * `UPDATE ... FROM (VALUES ...)` so the round-trip count is one regardless of
- * batch size. Falls back early on an empty input.
+ * `UPDATE ... FROM (VALUES ...)` so the round-trip count is one
+ * regardless of batch size. The map is keyed on the composite string
+ * `"<type>:<ownerId>"` (see `targetKey`) so callers can use a regular
+ * `Map<string, number>` without juggling tuples.
  */
 export async function incrementMetricPvBatch(deltas: Map<string, number>): Promise<void> {
-  const positive = Array.from(deltas).filter(([, delta]) => delta > 0)
+  const positive: Array<[string, string, number]> = []
+  for (const [composite, delta] of deltas) {
+    if (delta <= 0) {
+      continue
+    }
+    const idx = composite.indexOf(':')
+    if (idx <= 0) {
+      continue
+    }
+    const type = composite.slice(0, idx)
+    const ownerId = composite.slice(idx + 1)
+    if ((type !== 'post' && type !== 'page') || ownerId === '') {
+      continue
+    }
+    positive.push([type, ownerId, delta])
+  }
   if (positive.length === 0) {
     return
   }
 
-  // Build `(?, ?), (?, ?), ...` rows with bound parameters — never inline
-  // user-derived strings.
   const rows = sql.join(
-    positive.map(([key, delta]) => sql`(${key}::varchar(255), ${delta}::bigint)`),
+    positive.map(([type, ownerId, delta]) => sql`(${type}::varchar(16), ${ownerId}::bigint, ${delta}::bigint)`),
     sql`, `,
   )
 
   await db.execute(sql`
     UPDATE ${metric}
     SET    pv = COALESCE(${metric.pv}, 0) + v.delta
-    FROM   (VALUES ${rows}) AS v(key, delta)
-    WHERE  ${metric.key} = v.key
+    FROM   (VALUES ${rows}) AS v(type, owner_id, delta)
+    WHERE  ${metric.type} = v.type
+      AND  ${metric.ownerId} = v.owner_id
   `)
 }
 
-export async function incrementMetricVotes(key: string): Promise<void> {
-  await db
-    .update(metric)
-    .set({ voteUp: sql`${metric.voteUp} + 1` })
-    .where(eq(metric.key, key))
-}
-
-export async function decrementMetricVotes(key: string): Promise<void> {
+export async function decrementMetricVotes(target: EntityTarget): Promise<void> {
   await db
     .update(metric)
     .set({ voteUp: sql`GREATEST(${metric.voteUp} - 1, 0)` })
-    .where(eq(metric.key, key))
+    .where(whereTarget(target))
 }
+
+export { targetKey }

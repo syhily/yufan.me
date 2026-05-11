@@ -2,8 +2,10 @@ import { createElement } from 'react'
 import { render } from 'react-email'
 
 import type { CommentAndUser } from '@/server/comments/types'
-import type { Comment, MetricRow, User } from '@/server/db/types'
+import type { EntityTarget } from '@/server/db/target'
+import type { Comment, User } from '@/server/db/types'
 
+import { entityCommentUrl, findEntitySlugTitle } from '@/server/comments/url'
 import ApprovedComment from '@/server/email/templates/ApprovedComment'
 import NewComment from '@/server/email/templates/NewComment'
 import NewReply from '@/server/email/templates/NewReply'
@@ -118,15 +120,28 @@ async function internalSend(to: string, subject: string, html: string): Promise<
   return { ok: true }
 }
 
+async function resolveEntity(target: EntityTarget): Promise<{ title: string; url: string } | null> {
+  const entity = await findEntitySlugTitle(target)
+  if (entity === null) {
+    return null
+  }
+  return { title: entity.title, url: entityCommentUrl(target.type, entity.slug) }
+}
+
 // Sent to the administrator whenever a new comment is posted.
-export async function sendNewComment(commentInfo: CommentAndUser, page: MetricRow): Promise<SendResult> {
+export async function sendNewComment(commentInfo: CommentAndUser, target: EntityTarget): Promise<SendResult> {
+  const entity = await resolveEntity(target)
+  if (entity === null) {
+    log.warn('Skipping new-comment email: target entity not found', { target })
+    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
+  }
   const html = await render(
     createElement(NewComment, {
-      postTitle: page.title,
-      postLink: page.key,
+      postTitle: entity.title,
+      postLink: entity.url,
       commentNeedApproval: commentInfo.isPending === true,
       commentContent: commentBodyToHtml(commentInfo.body),
-      commentLink: `${page.key}#user-comment-${commentInfo.id}`,
+      commentLink: `${entity.url}#user-comment-${commentInfo.id}`,
     }),
   )
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
@@ -138,16 +153,21 @@ export async function sendNewReply(
   sourceUser: User,
   source: Comment,
   reply: CommentAndUser,
-  page: MetricRow,
+  target: EntityTarget,
 ): Promise<SendResult> {
+  const entity = await resolveEntity(target)
+  if (entity === null) {
+    log.warn('Skipping reply email: target entity not found', { target })
+    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
+  }
   const html = await render(
     createElement(NewReply, {
       receiver: sourceUser.name,
-      postTitle: page.title,
-      postLink: page.key,
+      postTitle: entity.title,
+      postLink: entity.url,
       sourceContent: commentBodyToHtml(source.body),
       replyContent: commentBodyToHtml(reply.body),
-      replyLink: `${page.key}#user-comment-${reply.id}`,
+      replyLink: `${entity.url}#user-comment-${reply.id}`,
     }),
   )
   return internalSend(
@@ -158,14 +178,19 @@ export async function sendNewReply(
 }
 
 // Sent to the commenter when an admin approves their previously pending comment.
-export async function sendApprovedComment(comment: Comment, user: User, page: MetricRow): Promise<SendResult> {
+export async function sendApprovedComment(comment: Comment, user: User, target: EntityTarget): Promise<SendResult> {
+  const entity = await resolveEntity(target)
+  if (entity === null) {
+    log.warn('Skipping approval email: target entity not found', { target })
+    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
+  }
   const html = await render(
     createElement(ApprovedComment, {
       receiver: user.name,
-      postTitle: page.title,
-      postLink: page.key,
+      postTitle: entity.title,
+      postLink: entity.url,
       commentContent: commentBodyToHtml(comment.body),
-      commentLink: `${page.key}#user-comment-${comment.id}`,
+      commentLink: `${entity.url}#user-comment-${comment.id}`,
     }),
   )
   return internalSend(user.email, `您在【${requireBlogSettingsSection('siteIdentity').title}】的留言已经通过审核`, html)

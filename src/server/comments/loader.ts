@@ -1,6 +1,7 @@
 import type { CommentAndUser, CommentItem, CommentReq, Comments, LatestComment } from '@/server/comments/types'
 import type { PendingCommentRow } from '@/server/db/query/comment'
-import type { NewComment } from '@/server/db/types'
+import type { EntityTarget } from '@/server/db/target'
+import type { MetricRow, NewComment } from '@/server/db/types'
 
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
 import { canonicalizeCommentBody } from '@/server/comments/canonicalize'
@@ -18,7 +19,7 @@ import {
   pendingComments as pendingCommentsRepo,
   recentCommentsForUserDedupe,
 } from '@/server/db/query/comment'
-import { findMetricByKey, upsertMetric } from '@/server/db/query/metric'
+import { ensureMetric, findMetricByPublicId } from '@/server/db/query/metric'
 import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
@@ -26,6 +27,7 @@ import { DomainError } from '@/server/route-helpers/errors'
 import { isAdmin, userSession, type BlogSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { groupBy } from '@/shared/tools'
+import { joinUrl } from '@/shared/urls'
 
 const log = getLogger('comments.loader')
 
@@ -38,12 +40,21 @@ function trimSiteSuffix(title: string | null): string {
   return trim
 }
 
+function entityPermalink(type: 'post' | 'page', slug: string): string {
+  return type === 'post' ? `/posts/${slug}` : `/${slug}`
+}
+
 function toLatestComment(row: PendingCommentRow): LatestComment {
+  const website = requireBlogSettingsSection('siteIdentity').website
+  const slug = row.slug ?? ''
+  // Without a slug the entity has been deleted or never existed — link
+  // back to the homepage to keep the moderation widget useful.
+  const url = slug === '' ? website : joinUrl(website, entityPermalink(row.type, slug), '/')
   return {
     title: trimSiteSuffix(row.title),
     author: row.author ?? '',
     authorLink: row.authorLink ?? '',
-    permalink: `${row.page}#user-comment-${row.id}`,
+    permalink: `${url}#user-comment-${row.id}`,
   }
 }
 
@@ -62,8 +73,7 @@ export async function latestComments(): Promise<LatestComment[]> {
 
 export async function loadComments(
   session: BlogSession,
-  key: string,
-  title: string | null,
+  target: EntityTarget,
   offset: number,
   options: { ensurePage?: boolean } = {},
 ): Promise<Comments | null> {
@@ -76,12 +86,12 @@ export async function loadComments(
   // both fan out in parallel with the page upsert and root listing. Child
   // comments depend on the root id list, so they're issued afterwards.
   const [, counts, rootComments] = await Promise.all([
-    ensurePage ? upsertMetric(key, title) : Promise.resolve(null),
-    countCommentsAndRoots(key, pendingArray),
-    findRootComments(key, pendingArray, offset, requireBlogSettingsSection('comments').comments.size),
+    ensurePage ? ensureMetric(target) : Promise.resolve(null),
+    countCommentsAndRoots(target, pendingArray),
+    findRootComments(target, pendingArray, offset, requireBlogSettingsSection('comments').comments.size),
   ])
   const childComments = await findChildComments(
-    key,
+    target,
     pendingArray,
     rootComments.map((c) => c.id),
   )
@@ -93,8 +103,8 @@ export async function loadComments(
   }
 }
 
-export async function ensureCommentPage(key: string, title: string | null) {
-  await upsertMetric(key, title)
+export async function ensureCommentPage(target: EntityTarget): Promise<MetricRow> {
+  return ensureMetric(target)
 }
 
 export async function createComment(
@@ -103,11 +113,13 @@ export async function createComment(
   clientAddress: string,
   session: BlogSession,
 ): Promise<CommentAndUser> {
-  // Check page key
-  const p = await findMetricByKey(commentReq.page_key)
-  if (p === null) {
+  // Resolve the wire `page_key` (now a UUID surrogate) back to an
+  // entity target. The metric row carries the canonical (type, owner_id).
+  const metricRow = await findMetricByPublicId(commentReq.page_key)
+  if (metricRow === null || metricRow.type === null || metricRow.ownerId === null) {
     throw new DomainError('NOT_FOUND', '系统错误，评论的目标页面不存在。')
   }
+  const target: EntityTarget = { type: metricRow.type as 'post' | 'page', ownerId: metricRow.ownerId }
 
   // Upsert the comment user.
   const u = await insertCommentUser(commentReq.name, commentReq.email, commentReq.link || '')
@@ -180,7 +192,8 @@ export async function createComment(
   const newComment: NewComment = {
     content: markdownSnapshot,
     body: canonicalBody,
-    pageKey: commentReq.page_key,
+    type: target.type,
+    ownerId: target.ownerId,
     userId: u.id,
     isVerified: u.emailVerified,
     ua: req.headers.get('User-Agent'),
@@ -214,14 +227,14 @@ export async function createComment(
 
   // Send the email.
   if (info.email !== requireBlogSettingsSection('siteIdentity').author.email) {
-    void sendNewComment(info, p).catch((error) => {
+    void sendNewComment(info, target).catch((error) => {
       log.error('failed to send new comment email', { error })
     })
   }
   if (info.rid !== 0) {
     const source = await findCommentWithSourceUser(BigInt(info.rid))
     if (source) {
-      void sendNewReply(source.user, source.comment, info, p).catch((error) => {
+      void sendNewReply(source.user, source.comment, info, target).catch((error) => {
         log.error('failed to send new reply email', { error })
       })
     }

@@ -31,6 +31,18 @@ export interface AdminPostDto {
   pinnedAt: string | null
   /** Null until the first successful publish. */
   firstPublishedAt: string | null
+  /**
+   * Approved comment count for this post's metric row. Populated by
+   * the admin list endpoint; `0` on detail / save paths.
+   */
+  commentCount: number
+  /**
+   * The post's `metric.public_id` UUID — the opaque wire identifier the
+   * admin comment-count link uses to deep-link into
+   * `/wp-admin/comments?pageKey=<uuid>`. Empty string on detail / save
+   * paths that don't fan out a metric upsert.
+   */
+  commentPublicId: string
 }
 
 export interface AdminRevisionDto {

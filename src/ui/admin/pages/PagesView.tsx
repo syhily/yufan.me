@@ -1,4 +1,13 @@
-import { ExternalLinkIcon, FilePenIcon, PlusIcon, RefreshCwIcon, SearchIcon, Trash2Icon, Undo2Icon } from 'lucide-react'
+import {
+  ExternalLinkIcon,
+  FilePenIcon,
+  MessageSquareIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  Trash2Icon,
+  Undo2Icon,
+} from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
@@ -161,7 +170,7 @@ export function PagesView() {
                   <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">更新时间</TableHead>
-                  <TableHead className="w-44 pr-4 text-right">操作</TableHead>
+                  <TableHead className="w-56 pr-4 text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -226,13 +235,13 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
       <TableCell className="hidden max-w-md md:table-cell">
         <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary || '—'}</p>
       </TableCell>
-      <TableCell className="hidden w-24 text-center align-top md:table-cell">
+      <TableCell className="hidden w-24 text-center align-middle md:table-cell">
         <p className="text-sm text-muted-foreground">{page.authorName || '—'}</p>
       </TableCell>
-      <TableCell className="text-center align-top">
+      <TableCell className="text-center align-middle">
         <StatusBadge page={page} />
       </TableCell>
-      <TableCell className="hidden align-top text-sm lg:table-cell">
+      <TableCell className="hidden align-middle text-sm lg:table-cell">
         {new Date(page.updatedAt).toLocaleString('zh-CN')}
       </TableCell>
       <TableCell className="pr-4 text-right align-top">
@@ -246,6 +255,16 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
                 render={
                   <Link to={`/${page.slug}`} target="_blank" rel="noreferrer">
                     <ExternalLinkIcon />
+                  </Link>
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                title="查看评论"
+                render={
+                  <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}>
+                    <MessageSquareIcon /> {page.commentCount}
                   </Link>
                 }
               />

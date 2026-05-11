@@ -1,4 +1,7 @@
+import type { EntityTarget } from '@/server/db/target'
+
 import { incrementMetricPv, incrementMetricPvBatch } from '@/server/db/query/metric'
+import { targetKey } from '@/server/db/target'
 import { getLogger } from '@/server/logger'
 
 // In-memory aggregator for high-frequency counters. We currently track page
@@ -108,9 +111,9 @@ function getBatcher(): PageViewBatcher {
 // We intentionally write through directly instead of relying on the in-memory
 // batcher so production deployments with short-lived/ephemeral workers do not
 // lose buffered increments before a timer flush runs.
-export function bumpPageView(key: string): void {
-  void incrementMetricPv(key).catch((err) => {
-    log.error('direct page-view increment failed', { err: String(err), key })
+export function bumpPageView(target: EntityTarget): void {
+  void incrementMetricPv(target).catch((err) => {
+    log.error('direct page-view increment failed', { err: String(err), target: targetKey(target) })
   })
 }
 

@@ -11,6 +11,17 @@ import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
 import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/ui/components/alert-dialog'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { publicButtonVariants } from '@/ui/primitives/btn'
@@ -293,12 +304,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
 
   const handleReply = () => leaf.onReply(Number(comment.id))
   const handleApprove = () => approve.submit({ rid: String(comment.id) })
-  const handleDelete = () => {
-    if (!window.confirm('确定要删除这条评论吗？此操作不可恢复！')) {
-      return
-    }
-    remove.submit({ rid: String(comment.id) })
-  }
+  const handleDelete = () => remove.submit({ rid: String(comment.id) })
 
   return (
     <div className="flex flex-1 items-center gap-2 text-xs text-ink-muted">
@@ -341,16 +347,31 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
               通过
             </button>
           )}
-          <button
-            type="button"
-            className={cn(commentFooterButtonClass, 'text-alert')}
-            data-rid={comment.id}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={handleDelete}
-            disabled={remove.isPending}
-          >
-            删除
-          </button>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <button
+                  type="button"
+                  className={cn(commentFooterButtonClass, 'text-alert')}
+                  data-rid={comment.id}
+                  onMouseDown={(event) => event.preventDefault()}
+                  disabled={remove.isPending}
+                >
+                  删除
+                </button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>删除评论？</AlertDialogTitle>
+                <AlertDialogDescription>此操作不可恢复，删除后评论将立即从前后台消失。</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>删除</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </div>

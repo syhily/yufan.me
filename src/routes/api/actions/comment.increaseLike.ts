@@ -1,12 +1,16 @@
 import { z } from 'zod'
 
 import { increaseLikes } from '@/server/comments/likes'
+import { findMetricByPublicId } from '@/server/db/query/metric'
 import { tryLikeIncreaseRateLimit } from '@/server/rate-limit'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
-import { DomainError } from '@/server/route-helpers/errors'
-import { permalinkKeySchema } from '@/server/route-helpers/permalink-key'
+import { ActionFailure, DomainError } from '@/server/route-helpers/errors'
 
-const inputSchema = z.object({ key: permalinkKeySchema })
+// Wire `key` is the metric's `public_id` UUID. Validated as a string
+// (Zod accepts any non-empty value); the metric lookup is the real
+// existence check so an unknown UUID 404s rather than silently writing
+// to a row that doesn't exist.
+const inputSchema = z.object({ key: z.string().min(1) })
 
 // IP-scoped rate limit guards the DB before we hand control to
 // `increaseLikes`. The historical implementation inserted a fresh
@@ -25,6 +29,11 @@ export const action = defineApiAction({
     if (limit.exceeded) {
       throw new DomainError('RATE_LIMITED', '点赞过于频繁，请稍后再试。')
     }
-    return { ...(await increaseLikes(payload.key)), key: payload.key }
+    const metricRow = await findMetricByPublicId(payload.key)
+    if (metricRow === null || metricRow.type === null || metricRow.ownerId === null) {
+      throw new ActionFailure(404, '评论目标不存在')
+    }
+    const target = { type: metricRow.type as 'post' | 'page', ownerId: metricRow.ownerId }
+    return { ...(await increaseLikes(target)), key: payload.key }
   },
 })

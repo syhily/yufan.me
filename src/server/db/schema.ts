@@ -17,14 +17,14 @@ import { randomUUID } from 'node:crypto'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-// Per-page metric counters keyed on the canonical permalink (`key`).
-// One row per public URL the like / view / comment-count widgets need
-// to track. Counters move with single-row UPDATEs from the comment +
-// like flows, so the table stays narrow on purpose — denormalised
-// `title` and the soft-delete column are retained because the
-// comment-moderation list (`@/server/db/query/comment.ts`) joins back
-// to surface a friendly "post title" next to each pending row without
-// hitting the in-memory catalog.
+// Per-entity metric counters keyed on `(type, owner_id)` where `type` is
+// `'post' | 'page'` and `owner_id` references `post.id` / `page.id`.
+// Counters move with single-row UPDATEs from the comment + like flows,
+// so the table stays narrow on purpose. `public_id` is the opaque UUID
+// exposed on the public API wire (the field still named `page_key` on
+// the request/response envelope) so numeric ids never reach the browser.
+// `(type, owner_id)` is the application-side join key; `public_id` is
+// the wire-side identifier — both are unique.
 export const metric = pgTable(
   'metric',
   {
@@ -36,13 +36,27 @@ export const metric = pgTable(
       .notNull()
       .$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-    key: varchar('key', { length: 255 }).unique().notNull(),
-    title: text('title').notNull(),
+    // Populated by `ensureMetric(type, ownerId)` on every metric
+    // upsert. `publicId` is the opaque UUID surfaced to public clients
+    // in place of the historical URL-based `key`. `type` mirrors the
+    // `content` table convention (`varchar(16)`, no DB enum, see the
+    // `content` discriminator comment block below) so future entity
+    // types extend without a `pg_enum_add` migration. NULL only on the
+    // narrow window before the cleanup migration backfills orphan rows.
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    publicId: uuid('public_id')
+      .notNull()
+      .$defaultFn(() => randomUUID()),
     voteUp: bigint('vote_up', { mode: 'number' }),
     voteDown: bigint('vote_down', { mode: 'number' }),
     pv: bigint('pv', { mode: 'number' }),
   },
-  (table) => [index('idx_metric_key').on(table.key), index('idx_metric_deleted_at').on(table.deletedAt)],
+  (table) => [
+    uniqueIndex('uq_metric_public_id').on(table.publicId),
+    uniqueIndex('uq_metric_owner').on(table.type, table.ownerId),
+    index('idx_metric_deleted_at').on(table.deletedAt),
+  ],
 )
 
 export const like = pgTable(
@@ -53,9 +67,10 @@ export const like = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     token: varchar('token', { length: 255 }),
-    pageKey: varchar('page_key', { length: 255 }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }),
   },
-  (table) => [index('idx_like_token').on(table.token)],
+  (table) => [index('idx_like_token').on(table.token), index('idx_like_owner').on(table.type, table.ownerId)],
 )
 
 export const comment = pgTable(
@@ -74,7 +89,8 @@ export const comment = pgTable(
       .$type<CommentBody>()
       .notNull()
       .default(sql`'[]'::jsonb`),
-    pageKey: varchar('page_key', { length: 255 }).notNull(),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),
     isVerified: boolean('is_verified').default(false),
     ua: text('ua'),
@@ -91,7 +107,7 @@ export const comment = pgTable(
     index('idx_comment_root_id').on(table.rootId),
     index('idx_comment_rid').on(table.rid),
     index('idx_comment_user_id').on(table.userId),
-    index('idx_comment_page_key').on(table.pageKey),
+    index('idx_comment_owner').on(table.type, table.ownerId),
     index('idx_comment_deleted_at').on(table.deletedAt),
   ],
 )

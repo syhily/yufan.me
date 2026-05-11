@@ -78,6 +78,7 @@ export async function loader({
       return {
         categoryLinks,
         featurePosts: featurePosts.map((post) => ({
+          id: post.id,
           slug: post.slug,
           title: post.title,
           summary: post.summary,

@@ -5,10 +5,13 @@ import { useFetcher } from 'react-router'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { ReplyCommentOutput } from '@/shared/api-types'
 import type { AdminComment } from '@/shared/comments'
+import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useFetcherResult } from '@/client/api/fetcher'
+import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -19,7 +22,6 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
-import { Textarea } from '@/ui/components/textarea'
 
 const REPLY = API_ACTIONS.comment.replyComment
 
@@ -43,18 +45,23 @@ export function ReplyCommentDialog({
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
   const fetcher = useFetcher<ApiEnvelope<ReplyCommentOutput>>()
-  const [value, setValue] = useState('')
+  // Reply body is PortableText, not plain text — the public reply form
+  // posts the same shape, and the API perimeter validates against
+  // `commentBodySchema`. Keeping the admin reply on the same editor
+  // means the admin sees a live preview of badges / code / math /
+  // footnotes exactly as a visitor would author them.
+  const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
+  const [bodyKey, setBodyKey] = useState(0)
 
   useEffect(() => {
-    if (!comment) {
-      setValue('')
-    }
-  }, [comment])
+    // Reset the editor body whenever the dialog opens for a new
+    // comment, or closes. Bumping `bodyKey` forces `CommentBodyEditor`
+    // to remount its Tiptap instance so the previous reply doesn't
+    // leak into the next one.
+    setBody(EMPTY_COMMENT_BODY)
+    setBodyKey((k) => k + 1)
+  }, [comment?.id])
 
-  // `useFetcherResult` already memoises against `fetcher.data` identity
-  // and ref-stashes the callbacks, so an unstable parent `onReplied`
-  // closure can't re-enter this branch and trigger the historical
-  // runaway loop of `loadAll` requests.
   useFetcherResult(fetcher, {
     action: REPLY,
     onSuccess: (payload) => {
@@ -67,6 +74,7 @@ export function ReplyCommentDialog({
 
   const open = comment !== null
   const submitting = fetcher.state !== 'idle'
+  const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -83,20 +91,24 @@ export function ReplyCommentDialog({
             if (!comment) {
               return
             }
-            if (!value.trim()) {
-              window.alert('回复内容不能为空')
+            if (isCommentBodyBlank(body)) {
+              toast.error('回复内容不能为空')
               return
             }
             if (!authorEmail) {
-              window.alert('无法获取管理员邮箱，请刷新页面重试')
+              toast.error('无法获取管理员邮箱，请刷新页面重试')
+              return
+            }
+            if (!comment.pagePublicId) {
+              toast.error('该评论缺少有效的目标页面标识，无法回复')
               return
             }
             void fetcher.submit(
               {
-                page_key: comment.pageKey,
+                page_key: comment.pagePublicId,
                 name: authorName,
                 email: authorEmail,
-                content: value,
+                body,
                 rid: Number.parseInt(idStr(comment.id), 10),
                 csrf: csrfToken,
               },
@@ -107,12 +119,11 @@ export function ReplyCommentDialog({
         >
           <div className="flex flex-col gap-2">
             <Label htmlFor="reply-comment-content">回复内容</Label>
-            <Textarea
-              id="reply-comment-content"
-              rows={8}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              required
+            <CommentBodyEditor
+              initialBody={EMPTY_COMMENT_BODY}
+              bodyKey={`admin-reply-${dialogKey}-${bodyKey}`}
+              onBodyChange={setBody}
+              disabled={submitting}
             />
           </div>
           <DialogFooter>

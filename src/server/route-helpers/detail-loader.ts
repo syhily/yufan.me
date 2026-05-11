@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 
 import { redirect } from 'react-router'
 
+import type { EntityTarget } from '@/server/db/target'
 import type { ClientTag, SidebarPostLink } from '@/shared/catalog'
 
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/comments/page-data'
@@ -43,13 +44,11 @@ function isPrefetchRequest(request: Request): boolean {
 export async function loadPublicDetailData({
   request,
   context,
-  permalink,
-  title,
+  target,
   preload,
   sidebar,
 }: Pick<LoaderFunctionArgs, 'request' | 'context'> & {
-  permalink: string
-  title: string
+  target: EntityTarget
   preload: () => Promise<void>
   sidebar?: PublicDetailSidebarData
 }): Promise<{
@@ -63,7 +62,7 @@ export async function loadPublicDetailData({
   const trackView = !isPrefetchRequest(request)
   const [, streaming, issued] = await Promise.all([
     preload(),
-    loadDetailPageStreaming(session, permalink, title, { trackView }),
+    loadDetailPageStreaming(session, target, { trackView }),
     issueCsrfToken(),
   ])
 

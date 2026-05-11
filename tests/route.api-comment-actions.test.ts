@@ -64,11 +64,13 @@ vi.mock('@/server/comments/likes', () => ({
   increaseLikes: vi.fn(async () => ({ token: 'tok-test', likes: 1 })),
 }))
 
-// `permalinkKeySchema` validates the `key` against `buildPermalinkSet()`.
-// The action tests want the schema to pass for our test fixture key
-// without standing up the real catalog.
-vi.mock('@/server/catalog', () => ({
-  buildPermalinkSet: vi.fn(async () => new Set<string>(['/posts/hello/'])),
+// The `key` payload is now the metric's `public_id` UUID — the action
+// resolves it back to a `(type, owner_id)` target before delegating.
+// Stub the lookup so the action tests don't need a real metric row.
+vi.mock('@/server/db/query/metric', () => ({
+  findMetricByPublicId: vi.fn(async (uuid: string) =>
+    uuid === '11111111-1111-1111-1111-111111111111' ? { type: 'post', ownerId: 1n } : null,
+  ),
 }))
 
 const userQuery = await import('@/server/db/query/user')
@@ -220,7 +222,7 @@ describe('api/comment.increaseLike action', () => {
 
     const res = await increaseLikeAction(
       makeLoaderArgs({
-        request: jsonRequest('POST', { key: '/posts/hello/' }),
+        request: jsonRequest('POST', { key: '11111111-1111-1111-1111-111111111111' }),
         session: session.current,
         clientAddress: '203.0.113.10',
       }),
@@ -228,9 +230,9 @@ describe('api/comment.increaseLike action', () => {
 
     expect(res.status).toBe(200)
     expect(rateLimit.tryLikeIncreaseRateLimit).toHaveBeenCalledWith('203.0.113.10')
-    expect(likes.increaseLikes).toHaveBeenCalledWith('/posts/hello/')
+    expect(likes.increaseLikes).toHaveBeenCalledWith({ type: 'post', ownerId: 1n })
     const body = (await res.json()) as { data: { token: string; likes: number; key: string } }
-    expect(body.data).toMatchObject({ token: 'tok-1', likes: 7, key: '/posts/hello/' })
+    expect(body.data).toMatchObject({ token: 'tok-1', likes: 7, key: '11111111-1111-1111-1111-111111111111' })
   })
 
   it('returns 429 and never reaches the DB when the IP is rate-limited', async () => {
@@ -239,7 +241,7 @@ describe('api/comment.increaseLike action', () => {
 
     const res = await increaseLikeAction(
       makeLoaderArgs({
-        request: jsonRequest('POST', { key: '/posts/hello/' }),
+        request: jsonRequest('POST', { key: '11111111-1111-1111-1111-111111111111' }),
         session: session.current,
         clientAddress: '203.0.113.10',
       }),

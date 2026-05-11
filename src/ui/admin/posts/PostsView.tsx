@@ -3,6 +3,7 @@ import {
   ArrowUpIcon,
   ExternalLinkIcon,
   FilePenIcon,
+  MessageSquareIcon,
   PinIcon,
   PlusIcon,
   RefreshCwIcon,
@@ -380,7 +381,7 @@ export function PostsView() {
                   <TableHead className="hidden w-24 text-center md:table-cell">作者</TableHead>
                   <TableHead className="w-28 text-center">状态</TableHead>
                   <TableHead className="hidden w-44 lg:table-cell">发布时间</TableHead>
-                  <TableHead className="w-44 pr-4 text-right">操作</TableHead>
+                  <TableHead className="w-56 pr-4 text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -458,13 +459,13 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
       <TableCell className="hidden md:table-cell">
         <p className="text-sm text-muted-foreground">{post.category || '—'}</p>
       </TableCell>
-      <TableCell className="hidden w-24 text-center align-top md:table-cell">
+      <TableCell className="hidden w-24 text-center align-middle md:table-cell">
         <p className="text-sm text-muted-foreground">{post.authorName || '—'}</p>
       </TableCell>
-      <TableCell className="text-center align-top">
+      <TableCell className="text-center align-middle">
         <StatusBadge post={post} />
       </TableCell>
-      <TableCell className="hidden align-top text-sm lg:table-cell">
+      <TableCell className="hidden align-middle text-sm lg:table-cell">
         {new Date(post.firstPublishedAt ?? post.publishedAt).toLocaleString('zh-CN')}
       </TableCell>
       <TableCell className="pr-4 text-right align-top">
@@ -478,6 +479,16 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
                 render={
                   <Link to={`/posts/${post.slug}`} target="_blank" rel="noreferrer">
                     <ExternalLinkIcon />
+                  </Link>
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                title="查看评论"
+                render={
+                  <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}>
+                    <MessageSquareIcon /> {post.commentCount}
                   </Link>
                 }
               />

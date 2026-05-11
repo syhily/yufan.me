@@ -1,5 +1,6 @@
 import type { AdminCommentsResult } from '@/server/comments/types'
 import type { AdminListFilters } from '@/server/db/query/comment'
+import type { EntityTarget } from '@/server/db/target'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
@@ -8,13 +9,14 @@ import {
   approveCommentById,
   countAllComments,
   deleteCommentById,
-  findCommentWithUserAndPage,
+  findCommentWithUserAndTarget,
   findCommentWithUserById,
   listAdminComments,
   searchCommentAuthors,
   searchPages,
   updateCommentBodyAndContent,
 } from '@/server/db/query/comment'
+import { findMetricByPublicId } from '@/server/db/query/metric'
 import { sendApprovedComment } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
 
@@ -28,9 +30,10 @@ const log = getLogger('comments.admin')
 export async function approveComment(rid: string) {
   const id = BigInt(rid)
   await approveCommentById(id)
-  const c = await findCommentWithUserAndPage(id)
-  if (c) {
-    void sendApprovedComment(c.comment, c.user, c.metric).catch((error) => {
+  const c = await findCommentWithUserAndTarget(id)
+  if (c && c.comment.type !== null && c.comment.ownerId !== null) {
+    const target: EntityTarget = { type: c.comment.type as 'post' | 'page', ownerId: c.comment.ownerId }
+    void sendApprovedComment(c.comment, c.user, target).catch((error) => {
       log.error('failed to send approved comment email', { error })
     })
   }
@@ -66,9 +69,9 @@ export async function updateComment(rid: string, newBody: CommentBody) {
 export async function searchPageOptions(
   q: string | undefined,
   limit: number,
-  keys?: string[],
+  publicIds?: string[],
 ): Promise<Array<{ key: string; title: string }>> {
-  return searchPages(q, limit, keys)
+  return searchPages(q, limit, publicIds)
 }
 
 export async function searchAuthorOptions(
@@ -82,11 +85,29 @@ export async function searchAuthorOptions(
 export async function loadAllComments(
   offset: number,
   limit: number,
-  filterPageKey?: string,
+  filterPublicId?: string,
   filterUserId?: bigint,
   status?: 'all' | 'pending' | 'approved',
 ): Promise<AdminCommentsResult> {
-  const baseFilters = { pageKey: filterPageKey, userId: filterUserId } satisfies AdminListFilters
+  // Resolve the wire `pageKey` (UUID) into a (type, owner_id) target
+  // once up front so the four list / count queries below can each
+  // filter on the indexed columns directly.
+  let target: EntityTarget | undefined
+  if (filterPublicId) {
+    const metricRow = await findMetricByPublicId(filterPublicId)
+    if (metricRow !== null && metricRow.type !== null && metricRow.ownerId !== null) {
+      target = { type: metricRow.type as 'post' | 'page', ownerId: metricRow.ownerId }
+    } else {
+      // Caller filtered on an unknown UUID — there can be no matches.
+      return {
+        comments: [],
+        total: 0,
+        hasMore: false,
+        statusCounts: { all: 0, pending: 0, approved: 0 },
+      }
+    }
+  }
+  const baseFilters = { target, userId: filterUserId } satisfies AdminListFilters
   const filters: AdminListFilters = { ...baseFilters, status }
   // List + 3 count queries are all independent — issue them concurrently.
   // We fetch counts for every status under the SAME page/user context so
@@ -108,6 +129,7 @@ export async function loadAllComments(
       // the moderation UI renders directly from the canonical `body`.
       content: null,
       pageTitle: c.pageTitle,
+      pagePublicId: c.pagePublicId,
     })),
     total,
     hasMore: offset + limit < total,

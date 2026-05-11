@@ -80,9 +80,25 @@ export interface AdminPostDto {
   pinnedAt: string | null
   /** Null until the first successful publish. */
   firstPublishedAt: string | null
+  /**
+   * Approved comment count for this post's metric row. Populated by
+   * `listPostsForAdmin`; defaults to `0` on detail / save paths that
+   * don't need to fan out an extra query.
+   */
+  commentCount: number
+  /**
+   * The post's `metric.public_id` UUID — the opaque wire identifier
+   * the admin comment-count link uses to deep-link into
+   * `/wp-admin/comments?pageKey=<uuid>`. Empty string on detail / save
+   * paths that don't fan out a metric upsert.
+   */
+  commentPublicId: string
 }
 
-export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }): AdminPostDto {
+export function toAdminPostDto(
+  row: PostMetaRow & { authorName?: string | null },
+  options: { commentCount?: number; commentPublicId?: string } = {},
+): AdminPostDto {
   return {
     id: String(row.id),
     slug: row.slug,
@@ -107,6 +123,8 @@ export function toAdminPostDto(row: PostMetaRow & { authorName?: string | null }
     authorName: (row as { authorName?: string | null }).authorName ?? null,
     pinnedAt: row.pinnedAt === null ? null : row.pinnedAt.toISOString(),
     firstPublishedAt: row.firstPublishedAt === null ? null : row.firstPublishedAt.toISOString(),
+    commentCount: options.commentCount ?? 0,
+    commentPublicId: options.commentPublicId ?? '',
   }
 }
 

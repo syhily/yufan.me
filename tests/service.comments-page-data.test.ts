@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import { seedMetric } from './_helpers/db'
 import { regularSession } from './_helpers/session'
 
 // `loadDetailPageData` must fan out `loadComments`, `queryLikes`, and
@@ -10,7 +11,7 @@ import { regularSession } from './_helpers/session'
 // serialised.
 
 vi.mock('@/server/comments/loader', () => ({
-  ensureCommentPage: vi.fn(async () => undefined),
+  ensureCommentPage: vi.fn(async () => seedMetric()),
   loadComments: vi.fn(),
   parseComments: vi.fn(async () => []),
 }))
@@ -24,12 +25,18 @@ const sidebar = await import('@/server/sidebar/load')
 const metrics = await import('@/server/metrics/batcher')
 const { loadDetailPageData } = await import('@/server/comments/page-data')
 
+const POST_TIMING = { type: 'post' as const, ownerId: 1n }
+const POST_EMPTY = { type: 'post' as const, ownerId: 2n }
+const POST_ONE_UPSERT = { type: 'post' as const, ownerId: 3n }
+const POST_NO_TRACK = { type: 'post' as const, ownerId: 4n }
+
 function delay<T>(value: T, ms: number): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms))
 }
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(commentLoader.ensureCommentPage).mockResolvedValue(seedMetric())
 })
 
 describe('services/comments/page-data — loadDetailPageData', () => {
@@ -52,7 +59,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
     )
 
     const start = Date.now()
-    await loadDetailPageData(regularSession(), '/posts/timing', 'T')
+    await loadDetailPageData(regularSession(), POST_TIMING)
     const elapsed = Date.now() - start
 
     expect(elapsed).toBeLessThan(100)
@@ -73,7 +80,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as never)
 
-    const result = await loadDetailPageData(regularSession(), '/posts/empty', 'E')
+    const result = await loadDetailPageData(regularSession(), POST_EMPTY)
 
     expect(result.commentItems).toEqual([])
     expect(commentLoader.parseComments).not.toHaveBeenCalled()
@@ -94,16 +101,12 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as never)
 
-    await loadDetailPageData(regularSession(), '/posts/one-upsert', 'One upsert')
+    await loadDetailPageData(regularSession(), POST_ONE_UPSERT)
 
     expect(commentLoader.ensureCommentPage).toHaveBeenCalledOnce()
-    expect(commentLoader.loadComments).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.stringMatching(/\/posts\/one-upsert\/$/),
-      'One upsert',
-      0,
-      { ensurePage: false },
-    )
+    expect(commentLoader.loadComments).toHaveBeenCalledWith(expect.anything(), POST_ONE_UPSERT, 0, {
+      ensurePage: false,
+    })
   })
 
   it('skips view increments when caller disables tracking', async () => {
@@ -121,7 +124,7 @@ describe('services/comments/page-data — loadDetailPageData', () => {
       isAdmin: false,
     } as never)
 
-    await loadDetailPageData(regularSession(), '/posts/no-track', 'No track', { trackView: false })
+    await loadDetailPageData(regularSession(), POST_NO_TRACK, { trackView: false })
 
     expect(metrics.bumpPageView).not.toHaveBeenCalled()
   })
