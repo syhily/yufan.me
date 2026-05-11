@@ -96,6 +96,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
       commentsMd: { ...CACHE_BUCKET_FALLBACKS.commentsMd },
       embeddingSearch: { ...CACHE_BUCKET_FALLBACKS.embeddingSearch },
+      searchResult: { ...CACHE_BUCKET_FALLBACKS.searchResult },
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds

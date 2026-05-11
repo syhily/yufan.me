@@ -261,6 +261,7 @@ export const cacheSchema = z
       imageMeta: cacheBucketSchema,
       commentsMd: cacheBucketSchema,
       embeddingSearch: cacheBucketSchema,
+      searchResult: cacheBucketSchema,
     }),
   })
   .superRefine((value, ctx) => {
@@ -272,6 +273,7 @@ export const cacheSchema = z
       { id: 'imageMeta', prefix: buckets.imageMeta.prefix },
       { id: 'commentsMd', prefix: buckets.commentsMd.prefix },
       { id: 'embeddingSearch', prefix: buckets.embeddingSearch.prefix },
+      { id: 'searchResult', prefix: buckets.searchResult.prefix },
     ]
 
     // Two prefixes "collide" if either is a strict prefix of the other.

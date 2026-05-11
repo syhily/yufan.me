@@ -66,6 +66,12 @@ const BUCKET_META = [
     description:
       '向量搜索时查询文本的 Embedding 结果，键形如 ${prefix}${sha256(text)}。切换 Embedding 模型或维度后应清理一次。',
   },
+  {
+    id: 'searchResult',
+    label: '搜索结果缓存',
+    description:
+      '搜索查询返回的文章 slug 列表，键形如 ${prefix}${sha256(mode+query+threshold+model)}。分页时直接命中缓存，避免重复查询数据库。',
+  },
 ] as const satisfies readonly {
   id: CacheBucketId
   label: string

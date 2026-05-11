@@ -1,4 +1,11 @@
-export type CacheBucketId = 'og' | 'calendar' | 'avatar' | 'imageMeta' | 'commentsMd' | 'embeddingSearch'
+export type CacheBucketId =
+  | 'og'
+  | 'calendar'
+  | 'avatar'
+  | 'imageMeta'
+  | 'commentsMd'
+  | 'embeddingSearch'
+  | 'searchResult'
 
 export interface CacheBucketSlot {
   prefix: string
@@ -21,6 +28,7 @@ export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
   imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
   commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
   embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+  searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
 }
 
 export interface CacheBucket {

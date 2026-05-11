@@ -74,6 +74,7 @@ const fixtureBundle: BlogSettingsBundle = {
       imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
       commentsMd: { prefix: 'comments-md-', ttlSeconds: 3600 },
       embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+      searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
   },
   rateLimit: {
@@ -489,6 +490,7 @@ describe('services/settings — cache section', () => {
           imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
           commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+          searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
         },
       },
       null,

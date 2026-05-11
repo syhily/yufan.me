@@ -160,6 +160,7 @@ export interface CacheSettings {
     imageMeta: { prefix: string; ttlSeconds: number }
     commentsMd: { prefix: string; ttlSeconds: number }
     embeddingSearch: { prefix: string; ttlSeconds: number }
+    searchResult: { prefix: string; ttlSeconds: number }
   }
 }
 

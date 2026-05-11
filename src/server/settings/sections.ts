@@ -134,6 +134,7 @@ const cacheDefaults = {
     imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
     commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
     embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
+    searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
   },
 } as const
 // Rate-limit defaults mirror the historical hard-coded values that
