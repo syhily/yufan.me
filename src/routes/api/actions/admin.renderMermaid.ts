@@ -10,7 +10,8 @@ const MAX_BODY_BYTES = 128 * 1024
 export const action = defineApiAction({
   method: 'POST',
   input: renderMermaidSchema,
-  requireAdmin: true,
+  // Open to any visitor with a CSRF cookie — the endpoint is a pure
+  // stateless renderer (Mermaid → SVG) with no side effects.
   maxBodyBytes: MAX_BODY_BYTES,
   async run({ payload }): Promise<RenderMermaidOutput> {
     const code = payload.code

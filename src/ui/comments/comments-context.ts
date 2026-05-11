@@ -29,6 +29,7 @@ export type CommentTreeAction =
   | { type: 'removeComment'; id: bigint | string }
   | { type: 'approveComment'; id: bigint | string }
   | { type: 'setReplyTo'; rid: number }
+  | { type: 'mergeMyComments'; comments: CommentItemType[]; expiresAt: Record<string, number> }
 
 export interface CommentsContextValue {
   commentKey: string
@@ -39,12 +40,18 @@ export interface CommentsContextValue {
   state: CommentTreeState
   /** Reply target id resolved against the visible tree, or `0` when none. */
   activeReplyToId: number
+  /** Set of comment ids owned by the current anonymous token holder. */
+  myCommentIds: Set<string>
+  /** Per-comment token expiration timestamp (ms) for editable-hint rendering. */
+  myCommentExpiresAt: Map<string, number>
   /** Actions surfaced to leaf components (no render-prop drilling). */
   onReply: (rid: number) => void
   onCancelReply: () => void
   onEdited: (comment: CommentItemType) => void
   onApproved: (id: bigint | string) => void
   onDeleted: (id: bigint | string) => void
+  /** Dismiss the editable-hint for a comment and revoke its token cookie. */
+  onDismissMyComment: (id: bigint | string) => void
   /** Forwarded so `<Comments.LoadMore>` can append to the visible tree. */
   dispatch: React.Dispatch<CommentTreeAction>
   /** The reply form node, rendered inline at the active reply target. */

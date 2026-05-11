@@ -14,6 +14,7 @@ interface FormState {
   size: number
   avatarMirror: string
   avatarSize: number
+  tokenTtlSeconds: number
 }
 
 export function CommentsForm({ comments }: CommentsFormProps) {
@@ -27,11 +28,13 @@ export function CommentsForm({ comments }: CommentsFormProps) {
       size: source.comments.size,
       avatarMirror: source.comments.avatar.mirror,
       avatarSize: source.comments.avatar.size,
+      tokenTtlSeconds: source.comments.tokenTtlSeconds,
     }),
     fromState: (state) => ({
       comments: {
         size: state.size,
         avatar: { mirror: state.avatarMirror.trim(), size: state.avatarSize },
+        tokenTtlSeconds: state.tokenTtlSeconds,
       },
     }),
   })
@@ -77,6 +80,26 @@ export function CommentsForm({ comments }: CommentsFormProps) {
             max={512}
             value={draft.avatarSize}
             onChange={(e) => setDraft((prev) => ({ ...prev, avatarSize: Number.parseInt(e.target.value, 10) || 16 }))}
+            required
+          />
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection title="匿名评论 Token" description="控制匿名评论者发表后可编辑自己评论的时间窗口。">
+        <SettingsRow
+          label="Token 有效期 (秒)"
+          htmlFor="comments-token-ttl"
+          hint="默认 1800 秒（30 分钟）。范围 60–86400 秒。"
+        >
+          <Input
+            id="comments-token-ttl"
+            type="number"
+            min={60}
+            max={86400}
+            value={draft.tokenTtlSeconds}
+            onChange={(e) =>
+              setDraft((prev) => ({ ...prev, tokenTtlSeconds: Number.parseInt(e.target.value, 10) || 1800 }))
+            }
             required
           />
         </SettingsRow>

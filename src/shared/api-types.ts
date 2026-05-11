@@ -116,6 +116,19 @@ export interface CommentRawOutput {
   body: CommentBody
 }
 
+export interface MyCommentsOutput {
+  comments: CommentItem[]
+  /**
+   * Map from comment id string to token expiration timestamp (ms).
+   * The UI uses this to show "editable for X more minutes" hints.
+   */
+  expiresAt: Record<string, number>
+}
+
+export interface RevokeCommentTokenOutput {
+  success: true
+}
+
 export interface SearchPagesOutput {
   pages: { key: string; title: string | null }[]
 }

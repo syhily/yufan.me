@@ -62,6 +62,8 @@ describe('services/settings — write isolation', () => {
             avatar: { prefix: 'av-bucket:', ttlSeconds: 60 * 60 * 24 },
             imageMeta: { prefix: 'image-meta-bucket:', ttlSeconds: 60 * 60 * 24 },
             commentsMd: { prefix: 'comments-md-bucket:', ttlSeconds: 60 * 60 * 24 },
+            embeddingSearch: { prefix: 'embedding-search-bucket:', ttlSeconds: 60 * 60 * 24 },
+            searchResult: { prefix: 'search-result-bucket:', ttlSeconds: 60 * 60 * 24 },
           },
         },
         null,

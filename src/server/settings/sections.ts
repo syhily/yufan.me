@@ -88,6 +88,7 @@ const commentsDefaults = {
     // admin can swap in a regional mirror (e.g. `gravatar.loli.net`)
     // from `/wp-admin/settings/comments` without dropping a row.
     avatar: { mirror: 'https://www.gravatar.com/avatar', size: 80 },
+    tokenTtlSeconds: 1800,
   },
 } as const
 const seoDefaults = {

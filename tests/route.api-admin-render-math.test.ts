@@ -94,7 +94,9 @@ describe('routes/api/actions/admin.renderMath', () => {
     })
   })
 
-  it('rejects non-admin sessions with 403', async () => {
+  it('allows non-admin sessions to render', async () => {
+    renderMock.mockResolvedValueOnce('<math data-katex="ok"><mi>x</mi></math>')
+
     const { action } = await import('@/routes/api/actions/admin.renderMath')
     const response = await action(
       makeLoaderArgs({
@@ -104,8 +106,11 @@ describe('routes/api/actions/admin.renderMath', () => {
       }),
     )
 
-    expect(response.status).toBe(403)
-    expect(renderMock).not.toHaveBeenCalled()
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      data: { mathml: '<math data-katex="ok"><mi>x</mi></math>', error: null },
+    })
+    expect(renderMock).toHaveBeenCalledWith('x', false)
   })
 
   it('rejects GET with 405 — the endpoint is POST-only', async () => {

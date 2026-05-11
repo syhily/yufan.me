@@ -62,6 +62,12 @@ describe('shared API action contract', () => {
       const tail = action.route.replace(/^api\/actions\//, '')
       const filePath = resolve(actionsDir, `${tail.replace('/', '.')}.ts`)
       const source = readFileSync(filePath, 'utf8')
+      // Only flag files that actually read from URL search params; reading
+      // from cookies or headers is fine for GET endpoints.
+      const readsFromUrl = source.includes('readSearchInput(') || /searchParams\.get\(|url\.searchParams/.test(source)
+      if (!readsFromUrl) {
+        continue
+      }
       for (const piiKey of PII_QUERY_KEYS) {
         expect(
           source.includes(piiKey),

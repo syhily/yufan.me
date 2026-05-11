@@ -28,7 +28,8 @@ const MAX_BODY_BYTES = 8 * 1024
 export const action = defineApiAction({
   method: 'POST',
   input: renderMathSchema,
-  requireAdmin: true,
+  // Open to any visitor with a CSRF cookie — the endpoint is a pure
+  // stateless renderer (Katex → MathML) with no side effects.
   maxBodyBytes: MAX_BODY_BYTES,
   async run({ payload }): Promise<RenderMathOutput> {
     const tex = payload.tex

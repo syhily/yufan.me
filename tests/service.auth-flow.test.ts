@@ -295,7 +295,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // the very first public render after install can use the strict
     // per-section hooks (`useFooterSettings()`, `useNavigationSettings()`,
     // …) without throwing on a `null` bucket.
-    expect(settingQuery.upsertSetting).toHaveBeenCalledTimes(12)
+    expect(settingQuery.upsertSetting).toHaveBeenCalledTimes(13)
     const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
     const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: bigint | null }>()
     for (const [data, updatedBy, scope] of calls) {
@@ -311,6 +311,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
       'blog.mail',
       'blog.navigation',
       'blog.rateLimit',
+      'blog.search',
       'blog.seo',
       'blog.sidebar',
       'blog.socials',

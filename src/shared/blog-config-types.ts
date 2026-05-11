@@ -110,6 +110,8 @@ export interface CommentsSettings {
       mirror: string
       size: number
     }
+    /** TTL for the temporary comment edit token issued to anonymous commenters (seconds). */
+    tokenTtlSeconds: number
   }
 }
 

@@ -22,6 +22,7 @@ function chainable(rows: unknown[]) {
   const handle = Promise.resolve(rows) as unknown as {
     from: () => typeof handle
     innerJoin: () => typeof handle
+    leftJoin: () => typeof handle
     where: () => typeof handle
     orderBy: () => typeof handle
     limit: () => typeof handle
@@ -29,6 +30,7 @@ function chainable(rows: unknown[]) {
   }
   handle.from = () => handle
   handle.innerJoin = () => handle
+  handle.leftJoin = () => handle
   handle.where = () => handle
   handle.orderBy = () => handle
   handle.limit = () => handle

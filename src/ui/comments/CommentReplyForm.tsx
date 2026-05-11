@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { PencilIcon } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import type { FindAvatarInput, FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/api-types'
 import type { CommentFormUser } from '@/shared/catalog'
@@ -6,6 +7,7 @@ import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useApiFetcher } from '@/client/api/fetcher'
+import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
@@ -44,15 +46,36 @@ export function CommentReplyForm({
   onCancel,
   onReplied,
 }: CommentReplyFormProps) {
+  const { profile: guestProfile, saveProfile: saveGuestProfile, clearProfile: clearGuestProfile } = useCommentGuest()
+  const isGuestMode = !user && guestProfile !== null
+
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   // Bumping `bodyKey` forces the editor to reset its internal PM doc
   // from `initialBody` (used to clear after a successful submit).
   const [bodyKey, setBodyKey] = useState(0)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement | null>(null)
-  const [avatarSrc, setAvatarSrc] = useState<string>(() =>
-    user?.admin ? joinUrl('/images/avatar', `${user.id}.png`) : '/images/default-avatar.png',
-  )
+  const [avatarSrc, setAvatarSrc] = useState<string>(() => {
+    if (user?.admin) {
+      return joinUrl('/images/avatar', `${user.id}.png`)
+    }
+    if (guestProfile?.avatar) {
+      return guestProfile.avatar
+    }
+    return '/images/default-avatar.png'
+  })
+
+  // Sync avatarSrc when guest profile loads or clears after hydration.
+  useEffect(() => {
+    if (user) {
+      return
+    }
+    if (guestProfile?.avatar) {
+      setAvatarSrc(guestProfile.avatar)
+    } else {
+      setAvatarSrc('/images/default-avatar.png')
+    }
+  }, [guestProfile, user])
 
   const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(API_ACTIONS.comment.replyComment, {
     onSuccess: (data) => {
@@ -61,6 +84,15 @@ export function CommentReplyForm({
         onCsrfRotated(data.csrfToken)
       }
       onReplied(data.comment, replyToId)
+      // Persist guest info for future visits.
+      if (!user) {
+        saveGuestProfile({
+          name: data.comment.name,
+          email: data.comment.email,
+          link: data.comment.link ?? undefined,
+          avatar: avatarSrc,
+        })
+      }
       // Clear the editor + remount via bodyKey bump.
       setBody(EMPTY_COMMENT_BODY)
       setBodyKey((k) => k + 1)
@@ -80,7 +112,7 @@ export function CommentReplyForm({
   const isReplying = replyToId !== 0 && replyTarget !== undefined
 
   const onEmailBlur = (event: React.FocusEvent<HTMLInputElement>) => {
-    if (admin) {
+    if (admin || isGuestMode) {
       return
     }
     const email = event.currentTarget.value
@@ -99,9 +131,9 @@ export function CommentReplyForm({
     }
     const form = event.currentTarget
     const data = new FormData(form)
-    const name = readFormString(data, 'name') ?? user?.name ?? ''
-    const email = readFormString(data, 'email') ?? user?.email ?? ''
-    const link = readFormString(data, 'link') ?? ''
+    const name = readFormString(data, 'name') ?? user?.name ?? guestProfile?.name ?? ''
+    const email = readFormString(data, 'email') ?? user?.email ?? guestProfile?.email ?? ''
+    const link = readFormString(data, 'link') ?? guestProfile?.link ?? ''
     const subtitle = readFormString(data, 'subtitle') ?? ''
     const payload: ReplyCommentInput = {
       page_key: commentKey,
@@ -120,7 +152,13 @@ export function CommentReplyForm({
   return (
     <div id="respond" className="mb-4 md:mb-6">
       <form ref={formRef} id="commentForm" className="flex flex-1" onSubmit={handleSubmit}>
-        <div className="relative mr-[15px] flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7">
+        <div
+          className={cn(
+            'relative mr-[15px] flex size-10 shrink-0 items-center justify-center rounded-full leading-none font-semibold whitespace-nowrap max-md:mr-2.5 max-md:size-7',
+            isGuestMode && 'group/guest-avatar cursor-pointer',
+          )}
+          onClick={isGuestMode ? clearGuestProfile : undefined}
+        >
           <img
             alt="头像"
             src={avatarSrc}
@@ -129,6 +167,11 @@ export function CommentReplyForm({
             width={40}
             decoding="async"
           />
+          {isGuestMode && (
+            <span className="absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 group-hover/guest-avatar:flex">
+              <PencilIcon className="size-4 text-white" />
+            </span>
+          )}
         </div>
         <div className="flex-1">
           <div className="relative mb-4">
@@ -146,7 +189,13 @@ export function CommentReplyForm({
               />
             )}
           </div>
-          <CommentFormFields user={user} commentKey={commentKey} replyToId={replyToId} onEmailBlur={onEmailBlur} />
+          <CommentFormFields
+            user={user}
+            guestProfile={guestProfile}
+            commentKey={commentKey}
+            replyToId={replyToId}
+            onEmailBlur={onEmailBlur}
+          />
           {!admin && <CommentFormHoneypot />}
           {submitError && <div className="mb-2 text-xs text-alert">{submitError}</div>}
           <div className="flex justify-end gap-2">
@@ -226,36 +275,42 @@ function CommentFormHoneypot() {
 
 interface CommentFormFieldsProps {
   user?: CommentFormUser
+  guestProfile?: { name: string; email: string; link?: string } | null
   commentKey: string
   replyToId: number
   onEmailBlur: (event: React.FocusEvent<HTMLInputElement>) => void
 }
 
-function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {
+function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailBlur }: CommentFormFieldsProps) {
   const admin = user?.admin === true
+  const hasIdentity = admin || guestProfile !== null
+  const nameValue = admin ? user.name : (guestProfile?.name ?? '')
+  const emailValue = admin ? user.email : (guestProfile?.email ?? '')
+  const linkValue = admin ? (user.website ?? '') : (guestProfile?.link ?? '')
+
   return (
     <div className="-mx-1 -mt-2 mb-4 flex flex-wrap md:-mx-2 md:-mt-4">
-      {admin ? (
+      {hasIdentity ? (
         <input
           className={formControlVariants()}
-          placeholder={user.name}
+          placeholder={nameValue}
           name="name"
           type="text"
           readOnly
           hidden
-          defaultValue={user.name}
+          defaultValue={nameValue}
         />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
           <input className={formControlVariants()} placeholder="昵称" name="name" type="text" required />
         </div>
       )}
-      {admin ? (
+      {hasIdentity ? (
         <input
           className={formControlVariants()}
           name="email"
-          placeholder={user.email}
-          defaultValue={user.email}
+          placeholder={emailValue}
+          defaultValue={emailValue}
           type="email"
           readOnly
           hidden
@@ -274,11 +329,11 @@ function CommentFormFields({ user, commentKey, replyToId, onEmailBlur }: Comment
       )}
       <input hidden name="page_key" type="text" defaultValue={commentKey} />
       <input hidden name="rid" type="text" value={String(replyToId)} readOnly />
-      {admin ? (
+      {hasIdentity ? (
         <input
           className={formControlVariants()}
-          placeholder={user.website ?? undefined}
-          defaultValue={user.website ?? undefined}
+          placeholder={linkValue}
+          defaultValue={linkValue}
           name="link"
           type="url"
           readOnly

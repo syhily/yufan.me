@@ -48,6 +48,8 @@ export const API_ACTIONS = {
     loadComments: defineApiAction('api/actions/comment/loadComments', 'GET'),
     getRaw: defineApiAction('api/actions/comment/getRaw', 'GET'),
     edit: defineApiAction('api/actions/comment/edit', 'PATCH'),
+    myComments: defineApiAction('api/actions/comment/myComments', 'GET'),
+    revokeToken: defineApiAction('api/actions/comment/revokeToken', 'POST'),
     searchPages: defineApiAction('api/actions/comment/searchPages', 'GET'),
     searchAuthors: defineApiAction('api/actions/comment/searchAuthors', 'GET'),
     loadAll: defineApiAction('api/actions/comment/loadAll', 'POST'),

@@ -1,3 +1,4 @@
+import { XIcon } from 'lucide-react'
 import { useContext, useEffect, useState } from 'react'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/api-types'
@@ -46,12 +47,15 @@ export interface CommentItemProps {
 // the full context value, so leaf components see real callbacks there.
 function useCommentsLeafContext(propAdmin: boolean | undefined): {
   admin: boolean
+  myCommentIds: Set<string>
+  myCommentExpiresAt: Map<string, number>
   activeReplyToId: number
   replyForm: React.ReactNode
   onReply: (rid: number) => void
   onEdited: (comment: CommentItemType) => void
   onApproved: (id: bigint | string) => void
   onDeleted: (id: bigint | string) => void
+  onDismissMyComment: (id: bigint | string) => void
 } {
   const ctx = useContext(CommentsContext)
   if (ctx !== null) {
@@ -59,24 +63,30 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
   }
   return {
     admin: propAdmin === true,
+    myCommentIds: new Set(),
+    myCommentExpiresAt: new Map(),
     activeReplyToId: 0,
     replyForm: null,
     onReply: noop,
     onEdited: noop,
     onApproved: noop,
     onDeleted: noop,
+    onDismissMyComment: noop,
   }
 }
 
 function adapt(ctx: CommentsContextValue, propAdmin: boolean | undefined) {
   return {
     admin: propAdmin === undefined ? ctx.admin : propAdmin,
+    myCommentIds: ctx.myCommentIds,
+    myCommentExpiresAt: ctx.myCommentExpiresAt,
     activeReplyToId: ctx.activeReplyToId,
     replyForm: ctx.replyForm,
     onReply: ctx.onReply,
     onEdited: ctx.onEdited,
     onApproved: ctx.onApproved,
     onDeleted: ctx.onDeleted,
+    onDismissMyComment: ctx.onDismissMyComment,
   }
 }
 
@@ -207,6 +217,11 @@ function commentContentClass(depth: number): string {
 function CommentLi({ comment, depth, pending, admin: propAdmin, children }: CommentLiProps) {
   const authorHref = safeHref(comment.link)
   const [editing, setEditing] = useState(false)
+  const leaf = useCommentsLeafContext(propAdmin)
+  const isMyComment = leaf.myCommentIds.has(asKey(comment.id))
+  const isPending = pending ?? comment.isPending ?? false
+  const expiresAt = leaf.myCommentExpiresAt.get(asKey(comment.id))
+  const canEdit = expiresAt === undefined || expiresAt > Date.now()
   return (
     <li
       id={`user-comment-${comment.id}`}
@@ -257,12 +272,29 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               </span>
             )}
           </div>
-          {pending ? (
+          {isMyComment && canEdit && (
+            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+              <span className="flex-1">{editableHint(expiresAt, isPending)}</span>
+              <button
+                type="button"
+                onClick={() => leaf.onDismissMyComment(comment.id)}
+                className="inline-flex shrink-0 items-center justify-center rounded-sm p-0.5 hover:bg-amber-200 dark:hover:bg-amber-500/20"
+                aria-label="关闭提示"
+                title="关闭提示并移除编辑权限"
+              >
+                <XIcon className="size-3.5" />
+              </button>
+            </div>
+          )}
+          {isPending && (!isMyComment || !canEdit) && (
             <div className={commentContentClass(depth)}>
-              <p className="tip-comment-check text-xs text-alert">您的评论正在等待审核中...</p>
+              <div className="mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+                <span>您的评论正在等待审核中...</span>
+              </div>
               <PortableTextBody body={comment.body} />
             </div>
-          ) : (
+          )}
+          {(!isPending || (isMyComment && canEdit)) && (
             <div className={commentContentClass(depth)}>
               <PortableTextBody body={comment.body} />
             </div>
@@ -324,17 +356,19 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
       >
         回复
       </button>
+      {(leaf.admin || leaf.myCommentIds.has(asKey(comment.id))) && (
+        <button
+          type="button"
+          className={cn(commentFooterButtonClass, 'hover:text-alert')}
+          data-rid={comment.id}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onEdit}
+        >
+          编辑
+        </button>
+      )}
       {leaf.admin && (
         <>
-          <button
-            type="button"
-            className={cn(commentFooterButtonClass, 'hover:text-alert')}
-            data-rid={comment.id}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={onEdit}
-          >
-            编辑
-          </button>
           {comment.isPending && (
             <button
               type="button"
@@ -468,4 +502,28 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
       </div>
     </div>
   )
+}
+
+function editableHint(expiresAt: number | undefined, isPending: boolean | undefined): string {
+  if (expiresAt === undefined) {
+    return isPending ? '此消息正在等待审核，可编辑。' : '可编辑此消息。'
+  }
+  const remainingMs = expiresAt - Date.now()
+  if (remainingMs <= 0) {
+    return isPending ? '此消息正在等待审核，编辑时间已过期。' : '编辑时间已过期。'
+  }
+  const remainingMinutes = Math.ceil(remainingMs / (60 * 1000))
+  if (remainingMinutes >= 60) {
+    const hours = Math.floor(remainingMinutes / 60)
+    const mins = remainingMinutes % 60
+    const timeStr = mins > 0 ? `${hours} 小时 ${mins} 分钟` : `${hours} 小时`
+    return isPending ? `此消息正在等待审核，${timeStr}内可编辑。` : `${timeStr}内可编辑此消息。`
+  }
+  if (remainingMinutes <= 1) {
+    const seconds = Math.ceil(remainingMs / 1000)
+    return isPending ? `此消息正在等待审核，${seconds} 秒内可编辑。` : `${seconds} 秒内可编辑此消息。`
+  }
+  return isPending
+    ? `此消息正在等待审核，${remainingMinutes} 分钟内可编辑。`
+    : `${remainingMinutes} 分钟内可编辑此消息。`
 }

@@ -61,8 +61,6 @@ describe('routes/api/actions — file conventions', () => {
     const adminEndpoints = new Set([
       'api/actions/comment/approve',
       'api/actions/comment/delete',
-      'api/actions/comment/edit',
-      'api/actions/comment/getRaw',
       'api/actions/comment/searchPages',
       'api/actions/comment/searchAuthors',
       'api/actions/comment/loadAll',

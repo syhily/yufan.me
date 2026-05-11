@@ -47,7 +47,9 @@ const fixture: BlogSettingsBundle = {
     post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
   },
   sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 20 } },
-  comments: { comments: { size: 10, avatar: { mirror: 'https://cdn.test.example/avatar', size: 80 } } },
+  comments: {
+    comments: { size: 10, avatar: { mirror: 'https://cdn.test.example/avatar', size: 80 }, tokenTtlSeconds: 1800 },
+  },
   seo: {
     twitter: '@tester',
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },

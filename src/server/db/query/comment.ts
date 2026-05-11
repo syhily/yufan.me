@@ -318,6 +318,17 @@ export async function findCommentWithSourceUser(id: bigint) {
   return rows[0] ?? null
 }
 
+export async function findCommentsByIds(ids: bigint[]) {
+  if (ids.length === 0) {
+    return []
+  }
+  return db
+    .select(commentWithUser)
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(inArray(comment.id, ids))
+}
+
 export interface PageOption {
   /** `metric.public_id`. Wire field is named `key` because the Combobox API stays stable. */
   key: string

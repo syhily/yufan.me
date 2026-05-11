@@ -1,9 +1,12 @@
 import { createComment } from '@/server/comments/loader'
 import { commentReplySchema } from '@/server/comments/schema'
+import { appendCommentToken, issueCommentToken } from '@/server/comments/token'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/rate-limit'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure, DomainError } from '@/server/route-helpers/errors'
 import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/session'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/comment-token'
 
 // Accepts JSON only — PortableText bodies aren't form-encodable, so
 // the public reply form posts JSON through `useApiFetcher` (the
@@ -38,9 +41,22 @@ export const action = defineApiAction({
 
     const comment = await createComment(commentPayload, ctx.request, ctx.clientAddress, ctx.session)
     const rotated = await issueCsrfToken()
+
+    const headers = new Headers()
+    headers.append('Set-Cookie', rotated.setCookie)
+
+    // Issue a time-limited edit token for anonymous commenters.
+    if (!isAdmin()) {
+      const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
+      const token = await issueCommentToken(comment.id, comment.userId, payload.page_key, ttl)
+      const existing = parseCommentTokensCookie(ctx.request.headers.get('Cookie'))
+      const next = appendCommentToken(existing, payload.page_key, token, ttl)
+      headers.append('Set-Cookie', serializeCommentTokensCookie(next))
+    }
+
     return {
       data: { comment, csrfToken: rotated.token },
-      headers: { 'Set-Cookie': rotated.setCookie },
+      headers,
     }
   },
 })

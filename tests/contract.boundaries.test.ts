@@ -691,6 +691,21 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/routes.ts',
         specifier: './shared/api-actions',
       },
+      {
+        key: 'search index -> openai helper',
+        file: 'src/server/search/index.ts',
+        specifier: './openai',
+      },
+      {
+        key: 'search index -> options helper',
+        file: 'src/server/search/index.ts',
+        specifier: './options',
+      },
+      {
+        key: 'search indexer -> openai helper',
+        file: 'src/server/search/indexer.ts',
+        specifier: './openai',
+      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 

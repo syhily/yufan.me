@@ -61,7 +61,9 @@ describe('routes/api/actions/admin.renderMermaid', () => {
     })
   })
 
-  it('rejects non-admin sessions with 403', async () => {
+  it('allows non-admin sessions to render', async () => {
+    renderMermaidMock.mockResolvedValueOnce('<svg data-mermaid="ok"/>')
+
     const { action } = await import('@/routes/api/actions/admin.renderMermaid')
     const response = await action(
       makeLoaderArgs({
@@ -71,8 +73,11 @@ describe('routes/api/actions/admin.renderMermaid', () => {
       }),
     )
 
-    expect(response.status).toBe(403)
-    expect(renderMermaidMock).not.toHaveBeenCalled()
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      data: { svg: '<svg data-mermaid="ok"/>', error: null },
+    })
+    expect(renderMermaidMock).toHaveBeenCalledWith('graph TD')
   })
 
   it('rejects GET with 405 — the endpoint is POST-only', async () => {

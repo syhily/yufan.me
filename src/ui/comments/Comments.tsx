@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
-import type { LoadCommentsInput, LoadCommentsOutput } from '@/shared/api-types'
+import type {
+  CommentRidInput,
+  LoadCommentsInput,
+  LoadCommentsOutput,
+  MyCommentsOutput,
+  RevokeCommentTokenOutput,
+} from '@/shared/api-types'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
 
@@ -118,6 +124,43 @@ function reducer(state: CommentTreeState, action: CommentTreeAction): CommentTre
     }
     case 'setReplyTo':
       return { ...state, replyToId: action.rid }
+    case 'mergeMyComments': {
+      const incomingIds = new Set(action.comments.map((c) => asKey(c.id)))
+      // 1) Update any comments that already exist in the tree.
+      let items = mapTree(state.items, (item) => {
+        if (!incomingIds.has(asKey(item.id))) {
+          return item
+        }
+        const replacement = action.comments.find((c) => asKey(c.id) === asKey(item.id))!
+        return { ...replacement, children: item.children }
+      })
+      // 2) Insert brand-new comments.
+      // Root comments from myComments are pinned to the top so pending
+      // posts are immediately visible; children stay anchored under parent.
+      const newRoots: CommentItemType[] = []
+      const newChildren: CommentItemType[] = []
+      for (const c of action.comments) {
+        if (findComment(items, Number(c.id))) {
+          continue
+        }
+        if (c.rid === 0 || c.rid === null || c.rid === undefined) {
+          newRoots.push(c)
+        } else {
+          newChildren.push(c)
+        }
+      }
+      items = [...newRoots, ...items]
+      for (const c of newChildren) {
+        items = mapTree(items, (item) => {
+          if (asKey(item.id) !== asKey(c.rid)) {
+            return item
+          }
+          const children = item.children ?? []
+          return { ...item, children: [...children, c] }
+        })
+      }
+      return { ...state, items }
+    }
   }
 }
 
@@ -220,6 +263,24 @@ function CommentsRoot({
   const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
+  const revokeToken = useApiFetcher<CommentRidInput, RevokeCommentTokenOutput>(API_ACTIONS.comment.revokeToken)
+  const onDismissMyComment = useCallback(
+    (id: bigint | string) => {
+      const key = asKey(id)
+      revokeToken.submit({ rid: key })
+      setMyCommentIds((prev) => {
+        const next = new Set(prev)
+        next.delete(key)
+        return next
+      })
+      setMyCommentExpiresAt((prev) => {
+        const next = new Map(prev)
+        next.delete(key)
+        return next
+      })
+    },
+    [revokeToken],
+  )
   const onReplied = useCallback((comment: CommentItemType, rid: number) => {
     dispatch({ type: 'insertReply', comment, rid })
     dispatch({ type: 'setReplyTo', rid: 0 })
@@ -228,6 +289,26 @@ function CommentsRoot({
   const admin = user?.admin === true
   const replyTarget = state.replyToId === 0 ? undefined : findComment(state.items, state.replyToId)
   const activeReplyToId = replyTarget ? state.replyToId : 0
+
+  // Load the current user's own comments (including pending) via token cookie.
+  const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
+  const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
+  const myComments = useApiFetcher<never, MyCommentsOutput>(API_ACTIONS.comment.myComments, {
+    onSuccess: (payload) => {
+      if (payload.comments.length > 0) {
+        dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt })
+        setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
+        setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt)))
+      }
+    },
+  })
+
+  useEffect(() => {
+    if (!admin && !user) {
+      myComments.load({ page_key: commentKey })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentKey, admin, user])
 
   // The same reply form JSX flows through context to whichever depth
   // currently owns it (top-level or nested under the active comment).
@@ -254,11 +335,14 @@ function CommentsRoot({
     user,
     state,
     activeReplyToId,
+    myCommentIds,
+    myCommentExpiresAt,
     onReply,
     onCancelReply,
     onEdited,
     onApproved,
     onDeleted,
+    onDismissMyComment,
     dispatch,
     replyForm,
   }

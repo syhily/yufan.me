@@ -80,7 +80,9 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     footnotes: { sectionTitle: '尾声礼记' },
   },
   sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 10 } },
-  comments: { comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 } } },
+  comments: {
+    comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 }, tokenTtlSeconds: 1800 },
+  },
   seo: {
     twitter: 'syhily',
     toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
