@@ -2,6 +2,7 @@ import type { CategoryRow } from '@/server/db/types'
 import type { AdminCategoryDto } from '@/shared/categories'
 
 import { listPostsByCategory } from '@/server/catalog'
+import { invalidateCatalog } from '@/server/catalog/invalidate'
 import {
   type AdminCategoriesListFilters,
   deleteCategory as deleteCategoryRow,
@@ -97,6 +98,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
       description: input.description,
       sortOrder: input.sortOrder,
     })
+    invalidateCatalog('taxonomy')
     const countOf = await categoryPostCounter()
     return toAdminCategoryDto(row, await countOf(row.name))
   }
@@ -116,6 +118,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   if (updated === null) {
     throw new ActionFailure(404, '分类不存在')
   }
+  invalidateCatalog('taxonomy')
   const countOf = await categoryPostCounter()
   return toAdminCategoryDto(updated, await countOf(updated.name))
 }
@@ -168,6 +171,7 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
   }
 
   const updated = await reorderCategoryRows(orderedIds.map((id) => BigInt(id)))
+  invalidateCatalog('taxonomy')
   const countOf = await categoryPostCounter()
   return await Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
 }
@@ -197,7 +201,11 @@ export async function deleteAdminCategory(id: bigint): Promise<boolean> {
     )
   }
 
-  return deleteCategoryRow(id)
+  const removed = await deleteCategoryRow(id)
+  if (removed) {
+    invalidateCatalog('taxonomy')
+  }
+  return removed
 }
 
 async function ensureUniqueOnCreate(name: string, slug: string): Promise<void> {

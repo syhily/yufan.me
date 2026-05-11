@@ -1,5 +1,5 @@
+import type { PortableTextBody } from '@/pt/schema'
 import type { MarkdownHeading } from '@/shared/catalog'
-import type { PortableTextBody } from '@/shared/portable-text'
 
 // Wire-format DTOs and request shapes for the `/wp-admin/pages` editor +
 // the `/api/actions/admin.{listPages,…}` resource routes. Lives in
@@ -131,6 +131,52 @@ export interface UpsertPageMetaInput {
 
 export interface UpsertPageMetaOutput {
   page: AdminPageDto
+}
+
+// Single source of truth for the editor/sidebar metadata draft shape.
+// `MetaSidebar` and the create-flow local draft both consume this type;
+// adding a meta field touches exactly this declaration plus the
+// `EMPTY_PAGE_META_DRAFT` / `pageMetaDraftFromDto` helpers below.
+export interface PageMetaDraft {
+  slug: string
+  title: string
+  summary: string
+  cover: string
+  og: string
+  published: boolean
+  commentsEnabled: boolean
+  showToc: boolean
+  showFriends: boolean
+  /** `<input type="datetime-local">` value (no timezone). Empty = leave server publishedAt alone. */
+  publishedAt: string
+}
+
+export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
+  slug: '',
+  title: '',
+  summary: '',
+  cover: '',
+  og: '',
+  published: true,
+  commentsEnabled: true,
+  showToc: false,
+  showFriends: false,
+  publishedAt: '',
+}
+
+export function pageMetaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean {
+  return (
+    a.slug === b.slug &&
+    a.title === b.title &&
+    a.summary === b.summary &&
+    a.cover === b.cover &&
+    a.og === b.og &&
+    a.published === b.published &&
+    a.commentsEnabled === b.commentsEnabled &&
+    a.showToc === b.showToc &&
+    a.showFriends === b.showFriends &&
+    a.publishedAt === b.publishedAt
+  )
 }
 
 // --- delete / restore -----------------------------------------------------

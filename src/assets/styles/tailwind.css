@@ -436,8 +436,7 @@ body {
      * Baseline: h1 = 1.75rem; h2–h5 step down in ~0.125–0.25rem tiers.
      * Colour: project token --surface-secondary (#283149), deep blue vs body ink.
      */
-    &.prose-lg
-      :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+    &.prose-lg :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
       color: var(--surface-secondary);
     }
     &.prose-lg :where(h1):not(:where([class~='not-prose'], [class~='not-prose'] *)) {

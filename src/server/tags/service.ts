@@ -2,6 +2,7 @@ import type { TagRow } from '@/server/db/types'
 import type { AdminTagDto } from '@/shared/tags'
 
 import { listPostsByTag } from '@/server/catalog'
+import { invalidateCatalog } from '@/server/catalog/invalidate'
 import { formatBlockMessage } from '@/server/categories/service'
 import {
   type AdminTagsListFilters,
@@ -78,6 +79,7 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
   if (input.id === undefined) {
     await ensureUniqueOnCreate(input.name, slug)
     const row = await insertTag({ name: input.name, slug })
+    invalidateCatalog('taxonomy')
     const countOf = await tagPostCounter()
     return toAdminTagDto(row, await countOf(row.name))
   }
@@ -91,6 +93,7 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
   if (updated === null) {
     throw new ActionFailure(404, '标签不存在')
   }
+  invalidateCatalog('taxonomy')
   const countOf = await tagPostCounter()
   return toAdminTagDto(updated, await countOf(updated.name))
 }
@@ -116,7 +119,11 @@ export async function deleteAdminTag(id: bigint): Promise<boolean> {
     )
   }
 
-  return deleteTagRow(id)
+  const removed = await deleteTagRow(id)
+  if (removed) {
+    invalidateCatalog('taxonomy')
+  }
+  return removed
 }
 
 async function ensureUniqueOnCreate(name: string, slug: string): Promise<void> {

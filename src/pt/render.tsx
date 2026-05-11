@@ -28,7 +28,7 @@ import {
   type TableBlock,
   type TextBlock,
   type TwoColumnBlock,
-} from '@/shared/portable-text'
+} from '@/pt/schema'
 import { cn } from '@/ui/lib/cn'
 import { CodeBlock as CodeBlockComponent } from '@/ui/mdx/CodeBlock'
 import { FootnoteProvider, FootnotePreviewRegistrar, FootnoteReference } from '@/ui/mdx/Footnotes'

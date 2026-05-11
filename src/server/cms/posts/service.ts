@@ -1,9 +1,11 @@
+import type { PortableTextBody } from '@/pt/schema'
 import type { PublishLatestResult, SaveDraftResult } from '@/server/cms/pages/repository'
 import type { ContentRow, PostMetaRow } from '@/server/db/types'
-import type { PortableTextBody } from '@/shared/portable-text'
 
+import { canonicalizePortableTextBody } from '@/pt/canonicalize'
+import { collectHeadings, collectImageStoragePaths } from '@/pt/schema'
+import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
-import { prerenderPortableTextBody } from '@/server/cms/pages/prerender'
 import {
   toAdminPostDto,
   toAdminRevisionDto,
@@ -39,7 +41,6 @@ import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
 import { derivedTagSlug } from '@/server/tags/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
-import { collectHeadings, collectImageStoragePaths, validatePortableTextBody } from '@/shared/portable-text'
 
 const auditLog = getLogger('audit.cms.posts')
 
@@ -66,14 +67,20 @@ function isCatalogVisible(meta: PostMetaRow, asOf: Date = new Date()): boolean {
   return true
 }
 
-// Process-level cache for catalog post metas. Eliminates the repeated
-// full-table rebuild that made the home / listing routes unbearably slow
-// after the in-memory catalog singleton was removed. TTL is short (10 s)
-// so dev edits and admin publishes surface quickly without an explicit
-// invalidation channel in development.
+// Process-level cache for catalog post metas. Invalidated explicitly by
+// admin writes via `subscribeCatalogInvalidate`; the TTL is a stale-while-
+// revalidate floor for environments where the subscription channel doesn't
+// fire (e.g. external DB edits).
 let cachedPostMetas: CmsPost[] | null = null
 let cachedPostMetasAt = 0
-const POST_META_CACHE_TTL_MS = 10_000
+const POST_META_CACHE_TTL_MS = 60_000
+
+subscribeCatalogInvalidate((kind) => {
+  if (kind === 'post' || kind === 'taxonomy') {
+    cachedPostMetas = null
+    cachedPostMetasAt = 0
+  }
+})
 
 export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
   const now = Date.now()
@@ -105,13 +112,6 @@ export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
   cachedPostMetas = result
   cachedPostMetasAt = now
   return result.map((p) => ({ ...p }))
-}
-
-/** Drop the in-process catalog cache. Call after any admin write that
- *  mutates post visibility, publication state, or slug. */
-export function invalidateCatalogPostCache(): void {
-  cachedPostMetas = null
-  cachedPostMetasAt = 0
 }
 
 export async function loadCatalogPostBySlug(slug: string): Promise<CmsPost | null> {
@@ -269,6 +269,7 @@ export async function createPost(input: UpsertPostMetaInput, authorId: bigint | 
     publishedAt: input.publishedAt ?? now,
     authorId,
   })
+  invalidateCatalog('post')
   return toAdminPostDto(row)
 }
 
@@ -308,15 +309,24 @@ export async function updatePostMeta(input: UpsertPostMetaInput): Promise<AdminP
   if (updated === null) {
     throw new ActionFailure(404, '文章不存在或已被删除。')
   }
+  invalidateCatalog('post')
   return toAdminPostDto(updated)
 }
 
 export async function deletePost(id: bigint): Promise<{ deleted: boolean }> {
-  return { deleted: await softDeletePostMeta(id) }
+  const deleted = await softDeletePostMeta(id)
+  if (deleted) {
+    invalidateCatalog('post')
+  }
+  return { deleted }
 }
 
 export async function restorePost(id: bigint): Promise<{ restored: boolean }> {
-  return { restored: await restorePostMeta(id) }
+  const restored = await restorePostMeta(id)
+  if (restored) {
+    invalidateCatalog('post')
+  }
+  return { restored }
 }
 
 export async function unpublishPost(id: bigint): Promise<AdminPostDto> {
@@ -328,6 +338,7 @@ export async function unpublishPost(id: bigint): Promise<AdminPostDto> {
   if (updated === null) {
     throw new ActionFailure(404, '文章不存在或已被删除。')
   }
+  invalidateCatalog('post')
   return toAdminPostDto(updated)
 }
 
@@ -355,8 +366,7 @@ async function savePostBodyInternal(input: SavePostBodyInput, mode: 'draft' | 'p
   if (meta === null) {
     throw new ActionFailure(404, '文章不存在或已被删除。')
   }
-  const body = parseBodyOrThrow(input.body)
-  await prerenderPortableTextBody(body)
+  const body = await canonicalizeBodyOrThrow(input.body)
   await syncLibraryImageBlocks(body).catch(() => undefined)
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
@@ -395,6 +405,9 @@ async function savePostBodyInternal(input: SavePostBodyInput, mode: 'draft' | 'p
       })
     }
   }
+  if (mode === 'publish' && wroteSuccessfully) {
+    invalidateCatalog('post')
+  }
   return projectSaveResult(result)
 }
 
@@ -406,9 +419,9 @@ export function publishLatest(input: SavePostBodyInput): Promise<SavePostResult>
   return savePostBodyInternal(input, 'publish')
 }
 
-function parseBodyOrThrow(value: unknown): PortableTextBody {
+async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {
   try {
-    return validatePortableTextBody(value)
+    return await canonicalizePortableTextBody(value)
   } catch (error) {
     throw new ActionFailure(400, '正文格式不合法。', extractZodIssues(error))
   }

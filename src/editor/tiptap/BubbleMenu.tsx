@@ -15,9 +15,9 @@ import {
 import { useState } from 'react'
 
 import { fetchRenderMath } from '@/client/api/render-math-fetch'
-import { generateBlockKey } from '@/shared/portable-text'
-import { MathInlinePanel } from '@/ui/admin/pages/tiptap/InlineMarkPanels'
-import { LinkPopover } from '@/ui/admin/pages/tiptap/LinkPopover'
+import { MathInlinePanel } from '@/editor/tiptap/InlineMarkPanels'
+import { LinkPopover } from '@/editor/tiptap/LinkPopover'
+import { generateBlockKey } from '@/pt/schema'
 import { Button } from '@/ui/components/ui/button'
 import { Separator } from '@/ui/components/ui/separator'
 import { cn } from '@/ui/lib/cn'

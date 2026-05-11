@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
+import type { PortableTextBody } from '@/pt/schema'
 import type {
   AdminPostDetailDto,
   AdminPostDto,
@@ -24,7 +25,6 @@ import type {
   UpsertPostMetaInput,
   UpsertPostMetaOutput,
 } from '@/shared/cms-posts'
-import type { PortableTextBody } from '@/shared/portable-text'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { submitApiAction } from '@/client/api/submit'
@@ -32,10 +32,10 @@ import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
 import { usePostAutosave } from '@/client/hooks/use-post-autosave'
 import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
+import { DraftConflictDialog } from '@/editor/DraftConflictDialog'
+import { PageBodyEditor } from '@/editor/PageBodyEditor'
+import { arePortableTextBodiesEquivalent } from '@/pt/bridge'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt-bridge'
-import { DraftConflictDialog } from '@/ui/admin/pages/DraftConflictDialog'
-import { PageBodyEditor } from '@/ui/admin/pages/PageBodyEditor'
 import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import {

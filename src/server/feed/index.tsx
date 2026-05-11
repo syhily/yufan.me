@@ -1,5 +1,6 @@
 import { Feed } from 'feed'
 
+import { PortableTextBody } from '@/pt/render'
 import {
   findCategoryByName,
   findCategoryBySlug,
@@ -16,7 +17,6 @@ import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { joinUrl } from '@/shared/urls'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
-import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 
 export interface FeedOptions {
   includeHidden?: boolean

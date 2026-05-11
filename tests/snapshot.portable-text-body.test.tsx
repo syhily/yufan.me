@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/pt/schema'
 
-import { PortableTextBody as PortableTextBodyComponent } from '@/ui/portable-text/PortableTextBody'
+import { PortableTextBody as PortableTextBodyComponent } from '@/pt/render'
 
 import { renderInRouter, stableHtml } from './_helpers/render'
 

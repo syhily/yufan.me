@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/pt/schema'
+import type { PageMetaDraft } from '@/shared/cms-pages'
 
 // Local-Storage backed draft persistence for the **create** flow of
 // the Page editor. Distinct from `usePageLocalDraft` — that one keys
@@ -23,35 +24,19 @@ const STORAGE_VERSION = 1
 const STORAGE_KEY_PREFIX = 'cms-page-draft:new:'
 const SESSION_KEY = 'cms-page-draft:new:session'
 
-// Mirror of `PageMetaDraft` from the editor. We keep a structural
-// copy here because the boundary contract forbids `client` from
-// reaching into the component layer. Adding a field requires
-// updating both shapes — a one-time tax that's worth keeping the
-// layering pure.
-export interface CreateDraftMeta {
-  slug: string
-  title: string
-  summary: string
-  cover: string
-  og: string
-  published: boolean
-  commentsEnabled: boolean
-  showToc: boolean
-  showFriends: boolean
-  publishedAt: string
-}
+export type CreateDraftMeta = PageMetaDraft
 
 interface StoredCreateDraft {
   version: number
   sessionId: string
   body: PortableTextBody
-  meta: CreateDraftMeta
+  meta: PageMetaDraft
   savedAt: number
 }
 
 export interface UseCreatePageDraftOptions {
   body: PortableTextBody
-  meta: CreateDraftMeta
+  meta: PageMetaDraft
 }
 
 export interface UseCreatePageDraftResult {

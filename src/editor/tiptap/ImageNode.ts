@@ -1,7 +1,7 @@
 import Image from '@tiptap/extension-image'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 
-import { ImageNodeView } from '@/ui/admin/pages/tiptap/ImageNodeView'
+import { ImageNodeView } from '@/editor/tiptap/ImageNodeView'
 
 // PortableText `image` blocks carry richer metadata than the default
 // Tiptap image node: a caption, intrinsic width/height (so the viewer

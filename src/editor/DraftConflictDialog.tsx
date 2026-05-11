@@ -1,8 +1,8 @@
 import { ArrowRightLeftIcon, MonitorIcon, ServerIcon } from 'lucide-react'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/pt/schema'
 
-import { diffBodies, DiffPanel } from '@/ui/admin/pages/portable-text-diff'
+import { diffBodies, DiffPanel } from '@/editor/portable-text-diff'
 import { Button } from '@/ui/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui/components/ui/dialog'
 

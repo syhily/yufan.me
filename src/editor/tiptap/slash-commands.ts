@@ -22,14 +22,14 @@ import {
   Columns2Icon,
 } from 'lucide-react'
 
-import type { Block } from '@/shared/portable-text'
+import type { Block } from '@/pt/schema'
 
-import { generateBlockKey } from '@/shared/portable-text'
 import {
   dispatchOpenFootnoteDialog,
   dispatchOpenImagePicker,
   dispatchOpenMusicPicker,
-} from '@/ui/admin/pages/tiptap/editor-events'
+} from '@/editor/tiptap/editor-events'
+import { generateBlockKey } from '@/pt/schema'
 
 // Default `mathBlock` TeX when inserting from `/` — mirrors typical lecture
 // notes (`align*` derivations) rather than a one-line identity; authors

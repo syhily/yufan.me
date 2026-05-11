@@ -1,7 +1,7 @@
 import { Extension, InputRule } from '@tiptap/core'
 
-import { dispatchOpenFootnoteDialog } from '@/ui/admin/pages/tiptap/editor-events'
-import { canInsertFootnoteMark } from '@/ui/admin/pages/tiptap/insert-inline-footnote'
+import { dispatchOpenFootnoteDialog } from '@/editor/tiptap/editor-events'
+import { canInsertFootnoteMark } from '@/editor/tiptap/insert-inline-footnote'
 
 // Footnote insert shortcut: caret + ASCII space, aligned with backtick code and $ math.
 // A backslash before the caret suppresses the trigger (same spirit as \$ for math).

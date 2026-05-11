@@ -1,8 +1,10 @@
+import type { PortableTextBody } from '@/pt/schema'
 import type { ContentRow, PageMetaRow } from '@/server/db/types'
-import type { PortableTextBody } from '@/shared/portable-text'
 
+import { canonicalizePortableTextBody } from '@/pt/canonicalize'
+import { collectHeadings, collectImageStoragePaths } from '@/pt/schema'
+import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
-import { prerenderPortableTextBody } from '@/server/cms/pages/prerender'
 import {
   toAdminPageDto,
   toAdminRevisionDto,
@@ -37,7 +39,6 @@ import {
 import { getLogger } from '@/server/logger'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
-import { collectHeadings, collectImageStoragePaths, validatePortableTextBody } from '@/shared/portable-text'
 
 // Audit logger for force-overwrite saves. Emits at info level so
 // admin actions stay visible in production without being noisy in
@@ -85,12 +86,29 @@ function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
   return true
 }
 
+let cachedPages: CmsPage[] | null = null
+let cachedPagesAt = 0
+const PAGE_CACHE_TTL_MS = 60_000
+
+subscribeCatalogInvalidate((kind) => {
+  if (kind === 'page' || kind === 'taxonomy') {
+    cachedPages = null
+    cachedPagesAt = 0
+  }
+})
+
 /** All non-deleted, non-scheduled, published pages joined with their content. */
 export async function loadCatalogPages(): Promise<CmsPage[]> {
+  const now = Date.now()
+  if (cachedPages !== null && now - cachedPagesAt < PAGE_CACHE_TTL_MS) {
+    return cachedPages.map((p) => ({ ...p }))
+  }
   const metas = await listPublicPageMetas()
   const asOf = new Date()
   const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
   if (visible.length === 0) {
+    cachedPages = []
+    cachedPagesAt = now
     return []
   }
   const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
@@ -101,10 +119,13 @@ export async function loadCatalogPages(): Promise<CmsPage[]> {
       revisionMap.set(row.id, row)
     }
   }
-  return visible.map((meta) => {
+  const result = visible.map((meta) => {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
     return toCmsPage(meta, revision)
   })
+  cachedPages = result
+  cachedPagesAt = now
+  return result.map((p) => ({ ...p }))
 }
 
 /**
@@ -216,15 +237,8 @@ export async function listRevisionsForAdmin(id: bigint): Promise<AdminRevisionDt
 // --- Admin metadata CRUD ---------------------------------------------------
 
 const RESERVED_PAGE_SLUGS = new Set<string>([
-  // Reserve slugs that already drive top-level routing on the public
-  // site so an admin can't shadow `/posts/...`, `/cats/...`, etc.
-  // with a page row.
-  //
-  // Note: this is the *route-prefix* fence, NOT the page↔post
-  // uniqueness fence. The latter is enforced at catalog cold start
-  // by `validatePageSlugs` (page slugs and post slugs share a
-  // single global namespace — see the page table comment in
-  // `@/server/db/schema`).
+  // Route-prefix fence only. page↔post slug uniqueness is enforced by
+  // `validateSlugFence` at every catalog snapshot rebuild.
   'posts',
   'cats',
   'tags',
@@ -298,13 +312,8 @@ function resolveSlugForPage(explicit: string | undefined, title: string): string
 export async function createPage(input: UpsertPageMetaInput, authorId: bigint | null): Promise<AdminPageDto> {
   const slug = resolveSlugForPage(input.slug, input.title)
   ensureSlugLegal(slug)
-  // SLUG NAMESPACE — global across DB pages and MDX posts (incl. `alias[]`).
-  // This collision check only consults the `page` table, so it cannot catch a
-  // clash with a post slug from repo MDX. The catalog's cold
-  // start (`validatePageSlugs` in `@/server/catalog/catalog`) is
-  // the cross-table fence — saving a colliding page succeeds here
-  // and the failure surfaces on the next catalog rebuild. See
-  // `src/server/db/schema.ts` page table for the full invariant.
+  // page↔page collision; the cross-table page↔post fence runs in the
+  // catalog snapshot rebuild after invalidate.
   const collision = await findPageMetaBySlug(slug)
   if (collision !== null) {
     throw new ActionFailure(409, `slug "${slug}" 已被其它页面占用。`)
@@ -327,6 +336,7 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
     publishedAt: input.publishedAt ?? now,
     authorId,
   })
+  invalidateCatalog('page')
   return toAdminPageDto(row)
 }
 
@@ -341,9 +351,6 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
     throw new ActionFailure(404, '页面不存在或已被删除。')
   }
   if (existing.slug !== slug) {
-    // Same caveat as `createPage`: this only catches page↔page
-    // collisions inside the `page` table. The page↔post invariant
-    // is fenced by `validatePageSlugs` at catalog cold start.
     const collision = await findPageMetaBySlug(slug)
     if (collision !== null && collision.id !== input.id) {
       throw new ActionFailure(409, `slug "${slug}" 已被其它页面占用。`)
@@ -364,22 +371,26 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
   if (updated === null) {
     throw new ActionFailure(404, '页面不存在或已被删除。')
   }
+  invalidateCatalog('page')
   return toAdminPageDto(updated)
 }
 
 export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
-  return { deleted: await softDeletePageMeta(id) }
+  const deleted = await softDeletePageMeta(id)
+  if (deleted) {
+    invalidateCatalog('page')
+  }
+  return { deleted }
 }
 
 export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
-  return { restored: await restorePageMeta(id) }
+  const restored = await restorePageMeta(id)
+  if (restored) {
+    invalidateCatalog('page')
+  }
+  return { restored }
 }
 
-// Take a previously published page offline. Flips `meta.published`
-// to false without touching the `content` row referenced by
-// `published_revision_id` — the public site simply 404s the page
-// while the latest published revision stays in the history. A later
-// `publishLatest` re-promotes it.
 export async function unpublishPage(id: bigint): Promise<AdminPageDto> {
   const existing = await findPageMetaById(id)
   if (existing === null) {
@@ -389,6 +400,7 @@ export async function unpublishPage(id: bigint): Promise<AdminPageDto> {
   if (updated === null) {
     throw new ActionFailure(404, '页面不存在或已被删除。')
   }
+  invalidateCatalog('page')
   return toAdminPageDto(updated)
 }
 
@@ -434,8 +446,7 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   // best-effort: it mutates the validated body in place, leaving
   // already-rendered fields alone and skipping blocks whose
   // renderer throws so a single bad block doesn't fail the save.
-  const body = parseBodyOrThrow(input.body)
-  await prerenderPortableTextBody(body)
+  const body = await canonicalizeBodyOrThrow(input.body)
   // Library `image` blocks (those carrying an `imageId`) are
   // re-resolved from the canonical `image` row so the body stays in
   // lockstep with the media library; external blocks are stripped of
@@ -494,6 +505,9 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
       })
     }
   }
+  if (mode === 'publish' && wroteSuccessfully) {
+    invalidateCatalog('page')
+  }
   return projectSaveResult(result)
 }
 
@@ -505,9 +519,9 @@ export function publishLatest(input: SavePageBodyInput): Promise<SavePageResult>
   return savePageBodyInternal(input, 'publish')
 }
 
-function parseBodyOrThrow(value: unknown): PortableTextBody {
+async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {
   try {
-    return validatePortableTextBody(value)
+    return await canonicalizePortableTextBody(value)
   } catch (error) {
     throw new ActionFailure(400, '正文格式不合法。', extractZodIssues(error))
   }

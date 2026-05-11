@@ -17,9 +17,9 @@ import type {
   TableCell,
   TableRow,
   TextBlock,
-} from '@/shared/portable-text'
+} from '@/pt/schema'
 
-import { portableTextBlockSemanticFingerprint } from '@/shared/portable-text-semantics'
+import { portableTextBlockSemanticFingerprint } from '@/pt/semantics'
 
 // PortableText ↔ ProseMirror bridge.
 //
@@ -684,7 +684,7 @@ export function pmDocToBody(doc: PmDoc): PortableTextBody {
  * vs. explicit `level: 1`, or mixed-list nesting expressed through
  * different intermediate PM trees).
  */
-export function canonicalizePortableTextBody(body: PortableTextBody): PortableTextBody {
+function canonicalizePortableTextBodyShape(body: PortableTextBody): PortableTextBody {
   return pmDocToBody(bodyToPmDoc(body))
 }
 
@@ -702,8 +702,8 @@ export function canonicalizePortableTextBody(body: PortableTextBody): PortableTe
  * operator sees as UNCHANGED rows.
  */
 export function arePortableTextBodiesEquivalent(left: PortableTextBody, right: PortableTextBody): boolean {
-  const canonLeft = canonicalizePortableTextBody(left)
-  const canonRight = canonicalizePortableTextBody(right)
+  const canonLeft = canonicalizePortableTextBodyShape(left)
+  const canonRight = canonicalizePortableTextBodyShape(right)
   if (canonLeft.length !== canonRight.length) {
     return false
   }

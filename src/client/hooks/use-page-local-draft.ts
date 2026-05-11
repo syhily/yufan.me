@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/pt/schema'
 
 // Local-Storage backed draft persistence for the Page editor. The
 // goal is "no edit ever lost" — even if the network is down, the tab

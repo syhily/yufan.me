@@ -1,4 +1,4 @@
-import type { Block } from '@/shared/portable-text'
+import type { Block } from '@/pt/schema'
 
 // Normalisation shared by PortableText semantic equality (`pt-bridge`
 // dirty/conflict guards) AND the admin block-level diff anchoring logic

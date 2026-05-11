@@ -53,6 +53,15 @@ vi.mock('@/server/session', async () => {
 vi.mock('@/server/catalog', () => ({
   findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
+  getEntryBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello') {
+      return { type: 'post', id: fixtures.samplePost.id, slug }
+    }
+    if (slug === 'about') {
+      return { type: 'page', id: fixtures.samplePage.id, slug }
+    }
+    return null
+  }),
   listAllFriends: vi.fn(async () => []),
   toClientPost: (p: unknown) => p,
   toClientPage: (p: unknown) => p,
@@ -66,7 +75,7 @@ vi.mock('@/ui/mdx/MdxContent', () => ({
   preloadPostBody: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/ui/portable-text/PortableTextBody', () => ({
+vi.mock('@/pt/render', () => ({
   PortableTextBody: () => null,
 }))
 

@@ -41,40 +41,40 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { generateBlockKey, type FootnoteDefinitionBlock, type PortableTextBody } from '@/shared/portable-text'
+import { FootnoteEditorDialog } from '@/editor/FootnoteEditorDialog'
+import { ImageLibraryPicker } from '@/editor/pickers/ImageLibraryPicker'
+import { MusicPickerDialog } from '@/editor/pickers/MusicPickerDialog'
+import { BlockCardNode } from '@/editor/tiptap/BlockCardNode'
+import { PageBubbleMenu } from '@/editor/tiptap/BubbleMenu'
+import { CodeBlockBubbleMenu } from '@/editor/tiptap/CodeBlockBubbleMenu'
+import {
+  EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG,
+  EDITOR_EVENT_OPEN_IMAGE_PICKER,
+  EDITOR_EVENT_OPEN_MUSIC_PICKER,
+} from '@/editor/tiptap/editor-events'
+import { FootnoteCaretTriggerExtension } from '@/editor/tiptap/footnote-caret-trigger'
+import { ImageNode } from '@/editor/tiptap/ImageNode'
+import { FootnoteRefMark, MathInlineMark } from '@/editor/tiptap/InlineMarks'
+import {
+  canInsertFootnoteMark,
+  computeNextFootnoteIndex,
+  insertFootnoteReferenceAtCaret,
+  removeFootnoteReferencesToTargetKey,
+} from '@/editor/tiptap/insert-inline-footnote'
+import { LinkPopover } from '@/editor/tiptap/LinkPopover'
+import { SlashCommandsExtension } from '@/editor/tiptap/SlashMenu'
+import { SolutionNode } from '@/editor/tiptap/SolutionNode'
+import { TableBubbleMenu } from '@/editor/tiptap/TableBubbleMenu'
+import { TwoColumnNode, TwoColumnPaneNode } from '@/editor/tiptap/TwoColumnNode'
+import { bodyToPmDoc, footnoteSyncSignature, pmDocToBody, type PmDoc } from '@/pt/bridge'
 import {
   extractFootnoteDefinitionBlocks,
   footnoteChildrenToPlainText,
   mergeProseBodyWithFootnoteDefinitions,
   plainTextToFootnoteChildren,
   stripFootnoteDefinitionsForEditor,
-} from '@/shared/portable-text-footnote-merge'
-import { bodyToPmDoc, footnoteSyncSignature, pmDocToBody, type PmDoc } from '@/shared/pt-bridge'
-import { FootnoteEditorDialog } from '@/ui/admin/pages/FootnoteEditorDialog'
-import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
-import { MusicPickerDialog } from '@/ui/admin/pages/MusicPickerDialog'
-import { BlockCardNode } from '@/ui/admin/pages/tiptap/BlockCardNode'
-import { PageBubbleMenu } from '@/ui/admin/pages/tiptap/BubbleMenu'
-import { CodeBlockBubbleMenu } from '@/ui/admin/pages/tiptap/CodeBlockBubbleMenu'
-import {
-  EDITOR_EVENT_OPEN_FOOTNOTE_DIALOG,
-  EDITOR_EVENT_OPEN_IMAGE_PICKER,
-  EDITOR_EVENT_OPEN_MUSIC_PICKER,
-} from '@/ui/admin/pages/tiptap/editor-events'
-import { FootnoteCaretTriggerExtension } from '@/ui/admin/pages/tiptap/footnote-caret-trigger'
-import { ImageNode } from '@/ui/admin/pages/tiptap/ImageNode'
-import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/pages/tiptap/InlineMarks'
-import {
-  canInsertFootnoteMark,
-  computeNextFootnoteIndex,
-  insertFootnoteReferenceAtCaret,
-  removeFootnoteReferencesToTargetKey,
-} from '@/ui/admin/pages/tiptap/insert-inline-footnote'
-import { LinkPopover } from '@/ui/admin/pages/tiptap/LinkPopover'
-import { SlashCommandsExtension } from '@/ui/admin/pages/tiptap/SlashMenu'
-import { SolutionNode } from '@/ui/admin/pages/tiptap/SolutionNode'
-import { TableBubbleMenu } from '@/ui/admin/pages/tiptap/TableBubbleMenu'
-import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/pages/tiptap/TwoColumnNode'
+} from '@/pt/footnote-merge'
+import { generateBlockKey, type FootnoteDefinitionBlock, type PortableTextBody } from '@/pt/schema'
 import { Button } from '@/ui/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'

@@ -25,6 +25,15 @@ const samplePage = makePage({ slug: 'about', title: 'About', summary: '', cover:
 vi.mock('@/server/catalog', () => ({
   findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? samplePost : null)),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? samplePage : null)),
+  getEntryBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello') {
+      return { type: 'post', id: samplePost.id, slug }
+    }
+    if (slug === 'about') {
+      return { type: 'page', id: samplePage.id, slug }
+    }
+    return null
+  }),
 }))
 
 const { loader: ogLoader } = await import('@/routes/image.og')

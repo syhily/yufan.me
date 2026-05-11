@@ -1,9 +1,9 @@
 import { diff_match_patch } from 'diff-match-patch'
 
-import type { Block, PortableTextBody } from '@/shared/portable-text'
+import type { Block, PortableTextBody } from '@/pt/schema'
 
-import { bodyToPlainText } from '@/shared/portable-text'
-import { portableTextBlockSemanticFingerprint as anchorFor } from '@/shared/portable-text-semantics'
+import { bodyToPlainText } from '@/pt/schema'
+import { portableTextBlockSemanticFingerprint as anchorFor } from '@/pt/semantics'
 import { Badge } from '@/ui/components/ui/badge'
 import { cn } from '@/ui/lib/cn'
 

@@ -10,11 +10,12 @@ import {
 } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
 
-import type { AdminPageDto } from '@/shared/cms-pages'
+import type { AdminPageDto, PageMetaDraft } from '@/shared/cms-pages'
 import type { AdminImageDto } from '@/shared/images'
 
+import { ImageLibraryPicker } from '@/editor/pickers/ImageLibraryPicker'
+import { EMPTY_PAGE_META_DRAFT, pageMetaDraftsEqual } from '@/shared/cms-pages'
 import { DateTimePicker } from '@/ui/admin/pages/DateTimePicker'
-import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/ui/card'
@@ -25,60 +26,9 @@ import { RadioGroup, RadioGroupItem } from '@/ui/components/ui/radio-group'
 import { Textarea } from '@/ui/components/ui/textarea'
 import { cn } from '@/ui/lib/cn'
 
-// Editable subset of `AdminPageDto`. The body is owned by the editor
-// pane separately, so this state is purely metadata.
-export interface PageMetaDraft {
-  slug: string
-  title: string
-  summary: string
-  cover: string
-  og: string
-  published: boolean
-  commentsEnabled: boolean
-  showToc: boolean
-  /**
-   * Render the global friends grid at the bottom of the page. Lives on
-   * the meta row (not in the body), so toggling it on/off doesn't
-   * require re-publishing the body. See `routes/page.detail.tsx`
-   * for the rendering site.
-   */
-  showFriends: boolean
-  /**
-   * `<input type="datetime-local">` value (no timezone). Kept as a
-   * raw string so the sidebar doesn't have to round-trip through the
-   * Date constructor on every keystroke. Empty string ⇒ "leave the
-   * current `publishedAt` alone on save".
-   */
-  publishedAt: string
-}
-
-export const EMPTY_META_DRAFT: PageMetaDraft = {
-  slug: '',
-  title: '',
-  summary: '',
-  cover: '',
-  og: '',
-  published: true,
-  commentsEnabled: true,
-  showToc: false,
-  showFriends: false,
-  publishedAt: '',
-}
-
-export function metaDraftsEqual(a: PageMetaDraft, b: PageMetaDraft): boolean {
-  return (
-    a.slug === b.slug &&
-    a.title === b.title &&
-    a.summary === b.summary &&
-    a.cover === b.cover &&
-    a.og === b.og &&
-    a.published === b.published &&
-    a.commentsEnabled === b.commentsEnabled &&
-    a.showToc === b.showToc &&
-    a.showFriends === b.showFriends &&
-    a.publishedAt === b.publishedAt
-  )
-}
+export type { PageMetaDraft } from '@/shared/cms-pages'
+export const EMPTY_META_DRAFT = EMPTY_PAGE_META_DRAFT
+export const metaDraftsEqual = pageMetaDraftsEqual
 
 export function metaDraftFromPage(page: AdminPageDto): PageMetaDraft {
   return {

@@ -325,21 +325,10 @@ export const music = pgTable(
 //   ceiling enforced on category/tag slugs and is plenty for human-
 //   chosen handles like `about` / `friends` / `guestbook`).
 //
-//   IMPORTANT: page slugs share **a single global namespace** with MDX post
-//   `slug` and `alias[]`. Even though
-//   the routes physically separate them (`/posts/:slug` vs
-//   `/:slug`), every catalog-side lookup —
-//   `getCatalog().getPost(slug) ?? getCatalog().getPage(slug)`,
-//   the `images/og/:slug.png` resolver, the comment thread keyed
-//   on the permalink — relies on the slug being unique across the
-//   union. The DB-level `UNIQUE(slug)` here only enforces
-//   page↔page; the cross-table page↔post invariant is fenced at
-//   catalog cold start by `validatePageSlugs` (see
-//   `@/server/catalog/catalog`), which throws and refuses to boot
-//   the server when the union has a duplicate. Operators trying to
-//   create a colliding page therefore see the failure on the next
-//   catalog rebuild rather than at save time — keep this in mind
-//   when adding new slug emitters anywhere in the codebase.
+//   IMPORTANT: page slugs share a global namespace with post slugs.
+//   The DB-level `UNIQUE(slug)` here only enforces page↔page;
+//   page↔post collisions are caught by `validateSlugFence` inside
+//   every catalog snapshot rebuild (`@/server/catalog/fence`).
 // - `title` / `summary` / `cover` / `og` mirror the post card surface — kept on
 //   the meta row so listings and feeds avoid joining `content`.
 // - `published` / `comments_enabled` / `show_toc` are boolean toggles
@@ -489,7 +478,7 @@ export const post = pgTable(
 //
 // Snapshot fields:
 // - `body` is the canonical PortableText (`PortableTextBlock[]`)
-//   payload. Validated by `@/shared/portable-text` at the API
+//   payload. Validated by `@/pt/schema` at the API
 //   perimeter so a malformed payload never lands.
 // - `image_sources` is the array of S3 storagePath values referenced
 //   by the body, denormalised so the SSR enhancer can resolve

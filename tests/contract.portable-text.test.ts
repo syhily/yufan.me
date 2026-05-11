@@ -9,7 +9,7 @@ import {
   validatePortableTextBody,
   type Block,
   type PortableTextBody,
-} from '@/shared/portable-text'
+} from '@/pt/schema'
 
 // Pin the in-repo PortableText dialect. Every editor save and every
 // SSR render parses through `portableTextBodySchema`, so drift here

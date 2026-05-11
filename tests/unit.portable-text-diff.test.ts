@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { Block, PortableTextBody, TextBlock } from '@/shared/portable-text'
+import type { Block, PortableTextBody, TextBlock } from '@/pt/schema'
 
-import { diffBodies, inlineCharDiff } from '@/ui/admin/pages/portable-text-diff'
+import { diffBodies, inlineCharDiff } from '@/editor/portable-text-diff'
 
 // `diffBodies` and `inlineCharDiff` are the workhorses behind both
 // the conflict resolver (DraftConflictDialog) and the revision

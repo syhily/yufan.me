@@ -1,4 +1,4 @@
-import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/portable-text'
+import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/pt/schema'
 
 // Server-side pre-renderer for PortableText bodies.
 //

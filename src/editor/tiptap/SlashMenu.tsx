@@ -6,7 +6,7 @@ import Suggestion, { type SuggestionProps, type SuggestionKeyDownProps } from '@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 
-import { filterSlashCommands, type SlashCommand } from '@/ui/admin/pages/tiptap/slash-commands'
+import { filterSlashCommands, type SlashCommand } from '@/editor/tiptap/slash-commands'
 import { cn } from '@/ui/lib/cn'
 
 // Slash command extension for Tiptap. The wiring is the standard

@@ -1,6 +1,6 @@
 import { Mark, markInputRule, markPasteRule } from '@tiptap/core'
 
-import { generateBlockKey } from '@/shared/portable-text'
+import { generateBlockKey } from '@/pt/schema'
 
 // Mirrors `@tiptap/extension-code`: last capture group is the marked span.
 // Opening `$` must not be `$$` (display math). Closing `$` must not be `$$`.

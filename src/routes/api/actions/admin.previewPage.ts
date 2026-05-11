@@ -1,7 +1,7 @@
+import { collectHeadings } from '@/pt/schema'
 import { previewPageBodySchema } from '@/server/cms/pages/schema'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
-import { collectHeadings } from '@/shared/portable-text'
 
 // Render the supplied body to a stand-alone HTML fragment for the
 // editor's right-pane preview. The body is validated by the schema

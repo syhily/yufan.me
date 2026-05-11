@@ -5,8 +5,7 @@ import type { NewPostMeta, PostMetaRow } from '@/server/db/types'
 import { db } from '@/server/db/pool'
 import { post as postMetaTable, user } from '@/server/db/schema'
 
-// Re-export shared content functions from the pages repository
-export type { ContentType } from '@/server/cms/pages/repository'
+export type { ContentType } from '@/server/cms/revision/repository'
 export {
   findContentById,
   findContentsByIds,
@@ -16,7 +15,7 @@ export {
   saveDraftRevision,
   publishLatestRevision,
   maxRevisionNo,
-} from '@/server/cms/pages/repository'
+} from '@/server/cms/revision/repository'
 
 // --- Reads -------------------------------------------------------------------
 

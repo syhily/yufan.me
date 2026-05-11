@@ -1,13 +1,13 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/pt/schema'
 
+import { PortableTextBody as PortableTextBodyComponent } from '@/pt/render'
+import { collectHeadings } from '@/pt/schema'
 import { deriveSlug } from '@/server/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
-import { collectHeadings } from '@/shared/portable-text'
-import { PortableTextBody as PortableTextBodyComponent } from '@/ui/portable-text/PortableTextBody'
 
 // Render the supplied PortableText body to a stand-alone HTML fragment
 // for the editor's right-pane preview.

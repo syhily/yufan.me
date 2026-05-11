@@ -12,12 +12,12 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import type { Block, MathBlock, MermaidBlock, MusicPlayerBlock } from '@/shared/portable-text'
+import type { Block, MathBlock, MermaidBlock, MusicPlayerBlock } from '@/pt/schema'
 
 import { fetchRenderMath } from '@/client/api/render-math-fetch'
 import { fetchRenderMermaid } from '@/client/api/render-mermaid-fetch'
-import { useAdminMathPreview } from '@/ui/admin/pages/tiptap/use-admin-math-preview'
-import { useAdminMermaidPreview } from '@/ui/admin/pages/tiptap/use-admin-mermaid-preview'
+import { useAdminMathPreview } from '@/editor/tiptap/use-admin-math-preview'
+import { useAdminMermaidPreview } from '@/editor/tiptap/use-admin-mermaid-preview'
 import { Button } from '@/ui/components/ui/button'
 import { Checkbox } from '@/ui/components/ui/checkbox'
 import { Label } from '@/ui/components/ui/label'
@@ -30,7 +30,7 @@ import { MusicPlayer } from '@/ui/mdx/music/MusicPlayer'
 // `mermaid`) to a single `blockCard` PM node carrying the original PT
 // block in `attrs.payload`. **`solution`** uses a dedicated nested PM node
 // (`SolutionNode`). **`footnoteDefinition`** is omitted from the admin page
-// editor PM doc — see `@/shared/portable-text-footnote-merge`.
+// editor PM doc — see `@/pt/footnote-merge`.
 // This Node spec is what makes the editor round-trip
 // those blocks safely:
 //

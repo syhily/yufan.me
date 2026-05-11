@@ -2,9 +2,9 @@ import { NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
 import { ImageOffIcon, LinkIcon, RotateCcwIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { ImageBlockLayout } from '@/shared/portable-text'
+import type { ImageBlockLayout } from '@/pt/schema'
 
-import { ImageLibraryPicker } from '@/ui/admin/pages/ImageLibraryPicker'
+import { ImageLibraryPicker } from '@/editor/pickers/ImageLibraryPicker'
 import { Button } from '@/ui/components/ui/button'
 import { Input } from '@/ui/components/ui/input'
 import { Label } from '@/ui/components/ui/label'

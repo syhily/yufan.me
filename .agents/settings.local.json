@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.ts$|\\\\.tsx$\")",
+      "Bash(grep -E \"^[^.].*\\\\.\\(tsx|ts\\)$\")"
+    ]
+  }
+}

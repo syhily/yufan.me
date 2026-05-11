@@ -4,6 +4,7 @@ import { createTokenizer } from '@orama/tokenizers/mandarin'
 import type { PostVisibilityOptions } from '@/server/catalog'
 
 import { listAllPosts } from '@/server/catalog'
+import { subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { hydrateBlogSettings } from '@/server/settings/snapshot'
 
 // Search should only index posts that can also be rendered by the route.
@@ -74,6 +75,12 @@ function getServer(): Promise<SearchDB | null> {
 export function resetSearchIndexForTest(): void {
   serverPromise = null
 }
+
+subscribeCatalogInvalidate((kind) => {
+  if (kind === 'post' || kind === 'taxonomy') {
+    serverPromise = null
+  }
+})
 
 // Pre-build the index at module import so production never pays the cost on
 // the first search request.

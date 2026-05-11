@@ -47,6 +47,15 @@ vi.mock('@/server/catalog', () => ({
     }
     return null
   }),
+  getEntryBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello' || slug === 'hello-old') {
+      return { type: 'post', id: samplePost.id, slug }
+    }
+    if (slug === 'about') {
+      return { type: 'page', id: samplePage.id, slug }
+    }
+    return null
+  }),
   listAllFriends: vi.fn(async () => []),
   getTagsByNames: vi.fn(async () => [sampleTag]),
   listClientPosts: vi.fn(async () => sidebarSamples),
@@ -65,7 +74,7 @@ vi.mock('@/ui/mdx/MdxContent', () => ({
   preloadPostBody: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/ui/portable-text/PortableTextBody', () => ({
+vi.mock('@/pt/render', () => ({
   PortableTextBody: () => null,
 }))
 

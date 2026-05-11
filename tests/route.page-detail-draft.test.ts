@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import type { PortableTextBody } from '@/shared/portable-text'
+import type { PortableTextBody } from '@/pt/schema'
 
 import { makePage } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'
@@ -77,6 +77,9 @@ vi.mock('@/server/session', async () => {
 vi.mock('@/server/catalog', () => ({
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? publishedPage : null)),
   findPostBySlug: vi.fn(async () => null),
+  getEntryBySlug: vi.fn(async (slug: string) =>
+    slug === 'about' ? { type: 'page', id: publishedPage.id, slug } : null,
+  ),
   listAllFriends: vi.fn(async () => []),
   buildDbPage: (p: unknown) => p,
   toClientPage: (p: unknown) => p,

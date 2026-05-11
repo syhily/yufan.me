@@ -2,7 +2,8 @@ import { data } from 'react-router'
 
 import type { Page } from '@/shared/catalog'
 
-import { buildDbPage, findPageBySlug, findPostBySlug, listAllFriends } from '@/server/catalog'
+import { PortableTextBody } from '@/pt/render'
+import { buildDbPage, findPageBySlug, getEntryBySlug, listAllFriends } from '@/server/catalog'
 import { loadPageDraftPreviewBySlug } from '@/server/cms/pages/service'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
 import { loadPublicDetailData, redirectPermanent } from '@/server/route-helpers/detail-loader'
@@ -14,7 +15,6 @@ import { isAdmin, resolveSessionContext, tryGetSessionContext } from '@/server/s
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { Friends } from '@/ui/mdx/page/Friends'
-import { PortableTextBody } from '@/ui/portable-text/PortableTextBody'
 import { type DraftMarker, PageDetailBody } from '@/ui/post/post/PageDetailBody'
 
 import type { Route } from './+types/page.detail'
@@ -28,7 +28,13 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 
-  const publishedPage: Page | undefined = (await findPageBySlug(params.slug)) ?? undefined
+  const entry = await getEntryBySlug(params.slug)
+  if (entry !== null && entry.type === 'post') {
+    redirectPermanent(`/posts/${entry.slug}`)
+  }
+
+  const publishedPage: Page | undefined =
+    entry !== null && entry.type === 'page' ? ((await findPageBySlug(params.slug)) ?? undefined) : undefined
 
   let sourcePage: Page | undefined = publishedPage
   let draftMarker: DraftMarker = null
@@ -55,10 +61,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   }
 
   if (sourcePage === undefined) {
-    const post = await findPostBySlug(params.slug)
-    if (post) {
-      redirectPermanent(`/posts/${post.slug}`)
-    }
     notFound()
   }
 

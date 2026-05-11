@@ -1,8 +1,8 @@
+import type { PortableTextBody } from '@/pt/schema'
 import type { ContentRow, PageMetaRow } from '@/server/db/types'
 import type { ClientPage, MarkdownHeading } from '@/shared/catalog'
-import type { PortableTextBody } from '@/shared/portable-text'
 
-import { validatePortableTextBody } from '@/shared/portable-text'
+import { validatePortableTextBody } from '@/pt/schema'
 
 // --- Public catalog projection ----------------------------------------------
 

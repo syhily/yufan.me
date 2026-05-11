@@ -1,12 +1,12 @@
 import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import type { PortableTextBody } from '@/pt/schema'
 import type { AdminRevisionDto, ListPageRevisionsInput, ListPageRevisionsOutput } from '@/shared/cms-pages'
-import type { PortableTextBody } from '@/shared/portable-text'
 
 import { useApiFetcher } from '@/client/api/fetcher'
+import { diffBodies, DiffPanel } from '@/editor/portable-text-diff'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { diffBodies, DiffPanel } from '@/ui/admin/pages/portable-text-diff'
 import { Badge } from '@/ui/components/ui/badge'
 import { Button } from '@/ui/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/ui/sheet'

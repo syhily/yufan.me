@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core'
 
-import type { FootnoteDefinitionBlock } from '@/shared/portable-text'
+import type { FootnoteDefinitionBlock } from '@/pt/schema'
 
 /** Footnote refs are inline marks; tables/code blocks cannot carry them on save (see pt-bridge). */
 export function canInsertFootnoteMark(editor: Editor): boolean {
