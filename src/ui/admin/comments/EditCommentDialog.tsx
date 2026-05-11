@@ -8,6 +8,7 @@ import type { AdminComment } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useFetcherResult } from '@/client/api/fetcher'
+import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
@@ -89,7 +90,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
               return
             }
             if (isCommentBodyBlank(body)) {
-              window.alert('评论内容不能为空')
+              toast.error('评论内容不能为空')
               return
             }
             void editFetcher.submit(

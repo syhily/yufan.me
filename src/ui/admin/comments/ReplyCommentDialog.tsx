@@ -7,6 +7,7 @@ import type { ReplyCommentOutput } from '@/shared/api-types'
 import type { AdminComment } from '@/shared/comments'
 
 import { useFetcherResult } from '@/client/api/fetcher'
+import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
@@ -84,15 +85,15 @@ export function ReplyCommentDialog({
               return
             }
             if (!value.trim()) {
-              window.alert('回复内容不能为空')
+              toast.error('回复内容不能为空')
               return
             }
             if (!authorEmail) {
-              window.alert('无法获取管理员邮箱，请刷新页面重试')
+              toast.error('无法获取管理员邮箱，请刷新页面重试')
               return
             }
             if (!comment.pagePublicId) {
-              window.alert('该评论缺少有效的目标页面标识，无法回复')
+              toast.error('该评论缺少有效的目标页面标识，无法回复')
               return
             }
             void fetcher.submit(

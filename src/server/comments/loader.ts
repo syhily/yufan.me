@@ -99,11 +99,7 @@ export async function loadComments(
   return {
     count: counts.total,
     roots_count: counts.roots,
-    // The Drizzle row type widens `type` to `string | null`; assert back
-    // down to `'post' | 'page' | null` to match `CommentAndUser`. DB-side
-    // CHECK could enforce this, but for now we trust the application code
-    // to only ever write the two valid values.
-    comments: [...rootComments, ...childComments] as unknown as CommentAndUser[],
+    comments: [...rootComments, ...childComments],
   }
 }
 
@@ -227,7 +223,7 @@ export async function createComment(
     badgeName: u.badgeName,
     badgeColor: u.badgeColor,
     badgeTextColor: u.badgeTextColor,
-  }) as unknown as CommentAndUser
+  })
 
   // Send the email.
   if (info.email !== requireBlogSettingsSection('siteIdentity').author.email) {

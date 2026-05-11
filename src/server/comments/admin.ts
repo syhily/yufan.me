@@ -130,7 +130,7 @@ export async function loadAllComments(
       content: null,
       pageTitle: c.pageTitle,
       pagePublicId: c.pagePublicId,
-    })) as unknown as AdminCommentsResult['comments'],
+    })),
     total,
     hasMore: offset + limit < total,
     statusCounts: { all: allCount, pending: pendingCount, approved: approvedCount },

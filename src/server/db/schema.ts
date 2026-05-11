@@ -43,7 +43,7 @@ export const metric = pgTable(
     // `content` discriminator comment block below) so future entity
     // types extend without a `pg_enum_add` migration. NULL only on the
     // narrow window before the cleanup migration backfills orphan rows.
-    type: varchar('type', { length: 16 }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
     ownerId: bigint('owner_id', { mode: 'bigint' }),
     publicId: uuid('public_id')
       .notNull()
@@ -67,7 +67,7 @@ export const like = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     token: varchar('token', { length: 255 }),
-    type: varchar('type', { length: 16 }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
     ownerId: bigint('owner_id', { mode: 'bigint' }),
   },
   (table) => [index('idx_like_token').on(table.token), index('idx_like_owner').on(table.type, table.ownerId)],
@@ -89,7 +89,7 @@ export const comment = pgTable(
       .$type<CommentBody>()
       .notNull()
       .default(sql`'[]'::jsonb`),
-    type: varchar('type', { length: 16 }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
     ownerId: bigint('owner_id', { mode: 'bigint' }),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),
     isVerified: boolean('is_verified').default(false),
