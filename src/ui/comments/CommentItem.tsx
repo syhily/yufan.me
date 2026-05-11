@@ -288,7 +288,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
           )}
           {isPending && (!isMyComment || !canEdit) && (
             <div className={commentContentClass(depth)}>
-              <div className="mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
                 <span>您的评论正在等待审核中...</span>
               </div>
               <PortableTextBody body={comment.body} />
