@@ -155,6 +155,11 @@ export function CommentReplyForm({
                 type="button"
                 id="cancel-comment-reply-link"
                 className={publicButtonVariants({ variant: 'light' })}
+                // See CommentItem.tsx — keep the contenteditable focused
+                // through mousedown so the editor toolbar doesn't
+                // collapse between mousedown and mouseup and steal the
+                // click away from this button.
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={onCancel}
               >
                 再想想
@@ -166,6 +171,7 @@ export function CommentReplyForm({
               id="submit"
               className={publicButtonVariants({ variant: 'primary' })}
               disabled={isPending}
+              onMouseDown={(event) => event.preventDefault()}
             >
               {isPending ? '发表中…' : '发表评论'}
             </button>
