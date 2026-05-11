@@ -62,14 +62,6 @@ async function hydrateCategoryImages(categories: Category[]): Promise<void> {
   }
 }
 
-async function parseCategoryDescription(description: string): Promise<string> {
-  if (description === '') {
-    return ''
-  }
-  const { parseContent } = await import('@/server/markdown/parser')
-  return parseContent(description)
-}
-
 export async function listAllCategories(): Promise<Category[]> {
   const now = new Date()
   const rows = await db
@@ -96,7 +88,7 @@ export async function listAllCategories(): Promise<Category[]> {
       name: row.name,
       slug: row.slug,
       cover: row.cover,
-      description: await parseCategoryDescription(row.description),
+      description: row.description,
       counts: row.counts,
       permalink: `/cats/${row.slug}`,
     })

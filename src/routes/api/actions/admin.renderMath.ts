@@ -37,9 +37,9 @@ export const action = defineApiAction({
       // that wouldn't paint anything anyway.
       return { mathml: '', error: null }
     }
-    let renderer: import('@/server/markdown/katex-renderer').KatexRenderer
+    let renderer: import('@/server/pt/katex-renderer').KatexRenderer
     try {
-      const { getKatexRenderer } = await import('@/server/markdown/katex-renderer')
+      const { getKatexRenderer } = await import('@/server/pt/katex-renderer')
       renderer = await getKatexRenderer()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'KaTeX 加载失败'

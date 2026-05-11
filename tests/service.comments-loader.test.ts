@@ -48,10 +48,6 @@ vi.mock('@/server/email/sender', () => ({
   sendNewReply: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/markdown/parser', () => ({
-  parseContent: vi.fn(async (content: string) => content),
-}))
-
 const queries = await import('@/server/db/query/comment')
 const metricQueries = await import('@/server/db/query/metric')
 const { loadComments, latestComments, pendingComments, parseComments } = await import('@/server/comments/loader')

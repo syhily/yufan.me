@@ -80,8 +80,6 @@
     "katex": "^0.16.45",
     "lucide-react": "^1.14.0",
     "lunar-typescript": "^1.8.6",
-    "marked": "^18.0.3",
-    "marked-shiki": "^1.2.1",
     "nanoid": "^5.1.11",
     "pg": "^8.20.0",
     "pinyin-pro": "^3.28.1",
@@ -100,7 +98,6 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "thumbhash": "^0.1.1",
-    "ultrahtml": "^1.6.0",
     "unstorage": "^1.17.5",
     "yaml": "^2.8.4",
     "zod": "^4.4.3"

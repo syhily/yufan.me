@@ -53,13 +53,18 @@ export async function canonicalizeCommentBody(input: unknown): Promise<{ body: C
 }
 
 function countLinks(body: CommentBody): number {
+  // Only count http(s) URLs. Tiptap's `Link` extension autolinks
+  // anything URL-shaped — including bare email addresses, which it
+  // turns into `mailto:user@example.com` markDefs. Treating those as
+  // URLs would flag a perfectly legitimate "feel free to email me at
+  // x@y" reply as spam.
   let total = 0
   for (const block of body) {
     if (block._type !== 'block') {
       continue
     }
     for (const def of block.markDefs ?? []) {
-      if (def._type === 'link') {
+      if (def._type === 'link' && /^https?:\/\//i.test(def.href)) {
         total += 1
       }
     }

@@ -8,7 +8,7 @@ import ApprovedComment from '@/server/email/templates/ApprovedComment'
 import NewComment from '@/server/email/templates/NewComment'
 import NewReply from '@/server/email/templates/NewReply'
 import { getLogger } from '@/server/logger'
-import { parseContent } from '@/server/markdown/parser'
+import { commentBodyToHtml } from '@/server/pt/comment-to-html'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 const log = getLogger('email')
@@ -125,7 +125,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, page: MetricRo
       postTitle: page.title,
       postLink: page.key,
       commentNeedApproval: commentInfo.isPending === true,
-      commentContent: await parseContent(commentInfo.content),
+      commentContent: commentBodyToHtml(commentInfo.body),
       commentLink: `${page.key}#user-comment-${commentInfo.id}`,
     }),
   )
@@ -145,8 +145,8 @@ export async function sendNewReply(
       receiver: sourceUser.name,
       postTitle: page.title,
       postLink: page.key,
-      sourceContent: await parseContent(source.content),
-      replyContent: await parseContent(reply.content),
+      sourceContent: commentBodyToHtml(source.body),
+      replyContent: commentBodyToHtml(reply.body),
       replyLink: `${page.key}#user-comment-${reply.id}`,
     }),
   )
@@ -164,7 +164,7 @@ export async function sendApprovedComment(comment: Comment, user: User, page: Me
       receiver: user.name,
       postTitle: page.title,
       postLink: page.key,
-      commentContent: await parseContent(comment.content),
+      commentContent: commentBodyToHtml(comment.body),
       commentLink: `${page.key}#user-comment-${comment.id}`,
     }),
   )

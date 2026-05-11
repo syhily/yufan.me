@@ -150,7 +150,7 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
   let highlight: ((code: string, lang?: string) => Promise<string>) | null = null
   try {
     const { bundledLanguages, createHighlighter } = await import('shiki')
-    const { SHIKI_THEME, shikiTransformers } = await import('@/server/markdown/shiki')
+    const { SHIKI_THEME, shikiTransformers } = await import('@/server/pt/shiki')
     const highlighter = await createHighlighter({
       langs: Object.keys(bundledLanguages),
       themes: [SHIKI_THEME],
@@ -193,9 +193,9 @@ async function runKatexPasses(
   }
   // Lazy-loaded process-level singleton. The first math render in a
   // process loads KaTeX; subsequent saves and editor previews re-use it.
-  let renderer: import('@/server/markdown/katex-renderer').KatexRenderer
+  let renderer: import('@/server/pt/katex-renderer').KatexRenderer
   try {
-    const { getKatexRenderer } = await import('@/server/markdown/katex-renderer')
+    const { getKatexRenderer } = await import('@/server/pt/katex-renderer')
     renderer = await getKatexRenderer()
   } catch {
     return

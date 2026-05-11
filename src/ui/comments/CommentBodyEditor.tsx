@@ -158,6 +158,15 @@ export function CommentBodyEditor({
           'wrap-break-word whitespace-normal',
           // Tiptap injects `.ProseMirror` on the contenteditable host.
           '[&_.ProseMirror]:min-h-[5rem] [&_.ProseMirror]:outline-none',
+          // The Tailwind Typography plugin gives every `<p>` a top
+          // margin via `.prose > :first-child` reset that only fires
+          // for direct children — but our `<p>` sits inside the
+          // injected `.ProseMirror` wrapper, so the reset misses and
+          // the first paragraph picks up both the editor `py-2` AND
+          // the prose-sm `<p>` margin. Zero out the first/last child
+          // margins inside `.ProseMirror` so the caret hugs the
+          // padding box instead of floating below it.
+          '[&_.ProseMirror>:first-child]:mt-0 [&_.ProseMirror>:last-child]:mb-0',
         )}
       />
       <CommentEditorHint />

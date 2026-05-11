@@ -146,13 +146,6 @@ vi.mock('@/server/cms/pages/service', () => ({
   loadCatalogPages: loadCatalogPagesMock,
 }))
 
-// Avoid the real markdown parser cold-load when categories have descriptions.
-vi.mock('@/server/markdown/parser', () => ({
-  parseContent: vi.fn(async (content: string) => `<p>${content}</p>\n`),
-  EMPTY_COMMENT_RAW: '该留言内容为空',
-  EMPTY_COMMENT_HTML: '<p>该留言内容为空</p>\n',
-}))
-
 const { ContentCatalog } = await import('@/server/catalog')
 
 beforeEach(() => {
