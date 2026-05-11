@@ -248,7 +248,16 @@ export function AdminCommentRow({
               </div>
             </div>
           </div>
-          <div className="prose prose-sm mt-3 max-w-none text-sm leading-relaxed text-foreground">
+          {/*
+           * Body wrapper mirrors the public `<CommentItem>` root-row classes
+           * so the admin moderation surface renders identical typography to
+           * what visitors see — same `prose-blog` token palette, same
+           * `leading-[1.85]` line rhythm, same `comment-content` hook for
+           * code-block tweaks in `tailwind.css`. Keeping the two in lockstep
+           * means an admin previewing a borderline comment sees exactly the
+           * spacing / colour treatment the public page will produce.
+           */}
+          <div className="comment-content prose-blog my-2 prose prose-sm mt-3 max-w-none leading-[1.85] wrap-break-word whitespace-normal">
             <PortableTextBody body={comment.body} />
           </div>
           {(truncatedUa || comment.ip) && (

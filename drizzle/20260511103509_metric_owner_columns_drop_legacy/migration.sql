@@ -2,14 +2,17 @@
 --
 -- The additive migration that precedes this one populated the new
 -- `(type, owner_id)` columns from the legacy URL `key` via a regex
--- backfill. By the time this cleanup migration runs the operator must
--- have already manually swept any rows the regex couldn't resolve —
--- otherwise the NOT NULL guards below abort the migration and leave
--- the legacy columns intact for re-attempt.
+-- backfill. Anything the regex couldn't resolve to a current post /
+-- page row landed with NULL discriminators — those rows now reference
+-- entities that no longer exist (deleted posts, pre-rename URLs from
+-- before alias tracking landed, pre-migration WordPress pageviews).
+-- They have no path forward under the new keying scheme.
 --
--- Guard: refuse to drop the legacy columns while orphans still exist.
--- The orphan check is repeated per-table so the failure message points
--- at exactly which table needs a sweep.
+-- This migration deletes the orphan rows and emits a NOTICE per table
+-- so the count shows up in the migration log. If you want to archive
+-- the bodies before they go, run
+-- `scripts/inspect-metric-orphans.sql` first (it has a `\copy` line
+-- that dumps full comment bodies to CSV).
 DO $$
 DECLARE
   metric_orphans bigint;
@@ -19,18 +22,22 @@ BEGIN
   SELECT COUNT(*) INTO metric_orphans FROM "metric" WHERE type IS NULL OR owner_id IS NULL;
   SELECT COUNT(*) INTO comment_orphans FROM "comment" WHERE type IS NULL OR owner_id IS NULL;
   SELECT COUNT(*) INTO like_orphans FROM "like" WHERE type IS NULL OR owner_id IS NULL;
+
   IF metric_orphans > 0 THEN
-    RAISE EXCEPTION 'metric has % orphan rows missing (type, owner_id); sweep before applying.', metric_orphans;
+    RAISE NOTICE 'Deleting % orphan metric rows (no matching post/page).', metric_orphans;
+    DELETE FROM "metric" WHERE type IS NULL OR owner_id IS NULL;
   END IF;
   IF comment_orphans > 0 THEN
-    RAISE EXCEPTION 'comment has % orphan rows missing (type, owner_id); sweep before applying.', comment_orphans;
+    RAISE NOTICE 'Deleting % orphan comment rows (no matching post/page).', comment_orphans;
+    DELETE FROM "comment" WHERE type IS NULL OR owner_id IS NULL;
   END IF;
   IF like_orphans > 0 THEN
-    RAISE EXCEPTION 'like has % orphan rows missing (type, owner_id); sweep before applying.', like_orphans;
+    RAISE NOTICE 'Deleting % orphan like rows (no matching post/page).', like_orphans;
+    DELETE FROM "like" WHERE type IS NULL OR owner_id IS NULL;
   END IF;
 END $$;
 
--- Enforce the invariant.
+-- Enforce the invariant now that the orphans are gone.
 ALTER TABLE "metric"  ALTER COLUMN "type" SET NOT NULL;
 ALTER TABLE "metric"  ALTER COLUMN "owner_id" SET NOT NULL;
 ALTER TABLE "comment" ALTER COLUMN "type" SET NOT NULL;
