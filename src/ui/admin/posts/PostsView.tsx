@@ -1,7 +1,6 @@
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  ExternalLinkIcon,
   FilePenIcon,
   MessageSquareIcon,
   PinIcon,
@@ -454,7 +453,12 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
             </span>
           )}
         </div>
-        <div className="font-mono text-xs text-muted-foreground">/posts/{post.slug}</div>
+        <Link
+          to={`/posts/${post.slug}`}
+          className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+        >
+          /posts/{post.slug}
+        </Link>
       </TableCell>
       <TableCell className="hidden md:table-cell">
         <p className="text-sm text-muted-foreground">{post.category || '—'}</p>
@@ -475,17 +479,8 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                title="在新窗口预览"
-                render={
-                  <Link to={`/posts/${post.slug}`} target="_blank" rel="noreferrer">
-                    <ExternalLinkIcon />
-                  </Link>
-                }
-              />
-              <Button
-                variant="ghost"
-                size="sm"
                 title="查看评论"
+                className="w-20 justify-start"
                 render={
                   <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}>
                     <MessageSquareIcon /> {post.commentCount}
