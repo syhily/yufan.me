@@ -1,5 +1,5 @@
-import type { PortableTextBody } from '@/pt/schema'
 import type { MarkdownHeading } from '@/shared/catalog'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 // Wire-format DTOs and request shapes for the `/wp-admin/pages` editor +
 // the `/api/actions/admin.{listPages,…}` resource routes. Lives in

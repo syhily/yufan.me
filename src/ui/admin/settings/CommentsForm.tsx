@@ -3,7 +3,7 @@ import type { CommentsSettings } from '@/shared/blog-config'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Input } from '@/ui/components/ui/input'
+import { Input } from '@/ui/components/input'
 
 interface CommentsFormProps {
   // Per-section DTO: matches `setting('blog.comments')`.

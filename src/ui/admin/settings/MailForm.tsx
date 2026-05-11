@@ -10,8 +10,8 @@ import { API_ACTIONS } from '@/shared/api-actions'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Button } from '@/ui/components/ui/button'
-import { Input } from '@/ui/components/ui/input'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 // `MailLoaderData['mail']` mirrors the projection in the route loader.

@@ -3,8 +3,8 @@ import type { ContentSettings } from '@/shared/blog-config'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Input } from '@/ui/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
+import { Input } from '@/ui/components/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 interface ContentFormProps {
   // Per-section DTO: matches `setting('blog.content')`.

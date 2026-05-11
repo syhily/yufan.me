@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { AdminImageDto } from '@/shared/images'
 
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -11,9 +11,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/ui/components/ui/dialog'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+} from '@/ui/components/dialog'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 
 interface ImageDetailDialogProps {
   image: AdminImageDto | null

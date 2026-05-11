@@ -23,13 +23,13 @@ import { useCommentsController } from '@/ui/admin/comments/useCommentsController
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Button } from '@/ui/components/ui/button'
-import { Card, CardContent } from '@/ui/components/ui/card'
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/ui/combobox'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
-import { Skeleton } from '@/ui/components/ui/skeleton'
-import { Tabs, TabsList, TabsTrigger } from '@/ui/components/ui/tabs'
+import { Button } from '@/ui/components/button'
+import { Card, CardContent } from '@/ui/components/card'
+import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Skeleton } from '@/ui/components/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
 const LOAD_ALL = API_ACTIONS.comment.loadAll
 const SEARCH_PAGES = API_ACTIONS.comment.searchPages

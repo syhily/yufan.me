@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import type { PortableTextBody } from '@/pt/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { makePage } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'

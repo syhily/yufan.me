@@ -7,8 +7,8 @@ import type { AdminPageDetailDto, GetPageInput } from '@/shared/cms-pages'
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
-import { Button } from '@/ui/components/ui/button'
-import { Skeleton } from '@/ui/components/ui/skeleton'
+import { Button } from '@/ui/components/button'
+import { Skeleton } from '@/ui/components/skeleton'
 
 const GET_PAGE = API_ACTIONS.admin.getPage
 

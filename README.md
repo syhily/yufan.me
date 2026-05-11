@@ -8,22 +8,21 @@
 
 [![Folo](https://badge.folo.is/feed/54772566650461214?color=FF5C00&labelColor=black&style=flat-square)](https://app.folo.is/share/feeds/54772566650461214)
 
-Source code for [yufan.me](https://yufan.me): a React Router full-stack blog with a built-in `/wp-admin` console. Public pages load from Postgres-backed settings and content; posts are authored as MDX in the repo and compiled at build time.
+Source code for [yufan.me](https://yufan.me): a React Router full-stack blog with a built-in `/wp-admin` console. Posts, pages, taxonomies, images, music, and settings all live in Postgres and are edited from the admin console; bodies are persisted as PortableText.
 
 **Contributors:** read [AGENTS.md](AGENTS.md) first — architecture, import boundaries, install/settings contracts, and tooling (`vp`) expectations.
 
 ## Stack
 
-| Layer      | Choice                                                                                                |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                         |
-| UI         | React 19, TSX only                                                                                    |
-| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))           |
-| Posts      | MDX under `src/content/posts/**/*.mdx`, pipeline in `source.config.ts` → catalog                      |
-| Pages      | `page` + `content` tables, PortableText, edited in admin                                              |
-| Data       | Postgres (Drizzle), Redis (sessions, rate limits, caches)                                             |
-| Assets     | S3-compatible bucket when enabled in settings                                                         |
-| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), shadcn/ui (Base UI) under `src/ui/components/ui/` |
+| Layer      | Choice                                                                                             |
+| ---------- | -------------------------------------------------------------------------------------------------- |
+| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                      |
+| UI         | React 19, TSX only                                                                                 |
+| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))        |
+| Content    | Posts and pages persist as PortableText in `page` / `post` + `content` tables, edited in admin     |
+| Data       | Postgres (Drizzle), Redis (sessions, rate limits, caches)                                          |
+| Assets     | S3-compatible bucket when enabled in settings                                                      |
+| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), shadcn/ui (Base UI) under `src/ui/components/` |
 
 ## Repository layout
 
@@ -32,11 +31,10 @@ Imports flow one way: `routes` may call `server` / `shared` / `ui` / `client`; `
 ```
 src/
 ├── routes/     Loaders, actions, meta, page components, resource routes, /api/actions/*
-├── server/     DB, Redis, sessions, catalog, markdown, mail, S3 dispatch, settings
+├── server/     DB, Redis, sessions, catalog, mail, S3 dispatch, settings
 ├── client/     Hooks, fetchers, browser-only code
-├── ui/         Presentational components and MDX renderers
+├── ui/         Presentational components and the PortableText renderer
 ├── shared/     DTOs and helpers safe on server + client
-├── content/    Post MDX sources and LICENSE (not runtime pages)
 └── assets/     Fonts, icons, global CSS
 ```
 
@@ -85,12 +83,12 @@ Runtime behaviour is driven by the `setting` table (`blog.general`, `blog.assets
 
 ## Content surfaces
 
-| Surface                     | Where it lives         | Public URL                                               |
-| --------------------------- | ---------------------- | -------------------------------------------------------- |
-| Posts                       | MDX in repo + catalog  | `/posts/:slug`                                           |
-| Pages                       | Postgres + admin       | `/:slug`                                                 |
-| Categories / tags / friends | Postgres + admin       | `/cats/:slug`, `/tags/:slug`, grids via MDX or page meta |
-| Images / music              | Postgres + optional S3 | Admin libraries; MDX embeds                              |
+| Surface                     | Where it lives         | Public URL                                        |
+| --------------------------- | ---------------------- | ------------------------------------------------- |
+| Posts                       | Postgres + admin       | `/posts/:slug`                                    |
+| Pages                       | Postgres + admin       | `/:slug`                                          |
+| Categories / tags / friends | Postgres + admin       | `/cats/:slug`, `/tags/:slug`, grids via page meta |
+| Images / music              | Postgres + optional S3 | Admin libraries; PortableText body blocks         |
 
 Slug rules and collisions between posts and pages are enforced in the catalog — AGENTS.md documents the global slug namespace.
 

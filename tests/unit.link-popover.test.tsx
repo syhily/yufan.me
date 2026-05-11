@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/core'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vite-plus/test'
 
-import { LinkPopover } from '@/editor/tiptap/LinkPopover'
+import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 
 // LinkPopover is shared by the toolbar (insert at caret) and the
 // BubbleMenu (wrap / edit selection). Static SSR checks keep the

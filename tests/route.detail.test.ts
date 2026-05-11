@@ -69,12 +69,7 @@ vi.mock('@/server/catalog', () => ({
   ContentCatalog: class {},
 }))
 
-vi.mock('@/ui/mdx/MdxContent', () => ({
-  PostBody: () => null,
-  preloadPostBody: vi.fn(async () => undefined),
-}))
-
-vi.mock('@/pt/render', () => ({
+vi.mock('@/ui/pt/render', () => ({
   PortableTextBody: () => null,
 }))
 

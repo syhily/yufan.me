@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { portableTextBodySchema } from '@/pt/schema'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
 // Re-exported wire-format types from @/shared/cms-posts
 export type {

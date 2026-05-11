@@ -1,6 +1,6 @@
 import { SaveIcon, Undo2Icon } from 'lucide-react'
 
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 
 interface SettingsFormBarProps {
   isPending: boolean

@@ -16,8 +16,8 @@ import {
 import { BucketSaveStatus, ReadOnlyStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsFetcher } from '@/ui/admin/settings/useSettingsFetcher'
-import { Button } from '@/ui/components/ui/button'
-import { Input } from '@/ui/components/ui/input'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
 
 type CacheSlice = CacheSettings['cache']
 

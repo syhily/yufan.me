@@ -129,14 +129,16 @@ src/
 - Sub-areas:
   - `ui/primitives/` — Header, Footer, Image, Tooltip, Popup,
     QRDialog, ScrollTopButton.
-  - `ui/components/ui/` — shadcn/ui primitives (Base UI variant). The
+  - `ui/components/` — shadcn/ui primitives (Base UI variant). The
     layout matches `components.json` so `npx shadcn@latest add/diff`
     works out of the box. Public and admin trees both consume these
     primitives directly; the public site and the admin shell share a
     single token cascade defined once at `:root` in `tailwind.css`.
   - `ui/post/`, `ui/pagination/`, `ui/toc/`, `ui/sidebar/`,
     `ui/search/`, `ui/like/`, `ui/comments/`, `ui/admin/` — Domain UIs.
-  - `ui/mdx/` — MDX-only React renderers (CodeBlock, MdxImg,
+  - `ui/pt/` — PortableText SSR renderer (`render.tsx`,
+    `Footnotes.tsx`, `image-meta-context.tsx`) and the custom-block
+    React components under `ui/pt/blocks/` (CodeBlock, BlockImage,
     MusicPlayer, Solution, Friends).
   - `ui/icons/` — Static-export icon library plus inline SVG pieces.
   - `ui/lib/` — UI-only utilities (e.g. `cn()`).
@@ -207,7 +209,7 @@ Use aliases instead of relative paths. The only allowed relative imports:
 - Frontmatter carries `slug`, categories/tags by name, visibility flags, etc.
   Public URLs use `slug`, not filenames (`/posts/:slug`).
 - `@/server/catalog` serves compiled MDX (`body`, headings, raw source,
-  listing fields). Custom components live under `@/ui/mdx`.
+  listing fields). Custom block components live under `@/ui/pt/blocks/`.
 
 ### Pages (Postgres)
 
@@ -413,25 +415,35 @@ sourceId)` is a unique key and `source` is reserved as varchar so
 ### PortableText editor
 
 - Pages and posts persist their body as PortableText (PT). The Zod
-  dialect lives in `@/shared/portable-text` (standard text /
+  dialect lives in `@/shared/pt/schema` (standard text /
   list / heading / blockquote + custom blocks `image`, `code`,
   `mathBlock`, `mermaid`, `horizontalRule`, `musicPlayer`,
-  `solution`, `footnoteDefinition`, `table`). The friends grid is
-  intentionally NOT a body block — it's a meta toggle on the
-  `page` row (`page.show_friends`) rendered by
+  `solution`, `footnoteDefinition`, `table`). Sibling isomorphic
+  modules — `@/shared/pt/bridge`, `@/shared/pt/semantics`,
+  `@/shared/pt/footnote-merge` — round out the shared core. The
+  friends grid is intentionally NOT a body block — it's a meta
+  toggle on the `page` row (`page.show_friends`) rendered by
   `routes/page.detail.tsx` after the body. See
   `### Page meta toggles`.
-- The PT ↔ ProseMirror bridge is `@/shared/pt-bridge` — single
+- Server-only PT helpers live in `@/server/pt/*`:
+  `@/server/pt/prerender` (Shiki / KaTeX / Mermaid pre-rendering)
+  and `@/server/pt/canonicalize` (validate + prerender). These
+  must never reach the client bundle.
+- The PT ↔ ProseMirror bridge is `@/shared/pt/bridge` — single
   file by design. Standard blocks map onto Tiptap's built-in nodes;
   custom blocks ride a generic `blockCard` PM node so the bridge
   doesn't need an extension per type. Round-trip is contract-tested
   in `tests/contract.pt-bridge.test.ts`.
-- SSR rendering goes through `@/ui/portable-text/PortableTextBody`,
-  which composes `@portabletext/react`'s component map with our
-  custom-block React components from `@/ui/mdx/*`. Heading anchor
-  ids align with MDX post anchors for stable deep links.
-- The admin Tiptap editor is `@/ui/admin/pages/PageBodyEditor`. UX
-  surface area lives in three layers, in this order:
+- SSR rendering goes through `@/ui/pt/render` (exported as
+  `PortableTextBody`), which composes `@portabletext/react`'s
+  component map with our custom-block React components from
+  `@/ui/pt/blocks/*`. Heading anchor ids align with MDX post anchors
+  for stable deep links.
+- The admin Tiptap editor is `@/ui/admin/editor/PageBodyEditor`
+  (shared by pages and posts). Sibling modules
+  (`DraftConflictDialog`, `FootnoteEditorDialog`,
+  `portable-text-diff`, `tiptap/`, `pickers/`) live alongside it.
+  UX surface area lives in three layers, in this order:
   1. **Toolbar** (in `PageBodyEditor.tsx`): mouse-driven access to
      the image library, music picker, link, table, hr, undo/redo,
      plus the drag-handle on/off toggle.
@@ -636,7 +648,7 @@ These are landmines from past refactors. Do not reintroduce them.
 - No `src/lib/` parallel to `@/ui/lib`. The shadcn CLI is wired through
   `components.json`'s `aliases.lib = @/ui/lib`.
 - No `@/ui/admin/shadcn/components/ui/` nesting. shadcn primitives live
-  at `@/ui/components/ui/`; admin domain UIs at `@/ui/admin/`.
+  at `@/ui/components/`; admin domain UIs at `@/ui/admin/`.
 - Keep server-only imports inside `src/server/` (or behind dynamic
   imports inside loaders/actions/resource routes if the call site must
   live elsewhere).

@@ -27,10 +27,10 @@ import { Form, NavLink, useLocation } from 'react-router'
 import { Toaster } from 'sonner'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/ui/avatar'
-import { Button } from '@/ui/components/ui/button'
-import { Separator } from '@/ui/components/ui/separator'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/ui/sheet'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
+import { Button } from '@/ui/components/button'
+import { Separator } from '@/ui/components/separator'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
 
 interface NavItem {

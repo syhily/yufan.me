@@ -1,11 +1,11 @@
 import { useDeferredValue, useMemo, useRef } from 'react'
 
-import type { PortableTextBody } from '@/pt/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { PortableTextBody as PortableTextBodyRenderer } from '@/pt/render'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { useContentSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { PortableTextBody as PortableTextBodyRenderer } from '@/ui/pt/render'
 
 export interface PreviewPaneProps {
   body: PortableTextBody

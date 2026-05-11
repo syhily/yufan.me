@@ -15,7 +15,7 @@ function loadThumbhashModule(): Promise<typeof import('thumbhash')> {
   return thumbhashModulePromise
 }
 
-// In-process cache of decoded thumbhash data URLs. `MdxImg` mounts can fire
+// In-process cache of decoded thumbhash data URLs. `BlockImage` mounts can fire
 // many times for the same hash on a single page (post listing thumbnails,
 // repeated images), so we avoid running the wasm decode per mount. Keyed on
 // the raw thumbhash string for a constant-size hit.
@@ -28,7 +28,7 @@ const thumbhashUrlCache = new Map<string, string>()
 // prop.
 //
 // The thumbhash itself is injected at SSR time by the detail-page loader
-// (`imageMeta` → `ImageMetaProvider` → `MdxImg`) as `data-thumbhash`
+// (`imageMeta` → `ImageMetaProvider` → `BlockImage`) as `data-thumbhash`
 // on the HTML, keyed off the matching row in the runtime `image` table.
 // Consumers only need to pass that attribute through to this hook.
 //

@@ -1,9 +1,7 @@
-import type { PortableTextBody } from '@/pt/schema'
 import type { PublishLatestResult, SaveDraftResult } from '@/server/cms/pages/repository'
 import type { ContentRow, PostMetaRow } from '@/server/db/types'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { canonicalizePortableTextBody } from '@/pt/canonicalize'
-import { collectHeadings, collectImageStoragePaths } from '@/pt/schema'
 import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
 import {
@@ -37,10 +35,12 @@ import {
 } from '@/server/cms/posts/repository'
 import { seedTagIfMissing } from '@/server/db/query/tag'
 import { getLogger } from '@/server/logger'
+import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
 import { derivedTagSlug } from '@/server/tags/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 
 const auditLog = getLogger('audit.cms.posts')
 

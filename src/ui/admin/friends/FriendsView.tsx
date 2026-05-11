@@ -27,22 +27,22 @@ import { useFriendsController } from '@/ui/admin/friends/useFriendsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Badge } from '@/ui/components/ui/badge'
-import { Button } from '@/ui/components/ui/button'
-import { Card } from '@/ui/components/ui/card'
-import { Checkbox } from '@/ui/components/ui/checkbox'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Card } from '@/ui/components/card'
+import { Checkbox } from '@/ui/components/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
-import { Skeleton } from '@/ui/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/ui/table'
+} from '@/ui/components/dropdown-menu'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Skeleton } from '@/ui/components/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
 const LIST = API_ACTIONS.admin.listFriends
 const DELETE = API_ACTIONS.admin.deleteFriend

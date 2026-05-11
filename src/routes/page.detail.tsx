@@ -2,7 +2,6 @@ import { data } from 'react-router'
 
 import type { Page } from '@/shared/catalog'
 
-import { PortableTextBody } from '@/pt/render'
 import { buildDbPage, findPageBySlug, getEntryBySlug, listAllFriends } from '@/server/catalog'
 import { loadPageDraftPreviewBySlug } from '@/server/cms/pages/service'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
@@ -15,8 +14,9 @@ import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
 import { isAdmin, resolveSessionContext, tryGetSessionContext } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
-import { Friends } from '@/ui/mdx/page/Friends'
 import { type DraftMarker, PageDetailBody } from '@/ui/post/post/PageDetailBody'
+import { Friends } from '@/ui/pt/blocks/Friends'
+import { PortableTextBody } from '@/ui/pt/render'
 
 import type { Route } from './+types/page.detail'
 

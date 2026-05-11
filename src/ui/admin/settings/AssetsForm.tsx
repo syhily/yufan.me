@@ -1,9 +1,9 @@
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Checkbox } from '@/ui/components/ui/checkbox'
-import { Input } from '@/ui/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
+import { Checkbox } from '@/ui/components/checkbox'
+import { Input } from '@/ui/components/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 // Loader projection passed in by the route. Bridges the DB-backed
 // `assets` bucket (`AssetsSettings` in `@/shared/blog-config`) into the

@@ -5,11 +5,11 @@ import type { NavigationSettings } from '@/shared/blog-config'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Button } from '@/ui/components/ui/button'
-import { Checkbox } from '@/ui/components/ui/checkbox'
-import { Field, FieldLabel } from '@/ui/components/ui/field'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+import { Button } from '@/ui/components/button'
+import { Checkbox } from '@/ui/components/checkbox'
+import { Field, FieldLabel } from '@/ui/components/field'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 
 interface NavigationEditorProps {
   // Per-section DTO: matches `setting('blog.navigation')`.

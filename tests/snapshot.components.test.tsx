@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vite-plus/test'
 import type { ClientPostWithMetadata } from '@/shared/catalog'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
-import { Input } from '@/ui/components/ui/input'
-import { CodeBlock } from '@/ui/mdx/CodeBlock'
+import { Input } from '@/ui/components/input'
 import { Pagination } from '@/ui/post/pagination/Pagination'
 import { PostListingBody, PostSquare } from '@/ui/post/post/PostListViews'
+import { CodeBlock } from '@/ui/pt/blocks/CodeBlock'
 import { SearchBar } from '@/ui/search/Search'
 
 import { makePost } from './_helpers/catalog'

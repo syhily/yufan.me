@@ -1,8 +1,6 @@
-import type { PortableTextBody } from '@/pt/schema'
 import type { ContentRow, PageMetaRow } from '@/server/db/types'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { canonicalizePortableTextBody } from '@/pt/canonicalize'
-import { collectHeadings, collectImageStoragePaths } from '@/pt/schema'
 import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
 import {
@@ -37,8 +35,10 @@ import {
   type SaveDraftResult,
 } from '@/server/cms/pages/repository'
 import { getLogger } from '@/server/logger'
+import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
+import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 
 // Audit logger for force-overwrite saves. Emits at info level so
 // admin actions stay visible in production without being noisy in

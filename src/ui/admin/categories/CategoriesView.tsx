@@ -19,11 +19,11 @@ import { useCategoriesController } from '@/ui/admin/categories/useCategoriesCont
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Button } from '@/ui/components/ui/button'
-import { Card } from '@/ui/components/ui/card'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/ui/table'
+import { Button } from '@/ui/components/button'
+import { Card } from '@/ui/components/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
 const LIST = API_ACTIONS.admin.listCategories
 const DELETE = API_ACTIONS.admin.deleteCategory

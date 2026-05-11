@@ -7,7 +7,7 @@ import type { AdminImageDto, UploadImageOutput } from '@/shared/images'
 
 import { API_ACTIONS } from '@/shared/api-actions'
 import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/ui/components/ui/dialog'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+} from '@/ui/components/dialog'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 
 const UPLOAD = API_ACTIONS.admin.uploadImage
 

@@ -3,10 +3,10 @@ import { CheckCheckIcon, SearchIcon, Trash2Icon } from 'lucide-react'
 import type { RoleFilter, SortOrder } from '@/ui/admin/users/useUsersController'
 
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
-import { Button } from '@/ui/components/ui/button'
-import { Checkbox } from '@/ui/components/ui/checkbox'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
+import { Button } from '@/ui/components/button'
+import { Checkbox } from '@/ui/components/checkbox'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 // Base UI's `Select.Value` reads its display text from the matching entry in
 // `Select.Root`'s `items` prop. Without that map it would render the raw

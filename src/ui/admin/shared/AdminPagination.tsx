@@ -7,7 +7,7 @@ import {
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
-} from '@/ui/components/ui/pagination'
+} from '@/ui/components/pagination'
 
 interface AdminPaginationProps {
   /** Total number of pages (>=1). The component renders nothing when total <= 1. */

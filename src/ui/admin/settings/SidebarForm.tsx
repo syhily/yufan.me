@@ -3,7 +3,7 @@ import type { SidebarSettings } from '@/shared/blog-config'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Input } from '@/ui/components/ui/input'
+import { Input } from '@/ui/components/input'
 
 interface SidebarFormProps {
   // Per-section DTO: matches `setting('blog.sidebar')`.

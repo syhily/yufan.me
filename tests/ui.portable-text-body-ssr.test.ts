@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vite-plus/test'
 
-import { PortableTextBody } from '@/pt/render'
+import { PortableTextBody } from '@/ui/pt/render'
 
 describe('PortableTextBody SSR', () => {
   it('renders solution blocks (same path as page.detail + PreviewPane)', () => {

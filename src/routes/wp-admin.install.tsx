@@ -10,7 +10,7 @@ import {
   signUpInitialAdminWithSession,
 } from '@/server/session'
 import { AdminInstallForm } from '@/ui/admin/AdminInstallForm'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 
 import type { Route } from './+types/wp-admin.install'
 

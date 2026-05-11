@@ -1,4 +1,4 @@
-import type { PortableTextBody } from '@/pt/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/toc'
 
 export interface AdminPostDto {

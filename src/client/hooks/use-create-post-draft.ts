@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/pt/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 // Local-Storage backed draft persistence for the **create** flow of
 // the Post editor. Distinct from `usePageLocalDraft` — that one keys

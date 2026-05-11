@@ -5,11 +5,11 @@ import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { Badge } from '@/ui/components/ui/badge'
-import { Button } from '@/ui/components/ui/button'
-import { Input } from '@/ui/components/ui/input'
-import { Skeleton } from '@/ui/components/ui/skeleton'
-import { TableCell, TableRow } from '@/ui/components/ui/table'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
+import { Skeleton } from '@/ui/components/skeleton'
+import { TableCell, TableRow } from '@/ui/components/table'
 
 const UPSERT = API_ACTIONS.admin.upsertTag
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i

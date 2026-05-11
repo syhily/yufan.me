@@ -12,7 +12,7 @@ import type {
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -20,11 +20,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/ui/components/ui/dialog'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
-import { Label } from '@/ui/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
-import { Skeleton } from '@/ui/components/ui/skeleton'
+} from '@/ui/components/dialog'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Label } from '@/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
 
 const SEARCH = API_ACTIONS.admin.searchMusic

@@ -13,7 +13,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 
-import type { PortableTextBody } from '@/pt/schema'
 import type {
   AdminPostDetailDto,
   AdminPostDto,
@@ -25,6 +24,7 @@ import type {
   UpsertPostMetaInput,
   UpsertPostMetaOutput,
 } from '@/shared/cms-posts'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { submitApiAction } from '@/client/api/submit'
@@ -32,10 +32,10 @@ import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
 import { usePostAutosave } from '@/client/hooks/use-post-autosave'
 import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
-import { DraftConflictDialog } from '@/editor/DraftConflictDialog'
-import { PageBodyEditor } from '@/editor/PageBodyEditor'
-import { arePortableTextBodiesEquivalent } from '@/pt/bridge'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge'
+import { DraftConflictDialog } from '@/ui/admin/editor/DraftConflictDialog'
+import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
 import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import {
@@ -50,9 +50,9 @@ import {
   type SidebarSaveStatus,
 } from '@/ui/admin/posts/PostMetaSidebar'
 import { useAdminChromeFocus } from '@/ui/admin/shell/AdminShell'
-import { Button } from '@/ui/components/ui/button'
-import { Input } from '@/ui/components/ui/input'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/ui/sheet'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 import { useContentSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 

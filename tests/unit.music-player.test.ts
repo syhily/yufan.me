@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vite-plus/test'
 
-import type { MusicPlayerInitHost } from '@/ui/mdx/music/MusicPlayer'
+import type { MusicPlayerInitHost } from '@/ui/pt/blocks/MusicPlayer'
 
-import { scheduleMusicPlayerInit } from '@/ui/mdx/music/MusicPlayer'
+import { scheduleMusicPlayerInit } from '@/ui/pt/blocks/MusicPlayer'
 
 describe('ui/mdx/music/MusicPlayer scheduler', () => {
   it('prefers requestIdleCallback so player hydration waits for critical image work', () => {

@@ -3,9 +3,9 @@ import { type ReactNode, useState } from 'react'
 import { NavLink, useLocation } from 'react-router'
 
 import { SECTION_DISPLAY_LIST } from '@/shared/settings'
-import { Button } from '@/ui/components/ui/button'
-import { Separator } from '@/ui/components/ui/separator'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/ui/sheet'
+import { Button } from '@/ui/components/button'
+import { Separator } from '@/ui/components/separator'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
 
 // Sidebar section list. The data lives in `@/shared/settings` so

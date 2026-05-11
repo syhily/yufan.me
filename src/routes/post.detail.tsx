@@ -1,6 +1,5 @@
 import { data } from 'react-router'
 
-import { PortableTextBody } from '@/pt/render'
 import { findPostBySlug, getTagsByNames, listAllTags } from '@/server/catalog'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
 import { selectSidebarPosts } from '@/server/posts/query'
@@ -13,6 +12,7 @@ import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { toClientPost, toDetailPostShell } from '@/shared/catalog'
 import { PostDetailBody } from '@/ui/post/post/PostDetailBody'
+import { PortableTextBody } from '@/ui/pt/render'
 
 import type { Route } from './+types/post.detail'
 

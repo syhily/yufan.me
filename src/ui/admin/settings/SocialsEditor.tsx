@@ -7,15 +7,10 @@ import { type SocialNetwork, SOCIAL_NETWORK_META, SOCIAL_NETWORKS, getSocialNetw
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Button } from '@/ui/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+import { Button } from '@/ui/components/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/ui/components/dropdown-menu'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
 
 interface SocialsEditorProps {

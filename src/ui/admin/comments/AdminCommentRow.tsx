@@ -9,17 +9,17 @@ import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { idStr } from '@/shared/tools'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/ui/avatar'
-import { Badge } from '@/ui/components/ui/badge'
-import { Button } from '@/ui/components/ui/button'
-import { Card, CardContent } from '@/ui/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Card, CardContent } from '@/ui/components/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu'
+} from '@/ui/components/dropdown-menu'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'

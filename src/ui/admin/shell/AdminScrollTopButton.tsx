@@ -3,7 +3,7 @@ import type { RefObject } from 'react'
 import { ArrowUpIcon } from 'lucide-react'
 
 import { useShowOnScroll } from '@/client/hooks/use-show-on-scroll'
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
 export interface AdminScrollTopButtonProps {

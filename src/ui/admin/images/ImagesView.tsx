@@ -23,12 +23,12 @@ import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Button } from '@/ui/components/ui/button'
-import { Card } from '@/ui/components/ui/card'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
-import { Skeleton } from '@/ui/components/ui/skeleton'
+import { Button } from '@/ui/components/button'
+import { Card } from '@/ui/components/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Skeleton } from '@/ui/components/skeleton'
 
 const LIST = API_ACTIONS.admin.listImages
 const DELETE = API_ACTIONS.admin.deleteImage

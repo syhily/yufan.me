@@ -14,7 +14,7 @@ import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cac
 import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { ConfirmClearDialog } from '@/ui/admin/settings/cache/ConfirmClearDialog'
 import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 
 type CacheSlice = CacheSettings['cache']
 

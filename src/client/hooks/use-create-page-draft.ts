@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { PortableTextBody } from '@/pt/schema'
 import type { PageMetaDraft } from '@/shared/cms-pages'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 // Local-Storage backed draft persistence for the **create** flow of
 // the Page editor. Distinct from `usePageLocalDraft` — that one keys

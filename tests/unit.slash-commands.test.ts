@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { filterSlashCommands, SLASH_COMMANDS } from '@/editor/tiptap/slash-commands'
+import { filterSlashCommands, SLASH_COMMANDS } from '@/ui/admin/editor/tiptap/slash-commands'
 
 // Slash command catalogue sanity tests. The catalogue is the
 // authoritative source of truth for what the `/` menu shows; this

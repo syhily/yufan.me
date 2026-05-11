@@ -6,7 +6,17 @@
       "Bash(vp lint *)",
       "Bash(node *)",
       "Bash(vp run *)",
-      "Bash(vp test *)"
+      "Bash(vp test *)",
+      "Bash(git mv *)",
+      "Bash(rg -l --null \"@/\\(pt|editor\\)/\" -g '*.ts' -g '*.tsx')",
+      "Bash(xargs -0 perl -i -pe ' *)",
+      "Bash(vp check *)",
+      "Bash(vp build *)",
+      "Bash(rg -l --null \"@/ui/mdx/|MdxImg\" -g '*.ts' -g '*.tsx')",
+      "Bash(rg -l --null \"@/ui/components/ui\" -g '*.ts' -g '*.tsx' -g '*.md')",
+      "Bash(xargs -0 perl -i -pe 's{@/ui/components/ui/}{\\\\@/ui/components/}g')",
+      "Bash(rg -l --null \"@/client/music\\\\b|from '@/client/music'\" -g '*.ts' -g '*.tsx')",
+      "Bash(xargs -0 perl -i -pe \"s{\\\\@/client/music\\\\b}{\\\\@/client/api/music-loader}g\")"
     ]
   }
 }

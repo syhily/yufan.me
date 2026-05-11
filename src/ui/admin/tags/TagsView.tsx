@@ -10,12 +10,12 @@ import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialo
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { draftFromTag, EMPTY_TAG_DRAFT, TagDisplayRow, TagEditorRow, TagsSkeleton } from '@/ui/admin/tags/TagRows'
 import { useTagsController } from '@/ui/admin/tags/useTagsController'
-import { Button } from '@/ui/components/ui/button'
-import { Card } from '@/ui/components/ui/card'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
-import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/ui/input-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/ui/table'
+import { Button } from '@/ui/components/button'
+import { Card } from '@/ui/components/card'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
 const LIST = API_ACTIONS.admin.listTags
 const DELETE = API_ACTIONS.admin.deleteTag

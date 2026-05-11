@@ -1,8 +1,8 @@
 import { Form, useNavigation } from 'react-router'
 
-import { Button } from '@/ui/components/ui/button'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 
 // Login-form markup (CSRF token + email + password). Lives in its own
 // component so the WordPress-style HTML stays stable across any future

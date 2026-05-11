@@ -5,10 +5,10 @@ import { zhCN } from 'date-fns/locale'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { Button } from '@/ui/components/ui/button'
-import { Calendar } from '@/ui/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
+import { Button } from '@/ui/components/button'
+import { Calendar } from '@/ui/components/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { cn } from '@/ui/lib/cn'
 
 // Combined date + time picker, modelled on

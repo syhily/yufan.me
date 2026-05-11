@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Form, useNavigation } from 'react-router'
 
-import { Button } from '@/ui/components/ui/button'
-import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/ui/combobox'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/ui/select'
+import { Button } from '@/ui/components/button'
+import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 export interface SettingsInstallFormProps {
   token: string

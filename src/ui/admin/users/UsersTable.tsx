@@ -18,21 +18,21 @@ import type { SiteIdentitySettings } from '@/shared/blog-config'
 
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
-import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/ui/avatar'
-import { Badge } from '@/ui/components/ui/badge'
-import { Button } from '@/ui/components/ui/button'
-import { Card } from '@/ui/components/ui/card'
-import { Checkbox } from '@/ui/components/ui/checkbox'
+import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Card } from '@/ui/components/card'
+import { Checkbox } from '@/ui/components/checkbox'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu'
-import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/ui/empty'
-import { Skeleton } from '@/ui/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/ui/table'
+} from '@/ui/components/dropdown-menu'
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
+import { Skeleton } from '@/ui/components/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

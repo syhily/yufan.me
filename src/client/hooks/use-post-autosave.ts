@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-import type { PortableTextBody } from '@/pt/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 // Autosave engine for the Page editor. The contract is intentionally
 // minimal — caller supplies the live body + a `flush` function that

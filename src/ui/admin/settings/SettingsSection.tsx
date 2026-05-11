@@ -1,8 +1,8 @@
 import { type ReactNode, useId } from 'react'
 
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/ui/card'
-import { Checkbox } from '@/ui/components/ui/checkbox'
-import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/ui/components/ui/field'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
+import { Checkbox } from '@/ui/components/checkbox'
+import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/ui/components/field'
 import { cn } from '@/ui/lib/cn'
 
 interface SettingsSectionProps {

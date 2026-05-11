@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { loadMusic } from '@/client/music'
+import { loadMusic } from '@/client/api/music-loader'
 import { API_ACTIONS } from '@/shared/api-actions'
 
 // `loadMusic` is the browser-side resolver fed straight into APlayer.

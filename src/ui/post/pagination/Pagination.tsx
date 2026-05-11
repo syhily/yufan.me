@@ -2,7 +2,7 @@ import { MoreHorizontalIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { computePageWindow } from '@/shared/pagination'
-import { chipActive, chipBase, chipResting } from '@/ui/components/ui/pagination'
+import { chipActive, chipBase, chipResting } from '@/ui/components/pagination'
 import { cn } from '@/ui/lib/cn'
 
 export interface PaginationProps {
@@ -14,7 +14,7 @@ export interface PaginationProps {
 // Public-site Pagination ---------------------------------------------------
 //
 // Visual contract is shared with the admin shell pagination
-// (`src/ui/components/ui/pagination.tsx`). Both surfaces compose the
+// (`src/ui/components/pagination.tsx`). Both surfaces compose the
 // same `chipBase + chipResting/chipActive` Tailwind chains so a chip
 // reads identically in `/page/2` and in `/wp-admin/posts`, and share
 // the same windowing algorithm (`computePageWindow` in

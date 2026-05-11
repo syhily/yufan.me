@@ -9,7 +9,7 @@ import type { AdminComment } from '@/shared/comments'
 import { useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -17,9 +17,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/ui/components/ui/dialog'
-import { Label } from '@/ui/components/ui/label'
-import { Textarea } from '@/ui/components/ui/textarea'
+} from '@/ui/components/dialog'
+import { Label } from '@/ui/components/label'
+import { Textarea } from '@/ui/components/textarea'
 
 const EDIT = API_ACTIONS.comment.edit
 const GET_RAW = API_ACTIONS.comment.getRaw

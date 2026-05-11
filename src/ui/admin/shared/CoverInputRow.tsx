@@ -4,9 +4,9 @@ import { useMemo, useState } from 'react'
 import type { AdminImageDto } from '@/shared/images'
 
 import { UploadImageDialog, type UploadKind } from '@/ui/admin/shared/UploadImageDialog'
-import { Button } from '@/ui/components/ui/button'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
 
 // Shared cover/poster row used by `EditCategoryDialog` and

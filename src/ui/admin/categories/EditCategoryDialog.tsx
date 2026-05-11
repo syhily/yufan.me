@@ -7,7 +7,7 @@ import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
-import { Button } from '@/ui/components/ui/button'
+import { Button } from '@/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -15,10 +15,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/ui/components/ui/dialog'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
-import { Textarea } from '@/ui/components/ui/textarea'
+} from '@/ui/components/dialog'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
+import { Textarea } from '@/ui/components/textarea'
 import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
 
 const UPSERT = API_ACTIONS.admin.upsertCategory

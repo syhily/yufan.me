@@ -7,8 +7,8 @@ import type { AdminPostDetailDto, GetPostInput } from '@/shared/cms-posts'
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
-import { Button } from '@/ui/components/ui/button'
-import { Skeleton } from '@/ui/components/ui/skeleton'
+import { Button } from '@/ui/components/button'
+import { Skeleton } from '@/ui/components/skeleton'
 
 const GET_POST = API_ACTIONS.admin.getPost
 

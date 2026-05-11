@@ -1,4 +1,4 @@
-import type { Block, ImageBlock, PortableTextBody } from '@/pt/schema'
+import type { Block, ImageBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { findImageById, updateImageNote } from '@/server/db/query/image'
 

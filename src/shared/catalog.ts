@@ -189,15 +189,15 @@ export interface CommentFormUser {
 }
 
 // Types that need PortableTextBody (isomorphic)
-export type { PortableTextBody } from '@/pt/schema'
+export type { PortableTextBody } from '@/shared/pt/schema'
 
 export interface Post extends ClientPost {
-  body: import('@/pt/schema').PortableTextBody
+  body: import('@/shared/pt/schema').PortableTextBody
   imageSources: string[]
 }
 
 export interface Page extends ClientPage {
-  body: import('@/pt/schema').PortableTextBody
+  body: import('@/shared/pt/schema').PortableTextBody
   imageSources: string[]
   publishedRevisionId: bigint | null
 }

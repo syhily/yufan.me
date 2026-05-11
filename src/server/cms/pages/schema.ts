@@ -13,7 +13,7 @@ import type {
   UpsertPageMetaInput,
 } from '@/shared/cms-pages'
 
-import { portableTextBodySchema } from '@/pt/schema'
+import { portableTextBodySchema } from '@/shared/pt/schema'
 
 // Re-export the wire-format types alongside the Zod validators so
 // admin Resource Routes import schema + type from the same module.

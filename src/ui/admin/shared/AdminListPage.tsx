@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 
 import { AdminPagination } from '@/ui/admin/shared/AdminPagination'
-import { Card, CardContent } from '@/ui/components/ui/card'
+import { Card, CardContent } from '@/ui/components/card'
 
 // The admin list pages (UsersView / CommentsView) all render a stack of
 // header → toolbar (filters, tabs, bulk actions) → body (table or

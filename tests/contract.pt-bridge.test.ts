@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { PortableTextBody } from '@/pt/schema'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 import {
   type PmBlockNode,
@@ -8,7 +8,7 @@ import {
   bodyToPmDoc,
   pmDocToBody,
   synchronizeFootnoteIndices,
-} from '@/pt/bridge'
+} from '@/shared/pt/bridge'
 
 // PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
 // the canonical shape (validated by the API perimeter); ProseMirror is

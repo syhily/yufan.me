@@ -8,8 +8,8 @@ import type { AdminComment } from '@/shared/comments'
 import { useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
-import { Button } from '@/ui/components/ui/button'
-import { Checkbox } from '@/ui/components/ui/checkbox'
+import { Button } from '@/ui/components/button'
+import { Checkbox } from '@/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -17,9 +17,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/ui/components/ui/dialog'
-import { Input } from '@/ui/components/ui/input'
-import { Label } from '@/ui/components/ui/label'
+} from '@/ui/components/dialog'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 
 // Default text colour offered to admins the moment they enable the
 // override. Matches the public site's "dark navy on light badge" pairing

@@ -2,12 +2,12 @@ import { and, desc, eq, inArray, max } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 
-import type { PortableTextBody } from '@/pt/schema'
 import type { ContentRow, NewContent } from '@/server/db/types'
+import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { arePortableTextBodiesEquivalent } from '@/pt/bridge'
 import { db } from '@/server/db/pool'
 import { content as contentTable, page as pageMetaTable, post as postMetaTable } from '@/server/db/schema'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge'
 
 export type ContentType = 'page' | 'post'
 

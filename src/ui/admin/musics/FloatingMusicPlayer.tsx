@@ -1,8 +1,8 @@
 import { ChevronRightIcon, Music2Icon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { loadMusic, type MusicMeta } from '@/client/music'
-import { Button } from '@/ui/components/ui/button'
+import { loadMusic, type MusicMeta } from '@/client/api/music-loader'
+import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
 // Floating, single-instance APlayer dock for the music admin page.

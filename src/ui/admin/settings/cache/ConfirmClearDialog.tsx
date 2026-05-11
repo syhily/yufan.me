@@ -12,7 +12,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/ui/components/ui/alert-dialog'
+} from '@/ui/components/alert-dialog'
 
 interface ConfirmClearDialogProps {
   open: boolean

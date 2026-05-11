@@ -3,17 +3,17 @@ import { type DragEvent, memo } from 'react'
 
 import type { AdminCategoryDto } from '@/shared/categories'
 
-import { Badge } from '@/ui/components/ui/badge'
-import { Button } from '@/ui/components/ui/button'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/ui/components/ui/dropdown-menu'
-import { Skeleton } from '@/ui/components/ui/skeleton'
-import { TableCell, TableRow } from '@/ui/components/ui/table'
+} from '@/ui/components/dropdown-menu'
+import { Skeleton } from '@/ui/components/skeleton'
+import { TableCell, TableRow } from '@/ui/components/table'
 import { Tooltip } from '@/ui/primitives/Tooltip'
 
 interface CategoryRowProps {

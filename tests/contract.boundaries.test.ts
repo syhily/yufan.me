@@ -819,15 +819,15 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps Base UI select and dropdown items inside group wrappers', () => {
-    const select = readFileSync('src/ui/components/ui/select.tsx', 'utf8')
-    const dropdown = readFileSync('src/ui/components/ui/dropdown-menu.tsx', 'utf8')
+    const select = readFileSync('src/ui/components/select.tsx', 'utf8')
+    const dropdown = readFileSync('src/ui/components/dropdown-menu.tsx', 'utf8')
 
     expect(select).toContain('<SelectGroup>{children}</SelectGroup>')
     expect(dropdown).toContain('<DropdownMenuGroup>{children}</DropdownMenuGroup>')
   })
 
   it('sizes Button icons through data-icon instead of hand-written size classes', () => {
-    const button = readFileSync('src/ui/components/ui/button.tsx', 'utf8')
+    const button = readFileSync('src/ui/components/button.tsx', 'utf8')
     const offenders: string[] = []
 
     expect(button).toContain('[&_[data-icon]]')

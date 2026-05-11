@@ -147,7 +147,7 @@ export const verification = pgTable('verification', {
 //   public renderer keys on `homepage` and the admin shell keys on
 //   `id`, neither of which needs a separate handle.
 // - No `sortOrder`: friends render in random order
-//   (`@/ui/mdx/page/Friends.tsx` already shuffles), so no ranking is
+//   (`@/ui/pt/blocks/Friends.tsx` already shuffles), so no ranking is
 //   stored. Admin list sorts by `createdAt desc` (newest first).
 // - Soft-uniqueness on `homepage` is enforced at the service layer
 //   (CLI import + admin upsert): a strict DB UNIQUE would reject
@@ -489,7 +489,7 @@ export const post = pgTable(
 //
 // Snapshot fields:
 // - `body` is the canonical PortableText (`PortableTextBlock[]`)
-//   payload. Validated by `@/pt/schema` at the API
+//   payload. Validated by `@/shared/pt/schema` at the API
 //   perimeter so a malformed payload never lands.
 // - `image_sources` is the array of S3 storagePath values referenced
 //   by the body, denormalised so the SSR enhancer can resolve

@@ -1,7 +1,7 @@
-import { collectHeadings } from '@/pt/schema'
 import { previewPostBodySchema } from '@/server/cms/posts/schema'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
+import { collectHeadings } from '@/shared/pt/schema'
 
 const MAX_BODY_BYTES = 1 * 1024 * 1024
 
