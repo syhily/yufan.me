@@ -2,6 +2,7 @@ import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizz
 
 import { db } from '@/server/db/pool'
 import { post, postSearchIndex } from '@/server/db/schema'
+import { getLogger } from '@/server/logger'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 
 import { generateEmbedding } from './openai'
@@ -37,21 +38,77 @@ export async function searchPosts(
     return { hits: [], page: 1, totalPages: 0 }
   }
 
-  // --- Vector mode ---
+  const pattern = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
+  const baseWhere = and(isNull(post.deletedAt), eq(post.published, true))
+  const likeWhere = and(
+    baseWhere,
+    or(
+      ilike(post.title, pattern),
+      ilike(post.summary, pattern),
+      ilike(sql`COALESCE(${postSearchIndex.plainText}, '')`, pattern),
+    ),
+  )
+
+  // --- Vector + LIKE hybrid mode ---
   if (settings.enabled && settings.mode === 'vector') {
     const embedding = await generateEmbedding(trimmed)
+    getLogger('search.vector').info('Search vector query', {
+      query: trimmed,
+      hasEmbedding: embedding !== null,
+      dimensions: embedding?.length ?? 0,
+      threshold: settings.similarityThreshold,
+    })
+
     if (embedding !== null) {
       const similarity = sql<number>`1 - (${cosineDistance(postSearchIndex.embedding, embedding)})`
-      const rows = await db
-        .select({ slug: post.slug, similarity })
-        .from(post)
-        .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
-        .where(and(isNull(post.deletedAt), eq(post.published, true), gt(similarity, settings.similarityThreshold)))
-        .orderBy(desc(similarity))
-        .limit(limit + offset)
 
-      const hits = rows.slice(offset).map((r) => r.slug)
-      const total = rows.length
+      const [vectorRows, likeRows] = await Promise.all([
+        db
+          .select({ slug: post.slug, similarity })
+          .from(post)
+          .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+          .where(and(baseWhere, gt(similarity, settings.similarityThreshold)))
+          .orderBy(desc(similarity))
+          .limit(100),
+        db
+          .select({ slug: post.slug })
+          .from(post)
+          .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
+          .where(likeWhere)
+          .orderBy(desc(post.publishedAt))
+          .limit(100),
+      ])
+
+      getLogger('search.vector').info('Search vector results', {
+        query: trimmed,
+        rawRows: vectorRows.length,
+        threshold: settings.similarityThreshold,
+        topSimilarity: vectorRows[0]?.similarity ?? null,
+      })
+
+      getLogger('search.like').info('Search LIKE results', {
+        query: trimmed,
+        rawRows: likeRows.length,
+      })
+
+      // Merge: vector results first, then LIKE results deduplicated
+      const seen = new Set<string>()
+      const merged: string[] = []
+      for (const row of vectorRows) {
+        if (!seen.has(row.slug)) {
+          seen.add(row.slug)
+          merged.push(row.slug)
+        }
+      }
+      for (const row of likeRows) {
+        if (!seen.has(row.slug)) {
+          seen.add(row.slug)
+          merged.push(row.slug)
+        }
+      }
+
+      const hits = merged.slice(offset, offset + limit)
+      const total = merged.length
       return {
         hits,
         page: Math.floor(offset / limit) + 1,
@@ -62,27 +119,18 @@ export async function searchPosts(
   }
 
   // --- LIKE fallback ---
-  // Search across title, summary, and plain text body. Use LEFT JOIN so
-  // posts that haven't been indexed yet (no row in post_search_index)
-  // are still discoverable via their title / summary.
-  const pattern = `%${trimmed.replace(/[%_]/g, '\\$&')}%`
   const rows = await db
     .select({ slug: post.slug })
     .from(post)
     .leftJoin(postSearchIndex, eq(post.id, postSearchIndex.postId))
-    .where(
-      and(
-        isNull(post.deletedAt),
-        eq(post.published, true),
-        or(
-          ilike(post.title, pattern),
-          ilike(post.summary, pattern),
-          ilike(sql`COALESCE(${postSearchIndex.plainText}, '')`, pattern),
-        ),
-      ),
-    )
+    .where(likeWhere)
     .orderBy(desc(post.publishedAt))
     .limit(limit + offset)
+
+  getLogger('search.like').info('Search LIKE results', {
+    query: trimmed,
+    rawRows: rows.length,
+  })
 
   const hits = rows.slice(offset).map((r) => r.slug)
   const total = rows.length

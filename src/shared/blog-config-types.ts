@@ -159,6 +159,7 @@ export interface CacheSettings {
     avatar: { prefix: string; ttlSeconds: number }
     imageMeta: { prefix: string; ttlSeconds: number }
     commentsMd: { prefix: string; ttlSeconds: number }
+    embeddingSearch: { prefix: string; ttlSeconds: number }
   }
 }
 

@@ -95,6 +95,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       avatar: { ...CACHE_BUCKET_FALLBACKS.avatar, ttlSeconds: 60 * 60 * 24 * 7 },
       imageMeta: { ...CACHE_BUCKET_FALLBACKS.imageMeta },
       commentsMd: { ...CACHE_BUCKET_FALLBACKS.commentsMd },
+      embeddingSearch: { ...CACHE_BUCKET_FALLBACKS.embeddingSearch },
     },
   },
   // Rate-limit fixture mirrors the historical hard-coded thresholds

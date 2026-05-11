@@ -260,6 +260,7 @@ export const cacheSchema = z
       // requests for the same key collapse to a single load.
       imageMeta: cacheBucketSchema,
       commentsMd: cacheBucketSchema,
+      embeddingSearch: cacheBucketSchema,
     }),
   })
   .superRefine((value, ctx) => {
@@ -270,6 +271,7 @@ export const cacheSchema = z
       { id: 'avatar', prefix: buckets.avatar.prefix },
       { id: 'imageMeta', prefix: buckets.imageMeta.prefix },
       { id: 'commentsMd', prefix: buckets.commentsMd.prefix },
+      { id: 'embeddingSearch', prefix: buckets.embeddingSearch.prefix },
     ]
 
     // Two prefixes "collide" if either is a strict prefix of the other.

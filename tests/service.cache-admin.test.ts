@@ -83,7 +83,7 @@ describe('service: cache admin', () => {
     const stats = await getAdminCacheStats()
 
     const counts = Object.fromEntries(stats.buckets.map((bucket) => [bucket.id, bucket.keyCount]))
-    expect(counts).toEqual({ og: 2, avatar: 1, calendar: 1, imageMeta: 0, commentsMd: 0 })
+    expect(counts).toEqual({ og: 2, avatar: 1, calendar: 1, imageMeta: 0, commentsMd: 0, embeddingSearch: 0 })
     expect(stats.total).toBe(4)
   })
 
@@ -114,7 +114,7 @@ describe('service: cache admin', () => {
 
     expect(result.total).toBe(4)
     const cleared = Object.fromEntries(result.cleared.map((entry) => [entry.bucketId, entry.removed]))
-    expect(cleared).toEqual({ og: 1, avatar: 2, calendar: 1, imageMeta: 0, commentsMd: 0 })
+    expect(cleared).toEqual({ og: 1, avatar: 2, calendar: 1, imageMeta: 0, commentsMd: 0, embeddingSearch: 0 })
     // Out-of-bucket keys (sessions, rate-limit) survive a "全部清空".
     expect([...fixture.store.keys()]).toEqual(['session:xyz'])
   })

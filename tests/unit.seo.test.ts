@@ -62,6 +62,7 @@ const fixture: BlogSettingsBundle = {
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
       imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
       commentsMd: { prefix: 'comments-md-', ttlSeconds: 3600 },
+      embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
     },
   },
   rateLimit: {
