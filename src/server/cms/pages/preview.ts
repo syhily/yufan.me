@@ -1,16 +1,8 @@
-import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
-
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { renderPortableTextToHtml as renderPortableTextBodyToHtml } from '@/server/render/feed-pt-render'
 import { deriveSlug } from '@/server/slug'
-import { requireBlogSettingsSection } from '@/shared/blog-config'
-import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { collectHeadings } from '@/shared/pt/schema'
-// Server→UI import exception: this file prerenders React components to
-// static HTML for the admin editor preview pane. The UI module is only
-// used during SSR and never reaches the client bundle.
-import { PortableTextBody as PortableTextBodyComponent } from '@/ui/pt/render'
 
 // Render the supplied PortableText body to a stand-alone HTML fragment
 // for the editor's right-pane preview.
@@ -26,12 +18,5 @@ import { PortableTextBody as PortableTextBodyComponent } from '@/ui/pt/render'
 // renders, no chrome.
 export async function renderPortableTextToHtml(body: PortableTextBody): Promise<string> {
   const headingSlugs = collectHeadings(body, deriveSlug).map((h) => h.slug)
-  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
-  const element = createElement(PortableTextBodyComponent, {
-    body,
-    headingSlugs,
-    suppressMusicAutoplay: true,
-    footnotesSectionTitle,
-  })
-  return renderToStaticMarkup(element)
+  return renderPortableTextBodyToHtml(body, headingSlugs, { suppressMusicAutoplay: true })
 }

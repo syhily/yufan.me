@@ -1,6 +1,6 @@
 import { MenuIcon } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router'
+import { Link } from 'react-router'
 
 import type { NavigationItem } from '@/shared/blog-config'
 import type { SocialNetwork } from '@/shared/socials'
@@ -16,6 +16,8 @@ import { SearchIconButton } from '@/ui/search/Search'
 export interface HeaderProps {
   navigation: NavigationItem[]
   admin: boolean
+  pathname: string
+  search: string
 }
 
 // Sticky aside drawer (`<header>`). On `>=lg` the drawer is a fixed-
@@ -223,10 +225,9 @@ function SocialNavIcon({ network, className }: { network: SocialNetwork; classNa
 // the cost of maintaining two parallel menus exceeds the a11y gain
 // over the current controlled implementation (Escape listener +
 // focus restore + `role="dialog"` + `aria-modal`).
-export function Header({ navigation, admin }: HeaderProps) {
+export function Header({ navigation, admin, pathname, search }: HeaderProps) {
   const { title } = useSiteIdentity()
   const { socials } = useSocialsSettings()
-  const { pathname, search } = useLocation()
   const logoutQuery = new URLSearchParams({
     action: 'logout',
     redirect_to: `${pathname}${search}`,

@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router'
+
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 
@@ -8,5 +10,6 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function WpAdminPageNewRoute() {
-  return <PageEditorShell mode="create" />
+  const navigate = useNavigate()
+  return <PageEditorShell mode="create" navigate={navigate} />
 }

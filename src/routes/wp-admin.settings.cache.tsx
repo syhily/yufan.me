@@ -15,7 +15,7 @@ export function meta({ matches }: Route.MetaArgs) {
 // hoist it into the layout loader. The editable cache slice itself
 // (prefixes / TTLs) is also re-read here — through
 // `requireBlogSettingsSection('cache')` so legacy rows missing newer
-// buckets (e.g. `imageMeta` / `commentsMd`) are transparently filled
+// buckets (e.g. ``imageMeta`) are transparently filled
 // in by `withCacheFallbacks()`. Going through the outlet's raw
 // `bundle.cache.cache` would skip that safety net and crash the form
 // on a stale-shape DB row before backfill rewrites it.

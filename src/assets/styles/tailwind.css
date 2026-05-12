@@ -54,6 +54,7 @@
   --border-inline-code-on-shiki-bg: color-mix(in oklab, var(--bg-shiki-light) 68%, white 32%);
   --size-empty-state: 50vh;
   --z-aside-drawer: 1020;
+  --z-modal: 1050;
   --scrim: rgba(8, 15, 25, 0.3);
   --skeleton-start: rgba(0, 0, 0, 0.04);
   --skeleton-end: rgba(0, 0, 0, 0.08);

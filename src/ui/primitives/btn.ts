@@ -45,7 +45,8 @@
 //     site has been migrated to `publicButtonVariants(...)`.
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 const publicButtonBase =
   'inline-block border border-transparent bg-transparent rounded-xs py-2 px-[1.625rem] max-md:py-1.5 text-center align-middle [font-size:0.875rem] whitespace-normal no-underline select-none transition-[color,background-color,border-color,box-shadow] duration-150 ease-in-out'
@@ -135,4 +136,4 @@ export type PublicButtonVariantProps = VariantProps<typeof publicButtonVariantsR
 // canonical class string per variant combination.
 type PublicButtonVariantsFn = (props?: Parameters<typeof publicButtonVariantsRaw>[0]) => string
 
-export const publicButtonVariants: PublicButtonVariantsFn = (props) => twMerge(publicButtonVariantsRaw(props))
+export const publicButtonVariants: PublicButtonVariantsFn = (props) => cn(publicButtonVariantsRaw(props))

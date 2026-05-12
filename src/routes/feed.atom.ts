@@ -1,5 +1,5 @@
-import { getSlug, scopeFromUrl } from '@/routes/feed.rss'
 import { feedHeaders, feedResponse } from '@/server/feed'
+import { getSlug, scopeFromUrl } from '@/server/feed/scope'
 
 import type { Route } from './+types/feed.atom'
 

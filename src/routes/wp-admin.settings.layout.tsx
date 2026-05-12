@@ -1,4 +1,4 @@
-import { Outlet, useOutletContext } from 'react-router'
+import { Outlet, useLocation, useOutletContext } from 'react-router'
 
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
@@ -82,13 +82,14 @@ export async function loader(_args: Route.LoaderArgs) {
 
 export default function WpAdminSettingsLayoutRoute({ loaderData }: Route.ComponentProps) {
   const parent = useOutletContext<ParentContext>()
+  const { pathname } = useLocation()
   const context: SettingsOutletContext = {
     ...parent,
     bundle: loaderData.bundle,
     timeZones: loaderData.timeZones,
   }
   return (
-    <SettingsShell>
+    <SettingsShell pathname={pathname}>
       <Outlet context={context} />
     </SettingsShell>
   )

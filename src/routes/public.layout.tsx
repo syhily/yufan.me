@@ -1,4 +1,4 @@
-import { Outlet, useMatches, useRouteLoaderData } from 'react-router'
+import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
@@ -50,9 +50,10 @@ function useResolvedChromeProps(): { admin: boolean; footer: boolean } {
 
 export default function PublicLayoutRoute() {
   const { admin, footer } = useResolvedChromeProps()
+  const { pathname, search } = useLocation()
 
   return (
-    <PublicChrome admin={admin} footer={footer}>
+    <PublicChrome admin={admin} footer={footer} pathname={pathname} search={search}>
       <Outlet />
     </PublicChrome>
   )
@@ -70,10 +71,11 @@ export default function PublicLayoutRoute() {
 // in the synchronous `<PublicChrome>` instead of the lazy variant.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const { admin, footer } = useResolvedChromeProps()
+  const { pathname, search } = useLocation()
 
   return (
-    <PublicChrome admin={admin} footer={footer}>
-      <ErrorView error={error} />
+    <PublicChrome admin={admin} footer={footer} pathname={pathname} search={search}>
+      <ErrorView error={error} isDev={import.meta.env.DEV} />
     </PublicChrome>
   )
 }

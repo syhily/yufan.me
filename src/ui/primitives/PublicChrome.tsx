@@ -35,6 +35,8 @@ export interface PublicChromeProps {
   navigation?: NavigationItem[]
   footer?: boolean
   admin: boolean
+  pathname: string
+  search: string
   children?: ReactNode
 }
 
@@ -42,9 +44,9 @@ export interface PublicChromeProps {
 // shared `<BaseLayout>` chrome. Public routes mount this through
 // `routes/public.layout.tsx`; the root `ErrorBoundary` lazy-loads it so the
 // admin SPA chunk never statically depends on `public.css`.
-export function PublicChrome({ navigation, footer, admin, children }: PublicChromeProps) {
+export function PublicChrome({ navigation, footer, admin, pathname, search, children }: PublicChromeProps) {
   return (
-    <BaseLayout navigation={navigation} footer={footer} admin={admin}>
+    <BaseLayout navigation={navigation} footer={footer} admin={admin} pathname={pathname} search={search}>
       {children}
     </BaseLayout>
   )

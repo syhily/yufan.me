@@ -1,6 +1,5 @@
 import { RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router'
 
 import type {
   FilterAutocompleteInput,
@@ -70,13 +69,19 @@ export interface CommentsViewProps {
   commentCsrfToken: string
   currentUserName: string
   currentUserEmail: string
+  initialAuthorId?: string
+  initialPageKey?: string
+  initialStatus?: FilterStatus
 }
 
-export function CommentsView({ commentCsrfToken, currentUserName, currentUserEmail }: CommentsViewProps) {
-  const [searchParams] = useSearchParams()
-  const initialAuthorId = searchParams.get('userId') ?? ''
-  const initialPageKey = searchParams.get('pageKey') ?? ''
-  const initialStatus = (searchParams.get('status') as FilterStatus | null) ?? 'all'
+export function CommentsView({
+  commentCsrfToken,
+  currentUserName,
+  currentUserEmail,
+  initialAuthorId = '',
+  initialPageKey = '',
+  initialStatus = 'all',
+}: CommentsViewProps) {
   const { state, dispatch, filterPageKey, filterAuthorId } = useCommentsController({
     initialAuthorId,
     initialPageKey,

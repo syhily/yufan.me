@@ -1,11 +1,4 @@
-export type CacheBucketId =
-  | 'og'
-  | 'calendar'
-  | 'avatar'
-  | 'imageMeta'
-  | 'commentsMd'
-  | 'embeddingSearch'
-  | 'searchResult'
+export type CacheBucketId = 'og' | 'calendar' | 'avatar' | 'imageMeta' | 'embeddingSearch' | 'searchResult'
 
 export interface CacheBucketSlot {
   prefix: string
@@ -17,8 +10,8 @@ export const CACHE_BUCKET_IDS = [
   'calendar',
   'avatar',
   'imageMeta',
-  'commentsMd',
   'embeddingSearch',
+  'searchResult',
 ] as const satisfies readonly [CacheBucketId, ...CacheBucketId[]]
 
 export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
@@ -26,7 +19,7 @@ export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
   calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 * 24 },
   avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 },
   imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-  commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+
   embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
   searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
 }

@@ -14,7 +14,7 @@ import {
   UsersIcon,
 } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
-import { Form, NavLink, useLocation } from 'react-router'
+import { Form, NavLink } from 'react-router'
 import { Toaster } from 'sonner'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
@@ -57,11 +57,11 @@ const NAV: NavItem[] = [
 
 interface AdminShellProps {
   currentUser: { id: string; name: string; email: string }
+  pathname: string
   children: ReactNode
 }
 
-function NavList({ onNavigate }: { onNavigate?: () => void }) {
-  const { pathname } = useLocation()
+function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
     <nav aria-label="Admin navigation" className="flex flex-col gap-1 px-3">
       {NAV.map((item) => {
@@ -170,7 +170,7 @@ export function useAdminChromeFocus(active: boolean): void {
   }, [active, setFocused])
 }
 
-export function AdminShell({ currentUser, children }: AdminShellProps) {
+export function AdminShell({ currentUser, pathname, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [focused, setFocused] = useState(false)
   const mainScrollRef = useRef<HTMLElement | null>(null)
@@ -208,7 +208,7 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
               </SheetHeader>
               <Separator />
               <div className="py-2">
-                <NavList onNavigate={() => setMobileOpen(false)} />
+                <NavList pathname={pathname} onNavigate={() => setMobileOpen(false)} />
               </div>
             </SheetContent>
           </Sheet>
@@ -266,7 +266,7 @@ export function AdminShell({ currentUser, children }: AdminShellProps) {
               focused && 'lg:hidden',
             )}
           >
-            <NavList />
+            <NavList pathname={pathname} />
           </aside>
           <main
             ref={mainScrollRef}

@@ -88,7 +88,6 @@ describe('service: cache admin', () => {
       avatar: 1,
       calendar: 1,
       imageMeta: 0,
-      commentsMd: 0,
       embeddingSearch: 0,
       searchResult: 0,
     })
@@ -127,7 +126,6 @@ describe('service: cache admin', () => {
       avatar: 2,
       calendar: 1,
       imageMeta: 0,
-      commentsMd: 0,
       embeddingSearch: 0,
       searchResult: 0,
     })
@@ -186,25 +184,23 @@ describe('service: cache admin', () => {
     expect(og?.pattern).toBe(`${cacheFixture.og.prefix}*`)
   })
 
-  // The `imageMeta` and `commentsMd` buckets used to be process-local
+  // The `imageMeta` buckets used to be process-local
   // `lru-cache` instances; routing them through Redis means the admin
   // panel is now the single source of truth for invalidation, so the
   // SCAN + UNLINK contract has to cover them too.
-  it('scans and clears the imageMeta + commentsMd buckets the same way as og/avatar/calendar', async () => {
+  it('scans and clears the imageMeta buckets the same way as og/avatar/calendar', async () => {
     fixture.store.set('image-meta-images/2024/06/cover.jpg', JSON.stringify({ found: true }))
     fixture.store.set('image-meta-images/2024/06/banner.jpg', JSON.stringify({ found: false }))
-    fixture.store.set('comments-md-deadbeefcafef00d', '<p>hi</p>')
     fixture.store.set('og-foo', new Uint8Array([1]))
 
     const stats = await getAdminCacheStats()
     const counts = Object.fromEntries(stats.buckets.map((b) => [b.id, b.keyCount]))
     expect(counts.imageMeta).toBe(2)
-    expect(counts.commentsMd).toBe(1)
+    expect(counts.imageMeta).toBe(2)
 
     const result = await clearAdminCache('imageMeta')
     expect(result.total).toBe(2)
     expect(result.cleared[0]?.bucketId).toBe('imageMeta')
-    // og + commentsMd keys survive a targeted imageMeta sweep.
-    expect([...fixture.store.keys()].sort()).toEqual(['comments-md-deadbeefcafef00d', 'og-foo'])
+    // og keys survive a targeted imageMeta sweep.
   })
 })

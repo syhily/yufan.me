@@ -24,7 +24,8 @@ vi.mock('@/server/feed', () => ({
   generateFeeds: vi.fn(),
 }))
 
-const { loader: rssLoader, scopeFromUrl } = await import('@/routes/feed.rss')
+const { loader: rssLoader } = await import('@/routes/feed.rss')
+const { scopeFromUrl } = await import('@/server/feed/scope')
 const { loader: atomLoader } = await import('@/routes/feed.atom')
 
 const callRss = (url: string, params: Record<string, string | undefined> = {}) =>

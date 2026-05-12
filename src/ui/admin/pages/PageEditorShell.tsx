@@ -1,3 +1,5 @@
+import type { NavigateFunction } from 'react-router'
+
 import {
   ArrowLeftIcon,
   ExternalLinkIcon,
@@ -11,7 +13,7 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 
 import type {
   AdminPageDetailDto,
@@ -82,6 +84,8 @@ export interface PageEditorShellProps {
   mode: 'create' | 'edit'
   /** Pre-loaded detail DTO. Only consulted when `mode === 'edit'`. */
   detail?: AdminPageDetailDto
+  /** Navigation function injected from the route module. */
+  navigate: NavigateFunction
 }
 
 // Top-level orchestrator for the page authoring screen. Owns the
@@ -94,8 +98,7 @@ export interface PageEditorShellProps {
 // this shell as separate effects + components. This commit ships the
 // metadata + manual save/publish skeleton; the autosave + LS + diff
 // hooks plug in next.
-export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
-  const navigate = useNavigate()
+export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps) {
   const isEditing = mode === 'edit' && detail !== undefined
 
   // Metadata draft mirrors the right-pane form. Initial state matches

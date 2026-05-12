@@ -251,7 +251,7 @@ const replyingToOverlayClass = cn(
   'flex items-center gap-1',
   'rounded-sm bg-brand/5 px-2 py-[0.15rem]',
   'text-[0.9rem] text-ink-body/95 opacity-60',
-  'overflow-hidden text-ellipsis whitespace-nowrap',
+  'truncate',
 )
 
 function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {

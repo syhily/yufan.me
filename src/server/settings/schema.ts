@@ -260,7 +260,6 @@ export const cacheSchema = z
       // network round-trip with `createInflight` so concurrent
       // requests for the same key collapse to a single load.
       imageMeta: cacheBucketSchema,
-      commentsMd: cacheBucketSchema,
       embeddingSearch: cacheBucketSchema,
       searchResult: cacheBucketSchema,
     }),
@@ -272,7 +271,6 @@ export const cacheSchema = z
       { id: 'calendar', prefix: buckets.calendar.prefix },
       { id: 'avatar', prefix: buckets.avatar.prefix },
       { id: 'imageMeta', prefix: buckets.imageMeta.prefix },
-      { id: 'commentsMd', prefix: buckets.commentsMd.prefix },
       { id: 'embeddingSearch', prefix: buckets.embeddingSearch.prefix },
       { id: 'searchResult', prefix: buckets.searchResult.prefix },
     ]

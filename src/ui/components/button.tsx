@@ -25,7 +25,7 @@ import { cn } from '@/ui/lib/cn'
 //    "this action is irreversible" vibe consistent with the public
 //    site's btn-primary:hover behaviour.
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=size-])]:size-4 [&_[data-icon]]:size-4 [&_[data-icon=sm]]:size-3 [&_[data-icon=lg]]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=size-])]:size-4 [&_[data-icon]]:size-4 [&_[data-icon=sm]]:size-3 [&_[data-icon=lg]]:size-5 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:border-destructive',
   {
     variants: {
       variant: {
@@ -36,8 +36,7 @@ const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground shadow-xs hover:bg-foreground hover:text-primary-foreground',
         // Same dark-navy hover lands on destructive too — the colour
         // shift is the visual cue that the action is firing.
-        destructive:
-          'bg-destructive text-white shadow-xs hover:bg-foreground focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
+        destructive: 'bg-destructive text-white shadow-xs hover:bg-foreground focus-visible:ring-destructive/20',
         // Light-red "clear" affordance — used for tertiary "undo"
         // actions like clearing a filter selection: visible enough to
         // signal "removes something" without competing with primary
@@ -47,13 +46,12 @@ const buttonVariants = cva(
         // background, `#f7094c` foreground); admin is the only
         // surviving consumer.
         'destructive-soft':
-          'bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40',
+          'bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-destructive/20',
         // outline / secondary / ghost stay on the lighter `accent`
         // hover so secondary actions don't compete with the primary
         // call-to-action when several buttons share a row (e.g. the
         // comment-row toolbar where "审核 / 回复 / …" all sit together).
-        outline:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50',
+        outline: 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground ',
         secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',

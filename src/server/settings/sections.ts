@@ -121,7 +121,7 @@ const mailDefaults = {
 // `rate-limit:` / `avatar-status-` surfaces. The five default
 // prefixes below clear both bars without overlapping each other.
 //
-// `image-meta:` and `comments-md:` are routed through Redis so SSR
+// `image-meta:` is routed through Redis so SSR
 // replicas share warmth and so admins can clear them from
 // `/wp-admin/settings/cache`. The 5-minute LRU these replaced was a
 // process-local safety net — bumping the floor to 1 hour matches the
@@ -133,7 +133,7 @@ const cacheDefaults = {
     calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
     avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
     imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-    commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
+
     embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
     searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
   },

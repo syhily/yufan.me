@@ -11,15 +11,9 @@ import {
   type Page,
   type Post,
 } from '@/server/catalog'
-import { prerenderToHtml } from '@/server/render/prerender'
-import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/blog-config'
-import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
+import { renderPortableTextToHtml } from '@/server/render/feed-pt-render'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { joinUrl } from '@/shared/urls'
-// Server→UI import exception: this file prerenders React components
-// to HTML for RSS/Atom feeds. The UI modules are only used during SSR
-// and never reach the client bundle.
-import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
-import { PortableTextBody } from '@/ui/pt/render'
 
 export interface FeedOptions {
   includeHidden?: boolean
@@ -60,18 +54,11 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
   //
   // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
   // so feed readers without JavaScript still get meaningful content.
-  const bundle = requireBlogSettingsBundle()
-  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
   // Both pages and posts now live in Postgres and carry a PortableText body.
-  return prerenderToHtml(
-    <BlogSettingsProvider value={bundle}>
-      <PortableTextBody
-        body={entry.body}
-        headingSlugs={entry.headings.map((h) => h.slug)}
-        footnotesSectionTitle={footnotesSectionTitle}
-        rssMode
-      />
-    </BlogSettingsProvider>,
+  return renderPortableTextToHtml(
+    entry.body,
+    entry.headings.map((h) => h.slug),
+    { rssMode: true },
   )
 }
 

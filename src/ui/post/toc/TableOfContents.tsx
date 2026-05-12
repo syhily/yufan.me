@@ -6,6 +6,7 @@ import type { TocOpts } from '@/shared/toc'
 
 import { generateToC } from '@/shared/toc'
 import { useSeoSettingsOptional } from '@/ui/lib/blog-config-context'
+import { cn } from '@/ui/lib/cn'
 import { TocItems } from '@/ui/post/toc/TocItems'
 
 // TOC toggle button. The class chain is sliced into semantic
@@ -22,15 +23,10 @@ import { TocItems } from '@/ui/post/toc/TocItems'
 // channel as the drawer's translate. All four properties share
 // the same 500 ms ease-in-out so they finish together.
 //
-// Plain template string (NOT `cn()` / `twMerge`): the chain mixes a
-// font-size custom token (`text-toc-toggle`, registered under
-// `--text-*` in `tailwind.css`) with a colour custom token
-// (`text-ink-secondary`, `--color-*`). Both share the `text-*`
-// prefix, so `tailwind-merge` misclassifies them as conflicting and
-// drops the font-size — but in CSS they target different properties
-// (`font-size` vs `color`) and BOTH need to ship. A plain join
-// preserves the historical class order and the rendered behaviour.
-const tocToggleClass = [
+// `cn()` correctly handles the `text-toc-toggle` (font-size) +
+// `text-ink-secondary` (colour) pair because both tokens are registered
+// in `cn.ts` under their respective tailwind-merge groups.
+const tocToggleClass = cn(
   // Layout: pinned to the right edge, vertically centred, inline-flex
   // so the chevron sits on the centred baseline. `justify-center` is
   // kept across both states so the chevron's horizontal position
@@ -81,7 +77,7 @@ const tocToggleClass = [
   // State (open) hover: same anchor as the open base, just enlarged
   // to 64x64 so the affordance stays clickable.
   'data-[state=open]:hover:-mr-8 data-[state=open]:hover:h-16 data-[state=open]:hover:w-16 data-[state=open]:hover:-translate-x-70',
-].join(' ')
+)
 
 // TOC chevron. A single `ChevronLeftIcon` is rendered in both states
 // — swapping between two different icon components on every toggle
@@ -112,7 +108,7 @@ const tocToggleClass = [
 // (1em = 1.375rem = 22px) used to sit with its left edge at 5.6px
 // (`pl-[0.35rem]`). With `justify-center` always on, the SVG would
 // otherwise centre at 50px which is offscreen.
-const tocToggleIconWrapperClass = [
+const tocToggleIconWrapperClass = cn(
   // `transform-gpu` for the same reason the parent button has it:
   // mobile Safari / WebKit tend to keep transformed children on the
   // main thread until they explicitly opt into a compositor layer,
@@ -121,26 +117,26 @@ const tocToggleIconWrapperClass = [
   'inline-flex transform-gpu transition-transform duration-500 ease-in-out',
   '-translate-x-[2.0875rem]',
   'data-[state=open]:translate-x-0 data-[state=open]:rotate-180',
-].join(' ')
+)
 
 // TOC drawer. Layout (fixed sticky rail) + box (240px wide, full
 // viewport height, left-edge divider) + colour (surface fill) +
-// state (slide-in on open). Same plain-join rationale as the toggle.
-const tocDrawerClass = [
+// state (slide-in on open).
+const tocDrawerClass = cn(
   // `transform-gpu` keeps the 280px slide on the compositor across
   // the toggle and the close, especially on iOS Safari where a
   // wide unpromoted layer can otherwise drop frames on its very
   // first translate after a route mount.
-  'fixed top-0 -right-72.5 bottom-0 z-880 h-full w-70 border-l border-line bg-surface font-normal transform-gpu transition-transform duration-500 ease-in-out',
+  'fixed top-0 -right-72.5 bottom-0 z-880 h-full w-70 transform-gpu border-l border-line bg-surface font-normal transition-transform duration-500 ease-in-out',
   'data-[state=open]:z-1000 data-[state=open]:-translate-x-72.5',
-].join(' ')
+)
 
 // Scrim behind the drawer. Hidden until `data-state=open` and only
 // then occupies the viewport.
-const tocBackdropClass = [
+const tocBackdropClass = cn(
   'pointer-events-none invisible',
   'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-black/30',
-].join(' ')
+)
 
 const DEFAULT_TOC_CONFIG = {
   maxHeadingLevel: 4,
