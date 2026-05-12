@@ -58,7 +58,7 @@ export interface CommentBodyEditorProps {
   className?: string
 }
 
-const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式，: 或 ：Emoji'
+const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式，: Emoji'
 
 const EMPTY_BODY: CommentBody = []
 
@@ -366,7 +366,7 @@ function ToolDivider() {
 function CommentEditorHint() {
   return (
     <div className="border-t border-line/60 px-3 py-1.5 text-xs text-ink-muted">
-      输入 <code>/</code> 块级命令，<code>$</code> 内联公式，<code>:</code> / <code>：</code> Emoji。
+      输入 <code>/</code> 块级命令，<code>$</code> 内联公式，<code>:</code> Emoji。
     </div>
   )
 }

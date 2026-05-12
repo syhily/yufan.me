@@ -10,10 +10,13 @@ import { createPortal } from 'react-dom'
 
 import { cn } from '@/ui/lib/cn'
 
+// Selective emoji subset: exclude flags and ungrouped regional indicators
+// so the picker only surfaces broadly-supported, commonly-used emojis.
+const COMMENT_EMOJIS: readonly EmojiItem[] = gitHubEmojis.filter((item) => item.group && item.group !== 'flags')
+
 // Emoji suggestion dropdown for the comment editor. Follows the same
-// `@tiptap/suggestion` pattern as the slash menu (`SlashMenu.tsx`) but
-// drives two trigger characters — English colon `:` and Chinese full-width
-// colon `：` — so users can trigger the picker with either keyboard layout.
+// `@tiptap/suggestion` pattern as the slash menu (`SlashMenu.tsx`).
+// Triggered by the English colon `:` only.
 //
 // Emojis are inserted as plain unicode text (not a custom node) so the
 // comment PT schema needs no changes and round-tripping stays transparent.
@@ -38,15 +41,15 @@ interface EmojiMenuListProps {
   ref?: Ref<EmojiMenuRendererRef>
 }
 
-const EMOJI_CHARS = [':', '：'] as const
+const EMOJI_CHAR = ':' as const
 
 function filterEmojis(query: string, limit = 24): readonly EmojiItem[] {
   const trimmed = query.trim().toLowerCase()
   if (trimmed === '') {
-    return gitHubEmojis.slice(0, limit)
+    return COMMENT_EMOJIS.slice(0, limit)
   }
   const results: EmojiItem[] = []
-  for (const item of gitHubEmojis) {
+  for (const item of COMMENT_EMOJIS) {
     if (results.length >= limit) {
       break
     }
@@ -60,16 +63,13 @@ function filterEmojis(query: string, limit = 24): readonly EmojiItem[] {
   return results
 }
 
-const EMOJI_PLUGIN_KEYS = {
-  ':': new PluginKey('emojiSuggestionColon'),
-  '：': new PluginKey('emojiSuggestionFullwidthColon'),
-} as const
+const EMOJI_PLUGIN_KEY = new PluginKey('emojiSuggestionColon')
 
-function makeSuggestionPlugin(editor: Editor, char: (typeof EMOJI_CHARS)[number], limit: number) {
+function makeSuggestionPlugin(editor: Editor, char: typeof EMOJI_CHAR, limit: number) {
   return Suggestion<EmojiItem>({
     editor,
     char,
-    pluginKey: EMOJI_PLUGIN_KEYS[char],
+    pluginKey: EMOJI_PLUGIN_KEY,
     startOfLine: false,
     allowSpaces: false,
     items: ({ query }) => [...filterEmojis(query, limit)],
@@ -117,7 +117,7 @@ export const EmojiSuggestionExtension = Extension.create<EmojiSuggestionExtensio
   },
   addProseMirrorPlugins() {
     const limit = this.options.limit ?? 24
-    return EMOJI_CHARS.map((char) => makeSuggestionPlugin(this.editor, char, limit))
+    return [makeSuggestionPlugin(this.editor, EMOJI_CHAR, limit)]
   },
 })
 
