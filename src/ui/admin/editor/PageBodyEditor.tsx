@@ -58,6 +58,7 @@ import { canInsertFootnoteMark } from '@/ui/admin/editor/tiptap/insert-inline-fo
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
 import { SolutionNode } from '@/ui/admin/editor/tiptap/SolutionNode'
+import { TableCellGuardExtension } from '@/ui/admin/editor/tiptap/table-cell-guard'
 import { TableBubbleMenu } from '@/ui/admin/editor/tiptap/TableBubbleMenu'
 import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/editor/tiptap/TwoColumnNode'
 import { useEditorFootnotes } from '@/ui/admin/editor/tiptap/use-editor-footnotes'
@@ -247,6 +248,7 @@ export function PageBodyEditor({
       FootnoteCaretTriggerExtension,
       SlashCommandsExtension,
       EditorActionsExtension,
+      TableCellGuardExtension,
     ],
     content: bodyToPmDoc(stripFootnoteDefinitionsForEditor(validatePortableTextBody(initialBody))) as never,
     onUpdate({ editor: instance }) {
@@ -270,7 +272,9 @@ export function PageBodyEditor({
 
   const deleteFootnoteFromDialog = useCallback(() => {
     const targetKey = footnotes.editTargetKey
-    if (targetKey === null) return
+    if (targetKey === null) {
+      return
+    }
     const merged = footnotes.removeFootnote(targetKey)
     if (merged !== null) {
       onBodyChangeRef.current(merged)
