@@ -110,10 +110,10 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>
               <XIcon data-icon /> 取消
             </Button>
-            <Button type="submit" disabled={submitting || !loaded}>
+            <Button type="submit" disabled={submitting || !loaded} onMouseDown={(event) => event.preventDefault()}>
               <SaveIcon data-icon /> {submitting ? '保存中…' : '保存'}
             </Button>
           </DialogFooter>

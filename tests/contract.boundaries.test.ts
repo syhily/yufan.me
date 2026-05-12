@@ -1025,8 +1025,6 @@ describe('contract: module and bundle boundaries', () => {
     expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
     expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
 
-    const postDetail = readFileSync('src/ui/post/post/PostDetailBody.tsx', 'utf8')
-    const pageDetail = readFileSync('src/ui/post/post/PageDetailBody.tsx', 'utf8')
     const detailChrome = readFileSync('src/ui/post/DetailBodyChrome.tsx', 'utf8')
     const commentItem = readFileSync('src/ui/comments/CommentItem.tsx', 'utf8')
 

@@ -127,10 +127,10 @@ export function ReplyCommentDialog({
             />
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onMouseDown={(event) => event.preventDefault()} onClick={onClose}>
               <XIcon data-icon /> 取消
             </Button>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitting} onMouseDown={(event) => event.preventDefault()}>
               <SendIcon data-icon /> {submitting ? '发送中…' : '发送回复'}
             </Button>
           </DialogFooter>

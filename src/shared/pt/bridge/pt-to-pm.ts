@@ -78,11 +78,11 @@ function blockToPmNode(block: Block): PmBlockNode {
     case 'table':
       return tableBlockToPmNode(block)
     case 'solution':
-      return solutionBlockToPmNode(block)
+      return solutionBlockToPmNode(block, pushBlocks)
     case 'twoColumn':
-      return twoColumnBlockToPmNode(block)
+      return twoColumnBlockToPmNode(block, pushBlocks)
     case 'footnoteDefinition':
-      return footnoteDefinitionBlockToPmNode(block)
+      return footnoteDefinitionBlockToPmNode(block, pushBlocks)
     case 'mathBlock':
       return mathBlockToPmNode(block)
     case 'mermaid':

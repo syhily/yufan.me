@@ -10,9 +10,10 @@ import type {
 
 import type { PmBlockNode, PmNode } from '../types'
 
-import { pushBlocks } from '../pt-to-pm'
-
-export function footnoteDefinitionBlockToPmNode(block: FootnoteDefinitionBlock): PmBlockNode {
+export function footnoteDefinitionBlockToPmNode(
+  block: FootnoteDefinitionBlock,
+  pushBlocks: (out: PmNode[], blocks: readonly import('@/shared/pt/schema').Block[]) => void,
+): PmBlockNode {
   const inner: PmNode[] = []
   pushBlocks(inner, block.children)
   if (inner.length === 0) {
