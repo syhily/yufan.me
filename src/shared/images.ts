@@ -206,6 +206,8 @@ export interface ImageUrlOptions {
   urlTemplate?: string
 }
 
+const DEFAULT_SRCSET_BREAKPOINTS = [256, 512, 768, 1024, 1280, 1536]
+
 export function getImageUrl({ src, width, height, quality, assetHost, urlTemplate }: ImageUrlOptions): string {
   if (!isTransformableRemoteImage(src, assetHost)) {
     return src
@@ -242,6 +244,42 @@ export function getImageUrl({ src, width, height, quality, assetHost, urlTemplat
   }
   const sep = url.includes('?') ? '&' : '?'
   return `${url}${sep}${search.slice(1)}`
+}
+
+export interface ImageSrcsetOptions extends ImageUrlOptions {
+  breakpoints?: number[]
+}
+
+export function getImageSrcset({
+  src,
+  width,
+  height,
+  quality,
+  assetHost,
+  urlTemplate,
+  breakpoints,
+}: ImageSrcsetOptions): string {
+  if (!isTransformableRemoteImage(src, assetHost)) {
+    return ''
+  }
+
+  const template = (urlTemplate ?? '').trim()
+  if (template === '') {
+    return ''
+  }
+
+  const bps = breakpoints ?? DEFAULT_SRCSET_BREAKPOINTS
+  const maxWidth = Math.max(width * 2, 1536)
+  const ratio = height / width
+
+  return bps
+    .filter((w) => w <= maxWidth)
+    .map((w) => {
+      const h = Math.round(w * ratio)
+      const url = getImageUrl({ src, width: w, height: h, quality, assetHost, urlTemplate })
+      return `${url} ${w}w`
+    })
+    .join(', ')
 }
 
 export function isTransformableRemoteImage(src: string, assetHost: string): boolean {

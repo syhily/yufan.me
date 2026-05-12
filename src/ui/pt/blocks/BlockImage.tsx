@@ -4,6 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { getImageSrcset } from '@/shared/images'
+import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { useImageMeta } from '@/ui/pt/image-meta-context'
 
 // `<img>` override for PortableText image blocks. Wires the thumbhash
@@ -34,6 +36,7 @@ export function BlockImage({
   const src = typeof rest.src === 'string' ? rest.src : undefined
   const imageMeta = useImageMeta()
   const meta = src ? imageMeta?.[src] : undefined
+  const { asset, storage } = useAssetsSettings()
 
   const initialWidth = readPositiveNumber(rest.width) ?? meta?.width
   const initialHeight = readPositiveNumber(rest.height) ?? meta?.height
@@ -42,6 +45,18 @@ export function BlockImage({
   const [width, setWidth] = useState<number | undefined>(initialWidth)
   const [height, setHeight] = useState<number | undefined>(initialHeight)
   const [loaded, setLoaded] = useState(false)
+
+  const srcset =
+    src !== undefined && width !== undefined && height !== undefined
+      ? getImageSrcset({
+          src,
+          width,
+          height,
+          assetHost: asset.host,
+          urlTemplate: storage.urlTemplate,
+          breakpoints: [256, 512, 768, 1024],
+        })
+      : undefined
 
   const imgRef = useRef<HTMLImageElement | null>(null)
 
@@ -148,6 +163,8 @@ export function BlockImage({
       alt={alt}
       loading={loading}
       decoding={decoding}
+      sizes="100vw"
+      srcSet={srcset}
       style={mergedStyle}
       onLoad={handleLoad}
     />

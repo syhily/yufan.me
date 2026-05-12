@@ -161,6 +161,7 @@ function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: b
             width={first ? 750 : 450}
             height={first ? 500 : 300}
             thumbhash={post.coverThumbhash}
+            sizes={first ? '(max-width: 1024px) 100vw, 67vw' : '(max-width: 1024px) 50vw, 33vw'}
             className="block size-full object-cover"
           />
           <div className="absolute inset-0 size-full bg-surface-secondary/60 opacity-60 transition-opacity duration-300 ease-in-out group-hover:opacity-[0.22]" />
@@ -211,6 +212,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNow
                   width={600}
                   height={400}
                   thumbhash={post.coverThumbhash}
+                  sizes="(max-width: 768px) 50vw, 42vw"
                   className="block size-full object-cover"
                 />
               </Link>
@@ -315,6 +317,11 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
               width={first ? 600 : 300}
               height={300}
               thumbhash={post.coverThumbhash}
+              sizes={
+                first
+                  ? '(max-width: 768px) 100vw, (max-width: 1280px) 67vw, 50vw'
+                  : '(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw'
+              }
               className="block size-full object-cover"
             />
             <div className="absolute inset-0 size-full bg-surface-secondary/60 opacity-60 transition-opacity duration-300 ease-in-out group-hover:opacity-[0.22]" />

@@ -37,6 +37,7 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                       width={600}
                       height={200}
                       thumbhash={category.coverThumbhash}
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="block size-full object-cover"
                     />
                   </Link>

@@ -55,6 +55,7 @@ export function Friends({ friends }: FriendsProps) {
                     width={1280}
                     height={425}
                     thumbhash={friend.posterThumbhash}
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     className="block size-full object-cover"
                   />
                 </div>

@@ -84,6 +84,7 @@ export function PageDetailBody({
           height={page.coverHeight ?? 1200}
           thumbhash={page.coverThumbhash}
           loading="eager"
+          sizes="(max-width: 1280px) 100vw, 33vw"
           className="block size-full object-cover"
         />
       </div>

@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ImgHTMLAttributes, type Ref } from 'react'
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
-import { getImageUrl } from '@/shared/images'
+import { getImageSrcset, getImageUrl } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 
 export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'width' | 'height' | 'ref'> {
@@ -12,6 +12,8 @@ export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>,
   thumbhash?: string
   /** Pass-through for the image service; defaults to 100. */
   quality?: number
+  /** Responsive `sizes` attribute. When provided, a `srcset` is generated automatically. */
+  sizes?: string
   ref?: Ref<HTMLImageElement>
   /** Asset host used for CDN image transforms. */
   assetHost?: string
@@ -26,6 +28,7 @@ export function RawImage({
   height,
   thumbhash,
   quality,
+  sizes,
   assetHost,
   urlTemplate,
   loading = 'lazy',
@@ -37,6 +40,10 @@ export function RawImage({
 }: RawImageProps) {
   const [loaded, setLoaded] = useState(false)
   const thumbhashStyle = useThumbhashBackground(thumbhash, loaded)
+  const srcset =
+    sizes !== undefined && sizes !== ''
+      ? getImageSrcset({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate })
+      : undefined
   const mergedStyle: React.CSSProperties =
     thumbhashStyle === undefined
       ? { ...style }
@@ -85,6 +92,8 @@ export function RawImage({
       height={height}
       loading={loading}
       decoding={decoding}
+      sizes={sizes}
+      srcSet={srcset}
       style={mergedStyle}
       onLoad={handleLoad}
     />
