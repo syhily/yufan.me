@@ -35,6 +35,19 @@ async function hydratePostImages(posts: Post[]): Promise<void> {
   )
 }
 
+async function hydrateClientPostCovers(posts: ClientPost[]): Promise<void> {
+  await hydrateImageRefs(
+    posts,
+    (p) => p.cover,
+    (p, lookup) => {
+      p.coverThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        p.cover = lookup.publicUrl
+      }
+    },
+  )
+}
+
 /** Join published `content` rows so callers receive a real `Post` with `body` (RSS, detail routes, etc.). */
 async function hydratePostMetasToFullPosts(metas: PostMetaRow[]): Promise<Post[]> {
   if (metas.length === 0) {
@@ -175,7 +188,18 @@ export async function listPublicPostCardsPaginated(
     }),
     countPublicPosts({ ...filters, category: options?.category, tag: options?.tag }),
   ])
-  return { posts: metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard), total }
+  const posts = metas.map((meta) => toClientPostFromMeta(meta)).map(toListingPostCard)
+  await hydrateImageRefs(
+    posts,
+    (p) => p.cover,
+    (p, lookup) => {
+      p.coverThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        p.cover = lookup.publicUrl
+      }
+    },
+  )
+  return { posts, total }
 }
 
 export async function listPostsByCategory(category: string, options?: PostVisibilityOptions): Promise<Post[]> {
@@ -228,7 +252,18 @@ export async function listAllPosts(options?: PostVisibilityOptions): Promise<Pos
 export async function listClientPosts(options?: PostVisibilityOptions): Promise<ClientPost[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts({ ...filters })
-  return metas.map((meta) => toClientPostFromMeta(meta))
+  const posts = metas.map((meta) => toClientPostFromMeta(meta))
+  await hydrateImageRefs(
+    posts,
+    (p) => p.cover,
+    (p, lookup) => {
+      p.coverThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        p.cover = lookup.publicUrl
+      }
+    },
+  )
+  return posts
 }
 
 // --- Metadata ----------------------------------------------------------------
@@ -280,6 +315,7 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
 
   const pinned = pinnedMetas.map((meta) => toClientPostFromMeta(meta))
   if (pinned.length === FEATURE_POST_COUNT) {
+    await hydrateClientPostCovers(pinned)
     return pinned
   }
 
@@ -310,15 +346,19 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
   const withCover = candidates.filter((post) => post.cover)
   const pool = withCover.length >= FEATURE_POST_COUNT - pinned.length ? withCover : candidates
 
+  let result: ClientPost[]
   if (pool.length + pinned.length < FEATURE_POST_COUNT) {
     const fallbackPool = candidates
-    return [...pinned, ...fallbackPool].slice(0, FEATURE_POST_COUNT)
+    result = [...pinned, ...fallbackPool].slice(0, FEATURE_POST_COUNT)
+  } else {
+    // Deterministic shuffle using the daily seed so the same date always
+    // yields the same feature picks.
+    const shuffled = shuffle(pool, `feature-posts:${seed}:${pool.length}`)
+    result = [...pinned, ...shuffled.slice(0, FEATURE_POST_COUNT - pinned.length)]
   }
 
-  // Deterministic shuffle using the daily seed so the same date always
-  // yields the same feature picks.
-  const shuffled = shuffle(pool, `feature-posts:${seed}:${pool.length}`)
-  return [...pinned, ...shuffled.slice(0, FEATURE_POST_COUNT - pinned.length)]
+  await hydrateClientPostCovers(result)
+  return result
 }
 
 export async function selectSidebarPosts(count: number): Promise<SidebarPostLink[]> {
