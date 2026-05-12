@@ -62,7 +62,7 @@ const catalogState = {
   postsByTag: new Map<string, { title: string }[]>(),
 }
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/posts/query', () => ({
   listPostsByCategory: vi.fn(async (name: string) => catalogState.postsByCategory.get(name) ?? []),
   listPostsByTag: vi.fn(async (name: string) => catalogState.postsByTag.get(name) ?? []),
 }))

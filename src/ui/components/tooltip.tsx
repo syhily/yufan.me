@@ -28,11 +28,11 @@ function TooltipContent({
 }: ComponentProps<typeof BaseTooltip.Popup> & { sideOffset?: number }) {
   return (
     <BaseTooltip.Portal>
-      <BaseTooltip.Positioner sideOffset={sideOffset} className="z-50">
+      <BaseTooltip.Positioner sideOffset={sideOffset} className="z-(--z-modal)">
         <BaseTooltip.Popup
           data-slot="tooltip-content"
           className={cn(
-            'z-50 w-fit origin-[var(--transform-origin)] rounded-md bg-primary px-3 py-1.5 text-xs text-balance text-primary-foreground data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
+            'z-(--z-modal) w-fit origin-[var(--transform-origin)] rounded-md bg-primary px-3 py-1.5 text-xs text-balance text-primary-foreground data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             className,
           )}
           {...props}

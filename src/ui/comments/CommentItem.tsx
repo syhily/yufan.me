@@ -1,5 +1,5 @@
 import { XIcon } from 'lucide-react'
-import { useContext, useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/api-types'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
@@ -57,7 +57,7 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
   onDeleted: (id: bigint | string) => void
   onDismissMyComment: (id: bigint | string) => void
 } {
-  const ctx = useContext(CommentsContext)
+  const ctx = use(CommentsContext)
   if (ctx !== null) {
     return adapt(ctx, propAdmin)
   }
@@ -75,9 +75,15 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
   }
 }
 
-function adapt(ctx: CommentsContextValue, propAdmin: boolean | undefined) {
+function adapt(ctx: CommentsContextValue, _propAdmin: boolean | undefined) {
+  // When a CommentsContext is mounted, it is the single source of truth.
+  // The legacy `<Comment>` SSR helper and snapshot tests still pass an
+  // `admin` prop, but those paths render WITHOUT a provider and fall
+  // through the `useCommentsLeafContext` fallback below instead of
+  // landing in `adapt`. So inside a compound usage we always read from
+  // context — no more prop-vs-context drift surface.
   return {
-    admin: propAdmin === undefined ? ctx.admin : propAdmin,
+    admin: ctx.admin,
     myCommentIds: ctx.myCommentIds,
     myCommentExpiresAt: ctx.myCommentExpiresAt,
     activeReplyToId: ctx.activeReplyToId,
@@ -262,8 +268,8 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
                   'rounded-full text-badge font-bold',
                 )}
                 style={{
-                  backgroundColor: comment.badgeColor || '#008c95',
-                  color: comment.badgeTextColor || '#ffffff',
+                  backgroundColor: comment.badgeColor || 'var(--brand)',
+                  color: comment.badgeTextColor || 'var(--canvas)',
                 }}
               >
                 {comment.badgeName}

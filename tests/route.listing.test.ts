@@ -29,9 +29,21 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/catalog/queries', () => ({
   findCategoryBySlug: vi.fn(async (slug: string) => (slug === 'general' ? sampleCategory : null)),
   findTagBySlug: vi.fn(async (slug: string) => (slug === 'typescript' ? sampleTag : null)),
+}))
+
+vi.mock('@/shared/catalog', async () => {
+  const actual = await vi.importActual<typeof import('@/shared/catalog')>('@/shared/catalog')
+  return {
+    ...actual,
+    toClientPost: (p: unknown) => p,
+    toListingPostCard: (p: unknown) => p,
+  }
+})
+
+vi.mock('@/server/posts/query', () => ({
   listPostsByCategory: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
@@ -41,14 +53,6 @@ vi.mock('@/server/catalog', () => ({
   getPostsBySlugs: vi.fn(async (_slugs: string[], options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
-  getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>
-    (posts as Array<{ slug: string }>).map((p) => ({ ...p, meta: { likes: 0, views: 0, comments: 0 } })),
-  ),
-  toClientPost: (p: unknown) => p,
-  toListingPostCard: (p: unknown) => p,
-}))
-
-vi.mock('@/server/posts/query', () => ({
   countPublicPosts: vi.fn(async (_filters: { includeHidden?: boolean; category?: string; tag?: string }) =>
     _filters?.includeHidden ? samplePosts.length : publicPosts.length,
   ),

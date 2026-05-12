@@ -46,10 +46,15 @@ export function LinkPopover({ editor, variant, onClose }: LinkPopoverProps) {
   const firstFieldRef = useRef<HTMLInputElement | null>(null)
   const newTabFieldId = useId()
 
+  // Focus the first field on mount and whenever the variant flips (the
+  // bubble popover and the toolbar popover have different first fields,
+  // so the variant change effectively re-keys the form). Without the
+  // dependency, an unrelated parent remount would re-pull focus into the
+  // popover and interrupt anything the user was typing elsewhere.
   useEffect(() => {
     firstFieldRef.current?.focus()
     firstFieldRef.current?.select()
-  }, [])
+  }, [variant])
 
   const applyToolbar = () => {
     const text = linkText.trim()

@@ -48,6 +48,9 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
   // While focus sits in the textarea, PM selection can drift; cancel restores
   // this baseline and re-syncs the textarea + preview.
   const baselineTexRef = useRef('')
+  // Track in-flight `fetchRenderMath` so a rapid double-Apply discards the
+  // earlier render before its `insertContent` would clobber the newer one.
+  const applyAbortRef = useRef<AbortController | null>(null)
   const { previewHtml, renderError, showSpinner } = useAdminMathPreview(tex, false)
 
   // Align panel TeX with the document slice (attrs can lag behind the
@@ -62,9 +65,26 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
 
   const apply = () => {
     void (async () => {
+      // Abort any in-flight render from a prior Apply click. The
+      // signal is checked after `await fetchRenderMath` so a stale
+      // response is dropped instead of overwriting the new one.
+      applyAbortRef.current?.abort()
+      const controller = new AbortController()
+      applyAbortRef.current = controller
+
       editor.chain().focus().extendMarkRange('mathInline').run()
       const prev = editor.getAttributes('mathInline') as { _key?: string }
       const nextKey = prev._key !== undefined && prev._key !== '' ? prev._key : generateBlockKey()
+      // Pin the PM range we matched up front. If the user clicks back
+      // into the document during the await, PM selection moves and a
+      // naïve `deleteSelection()` would corrupt the wrong span.
+      const pinnedRange = (() => {
+        const markType = editor.state.schema.marks.mathInline
+        if (markType === undefined) {
+          return null
+        }
+        return getMarkRange(editor.state.selection.$from, markType) ?? null
+      })()
 
       let mathml: string | undefined
       const trimmed = tex.trim()
@@ -72,12 +92,21 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
         setApplying(true)
         try {
           const out = await fetchRenderMath({ tex, display: false })
+          if (controller.signal.aborted) {
+            return
+          }
           if (out.error === null && out.mathml !== '') {
             mathml = out.mathml
           }
         } finally {
-          setApplying(false)
+          if (!controller.signal.aborted) {
+            setApplying(false)
+          }
         }
+      }
+
+      if (controller.signal.aborted) {
+        return
       }
 
       const attrs: Record<string, string> = { _key: nextKey, tex }
@@ -85,10 +114,13 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
         attrs.mathml = mathml
       }
 
-      editor
-        .chain()
-        .focus()
-        .deleteSelection()
+      const chain = editor.chain().focus()
+      if (pinnedRange !== null) {
+        chain.setTextSelection(pinnedRange).deleteSelection()
+      } else {
+        chain.extendMarkRange('mathInline').deleteSelection()
+      }
+      chain
         .insertContent({
           type: 'text',
           text: tex,

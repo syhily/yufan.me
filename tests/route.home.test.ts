@@ -53,19 +53,26 @@ const mocks = vi.hoisted(() => ({
   }),
 }))
 
-vi.mock('@/server/catalog', () => ({
-  listClientPosts: mocks.listClientPosts,
+vi.mock('@/server/catalog/queries', () => ({
   listAllTags: mocks.listAllTags,
   getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
   getCategoryLinks: vi.fn(async (names: string[]) =>
     Object.fromEntries(names.filter((n) => n === sampleCategory.name).map((n) => [n, sampleCategory.permalink])),
   ),
-  toClientPost: (p: unknown) => p,
-  toListingPostCard: (p: unknown) => p,
-  toSidebarPostLink: (p: unknown) => p,
 }))
 
+vi.mock('@/shared/catalog', async () => {
+  const actual = await vi.importActual<typeof import('@/shared/catalog')>('@/shared/catalog')
+  return {
+    ...actual,
+    toClientPost: (p: unknown) => p,
+    toListingPostCard: (p: unknown) => p,
+    toSidebarPostLink: (p: unknown) => p,
+  }
+})
+
 vi.mock('@/server/posts/query', () => ({
+  listClientPosts: mocks.listClientPosts,
   countPublicPosts: vi.fn(async () => mocks.postCount),
   listPublicPostCardsPaginated: mocks.paginatedPosts,
   getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) =>

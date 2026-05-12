@@ -1,4 +1,4 @@
-import { Outlet, useOutletContext } from 'react-router'
+import { isRouteErrorResponse, Outlet, useLocation, useOutletContext, useRouteError } from 'react-router'
 
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
@@ -80,15 +80,42 @@ export async function loader(_args: Route.LoaderArgs) {
   }
 }
 
+// Render section errors inside the SettingsShell so the admin chrome
+// (sidebar nav, breadcrumb) survives. Without this, a 500 from a
+// per-section loader bubbles to `wp-admin.layout`'s ErrorBoundary which
+// renders a bare error page and the operator loses their context.
+export function ErrorBoundary() {
+  const error = useRouteError()
+  const { pathname } = useLocation()
+  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '设置加载失败'
+  const message = isRouteErrorResponse(error)
+    ? typeof error.data === 'string'
+      ? error.data
+      : error.statusText
+    : error instanceof Error
+      ? error.message
+      : '未知错误'
+
+  return (
+    <SettingsShell pathname={pathname}>
+      <div className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-6">
+        <h2 className="text-lg font-semibold text-destructive">{title}</h2>
+        <p className="text-sm text-muted-foreground">{message}</p>
+      </div>
+    </SettingsShell>
+  )
+}
+
 export default function WpAdminSettingsLayoutRoute({ loaderData }: Route.ComponentProps) {
   const parent = useOutletContext<ParentContext>()
+  const { pathname } = useLocation()
   const context: SettingsOutletContext = {
     ...parent,
     bundle: loaderData.bundle,
     timeZones: loaderData.timeZones,
   }
   return (
-    <SettingsShell>
+    <SettingsShell pathname={pathname}>
       <Outlet context={context} />
     </SettingsShell>
   )

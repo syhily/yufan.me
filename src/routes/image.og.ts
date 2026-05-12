@@ -1,8 +1,10 @@
 import crypto from 'node:crypto'
 
 import { loadBuffer } from '@/server/cache/image'
-import { findPostBySlug, findPageBySlug, getEntryBySlug } from '@/server/catalog'
+import { getEntryBySlug } from '@/server/catalog'
 import { drawOpenGraph } from '@/server/images/og'
+import { findPageBySlug } from '@/server/pages/query'
+import { findPostBySlug } from '@/server/posts/query'
 import { pngResponse } from '@/server/route-helpers/http'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { joinUrl } from '@/shared/urls'

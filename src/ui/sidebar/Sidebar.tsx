@@ -60,7 +60,7 @@ const widgetListClass = 'pl-5'
 // that the legacy rule forgot — `overflow: hidden` + `white-
 // space: nowrap` alone hard-clips the text mid-glyph; the
 // ellipsis tail is what makes it read as "truncated".
-const widgetListItemClass = 'mb-3 list-[circle] overflow-hidden text-ellipsis whitespace-nowrap'
+const widgetListItemClass = 'mb-3 list-[circle] truncate'
 
 // `<Link>` / `<a>` inside the recent-entries / recent-comments
 // widgets. Replaces the legacy `.widget-recent-entries ul li a
@@ -73,7 +73,7 @@ const widgetListItemClass = 'mb-3 list-[circle] overflow-hidden text-ellipsis wh
 // author + permalink `<a>` / `<Link>` only need the hover color
 // flip (they sit inline with separator text so should NOT become
 // `block`; the `<li>` itself owns the ellipsis for that case).
-const widgetEntryLinkClass = 'block overflow-hidden text-ellipsis whitespace-nowrap hover:text-brand'
+const widgetEntryLinkClass = 'block truncate hover:text-brand'
 const widgetCommentLinkClass = 'hover:text-brand'
 
 // `<span>` wrapping the comment author. Replaces the legacy

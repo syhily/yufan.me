@@ -1,21 +1,83 @@
-import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { describe, expect, it } from 'vite-plus/test'
 
+// Node-native replacement for the previous `rg --files` shell-out. GitHub's
+// `ubuntu-latest` runner does not ship ripgrep, so `execFileSync('rg', …)`
+// fails in CI. The argv shape mirrors the original call sites:
+//
+//   files(path1, path2, …, '-g', '*.ts', '-g', '*.tsx', …)
+//
+// Positive globs are restricted to the `*.<ext>` shape every existing call
+// site uses; if no globs are passed, every file under the given paths is
+// returned. Each path argument may be a file or a directory.
+const IGNORE_DIRS = new Set([
+  'node_modules',
+  '.git',
+  '.cache',
+  '.turbo',
+  'coverage',
+  'build',
+  'dist',
+  '.next',
+  '.react-router',
+  '.source',
+  '.vite',
+  '.vite-hooks',
+  '.idea',
+  '.history',
+  'tmp',
+])
+
+function walk(root: string, out: string[]): void {
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (IGNORE_DIRS.has(entry.name)) {
+      continue
+    }
+    const full = `${root}/${entry.name}`
+    if (entry.isDirectory()) {
+      walk(full, out)
+    } else if (entry.isFile()) {
+      out.push(full)
+    }
+  }
+}
+
 function files(...args: string[]): string[] {
-  // `rg --files` exits with a non-zero status when every input path is
-  // missing (which happens after we deleted an entire feature tree), so we
-  // return early if no path-like argument resolves on disk. Flag args (`-g`
-  // plus its value) are kept intact.
-  const paths = args.filter((arg) => !arg.startsWith('-'))
+  const paths: string[] = []
+  const extensions: string[] = []
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '-g') {
+      const glob = args[++i]
+      if (glob !== undefined && glob.startsWith('*.')) {
+        extensions.push(glob.slice(1))
+      }
+      continue
+    }
+    paths.push(args[i])
+  }
   if (paths.length === 0) {
     return []
   }
-  if (paths.every((path) => !existsSync(path))) {
+  const existing = paths.filter((path) => existsSync(path))
+  if (existing.length === 0) {
     return []
   }
-  const out = execFileSync('rg', ['--files', ...args], { encoding: 'utf8' }).trim()
-  return out === '' ? [] : out.split('\n')
+
+  const collected: string[] = []
+  for (const path of existing) {
+    if (statSync(path).isDirectory()) {
+      walk(path, collected)
+    } else {
+      collected.push(path)
+    }
+  }
+  if (extensions.length === 0) {
+    return collected
+  }
+  return collected.filter((file) => {
+    const dot = file.lastIndexOf('.')
+    return dot !== -1 && extensions.includes(file.slice(dot))
+  })
 }
 
 describe('contract: module and bundle boundaries', () => {

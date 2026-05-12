@@ -1,3 +1,5 @@
+import type { NavigateFunction } from 'react-router'
+
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
@@ -14,9 +16,10 @@ const GET_POST = API_ACTIONS.admin.getPost
 
 export interface PostEditorRouteProps {
   postId: string
+  navigate: NavigateFunction
 }
 
-export function PostEditorRoute({ postId }: PostEditorRouteProps) {
+export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
   const [detail, setDetail] = useState<AdminPostDetailDto | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -42,7 +45,7 @@ export function PostEditorRoute({ postId }: PostEditorRouteProps) {
   if (detail === null) {
     return <PostEditorSkeleton />
   }
-  return <PostEditorShell mode="edit" detail={detail} />
+  return <PostEditorShell mode="edit" detail={detail} navigate={navigate} />
 }
 
 function PostEditorError({ message }: { message: string }) {

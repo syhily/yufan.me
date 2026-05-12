@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { UserDetailView } from '@/ui/admin/users/UserDetailView'
@@ -11,5 +11,6 @@ export function meta({ matches }: Route.MetaArgs) {
 
 export default function WpAdminUserDetailRoute() {
   const { id } = useParams()
-  return <UserDetailView userId={id ?? ''} />
+  const navigate = useNavigate()
+  return <UserDetailView userId={id ?? ''} navigate={navigate} />
 }

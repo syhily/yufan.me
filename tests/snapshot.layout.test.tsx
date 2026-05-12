@@ -14,7 +14,7 @@ import { renderInRouter } from './_helpers/render'
 describe('snapshot: BaseLayout shell', () => {
   it('renders the default chrome (footer on, non-admin)', () => {
     const html = renderInRouter(
-      <BaseLayout admin={false}>
+      <BaseLayout admin={false} pathname="/" search="">
         <div className="page-body">page body</div>
       </BaseLayout>,
       '/',
@@ -24,7 +24,7 @@ describe('snapshot: BaseLayout shell', () => {
 
   it('renders without the footer when explicitly disabled (page detail)', () => {
     const html = renderInRouter(
-      <BaseLayout admin={false} footer={false}>
+      <BaseLayout admin={false} footer={false} pathname="/about" search="">
         <div className="page-body">about body</div>
       </BaseLayout>,
       '/about',
@@ -34,7 +34,7 @@ describe('snapshot: BaseLayout shell', () => {
 
   it('renders the admin variant of the chrome', () => {
     const html = renderInRouter(
-      <BaseLayout admin>
+      <BaseLayout admin pathname="/posts/hello" search="">
         <div className="page-body">post body</div>
       </BaseLayout>,
       '/posts/hello',

@@ -149,24 +149,33 @@ function collectFromTextBlock(
 // Shiki — code blocks
 // ---------------------------------------------------------------------------
 
+// Process-level singleton. The first save in a process initialises Shiki
+// (loads every bundled grammar — 80ms+); subsequent saves and editor
+// previews reuse the same highlighter. We hold the in-flight promise so
+// concurrent first-save requests share one bootstrap.
+let shikiHighlighterPromise: ReturnType<typeof createHighlighter> | null = null
+
+function getShikiHighlighter(): ReturnType<typeof createHighlighter> {
+  if (shikiHighlighterPromise === null) {
+    shikiHighlighterPromise = createHighlighter({
+      langs: Object.keys(bundledLanguages),
+      themes: [SHIKI_THEME],
+    }).catch((err) => {
+      // Reset so a later save can retry instead of poisoning the cache.
+      shikiHighlighterPromise = null
+      throw err
+    })
+  }
+  return shikiHighlighterPromise
+}
+
 async function runShikiPasses(blocks: { code: string; language?: string; highlightedHtml?: string }[]): Promise<void> {
   if (blocks.length === 0) {
     return
   }
-  let highlight: ((code: string, lang?: string) => Promise<string>) | null = null
+  let highlighter: Awaited<ReturnType<typeof createHighlighter>>
   try {
-    const highlighter = await createHighlighter({
-      langs: Object.keys(bundledLanguages),
-      themes: [SHIKI_THEME],
-    })
-    highlight = (code, lang) =>
-      Promise.resolve(
-        highlighter.codeToHtml(code, {
-          lang: typeof lang === 'string' && lang !== '' && lang in bundledLanguages ? lang : 'text',
-          theme: SHIKI_THEME,
-          transformers: shikiTransformers(),
-        }),
-      )
+    highlighter = await getShikiHighlighter()
   } catch {
     // Highlighter bootstrap failed — leave the blocks raw and let the
     // public renderer's fallback render plain `<pre><code>`.
@@ -175,7 +184,14 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
   await Promise.all(
     blocks.map(async (block) => {
       try {
-        block.highlightedHtml = await highlight!(block.code, block.language)
+        block.highlightedHtml = highlighter.codeToHtml(block.code, {
+          lang:
+            typeof block.language === 'string' && block.language !== '' && block.language in bundledLanguages
+              ? block.language
+              : 'text',
+          theme: SHIKI_THEME,
+          transformers: shikiTransformers(),
+        })
       } catch {
         // Per-block failure: leave `highlightedHtml` unset so the
         // renderer falls back to plain `<code>` for this block only.
@@ -203,20 +219,22 @@ async function runKatexPasses(
   } catch {
     return
   }
-  for (const block of blocks) {
-    try {
-      block.mathml = await renderer.render(block.tex, true)
-    } catch {
-      // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
-    }
-  }
-  for (const def of inlines) {
-    try {
-      def.mathml = await renderer.render(def.tex, false)
-    } catch {
-      // Leave mathml unset.
-    }
-  }
+  await Promise.all([
+    ...blocks.map(async (block) => {
+      try {
+        block.mathml = await renderer.render(block.tex, true)
+      } catch {
+        // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
+      }
+    }),
+    ...inlines.map(async (def) => {
+      try {
+        def.mathml = await renderer.render(def.tex, false)
+      } catch {
+        // Leave mathml unset.
+      }
+    }),
+  ])
 }
 
 // ---------------------------------------------------------------------------

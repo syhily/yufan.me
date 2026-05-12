@@ -16,7 +16,17 @@ const mocks = vi.hoisted(() => ({
   getTagsByNames: vi.fn(),
 }))
 
-vi.mock('@/server/catalog', () => mocks)
+vi.mock('@/server/posts/query', () => ({
+  listPublicPostsWithContent: mocks.listPublicPostsWithContent,
+}))
+vi.mock('@/server/catalog/queries', () => ({
+  findCategoryBySlug: mocks.findCategoryBySlug,
+  findCategoryByName: mocks.findCategoryByName,
+  findTagBySlug: mocks.findTagBySlug,
+  findTagByName: mocks.findTagByName,
+  listAllCategories: mocks.listAllCategories,
+  getTagsByNames: mocks.getTagsByNames,
+}))
 
 const { feedResponse, generateFeeds } = await import('@/server/feed')
 

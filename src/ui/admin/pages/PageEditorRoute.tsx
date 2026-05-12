@@ -1,3 +1,5 @@
+import type { NavigateFunction } from 'react-router'
+
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
@@ -14,13 +16,14 @@ const GET_PAGE = API_ACTIONS.admin.getPage
 
 export interface PageEditorRouteProps {
   pageId: string
+  navigate: NavigateFunction
 }
 
 // Top-level wrapper around `PageEditorShell` that owns the
 // "fetch the detail DTO from the API on mount" lifecycle. Kept
 // separate from the shell so the shell stays plain-props +
 // straightforward to unit-test.
-export function PageEditorRoute({ pageId }: PageEditorRouteProps) {
+export function PageEditorRoute({ pageId, navigate }: PageEditorRouteProps) {
   const [detail, setDetail] = useState<AdminPageDetailDto | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -46,7 +49,7 @@ export function PageEditorRoute({ pageId }: PageEditorRouteProps) {
   if (detail === null) {
     return <PageEditorSkeleton />
   }
-  return <PageEditorShell mode="edit" detail={detail} />
+  return <PageEditorShell mode="edit" detail={detail} navigate={navigate} />
 }
 
 function PageEditorError({ message }: { message: string }) {

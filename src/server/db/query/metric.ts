@@ -48,6 +48,28 @@ export async function ensureMetric(target: EntityTarget): Promise<MetricRow> {
   return result[0]
 }
 
+/** Batch upsert of metric rows. One SQL round-trip regardless of batch size. */
+export async function ensureMetricsBatch(targets: EntityTarget[]): Promise<MetricRow[]> {
+  if (targets.length === 0) {
+    return []
+  }
+  const values = targets.map((t) => ({
+    type: t.type,
+    ownerId: t.ownerId,
+    voteUp: 0,
+    voteDown: 0,
+    pv: 0,
+  }))
+  return db
+    .insert(metric)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [metric.type, metric.ownerId],
+      set: { updatedAt: sql`${metric.updatedAt}` },
+    })
+    .returning()
+}
+
 export async function findMetricByPublicId(publicId: string): Promise<MetricRow | null> {
   const rows = await db.select().from(metric).where(eq(metric.publicId, publicId)).limit(1)
   return rows[0] ?? null

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { PageEditorRoute } from '@/ui/admin/pages/PageEditorRoute'
@@ -11,5 +11,6 @@ export function meta({ matches }: Route.MetaArgs) {
 
 export default function WpAdminPageEditRoute() {
   const { id } = useParams()
-  return <PageEditorRoute pageId={id ?? ''} />
+  const navigate = useNavigate()
+  return <PageEditorRoute pageId={id ?? ''} navigate={navigate} />
 }

@@ -194,7 +194,7 @@ const UserRow = memo(function UserRow({
                 <Badge
                   className="border-transparent"
                   style={{
-                    backgroundColor: user.badgeColor || '#008c95',
+                    backgroundColor: user.badgeColor || 'var(--brand)',
                     // Honour the admin-set text-colour override; fall
                     // back to white for legacy rows without one — the
                     // public site applies a proper WCAG pick, this

@@ -87,7 +87,6 @@ function withCacheFallbacks(value: CacheSettingsNonNull): CacheSettingsNonNull {
       calendar: isCacheBucketSlotLike(cache.calendar) ? cache.calendar : fallback.calendar,
       avatar: isCacheBucketSlotLike(cache.avatar) ? cache.avatar : fallback.avatar,
       imageMeta: isCacheBucketSlotLike(cache.imageMeta) ? cache.imageMeta : fallback.imageMeta,
-      commentsMd: isCacheBucketSlotLike(cache.commentsMd) ? cache.commentsMd : fallback.commentsMd,
       embeddingSearch: isCacheBucketSlotLike(cache.embeddingSearch) ? cache.embeddingSearch : fallback.embeddingSearch,
       searchResult: isCacheBucketSlotLike(cache.searchResult) ? cache.searchResult : fallback.searchResult,
     },

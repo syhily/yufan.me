@@ -149,7 +149,7 @@ export interface MailSettings {
 
 // Per-bucket Redis cache configuration. Bucket ids are hard-coded
 // in the writers — `og` / `calendar` / `avatar` for binary
-// generated-image surfaces, plus `image-meta` and `comments-md`
+// generated-image surfaces, plus `image-meta`
 // (the two former `lru-cache` instances now routed through Redis so
 // every replica shares warmth). The key PREFIX and TTL are
 // runtime-editable so an admin can rename a colliding prefix or
@@ -160,7 +160,6 @@ export interface CacheSettings {
     calendar: { prefix: string; ttlSeconds: number }
     avatar: { prefix: string; ttlSeconds: number }
     imageMeta: { prefix: string; ttlSeconds: number }
-    commentsMd: { prefix: string; ttlSeconds: number }
     embeddingSearch: { prefix: string; ttlSeconds: number }
     searchResult: { prefix: string; ttlSeconds: number }
   }

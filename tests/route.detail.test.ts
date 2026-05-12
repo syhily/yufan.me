@@ -35,18 +35,6 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => {
-    if (slug === 'hello' || slug === 'hello-old') {
-      return samplePost
-    }
-    return null
-  }),
-  findPageBySlug: vi.fn(async (slug: string) => {
-    if (slug === 'about') {
-      return samplePage
-    }
-    return null
-  }),
   getEntryBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return { type: 'post', id: samplePost.id, slug }
@@ -56,18 +44,42 @@ vi.mock('@/server/catalog', () => ({
     }
     return null
   }),
+}))
+vi.mock('@/server/posts/query', () => ({
+  findPostBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello' || slug === 'hello-old') {
+      return samplePost
+    }
+    return null
+  }),
+  listClientPosts: vi.fn(async () => sidebarSamples),
+  selectSidebarPosts: vi.fn(async () => sidebarSamples),
+}))
+vi.mock('@/server/pages/query', () => ({
+  findPageBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'about') {
+      return samplePage
+    }
+    return null
+  }),
+}))
+vi.mock('@/server/catalog/queries', () => ({
   listAllFriends: vi.fn(async () => []),
   getTagsByNames: vi.fn(async () => [sampleTag]),
-  listClientPosts: vi.fn(async () => sidebarSamples),
   listAllTags: vi.fn(async () => [sampleTag]),
-  toClientPost: (p: unknown) => p,
-  toClientPage: (p: unknown) => p,
-  toListingPostCard: (p: unknown) => p,
-  toDetailPostShell: (p: unknown) => p,
-  toDetailPageShell: (p: unknown) => p,
-  toSidebarPostLink: (p: unknown) => p,
-  ContentCatalog: class {},
 }))
+vi.mock('@/shared/catalog', async () => {
+  const actual = await vi.importActual<typeof import('@/shared/catalog')>('@/shared/catalog')
+  return {
+    ...actual,
+    toClientPost: (p: unknown) => p,
+    toClientPage: (p: unknown) => p,
+    toListingPostCard: (p: unknown) => p,
+    toDetailPostShell: (p: unknown) => p,
+    toDetailPageShell: (p: unknown) => p,
+    toSidebarPostLink: (p: unknown) => p,
+  }
+})
 
 vi.mock('@/ui/pt/render', () => ({
   PortableTextBody: () => null,

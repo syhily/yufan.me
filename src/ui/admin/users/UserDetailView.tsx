@@ -1,3 +1,5 @@
+import type { NavigateFunction } from 'react-router'
+
 import {
   ArrowLeftIcon,
   CheckCheckIcon,
@@ -8,7 +10,7 @@ import {
   VolumeOffIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useFetcher, useNavigate } from 'react-router'
+import { Link, useFetcher } from 'react-router'
 
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type {
@@ -55,9 +57,13 @@ const COMMENTS_LOAD = API_ACTIONS.comment.loadAll
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
-export function UserDetailView({ userId }: { userId: string }) {
+export interface UserDetailViewProps {
+  userId: string
+  navigate: NavigateFunction
+}
+
+export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const config = useSiteIdentity()
-  const navigate = useNavigate()
   const userFetcher = useFetcher<ApiEnvelope<GetUserOutput>>()
   const updateFetcher = useFetcher<ApiEnvelope<UpdateUserOutput>>()
   const muteFetcher = useFetcher<ApiEnvelope<MuteUserOutput>>()
@@ -219,7 +225,7 @@ export function UserDetailView({ userId }: { userId: string }) {
                     <Badge
                       className="border-transparent"
                       style={{
-                        backgroundColor: user.badgeColor || '#008c95',
+                        backgroundColor: user.badgeColor || 'var(--brand)',
                         // The DB value already accounts for the manual
                         // override (or is `null` when the admin opted
                         // for auto-derive). The card preview is a

@@ -1,7 +1,6 @@
 import type { TagRow } from '@/server/db/types'
 import type { AdminTagDto } from '@/shared/tags'
 
-import { listPostsByTag } from '@/server/catalog'
 import { invalidateCatalog } from '@/server/catalog/invalidate'
 import { formatBlockMessage } from '@/server/categories/service'
 import {
@@ -15,6 +14,7 @@ import {
   listAdminTagRows,
   updateTag,
 } from '@/server/db/query/tag'
+import { listPostsByTag } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { derivedTagSlug } from '@/server/tags/slug'
 

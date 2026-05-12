@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vite-plus/test'
 
+import type { PmBlockNode } from '@/shared/pt/bridge/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import {
-  type PmBlockNode,
-  arePortableTextBodiesEquivalent,
-  bodyToPmDoc,
-  pmDocToBody,
-  synchronizeFootnoteIndices,
-} from '@/shared/pt/bridge'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
+import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
+import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
+import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 
 // PortableText ↔ ProseMirror bridge contract tests. The on-disk PT is
 // the canonical shape (validated by the API perimeter); ProseMirror is
@@ -87,6 +85,90 @@ describe('contract: pt-bridge — round-trip on the standard subset', () => {
     const back = pmDocToBody(bodyToPmDoc(body))
     expect(back[0]._type).toBe('block')
     expect(back[0]).toMatchObject({ style: 'blockquote' })
+  })
+
+  it('preserves bullet list items nested inside a blockquote', () => {
+    // Tiptap's blockquote accepts `block+`, so an authored quote may
+    // contain a bulletList. The naive bridge used to treat every quote
+    // child as a paragraph and silently drop list content.
+    const doc = {
+      type: 'doc' as const,
+      content: [
+        {
+          type: 'blockquote' as const,
+          attrs: { _key: 'q1' },
+          content: [
+            {
+              type: 'paragraph' as const,
+              attrs: { _key: 'q1-p' },
+              content: [{ type: 'text' as const, text: 'lead' }],
+            },
+            {
+              type: 'bulletList' as const,
+              content: [
+                {
+                  type: 'listItem' as const,
+                  content: [
+                    {
+                      type: 'paragraph' as const,
+                      attrs: { _key: 'li-a' },
+                      content: [{ type: 'text' as const, text: 'first' }],
+                    },
+                  ],
+                },
+                {
+                  type: 'listItem' as const,
+                  content: [
+                    {
+                      type: 'paragraph' as const,
+                      attrs: { _key: 'li-b' },
+                      content: [{ type: 'text' as const, text: 'second' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const back = pmDocToBody(doc)
+    expect(back).toHaveLength(3)
+    expect(back[0]).toMatchObject({ _type: 'block', style: 'blockquote' })
+    if (back[0]._type !== 'block' || back[0].children[0]._type !== 'span') {
+      return
+    }
+    expect(back[0].children[0].text).toBe('lead')
+    expect(back[1]).toMatchObject({ _type: 'block', listItem: 'bullet', level: 1 })
+    expect(back[2]).toMatchObject({ _type: 'block', listItem: 'bullet', level: 1 })
+    if (back[1]._type === 'block' && back[1].children[0]._type === 'span') {
+      expect(back[1].children[0].text).toBe('first')
+    }
+    if (back[2]._type === 'block' && back[2].children[0]._type === 'span') {
+      expect(back[2].children[0].text).toBe('second')
+    }
+  })
+
+  it('preserves a code block nested inside a blockquote', () => {
+    const doc = {
+      type: 'doc' as const,
+      content: [
+        {
+          type: 'blockquote' as const,
+          attrs: { _key: 'q1' },
+          content: [
+            {
+              type: 'codeBlock' as const,
+              attrs: { _key: 'cb1', language: 'ts' },
+              content: [{ type: 'text' as const, text: 'const x = 1' }],
+            },
+          ],
+        },
+      ],
+    }
+    const back = pmDocToBody(doc)
+    expect(back).toHaveLength(1)
+    expect(back[0]).toMatchObject({ _type: 'code', language: 'ts', code: 'const x = 1' })
   })
 
   it('round-trips text alignment on paragraphs, headings and blockquotes', () => {

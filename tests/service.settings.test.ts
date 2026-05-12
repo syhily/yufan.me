@@ -9,6 +9,19 @@ vi.mock('@/server/db/query/setting', () => ({
   upsertSetting: vi.fn(),
 }))
 
+// Snapshot hydrate/refresh fan through `storage.getItem` /
+// `storage.setItem` (the settings-version coherence key). The default
+// `@/server/cache/storage` would try to dial `redis://localhost:6379` —
+// fine locally, but on CI there is no Redis and `ioredis` retries
+// forever, blowing past every test timeout. Tests never assert on the
+// version key, so an in-memory no-op is plenty.
+vi.mock('@/server/cache/storage', () => ({
+  storage: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => undefined),
+  },
+}))
+
 const settingQueries = await import('@/server/db/query/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/settings/snapshot')
@@ -74,7 +87,6 @@ const fixtureBundle: BlogSettingsBundle = {
       calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
       imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
-      commentsMd: { prefix: 'comments-md-', ttlSeconds: 3600 },
       embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
       searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
@@ -490,7 +502,6 @@ describe('services/settings — cache section', () => {
           calendar: { prefix: 'cal:', ttlSeconds: 60 * 60 * 12 },
           avatar: { prefix: 'gravatar-', ttlSeconds: 60 * 60 * 24 * 3 },
           imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-          commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
           embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
         },
@@ -518,7 +529,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'shared-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -540,7 +550,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'og-foo-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -562,7 +571,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -583,7 +591,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -604,7 +611,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -625,7 +631,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -642,7 +647,6 @@ describe('services/settings — cache section', () => {
             calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
             avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 365 },
             imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
-            commentsMd: { prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -692,14 +696,13 @@ describe('services/settings — snapshot reader', () => {
     expect(cache.calendar).toEqual({ prefix: 'legacy-calendar-', ttlSeconds: 5678 })
     expect(cache.avatar).toEqual({ prefix: 'legacy-avatar-', ttlSeconds: 4321 })
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
-    expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
     expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
     expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
   })
 
   it('hydrate rejects legacy 3-bucket cache rows so the registry default backfills the section', async () => {
     // Reproduces the prod crash where a legacy `blog.cache` row stored
-    // before `imageMeta` / `commentsMd` were added passed the old
+    // before `imageMeta` was added passed the old
     // (object-only) probe, then crashed `<BucketCard>` on
     // `allBuckets.imageMeta.prefix`. The strengthened probe rejects
     // the row, the bucket is left null after the SELECT pass, and the
@@ -726,7 +729,6 @@ describe('services/settings — snapshot reader', () => {
     expect(dto.bundle).not.toBeNull()
     const cache = dto.bundle!.cache!.cache
     expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
-    expect(cache.commentsMd).toEqual({ prefix: 'comments-md-', ttlSeconds: 60 * 60 * 24 })
     const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
     expect(upsertCalls.some((call) => call[2] === 'blog.cache')).toBe(true)
   })

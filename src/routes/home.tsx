@@ -1,7 +1,7 @@
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 import type { SidebarData } from '@/ui/sidebar/Sidebar'
 
-import { getCategoryLinks, listAllTags } from '@/server/catalog'
+import { getCategoryLinks, listAllTags } from '@/server/catalog/queries'
 import {
   countPublicPosts,
   listPublicPostCardsPaginated,

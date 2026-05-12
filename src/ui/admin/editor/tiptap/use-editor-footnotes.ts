@@ -2,13 +2,11 @@ import type { Editor } from '@tiptap/core'
 
 import { useCallback, useRef, useState } from 'react'
 
-import {
-  bodyToPmDoc,
-  footnoteSyncSignature,
-  pmDocToBody,
-  synchronizeFootnoteIndices,
-  type PmDoc,
-} from '@/shared/pt/bridge'
+import type { PmDoc } from '@/shared/pt/bridge/types'
+
+import { footnoteSyncSignature, synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
+import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
+import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import {
   extractFootnoteDefinitionBlocks,
   footnoteChildrenToPlainText,
@@ -28,6 +26,25 @@ export interface FootnoteItem {
   _key: string
   index: number
   children: FootnoteDefinitionBlock['children']
+}
+
+// Structural equality for the editor's footnote-definition cache. The
+// previous implementation diffed via `JSON.stringify(a) !== JSON.stringify(b)`
+// on every onUpdate tick, which traversed and allocated the entire
+// footnote tree per keystroke. A two-array walk over `_key + index`
+// catches the same drift (reorder, add, remove, index renumber) without
+// any allocations — body edits don't change a definition's identity, so
+// child content can shift freely without flagging the cache.
+function footnoteDefsEqual(a: FootnoteDefinitionBlock[], b: FootnoteDefinitionBlock[]): boolean {
+  if (a.length !== b.length) {
+    return false
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i]._key !== b[i]._key || a[i].index !== b[i].index) {
+      return false
+    }
+  }
+  return true
 }
 
 export interface UseEditorFootnotesResult {
@@ -127,6 +144,7 @@ function applyFootnoteRenumberTransaction(instance: Editor, syncedBody: Portable
     tr = tr.replaceWith(c.from, c.to, schema.text(c.newText, [markType.create(c.attrs)]))
   }
 
+  tr.setMeta('addToHistory', false)
   instance.view.dispatch(tr)
   return true
 }
@@ -194,7 +212,7 @@ export function useEditorFootnotes(editor: Editor | null): UseEditorFootnotesRes
         footnoteDefsRef.current,
       )
       const nextDefs = extractFootnoteDefinitionBlocks(merged)
-      if (JSON.stringify(nextDefs) !== JSON.stringify(footnoteDefsRef.current)) {
+      if (!footnoteDefsEqual(nextDefs, footnoteDefsRef.current)) {
         setFootnoteDefs(nextDefs)
         footnoteDefsRef.current = nextDefs
       }

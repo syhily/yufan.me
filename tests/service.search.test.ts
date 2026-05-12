@@ -18,6 +18,18 @@ vi.mock('@/server/search/openai', () => ({
   generateEmbedding: mocks.generateEmbedding,
 }))
 
+// `searchPosts` caches result slugs in Redis. The default
+// `@/server/cache/storage` would try to dial `redis://localhost:6379` —
+// fine locally, but on CI there is no Redis and `ioredis` retries
+// forever, blowing past every test timeout. An in-memory no-op forces
+// every call to a cache miss so tests exercise the real query path.
+vi.mock('@/server/cache/storage', () => ({
+  storage: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => undefined),
+  },
+}))
+
 function chainable(rows: unknown[]) {
   const handle = Promise.resolve(rows) as unknown as {
     from: () => typeof handle

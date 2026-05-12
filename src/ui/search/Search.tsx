@@ -56,16 +56,18 @@ export function SearchBar() {
   return (
     <div id="search" className="mb-10" ref={containerRef}>
       <Form method="get" action="/search">
-        <label className="block" aria-label="文章寻踪">
-          <input
-            type="search"
-            className={sidebarSearchInputClass}
-            placeholder="文章寻踪（输入后回车）"
-            name="q"
-            required
-            enterKeyHint="search"
-          />
+        <label htmlFor="sidebar-search-input" className="sr-only">
+          文章寻踪
         </label>
+        <input
+          id="sidebar-search-input"
+          type="search"
+          className={sidebarSearchInputClass}
+          placeholder="文章寻踪（输入后回车）"
+          name="q"
+          required
+          enterKeyHint="search"
+        />
       </Form>
     </div>
   )
@@ -140,7 +142,7 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
   useIosNoZoomOnFocus(formRef, open)
 
   return (
-    <Popup open={open} onClose={onClose} size="md" popupId={SEARCH_POPUP_ID}>
+    <Popup open={open} onClose={onClose} size="md" popupId={SEARCH_POPUP_ID} aria-label="搜索文章">
       <Form ref={formRef} className="text-center" method="get" action="/search" onSubmit={onClose}>
         <div className="px-4 py-4 md:px-12 md:py-8">
           <div className="mx-auto max-w-sm">

@@ -7,7 +7,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { db } from '@/server/db/pool'
 import { content as contentTable, page as pageMetaTable, post as postMetaTable } from '@/server/db/schema'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 
 export type ContentType = 'page' | 'post'
 

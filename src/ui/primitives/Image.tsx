@@ -1,8 +1,9 @@
-import { useCallback, useLayoutEffect, useRef, useState, type ImgHTMLAttributes, type Ref } from 'react'
+import type { ImgHTMLAttributes, Ref } from 'react'
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { getImageSrcset, getImageUrl } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
+import { useImageLoaded } from '@/ui/primitives/use-image-loaded'
 
 export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'width' | 'height' | 'ref'> {
   src: string
@@ -38,7 +39,7 @@ export function RawImage({
   ref: externalRef,
   ...rest
 }: RawImageProps) {
-  const [loaded, setLoaded] = useState(false)
+  const { ref, loaded, handleLoad } = useImageLoaded(externalRef, onLoad)
   const thumbhashStyle = useThumbhashBackground(thumbhash, loaded)
   const srcset =
     sizes !== undefined && sizes !== ''
@@ -51,41 +52,10 @@ export function RawImage({
         ? { ...thumbhashStyle }
         : { ...thumbhashStyle, ...style }
 
-  const imgRef = useRef<HTMLImageElement | null>(null)
-
-  useLayoutEffect(() => {
-    if (imgRef.current?.complete) {
-      setLoaded(true)
-    }
-  }, [])
-
-  const setRef = useCallback(
-    (node: HTMLImageElement | null) => {
-      imgRef.current = node
-      if (typeof externalRef === 'function') {
-        externalRef(node)
-      } else if (externalRef && 'current' in externalRef) {
-        ;(externalRef as React.RefObject<HTMLImageElement | null>).current = node
-      }
-      if (node?.complete) {
-        setLoaded(true)
-      }
-    },
-    [externalRef],
-  )
-
-  const handleLoad = useCallback(
-    (e: React.SyntheticEvent<HTMLImageElement>) => {
-      setLoaded(true)
-      onLoad?.(e)
-    },
-    [onLoad],
-  )
-
   return (
     <img
       {...rest}
-      ref={setRef}
+      ref={ref}
       src={getImageUrl({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate })}
       alt={alt}
       width={width}

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { PostEditorRoute } from '@/ui/admin/posts/PostEditorRoute'
@@ -11,5 +11,6 @@ export function meta({ matches }: Route.MetaArgs) {
 
 export default function WpAdminPostEditRoute() {
   const { id } = useParams()
-  return <PostEditorRoute postId={id ?? ''} />
+  const navigate = useNavigate()
+  return <PostEditorRoute postId={id ?? ''} navigate={navigate} />
 }

@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
-import { NavLink, useLocation } from 'react-router'
+import { NavLink } from 'react-router'
 
 import { SECTION_DISPLAY_LIST } from '@/shared/settings'
 import { Button } from '@/ui/components/button'
@@ -15,6 +15,7 @@ import { cn } from '@/ui/lib/cn'
 const SECTIONS = SECTION_DISPLAY_LIST
 
 interface SettingsShellProps {
+  pathname: string
   children: ReactNode
 }
 
@@ -49,11 +50,9 @@ function SectionNav({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export function SettingsShell({ children }: SettingsShellProps) {
-  const location = useLocation()
+export function SettingsShell({ pathname, children }: SettingsShellProps) {
   const activeSection =
-    SECTIONS.find((section) => location.pathname === section.to || location.pathname.startsWith(`${section.to}/`)) ??
-    SECTIONS[0]
+    SECTIONS.find((section) => pathname === section.to || pathname.startsWith(`${section.to}/`)) ?? SECTIONS[0]
 
   // Mobile drawer open state. Each `NavLink` triggers `onNavigate`
   // which closes the sheet, mirroring the AdminShell mobile menu.

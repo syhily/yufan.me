@@ -83,7 +83,17 @@ export function DetailBodyChrome({
       {admin && editHref && (
         <Link
           to={editHref}
-          className="absolute top-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-soft hover:text-ink-strong md:top-4 md:right-4"
+          // The parent card uses `p-4 md:p-8`, so anchoring the icon
+          // at `top-4/right-4` (and `top-8/right-8` on md+) makes the
+          // button's top edge meet the title's top edge — i.e. on the
+          // same horizontal line — while staying flush with the
+          // title's right edge instead of poking into the card's
+          // outer padding. Translate-y nudges the button down so its
+          // vertical center sits closer to the title's optical
+          // baseline (the h1's line-height is ~1.6× of `text-[1.5rem]`,
+          // and the button is 8/8 — half the line height minus half
+          // the button is roughly +2px / +6px at each breakpoint).
+          className="absolute top-4 right-4 inline-flex h-8 w-8 translate-y-0.5 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-soft hover:text-ink-strong md:top-8 md:right-8 md:translate-y-1"
           aria-label="编辑"
           title="编辑"
           prefetch="intent"
@@ -91,7 +101,7 @@ export function DetailBodyChrome({
           <PencilIcon className="size-4" />
         </Link>
       )}
-      <h1 className={cn(postTitleClass, 'font-bold')}>
+      <h1 className={cn(postTitleClass, 'font-bold', admin && editHref && 'pr-10')}>
         {markerLabel !== null && (
           <span className="text-alert">
             <span className="sr-only">{markerLabel.sr}</span>

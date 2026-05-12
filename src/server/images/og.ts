@@ -144,10 +144,7 @@ export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): 
   const seo = requireBlogSettingsSection('seo')
 
   // Fetch the cover image as the background
-  const coverImage = await loadImage(cover)
-
-  // Generate the logo image
-  const logoImage = await loadImage(logoDark())
+  const [coverImage, logoImage] = await Promise.all([loadImage(cover), loadImage(logoDark())])
 
   // Mark sure the summary length is small enough to fit in
   let description = `${summary.replace(/<[^>]+>/g, '').trim()}`

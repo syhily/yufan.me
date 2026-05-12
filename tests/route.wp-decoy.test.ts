@@ -51,8 +51,6 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
-  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
   getEntryBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello') {
       return { type: 'post', id: fixtures.samplePost.id, slug }
@@ -62,13 +60,27 @@ vi.mock('@/server/catalog', () => ({
     }
     return null
   }),
-  listAllFriends: vi.fn(async () => []),
-  toClientPost: (p: unknown) => p,
-  toClientPage: (p: unknown) => p,
-  toDetailPostShell: (p: unknown) => p,
-  toDetailPageShell: (p: unknown) => p,
-  toSidebarPostLink: (p: unknown) => p,
 }))
+vi.mock('@/server/posts/query', () => ({
+  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
+}))
+vi.mock('@/server/pages/query', () => ({
+  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
+}))
+vi.mock('@/server/catalog/queries', () => ({
+  listAllFriends: vi.fn(async () => []),
+}))
+vi.mock('@/shared/catalog', async () => {
+  const actual = await vi.importActual<typeof import('@/shared/catalog')>('@/shared/catalog')
+  return {
+    ...actual,
+    toClientPost: (p: unknown) => p,
+    toClientPage: (p: unknown) => p,
+    toDetailPostShell: (p: unknown) => p,
+    toDetailPageShell: (p: unknown) => p,
+    toSidebarPostLink: (p: unknown) => p,
+  }
+})
 
 vi.mock('@/ui/pt/render', () => ({
   PortableTextBody: () => null,

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { buildPermalinkSet } from '@/server/catalog'
+import { buildPermalinkSet } from '@/server/posts/query'
 
 // Reusable Zod fragment that validates a comment's `key` (permalink) against
 // the live catalog. Extracted so the half-dozen comment-related resource

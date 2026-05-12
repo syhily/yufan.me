@@ -1,4 +1,4 @@
-import { data, isRouteErrorResponse, Outlet, redirect, useRouteError } from 'react-router'
+import { data, isRouteErrorResponse, Outlet, redirect, useLocation, useRouteError } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
@@ -61,8 +61,9 @@ export function ErrorBoundary() {
 
 export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps) {
   useDetachPublicCss()
+  const { pathname } = useLocation()
   return (
-    <AdminShell currentUser={loaderData.currentUser}>
+    <AdminShell currentUser={loaderData.currentUser} pathname={pathname}>
       <Outlet context={{ csrfToken: loaderData.csrfToken, currentUser: loaderData.currentUser }} />
     </AdminShell>
   )

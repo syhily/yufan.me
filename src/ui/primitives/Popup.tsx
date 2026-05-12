@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { XIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { cn } from '@/ui/lib/cn'
@@ -22,7 +22,29 @@ export interface PopupProps {
    * this prop the popup still renders, just without a stable hook.
    */
   popupId?: string
+  /** Forwarded to the dialog container for screen reader naming. */
+  'aria-label'?: string
+  /** Element id whose textContent names the dialog. Takes precedence over aria-label. */
+  'aria-labelledby'?: string
   children: ReactNode
+}
+
+// CSS selector matching tabbable / focusable controls. Used by the
+// focus trap to find the first / last candidate inside the dialog.
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[contenteditable="true"]',
+].join(',')
+
+function getFocusable(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (node) => !node.hasAttribute('inert') && node.offsetParent !== null,
+  )
 }
 
 // Tailwind utility chains for the body's `max-width` ladder. `lg` is
@@ -70,8 +92,18 @@ const popupCloseButtonClass = cn(
 // commits before the rAF below fires, so the input is interactive
 // from the moment the user sees the dialog and the entrance
 // animation still plays its full ~300ms cycle.
-export function Popup({ open, onClose, size = 'sm', popupId, children }: PopupProps) {
+export function Popup({
+  open,
+  onClose,
+  size = 'sm',
+  popupId,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
+  children,
+}: PopupProps) {
   const [entered, setEntered] = useState(false)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!open) {
@@ -86,14 +118,61 @@ export function Popup({ open, onClose, size = 'sm', popupId, children }: PopupPr
     if (!open) {
       return
     }
+    // Save the element that opened the popup so we can restore focus on close.
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null
+
+    // Focus the first focusable child after the dialog has rendered. We poll
+    // through one rAF because the close button is fixed-positioned and only
+    // becomes focusable once the entrance transition allows pointer-events.
+    const raf = window.requestAnimationFrame(() => {
+      const root = dialogRef.current
+      if (root === null) {
+        return
+      }
+      const focusables = getFocusable(root)
+      const target = focusables[0] ?? root
+      target.focus({ preventScroll: true })
+    })
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault()
         onClose()
+        return
+      }
+      if (event.key !== 'Tab' || dialogRef.current === null) {
+        return
+      }
+      const focusables = getFocusable(dialogRef.current)
+      if (focusables.length === 0) {
+        event.preventDefault()
+        dialogRef.current.focus({ preventScroll: true })
+        return
+      }
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement
+      if (event.shiftKey) {
+        if (active === first || !dialogRef.current.contains(active)) {
+          event.preventDefault()
+          last.focus({ preventScroll: true })
+        }
+      } else {
+        if (active === last || !dialogRef.current.contains(active)) {
+          event.preventDefault()
+          first.focus({ preventScroll: true })
+        }
       }
     }
+
     document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      window.cancelAnimationFrame(raf)
+      // Restore focus to whatever opened the popup so the page stays
+      // navigable for keyboard / screen reader users.
+      previouslyFocusedRef.current?.focus({ preventScroll: true })
+    }
   }, [open, onClose])
 
   if (!open || typeof document === 'undefined') {
@@ -114,10 +193,17 @@ export function Popup({ open, onClose, size = 'sm', popupId, children }: PopupPr
           entered ? 'pointer-events-auto visible opacity-100' : 'invisible opacity-0',
         )}
         onClick={onClose}
+        aria-hidden="true"
       />
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabelledBy === undefined ? ariaLabel : undefined}
+        aria-labelledby={ariaLabelledBy}
+        tabIndex={-1}
         className={cn(
-          'relative w-popup-mobile py-8 transition-all duration-300 ease-in-out md:w-full',
+          'relative w-popup-mobile py-8 transition-all duration-300 ease-in-out focus:outline-none md:w-full',
           entered ? 'pointer-events-auto visible translate-y-0 opacity-100' : 'invisible -translate-y-10 opacity-0',
           BODY_SIZE_CLASS[size],
         )}

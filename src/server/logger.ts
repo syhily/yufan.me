@@ -8,13 +8,11 @@
 // strip or hash them before storage. Callers don't need to remember to tag
 // values manually — using the standard key names is enough.
 
+import { LOG_LEVEL } from '@/server/env'
+
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
 const LEVEL_ORDER: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 }
-
-function isLevel(value: string | undefined): value is Level {
-  return value === 'debug' || value === 'info' || value === 'warn' || value === 'error'
-}
 
 function readMinLevel(): Level {
   // `import.meta.env` is injected by Vite at build/dev time. Guard
@@ -22,11 +20,8 @@ function readMinLevel(): Level {
   // scripts under `scripts/`) where the object is undefined and
   // accessing `.PROD` would otherwise crash module evaluation.
   const meta = (import.meta as { env?: { PROD?: boolean } }).env
-  const fallback = meta?.PROD === true ? 'info' : 'debug'
-  if (typeof process === 'undefined') {
-    return fallback
-  }
-  return isLevel(process.env.LOG_LEVEL) ? process.env.LOG_LEVEL : fallback
+  const fallback: Level = meta?.PROD === true ? 'info' : 'debug'
+  return LOG_LEVEL ?? fallback
 }
 
 const minLevel: Level = readMinLevel()

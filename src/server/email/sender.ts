@@ -131,6 +131,7 @@ async function resolveEntity(target: EntityTarget): Promise<{ title: string; url
 // Sent to the administrator whenever a new comment is posted.
 export async function sendNewComment(commentInfo: CommentAndUser, target: EntityTarget): Promise<SendResult> {
   const entity = await resolveEntity(target)
+  const commentHtml = commentBodyToHtml(commentInfo.body)
   if (entity === null) {
     log.warn('Skipping new-comment email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -140,7 +141,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, target: Entity
       postTitle: entity.title,
       postLink: entity.url,
       commentNeedApproval: commentInfo.isPending === true,
-      commentContent: commentBodyToHtml(commentInfo.body),
+      commentContent: commentHtml,
       commentLink: `${entity.url}#user-comment-${commentInfo.id}`,
     }),
   )
@@ -156,6 +157,8 @@ export async function sendNewReply(
   target: EntityTarget,
 ): Promise<SendResult> {
   const entity = await resolveEntity(target)
+  const sourceHtml = commentBodyToHtml(source.body)
+  const replyHtml = commentBodyToHtml(reply.body)
   if (entity === null) {
     log.warn('Skipping reply email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -165,8 +168,8 @@ export async function sendNewReply(
       receiver: sourceUser.name,
       postTitle: entity.title,
       postLink: entity.url,
-      sourceContent: commentBodyToHtml(source.body),
-      replyContent: commentBodyToHtml(reply.body),
+      sourceContent: sourceHtml,
+      replyContent: replyHtml,
       replyLink: `${entity.url}#user-comment-${reply.id}`,
     }),
   )
@@ -180,6 +183,7 @@ export async function sendNewReply(
 // Sent to the commenter when an admin approves their previously pending comment.
 export async function sendApprovedComment(comment: Comment, user: User, target: EntityTarget): Promise<SendResult> {
   const entity = await resolveEntity(target)
+  const commentHtml = commentBodyToHtml(comment.body)
   if (entity === null) {
     log.warn('Skipping approval email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
@@ -189,7 +193,7 @@ export async function sendApprovedComment(comment: Comment, user: User, target: 
       receiver: user.name,
       postTitle: entity.title,
       postLink: entity.url,
-      commentContent: commentBodyToHtml(comment.body),
+      commentContent: commentHtml,
       commentLink: `${entity.url}#user-comment-${comment.id}`,
     }),
   )

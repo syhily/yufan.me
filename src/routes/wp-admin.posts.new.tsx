@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router'
+
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 
@@ -8,5 +10,6 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function WpAdminPostNewRoute() {
-  return <PostEditorShell mode="create" />
+  const navigate = useNavigate()
+  return <PostEditorShell mode="create" navigate={navigate} />
 }

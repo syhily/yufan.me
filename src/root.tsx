@@ -11,6 +11,7 @@ import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { ErrorView } from '@/ui/post/ErrorView'
+import { NavigationSplash } from '@/ui/primitives/NavigationSplash'
 
 import type { Route } from './+types/root'
 
@@ -156,6 +157,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // `useFooterSettings()` / etc.
   return (
     <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+      <NavigationSplash />
       <Outlet />
     </BlogSettingsProvider>
   )
@@ -178,7 +180,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   // Body decision is shared with `routes/public.layout.tsx`'s
   // boundary via `<ErrorView />`. Keeping the body off-component
   // guarantees scanner traffic and real 404s get the same shell.
-  const body = <ErrorView error={error} />
+  const body = <ErrorView error={error} isDev={import.meta.env.DEV} />
 
   // Fallback for the (rare) case where we hit an error before any
   // request ever populated the snapshot — e.g. the root loader threw on
@@ -189,7 +191,13 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   return (
     <BlogSettingsProvider value={blogSettings ?? undefined}>
       <Suspense fallback={null}>
-        {blogSettings ? <PublicChromeLazy admin={loaderData?.admin ?? false}>{body}</PublicChromeLazy> : body}
+        {blogSettings ? (
+          <PublicChromeLazy admin={loaderData?.admin ?? false} pathname="/" search="">
+            {body}
+          </PublicChromeLazy>
+        ) : (
+          body
+        )}
       </Suspense>
     </BlogSettingsProvider>
   )

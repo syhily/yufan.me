@@ -2,8 +2,8 @@ import {
   cloneElement,
   createContext,
   isValidElement,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -64,7 +64,7 @@ export function FootnoteProvider({ children }: { children: ReactNode }) {
 }
 
 export function FootnoteReference({ children, ...props }: ComponentProps<'sup'>) {
-  const context = useContext(FootnotePreviewContext)
+  const context = use(FootnotePreviewContext)
   const href = footnoteReferenceHref(children)
   const preview = href === undefined ? undefined : context?.previews.get(href)
 
@@ -82,7 +82,7 @@ export function FootnoteReference({ children, ...props }: ComponentProps<'sup'>)
 }
 
 export function FootnotePreviewRegistrar({ anchorId, preview }: { anchorId: string; preview: ReactNode }) {
-  const register = useContext(FootnoteRegisterContext)
+  const register = use(FootnoteRegisterContext)
   const previewRef = useRef(preview)
   previewRef.current = preview
 
@@ -98,7 +98,7 @@ export function FootnotePreviewRegistrar({ anchorId, preview }: { anchorId: stri
 }
 
 export function FootnoteDefinition({ children, id, ...props }: ComponentProps<'li'>) {
-  const register = useContext(FootnoteRegisterContext)
+  const register = use(FootnoteRegisterContext)
   const isFootnote = typeof id === 'string' && id.startsWith(FOOTNOTE_ID_PREFIX)
   const preview = useMemo(() => stripBackrefs(children), [children])
   const previewRef = useRef(preview)

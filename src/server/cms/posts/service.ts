@@ -34,7 +34,7 @@ import {
   type ListPostsFilters,
 } from '@/server/cms/posts/repository'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/db/query/like'
-import { ensureMetric } from '@/server/db/query/metric'
+import { ensureMetricsBatch } from '@/server/db/query/metric'
 import { seedTagIfMissing } from '@/server/db/query/tag'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
@@ -164,9 +164,9 @@ export async function listPostsForAdmin(filters: ListPostsFilters = {}): Promise
   // Ensure every listed post has a `metric` row so the admin
   // comment-count link can compose `?pageKey=<publicId>` even before
   // the post has been visited publicly. The upsert is idempotent and
-  // batched in a single Promise.all.
+  // batched in a single SQL statement.
   const ownerIds = rows.map((row) => row.id)
-  await Promise.all(rows.map((row) => ensureMetric({ type: 'post', ownerId: row.id })))
+  await ensureMetricsBatch(rows.map((row) => ({ type: 'post', ownerId: row.id })))
   const [metrics, countRows] = await Promise.all([
     metricsByOwnerIds('post', ownerIds),
     commentCountsByOwnerIds('post', ownerIds),

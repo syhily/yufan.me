@@ -27,11 +27,11 @@ interface PopoverContentProps extends ComponentProps<typeof BasePopover.Popup> {
 function PopoverContent({ className, align = 'center', sideOffset = 4, children, ...props }: PopoverContentProps) {
   return (
     <BasePopover.Portal>
-      <BasePopover.Positioner sideOffset={sideOffset} align={align} className="z-50">
+      <BasePopover.Positioner sideOffset={sideOffset} align={align} className="z-(--z-modal)">
         <BasePopover.Popup
           data-slot="popover-content"
           className={cn(
-            'z-50 w-72 origin-[var(--transform-origin)] rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+            'z-(--z-modal) w-72 origin-[var(--transform-origin)] rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none',
             'data-[ending-style]:scale-95 data-[ending-style]:opacity-0',
             'data-[starting-style]:scale-95 data-[starting-style]:opacity-0',
             'transition-[transform,opacity] duration-150',

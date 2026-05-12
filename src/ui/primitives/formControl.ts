@@ -34,7 +34,8 @@
 // 'textarea'` does not.
 
 import { cva, type VariantProps } from 'class-variance-authority'
-import { twMerge } from 'tailwind-merge'
+
+import { cn } from '@/ui/lib/cn'
 
 const formControlBase =
   'block w-full bg-canvas bg-clip-padding border border-line rounded-(--radius-sm) font-normal text-ink-muted placeholder:text-ink-secondary placeholder:opacity-100 disabled:bg-surface read-only:bg-surface focus:text-ink-secondary focus:border-line-muted'
@@ -85,4 +86,4 @@ type FormControlVariantsFn = (props?: Parameters<typeof formControlVariantsRaw>[
 // `text-sm py-2.5 px-3` (textarea compound) string when both fire,
 // and `tailwind-merge` collapses the duplicate same-group utilities
 // down to one canonical declaration before consumers see the class.
-export const formControlVariants: FormControlVariantsFn = (props) => twMerge(formControlVariantsRaw(props))
+export const formControlVariants: FormControlVariantsFn = (props) => cn(formControlVariantsRaw(props))

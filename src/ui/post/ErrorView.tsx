@@ -23,9 +23,10 @@ const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
 // between the two boundaries.
 export interface ErrorViewProps {
   error: unknown
+  isDev?: boolean
 }
 
-export function ErrorView({ error }: ErrorViewProps) {
+export function ErrorView({ error, isDev }: ErrorViewProps) {
   if (isRouteErrorResponse(error) && error.status === 404 && error.statusText === NOT_WORDPRESS_STATUS_TEXT) {
     return <NotWordPressView />
   }
@@ -36,7 +37,7 @@ export function ErrorView({ error }: ErrorViewProps) {
   if (isRouteErrorResponse(error) && error.status === 404) {
     title = '未找到页面'
     description = '抱歉，没有你要找的内容...'
-  } else if (import.meta.env.DEV && error instanceof Error) {
+  } else if (isDev && error instanceof Error) {
     description = error.message
   }
 

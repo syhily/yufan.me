@@ -8,40 +8,10 @@ import TextAlign from '@tiptap/extension-text-align'
 import Typography from '@tiptap/extension-typography'
 import { type Editor, EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import {
-  AlignCenterIcon,
-  AlignLeftIcon,
-  AlignRightIcon,
-  BoldIcon,
-  Code2Icon,
-  CodeIcon,
-  Heading2Icon,
-  Heading3Icon,
-  Heading4Icon,
-  Heading5Icon,
-  ImageIcon,
-  ItalicIcon,
-  LinkIcon,
-  ListIcon,
-  ListOrderedIcon,
-  MaximizeIcon,
-  MinimizeIcon,
-  MinusIcon,
-  Music2Icon,
-  PilcrowIcon,
-  PlusIcon,
-  QuoteIcon,
-  Redo2Icon,
-  StrikethroughIcon,
-  SuperscriptIcon,
-  TableIcon,
-  Undo2Icon,
-  UnderlineIcon,
-} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
-import { bodyToPmDoc } from '@/shared/pt/bridge'
+import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import { stripFootnoteDefinitionsForEditor } from '@/shared/pt/footnote-merge'
 import { generateBlockKey, validatePortableTextBody, type PortableTextBody } from '@/shared/pt/schema'
 import { FootnoteEditorDialog } from '@/ui/admin/editor/FootnoteEditorDialog'
@@ -54,18 +24,14 @@ import { EditorActionsExtension } from '@/ui/admin/editor/tiptap/editor-actions'
 import { FootnoteCaretTriggerExtension } from '@/ui/admin/editor/tiptap/footnote-caret-trigger'
 import { ImageNode } from '@/ui/admin/editor/tiptap/ImageNode'
 import { FootnoteRefMark, MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
-import { canInsertFootnoteMark } from '@/ui/admin/editor/tiptap/insert-inline-footnote'
-import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
 import { SolutionNode } from '@/ui/admin/editor/tiptap/SolutionNode'
 import { TableCellGuardExtension } from '@/ui/admin/editor/tiptap/table-cell-guard'
 import { TableBubbleMenu } from '@/ui/admin/editor/tiptap/TableBubbleMenu'
 import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/editor/tiptap/TwoColumnNode'
 import { useEditorFootnotes } from '@/ui/admin/editor/tiptap/use-editor-footnotes'
-import { Button } from '@/ui/components/button'
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Separator } from '@/ui/components/separator'
+import { useToolbarDensityPreference } from '@/ui/admin/editor/toolbar/density'
+import { Toolbar } from '@/ui/admin/editor/toolbar/Toolbar'
 import { cn } from '@/ui/lib/cn'
 
 export interface PageBodyEditorProps {
@@ -94,6 +60,16 @@ export interface PageBodyEditorProps {
    * bidirectional scroll sync with the live-preview pane.
    */
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
+  /**
+   * Action(s) rendered to the right of the floating editor toolbar
+   * (the duplicate that pins to the bottom-center once the inline
+   * toolbar has scrolled off-screen). Useful for shell-level controls
+   * like 发布草稿 that should stay reachable while the operator is
+   * deep in the body. Pass `null` to hide. Renders nothing when the
+   * floating toolbar itself isn't visible (live-preview mode, or
+   * before the operator has scrolled).
+   */
+  floatingActions?: React.ReactNode
 }
 
 // Tiptap-based PortableText editor. The standard subset (paragraphs /
@@ -124,6 +100,7 @@ export function PageBodyEditor({
   disabled,
   livePreviewOpen = false,
   scrollContainerRef,
+  floatingActions,
 }: PageBodyEditorProps) {
   const onBodyChangeRef = useRef(onBodyChange)
   onBodyChangeRef.current = onBodyChange
@@ -203,7 +180,7 @@ export function PageBodyEditor({
     extensions: [
       StarterKit.configure({
         link: false,
-        dropcursor: { color: '#3b82f6', width: 2 },
+        dropcursor: { color: 'var(--brand)', width: 2 },
       }),
       Typography,
       TextAlign.configure({ types: ['heading', 'paragraph', 'blockquote'] }),
@@ -500,10 +477,20 @@ export function PageBodyEditor({
             <div className="min-h-0 grow px-6 pt-6 pb-[60vh]">{editorCanvas}</div>
           </div>
           {showFloatingToolbar ? (
-            <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-3 sm:bottom-8">
+            // Outer container is a fixed-position flex row centered on
+            // the viewport. The toolbar pill takes its natural width
+            // (driven by the active density preset); any `floatingActions`
+            // slot — typically the shell's 发布草稿 button — flows
+            // immediately to the right of it via `gap-2`, so when the
+            // operator toggles density (compact ⇄ full) the publish
+            // button rides along with the toolbar's right edge instead
+            // of floating in a fixed corner that an unrelated overlay
+            // (e.g. scroll-to-top) might cover.
+            <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex items-center justify-center gap-2 px-3 sm:bottom-8">
               <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
                 <Toolbar {...toolbarProps} className="border-b-0" />
               </div>
+              {floatingActions ? <div className="pointer-events-auto shrink-0">{floatingActions}</div> : null}
             </div>
           ) : null}
         </>
@@ -522,650 +509,5 @@ export function PageBodyEditor({
       <TableBubbleMenu editor={editor} />
       <CodeBlockBubbleMenu editor={editor} />
     </div>
-  )
-}
-
-interface ToolbarProps {
-  editor: Editor
-  disabled?: boolean
-  density: ToolbarDensity
-  onDensityChange: (next: ToolbarDensity) => void
-  onOpenImagePicker: () => void
-  onOpenMusicPicker: () => void
-  onOpenFootnoteInsertDialog: () => void
-  /** Merged onto the outer toolbar row (e.g. floated duplicate drops `border-b`). */
-  className?: string
-}
-
-// Toolbar layered into a stack of `ToolbarGroup`s (see groups below).
-// Undo / redo only render in 'full' density. Tiptap's History
-// extension wires Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z in every mode, so
-// 'compact' falls back to the keyboard to save the two slots.
-//
-// Full density: the outer container is `flex flex-wrap` so groups
-// flow to extra rows when space is tight (whole groups stay together).
-// Compact density uses the same wrap rules with Select + 「插入」Popover.
-//
-// Each `ToolbarGroup` is `flex flex-nowrap` with a trailing separator.
-// The picker triggers (image / music) own their own picker dialogs,
-// so we MUST mount the inserts buttons exactly once per render to
-// avoid duplicate dialog state. That's why we branch on `density`
-// first and pick a single branch, instead of rendering both
-// branches and toggling visibility with CSS.
-//
-// The slash menu (`/`) and bubble menu still cover the same surface
-// for keyboard-first authoring; the toolbar exists so the editor
-// looks self-evidently capable on first open.
-
-function Toolbar(props: ToolbarProps) {
-  const { editor, disabled, density, className } = props
-
-  const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)
-
-  const insertButtons = (
-    <>
-      <ToolbarButton title="插入图片" disabled={disabled} onClick={props.onOpenImagePicker}>
-        <ImageIcon />
-      </ToolbarButton>
-      <ToolbarButton title="插入音乐" disabled={disabled} onClick={props.onOpenMusicPicker}>
-        <Music2Icon />
-      </ToolbarButton>
-      <ToolbarButton
-        title="插入表格 (3×3 含表头)"
-        disabled={disabled}
-        onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-      >
-        <TableIcon />
-      </ToolbarButton>
-      <Popover
-        open={linkToolbarOpen}
-        onOpenChange={(open) => {
-          if (open) {
-            editor.chain().focus().run()
-          }
-          setLinkToolbarOpen(open)
-        }}
-      >
-        <PopoverTrigger
-          disabled={disabled}
-          render={
-            <Button
-              type="button"
-              variant={editor.isActive('link') ? 'secondary' : 'ghost'}
-              size="sm"
-              disabled={disabled}
-              title="链接"
-              aria-label="链接"
-              aria-pressed={editor.isActive('link')}
-              onMouseDownCapture={(event) => {
-                // Match BubbleMenu / LinkPopover: keep ProseMirror selection
-                // when the trigger is pressed so setLink still has a range.
-                event.preventDefault()
-              }}
-            >
-              <LinkIcon />
-            </Button>
-          }
-        />
-        <PopoverContent align="start" sideOffset={6} className="w-auto border-0 bg-transparent p-0 shadow-none">
-          {linkToolbarOpen ? (
-            <LinkPopover
-              variant="toolbar"
-              editor={editor}
-              onClose={() => {
-                setLinkToolbarOpen(false)
-              }}
-            />
-          ) : null}
-        </PopoverContent>
-      </Popover>
-      <ToolbarButton
-        title="水平分隔线"
-        disabled={disabled}
-        onClick={() => editor.chain().focus().setHorizontalRule().run()}
-      >
-        <MinusIcon />
-      </ToolbarButton>
-    </>
-  )
-
-  const groups = (
-    <>
-      {density === 'full' ? <UndoRedoGroup editor={editor} disabled={disabled} /> : null}
-      <BlockStyleGroup editor={editor} disabled={disabled} density={density} />
-      <AlignGroup editor={editor} disabled={disabled} density={density} />
-      <ToolbarGroup>
-        <ToolbarButton
-          title="加粗 (Cmd/Ctrl+B)"
-          disabled={disabled}
-          active={editor.isActive('bold')}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-        >
-          <BoldIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="斜体 (Cmd/Ctrl+I)"
-          disabled={disabled}
-          active={editor.isActive('italic')}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-        >
-          <ItalicIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="下划线 (Cmd/Ctrl+U)"
-          disabled={disabled}
-          active={editor.isActive('underline')}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-        >
-          <UnderlineIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="删除线"
-          disabled={disabled}
-          active={editor.isActive('strike')}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-        >
-          <StrikethroughIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="行内代码"
-          disabled={disabled}
-          active={editor.isActive('code')}
-          onClick={() => editor.chain().focus().toggleCode().run()}
-        >
-          <Code2Icon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="脚注引用（^ 空格快捷插入；行内上标；表格与代码块内不可用）"
-          disabled={disabled || !canInsertFootnoteMark(editor)}
-          onClick={() => props.onOpenFootnoteInsertDialog()}
-        >
-          <SuperscriptIcon />
-        </ToolbarButton>
-      </ToolbarGroup>
-      <ToolbarGroup>
-        <ToolbarButton
-          title="无序列表"
-          disabled={disabled}
-          active={editor.isActive('bulletList')}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-        >
-          <ListIcon />
-        </ToolbarButton>
-        <ToolbarButton
-          title="有序列表"
-          disabled={disabled}
-          active={editor.isActive('orderedList')}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        >
-          <ListOrderedIcon />
-        </ToolbarButton>
-      </ToolbarGroup>
-      <InsertsGroup density={density} disabled={disabled}>
-        {insertButtons}
-      </InsertsGroup>
-    </>
-  )
-
-  const densityRail = <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
-
-  const isCompact = density === 'compact'
-
-  return (
-    <div
-      className={cn(
-        'flex w-full max-w-full min-w-0 items-center gap-x-0.5 border-b p-2',
-        isCompact ? 'flex-nowrap overflow-x-auto' : 'flex-wrap gap-y-1',
-        className,
-      )}
-    >
-      {groups}
-      <ToolbarGroup hideTrailingSeparator className="ml-auto shrink-0">
-        {densityRail}
-      </ToolbarGroup>
-    </div>
-  )
-}
-
-interface ToolbarGroupProps {
-  children: React.ReactNode
-  /**
-   * Set on the last group in the toolbar so we don't print a
-   * dangling separator at the right edge. Internal groups always
-   * print their own trailing separator — that separator stays
-   * inside the group's `flex-nowrap` box, so wrapping occurs
-   * BETWEEN groups (between separator and next group), never
-   * leaving a separator marooned at row start or row end.
-   */
-  hideTrailingSeparator?: boolean
-  /**
-   * Extra classes — used by the Toolbar to flip a group between
-   * inline (`flex`) and hidden (`hidden`) variants for the
-   * full / compact density swap. The default `flex` is overridden
-   * if the caller provides `flex` or `hidden` of their own.
-   */
-  className?: string
-}
-
-function ToolbarGroup({ children, hideTrailingSeparator, className }: ToolbarGroupProps) {
-  return (
-    <div className={cn('flex flex-nowrap items-center gap-0.5', className)}>
-      {children}
-      {hideTrailingSeparator !== true ? (
-        <Separator orientation="vertical" className="mx-1 h-6" aria-hidden="true" />
-      ) : null}
-    </div>
-  )
-}
-
-interface GroupProps {
-  editor: Editor
-  disabled?: boolean
-}
-
-interface DensityGroupProps extends GroupProps {
-  density: ToolbarDensity
-}
-
-function UndoRedoGroup({ editor, disabled }: GroupProps) {
-  return (
-    <ToolbarGroup>
-      <ToolbarButton
-        title="撤销 (Cmd/Ctrl+Z)"
-        disabled={disabled || !editor.can().undo()}
-        onClick={() => editor.chain().focus().undo().run()}
-      >
-        <Undo2Icon />
-      </ToolbarButton>
-      <ToolbarButton
-        title="重做 (Cmd/Ctrl+Shift+Z)"
-        disabled={disabled || !editor.can().redo()}
-        onClick={() => editor.chain().focus().redo().run()}
-      >
-        <Redo2Icon />
-      </ToolbarButton>
-    </ToolbarGroup>
-  )
-}
-
-function BlockStyleGroup({ editor, disabled, density }: DensityGroupProps) {
-  return (
-    <ToolbarGroup>
-      {density === 'full' ? (
-        <BlockStyleButtons editor={editor} disabled={disabled} />
-      ) : (
-        <BlockStyleSelect editor={editor} disabled={disabled} />
-      )}
-    </ToolbarGroup>
-  )
-}
-
-function AlignGroup({ editor, disabled, density }: DensityGroupProps) {
-  if (density === 'compact') {
-    return (
-      <ToolbarGroup>
-        <AlignSelect editor={editor} disabled={disabled} />
-      </ToolbarGroup>
-    )
-  }
-  return (
-    <ToolbarGroup>
-      <ToolbarButton
-        title="居左"
-        disabled={disabled}
-        active={editor.isActive({ textAlign: 'left' })}
-        onClick={() => editor.chain().focus().setTextAlign('left').run()}
-      >
-        <AlignLeftIcon />
-      </ToolbarButton>
-      <ToolbarButton
-        title="居中"
-        disabled={disabled}
-        active={editor.isActive({ textAlign: 'center' })}
-        onClick={() => editor.chain().focus().setTextAlign('center').run()}
-      >
-        <AlignCenterIcon />
-      </ToolbarButton>
-      <ToolbarButton
-        title="居右"
-        disabled={disabled}
-        active={editor.isActive({ textAlign: 'right' })}
-        onClick={() => editor.chain().focus().setTextAlign('right').run()}
-      >
-        <AlignRightIcon />
-      </ToolbarButton>
-    </ToolbarGroup>
-  )
-}
-
-interface InsertsGroupProps {
-  density: ToolbarDensity
-  disabled?: boolean
-  children: React.ReactNode
-}
-
-function InsertsGroup({ density, disabled, children }: InsertsGroupProps) {
-  if (density === 'full') {
-    return <ToolbarGroup>{children}</ToolbarGroup>
-  }
-  return (
-    <ToolbarGroup>
-      <Popover>
-        <PopoverTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={disabled}
-              title="插入图片 / 音乐 / 表格 / 链接 / 分隔线"
-              aria-label="插入元素"
-            >
-              <PlusIcon /> 插入
-            </Button>
-          }
-        />
-        <PopoverContent align="start" sideOffset={6} className="w-auto p-1">
-          <div className="flex flex-wrap items-center gap-0.5">{children}</div>
-        </PopoverContent>
-      </Popover>
-    </ToolbarGroup>
-  )
-}
-
-export type ToolbarDensity = 'compact' | 'full'
-
-const TOOLBAR_DENSITY_STORAGE_KEY = 'yufan.me/admin/page-editor/toolbar-density'
-
-// Persistent toolbar density preference. Defaults to `'full'` so a
-// fresh visit shows every group inline; the outer `flex-wrap` container
-// grows to more rows when space is tight. Compact mode uses Select +
-// 「插入」Popover. Wrapped in `useState` + a `useEffect`
-// write because we need lazy SSR-safe initialisation; reading
-// localStorage synchronously inside the initialiser would crash
-// during hydration if the value type drifts — the guard inside
-// `readDensity` covers that.
-function useToolbarDensityPreference(): [ToolbarDensity, (next: ToolbarDensity) => void] {
-  const [density, setDensityState] = useState<ToolbarDensity>('full')
-  useEffect(() => {
-    setDensityState(readDensity())
-  }, [])
-  const setDensity = useCallback((next: ToolbarDensity) => {
-    setDensityState(next)
-    if (typeof window === 'undefined') {
-      return
-    }
-    try {
-      window.localStorage.setItem(TOOLBAR_DENSITY_STORAGE_KEY, next)
-    } catch {
-      // localStorage may throw in private mode / quota-exceeded; the
-      // preference is best-effort, so silently move on.
-    }
-  }, [])
-  return [density, setDensity]
-}
-
-function readDensity(): ToolbarDensity {
-  if (typeof window === 'undefined') {
-    return 'full'
-  }
-  try {
-    const raw = window.localStorage.getItem(TOOLBAR_DENSITY_STORAGE_KEY)
-    if (raw === 'compact' || raw === 'full') {
-      return raw
-    }
-  } catch {
-    // ignore — return the safe default.
-  }
-  return 'full'
-}
-
-interface DensityToggleButtonProps {
-  density: ToolbarDensity
-  onChange: (next: ToolbarDensity) => void
-  disabled?: boolean
-}
-
-// Two-state toggle: full ↔ compact. The icon mirrors the action that
-// firing the button will perform — when expanded ('full') we show the
-// "collapse inward" chevron; when collapsed ('compact') we show the
-// "expand outward" chevron. Full mode wraps groups across rows;
-// compact collapses inserts and block style into menus.
-function DensityToggleButton({ density, onChange, disabled }: DensityToggleButtonProps) {
-  const next: ToolbarDensity = density === 'full' ? 'compact' : 'full'
-  const title = density === 'full' ? '收起工具栏' : '展开工具栏'
-  const Icon = density === 'full' ? MinimizeIcon : MaximizeIcon
-  return (
-    <ToolbarButton title={title} disabled={disabled} onClick={() => onChange(next)}>
-      <Icon />
-    </ToolbarButton>
-  )
-}
-
-interface ToolbarButtonProps {
-  title: string
-  active?: boolean
-  disabled?: boolean
-  onClick: () => void
-  children: React.ReactNode
-}
-
-function ToolbarButton({ title, active, disabled, onClick, children }: ToolbarButtonProps) {
-  return (
-    <Button
-      type="button"
-      variant={active === true ? 'secondary' : 'ghost'}
-      size="sm"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      aria-label={title}
-      aria-pressed={active === true}
-    >
-      {children}
-    </Button>
-  )
-}
-
-// Block style values map 1:1 to PortableText `style` values produced
-// by pmDocToBody / consumed by bodyToPmDoc — keep in sync if a new
-// style is ever added to `portableTextBodySchema`. h1 is owned by
-// the page title (rendered in the public layout), so the editor
-// surfaces h2–h5 only; h1 + h6 still round-trip through the bridge
-// if external content provides them.
-const BLOCK_STYLE_OPTIONS: { value: string; label: string }[] = [
-  { value: 'normal', label: '正文段落' },
-  { value: 'h2', label: '二级标题' },
-  { value: 'h3', label: '三级标题' },
-  { value: 'h4', label: '四级标题' },
-  { value: 'h5', label: '五级标题' },
-  { value: 'blockquote', label: '引用' },
-  { value: 'codeBlock', label: '代码块' },
-]
-
-function getActiveBlockStyle(editor: Editor): string {
-  if (editor.isActive('codeBlock')) {
-    return 'codeBlock'
-  }
-  if (editor.isActive('blockquote')) {
-    return 'blockquote'
-  }
-  for (const level of [2, 3, 4, 5] as const) {
-    if (editor.isActive('heading', { level })) {
-      return `h${level}`
-    }
-  }
-  return 'normal'
-}
-
-function applyBlockStyle(editor: Editor, value: string): void {
-  const chain = editor.chain().focus()
-  switch (value) {
-    case 'normal':
-      chain.setParagraph().run()
-      return
-    case 'blockquote':
-      // toggle vs set: setting blockquote when already inside it is a
-      // no-op in tiptap, so prefer toggle so re-selecting "引用" lifts
-      // the wrapper. Same goes for codeBlock below.
-      if (!editor.isActive('blockquote')) {
-        chain.toggleBlockquote().run()
-      }
-      return
-    case 'codeBlock':
-      if (!editor.isActive('codeBlock')) {
-        chain.toggleCodeBlock().run()
-      }
-      return
-    default: {
-      const match = /^h([2-5])$/.exec(value)
-      if (match) {
-        const level = Number(match[1]) as 2 | 3 | 4 | 5
-        chain.setHeading({ level }).run()
-      }
-    }
-  }
-}
-
-interface AlignSelectProps {
-  editor: Editor
-  disabled?: boolean
-}
-
-const ALIGN_OPTIONS = [
-  { value: 'left', label: '居左', Icon: AlignLeftIcon },
-  { value: 'center', label: '居中', Icon: AlignCenterIcon },
-  { value: 'right', label: '居右', Icon: AlignRightIcon },
-] as const
-
-function getActiveAlign(editor: Editor): string {
-  for (const opt of ALIGN_OPTIONS) {
-    if (editor.isActive({ textAlign: opt.value })) {
-      return opt.value
-    }
-  }
-  return 'left'
-}
-
-function AlignSelect({ editor, disabled }: AlignSelectProps) {
-  const active = getActiveAlign(editor)
-  return (
-    <Select
-      value={active}
-      onValueChange={(value: string | null) => {
-        if (typeof value === 'string') {
-          editor
-            .chain()
-            .focus()
-            .setTextAlign(value as 'left' | 'center' | 'right')
-            .run()
-        }
-      }}
-      disabled={disabled}
-    >
-      <SelectTrigger size="sm" className="h-8 min-w-24" aria-label="对齐方式">
-        <SelectValue placeholder="对齐">
-          {(value) => {
-            const match = ALIGN_OPTIONS.find((option) => option.value === value)
-            if (match === undefined) {
-              return '对齐'
-            }
-            return (
-              <span className="flex items-center gap-1.5">
-                <match.Icon className="h-4 w-4" />
-                {match.label}
-              </span>
-            )
-          }}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {ALIGN_OPTIONS.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            <span className="flex items-center gap-2">
-              <option.Icon className="h-4 w-4" />
-              {option.label}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
-
-interface BlockStyleSelectProps {
-  editor: Editor
-  disabled?: boolean
-}
-
-function BlockStyleSelect({ editor, disabled }: BlockStyleSelectProps) {
-  const active = getActiveBlockStyle(editor)
-  return (
-    <Select
-      value={active}
-      onValueChange={(value: string | null) => {
-        if (typeof value === 'string') {
-          applyBlockStyle(editor, value)
-        }
-      }}
-      disabled={disabled}
-    >
-      <SelectTrigger size="sm" className="h-8 min-w-30" aria-label="段落样式">
-        {/* Base UI's Select.Value defaults to rendering the raw `value`
-            string (e.g. "h2" / "codeBlock") when no child render
-            function is supplied. We map back to the Chinese label so
-            the trigger matches the dropdown options. */}
-        <SelectValue placeholder="段落样式">
-          {(value) => {
-            const match = BLOCK_STYLE_OPTIONS.find((option) => option.value === value)
-            return match?.label ?? '段落样式'
-          }}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {BLOCK_STYLE_OPTIONS.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
-
-interface BlockStyleButtonsProps {
-  editor: Editor
-  disabled?: boolean
-}
-
-// Inline button row mirror of `BlockStyleSelect`. The icons follow
-// the same conventions used by the slash menu so the operator gets
-// the same visual cue regardless of entry point.
-const BLOCK_STYLE_BUTTONS: { value: string; title: string; Icon: typeof PilcrowIcon }[] = [
-  { value: 'normal', title: '正文段落', Icon: PilcrowIcon },
-  { value: 'h2', title: '二级标题', Icon: Heading2Icon },
-  { value: 'h3', title: '三级标题', Icon: Heading3Icon },
-  { value: 'h4', title: '四级标题', Icon: Heading4Icon },
-  { value: 'h5', title: '五级标题', Icon: Heading5Icon },
-  { value: 'blockquote', title: '引用', Icon: QuoteIcon },
-  { value: 'codeBlock', title: '代码块', Icon: CodeIcon },
-]
-
-function BlockStyleButtons({ editor, disabled }: BlockStyleButtonsProps) {
-  const active = getActiveBlockStyle(editor)
-  return (
-    <>
-      {BLOCK_STYLE_BUTTONS.map(({ value, title, Icon }) => (
-        <ToolbarButton
-          key={value}
-          title={title}
-          disabled={disabled}
-          active={active === value}
-          onClick={() => applyBlockStyle(editor, value)}
-        >
-          <Icon />
-        </ToolbarButton>
-      ))}
-    </>
   )
 }

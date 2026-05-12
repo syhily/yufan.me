@@ -8,6 +8,19 @@ vi.mock('@/server/db/query/setting', () => ({
   upsertSetting: vi.fn(),
 }))
 
+// Snapshot hydrate/refresh fan through `storage.getItem` /
+// `storage.setItem` (the settings-version coherence key). The default
+// `@/server/cache/storage` would try to dial `redis://localhost:6379` —
+// fine locally, but on CI there is no Redis and `ioredis` retries
+// forever, blowing past every test timeout. Tests only assert on
+// `upsertSetting`, so an in-memory no-op is plenty.
+vi.mock('@/server/cache/storage', () => ({
+  storage: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => undefined),
+  },
+}))
+
 const settingQueries = await import('@/server/db/query/setting')
 const { updateBlogSettingsSection } = await import('@/server/settings/service')
 const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
@@ -61,7 +74,7 @@ describe('services/settings — write isolation', () => {
             calendar: { prefix: 'cal-bucket:', ttlSeconds: 60 * 60 * 24 },
             avatar: { prefix: 'av-bucket:', ttlSeconds: 60 * 60 * 24 },
             imageMeta: { prefix: 'image-meta-bucket:', ttlSeconds: 60 * 60 * 24 },
-            commentsMd: { prefix: 'comments-md-bucket:', ttlSeconds: 60 * 60 * 24 },
+
             embeddingSearch: { prefix: 'embedding-search-bucket:', ttlSeconds: 60 * 60 * 24 },
             searchResult: { prefix: 'search-result-bucket:', ttlSeconds: 60 * 60 * 24 },
           },

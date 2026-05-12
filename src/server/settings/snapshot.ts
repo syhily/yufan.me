@@ -128,7 +128,7 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
   mail: (value) => typeof value.mail === 'object' && value.mail !== null,
   // Each cache bucket carries `prefix` + `ttlSeconds`. Probe walks
   // every required bucket so a row missing newer surfaces (e.g. a
-  // legacy install written before `imageMeta` / `commentsMd` were
+  // legacy install written before `imageMeta` was
   // added) falls through and gets repaired by the registry-default
   // backfill — same pattern as the `rateLimit` probe below. Without
   // this, the admin cache form would crash with

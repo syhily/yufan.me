@@ -12,8 +12,10 @@ const mocks = vi.hoisted(() => ({
   listAllPages: vi.fn(),
 }))
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/posts/query', () => ({
   listAllPosts: mocks.listAllPosts,
+}))
+vi.mock('@/server/pages/query', () => ({
   listAllPages: mocks.listAllPages,
 }))
 

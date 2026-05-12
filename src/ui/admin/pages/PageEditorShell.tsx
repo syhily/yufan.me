@@ -1,3 +1,5 @@
+import type { NavigateFunction } from 'react-router'
+
 import {
   ArrowLeftIcon,
   ExternalLinkIcon,
@@ -11,7 +13,7 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link } from 'react-router'
 
 import type {
   AdminPageDetailDto,
@@ -33,8 +35,9 @@ import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge'
+import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { DraftConflictDialog } from '@/ui/admin/editor/DraftConflictDialog'
+import { FloatingPublishButton } from '@/ui/admin/editor/FloatingPublishButton'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import {
   EMPTY_META_DRAFT,
@@ -82,6 +85,8 @@ export interface PageEditorShellProps {
   mode: 'create' | 'edit'
   /** Pre-loaded detail DTO. Only consulted when `mode === 'edit'`. */
   detail?: AdminPageDetailDto
+  /** Navigation function injected from the route module. */
+  navigate: NavigateFunction
 }
 
 // Top-level orchestrator for the page authoring screen. Owns the
@@ -94,8 +99,7 @@ export interface PageEditorShellProps {
 // this shell as separate effects + components. This commit ships the
 // metadata + manual save/publish skeleton; the autosave + LS + diff
 // hooks plug in next.
-export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
-  const navigate = useNavigate()
+export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps) {
   const isEditing = mode === 'edit' && detail !== undefined
 
   // Metadata draft mirrors the right-pane form. Initial state matches
@@ -1058,6 +1062,22 @@ export function PageEditorShell({ mode, detail }: PageEditorShellProps) {
             disabled={isPending}
             livePreviewOpen={previewOpen}
             scrollContainerRef={editorScrollRef}
+            floatingActions={
+              isEditing ? (
+                <FloatingPublishButton
+                  onPublish={persistPublish}
+                  disabled={isPending || !canPublish}
+                  pending={isPublishing}
+                  title={
+                    canPublish
+                      ? sidebarPublishStatus === 'scheduled'
+                        ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
+                        : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
+                      : '当前没有待发布的草稿'
+                  }
+                />
+              ) : null
+            }
           />
         </div>
         {previewOpen ? (

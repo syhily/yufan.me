@@ -5,7 +5,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state'
 const TABLE_CELL_GUARD_KEY = new PluginKey('tableCellGuard')
 
 /** Marks that are not allowed inside a table cell per the PT table dialect. */
-const ILLEGAL_MARK_NAMES = new Set(['code', 'mathInline', 'footnoteRef'])
+const ILLEGAL_MARK_NAMES = new Set(['mathInline', 'footnoteRef'])
 
 function isInsideTableCell(state: {
   selection: { $from: { depth: number; node: (d: number) => { type: { name: string } } } }
@@ -52,8 +52,8 @@ function sanitizeSlice(slice: Slice): Slice {
 
 /**
  * ProseMirror plugin that strips illegal marks from content pasted or dropped
- * into a table cell. The PT table dialect only permits inline spans + link
- * marks inside cells; code, mathInline, and footnoteRef marks are silently
+ * into a table cell. The PT table dialect permits inline spans, link marks,
+ * and code marks inside cells; mathInline and footnoteRef marks are silently
  * removed so the user is not surprised by content that disappears on save.
  */
 export const TableCellGuardExtension = Extension.create({

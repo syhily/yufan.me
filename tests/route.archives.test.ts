@@ -21,13 +21,19 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/posts/query', () => ({
   listClientPosts: mocks.listClientPosts,
   listAllPosts: mocks.listAllPosts,
   getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,
-  toClientPost: (post: unknown) => post,
-  toListingPostCard: (post: unknown) => post,
 }))
+vi.mock('@/shared/catalog', async () => {
+  const actual = await vi.importActual<typeof import('@/shared/catalog')>('@/shared/catalog')
+  return {
+    ...actual,
+    toClientPost: (post: unknown) => post,
+    toListingPostCard: (post: unknown) => post,
+  }
+})
 
 const { loader } = await import('@/routes/archives')
 

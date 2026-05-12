@@ -1,4 +1,4 @@
-import { useOutletContext } from 'react-router'
+import { useOutletContext, useSearchParams } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { CommentsView } from '@/ui/admin/comments/CommentsView'
@@ -14,11 +14,15 @@ export default function WpAdminCommentsRoute() {
     csrfToken: string
     currentUser: { id: string; name: string; email: string }
   }>()
+  const [searchParams] = useSearchParams()
   return (
     <CommentsView
       commentCsrfToken={csrfToken}
       currentUserName={currentUser.name}
       currentUserEmail={currentUser.email}
+      initialAuthorId={searchParams.get('userId') ?? undefined}
+      initialPageKey={searchParams.get('pageKey') ?? undefined}
+      initialStatus={(searchParams.get('status') as 'all' | 'pending' | 'approved') ?? undefined}
     />
   )
 }

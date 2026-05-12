@@ -15,9 +15,11 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 
+import type { PmDoc } from '@/shared/pt/bridge/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { bodyToPmDoc, pmDocToBody, type PmDoc } from '@/shared/pt/bridge'
+import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
+import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import { type CommentBody, safeValidateCommentBody } from '@/shared/pt/comment-schema'
 import { BlockCardNode } from '@/ui/admin/editor/tiptap/BlockCardNode'
 import { MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'

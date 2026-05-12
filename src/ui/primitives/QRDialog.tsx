@@ -88,7 +88,7 @@ export function QRDialog({ url, name, title, trigger, className }: QRDialogProps
         <IconButtonContent>{trigger}</IconButtonContent>
       </button>
       {open && (
-        <Popup open={open} onClose={handleClose} popupId={QR_POPUP_ID}>
+        <Popup open={open} onClose={handleClose} popupId={QR_POPUP_ID} aria-label={title}>
           <div className="text-center">
             <div className="text-xl leading-tight font-semibold">{title}</div>
             <p className="mt-1 mb-2 text-base">{name}</p>

@@ -174,7 +174,7 @@ export function MusicPlayer({ id, auto, center }: MusicPlayerProps) {
   return (
     <div
       className={cn(
-        'mt-5 mb-5.5 max-w-87.5 max-xl:mx-auto max-md:mx-0 max-md:mt-0 max-md:mb-5 max-md:max-w-full',
+        'mt-5 mb-[1.375rem] max-w-[21.875rem] max-xl:mx-auto max-md:mx-0 max-md:mt-0 max-md:mb-5 max-md:max-w-full',
         center && 'mx-auto max-md:mx-auto',
       )}
     >

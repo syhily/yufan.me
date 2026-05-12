@@ -1,6 +1,6 @@
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 
-import { findCategoryBySlug } from '@/server/catalog'
+import { findCategoryBySlug } from '@/server/catalog/queries'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/posts/query'
 import { notFound } from '@/server/route-helpers/http'
 import { listingLoader } from '@/server/route-helpers/listing-loader'

@@ -24,6 +24,8 @@ export interface BaseLayoutProps {
   navigation?: NavigationItem[]
   footer?: boolean
   admin: boolean
+  pathname: string
+  search: string
   children?: ReactNode
 }
 
@@ -33,7 +35,7 @@ export interface BaseLayoutProps {
 // Exported so `tests/snapshot.layout.test.tsx` can render the chrome in
 // isolation; production callers should rely on the default `<App>` export
 // from `@/root` rather than instantiating `BaseLayout` directly.
-export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutProps) {
+export function BaseLayout({ navigation, footer, admin, pathname, search, children }: BaseLayoutProps) {
   const navigationSection = useNavigationSettings()
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || navigationSection.navigation
@@ -44,7 +46,7 @@ export function BaseLayout({ navigation, footer, admin, children }: BaseLayoutPr
   // fill all remaining inline space (`flex: 1 1 auto`).
   return (
     <div className="flex flex-col lg:flex-row">
-      <Header navigation={resolvedNavigation} admin={admin} />
+      <Header navigation={resolvedNavigation} admin={admin} pathname={pathname} search={search} />
       <main className="flex flex-1 flex-col">
         {children}
         {showFooter && <Footer />}

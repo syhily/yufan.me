@@ -1,7 +1,6 @@
 import type { CategoryRow } from '@/server/db/types'
 import type { AdminCategoryDto } from '@/shared/categories'
 
-import { listPostsByCategory } from '@/server/catalog'
 import { invalidateCatalog } from '@/server/catalog/invalidate'
 import {
   type AdminCategoriesListFilters,
@@ -15,6 +14,7 @@ import {
   reorderCategories as reorderCategoryRows,
   updateCategory,
 } from '@/server/db/query/category'
+import { listPostsByCategory } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
 

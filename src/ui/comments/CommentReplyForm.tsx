@@ -249,9 +249,9 @@ interface ReplyOverlayProps {
 const replyingToOverlayClass = cn(
   'pointer-events-none absolute top-[0.4rem] right-3 left-3 z-2',
   'flex items-center gap-1',
-  'rounded-sm bg-[rgba(0,140,149,0.05)] px-2 py-[0.15rem]',
-  'text-[0.9rem] text-[rgba(73,80,87,0.95)] opacity-60',
-  'overflow-hidden text-ellipsis whitespace-nowrap',
+  'rounded-sm bg-brand/5 px-2 py-[0.15rem]',
+  'text-[0.9rem] text-ink-body/95 opacity-60',
+  'truncate',
 )
 
 function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {

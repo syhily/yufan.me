@@ -23,8 +23,6 @@ const samplePost = makePost({ slug: 'hello', title: 'Hello', summary: 'summary',
 const samplePage = makePage({ slug: 'about', title: 'About', summary: '', cover: '/c.png' })
 
 vi.mock('@/server/catalog', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? samplePost : null)),
-  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? samplePage : null)),
   getEntryBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello') {
       return { type: 'post', id: samplePost.id, slug }
@@ -34,6 +32,12 @@ vi.mock('@/server/catalog', () => ({
     }
     return null
   }),
+}))
+vi.mock('@/server/posts/query', () => ({
+  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? samplePost : null)),
+}))
+vi.mock('@/server/pages/query', () => ({
+  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? samplePage : null)),
 }))
 
 const { loader: ogLoader } = await import('@/routes/image.og')

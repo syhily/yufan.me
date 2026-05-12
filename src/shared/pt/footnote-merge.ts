@@ -1,4 +1,4 @@
-import { synchronizeFootnoteIndices } from '@/shared/pt/bridge'
+import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
 import {
   generateBlockKey,
   type FootnoteDefinitionBlock,

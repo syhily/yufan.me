@@ -63,8 +63,37 @@ export default defineConfig({
   },
   build: {
     emptyOutDir: true,
+    // The admin editor pulls in the entire Tiptap + ProseMirror stack;
+    // grouping them into one named chunk lets the browser cache it
+    // independently of route modules and stops the chunk-size warning
+    // from masking accidental growth in unrelated bundles.
+    chunkSizeWarningLimit: 800,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/@tiptap/') || id.includes('node_modules/prosemirror-')) {
+            return 'editor-tiptap'
+          }
+          return undefined
+        },
+      },
+    },
   },
   server: {
     port: 4321,
+    // Pre-transform every route module on dev-server boot. Without
+    // this, the first navigation to a route triggers Vite's
+    // dependency optimizer mid-request, which reloads the page
+    // ("optimized dependencies changed. reloading"). Warming up the
+    // route entrypoints (and the entry / root shells) front-loads the
+    // optimizer scan so every subsequent navigation hits an already-
+    // optimized graph. The glob expands to ~55 files — well under
+    // Vite's recommended ceiling for warmup lists.
+    warmup: {
+      // `entry.client.tsx` is intentionally absent — React Router's
+      // dev server injects its own default entry. Listing it here
+      // would emit a "Failed to load url" pre-transform error on boot.
+      clientFiles: ['./src/root.tsx', './src/routes.ts', './src/routes/**/*.{ts,tsx}'],
+    },
   },
 })

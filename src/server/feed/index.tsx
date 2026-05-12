@@ -1,5 +1,7 @@
 import { Feed } from 'feed'
 
+import type { Page, Post } from '@/shared/catalog'
+
 import {
   findCategoryByName,
   findCategoryBySlug,
@@ -7,16 +9,11 @@ import {
   findTagBySlug,
   getTagsByNames,
   listAllCategories,
-  listPublicPostsWithContent,
-  type Page,
-  type Post,
-} from '@/server/catalog'
-import { prerenderToHtml } from '@/server/render/prerender'
-import { requireBlogSettingsBundle, requireBlogSettingsSection } from '@/shared/blog-config'
-import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
+} from '@/server/catalog/queries'
+import { listPublicPostsWithContent } from '@/server/posts/query'
+import { renderPortableTextToHtml } from '@/server/render/feed-pt-render'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { joinUrl } from '@/shared/urls'
-import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
-import { PortableTextBody } from '@/ui/pt/render'
 
 export interface FeedOptions {
   includeHidden?: boolean
@@ -57,18 +54,11 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
   //
   // `rssMode` degrades interactive blocks (musicPlayer, etc.) to static HTML
   // so feed readers without JavaScript still get meaningful content.
-  const bundle = requireBlogSettingsBundle()
-  const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
   // Both pages and posts now live in Postgres and carry a PortableText body.
-  return prerenderToHtml(
-    <BlogSettingsProvider value={bundle}>
-      <PortableTextBody
-        body={entry.body}
-        headingSlugs={entry.headings.map((h) => h.slug)}
-        footnotesSectionTitle={footnotesSectionTitle}
-        rssMode
-      />
-    </BlogSettingsProvider>,
+  return renderPortableTextToHtml(
+    entry.body,
+    entry.headings.map((h) => h.slug),
+    { rssMode: true },
   )
 }
 
@@ -108,14 +98,31 @@ export async function generateFeeds(options: FeedOptions = {}) {
     // deprecating XSLT for XML documents (Chrome et al.); aggregators ignore it.
   })
 
-  for (const post of feedPosts) {
-    const itemCategories = (await getTagsByNames(post.tags)).map((t) => ({
-      name: t.name,
-      domain: joinUrl(siteIdentity.website, `/tags/${t.slug}`),
-      scheme: 'https',
-      term: t.name,
-    }))
-    const postCategory = await findCategoryByName(post.category)
+  // Batch-resolve tags and categories so we don't N+1 inside the loop.
+  const allTagNames = [...new Set(feedPosts.flatMap((p) => p.tags))]
+  const allCategoryNames = [...new Set(feedPosts.map((p) => p.category).filter(Boolean))]
+
+  const [allTags, allCategories, contents] = await Promise.all([
+    getTagsByNames(allTagNames),
+    Promise.all(allCategoryNames.map((name) => findCategoryByName(name))),
+    Promise.all(feedPosts.map((post) => renderEntryContent(post))),
+  ])
+
+  const tagMap = new Map(allTags.map((t) => [t.name, t]))
+  const catMap = new Map(allCategories.filter(Boolean).map((c) => [c!.name, c!]))
+
+  for (let i = 0; i < feedPosts.length; i++) {
+    const post = feedPosts[i]
+    const itemCategories = post.tags
+      .map((name) => tagMap.get(name))
+      .filter(Boolean)
+      .map((t) => ({
+        name: t!.name,
+        domain: joinUrl(siteIdentity.website, `/tags/${t!.slug}`),
+        scheme: 'https',
+        term: t!.name,
+      }))
+    const postCategory = post.category ? (catMap.get(post.category) ?? null) : null
     if (postCategory !== null) {
       itemCategories.push({
         name: postCategory.name,
@@ -129,7 +136,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
       id: joinUrl(siteIdentity.website, post.permalink),
       link: joinUrl(siteIdentity.website, post.permalink),
       description: post.summary,
-      content: await renderEntryContent(post),
+      content: contents[i],
       author: [
         {
           name: siteIdentity.author.name,
@@ -145,7 +152,8 @@ export async function generateFeeds(options: FeedOptions = {}) {
     })
   }
 
-  for (const cat of await listAllCategories()) {
+  const categories = await listAllCategories()
+  for (const cat of categories) {
     feed.addCategory(cat.name)
   }
 

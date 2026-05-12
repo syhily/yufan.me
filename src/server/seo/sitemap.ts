@@ -1,10 +1,13 @@
-import { listAllPages, listAllPosts } from '@/server/catalog'
+import { listAllPages } from '@/server/pages/query'
+import { listAllPosts } from '@/server/posts/query'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { joinUrl } from '@/shared/urls'
 
 export async function buildSitemapXml(_request: Request): Promise<string> {
-  const posts = await listAllPosts({ includeHidden: true, includeScheduled: false })
-  const pages = await listAllPages()
+  const [posts, pages] = await Promise.all([
+    listAllPosts({ includeHidden: true, includeScheduled: false }),
+    listAllPages(),
+  ])
 
   // Build via array join so the response starts with `<?xml ... ?>` on the
   // first byte. The previous template-literal version left a leading newline

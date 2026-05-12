@@ -1,4 +1,4 @@
-import { listAllCategories } from '@/server/catalog'
+import { listAllCategories } from '@/server/catalog/queries'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { CategoriesBody } from '@/ui/post/categories/CategoriesBody'

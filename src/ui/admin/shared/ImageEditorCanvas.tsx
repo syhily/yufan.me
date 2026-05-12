@@ -242,7 +242,7 @@ export function ImageEditorCanvas({
 
     if (crop !== null) {
       ctx.save()
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+      ctx.fillStyle = 'var(--scrim)'
       ctx.beginPath()
       ctx.rect(0, 0, displayLayout.drawWidth, displayLayout.drawHeight)
       ctx.rect(
@@ -252,7 +252,7 @@ export function ImageEditorCanvas({
         crop.height * displayLayout.scale,
       )
       ctx.fill('evenodd')
-      ctx.strokeStyle = '#ffffff'
+      ctx.strokeStyle = 'var(--canvas)'
       ctx.lineWidth = 2
       ctx.strokeRect(
         crop.x * displayLayout.scale,

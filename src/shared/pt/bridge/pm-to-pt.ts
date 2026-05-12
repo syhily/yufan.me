@@ -52,17 +52,27 @@ export function pushPmNode(
       return
     }
     case 'blockquote': {
-      const child = (node.content ?? []).filter(isBlock)
-      const key = ensureKey(node.attrs)
+      // PortableText flattens — there is no "nested under blockquote" container.
+      // Tiptap's Blockquote accepts `block+`, so the quote may carry lists,
+      // code blocks, or even tables. Paragraphs adopt the blockquote style and
+      // inherit the quote's textAlign; non-paragraph children flow back through
+      // pushPmNode so their content survives (lists keep their items, code
+      // keeps its body) instead of being silently dropped.
       const textAlign = node.attrs?.textAlign as string | undefined
-      for (const para of child) {
-        out.push(
-          paragraphToTextBlock(
-            { ...para, attrs: { ...para.attrs, _key: key, ...(textAlign ? { textAlign } : {}) } },
-            ensureKey,
-            'blockquote',
-          ),
-        )
+      for (const child of (node.content ?? []).filter(isBlock)) {
+        if (child.type === 'paragraph') {
+          out.push(
+            paragraphToTextBlock(
+              { ...child, attrs: { ...child.attrs, ...(textAlign ? { textAlign } : {}) } },
+              ensureKey,
+              'blockquote',
+            ),
+          )
+        } else if (child.type === 'bulletList' || child.type === 'orderedList') {
+          flattenList(child, out, ensureKey, 1)
+        } else {
+          pushPmNode(out, child, ensureKey)
+        }
       }
       return
     }

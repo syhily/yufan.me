@@ -69,15 +69,27 @@ vi.mock('@/server/session', async () => {
 })
 
 vi.mock('@/server/catalog', () => ({
-  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? dbPage : null)),
-  findPostBySlug: vi.fn(async () => null),
   getEntryBySlug: vi.fn(async (slug: string) => (slug === 'about' ? { type: 'page', id: dbPage.id, slug } : null)),
-  listAllFriends: vi.fn(async () => []),
-  buildDbPage: (p: unknown) => p,
-  toClientPage: (p: unknown) => p,
-  toDetailPageShell: (p: unknown) => p,
-  toDetailPostShell: (p: unknown) => p,
 }))
+vi.mock('@/server/pages/query', () => ({
+  findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? dbPage : null)),
+  buildDbPage: (p: unknown) => p,
+}))
+vi.mock('@/server/posts/query', () => ({
+  findPostBySlug: vi.fn(async () => null),
+}))
+vi.mock('@/server/catalog/queries', () => ({
+  listAllFriends: vi.fn(async () => []),
+}))
+vi.mock('@/shared/catalog', async () => {
+  const actual = await vi.importActual<typeof import('@/shared/catalog')>('@/shared/catalog')
+  return {
+    ...actual,
+    toClientPage: (p: unknown) => p,
+    toDetailPageShell: (p: unknown) => p,
+    toDetailPostShell: (p: unknown) => p,
+  }
+})
 
 // Stub out the comments/data loader the same way `route.detail.test.ts`
 // does — the page.detail route awaits this for every request and we

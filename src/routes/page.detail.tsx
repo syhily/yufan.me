@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { listAllFriends } from '@/server/catalog'
+import { listAllFriends } from '@/server/catalog/queries'
 import { loadPagePreview } from '@/server/cms/pages/loader'
 import { loadPublicDetailData } from '@/server/route-helpers/detail-loader'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
@@ -23,7 +23,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 
-  const preview = await loadPagePreview({ slug: params.slug, wantsDraftPreview, request, context })
+  const [preview, friends] = await Promise.all([
+    loadPagePreview({ slug: params.slug, wantsDraftPreview, request, context }),
+    listAllFriends(),
+  ])
 
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
@@ -38,7 +41,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     {
       page: preview.page,
       body: preview.body,
-      friends: await listAllFriends(),
+      friends,
       showFriends: preview.showFriends,
       draftMarker: preview.draftMarker,
       detail,

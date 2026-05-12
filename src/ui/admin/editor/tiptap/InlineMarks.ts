@@ -1,6 +1,39 @@
-import { Mark, markInputRule, markPasteRule } from '@tiptap/core'
+import type { EditorState } from '@tiptap/pm/state'
+
+import { InputRule, Mark, markInputRule, markPasteRule } from '@tiptap/core'
 
 import { generateBlockKey } from '@/shared/pt/schema'
+
+// `mathInline` is forbidden inside table cells: the bridge's
+// `pmCellToTableCell` filters every mark def except `link` before saving,
+// so a `$x^2$` typed in a cell would survive the input rule, get a mark,
+// then silently disappear on the next save. We can't return `false` from
+// `markInputRule`'s `getAttributes` (it only receives `match`), so we
+// wrap the rule and bail on `state.selection` instead.
+function isInTableCell(state: EditorState): boolean {
+  const $from = state.selection.$from
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const name = $from.node(depth).type.name
+    if (name === 'tableCell' || name === 'tableHeader') {
+      return true
+    }
+  }
+  return false
+}
+
+function tableSafeMarkInputRule(config: Parameters<typeof markInputRule>[0]): InputRule {
+  const inner = markInputRule(config)
+  return new InputRule({
+    find: config.find,
+    handler: (props) => {
+      if (isInTableCell(props.state)) {
+        return null
+      }
+      return inner.handler(props)
+    },
+    undoable: inner.undoable,
+  })
+}
 
 // Mirrors `@tiptap/extension-code`: last capture group is the marked span.
 // Opening `$` must not be `$$` (display math). Closing `$` must not be `$$`.
@@ -34,7 +67,7 @@ export const MathInlineMark = Mark.create({
   },
   addInputRules() {
     return [
-      markInputRule({
+      tableSafeMarkInputRule({
         find: mathInlineInputRegex,
         type: this.type,
         getAttributes: (match) => {

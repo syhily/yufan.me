@@ -49,6 +49,22 @@ export function ImageNodeView(props: NodeViewProps) {
   const altTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const captionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Keep local state in sync when attrs change from outside this view —
+  // e.g. undo/redo, the library picker callback overwriting the whole
+  // node, or scripted bulk edits. Without these, the inputs keep
+  // showing the stale value the user typed before the external change.
+  // When `commitAlt` echoes back through `updateAttributes`, the synced
+  // value matches local state and `setAlt` becomes a no-op.
+  useEffect(() => {
+    setAlt(attrs.alt ?? '')
+  }, [attrs.alt])
+  useEffect(() => {
+    setCaption(attrs.caption ?? '')
+  }, [attrs.caption])
+  useEffect(() => {
+    setExternalUrl(attrs.imageId === undefined && attrs.src !== undefined ? attrs.src : '')
+  }, [attrs.imageId, attrs.src])
+
   useEffect(() => {
     return () => {
       if (altTimeoutRef.current) {

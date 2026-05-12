@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react'
+import { createContext, use } from 'react'
 
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
@@ -61,7 +61,7 @@ export interface CommentsContextValue {
 export const CommentsContext = createContext<CommentsContextValue | null>(null)
 
 export function useCommentsContext(component: string): CommentsContextValue {
-  const ctx = useContext(CommentsContext)
+  const ctx = use(CommentsContext)
   if (ctx === null) {
     throw new Error(`<${component}> must be rendered inside <Comments>`)
   }

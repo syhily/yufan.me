@@ -54,6 +54,11 @@
   --border-inline-code-on-shiki-bg: color-mix(in oklab, var(--bg-shiki-light) 68%, white 32%);
   --size-empty-state: 50vh;
   --z-aside-drawer: 1020;
+  --z-modal: 1050;
+  --z-nav-splash: 1100;
+  --scrim: rgba(8, 15, 25, 0.3);
+  --skeleton-start: rgba(0, 0, 0, 0.04);
+  --skeleton-end: rgba(0, 0, 0, 0.08);
   text-autospace: normal;
 
   /* Shadcn semantic slots light */
@@ -175,6 +180,9 @@
   --color-brand-dark: var(--brand-dark);
   --color-brand-darker: var(--brand-darker);
   --color-brand-success: var(--brand-success);
+  --color-scrim: var(--scrim);
+  --color-skeleton-start: var(--skeleton-start);
+  --color-skeleton-end: var(--skeleton-end);
   --color-warn: var(--warn);
   --color-alert: var(--alert);
 
@@ -431,11 +439,7 @@ body {
     --prose-blog-table-header-bg: var(--surface);
     --prose-blog-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
 
-    /*
-     * Article headings: scale down from @tailwindcss/typography prose-lg defaults.
-     * Baseline: h1 = 1.75rem; h2–h5 step down in ~0.125–0.25rem tiers.
-     * Colour: project token --surface-secondary (#283149), deep blue vs body ink.
-     */
+    /* Article headings scaled down from prose-lg defaults */
     &.prose-lg :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
       color: var(--surface-secondary);
     }

@@ -3,7 +3,7 @@ import type { Editor, Range } from '@tiptap/core'
 import { Extension } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion, { type SuggestionProps, type SuggestionKeyDownProps } from '@tiptap/suggestion'
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 
 import { filterSlashCommands, SLASH_COMMANDS, type SlashCommand } from '@/ui/admin/editor/tiptap/slash-commands'
@@ -129,7 +129,7 @@ function toListProps(suggestion: SuggestionProps<SlashCommand>): SlashMenuListPr
 }
 
 function SlashMenuList(props: SlashMenuListProps) {
-  const { items, command, clientRect, isOpen = true, ref } = props
+  const { items, command, clientRect, query, isOpen = true, ref } = props
   const [activeIndex, setActiveIndex] = useState(0)
   const itemsRef = useRef<readonly SlashCommand[]>(items)
   const activeIndexRef = useRef(activeIndex)
@@ -146,10 +146,14 @@ function SlashMenuList(props: SlashMenuListProps) {
   }, [items, activeIndex])
 
   // Track the anchor rect so the menu follows the cursor as the user
-  // types more characters. We poll on every render — the suggestion
-  // plugin produces a fresh `clientRect()` each call, so keeping
-  // `useEffect` out of the loop avoids the menu lagging by a frame.
-  const rect = clientRect ? clientRect() : null
+  // types more characters. `clientRect()` queries layout (a layout
+  // read forces a flush on Chromium); `query` is in the dep array as
+  // an explicit invalidation key — when the filter text changes the
+  // cursor has moved, so we re-read. The closure itself doesn't read
+  // `query`, hence the disable: `query` is intentionally there only to
+  // drive cache invalidation.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  const rect = useMemo(() => (clientRect ? clientRect() : null), [clientRect, query])
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {
