@@ -1,4 +1,4 @@
-import { data, Outlet, redirect } from 'react-router'
+import { data, isRouteErrorResponse, Outlet, redirect, useRouteError } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
@@ -35,6 +35,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       csrfToken: issued.token,
     },
     issued.setCookie === '' ? undefined : { headers: { 'Set-Cookie': issued.setCookie } },
+  )
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError()
+  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '出错了'
+  const message = isRouteErrorResponse(error)
+    ? typeof error.data === 'string'
+      ? error.data
+      : error.statusText
+    : error instanceof Error
+      ? error.message
+      : '未知错误'
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+      <div className="max-w-md space-y-2 text-center">
+        <h1 className="text-lg font-semibold text-red-500">{title}</h1>
+        <p className="text-sm text-muted-foreground">{message}</p>
+      </div>
+    </div>
   )
 }
 

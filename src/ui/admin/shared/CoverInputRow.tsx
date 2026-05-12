@@ -102,7 +102,11 @@ export function CoverInputRow({
             modes. */}
         <div className="flex h-10 w-20 items-center justify-center overflow-hidden rounded border bg-muted">
           {value !== '' ? (
-            <img src={value} alt={label} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            <>
+              {/* Small preview thumbnail (80×40): the URL is already a public S3
+                  object; no CDN transform needed for this size. */}
+              <img src={value} alt={label} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+            </>
           ) : (
             <ImageOffIcon className="size-4 text-muted-foreground" />
           )}

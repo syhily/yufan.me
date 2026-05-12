@@ -47,7 +47,9 @@ function filterEmojis(query: string, limit = 24): readonly EmojiItem[] {
   }
   const results: EmojiItem[] = []
   for (const item of gitHubEmojis) {
-    if (results.length >= limit) break
+    if (results.length >= limit) {
+      break
+    }
     const nameMatch = item.name.toLowerCase().includes(trimmed)
     const shortcodeMatch = item.shortcodes.some((s) => s.toLowerCase().includes(trimmed))
     const tagMatch = item.tags.some((t) => t.toLowerCase().includes(trimmed))
@@ -149,15 +151,21 @@ function EmojiMenuList(props: EmojiMenuListProps) {
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {
-      if (!isOpen) return false
+      if (!isOpen) {
+        return false
+      }
       const list = itemsRef.current
       if (event.key === 'ArrowDown') {
-        if (list.length === 0) return true
+        if (list.length === 0) {
+          return true
+        }
         setActiveIndex((current) => (current + 1) % list.length)
         return true
       }
       if (event.key === 'ArrowUp') {
-        if (list.length === 0) return true
+        if (list.length === 0) {
+          return true
+        }
         setActiveIndex((current) => (current - 1 + list.length) % list.length)
         return true
       }

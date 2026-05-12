@@ -726,6 +726,12 @@ describe('contract: module and bundle boundaries', () => {
       ) {
         return true
       }
+      if (file.startsWith('src/shared/pt/bridge/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
+        return true
+      }
+      if (file.startsWith('src/ui/admin/editor/tiptap/block-cards/') && specifier.startsWith('./')) {
+        return true
+      }
       return false
     }
 
@@ -1021,10 +1027,11 @@ describe('contract: module and bundle boundaries', () => {
 
     const postDetail = readFileSync('src/ui/post/post/PostDetailBody.tsx', 'utf8')
     const pageDetail = readFileSync('src/ui/post/post/PageDetailBody.tsx', 'utf8')
+    const detailChrome = readFileSync('src/ui/post/DetailBodyChrome.tsx', 'utf8')
     const commentItem = readFileSync('src/ui/comments/CommentItem.tsx', 'utf8')
 
-    expect(postDetail).toMatch(/cn\(\s*'post-content'\s*,/)
-    expect(pageDetail).toMatch(/cn\(\s*'post-content'\s*,/)
+    // post-content class is inlined in DetailBodyChrome; Post/Page DetailBody are thin wrappers.
+    expect(detailChrome).toMatch(/cn\(\s*'post-content'\s*,/)
     expect(commentItem).toMatch(/cn\(\s*'comment-content'\s*,/)
 
     // The registry stays deleted. A regression that re-adds it or

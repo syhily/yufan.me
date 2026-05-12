@@ -1,20 +1,14 @@
 import { data } from 'react-router'
 
-import type { Page } from '@/shared/catalog'
-
-import { buildDbPage, findPageBySlug, getEntryBySlug, listAllFriends } from '@/server/catalog'
-import { loadPageDraftPreviewBySlug } from '@/server/cms/pages/service'
-import { resolveImageMetaBySources } from '@/server/images/render-enhance'
-import { loadPublicDetailData, redirectPermanent } from '@/server/route-helpers/detail-loader'
-import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpers/etag'
-import { notFound } from '@/server/route-helpers/http'
+import { listAllFriends } from '@/server/catalog'
+import { loadPagePreview } from '@/server/cms/pages/loader'
+import { loadPublicDetailData } from '@/server/route-helpers/detail-loader'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
-import { isAdmin, resolveSessionContext, tryGetSessionContext } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
-import { type DraftMarker, PageDetailBody } from '@/ui/post/post/PageDetailBody'
+import { PageDetailBody } from '@/ui/post/post/PageDetailBody'
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
 
@@ -29,94 +23,33 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 
-  const entry = await getEntryBySlug(params.slug)
-  if (entry !== null && entry.type === 'post') {
-    redirectPermanent(`/posts/${entry.slug}`)
-  }
+  const preview = await loadPagePreview({ slug: params.slug, wantsDraftPreview, request, context })
 
-  const publishedPage: Page | undefined =
-    entry !== null && entry.type === 'page' ? ((await findPageBySlug(params.slug)) ?? undefined) : undefined
-
-  let sourcePage: Page | undefined = publishedPage
-  let draftMarker: DraftMarker = null
-
-  const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
-  if (needsDraftLookup) {
-    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
-    if (isAdmin(sessionContext.session)) {
-      const preview = await loadPageDraftPreviewBySlug(params.slug)
-      if (preview !== null) {
-        if (sourcePage === undefined) {
-          sourcePage = buildDbPage(preview.page)
-          draftMarker = 'draft'
-        } else if (wantsDraftPreview) {
-          if (preview.hasNewerDraft) {
-            sourcePage = buildDbPage(preview.page)
-            draftMarker = 'unpublished-draft'
-          } else {
-            draftMarker = 'published-draft'
-          }
-        }
-      }
-    }
-  }
-
-  if (sourcePage === undefined) {
-    notFound()
-  }
-
-  const publicEtag =
-    draftMarker === null ? weakEtag(['page', sourcePage.id, sourcePage.publishedRevisionId, sourcePage.updated]) : null
-  if (publicEtag !== null && ifNoneMatch(request, publicEtag)) {
-    throw notModifiedResponse(publicEtag)
-  }
-
-  const page = {
-    id: sourcePage.id,
-    slug: sourcePage.slug,
-    title: sourcePage.title,
-    summary: sourcePage.summary,
-    cover: sourcePage.cover,
-    coverThumbhash: sourcePage.coverThumbhash,
-    coverWidth: sourcePage.coverWidth,
-    coverHeight: sourcePage.coverHeight,
-    permalink: sourcePage.permalink,
-    date: sourcePage.date,
-    updated: sourcePage.updated,
-    og: sourcePage.og,
-    comments: sourcePage.comments,
-    toc: sourcePage.toc,
-    showUpdated: sourcePage.showUpdated,
-    headings: sourcePage.headings,
-  }
-
-  const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePage.imageSources))
-  const body = sourcePage.body
   const footnotesSectionTitle = resolveFootnotesSectionTitle(requireBlogSettingsSection('content'))
 
   const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
     context,
-    target: { type: 'page', ownerId: BigInt(page.id) },
+    target: { type: 'page', ownerId: BigInt(preview.page.id) },
     preload: () => Promise.resolve(),
   })
 
   return data(
     {
-      page,
-      body,
+      page: preview.page,
+      body: preview.body,
       friends: await listAllFriends(),
-      showFriends: sourcePage.showFriends,
-      draftMarker,
+      showFriends: preview.showFriends,
+      draftMarker: preview.draftMarker,
       detail,
-      imageMeta,
+      imageMeta: preview.imageMeta,
       footnotesSectionTitle,
     },
     {
       headers:
-        publicEtag === null
+        preview.publicEtag === null
           ? { 'Set-Cookie': commentCsrfSetCookie }
-          : { 'Set-Cookie': commentCsrfSetCookie, ETag: publicEtag },
+          : { 'Set-Cookie': commentCsrfSetCookie, ETag: preview.publicEtag },
     },
   )
 }

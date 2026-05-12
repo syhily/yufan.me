@@ -116,7 +116,11 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
           {music ? (
             <div className="grid grid-cols-[80px_1fr] items-center gap-3 sm:col-span-2">
               {music.coverUrl !== '' ? (
-                <img src={music.coverUrl} alt="" className="size-20 rounded-md object-cover" loading="lazy" />
+                <>
+                  {/* Admin preview thumbnail: the cover is already a small public S3 URL
+                      and does not need CDN transform for an 80×80 dialog preview. */}
+                  <img src={music.coverUrl} alt="" className="size-20 rounded-md object-cover" loading="lazy" />
+                </>
               ) : (
                 <div className="size-20 rounded-md bg-muted" />
               )}

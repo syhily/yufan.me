@@ -1,5 +1,6 @@
 import type { ImageRow } from '@/server/db/types'
 
+import { createInflight } from '@/server/cache/inflight'
 import { storage } from '@/server/cache/storage'
 import { findImagesByStoragePaths } from '@/server/db/query/image'
 import { getPublicBaseUrl } from '@/server/images/storage'
@@ -78,52 +79,84 @@ function cacheKey(storagePath: string): string {
 // requests for the same `storagePath` collapses to one DB call
 // instead of N parallel ones — the worst case the old design quietly
 // avoided.
-const requests = new Map<string, Promise<CachedImageMeta>>()
+const inflight = createInflight<CachedImageMeta>()
 
 async function readMeta(storagePath: string): Promise<CachedImageMeta> {
-  const pending = requests.get(storagePath)
-  if (pending !== undefined) {
-    return pending
-  }
-  const promise = (async () => {
-    try {
-      const cached = await storage.getItem<CachedImageMeta>(cacheKey(storagePath))
-      if (cached !== null) {
-        return cached
-      }
-      const rows = await findImagesByStoragePaths([storagePath])
-      const row = rows[0] ?? null
-      const value: CachedImageMeta = row !== null ? rowToCached(row) : { found: false }
-      try {
-        await storage.setItem(cacheKey(storagePath), value, { ttl: bucket().ttlSeconds })
-      } catch (error) {
-        log.warn('Failed to write image-meta cache; continuing without warmth', { storagePath, error })
-      }
-      return value
-    } finally {
-      requests.delete(storagePath)
+  return inflight(storagePath, async () => {
+    const cached = await storage.getItem<CachedImageMeta>(cacheKey(storagePath))
+    if (cached !== null) {
+      return cached
     }
-  })()
-  requests.set(storagePath, promise)
-  return promise
+    const rows = await findImagesByStoragePaths([storagePath])
+    const row = rows[0] ?? null
+    const value: CachedImageMeta = row !== null ? rowToCached(row) : { found: false }
+    try {
+      await storage.setItem(cacheKey(storagePath), value, { ttl: bucket().ttlSeconds })
+    } catch (error) {
+      log.warn('Failed to write image-meta cache; continuing without warmth', { storagePath, error })
+    }
+    return value
+  })
 }
 
 async function readManyMeta(storagePaths: string[]): Promise<Map<string, CachedImageMeta>> {
-  // Parallelise so a 30-image post warms up in one tick instead of
-  // 30 sequential round-trips. The inflight map dedupes within the
-  // batch, and `Promise.all` lets us pipeline the Redis reads.
   const out = new Map<string, CachedImageMeta>()
-  await Promise.all(
-    storagePaths.map(async (storagePath) => {
-      out.set(storagePath, await readMeta(storagePath))
-    }),
-  )
+  if (storagePaths.length === 0) {
+    return out
+  }
+
+  // Batch read from Redis via getItems (Redis driver uses mget).
+  const { prefix, ttlSeconds } = bucket()
+  const keyToPath = new Map<string, string>()
+  for (const storagePath of storagePaths) {
+    keyToPath.set(`${prefix}${storagePath}`, storagePath)
+  }
+  const cacheEntries = await storage.getItems<CachedImageMeta>([...keyToPath.keys()])
+
+  const missingPaths: string[] = []
+  for (const entry of cacheEntries) {
+    const storagePath = keyToPath.get(entry.key)!
+    if (entry.value !== null) {
+      out.set(storagePath, entry.value)
+    } else {
+      missingPaths.push(storagePath)
+    }
+  }
+
+  if (missingPaths.length > 0) {
+    // Batch query DB for cache misses.
+    const rows = await findImagesByStoragePaths(missingPaths)
+    const rowMap = new Map(rows.map((r) => [r.storagePath, r]))
+
+    // Build values and batch write back to Redis.
+    const toWrite: { key: string; value: CachedImageMeta }[] = []
+    for (const storagePath of missingPaths) {
+      const row = rowMap.get(storagePath)
+      const value: CachedImageMeta = row !== undefined ? rowToCached(row) : { found: false }
+      out.set(storagePath, value)
+      toWrite.push({ key: `${prefix}${storagePath}`, value })
+    }
+
+    await Promise.all(
+      toWrite.map(async ({ key, value }) => {
+        try {
+          await storage.setItem(key, value, { ttl: ttlSeconds })
+        } catch (error) {
+          log.warn('Failed to write image-meta cache; continuing without warmth', { key, error })
+        }
+      }),
+    )
+  }
+
   return out
 }
 
 /** Drop a single entry from the resolution cache (called by the upload service after a write). */
 export async function invalidateImageEnhanceCacheFor(storagePath: string): Promise<void> {
-  requests.delete(storagePath)
+  // `createInflight` auto-evicts resolved promises in `.finally`;
+  // there is no manual delete. A stale in-flight promise is a
+  // vanishingly small race window (upload → DB commit → invalidate
+  // all happen in one sequential flow).
   try {
     await storage.removeItem(cacheKey(storagePath))
   } catch (error) {
@@ -139,7 +172,6 @@ export async function invalidateImageEnhanceCacheFor(storagePath: string): Promi
  * panel's per-bucket UI stays the single source of truth.
  */
 export async function clearImageEnhanceCache(): Promise<void> {
-  requests.clear()
   // Match the SCAN+UNLINK shape used by `server/cache/buckets.ts`
   // rather than depending on it (would create a server→server cycle
   // the `cache.buckets` module doesn't have today). Test usage is
@@ -393,4 +425,32 @@ export async function resolveImageMetaBySources(links: string[]): Promise<Map<st
     out.set(src, meta)
   }
   return out
+}
+
+// ---------------------------------------------------------------------------
+// Generic cover / poster hydration
+// ---------------------------------------------------------------------------
+
+/**
+ * Batch-resolve image URLs for a collection of items and write
+ * thumbhash / publicUrl (and any caller-supplied fields) back
+ * into each item.
+ *
+ * Deduplicates URLs across the batch and fans out `loadImageThumbhash`
+ * in parallel so N items sharing the same cover incur one Redis + one
+ * DB round-trip at most.
+ */
+export async function hydrateImageRefs<T>(
+  items: T[],
+  getUrl: (item: T) => string,
+  apply: (item: T, lookup: ImageThumbhashLookup | null) => void,
+): Promise<void> {
+  const uniqueUrls = [...new Set(items.map(getUrl).filter((url) => url !== ''))]
+  const lookups = await Promise.all(uniqueUrls.map((url) => loadImageThumbhash(url)))
+  const lookupMap = new Map(uniqueUrls.map((url, i) => [url, lookups[i]]))
+  for (const item of items) {
+    const url = getUrl(item)
+    const lookup = url === '' ? null : (lookupMap.get(url) ?? null)
+    apply(item, lookup)
+  }
 }

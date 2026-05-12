@@ -248,15 +248,15 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNow
               <div>
                 <div className="flex flex-1 items-center text-sm text-ink-muted">
                   <div className="hidden flex-1 md:block">{formatShowDate(post.date, config, listingNowIso)}</div>
-                  <ListMetric value={post.meta.views}>
+                  <Metric className="text-ink-strong" value={post.meta.views}>
                     <EyeIcon className="text-md" size="1em" aria-hidden />
-                  </ListMetric>
-                  <ListMetric value={post.meta.likes}>
+                  </Metric>
+                  <Metric className="text-ink-strong" value={post.meta.likes}>
                     <HeartIcon className="text-md" fill="currentColor" strokeWidth={0} size="1em" aria-hidden />
-                  </ListMetric>
-                  <ListMetric value={post.meta.comments}>
+                  </Metric>
+                  <Metric className="text-ink-strong" value={post.meta.comments}>
                     <MessageCircleMoreIcon className="text-md" size="1em" aria-hidden />
-                  </ListMetric>
+                  </Metric>
                 </div>
               </div>
             </div>
@@ -270,16 +270,6 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNow
   )
 }
 
-// Icon + count chip in `PostCards` rows. Replaces the legacy
-// `.list-like, .list-like-square { display: inline-flex; align-items:
-// center; gap: 0.35rem; margin-left: 10px; vertical-align: middle;
-// background-color: transparent }` shared rule plus the
-// `.list-like { color: var(--color-dark) }` colour override. The
-// 0.35rem gap → `gap-1.5` (6 px) is a Lesson 8 0.4 px collapse;
-// the `background-color: transparent` is a `<div>` default and was
-// dropped (Lesson 1).
-const listLikeClass = cn('ml-2.5 inline-flex items-center gap-1.5 align-middle', 'text-ink-strong')
-
 // `<span>` displaying the like count. Replaces the legacy
 // `.list-like .like-count, .list-like-square .like-count
 // { padding-left: 0; line-height: 1 }` rule. `padding-left: 0` is a
@@ -288,9 +278,9 @@ const listLikeClass = cn('ml-2.5 inline-flex items-center gap-1.5 align-middle',
 // centred next to the SVG.
 const likeCountClass = 'leading-none'
 
-function ListMetric({ children, value }: { children: ReactNode; value: number }) {
+function Metric({ children, value, className }: { children: ReactNode; value: number; className?: string }) {
   return (
-    <div className={listLikeClass}>
+    <div className={cn('ml-2.5 inline-flex items-center gap-1.5 align-middle', className)}>
       {children}
       <span className={likeCountClass}>{value}</span>
     </div>
@@ -338,31 +328,16 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
             <div className="font-number flex flex-1 text-sm text-ink-overlay">
               <span className="inline-block">{formatShowDate(post.date, config, listingNowIso)}</span>
               <div className="flex-1" />
-              <SquareMetric value={post.meta.views}>
+              <Metric value={post.meta.views}>
                 <EyeIcon className="text-md" size="1em" aria-hidden />
-              </SquareMetric>
-              <SquareMetric value={post.meta.likes}>
+              </Metric>
+              <Metric value={post.meta.likes}>
                 <HeartIcon className="text-md" fill="currentColor" strokeWidth={0} size="1em" aria-hidden />
-              </SquareMetric>
+              </Metric>
             </div>
           </Link>
         </div>
       </div>
-    </div>
-  )
-}
-
-// Icon + count chip in `PostSquare` overlays. Same chrome as
-// `listLikeClass` minus the `color: var(--color-dark)` — the square
-// variant inherits its colour (`text-ink-overlay`) from the parent
-// overlay row.
-const listLikeSquareClass = 'ml-2.5 inline-flex items-center gap-1.5 align-middle'
-
-function SquareMetric({ children, value }: { children: ReactNode; value: number }) {
-  return (
-    <div className={listLikeSquareClass}>
-      {children}
-      <span className={likeCountClass}>{value}</span>
     </div>
   )
 }

@@ -1,29 +1,31 @@
 import { Node } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
-import {
-  CheckIcon,
-  FunctionSquareIcon,
-  Music2Icon,
-  PencilIcon,
-  SigmaIcon,
-  TrashIcon,
-  WorkflowIcon,
-  XIcon,
-} from 'lucide-react'
+import { FunctionSquareIcon, PencilIcon, TrashIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import type { Block, MathBlock, MermaidBlock, MusicPlayerBlock } from '@/shared/pt/schema'
+import type { Block } from '@/shared/pt/schema'
 
-import { fetchRenderMath } from '@/client/api/render-math-fetch'
-import { fetchRenderMermaid } from '@/client/api/render-mermaid-fetch'
-import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
-import { useAdminMermaidPreview } from '@/ui/admin/editor/tiptap/use-admin-mermaid-preview'
+import {
+  MathBlockSourceEditor,
+  MathBlockSummary,
+  mathBlockIcon,
+  mathBlockTitle,
+  MermaidBlockOptions,
+  MermaidBlockSourceEditor,
+  MermaidBlockSummary,
+  mermaidBlockIcon,
+  mermaidBlockTitle,
+  MusicBlockSummary,
+  musicBlockIcon,
+  musicBlockTitle,
+  MusicPlayerOptions,
+  patchMermaidCenterFlag,
+  patchMusicPlayerFlag,
+  stripMathArtifacts,
+  stripMermaidArtifacts,
+} from '@/ui/admin/editor/tiptap/block-cards'
 import { Button } from '@/ui/components/button'
-import { Checkbox } from '@/ui/components/checkbox'
-import { Label } from '@/ui/components/label'
-import { Textarea } from '@/ui/components/textarea'
 import { cn } from '@/ui/lib/cn'
-import { MusicPlayer } from '@/ui/pt/blocks/MusicPlayer'
 
 // Universal "block card" Tiptap node. The PortableText ↔ ProseMirror
 // bridge maps opaque PT custom blocks (`musicPlayer`, `mathBlock`,
@@ -186,12 +188,10 @@ function isInlineEditable(ptType: string): boolean {
 // server-rendered output instead of raw source.
 function stripPrerenderArtifacts(block: Block): Block {
   if (block._type === 'mathBlock') {
-    const { mathml: _mathml, svg: _svg, ...rest } = block as { mathml?: string; svg?: string } & Block
-    return rest as Block
+    return stripMathArtifacts(block)
   }
   if (block._type === 'mermaid') {
-    const { svg: _ignored, ...rest } = block as { svg?: string } & Block
-    return rest as Block
+    return stripMermaidArtifacts(block)
   }
   if (block._type === 'code') {
     const { highlightedHtml: _ignored, ...rest } = block as { highlightedHtml?: string } & Block
@@ -200,81 +200,31 @@ function stripPrerenderArtifacts(block: Block): Block {
   return block
 }
 
-function patchMusicPlayerFlag(payload: MusicPlayerBlock, flag: 'auto' | 'center', enabled: boolean): Block {
-  const next: MusicPlayerBlock = { ...payload }
-  if (enabled) {
-    next[flag] = true
-  } else {
-    delete next[flag]
+function CardIcon({ ptType }: { ptType: string }) {
+  const props = { className: 'mt-0.5 size-5 shrink-0 text-muted-foreground' }
+  switch (ptType) {
+    case 'musicPlayer':
+      return musicBlockIcon(props)
+    case 'mathBlock':
+      return mathBlockIcon(props)
+    case 'mermaid':
+      return mermaidBlockIcon(props)
+    default:
+      return <FunctionSquareIcon {...props} />
   }
-  return next
 }
 
-function patchMermaidCenterFlag(payload: MermaidBlock, enabled: boolean): Block {
-  const next: MermaidBlock = { ...payload }
-  if (enabled) {
-    next.center = true
-  } else {
-    delete next.center
+function cardTitle(ptType: string): string {
+  switch (ptType) {
+    case 'musicPlayer':
+      return musicBlockTitle()
+    case 'mathBlock':
+      return mathBlockTitle()
+    case 'mermaid':
+      return mermaidBlockTitle()
+    default:
+      return `自定义块 (${ptType})`
   }
-  return next
-}
-
-interface MusicPlayerOptionsProps {
-  stableId: string
-  auto: boolean
-  center: boolean
-  onFlagChange: (flag: 'auto' | 'center', enabled: boolean) => void
-}
-
-function MusicPlayerOptions({ stableId, auto, center, onFlagChange }: MusicPlayerOptionsProps) {
-  return (
-    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 border-b border-border/80 pb-2">
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={`music-auto-${stableId}`}
-          checked={auto}
-          onCheckedChange={(v) => onFlagChange('auto', v === true)}
-        />
-        <Label htmlFor={`music-auto-${stableId}`} className="cursor-pointer text-xs leading-none font-normal">
-          自动播放
-        </Label>
-      </div>
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={`music-center-${stableId}`}
-          checked={center}
-          onCheckedChange={(v) => onFlagChange('center', v === true)}
-        />
-        <Label htmlFor={`music-center-${stableId}`} className="cursor-pointer text-xs leading-none font-normal">
-          永远居中
-        </Label>
-      </div>
-    </div>
-  )
-}
-
-interface MermaidBlockOptionsProps {
-  stableId: string
-  center: boolean
-  onCenterChange: (enabled: boolean) => void
-}
-
-function MermaidBlockOptions({ stableId, center, onCenterChange }: MermaidBlockOptionsProps) {
-  return (
-    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-2 border-b border-border/80 pb-2">
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id={`mermaid-center-${stableId}`}
-          checked={center}
-          onCheckedChange={(v) => onCenterChange(v === true)}
-        />
-        <Label htmlFor={`mermaid-center-${stableId}`} className="cursor-pointer text-xs leading-none font-normal">
-          永远居中
-        </Label>
-      </div>
-    </div>
-  )
 }
 
 interface CardSourceEditorProps {
@@ -293,215 +243,6 @@ function CardSourceEditor({ payload, onCommit, onCancel }: CardSourceEditorProps
   return null
 }
 
-interface MathBlockSourceEditorProps {
-  payload: MathBlock
-  onCommit: (next: Block, editorRender?: string) => void
-  onCancel: () => void
-}
-
-function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlockSourceEditorProps) {
-  const [draft, setDraft] = useState(payload.tex)
-  const [saving, setSaving] = useState(false)
-  const { previewHtml, renderError, showSpinner } = useAdminMathPreview(draft, true)
-
-  const handleSave = async () => {
-    const trimmed = draft.trim()
-    if (trimmed === '') {
-      onCommit({ ...payload, tex: draft })
-      return
-    }
-    setSaving(true)
-    try {
-      const out = await fetchRenderMath({ tex: draft, display: true })
-      const mathml = out.error === null && out.mathml !== '' ? out.mathml : ''
-      onCommit({ ...payload, tex: draft }, mathml)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="mt-2 flex w-full max-w-full flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-xs">公式块 TeX</Label>
-        {renderError !== null ? (
-          <span className="shrink-0 text-xs text-destructive">语法错误：{renderError}</span>
-        ) : null}
-      </div>
-      <p className="text-xs leading-snug text-muted-foreground">
-        独占行或多行环境（align、gather 等）。预览与发布后正文一致（KaTeX MathML）。
-      </p>
-      <Textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        placeholder={'\\begin{align*}\n    a &= b\\\\\n    c &= d\n\\end{align*}'}
-        rows={8}
-        className="font-mono text-xs"
-      />
-      <div className="rounded-sm border bg-muted/30 px-2 py-2 text-sm">
-        <span className="text-xs text-muted-foreground">预览：</span>
-        {showSpinner ? (
-          <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
-        ) : (
-          <div
-            className="math math-display mt-2 max-w-full overflow-x-auto text-center"
-            dangerouslySetInnerHTML={{ __html: previewHtml }}
-          />
-        )}
-      </div>
-      <div className="flex justify-end gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          disabled={saving}
-          onClick={() => {
-            setDraft(payload.tex)
-            onCancel()
-          }}
-          title="取消"
-        >
-          <XIcon /> 取消
-        </Button>
-        <Button
-          size="sm"
-          type="button"
-          disabled={saving}
-          onClick={() => {
-            void handleSave()
-          }}
-          title="保存编辑"
-        >
-          <CheckIcon /> {saving ? '保存中…' : '保存'}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-interface MermaidBlockSourceEditorProps {
-  payload: MermaidBlock
-  onCommit: (next: Block, editorRender?: string) => void
-  onCancel: () => void
-}
-
-function MermaidBlockSourceEditor({ payload, onCommit, onCancel }: MermaidBlockSourceEditorProps) {
-  const [draft, setDraft] = useState(payload.code)
-  const [saving, setSaving] = useState(false)
-  const center = payload.center === true
-  const { previewHtml, renderError, showSpinner } = useAdminMermaidPreview(draft)
-
-  const handleSave = async () => {
-    const trimmed = draft.trim()
-    if (trimmed === '') {
-      onCommit({ ...payload, code: draft })
-      return
-    }
-    setSaving(true)
-    try {
-      const out = await fetchRenderMermaid({ code: draft })
-      const svg = out.error === null && out.svg !== '' ? out.svg : ''
-      onCommit({ ...payload, code: draft }, svg)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const previewInner =
-    previewHtml !== '' ? (
-      <div
-        className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
-        dangerouslySetInnerHTML={{ __html: previewHtml }}
-      />
-    ) : (
-      <span className="ml-2 text-xs text-muted-foreground">输入源码后显示预览</span>
-    )
-
-  return (
-    <div className="mt-2 flex w-full max-w-full flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <Label className="text-xs">Mermaid 源</Label>
-        {renderError !== null ? (
-          <span className="shrink-0 text-xs text-destructive">语法错误：{renderError}</span>
-        ) : null}
-      </div>
-      <p className="text-xs leading-snug text-muted-foreground">
-        预览与发布后正文一致（beautiful-mermaid）。保存时会写入与正文相同的 SVG。
-      </p>
-      <Textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        placeholder={'graph TD\n  A --> B'}
-        rows={8}
-        className="font-mono text-xs"
-      />
-      <div className="rounded-sm border bg-muted/30 px-2 py-2 text-sm">
-        <span className="text-xs text-muted-foreground">预览：</span>
-        {showSpinner ? (
-          <span className="ml-2 text-xs text-muted-foreground">渲染中…</span>
-        ) : center ? (
-          <div className="flex max-w-full justify-center overflow-x-auto">{previewInner}</div>
-        ) : (
-          previewInner
-        )}
-      </div>
-      <div className="flex justify-end gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          type="button"
-          disabled={saving}
-          onClick={() => {
-            setDraft(payload.code)
-            onCancel()
-          }}
-          title="取消"
-        >
-          <XIcon /> 取消
-        </Button>
-        <Button
-          size="sm"
-          type="button"
-          disabled={saving}
-          onClick={() => {
-            void handleSave()
-          }}
-          title="保存编辑"
-        >
-          <CheckIcon /> {saving ? '保存中…' : '保存'}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function CardIcon({ ptType }: { ptType: string }) {
-  const props = { className: 'mt-0.5 size-5 shrink-0 text-muted-foreground' }
-  switch (ptType) {
-    case 'musicPlayer':
-      return <Music2Icon {...props} />
-    case 'mathBlock':
-      return <SigmaIcon {...props} />
-    case 'mermaid':
-      return <WorkflowIcon {...props} />
-    default:
-      return <FunctionSquareIcon {...props} />
-  }
-}
-
-function cardTitle(ptType: string): string {
-  switch (ptType) {
-    case 'musicPlayer':
-      return '音乐播放器'
-    case 'mathBlock':
-      return '数学公式块'
-    case 'mermaid':
-      return 'Mermaid 流程图'
-    default:
-      return `自定义块 (${ptType})`
-  }
-}
-
 interface CardSummaryProps {
   payload: Block | null
 }
@@ -512,47 +253,11 @@ function CardSummary({ payload }: CardSummaryProps) {
   }
   switch (payload._type) {
     case 'musicPlayer':
-      return (
-        <div className="mt-2">
-          <MusicPlayer id={payload.playerId} auto={false} center={payload.center} />
-        </div>
-      )
+      return <MusicBlockSummary payload={payload} />
     case 'mathBlock':
-      return payload.mathml !== undefined && payload.mathml !== '' ? (
-        <div
-          className="math math-display mt-2 max-w-full overflow-x-auto text-center"
-          dangerouslySetInnerHTML={{ __html: payload.mathml }}
-        />
-      ) : payload.svg !== undefined && payload.svg !== '' ? (
-        <div
-          className="math math-display mt-2 max-w-full overflow-x-auto text-center [&_svg]:max-w-none"
-          dangerouslySetInnerHTML={{ __html: payload.svg }}
-        />
-      ) : (
-        <p className="mt-2 text-xs text-muted-foreground">
-          暂无预览。打开「编辑源」保存一次即可生成与正文一致的 MathML。
-        </p>
-      )
-    case 'mermaid': {
-      const center = payload.center === true
-      if (payload.svg !== undefined && payload.svg !== '') {
-        const inner = (
-          <div
-            className={cn('mermaid mt-2 max-w-full overflow-x-auto [&_svg]:max-w-none', center && 'shrink-0')}
-            dangerouslySetInnerHTML={{ __html: payload.svg }}
-          />
-        )
-        if (!center) {
-          return inner
-        }
-        return <div className="flex max-w-full justify-center overflow-x-auto">{inner}</div>
-      }
-      return (
-        <p className="mt-2 text-xs text-muted-foreground">
-          暂无预览图。打开「编辑源」保存一次即可生成与正文一致的 SVG。
-        </p>
-      )
-    }
+      return <MathBlockSummary payload={payload} />
+    case 'mermaid':
+      return <MermaidBlockSummary payload={payload} />
     default:
       return <div className="mt-1 text-xs text-muted-foreground">_type: {(payload as { _type: string })._type}</div>
   }

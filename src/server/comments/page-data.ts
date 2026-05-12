@@ -93,27 +93,12 @@ export async function loadDetailPageData(
   target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
-  const currentUser = toCommentFormUser(userSession(session))
-  const admin = isAdmin(session)
-  const trackView = options?.trackView ?? true
-
-  if (!admin && trackView) {
-    bumpPageView(target)
-  }
-
-  const [metricRow, comments, likes, sidebar] = await Promise.all([
-    ensureCommentPage(target),
-    loadCommentsAndItems(session, target),
-    queryLikes(target),
-    loadSidebarData(session),
-  ])
-
+  const commentsPromise = loadCommentsAndItems(session, target)
+  const critical = await loadDetailPageCritical(session, target, options)
+  const comments = await commentsPromise
   return {
-    commentKey: metricRow.publicId,
-    likes,
+    ...critical,
     commentData: comments.commentData,
     commentItems: comments.commentItems,
-    currentUser,
-    ...sidebar,
   }
 }
