@@ -203,20 +203,22 @@ async function runKatexPasses(
   } catch {
     return
   }
-  for (const block of blocks) {
-    try {
-      block.mathml = await renderer.render(block.tex, true)
-    } catch {
-      // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
-    }
-  }
-  for (const def of inlines) {
-    try {
-      def.mathml = await renderer.render(def.tex, false)
-    } catch {
-      // Leave mathml unset.
-    }
-  }
+  await Promise.all([
+    ...blocks.map(async (block) => {
+      try {
+        block.mathml = await renderer.render(block.tex, true)
+      } catch {
+        // Leave mathml unset; renderer will fall back to legacy SVG or raw text.
+      }
+    }),
+    ...inlines.map(async (def) => {
+      try {
+        def.mathml = await renderer.render(def.tex, false)
+      } catch {
+        // Leave mathml unset.
+      }
+    }),
+  ])
 }
 
 // ---------------------------------------------------------------------------

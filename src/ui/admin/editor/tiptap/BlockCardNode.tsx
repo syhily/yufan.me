@@ -10,20 +10,24 @@ import {
   MathBlockSummary,
   mathBlockIcon,
   mathBlockTitle,
+  stripMathArtifacts,
+} from '@/ui/admin/editor/tiptap/block-cards/MathBlock'
+import {
   MermaidBlockOptions,
   MermaidBlockSourceEditor,
   MermaidBlockSummary,
   mermaidBlockIcon,
   mermaidBlockTitle,
+  patchMermaidCenterFlag,
+  stripMermaidArtifacts,
+} from '@/ui/admin/editor/tiptap/block-cards/MermaidBlock'
+import {
   MusicBlockSummary,
   musicBlockIcon,
   musicBlockTitle,
   MusicPlayerOptions,
-  patchMermaidCenterFlag,
   patchMusicPlayerFlag,
-  stripMathArtifacts,
-  stripMermaidArtifacts,
-} from '@/ui/admin/editor/tiptap/block-cards'
+} from '@/ui/admin/editor/tiptap/block-cards/MusicBlock'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 

@@ -5,7 +5,7 @@ import {
   type PortableTextTypeComponentProps,
 } from '@portabletext/react'
 import GithubSlugger from 'github-slugger'
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, use, useMemo, type ReactNode } from 'react'
 
 import {
   collectHeadingSlotsInPortableTextRenderOrder,
@@ -249,7 +249,7 @@ function HeadingBlock({
   value: TextBlock
   Tag: 'h1' | 'h2' | 'h3' | 'h4'
 }) {
-  const ids = useContext(HeadingIdByBlockKeyContext)
+  const ids = use(HeadingIdByBlockKeyContext)
   const id = ids.get(value._key) ?? ''
   const cls = alignClass(value.align)
   return (
@@ -497,8 +497,8 @@ function HorizontalRuleComponent(_props: PortableTextTypeComponentProps<Horizont
 }
 
 function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPlayerBlock>) {
-  const { suppressAutoplay } = useContext(MusicPresentationContext)
-  const isRss = useContext(RssModeContext)
+  const { suppressAutoplay } = use(MusicPresentationContext)
+  const isRss = use(RssModeContext)
   if (isRss) {
     return <p className="my-4 text-center text-ink-secondary">🎵 此文章包含音乐播放器，请访问原文收听。</p>
   }

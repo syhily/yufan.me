@@ -34,21 +34,19 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     throw notModifiedResponse(etag)
   }
 
-  const visibleTags = await getTagsByNames(post.tags)
+  const [visibleTags, imageMeta, sidebarTags, sidebarPosts] = await Promise.all([
+    getTagsByNames(post.tags),
+    resolveImageMetaBySources(sourcePost.imageSources).then((r) => Object.fromEntries(r)),
+    listAllTags().then(selectSidebarTags),
+    selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),
+  ])
 
-  const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePost.imageSources))
-
-  const sidebarTags = selectSidebarTags(await listAllTags())
-
-  const { detail, sidebar, commentCsrfSetCookie } = await loadPublicDetailData({
+  const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
     request,
     context,
     target: { type: 'post', ownerId: BigInt(post.id) },
     preload: () => Promise.resolve(),
-    sidebar: {
-      posts: await selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),
-      tags: sidebarTags,
-    },
+    sidebar: { posts: sidebarPosts, tags: sidebarTags },
   })
 
   return data(
@@ -56,8 +54,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       post,
       body: sourcePost.body,
       visibleTags,
-      sidebarPosts: sidebar?.posts ?? [],
-      tags: sidebar?.tags ?? [],
+      sidebarPosts,
+      tags: sidebarTags,
       detail,
       imageMeta,
     },

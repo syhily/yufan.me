@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, use, type ReactNode } from 'react'
 
 export interface ResolvedImageMeta {
   thumbhash?: string
@@ -15,5 +15,5 @@ export function ImageMetaProvider({ children, value }: { children: ReactNode; va
 }
 
 export function useImageMeta(): ImageMetaMap | undefined {
-  return useContext(ImageMetaContext)
+  return use(ImageMetaContext)
 }

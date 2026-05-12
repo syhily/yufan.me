@@ -127,6 +127,7 @@ function applyFootnoteRenumberTransaction(instance: Editor, syncedBody: Portable
     tr = tr.replaceWith(c.from, c.to, schema.text(c.newText, [markType.create(c.attrs)]))
   }
 
+  tr.setMeta('addToHistory', false)
   instance.view.dispatch(tr)
   return true
 }

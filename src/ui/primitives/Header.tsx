@@ -93,7 +93,7 @@ const asideOverlayClass = cn(
   'max-lg:group-data-[state=open]/aside:inset-0',
   'max-lg:group-data-[state=open]/aside:visible',
   'max-lg:group-data-[state=open]/aside:pointer-events-auto',
-  'max-lg:group-data-[state=open]/aside:bg-[rgba(8,15,25,0.3)]',
+  'max-lg:group-data-[state=open]/aside:bg-scrim',
 )
 
 // Brand `<h1>` (`.navbar-brand`). Hidden on mobile + tablet (the

@@ -27,20 +27,19 @@ runtimes), kept in sync via `skills-lock.json`.
   re-introducing an older rule.
 - **Quote stable rule ids in PR review** (e.g. `bundle-barrel-imports`,
   `architecture-avoid-boolean-props`, `server-no-shared-module-state`).
-- **Out-of-scope topics** (Drizzle migrations, deep MDX / `source.config.ts`
-  wiring, Vite+ tooling) fall back to this document and upstream library docs.
+- **Out-of-scope topics** (Drizzle migrations, Vite+ tooling) fall back to
+  this document and upstream library docs.
 
 ## Stack
 
 - React Router 7 Framework Mode with SSR. `react-router.config.ts` keeps
   `appDirectory` at `src` and enables `future.v8_middleware`.
 - Vite (via Vite+) is the build system. `vite.config.ts` wires React
-  Router, the MDX post pipeline (`source.config.ts`), binary asset imports,
-  path aliases, and dev server settings.
-- Posts are MDX under `src/content/posts`, compiled into the catalog at build
-  time. Site pages live in the `page` + `content` Postgres tables and are
-  edited through `/wp-admin/pages`. Categories, tags, and friends live in
-  Postgres and are edited through `/wp-admin/{categories,tags,friends}`.
+  Router, binary asset imports, path aliases, and dev server settings.
+- Posts and pages both live in Postgres (`post` + `content` and `page` +
+  `content` tables) and are edited through `/wp-admin/{posts,pages}`.
+  Categories, tags, and friends live in Postgres and are edited through
+  `/wp-admin/{categories,tags,friends}`.
 - React 19 view layer. TSX/TS only.
 - Postgres for users, comments, likes, counters, settings, taxonomies,
   images, music. Redis for sessions, rate limits, avatars, and
@@ -177,7 +176,7 @@ src/
 
 - `@/*` → `./src/*`
 - `~/*` → `./public/*`
-- `#source/*` → `./.source/*` (generated MDX collection output for the build)
+- `~/*` → `./public/*` (public static assets)
 
 Use aliases instead of relative paths. The only allowed relative imports:
 
@@ -185,8 +184,7 @@ Use aliases instead of relative paths. The only allowed relative imports:
   because React Router reads the route manifest before Vite resolves
   aliases).
 - `./+types/*` — React Router type codegen colocated with each route.
-- `vite.config.ts` ↔ `source.config.ts` and config-only markdown
-  plugins inside `source.config.ts`, which use explicit `.ts`
+- `vite.config.ts` and config-only plugins use explicit `.ts`
   specifiers because Vite+'s ESM config loader does not resolve bare
   TS specifiers (`allowImportingTsExtensions` is enabled for this).
 
@@ -201,24 +199,22 @@ Use aliases instead of relative paths. The only allowed relative imports:
 
 ## Content
 
-### Posts (MDX)
+### Posts (Postgres)
 
-- Authors edit `src/content/posts/**/*.mdx`. `source.config.ts` declares the
-  collection and wires plugins (math, Mermaid, Shiki, heading slugs, external
-  links, title figures).
-- Frontmatter carries `slug`, categories/tags by name, visibility flags, etc.
-  Public URLs use `slug`, not filenames (`/posts/:slug`).
-- `@/server/catalog` serves compiled MDX (`body`, headings, raw source,
-  listing fields). Custom block components live under `@/ui/pt/blocks/`.
+- Stored in `post` + `content`, edited at `/wp-admin/posts`, rendered with
+  `<PortableTextBody>` (`/posts/:slug`).
+- Frontmatter equivalents (slug, categories/tags, visibility flags) live in
+  the `post` table. Public URLs use `slug`, not internal id.
+- `@/server/catalog` serves the compiled body, headings, raw source, and
+  listing fields. Custom block components live under `@/ui/pt/blocks/`.
 
 ### Pages (Postgres)
 
 - Stored in `page` + `content`, edited at `/wp-admin/pages`, rendered with
   `<PortableTextBody>` (`/:slug` from the `page.slug` column).
-- MDX under `src/content/pages/` is **not** walked by `source.config.ts` and does
-  not ship in the SSR bundle. Production pages are edited in `/wp-admin/pages`;
-  disk MDX there is only useful if your deployment still runs a bulk importer
-  from `scripts/` (see that script’s header for usage).
+- Production pages are edited in `/wp-admin/pages`. Historical disk MDX
+  under `src/content/pages/` is not shipped in the SSR bundle and is only
+  useful if your deployment still runs a bulk importer from `scripts/`.
 
 ### Listing rules
 

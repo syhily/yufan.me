@@ -219,7 +219,7 @@ export function UserDetailView({ userId }: { userId: string }) {
                     <Badge
                       className="border-transparent"
                       style={{
-                        backgroundColor: user.badgeColor || '#008c95',
+                        backgroundColor: user.badgeColor || 'var(--brand)',
                         // The DB value already accounts for the manual
                         // override (or is `null` when the admin opted
                         // for auto-derive). The card preview is a

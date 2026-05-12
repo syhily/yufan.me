@@ -37,7 +37,7 @@ describe('contract: feed (RSS + Atom) shape', () => {
     // helper is wired in and that entry items receive the prerendered body
     // as `content`, so subscribers see the full post — not a summary stub.
     expect(feedSource).toContain('prerenderToHtml')
-    expect(feedSource).toContain('content: await renderEntryContent(post)')
+    expect(feedSource).toContain('content: contents[i]')
   })
 
   it('category / tag feeds keep their /cats and /tags URL prefixes', () => {

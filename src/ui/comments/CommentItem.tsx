@@ -1,5 +1,5 @@
 import { XIcon } from 'lucide-react'
-import { useContext, useEffect, useState } from 'react'
+import { use, useEffect, useState } from 'react'
 
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/api-types'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
@@ -57,7 +57,7 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
   onDeleted: (id: bigint | string) => void
   onDismissMyComment: (id: bigint | string) => void
 } {
-  const ctx = useContext(CommentsContext)
+  const ctx = use(CommentsContext)
   if (ctx !== null) {
     return adapt(ctx, propAdmin)
   }
@@ -262,8 +262,8 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
                   'rounded-full text-badge font-bold',
                 )}
                 style={{
-                  backgroundColor: comment.badgeColor || '#008c95',
-                  color: comment.badgeTextColor || '#ffffff',
+                  backgroundColor: comment.badgeColor || 'var(--brand)',
+                  color: comment.badgeTextColor || 'var(--canvas)',
                 }}
               >
                 {comment.badgeName}

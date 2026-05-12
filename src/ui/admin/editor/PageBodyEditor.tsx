@@ -203,7 +203,7 @@ export function PageBodyEditor({
     extensions: [
       StarterKit.configure({
         link: false,
-        dropcursor: { color: '#3b82f6', width: 2 },
+        dropcursor: { color: 'var(--brand)', width: 2 },
       }),
       Typography,
       TextAlign.configure({ types: ['heading', 'paragraph', 'blockquote'] }),

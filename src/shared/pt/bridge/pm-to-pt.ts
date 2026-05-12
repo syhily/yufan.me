@@ -53,12 +53,11 @@ export function pushPmNode(
     }
     case 'blockquote': {
       const child = (node.content ?? []).filter(isBlock)
-      const key = ensureKey(node.attrs)
       const textAlign = node.attrs?.textAlign as string | undefined
       for (const para of child) {
         out.push(
           paragraphToTextBlock(
-            { ...para, attrs: { ...para.attrs, _key: key, ...(textAlign ? { textAlign } : {}) } },
+            { ...para, attrs: { ...para.attrs, ...(textAlign ? { textAlign } : {}) } },
             ensureKey,
             'blockquote',
           ),

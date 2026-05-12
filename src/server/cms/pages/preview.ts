@@ -7,6 +7,9 @@ import { deriveSlug } from '@/server/slug'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { collectHeadings } from '@/shared/pt/schema'
+// Server→UI import exception: this file prerenders React components to
+// static HTML for the admin editor preview pane. The UI module is only
+// used during SSR and never reaches the client bundle.
 import { PortableTextBody as PortableTextBodyComponent } from '@/ui/pt/render'
 
 // Render the supplied PortableText body to a stand-alone HTML fragment

@@ -13,16 +13,7 @@ import {
   TagsIcon,
   UsersIcon,
 } from 'lucide-react'
-import {
-  createContext,
-  type ComponentType,
-  type ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { createContext, type ComponentType, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
 import { Form, NavLink, useLocation } from 'react-router'
 import { Toaster } from 'sonner'
 
@@ -157,7 +148,7 @@ interface AdminChromeContextValue {
 const AdminChromeContext = createContext<AdminChromeContextValue | null>(null)
 
 export function useAdminChrome(): AdminChromeContextValue {
-  const ctx = useContext(AdminChromeContext)
+  const ctx = use(AdminChromeContext)
   if (ctx === null) {
     throw new Error('useAdminChrome must be used inside <AdminShell>')
   }

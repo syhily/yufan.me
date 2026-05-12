@@ -193,14 +193,19 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
   const audioStoragePath = `musics/${playerId}.mp3`
   const coverStoragePath = `musics/${playerId}.jpg`
 
-  // 1. audio
-  const audioUrl = input.prefill?.audioUrl ?? (await getStreamUrl(hit.urlId))
-  const audioBuffer = await downloadBinary(audioUrl, MAX_AUDIO_BYTES, 'audio')
-  await putMusicAudio(audioStoragePath, audioBuffer)
+  // Resolve URLs, download binaries, and fetch lyric in parallel.
+  const [audioUrl, coverUrl] = await Promise.all([
+    input.prefill?.audioUrl ?? getStreamUrl(hit.urlId),
+    input.prefill?.coverUrl ?? getCoverUrl(hit.picId, COVER_SIZE),
+  ])
 
-  // 2. cover (re-encode to 300x300 JPEG)
-  const coverUrl = input.prefill?.coverUrl ?? (await getCoverUrl(hit.picId, COVER_SIZE))
-  const coverSrcBuffer = await downloadBinary(coverUrl, MAX_COVER_BYTES, 'cover')
+  const [audioBuffer, coverSrcBuffer, lyricText] = await Promise.all([
+    downloadBinary(audioUrl, MAX_AUDIO_BYTES, 'audio'),
+    downloadBinary(coverUrl, MAX_COVER_BYTES, 'cover'),
+    input.prefill?.lyric === undefined ? getLyric(hit.lyricId) : input.prefill.lyric,
+  ])
+
+  // Re-encode cover to 300x300 JPEG before uploading.
   let coverProcessed: Buffer
   try {
     const processed = await processImageBuffer({
@@ -211,15 +216,11 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
     coverProcessed = processed.buffer
   } catch (error) {
     log.error('Cover image processing failed', { sourceId: input.sourceId, error })
-    // Best-effort cleanup of the audio we just uploaded so we don't
-    // leak orphans on a partial failure.
-    await deleteMusicObject(audioStoragePath).catch(() => undefined)
     throw error
   }
-  await putMusicCover(coverStoragePath, coverProcessed)
 
-  // 3. lyric (prefill wins; otherwise resolve via Meting)
-  const lyricText = input.prefill?.lyric === undefined ? await getLyric(hit.lyricId) : input.prefill.lyric
+  // Upload both assets in parallel.
+  await Promise.all([putMusicAudio(audioStoragePath, audioBuffer), putMusicCover(coverStoragePath, coverProcessed)])
 
   const newRow: NewMusic = {
     source: input.source,

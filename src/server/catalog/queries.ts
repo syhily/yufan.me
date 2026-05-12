@@ -178,20 +178,12 @@ export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
   const uniqueNames = [...new Set(names)]
   const now = new Date()
 
-  // Query 1: only the tags referenced by the post.
-  const tagRows = await db
+  // Query 1 + 2 in parallel: tags and their usage counts.
+  const tagRowsPromise = db
     .select({ name: tagTable.name, slug: tagTable.slug })
     .from(tagTable)
     .where(inArray(tagTable.name, uniqueNames))
-
-  if (tagRows.length === 0) {
-    return []
-  }
-
-  // Query 2: counts for these specific tags only.
-  // NOTE: We aggregate ALL tags in one shot and pick the ones we need in JS,
-  // rather than using jsonb overlap (&&) which is not universally available.
-  const countsResult = await db.execute<{ tag_name: string; counts: number }>(sql`
+  const countsResultPromise = db.execute<{ tag_name: string; counts: number }>(sql`
     SELECT jsonb_array_elements_text(${postMetaTable.tags}) AS tag_name,
            COUNT(*)::int AS counts
     FROM ${postMetaTable}
@@ -201,6 +193,14 @@ export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
       AND ${postMetaTable.publishedAt} <= ${now}
     GROUP BY jsonb_array_elements_text(${postMetaTable.tags})
   `)
+  const [tagRows, countsResult] = (await Promise.all([tagRowsPromise, countsResultPromise])) as [
+    Awaited<typeof tagRowsPromise>,
+    Awaited<typeof countsResultPromise>,
+  ]
+
+  if (tagRows.length === 0) {
+    return []
+  }
 
   const countsMap = new Map<string, number>()
   for (const row of countsResult.rows) {
