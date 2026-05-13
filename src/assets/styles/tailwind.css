@@ -28,7 +28,7 @@
 
   /* Ink */
   --ink-1: #151b2b;
-  --ink-2: #151924;
+  --ink-2: #1f2538;
   --ink-3: #404b69;
   --ink-4: #8a92a9;
   --ink-on-dark: #e8e9ea;
@@ -253,8 +253,12 @@
   --like-active: #991b1b;
   --like-active-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.45);
 
-  /* Shiki fallback when inline style does not set shiki light */
+  /* Shiki names its light-theme color variable --shiki-light fallback when inline style is missing */
   --shiki-light: var(--ink-2);
+
+  /* Status warn alert lifted in dark mode aligns with brand lift */
+  --warn: #ff9b5c;
+  --alert: #ff4a6a;
 
   /* Status tokens — dark mode */
   --status-info-bg: #0c4a6e;
@@ -348,6 +352,9 @@
     --like-active-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.45);
 
     --shiki-light: var(--ink-2);
+
+    --warn: #ff9b5c;
+    --alert: #ff4a6a;
 
     --status-info-bg: #0c4a6e;
     --status-info-fg: #bae6fd;
