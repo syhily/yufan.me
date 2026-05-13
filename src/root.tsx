@@ -3,6 +3,15 @@ import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-rou
 import { lazy, Suspense } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
+// Side-effect imports: `vite-plugin-font` rewrites each `.ttf` import into a
+// module whose body statically imports the generated split-webfont CSS
+// (`metrics.css` + `result.css`). Keeping these at the top of `root.tsx` —
+// the highest static-import ancestor of every page — lets Vite collect the
+// stylesheets into the SSR `<Links />` output so first paint never depends
+// on a third-party CDN.
+import '@/assets/fonts/opposans.ttf'
+import '@/assets/fonts/opposerif.ttf'
+import '@/assets/fonts/iosevka.ttf'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { installGateMiddleware } from '@/server/middleware/install-gate'
 import { sessionMiddleware } from '@/server/middleware/session'
@@ -65,14 +74,6 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
   // `undefined` lets `routeMeta()` degrade to its pre-install
   // fallback if no source has the bundle yet.
   return routeMeta(undefined, loaderData?.blogSettings ?? bundleFromMatches(matches))
-}
-
-export function links() {
-  return [
-    { rel: 'stylesheet', href: '/fonts/opposans.css' },
-    { rel: 'stylesheet', href: '/fonts/opposerif.css' },
-    { rel: 'stylesheet', href: '/fonts/iosevka.css' },
-  ]
 }
 
 export function loader({ request, context }: Route.LoaderArgs) {

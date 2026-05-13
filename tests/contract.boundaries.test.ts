@@ -855,21 +855,20 @@ describe('contract: module and bundle boundaries', () => {
     expect(source).not.toContain('db/types/comment')
   })
 
-  it('loads OPPO font CSS from public instead of the root CSS bundle', () => {
+  it('side-effect imports TTFs in root.tsx so vite-plugin-font emits split webfont CSS into the root chunk', () => {
     const globals = readFileSync('src/assets/styles/public.css', 'utf8')
     const root = readFileSync('src/root.tsx', 'utf8')
 
     expect(globals).not.toContain('opposans.css')
     expect(globals).not.toContain('opposerif.css')
     expect(globals).not.toContain('iosevka.css')
-    expect(root).toContain("href: '/fonts/opposans.css'")
-    expect(root).toContain("href: '/fonts/iosevka.css'")
-    expect(root).toContain("href: '/fonts/opposerif.css'")
-    expect(files('public/fonts', '-g', '*.css').sort()).toEqual([
-      'public/fonts/iosevka.css',
-      'public/fonts/opposans.css',
-      'public/fonts/opposerif.css',
-    ])
+    expect(root).toContain("import '@/assets/fonts/opposans.ttf'")
+    expect(root).toContain("import '@/assets/fonts/opposerif.ttf'")
+    expect(root).toContain("import '@/assets/fonts/iosevka.ttf'")
+    expect(root).not.toContain('/fonts/opposans.css')
+    expect(root).not.toContain('/fonts/opposerif.css')
+    expect(root).not.toContain('/fonts/iosevka.css')
+    expect(files('public/fonts', '-g', '*.css')).toEqual([])
   })
 
   it('keeps admin Tailwind layouts on flex/grid gap instead of space utilities', () => {

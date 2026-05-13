@@ -3,7 +3,6 @@
   "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
-    "types": ["node", "vite-plugin-binary/types", "vite/client"],
     "target": "ES2022",
     "forceConsistentCasingInFileNames": true,
     "module": "ES2022",
