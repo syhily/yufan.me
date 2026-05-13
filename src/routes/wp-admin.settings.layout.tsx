@@ -60,7 +60,9 @@ export interface SettingsOutletContext extends ParentContext {
 // the bundle is fully populated and avoid re-stating the same guard.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role } = await import('@/server/session').then((m) => m.getRouteRequestContext({ request, context }))
-  if (role !== 'admin') throw await import('react-router').then((m) => m.redirect('/wp-admin/welcome'))
+  if (role !== 'admin') {
+    throw await import('react-router').then((m) => m.redirect('/wp-admin/welcome'))
+  }
   const { bundle } = await getAdminBlogSettings()
   if (bundle === null) {
     throw new Response('Blog has not been installed yet.', { status: 503 })

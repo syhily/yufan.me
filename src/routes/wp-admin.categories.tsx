@@ -8,7 +8,9 @@ import type { Route } from './+types/wp-admin.categories'
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role } = getRouteRequestContext({ request, context })
-  if (role !== 'admin') throw redirect('/wp-admin/welcome')
+  if (role !== 'admin') {
+    throw redirect('/wp-admin/welcome')
+  }
   return null
 }
 
