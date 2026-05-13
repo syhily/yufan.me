@@ -5,6 +5,31 @@ export interface LatestComment {
   permalink: string
 }
 
+// Welcome-dashboard moderation inbox row. Same shape for both queues —
+// the `kind` discriminator decides which buttons the UI renders.
+//   `approval` → 通过 / 拒绝   (uses `comment.approve` / `comment.delete`)
+//   `deletion` → 同意删除 / 拒绝删除   (uses `admin.approveCommentDeletion`)
+export type AdminPendingKind = 'all' | 'approval' | 'deletion'
+
+export interface AdminPendingItemDto {
+  id: string
+  kind: 'approval' | 'deletion'
+  authorName: string
+  authorLink: string | null
+  excerpt: string
+  createdAtIso: string
+  deleteRequestedAtIso: string | null
+  pageTitle: string | null
+  pagePermalink: string | null
+}
+
+export interface AdminPendingDashboardDto {
+  items: AdminPendingItemDto[]
+  total: number
+  hasMore: boolean
+  counts: { all: number; approval: number; deletion: number }
+}
+
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 export interface CommentAndUser {

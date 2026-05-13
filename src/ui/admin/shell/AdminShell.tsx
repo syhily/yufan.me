@@ -293,7 +293,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
               </div>
             </SheetContent>
           </Sheet>
-          <a href="/wp-admin/comments" className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <a href="/wp-admin/welcome" className="flex items-center gap-2 text-base font-semibold text-foreground">
             <BrandLogo className="h-7 w-auto" />
           </a>
           {/* Quick "back to public site" affordance. Wrapped in a ghost

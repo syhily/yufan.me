@@ -36,11 +36,10 @@ const UPDATE_NOTE = API_ACTIONS.admin.updateImageNote
 const RECALCULATE_THUMBHASH = API_ACTIONS.admin.recalculateImageThumbhash
 
 // Grid mode shows pure square thumbnails — far more rows fit per page
-// than the old table layout, so the page-size options skew higher.
-// The default is 60 (≈ 12 rows on a 5-column desktop grid) which
-// still loads quickly because each thumb is downsampled to 300×300
-// through the configured image transform.
-const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [60, 120, 240, 480].map((n) => ({
+// than the old table layout, so the page-size options stay generous.
+// The default is 30 which still loads quickly because each thumb is
+// downsampled to 300×300 through the configured image transform.
+const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [30, 60, 120].map((n) => ({
   value: String(n),
   label: `${n} 张`,
 }))
@@ -167,7 +166,7 @@ export function ImagesView() {
     <>
       <AdminListPage>
         <AdminListPage.Header title="图片管理" description={`共 ${state.total} 条。删除时同步移除 S3 中的原始对象。`}>
-          <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setUploadOpen(true)}>

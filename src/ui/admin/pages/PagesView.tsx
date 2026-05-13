@@ -106,7 +106,7 @@ export function PagesView() {
           title="页面管理"
           description={`共 ${state.total} 个页面。点击「编辑」可进入富文本编辑器，编辑器右侧可同时调整页面元数据。`}
         >
-          <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button

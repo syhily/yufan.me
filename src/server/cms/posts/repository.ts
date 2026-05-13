@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, getColumns, isNotNull, isNull, sql, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, getColumns, isNotNull, isNull, or, sql, type SQL } from 'drizzle-orm'
 
 import type { NewPostMeta, PostMetaRow } from '@/server/db/types'
 
@@ -44,6 +44,22 @@ export interface ListPostsFilters {
   sortOrder?: 'asc' | 'desc'
   /** Filter by author id. */
   authorId?: bigint
+  /**
+   * Coarse lifecycle bucket — partitions every live row into one of two
+   * sets that match the `StatusBadge` logic in `PostsView`:
+   *   - `'published'`: `published = true AND published_revision_id IS NOT NULL`
+   *                   (publicly visible on the site).
+   *   - `'draft'`: everything else (`published = false`, OR
+   *                `published_revision_id IS NULL` meaning the row has
+   *                only ever held draft revisions / was never promoted).
+   *
+   * Use this for "drafts vs published" dashboards instead of `published`
+   * alone — the boolean flag misses the common "freshly created but
+   * not yet promoted" case where the row sits at `published = true`,
+   * `published_revision_id = NULL` and is what users intuitively call
+   * a draft.
+   */
+  lifecycle?: 'draft' | 'published'
 }
 
 function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
@@ -71,6 +87,16 @@ function buildPostsWhere(filters: ListPostsFilters): SQL | undefined {
   }
   if (filters.authorId !== undefined) {
     conditions.push(eq(postMetaTable.authorId, filters.authorId))
+  }
+  if (filters.lifecycle === 'published') {
+    conditions.push(eq(postMetaTable.published, true), isNotNull(postMetaTable.publishedRevisionId))
+  } else if (filters.lifecycle === 'draft') {
+    // Drafts = NOT(currently public). Captures rows in any non-public
+    // state: `published = false`, OR no published revision pointer.
+    const draftClause = or(eq(postMetaTable.published, false), isNull(postMetaTable.publishedRevisionId))
+    if (draftClause !== undefined) {
+      conditions.push(draftClause)
+    }
   }
   if (conditions.length === 0) {
     return undefined

@@ -59,7 +59,7 @@ export function useImagesController() {
     q: '',
     kind: 'all',
     currentPage: 0,
-    pageSize: 60,
+    pageSize: 30,
   })
   return { state, dispatch }
 }

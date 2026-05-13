@@ -1,14 +1,11 @@
 import type { BlogSession } from '@/server/session'
 
-import { latestComments, pendingComments as loadPendingComments } from '@/server/comments/loader'
+import { latestComments } from '@/server/comments/loader'
 import { userSession } from '@/server/session'
 
 export async function loadSidebarData(session: BlogSession) {
   const admin = userSession(session)?.role === 'admin'
-  const [recentComments, pendingComments] = await Promise.all([
-    latestComments(),
-    admin ? loadPendingComments() : Promise.resolve([]),
-  ])
+  const recentComments = await latestComments()
 
-  return { admin, recentComments, pendingComments }
+  return { admin, recentComments }
 }

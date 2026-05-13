@@ -17,9 +17,9 @@ import { SearchBar } from '@/ui/public/Search'
 // className into a named utility chain.
 const sidebarInnerClass = cn('mb-7 px-7 py-8', 'bg-canvas shadow-card', 'xl:sticky xl:top-[30px]')
 
-// Each widget container (one per RecentComments / PendingComments /
-// RandomPosts / RandomTags / TodayCalendar / SearchBar). Replaces
-// the legacy `.widget { margin-bottom: 2.5rem }` rule.
+// Each widget container (one per RecentComments / RandomPosts /
+// RandomTags / TodayCalendar / SearchBar). Replaces the legacy
+// `.widget { margin-bottom: 2.5rem }` rule.
 const widgetClass = 'mb-10'
 
 // `<h3>` widget title. Replaces the legacy `.widget-title { color:
@@ -41,7 +41,7 @@ const widgetTitleClass = cn(
   "before:absolute before:-top-0.5 before:left-0 before:h-0.5 before:w-[30px] before:bg-brand before:content-['']",
 )
 
-// `<ul>` inside RandomPosts / RecentComments / PendingComments.
+// `<ul>` inside RandomPosts / RecentComments.
 // Replaces the legacy `.widget-recent-entries ul, .widget-recent-
 // comments ul { padding-left: 1.25rem }` rule. Stage 11 P2 dropped
 // the historical `!` modifier — `pl-5` is a `@layer utilities` rule
@@ -123,47 +123,25 @@ export interface SidebarData {
   posts: SidebarPostLink[]
   tags: ClientTag[]
   recentComments: LatestComment[]
-  pendingComments: LatestComment[]
 }
 
 export interface SidebarProps {
   data: SidebarData
-  admin: boolean
 }
 
-export function Sidebar({ data, admin }: SidebarProps) {
-  const { posts, tags, recentComments, pendingComments } = data
+export function Sidebar({ data }: SidebarProps) {
+  const { posts, tags, recentComments } = data
 
   return (
     <aside className="box-border hidden w-full max-w-full shrink-0 px-3 xl:ml-auto xl:block xl:w-[29%] xl:max-w-[370px]">
       <div className={sidebarInnerClass}>
         <SearchBar />
-        {admin && <PendingComments comments={pendingComments} />}
         <RandomPosts posts={posts} />
         <RecentComments comments={recentComments} />
         <RandomTags tags={tags} />
         <TodayCalendar />
       </div>
     </aside>
-  )
-}
-
-interface PendingCommentsProps {
-  comments: LatestComment[]
-}
-
-function PendingComments({ comments }: PendingCommentsProps) {
-  return (
-    <div id="pending-comments" className={widgetClass}>
-      <WidgetTitle tooltip="云中谁寄锦书来？雁字回时，月满西楼。">待审评论</WidgetTitle>
-      <ul className={widgetListClass}>
-        {comments.length > 0 ? (
-          comments.map((comment) => <CommentLink key={commentKey(comment)} comment={comment} />)
-        ) : (
-          <div>无待审评论</div>
-        )}
-      </ul>
-    </div>
   )
 }
 

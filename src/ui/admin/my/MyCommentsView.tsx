@@ -205,6 +205,7 @@ export function MyCommentsView({
         <Button
           type="button"
           variant="outline"
+          className="border-ink-4"
           onClick={() => void revalidator.revalidate()}
           disabled={revalidator.state !== 'idle'}
         >
