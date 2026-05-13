@@ -1,6 +1,6 @@
 import { searchAuthorOptions } from '@/server/comments/admin'
 import { filterAutocompleteSchema } from '@/server/comments/schema'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 // Server-side autocomplete for the comment moderation author filter.
 // Bigint user ids are stringified at the wire boundary so the client
@@ -24,7 +24,7 @@ function parseBigIntIds(raw: string[] | undefined): bigint[] | undefined {
   return out.length > 0 ? out : undefined
 }
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: filterAutocompleteSchema,
   requireRole: 'admin',

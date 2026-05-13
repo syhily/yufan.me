@@ -1,22 +1,22 @@
 import { data } from 'react-router'
 
+import { requireRole } from '@/server/auth/rbac'
 import { findUserById } from '@/server/db/query/user'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
-import { MyProfileForm } from '@/ui/admin/my/MyProfileForm'
+import { MyProfileForm } from '@/ui/public/my/MyProfileForm'
 
-import type { Route } from './+types/wp-admin.my.profile'
+import type { Route } from './+types/my.profile'
 
 export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '个人信息' }, bundleFromMatches(matches))
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { user } = getRouteRequestContext({ request, context })
-  if (!user) {
-    throw new Response('Unauthorized', { status: 401 })
-  }
-  const dbUser = await findUserById(BigInt(user.id))
+  const ctx = getRouteRequestContext({ request, context })
+  // Self-service profile — any logged-in role can edit their own row.
+  requireRole(ctx, 'visitor')
+  const dbUser = await findUserById(BigInt(ctx.user.id))
   return data({
     name: dbUser?.name ?? '',
     email: dbUser?.email ?? '',
@@ -28,5 +28,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function MyProfileRoute({ loaderData }: Route.ComponentProps) {
-  return <MyProfileForm initial={loaderData} />
+  return (
+    <div className="container mx-auto max-w-3xl py-8">
+      <MyProfileForm initial={loaderData} />
+    </div>
+  )
 }

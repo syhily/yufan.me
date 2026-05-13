@@ -1,8 +1,8 @@
 import { loadAllComments } from '@/server/comments/admin'
 import { loadAllCommentsSchema } from '@/server/comments/schema'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: loadAllCommentsSchema,
   requireRole: 'admin',

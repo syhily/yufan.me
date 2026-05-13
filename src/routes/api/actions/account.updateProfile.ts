@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { findUserById, updateUserById } from '@/server/db/query/user'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
 const schema = z.object({
@@ -13,7 +13,7 @@ const schema = z.object({
   receiveEmail: z.boolean().optional(),
 })
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: schema,
   requireRole: 'visitor',

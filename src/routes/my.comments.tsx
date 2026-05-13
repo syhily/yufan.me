@@ -2,12 +2,13 @@ import { data } from 'react-router'
 
 import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schema'
 
+import { requireRole } from '@/server/auth/rbac'
 import { countMyComments, listMyComments } from '@/server/db/query/comment'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
-import { MyCommentsList } from '@/ui/admin/my/MyCommentsList'
+import { MyCommentsList } from '@/ui/public/my/MyCommentsList'
 
-import type { Route } from './+types/wp-admin.my.comments'
+import type { Route } from './+types/my.comments'
 
 export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '我的评论' }, bundleFromMatches(matches))
@@ -23,11 +24,12 @@ export interface MyCommentItem {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { user } = getRouteRequestContext({ request, context })
-  if (!user) {
-    throw new Response('Unauthorized', { status: 401 })
-  }
-  const userId = BigInt(user.id)
+  const ctx = getRouteRequestContext({ request, context })
+  // Self-service path — any logged-in role (admin/author/visitor) can
+  // see their own comments. The public layout itself is anonymous-
+  // friendly, so the guard lives here in the route loader.
+  requireRole(ctx, 'visitor')
+  const userId = BigInt(ctx.user.id)
   const url = new URL(request.url)
   const offset = Number(url.searchParams.get('offset') ?? '0')
   const limit = Math.min(Number(url.searchParams.get('limit') ?? '20'), 100)
@@ -44,5 +46,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function MyCommentsRoute({ loaderData }: Route.ComponentProps) {
-  return <MyCommentsList items={loaderData.items} counts={loaderData.counts} />
+  return (
+    <div className="container mx-auto max-w-3xl py-8">
+      <MyCommentsList items={loaderData.items} counts={loaderData.counts} />
+    </div>
+  )
 }

@@ -390,7 +390,9 @@ handler 可以 `ctx.session.get('user')` 绕过 viewer 系统。
 schema 也用 partial**：
 
 ```ts
-index('idx_user_role').on(table.role).where(sql`role IS NOT NULL`)
+index('idx_user_role')
+  .on(table.role)
+  .where(sql`role IS NOT NULL`)
 ```
 
 ### M3. `user.role` 没有 CHECK 约束
@@ -437,21 +439,21 @@ key 给其他场景；新增 `purpose` 列和外键 `user_id`）。当前的 `id
 
 ## 五、其他细枝末节
 
-| #   | 问题                                                                                                                                                                                                                                              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F1  | `resolveSessionContext` 升级失败分支 `session.unset('user')` — 把用户踢出。但「升级失败」可能只是临时 DB 抖动，应当 retry/降级而不是删 session。                                                                                                  |
-| F2  | `MyCommentsList.tsx` 的 `CommentRow` 每个评论独立持有两个 useFetcher。一页 100 条评论就是 200 个 fetcher，React Router 内部对每个独立追踪状态。**应该**：单个父级 fetcher，通过 commentId 路由结果到对应 row。                                    |
-| F3  | `wp-admin.welcome.tsx:39` 中 role label 三元嵌套。`AdminShell` 里没用 label，`MyProfileForm.tsx:28` 又定义了一份 `ROLE_LABEL`。三处独立。应抽到 `@/shared/users` 或 `@/shared/roles`。                                                             |
-| F4  | `BlogSessionData` 里 `user?: SessionUser` 用 `?` 而 `SessionUser` 自己 `role: Role` 必填。**有 user 就一定有 role** — 这个不变量正好是 PR 1 想强制的，但只在 type 层强制了，没在运行时 fail-fast — `establishLoginSession` 抛错的兜底是好的。     |
-| F5  | `MyProfileForm` 头一个表单收 `payload: Record<string, string \| null>` 时把 `name` 和 `link` 当字符串提交，但 schema 的 `link: z.url().nullable()` 收到字符串 `''` 就 400（O8）。                                                                 |
-| F6  | `csrf` 字段名是 industry-standard 选择，但我没把它写进 schema 注释或 form 注释。后人换 `_token` / `csrfToken` 又会撕掉重写。**应该**在 schema.ts 顶部一行注释固化「我们用 `csrf` 作为 CSRF 字段名」。                                             |
-| F7  | `revokeAllSessionsOfUser(userId, exceptSessionId?)` 的实现里 `pipeline.del(...)` + `pipeline.srem(...)` 是 N×2 个命令。对 100 个 session 来说还好，但 **没必要逐个 `srem`** — 整个 set 后面也没人在意残留，set 自然过期。或者更稳：直接 `del setKey`。 |
-| F8  | `verification.identifier` 没 UNIQUE，`issueToken` 的「先 delete 再 insert」依赖事务隔离级别。在 READ COMMITTED 下两个并发请求都看到 0 行可删 → 都 insert → 两个 token 都活着。应当：UNIQUE(identifier) + `ON CONFLICT (identifier) DO UPDATE`。       |
-| F9  | `setUserMuted` 拒绝禁言 admin 的判定（`server/db/query/user.ts`）现在是 `or(eq(role,'author'), eq(role,'visitor'), isNull(role))`。后续加 `editor` 角色会忘掉。应改成 `ne(user.role, 'admin')` — 反向断言，新角色自动包含。                       |
+| #   | 问题                                                                                                                                                                                                                                                                                                                                                                                      |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | `resolveSessionContext` 升级失败分支 `session.unset('user')` — 把用户踢出。但「升级失败」可能只是临时 DB 抖动，应当 retry/降级而不是删 session。                                                                                                                                                                                                                                          |
+| F2  | `MyCommentsList.tsx` 的 `CommentRow` 每个评论独立持有两个 useFetcher。一页 100 条评论就是 200 个 fetcher，React Router 内部对每个独立追踪状态。**应该**：单个父级 fetcher，通过 commentId 路由结果到对应 row。                                                                                                                                                                            |
+| F3  | `wp-admin.welcome.tsx:39` 中 role label 三元嵌套。`AdminShell` 里没用 label，`MyProfileForm.tsx:28` 又定义了一份 `ROLE_LABEL`。三处独立。应抽到 `@/shared/users` 或 `@/shared/roles`。                                                                                                                                                                                                    |
+| F4  | `BlogSessionData` 里 `user?: SessionUser` 用 `?` 而 `SessionUser` 自己 `role: Role` 必填。**有 user 就一定有 role** — 这个不变量正好是 PR 1 想强制的，但只在 type 层强制了，没在运行时 fail-fast — `establishLoginSession` 抛错的兜底是好的。                                                                                                                                             |
+| F5  | `MyProfileForm` 头一个表单收 `payload: Record<string, string \| null>` 时把 `name` 和 `link` 当字符串提交，但 schema 的 `link: z.url().nullable()` 收到字符串 `''` 就 400（O8）。                                                                                                                                                                                                         |
+| F6  | `csrf` 字段名是 industry-standard 选择，但我没把它写进 schema 注释或 form 注释。后人换 `_token` / `csrfToken` 又会撕掉重写。**应该**在 schema.ts 顶部一行注释固化「我们用 `csrf` 作为 CSRF 字段名」。                                                                                                                                                                                     |
+| F7  | `revokeAllSessionsOfUser(userId, exceptSessionId?)` 的实现里 `pipeline.del(...)` + `pipeline.srem(...)` 是 N×2 个命令。对 100 个 session 来说还好，但 **没必要逐个 `srem`** — 整个 set 后面也没人在意残留，set 自然过期。或者更稳：直接 `del setKey`。                                                                                                                                    |
+| F8  | `verification.identifier` 没 UNIQUE，`issueToken` 的「先 delete 再 insert」依赖事务隔离级别。在 READ COMMITTED 下两个并发请求都看到 0 行可删 → 都 insert → 两个 token 都活着。应当：UNIQUE(identifier) + `ON CONFLICT (identifier) DO UPDATE`。                                                                                                                                           |
+| F9  | `setUserMuted` 拒绝禁言 admin 的判定（`server/db/query/user.ts`）现在是 `or(eq(role,'author'), eq(role,'visitor'), isNull(role))`。后续加 `editor` 角色会忘掉。应改成 `ne(user.role, 'admin')` — 反向断言，新角色自动包含。                                                                                                                                                               |
 | F10 | `comment.edit.ts` 我把 `isAdmin(session)` 改成 `userSession(ctx.session)?.role === 'admin'` — 但 `defineApiAction` 给这个端点根本没 `requireRole`，所以可以无登录进入。逻辑「非 admin 走 token-edit 验证」OK，但端点级别没区分匿名 / 已登录的 visitor — **已登录的 visitor 没有 token 时不能编辑自己的评论**。这又是 own-routes 没复用、和 `comment.updateOwn` 平行了一套权限路径的体现。 |
-| F11 | `admin.softDeleteUser` 不阻止 admin 被删（甚至自杀）。`updateUserRole` 加了「不能降级唯一 admin」「不能改自己」，但 softDelete 没加对称保护。                                                                                                     |
-| F12 | `inviteAuthor` 的邮件链接不带 `Bcc: 邀请人`。审计追踪不便。                                                                                                                                                                                       |
-| F13 | 我加的所有 `getLogger('audit.user')` / `'audit.comment'` 都用 `log.info`，进 stdout 即丢。审计 log 应该有独立的持久化（DB 表或专门 logger sink）。PR 计划的「不在本次范围」里有承认。当前实现是占位，**给人一种「已做审计」的虚假安全感** — 这点应当用注释明确。 |
+| F11 | `admin.softDeleteUser` 不阻止 admin 被删（甚至自杀）。`updateUserRole` 加了「不能降级唯一 admin」「不能改自己」，但 softDelete 没加对称保护。                                                                                                                                                                                                                                             |
+| F12 | `inviteAuthor` 的邮件链接不带 `Bcc: 邀请人`。审计追踪不便。                                                                                                                                                                                                                                                                                                                               |
+| F13 | 我加的所有 `getLogger('audit.user')` / `'audit.comment'` 都用 `log.info`，进 stdout 即丢。审计 log 应该有独立的持久化（DB 表或专门 logger sink）。PR 计划的「不在本次范围」里有承认。当前实现是占位，**给人一种「已做审计」的虚假安全感** — 这点应当用注释明确。                                                                                                                          |
 
 ---
 

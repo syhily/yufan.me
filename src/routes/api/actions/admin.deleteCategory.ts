@@ -1,8 +1,8 @@
 import { categoryIdSchema } from '@/server/categories/schema'
 import { deleteAdminCategory } from '@/server/categories/service'
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'DELETE',
   input: categoryIdSchema,
   requireRole: 'admin',

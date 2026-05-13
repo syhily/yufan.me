@@ -34,7 +34,11 @@ import '@/assets/styles/public.css'
 export interface PublicChromeProps {
   navigation?: NavigationItem[]
   footer?: boolean
-  admin: boolean
+  /**
+   * Authenticated user (or `null`). The header's user menu derives the
+   * "admin only" branches (e.g. "管理后台" link) from `currentUser.role`.
+   */
+  currentUser: import('@/ui/public/chrome/Header').HeaderCurrentUser | null
   pathname: string
   search: string
   children?: ReactNode
@@ -44,9 +48,9 @@ export interface PublicChromeProps {
 // shared `<BaseLayout>` chrome. Public routes mount this through
 // `routes/public.layout.tsx`; the root `ErrorBoundary` lazy-loads it so the
 // admin SPA chunk never statically depends on `public.css`.
-export function PublicChrome({ navigation, footer, admin, pathname, search, children }: PublicChromeProps) {
+export function PublicChrome({ navigation, footer, currentUser, pathname, search, children }: PublicChromeProps) {
   return (
-    <BaseLayout navigation={navigation} footer={footer} admin={admin} pathname={pathname} search={search}>
+    <BaseLayout navigation={navigation} footer={footer} currentUser={currentUser} pathname={pathname} search={search}>
       {children}
     </BaseLayout>
   )

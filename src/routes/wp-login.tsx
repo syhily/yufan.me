@@ -11,12 +11,14 @@ import { ensureInstalledOrRedirect } from '@/server/install/gate'
 import { tryPasswordResetRateLimit } from '@/server/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import {
+  clearCsrfCookie,
   commitSession,
   destroySession,
   getRouteRequestContext,
   issueCsrfToken,
   processAuthFormSubmission,
   signInWithSession,
+  validateRequestCsrf,
 } from '@/server/session'
 import { safeRedirectPath } from '@/shared/safe-url'
 import { AdminCredentialsForm } from '@/ui/admin/auth/AdminCredentialsForm'
@@ -92,7 +94,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       const u = await findUserByEmail(email)
       if (u && u.role) {
         // Existing user with a role — send reset email.
-        const { token } = await issueResetToken(Number(u.id))
+        const { token } = await issueResetToken(u.id)
         const origin = new URL(request.url).origin
         const link = `${origin}/wp-login.php?action=resetpassword&token=${encodeURIComponent(token)}`
         await sendPasswordReset(u, link)
@@ -102,7 +104,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         const approved = await countApprovedCommentsByUser(u.id)
         if (approved >= 1) {
           await updateUserById(u.id, { role: 'visitor' })
-          const { token } = await issueResetToken(Number(u.id))
+          const { token } = await issueResetToken(u.id)
           const origin = new URL(request.url).origin
           const link = `${origin}/wp-login.php?action=resetpassword&token=${encodeURIComponent(token)}`
           await sendPasswordReset(u, link)
@@ -113,7 +115,24 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (action === 'resetpassword' || action === 'accept-invite') {
+    // Credential-rotating flow. Two non-negotiable invariants:
+    //   1. CSRF must be validated. The reset link by itself is a bearer
+    //      token leaked over email; without CSRF, a malicious page can
+    //      submit it from elsewhere.
+    //   2. ALL other sessions of the target user must be revoked before
+    //      we issue a new one. This is the recovery path users walk
+    //      after suspecting credential compromise; leaving an
+    //      attacker-held cookie alive defeats the point.
     const formData = await request.formData()
+    const csrf = formFieldString(formData, 'csrf')
+    const [csrfOk] = await validateRequestCsrf(request, csrf)
+    if (!csrfOk) {
+      return data(
+        { error: '页面安全令牌已失效，请刷新后重试。' },
+        { headers: { 'Set-Cookie': await clearCsrfCookie() } },
+      )
+    }
+
     const rawToken = formFieldString(formData, 'reset_token')
     const newPassword = formFieldString(formData, 'password')
     const purpose = action === 'resetpassword' ? 'password-reset' : 'author-invite'
@@ -128,13 +147,17 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
 
     const hashed = await bcrypt.hash(newPassword, 12)
-    await updateUserById(BigInt(result.userId), { password: hashed })
+    await updateUserById(result.userId, { password: hashed })
 
-    const dbUser = await findUserById(BigInt(result.userId))
+    const dbUser = await findUserById(result.userId)
     if (!dbUser || !dbUser.role) {
       return data({ error: '账户状态异常，无法登录。' })
     }
-    await establishLoginSession(session, dbUser, request, clientAddress)
+    // `{ revokeOtherSessions: true }` enforces invariant 2 at the top
+    // of this branch: every other session of this user (incl. anything
+    // an attacker might still hold) is destroyed before the new one
+    // is issued.
+    await establishLoginSession(session, dbUser, request, clientAddress, { revokeOtherSessions: true })
     return redirect(redirectTo, { headers: { 'Set-Cookie': await commitSession(session) } })
   }
 

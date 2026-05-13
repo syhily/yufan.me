@@ -1,8 +1,8 @@
 import { deleteComment } from '@/server/comments/admin'
 import { commentRidSchema } from '@/server/comments/schema'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'DELETE',
   input: commentRidSchema,
   requireRole: 'admin',

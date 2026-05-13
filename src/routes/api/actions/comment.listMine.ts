@@ -1,14 +1,14 @@
 import { z } from 'zod'
 
 import { countMyComments, listMyComments } from '@/server/db/query/comment'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 const schema = z.object({
   offset: z.coerce.number().optional(),
   limit: z.coerce.number().optional(),
 })
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: schema,
   requireRole: 'visitor',

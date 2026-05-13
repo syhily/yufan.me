@@ -1,8 +1,8 @@
 import { searchMusicSchema } from '@/server/music/schema'
 import { searchMusic } from '@/server/music/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: searchMusicSchema,
   requireRole: 'author',

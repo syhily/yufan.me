@@ -1,7 +1,7 @@
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { getAdminBlogSettings } from '@/server/settings/service'
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   requireRole: 'admin',
   async run() {

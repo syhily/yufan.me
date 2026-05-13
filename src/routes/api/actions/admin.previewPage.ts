@@ -1,6 +1,6 @@
 import { renderPortableTextToHtml } from '@/server/cms/pages/preview'
 import { previewPageBodySchema } from '@/server/cms/pages/schema'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
 
@@ -16,7 +16,7 @@ import { collectHeadings } from '@/shared/pt/schema'
 // a hard stop against accidental runaway payloads.
 const MAX_BODY_BYTES = 1 * 1024 * 1024
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: previewPageBodySchema,
   requireRole: 'admin',

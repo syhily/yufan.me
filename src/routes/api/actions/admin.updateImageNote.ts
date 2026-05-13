@@ -1,8 +1,8 @@
 import { updateImageNoteSchema } from '@/server/images/schema'
 import { updateImageNote } from '@/server/images/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'PATCH',
   input: updateImageNoteSchema,
   requireRole: 'author',

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, isNull, max, ne, or, sql } from 'drizzle-orm'
 
 import type { NewUser, User } from '@/server/db/types'
 
@@ -333,11 +333,13 @@ export async function restoreUserById(id: bigint): Promise<boolean> {
 export async function setUserMuted(id: bigint, muted: boolean): Promise<User | null> {
   // Admins are exempt from muting; the admin UI hides the action, but
   // this guard makes the rule explicit at the storage boundary so it
-  // cannot be bypassed by a hand-crafted API request.
+  // cannot be bypassed by a hand-crafted API request. Reverse-asserts
+  // on `role != 'admin'` so future roles (e.g. `editor`) inherit the
+  // mute-eligibility without a one-by-one update here.
   const updated = await db
     .update(user)
     .set({ isMuted: muted })
-    .where(and(eq(user.id, id), or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role))))
+    .where(and(eq(user.id, id), or(isNull(user.role), ne(user.role, 'admin'))))
     .returning()
   return updated[0] ?? null
 }

@@ -1,13 +1,13 @@
 import { updateMusicSchema } from '@/server/music/schema'
 import { updateMusicMetadata } from '@/server/music/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 // Metadata-only edit for the admin music library. Audio / cover
 // bytes and the provider id triplet (source, sourceId, playerId)
 // are owned by the upload pipeline and intentionally not part of
 // this action's input — see `updateMusicSchema` and the
 // `updateMusicMetadata` service for the full reasoning.
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'PATCH',
   input: updateMusicSchema,
   requireRole: 'author',

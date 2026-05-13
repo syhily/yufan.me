@@ -1,8 +1,8 @@
 import { deletePostSchema } from '@/server/cms/posts/schema'
 import { deletePost } from '@/server/cms/posts/service'
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'DELETE',
   input: deletePostSchema,
   requireRole: 'author',

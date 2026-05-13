@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findUserById, updateUserById } from '@/server/db/query/user'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
 const schema = z.object({
@@ -11,7 +11,7 @@ const schema = z.object({
   newPassword: z.string().min(6).max(128),
 })
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: schema,
   requireRole: 'visitor',

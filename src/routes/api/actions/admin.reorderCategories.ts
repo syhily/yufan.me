@@ -1,8 +1,8 @@
 import { reorderCategoriesSchema } from '@/server/categories/schema'
 import { reorderAdminCategories } from '@/server/categories/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: reorderCategoriesSchema,
   requireRole: 'admin',

@@ -1,8 +1,8 @@
 import { friendIdSchema } from '@/server/friends/schema'
 import { deleteAdminFriend } from '@/server/friends/service'
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'DELETE',
   input: friendIdSchema,
   requireRole: 'admin',

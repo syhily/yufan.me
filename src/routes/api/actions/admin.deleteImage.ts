@@ -1,8 +1,8 @@
 import { deleteImageSchema } from '@/server/images/schema'
 import { deleteImage } from '@/server/images/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'DELETE',
   input: deleteImageSchema,
   requireRole: 'author',

@@ -7,6 +7,15 @@
 // markers per `.cursor/rules/privacy-logging.mdc`, so log aggregators can
 // strip or hash them before storage. Callers don't need to remember to tag
 // values manually — using the standard key names is enough.
+//
+// Audit log convention: loggers named `audit.<domain>` (e.g. `audit.user`,
+// `audit.comment`, `audit.cms.posts`) MUST land in a durable sink before
+// they're trusted for compliance / forensic reads. **Today they go to
+// stdout only** — the same place every other log line lands — which is
+// placeholder behaviour. A follow-up PR will introduce a dedicated
+// `audit_log` DB table and a thin `recordAuditEvent()` helper that both
+// writes the row and logs the line; see RBAC-REVIEW.md §F13. Until that
+// ships, treat `getLogger('audit.*')` calls as informational only.
 
 import { LOG_LEVEL } from '@/server/env'
 

@@ -549,21 +549,27 @@ export async function countApprovedRepliesOfComment(commentId: bigint): Promise<
   return rows[0]?.count ?? 0
 }
 
+// Comments soft-deleted within this many milliseconds remain visible
+// in `/my/*` so the user can see what was removed (with a「已删除」
+// badge) before the row drops off entirely. Shared between
+// `listMyComments` and `countMyComments` — drift here previously
+// caused `hasMore = offset + comments.length < counts.total` to
+// underestimate the total and either truncate the last page or hide a
+// "load more" button mid-list (see RBAC-REVIEW §O7).
+const MY_COMMENTS_SOFT_DELETE_GRACE_MS = 7 * 24 * 60 * 60 * 1000
+function mineVisibleClause(userId: bigint) {
+  return and(
+    eq(comment.userId, userId),
+    or(isNull(comment.deletedAt), gte(comment.deletedAt, new Date(Date.now() - MY_COMMENTS_SOFT_DELETE_GRACE_MS))),
+  )
+}
+
 export async function listMyComments(userId: bigint, offset: number, limit: number): Promise<CommentWithUser[]> {
   return db
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(
-      and(
-        eq(comment.userId, userId),
-        or(
-          isNull(comment.deletedAt),
-          // Include soft-deleted comments within the last 7 days
-          gte(comment.deletedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
-        ),
-      ),
-    )
+    .where(mineVisibleClause(userId))
     .orderBy(desc(comment.createdAt))
     .limit(limit)
     .offset(offset)
@@ -579,7 +585,7 @@ export async function countMyComments(
       deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`,
     })
     .from(comment)
-    .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
+    .where(mineVisibleClause(userId))
   return {
     total: rows[0]?.total ?? 0,
     pending: rows[0]?.pending ?? 0,

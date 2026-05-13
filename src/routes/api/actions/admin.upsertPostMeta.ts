@@ -1,8 +1,8 @@
 import { upsertPostMetaSchema } from '@/server/cms/posts/schema'
 import { createPost, updatePostMeta } from '@/server/cms/posts/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: upsertPostMetaSchema,
   requireRole: 'author',

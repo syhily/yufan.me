@@ -1,8 +1,8 @@
 import { listImagesSchema } from '@/server/images/schema'
 import { listImagesForAdmin } from '@/server/images/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: listImagesSchema,
   requireRole: 'author',

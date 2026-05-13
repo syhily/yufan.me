@@ -75,6 +75,7 @@ const fixture: BlogSettingsBundle = {
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
     inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
     passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
+    passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
   },
   search: {
     search: {

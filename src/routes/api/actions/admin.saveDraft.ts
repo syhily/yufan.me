@@ -1,6 +1,6 @@
 import { savePageBodySchema } from '@/server/cms/pages/schema'
 import { saveDraft } from '@/server/cms/pages/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 // Save the current editor body as a draft.
 //
@@ -12,7 +12,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 // 1MB ceiling. See `admin.previewPage` for the rationale.
 const MAX_BODY_BYTES = 1 * 1024 * 1024
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: savePageBodySchema,
   requireRole: 'admin',

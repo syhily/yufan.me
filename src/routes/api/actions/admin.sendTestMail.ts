@@ -1,8 +1,8 @@
 import { sendTestMail } from '@/server/email/sender'
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { sendTestMailSchema } from '@/server/settings/schema'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: sendTestMailSchema,
   requireRole: 'admin',

@@ -1,7 +1,12 @@
 import type { User } from '@/server/db/types'
 
 import { type Role } from '@/server/auth/rbac'
-import { type BlogSession, getRequestSession, type SessionUser } from '@/server/auth/session-storage'
+import {
+  type BlogSession,
+  getRequestSession,
+  revokeAllSessionsOfUser,
+  type SessionUser,
+} from '@/server/auth/session-storage'
 import { redisInstance } from '@/server/cache/storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/db/query/user'
 
@@ -9,6 +14,17 @@ export interface SessionContext {
   session: BlogSession
   user: SessionUser | undefined
   role: Role | null
+}
+
+export interface EstablishLoginOptions {
+  /**
+   * Revoke every OTHER session of this user before establishing the
+   * new one. Required for credential-rotating flows (password reset,
+   * accept-invite) where the very point of the operation is "kick
+   * everyone else off". Default `false` — a fresh login should not
+   * pre-emptively burn down concurrent sessions.
+   */
+  revokeOtherSessions?: boolean
 }
 
 /**
@@ -19,15 +35,23 @@ export interface SessionContext {
  * code paths used to copy this block by hand and one of them (the
  * password-reset action) was silently leaving the user out of the
  * revocation set.
+ *
+ * Pass `{ revokeOtherSessions: true }` on credential-rotation paths
+ * to kill stale cookies from the same account before issuing the
+ * new one.
  */
 export async function establishLoginSession(
   session: BlogSession,
   dbUser: User,
   request: Request,
   clientAddress: string,
+  options: EstablishLoginOptions = {},
 ): Promise<void> {
   if (!dbUser.role) {
     throw new Error('establishLoginSession requires a user with a role')
+  }
+  if (options.revokeOtherSessions) {
+    await revokeAllSessionsOfUser(dbUser.id)
   }
   session.set('user', {
     id: `${dbUser.id}`,
@@ -85,7 +109,16 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
   // and no `role`. We can't trust the cookie for the upgrade — the
   // authoritative answer lives in `user.role`.
   if (user && typeof (user as { role?: Role }).role !== 'string') {
-    const dbUser = await findUserById(BigInt(user.id))
+    let dbUser: Awaited<ReturnType<typeof findUserById>> = null
+    let dbReachable = true
+    try {
+      dbUser = await findUserById(BigInt(user.id))
+    } catch {
+      // Transient DB error — keep the existing session intact and try
+      // again on the next request. Unsetting `user` here would log out
+      // every active session every time the DB has a hiccup.
+      dbReachable = false
+    }
     if (dbUser && dbUser.role) {
       const upgraded: SessionUser = {
         id: `${dbUser.id}`,
@@ -96,9 +129,9 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
       }
       session.set('user', upgraded)
       user = upgraded
-    } else {
-      // The user no longer has a role (account demoted/anonymised). Drop
-      // the session — they should re-login.
+    } else if (dbReachable) {
+      // Account confirmed gone-or-demoted: drop the session so they
+      // re-login. Only on a successful DB read — see comment above.
       session.unset('user')
       user = undefined
     }

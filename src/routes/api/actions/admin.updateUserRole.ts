@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { countAdmins, findUserById, updateUserRole } from '@/server/db/query/user'
 import { getLogger } from '@/server/logger'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
 const log = getLogger('audit.user')
@@ -13,7 +13,7 @@ const schema = z.object({
   role: z.enum(['admin', 'author', 'visitor']),
 })
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: schema,
   requireRole: 'admin',

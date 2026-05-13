@@ -1,8 +1,8 @@
 import { clearAdminCache } from '@/server/cache/admin'
 import { clearCacheSchema } from '@/server/cache/schema'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: clearCacheSchema,
   requireRole: 'admin',

@@ -161,6 +161,12 @@ export const rateLimitDefaults = {
   likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
   inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
   passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
+  // Per-target throttle for admin-triggered resets. 60s window with
+  // 1 attempt is intentionally aggressive: a legitimate admin would
+  // never need to resend within a minute, and the cap prevents both
+  // accidental double-clicks and SMTP-quota exhaustion attacks via
+  // a compromised admin cookie.
+  passwordResetTarget: { windowSeconds: 60, maxAttempts: 1 },
 } as const
 export const SECTION_REGISTRY = {
   general: { scope: 'blog.general', schema: generalSchema, key: 'siteIdentity', defaults: null },

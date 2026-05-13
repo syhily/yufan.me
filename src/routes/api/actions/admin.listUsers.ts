@@ -1,8 +1,8 @@
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { listUsersSchema } from '@/server/users/schema'
 import { listUsersForAdmin, toAdminUserDto } from '@/server/users/service'
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: listUsersSchema,
   requireRole: 'admin',

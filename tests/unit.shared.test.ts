@@ -176,8 +176,8 @@ describe('routes/_shared/revalidate', () => {
 })
 
 describe('routes/_shared/errors — ErrorMessages', () => {
-  it('exposes the canonical admin error message used by requireAdminSession', () => {
-    expect(ErrorMessages.NOT_ADMIN).toBe('当前用户不是管理员。')
+  it('exposes the canonical FORBIDDEN message used by requireRole', () => {
+    expect(ErrorMessages.FORBIDDEN).toBe('权限不足，需要更高角色。')
   })
 
   it('never re-uses the same message for two different errors (helps log triage)', () => {

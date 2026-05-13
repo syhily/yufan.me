@@ -1,6 +1,6 @@
 import { searchPageOptions } from '@/server/comments/admin'
 import { filterAutocompleteSchema } from '@/server/comments/schema'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 // Server-side autocomplete for the comment moderation page-title
 // filter. Replaces the old `getFilterOptions` GET that returned every
@@ -11,7 +11,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 // rehydrate from a `?pageKey=…` URL parameter (the URL only carries
 // the key, never the human title, so the client needs a one-shot
 // lookup to render the real title in the Combobox trigger).
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: filterAutocompleteSchema,
   requireRole: 'admin',

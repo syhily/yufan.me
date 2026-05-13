@@ -1,8 +1,8 @@
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { userIdSchema } from '@/server/users/schema'
 import { restoreAdminUser } from '@/server/users/service'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: userIdSchema,
   requireRole: 'admin',

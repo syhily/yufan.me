@@ -19,7 +19,11 @@ export const handle: RouteHandle = { layout: 'admin' }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
-  if (!hasAtLeast(role, 'visitor')) {
+  // wp-admin is for content management — author + admin only. Visitor
+  // self-service ("我的评论", "个人信息") lives at `/my/*` under the
+  // public layout so visitors don't drag in the 180KB admin CSS just
+  // to edit their own profile.
+  if (!hasAtLeast(role, 'author')) {
     throw redirect(`/wp-login.php?redirect_to=${encodeURIComponent(url.pathname)}`)
   }
 

@@ -1,12 +1,12 @@
 import { upsertPageMetaSchema } from '@/server/cms/pages/schema'
 import { createPage, updatePageMeta } from '@/server/cms/pages/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 // Single endpoint for both create + update (mirrors the upsertCategory
 // style). `id` absent → create; present → update. The metadata write
 // invalidates the in-process catalog so the next public render +
 // thumbhash hydration pick up the new slug/title/cover/published flag.
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: upsertPageMetaSchema,
   requireRole: 'admin',

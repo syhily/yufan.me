@@ -14,6 +14,7 @@ const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
 const inviteKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}invite:${ip}`
 const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:${ip}`
+const passwordResetTargetKey = (userId: bigint) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
 const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
 const commentPostEmailKey = (email: string) => {
   // Hash the email so the raw string never lands in Redis. SHA-256
@@ -94,6 +95,16 @@ export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
 /** Throttles password-reset requests by client IP. */
 export async function tryPasswordResetRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetKey(ip), readBucket('passwordResetIp'))
+}
+
+/**
+ * Throttles admin-triggered password-reset emails by target user id.
+ * Scoped per-target (not per-actor) so any admin — including a
+ * compromised cookie — can't carpet-bomb a single mailbox even if
+ * their own IP budget is fresh.
+ */
+export async function tryPasswordResetByTargetRateLimit(userId: bigint): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passwordResetTargetKey(userId), readBucket('passwordResetTarget'))
 }
 
 /** Throttles public comment submissions by IP (independent of login rate limits). */

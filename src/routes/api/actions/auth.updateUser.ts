@@ -1,8 +1,8 @@
 import { updateUserSchema } from '@/server/auth/schema'
 import { updateUserById } from '@/server/db/query/user'
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'PATCH',
   input: updateUserSchema,
   requireRole: 'admin',

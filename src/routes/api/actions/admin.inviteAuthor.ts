@@ -1,11 +1,11 @@
 import { z } from 'zod'
 
-import { issueSetupToken } from '@/server/auth/verification-tokens'
-import { findUserByEmail, insertAuthor } from '@/server/db/query/user'
+import { issueSetupToken, revokeTokensFor } from '@/server/auth/verification-tokens'
+import { findUserByEmail, insertAuthor, softDeleteUserById } from '@/server/db/query/user'
 import { sendAuthorInvite } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
 import { tryInviteRateLimit } from '@/server/rate-limit'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
 const log = getLogger('audit.user')
@@ -15,7 +15,7 @@ const schema = z.object({
   email: z.email(),
 })
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: schema,
   requireRole: 'admin',
@@ -32,11 +32,30 @@ export const action = defineApiAction({
     if (!user) {
       throw new ActionFailure(500, '创建作者账户失败。')
     }
-    const { token } = await issueSetupToken(Number(user.id))
+
+    // Order: issue token → send email → on email failure, roll back both
+    // the token and the freshly-created user row. Without rollback an
+    // SMTP outage would leave a phantom row blocking retry with
+    // "邮箱已被注册".
+    const { token } = await issueSetupToken(user.id)
     const origin = new URL(ctx.request.url).origin
     const link = `${origin}/wp-login.php?action=accept-invite&token=${encodeURIComponent(token)}`
-    const inviter = ctx.session.get('user')?.name ?? '管理员'
-    await sendAuthorInvite(user, link, inviter)
+    const inviterSession = ctx.session.get('user')
+    const inviter = inviterSession?.name ?? '管理员'
+
+    const sendResult = await sendAuthorInvite(user, link, inviter, inviterSession?.email)
+    if (!sendResult.ok) {
+      await revokeTokensFor(user.id, 'author-invite')
+      await softDeleteUserById(user.id)
+      log.warn('author invite rolled back: email send failed', {
+        actor: viewer.userId,
+        target: String(user.id),
+        email: payload.email,
+        reason: sendResult.reason,
+        message: sendResult.message,
+      })
+      throw new ActionFailure(502, `邮件发送失败，已回滚账户创建：${sendResult.message}`)
+    }
     log.info('author invited', { actor: viewer.userId, target: String(user.id), email: payload.email })
     return { success: true }
   },

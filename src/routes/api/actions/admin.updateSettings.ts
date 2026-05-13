@@ -1,8 +1,8 @@
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { updateSettingsSchema } from '@/server/settings/sections'
 import { updateBlogSettingsSection } from '@/server/settings/service'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'PATCH',
   input: updateSettingsSchema,
   requireRole: 'admin',

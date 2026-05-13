@@ -11,13 +11,13 @@ import {
   NotebookPenIcon,
   SettingsIcon,
   TagsIcon,
-  UserIcon,
   UsersIcon,
 } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
 import { Form, NavLink } from 'react-router'
 import { Toaster } from 'sonner'
 
+import { hasAtLeast } from '@/shared/roles'
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
@@ -53,8 +53,6 @@ const NAV: NavItem[] = [
     matchPrefix: '/wp-admin/settings',
     minRole: 'admin',
   },
-  { to: '/wp-admin/my/comments', label: '我的评论', icon: MessageSquareIcon, minRole: 'visitor' },
-  { to: '/wp-admin/my/profile', label: '个人信息', icon: UserIcon, minRole: 'visitor' },
 ]
 
 interface AdminShellProps {
@@ -72,15 +70,10 @@ function NavList({
   onNavigate?: () => void
   role: AdminShellProps['currentUser']['role']
 }) {
-  const visibleNav = NAV.filter((item) => {
-    if (item.minRole === 'visitor') {
-      return true
-    }
-    if (item.minRole === 'author') {
-      return role === 'author' || role === 'admin'
-    }
-    return role === 'admin'
-  })
+  // Reuse the same `hasAtLeast` ladder the server-side guards use,
+  // so future role additions (e.g. `editor`) propagate to the
+  // sidebar automatically.
+  const visibleNav = NAV.filter((item) => hasAtLeast(role, item.minRole))
   return (
     <nav aria-label="Admin navigation" className="flex flex-col gap-1 px-3">
       {visibleNav.map((item) => {

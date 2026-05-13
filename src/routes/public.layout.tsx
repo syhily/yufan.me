@@ -33,10 +33,17 @@ import type { Route } from './+types/public.layout'
 // route so the closest opt-out wins, matching the behaviour the previous
 // `<App>` component implemented inside `root.tsx`.
 
-function useResolvedChromeProps(): { admin: boolean; footer: boolean } {
+interface RootChromeData {
+  currentUser?: { id: string; name: string; role: 'admin' | 'author' | 'visitor' } | null
+}
+
+function useResolvedChromeProps(): {
+  currentUser: NonNullable<RootChromeData['currentUser']> | null
+  footer: boolean
+} {
   const matches = useMatches()
-  const rootData = useRouteLoaderData('root') as { admin?: boolean } | undefined
-  const admin = rootData?.admin ?? false
+  const rootData = useRouteLoaderData('root') as RootChromeData | undefined
+  const currentUser = rootData?.currentUser ?? null
 
   const footer = matches.reduce<boolean>((acc, match) => {
     const handle = match.handle as RouteHandle | undefined
@@ -46,15 +53,15 @@ function useResolvedChromeProps(): { admin: boolean; footer: boolean } {
     return acc
   }, true)
 
-  return { admin, footer }
+  return { currentUser, footer }
 }
 
 export default function PublicLayoutRoute() {
-  const { admin, footer } = useResolvedChromeProps()
+  const { currentUser, footer } = useResolvedChromeProps()
   const { pathname, search } = useLocation()
 
   return (
-    <PublicChrome admin={admin} footer={footer} pathname={pathname} search={search}>
+    <PublicChrome currentUser={currentUser} footer={footer} pathname={pathname} search={search}>
       <Outlet />
     </PublicChrome>
   )
@@ -77,11 +84,11 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   // `<ErrorView />` render path for non-chunk errors.
   useReloadOnChunkError(error)
 
-  const { admin, footer } = useResolvedChromeProps()
+  const { currentUser, footer } = useResolvedChromeProps()
   const { pathname, search } = useLocation()
 
   return (
-    <PublicChrome admin={admin} footer={footer} pathname={pathname} search={search}>
+    <PublicChrome currentUser={currentUser} footer={footer} pathname={pathname} search={search}>
       <ErrorView error={error} isDev={import.meta.env.DEV} />
     </PublicChrome>
   )

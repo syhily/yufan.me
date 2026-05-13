@@ -1,6 +1,6 @@
 import { useFetcher, useRevalidator } from 'react-router'
 
-import type { MyCommentItem } from '@/routes/wp-admin.my.comments'
+import type { MyCommentItem } from '@/routes/my.comments'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 
 import { useFetcherResult } from '@/client/api/fetcher'

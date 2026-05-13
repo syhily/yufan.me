@@ -1,11 +1,11 @@
 import { restorePageSchema } from '@/server/cms/pages/schema'
 import { restorePage } from '@/server/cms/pages/service'
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 // Restore a soft-deleted page (clears `deletedAt`). 404 when the row
 // is missing or already live (`deletedAt IS NULL`) so a double-click
 // doesn't silently no-op on an already-active row.
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: restorePageSchema,
   requireRole: 'admin',

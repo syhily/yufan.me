@@ -442,6 +442,7 @@ export const rateLimitSchema = z.object({
   likeIncreaseIp: rateLimitBucketSchema,
   inviteIp: rateLimitBucketSchema,
   passwordResetIp: rateLimitBucketSchema,
+  passwordResetTarget: rateLimitBucketSchema,
 })
 export type RateLimitInput = z.infer<typeof rateLimitSchema>
 

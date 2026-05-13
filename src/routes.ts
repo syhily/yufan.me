@@ -21,6 +21,13 @@ export default [
     route('search/:keyword', 'routes/search.list.tsx'),
     route('search/:keyword/page/:num', 'routes/search.list.tsx', { id: 'search-list-page' }),
     route('posts/:slug', 'routes/post.detail.tsx'),
+    // Visitor self-service. Sits under the public layout instead of
+    // wp-admin so non-author users don't pay the cost of the admin
+    // SPA chrome (180KB CSS + admin chunks) for what is essentially a
+    // pair of authenticated public pages. Auth gating lives in each
+    // route's own loader — public.layout is anonymous-friendly.
+    route('my/comments', 'routes/my.comments.tsx'),
+    route('my/profile', 'routes/my.profile.tsx'),
     route(':slug', 'routes/page.detail.tsx'),
     // Splat MUST stay last — see _README.md §B.
     route('*', 'routes/not-found.tsx'),
@@ -52,8 +59,6 @@ export default [
   layout('routes/wp-admin.layout.tsx', [
     route('wp-admin', 'routes/wp-admin.dashboard.tsx'),
     route('wp-admin/welcome', 'routes/wp-admin.welcome.tsx'),
-    route('wp-admin/my/comments', 'routes/wp-admin.my.comments.tsx'),
-    route('wp-admin/my/profile', 'routes/wp-admin.my.profile.tsx'),
     route('wp-admin/comments', 'routes/wp-admin.comments.tsx'),
     route('wp-admin/users', 'routes/wp-admin.users.tsx'),
     route('wp-admin/users/:id', 'routes/wp-admin.users.detail.tsx'),

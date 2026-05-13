@@ -3,7 +3,7 @@ import type { ZodError, ZodType } from 'zod'
 
 import type { BlogSession } from '@/server/session'
 
-import { requireRole, type Role, type ViewerContext } from '@/server/auth/rbac'
+import { requireUserRole, type Role, type ViewerContext } from '@/server/auth/rbac'
 import { getLogger } from '@/server/logger'
 import { ActionFailure, DomainError, domainStatus } from '@/server/route-helpers/errors'
 import { getRouteRequestContext } from '@/server/session'
@@ -149,6 +149,14 @@ export function assertMethod(request: Request, ...allowed: string[]): void {
 
 // Per-request context every resource-route handler can lazily destructure.
 // Built once by `runApi` so handlers don't each re-derive session / IP / URL.
+//
+// `session` is intentionally exposed but should ONLY be used for cookie
+// operations (CSRF rotation, `commitSession`). To read the authenticated
+// user, prefer `viewer` from `defineGuardedApiAction`. For opt-in admin
+// checks in unguarded endpoints (e.g. rate-limit bypass for logged-in
+// admins on `comment.replyComment`), `userSession(ctx.session)?.role`
+// is acceptable but should carry a comment explaining why a guarded
+// action wasn't used.
 export interface ApiContext {
   request: Request
   url: URL
@@ -234,37 +242,6 @@ type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 // Defaults are picked from the HTTP method when the caller doesn't override.
 type InputSource = 'json' | 'search' | 'form' | 'auto'
 
-interface RunParams<I, R extends Role | undefined> {
-  ctx: ApiContext
-  payload: I
-  /**
-   * Per-request viewer identity. Present whenever `requireRole` is set
-   * on the action — the gate has already enforced that `user` and
-   * `user.role` are non-null. Omit from the type when `requireRole` is
-   * absent so anonymous endpoints can't accidentally read it.
-   */
-  viewer: R extends Role ? ViewerContext : undefined
-}
-
-interface DefineApiActionConfig<I, O, R extends Role | undefined> {
-  method: HttpMethod | HttpMethod[]
-  // Optional Zod schema. Pass `undefined` for endpoints without an input
-  // payload (e.g. read-only listings whose only "input" is the admin
-  // session cookie itself).
-  input?: ZodType<I>
-  inputSource?: InputSource
-  /** Minimum role required to invoke this action. */
-  requireRole?: R
-  /**
-   * Reject the request with 413 if the declared `Content-Length`
-   * exceeds this many bytes. Use on endpoints that accept large
-   * editor payloads (PortableText bodies, image metadata) to put a
-   * cheap upper bound on the request before the body is even read.
-   */
-  maxBodyBytes?: number
-  run: (params: RunParams<I, R>) => Promise<ApiResult<O>> | ApiResult<O>
-}
-
 // Resolve the request payload to the validated input shape, choosing the
 // channel based on the declared (or inferred) `InputSource`. Centralised so
 // the wire-format vocabulary stays in one place.
@@ -286,29 +263,93 @@ async function readInputFrom<T>(ctx: ApiContext, source: InputSource, schema: Zo
   }
 }
 
-// Shrinks the typical 10-line resource-route action down to a config object.
-// Equivalent to writing `runApi(args, ...)` by hand but factors out method
-// assertion, input parsing, role gating, and lets the handler focus on the
-// business call.
-export function defineApiAction<I, O, R extends Role | undefined = undefined>(config: DefineApiActionConfig<I, O, R>) {
-  const methods = Array.isArray(config.method) ? config.method : [config.method]
-  const sourceFor = (request: Request): InputSource =>
-    config.inputSource ?? (request.method === 'GET' ? 'search' : 'json')
+interface ApiActionConfig<I, O> {
+  method: HttpMethod | HttpMethod[]
+  /**
+   * Optional Zod schema. Pass `undefined` for endpoints without an input
+   * payload (e.g. read-only listings whose only "input" is the session
+   * cookie itself).
+   */
+  input?: ZodType<I>
+  inputSource?: InputSource
+  /**
+   * Reject the request with 413 if the declared `Content-Length`
+   * exceeds this many bytes. Use on endpoints that accept large
+   * editor payloads (PortableText bodies, image metadata) to put a
+   * cheap upper bound on the request before the body is even read.
+   */
+  maxBodyBytes?: number
+  run: (params: { ctx: ApiContext; payload: I }) => Promise<ApiResult<O>> | ApiResult<O>
+}
 
+interface GuardedApiActionConfig<I, O> extends Omit<ApiActionConfig<I, O>, 'run'> {
+  /**
+   * Minimum role required to invoke this action. The handler's
+   * `viewer` is non-nullable as a direct consequence — the gate
+   * enforces that `user` + `user.role` exist on every call.
+   */
+  requireRole: Role
+  run: (params: { ctx: ApiContext; payload: I; viewer: ViewerContext }) => Promise<ApiResult<O>> | ApiResult<O>
+}
+
+function sourceFor(request: Request, override: InputSource | undefined): InputSource {
+  return override ?? (request.method === 'GET' ? 'search' : 'json')
+}
+
+function methodsOf(method: HttpMethod | HttpMethod[]): HttpMethod[] {
+  return Array.isArray(method) ? method : [method]
+}
+
+/**
+ * Resource-route action without role gating. Use this for public
+ * endpoints (anonymous comment replies, public RSS feeds, ...) and
+ * for endpoints that need opt-in admin detection (e.g. rate-limit
+ * bypass for logged-in admins on `comment.replyComment`).
+ *
+ * If you need «must be logged in as at least role X», use
+ * {@link defineGuardedApiAction} instead — its `viewer` parameter is
+ * non-nullable and the gate is enforced before `run` is called.
+ */
+export function defineApiAction<I, O>(config: ApiActionConfig<I, O>) {
+  const methods = methodsOf(config.method)
   return (args: Pick<LoaderFunctionArgs, 'request' | 'context'>) =>
     runApi(args, async (ctx) => {
       assertMethod(ctx.request, ...methods)
-      let viewer: ViewerContext | undefined
-      if (config.requireRole) {
-        const user = ctx.session.get('user')
-        requireRole({ user, role: user?.role ?? null }, config.requireRole)
-        viewer = { userId: user!.id, role: user!.role }
-      }
       if (config.maxBodyBytes !== undefined) {
         assertContentLengthUnder(ctx.request, config.maxBodyBytes)
       }
-      const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)
-      return config.run({ ctx, payload, viewer: viewer as RunParams<I, R>['viewer'] })
+      const payload = config.input
+        ? await readInputFrom(ctx, sourceFor(ctx.request, config.inputSource), config.input)
+        : (undefined as I)
+      return config.run({ ctx, payload })
+    })
+}
+
+/**
+ * Resource-route action gated on a minimum role. The handler receives
+ * a non-nullable {@link ViewerContext} so callers don't need to
+ * narrow `session.get('user')` themselves (and don't need non-null
+ * assertions on `viewer.userId` / `viewer.role`).
+ *
+ * For unguarded endpoints use {@link defineApiAction}.
+ */
+export function defineGuardedApiAction<I, O>(config: GuardedApiActionConfig<I, O>) {
+  const methods = methodsOf(config.method)
+  return (args: Pick<LoaderFunctionArgs, 'request' | 'context'>) =>
+    runApi(args, async (ctx) => {
+      assertMethod(ctx.request, ...methods)
+      const user = ctx.session.get('user')
+      requireUserRole(user, config.requireRole)
+      // `user` is now narrowed to `SessionUser` (non-null role) by the
+      // assertion above — no `!` needed.
+      const viewer: ViewerContext = { userId: user.id, role: user.role }
+      if (config.maxBodyBytes !== undefined) {
+        assertContentLengthUnder(ctx.request, config.maxBodyBytes)
+      }
+      const payload = config.input
+        ? await readInputFrom(ctx, sourceFor(ctx.request, config.inputSource), config.input)
+        : (undefined as I)
+      return config.run({ ctx, payload, viewer })
     })
 }
 

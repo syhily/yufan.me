@@ -64,7 +64,17 @@ function checkMailReady(
   return { ready: true }
 }
 
-async function internalSend(to: string, subject: string, html: string): Promise<SendResult> {
+interface InternalSendOptions {
+  /** Optional BCC list. Used by admin-author-invite to keep the inviter on the audit trail. */
+  bcc?: string[]
+}
+
+async function internalSend(
+  to: string,
+  subject: string,
+  html: string,
+  options: InternalSendOptions = {},
+): Promise<SendResult> {
   const mail = readMailConfig()
   const ready = checkMailReady(mail)
   if (!ready.ready) {
@@ -93,6 +103,7 @@ async function internalSend(to: string, subject: string, html: string): Promise<
       body: JSON.stringify({
         from: mail.sender,
         to: [to],
+        ...(options.bcc && options.bcc.length > 0 ? { bcc: options.bcc } : {}),
         subject,
         html,
       }),
@@ -182,8 +193,15 @@ export async function sendNewReply(
   )
 }
 
-// Sent to a newly invited author with a setup link.
-export async function sendAuthorInvite(user: User, link: string, inviterName: string): Promise<SendResult> {
+// Sent to a newly invited author with a setup link. The inviter is
+// BCC'd so admin actions stay on the audit trail (the recipient does
+// not see the BCC).
+export async function sendAuthorInvite(
+  user: User,
+  link: string,
+  inviterName: string,
+  inviterEmail?: string,
+): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const html = await render(
     createElement(AuthorInvite, {
@@ -192,7 +210,9 @@ export async function sendAuthorInvite(user: User, link: string, inviterName: st
       link,
     }),
   )
-  return internalSend(user.email, `【${siteIdentity.title}】作者邀请`, html)
+  return internalSend(user.email, `【${siteIdentity.title}】作者邀请`, html, {
+    bcc: inviterEmail ? [inviterEmail] : undefined,
+  })
 }
 
 // Sent when a user requests a password reset.

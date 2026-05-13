@@ -2,6 +2,7 @@ import { data } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
+import { roleLabel } from '@/shared/roles'
 
 import type { Route } from './+types/wp-admin.welcome'
 
@@ -35,7 +36,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
   const { name, role, greeting } = loaderData
-  const roleLabel = role === 'admin' ? '管理员' : role === 'author' ? '作者' : role === 'visitor' ? '访客' : '用户'
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between rounded-lg border bg-card p-6">
@@ -43,7 +43,7 @@ export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
           <h1 className="text-2xl font-semibold">
             {greeting}，{name}
           </h1>
-          <p className="mt-1 text-muted-foreground">当前身份：{roleLabel}</p>
+          <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
         </div>
       </div>
       {role === 'admin' && (
@@ -62,12 +62,6 @@ export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
         <div className="rounded-lg border bg-card p-4">
           <h2 className="font-medium">我的创作</h2>
           <p className="mt-1 text-sm text-muted-foreground">作者仪表盘 Widget 占位</p>
-        </div>
-      )}
-      {role === 'visitor' && (
-        <div className="rounded-lg border bg-card p-4">
-          <h2 className="font-medium">我的评论</h2>
-          <p className="mt-1 text-sm text-muted-foreground">访客仪表盘 Widget 占位</p>
         </div>
       )}
     </div>

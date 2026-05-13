@@ -15,9 +15,16 @@ import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { SearchIconButton } from '@/ui/public/Search'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
+export interface HeaderCurrentUser {
+  id: string
+  name: string
+  role: 'admin' | 'author' | 'visitor'
+}
+
 export interface HeaderProps {
   navigation: NavigationItem[]
-  admin: boolean
+  /** Logged-in user identity, or `null` for anonymous visitors. */
+  currentUser: HeaderCurrentUser | null
   pathname: string
   search: string
 }
@@ -227,7 +234,7 @@ function SocialNavIcon({ network, className }: { network: SocialNetwork; classNa
 // the cost of maintaining two parallel menus exceeds the a11y gain
 // over the current controlled implementation (Escape listener +
 // focus restore + `role="dialog"` + `aria-modal`).
-export function Header({ navigation, admin, pathname, search }: HeaderProps) {
+export function Header({ navigation, currentUser, pathname, search }: HeaderProps) {
   const { title } = useSiteIdentity()
   const { socials } = useSocialsSettings()
   const logoutQuery = new URLSearchParams({
@@ -365,13 +372,25 @@ export function Header({ navigation, admin, pathname, search }: HeaderProps) {
                   )}
                 </li>
               ))}
-              {admin && (
+              {currentUser && (
                 <>
                   <li className={siteMenuItemClass}>
-                    <Link to="/wp-admin/" prefetch="intent" className={siteMenuLinkClass}>
-                      管理
+                    <Link to="/my/comments" prefetch="intent" className={siteMenuLinkClass}>
+                      我的评论
                     </Link>
                   </li>
+                  <li className={siteMenuItemClass}>
+                    <Link to="/my/profile" prefetch="intent" className={siteMenuLinkClass}>
+                      个人信息
+                    </Link>
+                  </li>
+                  {(currentUser.role === 'admin' || currentUser.role === 'author') && (
+                    <li className={siteMenuItemClass}>
+                      <Link to="/wp-admin/" prefetch="intent" className={siteMenuLinkClass}>
+                        管理后台
+                      </Link>
+                    </li>
+                  )}
                   <li className={siteMenuItemClass}>
                     <a href={`/wp-login.php?${logoutQuery}`} className={siteMenuLinkClass}>
                       登出

@@ -256,6 +256,12 @@ export interface RateLimitSettings {
   inviteIp: RateLimitBucket
   /** Password-reset requests per client IP. */
   passwordResetIp: RateLimitBucket
+  /**
+   * Admin-triggered password reset emails per target user id. Stops a
+   * (rogue / compromised) admin from spamming any single mailbox even
+   * if their own IP rate-limit budget is fresh.
+   */
+  passwordResetTarget: RateLimitBucket
 }
 
 export interface SearchSettings {

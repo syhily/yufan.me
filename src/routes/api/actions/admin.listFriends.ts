@@ -1,8 +1,8 @@
 import { listFriendsSchema } from '@/server/friends/schema'
 import { listFriendsForAdmin } from '@/server/friends/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: listFriendsSchema,
   requireRole: 'admin',

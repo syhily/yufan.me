@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useFetcher } from 'react-router'
+import { useFetcher, useRevalidator } from 'react-router'
 
 import type { ApiEnvelope } from '@/shared/api-envelope'
 
 import { useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
+import { roleLabel } from '@/shared/roles'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
@@ -25,15 +26,10 @@ export interface MyProfileFormProps {
   initial: MyProfileInitial
 }
 
-const ROLE_LABEL: Record<NonNullable<MyProfileInitial['role']>, string> = {
-  admin: '管理员',
-  author: '作者',
-  visitor: '访客',
-}
-
 export function MyProfileForm({ initial }: MyProfileFormProps) {
   const profileFetcher = useFetcher<ApiEnvelope<{ user: unknown }>>()
   const passwordFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const revalidator = useRevalidator()
 
   const [name, setName] = useState(initial.name)
   const [link, setLink] = useState(initial.link)
@@ -46,7 +42,13 @@ export function MyProfileForm({ initial }: MyProfileFormProps) {
 
   useFetcherResult(profileFetcher, {
     action: UPDATE_PROFILE,
-    onSuccess: () => setProfileMessage('已保存。'),
+    onSuccess: () => {
+      setProfileMessage('已保存。')
+      // Re-run the route loader so a subsequent route remount (or any
+      // sibling consumer of the loader's `initial` snapshot) sees the
+      // freshly-saved values instead of the pre-edit ones.
+      void revalidator.revalidate()
+    },
   })
   useFetcherResult(passwordFetcher, {
     action: UPDATE_PASSWORD,
@@ -60,7 +62,7 @@ export function MyProfileForm({ initial }: MyProfileFormProps) {
   const profileError = profileFetcher.data?.error?.message
   const passwordError = passwordFetcher.data?.error?.message
   const canSetBadge = initial.role === 'admin' || initial.role === 'author'
-  const roleLabel = initial.role ? ROLE_LABEL[initial.role] : '匿名'
+  const roleLabelText = roleLabel(initial.role)
 
   return (
     <div className="flex max-w-xl flex-col gap-6">
@@ -71,7 +73,13 @@ export function MyProfileForm({ initial }: MyProfileFormProps) {
         onSubmit={(e) => {
           e.preventDefault()
           setProfileMessage(null)
-          const payload: Record<string, string | null> = { name, link: link || '' }
+          // Empty link → null (Zod's z.url() rejects empty strings —
+          // clearing the field must send the "no link" sentinel).
+          const trimmedLink = link.trim()
+          const payload: Record<string, string | null> = {
+            name,
+            link: trimmedLink === '' ? null : trimmedLink,
+          }
           if (canSetBadge) {
             payload.badgeName = badgeName || null
             payload.badgeColor = badgeColor || null
@@ -116,7 +124,7 @@ export function MyProfileForm({ initial }: MyProfileFormProps) {
         )}
         <div className="flex flex-col gap-2">
           <Label>角色</Label>
-          <Input value={roleLabel} disabled />
+          <Input value={roleLabelText} disabled />
         </div>
         {profileError && <div className="text-sm text-destructive">{profileError}</div>}
         {profileMessage && <div className="text-sm text-green-600">{profileMessage}</div>}

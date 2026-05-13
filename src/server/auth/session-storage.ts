@@ -2,20 +2,29 @@ import type { Session } from 'react-router'
 
 import { createSessionStorage } from 'react-router'
 
+import type { Role } from '@/shared/roles'
+
 import { redisInstance } from '@/server/cache/storage'
 import { SESSION_SECRET } from '@/server/env'
 
-export type Role = 'admin' | 'author' | 'visitor'
+export type { Role } from '@/shared/roles'
 
 export interface SessionUser {
   id: string
   name: string
   email: string
   website: string | null
+  // Invariant: present on every user row in a session. Writes go
+  // through `establishLoginSession`, which throws on `!dbUser.role`,
+  // so a session with a user but no role is unreachable at runtime.
   role: Role
 }
 
 export interface BlogSessionData {
+  // Invariant: if `user` is present, `user.role` is non-null.
+  // The single writer is `establishLoginSession` (in `primitives.ts`),
+  // which throws on `!dbUser.role` — so no callable code path can
+  // produce a stored session with `user` but missing role.
   user?: SessionUser
 }
 
@@ -88,7 +97,15 @@ export async function revokeAllSessionsOfUser(userId: bigint, exceptSessionId?: 
   const pipeline = redis.pipeline()
   for (const sid of targets) {
     pipeline.del(`session:${sid}`)
-    pipeline.srem(setKey, sid)
+  }
+  if (exceptSessionId === undefined) {
+    // Wholesale wipe: drop the whole index in one shot. Cheaper than
+    // N srem commands on a 50+ session user.
+    pipeline.del(setKey)
+  } else {
+    for (const sid of targets) {
+      pipeline.srem(setKey, sid)
+    }
   }
   await pipeline.exec()
 }

@@ -1,10 +1,10 @@
 import { savePostBodySchema } from '@/server/cms/posts/schema'
 import { publishLatest } from '@/server/cms/posts/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
 const MAX_BODY_BYTES = 1 * 1024 * 1024
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: savePostBodySchema,
   requireRole: 'author',

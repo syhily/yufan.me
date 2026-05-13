@@ -1,8 +1,8 @@
-import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handler'
+import { ActionFailure, defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { tagIdSchema } from '@/server/tags/schema'
 import { deleteAdminTag } from '@/server/tags/service'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'DELETE',
   input: tagIdSchema,
   requireRole: 'author',

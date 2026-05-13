@@ -82,8 +82,13 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export function loader({ request, context }: Route.LoaderArgs) {
-  const { role } = getRouteRequestContext({ request, context })
+  const { role, user } = getRouteRequestContext({ request, context })
   const admin = role === 'admin'
+  // Project the authenticated user (if any) to the slim shape the
+  // public chrome's UserMenu needs. Don't ship the whole SessionUser —
+  // email and badge fields belong on the profile page, not in the
+  // navigation bar payload.
+  const currentUser = user && role ? { id: user.id, name: user.name, role } : null
 
   // Read the theme cookie so the SSR <html> tag carries the correct
   // class before the client bundle loads — no inline scripts needed.
@@ -113,7 +118,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
   // returns `null` when serving the install split-screen itself.
   const blogSettings = getBlogSettingsBundleSync()
 
-  return { admin, blogSettings, theme }
+  return { admin, currentUser, blogSettings, theme }
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
@@ -238,7 +243,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <Suspense fallback={null}>
           {blogSettings ? (
-            <PublicChromeLazy admin={loaderData?.admin ?? false} pathname="/" search="">
+            <PublicChromeLazy currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
               {body}
             </PublicChromeLazy>
           ) : (

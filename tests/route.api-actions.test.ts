@@ -23,10 +23,11 @@ describe('routes/api/actions — file conventions', () => {
   it('every action file goes through the runApi perimeter', () => {
     for (const action of API_ACTION_LIST) {
       const { file, source } = readActionSource(action.route)
-      // `defineApiAction` is the declarative wrapper around `runApi`; treat
-      // either as a valid perimeter marker so future endpoints can pick the
-      // shape that fits best.
-      const usesPerimeter = source.includes('runApi(') || source.includes('defineApiAction(')
+      // `defineApiAction` / `defineGuardedApiAction` are declarative wrappers
+      // around `runApi`; treat any of the three as a valid perimeter marker so
+      // future endpoints can pick the shape that fits best.
+      const usesPerimeter =
+        source.includes('runApi(') || source.includes('defineApiAction(') || source.includes('defineGuardedApiAction(')
       expect(
         usesPerimeter,
         `${file} must funnel through runApi() or defineApiAction() for unified error handling.`,

@@ -110,8 +110,6 @@ export class ActionFailure extends Error {
 // every call site at once, and so tests can pin the canonical UX copy.
 // Single-use messages live inline at their throw site.
 export const ErrorMessages = {
-  /** Legacy message kept for older tests that pin the admin-only copy. */
-  NOT_ADMIN: '当前用户不是管理员。',
-  FORBIDDEN: '禁止访问。',
+  FORBIDDEN: '权限不足，需要更高角色。',
   NOT_FOUND: '资源不存在。',
 } as const

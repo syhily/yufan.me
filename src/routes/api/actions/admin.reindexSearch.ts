@@ -6,7 +6,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 import { db } from '@/server/db/pool'
 import { content, post } from '@/server/db/schema'
 import { getLogger } from '@/server/logger'
-import { defineApiAction, ok } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction, ok } from '@/server/route-helpers/api-handler'
 import { indexPost } from '@/server/search/indexer'
 
 const reindexInputSchema = z.object({
@@ -14,7 +14,7 @@ const reindexInputSchema = z.object({
   offset: z.number().int().min(0).optional(),
 })
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   requireRole: 'admin',
   input: reindexInputSchema,

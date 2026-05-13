@@ -1,8 +1,8 @@
 import { listMusicSchema } from '@/server/music/schema'
 import { listMusicForAdmin } from '@/server/music/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const loader = defineApiAction({
+export const loader = defineGuardedApiAction({
   method: 'GET',
   input: listMusicSchema,
   requireRole: 'author',

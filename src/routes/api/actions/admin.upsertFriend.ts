@@ -1,8 +1,8 @@
 import { upsertFriendSchema } from '@/server/friends/schema'
 import { upsertAdminFriend } from '@/server/friends/service'
-import { defineApiAction } from '@/server/route-helpers/api-handler'
+import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 
-export const action = defineApiAction({
+export const action = defineGuardedApiAction({
   method: 'POST',
   input: upsertFriendSchema,
   requireRole: 'admin',
