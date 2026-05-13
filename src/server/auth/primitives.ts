@@ -192,17 +192,6 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
   // promise and catches errors.
   if (user) {
     recordSessionActivity(session.id)
-    // Self-healing migration: sessions minted before
-    // `establishLoginSession` forced an early `commitSession` had
-    // empty-string sids in the `user_sessions` set + empty-keyed
-    // `session_meta:` hash. On every authenticated request, ensure
-    // the REAL sid is registered. Idempotent `sadd` is a no-op when
-    // the member already exists; backfilling the meta hash is left to
-    // a subsequent login, since we can't reconstruct `loginAt` from
-    // here.
-    void redisInstance()
-      .sadd(`user_sessions:${user.id}`, session.id)
-      .catch(() => {})
   }
 
   return { session, user, role: user?.role ?? null }

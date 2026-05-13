@@ -153,21 +153,68 @@ export async function listSessionsByUser(userId: bigint): Promise<SessionMeta[]>
     return []
   }
   // Filter empty-string sids defensively — legacy logins (before
-  // `establishLoginSession` forced an early `commitSession`) wrote
-  // `''` into the user-sessions set and a `session_meta:` (empty
-  // key) hash. Excluding them here keeps the orphan row out of the
-  // UI and prevents a revoke click from hitting the bogus key.
+  // `establishLoginSession` minted the sid itself) wrote `''` into
+  // the user-sessions set and an empty-keyed `session_meta:` hash.
+  // Excluding them here keeps the orphan row out of the UI and
+  // prevents a revoke click from hitting the bogus key.
   const realSids = sids.filter((sid) => sid !== '')
   if (realSids.length === 0) {
     return []
   }
+  // A session is only "live" when the cookie blob at `session:<sid>`
+  // still exists — that's the source of truth React Router consults
+  // on every request. If the blob has been DEL'd (or expired by TTL),
+  // the meta hash + the user-sessions set entry are stale. Cross-
+  // check existence in one pipeline and lazily clean any orphans so
+  // the index converges back to truth.
+  const liveSids = await filterLiveSidsAndCleanOrphans(realSids, userId)
+  if (liveSids.length === 0) {
+    return []
+  }
   const metas = await Promise.all(
-    realSids.map(async (sid) => {
+    liveSids.map(async (sid) => {
       const hash = (await redis.hgetall(META_KEY(sid))) as Record<string, string>
       return parseMeta(sid, hash)
     }),
   )
   return metas.filter((meta): meta is SessionMeta => meta !== null && meta.userId === userId)
+}
+
+/**
+ * Pipeline `EXISTS session:<sid>` against every candidate sid in one
+ * round trip. Any sid whose cookie blob is gone counts as orphaned —
+ * `user_sessions:<userId>` and `session_meta:<sid>` both get lazily
+ * dropped (best-effort; pipeline failure does not block the caller).
+ * Returns only sids whose cookie blob is still live.
+ */
+async function filterLiveSidsAndCleanOrphans(sids: string[], userId: bigint): Promise<string[]> {
+  const redis = redisInstance()
+  const existsPipeline = redis.pipeline()
+  for (const sid of sids) {
+    existsPipeline.exists(`session:${sid}`)
+  }
+  const results = await existsPipeline.exec()
+  const live: string[] = []
+  const orphans: string[] = []
+  sids.forEach((sid, i) => {
+    const [, exists] = results?.[i] ?? [null, 0]
+    if (exists === 1) {
+      live.push(sid)
+    } else {
+      orphans.push(sid)
+    }
+  })
+  if (orphans.length > 0) {
+    const cleanup = redis.pipeline()
+    for (const sid of orphans) {
+      cleanup.del(META_KEY(sid))
+      cleanup.srem(USER_SET_KEY(userId), sid)
+    }
+    void cleanup.exec().catch((error) => {
+      log.warn('failed to clean orphan sessions', { error: String(error) })
+    })
+  }
+  return live
 }
 
 /**
@@ -194,13 +241,60 @@ export async function listAllSessions(): Promise<SessionWithUser[]> {
   if (sids.length === 0) {
     return []
   }
+  // Drop empty-keyed orphan (`session_meta:` with no sid suffix) up
+  // front so it never enters the cookie-existence check below.
+  const realSids = sids.filter((sid) => sid !== '')
+  if (realSids.length === 0) {
+    return []
+  }
+  // SCAN of `session_meta:*` can pick up entries whose cookie blob is
+  // already gone (revoked, expired, or written by legacy buggy code).
+  // Cross-check each sid against `session:<sid>` in one pipelined
+  // batch, and lazily DEL any meta + user-sessions-set entry that no
+  // longer has a live cookie. Without this fence the admin view
+  // would render zombie rows that can't actually authenticate.
+  const existsPipeline = redis.pipeline()
+  for (const sid of realSids) {
+    existsPipeline.exists(`session:${sid}`)
+  }
+  const existsResults = await existsPipeline.exec()
+  const liveSids: string[] = []
+  const orphanSids: string[] = []
+  realSids.forEach((sid, i) => {
+    const [, exists] = existsResults?.[i] ?? [null, 0]
+    if (exists === 1) {
+      liveSids.push(sid)
+    } else {
+      orphanSids.push(sid)
+    }
+  })
+  if (liveSids.length === 0) {
+    if (orphanSids.length > 0) {
+      const cleanup = redis.pipeline()
+      for (const sid of orphanSids) {
+        cleanup.del(META_KEY(sid))
+      }
+      void cleanup.exec().catch((error) => log.warn('orphan cleanup failed', { error: String(error) }))
+    }
+    return []
+  }
   const metas = await Promise.all(
-    sids.map(async (sid) => {
+    liveSids.map(async (sid) => {
       const hash = (await redis.hgetall(META_KEY(sid))) as Record<string, string>
       return parseMeta(sid, hash)
     }),
   )
   const validMetas = metas.filter((meta): meta is SessionMeta => meta !== null)
+  // Fire-and-forget cleanup of any orphans we found. We DEL the meta
+  // hash here; the SREM happens per-user in `listSessionsByUser` (it
+  // requires the userId which we don't carry in an admin SCAN).
+  if (orphanSids.length > 0) {
+    const cleanup = redis.pipeline()
+    for (const sid of orphanSids) {
+      cleanup.del(META_KEY(sid))
+    }
+    void cleanup.exec().catch((error) => log.warn('orphan cleanup failed', { error: String(error) }))
+  }
   if (validMetas.length === 0) {
     return []
   }
