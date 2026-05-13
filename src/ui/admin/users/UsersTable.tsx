@@ -185,7 +185,7 @@ const UserRow = memo(function UserRow({
               >
                 {user.name}
               </Link>
-              {user.isAdmin && (
+              {user.role === 'admin' && (
                 <Badge variant="secondary" className="gap-1">
                   <ShieldIcon /> 管理员
                 </Badge>
@@ -275,7 +275,7 @@ const UserRow = memo(function UserRow({
                 </Link>
               }
             />
-            {!user.isAdmin && (
+            {user.role !== 'admin' && (
               <DropdownMenuItem onClick={onMuteToggle}>
                 {user.isMuted ? (
                   <>
@@ -299,13 +299,13 @@ const UserRow = memo(function UserRow({
                 <RotateCcwIcon /> 恢复用户
               </DropdownMenuItem>
             ) : (
-              !user.isAdmin && (
+              user.role !== 'admin' && (
                 <DropdownMenuItem variant="destructive" onClick={onSoftDelete}>
                   <Trash2Icon /> 软删除用户
                 </DropdownMenuItem>
               )
             )}
-            {user.commentCount > 0 && !user.isAdmin && (
+            {user.commentCount > 0 && user.role !== 'admin' && (
               <DropdownMenuItem variant="destructive" onClick={onBulkDeleteComments}>
                 <Trash2Icon /> 删除其全部评论
               </DropdownMenuItem>

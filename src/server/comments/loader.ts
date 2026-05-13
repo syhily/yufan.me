@@ -130,7 +130,7 @@ export async function createComment(
 
   // Block the comment from the Admin
   const loginUser = userSession(session)
-  if (u.isAdmin) {
+  if (u.role === 'admin') {
     if (loginUser === undefined) {
       throw new DomainError('UNAUTHORIZED', '管理员账号需要登陆才能评论。')
     }
@@ -166,7 +166,7 @@ export async function createComment(
   // post the same canned reply on different threads. Dedupe compares the
   // markdown snapshot — comparing JSON would defeat the check because
   // each save mints fresh `_key` nanoids on every block.
-  if (!u.isAdmin) {
+  if (u.role !== 'admin') {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const recent = await recentCommentsForUserDedupe(u.id, since, 20)
     if (recent.some((c) => c.content === markdownSnapshot)) {

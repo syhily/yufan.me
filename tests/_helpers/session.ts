@@ -33,9 +33,9 @@ export function adminUser(overrides: Partial<SessionUser> = {}): SessionUser {
     name: 'admin',
     email: 'admin@yufan.me',
     website: null,
-    admin: true,
+    role: 'admin',
     ...overrides,
-  }
+  } as SessionUser
 }
 
 export function regularUser(overrides: Partial<SessionUser> = {}): SessionUser {
@@ -44,9 +44,9 @@ export function regularUser(overrides: Partial<SessionUser> = {}): SessionUser {
     name: 'reader',
     email: 'reader@example.com',
     website: null,
-    admin: false,
+    role: 'visitor',
     ...overrides,
-  }
+  } as SessionUser
 }
 
 export function adminSession(): BlogSession {

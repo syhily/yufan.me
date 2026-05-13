@@ -29,6 +29,8 @@ const commentWithUser = {
   voteUp: comment.voteUp,
   voteDown: comment.voteDown,
   rootId: comment.rootId,
+  deleteRequestedAt: comment.deleteRequestedAt,
+  deleteRequestedBy: comment.deleteRequestedBy,
   name: user.name,
   email: user.email,
   emailVerified: user.emailVerified,
@@ -121,7 +123,7 @@ export async function pendingComments(limit: number): Promise<PendingCommentRow[
 }
 
 export async function adminUserIds(): Promise<bigint[]> {
-  const rows = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
+  const rows = await db.select({ id: user.id }).from(user).where(eq(user.role, 'admin'))
   return rows.map((r) => r.id)
 }
 
@@ -461,6 +463,107 @@ export async function bulkSoftDeleteCommentsByUser(userId: bigint): Promise<numb
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
   return updated.length
+}
+
+export async function loadOwnedCommentOr404(id: bigint, expectedUserId: bigint) {
+  const row = await findCommentWithUserById(id)
+  if (row === null) {
+    return null
+  }
+  if (row.userId !== expectedUserId) {
+    return null
+  }
+  return row
+}
+
+export async function requestDeleteComment(id: bigint, byUserId: bigint): Promise<boolean> {
+  const updated = await db
+    .update(comment)
+    .set({ deleteRequestedAt: new Date(), deleteRequestedBy: byUserId })
+    .where(and(eq(comment.id, id), isNull(comment.deleteRequestedAt)))
+    .returning({ id: comment.id })
+  return updated.length > 0
+}
+
+export async function clearDeleteRequest(id: bigint): Promise<boolean> {
+  const updated = await db
+    .update(comment)
+    .set({ deleteRequestedAt: null, deleteRequestedBy: null })
+    .where(and(eq(comment.id, id), isNotNull(comment.deleteRequestedAt)))
+    .returning({ id: comment.id })
+  return updated.length > 0
+}
+
+export async function countApprovedRepliesOfComment(rootId: bigint): Promise<number> {
+  const rows = await db
+    .select({ count: count() })
+    .from(comment)
+    .where(and(eq(comment.rootId, rootId), eq(comment.isPending, false), isNull(comment.deletedAt)))
+  return rows[0]?.count ?? 0
+}
+
+export async function listMyComments(
+  userId: bigint,
+  options: { offset?: number; limit?: number },
+): Promise<{ rows: CommentWithUser[]; total: number }> {
+  const offset = options.offset ?? 0
+  const limit = options.limit ?? 20
+  const [result, total] = await Promise.all([
+    db
+      .select(commentWithUser)
+      .from(comment)
+      .innerJoin(user, eq(comment.userId, user.id))
+      .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
+      .orderBy(desc(comment.createdAt), desc(comment.id))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: count() })
+      .from(comment)
+      .where(and(eq(comment.userId, userId), isNull(comment.deletedAt))),
+  ])
+  return { rows: result, total: total[0]?.count ?? 0 }
+}
+
+export async function countDeleteRequests(): Promise<number> {
+  const rows = await db
+    .select({ count: count() })
+    .from(comment)
+    .where(and(isNotNull(comment.deleteRequestedAt), isNull(comment.deletedAt)))
+  return rows[0]?.count ?? 0
+}
+
+export async function listDeleteRequests(offset: number, limit: number) {
+  const entity = targetSlugTitleSubquery()
+  return db
+    .select({ ...commentWithUser, pageTitle: entity.title, pagePublicId: sql<string>`${metric.publicId}` })
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
+    .leftJoin(metric, and(eq(metric.type, comment.type), eq(metric.ownerId, comment.ownerId)))
+    .where(and(isNotNull(comment.deleteRequestedAt), isNull(comment.deletedAt)))
+    .orderBy(desc(comment.deleteRequestedAt))
+    .limit(limit)
+    .offset(offset)
+}
+
+export async function countMyComments(
+  userId: bigint,
+): Promise<{ total: number; pending: number; deleteRequested: number }> {
+  const rows = await db
+    .select({
+      total: count(),
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`,
+      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`,
+    })
+    .from(comment)
+    .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
+  const row = rows[0]
+  return {
+    total: Number(row?.total ?? 0),
+    pending: Number(row?.pending ?? 0),
+    deleteRequested: Number(row?.deleteRequested ?? 0),
+  }
 }
 
 // Suppress unused-import warning: `or` is re-exported for callers that

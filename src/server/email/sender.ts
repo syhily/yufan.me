@@ -7,8 +7,10 @@ import type { Comment, User } from '@/server/db/types'
 
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/comments/url'
 import ApprovedComment from '@/server/email/templates/ApprovedComment'
+import AuthorInvite from '@/server/email/templates/AuthorInvite'
 import NewComment from '@/server/email/templates/NewComment'
 import NewReply from '@/server/email/templates/NewReply'
+import PasswordReset from '@/server/email/templates/PasswordReset'
 import { getLogger } from '@/server/logger'
 import { commentBodyToHtml } from '@/server/pt/comment-to-html'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -268,6 +270,43 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     }
   }
   return { ok: true }
+}
+
+export async function sendPasswordReset(
+  toEmail: string,
+  toName: string,
+  resetLink: string,
+  isFirstPassword: boolean,
+): Promise<SendResult> {
+  const html = await render(
+    createElement(PasswordReset, {
+      receiver: toName,
+      resetLink,
+      isFirstPassword,
+    }),
+  )
+  const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  const subject = isFirstPassword
+    ? `您在【${siteIdentity.title}】的评论已通过审核，请设置密码`
+    : `【${siteIdentity.title}】密码重置`
+  return internalSend(toEmail, subject, html)
+}
+
+export async function sendAuthorInvite(
+  toEmail: string,
+  toName: string,
+  inviterName: string,
+  acceptLink: string,
+): Promise<SendResult> {
+  const html = await render(
+    createElement(AuthorInvite, {
+      receiver: toName,
+      inviterName,
+      acceptLink,
+    }),
+  )
+  const siteIdentity = requireBlogSettingsSection('siteIdentity')
+  return internalSend(toEmail, `您被邀请成为【${siteIdentity.title}】的作者`, html)
 }
 
 // Tiny escape used only by the test-mail HTML — the comment templates

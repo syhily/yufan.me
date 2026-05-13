@@ -211,7 +211,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   <div className="text-sm text-muted-foreground">{user.email}</div>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {user.isAdmin && <Badge variant="secondary">管理员</Badge>}
+                  {user.role === 'admin' && <Badge variant="secondary">管理员</Badge>}
                   {user.deletedAt ? (
                     <Badge variant="outline" className="text-muted-foreground">
                       已删除
@@ -286,7 +286,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                 <CardDescription>对该用户执行管理操作。</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
-                {!user.isAdmin && (
+                {user.role !== 'admin' && (
                   <Button
                     type="button"
                     variant="outline"
@@ -364,7 +364,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                     <RotateCcwIcon /> 恢复用户
                   </Button>
                 ) : (
-                  !user.isAdmin && (
+                  user.role !== 'admin' && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -390,7 +390,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                     </Button>
                   )
                 )}
-                {user.commentCount > 0 && !user.isAdmin && (
+                {user.commentCount > 0 && user.role !== 'admin' && (
                   <Button
                     type="button"
                     variant="destructive"

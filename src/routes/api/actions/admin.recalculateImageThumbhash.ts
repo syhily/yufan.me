@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: recalculateThumbhashSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     const image = await recalculateImageThumbhash(BigInt(payload.id))
     // Thumbhash + `updatedAt` changed: invalidate the catalog so the

@@ -9,7 +9,7 @@ const MAX_BODY_BYTES = 1 * 1024 * 1024
 export const action = defineApiAction({
   method: 'POST',
   input: previewPostBodySchema,
-  requireAdmin: true,
+  requireRole: 'author',
   maxBodyBytes: MAX_BODY_BYTES,
   async run({ payload }) {
     const html = await renderPortableTextToHtml(payload.body)

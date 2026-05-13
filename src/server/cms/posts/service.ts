@@ -154,10 +154,22 @@ export interface AdminPostsListResult {
   hasMore: boolean
 }
 
-export async function listPostsForAdmin(filters: ListPostsFilters = {}): Promise<AdminPostsListResult> {
+export async function listPostsForAdmin(
+  filters: ListPostsFilters = {},
+  authorId?: bigint | null,
+  isAdmin?: boolean,
+): Promise<AdminPostsListResult> {
   const offset = filters.offset ?? 0
   const limit = filters.limit ?? 20
-  const [rows, total] = await Promise.all([listPostMetas({ ...filters, limit, offset }), countPostMetas(filters)])
+  // Author isolation: non-admin users get their authorId force-injected.
+  const effectiveFilters = { ...filters }
+  if (!isAdmin && authorId != null) {
+    effectiveFilters.authorId = authorId
+  }
+  const [rows, total] = await Promise.all([
+    listPostMetas({ ...effectiveFilters, limit, offset }),
+    countPostMetas(effectiveFilters),
+  ])
   if (rows.length === 0) {
     return { posts: [], total, hasMore: false }
   }
@@ -199,6 +211,22 @@ export async function getPostDetailForAdmin(id: bigint): Promise<AdminPostDetail
     latestRevision: latest === null ? null : toAdminRevisionDto(latest),
     publishedRevision: published === null ? null : toAdminRevisionDto(published),
   }
+}
+
+// Load a post and assert ownership. Returns 404 (not 403) to avoid leaking
+// existence. Call at the top of every author-gated write / read endpoint.
+export async function loadOwnedPostOr404(
+  id: bigint,
+  actor: { role: string | null; userId: string },
+): Promise<PostMetaRow> {
+  const meta = await findPostMetaById(id)
+  if (meta === null) {
+    throw new ActionFailure(404, '文章不存在或已被删除。')
+  }
+  if (actor.role !== 'admin' && meta.authorId?.toString() !== actor.userId) {
+    throw new ActionFailure(404, '文章不存在或已被删除。')
+  }
+  return meta
 }
 
 export async function listRevisionsForAdmin(id: bigint): Promise<AdminRevisionDto[]> {

@@ -5,7 +5,7 @@ import { listTagsForAdmin } from '@/server/tags/service'
 export const loader = defineApiAction({
   method: 'GET',
   input: listTagsSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     return listTagsForAdmin({ q: payload.q, offset: payload.offset, limit: payload.limit })
   },

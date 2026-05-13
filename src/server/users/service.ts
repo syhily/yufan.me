@@ -23,7 +23,7 @@ export interface AdminUserDto {
   badgeName: string | null
   badgeColor: string | null
   badgeTextColor: string | null
-  isAdmin: boolean
+  role: 'admin' | 'author' | 'visitor' | null
   isMuted: boolean
   emailVerified: boolean
   createdAt: string
@@ -44,7 +44,7 @@ export function toAdminUserDto(row: AdminUserRow): AdminUserDto {
     badgeName: row.badgeName,
     badgeColor: row.badgeColor,
     badgeTextColor: row.badgeTextColor,
-    isAdmin: row.isAdmin,
+    role: row.role === null ? null : row.role,
     isMuted: row.isMuted,
     emailVerified: row.emailVerified,
     createdAt: row.createdAt.toISOString(),

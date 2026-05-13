@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'DELETE',
   input: deleteImageSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     await deleteImage(BigInt(payload.id))
     // The catalog hydrates cover URLs / thumbhashes from the live

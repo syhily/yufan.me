@@ -5,7 +5,7 @@ import { deleteAdminTag } from '@/server/tags/service'
 export const action = defineApiAction({
   method: 'DELETE',
   input: tagIdSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     const ok = await deleteAdminTag(BigInt(payload.id))
     if (!ok) {

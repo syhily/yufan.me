@@ -2,6 +2,8 @@ import type { Session } from 'react-router'
 
 import { createSessionStorage } from 'react-router'
 
+import type { Role } from '@/server/auth/rbac'
+
 import { redisInstance } from '@/server/cache/storage'
 import { SESSION_SECRET } from '@/server/env'
 
@@ -10,7 +12,7 @@ export interface SessionUser {
   name: string
   email: string
   website: string | null
-  admin: boolean
+  role: Role | null
 }
 
 export interface BlogSessionData {
@@ -59,10 +61,30 @@ async function writeSession(id: string, data: BlogSessionData, expires: Date | u
   } else {
     await redis.set(`session:${id}`, payload, 'EX', SESSION_MAX_AGE)
   }
+  // Mirror the session id into the per-user Set so `revokeAllSessionsOfUser`
+  // can enumerate and destroy every session for a single user atomically.
+  if (data.user?.id) {
+    await redis.sadd(`user_sessions:${data.user.id}`, id)
+  }
 }
 
 export const { getSession, commitSession, destroySession } = storage
 
 export async function getRequestSession(request: Request): Promise<BlogSession> {
   return getSession(request.headers.get('Cookie'))
+}
+
+export async function revokeAllSessionsOfUser(userId: string | bigint): Promise<void> {
+  const redis = redisInstance()
+  const key = `user_sessions:${String(userId)}`
+  const members = await redis.smembers(key)
+  if (members.length === 0) {
+    return
+  }
+  const pipeline = redis.pipeline()
+  pipeline.del(key)
+  for (const sid of members) {
+    pipeline.del(`session:${sid}`)
+  }
+  await pipeline.exec()
 }

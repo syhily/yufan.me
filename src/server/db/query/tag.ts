@@ -1,9 +1,9 @@
-import { asc, count, eq, ilike, or, type SQL } from 'drizzle-orm'
+import { and, asc, count, eq, ilike, or, sql, type SQL } from 'drizzle-orm'
 
 import type { NewTag, TagRow } from '@/server/db/types'
 
 import { db } from '@/server/db/pool'
-import { tag } from '@/server/db/schema'
+import { post, tag } from '@/server/db/schema'
 
 // Public listing reads. Stable `name ASC` order so the `/tags`
 // catalogue (and any sidebar widget that surfaces the full list) has
@@ -121,4 +121,13 @@ export async function seedTagIfMissing(values: NewTag): Promise<boolean> {
     .onConflictDoNothing({ target: tag.name })
     .returning({ id: tag.id })
   return result.length > 0
+}
+
+// Count how many published, non-deleted posts reference a tag by name.
+export async function countPostsByTag(tagName: string): Promise<number> {
+  const rows = await db
+    .select({ count: count() })
+    .from(post)
+    .where(and(sql`${post.tags} @> ${JSON.stringify([tagName])}`))
+  return rows[0]?.count ?? 0
 }

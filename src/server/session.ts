@@ -1,5 +1,11 @@
 export type { BlogSession, BlogSessionData, SessionUser } from '@/server/auth/session-storage'
-export { commitSession, destroySession, getRequestSession, getSession } from '@/server/auth/session-storage'
+export {
+  commitSession,
+  destroySession,
+  getRequestSession,
+  getSession,
+  revokeAllSessionsOfUser,
+} from '@/server/auth/session-storage'
 
 export type { SessionContext } from '@/server/auth/primitives'
 export { isAdmin, login, logout, resolveSessionContext, userSession } from '@/server/auth/primitives'

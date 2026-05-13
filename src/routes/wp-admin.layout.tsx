@@ -18,8 +18,10 @@ import '@/assets/styles/admin.css'
 export const handle: RouteHandle = { layout: 'admin' }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { admin, user, url } = getRouteRequestContext({ request, context })
-  if (!admin) {
+  const { role, user, url } = getRouteRequestContext({ request, context })
+  // Gate: all logged-in users can enter the admin shell (visitor+).
+  // Individual routes gate finer-grained permissions inside their own loaders.
+  if (role === null) {
     throw redirect(`/wp-login.php?redirect_to=${encodeURIComponent(url.pathname)}`)
   }
 
@@ -32,6 +34,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         id: user?.id ?? '',
         name: user?.name ?? '管理员',
         email: user?.email ?? '',
+        role: role ?? null,
       },
       csrfToken: issued.token,
     },

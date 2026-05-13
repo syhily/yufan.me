@@ -5,7 +5,7 @@ import { upsertAdminTag } from '@/server/tags/service'
 export const action = defineApiAction({
   method: 'POST',
   input: upsertTagSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     const tag = await upsertAdminTag({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,

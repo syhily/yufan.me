@@ -1,8 +1,10 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router'
 import type { ZodError, ZodType } from 'zod'
 
+import type { Role } from '@/server/auth/rbac'
 import type { BlogSession } from '@/server/session'
 
+import { hasAtLeast } from '@/server/auth/rbac'
 import { getLogger } from '@/server/logger'
 import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/route-helpers/errors'
 import { getRouteRequestContext, isAdmin } from '@/server/session'
@@ -148,9 +150,6 @@ export function assertMethod(request: Request, ...allowed: string[]): void {
 
 export function requireAdminSession(session: BlogSession): BlogSession {
   if (!isAdmin(session)) {
-    // Logged-in non-admins are *forbidden*, not unauthenticated. Returning
-    // 401 here causes most HTTP clients to retry with credentials, so use
-    // 403 to communicate "you are who you say you are, but the door is shut".
     throw new ActionFailure(403, ErrorMessages.NOT_ADMIN)
   }
   return session
@@ -167,6 +166,7 @@ export interface ApiContext {
   url: URL
   session: BlogSession
   clientAddress: string
+  role: Role | null
 }
 
 export type ApiHandler<O> = (ctx: ApiContext) => Promise<ApiResult<O>> | ApiResult<O>
@@ -207,6 +207,7 @@ export async function runApi<O>(args: RunApiArgs, handler: ApiHandler<O>): Promi
       url: resolved.url,
       session: resolved.session,
       clientAddress: resolved.clientAddress,
+      role: resolved.role,
     }
     const result = await handler(ctx)
     if (result instanceof Response) {
@@ -255,6 +256,7 @@ interface DefineApiActionConfig<I, O> {
   input?: ZodType<I>
   inputSource?: InputSource
   requireAdmin?: boolean
+  requireRole?: Role
   /**
    * Reject the request with 413 if the declared `Content-Length`
    * exceeds this many bytes. Use on endpoints that accept large
@@ -309,15 +311,15 @@ export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
   return (args: Pick<LoaderFunctionArgs, 'request' | 'context'>) =>
     runApi(args, async (ctx) => {
       assertMethod(ctx.request, ...methods)
-      // `requireAdminSession` already guarantees admin === true on success,
-      // so admin endpoints skip the redundant `isAdmin(session)` re-read.
-      if (config.requireAdmin) {
-        requireAdminSession(ctx.session)
+      const requiredRole = config.requireRole ?? (config.requireAdmin ? 'admin' : null)
+      if (requiredRole !== null && !hasAtLeast(ctx.role, requiredRole)) {
+        throw new ActionFailure(403, ErrorMessages.NOT_ADMIN)
       }
       if (config.maxBodyBytes !== undefined) {
         assertContentLengthUnder(ctx.request, config.maxBodyBytes)
       }
-      const isAdminLazy = config.requireAdmin ? () => true : () => isAdmin(ctx.session)
+      const isAdminLazy =
+        config.requireAdmin || config.requireRole === 'admin' ? () => true : () => isAdmin(ctx.session)
       const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)
       return config.run({ ctx, payload, isAdmin: isAdminLazy })
     })

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, isNull, max, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, isNull, ne, or, sql } from 'drizzle-orm'
 
 import type { NewUser, User } from '@/server/db/types'
 
@@ -10,12 +10,22 @@ import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 const PASSWORD_HASH_ROUNDS = 12
 
 export async function hasAdmin(): Promise<boolean> {
-  const res = await db.select({ count: count() }).from(user).where(eq(user.isAdmin, true))
+  const res = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
   return res.length > 0 && res[0].count > 0
+}
+
+export async function countAdmins(): Promise<number> {
+  const res = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
+  return res[0]?.count ?? 0
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.email, email)).limit(1)
+  return rows[0] ?? null
+}
+
+export async function findUserById(id: bigint): Promise<User | null> {
+  const rows = await db.select().from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
 }
 
@@ -25,6 +35,14 @@ export async function verifyUserPassword(email: string, password: string): Promi
     return null
   }
   return (await bcrypt.compare(password, u.password)) ? u : null
+}
+
+export async function verifyUserPasswordById(id: bigint, password: string): Promise<boolean> {
+  const u = await findUserById(id)
+  if (u === null) {
+    return false
+  }
+  return bcrypt.compare(password, u.password)
 }
 
 export async function findUserIdByEmail(email: string): Promise<string | null> {
@@ -37,14 +55,12 @@ export async function findEmailById(id: bigint): Promise<string | null> {
   return rows[0]?.email ?? null
 }
 
+export async function updateUserPasswordById(id: bigint, newPassword: string): Promise<void> {
+  const hashedPassword = bcrypt.hashSync(newPassword, PASSWORD_HASH_ROUNDS)
+  await db.update(user).set({ password: hashedPassword }).where(eq(user.id, id))
+}
+
 export interface InsertAdminOptions {
-  /**
-   * Optional homepage URL stored on the admin row. The install flow
-   * threads in the freshly-collected `website` field directly because
-   * the settings snapshot has not been written yet at that point. Other
-   * call sites (none today, but kept for symmetry) can omit this and
-   * fall back to the snapshot value, ultimately the empty string.
-   */
   link?: string
 }
 
@@ -59,17 +75,30 @@ export async function insertAdmin(
     name,
     email,
     emailVerified: false,
-    // The install flow passes `link` explicitly because the settings
-    // snapshot is not hydrated yet. Other callers fall back to the
-    // already-installed `website` value (or empty string pre-install).
     link: options.link ?? getBlogSettingsBundleSync()?.siteIdentity?.website ?? '',
-    isAdmin: true,
+    role: 'admin',
     password: hashedPassword,
     badgeName: 'MOD',
     badgeColor: '#008c95',
     receiveEmail: true,
   }
   return db.insert(user).values(admin).returning()
+}
+
+export async function insertAuthor(name: string, email: string): Promise<User> {
+  const author: NewUser = {
+    name,
+    email,
+    emailVerified: false,
+    role: 'author',
+    password: '',
+    link: '',
+    badgeName: 'AUTHOR',
+    badgeColor: '#6366f1',
+    receiveEmail: true,
+  }
+  const rows = await db.insert(user).values(author).returning()
+  return rows[0]
 }
 
 export async function insertCommentUser(name: string, email: string, website: string): Promise<User | null> {
@@ -82,7 +111,7 @@ export async function insertCommentUser(name: string, email: string, website: st
     email,
     emailVerified: false,
     link: website,
-    isAdmin: false,
+    role: null,
     password: '',
     badgeName: '',
     badgeColor: '',
@@ -102,10 +131,6 @@ export interface UserUpdate {
   link?: string
   badgeName?: string
   badgeColor?: string
-  // `null` clears the manual override and reactivates the auto-derived
-  // contrast pick (see `commentBadgeTextColor`); a non-null hex string
-  // pins the badge text colour verbatim. Distinct from `undefined`
-  // (which means "do not touch the column on this update").
   badgeTextColor?: string | null
 }
 
@@ -114,13 +139,16 @@ export async function updateUserById(id: bigint, patch: UserUpdate): Promise<Use
   return updated[0] ?? null
 }
 
-// --- Admin user-management helpers ----------------------------------------
-//
-// Everything below this line is consumed by the wp-admin SPA only. The
-// public site never references these helpers, so they can evolve
-// independently without worrying about the public bundle surface.
+// --- Role helpers --------------------------------------------------------
 
-export type UserRoleFilter = 'all' | 'admin' | 'normal'
+export async function updateUserRole(id: bigint, role: 'admin' | 'author' | 'visitor' | null): Promise<User | null> {
+  const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()
+  return updated[0] ?? null
+}
+
+// --- Admin user-management helpers ----------------------------------------
+
+export type UserRoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 
 export interface AdminUsersListFilters {
   q?: string
@@ -137,7 +165,7 @@ export interface AdminUserRow {
   badgeName: string | null
   badgeColor: string | null
   badgeTextColor: string | null
-  isAdmin: boolean
+  role: 'admin' | 'author' | 'visitor' | null
   isMuted: boolean
   emailVerified: boolean
   createdAt: Date
@@ -155,11 +183,14 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
     conditions.push(isNull(user.deletedAt))
   }
   if (filters.role === 'admin') {
-    conditions.push(eq(user.isAdmin, true))
+    conditions.push(eq(user.role, 'admin'))
+  } else if (filters.role === 'author') {
+    conditions.push(eq(user.role, 'author'))
+  } else if (filters.role === 'visitor') {
+    conditions.push(eq(user.role, 'visitor'))
   } else if (filters.role === 'normal') {
-    // `is_admin` is nullable in legacy rows (default false), so we need
-    // both branches to capture every non-admin user.
-    conditions.push(or(eq(user.isAdmin, false), isNull(user.isAdmin)))
+    // Non-admin users
+    conditions.push(or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role)))
   }
   if (filters.q && filters.q.trim() !== '') {
     const like = `%${filters.q.trim()}%`
@@ -182,18 +213,10 @@ export async function countAdminUsers(filters: AdminUsersListFilters): Promise<n
 
 export type AdminUsersSortOrder = 'recent' | 'commentCount'
 
-// Drizzle 1.0 wires aggregate functions (`max`, `min`, …) to call
-// `column.mapFromDriverValue()` on the result. `PgTimestamp` does not
-// override that hook — its driver-value normalisation lives on the
-// dialect codec layer instead, which the aggregate path bypasses. The
-// `node-postgres` session also disables pg's built-in TIMESTAMP/TIMESTAMPTZ
-// type parsers (so the column codec layer can handle them uniformly), so
-// without this coercion the raw text from pg leaks all the way out to
-// callers that expect a `Date` (manifesting as
-// `lastCommentAt.toISOString is not a function`). A fresh SQL fragment is
-// returned per call to avoid sharing decoder state across query builds.
 function lastCommentAtAggregate() {
-  return max(comment.createdAt).mapWith((value: Date | string) => (value instanceof Date ? value : new Date(value)))
+  return sql<Date>`MAX(${comment.createdAt})`.mapWith((value: Date | string) =>
+    value instanceof Date ? value : new Date(value),
+  )
 }
 
 export async function listAdminUsers(
@@ -203,14 +226,6 @@ export async function listAdminUsers(
   sortBy: AdminUsersSortOrder = 'recent',
 ): Promise<AdminUserRow[]> {
   const conditions = buildAdminUsersConditions(filters)
-  // Aggregate comment counts and last-comment timestamp per user via a
-  // single LEFT JOIN + GROUP BY, so the listing query stays at one
-  // round-trip even with the comment metadata columns.
-  //
-  // The aggregated `commentCount` column is reused by the optional
-  // `commentCount` sort below — we name it explicitly with `sql.raw` so
-  // we can ORDER BY the alias instead of repeating the FILTER clause
-  // (PostgreSQL accepts `ORDER BY <alias>` after `GROUP BY`).
   const commentCountSql = sql<number>`COUNT(${comment.id}) FILTER (WHERE ${comment.deletedAt} IS NULL)`
   const rows = await db
     .select({
@@ -221,7 +236,7 @@ export async function listAdminUsers(
       badgeName: user.badgeName,
       badgeColor: user.badgeColor,
       badgeTextColor: user.badgeTextColor,
-      isAdmin: user.isAdmin,
+      role: user.role,
       isMuted: user.isMuted,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
@@ -236,9 +251,6 @@ export async function listAdminUsers(
     .leftJoin(comment, eq(comment.userId, user.id))
     .where(conditions.length ? and(...conditions) : undefined)
     .groupBy(user.id)
-    // Tiebreak with `user.id` desc in both modes so paginated results
-    // stay deterministic when several users share the same primary key
-    // (zero comments → identical `commentCount`; identical createdAt).
     .orderBy(
       ...(sortBy === 'commentCount' ? [desc(commentCountSql), desc(user.id)] : [desc(user.createdAt), desc(user.id)]),
     )
@@ -247,7 +259,7 @@ export async function listAdminUsers(
 
   return rows.map((row) => ({
     ...row,
-    isAdmin: row.isAdmin ?? false,
+    role: row.role ?? null,
     commentCount: Number(row.commentCount ?? 0),
     pendingCount: Number(row.pendingCount ?? 0),
   }))
@@ -263,7 +275,7 @@ export async function findAdminUserById(id: bigint): Promise<AdminUserRow | null
       badgeName: user.badgeName,
       badgeColor: user.badgeColor,
       badgeTextColor: user.badgeTextColor,
-      isAdmin: user.isAdmin,
+      role: user.role,
       isMuted: user.isMuted,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
@@ -285,7 +297,7 @@ export async function findAdminUserById(id: bigint): Promise<AdminUserRow | null
   }
   return {
     ...row,
-    isAdmin: row.isAdmin ?? false,
+    role: row.role ?? null,
     commentCount: Number(row.commentCount ?? 0),
     pendingCount: Number(row.pendingCount ?? 0),
   }
@@ -306,13 +318,10 @@ export async function restoreUserById(id: bigint): Promise<boolean> {
 }
 
 export async function setUserMuted(id: bigint, muted: boolean): Promise<User | null> {
-  // Admins are exempt from muting; the admin UI hides the action, but
-  // this guard makes the rule explicit at the storage boundary so it
-  // cannot be bypassed by a hand-crafted API request.
   const updated = await db
     .update(user)
     .set({ isMuted: muted })
-    .where(and(eq(user.id, id), or(eq(user.isAdmin, false), isNull(user.isAdmin))))
+    .where(and(eq(user.id, id), ne(user.role, 'admin')))
     .returning()
   return updated[0] ?? null
 }

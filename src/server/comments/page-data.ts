@@ -22,7 +22,7 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
     name: user.name,
     email: user.email,
     website: user.website,
-    admin: user.admin,
+    admin: user.role === 'admin',
   }
 }
 

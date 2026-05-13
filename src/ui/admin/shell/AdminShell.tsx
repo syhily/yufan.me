@@ -12,14 +12,22 @@ import {
   SettingsIcon,
   TagsIcon,
   UsersIcon,
+  UserIcon,
 } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
-import { Form, NavLink } from 'react-router'
+import { Form, NavLink, Link } from 'react-router'
 import { Toaster } from 'sonner'
 
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/ui/components/dropdown-menu'
 import { Separator } from '@/ui/components/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
@@ -30,43 +38,65 @@ interface NavItem {
   to: string
   label: string
   icon: ComponentType<{ className?: string }>
-  /**
-   * Optional prefix used for the active highlight. Without it the
-   * `NavLink` only matches its exact `to`; settings pages live under
-   * `/wp-admin/settings/*` so the entry should stay highlighted on every
-   * sub-route.
-   */
   matchPrefix?: string
+  minRole?: 'admin' | 'author' | 'visitor'
 }
 
 const NAV: NavItem[] = [
-  { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon },
-  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon },
-  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon },
-  { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon },
-  { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon },
-  { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon },
-  { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon },
-  { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon },
-  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users' },
+  // All logged-in users
+  { to: '/wp-admin/welcome', label: '欢迎', icon: HomeIcon, minRole: 'visitor' },
+  // Author+
+  { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon, minRole: 'author' },
+  // Admin only
+  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon, minRole: 'admin' },
+  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon, minRole: 'admin' },
+  { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon, minRole: 'admin' },
+  { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon, minRole: 'admin' },
+  { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon, minRole: 'admin' },
+  // Author+
+  { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon, minRole: 'author' },
+  { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon, minRole: 'author' },
+  // Admin only
+  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users', minRole: 'admin' },
   {
     to: '/wp-admin/settings/general',
     label: '系统设置',
     icon: SettingsIcon,
     matchPrefix: '/wp-admin/settings',
+    minRole: 'admin',
   },
+  // All logged-in users
+  { to: '/wp-admin/my/comments', label: '我的评论', icon: MessageSquareIcon, minRole: 'visitor' },
 ]
 
 interface AdminShellProps {
-  currentUser: { id: string; name: string; email: string }
+  currentUser: { id: string; name: string; email: string; role?: string | null }
   pathname: string
   children: ReactNode
 }
 
-function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+const ROLE_ORDER: Record<string, number> = { admin: 3, author: 2, visitor: 1 }
+
+function hasAtLeast(userRole: string | null | undefined, min: string): boolean {
+  if (!userRole) {
+    return false
+  }
+  return (ROLE_ORDER[userRole] ?? 0) >= (ROLE_ORDER[min] ?? 0)
+}
+
+function NavList({
+  pathname,
+  currentUser,
+  onNavigate,
+}: {
+  pathname: string
+  currentUser: AdminShellProps['currentUser']
+  onNavigate?: () => void
+}) {
+  const visibleItems = NAV.filter((item) => !item.minRole || hasAtLeast(currentUser.role, item.minRole))
   return (
     <nav aria-label="Admin navigation" className="flex flex-col gap-1 px-3">
-      {NAV.map((item) => {
+      {visibleItems.map((item) => {
         const prefixActive = item.matchPrefix
           ? pathname === item.matchPrefix || pathname.startsWith(`${item.matchPrefix}/`)
           : undefined
@@ -79,9 +109,6 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
             className={({ isActive }) => {
               const active = prefixActive ?? isActive
               return cn(
-                // Auto-size the leading icon through the wrapper, so the
-                // icon import below stays sizing-class-free (mirrors the
-                // shadcn `Button` rule of "components own icon sizing").
                 'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors [&_svg]:size-4',
                 active
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground'
@@ -101,60 +128,51 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
 function UserMenu({ id, name, email }: { id: string; name: string; email: string }) {
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
   return (
-    <div className="flex items-center gap-3">
-      <Avatar className="size-9">
-        {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
-        <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">{initial}</AvatarFallback>
-      </Avatar>
-      <div className="hidden min-w-0 flex-col md:flex">
-        <span className="truncate text-sm leading-tight font-medium">{name}</span>
-        <span className="truncate text-xs leading-tight text-muted-foreground">{email}</span>
-      </div>
-      <Form method="get" action="/wp-login.php" className="flex">
-        <input type="hidden" name="action" value="logout" />
-        <input type="hidden" name="redirect_to" value="/" />
-        {/* `hover:text-primary` overrides ghost variant's
-            `hover:text-accent-foreground` (tailwind-merge resolves the
-            conflict by source order) so hover state matches the brand
-            colour the home icon uses. */}
-        <Button
-          type="submit"
-          variant="ghost"
-          size="sm"
-          className="gap-1 text-foreground hover:text-primary focus-visible:text-primary"
-        >
-          <LogOutIcon data-icon />
-          <span className="hidden sm:inline">退出</span>
-        </Button>
-      </Form>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Avatar className="size-8">
+              {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
+              <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                {initial}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem>
+          <Link to="/wp-admin/my/profile" className="flex w-full items-center gap-2">
+            <UserIcon className="size-4" />
+            个人信息
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Link to="/wp-admin/my/comments" className="flex w-full items-center gap-2">
+            <MessageSquareIcon className="size-4" />
+            我的评论
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <Form method="get" action="/wp-login.php" className="flex">
+          <input type="hidden" name="action" value="logout" />
+          <input type="hidden" name="redirect_to" value="/" />
+          <DropdownMenuItem>
+            <button type="submit" className="flex w-full items-center gap-2">
+              <LogOutIcon className="size-4" />
+              <span>登出</span>
+            </button>
+          </DropdownMenuItem>
+        </Form>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
-// "Focus mode" lets a child route (currently the page editor) ask the
-// admin shell to collapse its left navigation rail and drop the
-// content `max-width` cap, giving the editor the full viewport for
-// its editor + live-preview + metadata three-pane layout. The flag
-// lives in shell-scoped React state so a route opt-in is simple
-// (`useAdminChromeFocus(true)` while mounted) and so the next route
-// navigation automatically resets it (the unmount cleanup flips it
-// back to `false`). Keeping it in context — instead of, say, a
-// `data-admin-focused` attribute on `<html>` — also means the shell
-// can apply Tailwind utilities directly off `focused` without
-// recomputing on every paint.
 interface AdminChromeContextValue {
   focused: boolean
   setFocused: (next: boolean) => void
-  // Set by editor routes for the duration of their mount when a
-  // bottom-right FAB (today: `FloatingPublishButton`) may surface in
-  // the same corner ScrollTop normally occupies. AdminShell ORs this
-  // with `focused` to decide whether the ScrollTop FAB needs to ride
-  // higher (`bottom-20 lg:bottom-24`) instead of its default
-  // `bottom-4 lg:bottom-6` slot. Independent from `focused` because
-  // ScrollTop must clear the publish FAB even in plain editing
-  // (no live preview); previously the two FABs overlapped and the
-  // ScrollTop FAB swallowed every click that should have reached
-  // publish.
   scrollTopLifted: boolean
   setScrollTopLifted: (next: boolean) => void
 }
@@ -169,13 +187,6 @@ export function useAdminChrome(): AdminChromeContextValue {
   return ctx
 }
 
-/**
- * Convenience hook used by routes that want to enter focus mode for
- * the duration of a UI state. Pass `true` to collapse the chrome,
- * `false` to restore it. The unmount cleanup always restores so
- * routes that forget to flip the flag back don't leak focus mode
- * into the next navigation.
- */
 export function useAdminChromeFocus(active: boolean): void {
   const { setFocused } = useAdminChrome()
   useEffect(() => {
@@ -184,16 +195,6 @@ export function useAdminChromeFocus(active: boolean): void {
   }, [active, setFocused])
 }
 
-/**
- * Signals to the admin shell that the current route mounts a
- * bottom-right FAB (e.g. the editor's publish button), so the shared
- * `AdminScrollTopButton` should ride above its default slot to keep
- * both FABs reachable. Pairs with `useAdminChromeFocus` but is
- * orthogonal: focus mode collapses the left rail and switches the
- * scroll root to `<main>`, while this only lifts the ScrollTop FAB.
- * Plain editing (no live preview) needs the lift; preview mode also
- * gets it via the OR in `AdminShell`.
- */
 export function useAdminScrollTopLift(active: boolean): void {
   const { setScrollTopLifted } = useAdminChrome()
   useEffect(() => {
@@ -217,10 +218,6 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
       <div
         className={cn(
           'flex flex-col bg-background text-foreground',
-          // Viewport lock + `<main>` scroll only while the page editor is in
-          // focus mode (live preview). Other admin routes keep the relaxed
-          // `min-h-screen` document flow so list pages and the non-preview
-          // editor do not look cramped.
           focused ? 'h-dvh max-h-dvh min-h-0 overflow-hidden' : 'min-h-screen',
         )}
       >
@@ -244,23 +241,13 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
               </SheetHeader>
               <Separator />
               <div className="py-2">
-                <NavList pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                <NavList pathname={pathname} currentUser={currentUser} onNavigate={() => setMobileOpen(false)} />
               </div>
             </SheetContent>
           </Sheet>
           <a href="/wp-admin/comments" className="flex items-center gap-2 text-base font-semibold text-foreground">
             <BrandLogo className="h-7 w-auto" />
           </a>
-          {/* Quick "back to public site" affordance. Wrapped in a ghost
-            Button so the hit target / focus ring / hover background match
-            the logout button on the right edge of the header — the two
-            controls form a visual pair (icon-button on the left, icon
-            + label on the right) and previously diverged because the home
-            link was a bare `<a>`. `render` swaps the underlying element
-            to an anchor without losing the Button class composition.
-            Full-page nav (not SPA) is intentional: admin shell and
-            public chrome live in different stylesheet layers — see
-            `use-detach-public-css`. */}
           <Button
             variant="ghost"
             size="icon"
@@ -282,7 +269,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
               focused && 'lg:hidden',
             )}
           >
-            <NavList pathname={pathname} />
+            <NavList pathname={pathname} currentUser={currentUser} />
           </aside>
           <main
             ref={mainScrollRef}

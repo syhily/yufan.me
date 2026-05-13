@@ -112,4 +112,5 @@ export class ActionFailure extends Error {
 export const ErrorMessages = {
   /** Surfaced by `requireAdminSession` and asserted by the API contract test. */
   NOT_ADMIN: '当前用户不是管理员。',
+  FORBIDDEN: '禁止访问。',
 } as const

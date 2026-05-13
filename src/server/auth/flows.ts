@@ -156,7 +156,7 @@ export async function signUpInitialAdminWithSession({
     name: admin.name,
     email: admin.email,
     website: admin.link,
-    admin: true,
+    role: 'admin',
   })
 
   return {

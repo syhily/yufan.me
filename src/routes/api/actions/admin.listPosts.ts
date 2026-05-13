@@ -5,20 +5,27 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const loader = defineApiAction({
   method: 'GET',
   input: listPostsSchema,
-  requireAdmin: true,
-  async run({ payload }) {
-    return listPostsForAdmin({
-      q: payload.q,
-      deletedStatus: payload.deletedStatus,
-      offset: payload.offset,
-      limit: payload.limit,
-      category: payload.category,
-      tag: payload.tag,
-      published: payload.published,
-      visible: payload.visible,
-      sortBy: payload.sortBy,
-      sortOrder: payload.sortOrder,
-      authorId: payload.authorId,
-    })
+  requireRole: 'author',
+  async run({ ctx, payload }) {
+    const user = ctx.session.get('user')
+    const userId = user?.id ? BigInt(user.id) : null
+    const isAdmin = ctx.role === 'admin'
+    return listPostsForAdmin(
+      {
+        q: payload.q,
+        deletedStatus: payload.deletedStatus,
+        offset: payload.offset,
+        limit: payload.limit,
+        category: payload.category,
+        tag: payload.tag,
+        published: payload.published,
+        visible: payload.visible,
+        sortBy: payload.sortBy,
+        sortOrder: payload.sortOrder,
+        authorId: payload.authorId,
+      },
+      userId,
+      isAdmin,
+    )
   },
 })
