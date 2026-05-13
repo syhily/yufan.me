@@ -61,10 +61,31 @@ export function useChunkErrorRecovery(): void {
 const RELOAD_GUARD_KEY = 'chunk-error-reload-attempted-at'
 const RELOAD_COOLDOWN_MS = 10_000
 
+// Process-singleton subscription so that whichever path detected the
+// chunk error (window listener, error-boundary hook, or any future
+// caller) can notify a React overlay BEFORE the hard reload fires.
+// The overlay paints the brand splash so the user sees a calm loading
+// state instead of the broken previous-deploy DOM during the network
+// fetch of the new document.
+type ReloadListener = () => void
+const reloadListeners = new Set<ReloadListener>()
+let reloadStarted = false
+
+export function subscribeChunkReload(listener: ReloadListener): () => void {
+  reloadListeners.add(listener)
+  return () => {
+    reloadListeners.delete(listener)
+  }
+}
+
 export function triggerChunkReload(): void {
   if (typeof window === 'undefined') {
     return
   }
+  if (reloadStarted) {
+    return
+  }
+
   let storage: Storage | null = null
   try {
     storage = window.sessionStorage
@@ -87,7 +108,28 @@ export function triggerChunkReload(): void {
     }
   }
 
-  window.location.reload()
+  reloadStarted = true
+  for (const listener of reloadListeners) {
+    try {
+      listener()
+    } catch {
+      // ignore -- a subscriber failure must not block recovery.
+    }
+  }
+
+  // Defer the navigation across two animation frames so React has time
+  // to commit the splash overlay and the browser to paint it before
+  // the document fetch starts. `location.reload()` keeps the current
+  // document painted until the new one is ready, so the splash stays
+  // visible through the entire round-trip.
+  const reload = () => window.location.reload()
+  if (typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(reload)
+    })
+  } else {
+    window.setTimeout(reload, 50)
+  }
 }
 
 function triggerReload() {

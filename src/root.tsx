@@ -22,6 +22,7 @@ import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
+import { ChunkReloadOverlay } from '@/ui/public/chrome/ChunkReloadOverlay'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
 
@@ -141,6 +142,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <ChunkReloadOverlay />
         <ScrollRestoration />
         <Scripts />
       </body>
