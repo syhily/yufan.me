@@ -23,8 +23,12 @@ interface ThemeToggleProps {
 // Moon is the in-flow icon (centred by `IconButtonContent`'s flex);
 // Sun overlays absolutely against the same wrapper so both glyphs
 // share one centre point regardless of which is currently scaled in.
+// The overlay deliberately omits `m-icon-inset` — combining margin:28%
+// with `absolute inset-0` over-constrains the box and the browser keeps
+// top/left margins while dropping bottom/right, shifting the Sun toward
+// the bottom-right. `inset-0 m-auto` alone centres the intrinsic 1em SVG.
 const moonClass = 'm-icon-inset transition-all dark:scale-0 dark:opacity-0'
-const sunClass = 'm-icon-inset absolute inset-0 m-auto scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100'
+const sunClass = 'absolute inset-0 m-auto scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100'
 
 export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme()
