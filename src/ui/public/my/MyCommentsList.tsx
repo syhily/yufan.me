@@ -24,26 +24,9 @@ export interface MyCommentsListProps {
 }
 
 export function MyCommentsList({ items, counts }: MyCommentsListProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">我的评论</h1>
-      <div className="text-sm text-muted-foreground">
-        总计 {counts.total} 条 · 待审 {counts.pending} · 申请删除 {counts.deleteRequested}
-      </div>
-      {items.length === 0 ? (
-        <div className="rounded-md border bg-muted/40 p-6 text-center text-sm text-muted-foreground">暂无评论。</div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {items.map((c) => (
-            <CommentRow key={c.id} item={c} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function CommentRow({ item }: { item: MyCommentItem }) {
+  // Hoisted fetchers — one in-flight slot per action, shared by every row.
+  // Trade-off: clicking two rows in rapid succession queues; we surface this
+  // by disabling every row's action buttons while any submit is in flight.
   const requestDelete = useFetcher<ApiEnvelope<{ success: boolean }>>()
   const cancelDelete = useFetcher<ApiEnvelope<{ success: boolean }>>()
   const revalidator = useRevalidator()
@@ -61,9 +44,56 @@ function CommentRow({ item }: { item: MyCommentItem }) {
     },
   })
 
+  const submitting = requestDelete.state !== 'idle' || cancelDelete.state !== 'idle'
+
+  const onRequestDelete = (id: string) => {
+    void requestDelete.submit(
+      { commentId: id },
+      { method: REQUEST_DELETE.method, encType: 'application/json', action: REQUEST_DELETE.path },
+    )
+  }
+  const onCancelDelete = (id: string) => {
+    void cancelDelete.submit(
+      { commentId: id },
+      { method: CANCEL_DELETE.method, encType: 'application/json', action: CANCEL_DELETE.path },
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <h1 className="text-2xl font-semibold">我的评论</h1>
+      <div className="text-sm text-muted-foreground">
+        总计 {counts.total} 条 · 待审 {counts.pending} · 申请删除 {counts.deleteRequested}
+      </div>
+      {items.length === 0 ? (
+        <div className="rounded-md border bg-muted/40 p-6 text-center text-sm text-muted-foreground">暂无评论。</div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {items.map((c) => (
+            <CommentRow
+              key={c.id}
+              item={c}
+              submitting={submitting}
+              onRequestDelete={onRequestDelete}
+              onCancelDelete={onCancelDelete}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface CommentRowProps {
+  item: MyCommentItem
+  submitting: boolean
+  onRequestDelete: (id: string) => void
+  onCancelDelete: (id: string) => void
+}
+
+function CommentRow({ item, submitting, onRequestDelete, onCancelDelete }: CommentRowProps) {
   const isDeleted = item.deletedAtIso !== null
   const hasPendingDelete = item.deleteRequestedAtIso !== null
-  const submitting = requestDelete.state !== 'idle' || cancelDelete.state !== 'idle'
 
   return (
     <div className="rounded-md border p-3">
@@ -86,12 +116,7 @@ function CommentRow({ item }: { item: MyCommentItem }) {
               size="sm"
               variant="outline"
               disabled={submitting}
-              onClick={() => {
-                void cancelDelete.submit(
-                  { commentId: item.id },
-                  { method: CANCEL_DELETE.method, encType: 'application/json', action: CANCEL_DELETE.path },
-                )
-              }}
+              onClick={() => onCancelDelete(item.id)}
             >
               撤回删除
             </Button>
@@ -101,12 +126,7 @@ function CommentRow({ item }: { item: MyCommentItem }) {
               size="sm"
               variant="outline"
               disabled={submitting}
-              onClick={() => {
-                void requestDelete.submit(
-                  { commentId: item.id },
-                  { method: REQUEST_DELETE.method, encType: 'application/json', action: REQUEST_DELETE.path },
-                )
-              }}
+              onClick={() => onRequestDelete(item.id)}
             >
               申请删除
             </Button>

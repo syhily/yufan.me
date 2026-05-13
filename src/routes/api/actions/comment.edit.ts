@@ -9,12 +9,17 @@ import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared
 
 // Three legitimate paths to edit a comment:
 //   1. Admin session     → bypass token check.
-//   2. Owner session     → logged-in user editing their own row;
-//                          no anonymous-token cookie required.
-//   3. Anonymous token   → cookie-bound proof of authorship issued
+//   2. Anonymous token   → cookie-bound proof of authorship issued
 //                          when an anonymous visitor first posted.
+//                          Checked FIRST (in-memory hash, no DB) so
+//                          the common public-reply edit doesn't pay
+//                          a DB read.
+//   3. Owner session     → logged-in user editing their own row;
+//                          requires a DB probe to find the row's
+//                          author. Used as a fallback when no
+//                          anonymous token matches.
 //
-// Path (2) is what makes self-service edit work for visitors who
+// Path (3) is what makes self-service edit work for visitors who
 // signed in through `/wp-login.php` without ever having held an
 // anonymous token (e.g. they got upgraded to a real account via
 // password reset). See RBAC-REVIEW §F10.
@@ -27,20 +32,24 @@ export const action = defineApiAction({
     const headers = new Headers()
 
     if (!isAdmin) {
-      // Probe ownership of the row before falling through to the
-      // anonymous-token path. Skipping the token round-trip when the
-      // logged-in user is the author keeps cookie-less edits working.
-      const commentId = BigInt(payload.rid)
-      const row = await findCommentWithUserById(commentId)
-      const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
+      // 1) Anonymous-token path FIRST — pure in-memory hash check.
+      //    `ok=false` from verifyCommentOwnership does NOT mean
+      //    "reject"; it means "no valid token, try next path".
+      const cookie = parseCommentTokensCookie(ctx.request.headers.get('Cookie'))
+      const { ok: ownerByToken, cleaned } = await verifyCommentOwnership(cookie, payload.rid)
 
-      if (!ownerBySession) {
-        const cookie = parseCommentTokensCookie(ctx.request.headers.get('Cookie'))
-        const { ok, cleaned } = await verifyCommentOwnership(cookie, payload.rid)
-        if (!ok) {
+      if (ownerByToken) {
+        headers.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
+      } else {
+        // 2) Fall back to a DB probe: is the logged-in session the
+        //    author of the row?
+        const commentId = BigInt(payload.rid)
+        const row = await findCommentWithUserById(commentId)
+        const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
+
+        if (!ownerBySession) {
           throw new ActionFailure(403, '无权编辑该评论')
         }
-        headers.append('Set-Cookie', serializeCommentTokensCookie(cleaned))
       }
     }
 

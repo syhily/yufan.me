@@ -12,6 +12,7 @@ import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-contex
 import { cn } from '@/ui/lib/cn'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
+import { UserMenu } from '@/ui/public/chrome/UserMenu'
 import { SearchIconButton } from '@/ui/public/Search'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
@@ -373,30 +374,9 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
                 </li>
               ))}
               {currentUser && (
-                <>
-                  <li className={siteMenuItemClass}>
-                    <Link to="/my/comments" prefetch="intent" className={siteMenuLinkClass}>
-                      我的评论
-                    </Link>
-                  </li>
-                  <li className={siteMenuItemClass}>
-                    <Link to="/my/profile" prefetch="intent" className={siteMenuLinkClass}>
-                      个人信息
-                    </Link>
-                  </li>
-                  {(currentUser.role === 'admin' || currentUser.role === 'author') && (
-                    <li className={siteMenuItemClass}>
-                      <Link to="/wp-admin/" prefetch="intent" className={siteMenuLinkClass}>
-                        管理后台
-                      </Link>
-                    </li>
-                  )}
-                  <li className={siteMenuItemClass}>
-                    <a href={`/wp-login.php?${logoutQuery}`} className={siteMenuLinkClass}>
-                      登出
-                    </a>
-                  </li>
-                </>
+                <li className={siteMenuItemClass}>
+                  <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
+                </li>
               )}
             </ul>
           </nav>

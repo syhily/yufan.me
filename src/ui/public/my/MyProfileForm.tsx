@@ -62,7 +62,7 @@ export function MyProfileForm({ initial }: MyProfileFormProps) {
   const profileError = profileFetcher.data?.error?.message
   const passwordError = passwordFetcher.data?.error?.message
   const canSetBadge = initial.role === 'admin' || initial.role === 'author'
-  const roleLabelText = roleLabel(initial.role)
+  const roleLabelText = initial.role ? roleLabel(initial.role) : ''
 
   return (
     <div className="flex max-w-xl flex-col gap-6">

@@ -11,6 +11,11 @@ const TOKEN_BYTES = 32
 const RESET_TTL_MS = 15 * 60 * 1000
 const SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
+// `randomBytes(TOKEN_BYTES=32).toString('base64url')` produces exactly
+// 43 chars. Any input outside that length is by-construction not one
+// of our tokens — fail fast before hitting the DB.
+const TOKEN_LEN_RE = /^[A-Za-z0-9_-]{43}$/
+
 // Purpose tags persisted to `verification.purpose`. The DB column is
 // `varchar(32)` so the set has plenty of headroom for future flows
 // (e.g. `'email-change'`), but new values must be added here so the
@@ -86,7 +91,7 @@ function validatedTokenRow(
  * The destructive {@link consumeToken} is reserved for the action.
  */
 export async function peekToken(rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
-  if (!/^[A-Za-z0-9_-]{32,80}$/.test(rawToken)) {
+  if (!TOKEN_LEN_RE.test(rawToken)) {
     return null
   }
   const value = sha256(rawToken)
@@ -109,7 +114,7 @@ export async function peekToken(rawToken: string, purpose: TokenPurpose): Promis
  * subsequent call with the same token returns `null`.
  */
 export async function consumeToken(rawToken: string, purpose: TokenPurpose): Promise<ValidatedToken | null> {
-  if (!/^[A-Za-z0-9_-]{32,80}$/.test(rawToken)) {
+  if (!TOKEN_LEN_RE.test(rawToken)) {
     return null
   }
   const value = sha256(rawToken)

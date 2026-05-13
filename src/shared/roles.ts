@@ -19,10 +19,12 @@ export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
 
 /**
  * Human-readable Chinese label. Used by both the public chrome
- * (user menu badge) and the admin profile screen. `null` covers
- * anonymous-placeholder accounts that aren't really "users".
+ * (user menu badge) and the admin profile screen. Callers must narrow
+ * to a non-null `Role` first — every real call site already lives
+ * behind a session gate, so the previous '匿名' default was
+ * unreachable.
  */
-export function roleLabel(role: RoleOrNull | undefined): string {
+export function roleLabel(role: Role): string {
   switch (role) {
     case 'admin':
       return '管理员'
@@ -30,7 +32,5 @@ export function roleLabel(role: RoleOrNull | undefined): string {
       return '作者'
     case 'visitor':
       return '访客'
-    default:
-      return '匿名'
   }
 }

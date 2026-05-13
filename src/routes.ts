@@ -32,6 +32,10 @@ export default [
     // Splat MUST stay last — see _README.md §B.
     route('*', 'routes/not-found.tsx'),
   ]),
+  // Backwards-compat redirects: /wp-admin/my/* moved to /my/* in the
+  // RBAC visitor-self-service split. External bookmarks survive.
+  route('wp-admin/my/comments', 'routes/wp-admin.my.redirect.comments.ts'),
+  route('wp-admin/my/profile', 'routes/wp-admin.my.redirect.profile.ts'),
   // Resource routes outside the public layout — see _README.md §C.
   route('tags', 'routes/tags.index.ts'),
   // Feed URLs — see _README.md §D for the URL ↔ module ↔ id table.

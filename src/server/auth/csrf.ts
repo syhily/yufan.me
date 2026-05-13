@@ -3,6 +3,14 @@ import { createCookie } from 'react-router'
 import { SESSION_SECRET } from '@/server/env'
 import { makeToken, timingSafeEqual } from '@/shared/security'
 
+// CSRF wire convention (fixed across all submission paths):
+//   - Form submissions carry the token as `<input type="hidden" name="csrf">`.
+//   - JSON submissions place it on the `csrf` property of the payload.
+//   - The cookie is named `csrf-token`.
+// Renaming any of these without simultaneously updating the others
+// breaks every login / install / reset / accept-invite flow at once.
+// If you really need a different name, search the repo first.
+
 const CSRF_TOKEN_TTL_SECONDS = 60 * 5
 const CSRF_TOKEN_LENGTH = 48
 

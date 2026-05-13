@@ -7,6 +7,9 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 
 const MAX_BODY_BYTES = 128 * 1024
 
+// NB: the `admin/` URL prefix is by-convention to group editor-side
+// endpoints together; this route is intentionally unguarded — pure
+// stateless renderer with CSRF as the only gate.
 export const action = defineApiAction({
   method: 'POST',
   input: renderMermaidSchema,

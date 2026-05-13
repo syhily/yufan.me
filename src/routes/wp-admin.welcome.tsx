@@ -1,5 +1,6 @@
 import { data } from 'react-router'
 
+import { requireRole } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { roleLabel } from '@/shared/roles'
@@ -11,7 +12,11 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { user } = getRouteRequestContext({ request, context })
+  const ctx = getRouteRequestContext({ request, context })
+  // Defence-in-depth: `wp-admin.layout` already gates author+, but
+  // asserting here narrows `ctx.user` / `ctx.role` to non-null for the
+  // loader body so the response shape is statically tight.
+  requireRole(ctx, 'author')
   const now = new Date()
   const hour = now.getHours()
   let greeting = '你好'
@@ -28,8 +33,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   return data({
-    name: user?.name ?? '',
-    role: user?.role ?? null,
+    name: ctx.user.name,
+    role: ctx.user.role,
     greeting,
   })
 }

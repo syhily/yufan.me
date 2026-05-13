@@ -23,6 +23,10 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 // `defineApiAction` Content-Length pre-flight guards against runaway
 // payloads before the body is read at all; the Zod stage is a
 // defence-in-depth check on the parsed value.
+//
+// NB: the `admin/` URL prefix is by-convention to group editor-side
+// endpoints together; this route is intentionally unguarded — pure
+// stateless renderer with CSRF as the only gate.
 const MAX_BODY_BYTES = 8 * 1024
 
 export const action = defineApiAction({

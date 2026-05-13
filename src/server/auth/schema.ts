@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { isSupportedTimeZone } from '@/server/settings/timezones'
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 
+// CSRF field is `csrf` — see `@/server/auth/csrf` top-of-file note.
 export const signInSchema = z.object({
   email: z.email(),
   password: z.string().min(10),

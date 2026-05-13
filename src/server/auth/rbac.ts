@@ -64,21 +64,23 @@ export function requireRole(
 // trap of collapsing them into one — see RBAC-REVIEW §R1.
 // ---------------------------------------------------------------------------
 
-export function isPostOwner(viewer: ViewerContext, post: { authorId: bigint | null }): boolean {
-  return post.authorId !== null && post.authorId.toString() === viewer.userId
+// Factory: build an ownership predicate keyed off a single bigint(-or-null)
+// column. `bigint` is assignable to `bigint | null`, so non-null callers
+// (e.g. `{ userId: bigint }` for comments) still satisfy the constraint.
+function ownerOf<K extends string>(field: K) {
+  return <T extends Record<K, bigint | null>>(viewer: ViewerContext, row: T): boolean => {
+    const owner = row[field]
+    if (owner === null) {
+      return false
+    }
+    return owner.toString() === viewer.userId
+  }
 }
 
-export function isImageOwner(viewer: ViewerContext, img: { uploaderId: bigint | null }): boolean {
-  return img.uploaderId !== null && img.uploaderId.toString() === viewer.userId
-}
-
-export function isMusicOwner(viewer: ViewerContext, m: { uploaderId: bigint | null }): boolean {
-  return m.uploaderId !== null && m.uploaderId.toString() === viewer.userId
-}
-
-export function isCommentOwner(viewer: ViewerContext, c: { userId: bigint }): boolean {
-  return c.userId.toString() === viewer.userId
-}
+export const isPostOwner = ownerOf('authorId')
+export const isImageOwner = ownerOf('uploaderId')
+export const isMusicOwner = ownerOf('uploaderId')
+export const isCommentOwner = ownerOf('userId')
 
 export function canEditPost(viewer: ViewerContext, post: { authorId: bigint | null }): boolean {
   return viewer.role === 'admin' || isPostOwner(viewer, post)
