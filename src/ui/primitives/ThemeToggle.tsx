@@ -3,7 +3,6 @@ import { Moon, Sun } from 'lucide-react'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { useTheme } from '@/ui/lib/ThemeProvider'
-import { publicButtonVariants } from '@/ui/primitives/btn'
 
 interface ThemeToggleProps {
   mode: 'public' | 'admin'
@@ -20,13 +19,7 @@ export function ThemeToggle({ mode }: ThemeToggleProps) {
 
   if (mode === 'public') {
     return (
-      <button
-        type="button"
-        onClick={toggle}
-        title={label}
-        aria-label={label}
-        className={publicButtonVariants({ variant: 'dark', size: 'iconSm', shape: 'circle' })}
-      >
+      <Button variant="dark" size="iconSm" shape="circle" onClick={toggle} title={label} aria-label={label}>
         <IconButtonContent>
           {resolvedTheme === 'dark' ? (
             <Sun size="1em" aria-hidden className="m-icon-inset" />
@@ -34,7 +27,7 @@ export function ThemeToggle({ mode }: ThemeToggleProps) {
             <Moon size="1em" aria-hidden className="m-icon-inset" />
           )}
         </IconButtonContent>
-      </button>
+      </Button>
     )
   }
 

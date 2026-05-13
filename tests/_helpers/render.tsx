@@ -6,6 +6,7 @@ import { prerenderToNodeStream } from 'react-dom/static'
 import { createMemoryRouter, type RouteObject, RouterProvider } from 'react-router'
 
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
+import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 
@@ -16,7 +17,11 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 
 /** Synchronously render a React element to an HTML string. */
 export function renderToHtml(element: ReactElement): string {
-  return renderToString(<BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>)
+  return renderToString(
+    <ThemeProvider>
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+    </ThemeProvider>,
+  )
 }
 
 // Render a component tree under a memory router so React Router 7 hooks
@@ -31,9 +36,11 @@ export function renderInRouter(node: ReactNode, initialPath: string = '/'): stri
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   return renderToStaticMarkup(
-    <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-      <RouterProvider router={router} />
-    </BlogSettingsProvider>,
+    <ThemeProvider>
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+        <RouterProvider router={router} />
+      </BlogSettingsProvider>
+    </ThemeProvider>,
   )
 }
 
@@ -46,7 +53,9 @@ export function renderInRouter(node: ReactNode, initialPath: string = '/'): stri
  */
 export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
-    <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>,
+    <ThemeProvider>
+      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+    </ThemeProvider>,
   )
   const chunks: Buffer[] = []
   for await (const chunk of prelude) {

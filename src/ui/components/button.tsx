@@ -33,10 +33,10 @@ const buttonVariants = cva(
         // site's `.btn-primary:hover` swap (`--btn-primary` →
         // `--btn-dark`), and matches the two reference screenshots the
         // user shared (resting teal vs. hover dark).
-        default: 'bg-primary text-primary-foreground shadow-xs hover:bg-foreground hover:text-primary-foreground',
+        default: 'bg-primary text-primary-foreground hover:bg-foreground hover:text-primary-foreground',
         // Same dark-navy hover lands on destructive too — the colour
         // shift is the visual cue that the action is firing.
-        destructive: 'bg-destructive text-white shadow-xs hover:bg-foreground focus-visible:ring-destructive/20',
+        destructive: 'bg-destructive text-white hover:bg-foreground focus-visible:ring-destructive/20',
         // Light-red "clear" affordance — used for tertiary "undo"
         // actions like clearing a filter selection: visible enough to
         // signal "removes something" without competing with primary
@@ -51,16 +51,33 @@ const buttonVariants = cva(
         // hover so secondary actions don't compete with the primary
         // call-to-action when several buttons share a row (e.g. the
         // comment-row toolbar where "审核 / 回复 / …" all sit together).
-        outline: 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground ',
-        secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
+        outline: 'border bg-background hover:bg-accent hover:text-accent-foreground ',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Public-site colourways — solid fills that match the retired
+        // `publicButtonVariants` recipes. `light` is the muted chip used
+        // for ScrollTop, comment cancel, share buttons. `dark` is the
+        // solid navy used for Header social rail, QRDialog, search trigger.
+        light: 'border border-surface-soft bg-surface-soft text-ink-muted hover:text-ink-strong',
+        dark: 'border border-brand-dark bg-brand-dark text-ink-light hover:bg-brand-darker hover:border-brand-darker hover:text-white',
       },
       size: {
         default: 'h-10 px-5 py-2.5',
         sm: 'h-9 rounded-md gap-1.5 px-3.5 py-2',
         lg: 'h-11 rounded-md px-7 py-2.5',
         icon: 'size-9',
+        // Public-site icon-button sizes — square-only, zero padding.
+        iconSm: 'size-8',
+        iconMd: 'size-[2.625rem]',
+        iconLg: 'size-11',
+      },
+      /** Corner radius. `default` inherits `rounded-md` from the base. */
+      shape: {
+        default: '',
+        circle: 'rounded-full',
+        pill: 'rounded-[4rem]',
+        block: 'block w-full',
       },
     },
     defaultVariants: {
@@ -74,7 +91,7 @@ export interface ButtonProps extends ComponentProps<'button'>, VariantProps<type
   render?: useRender.RenderProp
 }
 
-function Button({ className, variant, size, render, ...props }: ButtonProps) {
+function Button({ className, variant, size, shape, render, ...props }: ButtonProps) {
   // Use Base UI's `defaultTagName` to provide the fallback element (a
   // plain `<button>`) and put defaults — including `type="button"` —
   // into the `props` bag. `useRender` treats the render element as the
@@ -90,7 +107,7 @@ function Button({ className, variant, size, render, ...props }: ButtonProps) {
       type: 'button',
       'data-slot': 'button',
       ...props,
-      className: cn(buttonVariants({ variant, size, className })),
+      className: cn(buttonVariants({ variant, size, shape, className })),
     },
   })
   return element

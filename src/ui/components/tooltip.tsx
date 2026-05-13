@@ -3,23 +3,14 @@ import { type ComponentProps, type ReactNode, createContext, use } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-// Unified tooltip built on `@base-ui/react/tooltip`. Supports two
-// visual styles via the `variant` prop on `<Tooltip.Content>`:
-//
-//   `variant="public"` (default) — white pill + CSS ::before arrow +
-//   drop shadow. Used by sidebar widgets, footnote references, and
-//   admin category descriptions.
-//
-//   `variant="shadcn"` — brand background + foreground text + scale
-//   animation. Mirrors the standard shadcn tooltip appearance.
-//
-// Both variants share the same Base UI wiring (focus/hover/scroll-hide,
-// collision-aware positioning, portal rendering).
+// Unified tooltip built on `@base-ui/react/tooltip`.
+// White pill + CSS ::before arrow + drop shadow.
+// Used by sidebar widgets, footnote references, and admin components.
 //
 // Public API:
 //   <Tooltip placement="top">
 //     <Tooltip.Trigger as="span">…</Tooltip.Trigger>
-//     <Tooltip.Content variant="public">…</Tooltip.Content>
+//     <Tooltip.Content>…</Tooltip.Content>
 //   </Tooltip>
 //
 // Also exports the flat `TooltipProvider` for shadcn-style composition.
@@ -45,9 +36,6 @@ const ARROW_CLASS =
   ' data-[side=right]:before:top-1/2 data-[side=right]:before:-left-1.5 data-[side=right]:before:-mt-1.5' +
   ' data-[side=right]:before:border-y-[6px] data-[side=right]:before:border-r-[6px] data-[side=right]:before:border-l-0' +
   ' data-[side=right]:before:border-y-transparent data-[side=right]:before:border-r-[--canvas]'
-
-const SHADCN_CONTENT_CLASS =
-  'z-(--z-modal) w-fit origin-[var(--transform-origin)] rounded-md bg-primary px-3 py-1.5 text-xs text-balance text-primary-foreground data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0'
 
 // --- Placement context ---
 
@@ -89,11 +77,9 @@ function TooltipTrigger({ as = 'span', children, ...rest }: TooltipTriggerProps)
 
 export interface TooltipContentProps {
   children: ReactNode
-  /** Visual style. `public` (default) = white pill + arrow; `shadcn` = brand bg. */
-  variant?: 'public' | 'shadcn'
 }
 
-function TooltipContent({ children, variant = 'public' }: TooltipContentProps) {
+function TooltipContent({ children }: TooltipContentProps) {
   const placement = use(PlacementContext)
   if (children === null || children === undefined || children === false || children === '') {
     return null
@@ -101,14 +87,7 @@ function TooltipContent({ children, variant = 'public' }: TooltipContentProps) {
   return (
     <BaseTooltip.Portal>
       <BaseTooltip.Positioner side={placement} sideOffset={8}>
-        <BaseTooltip.Popup
-          className={cn(
-            variant === 'public' ? PUBLIC_BASE_CLASS : SHADCN_CONTENT_CLASS,
-            variant === 'public' && ARROW_CLASS,
-          )}
-        >
-          {children}
-        </BaseTooltip.Popup>
+        <BaseTooltip.Popup className={cn(PUBLIC_BASE_CLASS, ARROW_CLASS)}>{children}</BaseTooltip.Popup>
       </BaseTooltip.Positioner>
     </BaseTooltip.Portal>
   )

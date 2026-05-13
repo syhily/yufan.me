@@ -12,9 +12,9 @@ import { API_ACTIONS } from '@/shared/api-actions'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
-import { publicButtonVariants } from '@/ui/primitives/btn'
-import { formControlVariants } from '@/ui/primitives/formControl'
 
 export interface CommentReplyFormProps {
   commentKey: string
@@ -200,10 +200,9 @@ export function CommentReplyForm({
           {submitError && <div className="mb-2 text-xs text-alert">{submitError}</div>}
           <div className="flex justify-end gap-2">
             {replyToId !== 0 && (
-              <button
-                type="button"
+              <Button
+                variant="light"
                 id="cancel-comment-reply-link"
-                className={publicButtonVariants({ variant: 'light' })}
                 // See CommentItem.tsx — keep the contenteditable focused
                 // through mousedown so the editor toolbar doesn't
                 // collapse between mousedown and mouseup and steal the
@@ -212,18 +211,18 @@ export function CommentReplyForm({
                 onClick={onCancel}
               >
                 再想想
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               name="submit"
               type="submit"
               id="submit"
-              className={publicButtonVariants({ variant: 'primary' })}
+              variant="default"
               disabled={isPending}
               onMouseDown={(event) => event.preventDefault()}
             >
               {isPending ? '发表中…' : '发表评论'}
-            </button>
+            </Button>
           </div>
         </div>
       </form>
@@ -291,57 +290,26 @@ function CommentFormFields({ user, guestProfile, commentKey, replyToId, onEmailB
   return (
     <div className="-mx-1 -mt-2 mb-4 flex flex-wrap md:-mx-2 md:-mt-4">
       {hasIdentity ? (
-        <input
-          className={formControlVariants()}
-          placeholder={nameValue}
-          name="name"
-          type="text"
-          readOnly
-          hidden
-          defaultValue={nameValue}
-        />
+        <input name="name" type="text" readOnly hidden defaultValue={nameValue} />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
-          <input className={formControlVariants()} placeholder="昵称" name="name" type="text" required />
+          <Input className="bg-canvas" placeholder="昵称" name="name" type="text" required />
         </div>
       )}
       {hasIdentity ? (
-        <input
-          className={formControlVariants()}
-          name="email"
-          placeholder={emailValue}
-          defaultValue={emailValue}
-          type="email"
-          readOnly
-          hidden
-        />
+        <input name="email" defaultValue={emailValue} type="email" readOnly hidden />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:w-1/2 md:px-2">
-          <input
-            className={formControlVariants()}
-            name="email"
-            placeholder="邮箱"
-            type="email"
-            required
-            onBlur={onEmailBlur}
-          />
+          <Input className="bg-canvas" name="email" placeholder="邮箱" type="email" required onBlur={onEmailBlur} />
         </div>
       )}
       <input hidden name="page_key" type="text" defaultValue={commentKey} />
       <input hidden name="rid" type="text" value={String(replyToId)} readOnly />
       {hasIdentity ? (
-        <input
-          className={formControlVariants()}
-          placeholder={linkValue}
-          defaultValue={linkValue}
-          name="link"
-          type="url"
-          readOnly
-          hidden
-        />
+        <input name="link" type="url" readOnly hidden defaultValue={linkValue} />
       ) : (
         <div className="mt-2 box-border w-full max-w-full shrink-0 px-1 md:mt-4 md:px-2">
-          <input className={formControlVariants()} placeholder="网址" name="link" type="url" />
+          <Input className="bg-canvas" placeholder="网址" name="link" type="url" />
         </div>
       )}
     </div>

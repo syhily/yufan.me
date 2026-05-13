@@ -23,9 +23,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/ui/components/alert-dialog'
+import { Button } from '@/ui/components/button'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { publicButtonVariants } from '@/ui/primitives/btn'
 import { PortableTextBody } from '@/ui/pt/render'
 
 export interface CommentItemProps {
@@ -485,24 +485,17 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
         disabled={!loaded || saving}
       />
       <div className="mt-2 flex justify-end gap-2">
-        <button
-          type="button"
-          className={publicButtonVariants({ variant: 'primary' })}
+        <Button
+          variant="default"
           onMouseDown={(event) => event.preventDefault()}
           onClick={handleSave}
           disabled={!loaded || saving}
         >
           {saving ? '保存中...' : '保存'}
-        </button>
-        <button
-          type="button"
-          className={publicButtonVariants({ variant: 'light' })}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onCancel}
-          disabled={saving}
-        >
+        </Button>
+        <Button variant="light" onMouseDown={(event) => event.preventDefault()} onClick={onCancel} disabled={saving}>
           取消
-        </button>
+        </Button>
       </div>
     </div>
   )

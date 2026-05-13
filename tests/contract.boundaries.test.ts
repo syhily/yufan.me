@@ -166,7 +166,7 @@ describe('contract: module and bundle boundaries', () => {
     // the residual Bootstrap `.btn` reset in `bootstrap-compat.css` +
     // the temporary un-layered shim at `components.css` that briefly
     // consumer is now inlined into a Tailwind utility chain backed by
-    // the shared `btn*` constants in `@/ui/primitives/btn.ts`. This
+    // the shared `buttonVariants` CVA in `@/ui/components/button.tsx`. This
     // contract guards every step of that retirement so a future
     // refactor can't silently re-introduce the legacy partials.
     expect(existsSync('src/ui/primitives/buttons.css')).toBe(false)
@@ -183,19 +183,29 @@ describe('contract: module and bundle boundaries', () => {
     // recipe (`publicButtonVariants`). The legacy constants are
     // intentionally NOT re-exported any more — every call site
     // spreads `{ variant, size, shape }` over the recipe — so the
-    // pin here tracks the recipe and the variants it exposes
-    // instead of a flat list of named exports. Adding or renaming
-    // a variant requires updating this list too so a future
-    // refactor cannot silently drop, say, the `dark + iconSm +
-    // circle` social-rail combo.
-    expect(existsSync('src/ui/primitives/btn.ts')).toBe(true)
-    const btn = readFileSync('src/ui/primitives/btn.ts', 'utf8')
-    expect(btn).toMatch(/export const publicButtonVariants\b/)
-    expect(btn).toMatch(/export type PublicButtonVariantProps\b/)
-    for (const variant of ['primary', 'secondary', 'light', 'dark']) {
-      expect(btn).toMatch(new RegExp(`\\b${variant}:`))
+    // The public-button recipe was unified into the shared
+    // `buttonVariants` CVA in `@/ui/components/button.tsx` (serves
+    // both admin and public contexts). Pinning the variant/size/shape
+    // sets here so a future refactor cannot silently drop, say, the
+    // `dark + iconSm + circle` social-rail combo.
+    expect(existsSync('src/ui/primitives/btn.ts')).toBe(false)
+    const btn = readFileSync('src/ui/components/button.tsx', 'utf8')
+    expect(btn).toMatch(/export \{ Button, buttonVariants \}/)
+    expect(btn).toMatch(/export interface ButtonProps\b/)
+    for (const variant of [
+      'default',
+      'destructive',
+      'destructive-soft',
+      'outline',
+      'secondary',
+      'ghost',
+      'link',
+      'light',
+      'dark',
+    ]) {
+      expect(btn).toMatch(new RegExp(`${variant}['"]?\\s*:`))
     }
-    for (const size of ['default', 'lg', 'iconSm', 'iconMd', 'iconLg']) {
+    for (const size of ['default', 'sm', 'lg', 'icon', 'iconSm', 'iconMd', 'iconLg']) {
       expect(btn).toMatch(new RegExp(`\\b${size}:`))
     }
     for (const shape of ['default', 'circle', 'pill', 'block']) {

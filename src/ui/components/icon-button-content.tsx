@@ -4,11 +4,10 @@ import { cn } from '@/ui/lib/cn'
 
 // Icon-button content slot.
 //
-// The icon-only `<button>` variants emitted by `publicButtonVariants`
-// (`size: iconSm | iconMd | iconLg`) all share the same shape: a
-// `relative size-N` host whose icon child is absolutely-centred so
-// the host's text-baseline does NOT shift the SVG by half a line
-// when wrapped in flow content.
+// The icon-only `<Button>` sizes (`iconSm | iconMd | iconLg`) all
+// share the same shape: a `relative size-N` host whose icon child is
+// absolutely-centred so the host's text-baseline does NOT shift the
+// SVG by half a line when wrapped in flow content.
 //
 // Why `absolute top-0 size-full` instead of `inset-0`:
 //   - `absolute inset-0` is the conceptually-cleaner equivalent

@@ -5,11 +5,11 @@ import { Link } from 'react-router'
 import type { NavigationItem } from '@/shared/blog-config'
 import type { SocialNetwork } from '@/shared/socials'
 
+import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
 import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { publicButtonVariants } from '@/ui/primitives/btn'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
 import { SearchIconButton } from '@/ui/search/Search'
@@ -394,23 +394,20 @@ export function Header({ navigation, admin, pathname, search }: HeaderProps) {
                 )
               }
               return (
-                <a
+                <Button
                   key={social.name}
-                  href={social.link}
-                  target="_blank"
-                  rel="noreferrer"
+                  variant="dark"
+                  size="iconSm"
+                  shape="circle"
+                  className="mr-2"
+                  // oxlint-disable-next-line jsx-a11y/anchor-has-content
+                  render={<a href={social.link} target="_blank" rel="noreferrer" />}
                   title={social.title ?? social.name}
-                  className={publicButtonVariants({
-                    variant: 'dark',
-                    size: 'iconSm',
-                    shape: 'circle',
-                    className: 'mr-2',
-                  })}
                 >
                   <IconButtonContent>
                     <SocialNavIcon network={social.network} className="m-icon-inset" />
                   </IconButtonContent>
-                </a>
+                </Button>
               )
             })}
             <SearchIconButton />

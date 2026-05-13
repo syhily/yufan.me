@@ -13,11 +13,11 @@ import type {
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { joinUrl } from '@/shared/urls'
+import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { publicButtonVariants } from '@/ui/primitives/btn'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -116,34 +116,25 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
 
   return (
     <div className="mt-12 text-center">
-      <button
-        className={publicButtonVariants({
-          variant: 'secondary',
-          size: 'lg',
-          shape: 'pill',
-          // - `px-10` widens the pill horizontally to match the
-          //   legacy `padding-inline: 2.5rem` from the post-like rule.
-          // - `data-[liked=true]:…` swaps the chrome to the red
-          //   like-active state when the post is liked. The
-          //   `[data-liked=true]` attribute selector adds 1 to
-          //   selector specificity, so the data-state utilities
-          //   win over the unconditional `secondary` colourway by
-          //   specificity at runtime — no `!` is needed (Stage 11
-          //   P2). `tailwind-merge` does NOT dedupe across these
-          //   two classes because one is unmodified (`bg-brand-
-          //   darker`) and the other carries the data-state prefix
-          //   (`data-[liked=true]:bg-like-active`); they ride into
-          //   the rendered class string side-by-side and the runtime
-          //   selector chooses which wins.
-          className: cn(
-            'px-10',
-            'hover:animate-shake hover:will-change-transform',
-            'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
-            isPending && 'lock',
-          ),
-        })}
+      <Button
+        variant="dark"
+        size="lg"
+        shape="pill"
+        // - `px-10` widens the pill horizontally to match the
+        //   legacy `padding-inline: 2.5rem` from the post-like rule.
+        // - `data-[liked=true]:…` swaps the chrome to the red
+        //   like-active state when the post is liked. The
+        //   `[data-liked=true]` attribute selector adds 1 to
+        //   selector specificity, so the data-state utilities
+        //   win over the unconditional colourway by
+        //   specificity at runtime.
+        className={cn(
+          'px-10',
+          'hover:animate-shake hover:will-change-transform',
+          'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
+          isPending && 'lock',
+        )}
         title="Do you like me?"
-        type="button"
         data-permalink={permalink}
         data-liked={state.liked ? 'true' : 'false'}
         onClick={onClick}
@@ -157,7 +148,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
           aria-hidden
         />
         <span className="inline-block align-middle">{state.likes}</span>
-      </button>
+      </Button>
     </div>
   )
 }
@@ -192,46 +183,42 @@ export function LikeShare({ post }: LikeShareProps) {
 
   return (
     <div className="mt-6 text-center">
-      <a
-        href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
-        className={publicButtonVariants({
-          variant: 'light',
-          size: 'iconMd',
-          shape: 'circle',
-          className: 'mx-1',
-        })}
+      <Button
+        variant="light"
+        size="iconMd"
+        shape="circle"
+        className="mx-1"
+        // oxlint-disable-next-line jsx-a11y/anchor-has-content
+        render={<a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} />}
         title="分享到 QQ 空间"
       >
         <IconButtonContent>
           <QQIcon className="m-icon-inset" />
         </IconButtonContent>
-      </a>
+      </Button>
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
         trigger={<WechatIcon className="m-icon-inset" />}
-        className={publicButtonVariants({
-          variant: 'light',
-          size: 'iconMd',
-          shape: 'circle',
-          className: 'mx-1',
-        })}
+        variant="light"
+        size="iconMd"
+        shape="circle"
+        className="mx-1"
       />
-      <a
-        href={`https://service.weibo.com/share/share.php?${weibo}`}
-        className={publicButtonVariants({
-          variant: 'light',
-          size: 'iconMd',
-          shape: 'circle',
-          className: 'mx-1',
-        })}
+      <Button
+        variant="light"
+        size="iconMd"
+        shape="circle"
+        className="mx-1"
+        // oxlint-disable-next-line jsx-a11y/anchor-has-content
+        render={<a href={`https://service.weibo.com/share/share.php?${weibo}`} />}
         title="分享到微博"
       >
         <IconButtonContent>
           <WeiboIcon className="m-icon-inset" />
         </IconButtonContent>
-      </a>
+      </Button>
     </div>
   )
 }
