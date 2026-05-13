@@ -264,7 +264,7 @@ export function CommentsView({
     <>
       <AdminListPage>
         <AdminListPage.Header title="评论管理" description="审核、回复、编辑站点评论。">
-          <Button type="button" variant="outline" onClick={reload} disabled={isLoading}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isLoading}>
             <RefreshCwIcon data-icon="inline-start" /> 刷新
           </Button>
         </AdminListPage.Header>

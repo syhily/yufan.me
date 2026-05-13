@@ -159,7 +159,7 @@ export function CategoriesView() {
           title="分类管理"
           description={`共 ${state.total} 个分类。MDX 文章 frontmatter 中的 category 字段引用这些名称；拖拽行首手柄可调整顺序。`}
         >
-          <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setEditTarget(null)}>

@@ -33,17 +33,8 @@ const sampleRecent: LatestComment[] = [
   },
 ]
 
-const samplePending: LatestComment[] = [
-  {
-    permalink: '/posts/pending',
-    title: 'Awaiting moderation',
-    author: 'spam',
-    authorLink: '',
-  },
-]
-
-describe('snapshot: Sidebar (all 6 widgets)', () => {
-  it('renders the public (non-admin) sidebar with every widget populated', () => {
+describe('snapshot: Sidebar', () => {
+  it('renders the public sidebar with every widget populated', () => {
     const data = {
       posts: makePostList(3, { slug: 'side' }),
       tags: [
@@ -51,20 +42,8 @@ describe('snapshot: Sidebar (all 6 widgets)', () => {
         makeTag({ name: 'react', slug: 'react', counts: 8 }),
       ],
       recentComments: sampleRecent,
-      pendingComments: samplePending,
     }
-    const html = renderInRouter(<Sidebar data={data} admin={false} />)
-    expect(html).toMatchSnapshot()
-  })
-
-  it('renders the admin sidebar with the pending-comments widget visible', () => {
-    const data = {
-      posts: makePostList(2, { slug: 'side-admin' }),
-      tags: [makeTag({ name: 'typescript', slug: 'typescript', counts: 5 })],
-      recentComments: sampleRecent,
-      pendingComments: samplePending,
-    }
-    const html = renderInRouter(<Sidebar data={data} admin />)
+    const html = renderInRouter(<Sidebar data={data} />)
     expect(html).toMatchSnapshot()
   })
 
@@ -73,9 +52,8 @@ describe('snapshot: Sidebar (all 6 widgets)', () => {
       posts: [],
       tags: [],
       recentComments: [],
-      pendingComments: [],
     }
-    const html = renderInRouter(<Sidebar data={data} admin={false} />)
+    const html = renderInRouter(<Sidebar data={data} />)
     expect(html).toMatchSnapshot()
   })
 })

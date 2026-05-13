@@ -174,7 +174,7 @@ function RevisionListView({ revisions, currentToken, isFetching, onSelect, onRef
         <span className="text-xs text-muted-foreground">
           {revisions !== null ? `${revisions.length} 个修订` : '加载中…'}
         </span>
-        <Button variant="ghost" size="sm" onClick={onRefresh} disabled={isFetching}>
+        <Button variant="outline" size="sm" className="border-ink-4" onClick={onRefresh} disabled={isFetching}>
           <RefreshCcwIcon /> 刷新
         </Button>
       </div>

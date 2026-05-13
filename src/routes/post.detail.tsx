@@ -88,7 +88,6 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         posts: sidebarPosts,
         tags,
         recentComments: detail.recentComments,
-        pendingComments: detail.pendingComments,
       }}
     >
       <PortableTextBody body={body} headingSlugs={post.headings.map((h) => h.slug)} imageMeta={imageMeta} />

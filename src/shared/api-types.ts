@@ -1,5 +1,5 @@
 import type { ClearCacheInput, ClearCacheResultDto, AdminCacheStatsDto } from '@/shared/cache-types'
-import type { AdminComment, CommentItem } from '@/shared/comments'
+import type { AdminComment, AdminPendingDashboardDto, AdminPendingKind, CommentItem } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { UpdateSettingsInput } from '@/shared/settings'
 import type { AdminUserDto, ListUsersInput, MuteUserInput, UserIdInput } from '@/shared/users'
@@ -191,6 +191,13 @@ export type { ClearCacheInput }
 
 export type GetCacheStatsOutput = AdminCacheStatsDto
 export type ClearCacheOutput = ClearCacheResultDto
+
+export interface ListPendingDashboardInput {
+  kind?: AdminPendingKind
+  offset?: number
+  limit?: number
+}
+export type ListPendingDashboardOutput = AdminPendingDashboardDto
 
 export interface SendTestMailInput {
   to: string

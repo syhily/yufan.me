@@ -19,7 +19,6 @@ export interface HomeLayoutBodyProps {
   totalPage: number
   categoryLinks: Record<string, string>
   featurePosts: ListingPostCard[]
-  admin: boolean
   sidebar: SidebarData
   /** From `loaderData.listingNowIso` — stabilises relative dates across SSR + hydration. */
   listingNowIso: string
@@ -32,7 +31,6 @@ export function HomeLayoutBody({
   totalPage,
   categoryLinks,
   featurePosts,
-  admin,
   sidebar,
   listingNowIso,
   children,
@@ -49,7 +47,7 @@ export function HomeLayoutBody({
             categoryLinks={categoryLinks}
             listingNowIso={listingNowIso}
           />
-          <Sidebar data={sidebar} admin={admin} />
+          <Sidebar data={sidebar} />
         </div>
       </div>
       {children}

@@ -1,17 +1,20 @@
 import type { AdminCommentsResult } from '@/server/comments/types'
-import type { AdminListFilters } from '@/server/db/query/comment'
+import type { AdminListFilters, AdminPendingKind } from '@/server/db/query/comment'
 import type { EntityTarget } from '@/server/db/target'
+import type { AdminPendingDashboardDto, AdminPendingItemDto } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
 import { canonicalizeCommentBody } from '@/server/comments/canonicalize'
 import {
   approveCommentById,
+  countAdminPendingDashboard,
   countAllComments,
   deleteCommentById,
   findCommentWithUserAndTarget,
   findCommentWithUserById,
   listAdminComments,
+  listAdminPendingDashboard,
   searchCommentAuthors,
   searchPages,
   updateCommentBodyAndContent,
@@ -135,6 +138,64 @@ export async function searchAuthorOptions(
   ids?: bigint[],
 ): Promise<Array<{ id: bigint; name: string }>> {
   return searchCommentAuthors(q, limit, ids)
+}
+
+// Welcome-dashboard moderation inbox. Same row shape across both queues
+// (approval / deletion) so the UI renders a single table — the
+// `kind` discriminator switches the action buttons. `excerpt` is a
+// 120-codepoint slice of the markdown snapshot (mirrors `wp-admin/my/comments`
+// at a slightly larger cap so admins reading the dashboard get enough
+// context without expanding the row).
+const DASHBOARD_EXCERPT_LIMIT = 120
+
+function makeDashboardExcerpt(raw: string | null): string {
+  if (!raw) {
+    return ''
+  }
+  const trimmed = raw.trim()
+  if (trimmed === '') {
+    return ''
+  }
+  const codepoints = Array.from(trimmed)
+  if (codepoints.length <= DASHBOARD_EXCERPT_LIMIT) {
+    return trimmed
+  }
+  return `${codepoints.slice(0, DASHBOARD_EXCERPT_LIMIT).join('')}…`
+}
+
+function entityPermalink(type: 'post' | 'page', slug: string): string {
+  return type === 'post' ? `/posts/${slug}` : `/${slug}`
+}
+
+export async function loadAdminPendingDashboard(
+  kind: AdminPendingKind,
+  offset: number,
+  limit: number,
+): Promise<AdminPendingDashboardDto> {
+  const [rows, counts] = await Promise.all([
+    listAdminPendingDashboard(kind, offset, limit),
+    countAdminPendingDashboard(),
+  ])
+  const items: AdminPendingItemDto[] = rows.map((row) => ({
+    id: String(row.id),
+    // Deletion dominates the union — if both flags are live, surface the
+    // row as a deletion request so the admin sees the more urgent state.
+    kind: row.deleteRequestedAt !== null ? 'deletion' : 'approval',
+    authorName: row.authorName,
+    authorLink: row.authorLink,
+    excerpt: makeDashboardExcerpt(row.content),
+    createdAtIso: row.createdAt.toISOString(),
+    deleteRequestedAtIso: row.deleteRequestedAt ? row.deleteRequestedAt.toISOString() : null,
+    pageTitle: row.pageTitle,
+    pagePermalink: row.pageSlug && row.type ? entityPermalink(row.type, row.pageSlug) : null,
+  }))
+  const total = kind === 'approval' ? counts.approval : kind === 'deletion' ? counts.deletion : counts.all
+  return {
+    items,
+    total,
+    hasMore: offset + items.length < total,
+    counts,
+  }
 }
 
 export async function loadAllComments(

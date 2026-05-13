@@ -120,7 +120,7 @@ export function TagsView() {
           title="标签管理"
           description={`共 ${state.total} 个标签。MDX 文章 frontmatter 中的 tags 字段引用这些名称。`}
         >
-          <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={handleStartCreate} disabled={isCreating}>

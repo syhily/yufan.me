@@ -32,7 +32,6 @@ describe('snapshot: HomeLayoutBody composed page', () => {
       posts: makePostList(2, { slug: 'side' }),
       tags: [makeTag({ name: 'typescript', slug: 'typescript' })],
       recentComments: [],
-      pendingComments: [],
     }
     const html = renderInRouter(
       <HomeLayoutBody
@@ -41,7 +40,6 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         totalPage={3}
         categoryLinks={{ general: '/categories/general' }}
         featurePosts={featurePosts}
-        admin={false}
         sidebar={sidebar}
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
@@ -56,7 +54,6 @@ describe('snapshot: HomeLayoutBody composed page', () => {
       posts: makePostList(2, { slug: 'side' }),
       tags: [makeTag({ name: 'typescript', slug: 'typescript' })],
       recentComments: [],
-      pendingComments: [],
     }
     const html = renderInRouter(
       <HomeLayoutBody
@@ -65,7 +62,6 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         totalPage={3}
         categoryLinks={{ general: '/categories/general' }}
         featurePosts={featurePosts}
-        admin={false}
         sidebar={sidebar}
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,
@@ -79,7 +75,6 @@ describe('snapshot: HomeLayoutBody composed page', () => {
       posts: [],
       tags: [],
       recentComments: [],
-      pendingComments: [],
     }
     const html = renderInRouter(
       <HomeLayoutBody
@@ -88,7 +83,6 @@ describe('snapshot: HomeLayoutBody composed page', () => {
         totalPage={3}
         categoryLinks={{ general: '/categories/general' }}
         featurePosts={[]}
-        admin={false}
         sidebar={sidebar}
         listingNowIso="2026-04-25T12:00:00.000Z"
       />,

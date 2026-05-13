@@ -98,7 +98,7 @@ export function PostDetailBody({
               </DetailBodyChrome>
             </div>
           </div>
-          <Sidebar data={sidebar} admin={admin} />
+          <Sidebar data={sidebar} />
         </div>
       </div>
     </div>

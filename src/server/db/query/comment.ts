@@ -510,6 +510,112 @@ export async function listAdminComments(offset: number, limit: number, filters: 
     .offset(offset)
 }
 
+// Welcome-dashboard pending queue. Rolls TWO concerns into a single
+// list so the admin landing page can offer a unified inbox:
+//
+//   - `approval`: `is_pending = true` AND no delete request — newly
+//                 posted (first-time author) OR re-pended after an
+//                 author edit. Approve / reject buttons act on these.
+//   - `deletion`: `delete_requested_at IS NOT NULL` — the author asked
+//                 to remove their own row and the admin still has to
+//                 accept or refuse. Accept / refuse buttons act on
+//                 these.
+//
+// A row that's both pending-approval AND has a delete request reports as
+// `deletion` because that's the more urgent state.
+export type AdminPendingKind = 'all' | 'approval' | 'deletion'
+
+function adminPendingWhere(kind: AdminPendingKind) {
+  const live = isNull(comment.deletedAt)
+  if (kind === 'approval') {
+    return and(live, eq(comment.isPending, true), isNull(comment.deleteRequestedAt))
+  }
+  if (kind === 'deletion') {
+    return and(live, isNotNull(comment.deleteRequestedAt))
+  }
+  return and(live, or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
+}
+
+export interface AdminPendingRow {
+  id: bigint
+  createdAt: Date
+  deleteRequestedAt: Date | null
+  // Mirrors the DB column nullability — `comment.is_pending` is
+  // declared nullable so legacy seed rows could be backfilled.
+  isPending: boolean | null
+  content: string | null
+  type: EntityType | null
+  ownerId: bigint | null
+  pageSlug: string | null
+  pageTitle: string | null
+  authorName: string
+  authorLink: string | null
+}
+
+export async function listAdminPendingDashboard(
+  kind: AdminPendingKind,
+  offset: number,
+  limit: number,
+): Promise<AdminPendingRow[]> {
+  const entity = targetSlugTitleSubquery()
+  const rows = await db
+    .select({
+      id: comment.id,
+      createdAt: comment.createdAt,
+      deleteRequestedAt: comment.deleteRequestedAt,
+      isPending: comment.isPending,
+      content: comment.content,
+      type: comment.type,
+      ownerId: comment.ownerId,
+      pageSlug: entity.slug,
+      pageTitle: entity.title,
+      authorName: user.name,
+      authorLink: user.link,
+    })
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .leftJoin(entity, and(eq(entity.type, comment.type), eq(entity.ownerId, comment.ownerId)))
+    .where(adminPendingWhere(kind))
+    // Order by the most-recent activity: delete-request time when set,
+    // otherwise the comment's createdAt. Pushes fresh moderation work to
+    // the top regardless of which queue surfaced it.
+    .orderBy(desc(sql`COALESCE(${comment.deleteRequestedAt}, ${comment.createdAt})`), desc(comment.id))
+    .limit(limit)
+    .offset(offset)
+  return rows.map((row) => ({
+    id: row.id,
+    createdAt: row.createdAt,
+    deleteRequestedAt: row.deleteRequestedAt,
+    isPending: row.isPending,
+    content: row.content,
+    type: row.type,
+    ownerId: row.ownerId,
+    pageSlug: row.pageSlug,
+    pageTitle: row.pageTitle,
+    authorName: row.authorName,
+    authorLink: row.authorLink,
+  }))
+}
+
+export async function countAdminPendingDashboard(): Promise<{ all: number; approval: number; deletion: number }> {
+  // One filtered aggregate beats three round-trips. The two `FILTER`
+  // clauses use the same conventions as `countMyComments` and stay in
+  // lockstep with `adminPendingWhere` above (live rows only, deletion
+  // dominates the union).
+  const rows = await db
+    .select({
+      all: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND (${comment.isPending} = TRUE OR ${comment.deleteRequestedAt} IS NOT NULL))`,
+      approval: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.isPending} = TRUE AND ${comment.deleteRequestedAt} IS NULL)`,
+      deletion: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NULL AND ${comment.deleteRequestedAt} IS NOT NULL)`,
+    })
+    .from(comment)
+  return {
+    all: rows[0]?.all ?? 0,
+    approval: rows[0]?.approval ?? 0,
+    deletion: rows[0]?.deletion ?? 0,
+  }
+}
+
 export async function bulkApprovePendingByUser(userId: bigint): Promise<number> {
   // Returns the number of pending comments that were just approved.
   const updated = await db

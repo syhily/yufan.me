@@ -115,7 +115,7 @@ export function FriendsView() {
     <>
       <AdminListPage>
         <AdminListPage.Header title="友链管理" description={`共 ${state.total} 条。公共页面以随机顺序展示。`}>
-          <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setEditTarget(null)}>

@@ -126,6 +126,7 @@ export const API_ACTIONS = {
     renderMermaid: defineApiAction('api/actions/admin/renderMermaid', 'POST'),
     reindexSearch: defineApiAction('api/actions/admin/reindexSearch', 'POST'),
     approveCommentDeletion: defineApiAction('api/actions/admin/approveCommentDeletion', 'POST'),
+    listPendingDashboard: defineApiAction('api/actions/admin/listPendingDashboard', 'GET'),
     inviteAuthor: defineApiAction('api/actions/admin/inviteAuthor', 'POST'),
     updateUserRole: defineApiAction('api/actions/admin/updateUserRole', 'POST'),
     sendPasswordReset: defineApiAction('api/actions/admin/sendPasswordReset', 'POST'),

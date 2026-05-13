@@ -5,7 +5,7 @@ import { useFetcher, useRevalidator } from 'react-router'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { ClearCacheOutput, GetCacheStatsOutput } from '@/shared/api-types'
 import type { CacheSettings } from '@/shared/blog-config'
-import type { CacheBucketId, ClearCacheTarget } from '@/shared/cache-types'
+import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
 
 import { useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
@@ -155,6 +155,8 @@ export function CacheView({ stats, cache }: CacheViewProps) {
         />
       ))}
 
+      <ReservedBucketsSection reserved={stats.reserved} />
+
       <ConfirmClearDialog
         open={confirmTarget !== null}
         target={confirmTarget}
@@ -174,3 +176,35 @@ export function CacheView({ stats, cache }: CacheViewProps) {
 // Re-export the bucket id type for any consumer that wants to render a
 // custom bucket-aware UI without re-importing from the server module.
 export type { CacheBucketId }
+
+// Read-only display for cache surfaces that the admin must NOT clear
+// from the UI: `session:*` (clearing logs everyone out) and
+// `rate-limit:*` (clearing lets throttled abusers retry immediately).
+// We surface them for visibility only — current key count, prefix,
+// description — so an operator can see them growing without exposing
+// a foot-gun. Renaming / clearing stays administrative-tool territory
+// (vp shells / Redis CLI).
+function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketStats[] }) {
+  return (
+    <SettingsSection
+      title="受保护的缓存（只读）"
+      description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `vp` 或 Redis CLI 进行。"
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        {reserved.map((bucket) => (
+          <div key={bucket.id} className="rounded-md border bg-card p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <h3 className="text-sm font-medium">{bucket.label}</h3>
+              <span className="font-mono text-xs text-muted-foreground">{bucket.prefix}*</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{bucket.description}</p>
+            <p className="mt-3 text-xs">
+              <span className="text-muted-foreground">当前键数：</span>
+              <span className="font-medium">{bucket.keyCount}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+    </SettingsSection>
+  )
+}

@@ -1,14 +1,21 @@
 import type { AdminCacheStatsDto, ClearCacheResultDto, ClearCacheTarget } from '@/shared/cache-types'
 
-import { clearAllBuckets, clearBucket, getBucket, getCacheBuckets, snapshotAllBuckets } from '@/server/cache/buckets'
+import {
+  clearAllBuckets,
+  clearBucket,
+  getBucket,
+  getCacheBuckets,
+  snapshotAllBuckets,
+  snapshotReservedBuckets,
+} from '@/server/cache/buckets'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 
 export type { AdminCacheStatsDto, ClearCacheResultDto, ClearCacheTarget } from '@/shared/cache-types'
 
 export async function getAdminCacheStats(): Promise<AdminCacheStatsDto> {
-  const buckets = await snapshotAllBuckets()
+  const [buckets, reserved] = await Promise.all([snapshotAllBuckets(), snapshotReservedBuckets()])
   const total = buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
-  return { buckets, total, generatedAt: new Date().toISOString() }
+  return { buckets, reserved, total, generatedAt: new Date().toISOString() }
 }
 
 export async function clearAdminCache(target: ClearCacheTarget): Promise<ClearCacheResultDto> {

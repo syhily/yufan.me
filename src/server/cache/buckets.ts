@@ -1,8 +1,9 @@
-import type { CacheBucket, CacheBucketId, CacheBucketStats } from '@/shared/cache-types'
+import type { CacheBucket, CacheBucketId, CacheBucketStats, ReservedCacheBucketStats } from '@/shared/cache-types'
 
 import { redisInstance } from '@/server/cache/storage'
 import { getLogger } from '@/server/logger'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { RESERVED_CACHE_BUCKETS } from '@/shared/cache-types'
 
 const log = getLogger('cache.buckets')
 
@@ -19,6 +20,8 @@ const log = getLogger('cache.buckets')
 //                         immediately, defeating the spam wall.
 // Those two surfaces stay administered through `vp` shells / Redis CLI,
 // and the `cache` settings schema validates against them collisively.
+// They DO surface read-only in the admin cache page via the parallel
+// `RESERVED_CACHE_BUCKETS` registry (see `countReservedBuckets()`).
 //
 // Patterns talk to `redisInstance()` directly so the SCAN MATCH
 // expression matches whatever shape the writers currently emit. Going
@@ -164,6 +167,31 @@ export async function snapshotAllBuckets(): Promise<CacheBucketStats[]> {
       pattern: bucket.pattern,
       keyCount: await countBucket(bucket),
     })),
+  )
+}
+
+/**
+ * SCAN-count the read-only reserved buckets (`session:*`,
+ * `rate-limit:*`). Returned alongside the editable bucket stats so the
+ * admin cache page can surface them for visibility without exposing a
+ * clear button.
+ */
+export async function snapshotReservedBuckets(): Promise<ReservedCacheBucketStats[]> {
+  return Promise.all(
+    RESERVED_CACHE_BUCKETS.map(async (bucket) => {
+      let total = 0
+      for await (const batch of scanKeys(bucket.pattern)) {
+        total += batch.length
+      }
+      return {
+        id: bucket.id,
+        label: bucket.label,
+        description: bucket.description,
+        prefix: bucket.prefix,
+        pattern: bucket.pattern,
+        keyCount: total,
+      }
+    }),
   )
 }
 

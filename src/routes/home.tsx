@@ -23,7 +23,6 @@ import type { Route } from './+types/home'
 interface HomeExtra {
   categoryLinks: Record<string, string>
   featurePosts: import('@/shared/catalog').ListingPostCard[]
-  admin: boolean
   sidebar: SidebarData
 }
 
@@ -89,12 +88,10 @@ export async function loader({
           date: post.date,
           published: post.published,
         })),
-        admin: sidebar.admin,
         sidebar: {
           posts: await sidebarPostsPromise,
           tags: selectSidebarTags(tags),
           recentComments: sidebar.recentComments,
-          pendingComments: sidebar.pendingComments,
         },
       }
     },
@@ -117,7 +114,6 @@ export default function HomeRoute({ loaderData }: Route.ComponentProps) {
       totalPage={totalPage}
       categoryLinks={extra.categoryLinks}
       featurePosts={extra.featurePosts}
-      admin={extra.admin}
       sidebar={extra.sidebar}
       listingNowIso={loaderData.listingNowIso}
     />

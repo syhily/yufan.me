@@ -129,7 +129,7 @@ export function MusicsView() {
           title="音乐管理"
           description={`共 ${state.total} 条。当前仅支持 NetEase；可在右侧浮动播放器试听，可编辑歌名、歌手、专辑、歌词等元数据，删除时同步移除 S3 中的音频与封面对象。`}
         >
-          <Button type="button" variant="outline" onClick={reload} disabled={isListPending}>
+          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setAddDialogOpen(true)}>
