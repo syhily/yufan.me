@@ -6,6 +6,10 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 // in the full mock from `tests/_helpers/redis.ts`.
 const userSets = new Map<string, Set<string>>()
 const metaHashes = new Map<string, Record<string, string>>()
+// Mirror the cookie blob namespace (`session:<sid>`) so the
+// EXISTS-based liveness check in `listSessionsByUser` /
+// `listAllSessions` sees a realistic Redis state.
+const sessionBlobs = new Set<string>()
 
 const redisStub = {
   sadd: vi.fn(async (key: string, value: string) => {
@@ -25,30 +29,46 @@ const redisStub = {
     return metaHashes.get(key) ?? {}
   }),
   pexpireat: vi.fn(async () => 1),
+  set: vi.fn(async (key: string) => {
+    if (key.startsWith('session:')) {
+      sessionBlobs.add(key)
+    }
+    return 'OK'
+  }),
+  exists: vi.fn(async (key: string) => (sessionBlobs.has(key) ? 1 : 0)),
   del: vi.fn(async (key: string) => {
     metaHashes.delete(key)
     userSets.delete(key)
+    sessionBlobs.delete(key)
     return 1
   }),
   srem: vi.fn(async () => 1),
   pipeline: () => {
     const ops: Array<() => Promise<unknown>> = []
+    const results: unknown[] = []
     const builder = {
       del(key: string) {
         ops.push(async () => {
           metaHashes.delete(key)
           userSets.delete(key)
+          sessionBlobs.delete(key)
+          results.push([null, 1])
         })
         return builder
       },
       srem() {
+        ops.push(async () => results.push([null, 1]))
+        return builder
+      },
+      exists(key: string) {
+        ops.push(async () => results.push([null, sessionBlobs.has(key) ? 1 : 0]))
         return builder
       },
       async exec() {
         for (const op of ops) {
           await op()
         }
-        return []
+        return results
       },
     }
     return builder
@@ -68,6 +88,7 @@ const { listSessionsByUser, recordSessionLogin } = await import('@/server/auth/s
 beforeEach(() => {
   userSets.clear()
   metaHashes.clear()
+  sessionBlobs.clear()
   redisStub.sadd.mockClear()
   redisStub.smembers.mockClear()
   redisStub.hset.mockClear()
@@ -81,8 +102,11 @@ describe('listSessionsByUser', () => {
 
     // Seed two sessions for the same user. `recordSessionLogin` writes
     // the meta hash, and we manually mirror what `establishLoginSession`
-    // would also do (SADD into `user_sessions:<id>`).
+    // would also do (SADD into `user_sessions:<id>` AND populate the
+    // cookie blob at `session:<sid>` so the new liveness check
+    // confirms them as active).
     await redisStub.sadd(`user_sessions:${userId}`, 'sid-a')
+    sessionBlobs.add('session:sid-a')
     await recordSessionLogin({
       sid: 'sid-a',
       userId,
@@ -91,6 +115,7 @@ describe('listSessionsByUser', () => {
       loginAt,
     })
     await redisStub.sadd(`user_sessions:${userId}`, 'sid-b')
+    sessionBlobs.add('session:sid-b')
     await recordSessionLogin({
       sid: 'sid-b',
       userId,
@@ -99,8 +124,9 @@ describe('listSessionsByUser', () => {
       loginAt,
     })
 
-    // A session id that exists in the set but whose meta hash has
-    // been evicted: must be filtered out, NOT yield an empty row.
+    // A session id that exists in the set but whose cookie blob has
+    // been evicted: must be filtered out (and lazily cleaned), NOT
+    // yield an empty row. Deliberately no `sessionBlobs.add` here.
     await redisStub.sadd(`user_sessions:${userId}`, 'sid-orphan')
 
     const sessions = await listSessionsByUser(userId)
