@@ -152,8 +152,17 @@ export async function listSessionsByUser(userId: bigint): Promise<SessionMeta[]>
   if (sids.length === 0) {
     return []
   }
+  // Filter empty-string sids defensively — legacy logins (before
+  // `establishLoginSession` forced an early `commitSession`) wrote
+  // `''` into the user-sessions set and a `session_meta:` (empty
+  // key) hash. Excluding them here keeps the orphan row out of the
+  // UI and prevents a revoke click from hitting the bogus key.
+  const realSids = sids.filter((sid) => sid !== '')
+  if (realSids.length === 0) {
+    return []
+  }
   const metas = await Promise.all(
-    sids.map(async (sid) => {
+    realSids.map(async (sid) => {
       const hash = (await redis.hgetall(META_KEY(sid))) as Record<string, string>
       return parseMeta(sid, hash)
     }),

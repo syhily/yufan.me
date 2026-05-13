@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 
 import type { SearchLoaderShape } from '@/shared/settings'
 
+import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
@@ -127,7 +128,7 @@ export function SearchForm({ search }: SearchFormProps) {
     } catch (err) {
       console.error('Reindex failed:', err)
       setReindex({ phase: 'idle', total: 0, processed: 0, failed: 0 })
-      alert(err instanceof Error ? err.message : '索引重建失败')
+      toast.error(err instanceof Error ? err.message : '索引重建失败')
     }
   }
 

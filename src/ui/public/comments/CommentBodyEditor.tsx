@@ -13,7 +13,7 @@ import {
   StrikethroughIcon,
   UnderlineIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { PmDoc } from '@/shared/pt/bridge/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -24,6 +24,17 @@ import { type CommentBody, safeValidateCommentBody } from '@/shared/pt/comment-s
 import { BlockCardNode } from '@/ui/admin/editor/tiptap/BlockCardNode'
 import { MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
 import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
+import { Button } from '@/ui/components/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/components/dialog'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-commands'
 import { EmojiSuggestionExtension } from '@/ui/public/comments/EmojiSuggestion'
@@ -226,103 +237,173 @@ function CommentEditorToolbar({ editor, disabled }: CommentEditorToolbarProps) {
     }),
   })
 
+  // Replaces the legacy `window.prompt` flow. The toolbar seeds the
+  // dialog with the link href under the current selection; the dialog
+  // owns the apply / remove / cancel branches and calls into the
+  // editor on confirm so the toolbar handler stays synchronous.
+  const [linkPromptSeed, setLinkPromptSeed] = useState<string | null>(null)
+
   const promptLink = () => {
     const current = (editor.getAttributes('link').href as string | undefined) ?? ''
-    const next = typeof window === 'undefined' ? null : window.prompt('链接地址（留空可移除）', current)
-    if (next === null) {
-      // Cancelled — leave the selection unchanged.
-      editor.chain().focus().run()
-      return
-    }
-    const trimmed = next.trim()
-    if (trimmed === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
-    }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: trimmed }).run()
+    setLinkPromptSeed(current)
   }
 
   return (
-    <div
-      className={cn(
-        // Hidden by default; revealed when the wrapping div carries
-        // `:focus-within` (the editor, slash menu, or any toolbar
-        // button is focused).
-        'hidden flex-wrap items-center gap-0.5 border-b border-line/60 px-2 py-1',
-        'group-focus-within/comment-editor:flex',
-      )}
-      aria-label="评论格式工具栏"
-    >
-      <ToolButton
-        title="加粗 (Cmd/Ctrl+B)"
-        disabled={disabled}
-        active={state.bold}
-        onClick={() => editor.chain().focus().toggleBold().run()}
+    <>
+      <div
+        className={cn(
+          // Hidden by default; revealed when the wrapping div carries
+          // `:focus-within` (the editor, slash menu, or any toolbar
+          // button is focused).
+          'hidden flex-wrap items-center gap-0.5 border-b border-line/60 px-2 py-1',
+          'group-focus-within/comment-editor:flex',
+        )}
+        aria-label="评论格式工具栏"
       >
-        <BoldIcon />
-      </ToolButton>
-      <ToolButton
-        title="斜体 (Cmd/Ctrl+I)"
-        disabled={disabled}
-        active={state.italic}
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <ItalicIcon />
-      </ToolButton>
-      <ToolButton
-        title="下划线 (Cmd/Ctrl+U)"
-        disabled={disabled}
-        active={state.underline}
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-      >
-        <UnderlineIcon />
-      </ToolButton>
-      <ToolButton
-        title="删除线"
-        disabled={disabled}
-        active={state.strike}
-        onClick={() => editor.chain().focus().toggleStrike().run()}
-      >
-        <StrikethroughIcon />
-      </ToolButton>
-      <ToolButton
-        title="行内代码"
-        disabled={disabled}
-        active={state.code}
-        onClick={() => editor.chain().focus().toggleCode().run()}
-      >
-        <CodeIcon />
-      </ToolButton>
-      <ToolDivider />
-      <ToolButton
-        title="无序列表"
-        disabled={disabled}
-        active={state.bulletList}
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <ListIcon />
-      </ToolButton>
-      <ToolButton
-        title="有序列表"
-        disabled={disabled}
-        active={state.orderedList}
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        <ListOrderedIcon />
-      </ToolButton>
-      <ToolButton
-        title="引用"
-        disabled={disabled}
-        active={state.blockquote}
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-      >
-        <QuoteIcon />
-      </ToolButton>
-      <ToolDivider />
-      <ToolButton title="链接" disabled={disabled} active={state.link} onClick={promptLink}>
-        <LinkIcon />
-      </ToolButton>
-    </div>
+        <ToolButton
+          title="加粗 (Cmd/Ctrl+B)"
+          disabled={disabled}
+          active={state.bold}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <BoldIcon />
+        </ToolButton>
+        <ToolButton
+          title="斜体 (Cmd/Ctrl+I)"
+          disabled={disabled}
+          active={state.italic}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <ItalicIcon />
+        </ToolButton>
+        <ToolButton
+          title="下划线 (Cmd/Ctrl+U)"
+          disabled={disabled}
+          active={state.underline}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
+          <UnderlineIcon />
+        </ToolButton>
+        <ToolButton
+          title="删除线"
+          disabled={disabled}
+          active={state.strike}
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+        >
+          <StrikethroughIcon />
+        </ToolButton>
+        <ToolButton
+          title="行内代码"
+          disabled={disabled}
+          active={state.code}
+          onClick={() => editor.chain().focus().toggleCode().run()}
+        >
+          <CodeIcon />
+        </ToolButton>
+        <ToolDivider />
+        <ToolButton
+          title="无序列表"
+          disabled={disabled}
+          active={state.bulletList}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <ListIcon />
+        </ToolButton>
+        <ToolButton
+          title="有序列表"
+          disabled={disabled}
+          active={state.orderedList}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          <ListOrderedIcon />
+        </ToolButton>
+        <ToolButton
+          title="引用"
+          disabled={disabled}
+          active={state.blockquote}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        >
+          <QuoteIcon />
+        </ToolButton>
+        <ToolDivider />
+        <ToolButton title="链接" disabled={disabled} active={state.link} onClick={promptLink}>
+          <LinkIcon />
+        </ToolButton>
+      </div>
+      <LinkPromptDialog
+        seed={linkPromptSeed}
+        onClose={() => setLinkPromptSeed(null)}
+        onConfirm={(href) => {
+          if (href === null) {
+            editor.chain().focus().extendMarkRange('link').unsetLink().run()
+          } else {
+            editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+          }
+          setLinkPromptSeed(null)
+        }}
+      />
+    </>
+  )
+}
+
+interface LinkPromptDialogProps {
+  /** Seed value when open; `null` keeps the dialog closed. */
+  seed: string | null
+  onClose: () => void
+  /** Confirm callback. `null` means "remove the link"; a string is the new href. */
+  onConfirm: (href: string | null) => void
+}
+
+// Small inline dialog that replaces the native `window.prompt` flow
+// for the link bubble. Mounted next to the toolbar; the toolbar
+// owns the seed value (read from the active selection) and the
+// editor instance is closed over by `onConfirm`, so the dialog
+// itself stays UI-only.
+function LinkPromptDialog({ seed, onClose, onConfirm }: LinkPromptDialogProps) {
+  const [value, setValue] = useState('')
+
+  useEffect(() => {
+    if (seed !== null) {
+      setValue(seed)
+    }
+  }, [seed])
+
+  const open = seed !== null
+
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>编辑链接</DialogTitle>
+          <DialogDescription>填写链接地址，留空可移除当前链接。</DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            const trimmed = value.trim()
+            onConfirm(trimmed === '' ? null : trimmed)
+          }}
+          className="grid gap-4"
+        >
+          <div className="grid gap-2">
+            <Label htmlFor="comment-link-href">链接地址</Label>
+            <Input
+              id="comment-link-href"
+              type="url"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="https://example.com"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              取消
+            </Button>
+            <Button type="submit">确定</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

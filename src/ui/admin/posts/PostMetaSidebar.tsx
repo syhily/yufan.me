@@ -15,7 +15,7 @@ import type { AdminPostDto } from '@/shared/cms-posts'
 import type { AdminImageDto } from '@/shared/images'
 import type { AdminTagDto, ListTagsOutput } from '@/shared/tags'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { toast, useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { POST_META_TOGGLE_FIELDS } from '@/shared/cms-posts'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
@@ -1000,7 +1000,7 @@ function AliasField({ values, onChange, disabled }: AliasFieldProps) {
         return
       }
       if (!SLUG_PATTERN.test(slug)) {
-        alert('别名只能包含小写字母、数字和连字符，且不能以连字符开头或结尾。')
+        toast.error('别名只能包含小写字母、数字和连字符，且不能以连字符开头或结尾。')
         return
       }
       onChange([...values, slug])

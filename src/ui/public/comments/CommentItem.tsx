@@ -1,11 +1,13 @@
 import { XIcon } from 'lucide-react'
 import { use, useEffect, useState } from 'react'
+import { useFetcher, useRevalidator } from 'react-router'
 
+import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/api-types'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { useApiFetcher, useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
@@ -49,6 +51,7 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
   admin: boolean
   myCommentIds: Set<string>
   myCommentExpiresAt: Map<string, number>
+  currentUserId: string | null
   activeReplyToId: number
   replyForm: React.ReactNode
   onReply: (rid: number) => void
@@ -65,6 +68,7 @@ function useCommentsLeafContext(propAdmin: boolean | undefined): {
     admin: propAdmin === true,
     myCommentIds: new Set(),
     myCommentExpiresAt: new Map(),
+    currentUserId: null,
     activeReplyToId: 0,
     replyForm: null,
     onReply: noop,
@@ -86,6 +90,7 @@ function adapt(ctx: CommentsContextValue, _propAdmin: boolean | undefined) {
     admin: ctx.admin,
     myCommentIds: ctx.myCommentIds,
     myCommentExpiresAt: ctx.myCommentExpiresAt,
+    currentUserId: ctx.currentUserId,
     activeReplyToId: ctx.activeReplyToId,
     replyForm: ctx.replyForm,
     onReply: ctx.onReply,
@@ -225,9 +230,18 @@ function commentContentClass(depth: number): string {
 
 function CommentLi({ comment, depth, pending, admin: propAdmin, children }: CommentLiProps) {
   const authorHref = safeHref(comment.link)
-  const [editing, setEditing] = useState(false)
+  // `editing` is a small state machine — only one kind of editor can be
+  // open at a time. `admin` opens the admin/legacy-token-backed
+  // `<CommentEditArea>` (which round-trips through `comment.getRaw` /
+  // `comment.edit`); `own` opens the visitor-scoped `<OwnEditArea>`
+  // (which posts to `comment.updateOwn` with the body the SSR already
+  // shipped, no extra fetch). The footer picks the discriminator based
+  // on which button the operator clicks.
+  const [editing, setEditing] = useState<'admin' | 'own' | false>(false)
   const leaf = useCommentsLeafContext(propAdmin)
   const isMyComment = leaf.myCommentIds.has(asKey(comment.id))
+  const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
+  const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
   const isPending = pending ?? comment.isPending ?? false
   return (
     <li
@@ -293,6 +307,11 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               </button>
             </div>
           )}
+          {isOwnedByCurrentUser && hasPendingDelete && (
+            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
+              <span className="flex-1">你已申请删除这条评论，等待管理员处理。</span>
+            </div>
+          )}
           {isPending && !isMyComment && (
             <div className={commentContentClass(depth)}>
               <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
@@ -306,14 +325,22 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
               <PortableTextBody body={comment.body} />
             </div>
           )}
-          {editing && (
+          {editing === 'admin' && (
             <CommentEditArea
               commentId={comment.id}
               onCancel={() => setEditing(false)}
               onSaved={() => setEditing(false)}
             />
           )}
-          <CommentFooter comment={comment} admin={propAdmin} onEdit={() => setEditing(true)} />
+          {editing === 'own' && (
+            <OwnEditArea comment={comment} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />
+          )}
+          <CommentFooter
+            comment={comment}
+            admin={propAdmin}
+            onEditAdmin={() => setEditing('admin')}
+            onEditOwn={() => setEditing('own')}
+          />
         </div>
       </article>
       {children}
@@ -328,12 +355,16 @@ function asKey(value: bigint | string | number): string {
 interface CommentFooterProps {
   comment: CommentItemType
   admin: boolean | undefined
-  onEdit: () => void
+  /** Open the admin / legacy-token edit area (round-trips through `comment.edit`). */
+  onEditAdmin: () => void
+  /** Open the visitor self-edit area (posts to `comment.updateOwn`). */
+  onEditOwn: () => void
 }
 
-function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps) {
+function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: CommentFooterProps) {
   const siteIdentity = useSiteIdentity()
   const leaf = useCommentsLeafContext(propAdmin)
+  const revalidator = useRevalidator()
   const approve = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.approve, {
     onSuccess: () => leaf.onApproved(comment.id),
   })
@@ -341,9 +372,32 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
     onSuccess: () => leaf.onDeleted(comment.id),
   })
 
+  // Visitor-scoped delete-request toggles. Both endpoints are POST + JSON
+  // and take a plain `{ commentId }` payload, so `useApiFetcher` works
+  // directly — no query-string round trip like `comment.updateOwn`.
+  const requestDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(
+    API_ACTIONS.comment.requestDeleteOwn,
+    {
+      onSuccess: () => void revalidator.revalidate(),
+    },
+  )
+  const cancelDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(API_ACTIONS.comment.cancelDeleteOwn, {
+    onSuccess: () => void revalidator.revalidate(),
+  })
+
+  const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
+  const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
+  // Admin already has the admin-edit affordance below; don't duplicate
+  // the button for an admin who happens to also own the row.
+  const showOwnAffordances = isOwnedByCurrentUser && !leaf.admin
+  const ownEditDisabled = hasPendingDelete || requestDelete.isPending || cancelDelete.isPending
+  const deleteToggleDisabled = requestDelete.isPending || cancelDelete.isPending
+
   const handleReply = () => leaf.onReply(Number(comment.id))
   const handleApprove = () => approve.submit({ rid: String(comment.id) })
   const handleDelete = () => remove.submit({ rid: String(comment.id) })
+  const handleRequestDelete = () => requestDelete.submit({ commentId: String(comment.id) })
+  const handleCancelDelete = () => cancelDelete.submit({ commentId: String(comment.id) })
 
   return (
     <div className="flex flex-1 items-center gap-2 text-xs text-ink-4">
@@ -369,11 +423,47 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
           className={cn(commentFooterButtonClass, 'hover:text-alert')}
           data-rid={comment.id}
           onMouseDown={(event) => event.preventDefault()}
-          onClick={onEdit}
+          onClick={onEditAdmin}
         >
           编辑
         </button>
       )}
+      {showOwnAffordances && !hasPendingDelete && (
+        <button
+          type="button"
+          className={cn(commentFooterButtonClass, 'hover:text-alert')}
+          data-rid={comment.id}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onEditOwn}
+          disabled={ownEditDisabled}
+        >
+          修改
+        </button>
+      )}
+      {showOwnAffordances &&
+        (hasPendingDelete ? (
+          <button
+            type="button"
+            className={cn(commentFooterButtonClass, 'hover:text-brand')}
+            data-rid={comment.id}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={handleCancelDelete}
+            disabled={deleteToggleDisabled}
+          >
+            撤回删除
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={cn(commentFooterButtonClass, 'hover:text-alert')}
+            data-rid={comment.id}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={handleRequestDelete}
+            disabled={deleteToggleDisabled}
+          >
+            申请删除
+          </button>
+        ))}
       {leaf.admin && (
         <>
           {comment.isPending && (
@@ -497,6 +587,93 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
           {saving ? '保存中...' : '保存'}
         </Button>
         <Button variant="light" onMouseDown={(event) => event.preventDefault()} onClick={onCancel} disabled={saving}>
+          取消
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// Visitor self-edit area. Differs from `<CommentEditArea>`:
+// - posts to `comment.updateOwn` (visitor-allowed) instead of `comment.edit` (admin-only)
+// - seeds the editor with `comment.body` directly — no extra `comment.getRaw`
+//   round trip, mirroring `<MyEditCommentDialog>` in the admin panel
+// - server enforces the 30-min auto-approve vs re-pend rule and may flip
+//   the row back to pending; we let `useRevalidator()` re-fetch the loader
+//   so the parent tree re-renders with the new state instead of guessing
+//   client-side
+const OWN_UPDATE_OWN = API_ACTIONS.comment.updateOwn
+
+interface OwnEditAreaProps {
+  comment: CommentItemType
+  onCancel: () => void
+  onSaved: () => void
+}
+
+function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
+  const revalidator = useRevalidator()
+  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  // `comment.body` is the full `PortableTextBody` dialect; the editor
+  // expects the narrower `CommentBody`. Comment bodies are validated
+  // against `commentBodySchema` at insert/update time, so the runtime
+  // invariant holds (see the parallel cast in `MyEditCommentDialog`).
+  const seed = comment.body as unknown as CommentBody
+  const [body, setBody] = useState<CommentBody>(seed)
+  const [bodyKey, setBodyKey] = useState(0)
+
+  useFetcherResult(fetcher, {
+    action: OWN_UPDATE_OWN,
+    onSuccess: () => {
+      void revalidator.revalidate()
+      onSaved()
+    },
+  })
+
+  const submitting = fetcher.state !== 'idle'
+
+  const handleSave = () => {
+    if (isCommentBodyBlank(body)) {
+      return
+    }
+    // `updateOwn` reads `commentId` off the query string; the JSON body
+    // carries the PortableText payload directly. Same shape as
+    // `MyEditCommentDialog` so the server contract stays single-call-site.
+    void fetcher.submit(body as never, {
+      method: OWN_UPDATE_OWN.method,
+      encType: 'application/json',
+      action: `${OWN_UPDATE_OWN.path}?commentId=${encodeURIComponent(String(comment.id))}`,
+    })
+  }
+
+  return (
+    <div className="mt-2 block w-full">
+      <CommentBodyEditor
+        initialBody={seed}
+        bodyKey={`own-edit-${comment.id}-${bodyKey}`}
+        onBodyChange={(next) => {
+          setBody(next)
+          // Bump the key only on the first user edit so the editor
+          // doesn't tear down mid-keystroke; this keeps the cancel/reopen
+          // cycle clean without flicker.
+          setBodyKey((k) => (k === 0 ? k + 1 : k))
+        }}
+        disabled={submitting}
+      />
+      <div className="mt-2 flex justify-end gap-2">
+        <Button
+          variant="default"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={handleSave}
+          disabled={submitting}
+        >
+          {submitting ? '保存中...' : '保存'}
+        </Button>
+        <Button
+          variant="light"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onCancel}
+          disabled={submitting}
+        >
           取消
         </Button>
       </div>

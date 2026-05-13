@@ -44,6 +44,16 @@ export interface CommentsContextValue {
   myCommentIds: Set<string>
   /** Per-comment token expiration timestamp (ms) for editable-hint rendering. */
   myCommentExpiresAt: Map<string, number>
+  /**
+   * The logged-in viewer's user id (stringified `user.id`) when a
+   * session is mounted, or `null` for anonymous renders. Drives the
+   * inline self-edit / 申请删除 affordances on rows authored by the
+   * current user. Separate from the legacy anonymous-token mechanism
+   * (`myCommentIds`) — both can be active at once and they target
+   * different API surfaces (visitor-scoped `comment.updateOwn` vs.
+   * legacy token-scoped `comment.edit`).
+   */
+  currentUserId: string | null
   /** Actions surfaced to leaf components (no render-prop drilling). */
   onReply: (rid: number) => void
   onCancelReply: () => void

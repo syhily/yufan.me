@@ -3,6 +3,7 @@ import type { User } from '@/server/db/types'
 import { type Role } from '@/server/auth/rbac'
 import {
   type BlogSession,
+  commitSession,
   getRequestSession,
   revokeAllSessionsOfUser,
   type SessionUser,
@@ -61,6 +62,17 @@ export async function establishLoginSession(
     website: dbUser.link,
     role: dbUser.role,
   })
+  // Force the session id to materialise before any Redis bookkeeping
+  // reads `session.id`. For a fresh login the cookie carries no sid,
+  // so React Router's `createData` only runs during `commitSession` —
+  // which the caller invokes AFTER us. Without this early commit our
+  // `sadd('user_sessions:…', session.id)` would push an empty string
+  // into the user-sessions index and the parallel `session_meta:` HSET
+  // would key off the empty sid. The caller's subsequent
+  // `commitSession` then becomes a cheap update on the now-materialised
+  // id, so we don't lose the Set-Cookie path that mints the cookie
+  // header.
+  await commitSession(session)
   const userAgent = request.headers.get('User-Agent')
   await updateLastLogin(dbUser.id, clientAddress, userAgent)
   await redisInstance().sadd(`user_sessions:${dbUser.id}`, session.id)
@@ -165,6 +177,17 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
   // promise and catches errors.
   if (user) {
     recordSessionActivity(session.id)
+    // Self-healing migration: sessions minted before
+    // `establishLoginSession` forced an early `commitSession` had
+    // empty-string sids in the `user_sessions` set + empty-keyed
+    // `session_meta:` hash. On every authenticated request, ensure
+    // the REAL sid is registered. Idempotent `sadd` is a no-op when
+    // the member already exists; backfilling the meta hash is left to
+    // a subsequent login, since we can't reconstruct `loginAt` from
+    // here.
+    void redisInstance()
+      .sadd(`user_sessions:${user.id}`, session.id)
+      .catch(() => {})
   }
 
   return { session, user, role: user?.role ?? null }

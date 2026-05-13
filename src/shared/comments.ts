@@ -13,6 +13,18 @@ export interface CommentAndUser {
   updatedAt: Date
   deleteAt: Date | null
   /**
+   * Soft "delete-request" marker. The visitor clicked "申请删除" but the
+   * admin has not yet acted on it. When set, the comment is still
+   * visible (so the author can review their own pending action and
+   * optionally 撤回删除), but the public comment row gains a quiet
+   * warning banner and the inline edit affordance is hidden.
+   *
+   * Optional on the shared shape so existing fixtures (snapshot tests,
+   * isomorphic builders) don't need to be regenerated; the SQL
+   * projection populates it on every server query.
+   */
+  deleteRequestedAt?: Date | string | null
+  /**
    * Canonical PortableText body. Rendered by `<PortableTextBody>` on
    * the public site. The DB also retains a markdown projection of this
    * field under `comment.content`, but that's server-only and is NOT

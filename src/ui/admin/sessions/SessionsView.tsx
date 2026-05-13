@@ -1,4 +1,6 @@
-import { LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
+import type { DateRange } from 'react-day-picker'
+
+import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
@@ -16,10 +18,11 @@ import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
+import { Calendar } from '@/ui/components/calendar'
 import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
-import { Input } from '@/ui/components/input'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
@@ -32,6 +35,36 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
   { value: 'loginTime', label: '登录时间' },
   { value: 'userName', label: '用户名' },
 ]
+
+function parseRange(from: string, to: string): DateRange | undefined {
+  const start = from ? new Date(`${from}T00:00:00`) : undefined
+  const end = to ? new Date(`${to}T00:00:00`) : undefined
+  if (!start && !end) {
+    return undefined
+  }
+  return { from: start, to: end }
+}
+
+function toIsoDate(date: Date): string {
+  // YYYY-MM-DD in local time (the existing URL convention).
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function formatRangeLabel(from: string, to: string): string {
+  if (from && to) {
+    return `${from} → ${to}`
+  }
+  if (from) {
+    return `${from} 起`
+  }
+  if (to) {
+    return `截至 ${to}`
+  }
+  return ''
+}
 
 interface Filters {
   q: string
@@ -155,15 +188,30 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
                 </InputGroup>
               </AdminListPage.FilterField>
             </div>
-            <AdminListPage.FilterField label="登录时间从">
-              <Input
-                type="date"
-                value={filters.from}
-                onChange={(e) => updateParams({ from: e.target.value || null })}
-              />
-            </AdminListPage.FilterField>
-            <AdminListPage.FilterField label="登录时间至">
-              <Input type="date" value={filters.to} onChange={(e) => updateParams({ to: e.target.value || null })} />
+            <AdminListPage.FilterField label="登录时间范围">
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button type="button" variant="outline" className="w-full justify-start font-normal">
+                      <CalendarIcon data-icon="inline-start" />
+                      {filters.from || filters.to ? formatRangeLabel(filters.from, filters.to) : '选择时间范围'}
+                    </Button>
+                  }
+                />
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="range"
+                    selected={parseRange(filters.from, filters.to)}
+                    onSelect={(range) => {
+                      updateParams({
+                        from: range?.from ? toIsoDate(range.from) : null,
+                        to: range?.to ? toIsoDate(range.to) : null,
+                      })
+                    }}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
             </AdminListPage.FilterField>
             <AdminListPage.FilterField label="排序">
               <Select

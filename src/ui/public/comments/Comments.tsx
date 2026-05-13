@@ -331,6 +331,7 @@ function CommentsRoot({
     activeReplyToId,
     myCommentIds,
     myCommentExpiresAt,
+    currentUserId: user?.id != null ? String(user.id) : null,
     onReply,
     onCancelReply,
     onEdited,
