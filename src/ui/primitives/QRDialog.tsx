@@ -8,8 +8,8 @@ import type { ReactNode } from 'react'
 
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
+import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { publicButtonVariants } from '@/ui/primitives/btn'
-import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { Popup } from '@/ui/primitives/Popup'
 
 export interface QRDialogProps {

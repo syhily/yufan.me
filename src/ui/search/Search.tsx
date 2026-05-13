@@ -6,11 +6,11 @@ import { flushSync } from 'react-dom'
 import { Form } from 'react-router'
 
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
+import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { useSidebarSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { publicButtonVariants } from '@/ui/primitives/btn'
 import { formControlVariants } from '@/ui/primitives/formControl'
-import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { Popup } from '@/ui/primitives/Popup'
 
 // Sidebar search: real GET form first, React Router navigation second.

@@ -6,9 +6,9 @@ import type { LatestComment } from '@/shared/comments'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
+import { Tooltip } from '@/ui/components/tooltip'
 import { useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { Tooltip } from '@/ui/primitives/Tooltip'
 import { SearchBar } from '@/ui/search/Search'
 
 // Sidebar shell. Replaces the legacy `.sidebar-inner` (`padding:

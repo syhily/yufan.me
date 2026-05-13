@@ -45,12 +45,16 @@ export function RawImage({
     sizes !== undefined && sizes !== ''
       ? getImageSrcset({ src, width, height, quality, assetHost: assetHost ?? '', urlTemplate })
       : undefined
+  const brightnessFilter: React.CSSProperties = {
+    filter: 'brightness(var(--image-brightness))',
+    transition: 'filter 0.3s ease',
+  }
   const mergedStyle: React.CSSProperties =
     thumbhashStyle === undefined
-      ? { ...style }
+      ? { ...brightnessFilter, ...style }
       : style === undefined
-        ? { ...thumbhashStyle }
-        : { ...thumbhashStyle, ...style }
+        ? { ...brightnessFilter, ...thumbhashStyle }
+        : { ...brightnessFilter, ...thumbhashStyle, ...style }
 
   return (
     <img

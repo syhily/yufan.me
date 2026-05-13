@@ -50,7 +50,7 @@ const tocToggleClass = cn(
   // the disc up front avoids that "first frame jump" on touch devices.
   'transform-gpu',
   // Box: rounded disc with a subtle surface tint.
-  'rounded-full border border-line bg-white/90',
+  'rounded-full border border-line bg-canvas/90',
   // Typography & colour.
   'text-toc-toggle leading-none text-ink-secondary shadow-toc-toggle',
   // Transition: include the CSS `translate` / `scale` / `rotate`

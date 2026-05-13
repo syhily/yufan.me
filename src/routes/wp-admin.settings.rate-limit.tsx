@@ -2,14 +2,10 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
-import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { settingsMeta } from '@/server/route-helpers/settings-meta'
 import { RateLimitForm } from '@/ui/admin/settings/RateLimitForm'
 
-import type { Route } from './+types/wp-admin.settings.rate-limit'
-
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '流控设置' }, bundleFromMatches(matches))
-}
+export const meta = settingsMeta('流控设置')
 
 export default function WpAdminSettingsRateLimitRoute() {
   const { bundle } = useOutletContext<SettingsOutletContext>()

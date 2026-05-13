@@ -1,8 +1,9 @@
-import { isRouteErrorResponse, Link, Outlet, useRouteError } from 'react-router'
+import { Link, Outlet } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
+import { AdminErrorFallback } from '@/ui/admin/AdminErrorFallback'
 import { useSiteIdentityOptional } from '@/ui/lib/blog-config-context'
 // The login / install screen is admin chrome — same shadcn / Tailwind v4
 // cascade the wp-admin SPA uses, so import `tailwind.css` directly. This
@@ -16,26 +17,7 @@ import '@/assets/styles/admin.css'
 // so the admin / login stack can own its own chrome.
 export const handle: RouteHandle = { layout: 'admin' }
 
-export function ErrorBoundary() {
-  const error = useRouteError()
-  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '出错了'
-  const message = isRouteErrorResponse(error)
-    ? typeof error.data === 'string'
-      ? error.data
-      : error.statusText
-    : error instanceof Error
-      ? error.message
-      : '未知错误'
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
-      <div className="max-w-md space-y-2 text-center">
-        <h1 className="text-lg font-semibold text-red-500">{title}</h1>
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </div>
-    </div>
-  )
-}
+export { AdminErrorFallback as ErrorBoundary }
 
 export default function AdminLayoutRoute() {
   // Defensive cleanup mirroring the wp-admin SPA: when the user reaches

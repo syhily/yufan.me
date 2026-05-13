@@ -135,7 +135,7 @@ export function NavigationSplash() {
       aria-label="页面加载中"
       className={cn(
         'fixed inset-0 flex items-center justify-center',
-        'bg-white',
+        'bg-canvas',
         'z-(--z-nav-splash)',
         'transition-opacity ease-out',
         'motion-reduce:transition-none',
@@ -149,7 +149,7 @@ export function NavigationSplash() {
         <img src="/logo-large.svg" alt="" className="h-full w-full select-none" draggable={false} />
         <div
           aria-hidden
-          className={cn('absolute inset-0 bg-white', 'transition-opacity ease-out', 'motion-reduce:transition-none')}
+          className={cn('absolute inset-0 bg-canvas', 'transition-opacity ease-out', 'motion-reduce:transition-none')}
           style={{
             opacity: veil,
             transitionDuration: `${veilMs}ms`,

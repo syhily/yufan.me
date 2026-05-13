@@ -2,14 +2,10 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
-import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { settingsMeta } from '@/server/route-helpers/settings-meta'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 
-import type { Route } from './+types/wp-admin.settings.socials'
-
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '社交链接' }, bundleFromMatches(matches))
-}
+export const meta = settingsMeta('社交链接')
 
 export default function WpAdminSettingsSocialsRoute() {
   const { bundle } = useOutletContext<SettingsOutletContext>()

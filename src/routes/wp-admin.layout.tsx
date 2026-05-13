@@ -1,9 +1,10 @@
-import { data, isRouteErrorResponse, Outlet, redirect, useLocation, useRouteError } from 'react-router'
+import { data, Outlet, redirect, useLocation } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext, reuseOrIssueCsrfToken } from '@/server/session'
+import { AdminErrorFallback } from '@/ui/admin/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
 import type { Route } from './+types/wp-admin.layout'
@@ -38,26 +39,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   )
 }
 
-export function ErrorBoundary() {
-  const error = useRouteError()
-  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '出错了'
-  const message = isRouteErrorResponse(error)
-    ? typeof error.data === 'string'
-      ? error.data
-      : error.statusText
-    : error instanceof Error
-      ? error.message
-      : '未知错误'
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
-      <div className="max-w-md space-y-2 text-center">
-        <h1 className="text-lg font-semibold text-red-500">{title}</h1>
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </div>
-    </div>
-  )
-}
+export { AdminErrorFallback as ErrorBoundary }
 
 export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps) {
   useDetachPublicCss()

@@ -1140,7 +1140,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(search).not.toMatch(/'global-search-popup'/)
   })
 
-  it('routes icon-button content through @/ui/primitives/IconButtonContent', () => {
+  it('routes icon-button content through @/ui/components/icon-button-content', () => {
     // P4 (Stage 11) extracted the repeated `<span className="absolute
     // top-0 flex size-full items-center justify-center">…</span>`
     // wrapper into `<IconButtonContent>`. The wrapper is the
@@ -1152,13 +1152,13 @@ describe('contract: module and bundle boundaries', () => {
     //   1. The component file exists and exports `IconButtonContent`.
     //   2. No other file in `src/` re-introduces the literal centring
     //      chain — every consumer must go through the component.
-    expect(existsSync('src/ui/primitives/IconButtonContent.tsx')).toBe(true)
-    const component = readFileSync('src/ui/primitives/IconButtonContent.tsx', 'utf8')
+    expect(existsSync('src/ui/components/icon-button-content.tsx')).toBe(true)
+    const component = readFileSync('src/ui/components/icon-button-content.tsx', 'utf8')
     expect(component).toMatch(/export\s+function\s+IconButtonContent\b/)
     expect(component).toMatch(/absolute top-0 flex size-full items-center justify-center/)
 
     const offenders = files('src', '-g', '*.ts', '-g', '*.tsx')
-      .filter((file) => file !== 'src/ui/primitives/IconButtonContent.tsx')
+      .filter((file) => file !== 'src/ui/components/icon-button-content.tsx')
       .filter((file) => {
         const source = readFileSync(file, 'utf8')
         return /absolute top-0 flex size-full items-center justify-center/.test(source)

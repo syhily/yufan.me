@@ -2,14 +2,10 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
-import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { settingsMeta } from '@/server/route-helpers/settings-meta'
 import { GeneralForm } from '@/ui/admin/settings/GeneralForm'
 
-import type { Route } from './+types/wp-admin.settings.general'
-
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '基本信息' }, bundleFromMatches(matches))
-}
+export const meta = settingsMeta('基本信息')
 
 export default function WpAdminSettingsGeneralRoute() {
   const { bundle, timeZones } = useOutletContext<SettingsOutletContext>()

@@ -1,6 +1,9 @@
 @import 'tailwindcss' source(none);
 @plugin '@tailwindcss/typography';
 
+/* Activate class-based dark mode variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../..';
 
 /* Project semantic tokens light */
@@ -57,6 +60,7 @@
   --z-modal: 1050;
   --z-nav-splash: 1100;
   --scrim: rgba(8, 15, 25, 0.3);
+  --image-brightness: 1;
   --skeleton-start: rgba(0, 0, 0, 0.04);
   --skeleton-end: rgba(0, 0, 0, 0.08);
   text-autospace: normal;
@@ -104,6 +108,69 @@
   --sidebar-accent-foreground: var(--ink-strong);
   --sidebar-border: var(--border-soft);
   --sidebar-ring: var(--brand);
+}
+
+.dark {
+  /* Ink — light text on dark canvas */
+  --ink-strong: #e8e9ea;
+  --ink-body: #c8ccd6;
+  --ink-secondary: #8b92a5;
+  --ink-muted: #5b6378;
+  --ink-overlay: #2a3142;
+
+  /* Surfaces — deep navy backgrounds */
+  --canvas: #0f172a;
+  --surface: #1a2236;
+  --surface-dim: #1e263c;
+  --surface-warn: #3a2810;
+  --surface-body: #0f172a;
+  --surface-soft: #1c2438;
+
+  /* Lines — darker borders on dark surfaces */
+  --line: #1e293b;
+  --line-muted: #334155;
+  --line-widget: #2d3a4a;
+
+  /* Code block token inversion */
+  --bg-shiki-light: #1a1f2e;
+  --fg-inline-code-on-shiki-bg: #c8ccd6;
+  --border-inline-code-on-shiki-bg: color-mix(in oklab, var(--bg-shiki-light) 68%, #444 32%);
+
+  /* Dim images so they don't glare against dark backgrounds */
+  --image-brightness: 0.85;
+
+  /* Skeleton/shimmer inversion */
+  --skeleton-start: rgba(255, 255, 255, 0.04);
+  --skeleton-end: rgba(255, 255, 255, 0.08);
+
+  /* Scrim — more opaque on dark */
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* Shadows — more visible on dark backgrounds */
+  --shadow-card: 0 0 30px 0 rgb(0 0 0 / 30%);
+  --shadow-tooltip: 0 8px 28px rgb(0 0 0 / 40%);
+  --shadow-toc-toggle: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+  /* Popup close hover */
+  --color-popup-close-hover: #2a3142;
+
+  /* Shiki fallback when inline style doesn't set --shiki-light */
+  --shiki-light: var(--ink-body);
+}
+
+/* Post headings use --surface-secondary (navy, unchanged in dark).
+   Override to a light ink colour so headings remain readable. */
+.dark
+  .post-content.prose-blog.prose
+  :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  color: var(--ink-strong);
+}
+
+/* Shiki inlines style="background-color:..." on <pre>, which beats
+   CSS specificity. !important is the only path until dual-theme Shiki
+   rendering lands. */
+.dark pre.shiki {
+  background-color: var(--bg-shiki-light) !important;
 }
 
 /* Tailwind theme bridge shadcn */
@@ -531,7 +598,7 @@ body {
     :where(pre) {
       position: relative;
       color: inherit;
-      background-color: rgb(253, 246, 227);
+      background-color: var(--bg-shiki-light);
       padding: 1rem 1.25rem;
       margin-top: 0 !important;
       margin-bottom: 1rem !important;
@@ -636,7 +703,7 @@ body {
       font-size: 0.875rem;
       line-height: 1.7;
       color: inherit;
-      background-color: rgb(253, 246, 227);
+      background-color: var(--bg-shiki-light);
       padding: 0.875rem 1rem;
       margin: 0.75rem 0;
       border-radius: var(--radius-sm);

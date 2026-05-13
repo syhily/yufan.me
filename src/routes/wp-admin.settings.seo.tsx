@@ -2,14 +2,10 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
-import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { settingsMeta } from '@/server/route-helpers/settings-meta'
 import { SeoForm } from '@/ui/admin/settings/SeoForm'
 
-import type { Route } from './+types/wp-admin.settings.seo'
-
-export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: 'SEO 与目录' }, bundleFromMatches(matches))
-}
+export const meta = settingsMeta('SEO 与目录')
 
 export default function WpAdminSettingsSeoRoute() {
   const { bundle } = useOutletContext<SettingsOutletContext>()

@@ -1,7 +1,7 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { lazy, Suspense } from 'react'
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { installGateMiddleware } from '@/server/middleware/install-gate'
@@ -10,6 +10,7 @@ import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
+import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
 import { ErrorView } from '@/ui/post/ErrorView'
 import { NavigationSplash } from '@/ui/primitives/NavigationSplash'
 
@@ -77,6 +78,12 @@ export function links() {
 export function loader({ request, context }: Route.LoaderArgs) {
   const { admin } = getRouteRequestContext({ request, context })
 
+  // Read the theme cookie so the SSR <html> tag carries the correct
+  // class before the client bundle loads — no inline scripts needed.
+  const cookie = request.headers.get('Cookie') ?? ''
+  const themeMatch = cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`))
+  const theme = themeMatch?.[1] === 'dark' ? ('dark' as const) : ('light' as const)
+
   // The DB-backed blog config is serialised once per top-level request so
   // every UI component can read the live snapshot through the
   // per-section accessors. All fields (including asset / locale slices) come
@@ -92,7 +99,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
   // returns `null` when serving the install split-screen itself.
   const blogSettings = getBlogSettingsBundleSync()
 
-  return { admin, blogSettings }
+  return { admin, blogSettings, theme }
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
@@ -115,11 +122,15 @@ export function shouldRevalidate({ formAction, defaultShouldRevalidate }: Should
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const rootData = useRouteLoaderData<{ theme?: 'dark' | 'light' }>('root')
+  const theme = rootData?.theme ?? 'light'
+
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" className={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="color-scheme" content={theme === 'dark' ? 'dark' : 'light'} />
         <Meta />
         <Links />
       </head>
@@ -156,10 +167,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // components reach for through `useSiteIdentity()` /
   // `useFooterSettings()` / etc.
   return (
-    <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-      <NavigationSplash />
-      <Outlet />
-    </BlogSettingsProvider>
+    <ThemeProvider>
+      <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+        <NavigationSplash />
+        <Outlet />
+      </BlogSettingsProvider>
+    </ThemeProvider>
   )
 }
 
@@ -189,16 +202,18 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   // the user at least sees what went wrong instead of a blank page from
   // a strict per-section accessor throw inside the chrome.
   return (
-    <BlogSettingsProvider value={blogSettings ?? undefined}>
-      <Suspense fallback={null}>
-        {blogSettings ? (
-          <PublicChromeLazy admin={loaderData?.admin ?? false} pathname="/" search="">
-            {body}
-          </PublicChromeLazy>
-        ) : (
-          body
-        )}
-      </Suspense>
-    </BlogSettingsProvider>
+    <ThemeProvider>
+      <BlogSettingsProvider value={blogSettings ?? undefined}>
+        <Suspense fallback={null}>
+          {blogSettings ? (
+            <PublicChromeLazy admin={loaderData?.admin ?? false} pathname="/" search="">
+              {body}
+            </PublicChromeLazy>
+          ) : (
+            body
+          )}
+        </Suspense>
+      </BlogSettingsProvider>
+    </ThemeProvider>
   )
 }

@@ -1,9 +1,9 @@
 import { ArrowUpIcon } from 'lucide-react'
 
 import { useShowOnScroll } from '@/client/hooks/use-show-on-scroll'
+import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { cn } from '@/ui/lib/cn'
 import { publicButtonVariants } from '@/ui/primitives/btn'
-import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 
 // Scroll-to-top button for the public site. Becomes visible only once
 // the reader has moved past the initial viewport. The twin

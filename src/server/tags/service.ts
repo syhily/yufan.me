@@ -2,7 +2,6 @@ import type { TagRow } from '@/server/db/types'
 import type { AdminTagDto } from '@/shared/tags'
 
 import { invalidateCatalog } from '@/server/catalog/invalidate'
-import { formatBlockMessage } from '@/server/categories/service'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -16,9 +15,12 @@ import {
 } from '@/server/db/query/tag'
 import { listPostsByTag } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
-import { derivedTagSlug } from '@/server/tags/slug'
-
-export { derivedTagSlug }
+import {
+  deleteAdminTaxonomy,
+  ensureUniqueOnCreateTaxonomy,
+  ensureUniqueOnUpdateTaxonomy,
+  resolveSlugForTaxonomy,
+} from '@/server/taxonomies/service'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from the live `ContentCatalog` (mirrors
@@ -74,10 +76,10 @@ export interface UpsertTagInputs {
 }
 
 export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDto> {
-  const slug = (input.slug?.trim() ?? '') !== '' ? input.slug!.trim() : derivedTagSlug(input.name)
+  const slug = resolveSlugForTaxonomy(input.slug, input.name)
 
   if (input.id === undefined) {
-    await ensureUniqueOnCreate(input.name, slug)
+    await ensureUniqueOnCreateTaxonomy(findTagByName, findTagBySlug, input.name, slug, '标签')
     const row = await insertTag({ name: input.name, slug })
     invalidateCatalog('taxonomy')
     const countOf = await tagPostCounter()
@@ -88,7 +90,16 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
   if (existing === null) {
     throw new ActionFailure(404, '标签不存在')
   }
-  await ensureUniqueOnUpdate(input.id, input.name, existing.name, slug, existing.slug)
+  await ensureUniqueOnUpdateTaxonomy(
+    findTagByName,
+    findTagBySlug,
+    input.id,
+    input.name,
+    existing.name,
+    slug,
+    existing.slug,
+    '标签',
+  )
   const updated = await updateTag(input.id, { name: input.name, slug })
   if (updated === null) {
     throw new ActionFailure(404, '标签不存在')
@@ -102,58 +113,9 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
 // when any post (visible/hidden/scheduled) still lists the tag in its
 // frontmatter `tags: [...]`.
 export async function deleteAdminTag(id: bigint): Promise<boolean> {
-  const existing = await findTagById(id)
-  if (existing === null) {
-    return false
-  }
-
-  const referencing = await listPostsByTag(existing.name, { includeHidden: true, includeScheduled: true })
-  if (referencing.length > 0) {
-    throw new ActionFailure(
-      409,
-      formatBlockMessage(
-        '标签',
-        existing.name,
-        referencing.map((post) => post.title),
-      ),
-    )
-  }
-
-  const removed = await deleteTagRow(id)
-  if (removed) {
-    invalidateCatalog('taxonomy')
-  }
-  return removed
-}
-
-async function ensureUniqueOnCreate(name: string, slug: string): Promise<void> {
-  const dupName = await findTagByName(name)
-  if (dupName !== null) {
-    throw new ActionFailure(409, `已存在同名标签「${name}」`, [{ message: '名称已被占用', path: ['name'] }])
-  }
-  const dupSlug = await findTagBySlug(slug)
-  if (dupSlug !== null) {
-    throw new ActionFailure(409, `已存在相同 slug「${slug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
-  }
-}
-
-async function ensureUniqueOnUpdate(
-  id: bigint,
-  newName: string,
-  existingName: string,
-  newSlug: string,
-  existingSlug: string,
-): Promise<void> {
-  if (newName !== existingName) {
-    const dupName = await findTagByName(newName)
-    if (dupName !== null && dupName.id !== id) {
-      throw new ActionFailure(409, `已存在同名标签「${newName}」`, [{ message: '名称已被占用', path: ['name'] }])
-    }
-  }
-  if (newSlug !== existingSlug) {
-    const dupSlug = await findTagBySlug(newSlug)
-    if (dupSlug !== null && dupSlug.id !== id) {
-      throw new ActionFailure(409, `已存在相同 slug「${newSlug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
-    }
-  }
+  return deleteAdminTaxonomy(id, '标签', {
+    findById: findTagById,
+    deleteRow: deleteTagRow,
+    listPostsBy: listPostsByTag,
+  })
 }

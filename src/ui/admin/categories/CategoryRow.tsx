@@ -14,7 +14,7 @@ import {
 } from '@/ui/components/dropdown-menu'
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
-import { Tooltip } from '@/ui/primitives/Tooltip'
+import { Tooltip } from '@/ui/components/tooltip'
 
 interface CategoryRowProps {
   category: AdminCategoryDto
@@ -163,10 +163,8 @@ function CategoryDescriptionCell({ description }: CategoryDescriptionCellProps) 
   if (!description) {
     return <span className="text-sm text-muted-foreground">—</span>
   }
-  // Reuse the public-tree `<Tooltip>` primitive so the popup matches
-  // the rest of the site (white pill + drop shadow + ::before arrow,
-  // all expressed as Tailwind utilities directly on `<TooltipContent>`
-  // in `@/ui/primitives/Tooltip`). The trigger renders as
+  // Unified `<Tooltip>` primitive so the popup matches the rest of
+  // the site (white pill + drop shadow + ::before arrow). The trigger renders as
   // `<button type="button">` so the truncated text is reachable by
   // keyboard without `tabIndex` on a non-interactive element
   // (`jsx-a11y/no-noninteractive-tabindex`); native button chrome is

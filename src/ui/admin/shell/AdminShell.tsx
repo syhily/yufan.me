@@ -23,6 +23,7 @@ import { Button } from '@/ui/components/button'
 import { Separator } from '@/ui/components/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
+import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
 
 interface NavItem {
   to: string
@@ -255,6 +256,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
           >
             <HomeIcon data-icon />
           </Button>
+          <ThemeToggle mode="admin" />
           <div className="flex-1" />
           <UserMenu id={currentUser.id} name={currentUser.name} email={currentUser.email} />
         </header>

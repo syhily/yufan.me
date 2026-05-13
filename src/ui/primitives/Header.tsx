@@ -5,12 +5,13 @@ import { Link } from 'react-router'
 import type { NavigationItem } from '@/shared/blog-config'
 import type { SocialNetwork } from '@/shared/socials'
 
+import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
 import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { publicButtonVariants } from '@/ui/primitives/btn'
-import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { QRDialog } from '@/ui/primitives/QRDialog'
+import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
 import { SearchIconButton } from '@/ui/search/Search'
 
 export interface HeaderProps {
@@ -413,6 +414,7 @@ export function Header({ navigation, admin, pathname, search }: HeaderProps) {
               )
             })}
             <SearchIconButton />
+            <ThemeToggle mode="public" />
           </div>
         </div>
       </header>
