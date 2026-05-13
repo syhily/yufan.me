@@ -38,6 +38,7 @@ export default [
   route('sitemap.xml', 'routes/sitemap.ts'),
   route('images/og/:slug.png', 'routes/image.og.ts'),
   route('images/calendar/:year/:time.png', 'routes/image.calendar.ts'),
+  route('images/calendar/dark/:year/:time.png', 'routes/image.calendar.dark.ts'),
   route('images/avatar/:hash.png', 'routes/image.avatar.ts'),
   // API resource routes generated from `API_ACTION_LIST` — see _README.md §E.
   ...API_ACTION_LIST.map((action) => route(action.route, action.file)),

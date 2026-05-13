@@ -78,7 +78,9 @@ function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number) {
   return lines
 }
 
-export async function renderCalendar(date: Date): Promise<Buffer> {
+export type CalendarTheme = 'light' | 'dark'
+
+export async function renderCalendar(date: Date, theme: CalendarTheme = 'light'): Promise<Buffer> {
   ensureFonts()
 
   // Generate the required data from date.
@@ -91,14 +93,20 @@ export async function renderCalendar(date: Date): Promise<Buffer> {
   const canvas = createCanvas(WIDTH, HEIGHT)
   const ctx = canvas.getContext('2d')
 
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, WIDTH, HEIGHT)
+  // Light keeps the original opaque white card; dark leaves the canvas
+  // transparent so the sidebar's dark background shows through, and
+  // strokes/text flip to white.
+  const inkColor = theme === 'dark' ? '#ffffff' : '#000000'
+  if (theme === 'light') {
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, WIDTH, HEIGHT)
+  }
 
-  ctx.strokeStyle = '#000000'
+  ctx.strokeStyle = inkColor
   ctx.lineWidth = 4
   ctx.strokeRect(12, 12, WIDTH - 24, HEIGHT - 24)
 
-  ctx.fillStyle = '#000000'
+  ctx.fillStyle = inkColor
   ctx.textBaseline = 'middle'
   ctx.font = '28px OPPOSerif'
   ctx.textAlign = 'left'
@@ -157,5 +165,5 @@ export async function renderCalendar(date: Date): Promise<Buffer> {
   ctx.fillText(authorText, WIDTH - 36, HEIGHT - 50)
 
   const encodedImage = await canvas.encode('png')
-  return await compressImage(encodedImage)
+  return await compressImage(encodedImage, { preserveAlpha: theme === 'dark' })
 }

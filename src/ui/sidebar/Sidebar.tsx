@@ -5,7 +5,6 @@ import type { LatestComment } from '@/shared/comments'
 
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
-import { joinUrl } from '@/shared/urls'
 import { Tooltip } from '@/ui/components/tooltip'
 import { useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
@@ -293,24 +292,40 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 function TodayCalendar() {
   const { sidebar } = useSidebarSettings()
   const siteIdentity = useSiteIdentity()
-  const { website } = siteIdentity
   if (!sidebar.calendar) {
     return null
   }
   const today = new Date()
-  const calendarImage = joinUrl(
-    website,
-    'images/calendar',
-    formatLocalDate(today, 'yyyy', siteIdentity),
-    `${formatLocalDate(today, 'LLdd', siteIdentity)}.png`,
-  )
+  const year = formatLocalDate(today, 'yyyy', siteIdentity)
+  const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)
+  const lightImage = `/images/calendar/${year}/${monthDay}.png`
+  const darkImage = `/images/calendar/dark/${year}/${monthDay}.png`
   return (
     <div className={widgetClass}>
       <WidgetTitle tooltip="时光只解催人老，不信多情，长恨离亭。">时光只言</WidgetTitle>
-      {/* The calendar image is served from the site's own static directory
-          (`public/images/calendar`) and is not stored on the CDN transform
-          domain, so a plain `<img>` is sufficient. */}
-      <img loading="lazy" decoding="async" src={calendarImage} width={600} height={880} alt="今日日历" />
+      {/* Two PNGs layered with `dark:hidden` / `dark:block` (same pattern
+          as `BrandLogo`): the light variant is the original opaque card,
+          the dark variant ships transparent background + white strokes so
+          it sits cleanly on the sidebar's dark surface. */}
+      <img
+        loading="lazy"
+        decoding="async"
+        src={lightImage}
+        width={600}
+        height={880}
+        alt="今日日历"
+        className="block dark:hidden"
+      />
+      <img
+        loading="lazy"
+        decoding="async"
+        src={darkImage}
+        width={600}
+        height={880}
+        alt="今日日历"
+        aria-hidden
+        className="hidden dark:block"
+      />
     </div>
   )
 }
