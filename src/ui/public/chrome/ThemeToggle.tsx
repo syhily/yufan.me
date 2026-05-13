@@ -13,6 +13,19 @@ interface ThemeToggleProps {
   variant?: 'rail' | 'floating'
 }
 
+// Light mode shows the Moon (jump-target = dark) and dark mode shows
+// the Sun (jump-target = light) so the visible glyph always describes
+// the action the click performs. Both icons sit in the DOM and the
+// `dark:` Tailwind variant swaps them via opacity + scale, so noscript
+// visitors on a dark-OS preference get the correct icon even before
+// any client JS runs (the `dark` custom-variant in `tailwind.css`
+// fires under `prefers-color-scheme: dark` when no class is set).
+// Moon is the in-flow icon (centred by `IconButtonContent`'s flex);
+// Sun overlays absolutely against the same wrapper so both glyphs
+// share one centre point regardless of which is currently scaled in.
+const moonClass = 'm-icon-inset transition-all dark:scale-0 dark:opacity-0'
+const sunClass = 'm-icon-inset absolute inset-0 m-auto scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100'
+
 export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
   const { resolvedTheme, setTheme } = useTheme()
 
@@ -20,23 +33,31 @@ export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
   }
 
-  const label = resolvedTheme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'
-
   if (mode === 'public') {
+    // Two sr-only labels live in the DOM so noscript / pre-hydration
+    // visitors get the correct accessible name from the CSS swap, not
+    // from the client-resolved `resolvedTheme`. `title` falls back to
+    // a static phrase because it can only carry one string.
+    const a11y = (
+      <>
+        <span className="sr-only dark:hidden">切换到暗色模式</span>
+        <span className="sr-only hidden dark:inline">切换到亮色模式</span>
+      </>
+    )
+    const staticTitle = '切换深浅色模式'
+
     if (variant === 'floating') {
       // High-contrast FAB palette — see the matching block in
       // `@/ui/public/chrome/ScrollTopButton` for the rationale (default
       // `variant="light"` is too low-contrast over article content on
       // mobile, in both themes).
       return (
-        <Button variant="fab" size="iconLg" shape="pill" onClick={toggle} title={label} aria-label={label}>
+        <Button variant="fab" size="iconLg" shape="pill" onClick={toggle} title={staticTitle}>
           <IconButtonContent>
-            {resolvedTheme === 'dark' ? (
-              <Sun size="1em" aria-hidden className="m-icon-inset" />
-            ) : (
-              <Moon size="1em" aria-hidden className="m-icon-inset" />
-            )}
+            <Moon size="1em" aria-hidden className={moonClass} />
+            <Sun size="1em" aria-hidden className={sunClass} />
           </IconButtonContent>
+          {a11y}
         </Button>
       )
     }
@@ -57,31 +78,29 @@ export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
         shape="circle"
         className="mr-2 max-lg:hidden"
         onClick={toggle}
-        title={label}
-        aria-label={label}
+        title={staticTitle}
       >
         <IconButtonContent>
-          {resolvedTheme === 'dark' ? (
-            <Sun size="1em" aria-hidden className="m-icon-inset" />
-          ) : (
-            <Moon size="1em" aria-hidden className="m-icon-inset" />
-          )}
+          <Sun size="1em" aria-hidden className={sunClass} />
+          <Moon size="1em" aria-hidden className={moonClass} />
         </IconButtonContent>
+        {a11y}
       </Button>
     )
   }
 
+  const adminLabel = resolvedTheme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'
   return (
     <Button
       variant="ghost"
       size="icon"
       onClick={toggle}
       className="relative text-foreground hover:text-primary focus-visible:text-primary"
-      title={label}
+      title={adminLabel}
     >
       <Sun data-icon className="transition-all dark:scale-0 dark:opacity-0" />
       <Moon data-icon className="absolute scale-0 opacity-0 transition-all dark:scale-100 dark:opacity-100" />
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{adminLabel}</span>
     </Button>
   )
 }
