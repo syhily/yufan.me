@@ -151,20 +151,23 @@
      reads with contrast against the dim canvas. */
   --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
 
-  /* Surfaces deep navy backgrounds. Body lifts above the aside so the
-     panel reads as recessed: aside (deepest), body / canvas (mid),
-     surfaces (most elevated). */
-  --canvas: #1d2842;
-  --surface: #1d2842;
-  --surface-dim: #232f4a;
+  /* Surfaces deep navy with a clear three-step hierarchy so cards,
+     APlayer, admin panels, and tag chips read as elevated against
+     the page body: aside (deepest), body (mid), canvas / surface
+     (elevated). canvas and surface stay siblings so cards and
+     elevated panels share the same plane. */
+  --canvas: #26314d;
+  --surface: #26314d;
+  --surface-dim: #2c3756;
   --surface-warn: #3a2810;
   --surface-body: #1d2842;
-  --surface-soft: #1f2a44;
+  --surface-soft: #2a3553;
 
-  /* Lines darker borders on dark surfaces */
-  --line: #1e293b;
-  --line-muted: #334155;
-  --line-widget: #2d3a4a;
+  /* Lines lifted so card outlines and chip borders stay visible on
+     the brighter elevated surfaces */
+  --line: #2a3553;
+  --line-muted: #3a4866;
+  --line-widget: #3a4866;
 
   /* Code block token inversion */
   --bg-shiki-light: #1a1f2e;
@@ -178,8 +181,10 @@
   /* Scrim more opaque on dark */
   --scrim: rgba(0, 0, 0, 0.5);
 
-  /* Shadows more visible on dark backgrounds */
-  --shadow-card-value: 0 0 30px 0 rgb(0 0 0 / 30%);
+  /* Shadows more visible on dark backgrounds. Card shadow pairs a
+     subtle white outline with a softer drop so cards stay legible
+     against the surface-body even when their fill is close in tone. */
+  --shadow-card-value: 0 0 0 1px rgb(255 255 255 / 7%), 0 6px 20px 0 rgb(0 0 0 / 38%);
   --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
   --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
 
@@ -223,6 +228,8 @@
 .dark .aplayer {
   background: var(--surface);
   color: var(--ink-body);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 8%);
+  border-radius: var(--radius-sm);
 }
 
 /* Album cover sits on the same dim treatment as content images. The play
