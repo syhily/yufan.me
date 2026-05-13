@@ -2,6 +2,7 @@ import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-route
 
 import type { RouteHandle } from '@/root'
 
+import { useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { ErrorView } from '@/ui/public/chrome/ErrorView'
 import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
@@ -70,6 +71,12 @@ export default function PublicLayoutRoute() {
 // `<ErrorView />`; the only difference here is that we wrap the body
 // in the synchronous `<PublicChrome>` instead of the lazy variant.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  // Chunk-load errors thrown during render of a child route bubble
+  // up to this boundary -- recover the same way `App` does for
+  // unhandled rejections, before falling through to the normal
+  // `<ErrorView />` render path for non-chunk errors.
+  useReloadOnChunkError(error)
+
   const { admin, footer } = useResolvedChromeProps()
   const { pathname, search } = useLocation()
 

@@ -12,6 +12,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } f
 import '@/assets/fonts/opposans.ttf'
 import '@/assets/fonts/opposerif.ttf'
 import '@/assets/fonts/iosevka.ttf'
+import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { installGateMiddleware } from '@/server/middleware/install-gate'
@@ -163,6 +164,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // behaviour from this single mount. Per-form re-installs are
   // forbidden; see `@/client/hooks/use-ios-no-zoom` for the contract.
   useIosNoZoomOnFocus()
+  // Document-scoped chunk-load-error recovery: when a previous
+  // deploy's tab tries to fetch a JS / CSS chunk that the new
+  // deploy no longer serves, hard-reload to pick up the new bundle.
+  // Same single-install contract as the iOS hook above — never
+  // re-install per route. See `@/client/hooks/use-chunk-error-recovery`.
+  useChunkErrorRecovery()
 
   // The bundle flows down through `BlogSettingsProvider` (per-section
   // contexts) and the route data path (`Route.MetaArgs.matches`). On
@@ -186,6 +193,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
+  // A chunk error thrown during render (e.g. a `React.lazy()`
+  // component whose chunk 404s after a deploy) lands here instead of
+  // as an unhandled rejection, so the window-level listeners
+  // installed in `App` never see it. Trigger the same reload path.
+  useReloadOnChunkError(error)
+
   // The root `ErrorBoundary` mounts INSTEAD of `App`, so the surrounding
   // `<BlogSettingsProvider>` from `App` is not in scope. The chrome
   // below depends on the per-section accessors
