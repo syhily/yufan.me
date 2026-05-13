@@ -28,7 +28,7 @@ export function ChunkReloadOverlay() {
       role="status"
       aria-live="polite"
       aria-label="正在加载最新版本"
-      className={cn('fixed inset-0 flex items-center justify-center', 'bg-canvas', 'z-(--z-nav-splash)')}
+      className={cn('fixed inset-0 flex items-center justify-center', 'bg-surface-body', 'z-(--z-nav-splash)')}
     >
       <div className="relative aspect-[1237/300] w-[min(80vw,560px)]">
         <BrandLogo alt="" className="h-full w-full select-none" draggable={false} />
