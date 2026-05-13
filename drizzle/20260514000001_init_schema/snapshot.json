@@ -1,8 +1,10 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "7eab570f-59c3-40b3-bd3a-9d335058ddb5",
-  "prevIds": ["6a715cd9-308c-42e7-a55d-66c9c524c359"],
+  "id": "b6f62ec8-de19-4545-86c1-112e0759bcd9",
+  "prevIds": [
+    "e6c9fa01-ca3e-405c-a595-db3e92cfdb12"
+  ],
   "ddl": [
     {
       "isRlsEnabled": false,
@@ -61,6 +63,12 @@
     {
       "isRlsEnabled": false,
       "name": "post",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "post_search_index",
       "entityType": "tables",
       "schema": "public"
     },
@@ -258,14 +266,40 @@
       "table": "comment"
     },
     {
-      "type": "varchar(255)",
+      "type": "jsonb",
       "typeSchema": null,
       "notNull": true,
+      "dimensions": 0,
+      "default": "'[]'",
+      "generated": null,
+      "identity": null,
+      "name": "body",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment"
+    },
+    {
+      "type": "varchar(16)",
+      "typeSchema": null,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "page_key",
+      "name": "type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "comment"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "owner_id",
       "entityType": "columns",
       "schema": "public",
       "table": "comment"
@@ -908,14 +942,27 @@
       "table": "like"
     },
     {
-      "type": "varchar(255)",
+      "type": "varchar(16)",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "page_key",
+      "name": "type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "like"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "owner_id",
       "entityType": "columns",
       "schema": "public",
       "table": "like"
@@ -973,27 +1020,40 @@
       "table": "metric"
     },
     {
-      "type": "varchar(255)",
+      "type": "varchar(16)",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "key",
+      "name": "type",
       "entityType": "columns",
       "schema": "public",
       "table": "metric"
     },
     {
-      "type": "text",
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "owner_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "metric"
+    },
+    {
+      "type": "uuid",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "title",
+      "name": "public_id",
       "entityType": "columns",
       "schema": "public",
       "table": "metric"
@@ -1383,6 +1443,19 @@
       "default": "false",
       "generated": null,
       "identity": null,
+      "name": "show_updated",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "page"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
       "name": "show_friends",
       "entityType": "columns",
       "schema": "public",
@@ -1601,6 +1674,19 @@
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "show_updated",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "post"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
       "default": "true",
       "generated": null,
       "identity": null,
@@ -1712,6 +1798,58 @@
       "entityType": "columns",
       "schema": "public",
       "table": "post"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "post_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "post_search_index"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "plain_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "post_search_index"
+    },
+    {
+      "type": "vector(1536)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "embedding",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "post_search_index"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "post_search_index"
     },
     {
       "type": "bigserial",
@@ -2251,7 +2389,14 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "page_key",
+          "value": "type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "owner_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -2263,7 +2408,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "idx_comment_page_key",
+      "name": "idx_comment_owner",
       "entityType": "indexes",
       "schema": "public",
       "table": "comment"
@@ -2489,7 +2634,14 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "key",
+          "value": "type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "owner_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -2501,7 +2653,56 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "idx_metric_key",
+      "name": "idx_like_owner",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "like"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "public_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "uq_metric_public_id",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "metric"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "owner_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "uq_metric_owner",
       "entityType": "indexes",
       "schema": "public",
       "table": "metric"
@@ -2811,6 +3012,30 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "embedding",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": {
+            "name": "vector_cosine_ops",
+            "default": false
+          }
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "hnsw",
+      "concurrently": false,
+      "name": "idx_post_search_embedding",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "post_search_index"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "slug",
           "isExpression": false,
           "asc": true,
@@ -2892,7 +3117,9 @@
       "table": "user"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "category_pkey",
       "schema": "public",
@@ -2900,7 +3127,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "comment_pkey",
       "schema": "public",
@@ -2908,7 +3137,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "content_pkey",
       "schema": "public",
@@ -2916,7 +3147,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "friend_pkey",
       "schema": "public",
@@ -2924,7 +3157,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "image_pkey",
       "schema": "public",
@@ -2932,7 +3167,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "like_pkey",
       "schema": "public",
@@ -2940,7 +3177,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "metric_pkey",
       "schema": "public",
@@ -2948,7 +3187,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "music_pkey",
       "schema": "public",
@@ -2956,7 +3197,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "page_pkey",
       "schema": "public",
@@ -2964,7 +3207,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "post_pkey",
       "schema": "public",
@@ -2972,7 +3217,19 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "post_id"
+      ],
+      "nameExplicit": false,
+      "name": "post_search_index_pkey",
+      "schema": "public",
+      "table": "post_search_index",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "setting_pkey",
       "schema": "public",
@@ -2980,7 +3237,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "tag_pkey",
       "schema": "public",
@@ -2988,7 +3247,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "user_pkey",
       "schema": "public",
@@ -2996,7 +3257,9 @@
       "entityType": "pks"
     },
     {
-      "columns": ["id"],
+      "columns": [
+        "id"
+      ],
       "nameExplicit": false,
       "name": "verification_pkey",
       "schema": "public",
@@ -3005,7 +3268,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["name"],
+      "columns": [
+        "name"
+      ],
       "nullsNotDistinct": false,
       "name": "category_name_key",
       "schema": "public",
@@ -3014,7 +3279,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["slug"],
+      "columns": [
+        "slug"
+      ],
       "nullsNotDistinct": false,
       "name": "category_slug_key",
       "schema": "public",
@@ -3023,7 +3290,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["storage_path"],
+      "columns": [
+        "storage_path"
+      ],
       "nullsNotDistinct": false,
       "name": "image_storage_path_key",
       "schema": "public",
@@ -3032,16 +3301,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["key"],
-      "nullsNotDistinct": false,
-      "name": "metric_key_unique",
-      "schema": "public",
-      "table": "metric",
-      "entityType": "uniques"
-    },
-    {
-      "nameExplicit": false,
-      "columns": ["player_id"],
+      "columns": [
+        "player_id"
+      ],
       "nullsNotDistinct": false,
       "name": "music_player_id_key",
       "schema": "public",
@@ -3050,7 +3312,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["audio_storage_path"],
+      "columns": [
+        "audio_storage_path"
+      ],
       "nullsNotDistinct": false,
       "name": "music_audio_storage_path_key",
       "schema": "public",
@@ -3059,7 +3323,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["cover_storage_path"],
+      "columns": [
+        "cover_storage_path"
+      ],
       "nullsNotDistinct": false,
       "name": "music_cover_storage_path_key",
       "schema": "public",
@@ -3068,7 +3334,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["slug"],
+      "columns": [
+        "slug"
+      ],
       "nullsNotDistinct": false,
       "name": "page_slug_key",
       "schema": "public",
@@ -3077,7 +3345,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["slug"],
+      "columns": [
+        "slug"
+      ],
       "nullsNotDistinct": false,
       "name": "post_slug_key",
       "schema": "public",
@@ -3086,7 +3356,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["scope"],
+      "columns": [
+        "scope"
+      ],
       "nullsNotDistinct": false,
       "name": "setting_scope_key",
       "schema": "public",
@@ -3095,7 +3367,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["name"],
+      "columns": [
+        "name"
+      ],
       "nullsNotDistinct": false,
       "name": "tag_name_key",
       "schema": "public",
@@ -3104,7 +3378,9 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["slug"],
+      "columns": [
+        "slug"
+      ],
       "nullsNotDistinct": false,
       "name": "tag_slug_key",
       "schema": "public",
@@ -3113,9 +3389,11 @@
     },
     {
       "nameExplicit": false,
-      "columns": ["email"],
+      "columns": [
+        "email"
+      ],
       "nullsNotDistinct": false,
-      "name": "user_email_unique",
+      "name": "user_email_key",
       "schema": "public",
       "table": "user",
       "entityType": "uniques"
