@@ -12,7 +12,6 @@ import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/s
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import {
   clearCsrfCookie,
-  commitSession,
   destroySession,
   getRouteRequestContext,
   issueCsrfToken,
@@ -162,9 +161,15 @@ export async function action({ request, context }: Route.ActionArgs) {
     // `{ revokeOtherSessions: true }` enforces invariant 2 at the top
     // of this branch: every other session of this user (incl. anything
     // an attacker might still hold) is destroyed before the new one
-    // is issued.
-    await establishLoginSession(session, dbUser, request, clientAddress, { revokeOtherSessions: true })
-    return redirect(redirectTo, { headers: { 'Set-Cookie': await commitSession(session) } })
+    // is issued. `establishLoginSession` mints the sid + cookie itself
+    // (so we can index the real cookie sid against Redis); use its
+    // returned `setCookie` rather than re-committing the in-memory
+    // session — calling `commitSession` after would mint a SECOND sid
+    // and orphan the one we just wrote.
+    const established = await establishLoginSession(session, dbUser, request, clientAddress, {
+      revokeOtherSessions: true,
+    })
+    return redirect(redirectTo, { headers: { 'Set-Cookie': established.setCookie } })
   }
 
   return processAuthFormSubmission({

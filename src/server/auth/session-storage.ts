@@ -1,6 +1,6 @@
 import type { Session } from 'react-router'
 
-import { createSessionStorage } from 'react-router'
+import { createSession, createSessionStorage } from 'react-router'
 
 import type { Role } from '@/shared/roles'
 
@@ -76,6 +76,26 @@ export const { getSession, commitSession, destroySession } = storage
 
 export async function getRequestSession(request: Request): Promise<BlogSession> {
   return getSession(request.headers.get('Cookie'))
+}
+
+/**
+ * Construct a `BlogSession` whose `id` is set to a caller-chosen sid
+ * before the cookie is ever serialised. React Router's `Session.id` is
+ * a closed-over `let` set once at creation — calling `commitSession`
+ * does NOT mutate it. So if the login path wants to know the sid
+ * before doing its Redis bookkeeping (so it can index
+ * `user_sessions:<userId>` against the real cookie sid), it must
+ * mint the sid itself and feed it to `createSession`.
+ *
+ * `commitSession(buildSessionWithSid(sid, data))` then takes the
+ * `id` branch (`updateData(id, data, expires)`) and writes
+ * `session:<sid>` with our pre-chosen id intact. The returned
+ * Set-Cookie header carries the same `<sid>` signed against the
+ * cookie secret, so the next request's cookie correctly resolves
+ * back to `session:<sid>`.
+ */
+export function buildSessionWithSid(sid: string, data: BlogSessionData): BlogSession {
+  return createSession<BlogSessionData, BlogSessionData>(data, sid)
 }
 
 /**

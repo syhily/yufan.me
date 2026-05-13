@@ -90,8 +90,8 @@ export async function signInWithSession({
     }
   }
 
-  const authenticated = await login({ email, password, session, request, clientAddress })
-  if (!authenticated) {
+  const established = await login({ email, password, session, request, clientAddress })
+  if (!established) {
     return {
       ok: false,
       status: 403,
@@ -100,11 +100,18 @@ export async function signInWithSession({
     }
   }
 
+  // `establishLoginSession` already minted the session cookie with the
+  // sid it wrote to Redis. Stack the CSRF rotation cookie on top
+  // instead of re-committing the in-memory session (which would mint
+  // a second, orphan sid).
   const rotated = await issueCsrfToken()
+  const headers = new Headers()
+  headers.append('Set-Cookie', established.setCookie)
+  headers.append('Set-Cookie', rotated.setCookie)
   return {
     ok: true,
     data: { redirectTo },
-    headers: await commitHeaders(session, rotated.setCookie),
+    headers,
   }
 }
 
@@ -153,12 +160,19 @@ export async function signUpInitialAdminWithSession({
     }
   }
 
-  await establishLoginSession(session, admin, request, clientAddress)
+  const established = await establishLoginSession(session, admin, request, clientAddress)
 
+  // Same as `signInWithSession`: `establishLoginSession` already
+  // produced the session cookie keyed on the sid it wrote to Redis,
+  // so we stack additional cookies (CSRF clear here) on top instead
+  // of re-committing the in-memory session.
+  const headers = new Headers()
+  headers.append('Set-Cookie', established.setCookie)
+  headers.append('Set-Cookie', await clearCsrfCookie())
   return {
     ok: true,
     data: { redirectTo: '/wp-admin/install/settings.php' },
-    headers: await commitHeaders(session, await clearCsrfCookie()),
+    headers,
   }
 }
 

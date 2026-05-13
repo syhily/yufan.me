@@ -372,7 +372,7 @@ function LinkPromptDialog({ seed, onClose, onConfirm }: LinkPromptDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>编辑链接</DialogTitle>
           <DialogDescription>填写链接地址，留空可移除当前链接。</DialogDescription>

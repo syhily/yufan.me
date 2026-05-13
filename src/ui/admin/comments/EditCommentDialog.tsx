@@ -78,7 +78,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>编辑评论</DialogTitle>
           <DialogDescription>修改评论内容后保存，会立即在前台生效。</DialogDescription>

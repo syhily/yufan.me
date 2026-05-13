@@ -3,6 +3,7 @@ import type { User } from '@/server/db/types'
 import { type Role } from '@/server/auth/rbac'
 import {
   type BlogSession,
+  buildSessionWithSid,
   commitSession,
   getRequestSession,
   revokeAllSessionsOfUser,
@@ -42,47 +43,61 @@ export interface EstablishLoginOptions {
  * to kill stale cookies from the same account before issuing the
  * new one.
  */
+export interface EstablishedLoginSession {
+  /** The newly-minted session id (decoupled from any prior cookie). */
+  sid: string
+  /** `Set-Cookie` header value — callers MUST attach it to the response. */
+  setCookie: string
+}
+
 export async function establishLoginSession(
   session: BlogSession,
   dbUser: User,
   request: Request,
   clientAddress: string,
   options: EstablishLoginOptions = {},
-): Promise<void> {
+): Promise<EstablishedLoginSession> {
   if (!dbUser.role) {
     throw new Error('establishLoginSession requires a user with a role')
   }
   if (options.revokeOtherSessions) {
     await revokeAllSessionsOfUser(dbUser.id)
   }
-  session.set('user', {
+  // We control the sid ourselves rather than letting React Router's
+  // `createData` mint one inside `commitSession`. Reason: React Router's
+  // `Session.id` is set ONCE at session creation and `commitSession`
+  // does not mutate it back onto the inbound session object. Without
+  // this manual sid we couldn't read the cookie sid in time to
+  // index `user_sessions:<userId>` or write the `session_meta:<sid>`
+  // hash — every Redis bookkeeping write would key off an empty
+  // string (the inbound session's empty default id), leaving the
+  // cookie pointing at a session blob that's invisible to the
+  // session-management views.
+  const sid = crypto.randomUUID()
+  const userData: SessionUser = {
     id: `${dbUser.id}`,
     name: dbUser.name,
     email: dbUser.email,
     website: dbUser.link,
     role: dbUser.role,
-  })
-  // Force the session id to materialise before any Redis bookkeeping
-  // reads `session.id`. For a fresh login the cookie carries no sid,
-  // so React Router's `createData` only runs during `commitSession` —
-  // which the caller invokes AFTER us. Without this early commit our
-  // `sadd('user_sessions:…', session.id)` would push an empty string
-  // into the user-sessions index and the parallel `session_meta:` HSET
-  // would key off the empty sid. The caller's subsequent
-  // `commitSession` then becomes a cheap update on the now-materialised
-  // id, so we don't lose the Set-Cookie path that mints the cookie
-  // header.
-  await commitSession(session)
+  }
+  // Mirror the new state into the inbound session object so the rest
+  // of the request handler sees `userSession(session)` return the
+  // freshly-authenticated user. The cookie itself is minted from the
+  // sid-pinned `newSession` below.
+  session.set('user', userData)
+  const newSession = buildSessionWithSid(sid, { user: userData })
+  const setCookie = await commitSession(newSession)
   const userAgent = request.headers.get('User-Agent')
   await updateLastLogin(dbUser.id, clientAddress, userAgent)
-  await redisInstance().sadd(`user_sessions:${dbUser.id}`, session.id)
+  await redisInstance().sadd(`user_sessions:${dbUser.id}`, sid)
   // Persist the per-session metadata that powers /my/sessions and
   // /wp-admin/sessions. Best-effort: any Redis hiccup here would
   // otherwise force a fresh login to fail, even though the cookie is
   // already valid. We log and continue.
   try {
     await recordSessionLogin({
-      sid: session.id,
+      sid,
       userId: dbUser.id,
       userAgent,
       ip: clientAddress,
@@ -91,6 +106,7 @@ export async function establishLoginSession(
     // The audit row is recoverable on next login; do not block the
     // user's auth flow.
   }
+  return { sid, setCookie }
 }
 
 export async function login({
@@ -105,14 +121,13 @@ export async function login({
   session: BlogSession
   request: Request
   clientAddress: string
-}): Promise<boolean> {
+}): Promise<EstablishedLoginSession | null> {
   const user = await verifyUserPassword(email, password)
   if (user === null || !user.role) {
     // Users without a role cannot log in (anonymous placeholder accounts).
-    return false
+    return null
   }
-  await establishLoginSession(session, user, request, clientAddress)
-  return true
+  return establishLoginSession(session, user, request, clientAddress)
 }
 
 export function userSession(session: BlogSession): SessionUser | undefined {
