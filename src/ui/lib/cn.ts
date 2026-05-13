@@ -85,6 +85,51 @@ import { extendTailwindMerge } from 'tailwind-merge'
 //   Do NOT write `dark:bg-foo` on a token that lives in tier 1 — the
 //   `.dark { }` rebind already handles theme switching, so the
 //   `dark:` prefix is a no-op double declaration.
+//
+// Dark surface lightness ladder (the "L 7 to L 44" reference in
+// `tailwind.css`'s comment above `--canvas`). Every adjacent tier
+// carries 3 to 8 L of perceptible separation, and no `--line-*`
+// token shares a value with any `--surface-*` token. The ladder
+// dictates which tokens can sit on top of which:
+//
+//     secondary    (#0b1322,  L  7) — image dimmer overlays only
+//     aside-bg     (#15203a,  L 14) — recessed sidebar
+//     body         (#1d2842,  L 17) — page floor, cards rest here
+//     canvas       (#26314d,  L 21) — card, popover, primary elevated
+//     surface      (#26314d,  L 21) — sibling of canvas
+//     surface-soft (#2a3553,  L 23) — soft chip / hover-state fill
+//     surface-dim  (#303a5a,  L 26) — muted / secondary fill, input bg
+//     line-muted   (#374566,  L 30) — recessed divider
+//     line         (#475672,  L 38) — default border (cards, inputs, …)
+//     line-widget  (#5b6b88,  L 44) — strong border (input emphasis)
+//
+// The earlier release had `--line === --surface-soft` (both
+// `#2a3553`), which made every `border-line` consumer (Input,
+// Textarea, SelectTrigger, sidebar dividers, accent hover fills)
+// vanish on top of the soft surface. Lifting the line trio out of
+// the surface band fixes form-element visibility, gives admin
+// `<Card border>` a real outline, and restores `--accent` (which
+// resolves to `--line` via the shadcn alias) as a perceptible
+// hover-state.
+//
+// `--shiki-light` aside: Shiki emits a CSS variable named
+// `--shiki-light` to carry its light-theme color. The project's
+// `.dark` block re-binds that name to `var(--ink-2)` so that when
+// Shiki's inline `--shiki-light` style is missing (e.g. body-text
+// inside a `pre` with no Shiki span), the fallback still reads as
+// foreground ink instead of literal white-on-dark.
+//
+// `--ink-on-dark` aside: this static near-white (`#e8e9ea`) does
+// double duty. It is the foreground colour the Button `dark`
+// variant uses on a dark navy fill (`text-ink-on-dark`), and it is
+// also the forced-light background the QR dialog applies via
+// `bg-ink-on-dark` so the rendered QR matrix stays scannable in
+// dark mode (camera apps need a white background regardless of
+// page theme). The name reads as "ink", but the second consumer
+// uses it as a surface. Splitting into two tokens
+// (`--ink-on-dark` + `--surface-static-light`) would be cleaner
+// but each token would still resolve to the same hex; one
+// consumer doesn't justify the extra registry entry.
 
 // --text-* -- font-size scale
 const TEXT_TOKENS = ['md', '2xl', 'toc-toggle', 'toc-title', 'toc-link', 'badge', 'empty-state-hero', 'btn-lg'] as const
@@ -197,7 +242,7 @@ const RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl'] as const
 const FONT_TOKENS = ['code'] as const
 
 // --animate-*
-const ANIMATE_TOKENS = ['shake', 'comments-shimmer'] as const
+const ANIMATE_TOKENS = ['shake', 'comments-shimmer', 'comment-flash'] as const
 
 // --spacing-* -- the broad spacing scale that p-, m-, gap-, top-,
 // w-, h-, ... all read from when they are given a custom token.

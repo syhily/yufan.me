@@ -136,7 +136,12 @@ export function NavigationSplash() {
       aria-label="页面加载中"
       className={cn(
         'fixed inset-0 flex items-center justify-center',
-        'bg-canvas',
+        // Use the page floor so the splash reads as a continuation of the
+        // page in both themes instead of an elevated "card" tone — light
+        // canvas (#ffffff) is invisible on the public body anyway, but in
+        // dark mode --canvas (#26314d) sits 4 L lighter than --surface-body
+        // (#1d2842) and pops as a mismatched lighter overlay.
+        'bg-surface-body',
         'z-(--z-nav-splash)',
         'transition-opacity ease-out',
         'motion-reduce:transition-none',
@@ -150,7 +155,11 @@ export function NavigationSplash() {
         <BrandLogo alt="" className="h-full w-full select-none" draggable={false} />
         <div
           aria-hidden
-          className={cn('absolute inset-0 bg-canvas', 'transition-opacity ease-out', 'motion-reduce:transition-none')}
+          className={cn(
+            'absolute inset-0 bg-surface-body',
+            'transition-opacity ease-out',
+            'motion-reduce:transition-none',
+          )}
           style={{
             opacity: veil,
             transitionDuration: `${veilMs}ms`,
