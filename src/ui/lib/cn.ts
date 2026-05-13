@@ -118,6 +118,18 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // Shiki's inline `--shiki-light` style is missing (e.g. body-text
 // inside a `pre` with no Shiki span), the fallback still reads as
 // foreground ink instead of literal white-on-dark.
+//
+// `--ink-on-dark` aside: this static near-white (`#e8e9ea`) does
+// double duty. It is the foreground colour the Button `dark`
+// variant uses on a dark navy fill (`text-ink-on-dark`), and it is
+// also the forced-light background the QR dialog applies via
+// `bg-ink-on-dark` so the rendered QR matrix stays scannable in
+// dark mode (camera apps need a white background regardless of
+// page theme). The name reads as "ink", but the second consumer
+// uses it as a surface. Splitting into two tokens
+// (`--ink-on-dark` + `--surface-static-light`) would be cleaner
+// but each token would still resolve to the same hex; one
+// consumer doesn't justify the extra registry entry.
 
 // --text-* -- font-size scale
 const TEXT_TOKENS = ['md', '2xl', 'toc-toggle', 'toc-title', 'toc-link', 'badge', 'empty-state-hero', 'btn-lg'] as const
