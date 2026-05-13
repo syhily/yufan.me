@@ -6,6 +6,8 @@ import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { getImageSrcset } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
+import { cn } from '@/ui/lib/cn'
+import { DARK_IMAGE_DIM_CLASS } from '@/ui/primitives/Image'
 import { useImageLoaded } from '@/ui/primitives/use-image-loaded'
 import { useImageMeta } from '@/ui/pt/image-meta-context'
 
@@ -143,17 +145,19 @@ export function BlockImage({
   const mergedStyle =
     thumbhashStyle === undefined ? style : style === undefined ? thumbhashStyle : { ...thumbhashStyle, ...style }
 
+  const { className, ...imgRest } = rest
   return (
     <img
-      {...rest}
+      {...imgRest}
       ref={setRef}
-      width={rest.width ?? width}
-      height={rest.height ?? height}
+      width={imgRest.width ?? width}
+      height={imgRest.height ?? height}
       alt={alt}
       loading={loading}
       decoding={decoding}
       sizes="100vw"
       srcSet={srcset}
+      className={cn(DARK_IMAGE_DIM_CLASS, className)}
       style={mergedStyle}
       onLoad={handleLoad}
     />

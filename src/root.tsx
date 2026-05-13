@@ -167,7 +167,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // components reach for through `useSiteIdentity()` /
   // `useFooterSettings()` / etc.
   return (
-    <ThemeProvider>
+    <ThemeProvider initialResolved={loaderData.theme}>
       <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
         <NavigationSplash />
         <Outlet />
@@ -202,7 +202,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   // the user at least sees what went wrong instead of a blank page from
   // a strict per-section accessor throw inside the chrome.
   return (
-    <ThemeProvider>
+    <ThemeProvider initialResolved={loaderData?.theme}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <Suspense fallback={null}>
           {blogSettings ? (

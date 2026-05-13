@@ -189,7 +189,7 @@ export function Popup({
     >
       <div
         className={cn(
-          'fixed inset-0 bg-black/30',
+          'fixed inset-0 bg-scrim',
           entered ? 'pointer-events-auto visible opacity-100' : 'invisible opacity-0',
         )}
         onClick={onClose}

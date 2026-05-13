@@ -14,7 +14,7 @@ export function AdminErrorFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <div className="flex max-w-md flex-col gap-2 text-center">
-        <h1 className="text-lg font-semibold text-red-500">{title}</h1>
+        <h1 className="text-lg font-semibold text-destructive">{title}</h1>
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     </div>

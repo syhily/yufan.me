@@ -26,16 +26,16 @@ const ARROW_CLASS =
   'before:absolute before:size-0 before:border-solid' +
   ' data-[side=top]:before:left-1/2 data-[side=top]:before:-bottom-1.5 data-[side=top]:before:-ml-1.5' +
   ' data-[side=top]:before:border-x-[6px] data-[side=top]:before:border-t-[6px] data-[side=top]:before:border-b-0' +
-  ' data-[side=top]:before:border-x-transparent data-[side=top]:before:border-t-[--canvas]' +
+  ' data-[side=top]:before:border-x-transparent data-[side=top]:before:border-t-(--canvas)' +
   ' data-[side=bottom]:before:left-1/2 data-[side=bottom]:before:-top-1.5 data-[side=bottom]:before:-ml-1.5' +
   ' data-[side=bottom]:before:border-x-[6px] data-[side=bottom]:before:border-b-[6px] data-[side=bottom]:before:border-t-0' +
-  ' data-[side=bottom]:before:border-x-transparent data-[side=bottom]:before:border-b-[--canvas]' +
+  ' data-[side=bottom]:before:border-x-transparent data-[side=bottom]:before:border-b-(--canvas)' +
   ' data-[side=left]:before:top-1/2 data-[side=left]:before:-right-1.5 data-[side=left]:before:-mt-1.5' +
   ' data-[side=left]:before:border-y-[6px] data-[side=left]:before:border-l-[6px] data-[side=left]:before:border-r-0' +
-  ' data-[side=left]:before:border-y-transparent data-[side=left]:before:border-l-[--canvas]' +
+  ' data-[side=left]:before:border-y-transparent data-[side=left]:before:border-l-(--canvas)' +
   ' data-[side=right]:before:top-1/2 data-[side=right]:before:-left-1.5 data-[side=right]:before:-mt-1.5' +
   ' data-[side=right]:before:border-y-[6px] data-[side=right]:before:border-r-[6px] data-[side=right]:before:border-l-0' +
-  ' data-[side=right]:before:border-y-transparent data-[side=right]:before:border-r-[--canvas]'
+  ' data-[side=right]:before:border-y-transparent data-[side=right]:before:border-r-(--canvas)'
 
 // --- Placement context ---
 

@@ -1,6 +1,5 @@
 import type { AssetsSettings, SearchSettings } from '@/shared/blog-config-types'
-import type { AssetsLoaderShape } from '@/ui/admin/settings/AssetsForm'
-import type { SearchLoaderShape } from '@/ui/admin/settings/SearchForm'
+import type { AssetsLoaderShape, SearchLoaderShape } from '@/shared/settings'
 
 /**
  * Project the raw `AssetsSettings` (from the settings bundle) into the

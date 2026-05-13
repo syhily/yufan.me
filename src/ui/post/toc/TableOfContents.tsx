@@ -135,7 +135,7 @@ const tocDrawerClass = cn(
 // then occupies the viewport.
 const tocBackdropClass = cn(
   'pointer-events-none invisible',
-  'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-black/30',
+  'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-scrim',
 )
 
 const DEFAULT_TOC_CONFIG = {

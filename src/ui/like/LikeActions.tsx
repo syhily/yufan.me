@@ -132,7 +132,6 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
           'px-10',
           'hover:animate-shake hover:will-change-transform',
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
-          isPending && 'lock',
         )}
         title="Do you like me?"
         data-permalink={permalink}
@@ -141,7 +140,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
         disabled={isPending}
       >
         <HeartIcon
-          className="icon-heart-fill me-1 mt-[-2px] size-[1.1em] align-middle"
+          className="me-1 mt-[-2px] size-[1.1em] align-middle"
           fill="currentColor"
           size="1em"
           strokeWidth={0}

@@ -160,7 +160,7 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
                 placeholder="搜索并回车"
               />
             </div>
-            <Button type="submit" variant="default" size="lg" shape="block">
+            <Button type="submit" variant="default" size="lg" block>
               搜索
             </Button>
           </div>

@@ -1,6 +1,8 @@
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import type { SearchLoaderShape } from '@/shared/settings'
+
 import { API_ACTIONS } from '@/shared/api-actions'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
@@ -9,17 +11,7 @@ import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Input } from '@/ui/components/input'
 
-export interface SearchLoaderShape {
-  search: {
-    enabled: boolean
-    mode: 'vector' | 'like'
-    endpoint: string
-    apiKey: string
-    model: string
-    similarityThreshold: number
-  }
-  apiKeyMask: string | null
-}
+export type { SearchLoaderShape }
 
 interface FormState {
   enabled: boolean

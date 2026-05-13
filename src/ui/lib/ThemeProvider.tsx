@@ -1,11 +1,12 @@
 import { createContext, use, useEffect, useState } from 'react'
 
 type Theme = 'dark' | 'light' | 'system'
+type Resolved = 'dark' | 'light'
 
 interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
-  resolvedTheme: 'dark' | 'light'
+  resolvedTheme: Resolved
 }
 
 const STORAGE_KEY = 'yf-blog-theme'
@@ -13,39 +14,65 @@ export const THEME_COOKIE = 'yf-blog-theme'
 
 const ThemeContext = createContext<ThemeContextType | null>(null)
 
-function setThemeCookie(resolved: 'dark' | 'light') {
-  // Max-age 1 year, path=/ so the server reads it on every SSR request.
+function setThemeCookie(resolved: Resolved) {
   document.cookie = `${THEME_COOKIE}=${resolved};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
 }
 
-function applyTheme(resolved: 'dark' | 'light') {
+function applyTheme(resolved: Resolved) {
   const root = document.documentElement
   root.classList.remove('light', 'dark')
   root.classList.add(resolved)
   const meta = document.querySelector('meta[name="color-scheme"]')
   if (meta) {
-    meta.setAttribute('content', resolved === 'dark' ? 'dark' : 'light')
+    meta.setAttribute('content', resolved)
   }
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system')
-  const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('light')
+export interface ThemeProviderProps {
+  children: React.ReactNode
+  /**
+   * The resolved theme the SSR shell rendered. Seeds `resolvedTheme` so the
+   * first client paint matches the server `<html className>` instead of
+   * defaulting to light and re-resolving on `useEffect`.
+   */
+  initialResolved?: Resolved
+}
 
+// Owns the `<html>` class flip and the cookie that lets SSR pick up the same
+// theme on the next request. The SSR loader reads the cookie and renders
+// `<html class={theme}>`; this provider hydrates with the same value and only
+// resolves `system` mode through `matchMedia` once the user has picked it.
+export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProviderProps) {
+  const [theme, setThemeState] = useState<Theme>('system')
+  const [resolvedTheme, setResolvedTheme] = useState<Resolved>(initialResolved)
+  const [hydrated, setHydrated] = useState(false)
+
+  // One mount-only effect picks up the persisted preference. Until then we
+  // trust the SSR `initialResolved` value (already painted by `<html>`) so
+  // we never flip the class on first hydration.
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
-    if (stored && ['dark', 'light', 'system'].includes(stored)) {
+    if (stored === 'dark' || stored === 'light' || stored === 'system') {
       setThemeState(stored)
+    } else {
+      // No persisted choice yet. Mirror the SSR-rendered theme back into the
+      // cookie so server and client agree on the next request, even when the
+      // user never opens the toggle.
+      setThemeCookie(initialResolved)
     }
-  }, [])
+    setHydrated(true)
+  }, [initialResolved])
 
   useEffect(() => {
+    if (!hydrated) {
+      return
+    }
     const resolve = () => {
-      const resolved =
+      const next: Resolved =
         theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme
-      applyTheme(resolved)
-      setThemeCookie(resolved)
-      setResolvedTheme(resolved)
+      applyTheme(next)
+      setThemeCookie(next)
+      setResolvedTheme(next)
     }
     resolve()
 
@@ -54,7 +81,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       mql.addEventListener('change', resolve)
       return () => mql.removeEventListener('change', resolve)
     }
-  }, [theme])
+  }, [theme, hydrated])
 
   const setTheme = (next: Theme) => {
     localStorage.setItem(STORAGE_KEY, next)

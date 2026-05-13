@@ -83,7 +83,14 @@ function PaginationItem({ ...props }: ComponentProps<'li'>) {
 export const chipBase =
   'inline-flex size-10 items-center justify-center rounded-full text-sm font-medium select-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40'
 
-export const chipResting = 'bg-foreground text-primary-foreground hover:bg-primary hover:text-primary-foreground'
+// Light mode keeps the original "dark navy chip on white text" via the
+// `foreground` <-> `background` pair. Dark mode would invert that to a
+// light-grey chip (because `--foreground` flips to the light ink), which the
+// user reported as "too pale to read". The `dark:` overrides park the chip
+// on an elevated dark surface (`surface-dim`) with light ink so the page
+// number stays readable against the deep navy canvas.
+export const chipResting =
+  'bg-foreground text-background hover:bg-primary hover:text-primary-foreground dark:bg-surface-dim dark:text-ink-strong dark:hover:text-primary-foreground'
 
 export const chipActive = 'bg-primary text-primary-foreground hover:bg-primary'
 
