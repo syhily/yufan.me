@@ -131,6 +131,9 @@ export const API_ACTIONS = {
   },
 } as const
 
+// Role type re-exported here so UI components can import from shared/ instead of server/.
+export type { Role } from '@/server/auth/rbac'
+
 export const API_ACTION_LIST = [
   ...Object.values(API_ACTIONS.auth),
   ...Object.values(API_ACTIONS.comment),

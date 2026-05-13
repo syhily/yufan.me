@@ -46,7 +46,7 @@ export function MyProfileView({ currentUser }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <UserIcon className="size-5" />
+            <UserIcon data-icon="lg" />
             个人信息
           </CardTitle>
           <CardDescription>修改姓名和个人主页链接。</CardDescription>
@@ -71,7 +71,7 @@ export function MyProfileView({ currentUser }: Props) {
             size="sm"
             className="self-start"
           >
-            <SaveIcon className="size-4" />
+            <SaveIcon data-icon />
             保存
           </Button>
           {updateProfile.error && <p className="text-sm text-destructive">{updateProfile.error.message}</p>}
@@ -81,7 +81,7 @@ export function MyProfileView({ currentUser }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <KeyRoundIcon className="size-5" />
+            <KeyRoundIcon data-icon="lg" />
             修改密码
           </CardTitle>
           <CardDescription>修改后所有设备将被登出，请重新登录。</CardDescription>
@@ -110,7 +110,7 @@ export function MyProfileView({ currentUser }: Props) {
               setPasswordMessage('')
               updatePassword.submit({ oldPassword, newPassword })
             }}
-            disabled={updatePassword.loading || !oldPassword || newPassword.length < 6}
+            disabled={updatePassword.isPending || !oldPassword || newPassword.length < 6}
             size="sm"
             className="self-start"
           >

@@ -83,7 +83,7 @@ export function InviteAuthorDialog({ onClose, onInvited }: InviteAuthorDialogPro
               <>发送中...</>
             ) : (
               <>
-                <SendIcon className="size-4" />
+                <SendIcon data-icon />
                 发送邀请
               </>
             )}

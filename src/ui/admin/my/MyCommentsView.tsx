@@ -42,13 +42,13 @@ export function MyCommentsView({ csrfToken, userId }: { csrfToken: string; userI
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquareIcon className="size-5" />
+            <MessageSquareIcon data-icon="lg" />
             我的评论
           </CardTitle>
         </CardHeader>
         <CardContent>
           {listApi.isPending ? (
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
@@ -92,7 +92,7 @@ export function MyCommentsView({ csrfToken, userId }: { csrfToken: string; userI
                         onClick={() => cancelDelete.submit({ commentId: c.id })}
                         disabled={cancelDelete.isPending}
                       >
-                        <Undo2Icon className="size-3.5" />
+                        <Undo2Icon data-icon="sm" />
                       </Button>
                     ) : (
                       <Button
@@ -101,7 +101,7 @@ export function MyCommentsView({ csrfToken, userId }: { csrfToken: string; userI
                         onClick={() => requestDelete.submit({ commentId: c.id })}
                         disabled={requestDelete.isPending}
                       >
-                        <Trash2Icon className="size-3.5" />
+                        <Trash2Icon data-icon="sm" />
                       </Button>
                     )}
                   </div>

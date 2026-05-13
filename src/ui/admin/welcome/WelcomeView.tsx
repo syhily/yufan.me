@@ -1,4 +1,4 @@
-import type { Role } from '@/server/auth/rbac'
+import type { Role } from '@/shared/api-actions'
 
 import { Badge } from '@/ui/components/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card'
