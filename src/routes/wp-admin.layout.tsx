@@ -3,7 +3,7 @@ import { data, Outlet, redirect, useLocation } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { getRouteRequestContext, reuseOrIssueCsrfToken } from '@/server/session'
+import { getRouteRequestContext, hasAtLeast, reuseOrIssueCsrfToken } from '@/server/session'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
@@ -18,8 +18,8 @@ import '@/assets/styles/admin.css'
 export const handle: RouteHandle = { layout: 'admin' }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const { admin, user, url } = getRouteRequestContext({ request, context })
-  if (!admin) {
+  const { role, user, url } = getRouteRequestContext({ request, context })
+  if (!hasAtLeast(role, 'author')) {
     throw redirect(`/wp-login.php?redirect_to=${encodeURIComponent(url.pathname)}`)
   }
 
@@ -32,6 +32,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         id: user?.id ?? '',
         name: user?.name ?? '管理员',
         email: user?.email ?? '',
+        role: (user?.role ?? null) as 'admin' | 'author' | 'visitor' | null,
       },
       csrfToken: issued.token,
     },

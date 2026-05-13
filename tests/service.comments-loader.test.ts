@@ -103,6 +103,8 @@ function row(overrides: Record<string, unknown> = {}) {
     voteUp: 0,
     voteDown: 0,
     rootId: 0n,
+    deleteRequestedAt: null,
+    deleteRequestedBy: null,
     name: 'Alice',
     email: 'a@example.com',
     emailVerified: true,
@@ -131,8 +133,8 @@ describe('services/comments/loader — loadComments', () => {
 
     await loadComments(regularSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false])
-    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false], 0, expect.any(Number))
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false], 2n)
+    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false], 0, expect.any(Number), 2n)
   })
 
   it('admins additionally see pending comments (pending=[false,true])', async () => {
@@ -143,8 +145,8 @@ describe('services/comments/loader — loadComments', () => {
 
     await loadComments(adminSession(), POST_HELLO, 0)
 
-    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false, true])
-    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false, true], 0, expect.any(Number))
+    expect(queries.countCommentsAndRoots).toHaveBeenCalledWith(POST_HELLO, [false, true], 1n)
+    expect(queries.findRootComments).toHaveBeenCalledWith(POST_HELLO, [false, true], 0, expect.any(Number), 1n)
   })
 
   it('returns the union of root + child comments and the aggregated counts', async () => {
@@ -163,7 +165,7 @@ describe('services/comments/loader — loadComments', () => {
     expect(result?.roots_count).toBe(2)
     expect(result?.comments).toHaveLength(5)
     // Verify the join: child fetch was called with the root ids only.
-    expect(queries.findChildComments).toHaveBeenCalledWith(POST_HELLO, [false], [1n, 2n])
+    expect(queries.findChildComments).toHaveBeenCalledWith(POST_HELLO, [false], [1n, 2n], 2n)
   })
 
   it('upserts the metric even when the page has zero comments', async () => {

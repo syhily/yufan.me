@@ -127,6 +127,7 @@ describe('shared/api-actions', () => {
 
   it('auth/comment/image/music/admin grouping is exhaustively listed in API_ACTION_LIST', () => {
     const flat = [
+      ...Object.values(API_ACTIONS.account),
       ...Object.values(API_ACTIONS.auth),
       ...Object.values(API_ACTIONS.comment),
       ...Object.values(API_ACTIONS.image),

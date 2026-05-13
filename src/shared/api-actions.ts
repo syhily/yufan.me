@@ -31,6 +31,10 @@ function defineApiAction<const Route extends string, const Method extends ApiAct
 }
 
 export const API_ACTIONS = {
+  account: {
+    updateProfile: defineApiAction('api/actions/account/updateProfile', 'POST'),
+    updatePassword: defineApiAction('api/actions/account/updatePassword', 'POST'),
+  },
   auth: {
     // The browser sign-in / sign-up flows go directly through React Router's
     // `<Form>` -> route `action`. Only mutations that genuinely need a JSON
@@ -53,6 +57,10 @@ export const API_ACTIONS = {
     searchPages: defineApiAction('api/actions/comment/searchPages', 'GET'),
     searchAuthors: defineApiAction('api/actions/comment/searchAuthors', 'GET'),
     loadAll: defineApiAction('api/actions/comment/loadAll', 'POST'),
+    updateOwn: defineApiAction('api/actions/comment/updateOwn', 'POST'),
+    requestDeleteOwn: defineApiAction('api/actions/comment/requestDeleteOwn', 'POST'),
+    cancelDeleteOwn: defineApiAction('api/actions/comment/cancelDeleteOwn', 'POST'),
+    listMine: defineApiAction('api/actions/comment/listMine', 'GET'),
   },
   image: {
     resolveThumbhash: defineApiAction('api/actions/image/resolveThumbhash', 'GET'),
@@ -116,10 +124,15 @@ export const API_ACTIONS = {
     renderMath: defineApiAction('api/actions/admin/renderMath', 'POST'),
     renderMermaid: defineApiAction('api/actions/admin/renderMermaid', 'POST'),
     reindexSearch: defineApiAction('api/actions/admin/reindexSearch', 'POST'),
+    approveCommentDeletion: defineApiAction('api/actions/admin/approveCommentDeletion', 'POST'),
+    inviteAuthor: defineApiAction('api/actions/admin/inviteAuthor', 'POST'),
+    updateUserRole: defineApiAction('api/actions/admin/updateUserRole', 'POST'),
+    sendPasswordReset: defineApiAction('api/actions/admin/sendPasswordReset', 'POST'),
   },
 } as const
 
 export const API_ACTION_LIST = [
+  ...Object.values(API_ACTIONS.account),
   ...Object.values(API_ACTIONS.auth),
   ...Object.values(API_ACTIONS.comment),
   ...Object.values(API_ACTIONS.image),

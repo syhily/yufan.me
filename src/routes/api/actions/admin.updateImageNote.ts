@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'PATCH',
   input: updateImageNoteSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     const image = await updateImageNote(BigInt(payload.id), payload.note ?? null)
     return { image }

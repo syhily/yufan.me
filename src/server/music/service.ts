@@ -10,6 +10,7 @@ import type {
   SearchMusicOutput,
 } from '@/shared/music'
 
+import { type Role } from '@/server/auth/rbac'
 import {
   type AdminMusicListFilters,
   countAdminMusic,
@@ -41,6 +42,7 @@ import {
   safeBuildMusicPublicUrl,
 } from '@/server/music/storage'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ErrorMessages } from '@/server/route-helpers/errors'
 
 // Domain-level entry points for the music admin library. Coordinates
 // the "search → download → process → S3 PUT → DB insert" pipeline
@@ -265,10 +267,21 @@ export interface UpdateMusicMetadataInputs {
  * `'Artist A / Artist B'` row representation; the public
  * projection unpacks it again on read.
  */
-export async function updateMusicMetadata(input: UpdateMusicMetadataInputs): Promise<AdminMusicDto> {
+export interface MusicViewerContext {
+  userId: string
+  role: Role
+}
+
+export async function updateMusicMetadata(
+  input: UpdateMusicMetadataInputs,
+  viewer?: MusicViewerContext,
+): Promise<AdminMusicDto> {
   const existing = await findMusicById(input.id)
   if (existing === null || existing.deletedAt !== null) {
     throw new ActionFailure(404, '音乐不存在')
+  }
+  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 
   const updated = await updateMusic(input.id, {
@@ -291,10 +304,13 @@ export async function updateMusicMetadata(input: UpdateMusicMetadataInputs): Pro
   return toAdminMusicDto(projected, projected.uploaderName)
 }
 
-export async function deleteMusic(id: bigint): Promise<void> {
+export async function deleteMusic(id: bigint, viewer?: MusicViewerContext): Promise<void> {
   const existing = await findMusicById(id)
   if (existing === null) {
     throw new ActionFailure(404, '音乐不存在')
+  }
+  if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 
   // Mirror the image library: try S3 best-effort, always proceed to

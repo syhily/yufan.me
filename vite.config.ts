@@ -5,7 +5,6 @@ import type { Plugin, PluginOption } from 'vite'
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
 import binary from 'vite-plugin-binary'
-import Font from 'vite-plugin-font'
 import { defineConfig } from 'vite-plus'
 
 import oxfmtConfig from './oxfmt.config.ts'
@@ -56,7 +55,6 @@ export default defineConfig({
   },
   plugins: [
     binary({ gzip: true, excludeAsset: true }),
-    Font.vite(),
     ...(reactRouter() as Plugin[]),
     tailwindcss(),
   ] as PluginOption[],

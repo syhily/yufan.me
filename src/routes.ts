@@ -51,6 +51,9 @@ export default [
   // wp-admin SPA shell — see _README.md §G.
   layout('routes/wp-admin.layout.tsx', [
     route('wp-admin', 'routes/wp-admin.dashboard.tsx'),
+    route('wp-admin/welcome', 'routes/wp-admin.welcome.tsx'),
+    route('wp-admin/my/comments', 'routes/wp-admin.my.comments.tsx'),
+    route('wp-admin/my/profile', 'routes/wp-admin.my.profile.tsx'),
     route('wp-admin/comments', 'routes/wp-admin.comments.tsx'),
     route('wp-admin/users', 'routes/wp-admin.users.tsx'),
     route('wp-admin/users/:id', 'routes/wp-admin.users.detail.tsx'),

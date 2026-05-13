@@ -1,4 +1,6 @@
+import { requireAdmin } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { getRouteRequestContext } from '@/server/session'
 import { hydrateBlogSettings } from '@/server/settings/snapshot'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 
@@ -15,7 +17,9 @@ export function meta({ matches }: Route.MetaArgs) {
 // only the fields the editor needs — the API key is masked
 // before it leaves the server, so the raw value never reaches the
 // browser.
-export async function loader(_args: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const ctx = getRouteRequestContext({ request, context })
+  requireAdmin(ctx)
   const bundle = await hydrateBlogSettings()
   if (bundle === null) {
     // `installGateMiddleware` redirects pre-install requests, so by the

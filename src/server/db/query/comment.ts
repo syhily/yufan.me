@@ -29,6 +29,8 @@ const commentWithUser = {
   voteUp: comment.voteUp,
   voteDown: comment.voteDown,
   rootId: comment.rootId,
+  deleteRequestedAt: comment.deleteRequestedAt,
+  deleteRequestedBy: comment.deleteRequestedBy,
   name: user.name,
   email: user.email,
   emailVerified: user.emailVerified,
@@ -121,7 +123,7 @@ export async function pendingComments(limit: number): Promise<PendingCommentRow[
 }
 
 export async function adminUserIds(): Promise<bigint[]> {
-  const rows = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true))
+  const rows = await db.select({ id: user.id }).from(user).where(eq(user.role, 'admin'))
   return rows.map((r) => r.id)
 }
 
@@ -187,44 +189,79 @@ export async function commentsByIds(ids: bigint[], limit: number): Promise<Pendi
 export async function countCommentsAndRoots(
   target: EntityTarget,
   pendingValues: boolean[],
+  currentUserId?: bigint,
 ): Promise<{ total: number; roots: number }> {
+  const baseConditions = [
+    whereTarget(target),
+    or(
+      and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
+      currentUserId !== undefined
+        ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
+        : sql`1 = 0`,
+    ),
+  ]
   const rows = await db
     .select({
       total: count(),
       roots: sql<number>`COUNT(*) FILTER (WHERE ${comment.rootId} = 0)`,
     })
     .from(comment)
-    .where(and(whereTarget(target), inArray(comment.isPending, pendingValues)))
+    .where(and(...baseConditions))
   const row = rows[0]
   return { total: Number(row.total), roots: Number(row.roots) }
 }
 
-export async function findRootComments(target: EntityTarget, pendingValues: boolean[], offset: number, limit: number) {
-  // Secondary `desc(comment.id)` is the deterministic tiebreaker for
-  // `createdAt` collisions (timestamps are millisecond-precision; a burst
-  // of comments inside the same millisecond would otherwise have an
-  // unstable order across paginated `loadComments` requests, which
-  // surfaces as duplicate or missing rows on "load more"). `id` is
-  // monotonic and cheap (already the primary key index).
+export async function findRootComments(
+  target: EntityTarget,
+  pendingValues: boolean[],
+  offset: number,
+  limit: number,
+  currentUserId?: bigint,
+) {
+  const baseConditions = [
+    whereTarget(target),
+    eq(comment.rootId, 0n),
+    or(
+      and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
+      currentUserId !== undefined
+        ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
+        : sql`1 = 0`,
+    ),
+  ]
   return db
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(whereTarget(target), eq(comment.rootId, 0n), inArray(comment.isPending, pendingValues)))
+    .where(and(...baseConditions))
     .limit(limit)
     .orderBy(desc(comment.createdAt), desc(comment.id))
     .offset(offset)
 }
 
-export async function findChildComments(target: EntityTarget, pendingValues: boolean[], rootIds: bigint[]) {
+export async function findChildComments(
+  target: EntityTarget,
+  pendingValues: boolean[],
+  rootIds: bigint[],
+  currentUserId?: bigint,
+) {
   if (rootIds.length === 0) {
     return []
   }
+  const baseConditions = [
+    whereTarget(target),
+    inArray(comment.rootId, rootIds),
+    or(
+      and(inArray(comment.isPending, pendingValues), isNull(comment.deleteRequestedAt)),
+      currentUserId !== undefined
+        ? and(eq(comment.userId, currentUserId), or(eq(comment.isPending, true), isNotNull(comment.deleteRequestedAt)))
+        : sql`1 = 0`,
+    ),
+  ]
   return db
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(and(whereTarget(target), inArray(comment.isPending, pendingValues), inArray(comment.rootId, rootIds)))
+    .where(and(...baseConditions))
 }
 
 export async function approveCommentById(id: bigint): Promise<void> {
@@ -298,6 +335,10 @@ export async function findCommentWithUserById(id: bigint) {
 
 export async function updateCommentContent(id: bigint, content: string): Promise<void> {
   await db.update(comment).set({ content }).where(eq(comment.id, id))
+}
+
+export async function softDeleteCommentById(id: bigint): Promise<void> {
+  await db.update(comment).set({ deletedAt: new Date() }).where(eq(comment.id, id))
 }
 
 export async function updateCommentBodyAndContent(
@@ -461,6 +502,75 @@ export async function bulkSoftDeleteCommentsByUser(userId: bigint): Promise<numb
     .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
     .returning({ id: comment.id })
   return updated.length
+}
+
+export async function requestDeleteComment(id: bigint, userId: bigint): Promise<void> {
+  await db
+    .update(comment)
+    .set({ deleteRequestedAt: new Date(), deleteRequestedBy: userId })
+    .where(and(eq(comment.id, id), isNull(comment.deletedAt)))
+}
+
+export async function clearDeleteRequest(id: bigint, userId: bigint): Promise<boolean> {
+  const updated = await db
+    .update(comment)
+    .set({ deleteRequestedAt: null, deleteRequestedBy: null })
+    .where(
+      and(
+        eq(comment.id, id),
+        eq(comment.deleteRequestedBy, userId),
+        isNull(comment.deletedAt),
+        isNotNull(comment.deleteRequestedAt),
+      ),
+    )
+    .returning({ id: comment.id })
+  return updated.length > 0
+}
+
+export async function countApprovedRepliesOfComment(commentId: bigint): Promise<number> {
+  const rows = await db
+    .select({ count: count() })
+    .from(comment)
+    .where(and(eq(comment.rid, Number(commentId)), eq(comment.isPending, false), isNull(comment.deletedAt)))
+  return rows[0]?.count ?? 0
+}
+
+export async function listMyComments(userId: bigint, offset: number, limit: number): Promise<CommentWithUser[]> {
+  return db
+    .select(commentWithUser)
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(
+      and(
+        eq(comment.userId, userId),
+        or(
+          isNull(comment.deletedAt),
+          // Include soft-deleted comments within the last 7 days
+          gte(comment.deletedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
+        ),
+      ),
+    )
+    .orderBy(desc(comment.createdAt))
+    .limit(limit)
+    .offset(offset)
+}
+
+export async function countMyComments(
+  userId: bigint,
+): Promise<{ total: number; pending: number; deleteRequested: number }> {
+  const rows = await db
+    .select({
+      total: count(),
+      pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`,
+      deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`,
+    })
+    .from(comment)
+    .where(and(eq(comment.userId, userId), isNull(comment.deletedAt)))
+  return {
+    total: rows[0]?.total ?? 0,
+    pending: rows[0]?.pending ?? 0,
+    deleteRequested: rows[0]?.deleteRequested ?? 0,
+  }
 }
 
 // Suppress unused-import warning: `or` is re-exported for callers that

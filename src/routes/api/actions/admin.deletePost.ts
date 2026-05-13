@@ -5,9 +5,12 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const action = defineApiAction({
   method: 'DELETE',
   input: deletePostSchema,
-  requireAdmin: true,
-  async run({ payload }) {
-    const result = await deletePost(BigInt(payload.id))
+  requireRole: 'author',
+  async run({ ctx, payload }) {
+    const result = await deletePost(BigInt(payload.id), {
+      userId: ctx.session.get('user')!.id,
+      role: ctx.session.get('user')!.role!,
+    })
     if (!result.deleted) {
       throw new ActionFailure(404, '文章不存在或已被删除。')
     }

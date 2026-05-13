@@ -10,12 +10,17 @@ import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 const PASSWORD_HASH_ROUNDS = 12
 
 export async function hasAdmin(): Promise<boolean> {
-  const res = await db.select({ count: count() }).from(user).where(eq(user.isAdmin, true))
+  const res = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
   return res.length > 0 && res[0].count > 0
 }
 
 export async function findUserByEmail(email: string): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.email, email)).limit(1)
+  return rows[0] ?? null
+}
+
+export async function findUserById(id: bigint): Promise<User | null> {
+  const rows = await db.select().from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
 }
 
@@ -63,13 +68,28 @@ export async function insertAdmin(
     // snapshot is not hydrated yet. Other callers fall back to the
     // already-installed `website` value (or empty string pre-install).
     link: options.link ?? getBlogSettingsBundleSync()?.siteIdentity?.website ?? '',
-    isAdmin: true,
+    role: 'admin',
     password: hashedPassword,
     badgeName: 'MOD',
     badgeColor: '#008c95',
     receiveEmail: true,
   }
   return db.insert(user).values(admin).returning()
+}
+
+export async function insertAuthor(name: string, email: string): Promise<User[]> {
+  const author: NewUser = {
+    name,
+    email,
+    emailVerified: false,
+    link: '',
+    role: 'author',
+    password: '',
+    badgeName: 'AUTHOR',
+    badgeColor: '#008c95',
+    receiveEmail: true,
+  }
+  return db.insert(user).values(author).returning()
 }
 
 export async function insertCommentUser(name: string, email: string, website: string): Promise<User | null> {
@@ -82,7 +102,6 @@ export async function insertCommentUser(name: string, email: string, website: st
     email,
     emailVerified: false,
     link: website,
-    isAdmin: false,
     password: '',
     badgeName: '',
     badgeColor: '',
@@ -100,6 +119,7 @@ export interface UserUpdate {
   name?: string
   email?: string
   link?: string
+  password?: string
   badgeName?: string
   badgeColor?: string
   // `null` clears the manual override and reactivates the auto-derived
@@ -107,6 +127,7 @@ export interface UserUpdate {
   // pins the badge text colour verbatim. Distinct from `undefined`
   // (which means "do not touch the column on this update").
   badgeTextColor?: string | null
+  receiveEmail?: boolean
 }
 
 export async function updateUserById(id: bigint, patch: UserUpdate): Promise<User | null> {
@@ -120,7 +141,7 @@ export async function updateUserById(id: bigint, patch: UserUpdate): Promise<Use
 // public site never references these helpers, so they can evolve
 // independently without worrying about the public bundle surface.
 
-export type UserRoleFilter = 'all' | 'admin' | 'normal'
+export type UserRoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 
 export interface AdminUsersListFilters {
   q?: string
@@ -137,7 +158,7 @@ export interface AdminUserRow {
   badgeName: string | null
   badgeColor: string | null
   badgeTextColor: string | null
-  isAdmin: boolean
+  role: 'admin' | 'author' | 'visitor' | null
   isMuted: boolean
   emailVerified: boolean
   createdAt: Date
@@ -155,11 +176,14 @@ function buildAdminUsersConditions(filters: AdminUsersListFilters) {
     conditions.push(isNull(user.deletedAt))
   }
   if (filters.role === 'admin') {
-    conditions.push(eq(user.isAdmin, true))
+    conditions.push(eq(user.role, 'admin'))
+  } else if (filters.role === 'author') {
+    conditions.push(eq(user.role, 'author'))
+  } else if (filters.role === 'visitor') {
+    conditions.push(eq(user.role, 'visitor'))
   } else if (filters.role === 'normal') {
-    // `is_admin` is nullable in legacy rows (default false), so we need
-    // both branches to capture every non-admin user.
-    conditions.push(or(eq(user.isAdmin, false), isNull(user.isAdmin)))
+    // Non-admin users: author, visitor, or role-less anonymous.
+    conditions.push(or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role)))
   }
   if (filters.q && filters.q.trim() !== '') {
     const like = `%${filters.q.trim()}%`
@@ -221,7 +245,7 @@ export async function listAdminUsers(
       badgeName: user.badgeName,
       badgeColor: user.badgeColor,
       badgeTextColor: user.badgeTextColor,
-      isAdmin: user.isAdmin,
+      role: user.role,
       isMuted: user.isMuted,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
@@ -247,7 +271,7 @@ export async function listAdminUsers(
 
   return rows.map((row) => ({
     ...row,
-    isAdmin: row.isAdmin ?? false,
+    role: row.role ?? null,
     commentCount: Number(row.commentCount ?? 0),
     pendingCount: Number(row.pendingCount ?? 0),
   }))
@@ -263,7 +287,7 @@ export async function findAdminUserById(id: bigint): Promise<AdminUserRow | null
       badgeName: user.badgeName,
       badgeColor: user.badgeColor,
       badgeTextColor: user.badgeTextColor,
-      isAdmin: user.isAdmin,
+      role: user.role,
       isMuted: user.isMuted,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt,
@@ -285,7 +309,7 @@ export async function findAdminUserById(id: bigint): Promise<AdminUserRow | null
   }
   return {
     ...row,
-    isAdmin: row.isAdmin ?? false,
+    role: row.role ?? null,
     commentCount: Number(row.commentCount ?? 0),
     pendingCount: Number(row.pendingCount ?? 0),
   }
@@ -312,7 +336,17 @@ export async function setUserMuted(id: bigint, muted: boolean): Promise<User | n
   const updated = await db
     .update(user)
     .set({ isMuted: muted })
-    .where(and(eq(user.id, id), or(eq(user.isAdmin, false), isNull(user.isAdmin))))
+    .where(and(eq(user.id, id), or(eq(user.role, 'author'), eq(user.role, 'visitor'), isNull(user.role))))
     .returning()
+  return updated[0] ?? null
+}
+
+export async function countAdmins(): Promise<number> {
+  const rows = await db.select({ count: count() }).from(user).where(eq(user.role, 'admin'))
+  return rows[0]?.count ?? 0
+}
+
+export async function updateUserRole(id: bigint, role: 'admin' | 'author' | 'visitor'): Promise<User | null> {
+  const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }

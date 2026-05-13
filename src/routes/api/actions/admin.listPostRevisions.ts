@@ -5,9 +5,10 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const loader = defineApiAction({
   method: 'GET',
   input: listPostRevisionsSchema,
-  requireAdmin: true,
-  async run({ payload }) {
-    const revisions = await listRevisionsForAdmin(BigInt(payload.id))
+  requireRole: 'author',
+  async run({ ctx, payload }) {
+    const user = ctx.session.get('user')
+    const revisions = await listRevisionsForAdmin(BigInt(payload.id), { userId: user!.id, role: user!.role! })
     return { revisions }
   },
 })

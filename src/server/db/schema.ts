@@ -103,6 +103,8 @@ export const comment = pgTable(
     voteUp: bigint('vote_up', { mode: 'number' }),
     voteDown: bigint('vote_down', { mode: 'number' }),
     rootId: bigint('root_id', { mode: 'bigint' }),
+    deleteRequestedAt: timestamp('delete_requested_at', { withTimezone: true, mode: 'date' }),
+    deleteRequestedBy: bigint('delete_requested_by', { mode: 'bigint' }),
   },
   (table) => [
     index('idx_comment_root_id').on(table.rootId),
@@ -110,6 +112,7 @@ export const comment = pgTable(
     index('idx_comment_user_id').on(table.userId),
     index('idx_comment_owner').on(table.type, table.ownerId),
     index('idx_comment_deleted_at').on(table.deletedAt),
+    index('idx_comment_delete_requested_at').on(table.deleteRequestedAt),
   ],
 )
 
@@ -139,6 +142,7 @@ export const user = pgTable(
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
     isAdmin: boolean('is_admin').default(false),
+    role: varchar('role', { length: 16 }).$type<'admin' | 'author' | 'visitor'>(),
     isMuted: boolean('is_muted').default(false).notNull(),
     receiveEmail: boolean('receive_email').default(true),
   },

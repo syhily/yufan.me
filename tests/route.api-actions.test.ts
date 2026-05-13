@@ -85,13 +85,6 @@ describe('routes/api/actions — file conventions', () => {
       'api/actions/admin/upsertCategory',
       'api/actions/admin/deleteCategory',
       'api/actions/admin/reorderCategories',
-      'api/actions/admin/listTags',
-      'api/actions/admin/upsertTag',
-      'api/actions/admin/deleteTag',
-      'api/actions/admin/listMusic',
-      'api/actions/admin/searchMusic',
-      'api/actions/admin/addMusic',
-      'api/actions/admin/deleteMusic',
     ])
     for (const action of API_ACTION_LIST) {
       if (!adminEndpoints.has(action.route)) {

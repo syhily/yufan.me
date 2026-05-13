@@ -25,6 +25,10 @@ vi.mock('@/server/cache/storage', () => ({
     get: vi.fn(async () => null),
     set: vi.fn(async () => 'OK'),
     del: vi.fn(async () => 1),
+    sadd: vi.fn(async () => 1),
+    srem: vi.fn(async () => 1),
+    smembers: vi.fn(async () => []),
+    pipeline: () => ({ del: () => {}, exec: vi.fn(async () => []) }),
   }),
 }))
 

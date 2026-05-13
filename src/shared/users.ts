@@ -5,7 +5,7 @@ export interface ListUsersInput {
   offset?: number
   limit?: number
   q?: string
-  role?: 'all' | 'admin' | 'normal'
+  role?: 'all' | 'admin' | 'author' | 'visitor' | 'normal'
   includeDeleted?: boolean | 'true' | 'false'
   sortBy?: UserSortOrder
   hasPosts?: boolean | 'true' | 'false'
@@ -27,7 +27,7 @@ export interface AdminUserDto {
   badgeName: string | null
   badgeColor: string | null
   badgeTextColor: string | null
-  isAdmin: boolean
+  role: 'admin' | 'author' | 'visitor' | null
   isMuted: boolean
   emailVerified: boolean
   createdAt: string

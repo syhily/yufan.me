@@ -1,7 +1,15 @@
+import { requireAdmin } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { getRouteRequestContext } from '@/server/session'
 import { CategoriesView } from '@/ui/admin/categories/CategoriesView'
 
 import type { Route } from './+types/wp-admin.categories'
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const ctx = getRouteRequestContext({ request, context })
+  requireAdmin(ctx)
+  return null
+}
 
 export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '分类管理' }, bundleFromMatches(matches))

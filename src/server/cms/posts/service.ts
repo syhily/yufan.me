@@ -2,6 +2,7 @@ import type { PublishLatestResult, SaveDraftResult } from '@/server/cms/pages/re
 import type { ContentRow, PostMetaRow } from '@/server/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { hasAtLeast, type Role } from '@/server/auth/rbac'
 import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
 import {
@@ -39,6 +40,7 @@ import { seedTagIfMissing } from '@/server/db/query/tag'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ErrorMessages } from '@/server/route-helpers/errors'
 import { indexPost, removePostIndex } from '@/server/search/indexer'
 import { deriveSlug } from '@/server/slug'
 import { resolveSlugForTaxonomy } from '@/server/taxonomies/service'
@@ -148,13 +150,24 @@ export async function loadPostDraftPreviewBySlug(slug: string): Promise<PostDraf
 
 // --- Admin list / get -------------------------------------------------------
 
+export interface ViewerContext {
+  userId: string
+  role: Role
+}
+
 export interface AdminPostsListResult {
   posts: AdminPostDto[]
   total: number
   hasMore: boolean
 }
 
-export async function listPostsForAdmin(filters: ListPostsFilters = {}): Promise<AdminPostsListResult> {
+export async function listPostsForAdmin(
+  filters: ListPostsFilters = {},
+  viewer?: ViewerContext,
+): Promise<AdminPostsListResult> {
+  if (viewer && !hasAtLeast(viewer.role, 'admin')) {
+    filters = { ...filters, authorId: BigInt(viewer.userId) }
+  }
   const offset = filters.offset ?? 0
   const limit = filters.limit ?? 20
   const [rows, total] = await Promise.all([listPostMetas({ ...filters, limit, offset }), countPostMetas(filters)])
@@ -185,11 +198,18 @@ export async function listPostsForAdmin(filters: ListPostsFilters = {}): Promise
   }
 }
 
-export async function getPostDetailForAdmin(id: bigint): Promise<AdminPostDetailDto | null> {
-  const meta = await findPostMetaById(id)
-  if (meta === null) {
-    return null
+function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerContext): asserts meta is PostMetaRow {
+  if (!meta) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
+  if (viewer && !hasAtLeast(viewer.role, 'admin') && meta.authorId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+  }
+}
+
+export async function getPostDetailForAdmin(id: bigint, viewer?: ViewerContext): Promise<AdminPostDetailDto | null> {
+  const meta = await findPostMetaById(id)
+  assertOwnPostOr404(meta, viewer)
   const [latest, published] = await Promise.all([
     findLatestRevision('post', meta.id),
     meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),
@@ -201,7 +221,9 @@ export async function getPostDetailForAdmin(id: bigint): Promise<AdminPostDetail
   }
 }
 
-export async function listRevisionsForAdmin(id: bigint): Promise<AdminRevisionDto[]> {
+export async function listRevisionsForAdmin(id: bigint, viewer?: ViewerContext): Promise<AdminRevisionDto[]> {
+  const meta = await findPostMetaById(id)
+  assertOwnPostOr404(meta, viewer)
   const rows = await listRevisions('post', id)
   return rows.map(toAdminRevisionDto)
 }
@@ -271,7 +293,14 @@ function resolveSlugForPost(explicit: string | undefined, title: string): string
   return derived
 }
 
-export async function createPost(input: UpsertPostMetaInput, authorId: bigint | null): Promise<AdminPostDto> {
+export async function createPost(
+  input: UpsertPostMetaInput,
+  authorId: bigint | null,
+  viewer?: ViewerContext,
+): Promise<AdminPostDto> {
+  if (viewer && !hasAtLeast(viewer.role, 'admin')) {
+    authorId = BigInt(viewer.userId)
+  }
   const slug = resolveSlugForPost(input.slug, input.title)
   ensureSlugLegal(slug)
   const collision = await findPostMetaBySlug(slug)
@@ -302,16 +331,14 @@ export async function createPost(input: UpsertPostMetaInput, authorId: bigint | 
   return toAdminPostDto(row)
 }
 
-export async function updatePostMeta(input: UpsertPostMetaInput): Promise<AdminPostDto> {
+export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: ViewerContext): Promise<AdminPostDto> {
   if (input.id === undefined) {
     throw new ActionFailure(400, 'updatePostMeta requires an id')
   }
   const slug = resolveSlugForPost(input.slug, input.title)
   ensureSlugLegal(slug)
   const existing = await findPostMetaById(input.id)
-  if (existing === null) {
-    throw new ActionFailure(404, '文章不存在或已被删除。')
-  }
+  assertOwnPostOr404(existing, viewer)
   if (existing.slug !== slug) {
     const collision = await findPostMetaBySlug(slug)
     if (collision !== null && collision.id !== input.id) {
@@ -343,7 +370,9 @@ export async function updatePostMeta(input: UpsertPostMetaInput): Promise<AdminP
   return toAdminPostDto(updated)
 }
 
-export async function deletePost(id: bigint): Promise<{ deleted: boolean }> {
+export async function deletePost(id: bigint, viewer?: ViewerContext): Promise<{ deleted: boolean }> {
+  const meta = await findPostMetaById(id)
+  assertOwnPostOr404(meta, viewer)
   const deleted = await softDeletePostMeta(id)
   if (deleted) {
     invalidateCatalog('post')
@@ -352,7 +381,9 @@ export async function deletePost(id: bigint): Promise<{ deleted: boolean }> {
   return { deleted }
 }
 
-export async function restorePost(id: bigint): Promise<{ restored: boolean }> {
+export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{ restored: boolean }> {
+  const meta = await findPostMetaById(id)
+  assertOwnPostOr404(meta, viewer)
   const restored = await restorePostMeta(id)
   if (restored) {
     invalidateCatalog('post')
@@ -367,11 +398,9 @@ export async function restorePost(id: bigint): Promise<{ restored: boolean }> {
   return { restored }
 }
 
-export async function unpublishPost(id: bigint): Promise<AdminPostDto> {
+export async function unpublishPost(id: bigint, viewer?: ViewerContext): Promise<AdminPostDto> {
   const existing = await findPostMetaById(id)
-  if (existing === null) {
-    throw new ActionFailure(404, '文章不存在或已被删除。')
-  }
+  assertOwnPostOr404(existing, viewer)
   const updated = await updatePostMetaById(id, { published: false })
   if (updated === null) {
     throw new ActionFailure(404, '文章不存在或已被删除。')
@@ -400,11 +429,13 @@ export type SavePostResult =
       expectedToken: string
     }
 
-async function savePostBodyInternal(input: SavePostBodyInput, mode: 'draft' | 'publish'): Promise<SavePostResult> {
+async function savePostBodyInternal(
+  input: SavePostBodyInput,
+  mode: 'draft' | 'publish',
+  viewer?: ViewerContext,
+): Promise<SavePostResult> {
   const meta = await findPostMetaById(input.postId)
-  if (meta === null) {
-    throw new ActionFailure(404, '文章不存在或已被删除。')
-  }
+  assertOwnPostOr404(meta, viewer)
   const body = await canonicalizeBodyOrThrow(input.body)
   await syncLibraryImageBlocks(body).catch(() => undefined)
   const imageSources = collectImageStoragePaths(body)
@@ -462,12 +493,12 @@ async function savePostBodyInternal(input: SavePostBodyInput, mode: 'draft' | 'p
   return projectSaveResult(result)
 }
 
-export function saveDraft(input: SavePostBodyInput): Promise<SavePostResult> {
-  return savePostBodyInternal(input, 'draft')
+export function saveDraft(input: SavePostBodyInput, viewer?: ViewerContext): Promise<SavePostResult> {
+  return savePostBodyInternal(input, 'draft', viewer)
 }
 
-export function publishLatest(input: SavePostBodyInput): Promise<SavePostResult> {
-  return savePostBodyInternal(input, 'publish')
+export function publishLatest(input: SavePostBodyInput, viewer?: ViewerContext): Promise<SavePostResult> {
+  return savePostBodyInternal(input, 'publish', viewer)
 }
 
 async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {
@@ -509,15 +540,16 @@ function extractZodIssues(error: unknown): { message: string; path?: string[] }[
 
 export type { AdminPostDetailDto, AdminPostDto, AdminRevisionDto, CmsPost } from '@/server/cms/posts/projection'
 
-export async function loadEditorBody(id: bigint): Promise<{
+export async function loadEditorBody(
+  id: bigint,
+  viewer?: ViewerContext,
+): Promise<{
   meta: PostMetaRow
   draft: ContentRow | null
   published: ContentRow | null
 }> {
   const meta = await findPostMetaById(id)
-  if (meta === null) {
-    throw new ActionFailure(404, '文章不存在或已被删除。')
-  }
+  assertOwnPostOr404(meta, viewer)
   const [draft, published] = await Promise.all([
     findLatestDraft('post', meta.id),
     meta.publishedRevisionId === null ? Promise.resolve(null) : findContentById(meta.publishedRevisionId),

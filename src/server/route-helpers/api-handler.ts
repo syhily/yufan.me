@@ -3,6 +3,7 @@ import type { ZodError, ZodType } from 'zod'
 
 import type { BlogSession } from '@/server/session'
 
+import { hasAtLeast, requireRole, type Role } from '@/server/auth/rbac'
 import { getLogger } from '@/server/logger'
 import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/route-helpers/errors'
 import { getRouteRequestContext, isAdmin } from '@/server/session'
@@ -156,6 +157,14 @@ export function requireAdminSession(session: BlogSession): BlogSession {
   return session
 }
 
+export function requireMinRole(session: BlogSession, min: Role): void {
+  const user = session.get('user')
+  const role = user?.role ?? (user?.admin ? 'admin' : null)
+  if (!hasAtLeast(role, min)) {
+    throw new ActionFailure(403, ErrorMessages.FORBIDDEN)
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Resource Route perimeter (`runApi`)
 // ---------------------------------------------------------------------------
@@ -255,6 +264,8 @@ interface DefineApiActionConfig<I, O> {
   input?: ZodType<I>
   inputSource?: InputSource
   requireAdmin?: boolean
+  /** Minimum role required. Takes precedence over `requireAdmin`. */
+  requireRole?: Role
   /**
    * Reject the request with 413 if the declared `Content-Length`
    * exceeds this many bytes. Use on endpoints that accept large
@@ -309,15 +320,14 @@ export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
   return (args: Pick<LoaderFunctionArgs, 'request' | 'context'>) =>
     runApi(args, async (ctx) => {
       assertMethod(ctx.request, ...methods)
-      // `requireAdminSession` already guarantees admin === true on success,
-      // so admin endpoints skip the redundant `isAdmin(session)` re-read.
-      if (config.requireAdmin) {
-        requireAdminSession(ctx.session)
+      const minRole = config.requireRole ?? (config.requireAdmin ? 'admin' : undefined)
+      if (minRole) {
+        requireMinRole(ctx.session, minRole)
       }
       if (config.maxBodyBytes !== undefined) {
         assertContentLengthUnder(ctx.request, config.maxBodyBytes)
       }
-      const isAdminLazy = config.requireAdmin ? () => true : () => isAdmin(ctx.session)
+      const isAdminLazy = minRole === 'admin' ? () => true : () => isAdmin(ctx.session)
       const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)
       return config.run({ ctx, payload, isAdmin: isAdminLazy })
     })

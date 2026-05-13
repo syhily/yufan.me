@@ -1,6 +1,7 @@
 import type { TagRow } from '@/server/db/types'
 import type { AdminTagDto } from '@/shared/tags'
 
+import { hasAtLeast, type Role } from '@/server/auth/rbac'
 import { invalidateCatalog } from '@/server/catalog/invalidate'
 import {
   type AdminTagsListFilters,
@@ -15,6 +16,7 @@ import {
 } from '@/server/db/query/tag'
 import { listPostsByTag } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ErrorMessages } from '@/server/route-helpers/errors'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -75,7 +77,12 @@ export interface UpsertTagInputs {
   slug?: string
 }
 
-export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDto> {
+export interface TagViewerContext {
+  userId: string
+  role: Role
+}
+
+export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerContext): Promise<AdminTagDto> {
   const slug = resolveSlugForTaxonomy(input.slug, input.name)
 
   if (input.id === undefined) {
@@ -84,6 +91,11 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
     invalidateCatalog('taxonomy')
     const countOf = await tagPostCounter()
     return toAdminTagDto(row, await countOf(row.name))
+  }
+
+  // Authors may only create tags; renaming is admin-only.
+  if (viewer && !hasAtLeast(viewer.role, 'admin')) {
+    throw new ActionFailure(403, ErrorMessages.FORBIDDEN)
   }
 
   const existing = await findTagById(input.id)
@@ -112,7 +124,9 @@ export async function upsertAdminTag(input: UpsertTagInputs): Promise<AdminTagDt
 // Block-only deletion. Same contract as `deleteAdminCategory`: refuse
 // when any post (visible/hidden/scheduled) still lists the tag in its
 // frontmatter `tags: [...]`.
-export async function deleteAdminTag(id: bigint): Promise<boolean> {
+export async function deleteAdminTag(id: bigint, viewer?: TagViewerContext): Promise<boolean> {
+  // deleteAdminTaxonomy already blocks deletion when posts reference the tag.
+  // Admin can delete regardless of ownership; author can only delete unreferenced tags.
   return deleteAdminTaxonomy(id, '标签', {
     findById: findTagById,
     deleteRow: deleteTagRow,

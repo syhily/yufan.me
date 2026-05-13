@@ -27,10 +27,12 @@ export function makeRouteContext({
 }: MakeContextOptions = {}): RouterContextProvider {
   const context = new RouterContextProvider()
   const resolvedUser = user ?? (session?.data?.user as SessionUser | undefined)
+  const resolvedRole = resolvedUser?.role ?? (resolvedUser?.admin ? 'admin' : null)
   const resolvedAdmin = admin ?? Boolean(resolvedUser?.admin)
   context.set(sessionContext, {
     session,
     user: resolvedUser,
+    role: resolvedRole,
     admin: resolvedAdmin,
   })
   context.set(requestContext, {

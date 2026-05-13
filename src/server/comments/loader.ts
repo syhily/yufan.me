@@ -24,7 +24,7 @@ import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
 import { DomainError } from '@/server/route-helpers/errors'
-import { isAdmin, userSession, type BlogSession } from '@/server/session'
+import { hasAtLeast, isAdmin, userSession, type BlogSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { groupBy } from '@/shared/tools'
 const log = getLogger('comments.loader')
@@ -80,21 +80,22 @@ export async function loadComments(
 ): Promise<Comments | null> {
   const ensurePage = options.ensurePage ?? true
   // Admins see both approved (pending=false) and pending (pending=true) rows;
-  // everyone else only sees approved ones.
-  const pendingArray: boolean[] = isAdmin(session) ? [false, true] : [false]
+  // author/visitor see approved + their own pending / delete-requested.
+  const user = userSession(session)
+  const role = user?.role ?? null
+  const pendingArray: boolean[] = hasAtLeast(role, 'admin') ? [false, true] : [false]
+  const currentUserId = user?.id ? BigInt(user.id) : undefined
 
-  // Total + root counts are derived in a single query (filtered aggregate);
-  // both fan out in parallel with the page upsert and root listing. Child
-  // comments depend on the root id list, so they're issued afterwards.
   const [, counts, rootComments] = await Promise.all([
     ensurePage ? ensureMetric(target) : Promise.resolve(null),
-    countCommentsAndRoots(target, pendingArray),
-    findRootComments(target, pendingArray, offset, requireBlogSettingsSection('comments').comments.size),
+    countCommentsAndRoots(target, pendingArray, currentUserId),
+    findRootComments(target, pendingArray, offset, requireBlogSettingsSection('comments').comments.size, currentUserId),
   ])
   const childComments = await findChildComments(
     target,
     pendingArray,
     rootComments.map((c) => c.id),
+    currentUserId,
   )
 
   return {
@@ -130,7 +131,7 @@ export async function createComment(
 
   // Block the comment from the Admin
   const loginUser = userSession(session)
-  if (u.isAdmin) {
+  if (u.role === 'admin') {
     if (loginUser === undefined) {
       throw new DomainError('UNAUTHORIZED', '管理员账号需要登陆才能评论。')
     }
@@ -166,7 +167,7 @@ export async function createComment(
   // post the same canned reply on different threads. Dedupe compares the
   // markdown snapshot — comparing JSON would defeat the check because
   // each save mints fresh `_key` nanoids on every block.
-  if (!u.isAdmin) {
+  if (u.role !== 'admin') {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const recent = await recentCommentsForUserDedupe(u.id, since, 20)
     if (recent.some((c) => c.content === markdownSnapshot)) {

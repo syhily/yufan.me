@@ -10,7 +10,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'PATCH',
   input: updateMusicSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     const music = await updateMusicMetadata({
       id: BigInt(payload.id),

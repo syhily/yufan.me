@@ -6,7 +6,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: upsertPostMetaSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ ctx, payload }) {
     const user = userSession(ctx.session)
     const sessionUserId = user?.id ? BigInt(user.id) : null
@@ -30,8 +30,8 @@ export const action = defineApiAction({
     }
     const post =
       payload.id === undefined
-        ? await createPost(meta, sessionUserId)
-        : await updatePostMeta({ id: BigInt(payload.id), ...meta })
+        ? await createPost(meta, sessionUserId, { userId: user!.id, role: user!.role! })
+        : await updatePostMeta({ id: BigInt(payload.id), ...meta }, { userId: user!.id, role: user!.role! })
     return { post }
   },
 })

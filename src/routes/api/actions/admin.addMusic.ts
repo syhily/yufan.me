@@ -6,7 +6,7 @@ import { userSession } from '@/server/session'
 export const action = defineApiAction({
   method: 'POST',
   input: addMusicSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ ctx, payload }) {
     const adminUser = userSession(ctx.session)
     if (adminUser === undefined) {

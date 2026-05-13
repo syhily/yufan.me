@@ -1,5 +1,7 @@
+import { requireAdmin } from '@/server/auth/rbac'
 import { getAdminCacheStats } from '@/server/cache/admin'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
+import { getRouteRequestContext } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 
@@ -19,7 +21,9 @@ export function meta({ matches }: Route.MetaArgs) {
 // in by `withCacheFallbacks()`. Going through the outlet's raw
 // `bundle.cache.cache` would skip that safety net and crash the form
 // on a stale-shape DB row before backfill rewrites it.
-export async function loader(_args: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const ctx = getRouteRequestContext({ request, context })
+  requireAdmin(ctx)
   const stats = await getAdminCacheStats()
   const cache = requireBlogSettingsSection('cache').cache
   return { stats, cache }

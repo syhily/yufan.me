@@ -30,43 +30,53 @@ interface NavItem {
   to: string
   label: string
   icon: ComponentType<{ className?: string }>
-  /**
-   * Optional prefix used for the active highlight. Without it the
-   * `NavLink` only matches its exact `to`; settings pages live under
-   * `/wp-admin/settings/*` so the entry should stay highlighted on every
-   * sub-route.
-   */
   matchPrefix?: string
+  minRole: 'visitor' | 'author' | 'admin'
 }
 
 const NAV: NavItem[] = [
-  { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon },
-  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon },
-  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon },
-  { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon },
-  { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon },
-  { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon },
-  { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon },
-  { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon },
-  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users' },
+  { to: '/wp-admin/welcome', label: '欢迎', icon: HomeIcon, minRole: 'visitor' },
+  { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon, minRole: 'author' },
+  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon, minRole: 'admin' },
+  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon, minRole: 'admin' },
+  { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon, minRole: 'admin' },
+  { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon, minRole: 'author' },
+  { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon, minRole: 'admin' },
+  { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon, minRole: 'author' },
+  { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon, minRole: 'author' },
+  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users', minRole: 'admin' },
   {
     to: '/wp-admin/settings/general',
     label: '系统设置',
     icon: SettingsIcon,
     matchPrefix: '/wp-admin/settings',
+    minRole: 'admin',
   },
 ]
 
 interface AdminShellProps {
-  currentUser: { id: string; name: string; email: string }
+  currentUser: { id: string; name: string; email: string; role: 'admin' | 'author' | 'visitor' | null }
   pathname: string
   children: ReactNode
 }
 
-function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+function NavList({
+  pathname,
+  onNavigate,
+  role,
+}: {
+  pathname: string
+  onNavigate?: () => void
+  role: AdminShellProps['currentUser']['role']
+}) {
+  const visibleNav = NAV.filter((item) => {
+    if (item.minRole === 'visitor') return true
+    if (item.minRole === 'author') return role === 'author' || role === 'admin'
+    return role === 'admin'
+  })
   return (
     <nav aria-label="Admin navigation" className="flex flex-col gap-1 px-3">
-      {NAV.map((item) => {
+      {visibleNav.map((item) => {
         const prefixActive = item.matchPrefix
           ? pathname === item.matchPrefix || pathname.startsWith(`${item.matchPrefix}/`)
           : undefined
@@ -244,7 +254,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
               </SheetHeader>
               <Separator />
               <div className="py-2">
-                <NavList pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+                <NavList pathname={pathname} onNavigate={() => setMobileOpen(false)} role={currentUser.role} />
               </div>
             </SheetContent>
           </Sheet>
@@ -282,7 +292,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
               focused && 'lg:hidden',
             )}
           >
-            <NavList pathname={pathname} />
+            <NavList pathname={pathname} role={currentUser.role} />
           </aside>
           <main
             ref={mainScrollRef}

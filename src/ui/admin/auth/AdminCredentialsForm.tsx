@@ -4,32 +4,55 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 
-// Login-form markup (CSRF token + email + password). Lives in its own
-// component so the WordPress-style HTML stays stable across any future
-// callers and we have one place to evolve the styling.
-//
-// React Router 7 owns the submission lifecycle: `<Form>` posts straight
-// to the route `action`, `useNavigation()` exposes the in-flight state
-// so the submit button can disable itself, and there is no client-only
-// JS bridge. The form continues to degrade gracefully without JS — RR
-// falls back to a plain HTML POST through the same action.
-//
-// The install flow used to share this component through a `mode`
-// have diverged enough that each form is clearer as its own file.
-
 export interface AdminCredentialsFormProps {
-  /**
-   * Optional `<Form action>` override. Defaults to the current route's
-   * URL (so the route's own `action` handles the POST). Pass an empty
-   * string to preserve the previous behaviour explicitly.
-   */
   action?: string
   token: string
+  mode?: 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'
+  resetToken?: string
 }
 
-export function AdminCredentialsForm({ action, token }: AdminCredentialsFormProps) {
+export function AdminCredentialsForm({ action, token, mode = 'login', resetToken }: AdminCredentialsFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
+
+  if (mode === 'lostpassword') {
+    return (
+      <Form method="post" action={action} id="loginForm" className="flex flex-col gap-5">
+        <input type="hidden" name="token" value={token} />
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="loginForm-email">邮箱</Label>
+          <Input id="loginForm-email" name="email" type="email" autoComplete="email" required disabled={isSubmitting} />
+        </div>
+        <Button type="submit" name="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? '发送中...' : '发送重置邮件'}
+        </Button>
+      </Form>
+    )
+  }
+
+  if (mode === 'resetpassword' || mode === 'accept-invite') {
+    return (
+      <Form method="post" action={action} id="loginForm" className="flex flex-col gap-5">
+        <input type="hidden" name="token" value={token} />
+        <input type="hidden" name="token" value={resetToken ?? ''} />
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="loginForm-password">新密码</Label>
+          <Input
+            id="loginForm-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={6}
+            disabled={isSubmitting}
+          />
+        </div>
+        <Button type="submit" name="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? '保存中...' : '设置密码'}
+        </Button>
+      </Form>
+    )
+  }
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex flex-col gap-5">

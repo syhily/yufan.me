@@ -3,6 +3,7 @@ export { commitSession, destroySession, getRequestSession, getSession } from '@/
 
 export type { SessionContext } from '@/server/auth/primitives'
 export { isAdmin, login, logout, resolveSessionContext, userSession } from '@/server/auth/primitives'
+export { hasAtLeast, requireAdmin, requireAuthor, requireRole, type Role } from '@/server/auth/rbac'
 
 export type { IssuedCsrfToken, ReusedCsrfToken } from '@/server/auth/csrf'
 export { clearCsrfCookie, issueCsrfToken, reuseOrIssueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'

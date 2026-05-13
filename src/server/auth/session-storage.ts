@@ -5,11 +5,16 @@ import { createSessionStorage } from 'react-router'
 import { redisInstance } from '@/server/cache/storage'
 import { SESSION_SECRET } from '@/server/env'
 
+export type Role = 'admin' | 'author' | 'visitor'
+
 export interface SessionUser {
   id: string
   name: string
   email: string
   website: string | null
+  /** Present on all new sessions; legacy cookies may lack this. */
+  role?: Role
+  /** @deprecated use `role === 'admin'` via {@link hasAtLeast} */
   admin: boolean
 }
 
@@ -65,4 +70,22 @@ export const { getSession, commitSession, destroySession } = storage
 
 export async function getRequestSession(request: Request): Promise<BlogSession> {
   return getSession(request.headers.get('Cookie'))
+}
+
+/**
+ * Revoke every session belonging to a user. Called after password change
+ * or role downgrade so stale cookies cannot be reused.
+ */
+export async function revokeAllSessionsOfUser(userId: bigint): Promise<void> {
+  const redis = redisInstance()
+  const setKey = `user_sessions:${userId}`
+  const sessionIds = await redis.smembers(setKey)
+  if (sessionIds.length > 0) {
+    const pipeline = redis.pipeline()
+    for (const sid of sessionIds) {
+      pipeline.del(`session:${sid}`)
+    }
+    pipeline.del(setKey)
+    await pipeline.exec()
+  }
 }

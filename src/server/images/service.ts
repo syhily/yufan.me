@@ -1,6 +1,7 @@
 import type { ImageRow } from '@/server/db/types'
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/images'
 
+import { canEditImage, type Role } from '@/server/auth/rbac'
 import {
   type AdminImagesListFilters,
   countAdminImages,
@@ -20,6 +21,7 @@ import { buildPublicUrl, invalidateImageEnhanceCacheFor } from '@/server/images/
 import { deleteImage as deleteStoredImage, getImage, putImage } from '@/server/images/storage'
 import { getLogger } from '@/server/logger'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ErrorMessages } from '@/server/route-helpers/errors'
 import { classifyImageKind } from '@/shared/images'
 
 // Domain-level entry points for the admin image library. Coordinates
@@ -140,21 +142,27 @@ export async function listImagesForAdmin(input: ListImagesInput = {}): Promise<L
   }
 }
 
-export async function deleteImage(id: bigint): Promise<void> {
+export interface ImageViewerContext {
+  userId: string
+  role: Role
+}
+
+function isAdmin(role: Role): boolean {
+  return role === 'admin'
+}
+
+export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Promise<void> {
   const existing = await findImageById(id)
   if (existing === null) {
     throw new ActionFailure(404, '图片不存在')
+  }
+  if (viewer && !isAdmin(viewer.role) && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 
   try {
     await deleteStoredImage(existing.storagePath)
   } catch (error) {
-    // Surface the failure but still soft-delete the row so the
-    // admin table doesn't keep showing a "missing" image. The S3
-    // object can be cleaned up out-of-band; the
-    // `ActionFailure(503)` raised when the upload toggle is OFF
-    // also lands here because the admin can still need to delete
-    // historical metadata even when uploads are paused.
     log.warn('S3 delete failed; proceeding with DB soft-delete anyway', {
       id: String(id),
       storagePath: existing.storagePath,
@@ -169,10 +177,18 @@ export async function deleteImage(id: bigint): Promise<void> {
   await invalidateImageEnhanceCacheFor(deleted.storagePath)
 }
 
-export async function updateImageNote(id: bigint, note: string | null): Promise<AdminImageDto> {
-  // Single helper call: the query layer issues the UPDATE and a
-  // joined re-read so the patched DTO carries `uploaderName` without
-  // a per-section round-trip from this service.
+export async function updateImageNote(
+  id: bigint,
+  note: string | null,
+  viewer?: ImageViewerContext,
+): Promise<AdminImageDto> {
+  const existing = await findImageById(id)
+  if (existing === null) {
+    throw new ActionFailure(404, '图片不存在')
+  }
+  if (viewer && !isAdmin(viewer.role) && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+  }
   const updated = await updateImageNoteWithUploader(id, note)
   if (updated === null) {
     throw new ActionFailure(404, '图片不存在')
@@ -180,10 +196,13 @@ export async function updateImageNote(id: bigint, note: string | null): Promise<
   return toAdminImageDto(updated, updated.uploaderName)
 }
 
-export async function recalculateImageThumbhash(id: bigint): Promise<AdminImageDto> {
+export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewerContext): Promise<AdminImageDto> {
   const existing = await findAdminImageRowById(id)
   if (existing === null) {
     throw new ActionFailure(404, '图片不存在')
+  }
+  if (viewer && !isAdmin(viewer.role) && existing.uploaderId?.toString() !== viewer.userId) {
+    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 
   let buffer: Buffer

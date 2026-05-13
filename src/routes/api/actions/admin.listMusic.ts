@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const loader = defineApiAction({
   method: 'GET',
   input: listMusicSchema,
-  requireAdmin: true,
+  requireRole: 'author',
   async run({ payload }) {
     return listMusicForAdmin({
       q: payload.q,
