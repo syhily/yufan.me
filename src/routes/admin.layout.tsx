@@ -1,9 +1,11 @@
-import { isRouteErrorResponse, Link, Outlet, useRouteError } from 'react-router'
+import { Link, Outlet } from 'react-router'
 
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
+import { AdminErrorFallback } from '@/ui/admin/AdminErrorFallback'
 import { useSiteIdentityOptional } from '@/ui/lib/blog-config-context'
+import { BrandLogo } from '@/ui/primitives/BrandLogo'
 // The login / install screen is admin chrome — same shadcn / Tailwind v4
 // cascade the wp-admin SPA uses, so import `tailwind.css` directly. This
 // keeps the public-site Bootstrap cascade (`public.css`) and the
@@ -16,26 +18,7 @@ import '@/assets/styles/admin.css'
 // so the admin / login stack can own its own chrome.
 export const handle: RouteHandle = { layout: 'admin' }
 
-export function ErrorBoundary() {
-  const error = useRouteError()
-  const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '出错了'
-  const message = isRouteErrorResponse(error)
-    ? typeof error.data === 'string'
-      ? error.data
-      : error.statusText
-    : error instanceof Error
-      ? error.message
-      : '未知错误'
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
-      <div className="max-w-md space-y-2 text-center">
-        <h1 className="text-lg font-semibold text-red-500">{title}</h1>
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </div>
-    </div>
-  )
-}
+export { AdminErrorFallback as ErrorBoundary }
 
 export default function AdminLayoutRoute() {
   // Defensive cleanup mirroring the wp-admin SPA: when the user reaches
@@ -64,13 +47,7 @@ export default function AdminLayoutRoute() {
       />
       <header className="flex items-center justify-between px-6 py-5 lg:px-10 lg:py-7">
         <Link to="/" title={siteTitle} prefetch="intent" className="flex items-center gap-3 text-foreground">
-          {/* Inline `style` mirrors the wp-admin shell logo: the
-              un-layered `img { height: auto }` reset from the public
-              site beats Tailwind utilities on the first paint after an
-              SPA navigation, so we lock the size with an inline style
-              that wins against both un-layered selectors and Tailwind
-              utilities. */}
-          <img src="/logo-large.svg" alt={siteTitle} className="h-8 w-auto" style={{ height: '2rem', width: 'auto' }} />
+          <BrandLogo alt={siteTitle} className="h-8 w-auto" />
         </Link>
         <span className="hidden text-sm text-muted-foreground sm:inline">{siteTitle} · 管理入口</span>
       </header>

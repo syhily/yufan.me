@@ -16,7 +16,12 @@ import {
 } from '@/server/db/query/category'
 import { listPostsByCategory } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
-import { deriveSlug } from '@/server/slug'
+import {
+  deleteAdminTaxonomy,
+  ensureUniqueOnCreateTaxonomy,
+  ensureUniqueOnUpdateTaxonomy,
+  resolveSlugForTaxonomy,
+} from '@/server/taxonomies/service'
 
 // Wire-format DTO returned by every admin category endpoint. Bigint
 // id stringified so the browser bundle never touches BigInt. The
@@ -87,10 +92,10 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   // applied to the category name. We treat `''` the same as missing
   // because the admin form posts an empty string when the input is
   // cleared (Zod has already trimmed by the time we land here).
-  const slug = resolveSlugForCategory(input.slug, input.name)
+  const slug = resolveSlugForTaxonomy(input.slug, input.name)
 
   if (input.id === undefined) {
-    await ensureUniqueOnCreate(input.name, slug)
+    await ensureUniqueOnCreateTaxonomy(findCategoryByName, findCategoryBySlug, input.name, slug, '分类')
     const row = await insertCategory({
       name: input.name,
       slug,
@@ -107,7 +112,16 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   if (existing === null) {
     throw new ActionFailure(404, '分类不存在')
   }
-  await ensureUniqueOnUpdate(input.id, input.name, existing.name, slug, existing.slug)
+  await ensureUniqueOnUpdateTaxonomy(
+    findCategoryByName,
+    findCategoryBySlug,
+    input.id,
+    input.name,
+    existing.name,
+    slug,
+    existing.slug,
+    '分类',
+  )
   const updated = await updateCategory(input.id, {
     name: input.name,
     slug,
@@ -121,23 +135,6 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   invalidateCatalog('taxonomy')
   const countOf = await categoryPostCounter()
   return toAdminCategoryDto(updated, await countOf(updated.name))
-}
-
-function resolveSlugForCategory(explicit: string | undefined, name: string): string {
-  if (typeof explicit === 'string' && explicit.trim() !== '') {
-    return explicit.trim()
-  }
-  const derived = deriveSlug(name)
-  if (derived === '') {
-    // `deriveSlug` strips everything to ASCII alphanumerics + dashes;
-    // a name made entirely of punctuation / emoji can collapse to an
-    // empty string. Refuse the save with a friendly hint instead of
-    // letting the DB throw a NOT NULL violation downstream.
-    throw new ActionFailure(400, '无法从名称推导出 slug，请手动填写。', [
-      { message: '名称推导出空 slug，请手动填写', path: ['slug'] },
-    ])
-  }
-  return derived
 }
 
 // Drag-to-reorder. Validates that the submitted id set matches the
@@ -184,66 +181,9 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
 // 409 message lists up to 5 referencing post titles so the admin
 // knows which files to fix.
 export async function deleteAdminCategory(id: bigint): Promise<boolean> {
-  const existing = await findCategoryById(id)
-  if (existing === null) {
-    return false
-  }
-
-  const referencing = await listPostsByCategory(existing.name, { includeHidden: true, includeScheduled: true })
-  if (referencing.length > 0) {
-    throw new ActionFailure(
-      409,
-      formatBlockMessage(
-        '分类',
-        existing.name,
-        referencing.map((post) => post.title),
-      ),
-    )
-  }
-
-  const removed = await deleteCategoryRow(id)
-  if (removed) {
-    invalidateCatalog('taxonomy')
-  }
-  return removed
-}
-
-async function ensureUniqueOnCreate(name: string, slug: string): Promise<void> {
-  const dupName = await findCategoryByName(name)
-  if (dupName !== null) {
-    throw new ActionFailure(409, `已存在同名分类「${name}」`, [{ message: '名称已被占用', path: ['name'] }])
-  }
-  const dupSlug = await findCategoryBySlug(slug)
-  if (dupSlug !== null) {
-    throw new ActionFailure(409, `已存在相同 slug「${slug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
-  }
-}
-
-async function ensureUniqueOnUpdate(
-  id: bigint,
-  newName: string,
-  existingName: string,
-  newSlug: string,
-  existingSlug: string,
-): Promise<void> {
-  if (newName !== existingName) {
-    const dupName = await findCategoryByName(newName)
-    if (dupName !== null && dupName.id !== id) {
-      throw new ActionFailure(409, `已存在同名分类「${newName}」`, [{ message: '名称已被占用', path: ['name'] }])
-    }
-  }
-  if (newSlug !== existingSlug) {
-    const dupSlug = await findCategoryBySlug(newSlug)
-    if (dupSlug !== null && dupSlug.id !== id) {
-      throw new ActionFailure(409, `已存在相同 slug「${newSlug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
-    }
-  }
-}
-
-// Shared with the tag service: format the "still referenced by N
-// posts" 409 body.
-export function formatBlockMessage(kind: string, name: string, titles: readonly string[]): string {
-  const preview = titles.slice(0, 5).join('、')
-  const suffix = titles.length > 5 ? `等 ${titles.length} 篇文章` : `${titles.length} 篇文章`
-  return `${kind}「${name}」仍被 ${suffix}引用：${preview}。请先在 MDX frontmatter 中改写后再删除。`
+  return deleteAdminTaxonomy(id, '分类', {
+    findById: findCategoryById,
+    deleteRow: deleteCategoryRow,
+    listPostsBy: listPostsByCategory,
+  })
 }

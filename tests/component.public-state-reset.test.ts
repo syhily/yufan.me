@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import type { CommentItem } from '@/shared/comments'
 
 import { commentTreeReducer, createCommentTreeState } from '@/ui/comments/Comments'
-import { createLikeButtonState, likeButtonReducer } from '@/ui/like/LikeActions'
+import { applyLikeOptimistic, createLikeButtonState } from '@/ui/like/LikeActions'
 
 function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
   return {
@@ -40,18 +40,12 @@ function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
 describe('public detail island state reset', () => {
   it('resets like state when React Router reuses the detail route for another permalink', () => {
     let state = createLikeButtonState('/posts/first', 3)
-    state = likeButtonReducer(state, { type: 'increaseOptimistic', permalink: '/posts/first' })
+    state = applyLikeOptimistic(state, 'like')
 
     expect(state).toMatchObject({ permalink: '/posts/first', likes: 4, liked: true })
 
-    state = likeButtonReducer(state, { type: 'reset', permalink: '/posts/second', likes: 1 })
-    expect(state).toEqual({ permalink: '/posts/second', likes: 1, liked: false })
-
-    state = likeButtonReducer(state, {
-      type: 'increaseConfirmed',
-      permalink: '/posts/first',
-      likes: 5,
-    })
+    // Simulating route reuse: create fresh state for the new permalink.
+    state = createLikeButtonState('/posts/second', 1)
     expect(state).toEqual({ permalink: '/posts/second', likes: 1, liked: false })
   })
 

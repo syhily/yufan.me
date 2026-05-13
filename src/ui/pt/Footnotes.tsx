@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import { Tooltip } from '@/ui/primitives/Tooltip'
+import { Tooltip } from '@/ui/components/tooltip'
 
 interface FootnoteContextValue {
   previews: ReadonlyMap<string, ReactNode>

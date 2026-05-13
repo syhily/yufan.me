@@ -26,7 +26,7 @@ function SheetBackdrop({ className, ...props }: ComponentProps<typeof BaseDialog
     <BaseDialog.Backdrop
       data-slot="sheet-backdrop"
       className={cn(
-        'fixed inset-0 z-(--z-modal) bg-black/50 transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
+        'fixed inset-0 z-(--z-modal) bg-scrim transition-opacity duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
         className,
       )}
       {...props}

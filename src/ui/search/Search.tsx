@@ -6,11 +6,11 @@ import { flushSync } from 'react-dom'
 import { Form } from 'react-router'
 
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
+import { Button } from '@/ui/components/button'
+import { IconButtonContent } from '@/ui/components/icon-button-content'
+import { Input } from '@/ui/components/input'
 import { useSidebarSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { publicButtonVariants } from '@/ui/primitives/btn'
-import { formControlVariants } from '@/ui/primitives/formControl'
-import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { Popup } from '@/ui/primitives/Popup'
 
 // Sidebar search: real GET form first, React Router navigation second.
@@ -107,13 +107,15 @@ export function SearchIconButton() {
 
   return (
     <>
-      <button
-        type="button"
+      <Button
         ref={triggerRef}
+        variant="dark"
+        size="iconSm"
+        shape="circle"
         // `mr-2` (= 8px) is the social-rail gap supplied by every
         // rail consumer. The sole consumer of `SearchIconButton`
         // today is the public Header social rail.
-        className={publicButtonVariants({ variant: 'dark', size: 'iconSm', shape: 'circle', className: 'mr-2' })}
+        className="mr-2"
         title="搜索"
         aria-label="打开搜索"
         onClick={(event) => {
@@ -125,7 +127,7 @@ export function SearchIconButton() {
         <IconButtonContent>
           <SearchIcon size="1em" aria-hidden className="m-icon-inset" />
         </IconButtonContent>
-      </button>
+      </Button>
       <SearchPopup open={open} onClose={handleClose} inputRef={popupInputRef} />
     </>
   )
@@ -147,19 +149,20 @@ function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
         <div className="px-4 py-4 md:px-12 md:py-8">
           <div className="mx-auto max-w-sm">
             <div className="mb-4 md:mb-6">
-              <input
+              <Input
                 ref={inputRef}
                 type="search"
                 name="q"
                 required
                 enterKeyHint="search"
-                className={cn(formControlVariants({ control: 'input', size: 'lg' }), 'text-center')}
+                size="lg"
+                className="bg-canvas text-center"
                 placeholder="搜索并回车"
               />
             </div>
-            <button type="submit" className={publicButtonVariants({ variant: 'primary', size: 'lg', shape: 'block' })}>
+            <Button type="submit" variant="default" size="lg" block>
               搜索
-            </button>
+            </Button>
           </div>
         </div>
       </Form>

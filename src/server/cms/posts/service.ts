@@ -41,7 +41,7 @@ import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure } from '@/server/route-helpers/api-handler'
 import { indexPost, removePostIndex } from '@/server/search/indexer'
 import { deriveSlug } from '@/server/slug'
-import { derivedTagSlug } from '@/server/tags/slug'
+import { resolveSlugForTaxonomy } from '@/server/taxonomies/service'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 
@@ -52,7 +52,7 @@ async function ensureTagsExist(tagNames: string[]): Promise<void> {
   if (tagNames.length === 0) {
     return
   }
-  await Promise.all(tagNames.map((name) => seedTagIfMissing({ name, slug: derivedTagSlug(name) })))
+  await Promise.all(tagNames.map((name) => seedTagIfMissing({ name, slug: resolveSlugForTaxonomy(undefined, name) })))
 }
 
 // --- Public catalog helpers -------------------------------------------------

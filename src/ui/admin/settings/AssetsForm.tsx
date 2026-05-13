@@ -1,3 +1,5 @@
+import type { AssetsLoaderShape } from '@/shared/settings'
+
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
@@ -5,32 +7,7 @@ import { Checkbox } from '@/ui/components/checkbox'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
-// Loader projection passed in by the route. Bridges the DB-backed
-// `assets` bucket (`AssetsSettings` in `@/shared/blog-config`) into the
-// editor: the secret is masked so the operator can confirm "the secret
-// is set" without ever round-tripping the raw value to the browser.
-//
-// `secretAccessKey` follows the same "optional ⇒ keep existing"
-// convention as `mail.apiKey`. The form always renders the S3 fieldset
-// so the operator can prepare the credentials BEFORE flipping the
-// master toggle on. While the toggle is off the schema's `superRefine`
-// only requires the bucket fields when `enabled === true`, so the
-// perimeter rejects a half-baked enabled submission cleanly.
-export interface AssetsLoaderShape {
-  asset: { host: string; scheme: 'http' | 'https' }
-  storage: {
-    enabled: boolean
-    endpoint: string
-    region: string
-    bucket: string
-    accessKeyId: string
-    forcePathStyle: boolean
-    urlTemplate: string
-  }
-  /** Last 4 chars of the stored secret access key, or `null` when unset. */
-  secretAccessKeyMask: string | null
-  upload: { maxBytes: number; jpegQuality: number }
-}
+export type { AssetsLoaderShape }
 
 interface AssetsFormProps {
   assets: AssetsLoaderShape

@@ -1,6 +1,9 @@
 @import 'tailwindcss' source(none);
 @plugin '@tailwindcss/typography';
 
+/* Activate class-based dark mode variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @source '../..';
 
 /* Project semantic tokens light */
@@ -10,6 +13,10 @@
   --brand-dark: #151b2b;
   --brand-darker: #20283b;
   --brand-success: #41d589;
+
+  /* Primary button hover swap brand teal to dark navy in light mode */
+  --btn-hover-bg: var(--brand-dark);
+  --btn-hover-fg: #ffffff;
 
   /* Ink */
   --ink-strong: #151b2b;
@@ -59,6 +66,13 @@
   --scrim: rgba(8, 15, 25, 0.3);
   --skeleton-start: rgba(0, 0, 0, 0.04);
   --skeleton-end: rgba(0, 0, 0, 0.08);
+
+  /* Shadow and popup values are declared at root so dark overrides apply through var */
+  --shadow-card-value: 0 0 30px 0 rgb(40 49 73 / 2%);
+  --shadow-tooltip-value: 0 8px 28px rgb(40 49 73 / 14%);
+  --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 11.7%);
+  --popup-close-hover: #f5f5f5;
+
   text-autospace: normal;
 
   /* Shadcn semantic slots light */
@@ -71,6 +85,11 @@
 
   --primary: var(--brand);
   --primary-foreground: #ffffff;
+
+  /* Resting fill for the default Button variant. Lifts off `--primary` in
+     light mode and deepens in dark mode so the teal reads as a richer, less
+     saturated swatch against the navy canvas. */
+  --btn-primary-bg: var(--primary);
 
   --secondary: var(--surface-dim);
   --secondary-foreground: var(--ink-strong);
@@ -104,6 +123,204 @@
   --sidebar-accent-foreground: var(--ink-strong);
   --sidebar-border: var(--border-soft);
   --sidebar-ring: var(--brand);
+}
+
+.dark {
+  /* Ink light text on dark canvas */
+  --ink-strong: #e8e9ea;
+  --ink-body: #c8ccd6;
+  --ink-secondary: #8b92a5;
+  --ink-muted: #5b6378;
+  --ink-overlay: #2a3142;
+
+  /* Brand teal lifted in dark mode so accents (sidebar widget titles, link
+     colours, focus ring) read with more punch against the dim canvas. */
+  --brand: #1ab2bd;
+
+  /* Brand-dark surfaces relifted so dark buttons stay visible on the dark body */
+  --brand-dark: #334155;
+  --brand-darker: #475569;
+
+  /* Sidebar sits one step darker than the lifted body so the two surfaces
+     stay clearly separated without the aside going pure black. */
+  --surface-secondary: #0b1322;
+
+  /* Primary button hover swap dims the brand teal in dark mode */
+  --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
+  --btn-hover-fg: #ffffff;
+
+  /* Primary button rests on a deeper teal in dark mode so the label still
+     reads with contrast against the dim canvas. */
+  --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
+
+  /* Surfaces deep navy backgrounds. Body lifts one notch above the sidebar so
+     the two regions read as a clear hierarchy: aside (deepest), body
+     (mid), surface (most elevated). */
+  --canvas: #15203a;
+  --surface: #1d2842;
+  --surface-dim: #232f4a;
+  --surface-warn: #3a2810;
+  --surface-body: #15203a;
+  --surface-soft: #1f2a44;
+
+  /* Lines darker borders on dark surfaces */
+  --line: #1e293b;
+  --line-muted: #334155;
+  --line-widget: #2d3a4a;
+
+  /* Code block token inversion */
+  --bg-shiki-light: #1a1f2e;
+  --fg-inline-code-on-shiki-bg: #c8ccd6;
+  --border-inline-code-on-shiki-bg: color-mix(in oklab, var(--bg-shiki-light) 68%, #444 32%);
+
+  /* Skeleton shimmer inversion */
+  --skeleton-start: rgba(255, 255, 255, 0.04);
+  --skeleton-end: rgba(255, 255, 255, 0.08);
+
+  /* Scrim more opaque on dark */
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* Shadows more visible on dark backgrounds */
+  --shadow-card-value: 0 0 30px 0 rgb(0 0 0 / 30%);
+  --shadow-tooltip-value: 0 8px 28px rgb(0 0 0 / 40%);
+  --shadow-toc-toggle-value: 0 0.125rem 0.3125rem rgb(0 0 0 / 40%);
+
+  /* Popup close hover */
+  --popup-close-hover: #2a3142;
+
+  /* Shiki fallback when inline style does not set shiki light */
+  --shiki-light: var(--ink-body);
+}
+
+/* Post headings override for dark mode */
+.dark
+  .post-content.prose-blog.prose
+  :where(h1, h2, h3, h4, h5):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+  color: var(--ink-strong);
+}
+
+/* Shiki sets inline background on pre so we must use important */
+.dark pre.shiki {
+  background-color: var(--bg-shiki-light) !important;
+}
+
+/* APlayer dark mode overrides. The library ships a fixed light palette so we
+   reskin every chrome surface against the project tokens. Album art controls
+   stay white because they paint on the cover image not on the player frame. */
+.dark .aplayer {
+  background: var(--surface);
+  color: var(--ink-body);
+}
+
+/* Album cover sits on the same dim treatment as content images. The play
+   button child counter-brightens so the white overlay still reads on darker
+   covers. The cover paints via background-image so the image-component dim
+   class does not reach it. */
+.dark .aplayer .aplayer-pic {
+  filter: brightness(0.72) contrast(0.95) saturate(0.9);
+}
+
+.dark .aplayer .aplayer-pic .aplayer-button {
+  filter: brightness(1.35);
+}
+
+.dark .aplayer.aplayer-withlist .aplayer-info {
+  border-bottom-color: var(--line);
+}
+
+.dark .aplayer .aplayer-info .aplayer-music .aplayer-title {
+  color: var(--ink-strong);
+}
+
+.dark .aplayer .aplayer-info .aplayer-music .aplayer-author {
+  color: var(--ink-muted);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar {
+  background: var(--line-widget);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
+  background: var(--ink-muted);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time {
+  color: var(--ink-muted);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
+  fill: var(--ink-secondary);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon:hover path {
+  fill: var(--ink-strong);
+}
+
+.dark .aplayer .aplayer-info .aplayer-controller .aplayer-volume-wrap .aplayer-volume-bar-wrap .aplayer-volume-bar {
+  background: var(--ink-muted);
+}
+
+.dark .aplayer .aplayer-lrc::before {
+  background: linear-gradient(to bottom, var(--surface) 0%, color-mix(in oklab, var(--surface) 0%, transparent) 100%);
+}
+
+.dark .aplayer .aplayer-lrc::after {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--surface) 0%, transparent) 0%,
+    color-mix(in oklab, var(--surface) 80%, transparent) 100%
+  );
+}
+
+.dark .aplayer .aplayer-lrc p {
+  color: var(--ink-muted);
+}
+
+.dark .aplayer .aplayer-lrc p.aplayer-lrc-current {
+  color: var(--ink-body);
+}
+
+.dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb {
+  background-color: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb:hover {
+  background-color: var(--line-muted);
+}
+
+.dark .aplayer .aplayer-list ol li {
+  border-top-color: var(--line);
+  color: var(--ink-body);
+}
+
+.dark .aplayer .aplayer-list ol li:hover {
+  background: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-list ol li.aplayer-list-light {
+  background: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-list ol li .aplayer-list-index,
+.dark .aplayer .aplayer-list ol li .aplayer-list-author {
+  color: var(--ink-muted);
+}
+
+.dark .aplayer .aplayer-notice {
+  background-color: var(--surface-dim);
+  color: var(--ink-body);
+}
+
+.dark .aplayer .aplayer-miniswitcher {
+  background: var(--surface-dim);
+}
+
+.dark .aplayer .aplayer-miniswitcher .aplayer-icon path {
+  fill: var(--ink-secondary);
+}
+
+.dark .aplayer .aplayer-miniswitcher .aplayer-icon:hover path {
+  fill: var(--ink-strong);
 }
 
 /* Tailwind theme bridge shadcn */
@@ -211,19 +428,20 @@
   --leading-badge: 1.2;
   --spacing-badge-overlay-y: 0.4375rem;
   --spacing-icon-inset: 28%;
+  --spacing-btn-icon-md: 2.625rem;
 
   --container-popup-sm: 300px;
   --container-popup-md: 540px;
   --container-popup-lg: 960px;
   --width-popup-mobile: 95%;
   --shadow-popup-close: 0 2px 6px rgba(0, 0, 0, 0.2);
-  --color-popup-close-hover: #f5f5f5;
+  --color-popup-close-hover: var(--popup-close-hover);
 
   --size-qr-dialog: 210px;
 
-  --shadow-card: 0 0 30px 0 rgb(40 49 73 / 2%);
-  --shadow-tooltip: 0 8px 28px rgb(40 49 73 / 14%);
-  --shadow-toc-toggle: 0 0.125rem 0.3125rem rgb(0 0 0 / 11.7%);
+  --shadow-card: var(--shadow-card-value);
+  --shadow-tooltip: var(--shadow-tooltip-value);
+  --shadow-toc-toggle: var(--shadow-toc-toggle-value);
 
   --animate-shake: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 
@@ -531,7 +749,7 @@ body {
     :where(pre) {
       position: relative;
       color: inherit;
-      background-color: rgb(253, 246, 227);
+      background-color: var(--bg-shiki-light);
       padding: 1rem 1.25rem;
       margin-top: 0 !important;
       margin-bottom: 1rem !important;
@@ -636,7 +854,7 @@ body {
       font-size: 0.875rem;
       line-height: 1.7;
       color: inherit;
-      background-color: rgb(253, 246, 227);
+      background-color: var(--bg-shiki-light);
       padding: 0.875rem 1rem;
       margin: 0.75rem 0;
       border-radius: var(--radius-sm);

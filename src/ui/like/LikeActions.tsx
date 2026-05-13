@@ -1,5 +1,5 @@
 import { HeartIcon } from 'lucide-react'
-import { useEffect, useReducer } from 'react'
+import { useEffect, useState, useOptimistic } from 'react'
 
 import type {
   DecreaseLikeInput,
@@ -13,11 +13,11 @@ import type {
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { joinUrl } from '@/shared/urls'
+import { Button } from '@/ui/components/button'
+import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { publicButtonVariants } from '@/ui/primitives/btn'
-import { IconButtonContent } from '@/ui/primitives/IconButtonContent'
 import { QRDialog } from '@/ui/primitives/QRDialog'
 
 export interface LikeButtonProps {
@@ -33,38 +33,16 @@ export interface LikeButtonState {
   liked: boolean
 }
 
-export type LikeButtonAction =
-  | { type: 'reset'; permalink: string; likes: number }
-  | { type: 'validated'; permalink: string; valid: boolean }
-  | { type: 'increaseOptimistic'; permalink: string }
-  | { type: 'increaseConfirmed'; permalink: string; likes: number }
-  | { type: 'decreaseOptimistic'; permalink: string }
-  | { type: 'decreaseConfirmed'; permalink: string; likes: number }
-
 export function createLikeButtonState(permalink: string, likes: number): LikeButtonState {
   return { permalink, likes, liked: false }
 }
 
-export function likeButtonReducer(state: LikeButtonState, action: LikeButtonAction): LikeButtonState {
-  if (action.type === 'reset') {
-    return createLikeButtonState(action.permalink, action.likes)
+/** Apply an optimistic like/unlike toggle. Exported for unit tests. */
+export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'unlike'): LikeButtonState {
+  if (action === 'like') {
+    return { ...state, liked: true, likes: state.likes + 1 }
   }
-  if (action.permalink !== state.permalink) {
-    return state
-  }
-
-  switch (action.type) {
-    case 'validated':
-      return { ...state, liked: action.valid }
-    case 'increaseOptimistic':
-      return { ...state, liked: true, likes: state.likes + 1 }
-    case 'increaseConfirmed':
-      return { ...state, liked: true, likes: action.likes }
-    case 'decreaseOptimistic':
-      return { ...state, liked: false, likes: Math.max(0, state.likes - 1) }
-    case 'decreaseConfirmed':
-      return { ...state, liked: false, likes: action.likes }
-  }
+  return { ...state, liked: false, likes: Math.max(0, state.likes - 1) }
 }
 
 // React 19 client island: replaces the imperative
@@ -73,13 +51,14 @@ export function likeButtonReducer(state: LikeButtonState, action: LikeButtonActi
 // `localStorage`, and uses one `useApiFetcher` per direction so the SSR
 // HTML (count / heart) stays the source of truth on first paint.
 export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) {
-  const [state, dispatch] = useReducer(likeButtonReducer, createLikeButtonState(permalink, initialLikes))
+  const [baseState, setBaseState] = useState(createLikeButtonState(permalink, initialLikes))
+  const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
     API_ACTIONS.comment.validateLikeToken,
     {
       onSuccess: (data) => {
-        dispatch({ type: 'validated', permalink: data.key, valid: data.valid })
+        setBaseState((prev) => (data.key === prev.permalink ? { ...prev, liked: data.valid } : prev))
         if (!data.valid) {
           localStorage.removeItem(tokenStorageKey(data.key))
         }
@@ -89,14 +68,14 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
 
   const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
     onSuccess: (data) => {
-      dispatch({ type: 'increaseConfirmed', permalink: data.key, likes: data.likes })
+      setBaseState((prev) => (data.key === prev.permalink ? { ...prev, liked: true, likes: data.likes } : prev))
       localStorage.setItem(tokenStorageKey(data.key), data.token)
     },
   })
 
   const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
     onSuccess: (data) => {
-      dispatch({ type: 'decreaseConfirmed', permalink: data.key, likes: data.likes })
+      setBaseState((prev) => (data.key === prev.permalink ? { ...prev, liked: false, likes: data.likes } : prev))
       localStorage.removeItem(tokenStorageKey(data.key))
     },
   })
@@ -107,7 +86,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   // the new page's cached token.
   const validateSubmit = validate.submit
   useEffect(() => {
-    dispatch({ type: 'reset', permalink, likes: initialLikes })
+    setBaseState(createLikeButtonState(permalink, initialLikes))
     const token = localStorage.getItem(tokenStorageKey(permalink))
     if (!token) {
       return
@@ -127,58 +106,48 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
       if (!token) {
         return
       }
-      dispatch({ type: 'decreaseOptimistic', permalink })
+      addOptimistic('unlike')
       decrease.submit({ key: permalink, token })
     } else {
-      dispatch({ type: 'increaseOptimistic', permalink })
+      addOptimistic('like')
       increase.submit({ key: permalink })
     }
   }
 
   return (
     <div className="mt-12 text-center">
-      <button
-        className={publicButtonVariants({
-          variant: 'secondary',
-          size: 'lg',
-          shape: 'pill',
-          // - `px-10` widens the pill horizontally to match the
-          //   legacy `padding-inline: 2.5rem` from the post-like rule.
-          // - `data-[liked=true]:…` swaps the chrome to the red
-          //   like-active state when the post is liked. The
-          //   `[data-liked=true]` attribute selector adds 1 to
-          //   selector specificity, so the data-state utilities
-          //   win over the unconditional `secondary` colourway by
-          //   specificity at runtime — no `!` is needed (Stage 11
-          //   P2). `tailwind-merge` does NOT dedupe across these
-          //   two classes because one is unmodified (`bg-brand-
-          //   darker`) and the other carries the data-state prefix
-          //   (`data-[liked=true]:bg-like-active`); they ride into
-          //   the rendered class string side-by-side and the runtime
-          //   selector chooses which wins.
-          className: cn(
-            'px-10',
-            'hover:animate-shake hover:will-change-transform',
-            'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
-            isPending && 'lock',
-          ),
-        })}
+      <Button
+        variant="dark"
+        size="lg"
+        shape="pill"
+        // - `px-10` widens the pill horizontally to match the
+        //   legacy `padding-inline: 2.5rem` from the post-like rule.
+        // - `data-[liked=true]:…` swaps the chrome to the red
+        //   like-active state when the post is liked. The
+        //   `[data-liked=true]` attribute selector adds 1 to
+        //   selector specificity, so the data-state utilities
+        //   win over the unconditional colourway by
+        //   specificity at runtime.
+        className={cn(
+          'px-10',
+          'hover:animate-shake hover:will-change-transform',
+          'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
+        )}
         title="Do you like me?"
-        type="button"
         data-permalink={permalink}
         data-liked={state.liked ? 'true' : 'false'}
         onClick={onClick}
         disabled={isPending}
       >
         <HeartIcon
-          className="icon-heart-fill me-1 mt-[-2px] size-[1.1em] align-middle"
+          className="me-1 mt-[-2px] size-[1.1em] align-middle"
           fill="currentColor"
           size="1em"
           strokeWidth={0}
           aria-hidden
         />
         <span className="inline-block align-middle">{state.likes}</span>
-      </button>
+      </Button>
     </div>
   )
 }
@@ -213,46 +182,42 @@ export function LikeShare({ post }: LikeShareProps) {
 
   return (
     <div className="mt-6 text-center">
-      <a
-        href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`}
-        className={publicButtonVariants({
-          variant: 'light',
-          size: 'iconMd',
-          shape: 'circle',
-          className: 'mx-1',
-        })}
+      <Button
+        variant="light"
+        size="iconMd"
+        shape="circle"
+        className="mx-1"
+        // oxlint-disable-next-line jsx-a11y/anchor-has-content
+        render={<a href={`https://connect.qq.com/widget/shareqq/index.html?${qq}`} />}
         title="分享到 QQ 空间"
       >
         <IconButtonContent>
           <QQIcon className="m-icon-inset" />
         </IconButtonContent>
-      </a>
+      </Button>
       <QRDialog
         url={postURL}
         name="在微信中请长按二维码"
         title="微信扫一扫 分享朋友圈"
         trigger={<WechatIcon className="m-icon-inset" />}
-        className={publicButtonVariants({
-          variant: 'light',
-          size: 'iconMd',
-          shape: 'circle',
-          className: 'mx-1',
-        })}
+        variant="light"
+        size="iconMd"
+        shape="circle"
+        className="mx-1"
       />
-      <a
-        href={`https://service.weibo.com/share/share.php?${weibo}`}
-        className={publicButtonVariants({
-          variant: 'light',
-          size: 'iconMd',
-          shape: 'circle',
-          className: 'mx-1',
-        })}
+      <Button
+        variant="light"
+        size="iconMd"
+        shape="circle"
+        className="mx-1"
+        // oxlint-disable-next-line jsx-a11y/anchor-has-content
+        render={<a href={`https://service.weibo.com/share/share.php?${weibo}`} />}
         title="分享到微博"
       >
         <IconButtonContent>
           <WeiboIcon className="m-icon-inset" />
         </IconButtonContent>
-      </a>
+      </Button>
     </div>
   )
 }

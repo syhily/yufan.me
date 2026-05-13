@@ -50,7 +50,7 @@ const tocToggleClass = cn(
   // the disc up front avoids that "first frame jump" on touch devices.
   'transform-gpu',
   // Box: rounded disc with a subtle surface tint.
-  'rounded-full border border-line bg-white/90',
+  'rounded-full border border-line bg-canvas/90',
   // Typography & colour.
   'text-toc-toggle leading-none text-ink-secondary shadow-toc-toggle',
   // Transition: include the CSS `translate` / `scale` / `rotate`
@@ -135,7 +135,7 @@ const tocDrawerClass = cn(
 // then occupies the viewport.
 const tocBackdropClass = cn(
   'pointer-events-none invisible',
-  'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-black/30',
+  'data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:fixed data-[state=open]:inset-0 data-[state=open]:z-500 data-[state=open]:bg-scrim',
 )
 
 const DEFAULT_TOC_CONFIG = {

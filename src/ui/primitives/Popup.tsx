@@ -76,7 +76,7 @@ const popupCloseButtonClass = cn(
   'fixed bottom-0 left-1/2 z-99 flex items-center justify-center',
   '-translate-x-1/2 translate-y-1/2',
   'h-8 w-8 appearance-none rounded-full border-0 p-0',
-  'bg-white shadow-popup-close',
+  'bg-canvas shadow-popup-close',
   'transition-colors duration-150 ease-out',
   'hover:bg-popup-close-hover focus-visible:bg-popup-close-hover',
 )
@@ -189,7 +189,7 @@ export function Popup({
     >
       <div
         className={cn(
-          'fixed inset-0 bg-black/30',
+          'fixed inset-0 bg-scrim',
           entered ? 'pointer-events-auto visible opacity-100' : 'invisible opacity-0',
         )}
         onClick={onClose}
@@ -217,9 +217,9 @@ export function Popup({
             onClose()
           }}
         >
-          <XIcon size={22} aria-hidden className="inline-block align-middle text-gray-300" />
+          <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-muted" />
         </button>
-        <div className={cn('relative rounded-lg bg-white text-ink-strong', CONTENT_SIZE_CLASS[size])}>{children}</div>
+        <div className={cn('relative rounded-lg bg-canvas text-ink-strong', CONTENT_SIZE_CLASS[size])}>{children}</div>
       </div>
     </div>,
     document.body,

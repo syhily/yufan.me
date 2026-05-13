@@ -29,14 +29,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Brand teal at rest → dark navy on hover. Mirrors the public
-        // site's `.btn-primary:hover` swap (`--btn-primary` →
-        // `--btn-dark`), and matches the two reference screenshots the
-        // user shared (resting teal vs. hover dark).
-        default: 'bg-primary text-primary-foreground shadow-xs hover:bg-foreground hover:text-primary-foreground',
-        // Same dark-navy hover lands on destructive too — the colour
-        // shift is the visual cue that the action is firing.
-        destructive: 'bg-destructive text-white shadow-xs hover:bg-foreground focus-visible:ring-destructive/20',
+        // Brand teal at rest, hover swap driven by `--btn-hover-bg` /
+        // `--btn-hover-fg` so the cascade can rebind it in dark mode.
+        // Light mode keeps the public-site navy swap; dark mode dims
+        // the brand teal (`hover:bg-foreground` would otherwise resolve
+        // to light grey, hiding the white label).
+        default: 'bg-(--btn-primary-bg) text-primary-foreground hover:bg-(--btn-hover-bg) hover:text-(--btn-hover-fg)',
+        // Destructive shares the same hover token pair so the firing
+        // affordance reads identically in both modes.
+        destructive:
+          'bg-destructive text-destructive-foreground hover:bg-(--btn-hover-bg) hover:text-(--btn-hover-fg) focus-visible:ring-destructive/20',
         // Light-red "clear" affordance — used for tertiary "undo"
         // actions like clearing a filter selection: visible enough to
         // signal "removes something" without competing with primary
@@ -51,16 +53,40 @@ const buttonVariants = cva(
         // hover so secondary actions don't compete with the primary
         // call-to-action when several buttons share a row (e.g. the
         // comment-row toolbar where "审核 / 回复 / …" all sit together).
-        outline: 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground ',
-        secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
+        outline: 'border bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
+        // Public-site colourways — solid fills that match the retired
+        // `publicButtonVariants` recipes. `light` is the muted chip used
+        // for ScrollTop, comment cancel, share buttons. `dark` is the
+        // solid navy used for Header social rail, QRDialog, search trigger.
+        light: 'border border-surface-soft bg-surface-soft text-ink-muted hover:text-ink-strong',
+        dark: 'border border-brand-dark bg-brand-dark text-ink-light hover:bg-brand-darker hover:border-brand-darker hover:text-white',
       },
       size: {
         default: 'h-10 px-5 py-2.5',
         sm: 'h-9 rounded-md gap-1.5 px-3.5 py-2',
         lg: 'h-11 rounded-md px-7 py-2.5',
-        icon: 'size-9',
+        icon: 'relative size-9',
+        // Public-site icon-button sizes square-only zero padding. `relative` is
+        // required so the centred `<IconButtonContent>` span anchors against
+        // the button itself rather than escaping to the nearest positioned
+        // ancestor (e.g. the sticky aside drawer).
+        iconSm: 'relative size-8',
+        iconMd: 'relative size-btn-icon-md',
+        iconLg: 'relative size-11',
+      },
+      /** Corner radius. `default` inherits `rounded-md` from the base. */
+      shape: {
+        default: '',
+        circle: 'rounded-full',
+        pill: 'rounded-[4rem]',
+      },
+      /** Layout. `default` keeps `inline-flex` from the base; `block` stretches to the parent's width. */
+      block: {
+        true: 'block w-full',
+        false: '',
       },
     },
     defaultVariants: {
@@ -74,7 +100,7 @@ export interface ButtonProps extends ComponentProps<'button'>, VariantProps<type
   render?: useRender.RenderProp
 }
 
-function Button({ className, variant, size, render, ...props }: ButtonProps) {
+function Button({ className, variant, size, shape, block, render, ...props }: ButtonProps) {
   // Use Base UI's `defaultTagName` to provide the fallback element (a
   // plain `<button>`) and put defaults — including `type="button"` —
   // into the `props` bag. `useRender` treats the render element as the
@@ -90,7 +116,7 @@ function Button({ className, variant, size, render, ...props }: ButtonProps) {
       type: 'button',
       'data-slot': 'button',
       ...props,
-      className: cn(buttonVariants({ variant, size, className })),
+      className: cn(buttonVariants({ variant, size, shape, block, className })),
     },
   })
   return element

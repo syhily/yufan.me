@@ -22,7 +22,7 @@ function AlertDialogBackdrop({ className, ...props }: ComponentProps<typeof Base
     <BaseAlertDialog.Backdrop
       data-slot="alert-dialog-backdrop"
       className={cn(
-        'fixed inset-0 z-(--z-modal) bg-black/50 transition-opacity duration-150 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
+        'fixed inset-0 z-(--z-modal) bg-scrim transition-opacity duration-150 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0',
         className,
       )}
       {...props}

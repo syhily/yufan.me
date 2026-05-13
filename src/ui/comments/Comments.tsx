@@ -23,8 +23,8 @@ import {
   type CommentTreeState,
   useCommentsContext,
 } from '@/ui/comments/comments-context'
+import { Button } from '@/ui/components/button'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
-import { publicButtonVariants } from '@/ui/primitives/btn'
 
 export interface CommentsProps {
   commentKey: string
@@ -424,9 +424,8 @@ function CommentsLoadMore() {
 
   return (
     <div className="mt-4 text-center md:mt-6">
-      <button
-        type="button"
-        className={publicButtonVariants({ variant: 'light' })}
+      <Button
+        variant="light"
         onClick={onLoadMore}
         disabled={moreLoading}
         data-key={ctx.commentKey}
@@ -434,7 +433,7 @@ function CommentsLoadMore() {
         data-offset={ctx.state.rootsLoaded}
       >
         {moreLoading ? '加载中...' : '加载更多'}
-      </button>
+      </Button>
     </div>
   )
 }

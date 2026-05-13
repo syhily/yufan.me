@@ -112,3 +112,35 @@ export interface UpdateSettingsInput {
   section: SettingsSection
   payload: unknown
 }
+
+// DTO shapes the server projection emits and the admin forms consume. They
+// live in shared (not in the admin form modules) so the server projection
+// can import them without crossing the server to UI boundary.
+
+export interface AssetsLoaderShape {
+  asset: { host: string; scheme: 'http' | 'https' }
+  storage: {
+    enabled: boolean
+    endpoint: string
+    region: string
+    bucket: string
+    accessKeyId: string
+    forcePathStyle: boolean
+    urlTemplate: string
+  }
+  /** Last 4 chars of the stored secret access key, or `null` when unset. */
+  secretAccessKeyMask: string | null
+  upload: { maxBytes: number; jpegQuality: number }
+}
+
+export interface SearchLoaderShape {
+  search: {
+    enabled: boolean
+    mode: 'vector' | 'like'
+    endpoint: string
+    apiKey: string
+    model: string
+    similarityThreshold: number
+  }
+  apiKeyMask: string | null
+}

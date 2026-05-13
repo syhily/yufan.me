@@ -23,6 +23,8 @@ import { Button } from '@/ui/components/button'
 import { Separator } from '@/ui/components/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
+import { BrandLogo } from '@/ui/primitives/BrandLogo'
+import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
 
 interface NavItem {
   to: string
@@ -213,28 +215,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
             </SheetContent>
           </Sheet>
           <a href="/wp-admin/comments" className="flex items-center gap-2 text-base font-semibold text-foreground">
-            {/* `style` carries the LOGO size instead of relying on `h-7
-              w-auto`. When the user arrives here through a *client-side*
-              SPA navigation from the public site, React Router keeps the
-              public `public.css` `<link>` attached to `<head>` for the
-              current tick (see `persistentHrefs` in `react-router-dev`).
-              That sheet ships an UN-LAYERED `img { height: auto }` reset —
-              and per the W3C cascade-layers spec un-layered rules beat any
-              layered rule of any specificity. Tailwind v4 utilities like
-              `h-7` live in `@layer utilities` and silently lose, so the
-              SVG renders at its intrinsic ~700px size for one paint and the
-              header explodes (a hard refresh fixes it because the public
-              sheet stops being fetched). Inline `style` wins both against
-              un-layered selector rules and against Tailwind utilities, so
-              the LOGO stays at 28px regardless of which stylesheets currently
-              sit in `<head>`. The `h-7 w-auto` classes remain so the
-              intent reads correctly in JSX. */}
-            <img
-              src="/logo-large.svg"
-              alt="且听书吟"
-              className="h-7 w-auto"
-              style={{ height: '1.75rem', width: 'auto' }}
-            />
+            <BrandLogo className="h-7 w-auto" />
           </a>
           {/* Quick "back to public site" affordance. Wrapped in a ghost
             Button so the hit target / focus ring / hover background match
@@ -255,6 +236,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
           >
             <HomeIcon data-icon />
           </Button>
+          <ThemeToggle mode="admin" />
           <div className="flex-1" />
           <UserMenu id={currentUser.id} name={currentUser.name} email={currentUser.email} />
         </header>
