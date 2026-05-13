@@ -24,7 +24,7 @@ vi.mock('@/server/session', async () => {
     resolveSessionContext: vi.fn(async () => ({
       session,
       user: session?.data?.user,
-      admin: Boolean(session?.data?.user?.admin),
+      admin: Boolean(session?.data?.user?.role === 'admin'),
     })),
   }
 })

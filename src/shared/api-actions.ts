@@ -53,6 +53,14 @@ export const API_ACTIONS = {
     searchPages: defineApiAction('api/actions/comment/searchPages', 'GET'),
     searchAuthors: defineApiAction('api/actions/comment/searchAuthors', 'GET'),
     loadAll: defineApiAction('api/actions/comment/loadAll', 'POST'),
+    updateOwn: defineApiAction('api/actions/comment/updateOwn', 'POST'),
+    requestDeleteOwn: defineApiAction('api/actions/comment/requestDeleteOwn', 'POST'),
+    cancelDeleteOwn: defineApiAction('api/actions/comment/cancelDeleteOwn', 'POST'),
+    listMine: defineApiAction('api/actions/comment/listMine', 'GET'),
+  },
+  account: {
+    updateProfile: defineApiAction('api/actions/account/updateProfile', 'POST'),
+    updatePassword: defineApiAction('api/actions/account/updatePassword', 'POST'),
   },
   image: {
     resolveThumbhash: defineApiAction('api/actions/image/resolveThumbhash', 'GET'),
@@ -116,12 +124,17 @@ export const API_ACTIONS = {
     renderMath: defineApiAction('api/actions/admin/renderMath', 'POST'),
     renderMermaid: defineApiAction('api/actions/admin/renderMermaid', 'POST'),
     reindexSearch: defineApiAction('api/actions/admin/reindexSearch', 'POST'),
+    inviteAuthor: defineApiAction('api/actions/admin/inviteAuthor', 'POST'),
+    updateUserRole: defineApiAction('api/actions/admin/updateUserRole', 'POST'),
+    sendPasswordReset: defineApiAction('api/actions/admin/sendPasswordReset', 'POST'),
+    approveCommentDeletion: defineApiAction('api/actions/admin/approveCommentDeletion', 'POST'),
   },
 } as const
 
 export const API_ACTION_LIST = [
   ...Object.values(API_ACTIONS.auth),
   ...Object.values(API_ACTIONS.comment),
+  ...Object.values(API_ACTIONS.account),
   ...Object.values(API_ACTIONS.image),
   ...Object.values(API_ACTIONS.music),
   ...Object.values(API_ACTIONS.admin),

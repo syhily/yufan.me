@@ -58,7 +58,9 @@ export interface SettingsOutletContext extends ParentContext {
 // truncated a row by hand. Surfacing the regression at the layer that
 // actually owns the seed contract lets every per-section route trust
 // the bundle is fully populated and avoid re-stating the same guard.
-export async function loader(_args: Route.LoaderArgs) {
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const { role } = await import('@/server/session').then((m) => m.getRouteRequestContext({ request, context }))
+  if (role !== 'admin') throw await import('react-router').then((m) => m.redirect('/wp-admin/welcome'))
   const { bundle } = await getAdminBlogSettings()
   if (bundle === null) {
     throw new Response('Blog has not been installed yet.', { status: 503 })

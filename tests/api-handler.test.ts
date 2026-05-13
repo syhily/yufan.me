@@ -127,7 +127,7 @@ describe('routes/_shared/api/handler — runApi perimeter', () => {
 
   it('requireAdminSession reuses the session object runApi already resolved', () => {
     const session = {
-      get: (key: string) => (key === 'user' ? { admin: true } : undefined),
+      get: (key: string) => (key === 'user' ? { role: 'admin' } : undefined),
     } as BlogSession
 
     expect(requireAdminSession(session)).toBe(session)

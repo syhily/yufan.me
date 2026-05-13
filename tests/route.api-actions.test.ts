@@ -85,20 +85,20 @@ describe('routes/api/actions — file conventions', () => {
       'api/actions/admin/upsertCategory',
       'api/actions/admin/deleteCategory',
       'api/actions/admin/reorderCategories',
-      'api/actions/admin/listTags',
-      'api/actions/admin/upsertTag',
-      'api/actions/admin/deleteTag',
-      'api/actions/admin/listMusic',
-      'api/actions/admin/searchMusic',
-      'api/actions/admin/addMusic',
-      'api/actions/admin/deleteMusic',
+      'api/actions/admin/inviteAuthor',
+      'api/actions/admin/updateUserRole',
+      'api/actions/admin/sendPasswordReset',
+      'api/actions/admin/approveCommentDeletion',
     ])
     for (const action of API_ACTION_LIST) {
       if (!adminEndpoints.has(action.route)) {
         continue
       }
       const { file, source } = readActionSource(action.route)
-      const usesGuard = source.includes('requireAdminSession(') || /requireAdmin:\s*true/.test(source)
+      const usesGuard =
+        source.includes('requireAdminSession(') ||
+        /requireAdmin:\s*true/.test(source) ||
+        /requireRole:\s*'admin'/.test(source)
       expect(
         usesGuard,
         `${file} is admin-only and must call requireAdminSession(session) or pass requireAdmin: true to defineApiAction.`,

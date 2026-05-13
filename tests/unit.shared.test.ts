@@ -129,6 +129,7 @@ describe('shared/api-actions', () => {
     const flat = [
       ...Object.values(API_ACTIONS.auth),
       ...Object.values(API_ACTIONS.comment),
+      ...Object.values(API_ACTIONS.account),
       ...Object.values(API_ACTIONS.image),
       ...Object.values(API_ACTIONS.music),
       ...Object.values(API_ACTIONS.admin),
