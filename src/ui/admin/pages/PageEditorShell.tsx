@@ -165,6 +165,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       setIsLg(event.matches)
       if (!event.matches) {
         setMetaOpen(false)
+        setPreviewOpenState(false)
       }
     }
     mql.addEventListener('change', handleChange)
@@ -956,7 +957,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
             onClick={() => setPreviewOpen((open) => !open)}
             title={previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
             aria-pressed={previewOpen}
-            className={cn(previewOpen && 'border border-transparent')}
+            className={cn('hidden lg:inline-flex', previewOpen && 'border border-transparent')}
           >
             {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
             <span className="sr-only sm:not-sr-only">实时预览</span>
