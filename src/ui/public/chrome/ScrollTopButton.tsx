@@ -58,20 +58,13 @@ export function ScrollTopButton() {
       )}
     >
       <Button
-        variant="light"
+        // FAB palette: high-contrast over article content (canvas/ink-1
+        // in light, surface-dim/ink-1 in dark). Defined as a Button
+        // variant so the ThemeToggle floating button can share the same
+        // resting palette without duplicating the class string.
+        variant="fab"
         size="iconLg"
         shape="pill"
-        // The default `variant="light"` resting palette
-        // (`surface-soft` + `ink-muted`) almost vanishes against the
-        // article column in both themes — light-mode `#eceef1` reads
-        // like a content card, and dark-mode `#2a3553` only differs
-        // from the body `#1d2842` by ~8% lightness, so on mobile the
-        // chip disappears the moment it overlaps text. Lift this pair
-        // (ScrollTop + floating ThemeToggle) to a high-contrast FAB
-        // surface in both modes: white face / dark glyph in light,
-        // slate-500 face / white glyph in dark. `shadow-tooltip` adds
-        // the elevation cue the muted surface used to lean on.
-        className="!bg-canvas !text-ink-strong shadow-tooltip hover:!bg-canvas hover:!text-ink-strong dark:!bg-surface-dim dark:!text-ink-strong dark:hover:!bg-surface-dim dark:hover:!text-ink-strong"
         aria-label="回到顶部"
         // When hidden, take the trigger out of the keyboard tab order
         // too — `pointer-events-none` only blocks pointer input.

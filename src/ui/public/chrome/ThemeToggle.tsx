@@ -29,15 +29,7 @@ export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
       // `variant="light"` is too low-contrast over article content on
       // mobile, in both themes).
       return (
-        <Button
-          variant="light"
-          size="iconLg"
-          shape="pill"
-          className="!bg-canvas !text-ink-strong shadow-tooltip hover:!bg-canvas hover:!text-ink-strong dark:!bg-surface-dim dark:!text-ink-strong dark:hover:!bg-surface-dim dark:hover:!text-ink-strong"
-          onClick={toggle}
-          title={label}
-          aria-label={label}
-        >
+        <Button variant="fab" size="iconLg" shape="pill" onClick={toggle} title={label} aria-label={label}>
           <IconButtonContent>
             {resolvedTheme === 'dark' ? (
               <Sun size="1em" aria-hidden className="m-icon-inset" />

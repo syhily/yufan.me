@@ -49,19 +49,18 @@ export function ThemeProvider({ children, initialResolved = 'light' }: ThemeProv
 
   // One mount-only effect picks up the persisted preference. Until then we
   // trust the SSR `initialResolved` value (already painted by `<html>`) so
-  // we never flip the class on first hydration.
+  // we never flip the class on first hydration. When no localStorage entry
+  // exists yet we leave `theme` at its default `'system'` so the second
+  // effect below resolves it via `matchMedia` and writes the right cookie —
+  // never the SSR fallback, which would be `'light'` for a no-cookie visit
+  // even when the user prefers dark.
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
     if (stored === 'dark' || stored === 'light' || stored === 'system') {
       setThemeState(stored)
-    } else {
-      // No persisted choice yet. Mirror the SSR-rendered theme back into the
-      // cookie so server and client agree on the next request, even when the
-      // user never opens the toggle.
-      setThemeCookie(initialResolved)
     }
     setHydrated(true)
-  }, [initialResolved])
+  }, [])
 
   useEffect(() => {
     if (!hydrated) {

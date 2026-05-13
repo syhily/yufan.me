@@ -12,18 +12,18 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // --color-* drives every text/bg/border/ring/decoration color slot,
 // --shadow-* drives box-shadow, and so on. The CSS pipeline therefore
 // already knows that text-toc-toggle is a font-size and that
-// text-ink-secondary is a color, even though they share the text-*
+// text-ink-3 is a color, even though they share the text-*
 // utility prefix.
 //
 // tailwind-merge does not parse our @theme inline blocks. Out of the
 // box it only knows the stock Tailwind v4 token names. Any custom
-// token name -- text-toc-toggle, text-ink-secondary, shadow-card,
+// token name -- text-toc-toggle, text-ink-3, shadow-card,
 // shadow-tooltip, font-code, animate-shake, ... -- falls into a
 // generic "unknown utility for prefix X" bucket and arbitrates
 // against every other class with the same prefix as if they were
 // the same group. The visible symptom is the bug we are fixing
-// here: cn('text-toc-toggle text-ink-secondary') used to collapse
-// to 'text-ink-secondary' alone, silently dropping the font-size.
+// here: cn('text-toc-toggle text-ink-3') used to collapse
+// to 'text-ink-3' alone, silently dropping the font-size.
 //
 // The fix is to register every project token name under the
 // matching tailwind-merge theme key. Once registered, tailwind-merge
@@ -38,6 +38,53 @@ import { extendTailwindMerge } from 'tailwind-merge'
 // or --shadow-foo token there must be paired with a matching entry
 // here. The unit test in tests/unit.cn.test.ts pins the contract so
 // the regression is loud at CI time.
+//
+// Token system overview (read once, then forget):
+//
+//   tailwind.css layers tokens in three tiers, with one-way dataflow
+//   from the bottom up:
+//
+//     1. Raw brand tokens — declared in `:root` and re-bound in
+//        `.dark { … }`. They are the only place a hex value lives.
+//        Examples: --brand, --ink-1, --surface-body,
+//        --line-muted, --status-info-bg, --chip-bg, --btn-light-bg,
+//        --fab-bg.
+//
+//     2. shadcn slot aliases — also in `:root`, mapped onto the raw
+//        layer by name so the shadcn primitives (Button, Input,
+//        Card, …) keep working unmodified:
+//          --background ← --surface-body
+//          --foreground ← --ink-1
+//          --card / --popover ← --canvas
+//          --muted / --secondary ← --surface-dim
+//          --accent ← --line
+//          --border ← --line
+//          --input ← --line-widget
+//          --ring ← --brand
+//          --sidebar-* ← surface tier mirrors
+//
+//     3. `@theme inline` bridge — the same names with a `--color-`
+//        (or `--shadow-`, `--text-`, …) prefix so Tailwind v4 emits
+//        utilities for them. This file mirrors that prefix-stripped
+//        list. `inline` keeps the tokens reactive to `.dark` rebinds
+//        in tier 1, which is the whole point of the three-tier split.
+//
+//   Shadow tokens (e.g. --shadow-card) cannot be re-bound directly
+//   in `.dark { }` because `@theme inline` tokens are immutable once
+//   registered. That's why every shadow has a `*-value` indirection:
+//   `.dark` rewrites --shadow-card-value, and the bridge alias
+//   --shadow-card = var(--shadow-card-value) passes the new value
+//   through transparently.
+//
+//   Practical rule for adding a new theme-aware utility:
+//     a) define raw token in `:root` AND in `.dark { }` (tailwind.css)
+//     b) bridge it in `@theme inline { --color-foo: var(--foo) }`
+//     c) add 'foo' to the matching list below
+//     d) consume as `bg-foo`/`text-foo`/… in TSX
+//
+//   Do NOT write `dark:bg-foo` on a token that lives in tier 1 — the
+//   `.dark { }` rebind already handles theme switching, so the
+//   `dark:` prefix is a no-op double declaration.
 
 // --text-* -- font-size scale
 const TEXT_TOKENS = ['md', '2xl', 'toc-toggle', 'toc-title', 'toc-link', 'badge', 'empty-state-hero', 'btn-lg'] as const
@@ -56,6 +103,13 @@ const COLOR_TOKENS = [
   'brand',
   'brand-dark',
   'brand-darker',
+  'btn-hover-bg',
+  'btn-hover-fg',
+  'btn-light-border',
+  'btn-light-bg',
+  'btn-light-fg',
+  'btn-light-hover-fg',
+  'btn-primary-bg',
   'canvas',
   'card',
   'scrim',
@@ -64,13 +118,15 @@ const COLOR_TOKENS = [
   'card-foreground',
   'destructive',
   'destructive-foreground',
+  'fab-bg',
+  'fab-fg',
   'foreground',
-  'ink-body',
-  'ink-light',
-  'ink-muted',
-  'ink-overlay',
-  'ink-secondary',
-  'ink-strong',
+  'ink-1',
+  'ink-2',
+  'ink-3',
+  'ink-4',
+  'ink-5',
+  'ink-on-dark',
   'input',
   'like-active',
   'like-bg',
@@ -119,10 +175,6 @@ const COLOR_TOKENS = [
   'chip-fg',
   'chip-hover-bg',
   'chip-hover-fg',
-  'btn-light-border',
-  'btn-light-bg',
-  'btn-light-fg',
-  'btn-light-hover-fg',
 ] as const
 
 // --shadow-*. A few shadow names also live in the --color-* table

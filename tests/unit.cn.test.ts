@@ -59,11 +59,11 @@ describe('cn() — Tailwind utility merging', () => {
   // under its `color` theme key. These tests pin that registration.
   describe('cn() — custom theme tokens distinguished by namespace', () => {
     it('keeps custom --text-* font-size and custom --color-* text color side by side', () => {
-      expect(cn('text-toc-toggle', 'text-ink-secondary')).toBe('text-toc-toggle text-ink-secondary')
-      expect(cn('text-ink-secondary', 'text-toc-toggle')).toBe('text-ink-secondary text-toc-toggle')
-      expect(cn('text-badge', 'text-ink-secondary')).toBe('text-badge text-ink-secondary')
+      expect(cn('text-toc-toggle', 'text-ink-3')).toBe('text-toc-toggle text-ink-3')
+      expect(cn('text-ink-3', 'text-toc-toggle')).toBe('text-ink-3 text-toc-toggle')
+      expect(cn('text-badge', 'text-ink-3')).toBe('text-badge text-ink-3')
       expect(cn('text-empty-state-hero', 'text-brand')).toBe('text-empty-state-hero text-brand')
-      expect(cn('text-btn-lg', 'text-ink-strong')).toBe('text-btn-lg text-ink-strong')
+      expect(cn('text-btn-lg', 'text-ink-1')).toBe('text-btn-lg text-ink-1')
     })
 
     it('still dedupes two custom font-sizes against each other', () => {
@@ -72,7 +72,7 @@ describe('cn() — Tailwind utility merging', () => {
     })
 
     it('still dedupes two custom text colors against each other', () => {
-      expect(cn('text-ink-strong', 'text-ink-secondary')).toBe('text-ink-secondary')
+      expect(cn('text-ink-1', 'text-ink-3')).toBe('text-ink-3')
       expect(cn('text-brand', 'text-alert')).toBe('text-alert')
     })
 
@@ -82,8 +82,8 @@ describe('cn() — Tailwind utility merging', () => {
     })
 
     it('dedupes a stock text color against a custom text color', () => {
-      expect(cn('text-red-500', 'text-ink-secondary')).toBe('text-ink-secondary')
-      expect(cn('text-ink-secondary', 'text-red-500')).toBe('text-red-500')
+      expect(cn('text-red-500', 'text-ink-3')).toBe('text-ink-3')
+      expect(cn('text-ink-3', 'text-red-500')).toBe('text-red-500')
     })
 
     it('handles other namespaces correctly: custom shadow tokens collapse against the stock scale', () => {

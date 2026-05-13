@@ -86,9 +86,16 @@ export function loader({ request, context }: Route.LoaderArgs) {
 
   // Read the theme cookie so the SSR <html> tag carries the correct
   // class before the client bundle loads — no inline scripts needed.
+  // When no cookie is present we deliberately render `<html>` without
+  // a theme class so the CSS `@media (prefers-color-scheme: dark)`
+  // fallback in tailwind.css can resolve the right palette for
+  // noscript users. ThemeProvider sets an explicit class after
+  // hydration, after which cookie precedence applies on every
+  // subsequent request.
   const cookie = request.headers.get('Cookie') ?? ''
   const themeMatch = cookie.match(new RegExp(`(?:^|;\\s*)${THEME_COOKIE}=([^;]*)`))
-  const theme = themeMatch?.[1] === 'dark' ? ('dark' as const) : ('light' as const)
+  const cookieValue = themeMatch?.[1]
+  const theme: 'dark' | 'light' | null = cookieValue === 'dark' ? 'dark' : cookieValue === 'light' ? 'light' : null
 
   // The DB-backed blog config is serialised once per top-level request so
   // every UI component can read the live snapshot through the
@@ -128,15 +135,15 @@ export function shouldRevalidate({ formAction, defaultShouldRevalidate }: Should
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const rootData = useRouteLoaderData<{ theme?: 'dark' | 'light' }>('root')
-  const theme = rootData?.theme ?? 'light'
+  const rootData = useRouteLoaderData<{ theme?: 'dark' | 'light' | null }>('root')
+  const theme = rootData?.theme ?? null
 
   return (
-    <html lang="zh-CN" className={theme}>
+    <html lang="zh-CN" className={theme ?? undefined}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="color-scheme" content={theme === 'dark' ? 'dark' : 'light'} />
+        <meta name="color-scheme" content={theme ?? 'light dark'} />
         <Meta />
         <Links />
       </head>
@@ -185,7 +192,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // components reach for through `useSiteIdentity()` /
   // `useFooterSettings()` / etc.
   return (
-    <ThemeProvider initialResolved={loaderData.theme}>
+    <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
       <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
         <NavigationSplash />
         <Outlet />
@@ -226,7 +233,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   // the user at least sees what went wrong instead of a blank page from
   // a strict per-section accessor throw inside the chrome.
   return (
-    <ThemeProvider initialResolved={loaderData?.theme}>
+    <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
       <BlogSettingsProvider value={blogSettings ?? undefined}>
         <Suspense fallback={null}>
           {blogSettings ? (

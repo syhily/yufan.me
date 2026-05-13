@@ -82,7 +82,7 @@ export function PostDetailBody({
                       {visibleTags.map((tag) => (
                         <Link
                           key={tag.slug}
-                          className="rounded-full bg-surface-soft px-3 py-1.5 align-middle text-badge leading-badge font-normal whitespace-nowrap text-ink-secondary"
+                          className="rounded-full bg-surface-soft px-3 py-1.5 align-middle text-badge leading-badge font-normal whitespace-nowrap text-ink-3"
                           to={`/tags/${tag.slug}`}
                           prefetch="intent"
                         >

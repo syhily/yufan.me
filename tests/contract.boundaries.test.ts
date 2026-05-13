@@ -226,9 +226,9 @@ describe('contract: module and bundle boundaries', () => {
     // the matching JSX as a Tailwind utility chain (stages 6e-6k).
     // The dark-overlay metadata colour `#eaecf3` that used to live
     // in lists.css's `.list-nice-overlay .text-muted:not(i)`
-    // override is now a first-class semantic token (`--ink-overlay`
-    // raw hex + `--color-ink-overlay` `@theme` alias); PostSquare
-    // reads it as `text-ink-overlay`. Re-introducing either partial would
+    // override is now a first-class semantic token (`--ink-5`
+    // raw hex + `--color-ink-5` `@theme` alias); PostSquare
+    // reads it as `text-ink-5`. Re-introducing either partial would
     // silently shadow the inlined chains because the legacy
     // partials would have to come back un-layered (un-layered beats
     // `@layer utilities` per the W3C cascade-layers spec, lesson 2);
@@ -240,13 +240,13 @@ describe('contract: module and bundle boundaries', () => {
     expect(globals).not.toMatch(/@import\s+['"][^'"]*cards\.css['"]/)
     expect(globals).not.toMatch(/@import\s+['"][^'"]*lists\.css['"]/)
 
-    // The `--color-ink-overlay` token lives in `tailwind.css`
-    // (theme alias) backed by `--ink-overlay` (`#eaecf3`) in the
+    // The `--color-ink-5` token lives in `tailwind.css`
+    // (theme alias) backed by `--ink-5` (`#eaecf3`) in the
     // semantic `:root` block. Both must stay registered because
-    // PostSquare reads the alias as `text-ink-overlay`.
+    // PostSquare reads the alias as `text-ink-5`.
     const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
-    expect(tailwindCss).toMatch(/--ink-overlay:\s*#eaecf3;/)
-    expect(tailwindCss).toMatch(/--color-ink-overlay:\s*var\(--ink-overlay\);/)
+    expect(tailwindCss).toMatch(/--ink-5:\s*#eaecf3;/)
+    expect(tailwindCss).toMatch(/--color-ink-5:\s*var\(--ink-5\);/)
 
     // Scan every public source file for residual className tokens
     // that would only resolve through the deleted partials. We strip
@@ -1023,7 +1023,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(existsSync('src/ui/post/post.css')).toBe(false)
 
     expect(tailwindCss).toContain("@plugin '@tailwindcss/typography'")
-    expect(tailwindCss).toMatch(/--bg-shiki-light:\s*rgb\(253,\s*246,\s*227\);/)
+    expect(tailwindCss).toMatch(/--code-bg:\s*rgb\(253,\s*246,\s*227\);/)
 
     // P7 (Stage 11) collapsed the previously hand-maintained 16+16
     // light/invert prose-colour ladders into a shared

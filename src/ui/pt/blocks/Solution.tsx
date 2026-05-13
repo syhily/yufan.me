@@ -10,7 +10,7 @@ export function Solution({ children }: SolutionProps) {
       <div className="solution-begin mb-2 block text-[1.2rem] font-extrabold text-brand">解：</div>
       {children}
       <span
-        className="solution-qed pointer-events-none absolute right-3 bottom-3 inline-flex h-3.5 w-3.5 items-center justify-center text-ink-secondary"
+        className="solution-qed pointer-events-none absolute right-3 bottom-3 inline-flex h-3.5 w-3.5 items-center justify-center text-ink-3"
         aria-hidden="true"
       >
         <svg viewBox="0 0 14 14" className="block h-full w-full" fill="none" stroke="currentColor" strokeWidth="1.5">

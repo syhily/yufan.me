@@ -75,7 +75,7 @@ export function CodeBlock({ children, className, copyText, dangerouslySetInnerHT
         )}
       >
         <span
-          className="language-label pointer-events-none font-code text-sm font-medium text-ink-strong select-none"
+          className="language-label pointer-events-none font-code text-sm font-medium text-ink-1 select-none"
           aria-label={`Code language: ${displayLanguage}`}
           role="note"
         >
@@ -83,7 +83,7 @@ export function CodeBlock({ children, className, copyText, dangerouslySetInnerHT
         </span>
         <button
           type="button"
-          className="copy-code cursor-pointer border-0 bg-transparent font-code text-sm font-medium text-ink-strong transition-[transform,color] duration-150 ease-in-out select-none hover:scale-105 hover:text-brand"
+          className="copy-code cursor-pointer border-0 bg-transparent font-code text-sm font-medium text-ink-1 transition-[transform,color] duration-150 ease-in-out select-none hover:scale-105 hover:text-brand"
           title={`Copy ${displayLanguage} code`}
           aria-label={`Copy ${displayLanguage} code to clipboard`}
           onClick={() => void onCopy()}

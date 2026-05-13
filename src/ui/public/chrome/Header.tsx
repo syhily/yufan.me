@@ -145,7 +145,7 @@ const mobileBrandImgClass = 'max-h-9 md:max-h-10'
 const menuTogglerClass = cn(
   'inline-flex items-center justify-center',
   'cursor-pointer border-0 bg-transparent p-0',
-  'text-2xl leading-none text-ink-strong',
+  'text-2xl leading-none text-ink-1',
 )
 
 // Navigation menu container (`.site-menu`). Element promoted from
@@ -172,7 +172,7 @@ const siteMenuItemClass = 'relative block py-3 px-3'
 // size in `reset.css`), so it inherits without an explicit utility.
 const siteMenuLinkClass = cn(
   'relative block cursor-pointer no-underline',
-  'text-ink-light opacity-60',
+  'text-ink-on-dark opacity-60',
   'hover:text-brand hover:opacity-100',
 )
 

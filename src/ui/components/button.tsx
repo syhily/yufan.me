@@ -34,11 +34,11 @@ const buttonVariants = cva(
         // Light mode keeps the public-site navy swap; dark mode dims
         // the brand teal (`hover:bg-foreground` would otherwise resolve
         // to light grey, hiding the white label).
-        default: 'bg-(--btn-primary-bg) text-primary-foreground hover:bg-(--btn-hover-bg) hover:text-(--btn-hover-fg)',
+        default: 'bg-btn-primary-bg text-primary-foreground hover:bg-btn-hover-bg hover:text-btn-hover-fg',
         // Destructive shares the same hover token pair so the firing
         // affordance reads identically in both modes.
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-(--btn-hover-bg) hover:text-(--btn-hover-fg) focus-visible:ring-destructive/20',
+          'bg-destructive text-destructive-foreground hover:bg-btn-hover-bg hover:text-btn-hover-fg focus-visible:ring-destructive/20',
         // Light-red "clear" affordance — used for tertiary "undo"
         // actions like clearing a filter selection: visible enough to
         // signal "removes something" without competing with primary
@@ -64,14 +64,20 @@ const buttonVariants = cva(
         //
         // Dark mode lifts every part of the chip — fill to `line-muted`
         // (L 30, +9 L over the body `#1d2842`), edge to `line` (L 38),
-        // glyph to `ink-strong` (#e8e9ea) — so a `light` chip reads as
+        // glyph to `ink-1` (#e8e9ea) — so a `light` chip reads as
         // an obvious interactive widget against the dark body instead
         // of fading into it. Hover routes the glyph through `brand` for
         // a perceptible affordance. Light mode keeps the original
         // muted-rest / strong-hover pair because the icons sit on a
         // near-white card and don't need the extra contrast.
         light: 'border border-btn-light-border bg-btn-light-bg text-btn-light-fg hover:text-btn-light-hover-fg',
-        dark: 'border border-brand-dark bg-brand-dark text-ink-light hover:bg-brand-darker hover:border-brand-darker hover:text-canvas',
+        dark: 'border border-brand-dark bg-brand-dark text-ink-on-dark hover:bg-brand-darker hover:border-brand-darker hover:text-canvas',
+        // FAB — floating action buttons (ScrollTop, mobile ThemeToggle)
+        // that sit over article content. Higher-contrast than `light`
+        // so the chip reads against post imagery in both themes; hover
+        // keeps the resting palette because FABs are isolated and the
+        // cursor + tap are the affordance.
+        fab: 'bg-fab-bg text-fab-fg shadow-tooltip hover:bg-fab-bg hover:text-fab-fg',
       },
       size: {
         default: 'h-10 px-5 py-2.5',

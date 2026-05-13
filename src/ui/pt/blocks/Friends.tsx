@@ -37,7 +37,7 @@ export function Friends({ friends }: FriendsProps) {
   // `@tailwindcss/typography`'s rules then skips this entire tree.
   return (
     <div className="not-prose mt-10 px-4 md:mt-8 md:px-0">
-      <h2 className="mb-6 text-xl text-ink-muted md:mb-4 md:text-2xl">
+      <h2 className="mb-6 text-xl text-ink-4 md:mb-4 md:text-2xl">
         左邻右舍 <span className="mb-6 text-sm text-brand md:mb-4">排名不分前后</span>
       </h2>
       <div className="-mx-2 -mt-4 flex flex-wrap md:-mx-3 md:-mt-6">
@@ -65,7 +65,7 @@ export function Friends({ friends }: FriendsProps) {
                   <div className="m-0 line-clamp-1 block leading-[1.4] font-semibold text-inherit">
                     {friend.website}
                   </div>
-                  <div className="mt-1 line-clamp-2 text-sm text-ink-secondary">
+                  <div className="mt-1 line-clamp-2 text-sm text-ink-3">
                     {friend.description ? friend.description : ' '}
                   </div>
                 </div>

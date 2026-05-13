@@ -4,7 +4,7 @@ import { bundledLanguages, createHighlighter } from 'shiki'
 import type { Block, MarkDef, PortableTextBody, TextBlock } from '@/shared/pt/schema'
 
 import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
-import { SHIKI_THEME, shikiTransformers } from '@/server/pt/shiki'
+import { SHIKI_THEMES, shikiTransformers } from '@/server/pt/shiki'
 
 // Server-side pre-renderer for PortableText bodies.
 //
@@ -159,7 +159,7 @@ function getShikiHighlighter(): ReturnType<typeof createHighlighter> {
   if (shikiHighlighterPromise === null) {
     shikiHighlighterPromise = createHighlighter({
       langs: Object.keys(bundledLanguages),
-      themes: [SHIKI_THEME],
+      themes: [SHIKI_THEMES.light, SHIKI_THEMES.dark],
     }).catch((err) => {
       // Reset so a later save can retry instead of poisoning the cache.
       shikiHighlighterPromise = null
@@ -189,7 +189,12 @@ async function runShikiPasses(blocks: { code: string; language?: string; highlig
             typeof block.language === 'string' && block.language !== '' && block.language in bundledLanguages
               ? block.language
               : 'text',
-          theme: SHIKI_THEME,
+          themes: SHIKI_THEMES,
+          // `defaultColor: false` keeps every span's inline `color` /
+          // `background-color` out of the output and emits paired
+          // `--shiki-light` / `--shiki-dark` CSS vars instead, so the
+          // active theme picks the colour at paint time.
+          defaultColor: false,
           transformers: shikiTransformers(),
         })
       } catch {

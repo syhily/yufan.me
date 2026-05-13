@@ -6,7 +6,7 @@
 
 .dark .aplayer {
   background: var(--surface);
-  color: var(--ink-body);
+  color: var(--ink-2);
   box-shadow: 0 0 0 1px rgb(255 255 255 / 8%);
   border-radius: var(--radius-sm);
 }
@@ -28,11 +28,11 @@
 }
 
 .dark .aplayer .aplayer-info .aplayer-music .aplayer-title {
-  color: var(--ink-strong);
+  color: var(--ink-1);
 }
 
 .dark .aplayer .aplayer-info .aplayer-music .aplayer-author {
-  color: var(--ink-muted);
+  color: var(--ink-4);
 }
 
 .dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar {
@@ -40,23 +40,23 @@
 }
 
 .dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
-  background: var(--ink-muted);
+  background: var(--ink-4);
 }
 
 .dark .aplayer .aplayer-info .aplayer-controller .aplayer-time {
-  color: var(--ink-muted);
+  color: var(--ink-4);
 }
 
 .dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
-  fill: var(--ink-secondary);
+  fill: var(--ink-3);
 }
 
 .dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon:hover path {
-  fill: var(--ink-strong);
+  fill: var(--ink-1);
 }
 
 .dark .aplayer .aplayer-info .aplayer-controller .aplayer-volume-wrap .aplayer-volume-bar-wrap .aplayer-volume-bar {
-  background: var(--ink-muted);
+  background: var(--ink-4);
 }
 
 .dark .aplayer .aplayer-lrc::before {
@@ -72,11 +72,11 @@
 }
 
 .dark .aplayer .aplayer-lrc p {
-  color: var(--ink-muted);
+  color: var(--ink-4);
 }
 
 .dark .aplayer .aplayer-lrc p.aplayer-lrc-current {
-  color: var(--ink-body);
+  color: var(--ink-2);
 }
 
 .dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb {
@@ -89,7 +89,7 @@
 
 .dark .aplayer .aplayer-list ol li {
   border-top-color: var(--line);
-  color: var(--ink-body);
+  color: var(--ink-2);
 }
 
 .dark .aplayer .aplayer-list ol li:hover {
@@ -102,12 +102,12 @@
 
 .dark .aplayer .aplayer-list ol li .aplayer-list-index,
 .dark .aplayer .aplayer-list ol li .aplayer-list-author {
-  color: var(--ink-muted);
+  color: var(--ink-4);
 }
 
 .dark .aplayer .aplayer-notice {
   background-color: var(--surface-dim);
-  color: var(--ink-body);
+  color: var(--ink-2);
 }
 
 .dark .aplayer .aplayer-miniswitcher {
@@ -115,9 +115,9 @@
 }
 
 .dark .aplayer .aplayer-miniswitcher .aplayer-icon path {
-  fill: var(--ink-secondary);
+  fill: var(--ink-3);
 }
 
 .dark .aplayer .aplayer-miniswitcher .aplayer-icon:hover path {
-  fill: var(--ink-strong);
+  fill: var(--ink-1);
 }

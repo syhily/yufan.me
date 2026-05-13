@@ -51,14 +51,14 @@ export function CategoriesBody({ title, categories }: CategoriesBodyProps) {
                     >
                       {category.name}
                     </Link>
-                    <div className="mt-2 hidden text-md text-ink-secondary md:block">
+                    <div className="mt-2 hidden text-md text-ink-3 md:block">
                       <div className="line-clamp-2">
                         <span>{category.description}</span>
                       </div>
                     </div>
                   </div>
                   <div className="mt-2">
-                    <div className="text-sm text-ink-muted">
+                    <div className="text-sm text-ink-4">
                       <span className="inline-block">{`${category.counts} 篇文章`}</span>
                     </div>
                   </div>

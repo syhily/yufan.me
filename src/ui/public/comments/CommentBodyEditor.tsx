@@ -351,7 +351,7 @@ function ToolButton({ title, disabled, active, onClick, children }: ToolButtonPr
       className={cn(
         'inline-flex size-7 items-center justify-center rounded-sm',
         '[&_svg]:size-4',
-        'text-ink-muted hover:bg-surface hover:text-ink-strong',
+        'text-ink-4 hover:bg-surface hover:text-ink-1',
         'disabled:cursor-not-allowed disabled:opacity-50',
         active && 'bg-surface text-brand',
       )}
@@ -367,7 +367,7 @@ function ToolDivider() {
 
 function CommentEditorHint() {
   return (
-    <div className="border-t border-line/60 px-3 py-1.5 text-xs text-ink-muted">
+    <div className="border-t border-line/60 px-3 py-1.5 text-xs text-ink-4">
       输入 <code>/</code> 块级命令，<code>$</code> 内联公式，<code>:</code> Emoji。
     </div>
   )

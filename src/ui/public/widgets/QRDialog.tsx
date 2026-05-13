@@ -93,7 +93,7 @@ export function QRDialog({ url, name, title, trigger, variant, size, shape, clas
              *
              *   1. The wrapper paints a light card surface that is
              *      pure white in light mode (`bg-canvas` → `#ffffff`)
-             *      and softens to `bg-ink-light` (`#e8e9ea`) in dark
+             *      and softens to `bg-ink-on-dark` (`#e8e9ea`) in dark
              *      mode so the card visually nests inside the navy
              *      popup chrome instead of punching a stark white
              *      hole through it. The quiet zone and "light" cells
@@ -114,7 +114,7 @@ export function QRDialog({ url, name, title, trigger, variant, size, shape, clas
              * second (potentially differently-coloured) rectangle
              * behind itself.
              */}
-            <div className="mx-auto flex size-qr-dialog items-center justify-center rounded-md bg-canvas p-2 text-brand-dark dark:bg-ink-light">
+            <div className="mx-auto flex size-qr-dialog items-center justify-center rounded-md bg-canvas p-2 text-brand-dark dark:bg-ink-on-dark">
               <Suspense fallback={null}>
                 <QRCodeSVG
                   value={url}

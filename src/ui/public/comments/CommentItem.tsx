@@ -280,12 +280,12 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
             )}
           </div>
           {isMyComment && (
-            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg dark:bg-status-warn-bg dark:text-status-warn-fg">
+            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
               <span className="flex-1">{editableHint(leaf.myCommentExpiresAt.get(asKey(comment.id)), isPending)}</span>
               <button
                 type="button"
                 onClick={() => leaf.onDismissMyComment(comment.id)}
-                className="inline-flex shrink-0 items-center justify-center rounded-sm p-0.5 hover:bg-status-warn-border dark:hover:bg-status-warn-border"
+                className="inline-flex shrink-0 items-center justify-center rounded-sm p-0.5 hover:bg-status-warn-border"
                 aria-label="关闭提示"
                 title="关闭提示并移除编辑权限"
               >
@@ -295,7 +295,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
           )}
           {isPending && !isMyComment && (
             <div className={commentContentClass(depth)}>
-              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg dark:bg-status-warn-bg dark:text-status-warn-fg">
+              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg">
                 <span>您的评论正在等待审核中...</span>
               </div>
               <PortableTextBody body={comment.body} />
@@ -346,7 +346,7 @@ function CommentFooter({ comment, admin: propAdmin, onEdit }: CommentFooterProps
   const handleDelete = () => remove.submit({ rid: String(comment.id) })
 
   return (
-    <div className="flex flex-1 items-center gap-2 text-xs text-ink-muted">
+    <div className="flex flex-1 items-center gap-2 text-xs text-ink-4">
       <time>{formatLocalDate(comment.createAt, 'yyyy-MM-dd HH:mm', siteIdentity)}</time>
       <button
         type="button"

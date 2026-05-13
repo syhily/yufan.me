@@ -24,7 +24,7 @@ import { TocItems } from '@/ui/public/post/TocItems'
 // the same 500 ms ease-in-out so they finish together.
 //
 // `cn()` correctly handles the `text-toc-toggle` (font-size) +
-// `text-ink-secondary` (colour) pair because both tokens are registered
+// `text-ink-3` (colour) pair because both tokens are registered
 // in `cn.ts` under their respective tailwind-merge groups.
 const tocToggleClass = cn(
   // Layout: pinned to the right edge, vertically centred, inline-flex
@@ -52,7 +52,7 @@ const tocToggleClass = cn(
   // Box: rounded disc with a subtle surface tint.
   'rounded-full border border-line bg-canvas/90',
   // Typography & colour.
-  'text-toc-toggle leading-none text-ink-secondary shadow-toc-toggle',
+  'text-toc-toggle leading-none text-ink-3 shadow-toc-toggle',
   // Transition: include the CSS `translate` / `scale` / `rotate`
   // longhands explicitly. Tailwind v4 emits `-translate-x-70` (and
   // friends) as the `translate: …` longhand, NOT as the legacy
@@ -271,9 +271,7 @@ export function TableOfContents({ headings, toc }: TableOfContentsProps) {
       <div data-state={state} className={tocDrawerClass}>
         <div className="absolute top-0 -right-12 bottom-0 left-0 overflow-x-hidden overflow-y-auto">
           <div className="mr-12 pt-11.5">
-            <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-strong">
-              文章目录
-            </h2>
+            <h2 className="w-full px-10 text-left text-toc-title leading-[3.6rem] font-bold text-ink-1">文章目录</h2>
             <div className="pt-8">
               <TocItems items={items} />
             </div>

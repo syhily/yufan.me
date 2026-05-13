@@ -217,9 +217,9 @@ export function Popup({
             onClose()
           }}
         >
-          <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-muted" />
+          <XIcon size={22} aria-hidden className="inline-block align-middle text-ink-4" />
         </button>
-        <div className={cn('relative rounded-lg bg-canvas text-ink-strong', CONTENT_SIZE_CLASS[size])}>{children}</div>
+        <div className={cn('relative rounded-lg bg-canvas text-ink-1', CONTENT_SIZE_CLASS[size])}>{children}</div>
       </div>
     </div>,
     document.body,

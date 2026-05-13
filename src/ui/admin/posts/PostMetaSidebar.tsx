@@ -781,28 +781,19 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
   switch (status) {
     case 'never-saved':
       return (
-        <Badge
-          variant="outline"
-          className="border-status-info-border bg-status-info-bg text-status-info-fg dark:border-status-info-border dark:bg-status-info-bg dark:text-status-info-fg"
-        >
+        <Badge variant="outline" className="border-status-info-border bg-status-info-bg text-status-info-fg">
           <CircleDashedIcon /> 尚未保存
         </Badge>
       )
     case 'offline':
       return (
-        <Badge
-          variant="outline"
-          className="border-status-error-border bg-status-error-bg text-status-error-fg dark:border-status-error-border dark:bg-status-error-bg dark:text-status-error-fg"
-        >
+        <Badge variant="outline" className="border-status-error-border bg-status-error-bg text-status-error-fg">
           <EyeOffIcon /> 已取消发布
         </Badge>
       )
     case 'scheduled':
       return (
-        <Badge
-          variant="outline"
-          className="border-status-info-border bg-status-info-bg text-status-info-fg dark:border-status-info-border dark:bg-status-info-bg dark:text-status-info-fg"
-        >
+        <Badge variant="outline" className="border-status-info-border bg-status-info-bg text-status-info-fg">
           <CalendarClockIcon /> 已计划发布
         </Badge>
       )
@@ -815,19 +806,13 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       // picker.
       void isFuture
       return (
-        <Badge
-          variant="outline"
-          className="border-status-success-border bg-status-success-bg text-status-success-fg dark:border-status-success-border dark:bg-status-success-bg dark:text-status-success-fg"
-        >
+        <Badge variant="outline" className="border-status-success-border bg-status-success-bg text-status-success-fg">
           <CheckCircle2Icon /> 已发布
         </Badge>
       )
     case 'live-with-draft-ahead':
       return (
-        <Badge
-          variant="outline"
-          className="border-status-warn-border bg-status-warn-bg text-status-warn-fg dark:border-status-warn-border dark:bg-status-warn-bg dark:text-status-warn-fg"
-        >
+        <Badge variant="outline" className="border-status-warn-border bg-status-warn-bg text-status-warn-fg">
           <CheckCircle2Icon /> 已发布（有未发布草稿）
         </Badge>
       )

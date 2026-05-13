@@ -84,7 +84,7 @@ export function PostListingBody({
         <div className="mb-4 lg:mb-6">
           <h1 className={cn(postTitleClass, 'font-bold')}>{title}</h1>
           {description && (
-            <div className="mt-1 text-ink-muted">
+            <div className="mt-1 text-ink-4">
               <span dangerouslySetInnerHTML={{ __html: description }} />
             </div>
           )}
@@ -171,7 +171,7 @@ function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: b
         <div className="flex flex-none flex-col">
           <Link
             to={post.permalink}
-            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-ink-light hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
+            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
             prefetch="intent"
           >
             {post.title}
@@ -216,7 +216,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNow
                   className="block size-full object-cover"
                 />
               </Link>
-              <div className="absolute inset-x-0 top-0 z-2 flex items-center text-ink-light">
+              <div className="absolute inset-x-0 top-0 z-2 flex items-center text-ink-on-dark">
                 <Link
                   className="hidden rounded-none bg-surface-secondary/60 px-2.5 py-badge-overlay-y align-middle text-badge font-normal md:inline-block"
                   to={categoryLinks[post.category] || '/'}
@@ -243,20 +243,20 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNow
                     {post.title}
                   </div>
                 </Link>
-                <div className="mt-4 hidden text-md text-ink-secondary md:block">
+                <div className="mt-4 hidden text-md text-ink-3 md:block">
                   <div className="line-clamp-3">{post.summary ?? ''}</div>
                 </div>
               </div>
               <div>
-                <div className="flex flex-1 items-center text-sm text-ink-muted">
+                <div className="flex flex-1 items-center text-sm text-ink-4">
                   <div className="hidden flex-1 md:block">{formatShowDate(post.date, config, listingNowIso)}</div>
-                  <Metric className="text-ink-strong" value={post.meta.views}>
+                  <Metric className="text-ink-1" value={post.meta.views}>
                     <EyeIcon className="text-md" size="1em" aria-hidden />
                   </Metric>
-                  <Metric className="text-ink-strong" value={post.meta.likes}>
+                  <Metric className="text-ink-1" value={post.meta.likes}>
                     <HeartIcon className="text-md" fill="currentColor" strokeWidth={0} size="1em" aria-hidden />
                   </Metric>
-                  <Metric className="text-ink-strong" value={post.meta.comments}>
+                  <Metric className="text-ink-1" value={post.meta.comments}>
                     <MessageCircleMoreIcon className="text-md" size="1em" aria-hidden />
                   </Metric>
                 </div>
@@ -329,10 +329,10 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
         </div>
         <div className="absolute inset-x-0 bottom-0 z-1 flex flex-none flex-col p-2 md:px-4 md:py-3">
           <Link to={post.permalink} className="flex flex-none flex-col" prefetch="intent">
-            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-ink-light hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px]">
+            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px]">
               {post.title}
             </div>
-            <div className="font-number flex flex-1 text-sm text-ink-overlay">
+            <div className="font-number flex flex-1 text-sm text-ink-5">
               <span className="inline-block">{formatShowDate(post.date, config, listingNowIso)}</span>
               <div className="flex-1" />
               <Metric value={post.meta.views}>

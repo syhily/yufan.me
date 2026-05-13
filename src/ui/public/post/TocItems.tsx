@@ -29,7 +29,7 @@ function TocItemsImpl({ items, depth = 0 }: TocItemsProps) {
         <li key={item.slug} className="overflow-hidden text-ellipsis">
           <a
             data-scroll
-            className="relative block overflow-hidden px-10 py-1.5 text-toc-link text-ellipsis whitespace-nowrap text-ink-secondary hover:bg-surface-dim hover:text-ink-strong"
+            className="relative block overflow-hidden px-10 py-1.5 text-toc-link text-ellipsis whitespace-nowrap text-ink-3 hover:bg-surface-dim hover:text-ink-1"
             href={`#${item.slug}`}
             title={item.text}
           >

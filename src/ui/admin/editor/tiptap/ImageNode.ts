@@ -64,7 +64,7 @@ export const ImageNode = Image.extend({
       // `NodeViewWrapper`. Pin readable ink + input chrome here so prose /
       // selection cascades cannot wash fields out to white-on-light.
       className:
-        '!text-ink-body [&_[data-slot=input]]:!bg-background [&_[data-slot=input]]:!text-ink-body [&_[data-slot=input]]:!caret-ink-body',
+        '!text-ink-2 [&_[data-slot=input]]:!bg-background [&_[data-slot=input]]:!text-ink-2 [&_[data-slot=input]]:!caret-ink-2',
     })
   },
 })

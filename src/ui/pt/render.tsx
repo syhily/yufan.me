@@ -41,13 +41,13 @@ import { ImageMetaProvider, type ImageMetaMap } from '@/ui/pt/image-meta-context
 // visible even when `.prose` typography rules lose the cascade (shadcn
 // `text-*` inheritance, nested shells, or `post-content` rules not applying).
 const PT_INLINE = {
-  strong: 'font-semibold text-ink-strong',
+  strong: 'font-semibold text-ink-1',
   em: 'italic',
   underline: 'underline underline-offset-2',
-  strike: 'line-through text-ink-secondary',
-  code: 'rounded bg-muted/80 px-1 py-0.5 font-mono text-[0.875em] text-ink-secondary',
+  strike: 'line-through text-ink-3',
+  code: 'rounded bg-muted/80 px-1 py-0.5 font-mono text-[0.875em] text-ink-3',
   link: 'text-brand underline decoration-brand/40 underline-offset-2',
-  mathTex: 'math-inline rounded bg-muted/50 px-0.5 font-mono text-ink-secondary',
+  mathTex: 'math-inline rounded bg-muted/50 px-0.5 font-mono text-ink-3',
 } as const
 
 // SSR/CSR renderer for PortableText. Built on top of `@portabletext/react`'s
@@ -500,7 +500,7 @@ function MusicPlayerComponent({ value }: PortableTextTypeComponentProps<MusicPla
   const { suppressAutoplay } = use(MusicPresentationContext)
   const isRss = use(RssModeContext)
   if (isRss) {
-    return <p className="my-4 text-center text-ink-secondary">🎵 此文章包含音乐播放器，请访问原文收听。</p>
+    return <p className="my-4 text-center text-ink-3">🎵 此文章包含音乐播放器，请访问原文收听。</p>
   }
   return (
     <MusicPlayer
@@ -684,7 +684,7 @@ function FootnotesSection({
 }) {
   return (
     <section className="footnotes" data-footnotes="" aria-labelledby="footnotes-section-heading">
-      <h3 id="footnotes-section-heading" className="mt-10 mb-3 scroll-mt-20 text-lg font-semibold text-ink-strong">
+      <h3 id="footnotes-section-heading" className="mt-10 mb-3 scroll-mt-20 text-lg font-semibold text-ink-1">
         {sectionTitle}
       </h3>
       <ol>

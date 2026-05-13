@@ -80,7 +80,7 @@ const widgetCommentLinkClass = 'hover:text-brand'
 // var(--color-dark); margin-right: 5px }` rule. The 5px → `mr-1.5`
 // (= 6px) is a Lesson 8 1px collapse; visually indistinguishable
 // next to the trailing "发表在《" Chinese punctuation.
-const commentAuthorLinkClass = 'mr-1.5 font-semibold text-ink-strong'
+const commentAuthorLinkClass = 'mr-1.5 font-semibold text-ink-1'
 
 // `<div>` wrapping the RandomTags chips. Replaces the legacy
 // `.tagcloud { display: flex; flex-wrap: wrap }`. The `'#'` prefix

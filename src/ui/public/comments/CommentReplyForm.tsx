@@ -249,7 +249,7 @@ const replyingToOverlayClass = cn(
   'pointer-events-none absolute top-[0.4rem] right-3 left-3 z-2',
   'flex items-center gap-1',
   'rounded-sm bg-brand/5 px-2 py-[0.15rem]',
-  'text-[0.9rem] text-ink-body/95 opacity-60',
+  'text-[0.9rem] text-ink-2/95 opacity-60',
   'truncate',
 )
 

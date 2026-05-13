@@ -93,7 +93,7 @@ export function DetailBodyChrome({
           // baseline (the h1's line-height is ~1.6× of `text-[1.5rem]`,
           // and the button is 8/8 — half the line height minus half
           // the button is roughly +2px / +6px at each breakpoint).
-          className="absolute top-4 right-4 inline-flex h-8 w-8 translate-y-0.5 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-surface-soft hover:text-ink-strong md:top-8 md:right-8 md:translate-y-1"
+          className="absolute top-4 right-4 inline-flex h-8 w-8 translate-y-0.5 items-center justify-center rounded-md text-ink-4 transition-colors hover:bg-surface-soft hover:text-ink-1 md:top-8 md:right-8 md:translate-y-1"
           aria-label="编辑"
           title="编辑"
           prefetch="intent"
@@ -110,7 +110,7 @@ export function DetailBodyChrome({
         )}
         {title}
       </h1>
-      <div className={cn(postMetaClass, 'text-sm text-ink-muted', metaClassName)}>
+      <div className={cn(postMetaClass, 'text-sm text-ink-4', metaClassName)}>
         <div className={cn(postMetaDateClass, 'flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1')}>
           <time dateTime={publishedIso} className="tabular-nums">
             {formatLocalDate(date, 'yyyy-MM-dd HH:mm', siteIdentity)}
