@@ -916,14 +916,23 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           flows after it on the same row, and the whole strip wraps
           flush-left on narrower viewports. The post identity (title +
           revision badge) docks inside PostMetaSidebar's 基本信息 card so the
-          toolbar stays focused on actions. */}
+          toolbar stays focused on actions.
+
+          Every button collapses to icon-only on `<sm` via
+          `sr-only sm:not-sr-only` wrappers around the text labels —
+          screen readers still read the label out, only the sighted
+          mobile layout drops it. Loading transitions (创建中… / 保存中… /
+          发布中… / 取消中…) keep showing the spinner inside the same
+          icon slot, so the operator still gets visual progress
+          feedback on phones. */}
       <header className="flex flex-wrap items-center gap-2 text-sm">
         <Button
           variant="ghost"
           size="sm"
           render={
             <Link to="/wp-admin/posts">
-              <ArrowLeftIcon /> 返回列表
+              <ArrowLeftIcon />
+              <span className="sr-only sm:not-sr-only">返回列表</span>
             </Link>
           }
         />
@@ -933,7 +942,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             size="sm"
             render={
               <Link to={`/${detail.post.slug}`} target="_blank" rel="noreferrer">
-                <ExternalLinkIcon /> 公开预览
+                <ExternalLinkIcon />
+                <span className="sr-only sm:not-sr-only">公开预览</span>
               </Link>
             }
           />
@@ -946,7 +956,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           aria-pressed={previewOpen}
           className={cn(previewOpen && 'border border-transparent')}
         >
-          {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />} 实时预览
+          {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
+          <span className="sr-only sm:not-sr-only">实时预览</span>
         </Button>
         {mode === 'create' ? (
           <Button
@@ -958,7 +969,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             title="保存文章信息并上传当前正文"
           >
             {isCreatingPost ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-            {isCreatingPost ? '创建中…' : '创建文章'}
+            <span className="sr-only sm:not-sr-only">{isCreatingPost ? '创建中…' : '创建文章'}</span>
           </Button>
         ) : (
           <>
@@ -976,7 +987,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
               title="保存文章信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)"
             >
               {isSavingDraft ? <Loader2Icon className="animate-spin" /> : <SaveIcon />}
-              {isSavingDraft ? '保存中…' : '保存草稿'}
+              <span className="sr-only sm:not-sr-only">{isSavingDraft ? '保存中…' : '保存草稿'}</span>
             </Button>
             <Button
               size="sm"
@@ -991,7 +1002,9 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
               }
             >
               {isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-              {isPublishing ? '发布中…' : sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
+              <span className="sr-only sm:not-sr-only">
+                {isPublishing ? '发布中…' : sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
+              </span>
             </Button>
             {/* Visibility toggle. Only surfaces when the post is
              *  currently live (`meta.published === true`). An offline
@@ -1007,7 +1020,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
                 title="将文章下线，公开访问会返回 404；正文不会丢失，再次发布草稿即可恢复"
               >
                 {isUnpublishing ? <Loader2Icon className="animate-spin" /> : <EyeOffIcon />}
-                {isUnpublishing ? '取消中…' : '取消发布'}
+                <span className="sr-only sm:not-sr-only">{isUnpublishing ? '取消中…' : '取消发布'}</span>
               </Button>
             ) : null}
           </>
@@ -1021,7 +1034,8 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           aria-label="切换文章信息面板"
           className={cn(metaOpen && 'border border-transparent')}
         >
-          <SlidersHorizontalIcon /> 元数据
+          <SlidersHorizontalIcon />
+          <span className="sr-only sm:not-sr-only">元数据</span>
         </Button>
       </header>
 

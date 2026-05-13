@@ -9,6 +9,14 @@ import { cn } from '@/ui/lib/cn'
 export interface AdminScrollTopButtonProps {
   /** When set (live preview / focus mode), depth is read from `<main>` instead of `window`. */
   scrollRootRef?: RefObject<HTMLElement | null>
+  /**
+   * Editor focus mode. When `true`, the bottom anchor matches the
+   * editor's floating-toolbar offset (`bottom-6 sm:bottom-8`) so the
+   * scroll-to-top FAB and the toolbar pill share one horizontal row
+   * instead of overlapping at the bottom-right corner — visible on
+   * narrow phones where the centred toolbar runs nearly full width.
+   */
+  focused?: boolean
 }
 
 // Floating "back to top" button for the wp-admin SPA. Mirrors the public
@@ -17,7 +25,7 @@ export interface AdminScrollTopButtonProps {
 //
 // Visibility follows `window` by default, or the wp-admin `<main>`
 // scrollport when `scrollRootRef` is passed (live preview focus mode).
-export function AdminScrollTopButton({ scrollRootRef }: AdminScrollTopButtonProps) {
+export function AdminScrollTopButton({ scrollRootRef, focused = false }: AdminScrollTopButtonProps) {
   const show = useShowOnScroll(300, scrollRootRef)
 
   return (
@@ -44,7 +52,12 @@ export function AdminScrollTopButton({ scrollRootRef }: AdminScrollTopButtonProp
         }
       }}
       className={cn(
-        'fixed right-4 bottom-4 z-40 lg:right-6 lg:bottom-6',
+        'fixed z-40',
+        // In editor focus mode the floating toolbar pill anchors at
+        // `bottom-6 sm:bottom-8`. Match that so the FAB rides on the
+        // same horizontal row as the toolbar instead of crashing into
+        // its right edge on narrow phones.
+        focused ? 'right-4 bottom-6 sm:bottom-8 lg:right-6' : 'right-4 bottom-4 lg:right-6 lg:bottom-6',
         // 44×44 (2.75rem) matches `.btn-icon.btn-lg`, fully rounded
         // pill, and the same drop-shadow lift the public widget uses.
         'size-11 rounded-full shadow-lg transition-all duration-200',

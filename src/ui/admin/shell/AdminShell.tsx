@@ -264,7 +264,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
             </div>
           </main>
         </div>
-        <AdminScrollTopButton {...(focused ? { scrollRootRef: mainScrollRef } : {})} />
+        <AdminScrollTopButton focused={focused} {...(focused ? { scrollRootRef: mainScrollRef } : {})} />
         <Toaster position="top-center" richColors closeButton />
       </div>
     </AdminChromeContext.Provider>

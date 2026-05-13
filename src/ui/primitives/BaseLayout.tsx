@@ -6,6 +6,7 @@ import { useNavigationSettings } from '@/ui/lib/blog-config-context'
 import { Footer } from '@/ui/primitives/Footer'
 import { Header } from '@/ui/primitives/Header'
 import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
+import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
 
 // NOTE: this component does NOT import `public.css`. The public stylesheet
 // cascade lives one level up in `@/ui/primitives/PublicChrome` so it can be
@@ -84,7 +85,22 @@ export function BaseLayout({ navigation, footer, admin, pathname, search, childr
         starts at `margin: 0` via reset.css's un-layered `li
         { margin: 0 }` rule.
       */}
-      <ul className="fixed right-5 bottom-5 z-9999 transform-gpu">
+      {/*
+        The floating ThemeToggle is mobile-only (`<lg`). On `>=lg` the
+        Header's social rail is always visible and already carries a
+        theme switch next to Search; surfacing a second control there
+        would just duplicate it. Below `lg` the side menu folds behind
+        the hamburger, so the rail-bound toggle becomes unreachable
+        without opening the drawer — the floating widget restores
+        one-tap parity. `flex flex-col gap-2` stacks the pair with an
+        8px gutter; `ScrollTopButton`'s opacity-based hide leaves a
+        spacer when scrolled to the top, which is fine — the rail
+        stays visually anchored to the bottom-right.
+      */}
+      <ul className="fixed right-5 bottom-5 z-9999 flex transform-gpu flex-col gap-2">
+        <li className="lg:hidden">
+          <ThemeToggle mode="public" variant="floating" />
+        </li>
         <ScrollTopButton />
       </ul>
     </div>

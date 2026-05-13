@@ -47,6 +47,8 @@
   --alert: #f7094c;
   --like-active: #ff4053;
   --like-active-shadow: 0 5px 20px 0 rgba(228, 93, 106, 0.35);
+  --like-bg: var(--brand-dark);
+  --like-bg-hover: var(--brand-darker);
 
   /* Radius */
   --radius: 0.3125rem;
@@ -151,23 +153,38 @@
      reads with contrast against the dim canvas. */
   --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
 
-  /* Surfaces deep navy with a clear three-step hierarchy so cards,
-     APlayer, admin panels, and tag chips read as elevated against
-     the page body: aside (deepest), body (mid), canvas / surface
-     (elevated). canvas and surface stay siblings so cards and
-     elevated panels share the same plane. */
+  /* Surface and line tokens form a single L (lightness) ladder so every
+     adjacent tier carries 3 to 8 L of perceptible separation, and no
+     line token shares a value with any surface token. The ladder also
+     dictates which tokens can sit on top of which:
+       secondary  (#0b1322,  L  7) — image dimmer overlays only
+       aside-bg   (#15203a,  L 14) — recessed sidebar
+       body       (#1d2842,  L 17) — page floor (cards rest here)
+       canvas     (#26314d,  L 21) — card, popover, primary elevated
+       surface    (#26314d,  L 21) — sibling of canvas
+       surface-soft (#2a3553, L 23) — soft chip / hover-state fill
+       surface-dim (#303a5a, L 26) — muted / secondary fill, input bg
+       line-muted (#374566,  L 30) — recessed divider
+       line       (#475672,  L 38) — default border (cards, inputs, …)
+       line-widget(#5b6b88,  L 44) — strong border (input emphasis)
+     The earlier release had `--line === --surface-soft` (both
+     `#2a3553`), which made every `border-line` consumer (Input,
+     Textarea, SelectTrigger, sidebar dividers, accent hover fills)
+     vanish on top of the soft surface. Lifting the line trio out of
+     the surface band fixes form-element visibility, gives admin
+     `<Card border>` a real outline, and restores `--accent` (which
+     resolves to `--line` via the shadcn alias) as a perceptible
+     hover-state. */
   --canvas: #26314d;
   --surface: #26314d;
-  --surface-dim: #2c3756;
+  --surface-dim: #303a5a;
   --surface-warn: #3a2810;
   --surface-body: #1d2842;
   --surface-soft: #2a3553;
 
-  /* Lines lifted so card outlines and chip borders stay visible on
-     the brighter elevated surfaces */
-  --line: #2a3553;
-  --line-muted: #3a4866;
-  --line-widget: #3a4866;
+  --line: #475672;
+  --line-muted: #374566;
+  --line-widget: #5b6b88;
 
   /* Code block token inversion */
   --bg-shiki-light: #1a1f2e;
@@ -190,6 +207,12 @@
 
   /* Popup close hover */
   --popup-close-hover: #2a3142;
+
+  /* Like button dark mode resting grayish light blue active deep red */
+  --like-bg: #64748b;
+  --like-bg-hover: #94a3b8;
+  --like-active: #991b1b;
+  --like-active-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.45);
 
   /* Shiki fallback when inline style does not set shiki light */
   --shiki-light: var(--ink-body);
@@ -423,6 +446,8 @@
   --color-ink-overlay: var(--ink-overlay);
 
   --color-like-active: var(--like-active);
+  --color-like-bg: var(--like-bg);
+  --color-like-bg-hover: var(--like-bg-hover);
   --shadow-like-active: var(--like-active-shadow);
 
   --radius-xs: var(--radius-xs);

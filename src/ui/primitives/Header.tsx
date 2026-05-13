@@ -411,8 +411,8 @@ export function Header({ navigation, admin, pathname, search }: HeaderProps) {
                 </Button>
               )
             })}
-            <SearchIconButton />
             <ThemeToggle mode="public" />
+            <SearchIconButton />
           </div>
         </div>
       </header>

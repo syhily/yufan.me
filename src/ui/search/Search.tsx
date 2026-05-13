@@ -112,10 +112,6 @@ export function SearchIconButton() {
         variant="dark"
         size="iconSm"
         shape="circle"
-        // `mr-2` (= 8px) is the social-rail gap supplied by every
-        // rail consumer. The sole consumer of `SearchIconButton`
-        // today is the public Header social rail.
-        className="mr-2"
         title="搜索"
         aria-label="打开搜索"
         onClick={(event) => {

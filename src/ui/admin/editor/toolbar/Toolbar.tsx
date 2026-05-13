@@ -21,7 +21,7 @@ import {
   Undo2Icon,
   UnderlineIcon,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { canInsertFootnoteMark } from '@/ui/admin/editor/tiptap/insert-inline-footnote'
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
@@ -65,8 +65,29 @@ export interface ToolbarProps {
 // The slash menu (`/`) and bubble menu still cover the same surface
 // for keyboard-first authoring; the toolbar exists so the editor
 // looks self-evidently capable on first open.
+// `<sm` (= `<640px`) collapses every density-branched control to its
+// icon-only form, regardless of the operator's stored density
+// preference. Forcing `'full'` keeps every button as a single icon,
+// drops the 「插入 ▼」 popover wrapper, and lets the toolbar live as a
+// one-row, horizontally-scrollable strip — the standard mobile
+// editor pattern. The density toggle is hidden in the same window so
+// the operator can't toggle into a state we'd silently override.
+function useMobileToolbar(): boolean {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 639px)')
+    const update = () => setIsMobile(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
+  return isMobile
+}
+
 export function Toolbar(props: ToolbarProps) {
-  const { editor, disabled, density, className } = props
+  const { editor, disabled, className } = props
+  const isMobile = useMobileToolbar()
+  const density: ToolbarDensity = isMobile ? 'full' : props.density
 
   const [linkToolbarOpen, setLinkToolbarOpen] = useState(false)
 
@@ -215,7 +236,14 @@ export function Toolbar(props: ToolbarProps) {
     </>
   )
 
-  const densityRail = <DensityToggleButton density={density} onChange={props.onDensityChange} disabled={disabled} />
+  // The density toggle is the operator's runtime knob between
+  // `'full'` (icon-button matrix) and `'compact'` (Select + Popover);
+  // on `<sm` we already pin density to `'full'` (see
+  // `useMobileToolbar`), so the toggle is hidden there to avoid
+  // surfacing a control that would be silently overridden.
+  const densityRail = isMobile ? null : (
+    <DensityToggleButton density={props.density} onChange={props.onDensityChange} disabled={disabled} />
+  )
 
   const isCompact = density === 'compact'
 
@@ -223,14 +251,20 @@ export function Toolbar(props: ToolbarProps) {
     <div
       className={cn(
         'flex w-full max-w-full min-w-0 items-center gap-x-0.5 border-b p-2',
-        isCompact ? 'flex-nowrap overflow-x-auto' : 'flex-wrap gap-y-1',
+        // On `<sm` the toolbar is a single-row, horizontally-scrollable
+        // strip even in full density — otherwise the ~25 icon buttons
+        // would wrap to several rows and balloon the floating pill's
+        // height past the FAB row.
+        isCompact || isMobile ? 'flex-nowrap overflow-x-auto' : 'flex-wrap gap-y-1',
         className,
       )}
     >
       {groups}
-      <ToolbarGroup hideTrailingSeparator className="ml-auto shrink-0">
-        {densityRail}
-      </ToolbarGroup>
+      {densityRail ? (
+        <ToolbarGroup hideTrailingSeparator className="ml-auto shrink-0">
+          {densityRail}
+        </ToolbarGroup>
+      ) : null}
     </div>
   )
 }

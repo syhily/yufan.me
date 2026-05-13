@@ -73,6 +73,8 @@ const COLOR_TOKENS = [
   'ink-strong',
   'input',
   'like-active',
+  'like-bg',
+  'like-bg-hover',
   'line',
   'line-muted',
   'muted',

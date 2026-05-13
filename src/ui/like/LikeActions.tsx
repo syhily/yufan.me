@@ -1,5 +1,5 @@
 import { HeartIcon } from 'lucide-react'
-import { useEffect, useState, useOptimistic } from 'react'
+import { useEffect, useState } from 'react'
 
 import type {
   DecreaseLikeInput,
@@ -51,14 +51,21 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
 // `localStorage`, and uses one `useApiFetcher` per direction so the SSR
 // HTML (count / heart) stays the source of truth on first paint.
 export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) {
-  const [baseState, setBaseState] = useState(createLikeButtonState(permalink, initialLikes))
-  const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
+  // Plain `useState` is the right primitive here: `useOptimistic` only keeps
+  // its dispatched update alive while an Action / transition is pending, so
+  // calling its setter from a non-transition `onClick` flashes the optimistic
+  // value for a single render and then reverts before the network round trip
+  // commits — visually identical to "the button does nothing on click". The
+  // network round trip is already managed by `useApiFetcher`, so we apply the
+  // optimistic toggle directly to local state and let `onSuccess` overwrite
+  // with the server-confirmed count.
+  const [state, setState] = useState(createLikeButtonState(permalink, initialLikes))
 
   const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
     API_ACTIONS.comment.validateLikeToken,
     {
       onSuccess: (data) => {
-        setBaseState((prev) => (data.key === prev.permalink ? { ...prev, liked: data.valid } : prev))
+        setState((prev) => (data.key === prev.permalink ? { ...prev, liked: data.valid } : prev))
         if (!data.valid) {
           localStorage.removeItem(tokenStorageKey(data.key))
         }
@@ -68,14 +75,14 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
 
   const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
     onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.permalink ? { ...prev, liked: true, likes: data.likes } : prev))
+      setState((prev) => (data.key === prev.permalink ? { ...prev, liked: true, likes: data.likes } : prev))
       localStorage.setItem(tokenStorageKey(data.key), data.token)
     },
   })
 
   const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
     onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.permalink ? { ...prev, liked: false, likes: data.likes } : prev))
+      setState((prev) => (data.key === prev.permalink ? { ...prev, liked: false, likes: data.likes } : prev))
       localStorage.removeItem(tokenStorageKey(data.key))
     },
   })
@@ -86,7 +93,7 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   // the new page's cached token.
   const validateSubmit = validate.submit
   useEffect(() => {
-    setBaseState(createLikeButtonState(permalink, initialLikes))
+    setState(createLikeButtonState(permalink, initialLikes))
     const token = localStorage.getItem(tokenStorageKey(permalink))
     if (!token) {
       return
@@ -106,10 +113,10 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
       if (!token) {
         return
       }
-      addOptimistic('unlike')
+      setState((prev) => applyLikeOptimistic(prev, 'unlike'))
       decrease.submit({ key: permalink, token })
     } else {
-      addOptimistic('like')
+      setState((prev) => applyLikeOptimistic(prev, 'like'))
       increase.submit({ key: permalink })
     }
   }
@@ -130,6 +137,10 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
         //   specificity at runtime.
         className={cn(
           'px-10',
+          // Resting state rides the dedicated `--like-bg` token so dark
+          // mode can swap the brand navy for a grayish light blue without
+          // affecting every other `variant="dark"` button on the site.
+          'border-like-bg bg-like-bg hover:border-like-bg-hover hover:bg-like-bg-hover',
           'hover:animate-shake hover:will-change-transform',
           'data-[liked=true]:border-like-active data-[liked=true]:bg-like-active data-[liked=true]:text-white data-[liked=true]:shadow-like-active',
         )}
