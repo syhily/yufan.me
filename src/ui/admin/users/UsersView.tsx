@@ -1,4 +1,4 @@
-import { Volume2Icon, VolumeOffIcon } from 'lucide-react'
+import { MailIcon, Volume2Icon, VolumeOffIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type {
@@ -18,9 +18,11 @@ import { API_ACTIONS } from '@/shared/api-actions'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
+import { InviteAuthorDialog } from '@/ui/admin/users/InviteAuthorDialog'
 import { UsersTable } from '@/ui/admin/users/UsersTable'
 import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { useUsersController } from '@/ui/admin/users/useUsersController'
+import { Button } from '@/ui/components/button'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const LIST = API_ACTIONS.admin.listUsers
@@ -91,6 +93,7 @@ export function UsersView() {
   const allRowsSelected = state.rows.length > 0 && state.rows.every((u) => state.selected[u.id])
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
+  const [inviteOpen, setInviteOpen] = useState(false)
 
   // Per-row action openers. Each one routes through `setConfirm` so
   // destructive operations always require an explicit user
@@ -190,7 +193,11 @@ export function UsersView() {
   return (
     <>
       <AdminListPage>
-        <AdminListPage.Header title="用户管理" description="管理评论用户：搜索、过滤、禁言、批量审核或软删除评论。" />
+        <AdminListPage.Header title="用户管理" description="管理评论用户：搜索、过滤、禁言、批量审核或软删除评论。">
+          <Button type="button" variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
+            <MailIcon /> 邀请作者
+          </Button>
+        </AdminListPage.Header>
 
         <UsersToolbar
           qInput={qInput}
@@ -233,6 +240,7 @@ export function UsersView() {
       </AdminListPage>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
+      <InviteAuthorDialog open={inviteOpen} onClose={() => setInviteOpen(false)} onInvited={reload} />
     </>
   )
 }

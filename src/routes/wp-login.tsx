@@ -8,6 +8,7 @@ import { countApprovedCommentsByUser } from '@/server/db/query/comment'
 import { findUserByEmail, updateUserById } from '@/server/db/query/user'
 import { sendPasswordReset } from '@/server/email/sender'
 import { ensureInstalledOrRedirect } from '@/server/install/gate'
+import { tryPasswordResetRateLimit } from '@/server/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import {
   issueCsrfToken,
@@ -68,6 +69,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (action === 'lostpassword') {
     const formData = await request.formData()
     const email = String(formData.get('email') ?? '')
+    // Rate-limit before any lookup to prevent abuse.
+    const limit = await tryPasswordResetRateLimit(clientAddress)
+    if (limit.exceeded) {
+      return data({ error: null, message: '如果该邮箱存在且符合要求，重置邮件已发送。' })
+    }
     // Always appear to succeed to prevent email enumeration.
     if (email) {
       const u = await findUserByEmail(email)

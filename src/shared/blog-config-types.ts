@@ -252,6 +252,10 @@ export interface RateLimitSettings {
    * flows.
    */
   likeIncreaseIp: RateLimitBucket
+  /** Admin author invitations per client IP. */
+  inviteIp: RateLimitBucket
+  /** Password-reset requests per client IP. */
+  passwordResetIp: RateLimitBucket
 }
 
 export interface SearchSettings {

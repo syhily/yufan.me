@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // sync because the JSX is rendered from the same array.
 const ROLE_OPTIONS: { value: RoleFilter; label: string }[] = [
   { value: 'all', label: '全部' },
-  { value: 'admin', label: '仅管理员' },
-  { value: 'normal', label: '仅普通用户' },
+  { value: 'admin', label: '管理员' },
+  { value: 'author', label: '作者' },
+  { value: 'visitor', label: '访客' },
+  { value: 'normal', label: '非管理员' },
 ]
 
 const SORT_OPTIONS: { value: SortOrder; label: string }[] = [

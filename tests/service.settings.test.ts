@@ -96,6 +96,8 @@ const fixtureBundle: BlogSettingsBundle = {
     commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
     commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
     likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
+    inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
+    passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
   },
   search: {
     search: {
@@ -418,6 +420,8 @@ describe('services/settings — rateLimit section', () => {
         commentPostIp: { windowSeconds: 60 * 30, maxAttempts: 6 },
         commentPostEmail: { windowSeconds: 60 * 30, maxAttempts: 4 },
         likeIncreaseIp: { windowSeconds: 60 * 5, maxAttempts: 100 },
+        inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
+        passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
       },
       11n,
     )
@@ -445,6 +449,8 @@ describe('services/settings — rateLimit section', () => {
           commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
           commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
           likeIncreaseIp: { windowSeconds: 3600, maxAttempts: 30 },
+          inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
+          passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
         },
         null,
       ),
@@ -463,6 +469,8 @@ describe('services/settings — rateLimit section', () => {
           commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
           commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
           likeIncreaseIp: { windowSeconds: 3600, maxAttempts: 0 },
+          inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
+          passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
         },
         null,
       ),
@@ -480,6 +488,8 @@ describe('services/settings — rateLimit section', () => {
           signInIp: { windowSeconds: 1800, maxAttempts: 5 },
           commentPostIp: { windowSeconds: 3600, maxAttempts: 12 },
           commentPostEmail: { windowSeconds: 3600, maxAttempts: 8 },
+          inviteIp: { windowSeconds: 3600, maxAttempts: 5 },
+          passwordResetIp: { windowSeconds: 1800, maxAttempts: 3 },
           // likeIncreaseIp deliberately omitted
         } as never,
         null,

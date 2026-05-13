@@ -12,6 +12,8 @@ import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 
 const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`
+const inviteKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}invite:${ip}`
+const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:${ip}`
 const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
 const commentPostEmailKey = (email: string) => {
   // Hash the email so the raw string never lands in Redis. SHA-256
@@ -82,6 +84,16 @@ async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<
  */
 export async function tryRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(signInKey(ip), readBucket('signInIp'))
+}
+
+/** Throttles admin author invitations by client IP. */
+export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(inviteKey(ip), readBucket('inviteIp'))
+}
+
+/** Throttles password-reset requests by client IP. */
+export async function tryPasswordResetRateLimit(ip: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passwordResetKey(ip), readBucket('passwordResetIp'))
 }
 
 /** Throttles public comment submissions by IP (independent of login rate limits). */

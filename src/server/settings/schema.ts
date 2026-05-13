@@ -440,6 +440,8 @@ export const rateLimitSchema = z.object({
   commentPostIp: rateLimitBucketSchema,
   commentPostEmail: rateLimitBucketSchema,
   likeIncreaseIp: rateLimitBucketSchema,
+  inviteIp: rateLimitBucketSchema,
+  passwordResetIp: rateLimitBucketSchema,
 })
 export type RateLimitInput = z.infer<typeof rateLimitSchema>
 

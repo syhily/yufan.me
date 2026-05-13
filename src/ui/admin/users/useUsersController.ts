@@ -2,7 +2,7 @@ import { useReducer } from 'react'
 
 import type { AdminUserDto } from '@/shared/api-types'
 
-export type RoleFilter = 'all' | 'admin' | 'normal'
+export type RoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 export type SortOrder = 'recent' | 'commentCount'
 
 interface UsersState {

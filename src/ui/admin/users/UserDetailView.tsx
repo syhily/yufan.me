@@ -27,6 +27,7 @@ import type { AdminComment } from '@/shared/comments'
 
 import { useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
+type Role = NonNullable<AdminUserDto['role']>
 import { formatLocalDate } from '@/shared/formatter'
 import { idStr } from '@/shared/tools'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -38,12 +39,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Checkbox } from '@/ui/components/checkbox'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 const GET = API_ACTIONS.admin.getUser
 const UPDATE = API_ACTIONS.auth.updateUser
+const UPDATE_ROLE = API_ACTIONS.admin.updateUserRole
 // Initial colour offered when an admin first ticks the "自定义字体颜色"
 // checkbox. Mirrors the public `--badge-text` light value so the picker
 // lands on the most common choice rather than `#000000`.
@@ -72,6 +75,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const bulkApproveFetcher = useFetcher<ApiEnvelope<BulkApproveOutput>>()
   const bulkDeleteFetcher = useFetcher<ApiEnvelope<BulkSoftDeleteOutput>>()
   const commentsFetcher = useFetcher<ApiEnvelope<LoadAllOutput>>()
+  const updateRoleFetcher = useFetcher<ApiEnvelope<{ user: AdminUserDto }>>()
 
   const [user, setUser] = useState<AdminUserDto | null>(null)
   const [comments, setComments] = useState<AdminComment[]>([])
@@ -86,6 +90,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   // whether the form sends `null` (clear → auto-derive) or a hex value.
   const [useTextOverride, setUseTextOverride] = useState(false)
   const [badgeTextColor, setBadgeTextColor] = useState(DEFAULT_BADGE_TEXT_COLOR)
+  const [roleDraft, setRoleDraft] = useState<Role | ''>('')
 
   // React Router's `useFetcher()` returns a fresh wrapper object on every
   // render. Closing over it directly in `useCallback` deps would re-fire
@@ -142,6 +147,13 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   })
   useFetcherResult(muteFetcher, { action: MUTE, onSuccess: (payload) => setUser(payload.user) })
   useFetcherResult(updateFetcher, { action: UPDATE, onSuccess: () => reloadUser() })
+  useFetcherResult(updateRoleFetcher, {
+    action: UPDATE_ROLE,
+    onSuccess: (payload) => {
+      setUser(payload.user)
+      setRoleDraft('')
+    },
+  })
   useFetcherResult(restoreFetcher, { action: RESTORE, onSuccess: () => reloadUser() })
   useFetcherResult(deleteFetcher, {
     action: SOFT_DELETE,
@@ -213,6 +225,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   {user.role === 'admin' && <Badge variant="secondary">管理员</Badge>}
                   {user.role === 'author' && <Badge variant="secondary">作者</Badge>}
+                  {user.role === 'visitor' && <Badge variant="secondary">访客</Badge>}
+                  {user.role === null && <Badge variant="outline">匿名</Badge>}
                   {user.deletedAt ? (
                     <Badge variant="outline" className="text-muted-foreground">
                       已删除
@@ -287,6 +301,42 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                 <CardDescription>对该用户执行管理操作。</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
+                {user.id !== userId && user.role !== null && (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="user-role">角色</Label>
+                    <Select
+                      value={roleDraft || user.role}
+                      onValueChange={(value) => {
+                        if (value === user.role) {
+                          setRoleDraft('')
+                          return
+                        }
+                        const nextRole = value as Role
+                        setRoleDraft(nextRole)
+                        setConfirm({
+                          title: `修改角色为「${nextRole === 'admin' ? '管理员' : nextRole === 'author' ? '作者' : '访客'}」？`,
+                          description: '修改角色后，该用户的所有会话将被强制登出。',
+                          actionLabel: '确认修改',
+                          destructive: false,
+                          onConfirm: () =>
+                            void updateRoleFetcher.submit(
+                              { userId: user.id, role: nextRole },
+                              { method: UPDATE_ROLE.method, encType: 'application/json', action: UPDATE_ROLE.path },
+                            ),
+                        })
+                      }}
+                    >
+                      <SelectTrigger id="user-role" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">管理员</SelectItem>
+                        <SelectItem value="author">作者</SelectItem>
+                        <SelectItem value="visitor">访客</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 {user.role !== 'admin' && (
                   <Button
                     type="button"

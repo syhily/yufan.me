@@ -7,8 +7,10 @@ import type { Comment, User } from '@/server/db/types'
 
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/comments/url'
 import ApprovedComment from '@/server/email/templates/ApprovedComment'
+import AuthorInvite from '@/server/email/templates/AuthorInvite'
 import NewComment from '@/server/email/templates/NewComment'
 import NewReply from '@/server/email/templates/NewReply'
+import PasswordReset from '@/server/email/templates/PasswordReset'
 import { getLogger } from '@/server/logger'
 import { commentBodyToHtml } from '@/server/pt/comment-to-html'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -181,28 +183,27 @@ export async function sendNewReply(
 }
 
 // Sent to a newly invited author with a setup link.
-export async function sendAuthorInvite(user: User, link: string, _inviterName: string): Promise<SendResult> {
+export async function sendAuthorInvite(user: User, link: string, inviterName: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = [
-    `<p>你好 <strong>${escapeHtml(user.name)}</strong>，</p>`,
-    `<p>你已被邀请成为 <strong>${escapeHtml(siteIdentity.title)}</strong> 的作者。</p>`,
-    `<p>请点击以下链接设置你的登录密码：</p>`,
-    `<p><a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>`,
-    `<p>该链接 7 天内有效。</p>`,
-  ].join('\n')
+  const html = await render(
+    createElement(AuthorInvite, {
+      receiver: user.name,
+      inviter: inviterName,
+      link,
+    }),
+  )
   return internalSend(user.email, `【${siteIdentity.title}】作者邀请`, html)
 }
 
 // Sent when a user requests a password reset.
 export async function sendPasswordReset(user: User, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = [
-    `<p>你好 <strong>${escapeHtml(user.name)}</strong>，</p>`,
-    `<p>你请求重置 <strong>${escapeHtml(siteIdentity.title)}</strong> 的登录密码。</p>`,
-    `<p>请点击以下链接重置密码：</p>`,
-    `<p><a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>`,
-    `<p>该链接 15 分钟内有效。</p>`,
-  ].join('\n')
+  const html = await render(
+    createElement(PasswordReset, {
+      receiver: user.name,
+      link,
+    }),
+  )
   return internalSend(user.email, `【${siteIdentity.title}】密码重置`, html)
 }
 

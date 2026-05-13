@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { issueSetupToken } from '@/server/auth/verification-tokens'
 import { findUserByEmail, insertAuthor } from '@/server/db/query/user'
 import { sendAuthorInvite } from '@/server/email/sender'
-import { tryRateLimit } from '@/server/rate-limit'
+import { tryInviteRateLimit } from '@/server/rate-limit'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
@@ -21,7 +21,7 @@ export const action = defineApiAction({
     if (existing !== null) {
       throw new ActionFailure(409, '该邮箱已被注册。')
     }
-    const limit = await tryRateLimit(`invite:${ctx.clientAddress}:${payload.email}`)
+    const limit = await tryInviteRateLimit(ctx.clientAddress)
     if (limit.exceeded) {
       throw new ActionFailure(429, '邀请发送过于频繁，请稍后再试。')
     }
