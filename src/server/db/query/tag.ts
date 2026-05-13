@@ -1,4 +1,4 @@
-import { and, asc, count, eq, ilike, or, sql, type SQL } from 'drizzle-orm'
+import { and, asc, count, eq, ilike, or, type SQL } from 'drizzle-orm'
 
 import type { NewTag, TagRow } from '@/server/db/types'
 

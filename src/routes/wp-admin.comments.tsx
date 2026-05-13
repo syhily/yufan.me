@@ -1,5 +1,4 @@
-import { redirect } from 'react-router'
-import { useOutletContext, useSearchParams } from 'react-router'
+import { redirect, useOutletContext, useSearchParams } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'

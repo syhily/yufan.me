@@ -67,7 +67,7 @@ export function MyProfileView({ currentUser }: Props) {
           </div>
           <Button
             onClick={() => updateProfile.submit({ name, link: link || null })}
-            disabled={updateProfile.loading || !name.trim()}
+            disabled={updateProfile.isPending || !name.trim()}
             size="sm"
             className="self-start"
           >

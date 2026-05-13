@@ -1,5 +1,4 @@
-import { redirect } from 'react-router'
-import { useNavigate } from 'react-router'
+import { redirect, useNavigate } from 'react-router'
 
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
