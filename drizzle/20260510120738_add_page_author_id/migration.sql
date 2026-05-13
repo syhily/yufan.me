@@ -1,1 +1,0 @@
-ALTER TABLE "page" ADD COLUMN "author_id" bigint;
