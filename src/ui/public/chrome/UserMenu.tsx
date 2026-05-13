@@ -1,4 +1,4 @@
-import { LogOutIcon, MessageSquareIcon, SettingsIcon, UserIcon } from 'lucide-react'
+import { LogOutIcon, MessageSquareIcon, MonitorIcon, SettingsIcon, UserIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { HeaderCurrentUser } from '@/ui/public/chrome/Header'
@@ -46,14 +46,21 @@ export function UserMenu({ currentUser, logoutQuery }: Props) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           render={
-            <Link to="/my/comments" prefetch="intent">
+            <Link to="/wp-admin/my/comments" prefetch="intent">
               <MessageSquareIcon /> 我的评论
             </Link>
           }
         />
         <DropdownMenuItem
           render={
-            <Link to="/my/profile" prefetch="intent">
+            <Link to="/wp-admin/my/sessions" prefetch="intent">
+              <MonitorIcon /> 登录设备
+            </Link>
+          }
+        />
+        <DropdownMenuItem
+          render={
+            <Link to="/wp-admin/my/profile" prefetch="intent">
               <UserIcon /> 个人信息
             </Link>
           }

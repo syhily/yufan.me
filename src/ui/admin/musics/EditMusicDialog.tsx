@@ -80,7 +80,7 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[calc(100dvh-4rem)] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>编辑音乐元数据</DialogTitle>
           <DialogDescription>
@@ -182,7 +182,7 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
               onChange={(e) => setDraft((prev) => ({ ...prev, lyric: e.target.value }))}
               rows={10}
               spellCheck={false}
-              className="font-mono text-xs"
+              className="max-h-72 min-h-32 overflow-y-auto font-mono text-xs"
               placeholder={'[00:12.34]第一行歌词\n[00:18.20]第二行歌词\n…'}
             />
             <p className="text-xs text-muted-foreground">留空则清除已存的歌词；保存后 APlayer 将使用新内容。</p>

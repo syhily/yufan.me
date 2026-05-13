@@ -7,20 +7,31 @@ import {
   LogOutIcon,
   MenuIcon,
   MessageSquareIcon,
+  MonitorIcon,
   Music2Icon,
   NotebookPenIcon,
   SettingsIcon,
+  SmartphoneIcon,
   TagsIcon,
+  UserIcon,
   UsersIcon,
 } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
-import { Form, NavLink } from 'react-router'
+import { Link, NavLink } from 'react-router'
 import { Toaster } from 'sonner'
 
 import { hasAtLeast } from '@/shared/roles'
 import { AdminScrollTopButton } from '@/ui/admin/shell/AdminScrollTopButton'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Button } from '@/ui/components/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/ui/components/dropdown-menu'
 import { Separator } from '@/ui/components/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
@@ -36,7 +47,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/wp-admin/welcome', label: '欢迎', icon: HomeIcon, minRole: 'visitor' },
+  { to: '/wp-admin/welcome', label: '欢迎页面', icon: HomeIcon, minRole: 'visitor' },
   { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon, minRole: 'author' },
   { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon, minRole: 'admin' },
   { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon, minRole: 'admin' },
@@ -46,6 +57,7 @@ const NAV: NavItem[] = [
   { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon, minRole: 'author' },
   { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon, minRole: 'author' },
   { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users', minRole: 'admin' },
+  { to: '/wp-admin/sessions', label: '会话管理', icon: SmartphoneIcon, minRole: 'admin' },
   {
     to: '/wp-admin/settings/general',
     label: '系统设置',
@@ -111,33 +123,56 @@ function NavList({
 function UserMenu({ id, name, email }: { id: string; name: string; email: string }) {
   const initial = (name || email || '?').slice(0, 1).toUpperCase()
   return (
-    <div className="flex items-center gap-3">
-      <Avatar className="size-9">
-        {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
-        <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">{initial}</AvatarFallback>
-      </Avatar>
-      <div className="hidden min-w-0 flex-col md:flex">
-        <span className="truncate text-sm leading-tight font-medium">{name}</span>
-        <span className="truncate text-xs leading-tight text-muted-foreground">{email}</span>
-      </div>
-      <Form method="get" action="/wp-login.php" className="flex">
-        <input type="hidden" name="action" value="logout" />
-        <input type="hidden" name="redirect_to" value="/" />
-        {/* `hover:text-primary` overrides ghost variant's
-            `hover:text-accent-foreground` (tailwind-merge resolves the
-            conflict by source order) so hover state matches the brand
-            colour the home icon uses. */}
-        <Button
-          type="submit"
-          variant="ghost"
-          size="sm"
-          className="gap-1 text-foreground hover:text-primary focus-visible:text-primary"
-        >
-          <LogOutIcon data-icon />
-          <span className="hidden sm:inline">退出</span>
-        </Button>
-      </Form>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" size="icon" className="size-9 rounded-full" aria-label="用户菜单">
+            <Avatar className="size-9">
+              {id ? <AvatarImage src={`/images/avatar/${id}.png`} alt={name} /> : null}
+              <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                {initial}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel className="flex flex-col gap-0.5">
+          <span className="truncate text-sm font-medium">{name}</span>
+          <span className="truncate text-xs font-normal text-muted-foreground">{email}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          render={
+            <Link to="/wp-admin/my/profile" prefetch="intent">
+              <UserIcon /> 个人信息
+            </Link>
+          }
+        />
+        <DropdownMenuItem
+          render={
+            <Link to="/wp-admin/my/comments" prefetch="intent">
+              <MessageSquareIcon /> 我的评论
+            </Link>
+          }
+        />
+        <DropdownMenuItem
+          render={
+            <Link to="/wp-admin/my/sessions" prefetch="intent">
+              <MonitorIcon /> 登录设备
+            </Link>
+          }
+        />
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          render={
+            <a href="/wp-login.php?action=logout&redirect_to=/">
+              <LogOutIcon /> 登出
+            </a>
+          }
+        />
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

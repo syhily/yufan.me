@@ -30,7 +30,7 @@ export interface BlogSessionData {
 
 export type BlogSession = Session<BlogSessionData, BlogSessionData>
 
-const SESSION_MAX_AGE = 60 * 60 * 24 * 30
+export const SESSION_MAX_AGE = 60 * 60 * 24 * 30
 
 const storage = createSessionStorage<BlogSessionData>({
   cookie: {
@@ -97,6 +97,13 @@ export async function revokeAllSessionsOfUser(userId: bigint, exceptSessionId?: 
   const pipeline = redis.pipeline()
   for (const sid of targets) {
     pipeline.del(`session:${sid}`)
+    // `session_meta:<sid>` is the parallel HSET that powers
+    // /wp-admin/sessions and /my/sessions. It must die with the
+    // session it describes; without this DEL the meta hash would
+    // outlive the session for up to 30 days and the admin view
+    // would render "ghost" rows for sessions that no longer let
+    // anyone log in.
+    pipeline.del(`session_meta:${sid}`)
   }
   if (exceptSessionId === undefined) {
     // Wholesale wipe: drop the whole index in one shot. Cheaper than

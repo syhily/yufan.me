@@ -121,12 +121,14 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
   return toAdminTagDto(updated, await countOf(updated.name))
 }
 
-// Block-only deletion. Same contract as `deleteAdminCategory`: refuse
-// when any post (visible/hidden/scheduled) still lists the tag in its
-// frontmatter `tags: [...]`.
+// Block-only deletion regardless of role. `deleteAdminTaxonomy` refuses
+// to remove a tag while any post still lists it in its frontmatter
+// `tags: [...]` — this is the project's intentional stricter-than-
+// RBAC-design fence: we never orphan posts, even when an admin clicks
+// delete. Authors get the same UX as admins because the cross-check is
+// global to the tag, not the viewer. Same contract as
+// `deleteAdminCategory`.
 export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Promise<boolean> {
-  // deleteAdminTaxonomy already blocks deletion when posts reference the tag.
-  // Admin can delete regardless of ownership; author can only delete unreferenced tags.
   return deleteAdminTaxonomy(id, '标签', {
     findById: findTagById,
     deleteRow: deleteTagRow,

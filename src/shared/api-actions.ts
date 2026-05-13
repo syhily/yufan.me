@@ -34,6 +34,7 @@ export const API_ACTIONS = {
   account: {
     updateProfile: defineApiAction('api/actions/account/updateProfile', 'POST'),
     updatePassword: defineApiAction('api/actions/account/updatePassword', 'POST'),
+    revokeSession: defineApiAction('api/actions/account/revokeSession', 'POST'),
   },
   auth: {
     // The browser sign-in / sign-up flows go directly through React Router's
@@ -128,6 +129,8 @@ export const API_ACTIONS = {
     inviteAuthor: defineApiAction('api/actions/admin/inviteAuthor', 'POST'),
     updateUserRole: defineApiAction('api/actions/admin/updateUserRole', 'POST'),
     sendPasswordReset: defineApiAction('api/actions/admin/sendPasswordReset', 'POST'),
+    revokeSession: defineApiAction('api/actions/admin/revokeSession', 'POST'),
+    revokeUserSessions: defineApiAction('api/actions/admin/revokeUserSessions', 'POST'),
   },
 } as const
 

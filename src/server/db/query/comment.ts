@@ -2,6 +2,9 @@ import { and, count, desc, eq, gte, ilike, inArray, isNotNull, isNull, or, sql }
 
 import type { EntityTarget, EntityType } from '@/server/db/target'
 import type { Comment, NewComment } from '@/server/db/types'
+import type { MyCommentsStatus } from '@/shared/comments'
+
+export type { MyCommentsStatus }
 
 import { db } from '@/server/db/pool'
 import { comment, metric, page, post, user } from '@/server/db/schema'
@@ -349,6 +352,31 @@ export async function updateCommentBodyAndContent(
   await db.update(comment).set({ body, content }).where(eq(comment.id, id))
 }
 
+// Fresh-edit variant of `comment.updateOwn`: an owner editing their own
+// comment within the grace window (see `updateOwnComment` in
+// `@/server/comments/admin`) gets to rewrite the PortableText body and
+// its markdown projection in place, bumping `updated_at` but NOT
+// flipping `is_pending`. The comment stays in whatever moderation
+// state it was already in, and the admin notification is skipped.
+export async function updateOwnCommentBody(id: bigint, body: NewComment['body'], content: string): Promise<void> {
+  await db.update(comment).set({ body, content, updatedAt: new Date() }).where(eq(comment.id, id))
+}
+
+// Re-pend variant of `comment.updateOwn`: when an owner edits their own
+// comment OUTSIDE the grace window, in addition to rewriting the
+// PortableText body and its markdown projection, flip the comment back
+// into the moderation queue (`is_pending = true`) and bump
+// `updated_at`. The admin-side edit path keeps using
+// `updateCommentBodyAndContent` so a moderator's edit does not
+// re-queue an already-approved comment.
+export async function updateOwnCommentBodyAndPending(
+  id: bigint,
+  body: NewComment['body'],
+  content: string,
+): Promise<void> {
+  await db.update(comment).set({ body, content, isPending: true, updatedAt: new Date() }).where(eq(comment.id, id))
+}
+
 export async function findCommentWithSourceUser(id: bigint) {
   const rows = await db
     .select()
@@ -564,31 +592,229 @@ function mineVisibleClause(userId: bigint) {
   )
 }
 
-export async function listMyComments(userId: bigint, offset: number, limit: number): Promise<CommentWithUser[]> {
+export interface MyCommentsFilters {
+  status?: MyCommentsStatus
+  q?: string
+  /**
+   * Narrow the result to a specific post / page the user has commented
+   * on. URL-driven via `?entity=<type>:<ownerId>` on `/wp-admin/my/comments`.
+   */
+  entity?: { type: EntityType; ownerId: bigint }
+}
+
+// Single source of truth for the visitor-self-service query predicate.
+// Wraps `mineVisibleClause` so the soft-delete grace window stays in
+// lockstep across list/count, and adds the optional tab-status / text
+// filters. Keep the first line literally `mineVisibleClause(userId)`
+// so the contract test in `tests/service.my-comments.test.ts` can still
+// grep for the shared visibility helper inside this function body.
+function mineWhere(userId: bigint, filters: MyCommentsFilters = {}) {
+  const clauses = [mineVisibleClause(userId)]
+  if (filters.status === 'pending') {
+    clauses.push(eq(comment.isPending, true))
+  } else if (filters.status === 'deleteRequested') {
+    clauses.push(isNotNull(comment.deleteRequestedAt))
+  } else if (filters.status === 'deleted') {
+    clauses.push(isNotNull(comment.deletedAt))
+  }
+  if (filters.entity) {
+    clauses.push(eq(comment.type, filters.entity.type))
+    clauses.push(eq(comment.ownerId, filters.entity.ownerId))
+  }
+  if (filters.q && filters.q.trim() !== '') {
+    // ILIKE against the markdown snapshot column `comment.content`
+    // (already a plain-text rollback of the PortableText body), so the
+    // search hits the same words the user sees rendered. Drizzle
+    // parameterises the bound literal so the `%pattern%` interpolation
+    // is not a SQL-injection vector; the per-user row volume is
+    // bounded by the soft-delete window, so a sequential filter is
+    // acceptable here.
+    clauses.push(sql`${comment.content} ILIKE ${`%${filters.q.trim()}%`}`)
+  }
+  return and(...clauses)
+}
+
+export async function listMyComments(
+  userId: bigint,
+  offset: number,
+  limit: number,
+  filters: MyCommentsFilters = {},
+): Promise<CommentWithUser[]> {
   return db
     .select(commentWithUser)
     .from(comment)
     .innerJoin(user, eq(comment.userId, user.id))
-    .where(mineVisibleClause(userId))
+    .where(mineWhere(userId, filters))
     .orderBy(desc(comment.createdAt))
     .limit(limit)
     .offset(offset)
 }
 
+// Batch helper: project the unique `(type, ownerId)` tuples that appear
+// in a `listMyComments` page back to a `{ type, slug, title }` triple
+// via the same post + page UNION used by the moderation widget. Keyed
+// by `${type}:${ownerId}` so the caller can look up rows without a
+// second per-row query. Returns one entry per existing entity — a
+// missing entry means the underlying post / page row was deleted.
+export interface EntitySlugTitle {
+  type: EntityType
+  slug: string
+  title: string
+}
+
+export async function resolveEntitiesForComments(
+  pairs: ReadonlyArray<{ type: EntityType; ownerId: bigint }>,
+): Promise<Map<string, EntitySlugTitle>> {
+  const out = new Map<string, EntitySlugTitle>()
+  if (pairs.length === 0) {
+    return out
+  }
+  // Dedupe by `(type, ownerId)` so the IN list stays bounded by the
+  // number of distinct entities on the current page, not the number of
+  // comments.
+  const postIds: bigint[] = []
+  const pageIds: bigint[] = []
+  const seen = new Set<string>()
+  for (const p of pairs) {
+    const key = `${p.type}:${p.ownerId}`
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    if (p.type === 'post') {
+      postIds.push(p.ownerId)
+    } else if (p.type === 'page') {
+      pageIds.push(p.ownerId)
+    }
+  }
+  if (postIds.length > 0) {
+    const rows = await db
+      .select({ id: post.id, slug: post.slug, title: post.title })
+      .from(post)
+      .where(inArray(post.id, postIds))
+    for (const r of rows) {
+      out.set(`post:${r.id}`, { type: 'post', slug: r.slug, title: r.title })
+    }
+  }
+  if (pageIds.length > 0) {
+    const rows = await db
+      .select({ id: page.id, slug: page.slug, title: page.title })
+      .from(page)
+      .where(inArray(page.id, pageIds))
+    for (const r of rows) {
+      out.set(`page:${r.id}`, { type: 'page', slug: r.slug, title: r.title })
+    }
+  }
+  return out
+}
+
+// Batch helper: returns the parent comment row (joined with its
+// author's `user.name`) for every id in `ids`. Used by the `/my/comments`
+// loader to surface the「回复 «name»: «excerpt»」block above each reply
+// without issuing one round-trip per row.
+export interface ParentCommentRow {
+  id: bigint
+  userId: bigint
+  name: string
+  content: string
+  deletedAt: Date | null
+}
+
+export async function findParentCommentsByIds(ids: bigint[]): Promise<Map<string, ParentCommentRow>> {
+  const out = new Map<string, ParentCommentRow>()
+  if (ids.length === 0) {
+    return out
+  }
+  const rows = await db
+    .select({
+      id: comment.id,
+      userId: comment.userId,
+      name: user.name,
+      content: comment.content,
+      deletedAt: comment.deletedAt,
+    })
+    .from(comment)
+    .innerJoin(user, eq(comment.userId, user.id))
+    .where(inArray(comment.id, ids))
+  for (const r of rows) {
+    out.set(String(r.id), {
+      id: r.id,
+      userId: r.userId,
+      name: r.name,
+      content: r.content ?? '',
+      deletedAt: r.deletedAt ?? null,
+    })
+  }
+  return out
+}
+
+export interface MyCommentEntity {
+  type: EntityType
+  ownerId: bigint
+  slug: string
+  title: string
+}
+
+// Cap so the Combobox doesn't try to render thousands of options;
+// the title-search input below narrows further when the user has
+// commented on more than this.
+const MY_COMMENT_ENTITY_LIMIT = 20
+
+/**
+ * Distinct posts / pages the user has commented on. Backs the
+ * "按文章筛选" Combobox on `/wp-admin/my/comments`.
+ *
+ * Reuses `mineVisibleClause(userId)` as the base predicate so the
+ * filter dropdown surfaces the same set of entities the comment list
+ * itself can render (i.e. respects the soft-delete grace window).
+ *
+ * Title matching is performed against the joined `post` / `page` title
+ * after resolving the distinct `(type, ownerId)` pairs — the comment
+ * row itself doesn't carry the title. Pair volume is bounded by the
+ * grace window so the in-TS filter / limit pass is acceptable.
+ */
+export async function listMyCommentEntities(userId: bigint, options: { q?: string } = {}): Promise<MyCommentEntity[]> {
+  const pairs = await db
+    .selectDistinct({ type: comment.type, ownerId: comment.ownerId })
+    .from(comment)
+    .where(mineVisibleClause(userId))
+  const resolvable = pairs
+    .filter((p): p is { type: EntityType; ownerId: bigint } => p.type !== null && p.ownerId !== null)
+    .map((p) => ({ type: p.type, ownerId: p.ownerId }))
+  const entityMap = await resolveEntitiesForComments(resolvable)
+  const q = options.q?.trim().toLowerCase() ?? ''
+  const out: MyCommentEntity[] = []
+  for (const p of resolvable) {
+    const row = entityMap.get(`${p.type}:${p.ownerId}`)
+    if (!row) {
+      continue
+    }
+    if (q !== '' && !row.title.toLowerCase().includes(q)) {
+      continue
+    }
+    out.push({ type: row.type, ownerId: p.ownerId, slug: row.slug, title: row.title })
+  }
+  out.sort((a, b) => a.title.localeCompare(b.title))
+  return out.slice(0, MY_COMMENT_ENTITY_LIMIT)
+}
+
 export async function countMyComments(
   userId: bigint,
-): Promise<{ total: number; pending: number; deleteRequested: number }> {
+  filters: MyCommentsFilters = {},
+): Promise<{ total: number; pending: number; deleteRequested: number; deleted: number }> {
   const rows = await db
     .select({
       total: count(),
       pending: sql<number>`COUNT(*) FILTER (WHERE ${comment.isPending} = TRUE)`,
       deleteRequested: sql<number>`COUNT(*) FILTER (WHERE ${comment.deleteRequestedAt} IS NOT NULL)`,
+      deleted: sql<number>`COUNT(*) FILTER (WHERE ${comment.deletedAt} IS NOT NULL)`,
     })
     .from(comment)
-    .where(mineVisibleClause(userId))
+    .where(mineWhere(userId, filters))
   return {
     total: rows[0]?.total ?? 0,
     pending: rows[0]?.pending ?? 0,
     deleteRequested: rows[0]?.deleteRequested ?? 0,
+    deleted: rows[0]?.deleted ?? 0,
   }
 }

@@ -109,6 +109,7 @@ vi.mock('@/server/email/sender', () => ({
 
 vi.mock('@/server/rate-limit', () => ({
   tryPasswordResetRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
+  tryPasswordResetByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 
 const { action } = await import('@/routes/wp-login')

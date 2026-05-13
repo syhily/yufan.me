@@ -97,3 +97,14 @@ export function canEditMusic(viewer: ViewerContext, m: { uploaderId: bigint | nu
 export function canManageComment(viewer: ViewerContext, c: { userId: bigint }): boolean {
   return viewer.role === 'admin' || isCommentOwner(viewer, c)
 }
+
+// Tag deletion is gated on the global reference count, not on ownership:
+// admins may delete any unreferenced tag; non-admins may only delete tags
+// no post still lists. See RBAC-REVIEW §4 — note that the live
+// `deleteAdminTag` enforces an even stricter fence (refuses ALL deletions
+// while any post references the tag, regardless of role) to avoid
+// orphaning posts. This predicate captures the design-doc rule for
+// future callers; it does NOT relax the service-level guard.
+export function canDeleteTag(viewer: ViewerContext, postCount: number): boolean {
+  return viewer.role === 'admin' || postCount === 0
+}

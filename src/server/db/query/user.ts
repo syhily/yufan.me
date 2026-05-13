@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import { and, count, desc, eq, isNull, max, ne, or, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNull, max, ne, or, sql } from 'drizzle-orm'
 
 import type { NewUser, User } from '@/server/db/types'
 
@@ -22,6 +22,19 @@ export async function findUserByEmail(email: string): Promise<User | null> {
 export async function findUserById(id: bigint): Promise<User | null> {
   const rows = await db.select().from(user).where(eq(user.id, id)).limit(1)
   return rows[0] ?? null
+}
+
+/**
+ * Bulk fetch of users by id list. Used by the admin session-management
+ * view to join `session_meta:<sid>` records against the `user` table in
+ * a single round trip. Returns rows in whatever order Postgres picks —
+ * the caller indexes by `id` rather than relying on input order.
+ */
+export async function findUsersByIds(ids: bigint[]): Promise<User[]> {
+  if (ids.length === 0) {
+    return []
+  }
+  return db.select().from(user).where(inArray(user.id, ids))
 }
 
 export async function verifyUserPassword(email: string, password: string): Promise<User | null> {

@@ -7,6 +7,7 @@ import {
   revokeAllSessionsOfUser,
   type SessionUser,
 } from '@/server/auth/session-storage'
+import { recordSessionActivity, recordSessionLogin } from '@/server/auth/sessions'
 import { redisInstance } from '@/server/cache/storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/db/query/user'
 
@@ -60,8 +61,24 @@ export async function establishLoginSession(
     website: dbUser.link,
     role: dbUser.role,
   })
-  await updateLastLogin(dbUser.id, clientAddress, request.headers.get('User-Agent'))
+  const userAgent = request.headers.get('User-Agent')
+  await updateLastLogin(dbUser.id, clientAddress, userAgent)
   await redisInstance().sadd(`user_sessions:${dbUser.id}`, session.id)
+  // Persist the per-session metadata that powers /my/sessions and
+  // /wp-admin/sessions. Best-effort: any Redis hiccup here would
+  // otherwise force a fresh login to fail, even though the cookie is
+  // already valid. We log and continue.
+  try {
+    await recordSessionLogin({
+      sid: session.id,
+      userId: dbUser.id,
+      userAgent,
+      ip: clientAddress,
+    })
+  } catch {
+    // The audit row is recoverable on next login; do not block the
+    // user's auth flow.
+  }
 }
 
 export async function login({
@@ -94,7 +111,11 @@ export async function logout(session: BlogSession): Promise<void> {
   const user = userSession(session)
   if (user) {
     const sid = session.id
-    await redisInstance().srem(`user_sessions:${user.id}`, sid)
+    const redis = redisInstance()
+    await redis.srem(`user_sessions:${user.id}`, sid)
+    // Drop the parallel meta hash so the admin / self-service views
+    // stop listing a session whose cookie is no longer valid.
+    await redis.del(`session_meta:${sid}`)
   }
   session.unset('user')
 }
@@ -135,6 +156,15 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
       session.unset('user')
       user = undefined
     }
+  }
+
+  // Fire-and-forget: bump `lastActiveAt` and PEXPIRE the meta hash
+  // alongside the session cookie's sliding refresh, so the
+  // session-management views show truthful "最近活跃" timestamps.
+  // Must NOT block the request — the helper internally voids the
+  // promise and catches errors.
+  if (user) {
+    recordSessionActivity(session.id)
   }
 
   return { session, user, role: user?.role ?? null }

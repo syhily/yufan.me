@@ -4,7 +4,7 @@ import { issueSetupToken, revokeTokensFor } from '@/server/auth/verification-tok
 import { findUserByEmail, insertAuthor, softDeleteUserById } from '@/server/db/query/user'
 import { sendAuthorInvite } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
-import { tryInviteRateLimit } from '@/server/rate-limit'
+import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/rate-limit'
 import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
@@ -24,8 +24,13 @@ export const action = defineGuardedApiAction({
     if (existing !== null) {
       throw new ActionFailure(409, '该邮箱已被注册。')
     }
-    const limit = await tryInviteRateLimit(ctx.clientAddress)
-    if (limit.exceeded) {
+    // Per-IP and per-(adminId, target email) buckets are additive — a
+    // 429 from either path closes the door without leaking which one
+    // tripped. `viewer.userId` is the string form of the admin's bigint
+    // id; cast back here so the key path stays a clean numeric segment.
+    const ipLimit = await tryInviteRateLimit(ctx.clientAddress)
+    const emailLimit = await tryInviteByEmailRateLimit(BigInt(viewer.userId), payload.email)
+    if (ipLimit.exceeded || emailLimit.exceeded) {
       throw new ActionFailure(429, '邀请发送过于频繁，请稍后再试。')
     }
     const [user] = await insertAuthor(payload.name, payload.email)

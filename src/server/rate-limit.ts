@@ -16,14 +16,19 @@ const inviteKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}invite:${ip}`
 const passwordResetKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}password-reset:${ip}`
 const passwordResetTargetKey = (userId: bigint) => `${RATE_LIMIT_NAMESPACE}password-reset-target:${userId.toString()}`
 const commentPostIpKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}comment-post:${ip}`
-const commentPostEmailKey = (email: string) => {
-  // Hash the email so the raw string never lands in Redis. SHA-256
-  // truncated to 32 hex chars (128 bits) is more than enough collision
-  // resistance for a per-window counter.
+
+// Hash the email so the raw string never lands in Redis. SHA-256
+// truncated to 32 hex chars (128 bits) is more than enough collision
+// resistance for a per-window counter.
+function hashEmail(email: string): string {
   const normalized = email.trim().toLowerCase()
-  const hash = createHash('sha256').update(normalized).digest('hex').slice(0, 32)
-  return `${RATE_LIMIT_NAMESPACE}comment-email:${hash}`
+  return createHash('sha256').update(normalized).digest('hex').slice(0, 32)
 }
+
+const commentPostEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}comment-email:${hashEmail(email)}`
+const inviteEmailKey = (adminId: bigint, email: string) =>
+  `${RATE_LIMIT_NAMESPACE}invite-email:${adminId.toString()}:${hashEmail(email)}`
+const passwordResetEmailKey = (email: string) => `${RATE_LIMIT_NAMESPACE}password-reset-email:${hashEmail(email)}`
 const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${ip}`
 
 // Conservative fallbacks used ONLY when the settings snapshot has
@@ -92,9 +97,30 @@ export async function tryInviteRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(inviteKey(ip), readBucket('inviteIp'))
 }
 
+/**
+ * Throttles admin author invitations by `(actor adminId, invitee email)`.
+ * Additive to {@link tryInviteRateLimit}: even if an admin's per-IP
+ * budget is fresh, they cannot re-send invites to the same mailbox
+ * faster than this bucket allows. The email is hashed before it lands
+ * in Redis so the raw address never persists in the cache.
+ */
+export async function tryInviteByEmailRateLimit(adminId: bigint, email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(inviteEmailKey(adminId, email), readBucket('inviteEmail'))
+}
+
 /** Throttles password-reset requests by client IP. */
 export async function tryPasswordResetRateLimit(ip: string): Promise<RateLimitResult> {
   return tryKeyedRateLimit(passwordResetKey(ip), readBucket('passwordResetIp'))
+}
+
+/**
+ * Throttles public lostpassword submissions by normalised target email.
+ * Additive to {@link tryPasswordResetRateLimit}: stops an attacker
+ * rotating client IPs from spamming reset prompts to a single mailbox.
+ * The email is hashed before it lands in Redis.
+ */
+export async function tryPasswordResetByEmailRateLimit(email: string): Promise<RateLimitResult> {
+  return tryKeyedRateLimit(passwordResetEmailKey(email), readBucket('passwordResetEmail'))
 }
 
 /**

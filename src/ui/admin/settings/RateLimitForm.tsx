@@ -29,7 +29,9 @@ interface FormState {
   commentPostEmail: BucketState
   likeIncreaseIp: BucketState
   inviteIp: BucketState
+  inviteEmail: BucketState
   passwordResetIp: BucketState
+  passwordResetEmail: BucketState
   passwordResetTarget: BucketState
 }
 
@@ -102,7 +104,9 @@ export function RateLimitForm({ rateLimit }: RateLimitFormProps) {
       commentPostEmail: { ...source.commentPostEmail },
       likeIncreaseIp: { ...source.likeIncreaseIp },
       inviteIp: { ...source.inviteIp },
+      inviteEmail: { ...source.inviteEmail },
       passwordResetIp: { ...source.passwordResetIp },
+      passwordResetEmail: { ...source.passwordResetEmail },
       passwordResetTarget: { ...source.passwordResetTarget },
     }),
     fromState: (state) => ({
@@ -111,7 +115,9 @@ export function RateLimitForm({ rateLimit }: RateLimitFormProps) {
       commentPostEmail: { ...state.commentPostEmail },
       likeIncreaseIp: { ...state.likeIncreaseIp },
       inviteIp: { ...state.inviteIp },
+      inviteEmail: { ...state.inviteEmail },
       passwordResetIp: { ...state.passwordResetIp },
+      passwordResetEmail: { ...state.passwordResetEmail },
       passwordResetTarget: { ...state.passwordResetTarget },
     }),
   })
@@ -183,6 +189,18 @@ export function RateLimitForm({ rateLimit }: RateLimitFormProps) {
       />
 
       <RateLimitBucketCard
+        title="邀请限流（按管理员 + 目标邮箱）"
+        description="按「发起邀请的管理员 ID + 目标邮箱」计数，Redis 中只存储邮箱的哈希值。即使 IP 额度未用完，同一管理员也无法在窗口内对同一邮箱反复发起邀请。"
+        windowFieldId="rate-limit-invite-email-window"
+        attemptsFieldId="rate-limit-invite-email-attempts"
+        bucket={draft.inviteEmail}
+        onChangeWindow={(value) => updateBucket('inviteEmail', { windowSeconds: value })}
+        onChangeAttempts={(value) => updateBucket('inviteEmail', { maxAttempts: value })}
+        windowHint="60 秒 - 24 小时。默认 1 小时（3600）。"
+        attemptsHint="默认 1 次（同一收件人 1 小时内只发 1 封邀请邮件已足够覆盖正常运营节奏）。"
+      />
+
+      <RateLimitBucketCard
         title="密码重置限流（按 IP）"
         description='公共 lostpassword 表单按客户端 IP 计数；与防止枚举的"总是返回成功"语义无关，仅限制每 IP 触发次数。'
         windowFieldId="rate-limit-password-reset-ip-window"
@@ -192,6 +210,18 @@ export function RateLimitForm({ rateLimit }: RateLimitFormProps) {
         onChangeAttempts={(value) => updateBucket('passwordResetIp', { maxAttempts: value })}
         windowHint="60 秒 - 24 小时。默认 30 分钟（1800）。"
         attemptsHint="默认 3 次。"
+      />
+
+      <RateLimitBucketCard
+        title="密码重置限流（按目标邮箱）"
+        description="公共 lostpassword 表单按目标邮箱计数，Redis 中只存储邮箱的哈希值。即使攻击者轮换 IP 也无法对单一邮箱持续触发重置邮件。"
+        windowFieldId="rate-limit-password-reset-email-window"
+        attemptsFieldId="rate-limit-password-reset-email-attempts"
+        bucket={draft.passwordResetEmail}
+        onChangeWindow={(value) => updateBucket('passwordResetEmail', { windowSeconds: value })}
+        onChangeAttempts={(value) => updateBucket('passwordResetEmail', { maxAttempts: value })}
+        windowHint="60 秒 - 24 小时。默认 5 分钟（300）。"
+        attemptsHint="默认 1 次（误填邮箱后用户几分钟内可再次提交，已经覆盖正常重试）。"
       />
 
       <RateLimitBucketCard

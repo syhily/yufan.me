@@ -45,7 +45,7 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>邀请作者</DialogTitle>
           <DialogDescription>向新作者发送邀请邮件，对方点击链接即可设置密码并登录。</DialogDescription>

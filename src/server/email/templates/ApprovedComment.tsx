@@ -1,6 +1,7 @@
 import { Link, Text } from 'react-email'
 
 import { EmailLayout } from '@/server/email/templates/layout/EmailLayout'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 interface Props {
   receiver: string
@@ -11,6 +12,11 @@ interface Props {
 }
 
 export function ApprovedComment({ receiver, postTitle, postLink, commentContent, commentLink }: Props) {
+  // Anonymous commenters can claim their account by self-requesting a
+  // reset on the public lostpassword page. Building the link off
+  // `siteIdentity.website` keeps the origin in sync with whatever the
+  // operator configured in `/wp-admin/settings/general`.
+  const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/wp-login.php?action=lostpassword`
   return (
     <EmailLayout receiver={receiver}>
       <Text style={paragraph}>
@@ -26,6 +32,10 @@ export function ApprovedComment({ receiver, postTitle, postLink, commentContent,
       <Text style={paragraph}>您可以打开下方链接查看留言：</Text>
       <Link href={commentLink} target="_blank" rel="noreferrer" style={primaryLink}>
         {commentLink}
+      </Link>
+      <Text style={paragraph}>想要查看与管理你的所有历史评论？通过此链接重置密码登录即可：</Text>
+      <Link href={resetPasswordLink} target="_blank" rel="noreferrer" style={primaryLink}>
+        {resetPasswordLink}
       </Link>
     </EmailLayout>
   )

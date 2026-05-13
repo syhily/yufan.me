@@ -15,9 +15,11 @@ import {
   searchCommentAuthors,
   searchPages,
   updateCommentBodyAndContent,
+  updateOwnCommentBody,
+  updateOwnCommentBodyAndPending,
 } from '@/server/db/query/comment'
 import { findMetricByPublicId } from '@/server/db/query/metric'
-import { sendApprovedComment } from '@/server/email/sender'
+import { sendApprovedComment, sendNewComment } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
 
 // Admin-only helpers for the moderation panel. Split out of `loader.server.ts`
@@ -55,6 +57,59 @@ export async function updateComment(rid: string, newBody: CommentBody) {
   const r = await findCommentWithUserById(id)
   if (r === null) {
     return null
+  }
+
+  return { ...withCommentBadgeTextColor(r), content: null }
+}
+
+// Owner self-edit path (`comment.updateOwn`). Distinct from
+// `updateComment` so a moderator editing someone else's comment from
+// `/wp-admin/comments` neither flips the row back into the moderation
+// queue nor fires another admin-notification email.
+//
+// Edits within `OWN_EDIT_GRACE_MS` of the original `createdAt` are
+// treated as fresh follow-up typing — the row stays in whatever
+// moderation state it was already in (typically `approved`), only the
+// body / content / updatedAt are rewritten, and no admin notification
+// fires. Edits outside the grace window mirror design §9.3 steps 4-5:
+// rewrite body + content, set `is_pending = true`, bump `updated_at`,
+// then fire-and-forget `sendNewComment(admin, target)` so the
+// moderation inbox sees the pending re-review.
+const OWN_EDIT_GRACE_MS = 30 * 60 * 1000
+
+export async function updateOwnComment(rid: string, newBody: CommentBody) {
+  const id = BigInt(rid)
+  const existing = await findCommentWithUserById(id)
+  // Race: the comment may have vanished between the route's ownership
+  // check and this call (admin hard-delete, soft-delete reaper, …).
+  if (existing === null) {
+    return null
+  }
+  const { body, content } = await canonicalizeCommentBody(newBody)
+  const insideGrace = Date.now() - existing.createAt.getTime() < OWN_EDIT_GRACE_MS
+  if (insideGrace) {
+    await updateOwnCommentBody(id, body, content)
+  } else {
+    await updateOwnCommentBodyAndPending(id, body, content)
+  }
+
+  const r = await findCommentWithUserById(id)
+  if (r === null) {
+    return null
+  }
+
+  // Only the re-pend path notifies the admin — inside-grace edits stay
+  // silent so a commenter polishing their just-posted reply doesn't
+  // spam the moderation inbox.
+  if (!insideGrace) {
+    if (r.type !== null && r.ownerId !== null) {
+      const target: EntityTarget = { type: r.type, ownerId: r.ownerId }
+      void sendNewComment(r, target).catch((error) => {
+        log.error('failed to send new comment email (own edit)', { error })
+      })
+    } else {
+      log.warn('skipping new-comment email after own edit: missing target', { commentId: id })
+    }
   }
 
   return { ...withCommentBadgeTextColor(r), content: null }

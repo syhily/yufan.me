@@ -14,13 +14,17 @@ import { describe, expect, it } from 'vite-plus/test'
 // «load more» button mid-list.
 //
 // The current implementation centralises that predicate in
-// `mineVisibleClause(userId)` and parameterises the grace window with
-// the named constant `MY_COMMENTS_SOFT_DELETE_GRACE_MS`. This test pins
-// the source-level contract:
+// `mineWhere(userId, filters)` — which itself wraps the smaller
+// `mineVisibleClause(userId)` so the soft-delete grace window stays in
+// lockstep — and parameterises the grace window with the named
+// constant `MY_COMMENTS_SOFT_DELETE_GRACE_MS`. This test pins the
+// source-level contract:
 //
 //   1. `MY_COMMENTS_SOFT_DELETE_GRACE_MS` is declared in the file AND
 //      both `listMyComments` and `countMyComments` reach for
-//      `mineVisibleClause` (not bespoke `where(...)` clauses).
+//      `mineWhere` (not bespoke `where(...)` clauses). `mineWhere` in
+//      turn references `mineVisibleClause`, keeping the grace-window
+//      predicate single-sourced.
 //   2. The grace constant equals exactly 7 days in milliseconds.
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -92,21 +96,22 @@ function extractFunctionBody(source: string, fnSignaturePattern: RegExp): string
 }
 
 describe('server/db/query/comment — listMyComments / countMyComments share visibility window', () => {
-  it('declares MY_COMMENTS_SOFT_DELETE_GRACE_MS and references mineVisibleClause from both functions', () => {
+  it('declares MY_COMMENTS_SOFT_DELETE_GRACE_MS and references mineWhere from both functions', () => {
     const source = readSource()
     expect(source).toMatch(/MY_COMMENTS_SOFT_DELETE_GRACE_MS/)
     expect(source).toMatch(/function\s+mineVisibleClause\s*\(/)
+    expect(source).toMatch(/function\s+mineWhere\s*\(/)
 
     const listBody = extractFunctionBody(source, /export\s+async\s+function\s+listMyComments\s*\(/)
     const countBody = extractFunctionBody(source, /export\s+async\s+function\s+countMyComments\s*\(/)
 
     expect(
-      listBody.includes('mineVisibleClause('),
-      'listMyComments must route through mineVisibleClause so it shares the grace window with countMyComments',
+      listBody.includes('mineWhere('),
+      'listMyComments must route through mineWhere so it shares the visibility predicate with countMyComments',
     ).toBe(true)
     expect(
-      countBody.includes('mineVisibleClause('),
-      'countMyComments must route through mineVisibleClause so hasMore math stays consistent',
+      countBody.includes('mineWhere('),
+      'countMyComments must route through mineWhere so hasMore math stays consistent',
     ).toBe(true)
   })
 

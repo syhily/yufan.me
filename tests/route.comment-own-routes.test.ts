@@ -44,7 +44,7 @@ const commentQueryMock = {
 vi.mock('@/server/db/query/comment', () => commentQueryMock)
 
 vi.mock('@/server/comments/admin', () => ({
-  updateComment: vi.fn(async () => undefined),
+  updateOwnComment: vi.fn(async () => undefined),
 }))
 
 const { action: requestDeleteOwnAction } = await import('@/routes/api/actions/comment.requestDeleteOwn')

@@ -105,3 +105,20 @@ export interface CommentReq {
 export interface ErrorResp {
   msg: string
 }
+
+/**
+ * Status filter for the visitor self-service `/wp-admin/my/comments`
+ * view. Lives in shared (not server/db) so the admin view can spell
+ * the same union the loader parses without crossing the
+ * server-import boundary; the server query helpers re-export this
+ * type via a `type` alias.
+ *
+ *   - `all`              — every comment the user has authored that
+ *                          is still within the 7-day soft-delete
+ *                          grace window.
+ *   - `pending`          — `isPending = true` (awaiting moderation).
+ *   - `deleteRequested`  — the user has clicked "申请删除" but the
+ *                          admin has not yet acted on it.
+ *   - `deleted`          — soft-deleted, still inside the grace window.
+ */
+export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'

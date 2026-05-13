@@ -3,6 +3,8 @@ import type { NavigateFunction } from 'react-router'
 import {
   ArrowLeftIcon,
   CheckCheckIcon,
+  LogOutIcon,
+  MailIcon,
   RotateCcwIcon,
   SaveIcon,
   Trash2Icon,
@@ -43,6 +45,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/ui/components/separator'
 import { Skeleton } from '@/ui/components/skeleton'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { PortableTextBody } from '@/ui/pt/render'
 
 const GET = API_ACTIONS.admin.getUser
 const UPDATE = API_ACTIONS.auth.updateUser
@@ -52,6 +55,8 @@ const UPDATE_ROLE = API_ACTIONS.admin.updateUserRole
 // lands on the most common choice rather than `#000000`.
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 const MUTE = API_ACTIONS.admin.muteUser
+const SEND_RESET = API_ACTIONS.admin.sendPasswordReset
+const REVOKE_USER_SESSIONS = API_ACTIONS.admin.revokeUserSessions
 const SOFT_DELETE = API_ACTIONS.admin.softDeleteUser
 const RESTORE = API_ACTIONS.admin.restoreUser
 const BULK_APPROVE = API_ACTIONS.admin.bulkApproveUserComments
@@ -69,6 +74,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const config = useSiteIdentity()
   const userFetcher = useFetcher<ApiEnvelope<GetUserOutput>>()
   const updateFetcher = useFetcher<ApiEnvelope<UpdateUserOutput>>()
+  const sendResetFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const revokeSessionsFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
   const muteFetcher = useFetcher<ApiEnvelope<MuteUserOutput>>()
   const deleteFetcher = useFetcher<ApiEnvelope<AdminMutationSuccessOutput>>()
   const restoreFetcher = useFetcher<ApiEnvelope<AdminMutationSuccessOutput>>()
@@ -146,6 +153,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     onSuccess: (payload) => setComments(payload.comments),
   })
   useFetcherResult(muteFetcher, { action: MUTE, onSuccess: (payload) => setUser(payload.user) })
+  useFetcherResult(sendResetFetcher, { action: SEND_RESET, onSuccess: () => {} })
+  useFetcherResult(revokeSessionsFetcher, { action: REVOKE_USER_SESSIONS, onSuccess: () => {} })
   useFetcherResult(updateFetcher, { action: UPDATE, onSuccess: () => reloadUser() })
   useFetcherResult(updateRoleFetcher, {
     action: UPDATE_ROLE,
@@ -336,6 +345,57 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+                {user.role !== null && user.deletedAt === null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setConfirm({
+                        title: `发送重置邮件给 ${user.name}？`,
+                        description: '用户将收到一封包含一次性重置链接的邮件。链接 15 分钟内有效。',
+                        actionLabel: '发送',
+                        destructive: false,
+                        onConfirm: () =>
+                          void sendResetFetcher.submit(
+                            { userId: user.id },
+                            {
+                              method: SEND_RESET.method,
+                              encType: 'application/json',
+                              action: SEND_RESET.path,
+                            },
+                          ),
+                      })
+                    }
+                  >
+                    <MailIcon /> 发送重置邮件
+                  </Button>
+                )}
+                {user.role !== null && user.deletedAt === null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setConfirm({
+                        title: `强制 ${user.name} 全部登出？`,
+                        description: '该用户在所有设备上的登录会话将立即被注销，下次访问需要重新登录。',
+                        actionLabel: '强制登出',
+                        destructive: true,
+                        actionIcon: <LogOutIcon data-icon />,
+                        onConfirm: () =>
+                          void revokeSessionsFetcher.submit(
+                            { userId: user.id },
+                            {
+                              method: REVOKE_USER_SESSIONS.method,
+                              encType: 'application/json',
+                              action: REVOKE_USER_SESSIONS.path,
+                            },
+                          ),
+                      })
+                    }
+                  >
+                    <LogOutIcon /> 强制全部登出
+                  </Button>
                 )}
                 {user.role !== 'admin' && (
                   <Button
@@ -632,10 +692,9 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           </span>
                           {c.isPending && <Badge variant="destructive">待审核</Badge>}
                         </div>
-                        <div
-                          className="mt-1 line-clamp-3 text-sm text-foreground [&_p]:my-0! [&>*]:!my-0"
-                          dangerouslySetInnerHTML={{ __html: c.content ?? '' }}
-                        />
+                        <div className="comment-content prose-blog prose prose-sm mt-1 line-clamp-3 max-w-none text-sm leading-snug wrap-break-word whitespace-normal [&>*]:!my-0">
+                          <PortableTextBody body={c.body} />
+                        </div>
                       </li>
                     ))}
                   </ul>

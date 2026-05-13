@@ -1,5 +1,5 @@
 import { isCommentOwner } from '@/server/auth/rbac'
-import { updateComment } from '@/server/comments/admin'
+import { updateOwnComment } from '@/server/comments/admin'
 import { countApprovedRepliesOfComment, findCommentWithUserById } from '@/server/db/query/comment'
 import { defineGuardedApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
@@ -26,7 +26,7 @@ export const action = defineGuardedApiAction({
     if (replyCount > 0) {
       throw new ActionFailure(409, '已有回复，无法再编辑。')
     }
-    await updateComment(String(commentId), payload)
+    await updateOwnComment(String(commentId), payload)
     return { success: true }
   },
 })

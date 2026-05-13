@@ -71,7 +71,7 @@ const buttonVariants = cva(
         // muted-rest / strong-hover pair because the icons sit on a
         // near-white card and don't need the extra contrast.
         light: 'border border-btn-light-border bg-btn-light-bg text-btn-light-fg hover:text-btn-light-hover-fg',
-        dark: 'border border-brand-dark bg-brand-dark text-ink-on-dark hover:bg-brand-darker hover:border-brand-darker hover:text-canvas',
+        dark: 'border border-brand-dark bg-brand-dark text-ink-on-dark hover:bg-brand-darker hover:border-brand-darker hover:text-white',
         // FAB — floating action buttons (ScrollTop, mobile ThemeToggle)
         // that sit over article content. Higher-contrast than `light`
         // so the chip reads against post imagery in both themes; hover

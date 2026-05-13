@@ -251,7 +251,62 @@ export async function parseComments(comments: CommentAndUser[]): Promise<Comment
   // server-only `content` markdown snapshot and adds the badge text
   // colour. The function stays `async` so the existing `await` call
   // sites don't need to change.
-  const projected = comments.map((comment) => ({
+  //
+  // Soft-deleted reparenting: rows with `deleteAt !== null` are kept in
+  // the input set strictly so their *id* can act as a routing waypoint,
+  // but they are never rendered. For each surviving reply, we walk the
+  // `rid` chain skipping deleted ancestors so the reply re-attaches to
+  // its nearest live ancestor (or becomes a root if every ancestor up
+  // to `rid=0` is deleted / missing). The walk is bounded to avoid
+  // cycles or pathological depth.
+  const MAX_RID_WALK = 256
+  const byId = new Map<string, CommentAndUser>()
+  for (const c of comments) {
+    byId.set(String(c.id), c)
+  }
+
+  const rewritten: CommentAndUser[] = []
+  for (const c of comments) {
+    if (c.deleteAt !== null) {
+      continue
+    }
+    let nextRid = c.rid
+    // Self-cycle (rid === own id) is the most common pathological case.
+    // Seed the visited set with the row's own id so the first hop into
+    // itself trips the cycle guard regardless of whether the row counts
+    // as "deleted" or not.
+    const ownIdNumeric = Number(c.id)
+    const seen = new Set<number>()
+    if (Number.isFinite(ownIdNumeric)) {
+      seen.add(ownIdNumeric)
+    }
+    for (let i = 0; i < MAX_RID_WALK; i++) {
+      if (nextRid === 0 || nextRid === null || nextRid === undefined) {
+        break
+      }
+      if (seen.has(nextRid)) {
+        // Cycle guard: fall back to root rather than spin forever.
+        nextRid = 0
+        break
+      }
+      seen.add(nextRid)
+      const parent = byId.get(String(nextRid))
+      if (parent === undefined) {
+        // Parent absent from this page (filtered out by paging or
+        // visibility). Treat as a root so the reply still renders.
+        nextRid = 0
+        break
+      }
+      if (parent.deleteAt === null) {
+        break
+      }
+      // Parent is soft-deleted: keep walking up.
+      nextRid = parent.rid
+    }
+    rewritten.push({ ...c, rid: nextRid })
+  }
+
+  const projected = rewritten.map((comment) => ({
     ...withCommentBadgeTextColor(comment),
     content: null,
   }))

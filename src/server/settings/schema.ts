@@ -409,10 +409,15 @@ export type AssetsInput = z.infer<typeof assetsSchema>
 // Centralised rate-limiting policy. Every bucket below maps 1:1 to a
 // surface in `@/server/rate-limit`:
 //
-//   * `signInIp`         — `tryRateLimit(ip)` (login form)
-//   * `commentPostIp`    — `tryCommentPostRateLimit(ip)` (anonymous comments)
-//   * `commentPostEmail` — `tryCommentPostRateLimitByEmail(email)`
-//   * `likeIncreaseIp`   — `tryLikeIncreaseRateLimit(ip)` (post likes)
+//   * `signInIp`            — `tryRateLimit(ip)` (login form)
+//   * `commentPostIp`       — `tryCommentPostRateLimit(ip)` (anonymous comments)
+//   * `commentPostEmail`    — `tryCommentPostRateLimitByEmail(email)`
+//   * `likeIncreaseIp`      — `tryLikeIncreaseRateLimit(ip)` (post likes)
+//   * `inviteIp`            — `tryInviteRateLimit(ip)` (admin invite)
+//   * `inviteEmail`         — `tryInviteByEmailRateLimit(adminId, email)`
+//   * `passwordResetIp`     — `tryPasswordResetRateLimit(ip)` (lostpassword)
+//   * `passwordResetEmail`  — `tryPasswordResetByEmailRateLimit(email)`
+//   * `passwordResetTarget` — `tryPasswordResetByTargetRateLimit(userId)`
 //
 // Bounds rationale:
 //
@@ -441,7 +446,9 @@ export const rateLimitSchema = z.object({
   commentPostEmail: rateLimitBucketSchema,
   likeIncreaseIp: rateLimitBucketSchema,
   inviteIp: rateLimitBucketSchema,
+  inviteEmail: rateLimitBucketSchema,
   passwordResetIp: rateLimitBucketSchema,
+  passwordResetEmail: rateLimitBucketSchema,
   passwordResetTarget: rateLimitBucketSchema,
 })
 export type RateLimitInput = z.infer<typeof rateLimitSchema>

@@ -160,7 +160,19 @@ export const rateLimitDefaults = {
   commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
   likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
   inviteIp: { windowSeconds: 60 * 60, maxAttempts: 5 },
+  // Per-`(adminId, invitee email)` throttle on author invitations.
+  // 1 hour / 1 attempt: a legitimate admin never needs to re-send an
+  // invite to the same address within an hour (the previous mail is
+  // still in the inbox), and the cap keeps a compromised admin
+  // cookie from blasting one mailbox even if its per-IP budget is
+  // fresh.
+  inviteEmail: { windowSeconds: 60 * 60, maxAttempts: 1 },
   passwordResetIp: { windowSeconds: 60 * 30, maxAttempts: 3 },
+  // Per-target-email throttle on the public lostpassword form.
+  // 5 minutes / 1 attempt: short enough that a legitimate user who
+  // mistyped the form first time can retry within minutes, strict
+  // enough that an attacker rotating IPs can't flood one mailbox.
+  passwordResetEmail: { windowSeconds: 60 * 5, maxAttempts: 1 },
   // Per-target throttle for admin-triggered resets. 60s window with
   // 1 attempt is intentionally aggressive: a legitimate admin would
   // never need to resend within a minute, and the cap prevents both

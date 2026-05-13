@@ -21,21 +21,19 @@ export default [
     route('search/:keyword', 'routes/search.list.tsx'),
     route('search/:keyword/page/:num', 'routes/search.list.tsx', { id: 'search-list-page' }),
     route('posts/:slug', 'routes/post.detail.tsx'),
-    // Visitor self-service. Sits under the public layout instead of
-    // wp-admin so non-author users don't pay the cost of the admin
-    // SPA chrome (180KB CSS + admin chunks) for what is essentially a
-    // pair of authenticated public pages. Auth gating lives in each
-    // route's own loader — public.layout is anonymous-friendly.
-    route('my/comments', 'routes/my.comments.tsx'),
-    route('my/profile', 'routes/my.profile.tsx'),
     route(':slug', 'routes/page.detail.tsx'),
     // Splat MUST stay last — see _README.md §B.
     route('*', 'routes/not-found.tsx'),
   ]),
-  // Backwards-compat redirects: /wp-admin/my/* moved to /my/* in the
-  // RBAC visitor-self-service split. External bookmarks survive.
-  route('wp-admin/my/comments', 'routes/wp-admin.my.redirect.comments.ts'),
-  route('wp-admin/my/profile', 'routes/wp-admin.my.redirect.profile.ts'),
+  // Backwards-compat redirects.
+  //
+  // Both `/my/comments` and `/my/profile` were promoted into the
+  // wp-admin shell to match the richness of the admin-side moderation
+  // and user-detail views (rich Tabs / search / pagination instead of
+  // the old plain stack). External bookmarks under `/my/*` survive
+  // via these 301s; the canonical URL is now `/wp-admin/my/*`.
+  route('my/comments', 'routes/my.redirect.comments.ts'),
+  route('my/profile', 'routes/my.redirect.profile.ts'),
   // Resource routes outside the public layout — see _README.md §C.
   route('tags', 'routes/tags.index.ts'),
   // Feed URLs — see _README.md §D for the URL ↔ module ↔ id table.
@@ -66,6 +64,21 @@ export default [
     route('wp-admin/comments', 'routes/wp-admin.comments.tsx'),
     route('wp-admin/users', 'routes/wp-admin.users.tsx'),
     route('wp-admin/users/:id', 'routes/wp-admin.users.detail.tsx'),
+    // Self-service profile editor — same shell as the admin user
+    // detail view, but scoped to the current session's own row.
+    route('wp-admin/my/profile', 'routes/wp-admin.my.profile.tsx'),
+    // Self-service comment list — mirrors the admin moderation view
+    // (Tabs / search / pagination) but only exposes own-comment
+    // actions (申请删除 / 撤回删除); approve/reject/edit-user are
+    // admin-only and stay on `/wp-admin/comments`.
+    route('wp-admin/my/comments', 'routes/wp-admin.my.comments.tsx'),
+    // Self-service active-session list. Mirrors the same shell as
+    // the admin site-wide view but scoped to the current user; each
+    // row's 注销 button hits `api/actions/account/revokeSession`.
+    route('wp-admin/my/sessions', 'routes/wp-admin.my.sessions.tsx'),
+    // Admin site-wide session-management surface — search by user,
+    // filter by login-time range, sort by activity, revoke any row.
+    route('wp-admin/sessions', 'routes/wp-admin.sessions.tsx'),
     route('wp-admin/friends', 'routes/wp-admin.friends.tsx'),
     route('wp-admin/categories', 'routes/wp-admin.categories.tsx'),
     route('wp-admin/tags', 'routes/wp-admin.tags.tsx'),

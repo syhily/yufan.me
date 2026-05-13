@@ -28,6 +28,12 @@ vi.mock('@/server/cache/storage', () => ({
     sadd: vi.fn(async () => 1),
     srem: vi.fn(async () => 1),
     smembers: vi.fn(async () => []),
+    // Session metadata writes added in the session-management feature.
+    // Stubs return success so `establishLoginSession` proceeds without
+    // touching a real Redis.
+    hset: vi.fn(async () => 1),
+    hgetall: vi.fn(async () => ({})),
+    pexpireat: vi.fn(async () => 1),
     pipeline: () => ({ del: () => {}, exec: vi.fn(async () => []) }),
   }),
 }))

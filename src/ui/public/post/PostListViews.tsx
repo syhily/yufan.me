@@ -332,7 +332,16 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
             <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-ink-on-dark hover:text-ink-on-dark hover:[text-shadow:var(--brand)_1px_0_4px]">
               {post.title}
             </div>
-            <div className="font-number flex flex-1 text-sm text-ink-5">
+            {/*
+             * Metadata strip sits on top of the cover image's dark
+             * scrim, so the text needs to stay light in BOTH themes.
+             * `text-ink-5` was the legacy hand-off — light mode landed
+             * on `#eaecf3` (light), dark mode flipped to `#2a3142`
+             * (dark surface) and the text vanished into the scrim.
+             * `text-ink-on-dark` is the always-light token shared with
+             * other dark-overlay surfaces.
+             */}
+            <div className="font-number flex flex-1 text-sm text-ink-on-dark">
               <span className="inline-block">{formatShowDate(post.date, config, listingNowIso)}</span>
               <div className="flex-1" />
               <Metric value={post.meta.views}>

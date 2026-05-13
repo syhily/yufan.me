@@ -254,8 +254,21 @@ export interface RateLimitSettings {
   likeIncreaseIp: RateLimitBucket
   /** Admin author invitations per client IP. */
   inviteIp: RateLimitBucket
+  /**
+   * Admin author invitations per `(actor admin id, invitee email)`
+   * pair. Mailboxes are hashed in Redis (raw never lands there).
+   * Stops a single admin from carpet-bombing one mailbox even if
+   * their per-IP budget is fresh.
+   */
+  inviteEmail: RateLimitBucket
   /** Password-reset requests per client IP. */
   passwordResetIp: RateLimitBucket
+  /**
+   * Public lostpassword form per normalised target email (hashed in
+   * Redis). Stops an attacker rotating IPs from spamming a single
+   * mailbox with reset prompts.
+   */
+  passwordResetEmail: RateLimitBucket
   /**
    * Admin-triggered password reset emails per target user id. Stops a
    * (rogue / compromised) admin from spamming any single mailbox even

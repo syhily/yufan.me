@@ -5,7 +5,6 @@ import {
   MoreHorizontalIcon,
   RotateCcwIcon,
   SearchIcon,
-  ShieldIcon,
   Trash2Icon,
   VolumeOffIcon,
   Volume2Icon,
@@ -17,6 +16,7 @@ import type { AdminUserDto } from '@/shared/api-types'
 import type { SiteIdentitySettings } from '@/shared/blog-config'
 
 import { formatLocalDate } from '@/shared/formatter'
+import { roleLabel } from '@/shared/roles'
 import { safeHref } from '@/shared/safe-url'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/components/avatar'
 import { Badge } from '@/ui/components/badge'
@@ -87,6 +87,7 @@ export function UsersTable({
             <TableHead className="hidden md:table-cell">联系方式</TableHead>
             <TableHead className="hidden lg:table-cell">最近活动</TableHead>
             <TableHead className="text-center">评论</TableHead>
+            <TableHead className="text-center">角色</TableHead>
             <TableHead className="text-center">状态</TableHead>
             <TableHead className="w-12 pr-4 text-right" />
           </TableRow>
@@ -96,7 +97,7 @@ export function UsersTable({
             <UsersSkeleton />
           ) : rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="p-0">
+              <TableCell colSpan={8} className="p-0">
                 <Empty className="border-0">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
@@ -185,16 +186,6 @@ const UserRow = memo(function UserRow({
               >
                 {user.name}
               </Link>
-              {user.role === 'admin' && (
-                <Badge variant="secondary" className="gap-1">
-                  <ShieldIcon /> 管理员
-                </Badge>
-              )}
-              {user.role === 'author' && (
-                <Badge variant="secondary" className="gap-1">
-                  <ShieldIcon /> 作者
-                </Badge>
-              )}
               {user.badgeName && (
                 <Badge
                   className="border-transparent"
@@ -244,6 +235,13 @@ const UserRow = memo(function UserRow({
           {user.commentCount}
         </Link>
         {user.pendingCount > 0 && <div className="mt-0.5 text-xs text-destructive">{user.pendingCount} 待审</div>}
+      </TableCell>
+      <TableCell className="text-center">
+        {user.role === null ? (
+          <Badge variant="outline">匿名</Badge>
+        ) : (
+          <Badge variant="secondary">{roleLabel(user.role)}</Badge>
+        )}
       </TableCell>
       <TableCell className="text-center">
         {user.deletedAt ? (
@@ -330,7 +328,7 @@ function UsersSkeleton() {
           <TableCell className="px-3">
             <Skeleton className="size-4 rounded" />
           </TableCell>
-          <TableCell colSpan={6}>
+          <TableCell colSpan={7}>
             <div className="flex items-center gap-3">
               <Skeleton className="size-9 shrink-0 rounded-full" />
               <Skeleton className="h-4 w-1/3" />
