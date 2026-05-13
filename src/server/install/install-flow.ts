@@ -12,7 +12,7 @@ import { getRouteRequestContext } from '@/server/session'
  *  `processAuthFormSubmission` to project the FormData into the
  *  validated input. */
 export const SETTINGS_INSTALL_FIELDS = [
-  'token',
+  'csrf',
   'title',
   'website',
   'authorEmail',
@@ -47,7 +47,7 @@ export async function requireStageTwoSession(args: RouteRequest) {
   // lost (process restart, different browser) bounce through the login
   // page first and return after auth.
   const ctx = getRouteRequestContext(args as { request: Request; context: never })
-  if (!ctx.admin || !ctx.user) {
+  if (ctx.role !== 'admin' || !ctx.user) {
     throw redirect(SETTINGS_INSTALL_LOGIN_BOUNCE, { status: 303 })
   }
   return ctx

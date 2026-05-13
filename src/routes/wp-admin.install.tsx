@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 
 import type { Route } from './+types/wp-admin.install'
 
-const ADMIN_INSTALL_FIELDS = ['name', 'email', 'password', 'token'] as const
+const ADMIN_INSTALL_FIELDS = ['name', 'email', 'password', 'csrf'] as const
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   // owns the install-state branching directly through
@@ -28,8 +28,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Pull the request context so we trip session middleware exactly once
   // even though we no longer write the CSRF token through the session.
   getRouteRequestContext({ request, context })
-  const { token, setCookie } = await issueCsrfToken()
-  return data({ token }, { headers: { 'Set-Cookie': setCookie } })
+  const { token: csrf, setCookie } = await issueCsrfToken()
+  return data({ csrf }, { headers: { 'Set-Cookie': setCookie } })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -39,14 +39,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   // courtesy, not a security boundary.
   await ensureNoAdminOrRedirect()
 
-  const { session } = getRouteRequestContext({ request, context })
+  const { session, clientAddress } = getRouteRequestContext({ request, context })
   return processAuthFormSubmission({
     request,
     schema: signUpAdminSchema,
     fields: ADMIN_INSTALL_FIELDS,
     defaultErrorMessage: '请填写完整的管理员账号信息。',
     redirectTo: undefined,
-    run: (input) => signUpInitialAdminWithSession({ ...input, session, request }),
+    run: (input) => signUpInitialAdminWithSession({ ...input, session, request, clientAddress }),
   })
 }
 
@@ -71,7 +71,7 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
             {actionData.error}
           </div>
         )}
-        <AdminInstallForm token={loaderData.token} />
+        <AdminInstallForm csrf={loaderData.csrf} />
       </CardContent>
     </Card>
   )

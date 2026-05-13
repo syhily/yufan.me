@@ -2,8 +2,8 @@ export type { BlogSession, BlogSessionData, SessionUser } from '@/server/auth/se
 export { commitSession, destroySession, getRequestSession, getSession } from '@/server/auth/session-storage'
 
 export type { SessionContext } from '@/server/auth/primitives'
-export { isAdmin, login, logout, resolveSessionContext, userSession } from '@/server/auth/primitives'
-export { hasAtLeast, requireAdmin, requireAuthor, requireRole, type Role } from '@/server/auth/rbac'
+export { establishLoginSession, login, logout, resolveSessionContext, userSession } from '@/server/auth/primitives'
+export { hasAtLeast, requireRole, type Role, type ViewerContext } from '@/server/auth/rbac'
 
 export type { IssuedCsrfToken, ReusedCsrfToken } from '@/server/auth/csrf'
 export { clearCsrfCookie, issueCsrfToken, reuseOrIssueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'

@@ -34,7 +34,7 @@ vi.mock('@/server/pt/katex-renderer', () => ({
 
 const { makeLoaderArgs } = await import('./_helpers/context')
 
-const ADMIN_ARGS = (request: Request) => makeLoaderArgs({ request, session: adminSession(), admin: true })
+const ADMIN_ARGS = (request: Request) => makeLoaderArgs({ request, session: adminSession() })
 
 function makePostRequest(body: unknown): Request {
   return new Request('http://localhost/api/actions/admin/renderMath', {
@@ -102,7 +102,6 @@ describe('routes/api/actions/admin.renderMath', () => {
       makeLoaderArgs({
         request: makePostRequest({ tex: 'x', display: false }),
         session: regularSession(),
-        admin: false,
       }),
     )
 

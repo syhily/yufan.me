@@ -5,7 +5,7 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const action = defineApiAction({
   method: 'DELETE',
   input: friendIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const ok = await deleteAdminFriend(BigInt(payload.id))
     if (!ok) {

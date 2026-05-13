@@ -3,7 +3,7 @@ import { getAdminBlogSettings } from '@/server/settings/service'
 
 export const loader = defineApiAction({
   method: 'GET',
-  requireAdmin: true,
+  requireRole: 'admin',
   async run() {
     return await getAdminBlogSettings()
   },

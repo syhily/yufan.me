@@ -91,10 +91,11 @@ describe('routes/api/actions — file conventions', () => {
         continue
       }
       const { file, source } = readActionSource(action.route)
-      const usesGuard = source.includes('requireAdminSession(') || /requireAdmin:\s*true/.test(source)
+      const usesGuard =
+        /requireRole:\s*['"]admin['"]/.test(source) || /requireRole\([^)]+,\s*['"]admin['"]\)/.test(source)
       expect(
         usesGuard,
-        `${file} is admin-only and must call requireAdminSession(session) or pass requireAdmin: true to defineApiAction.`,
+        `${file} is admin-only and must declare requireRole: 'admin' on defineApiAction or call requireRole(ctx, 'admin').`,
       ).toBe(true)
     }
   })

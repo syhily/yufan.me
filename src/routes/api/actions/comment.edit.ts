@@ -3,14 +3,14 @@ import { commentEditSchema } from '@/server/comments/schema'
 import { verifyCommentOwnership } from '@/server/comments/token'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
-import { isAdmin } from '@/server/session'
+import { userSession } from '@/server/session'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/comment-token'
 
 export const action = defineApiAction({
   method: 'PATCH',
   input: commentEditSchema,
   async run({ ctx, payload }) {
-    const admin = isAdmin(ctx.session)
+    const admin = userSession(ctx.session)?.role === 'admin'
     const headers = new Headers()
 
     if (!admin) {

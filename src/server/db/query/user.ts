@@ -120,6 +120,7 @@ export interface UserUpdate {
   email?: string
   link?: string
   password?: string
+  role?: 'admin' | 'author' | 'visitor' | null
   badgeName?: string
   badgeColor?: string
   // `null` clears the manual override and reactivates the auto-derived

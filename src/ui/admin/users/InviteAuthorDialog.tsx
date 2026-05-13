@@ -1,4 +1,4 @@
-import { MailIcon, SendIcon, XIcon } from 'lucide-react'
+import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher } from 'react-router'
 

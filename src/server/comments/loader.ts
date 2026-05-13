@@ -24,7 +24,7 @@ import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
 import { DomainError } from '@/server/route-helpers/errors'
-import { hasAtLeast, isAdmin, userSession, type BlogSession } from '@/server/session'
+import { hasAtLeast, userSession, type BlogSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { groupBy } from '@/shared/tools'
 const log = getLogger('comments.loader')

@@ -1,6 +1,5 @@
 import { data } from 'react-router'
 
-import { userSession } from '@/server/auth/primitives'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 
@@ -15,11 +14,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const now = new Date()
   const hour = now.getHours()
   let greeting = '你好'
-  if (hour >= 23 || hour < 5) greeting = '夜深了，还没睡么？记得早点休息'
-  else if (hour < 11) greeting = '早上好，新的一天开始啦'
-  else if (hour < 14) greeting = '中午好，记得吃午饭'
-  else if (hour < 18) greeting = '下午好'
-  else greeting = '晚上好'
+  if (hour >= 23 || hour < 5) {
+    greeting = '夜深了，还没睡么？记得早点休息'
+  } else if (hour < 11) {
+    greeting = '早上好，新的一天开始啦'
+  } else if (hour < 14) {
+    greeting = '中午好，记得吃午饭'
+  } else if (hour < 18) {
+    greeting = '下午好'
+  } else {
+    greeting = '晚上好'
+  }
 
   return data({
     name: user?.name ?? '',

@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
-import { softDeleteCommentById } from '@/server/db/query/comment'
+import { adminClearDeleteRequest, softDeleteCommentById } from '@/server/db/query/comment'
+import { getLogger } from '@/server/logger'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
+
+const log = getLogger('audit.comment')
 
 const schema = z.object({
   commentId: z.string(),
@@ -11,20 +14,15 @@ const schema = z.object({
 export const action = defineApiAction({
   method: 'POST',
   input: schema,
-  requireAdmin: true,
-  async run({ payload }) {
+  requireRole: 'admin',
+  async run({ payload, viewer }) {
     const id = BigInt(payload.commentId)
     if (payload.approve) {
       await softDeleteCommentById(id)
+      log.info('delete request approved', { actor: viewer.userId, commentId: payload.commentId })
     } else {
-      // Reject: clear delete request
-      const { db } = await import('@/server/db/pool')
-      const { comment } = await import('@/server/db/schema')
-      const { eq, and, isNotNull } = await import('drizzle-orm')
-      await db
-        .update(comment)
-        .set({ deleteRequestedAt: null, deleteRequestedBy: null })
-        .where(and(eq(comment.id, id), isNotNull(comment.deleteRequestedAt)))
+      await adminClearDeleteRequest(id)
+      log.info('delete request rejected', { actor: viewer.userId, commentId: payload.commentId })
     }
     return { success: true }
   },

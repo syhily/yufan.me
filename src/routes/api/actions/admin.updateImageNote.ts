@@ -6,8 +6,8 @@ export const action = defineApiAction({
   method: 'PATCH',
   input: updateImageNoteSchema,
   requireRole: 'author',
-  async run({ payload }) {
-    const image = await updateImageNote(BigInt(payload.id), payload.note ?? null)
+  async run({ payload, viewer }) {
+    const image = await updateImageNote(BigInt(payload.id), payload.note ?? null, viewer)
     return { image }
   },
 })

@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vite-plus/test'
 import { z } from 'zod'
 
-import type { BlogSession } from '@/server/session'
-
+import { requireRole } from '@/server/auth/rbac'
 import {
   assertContentLengthUnder,
   assertMethod,
   defineApiAction,
   readJsonInput,
   readSearchInput,
-  requireAdminSession,
   runApi,
 } from '@/server/route-helpers/api-handler'
 import { ActionFailure, DomainError, ErrorMessages } from '@/server/route-helpers/errors'
@@ -125,12 +123,12 @@ describe('routes/_shared/api/handler — runApi perimeter', () => {
     expect(() => assertMethod(new Request('http://localhost/api/test', { method: 'POST' }), 'POST')).not.toThrow()
   })
 
-  it('requireAdminSession reuses the session object runApi already resolved', () => {
-    const session = {
-      get: (key: string) => (key === 'user' ? { admin: true } : undefined),
-    } as BlogSession
-
-    expect(requireAdminSession(session)).toBe(session)
+  it('requireRole admits an admin session', () => {
+    const adminCtx = {
+      user: { id: '1', name: 'admin', email: 'a@b', website: null, role: 'admin' as const },
+      role: 'admin' as const,
+    }
+    expect(() => requireRole(adminCtx, 'admin')).not.toThrow()
   })
 
   it('assertContentLengthUnder accepts requests under the limit (and missing headers)', () => {
@@ -178,9 +176,10 @@ describe('routes/_shared/api/handler — runApi perimeter', () => {
     expect(body.error.message).toContain('1KB')
   })
 
-  it('requireAdminSession keeps admin failures in the standard error envelope', async () => {
+  it('requireRole keeps admin failures in the standard error envelope', async () => {
     const response = await runApi(apiArgs(), ({ session }) => {
-      requireAdminSession(session)
+      const user = session.get('user')
+      requireRole({ user, role: user?.role ?? null }, 'admin')
       return { ok: true }
     })
 
@@ -188,7 +187,7 @@ describe('routes/_shared/api/handler — runApi perimeter', () => {
     // admin. Returning 401 would invite browsers to retry with credentials.
     expect(response.status).toBe(403)
     expect(await response.json()).toEqual({
-      error: { message: ErrorMessages.NOT_ADMIN },
+      error: { message: ErrorMessages.FORBIDDEN },
     })
   })
 })

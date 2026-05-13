@@ -14,7 +14,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const loader = defineApiAction({
   method: 'GET',
   input: filterAutocompleteSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const keys = payload.key ? [payload.key] : undefined
     const pages = await searchPageOptions(payload.q, payload.limit, keys)

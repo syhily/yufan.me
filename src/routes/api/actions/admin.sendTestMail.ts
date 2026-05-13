@@ -5,7 +5,7 @@ import { sendTestMailSchema } from '@/server/settings/schema'
 export const action = defineApiAction({
   method: 'POST',
   input: sendTestMailSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const result = await sendTestMail(payload.to)
     if (!result.ok) {

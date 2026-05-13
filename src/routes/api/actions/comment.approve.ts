@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'PATCH',
   input: commentRidSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     await approveComment(payload.rid)
     return null

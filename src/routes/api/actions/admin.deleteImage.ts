@@ -6,8 +6,8 @@ export const action = defineApiAction({
   method: 'DELETE',
   input: deleteImageSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    await deleteImage(BigInt(payload.id), { userId: ctx.session.get('user')!.id, role: ctx.session.get('user')!.role! })
+  async run({ payload, viewer }) {
+    await deleteImage(BigInt(payload.id), viewer)
     // The catalog hydrates cover URLs / thumbhashes from the live
     // `image` table. After a soft-delete the lookup goes from "found"
     // to "missing" — without a reset the public side keeps rendering

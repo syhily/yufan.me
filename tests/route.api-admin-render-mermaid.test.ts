@@ -10,7 +10,7 @@ vi.mock('beautiful-mermaid', () => ({
 
 const { makeLoaderArgs } = await import('./_helpers/context')
 
-const ADMIN_ARGS = (request: Request) => makeLoaderArgs({ request, session: adminSession(), admin: true })
+const ADMIN_ARGS = (request: Request) => makeLoaderArgs({ request, session: adminSession() })
 
 function makePostRequest(body: unknown): Request {
   return new Request('http://localhost/api/actions/admin/renderMermaid', {
@@ -69,7 +69,6 @@ describe('routes/api/actions/admin.renderMermaid', () => {
       makeLoaderArgs({
         request: makePostRequest({ code: 'graph TD' }),
         session: regularSession(),
-        admin: false,
       }),
     )
 

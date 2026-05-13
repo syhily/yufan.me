@@ -5,7 +5,7 @@ import { restoreAdminUser } from '@/server/users/service'
 export const action = defineApiAction({
   method: 'POST',
   input: userIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const ok = await restoreAdminUser(BigInt(payload.userId))
     if (!ok) {

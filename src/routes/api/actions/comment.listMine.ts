@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { userSession } from '@/server/auth/primitives'
 import { countMyComments, listMyComments } from '@/server/db/query/comment'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 
@@ -13,9 +12,8 @@ export const loader = defineApiAction({
   method: 'GET',
   input: schema,
   requireRole: 'visitor',
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const userId = BigInt(user!.id)
+  async run({ payload, viewer }) {
+    const userId = BigInt(viewer.userId)
     const offset = payload.offset ?? 0
     const limit = Math.min(payload.limit ?? 20, 100)
     const [comments, counts] = await Promise.all([listMyComments(userId, offset, limit), countMyComments(userId)])

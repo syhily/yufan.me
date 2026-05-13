@@ -1,4 +1,4 @@
-import { requireAdmin } from '@/server/auth/rbac'
+import { requireRole } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { hydrateBlogSettings } from '@/server/settings/snapshot'
@@ -19,7 +19,7 @@ export function meta({ matches }: Route.MetaArgs) {
 // browser.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })
-  requireAdmin(ctx)
+  requireRole(ctx, 'admin')
   const bundle = await hydrateBlogSettings()
   if (bundle === null) {
     // `installGateMiddleware` redirects pre-install requests, so by the

@@ -1,7 +1,6 @@
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
-import { userSession } from '@/server/auth/primitives'
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findUserById, updateUserById } from '@/server/db/query/user'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -16,9 +15,8 @@ export const action = defineApiAction({
   method: 'POST',
   input: schema,
   requireRole: 'visitor',
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const dbUser = await findUserById(BigInt(user!.id))
+  async run({ ctx, payload, viewer }) {
+    const dbUser = await findUserById(BigInt(viewer.userId))
     if (!dbUser) {
       throw new ActionFailure(404, '用户不存在。')
     }
@@ -28,7 +26,10 @@ export const action = defineApiAction({
     }
     const hashed = await bcrypt.hash(payload.newPassword, 12)
     await updateUserById(dbUser.id, { password: hashed })
-    await revokeAllSessionsOfUser(dbUser.id)
+    // Keep the current session alive — the caller is presumably on the
+    // tab that initiated the change. Revoke every OTHER session so
+    // stolen-cookie attacks lose access immediately.
+    await revokeAllSessionsOfUser(dbUser.id, ctx.session.id)
     return { success: true }
   },
 })

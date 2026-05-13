@@ -53,7 +53,6 @@ export function getRouteRequestContext(args: AnyRouteArgs): RouteRequestContext 
     session: session.session,
     user: session.user,
     role: session.role,
-    admin: session.admin,
     clientAddress: requestData.clientAddress,
     url: requestData.url,
   }

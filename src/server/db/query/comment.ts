@@ -527,6 +527,20 @@ export async function clearDeleteRequest(id: bigint, userId: bigint): Promise<bo
   return updated.length > 0
 }
 
+/**
+ * Admin-side variant of {@link clearDeleteRequest}: clears the pending
+ * delete request regardless of who originated it. Used by the
+ * "reject delete request" admin action.
+ */
+export async function adminClearDeleteRequest(id: bigint): Promise<boolean> {
+  const updated = await db
+    .update(comment)
+    .set({ deleteRequestedAt: null, deleteRequestedBy: null })
+    .where(and(eq(comment.id, id), isNotNull(comment.deleteRequestedAt)))
+    .returning({ id: comment.id })
+  return updated.length > 0
+}
+
 export async function countApprovedRepliesOfComment(commentId: bigint): Promise<number> {
   const rows = await db
     .select({ count: count() })
@@ -572,7 +586,3 @@ export async function countMyComments(
     deleteRequested: rows[0]?.deleteRequested ?? 0,
   }
 }
-
-// Suppress unused-import warning: `or` is re-exported for callers that
-// still need it; keep it imported via barrel.
-export const _drizzleOr = or

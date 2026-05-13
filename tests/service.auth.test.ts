@@ -60,22 +60,22 @@ describe('services/auth/csrf — issue/validate (double-submit cookie)', () => {
   })
 })
 
-describe('services/auth/session — userSession / isAdmin', () => {
+describe('services/auth/session — userSession + role', () => {
   it('userSession returns the stored user payload (no nullable wrappers)', async () => {
-    const { userSession, isAdmin } = await import('@/server/session')
+    const { userSession } = await import('@/server/session')
     const admin = adminSession()
     expect(userSession(admin)?.email).toBe('admin@yufan.me')
-    expect(isAdmin(admin)).toBe(true)
+    expect(userSession(admin)?.role).toBe('admin')
   })
 
-  it('isAdmin is false when the user is non-admin', async () => {
-    const { isAdmin } = await import('@/server/session')
-    expect(isAdmin(regularSession())).toBe(false)
+  it('role is "visitor" for non-admin sessions', async () => {
+    const { userSession } = await import('@/server/session')
+    expect(userSession(regularSession())?.role).toBe('visitor')
   })
 
-  it('isAdmin is false when the session has no user attached', async () => {
-    const { isAdmin } = await import('@/server/session')
-    expect(isAdmin(makeSession())).toBe(false)
+  it('role is undefined when the session has no user attached', async () => {
+    const { userSession } = await import('@/server/session')
+    expect(userSession(makeSession())?.role).toBeUndefined()
   })
 })
 

@@ -6,9 +6,8 @@ export const loader = defineApiAction({
   method: 'GET',
   input: listPostRevisionsSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    const user = ctx.session.get('user')
-    const revisions = await listRevisionsForAdmin(BigInt(payload.id), { userId: user!.id, role: user!.role! })
+  async run({ payload, viewer }) {
+    const revisions = await listRevisionsForAdmin(BigInt(payload.id), viewer)
     return { revisions }
   },
 })

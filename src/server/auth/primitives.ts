@@ -1,7 +1,7 @@
-import type { BlogSession, SessionUser } from '@/server/auth/session-storage'
+import type { User } from '@/server/db/types'
 
-import { hasAtLeast, type Role } from '@/server/auth/rbac'
-import { getRequestSession } from '@/server/auth/session-storage'
+import { type Role } from '@/server/auth/rbac'
+import { type BlogSession, getRequestSession, type SessionUser } from '@/server/auth/session-storage'
 import { redisInstance } from '@/server/cache/storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/db/query/user'
 
@@ -9,16 +9,35 @@ export interface SessionContext {
   session: BlogSession
   user: SessionUser | undefined
   role: Role | null
-  /** @deprecated use `role` via {@link hasAtLeast} */
-  admin: boolean
 }
 
-function deriveRole(user: SessionUser | undefined): Role | null {
-  if (!user) return null
-  // Back-compat: legacy cookies stored `admin: boolean` without `role`.
-  if ('role' in user && user.role) return user.role
-  if (user.admin === true) return 'admin'
-  return null
+/**
+ * Write the session for a freshly-authenticated user and record the
+ * session id under `user_sessions:<id>` so a future
+ * `revokeAllSessionsOfUser` finds and clears it. Shared by password
+ * login, install flow, password reset, and accept-invite — all four
+ * code paths used to copy this block by hand and one of them (the
+ * password-reset action) was silently leaving the user out of the
+ * revocation set.
+ */
+export async function establishLoginSession(
+  session: BlogSession,
+  dbUser: User,
+  request: Request,
+  clientAddress: string,
+): Promise<void> {
+  if (!dbUser.role) {
+    throw new Error('establishLoginSession requires a user with a role')
+  }
+  session.set('user', {
+    id: `${dbUser.id}`,
+    name: dbUser.name,
+    email: dbUser.email,
+    website: dbUser.link,
+    role: dbUser.role,
+  })
+  await updateLastLogin(dbUser.id, clientAddress, request.headers.get('User-Agent'))
+  await redisInstance().sadd(`user_sessions:${dbUser.id}`, session.id)
 }
 
 export async function login({
@@ -35,27 +54,11 @@ export async function login({
   clientAddress: string
 }): Promise<boolean> {
   const user = await verifyUserPassword(email, password)
-  if (user === null) {
-    return false
-  }
-
-  const role = user.role ?? (user.isAdmin ? 'admin' : null)
-  if (!role) {
+  if (user === null || !user.role) {
     // Users without a role cannot log in (anonymous placeholder accounts).
     return false
   }
-
-  session.set('user', {
-    id: `${user.id}`,
-    name: user.name,
-    email: user.email,
-    website: user.link,
-    role,
-    admin: role === 'admin',
-  })
-
-  await updateLastLogin(user.id, clientAddress, request.headers.get('User-Agent'))
-  await redisInstance().sadd(`user_sessions:${user.id}`, session.id)
+  await establishLoginSession(session, user, request, clientAddress)
   return true
 }
 
@@ -72,20 +75,16 @@ export async function logout(session: BlogSession): Promise<void> {
   session.unset('user')
 }
 
-export function isAdmin(session: BlogSession): boolean {
-  const user = userSession(session)
-  if (!user) return false
-  return hasAtLeast(deriveRole(user), 'admin')
-}
-
 export async function resolveSessionContext(request: Request): Promise<SessionContext> {
   const session = await getRequestSession(request)
   let user = userSession(session)
 
   // Back-compat: upgrade legacy cookies that lack `role` by hitting the DB once.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const maybeLegacy = user as any
-  if (user && maybeLegacy.role === undefined) {
+  // The migration to drop `user.is_admin` runs in a follow-up release, so
+  // cookies minted before this branch still carry `{ admin: boolean }`
+  // and no `role`. We can't trust the cookie for the upgrade — the
+  // authoritative answer lives in `user.role`.
+  if (user && typeof (user as { role?: Role }).role !== 'string') {
     const dbUser = await findUserById(BigInt(user.id))
     if (dbUser && dbUser.role) {
       const upgraded: SessionUser = {
@@ -94,13 +93,16 @@ export async function resolveSessionContext(request: Request): Promise<SessionCo
         email: dbUser.email,
         website: dbUser.link,
         role: dbUser.role,
-        admin: dbUser.role === 'admin',
       }
       session.set('user', upgraded)
       user = upgraded
+    } else {
+      // The user no longer has a role (account demoted/anonymised). Drop
+      // the session — they should re-login.
+      session.unset('user')
+      user = undefined
     }
   }
 
-  const role = deriveRole(user)
-  return { session, user, role, admin: hasAtLeast(role, 'admin') }
+  return { session, user, role: user?.role ?? null }
 }

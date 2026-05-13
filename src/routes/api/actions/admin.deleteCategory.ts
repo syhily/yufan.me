@@ -5,7 +5,7 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const action = defineApiAction({
   method: 'DELETE',
   input: categoryIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const ok = await deleteAdminCategory(BigInt(payload.id))
     if (!ok) {

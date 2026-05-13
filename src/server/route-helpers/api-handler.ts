@@ -3,10 +3,10 @@ import type { ZodError, ZodType } from 'zod'
 
 import type { BlogSession } from '@/server/session'
 
-import { hasAtLeast, requireRole, type Role } from '@/server/auth/rbac'
+import { requireRole, type Role, type ViewerContext } from '@/server/auth/rbac'
 import { getLogger } from '@/server/logger'
-import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/route-helpers/errors'
-import { getRouteRequestContext, isAdmin } from '@/server/session'
+import { ActionFailure, DomainError, domainStatus } from '@/server/route-helpers/errors'
+import { getRouteRequestContext } from '@/server/session'
 
 // `ActionFailure` and `domainStatus` live in `routes/_shared/errors.ts`
 // alongside `DomainError`, so callers have a single import for the whole
@@ -144,28 +144,6 @@ export function assertMethod(request: Request, ...allowed: string[]): void {
 }
 
 // ---------------------------------------------------------------------------
-// Session helpers
-// ---------------------------------------------------------------------------
-
-export function requireAdminSession(session: BlogSession): BlogSession {
-  if (!isAdmin(session)) {
-    // Logged-in non-admins are *forbidden*, not unauthenticated. Returning
-    // 401 here causes most HTTP clients to retry with credentials, so use
-    // 403 to communicate "you are who you say you are, but the door is shut".
-    throw new ActionFailure(403, ErrorMessages.NOT_ADMIN)
-  }
-  return session
-}
-
-export function requireMinRole(session: BlogSession, min: Role): void {
-  const user = session.get('user')
-  const role = user?.role ?? (user?.admin ? 'admin' : null)
-  if (!hasAtLeast(role, min)) {
-    throw new ActionFailure(403, ErrorMessages.FORBIDDEN)
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Resource Route perimeter (`runApi`)
 // ---------------------------------------------------------------------------
 
@@ -256,16 +234,27 @@ type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 // Defaults are picked from the HTTP method when the caller doesn't override.
 type InputSource = 'json' | 'search' | 'form' | 'auto'
 
-interface DefineApiActionConfig<I, O> {
+interface RunParams<I, R extends Role | undefined> {
+  ctx: ApiContext
+  payload: I
+  /**
+   * Per-request viewer identity. Present whenever `requireRole` is set
+   * on the action — the gate has already enforced that `user` and
+   * `user.role` are non-null. Omit from the type when `requireRole` is
+   * absent so anonymous endpoints can't accidentally read it.
+   */
+  viewer: R extends Role ? ViewerContext : undefined
+}
+
+interface DefineApiActionConfig<I, O, R extends Role | undefined> {
   method: HttpMethod | HttpMethod[]
   // Optional Zod schema. Pass `undefined` for endpoints without an input
   // payload (e.g. read-only listings whose only "input" is the admin
   // session cookie itself).
   input?: ZodType<I>
   inputSource?: InputSource
-  requireAdmin?: boolean
-  /** Minimum role required. Takes precedence over `requireAdmin`. */
-  requireRole?: Role
+  /** Minimum role required to invoke this action. */
+  requireRole?: R
   /**
    * Reject the request with 413 if the declared `Content-Length`
    * exceeds this many bytes. Use on endpoints that accept large
@@ -273,18 +262,7 @@ interface DefineApiActionConfig<I, O> {
    * cheap upper bound on the request before the body is even read.
    */
   maxBodyBytes?: number
-  run: (params: {
-    ctx: ApiContext
-    payload: I
-    /**
-     * Lazy admin check. Returns `true` for endpoints declared with
-     * `requireAdmin: true` (the gate has already passed). For everything
-     * else we defer to `isAdmin(session)` only when the handler actually
-     * asks — most non-admin endpoints (likes, avatars, replies) never read
-     * this and shouldn't pay for an extra session lookup per request.
-     */
-    isAdmin: () => boolean
-  }) => Promise<ApiResult<O>> | ApiResult<O>
+  run: (params: RunParams<I, R>) => Promise<ApiResult<O>> | ApiResult<O>
 }
 
 // Resolve the request payload to the validated input shape, choosing the
@@ -310,9 +288,9 @@ async function readInputFrom<T>(ctx: ApiContext, source: InputSource, schema: Zo
 
 // Shrinks the typical 10-line resource-route action down to a config object.
 // Equivalent to writing `runApi(args, ...)` by hand but factors out method
-// assertion, input parsing, admin gating, and lets the handler focus on the
+// assertion, input parsing, role gating, and lets the handler focus on the
 // business call.
-export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
+export function defineApiAction<I, O, R extends Role | undefined = undefined>(config: DefineApiActionConfig<I, O, R>) {
   const methods = Array.isArray(config.method) ? config.method : [config.method]
   const sourceFor = (request: Request): InputSource =>
     config.inputSource ?? (request.method === 'GET' ? 'search' : 'json')
@@ -320,16 +298,17 @@ export function defineApiAction<I, O>(config: DefineApiActionConfig<I, O>) {
   return (args: Pick<LoaderFunctionArgs, 'request' | 'context'>) =>
     runApi(args, async (ctx) => {
       assertMethod(ctx.request, ...methods)
-      const minRole = config.requireRole ?? (config.requireAdmin ? 'admin' : undefined)
-      if (minRole) {
-        requireMinRole(ctx.session, minRole)
+      let viewer: ViewerContext | undefined
+      if (config.requireRole) {
+        const user = ctx.session.get('user')
+        requireRole({ user, role: user?.role ?? null }, config.requireRole)
+        viewer = { userId: user!.id, role: user!.role }
       }
       if (config.maxBodyBytes !== undefined) {
         assertContentLengthUnder(ctx.request, config.maxBodyBytes)
       }
-      const isAdminLazy = minRole === 'admin' ? () => true : () => isAdmin(ctx.session)
       const payload = config.input ? await readInputFrom(ctx, sourceFor(ctx.request), config.input) : (undefined as I)
-      return config.run({ ctx, payload, isAdmin: isAdminLazy })
+      return config.run({ ctx, payload, viewer: viewer as RunParams<I, R>['viewer'] })
     })
 }
 

@@ -14,7 +14,6 @@ export interface MakeContextOptions {
   request?: Request
   session?: BlogSession
   user?: SessionUser
-  admin?: boolean
   clientAddress?: string
 }
 
@@ -22,18 +21,14 @@ export function makeRouteContext({
   request = new Request('http://localhost/'),
   session = regularSession(),
   user,
-  admin,
   clientAddress = '127.0.0.1',
 }: MakeContextOptions = {}): RouterContextProvider {
   const context = new RouterContextProvider()
   const resolvedUser = user ?? (session?.data?.user as SessionUser | undefined)
-  const resolvedRole = resolvedUser?.role ?? (resolvedUser?.admin ? 'admin' : null)
-  const resolvedAdmin = admin ?? Boolean(resolvedUser?.admin)
   context.set(sessionContext, {
     session,
     user: resolvedUser,
-    role: resolvedRole,
-    admin: resolvedAdmin,
+    role: resolvedUser?.role ?? null,
   })
   context.set(requestContext, {
     clientAddress,

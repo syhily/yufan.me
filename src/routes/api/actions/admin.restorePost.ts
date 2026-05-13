@@ -6,11 +6,8 @@ export const action = defineApiAction({
   method: 'POST',
   input: restorePostSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    const result = await restorePost(BigInt(payload.id), {
-      userId: ctx.session.get('user')!.id,
-      role: ctx.session.get('user')!.role!,
-    })
+  async run({ payload, viewer }) {
+    const result = await restorePost(BigInt(payload.id), viewer)
     if (!result.restored) {
       throw new ActionFailure(404, '文章不存在或未被删除。')
     }

@@ -5,7 +5,7 @@ import { fetchAdminUserDto, muteAdminUser } from '@/server/users/service'
 export const action = defineApiAction({
   method: 'PATCH',
   input: muteUserSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const updated = await muteAdminUser(BigInt(payload.userId), payload.muted)
     if (!updated) {

@@ -69,7 +69,7 @@ vi.mock('@/server/posts/query', () => ({
 
 const { makeLoaderArgs } = await import('./_helpers/context')
 
-const ADMIN_ARGS = (request: Request) => makeLoaderArgs({ request, session: adminSession(), admin: true })
+const ADMIN_ARGS = (request: Request) => makeLoaderArgs({ request, session: adminSession() })
 
 const NOW = new Date('2026-05-02T00:00:00.000Z')
 

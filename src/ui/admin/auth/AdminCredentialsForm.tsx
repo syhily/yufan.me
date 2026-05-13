@@ -6,19 +6,26 @@ import { Label } from '@/ui/components/label'
 
 export interface AdminCredentialsFormProps {
   action?: string
-  token: string
+  /** Anti-CSRF token issued by the loader. Submitted as `name="csrf"`. */
+  csrf: string
   mode?: 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'
+  /**
+   * One-time token from the email link, passed to the loader through
+   * the URL. The form re-submits it as a separate `name="reset_token"`
+   * field — keeping CSRF and reset tokens on distinct names avoids the
+   * FormData collision the previous shape walked into.
+   */
   resetToken?: string
 }
 
-export function AdminCredentialsForm({ action, token, mode = 'login', resetToken }: AdminCredentialsFormProps) {
+export function AdminCredentialsForm({ action, csrf, mode = 'login', resetToken }: AdminCredentialsFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
 
   if (mode === 'lostpassword') {
     return (
       <Form method="post" action={action} id="loginForm" className="flex flex-col gap-5">
-        <input type="hidden" name="token" value={token} />
+        <input type="hidden" name="csrf" value={csrf} />
         <div className="flex flex-col gap-2">
           <Label htmlFor="loginForm-email">邮箱</Label>
           <Input id="loginForm-email" name="email" type="email" autoComplete="email" required disabled={isSubmitting} />
@@ -33,8 +40,8 @@ export function AdminCredentialsForm({ action, token, mode = 'login', resetToken
   if (mode === 'resetpassword' || mode === 'accept-invite') {
     return (
       <Form method="post" action={action} id="loginForm" className="flex flex-col gap-5">
-        <input type="hidden" name="token" value={token} />
-        <input type="hidden" name="token" value={resetToken ?? ''} />
+        <input type="hidden" name="csrf" value={csrf} />
+        <input type="hidden" name="reset_token" value={resetToken ?? ''} />
         <div className="flex flex-col gap-2">
           <Label htmlFor="loginForm-password">新密码</Label>
           <Input
@@ -56,7 +63,7 @@ export function AdminCredentialsForm({ action, token, mode = 'login', resetToken
 
   return (
     <Form method="post" action={action} id="loginForm" className="flex flex-col gap-5">
-      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="csrf" value={csrf} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="loginForm-email">邮箱</Label>
         <Input id="loginForm-email" name="email" type="email" autoComplete="email" required disabled={isSubmitting} />

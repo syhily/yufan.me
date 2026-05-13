@@ -5,7 +5,7 @@ import { listUsersForAdmin, toAdminUserDto } from '@/server/users/service'
 export const loader = defineApiAction({
   method: 'GET',
   input: listUsersSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const result = await listUsersForAdmin(
       payload.offset,

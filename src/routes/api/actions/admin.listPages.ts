@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const loader = defineApiAction({
   method: 'GET',
   input: listPagesSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     return listPagesForAdmin({
       q: payload.q,

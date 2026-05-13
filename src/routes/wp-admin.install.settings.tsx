@@ -13,12 +13,12 @@ import type { Route } from './+types/wp-admin.install.settings'
 export async function loader({ request, context }: Route.LoaderArgs) {
   await requireStageTwoSession({ request, context })
 
-  const { token, setCookie } = await issueCsrfToken()
+  const { token: csrf, setCookie } = await issueCsrfToken()
   // Pass the IANA timezone list through the loader so the form can
   // render a dropdown (no manual entry → no typos that fail validation
   // server-side). The list is paid for once per process at module load
   // time, so the loader cost is just a cache hit.
-  return data({ token, timeZones: getSupportedTimeZones() }, { headers: { 'Set-Cookie': setCookie } })
+  return data({ csrf, timeZones: getSupportedTimeZones() }, { headers: { 'Set-Cookie': setCookie } })
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -62,7 +62,7 @@ export default function SettingsInstallRoute({ actionData, loaderData }: Route.C
             {actionData.error}
           </div>
         )}
-        <SettingsInstallForm token={loaderData.token} timeZones={loaderData.timeZones} />
+        <SettingsInstallForm csrf={loaderData.csrf} timeZones={loaderData.timeZones} />
       </CardContent>
     </Card>
   )

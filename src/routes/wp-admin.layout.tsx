@@ -19,7 +19,7 @@ export const handle: RouteHandle = { layout: 'admin' }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { role, user, url } = getRouteRequestContext({ request, context })
-  if (!hasAtLeast(role, 'author')) {
+  if (!hasAtLeast(role, 'visitor')) {
     throw redirect(`/wp-login.php?redirect_to=${encodeURIComponent(url.pathname)}`)
   }
 

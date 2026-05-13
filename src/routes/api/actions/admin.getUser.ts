@@ -5,7 +5,7 @@ import { fetchAdminUserDto } from '@/server/users/service'
 export const action = defineApiAction({
   method: 'POST',
   input: userIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const user = await fetchAdminUserDto(BigInt(payload.userId))
     if (!user) {

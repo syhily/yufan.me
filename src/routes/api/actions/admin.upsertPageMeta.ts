@@ -1,4 +1,3 @@
-import { userSession } from '@/server/auth/primitives'
 import { upsertPageMetaSchema } from '@/server/cms/pages/schema'
 import { createPage, updatePageMeta } from '@/server/cms/pages/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -10,10 +9,9 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: upsertPageMetaSchema,
-  requireAdmin: true,
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const sessionUserId = user?.id ? BigInt(user.id) : null
+  requireRole: 'admin',
+  async run({ payload, viewer }) {
+    const sessionUserId = BigInt(viewer.userId)
     const meta = {
       slug: payload.slug,
       title: payload.title,

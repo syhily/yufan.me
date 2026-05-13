@@ -1,10 +1,12 @@
 import { z } from 'zod'
 
-import { userSession } from '@/server/auth/primitives'
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { countAdmins, findUserById, updateUserRole } from '@/server/db/query/user'
+import { getLogger } from '@/server/logger'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
+
+const log = getLogger('audit.user')
 
 const schema = z.object({
   userId: z.string(),
@@ -14,13 +16,12 @@ const schema = z.object({
 export const action = defineApiAction({
   method: 'POST',
   input: schema,
-  requireAdmin: true,
-  async run({ ctx, payload }) {
-    const self = userSession(ctx.session)
-    const targetId = BigInt(payload.userId)
-    if (self!.id === payload.userId) {
+  requireRole: 'admin',
+  async run({ payload, viewer }) {
+    if (viewer.userId === payload.userId) {
       throw new ActionFailure(403, '不能修改自己的角色。')
     }
+    const targetId = BigInt(payload.userId)
     const target = await findUserById(targetId)
     if (!target) {
       throw new ActionFailure(404, '用户不存在。')
@@ -34,6 +35,12 @@ export const action = defineApiAction({
     const updated = await updateUserRole(targetId, payload.role)
     if (updated) {
       await revokeAllSessionsOfUser(targetId)
+      log.info('user role changed', {
+        actor: viewer.userId,
+        target: payload.userId,
+        from: target.role,
+        to: payload.role,
+      })
     }
     return { user: updated }
   },

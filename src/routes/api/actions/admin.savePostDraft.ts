@@ -1,4 +1,3 @@
-import { userSession } from '@/server/auth/primitives'
 import { savePostBodySchema } from '@/server/cms/posts/schema'
 import { saveDraft } from '@/server/cms/posts/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -10,18 +9,16 @@ export const action = defineApiAction({
   input: savePostBodySchema,
   requireRole: 'author',
   maxBodyBytes: MAX_BODY_BYTES,
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const authorId = user?.id ? BigInt(user.id) : null
+  async run({ payload, viewer }) {
     return saveDraft(
       {
         postId: BigInt(payload.id),
         body: payload.body,
         expectedClientRevisionToken: payload.expectedClientRevisionToken ?? undefined,
         force: payload.force,
-        authorId,
+        authorId: BigInt(viewer.userId),
       },
-      { userId: user?.id ?? '', role: user?.role! },
+      viewer,
     )
   },
 })

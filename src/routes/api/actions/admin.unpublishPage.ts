@@ -10,7 +10,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: unpublishPageSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const page = await unpublishPage(BigInt(payload.id))
     return { page }

@@ -16,7 +16,7 @@ const reindexInputSchema = z.object({
 
 export const action = defineApiAction({
   method: 'POST',
-  requireAdmin: true,
+  requireRole: 'admin',
   input: reindexInputSchema,
   async run({ payload }) {
     const rows = await db

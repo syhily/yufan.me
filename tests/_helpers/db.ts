@@ -184,7 +184,7 @@ export function seedUser(overrides: Partial<User> = {}): User {
     email: overrides.email ?? 'alice@example.com',
     emailVerified: overrides.emailVerified ?? true,
     link: overrides.link ?? '',
-    isAdmin: overrides.isAdmin ?? false,
+    role: overrides.role ?? null,
     badgeName: overrides.badgeName ?? null,
     badgeColor: overrides.badgeColor ?? null,
     badgeTextColor: overrides.badgeTextColor ?? null,

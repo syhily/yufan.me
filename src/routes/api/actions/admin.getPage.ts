@@ -9,7 +9,7 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const loader = defineApiAction({
   method: 'GET',
   input: getPageSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const detail = await getPageDetailForAdmin(BigInt(payload.id))
     if (detail === null) {

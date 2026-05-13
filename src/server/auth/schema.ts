@@ -6,7 +6,7 @@ import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 export const signInSchema = z.object({
   email: z.email(),
   password: z.string().min(10),
-  token: z.string().default(''),
+  csrf: z.string().default(''),
 })
 export type SignInInput = z.infer<typeof signInSchema>
 
@@ -14,7 +14,7 @@ export const signUpAdminSchema = z.object({
   name: z.string().min(1),
   email: z.email().min(1),
   password: z.string().min(10),
-  token: z.string().default(''),
+  csrf: z.string().default(''),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 
@@ -24,7 +24,7 @@ export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 // codebase, so the editor visits the relevant `/wp-admin/settings/*`
 // page and fills them in explicitly.
 export const installSettingsSchema = z.object({
-  token: z.string().default(''),
+  csrf: z.string().default(''),
   // Site
   title: z.string().trim().min(1).max(120),
   website: z.url(),

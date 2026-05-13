@@ -2,7 +2,7 @@ import type { PublishLatestResult, SaveDraftResult } from '@/server/cms/pages/re
 import type { ContentRow, PostMetaRow } from '@/server/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { hasAtLeast, type Role } from '@/server/auth/rbac'
+import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/auth/rbac'
 import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/cms/pages/image-sync'
 import {
@@ -150,10 +150,7 @@ export async function loadPostDraftPreviewBySlug(slug: string): Promise<PostDraf
 
 // --- Admin list / get -------------------------------------------------------
 
-export interface ViewerContext {
-  userId: string
-  role: Role
-}
+export type ViewerContext = RbacViewerContext
 
 export interface AdminPostsListResult {
   posts: AdminPostDto[]
@@ -165,7 +162,7 @@ export async function listPostsForAdmin(
   filters: ListPostsFilters = {},
   viewer?: ViewerContext,
 ): Promise<AdminPostsListResult> {
-  if (viewer && !hasAtLeast(viewer.role, 'admin')) {
+  if (viewer && viewer.role !== 'admin') {
     filters = { ...filters, authorId: BigInt(viewer.userId) }
   }
   const offset = filters.offset ?? 0
@@ -202,7 +199,7 @@ function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerContext): a
   if (!meta) {
     throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
-  if (viewer && !hasAtLeast(viewer.role, 'admin') && meta.authorId?.toString() !== viewer.userId) {
+  if (viewer && !canEditPost(viewer, meta)) {
     throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 }
@@ -298,7 +295,7 @@ export async function createPost(
   authorId: bigint | null,
   viewer?: ViewerContext,
 ): Promise<AdminPostDto> {
-  if (viewer && !hasAtLeast(viewer.role, 'admin')) {
+  if (viewer && viewer.role !== 'admin') {
     authorId = BigInt(viewer.userId)
   }
   const slug = resolveSlugForPost(input.slug, input.title)

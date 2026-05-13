@@ -124,7 +124,7 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
 // Block-only deletion. Same contract as `deleteAdminCategory`: refuse
 // when any post (visible/hidden/scheduled) still lists the tag in its
 // frontmatter `tags: [...]`.
-export async function deleteAdminTag(id: bigint, viewer?: TagViewerContext): Promise<boolean> {
+export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Promise<boolean> {
   // deleteAdminTaxonomy already blocks deletion when posts reference the tag.
   // Admin can delete regardless of ownership; author can only delete unreferenced tags.
   return deleteAdminTaxonomy(id, '标签', {

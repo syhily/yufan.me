@@ -11,7 +11,7 @@ import { buildDbPage, findPageBySlug } from '@/server/pages/query'
 import { redirectPermanent } from '@/server/route-helpers/detail-loader'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpers/etag'
 import { notFound } from '@/server/route-helpers/http'
-import { isAdmin, resolveSessionContext, tryGetSessionContext } from '@/server/session'
+import { resolveSessionContext, tryGetSessionContext } from '@/server/session'
 
 type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 
@@ -66,7 +66,7 @@ export async function loadPagePreview({
   const needsDraftLookup = sourcePage === undefined || (wantsDraftPreview && publishedPage !== undefined)
   if (needsDraftLookup) {
     const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
-    if (isAdmin(sessionContext.session)) {
+    if (sessionContext.role === 'admin') {
       const preview = await loadPageDraftPreviewBySlug(slug)
       if (preview !== null) {
         if (sourcePage === undefined) {

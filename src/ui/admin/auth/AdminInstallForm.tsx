@@ -5,19 +5,19 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 
 export interface AdminInstallFormProps {
-  token: string
+  csrf: string
 }
 
 // `AdminCredentialsForm` (which serves the lightweight login flow at
 // `/wp-login.php`) because the install path's submission auto-logs the
 // everything else.
-export function AdminInstallForm({ token }: AdminInstallFormProps) {
+export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
 
   return (
     <Form method="post" id="adminInstallForm" className="flex flex-col gap-4">
-      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="csrf" value={csrf} />
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="install-name">昵称</Label>

@@ -1,4 +1,3 @@
-import { userSession } from '@/server/auth/primitives'
 import { savePageBodySchema } from '@/server/cms/pages/schema'
 import { publishLatest } from '@/server/cms/pages/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -16,24 +15,19 @@ const MAX_BODY_BYTES = 1 * 1024 * 1024
 export const action = defineApiAction({
   method: 'POST',
   input: savePageBodySchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   maxBodyBytes: MAX_BODY_BYTES,
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const authorId = user?.id ? BigInt(user.id) : null
-    const result = await publishLatest({
+  async run({ payload, viewer }) {
+    return publishLatest({
       pageId: BigInt(payload.id),
       body: payload.body,
       expectedClientRevisionToken: payload.expectedClientRevisionToken ?? undefined,
       force: payload.force,
-      authorId,
+      authorId: BigInt(viewer.userId),
       // Future publishedAt = scheduled publish; absent / past = "now".
       // The schema validates ISO-8601, the repo defaults to `now()`
       // when omitted.
       publishedAt: payload.publishedAt !== undefined ? new Date(payload.publishedAt) : undefined,
     })
-    if (result.status === 'saved') {
-    }
-    return result
   },
 })

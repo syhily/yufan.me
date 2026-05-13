@@ -5,7 +5,7 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const action = defineApiAction({
   method: 'PATCH',
   input: updateUserSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const { userId, ...patch } = payload
     const filtered = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined))

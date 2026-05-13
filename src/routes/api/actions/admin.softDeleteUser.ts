@@ -5,7 +5,7 @@ import { softDeleteAdminUser } from '@/server/users/service'
 export const action = defineApiAction({
   method: 'DELETE',
   input: userIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const ok = await softDeleteAdminUser(BigInt(payload.userId))
     if (!ok) {

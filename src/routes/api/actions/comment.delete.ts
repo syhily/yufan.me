@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'DELETE',
   input: commentRidSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     await deleteComment(payload.rid)
     return null

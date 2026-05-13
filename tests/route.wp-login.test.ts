@@ -30,7 +30,7 @@ vi.mock('@/server/session', async () => {
     destroySession: vi.fn(async () => 'blog_session=deleted'),
     getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
       session: state.session,
-      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@yufan.me', admin: true } : undefined,
+      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@yufan.me' } : undefined,
       admin: state.loggedIn,
       clientAddress: '127.0.0.1',
       url: new URL(request.url),

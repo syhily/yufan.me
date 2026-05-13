@@ -1,4 +1,4 @@
-import { requireAdmin } from '@/server/auth/rbac'
+import { requireRole } from '@/server/auth/rbac'
 import { getAdminCacheStats } from '@/server/cache/admin'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
@@ -23,7 +23,7 @@ export function meta({ matches }: Route.MetaArgs) {
 // on a stale-shape DB row before backfill rewrites it.
 export async function loader({ request, context }: Route.LoaderArgs) {
   const ctx = getRouteRequestContext({ request, context })
-  requireAdmin(ctx)
+  requireRole(ctx, 'admin')
   const stats = await getAdminCacheStats()
   const cache = requireBlogSettingsSection('cache').cache
   return { stats, cache }

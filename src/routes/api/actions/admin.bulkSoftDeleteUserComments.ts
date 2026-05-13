@@ -5,7 +5,7 @@ import { bulkDeleteCommentsForUser } from '@/server/users/service'
 export const action = defineApiAction({
   method: 'DELETE',
   input: userIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     return bulkDeleteCommentsForUser(BigInt(payload.userId))
   },

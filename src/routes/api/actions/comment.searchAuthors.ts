@@ -27,7 +27,7 @@ function parseBigIntIds(raw: string[] | undefined): bigint[] | undefined {
 export const loader = defineApiAction({
   method: 'GET',
   input: filterAutocompleteSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const ids = parseBigIntIds(payload.ids)
     const authors = await searchAuthorOptions(payload.q, payload.limit, ids)

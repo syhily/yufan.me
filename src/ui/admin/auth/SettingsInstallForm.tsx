@@ -8,7 +8,7 @@ import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 export interface SettingsInstallFormProps {
-  token: string
+  csrf: string
   /**
    * Canonical IANA / tzdata timezone list, supplied by the loader from
    * `getSupportedTimeZones()` (see `@/server/settings/timezones`). The
@@ -65,7 +65,7 @@ function pickInitialZone(timeZones: readonly string[]): string {
 // time zone, and the ISO-flavoured `yyyy-MM-dd HH:mm` token format
 // without thinking about them, but the values are still POSTed and
 // stored verbatim.
-export function SettingsInstallForm({ token, timeZones }: SettingsInstallFormProps) {
+export function SettingsInstallForm({ csrf, timeZones }: SettingsInstallFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
 
@@ -85,7 +85,7 @@ export function SettingsInstallForm({ token, timeZones }: SettingsInstallFormPro
 
   return (
     <Form method="post" id="settingsInstallForm" className="flex flex-col gap-6">
-      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="csrf" value={csrf} />
       {/*
        * Hidden mirrors for the two non-native form controls below so the
        * `<Form method="post">` POST body keeps carrying the same field

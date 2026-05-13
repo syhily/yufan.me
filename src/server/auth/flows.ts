@@ -6,7 +6,7 @@ import type { BlogSession } from '@/server/auth/session-storage'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/blog-config'
 
 import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
-import { login } from '@/server/auth/primitives'
+import { establishLoginSession, login } from '@/server/auth/primitives'
 import { commitSession } from '@/server/auth/session-storage'
 import { upsertSetting } from '@/server/db/query/setting'
 import { hasAdmin, insertAdmin } from '@/server/db/query/user'
@@ -45,8 +45,8 @@ async function commitHeaders(session: BlogSession, extraSetCookie?: string): Pro
   return headers
 }
 
-async function csrfFailure(request: Request, session: BlogSession, token: string): Promise<AuthFailure | null> {
-  const [valid] = await validateRequestCsrf(request, token)
+async function csrfFailure(request: Request, session: BlogSession, csrf: string): Promise<AuthFailure | null> {
+  const [valid] = await validateRequestCsrf(request, csrf)
   if (valid) {
     return null
   }
@@ -61,7 +61,7 @@ async function csrfFailure(request: Request, session: BlogSession, token: string
 export async function signInWithSession({
   email,
   password,
-  token,
+  csrf,
   session,
   request,
   clientAddress,
@@ -69,15 +69,15 @@ export async function signInWithSession({
 }: {
   email: string
   password: string
-  token: string
+  csrf: string
   session: BlogSession
   request: Request
   clientAddress: string
   redirectTo: string
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  const csrf = await csrfFailure(request, session, token)
-  if (csrf) {
-    return csrf
+  const csrfErr = await csrfFailure(request, session, csrf)
+  if (csrfErr) {
+    return csrfErr
   }
 
   const limit = await tryRateLimit(clientAddress)
@@ -112,23 +112,25 @@ export interface SignUpAdminSeed {
   name: string
   email: string
   password: string
-  token: string
+  csrf: string
 }
 
 export async function signUpInitialAdminWithSession({
   name,
   email,
   password,
-  token,
+  csrf,
   session,
   request,
+  clientAddress,
 }: SignUpAdminSeed & {
   session: BlogSession
   request: Request
+  clientAddress: string
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  const csrf = await csrfFailure(request, session, token)
-  if (csrf) {
-    return csrf
+  const csrfErr = await csrfFailure(request, session, csrf)
+  if (csrfErr) {
+    return csrfErr
   }
 
   if (await hasAdmin()) {
@@ -151,14 +153,7 @@ export async function signUpInitialAdminWithSession({
     }
   }
 
-  session.set('user', {
-    id: `${admin.id}`,
-    name: admin.name,
-    email: admin.email,
-    website: admin.link,
-    role: 'admin',
-    admin: true,
-  })
+  await establishLoginSession(session, admin, request, clientAddress)
 
   return {
     ok: true,
@@ -168,7 +163,7 @@ export async function signUpInitialAdminWithSession({
 }
 
 export interface InstallSettingsSeed {
-  token: string
+  csrf: string
   title: string
   website: string
   authorEmail: string
@@ -180,7 +175,7 @@ export interface InstallSettingsSeed {
 }
 
 export async function seedInstallSettingsWithSession({
-  token,
+  csrf,
   title,
   website,
   authorEmail,
@@ -197,9 +192,9 @@ export async function seedInstallSettingsWithSession({
   session: BlogSession
   request: Request
 }): Promise<AuthFlowResult<{ redirectTo: string }>> {
-  const csrf = await csrfFailure(request, session, token)
-  if (csrf) {
-    return csrf
+  const csrfErr = await csrfFailure(request, session, csrf)
+  if (csrfErr) {
+    return csrfErr
   }
 
   const siteIdentity = buildSiteIdentitySeed({

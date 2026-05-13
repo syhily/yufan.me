@@ -1,4 +1,3 @@
-import { userSession } from '@/server/auth/primitives'
 import { listPostsSchema } from '@/server/cms/posts/schema'
 import { listPostsForAdmin } from '@/server/cms/posts/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -7,7 +6,7 @@ export const loader = defineApiAction({
   method: 'GET',
   input: listPostsSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
+  async run({ payload, viewer }) {
     return listPostsForAdmin(
       {
         q: payload.q,
@@ -22,7 +21,7 @@ export const loader = defineApiAction({
         sortOrder: payload.sortOrder,
         authorId: payload.authorId,
       },
-      { userId: userSession(ctx.session)!.id, role: userSession(ctx.session)!.role! },
+      viewer,
     )
   },
 })

@@ -6,11 +6,8 @@ export const action = defineApiAction({
   method: 'DELETE',
   input: tagIdSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    const ok = await deleteAdminTag(BigInt(payload.id), {
-      userId: ctx.session.get('user')!.id,
-      role: ctx.session.get('user')!.role!,
-    })
+  async run({ payload, viewer }) {
+    const ok = await deleteAdminTag(BigInt(payload.id), viewer)
     if (!ok) {
       throw new ActionFailure(404, '标签不存在')
     }

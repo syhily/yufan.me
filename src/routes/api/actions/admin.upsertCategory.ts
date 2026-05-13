@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: upsertCategorySchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const category = await upsertAdminCategory({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,

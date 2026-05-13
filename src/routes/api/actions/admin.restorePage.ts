@@ -8,7 +8,7 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const action = defineApiAction({
   method: 'POST',
   input: restorePageSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const result = await restorePage(BigInt(payload.id))
     if (!result.restored) {

@@ -1,14 +1,9 @@
 import type { ActionFunctionArgs } from 'react-router'
 
+import { requireRole } from '@/server/auth/rbac'
 import { uploadImageMetadataSchema } from '@/server/images/schema'
 import { uploadImage } from '@/server/images/service'
-import {
-  ActionFailure,
-  assertMethod,
-  parseInput,
-  requireAdminSession,
-  runApi,
-} from '@/server/route-helpers/api-handler'
+import { ActionFailure, assertMethod, parseInput, runApi } from '@/server/route-helpers/api-handler'
 import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
@@ -19,11 +14,8 @@ import { requireBlogSettingsSection } from '@/shared/blog-config'
 export async function action(args: ActionFunctionArgs) {
   return runApi(args, async ({ request, session }) => {
     assertMethod(request, 'POST')
-    requireAdminSession(session)
     const adminUser = userSession(session)
-    if (adminUser === undefined) {
-      throw new ActionFailure(403, '需要管理员登录')
-    }
+    requireRole({ user: adminUser, role: adminUser?.role ?? null }, 'admin')
 
     const settings = requireBlogSettingsSection('assets')
 
@@ -57,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
 
     const buffer = Buffer.from(await fileEntry.arrayBuffer())
 
-    const uploader = { id: BigInt(adminUser.id), name: adminUser.name }
+    const uploader = { id: BigInt(adminUser!.id), name: adminUser!.name }
 
     let image
     if (metadata.kind === 'generic') {

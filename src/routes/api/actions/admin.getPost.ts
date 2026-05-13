@@ -6,11 +6,8 @@ export const loader = defineApiAction({
   method: 'GET',
   input: getPostSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    const detail = await getPostDetailForAdmin(BigInt(payload.id), {
-      userId: ctx.session.get('user')!.id,
-      role: ctx.session.get('user')!.role!,
-    })
+  async run({ payload, viewer }) {
+    const detail = await getPostDetailForAdmin(BigInt(payload.id), viewer)
     if (detail === null) {
       throw new ActionFailure(404, '文章不存在或已被删除。')
     }

@@ -1,7 +1,7 @@
 import type { ImageRow } from '@/server/db/types'
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/images'
 
-import { canEditImage, type Role } from '@/server/auth/rbac'
+import { canEditImage, type ViewerContext } from '@/server/auth/rbac'
 import {
   type AdminImagesListFilters,
   countAdminImages,
@@ -142,21 +142,14 @@ export async function listImagesForAdmin(input: ListImagesInput = {}): Promise<L
   }
 }
 
-export interface ImageViewerContext {
-  userId: string
-  role: Role
-}
-
-function isAdmin(role: Role): boolean {
-  return role === 'admin'
-}
+export type ImageViewerContext = ViewerContext
 
 export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Promise<void> {
   const existing = await findImageById(id)
   if (existing === null) {
     throw new ActionFailure(404, '图片不存在')
   }
-  if (viewer && !isAdmin(viewer.role) && existing.uploaderId?.toString() !== viewer.userId) {
+  if (viewer && !canEditImage(viewer, existing)) {
     throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 
@@ -186,7 +179,7 @@ export async function updateImageNote(
   if (existing === null) {
     throw new ActionFailure(404, '图片不存在')
   }
-  if (viewer && !isAdmin(viewer.role) && existing.uploaderId?.toString() !== viewer.userId) {
+  if (viewer && !canEditImage(viewer, existing)) {
     throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
   const updated = await updateImageNoteWithUploader(id, note)
@@ -201,7 +194,7 @@ export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewer
   if (existing === null) {
     throw new ActionFailure(404, '图片不存在')
   }
-  if (viewer && !isAdmin(viewer.role) && existing.uploaderId?.toString() !== viewer.userId) {
+  if (viewer && !canEditImage(viewer, existing)) {
     throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
   }
 

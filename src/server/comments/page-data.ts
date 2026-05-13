@@ -6,13 +6,13 @@ import type { DetailPageComments } from '@/shared/comments'
 import { queryLikes } from '@/server/comments/likes'
 import { ensureCommentPage, loadComments, parseComments } from '@/server/comments/loader'
 import { bumpPageView } from '@/server/metrics/batcher'
-import { isAdmin, userSession } from '@/server/session'
+import { userSession } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 
-// `SessionUser` already only carries id/name/email/website/admin, but the
-// reply form is the only consumer in the public bundle. Projecting through
-// `CommentFormUser` makes the boundary explicit so future session fields
-// don't accidentally reach the SSR DOM.
+// `SessionUser` carries the canonical `role`. The public reply form
+// only cares about the admin vs. non-admin distinction (admins bypass
+// rate limits, render moderator badges, etc.), so project through
+// `CommentFormUser` to keep future session fields out of the SSR DOM.
 function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | undefined {
   if (user === undefined) {
     return undefined
@@ -22,7 +22,7 @@ function toCommentFormUser(user: SessionUser | undefined): CommentFormUser | und
     name: user.name,
     email: user.email,
     website: user.website,
-    admin: user.admin,
+    admin: user.role === 'admin',
   }
 }
 
@@ -48,8 +48,9 @@ export async function loadDetailPageCritical(
   target: EntityTarget,
   options?: { trackView?: boolean },
 ) {
-  const currentUser = toCommentFormUser(userSession(session))
-  const admin = isAdmin(session)
+  const user = userSession(session)
+  const currentUser = toCommentFormUser(user)
+  const admin = user?.role === 'admin'
   const trackView = options?.trackView ?? true
 
   // Keep counting out of the critical path; this is fire-and-forget and

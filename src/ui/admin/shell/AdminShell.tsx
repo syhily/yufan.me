@@ -11,6 +11,7 @@ import {
   NotebookPenIcon,
   SettingsIcon,
   TagsIcon,
+  UserIcon,
   UsersIcon,
 } from 'lucide-react'
 import { createContext, type ComponentType, type ReactNode, use, useEffect, useMemo, useRef, useState } from 'react'
@@ -52,6 +53,8 @@ const NAV: NavItem[] = [
     matchPrefix: '/wp-admin/settings',
     minRole: 'admin',
   },
+  { to: '/wp-admin/my/comments', label: '我的评论', icon: MessageSquareIcon, minRole: 'visitor' },
+  { to: '/wp-admin/my/profile', label: '个人信息', icon: UserIcon, minRole: 'visitor' },
 ]
 
 interface AdminShellProps {
@@ -70,8 +73,12 @@ function NavList({
   role: AdminShellProps['currentUser']['role']
 }) {
   const visibleNav = NAV.filter((item) => {
-    if (item.minRole === 'visitor') return true
-    if (item.minRole === 'author') return role === 'author' || role === 'admin'
+    if (item.minRole === 'visitor') {
+      return true
+    }
+    if (item.minRole === 'author') {
+      return role === 'author' || role === 'admin'
+    }
     return role === 'admin'
   })
   return (

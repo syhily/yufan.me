@@ -2,7 +2,7 @@ import type { LoaderFunctionArgs } from 'react-router'
 
 import { redirect } from 'react-router'
 
-import { requireAdmin } from '@/server/auth/rbac'
+import { requireRole } from '@/server/auth/rbac'
 import { getRouteRequestContext } from '@/server/session'
 
 // `/wp-admin/settings` is the parent slot of the settings section; the
@@ -10,7 +10,7 @@ import { getRouteRequestContext } from '@/server/session'
 // `wp-admin.dashboard.tsx` → `wp-admin/comments` redirect pattern.
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = getRouteRequestContext({ request, context })
-  requireAdmin(ctx)
+  requireRole(ctx, 'admin')
   throw redirect('/wp-admin/settings/general')
 }
 

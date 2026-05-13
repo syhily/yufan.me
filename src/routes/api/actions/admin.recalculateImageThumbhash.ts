@@ -6,11 +6,8 @@ export const action = defineApiAction({
   method: 'POST',
   input: recalculateThumbhashSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    const image = await recalculateImageThumbhash(BigInt(payload.id), {
-      userId: ctx.session.get('user')!.id,
-      role: ctx.session.get('user')!.role!,
-    })
+  async run({ payload, viewer }) {
+    const image = await recalculateImageThumbhash(BigInt(payload.id), viewer)
     // Thumbhash + `updatedAt` changed: invalidate the catalog so the
     // next render emits a refreshed `?v=` cache buster + the new
     // base64 thumbhash on every page that references this image as

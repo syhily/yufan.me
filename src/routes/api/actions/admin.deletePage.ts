@@ -9,7 +9,7 @@ import { ActionFailure, defineApiAction } from '@/server/route-helpers/api-handl
 export const action = defineApiAction({
   method: 'DELETE',
   input: deletePageSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const result = await deletePage(BigInt(payload.id))
     if (!result.deleted) {

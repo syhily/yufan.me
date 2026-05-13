@@ -1,4 +1,3 @@
-import { userSession } from '@/server/auth/primitives'
 import { upsertPostMetaSchema } from '@/server/cms/posts/schema'
 import { createPost, updatePostMeta } from '@/server/cms/posts/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -7,9 +6,7 @@ export const action = defineApiAction({
   method: 'POST',
   input: upsertPostMetaSchema,
   requireRole: 'author',
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const sessionUserId = user?.id ? BigInt(user.id) : null
+  async run({ payload, viewer }) {
     const meta = {
       slug: payload.slug,
       title: payload.title,
@@ -28,10 +25,11 @@ export const action = defineApiAction({
         payload.pinnedAt === undefined || payload.pinnedAt === null ? payload.pinnedAt : new Date(payload.pinnedAt),
       publishedAt: payload.publishedAt === undefined ? undefined : new Date(payload.publishedAt),
     }
+    const sessionUserId = BigInt(viewer.userId)
     const post =
       payload.id === undefined
-        ? await createPost(meta, sessionUserId, { userId: user!.id, role: user!.role! })
-        : await updatePostMeta({ id: BigInt(payload.id), ...meta }, { userId: user!.id, role: user!.role! })
+        ? await createPost(meta, sessionUserId, viewer)
+        : await updatePostMeta({ id: BigInt(payload.id), ...meta }, viewer)
     return { post }
   },
 })

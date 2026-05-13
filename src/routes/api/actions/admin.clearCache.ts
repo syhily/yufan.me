@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: clearCacheSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     return await clearAdminCache(payload.target)
   },

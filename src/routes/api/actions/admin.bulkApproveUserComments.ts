@@ -5,7 +5,7 @@ import { bulkApproveCommentsForUser } from '@/server/users/service'
 export const action = defineApiAction({
   method: 'POST',
   input: userIdSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     return bulkApproveCommentsForUser(BigInt(payload.userId))
   },

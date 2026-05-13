@@ -141,7 +141,6 @@ export const user = pgTable(
     badgeTextColor: text('badge_text_color'),
     lastIp: text('last_ip'),
     lastUa: text('last_ua'),
-    isAdmin: boolean('is_admin').default(false),
     role: varchar('role', { length: 16 }).$type<'admin' | 'author' | 'visitor'>(),
     isMuted: boolean('is_muted').default(false).notNull(),
     receiveEmail: boolean('receive_email').default(true),
@@ -150,21 +149,26 @@ export const user = pgTable(
     index('idx_users_email').on(table.email),
     index('idx_users_name').on(table.name),
     index('idx_users_deleted_at').on(table.deletedAt),
+    index('idx_user_role').on(table.role),
   ],
 )
 
-export const verification = pgTable('verification', {
-  id: text('id').primaryKey(),
-  identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at')
-    .notNull()
-    .$defaultFn(() => new Date()),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .$defaultFn(() => new Date()),
-})
+export const verification = pgTable(
+  'verification',
+  {
+    id: text('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    value: text('value').notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at')
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index('idx_verification_value').on(table.value)],
+)
 
 // Friend links for the public grid (`<Friends />` in posts, `show_friends` on
 // pages). CRUD at `/wp-admin/friends`.

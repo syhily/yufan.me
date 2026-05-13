@@ -4,7 +4,7 @@ import { appendCommentToken, issueCommentToken } from '@/server/comments/token'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail } from '@/server/rate-limit'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
 import { ActionFailure, DomainError } from '@/server/route-helpers/errors'
-import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/session'
+import { clearCsrfCookie, issueCsrfToken, userSession, validateRequestCsrf } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/comment-token'
 
@@ -16,7 +16,7 @@ export const action = defineApiAction({
   method: 'POST',
   input: commentReplySchema,
   inputSource: 'json',
-  run: async ({ ctx, payload, isAdmin }) => {
+  run: async ({ ctx, payload }) => {
     const [csrfOk] = await validateRequestCsrf(ctx.request, payload.csrf)
     if (!csrfOk) {
       throw new ActionFailure(403, '页面安全令牌已失效，请刷新后重试。', undefined, {
@@ -24,7 +24,9 @@ export const action = defineApiAction({
       })
     }
 
-    if (!isAdmin()) {
+    const isAdmin = userSession(ctx.session)?.role === 'admin'
+
+    if (!isAdmin) {
       const byIp = await tryCommentPostRateLimit(ctx.clientAddress)
       if (byIp.exceeded) {
         throw new DomainError('RATE_LIMITED')
@@ -46,7 +48,7 @@ export const action = defineApiAction({
     headers.append('Set-Cookie', rotated.setCookie)
 
     // Issue a time-limited edit token for anonymous commenters.
-    if (!isAdmin()) {
+    if (!isAdmin) {
       const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
       const token = await issueCommentToken(comment.id, comment.userId, payload.page_key, ttl)
       const existing = parseCommentTokensCookie(ctx.request.headers.get('Cookie'))

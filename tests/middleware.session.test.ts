@@ -54,8 +54,8 @@ describe('middleware: sessionMiddleware perimeter', () => {
 
     expect(redisGetMock.mock.calls.length).toBe(redisCallsAfterMiddleware)
 
-    // All loaders see the same identity-stable session/admin/url shape.
-    expect(a.admin).toBe(false)
+    // All loaders see the same identity-stable session/role/url shape.
+    expect(a.role).toBe(null)
     expect(a.session).toBe(b.session)
     expect(a.session).toBe(c.session)
     expect(a.url.pathname).toBe('/posts/hello')

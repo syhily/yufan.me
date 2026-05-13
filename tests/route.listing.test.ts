@@ -19,12 +19,11 @@ vi.mock('@/server/session', async () => {
   return {
     ...actual,
     getRequestSession: vi.fn(async () => session),
-    isAdmin: vi.fn(() => false),
     userSession: vi.fn((s) => s?.data?.user),
     resolveSessionContext: vi.fn(async () => ({
       session,
       user: session?.data?.user,
-      admin: Boolean(session?.data?.user?.admin),
+      role: session?.data?.user?.role ?? null,
     })),
   }
 })
@@ -72,7 +71,7 @@ vi.mock('@/server/posts/query', () => ({
 }))
 
 vi.mock('@/server/sidebar/load', () => ({
-  loadSidebarData: vi.fn(async () => ({ admin: false, recentComments: [], pendingComments: [] })),
+  loadSidebarData: vi.fn(async () => ({ recentComments: [], pendingComments: [] })),
 }))
 
 vi.mock('@/server/search', () => ({

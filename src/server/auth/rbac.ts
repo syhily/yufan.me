@@ -1,4 +1,4 @@
-import type { BlogSession } from '@/server/auth/session-storage'
+import type { SessionUser } from '@/server/auth/session-storage'
 
 import { ActionFailure, ErrorMessages } from '@/server/route-helpers/errors'
 
@@ -7,67 +7,71 @@ export type Role = keyof typeof ROLE_LEVELS
 export type RoleOrNull = Role | null
 
 export function hasAtLeast(role: RoleOrNull | undefined, min: Role): boolean {
-  if (!role) return false
+  if (!role) {
+    return false
+  }
   return ROLE_LEVELS[role] >= ROLE_LEVELS[min]
 }
 
-export interface AuthedSessionContext {
-  session: BlogSession
-  user: NonNullable<ReturnType<typeof import('@/server/auth/primitives').userSession>>
+/**
+ * Per-request viewer identity. Build sites that authenticate every
+ * request put one of these in their RBAC checks instead of passing
+ * `(userId, role)` pairs all over the place. Created by
+ * `defineApiAction` once the `requireRole` gate has passed, so handlers
+ * receive a non-nullable `viewer`.
+ */
+export interface ViewerContext {
+  userId: string
   role: Role
 }
 
-export interface AdminSessionContext extends AuthedSessionContext {
-  role: 'admin'
-}
-
+/**
+ * Single role guard used by route loaders/actions and by
+ * `defineApiAction`. Throws `ActionFailure(403)` if the caller is not
+ * at least `min`. Asserts user/role into the type system on success.
+ */
 export function requireRole(
-  ctx: {
-    user?: { id: string; name: string; email: string; website: string | null; role?: Role | null }
-    role?: RoleOrNull
-  },
+  ctx: { user?: SessionUser; role?: RoleOrNull },
   min: Role,
-): asserts ctx is { user: NonNullable<typeof ctx.user>; role: Role } {
+): asserts ctx is { user: SessionUser; role: Role } {
   if (!hasAtLeast(ctx.role, min)) {
     throw new ActionFailure(403, ErrorMessages.FORBIDDEN)
   }
 }
 
-export function requireAdmin(ctx: {
-  user?: { id: string; name: string; email: string; website: string | null; role?: Role | null }
-  role?: RoleOrNull
-}): asserts ctx is { user: NonNullable<typeof ctx.user>; role: 'admin' } {
-  requireRole(ctx, 'admin')
+// ---------------------------------------------------------------------------
+// Permission predicates
+//
+// Used by route handlers that need to authorise an action against a
+// specific row (post, image, music, comment). `viewer` is the
+// per-request identity, the second argument is the row being operated
+// on. All predicates short-circuit on admin (`admin` may always edit).
+// ---------------------------------------------------------------------------
+
+export function canEditPost(viewer: ViewerContext, post: { authorId: bigint | null }): boolean {
+  if (viewer.role === 'admin') {
+    return true
+  }
+  return post.authorId !== null && post.authorId.toString() === viewer.userId
 }
 
-export function requireAuthor(ctx: {
-  user?: { id: string; name: string; email: string; website: string | null; role?: Role | null }
-  role?: RoleOrNull
-}): asserts ctx is { user: NonNullable<typeof ctx.user>; role: Role } {
-  requireRole(ctx, 'author')
+export function canEditImage(viewer: ViewerContext, img: { uploaderId: bigint | null }): boolean {
+  if (viewer.role === 'admin') {
+    return true
+  }
+  return img.uploaderId !== null && img.uploaderId.toString() === viewer.userId
 }
 
-export function canEditPost(ctx: AuthedSessionContext, post: { authorId: bigint | null }): boolean {
-  if (ctx.role === 'admin') return true
-  return post.authorId !== null && post.authorId.toString() === ctx.user.id
+export function canEditMusic(viewer: ViewerContext, m: { uploaderId: bigint | null }): boolean {
+  if (viewer.role === 'admin') {
+    return true
+  }
+  return m.uploaderId !== null && m.uploaderId.toString() === viewer.userId
 }
 
-export function canEditImage(ctx: AuthedSessionContext, img: { uploaderId: bigint | null }): boolean {
-  if (ctx.role === 'admin') return true
-  return img.uploaderId !== null && img.uploaderId.toString() === ctx.user.id
-}
-
-export function canEditMusic(ctx: AuthedSessionContext, m: { uploaderId: bigint | null }): boolean {
-  if (ctx.role === 'admin') return true
-  return m.uploaderId !== null && m.uploaderId.toString() === ctx.user.id
-}
-
-export function canDeleteTag(ctx: AuthedSessionContext, _tag: unknown, postCount: number): boolean {
-  if (ctx.role === 'admin') return true
-  return postCount === 0
-}
-
-export function canManageComment(ctx: AuthedSessionContext, c: { userId: bigint }): boolean {
-  if (ctx.role === 'admin') return true
-  return c.userId.toString() === ctx.user.id
+export function canManageComment(viewer: ViewerContext, c: { userId: bigint }): boolean {
+  if (viewer.role === 'admin') {
+    return true
+  }
+  return c.userId.toString() === viewer.userId
 }

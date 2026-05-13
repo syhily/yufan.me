@@ -82,7 +82,8 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export function loader({ request, context }: Route.LoaderArgs) {
-  const { admin } = getRouteRequestContext({ request, context })
+  const { role } = getRouteRequestContext({ request, context })
+  const admin = role === 'admin'
 
   // Read the theme cookie so the SSR <html> tag carries the correct
   // class before the client bundle loads — no inline scripts needed.

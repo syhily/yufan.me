@@ -101,7 +101,7 @@ const stubUser = {
   name: 'Admin',
   email: 'admin@yufan.me',
   link: null,
-  isAdmin: true,
+  role: 'admin',
 } as never
 
 describe('services/auth/flow — signInWithSession', () => {
@@ -112,7 +112,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const result = await signInWithSession({
       email: 'admin@yufan.me',
       password: 'correct horse',
-      token,
+      csrf: token,
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
@@ -143,7 +143,7 @@ describe('services/auth/flow — signInWithSession', () => {
     await signInWithSession({
       email: 'admin@yufan.me',
       password: 'correct horse',
-      token,
+      csrf: token,
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
@@ -161,7 +161,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const result = await signInWithSession({
       email: 'admin@yufan.me',
       password: 'correct horse',
-      token,
+      csrf: token,
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
@@ -182,7 +182,7 @@ describe('services/auth/flow — signInWithSession', () => {
     const result = await signInWithSession({
       email: 'admin@yufan.me',
       password: 'wrong',
-      token,
+      csrf: token,
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
@@ -207,15 +207,16 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 
   it('creates the admin row and redirects to stage 2', async () => {
     vi.mocked(userQuery.insertAdmin).mockResolvedValue([
-      { id: 7n, name: 'Admin', email: 'admin@yufan.me', link: '' } as never,
+      { id: 7n, name: 'Admin', email: 'admin@yufan.me', link: '', role: 'admin' } as never,
     ])
     const { request, token } = await buildSignedRequest('')
 
     const result = await signUpInitialAdminWithSession({
       ...baseSeed,
-      token,
+      csrf: token,
       session: emptySession(),
       request,
+      clientAddress: '127.0.0.1',
     })
 
     expect(result.ok).toBe(true)
@@ -233,9 +234,10 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 
     const result = await signUpInitialAdminWithSession({
       ...baseSeed,
-      token,
+      csrf: token,
       session: emptySession(),
       request,
+      clientAddress: '127.0.0.1',
     })
 
     expect(result.ok).toBe(false)
@@ -248,9 +250,10 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
   it('returns 403 and never touches the DB when the CSRF token is missing', async () => {
     const result = await signUpInitialAdminWithSession({
       ...baseSeed,
-      token: '',
+      csrf: '',
       session: emptySession(),
       request: new Request('http://localhost/wp-admin/install.php', { method: 'POST' }),
+      clientAddress: '127.0.0.1',
     })
 
     expect(result.ok).toBe(false)
@@ -279,7 +282,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
 
     const result = await seedInstallSettingsWithSession({
       ...baseSeed,
-      token,
+      csrf: token,
       admin: adminCtx,
       session: emptySession(),
       request,
@@ -418,7 +421,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
   it('returns 403 and never touches the DB when the CSRF token is missing', async () => {
     const result = await seedInstallSettingsWithSession({
       ...baseSeed,
-      token: '',
+      csrf: '',
       admin: adminCtx,
       session: emptySession(),
       request: new Request('http://localhost/wp-admin/install/settings.php', { method: 'POST' }),

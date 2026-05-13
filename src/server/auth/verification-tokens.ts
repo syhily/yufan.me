@@ -51,40 +51,64 @@ async function issueToken(userId: number, purpose: string, ttlMs: number): Promi
   return { token: raw, expiresAt }
 }
 
-export async function consumeToken(rawToken: string, purpose: string): Promise<{ userId: number } | null> {
-  // Defensive: reject malformed tokens before touching the DB.
+function validatedTokenRow(row: { identifier: string; expiresAt: Date } | undefined, purpose: string) {
+  if (!row) {
+    return null
+  }
+  if (row.expiresAt.getTime() < Date.now()) {
+    return null
+  }
+  const [rowPurpose, userIdStr] = row.identifier.split(':')
+  if (rowPurpose !== purpose) {
+    return null
+  }
+  const userId = Number.parseInt(userIdStr, 10)
+  if (!Number.isFinite(userId)) {
+    return null
+  }
+  return { userId }
+}
+
+/**
+ * Read-only check that the token exists, has the expected purpose, and
+ * is unexpired. Does NOT delete the row — callers in the loader use
+ * this to short-circuit a form before the user submits a password.
+ * The destructive {@link consumeToken} is reserved for the action.
+ */
+export async function peekToken(rawToken: string, purpose: string): Promise<{ userId: number } | null> {
   if (!/^[A-Za-z0-9_-]{32,80}$/.test(rawToken)) {
     return null
   }
-
   const value = sha256(rawToken)
+  try {
+    const rows = await db
+      .select({ identifier: verification.identifier, expiresAt: verification.expiresAt })
+      .from(verification)
+      .where(eq(verification.value, value))
+      .limit(1)
+    return validatedTokenRow(rows[0], purpose)
+  } catch (error) {
+    log.error('peekToken failed', { error })
+    return null
+  }
+}
 
+/**
+ * Delete the row matching `rawToken` and return `{ userId }` if the row
+ * exists, has the expected purpose, and is unexpired. Single-shot — a
+ * subsequent call with the same token returns `null`.
+ */
+export async function consumeToken(rawToken: string, purpose: string): Promise<{ userId: number } | null> {
+  if (!/^[A-Za-z0-9_-]{32,80}$/.test(rawToken)) {
+    return null
+  }
+  const value = sha256(rawToken)
   try {
     const rows = await db
       .delete(verification)
       .where(eq(verification.value, value))
       .returning({ identifier: verification.identifier, expiresAt: verification.expiresAt })
-
-    const row = rows[0]
-    if (!row) {
-      return null
-    }
-
-    if (row.expiresAt.getTime() < Date.now()) {
-      return null
-    }
-
-    const [rowPurpose, userIdStr] = row.identifier.split(':')
-    if (rowPurpose !== purpose) {
-      return null
-    }
-
-    const userId = Number.parseInt(userIdStr, 10)
-    if (!Number.isFinite(userId)) {
-      return null
-    }
-
-    return { userId }
+    return validatedTokenRow(rows[0], purpose)
   } catch (error) {
     log.error('consumeToken failed', { error })
     return null

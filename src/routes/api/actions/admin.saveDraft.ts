@@ -1,4 +1,3 @@
-import { userSession } from '@/server/auth/primitives'
 import { savePageBodySchema } from '@/server/cms/pages/schema'
 import { saveDraft } from '@/server/cms/pages/service'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -16,17 +15,15 @@ const MAX_BODY_BYTES = 1 * 1024 * 1024
 export const action = defineApiAction({
   method: 'POST',
   input: savePageBodySchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   maxBodyBytes: MAX_BODY_BYTES,
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
-    const authorId = user?.id ? BigInt(user.id) : null
+  async run({ payload, viewer }) {
     return saveDraft({
       pageId: BigInt(payload.id),
       body: payload.body,
       expectedClientRevisionToken: payload.expectedClientRevisionToken ?? undefined,
       force: payload.force,
-      authorId,
+      authorId: BigInt(viewer.userId),
     })
   },
 })

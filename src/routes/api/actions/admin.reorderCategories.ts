@@ -5,7 +5,7 @@ import { defineApiAction } from '@/server/route-helpers/api-handler'
 export const action = defineApiAction({
   method: 'POST',
   input: reorderCategoriesSchema,
-  requireAdmin: true,
+  requireRole: 'admin',
   async run({ payload }) {
     const categories = await reorderAdminCategories(payload.orderedIds)
     // Invalidate the in-process catalog so the next public render

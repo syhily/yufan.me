@@ -1,4 +1,4 @@
-import { userSession } from '@/server/auth/primitives'
+import { canManageComment } from '@/server/auth/rbac'
 import { updateComment } from '@/server/comments/admin'
 import { countApprovedRepliesOfComment, findCommentWithUserById } from '@/server/db/query/comment'
 import { defineApiAction } from '@/server/route-helpers/api-handler'
@@ -9,15 +9,14 @@ export const action = defineApiAction({
   method: 'POST',
   input: commentBodySchema,
   requireRole: 'visitor',
-  async run({ ctx, payload }) {
-    const user = userSession(ctx.session)
+  async run({ ctx, payload, viewer }) {
     // commentId is passed as a query param since POST body is the PT body
     const commentId = BigInt(ctx.url.searchParams.get('commentId') ?? '0')
     if (commentId === 0n) {
       throw new ActionFailure(400, '缺少 commentId')
     }
     const c = await findCommentWithUserById(commentId)
-    if (!c || c.userId.toString() !== user!.id) {
+    if (!c || !canManageComment(viewer, c)) {
       throw new ActionFailure(404, '资源不存在。')
     }
     if (c.deleteRequestedAt !== null) {
