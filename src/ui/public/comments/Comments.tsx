@@ -12,7 +12,6 @@ import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
 
 import { useApiFetcher } from '@/client/api/fetcher'
-import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
@@ -232,11 +231,6 @@ function CommentsRoot({
     setCsrfToken(initialCsrfToken)
   }, [initialCsrfToken])
 
-  // Suppress iOS Safari's auto-zoom while any comment input/textarea is
-  // focused, then restore the original viewport meta on blur.
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  useIosNoZoomOnFocus(containerRef)
-
   // Scroll the reply form into view after a Reply click. The Tiptap
   // editor inside the form auto-focuses on mount; we just need to
   // surface its container so the operator sees the staged reply box.
@@ -349,7 +343,7 @@ function CommentsRoot({
 
   return (
     <CommentsContext.Provider value={value}>
-      <div id="comments" className="pt-12" ref={containerRef}>
+      <div id="comments" className="pt-12">
         {children}
       </div>
     </CommentsContext.Provider>

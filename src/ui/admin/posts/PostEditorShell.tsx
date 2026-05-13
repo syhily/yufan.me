@@ -52,7 +52,7 @@ import {
   type SidebarRevisionSummary,
   type SidebarSaveStatus,
 } from '@/ui/admin/posts/PostMetaSidebar'
-import { useAdminChromeFocus } from '@/ui/admin/shell/AdminShell'
+import { useAdminChromeFocus, useAdminScrollTopLift } from '@/ui/admin/shell/AdminShell'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
@@ -141,21 +141,52 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   // it survives metadata edits but resets on route navigation.
   const [previewOpen, setPreviewOpenState] = useState(false)
   useAdminChromeFocus(previewOpen)
+  // Lift the shared ScrollTop FAB throughout the editor session so it
+  // clears the bottom-right publish FAB (`FloatingPublishButton`)
+  // whenever the operator scrolls past the inline toolbar. Tied to
+  // mount, not to `showFloatingToolbar`, because both FABs surface and
+  // hide together as the operator scrolls — keeping the lift always-on
+  // costs nothing visually (ScrollTop is opacity-0 until shown) and
+  // avoids a render-time race where one FAB animates in before the
+  // other has moved.
+  useAdminScrollTopLift(true)
 
   const editorScrollRef = useRef<HTMLDivElement>(null)
   const previewScrollRef = useRef<HTMLDivElement>(null)
   useSyncScroll({ editorRef: editorScrollRef, previewRef: previewScrollRef, enabled: previewOpen })
 
-  // Metadata visibility: docked inline by default, collapses into a
-  // right-side `Sheet` when the operator clicks the toolbar toggle
-  // OR whenever live preview is on (three columns at once is too
-  // cramped on a 13" laptop). Toggling preview on/off automatically
-  // sets a sane default for `metaOpen`, but the user can override
-  // it any time via the toolbar button. When `metaOpen` flips back
-  // to `true` the panel re-docks inline if the layout has room
-  // (`lg:` breakpoint) and falls back to the Sheet otherwise — see
-  // the layout block below.
-  const [metaOpen, setMetaOpen] = useState(true)
+  // `isLg` + `metaOpen` are deliberately driven from a single inline
+  // `matchMedia` listener instead of the shared `useMediaQuery`
+  // hook. The reason: when the viewport crosses OUT of `lg` (e.g.
+  // the operator drags the browser narrow) we MUST collapse the
+  // meta panel in the same render that flips `isLg` to `false`,
+  // otherwise the Sheet (about to take over from the inline aside)
+  // renders one frame with `open=true`, attaches its scrim backdrop,
+  // and then closes on the next effect tick — leaving a stuck
+  // transparent overlay that swallows every click on the editor.
+  // Calling `setIsLg(false)` and `setMetaOpen(false)` from the same
+  // matchMedia change handler lets React 18 auto-batch the updates
+  // into one commit, so the Sheet only ever renders with the
+  // already-closed state.
+  const [isLg, setIsLg] = useState(() => {
+    if (typeof window === 'undefined') {
+      return true
+    }
+    return window.matchMedia('(min-width: 1024px)').matches
+  })
+  const [metaOpen, setMetaOpen] = useState(isLg)
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)')
+    setIsLg(mql.matches)
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsLg(event.matches)
+      if (!event.matches) {
+        setMetaOpen(false)
+      }
+    }
+    mql.addEventListener('change', handleChange)
+    return () => mql.removeEventListener('change', handleChange)
+  }, [])
   // We sync `metaOpen` ↔ `previewOpen` synchronously inside the
   // toggle setter rather than via `useEffect`. An effect-driven sync
   // would render once with `previewOpen=true` while `metaOpen` is
@@ -912,131 +943,137 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
 
   return (
     <div className={cn('flex flex-col gap-4 p-4', previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]')}>
-      {/* Single wrapping toolbar. 返回列表 leads, every other control
-          flows after it on the same row, and the whole strip wraps
-          flush-left on narrower viewports. The post identity (title +
-          revision badge) docks inside PostMetaSidebar's 基本信息 card so the
-          toolbar stays focused on actions.
-
-          Every button collapses to icon-only on `<sm` via
-          `sr-only sm:not-sr-only` wrappers around the text labels —
-          screen readers still read the label out, only the sighted
-          mobile layout drops it. Loading transitions (创建中… / 保存中… /
-          发布中… / 取消中…) keep showing the spinner inside the same
-          icon slot, so the operator still gets visual progress
-          feedback on phones. */}
+      {/* Toolbar splits into two intent groups that share a single row
+       *  when there is room:
+       *    LEFT  — navigation away (`返回列表`, `公开预览`)
+       *    RIGHT — work on the current document (`实时预览`, action
+       *            buttons, `元数据`)
+       *  Labels collapse to icons in two tiers as the viewport
+       *  narrows: LEFT first (`<lg`), RIGHT second (`<sm`). That way
+       *  the destructive / publish controls keep their text labels for
+       *  longer than the navigation chrome — operators are less likely
+       *  to mis-tap an unfamiliar icon on a destructive action.
+       *  `flex-wrap` keeps the meta button reachable when the editing
+       *  state surfaces five RIGHT buttons (实时预览 / 保存 / 发布 /
+       *  取消发布 / 元数据): on iPhone-class widths even the all-icon
+       *  collapse exceeds the viewport, so the right group wraps to a
+       *  second row instead of being pushed off-screen. */}
       <header className="flex flex-wrap items-center gap-2 text-sm">
-        <Button
-          variant="ghost"
-          size="sm"
-          render={
-            <Link to="/wp-admin/posts">
-              <ArrowLeftIcon />
-              <span className="sr-only sm:not-sr-only">返回列表</span>
-            </Link>
-          }
-        />
-        {isEditing ? (
+        <div className="flex min-w-0 items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             render={
-              <Link to={`/${detail.post.slug}`} target="_blank" rel="noreferrer">
-                <ExternalLinkIcon />
-                <span className="sr-only sm:not-sr-only">公开预览</span>
+              <Link to="/wp-admin/posts">
+                <ArrowLeftIcon />
+                <span className="sr-only lg:not-sr-only">返回列表</span>
               </Link>
             }
           />
-        ) : null}
-        <Button
-          variant={previewOpen ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setPreviewOpen((open) => !open)}
-          title={previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
-          aria-pressed={previewOpen}
-          className={cn(previewOpen && 'border border-transparent')}
-        >
-          {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
-          <span className="sr-only sm:not-sr-only">实时预览</span>
-        </Button>
-        {mode === 'create' ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              void persistCreate()
-            }}
-            disabled={isPending || !canPersistMeta}
-            title="保存文章信息并上传当前正文"
-          >
-            {isCreatingPost ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-            <span className="sr-only sm:not-sr-only">{isCreatingPost ? '创建中…' : '创建文章'}</span>
-          </Button>
-        ) : (
-          <>
-            {/* Two-step authoring affordance: 保存草稿 always pushes
-             *  meta + body-as-draft, 发布草稿 promotes the latest
-             *  draft to published. Splitting them means the operator
-             *  can iterate on a live post (each save becomes a new
-             *  draft revision) without touching what visitors see,
-             *  and only commits when they explicitly publish. */}
+          {isEditing ? (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={persistSave}
-              disabled={isPending || !canPersistMeta}
-              title="保存文章信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)"
-            >
-              {isSavingDraft ? <Loader2Icon className="animate-spin" /> : <SaveIcon />}
-              <span className="sr-only sm:not-sr-only">{isSavingDraft ? '保存中…' : '保存草稿'}</span>
-            </Button>
-            <Button
-              size="sm"
-              onClick={persistPublish}
-              disabled={isPending || !canPublish}
-              title={
-                canPublish
-                  ? sidebarPublishStatus === 'scheduled'
-                    ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
-                    : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
-                  : '当前没有待发布的草稿'
+              render={
+                <Link to={`/${detail.post.slug}`} target="_blank" rel="noreferrer">
+                  <ExternalLinkIcon />
+                  <span className="sr-only lg:not-sr-only">公开预览</span>
+                </Link>
               }
+            />
+          ) : null}
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          <Button
+            variant={previewOpen ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setPreviewOpen((open) => !open)}
+            title={previewOpen ? '关闭实时预览，恢复菜单' : '开启实时预览，并折叠左侧菜单'}
+            aria-pressed={previewOpen}
+            className={cn(previewOpen && 'border border-transparent')}
+          >
+            {previewOpen ? <PanelRightCloseIcon /> : <PanelRightOpenIcon />}
+            <span className="sr-only sm:not-sr-only">实时预览</span>
+          </Button>
+          {mode === 'create' ? (
+            <Button
+              size="sm"
+              onClick={() => {
+                void persistCreate()
+              }}
+              disabled={isPending || !canPersistMeta}
+              title="保存文章信息并上传当前正文"
             >
-              {isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
-              <span className="sr-only sm:not-sr-only">
-                {isPublishing ? '发布中…' : sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
-              </span>
+              {isCreatingPost ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
+              <span className="sr-only sm:not-sr-only">{isCreatingPost ? '创建中…' : '创建文章'}</span>
             </Button>
-            {/* Visibility toggle. Only surfaces when the post is
-             *  currently live (`meta.published === true`). An offline
-             *  or never-published post reaches public visibility
-             *  exclusively through 发布草稿 — there's no separate
-             *  「重新上线」 affordance. */}
-            {meta.published ? (
+          ) : (
+            <>
+              {/* Two-step authoring affordance: 保存草稿 always pushes
+               *  meta + body-as-draft, 发布草稿 promotes the latest
+               *  draft to published. Splitting them means the operator
+               *  can iterate on a live post (each save becomes a new
+               *  draft revision) without touching what visitors see,
+               *  and only commits when they explicitly publish. */}
               <Button
-                variant="destructive-soft"
+                variant="outline"
                 size="sm"
-                onClick={persistUnpublish}
-                disabled={isPending}
-                title="将文章下线，公开访问会返回 404；正文不会丢失，再次发布草稿即可恢复"
+                onClick={persistSave}
+                disabled={isPending || !canPersistMeta}
+                title="保存文章信息（立即生效），并在正文与最新版本不一致时另存为新草稿 (Cmd/Ctrl+S)"
               >
-                {isUnpublishing ? <Loader2Icon className="animate-spin" /> : <EyeOffIcon />}
-                <span className="sr-only sm:not-sr-only">{isUnpublishing ? '取消中…' : '取消发布'}</span>
+                {isSavingDraft ? <Loader2Icon className="animate-spin" /> : <SaveIcon />}
+                <span className="sr-only sm:not-sr-only">{isSavingDraft ? '保存中…' : '保存草稿'}</span>
               </Button>
-            ) : null}
-          </>
-        )}
-        <Button
-          variant={metaOpen ? 'secondary' : 'outline'}
-          size="sm"
-          onClick={() => setMetaOpen((open) => !open)}
-          title={metaOpen ? '隐藏文章信息面板' : '展开文章信息面板'}
-          aria-pressed={metaOpen}
-          aria-label="切换文章信息面板"
-          className={cn(metaOpen && 'border border-transparent')}
-        >
-          <SlidersHorizontalIcon />
-          <span className="sr-only sm:not-sr-only">元数据</span>
-        </Button>
+              <Button
+                size="sm"
+                onClick={persistPublish}
+                disabled={isPending || !canPublish}
+                title={
+                  canPublish
+                    ? sidebarPublishStatus === 'scheduled'
+                      ? '将最新草稿按计划时间上线 (Cmd/Ctrl+Shift+P)'
+                      : '将最新草稿发布到线上 (Cmd/Ctrl+Shift+P)'
+                    : '当前没有待发布的草稿'
+                }
+              >
+                {isPublishing ? <Loader2Icon className="animate-spin" /> : <UploadIcon />}
+                <span className="sr-only sm:not-sr-only">
+                  {isPublishing ? '发布中…' : sidebarPublishStatus === 'scheduled' ? '计划发布' : '发布草稿'}
+                </span>
+              </Button>
+              {/* Visibility toggle. Only surfaces when the post is
+               *  currently live (`meta.published === true`). An offline
+               *  or never-published post reaches public visibility
+               *  exclusively through 发布草稿 — there's no separate
+               *  「重新上线」 affordance. */}
+              {meta.published ? (
+                <Button
+                  variant="destructive-soft"
+                  size="sm"
+                  onClick={persistUnpublish}
+                  disabled={isPending}
+                  title="将文章下线，公开访问会返回 404；正文不会丢失，再次发布草稿即可恢复"
+                >
+                  {isUnpublishing ? <Loader2Icon className="animate-spin" /> : <EyeOffIcon />}
+                  <span className="sr-only sm:not-sr-only">{isUnpublishing ? '取消中…' : '取消发布'}</span>
+                </Button>
+              ) : null}
+            </>
+          )}
+          <Button
+            variant={metaOpen ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => setMetaOpen((open) => !open)}
+            title={metaOpen ? '隐藏文章信息面板' : '展开文章信息面板'}
+            aria-pressed={metaOpen}
+            aria-label="切换文章信息面板"
+            className={cn(metaOpen && 'border border-transparent')}
+          >
+            <SlidersHorizontalIcon />
+            <span className="sr-only sm:not-sr-only">元数据</span>
+          </Button>
+        </div>
       </header>
 
       {isEditing && previewBanner !== null ? (
@@ -1118,11 +1155,16 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           </section>
         ) : null}
         {/* Inline metadata rail. Only renders in the 2-column
-         *  `[editor | meta]` layout — preview mode hands the panel
-         *  off to the Sheet below so the editor + preview keep
-         *  full width. */}
+         *  `[editor | meta]` layout at `lg+` viewports — preview mode
+         *  hands the panel off to the Sheet below so the editor +
+         *  preview keep full width, and small tablets / phones do the
+         *  same so the editor never gets squeezed below the third
+         *  column. The `hidden lg:flex` belt-and-braces guarantees
+         *  the aside never paints below the editor on narrow
+         *  viewports, even before the post-hydration `isLg` effect
+         *  has corrected `metaOpen`. */}
         {!previewOpen && metaOpen ? (
-          <aside className="flex min-h-0 flex-col overflow-y-auto pr-1">
+          <aside className="hidden min-h-0 flex-col overflow-y-auto pr-1 lg:flex">
             <PostMetaSidebar
               draft={meta}
               onChange={setMeta}
@@ -1152,10 +1194,12 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       {/* Floating metadata sheet — the panel is identical to the
        *  inline `<aside>` above (same `PostMetaSidebar` props) so the
        *  operator's mental model doesn't shift when previewing. We
-       *  render the Sheet markup whenever `previewOpen` is true so
-       *  the open/close transition can animate; visibility is
-       *  controlled by `metaOpen`. */}
-      {previewOpen ? (
+       *  render the Sheet markup whenever the layout would otherwise
+       *  have nowhere to put the inline aside: live preview (which
+       *  takes the third column) OR a `<lg` viewport (where there
+       *  simply is no third column). Open/close transition still
+       *  animates via `metaOpen`. */}
+      {previewOpen || !isLg ? (
         <Sheet open={metaOpen} onOpenChange={setMetaOpen}>
           <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
             <SheetHeader className="border-b">

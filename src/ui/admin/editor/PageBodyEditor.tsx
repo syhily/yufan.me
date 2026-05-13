@@ -477,20 +477,37 @@ export function PageBodyEditor({
             <div className="min-h-0 grow px-6 pt-6 pb-[60vh]">{editorCanvas}</div>
           </div>
           {showFloatingToolbar ? (
-            // Outer container is a fixed-position flex row centered on
-            // the viewport. The toolbar pill takes its natural width
-            // (driven by the active density preset); any `floatingActions`
-            // slot — typically the shell's 发布草稿 button — flows
-            // immediately to the right of it via `gap-2`, so when the
-            // operator toggles density (compact ⇄ full) the publish
-            // button rides along with the toolbar's right edge instead
-            // of floating in a fixed corner that an unrelated overlay
-            // (e.g. scroll-to-top) might cover.
-            <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex items-center justify-center gap-2 px-3 sm:bottom-8">
+            // Centered toolbar pill, anchored at the same `bottom-*`
+            // offset as the publish FAB column. `right-{n}` reserves
+            // room for that column so the pill never crashes into it
+            // on narrow phones — the toolbar shrinks (via the inner
+            // `overflow-x-auto`) instead of stretching past the FABs.
+            // The publish FAB now lives in its own fixed slot below
+            // (see the sibling block) so the pill width can change
+            // freely with density without dragging the publish button
+            // sideways — addresses the "publish icon drifts when the
+            // toolbar expands" complaint.
+            <div className="pointer-events-none fixed right-20 bottom-6 left-0 z-40 flex items-center justify-center px-3 sm:right-24 sm:bottom-8 lg:right-28">
               <div className="pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-card/95 p-1 shadow-lg ring-1 ring-border/60 backdrop-blur-sm supports-[backdrop-filter]:bg-card/90">
                 <Toolbar {...toolbarProps} className="border-b-0" />
               </div>
-              {floatingActions ? <div className="pointer-events-auto shrink-0">{floatingActions}</div> : null}
+            </div>
+          ) : null}
+          {showFloatingToolbar && floatingActions ? (
+            // Publish FAB column anchored bottom-right, independent of
+            // the centered toolbar pill. Sitting at the same `bottom-*`
+            // tier as the toolbar means the two stay visually paired
+            // on a single row, but the FAB never moves horizontally as
+            // toolbar density changes. `AdminScrollTopButton` lifts
+            // itself one row higher in focused mode so the scroll-to-
+            // top FAB sits directly above this slot rather than
+            // crashing into the centered toolbar pill. Tied to the
+            // same `showFloatingToolbar` gate as the toolbar pill so
+            // the FAB only surfaces once the inline header toolbar
+            // (which carries its own 发布草稿 button) has scrolled out
+            // of view.
+            <div className="pointer-events-auto fixed right-4 bottom-6 z-40 sm:bottom-8 lg:right-6">
+              {floatingActions}
             </div>
           ) : null}
         </>

@@ -87,9 +87,44 @@ export function QRDialog({ url, name, title, trigger, variant, size, shape, clas
           <div className="text-center">
             <div className="text-xl leading-tight font-semibold">{title}</div>
             <p className="mt-1 mb-2 text-base">{name}</p>
-            <div className="mx-auto flex size-qr-dialog items-center justify-center p-2">
+            {/*
+             * QR rendering follows two rules that keep the card
+             * scannable AND visually integrated with both themes:
+             *
+             *   1. The wrapper paints a light card surface that is
+             *      pure white in light mode (`bg-canvas` → `#ffffff`)
+             *      and softens to `bg-ink-light` (`#e8e9ea`) in dark
+             *      mode so the card visually nests inside the navy
+             *      popup chrome instead of punching a stark white
+             *      hole through it. The quiet zone and "light" cells
+             *      of the QR always sit on this uniformly light
+             *      substrate — letting them fall through to the
+             *      popup canvas in dark mode would blend with the
+             *      modules and break QR scanning.
+             *   2. The modules use `fgColor="currentColor"` driven by
+             *      the wrapper's `text-brand-dark` — `#151b2b` in
+             *      light mode (deep navy) and `#334155` in dark mode
+             *      (slate-700). Both are dark enough to scan on every
+             *      mainstream reader; the dark-mode shade rides the
+             *      `--brand-dark` token so the modules feel themed,
+             *      not stamped in pure black.
+             *
+             * `bgColor="transparent"` lets the QR's own quiet-zone
+             * path inherit the wrapper bg instead of painting a
+             * second (potentially differently-coloured) rectangle
+             * behind itself.
+             */}
+            <div className="mx-auto flex size-qr-dialog items-center justify-center rounded-md bg-canvas p-2 text-brand-dark dark:bg-ink-light">
               <Suspense fallback={null}>
-                <QRCodeSVG value={url} level="M" marginSize={2} size={QR_CODE_SIZE} title={title} />
+                <QRCodeSVG
+                  value={url}
+                  level="M"
+                  marginSize={2}
+                  size={QR_CODE_SIZE}
+                  title={title}
+                  bgColor="transparent"
+                  fgColor="currentColor"
+                />
               </Suspense>
             </div>
           </div>

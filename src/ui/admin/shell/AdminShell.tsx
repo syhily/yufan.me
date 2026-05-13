@@ -145,6 +145,18 @@ function UserMenu({ id, name, email }: { id: string; name: string; email: string
 interface AdminChromeContextValue {
   focused: boolean
   setFocused: (next: boolean) => void
+  // Set by editor routes for the duration of their mount when a
+  // bottom-right FAB (today: `FloatingPublishButton`) may surface in
+  // the same corner ScrollTop normally occupies. AdminShell ORs this
+  // with `focused` to decide whether the ScrollTop FAB needs to ride
+  // higher (`bottom-20 lg:bottom-24`) instead of its default
+  // `bottom-4 lg:bottom-6` slot. Independent from `focused` because
+  // ScrollTop must clear the publish FAB even in plain editing
+  // (no live preview); previously the two FABs overlapped and the
+  // ScrollTop FAB swallowed every click that should have reached
+  // publish.
+  scrollTopLifted: boolean
+  setScrollTopLifted: (next: boolean) => void
 }
 
 const AdminChromeContext = createContext<AdminChromeContextValue | null>(null)
@@ -172,11 +184,33 @@ export function useAdminChromeFocus(active: boolean): void {
   }, [active, setFocused])
 }
 
+/**
+ * Signals to the admin shell that the current route mounts a
+ * bottom-right FAB (e.g. the editor's publish button), so the shared
+ * `AdminScrollTopButton` should ride above its default slot to keep
+ * both FABs reachable. Pairs with `useAdminChromeFocus` but is
+ * orthogonal: focus mode collapses the left rail and switches the
+ * scroll root to `<main>`, while this only lifts the ScrollTop FAB.
+ * Plain editing (no live preview) needs the lift; preview mode also
+ * gets it via the OR in `AdminShell`.
+ */
+export function useAdminScrollTopLift(active: boolean): void {
+  const { setScrollTopLifted } = useAdminChrome()
+  useEffect(() => {
+    setScrollTopLifted(active)
+    return () => setScrollTopLifted(false)
+  }, [active, setScrollTopLifted])
+}
+
 export function AdminShell({ currentUser, pathname, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [focused, setFocused] = useState(false)
+  const [scrollTopLifted, setScrollTopLifted] = useState(false)
   const mainScrollRef = useRef<HTMLElement | null>(null)
-  const chromeValue = useMemo<AdminChromeContextValue>(() => ({ focused, setFocused }), [focused])
+  const chromeValue = useMemo<AdminChromeContextValue>(
+    () => ({ focused, setFocused, scrollTopLifted, setScrollTopLifted }),
+    [focused, scrollTopLifted],
+  )
 
   return (
     <AdminChromeContext.Provider value={chromeValue}>
@@ -264,7 +298,10 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
             </div>
           </main>
         </div>
-        <AdminScrollTopButton focused={focused} {...(focused ? { scrollRootRef: mainScrollRef } : {})} />
+        <AdminScrollTopButton
+          lifted={focused || scrollTopLifted}
+          {...(focused ? { scrollRootRef: mainScrollRef } : {})}
+        />
         <Toaster position="top-center" richColors closeButton />
       </div>
     </AdminChromeContext.Provider>

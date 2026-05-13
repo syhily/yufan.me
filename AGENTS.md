@@ -534,6 +534,41 @@ reviewers cite during PR review: `server-no-shared-module-state`,
   They must not import server modules.
 - Avoid adding new client dependencies unless the interaction needs them.
 
+### iOS auto-zoom contract
+
+iOS Safari zooms the viewport in when the user focuses a form
+control whose CSS `font-size` is below 16px. Bumping every input /
+textarea to `font-size: 16px` would inflate the densities the
+design system relies on — admin form rows pair with `<Button
+size="sm">` (`h-9`), the comment composer trades density for
+content, the public search chip sits inside the sidebar widget
+grid. So instead of a typographic floor, every form control across
+the project inherits an app-wide hook that temporarily disables
+user-scaling on the viewport `<meta>` tag while any control is
+focused and restores the previous value on blur.
+
+- **Single source of truth**: `useIosNoZoomOnFocus()` lives in
+  `@/client/hooks/use-ios-no-zoom` and is mounted **once** at the
+  top of `src/root.tsx`'s default `App` component. The hook
+  installs `focusin` / `focusout` listeners on `document`, so a
+  single install covers every `INPUT` / `TEXTAREA` / `SELECT` on
+  every page — public, admin, login split-screen, install
+  wizard — without any per-form glue.
+- **Do NOT re-install per-form.** A second `useIosNoZoomOnFocus()`
+  call anywhere in the tree would race two listeners against the
+  same `<meta>` rewrite and leak pinch-zoom in or out
+  unpredictably. New form components, new admin domains, new
+  marketing pages — they all just use `<Input>` / `<Textarea>` /
+  `<Select>` and inherit the behaviour.
+- **Detection is gated to iOS / iPadOS WebKit.** Other platforms
+  no-op so pinch-zoom on the rest of the page (article cover
+  images, code blocks, etc.) stays available.
+- **Focus traversal keeps the lock.** While focus moves between
+  form controls anywhere on the document, the viewport stays
+  locked — restoring the meta tag mid-tab would let Safari re-zoom
+  on every keystroke. Only when focus leaves form-control DOM
+  entirely does the original meta value come back.
+
 ## Sessions, Env, And Security
 
 - Sessions use React Router `createSessionStorage` with Redis

@@ -61,7 +61,17 @@ const buttonVariants = cva(
         // `publicButtonVariants` recipes. `light` is the muted chip used
         // for ScrollTop, comment cancel, share buttons. `dark` is the
         // solid navy used for Header social rail, QRDialog, search trigger.
-        light: 'border border-surface-soft bg-surface-soft text-ink-muted hover:text-ink-strong',
+        //
+        // Dark mode lifts every part of the chip — fill to `line-muted`
+        // (L 30, +9 L over the body `#1d2842`), edge to `line` (L 38),
+        // glyph to `ink-strong` (#e8e9ea) — so a `light` chip reads as
+        // an obvious interactive widget against the dark body instead
+        // of fading into it. Hover routes the glyph through `brand` for
+        // a perceptible affordance. Light mode keeps the original
+        // muted-rest / strong-hover pair because the icons sit on a
+        // near-white card and don't need the extra contrast.
+        light:
+          'border border-surface-soft bg-surface-soft text-ink-muted hover:text-ink-strong dark:border-line dark:bg-line-muted dark:text-ink-strong dark:hover:text-brand',
         dark: 'border border-brand-dark bg-brand-dark text-ink-light hover:bg-brand-darker hover:border-brand-darker hover:text-white',
       },
       size: {

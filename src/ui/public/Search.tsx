@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Form } from 'react-router'
 
-import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { Input } from '@/ui/components/input'
@@ -46,15 +45,13 @@ const sidebarSearchInputClass = cn(
 
 export function SearchBar() {
   const { sidebar } = useSidebarSettings()
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  useIosNoZoomOnFocus(containerRef)
 
   if (!sidebar.search) {
     return <div id="search" className="mb-10" hidden />
   }
 
   return (
-    <div id="search" className="mb-10" ref={containerRef}>
+    <div id="search" className="mb-10">
       <Form method="get" action="/search">
         <label htmlFor="sidebar-search-input" className="sr-only">
           文章寻踪
@@ -136,12 +133,9 @@ interface SearchPopupProps {
 }
 
 function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
-  const formRef = useRef<HTMLFormElement | null>(null)
-  useIosNoZoomOnFocus(formRef, open)
-
   return (
     <Popup open={open} onClose={onClose} size="md" popupId={SEARCH_POPUP_ID} aria-label="搜索文章">
-      <Form ref={formRef} className="text-center" method="get" action="/search" onSubmit={onClose}>
+      <Form className="text-center" method="get" action="/search" onSubmit={onClose}>
         <div className="px-4 py-4 md:px-12 md:py-8">
           <div className="mx-auto max-w-sm">
             <div className="mb-4 md:mb-6">

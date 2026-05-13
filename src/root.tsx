@@ -13,6 +13,7 @@ import '@/assets/fonts/opposans.ttf'
 import '@/assets/fonts/opposerif.ttf'
 import '@/assets/fonts/iosevka.ttf'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
+import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { installGateMiddleware } from '@/server/middleware/install-gate'
 import { sessionMiddleware } from '@/server/middleware/session'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
@@ -157,6 +158,11 @@ export type RouteHandle = {
 
 export default function App({ loaderData }: Route.ComponentProps) {
   useFocusHash()
+  // Document-scoped install — every INPUT / TEXTAREA / SELECT across
+  // public + admin + login + install flows inherits the no-zoom
+  // behaviour from this single mount. Per-form re-installs are
+  // forbidden; see `@/client/hooks/use-ios-no-zoom` for the contract.
+  useIosNoZoomOnFocus()
 
   // The bundle flows down through `BlogSettingsProvider` (per-section
   // contexts) and the route data path (`Route.MetaArgs.matches`). On

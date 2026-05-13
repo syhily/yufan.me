@@ -1,33 +1,37 @@
-import type { RefObject } from 'react'
-
 import { useEffect, useLayoutEffect, useRef } from 'react'
 
 const useBrowserLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
-// On iOS Safari, focusing a form control whose `font-size` is below 16px makes
-// the page zoom in automatically. The comment box uses smaller text on purpose
-// (visual density), so instead of bumping the typography up we temporarily
-// disable user scaling on the viewport meta tag while a control inside the
-// container is focused, and restore the previous value on blur.
+// iOS Safari zooms the viewport in when the user focuses a form
+// control whose CSS `font-size` is below 16px. Bumping every input
+// to `font-size: 16px` would inflate the densities the project's
+// design system relies on (admin form rows, comment composer, etc.),
+// so we instead disable user-scaling on the viewport meta tag while
+// any `INPUT` / `TEXTAREA` / `SELECT` on the page is focused and
+// restore the previous value the moment focus leaves the form
+// control.
 //
-// Detection is restricted to iOS/iPadOS WebKit because other platforms do not
-// exhibit the bug and we do not want to take away pinch-zoom unnecessarily.
-export function useIosNoZoomOnFocus<T extends HTMLElement>(containerRef: RefObject<T | null>, enabled = true): void {
+// Project contract — call this hook ONCE at the top of the app
+// (`src/root.tsx`'s `App` component). It listens on `document`
+// through bubbling `focusin` / `focusout` events, so a single
+// install covers every form control across public + admin + login
+// + install flows. Individual form components MUST NOT call this
+// themselves — duplicating the install would have two listeners
+// race against the same `<meta>` rewrite and leak pinch-zoom in or
+// out unpredictably. See `AGENTS.md` § "iOS auto-zoom contract".
+//
+// Detection is restricted to iOS / iPadOS WebKit because no other
+// platform exhibits the bug; the no-op on Android / desktop means
+// pinch-zoom on the rest of the page (e.g. zooming an article cover
+// image) stays available.
+export function useIosNoZoomOnFocus(): void {
   const originalContentRef = useRef<string | null>(null)
 
   useBrowserLayoutEffect(() => {
     if (typeof window === 'undefined') {
       return
     }
-    if (!enabled) {
-      return
-    }
     if (!isIos()) {
-      return
-    }
-
-    const container = containerRef.current
-    if (!container) {
       return
     }
 
@@ -59,10 +63,11 @@ export function useIosNoZoomOnFocus<T extends HTMLElement>(containerRef: RefObje
       if (!isFormControl(event.target)) {
         return
       }
-      // `relatedTarget` is the next focus owner: when it stays inside the
-      // container we keep the lock; when it leaves we restore the viewport.
-      const next = event.relatedTarget
-      if (next instanceof HTMLElement && container.contains(next) && isFormControl(next)) {
+      // `relatedTarget` is the next focus owner: keep the lock while
+      // focus moves between form controls anywhere on the page —
+      // restoring the meta tag mid-tab would let Safari re-zoom on
+      // every keystroke.
+      if (isFormControl(event.relatedTarget)) {
         return
       }
       const original = originalContentRef.current
@@ -72,19 +77,19 @@ export function useIosNoZoomOnFocus<T extends HTMLElement>(containerRef: RefObje
       originalContentRef.current = null
     }
 
-    container.addEventListener('focusin', onFocusIn)
-    container.addEventListener('focusout', onFocusOut)
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
     return () => {
-      container.removeEventListener('focusin', onFocusIn)
-      container.removeEventListener('focusout', onFocusOut)
-      // Defensive: if the component unmounts while a control is focused
+      document.removeEventListener('focusin', onFocusIn)
+      document.removeEventListener('focusout', onFocusOut)
+      // Defensive: if the app unmounts while a control is focused
       // (e.g. fast route change), make sure pinch-zoom comes back.
       if (originalContentRef.current !== null) {
         meta.setAttribute('content', originalContentRef.current)
         originalContentRef.current = null
       }
     }
-  }, [containerRef, enabled])
+  }, [])
 }
 
 function isIos(): boolean {

@@ -38,15 +38,23 @@ function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
 }
 
 describe('public detail island state reset', () => {
-  it('resets like state when React Router reuses the detail route for another permalink', () => {
-    let state = createLikeButtonState('/posts/first', 3)
+  it('resets like state when React Router reuses the detail route for another commentKey', () => {
+    // The like API actions key off the metric's `public_id` UUID
+    // (`commentKey`), so the in-memory state must echo that wire key
+    // back when React Router reuses the detail-route module for a
+    // different permalink. `permalink` lives on the consumer side as
+    // the `localStorage` namespace and is intentionally not part of
+    // `LikeButtonState` — keying both off the same field would let a
+    // post id renumber across deployments and silently clobber a
+    // visitor's like-token cache.
+    let state = createLikeButtonState('comment-key-1', 3)
     state = applyLikeOptimistic(state, 'like')
 
-    expect(state).toMatchObject({ permalink: '/posts/first', likes: 4, liked: true })
+    expect(state).toMatchObject({ commentKey: 'comment-key-1', likes: 4, liked: true })
 
-    // Simulating route reuse: create fresh state for the new permalink.
-    state = createLikeButtonState('/posts/second', 1)
-    expect(state).toEqual({ permalink: '/posts/second', likes: 1, liked: false })
+    // Simulating route reuse: create fresh state for the new commentKey.
+    state = createLikeButtonState('comment-key-2', 1)
+    expect(state).toEqual({ commentKey: 'comment-key-2', likes: 1, liked: false })
   })
 
   it('resets the comment tree and clears active replies for another comment key', () => {
