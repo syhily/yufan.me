@@ -5,10 +5,10 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "src/assets/styles/admin.css",
+    "css": "src/assets/styles/tailwind.css",
     "baseColor": "neutral",
     "cssVariables": true,
-    "prefix": "tw"
+    "prefix": ""
   },
   "aliases": {
     "components": "@/ui/components",

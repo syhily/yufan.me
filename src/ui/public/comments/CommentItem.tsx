@@ -280,12 +280,12 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
             )}
           </div>
           {isMyComment && (
-            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+            <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg dark:bg-status-warn-bg dark:text-status-warn-fg">
               <span className="flex-1">{editableHint(leaf.myCommentExpiresAt.get(asKey(comment.id)), isPending)}</span>
               <button
                 type="button"
                 onClick={() => leaf.onDismissMyComment(comment.id)}
-                className="inline-flex shrink-0 items-center justify-center rounded-sm p-0.5 hover:bg-amber-200 dark:hover:bg-amber-500/20"
+                className="inline-flex shrink-0 items-center justify-center rounded-sm p-0.5 hover:bg-status-warn-border dark:hover:bg-status-warn-border"
                 aria-label="关闭提示"
                 title="关闭提示并移除编辑权限"
               >
@@ -295,7 +295,7 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
           )}
           {isPending && !isMyComment && (
             <div className={commentContentClass(depth)}>
-              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+              <div className="mt-1.5 mb-1.5 flex w-full items-center gap-1.5 rounded-md border border-amber-500/30 bg-status-warn-bg px-2.5 py-1 text-xs text-status-warn-fg dark:bg-status-warn-bg dark:text-status-warn-fg">
                 <span>您的评论正在等待审核中...</span>
               </div>
               <PortableTextBody body={comment.body} />

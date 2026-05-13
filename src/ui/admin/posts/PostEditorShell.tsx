@@ -1291,12 +1291,12 @@ function PostActionBanner({ kind, slug, onClose }: PostActionBannerProps) {
       : '草稿已发布，可通过下方链接访问最新内容：'
   const themeClass =
     kind === 'draft'
-      ? 'border-amber-500/30 bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200'
-      : 'border-emerald-500/30 bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200'
+      ? 'border-status-warn-border/30 bg-status-warn-bg text-status-warn-fg dark:bg-status-warn-bg dark:text-status-warn-fg'
+      : 'border-status-success-border/30 bg-status-success-bg text-status-success-fg dark:bg-status-success-bg dark:text-status-success-fg'
   const closeBtnClass =
     kind === 'draft'
-      ? 'text-amber-900/80 hover:bg-amber-500/20 hover:text-amber-900 dark:text-amber-200/80 dark:hover:text-amber-100'
-      : 'text-emerald-900/80 hover:bg-emerald-500/20 hover:text-emerald-900 dark:text-emerald-200/80 dark:hover:text-emerald-100'
+      ? 'text-status-warn-fg/80 hover:bg-status-warn-border/20 hover:text-status-warn-fg dark:text-status-warn-fg/80 dark:hover:text-status-warn-fg'
+      : 'text-status-success-fg/80 hover:bg-status-success-border/20 hover:text-status-success-fg dark:text-status-success-fg/80 dark:hover:text-status-success-fg'
   return (
     <div
       role="status"

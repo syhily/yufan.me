@@ -89,8 +89,7 @@ export const chipBase =
 // user reported as "too pale to read". The `dark:` overrides park the chip
 // on an elevated dark surface (`surface-dim`) with light ink so the page
 // number stays readable against the deep navy canvas.
-export const chipResting =
-  'bg-foreground text-background hover:bg-primary hover:text-primary-foreground dark:bg-surface-dim dark:text-ink-strong dark:hover:text-primary-foreground'
+export const chipResting = 'bg-chip-bg text-chip-fg hover:bg-chip-hover-bg hover:text-chip-hover-fg'
 
 export const chipActive = 'bg-primary text-primary-foreground hover:bg-primary'
 

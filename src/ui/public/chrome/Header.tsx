@@ -172,7 +172,7 @@ const siteMenuItemClass = 'relative block py-3 px-3'
 // size in `reset.css`), so it inherits without an explicit utility.
 const siteMenuLinkClass = cn(
   'relative block cursor-pointer no-underline',
-  'text-white opacity-60',
+  'text-ink-light opacity-60',
   'hover:text-brand hover:opacity-100',
 )
 

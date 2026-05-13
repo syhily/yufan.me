@@ -226,7 +226,7 @@ export function SearchForm({ search }: SearchFormProps) {
           hint={
             <>
               <span>默认 text-embedding-3-small，性价比最高。text-embedding-3-large 质量更好但成本更高。</span>
-              <span className="block text-amber-600">
+              <span className="block text-status-warn-fg">
                 系统固定请求 1536 维向量输出，请确保所选模型支持 dimensions 参数或本身输出 1536 维。
               </span>
             </>
@@ -270,7 +270,7 @@ export function SearchForm({ search }: SearchFormProps) {
               }}
             >
               {reindex.phase === 'running' && <Loader2Icon className="animate-spin" />}
-              {reindex.phase === 'success' && <CheckIcon className="text-green-500" />}
+              {reindex.phase === 'success' && <CheckIcon className="text-status-success-fg" />}
               {reindex.phase === 'idle' && '重建索引'}
               {reindex.phase === 'running' && '索引中...'}
               {reindex.phase === 'success' && '完成'}
@@ -282,7 +282,7 @@ export function SearchForm({ search }: SearchFormProps) {
               </span>
             )}
             {reindex.phase === 'success' && (
-              <span className="text-sm text-green-600">
+              <span className="text-sm text-status-success-fg">
                 索引重建完成：成功 {reindex.processed} / 失败 {reindex.failed}（共 {reindex.total}）
               </span>
             )}

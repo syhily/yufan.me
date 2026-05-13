@@ -71,7 +71,7 @@ export function ScrollTopButton() {
         // surface in both modes: white face / dark glyph in light,
         // slate-500 face / white glyph in dark. `shadow-tooltip` adds
         // the elevation cue the muted surface used to lean on.
-        className="!bg-canvas !text-ink-strong shadow-tooltip hover:!bg-canvas hover:!text-ink-strong dark:!bg-slate-500 dark:!text-white dark:hover:!bg-slate-500 dark:hover:!text-white"
+        className="!bg-canvas !text-ink-strong shadow-tooltip hover:!bg-canvas hover:!text-ink-strong dark:!bg-surface-dim dark:!text-ink-strong dark:hover:!bg-surface-dim dark:hover:!text-ink-strong"
         aria-label="回到顶部"
         // When hidden, take the trigger out of the keyboard tab order
         // too — `pointer-events-none` only blocks pointer input.

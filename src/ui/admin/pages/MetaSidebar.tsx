@@ -551,7 +551,7 @@ function SaveStatusLine({ status }: { status: SidebarSaveStatus }) {
     case 'conflict':
       return <span className="text-xs text-destructive">检测到云端有更新的修订，请刷新后再保存。</span>
     case 'info':
-      return <span className="text-xs text-amber-600 dark:text-amber-400">{status.message}</span>
+      return <span className="text-xs text-status-warn-fg">{status.message}</span>
   }
 }
 
@@ -699,7 +699,7 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       return (
         <Badge
           variant="outline"
-          className="border-slate-300 bg-slate-50 text-slate-800 dark:border-slate-600 dark:bg-slate-900/60 dark:text-slate-200"
+          className="border-status-info-border bg-status-info-bg text-status-info-fg dark:border-status-info-border dark:bg-status-info-bg dark:text-status-info-fg"
         >
           <CircleDashedIcon /> 尚未保存
         </Badge>
@@ -708,7 +708,7 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       return (
         <Badge
           variant="outline"
-          className="border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/50 dark:text-red-100"
+          className="border-status-error-border bg-status-error-bg text-status-error-fg dark:border-status-error-border dark:bg-status-error-bg dark:text-status-error-fg"
         >
           <EyeOffIcon /> 已取消发布
         </Badge>
@@ -717,7 +717,7 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       return (
         <Badge
           variant="outline"
-          className="border-sky-400 bg-sky-50 text-sky-950 dark:border-sky-600 dark:bg-sky-950/55 dark:text-sky-100"
+          className="border-status-info-border bg-status-info-bg text-status-info-fg dark:border-status-info-border dark:bg-status-info-bg dark:text-status-info-fg"
         >
           <CalendarClockIcon /> 已计划发布
         </Badge>
@@ -733,7 +733,7 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       return (
         <Badge
           variant="outline"
-          className="border-emerald-500 bg-emerald-50 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/45 dark:text-emerald-100"
+          className="border-status-success-border bg-status-success-bg text-status-success-fg dark:border-status-success-border dark:bg-status-success-bg dark:text-status-success-fg"
         >
           <CheckCircle2Icon /> 已发布
         </Badge>
@@ -742,7 +742,7 @@ function PublishBadge({ status, isFuture }: { status: SidebarPublishStatus; isFu
       return (
         <Badge
           variant="outline"
-          className="border-amber-500 bg-amber-50 text-amber-950 dark:border-amber-600 dark:bg-amber-950/45 dark:text-amber-100"
+          className="border-status-warn-border bg-status-warn-bg text-status-warn-fg dark:border-status-warn-border dark:bg-status-warn-bg dark:text-status-warn-fg"
         >
           <CheckCircle2Icon /> 已发布（有未发布草稿）
         </Badge>

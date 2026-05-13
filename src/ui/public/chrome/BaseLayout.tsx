@@ -98,10 +98,10 @@ export function BaseLayout({ navigation, footer, admin, pathname, search, childr
         stays visually anchored to the bottom-right.
       */}
       <ul className="fixed right-5 bottom-5 z-9999 flex transform-gpu flex-col gap-2">
+        <ScrollTopButton />
         <li className="lg:hidden">
           <ThemeToggle mode="public" variant="floating" />
         </li>
-        <ScrollTopButton />
       </ul>
     </div>
   )

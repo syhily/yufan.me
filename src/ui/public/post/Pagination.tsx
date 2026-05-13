@@ -57,11 +57,7 @@ function Ellipsis() {
         // Ellipsis stays on the resting palette but suppresses the
         // hover swap — there's nothing to navigate to. `cursor-default`
         // overrides the link/button cursor users expect on a chip.
-        className={cn(
-          chipBase,
-          chipResting,
-          'cursor-default hover:bg-foreground hover:text-background dark:hover:bg-surface-dim dark:hover:text-ink-strong',
-        )}
+        className={cn(chipBase, chipResting, 'cursor-default hover:bg-chip-hover-bg hover:text-chip-hover-fg')}
       >
         <MoreHorizontalIcon className="size-4" aria-hidden />
         <span className="sr-only">更多</span>

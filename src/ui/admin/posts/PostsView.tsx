@@ -449,7 +449,7 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
           <span className="font-medium">{post.title}</span>
           {post.pinnedAt !== null && (
             <span title="已置顶">
-              <PinIcon className="size-3.5 text-amber-500" />
+              <PinIcon className="size-3.5 text-status-warn-fg" />
             </span>
           )}
         </div>

@@ -171,7 +171,7 @@ function FeaturePost({ post, first = false }: { post: ListingPostCard; first?: b
         <div className="flex flex-none flex-col">
           <Link
             to={post.permalink}
-            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-white hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
+            className="m-0 mb-2 line-clamp-2 block text-base leading-[1.4] font-semibold text-ink-light hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px] md:text-xl"
             prefetch="intent"
           >
             {post.title}
@@ -216,7 +216,7 @@ export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNow
                   className="block size-full object-cover"
                 />
               </Link>
-              <div className="absolute inset-x-0 top-0 z-2 flex items-center text-white">
+              <div className="absolute inset-x-0 top-0 z-2 flex items-center text-ink-light">
                 <Link
                   className="hidden rounded-none bg-surface-secondary/60 px-2.5 py-badge-overlay-y align-middle text-badge font-normal md:inline-block"
                   to={categoryLinks[post.category] || '/'}
@@ -329,7 +329,7 @@ export function PostSquare({ post, first, listingNowIso }: PostSquareProps) {
         </div>
         <div className="absolute inset-x-0 bottom-0 z-1 flex flex-none flex-col p-2 md:px-4 md:py-3">
           <Link to={post.permalink} className="flex flex-none flex-col" prefetch="intent">
-            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-white hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px]">
+            <div className="m-0 mb-2 line-clamp-2 block leading-[1.4] font-semibold text-ink-light hover:text-ink-light hover:[text-shadow:var(--brand)_1px_0_4px]">
               {post.title}
             </div>
             <div className="font-number flex flex-1 text-sm text-ink-overlay">

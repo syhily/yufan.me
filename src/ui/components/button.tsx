@@ -70,9 +70,8 @@ const buttonVariants = cva(
         // a perceptible affordance. Light mode keeps the original
         // muted-rest / strong-hover pair because the icons sit on a
         // near-white card and don't need the extra contrast.
-        light:
-          'border border-surface-soft bg-surface-soft text-ink-muted hover:text-ink-strong dark:border-line dark:bg-line-muted dark:text-ink-strong dark:hover:text-brand',
-        dark: 'border border-brand-dark bg-brand-dark text-ink-light hover:bg-brand-darker hover:border-brand-darker hover:text-white',
+        light: 'border border-btn-light-border bg-btn-light-bg text-btn-light-fg hover:text-btn-light-hover-fg',
+        dark: 'border border-brand-dark bg-brand-dark text-ink-light hover:bg-brand-darker hover:border-brand-darker hover:text-canvas',
       },
       size: {
         default: 'h-10 px-5 py-2.5',

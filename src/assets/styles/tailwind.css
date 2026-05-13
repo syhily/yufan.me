@@ -120,6 +120,32 @@
   --sidebar-accent-foreground: var(--ink-strong);
   --sidebar-border: var(--border-soft);
   --sidebar-ring: var(--brand);
+
+  /* Status tokens — light mode */
+  --status-info-bg: #f0f9ff;
+  --status-info-fg: #0369a1;
+  --status-info-border: #bae6fd;
+  --status-warn-bg: #fffbeb;
+  --status-warn-fg: #92400e;
+  --status-warn-border: #fcd34d;
+  --status-error-bg: #fef2f2;
+  --status-error-fg: #991b1b;
+  --status-error-border: #fecaca;
+  --status-success-bg: #f0fdf4;
+  --status-success-fg: #166534;
+  --status-success-border: #86efac;
+
+  /* Chip tokens — light mode */
+  --chip-bg: var(--foreground);
+  --chip-fg: var(--background);
+  --chip-hover-bg: var(--primary);
+  --chip-hover-fg: var(--primary-foreground);
+
+  /* Button light variant tokens — light mode */
+  --btn-light-border: var(--surface-soft);
+  --btn-light-bg: var(--surface-soft);
+  --btn-light-fg: var(--ink-muted);
+  --btn-light-hover-fg: var(--ink-strong);
 }
 
 .dark {
@@ -216,6 +242,32 @@
 
   /* Shiki fallback when inline style does not set shiki light */
   --shiki-light: var(--ink-body);
+
+  /* Status tokens — dark mode */
+  --status-info-bg: #0c4a6e;
+  --status-info-fg: #bae6fd;
+  --status-info-border: #075985;
+  --status-warn-bg: #451a03;
+  --status-warn-fg: #fcd34d;
+  --status-warn-border: #78350f;
+  --status-error-bg: #450a0a;
+  --status-error-fg: #fecaca;
+  --status-error-border: #7f1d1d;
+  --status-success-bg: #052e16;
+  --status-success-fg: #86efac;
+  --status-success-border: #14532d;
+
+  /* Chip tokens — dark mode */
+  --chip-bg: var(--surface-dim);
+  --chip-fg: var(--ink-strong);
+  --chip-hover-bg: var(--primary);
+  --chip-hover-fg: var(--primary-foreground);
+
+  /* Button light variant tokens — dark mode */
+  --btn-light-border: var(--line);
+  --btn-light-bg: var(--line-muted);
+  --btn-light-fg: var(--ink-strong);
+  --btn-light-hover-fg: var(--brand);
 }
 
 /* Post headings override for dark mode */
@@ -245,126 +297,7 @@
   border-radius: var(--radius-sm);
 }
 
-/* APlayer dark mode overrides. The library ships a fixed light palette so we
-   reskin every chrome surface against the project tokens. Album art controls
-   stay white because they paint on the cover image not on the player frame. */
-.dark .aplayer {
-  background: var(--surface);
-  color: var(--ink-body);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 8%);
-  border-radius: var(--radius-sm);
-}
-
-/* Album cover sits on the same dim treatment as content images. The play
-   button child counter-brightens so the white overlay still reads on darker
-   covers. The cover paints via background-image so the image-component dim
-   class does not reach it. */
-.dark .aplayer .aplayer-pic {
-  filter: brightness(0.72) contrast(0.95) saturate(0.9);
-}
-
-.dark .aplayer .aplayer-pic .aplayer-button {
-  filter: brightness(1.35);
-}
-
-.dark .aplayer.aplayer-withlist .aplayer-info {
-  border-bottom-color: var(--line);
-}
-
-.dark .aplayer .aplayer-info .aplayer-music .aplayer-title {
-  color: var(--ink-strong);
-}
-
-.dark .aplayer .aplayer-info .aplayer-music .aplayer-author {
-  color: var(--ink-muted);
-}
-
-.dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar {
-  background: var(--line-widget);
-}
-
-.dark .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
-  background: var(--ink-muted);
-}
-
-.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time {
-  color: var(--ink-muted);
-}
-
-.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon path {
-  fill: var(--ink-secondary);
-}
-
-.dark .aplayer .aplayer-info .aplayer-controller .aplayer-time .aplayer-icon:hover path {
-  fill: var(--ink-strong);
-}
-
-.dark .aplayer .aplayer-info .aplayer-controller .aplayer-volume-wrap .aplayer-volume-bar-wrap .aplayer-volume-bar {
-  background: var(--ink-muted);
-}
-
-.dark .aplayer .aplayer-lrc::before {
-  background: linear-gradient(to bottom, var(--surface) 0%, color-mix(in oklab, var(--surface) 0%, transparent) 100%);
-}
-
-.dark .aplayer .aplayer-lrc::after {
-  background: linear-gradient(
-    to bottom,
-    color-mix(in oklab, var(--surface) 0%, transparent) 0%,
-    color-mix(in oklab, var(--surface) 80%, transparent) 100%
-  );
-}
-
-.dark .aplayer .aplayer-lrc p {
-  color: var(--ink-muted);
-}
-
-.dark .aplayer .aplayer-lrc p.aplayer-lrc-current {
-  color: var(--ink-body);
-}
-
-.dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb {
-  background-color: var(--surface-dim);
-}
-
-.dark .aplayer .aplayer-list ol::-webkit-scrollbar-thumb:hover {
-  background-color: var(--line-muted);
-}
-
-.dark .aplayer .aplayer-list ol li {
-  border-top-color: var(--line);
-  color: var(--ink-body);
-}
-
-.dark .aplayer .aplayer-list ol li:hover {
-  background: var(--surface-dim);
-}
-
-.dark .aplayer .aplayer-list ol li.aplayer-list-light {
-  background: var(--surface-dim);
-}
-
-.dark .aplayer .aplayer-list ol li .aplayer-list-index,
-.dark .aplayer .aplayer-list ol li .aplayer-list-author {
-  color: var(--ink-muted);
-}
-
-.dark .aplayer .aplayer-notice {
-  background-color: var(--surface-dim);
-  color: var(--ink-body);
-}
-
-.dark .aplayer .aplayer-miniswitcher {
-  background: var(--surface-dim);
-}
-
-.dark .aplayer .aplayer-miniswitcher .aplayer-icon path {
-  fill: var(--ink-secondary);
-}
-
-.dark .aplayer .aplayer-miniswitcher .aplayer-icon:hover path {
-  fill: var(--ink-strong);
-}
+@import './aplayer.css' layer(components);
 
 /* Tailwind theme bridge shadcn */
 @theme inline {
@@ -503,6 +436,29 @@
   }
 
   --animate-comments-shimmer: comments-shimmer 1.4s linear infinite;
+
+  --color-status-info-bg: var(--status-info-bg);
+  --color-status-info-fg: var(--status-info-fg);
+  --color-status-info-border: var(--status-info-border);
+  --color-status-warn-bg: var(--status-warn-bg);
+  --color-status-warn-fg: var(--status-warn-fg);
+  --color-status-warn-border: var(--status-warn-border);
+  --color-status-error-bg: var(--status-error-bg);
+  --color-status-error-fg: var(--status-error-fg);
+  --color-status-error-border: var(--status-error-border);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-success-fg: var(--status-success-fg);
+  --color-status-success-border: var(--status-success-border);
+
+  --color-chip-bg: var(--chip-bg);
+  --color-chip-fg: var(--chip-fg);
+  --color-chip-hover-bg: var(--chip-hover-bg);
+  --color-chip-hover-fg: var(--chip-hover-fg);
+
+  --color-btn-light-border: var(--btn-light-border);
+  --color-btn-light-bg: var(--btn-light-bg);
+  --color-btn-light-fg: var(--btn-light-fg);
+  --color-btn-light-hover-fg: var(--btn-light-hover-fg);
 
   @keyframes comments-shimmer {
     0% {
