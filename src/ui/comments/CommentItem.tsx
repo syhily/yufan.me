@@ -183,8 +183,11 @@ function nestedCommentLiClass(): string {
 }
 
 // `<article>` is not in reset.css, so the `display: flex`/min-width:0
-// chain travels without `important`.
-const commentBodyClass = cn('relative box-border flex max-w-full min-w-0 flex-1')
+// chain travels without `important`. The `comment-body` literal is a
+// hook for `useFocusHash` which adds `.active` when the URL hash
+// targets this comment (`#user-comment-<id>`) so the flash animation
+// in `public.css` can replay.
+const commentBodyClass = cn('comment-body', 'relative box-border flex max-w-full min-w-0 flex-1')
 
 const commentAuthorClass = cn('inline-flex max-w-full flex-wrap items-center gap-1.5', 'font-bold')
 

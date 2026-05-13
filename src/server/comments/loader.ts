@@ -27,8 +27,6 @@ import { DomainError } from '@/server/route-helpers/errors'
 import { isAdmin, userSession, type BlogSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { groupBy } from '@/shared/tools'
-import { joinUrl } from '@/shared/urls'
-
 const log = getLogger('comments.loader')
 
 function trimSiteSuffix(title: string | null): string {
@@ -45,16 +43,19 @@ function entityPermalink(type: 'post' | 'page', slug: string): string {
 }
 
 function toLatestComment(row: PendingCommentRow): LatestComment {
-  const website = requireBlogSettingsSection('siteIdentity').website
   const slug = row.slug ?? ''
   // Without a slug the entity has been deleted or never existed — link
-  // back to the homepage to keep the moderation widget useful.
-  const url = slug === '' ? website : joinUrl(website, entityPermalink(row.type, slug), '/')
+  // back to the homepage to keep the moderation widget useful. Sidebar
+  // widgets render via <Link to=...>, so the permalink must be a
+  // same-origin path; the trailing slash before the hash matches the
+  // canonical post / page URL shape so React Router does not 301 the
+  // route on navigation.
+  const path = slug === '' ? '/' : `${entityPermalink(row.type, slug)}/`
   return {
     title: trimSiteSuffix(row.title),
     author: row.author ?? '',
     authorLink: row.authorLink ?? '',
-    permalink: `${url}#user-comment-${row.id}`,
+    permalink: `${path}#user-comment-${row.id}`,
   }
 }
 

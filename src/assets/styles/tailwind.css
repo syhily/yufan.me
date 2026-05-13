@@ -12,7 +12,6 @@
   --brand: #008c95;
   --brand-dark: #151b2b;
   --brand-darker: #20283b;
-  --brand-success: #41d589;
 
   /* Primary button hover swap brand teal to dark navy in light mode */
   --btn-hover-bg: var(--brand-dark);
@@ -33,8 +32,10 @@
   --surface-warn: #ffe9d5;
   --surface-body: #fbfbfd;
   --surface-secondary: #283149;
-  --surface-night: #232327;
   --surface-soft: #eceef1;
+
+  /* Aside panel */
+  --aside-bg: #283149;
 
   /* Lines */
   --line: #eff3fa;
@@ -109,12 +110,6 @@
   --input: var(--border-strong);
   --ring: var(--brand);
 
-  --chart-1: var(--brand);
-  --chart-2: var(--brand-success);
-  --chart-3: var(--warn);
-  --chart-4: var(--alert);
-  --chart-5: var(--ink-secondary);
-
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink-strong);
   --sidebar-primary: var(--brand);
@@ -141,9 +136,12 @@
   --brand-dark: #334155;
   --brand-darker: #475569;
 
-  /* Sidebar sits one step darker than the lifted body so the two surfaces
-     stay clearly separated without the aside going pure black. */
+  /* Surface secondary stays deep for cover dimming overlays */
   --surface-secondary: #0b1322;
+
+  /* Aside stays one step darker than the lifted body so it reads as
+     a recessed panel like in light mode */
+  --aside-bg: #15203a;
 
   /* Primary button hover swap dims the brand teal in dark mode */
   --btn-hover-bg: color-mix(in oklab, var(--brand) 80%, black 20%);
@@ -153,14 +151,14 @@
      reads with contrast against the dim canvas. */
   --btn-primary-bg: color-mix(in oklab, var(--brand) 75%, black 25%);
 
-  /* Surfaces deep navy backgrounds. Body lifts one notch above the sidebar so
-     the two regions read as a clear hierarchy: aside (deepest), body
-     (mid), surface (most elevated). */
-  --canvas: #15203a;
+  /* Surfaces deep navy backgrounds. Body lifts above the aside so the
+     panel reads as recessed: aside (deepest), body / canvas (mid),
+     surfaces (most elevated). */
+  --canvas: #1d2842;
   --surface: #1d2842;
   --surface-dim: #232f4a;
   --surface-warn: #3a2810;
-  --surface-body: #15203a;
+  --surface-body: #1d2842;
   --surface-soft: #1f2a44;
 
   /* Lines darker borders on dark surfaces */
@@ -202,6 +200,21 @@
 /* Shiki sets inline background on pre so we must use important */
 .dark pre.shiki {
   background-color: var(--bg-shiki-light) !important;
+}
+
+/* Comment hash focus flash */
+@keyframes comment-flash {
+  0%,
+  25% {
+    background-color: color-mix(in oklab, var(--brand) 16%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.comment-body.active {
+  animation: comment-flash 3s ease-out forwards;
+  border-radius: var(--radius-sm);
 }
 
 /* APlayer dark mode overrides. The library ships a fixed light palette so we
@@ -342,15 +355,8 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
-  --color-border-soft: var(--border-soft);
-  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -387,7 +393,7 @@
   --color-surface-warn: var(--surface-warn);
   --color-surface-body: var(--surface-body);
   --color-surface-secondary: var(--surface-secondary);
-  --color-surface-night: var(--surface-night);
+  --color-aside-bg: var(--aside-bg);
 
   --color-line: var(--line);
   --color-line-muted: var(--line-muted);
@@ -396,7 +402,6 @@
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
   --color-brand-darker: var(--brand-darker);
-  --color-brand-success: var(--brand-success);
   --color-scrim: var(--scrim);
   --color-skeleton-start: var(--skeleton-start);
   --color-skeleton-end: var(--skeleton-end);

@@ -215,7 +215,7 @@ describe('services/comments/loader — latestComments / pendingComments', () => 
     expect(queries.adminUserIds).toHaveBeenCalledOnce()
     expect(queries.latestDistinctCommentIds).toHaveBeenCalledWith([99n], expect.any(Number))
     expect(list).toHaveLength(2)
-    expect(list[0].permalink).toBe('https://yufan.me/posts/a/#user-comment-10')
+    expect(list[0].permalink).toBe('/posts/a/#user-comment-10')
     // Null author/title fall back to empty string (sidebar must never crash).
     expect(list[1].author).toBe('')
     expect(list[1].title).toBe('')

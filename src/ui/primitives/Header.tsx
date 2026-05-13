@@ -74,7 +74,7 @@ const asideShellClass = cn(
 // breakpoint (the legacy `<md` overlay width). The named-group
 // `data-state` driver lives on the parent `<header>`.
 const asideInnerClass = cn(
-  'flex h-full flex-col bg-surface-secondary',
+  'flex h-full flex-col bg-aside-bg',
   'max-lg:fixed max-lg:w-[240px]',
   'max-lg:transition-transform max-lg:duration-400 max-lg:ease-in-out',
   'max-lg:-translate-x-full',

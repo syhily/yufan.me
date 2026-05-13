@@ -2,12 +2,25 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
 // Smooth-scroll to the URL hash on initial mount and whenever the hash
-// changes. Also highlights a comment node when the hash targets one
+// changes. Also flashes a comment node when the hash targets one
 // (`#user-comment-<id>`).
 //
-// Previously implemented as a vanilla `window.load` listener in
-// `features/focus-hash.ts`. Moving it into a React hook means we get
-// both the first-paint behaviour AND client-side navigations for free.
+// Two timing concerns:
+//
+// 1. The target may not be in the DOM yet when the hash changes —
+//    comment threads on detail routes stream in through
+//    `<Suspense fallback={<CommentsSkeleton />}>` after the route
+//    loader resolves the comments promise. We watch DOM mutations
+//    until the target lands or a ceiling elapses.
+// 2. The flash must wait until the smooth scroll has come to rest so
+//    the highlight only starts once the user can actually see the
+//    target. We listen for `scrollend` with a fallback timeout for
+//    the cases where no scroll is needed (already in view) or the
+//    event never lands.
+const TARGET_WAIT_MS = 5000
+const SCROLL_SETTLE_FALLBACK_MS = 300
+const NO_SCROLL_THRESHOLD_PX = 4
+
 export function useFocusHash(): void {
   const { hash } = useLocation()
 
@@ -15,33 +28,93 @@ export function useFocusHash(): void {
     if (!hash) {
       return
     }
-    // Defer one frame so newly rendered content (e.g. MDX body or a
-    // freshly-inserted comment) has time to commit to the DOM before we
-    // try to scroll to it.
-    const raf = window.requestAnimationFrame(() => {
-      if (hash.startsWith('#user-comment-')) {
-        for (const li of document.querySelectorAll<HTMLElement>('.comment-body')) {
-          li.classList.remove('active')
-        }
-        const li = document.querySelector<HTMLElement>(hash)
-        if (li) {
-          smoothScrollTo(li)
-          li.querySelector<HTMLElement>('.comment-body')?.classList.add('active')
-        }
-        return
+
+    let observer: MutationObserver | undefined
+    let targetWaitTimeoutId: number | undefined
+    let scrollSettleTimeoutId: number | undefined
+    let scrollEndHandler: (() => void) | undefined
+
+    const clearScrollListeners = () => {
+      if (scrollSettleTimeoutId !== undefined) {
+        window.clearTimeout(scrollSettleTimeoutId)
+        scrollSettleTimeoutId = undefined
       }
-      const id = decodeURIComponent(hash).substring(1)
-      smoothScrollTo(document.getElementById(id))
-    })
-    return () => window.cancelAnimationFrame(raf)
+      if (scrollEndHandler !== undefined) {
+        window.removeEventListener('scrollend', scrollEndHandler)
+        scrollEndHandler = undefined
+      }
+    }
+
+    const isCommentHash = hash.startsWith('#user-comment-')
+
+    const focusOnce = (): boolean => {
+      const target = document.querySelector<HTMLElement>(hash)
+      if (target === null) {
+        return false
+      }
+
+      const rect = target.getBoundingClientRect()
+      const targetTop = rect.top + window.scrollY
+      const distance = Math.abs(targetTop - window.scrollY)
+
+      const fire = () => {
+        clearScrollListeners()
+        if (isCommentHash) {
+          flashComment(target)
+        }
+      }
+
+      if (distance < NO_SCROLL_THRESHOLD_PX) {
+        fire()
+        return true
+      }
+
+      window.scroll({ top: targetTop, left: 0, behavior: 'smooth' })
+
+      scrollEndHandler = fire
+      window.addEventListener('scrollend', fire, { once: true })
+      scrollSettleTimeoutId = window.setTimeout(fire, SCROLL_SETTLE_FALLBACK_MS)
+      return true
+    }
+
+    if (!focusOnce()) {
+      observer = new MutationObserver(() => {
+        if (focusOnce()) {
+          observer?.disconnect()
+          observer = undefined
+          if (targetWaitTimeoutId !== undefined) {
+            window.clearTimeout(targetWaitTimeoutId)
+            targetWaitTimeoutId = undefined
+          }
+        }
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+      targetWaitTimeoutId = window.setTimeout(() => observer?.disconnect(), TARGET_WAIT_MS)
+    }
+
+    return () => {
+      observer?.disconnect()
+      if (targetWaitTimeoutId !== undefined) {
+        window.clearTimeout(targetWaitTimeoutId)
+      }
+      clearScrollListeners()
+    }
   }, [hash])
 }
 
-function smoothScrollTo(elem: HTMLElement | null): void {
-  if (!elem) {
+function flashComment(target: HTMLElement): void {
+  for (const node of document.querySelectorAll<HTMLElement>('article.comment-body')) {
+    node.classList.remove('active')
+  }
+  // The hash points at `<li id="user-comment-N">`; the visual flash
+  // lives on the `<article>` wrapper inside it so the highlight fills
+  // the full comment row including the avatar gutter.
+  const article = target.querySelector<HTMLElement>('article.comment-body')
+  if (article === null) {
     return
   }
-  const rect = elem.getBoundingClientRect()
-  const top = rect.top + window.scrollY
-  window.scroll({ top, left: 0, behavior: 'smooth' })
+  // Force a reflow so the CSS animation restarts when re-targeting the
+  // same comment after a round-trip away from / back to the same hash.
+  void article.offsetWidth
+  article.classList.add('active')
 }
