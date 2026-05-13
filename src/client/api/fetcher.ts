@@ -63,8 +63,18 @@ export interface UseFetcherResultOptions<O> {
 
 export interface UseApiFetcherResult<I, O> {
   // POST/PATCH/DELETE submit. `payload` is JSON-encoded; the descriptor's
-  // method + path are reused so callers don't repeat them.
+  // method + path are reused so callers don't repeat them. Fire-and-forget
+  // — the returned Promise from the underlying fetcher is intentionally
+  // dropped so the call site does not need to mark it as `void`. Use
+  // `submitAsync` when the caller needs to await the round trip.
   submit: (payload: I) => void
+  // POST/PATCH/DELETE submit that returns the underlying `fetcher.submit`
+  // promise. The promise resolves once React Router has completed both the
+  // submission and its trailing revalidation pass, at which point the
+  // `useFetcherResult` effect has already drained `fetcher.data` and fired
+  // `onSuccess`. Use this from inside `startTransition` when an optimistic
+  // UI needs the transition to stay pending throughout the round trip.
+  submitAsync: (payload: I) => Promise<void>
   // GET load. Optional query params are URL-encoded; otherwise we just hit
   // the action's bare path.
   load: (query?: Record<string, ApiQueryValue>) => void
@@ -168,15 +178,22 @@ export function useApiFetcher<I, O>(
   // without triggering loops. `fetcher.submit` / `fetcher.load` themselves
   // are not stable across renders, but they always read the latest closure
   // through the `latest` ref above.
-  const submit = useCallback(
-    (payload: I) => {
-      void latest.current.fetcher.submit(payload as never, {
+  const submitAsync = useCallback(
+    (payload: I): Promise<void> => {
+      return latest.current.fetcher.submit(payload as never, {
         method: action.method,
         encType: 'application/json',
         action: action.path,
       })
     },
     [action.method, action.path],
+  )
+
+  const submit = useCallback(
+    (payload: I): void => {
+      void submitAsync(payload)
+    },
+    [submitAsync],
   )
 
   const load = useCallback(
@@ -200,6 +217,7 @@ export function useApiFetcher<I, O>(
 
   return {
     submit,
+    submitAsync,
     load,
     data: fetcher.data?.data,
     error: fetcher.data?.error,

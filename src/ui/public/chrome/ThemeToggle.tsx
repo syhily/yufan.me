@@ -25,7 +25,7 @@ export function ThemeToggle({ mode, variant = 'rail' }: ThemeToggleProps) {
   if (mode === 'public') {
     if (variant === 'floating') {
       // High-contrast FAB palette — see the matching block in
-      // `@/ui/primitives/ScrollTopButton` for the rationale (default
+      // `@/ui/public/chrome/ScrollTopButton` for the rationale (default
       // `variant="light"` is too low-contrast over article content on
       // mobile, in both themes).
       return (

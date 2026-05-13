@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { LatestComment } from '@/shared/comments'
 
-import { Sidebar } from '@/ui/sidebar/Sidebar'
+import { Sidebar } from '@/ui/public/Sidebar'
 
 import { makePostList, makeTag } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'

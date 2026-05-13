@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { BaseLayout } from '@/ui/primitives/BaseLayout'
+import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 
 import { renderInRouter } from './_helpers/render'
 

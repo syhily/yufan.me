@@ -24,9 +24,9 @@ import { type CommentBody, safeValidateCommentBody } from '@/shared/pt/comment-s
 import { BlockCardNode } from '@/ui/admin/editor/tiptap/BlockCardNode'
 import { MathInlineMark } from '@/ui/admin/editor/tiptap/InlineMarks'
 import { SlashCommandsExtension } from '@/ui/admin/editor/tiptap/SlashMenu'
-import { COMMENT_SLASH_COMMANDS } from '@/ui/comments/comment-slash-commands'
-import { EmojiSuggestionExtension } from '@/ui/comments/EmojiSuggestion'
 import { cn } from '@/ui/lib/cn'
+import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-commands'
+import { EmojiSuggestionExtension } from '@/ui/public/comments/EmojiSuggestion'
 
 // Simplified Tiptap editor for comment bodies. Mirrors the admin
 // `PageBodyEditor` shape but loads only the extensions needed for the

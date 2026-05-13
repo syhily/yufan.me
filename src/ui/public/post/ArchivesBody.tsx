@@ -2,8 +2,8 @@ import type { ListingPostCardWithMetadata } from '@/shared/catalog'
 
 import { groupBy } from '@/shared/tools'
 import { cn } from '@/ui/lib/cn'
-import { PostSquare } from '@/ui/post/post/PostListViews'
-import { postTitleClass } from '@/ui/post/postChrome'
+import { postTitleClass } from '@/ui/public/post/postChrome'
+import { PostSquare } from '@/ui/public/post/PostListViews'
 
 export interface ArchivesBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]

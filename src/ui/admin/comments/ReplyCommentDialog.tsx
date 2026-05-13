@@ -11,7 +11,6 @@ import { useFetcherResult } from '@/client/api/fetcher'
 import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
-import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -22,6 +21,7 @@ import {
   DialogTitle,
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
 
 const REPLY = API_ACTIONS.comment.replyComment
 

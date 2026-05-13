@@ -5,7 +5,7 @@ import type { MarkdownHeading } from '@/shared/catalog'
 
 import { setBlogSettingsBundleForTests } from '@/server/settings/snapshot'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
-import { TableOfContents } from '@/ui/post/toc/TableOfContents'
+import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
 const headings: MarkdownHeading[] = [
   { depth: 2, slug: 'intro', text: 'Intro' },

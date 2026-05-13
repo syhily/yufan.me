@@ -3,7 +3,7 @@ import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loade
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { searchLoader } from '@/server/route-helpers/search-loader'
 import { metaWithFallback } from '@/server/seo/meta'
-import { PostListingBody } from '@/ui/post/post/PostListViews'
+import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/search.list'
 

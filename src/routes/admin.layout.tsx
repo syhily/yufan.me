@@ -3,9 +3,9 @@ import { Link, Outlet } from 'react-router'
 import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
-import { AdminErrorFallback } from '@/ui/admin/AdminErrorFallback'
+import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { useSiteIdentityOptional } from '@/ui/lib/blog-config-context'
-import { BrandLogo } from '@/ui/primitives/BrandLogo'
+import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 // The login / install screen is admin chrome — same shadcn / Tailwind v4
 // cascade the wp-admin SPA uses, so import `tailwind.css` directly. This
 // keeps the public-site Bootstrap cascade (`public.css`) and the

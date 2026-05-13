@@ -1,6 +1,6 @@
 import { isRouteErrorResponse } from 'react-router'
 
-import { NotWordPressView } from '@/ui/post/NotWordPressView'
+import { NotWordPressView } from '@/ui/public/chrome/NotWordPressView'
 
 // Mirror of `NOT_WORDPRESS_STATUS_TEXT` from
 // `@/server/route-helpers/wp-decoy.ts`. The contract is "a 404

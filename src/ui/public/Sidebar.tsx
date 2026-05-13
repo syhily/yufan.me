@@ -8,7 +8,7 @@ import { safeHref } from '@/shared/safe-url'
 import { Tooltip } from '@/ui/components/tooltip'
 import { useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { SearchBar } from '@/ui/search/Search'
+import { SearchBar } from '@/ui/public/Search'
 
 // Sidebar shell. Replaces the legacy `.sidebar-inner` (`padding:
 // 2rem 1.75rem; background-color: var(--bg-white)`) plus the

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 
-import { Comment } from '@/ui/comments/Comment'
-import { CommentItem } from '@/ui/comments/CommentItem'
+import { Comment } from '@/ui/public/comments/Comment'
+import { CommentItem } from '@/ui/public/comments/CommentItem'
 
 import { renderInRouter } from './_helpers/render'
 

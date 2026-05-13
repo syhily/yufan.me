@@ -1,6 +1,6 @@
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 
-import { CommentItem } from '@/ui/comments/CommentItem'
+import { CommentItem } from '@/ui/public/comments/CommentItem'
 
 export interface CommentProps {
   comments: CommentItemType[]

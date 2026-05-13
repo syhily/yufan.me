@@ -3,13 +3,13 @@ import type { ReactNode } from 'react'
 import type { NavigationItem } from '@/shared/blog-config'
 
 import { useNavigationSettings } from '@/ui/lib/blog-config-context'
-import { Footer } from '@/ui/primitives/Footer'
-import { Header } from '@/ui/primitives/Header'
-import { ScrollTopButton } from '@/ui/primitives/ScrollTopButton'
-import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
+import { Footer } from '@/ui/public/chrome/Footer'
+import { Header } from '@/ui/public/chrome/Header'
+import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
+import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 
 // NOTE: this component does NOT import `public.css`. The public stylesheet
-// cascade lives one level up in `@/ui/primitives/PublicChrome` so it can be
+// cascade lives one level up in `@/ui/public/chrome/PublicChrome` so it can be
 // reached through a *static* import from `routes/public.layout.tsx` (which
 // in turn lets React Router include the resolved `<link rel="stylesheet">`
 // tags in the SSR `<Links />` output, preventing FOUC on first paint).

@@ -20,8 +20,8 @@ import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
-import { ErrorView } from '@/ui/post/ErrorView'
-import { NavigationSplash } from '@/ui/primitives/NavigationSplash'
+import { ErrorView } from '@/ui/public/chrome/ErrorView'
+import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
 
 import type { Route } from './+types/root'
 
@@ -34,11 +34,13 @@ import type { Route } from './+types/root'
 // free of `public.css` while still giving fatal-error pages real styling.
 //
 // IMPORTANT: do NOT re-export `PublicChrome` (or any binding from
-// `@/ui/primitives/PublicChrome` or `@/ui/primitives/BaseLayout`) from
+// `@/ui/public/chrome/PublicChrome` or `@/ui/public/chrome/BaseLayout`) from
 // this module. A re-export pins the live binding statically and would
 // drag `public.css` into every route chunk, breaking the cascade
 // contract documented in `tailwind.css` (#admin-buttons-no-padding).
-const PublicChromeLazy = lazy(() => import('@/ui/primitives/PublicChrome').then((m) => ({ default: m.PublicChrome })))
+const PublicChromeLazy = lazy(() =>
+  import('@/ui/public/chrome/PublicChrome').then((m) => ({ default: m.PublicChrome })),
+)
 
 // Order matters:
 //   1. Session middleware decrypts the cookie + populates request

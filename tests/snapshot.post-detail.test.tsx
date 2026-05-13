@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { MarkdownHeading } from '@/shared/catalog'
 
-import { PostDetailBody } from '@/ui/post/post/PostDetailBody'
+import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 
 import { makePost, makePostList, makeTag } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'

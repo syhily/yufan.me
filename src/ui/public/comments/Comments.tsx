@@ -14,17 +14,17 @@ import type { CommentItem as CommentItemType, Comments as CommentsData } from '@
 import { useApiFetcher } from '@/client/api/fetcher'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { API_ACTIONS } from '@/shared/api-actions'
-import { CommentItem } from '@/ui/comments/CommentItem'
-import { CommentReplyForm } from '@/ui/comments/CommentReplyForm'
+import { Button } from '@/ui/components/button'
+import { useCommentsSettings } from '@/ui/lib/blog-config-context'
+import { CommentItem } from '@/ui/public/comments/CommentItem'
+import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import {
   CommentsContext,
   type CommentsContextValue,
   type CommentTreeAction,
   type CommentTreeState,
   useCommentsContext,
-} from '@/ui/comments/comments-context'
-import { Button } from '@/ui/components/button'
-import { useCommentsSettings } from '@/ui/lib/blog-config-context'
+} from '@/ui/public/comments/comments-context'
 
 export interface CommentsProps {
   commentKey: string

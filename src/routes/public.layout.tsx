@@ -2,8 +2,8 @@ import { Outlet, useLocation, useMatches, useRouteLoaderData } from 'react-route
 
 import type { RouteHandle } from '@/root'
 
-import { ErrorView } from '@/ui/post/ErrorView'
-import { PublicChrome } from '@/ui/primitives/PublicChrome'
+import { ErrorView } from '@/ui/public/chrome/ErrorView'
+import { PublicChrome } from '@/ui/public/chrome/PublicChrome'
 
 import type { Route } from './+types/public.layout'
 

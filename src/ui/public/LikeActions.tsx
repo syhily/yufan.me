@@ -1,5 +1,5 @@
 import { HeartIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { startTransition, useEffect, useOptimistic, useState } from 'react'
 
 import type {
   DecreaseLikeInput,
@@ -18,23 +18,27 @@ import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { QQIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { QRDialog } from '@/ui/primitives/QRDialog'
+import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
 export interface LikeButtonProps {
+  /** Stable URL — used as the `localStorage` namespace for the like token. */
   permalink: string
+  /** Metric `public_id` UUID — the wire key the like API actions expect. */
+  commentKey: string
   likes: number
 }
 
 const tokenStorageKey = (permalink: string): string => permalink
 
 export interface LikeButtonState {
-  permalink: string
+  /** Mirrors the API wire `key` — the metric's public UUID. */
+  commentKey: string
   likes: number
   liked: boolean
 }
 
-export function createLikeButtonState(permalink: string, likes: number): LikeButtonState {
-  return { permalink, likes, liked: false }
+export function createLikeButtonState(commentKey: string, likes: number): LikeButtonState {
+  return { commentKey, likes, liked: false }
 }
 
 /** Apply an optimistic like/unlike toggle. Exported for unit tests. */
@@ -50,24 +54,38 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
 // the post / page detail pages, validates any cached like token in
 // `localStorage`, and uses one `useApiFetcher` per direction so the SSR
 // HTML (count / heart) stays the source of truth on first paint.
-export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) {
-  // Plain `useState` is the right primitive here: `useOptimistic` only keeps
-  // its dispatched update alive while an Action / transition is pending, so
-  // calling its setter from a non-transition `onClick` flashes the optimistic
-  // value for a single render and then reverts before the network round trip
-  // commits — visually identical to "the button does nothing on click". The
-  // network round trip is already managed by `useApiFetcher`, so we apply the
-  // optimistic toggle directly to local state and let `onSuccess` overwrite
-  // with the server-confirmed count.
-  const [state, setState] = useState(createLikeButtonState(permalink, initialLikes))
+export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeButtonProps) {
+  // baseState is the server-confirmed view. `useOptimistic` layers the
+  // pending toggle on top of it for the duration of the in-flight transition
+  // so the heart and counter flip the instant the user clicks.
+  //
+  // Contract that makes this work: `addOptimistic` MUST be dispatched
+  // inside a transition (React 19 reverts the update on the next render
+  // otherwise, which used to manifest as "the click does nothing"), and the
+  // transition MUST stay pending until `onSuccess` has committed the
+  // confirmed `baseState`. We achieve both by wrapping the dispatch in
+  // `startTransition(async () => { … })` and awaiting `submit`, whose
+  // returned promise resolves only after React Router finishes revalidation
+  // — by which point the `useFetcherResult` effect has already drained
+  // `fetcher.data` and called `onSuccess`, so `baseState` already matches
+  // the optimistic value and the transition can end without a flicker.
+  //
+  // Wire-vs-storage key split: the like API actions key off the metric's
+  // `public_id` UUID (`commentKey`), but the local like-token cache is
+  // keyed off the URL (`permalink`) so it survives DB id churn between
+  // deployments. Confuse the two and `findMetricByPublicId` 404s the
+  // permalink string — that was the original bug surfaced by clicking
+  // the heart.
+  const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
+  const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
     API_ACTIONS.comment.validateLikeToken,
     {
       onSuccess: (data) => {
-        setState((prev) => (data.key === prev.permalink ? { ...prev, liked: data.valid } : prev))
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
         if (!data.valid) {
-          localStorage.removeItem(tokenStorageKey(data.key))
+          localStorage.removeItem(tokenStorageKey(permalink))
         }
       },
     },
@@ -75,15 +93,15 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
 
   const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
     onSuccess: (data) => {
-      setState((prev) => (data.key === prev.permalink ? { ...prev, liked: true, likes: data.likes } : prev))
-      localStorage.setItem(tokenStorageKey(data.key), data.token)
+      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
+      localStorage.setItem(tokenStorageKey(permalink), data.token)
     },
   })
 
   const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
     onSuccess: (data) => {
-      setState((prev) => (data.key === prev.permalink ? { ...prev, liked: false, likes: data.likes } : prev))
-      localStorage.removeItem(tokenStorageKey(data.key))
+      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
+      localStorage.removeItem(tokenStorageKey(permalink))
     },
   })
 
@@ -93,31 +111,40 @@ export function LikeButton({ permalink, likes: initialLikes }: LikeButtonProps) 
   // the new page's cached token.
   const validateSubmit = validate.submit
   useEffect(() => {
-    setState(createLikeButtonState(permalink, initialLikes))
+    setBaseState(createLikeButtonState(commentKey, initialLikes))
     const token = localStorage.getItem(tokenStorageKey(permalink))
     if (!token) {
       return
     }
-    validateSubmit({ key: permalink, token })
-  }, [permalink, initialLikes, validateSubmit])
+    validateSubmit({ key: commentKey, token })
+  }, [permalink, commentKey, initialLikes, validateSubmit])
 
   const isPending = increase.isPending || decrease.isPending
+  const increaseSubmitAsync = increase.submitAsync
+  const decreaseSubmitAsync = decrease.submitAsync
 
   const onClick = () => {
     if (isPending) {
       return
     }
 
+    // The optimistic dispatch only survives while a transition is pending,
+    // so we open one here and let it stay pending until `submitAsync`
+    // resolves — see the contract comment above the hook calls.
     if (state.liked) {
       const token = localStorage.getItem(tokenStorageKey(permalink))
       if (!token) {
         return
       }
-      setState((prev) => applyLikeOptimistic(prev, 'unlike'))
-      decrease.submit({ key: permalink, token })
+      startTransition(async () => {
+        addOptimistic('unlike')
+        await decreaseSubmitAsync({ key: commentKey, token })
+      })
     } else {
-      setState((prev) => applyLikeOptimistic(prev, 'like'))
-      increase.submit({ key: permalink })
+      startTransition(async () => {
+        addOptimistic('like')
+        await increaseSubmitAsync({ key: commentKey })
+      })
     }
   }
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { ClientPostWithMetadata } from '@/shared/catalog'
 
-import { PostListingBody } from '@/ui/post/post/PostListViews'
+import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import { makePost } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'

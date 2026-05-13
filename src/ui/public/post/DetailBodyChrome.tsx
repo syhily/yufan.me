@@ -7,12 +7,12 @@ import type { CommentFormUser, MarkdownHeading } from '@/shared/catalog'
 import type { DetailPageComments } from '@/shared/comments'
 
 import { formatLocalDate } from '@/shared/formatter'
-import { Comments } from '@/ui/comments/Comments'
-import { CommentsSkeleton } from '@/ui/comments/CommentsSkeleton'
 import { cn } from '@/ui/lib/cn'
-import { LikeButton } from '@/ui/like/LikeActions'
-import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/post/postChrome'
-import { TableOfContents } from '@/ui/post/toc/TableOfContents'
+import { Comments } from '@/ui/public/comments/Comments'
+import { CommentsSkeleton } from '@/ui/public/comments/CommentsSkeleton'
+import { LikeButton } from '@/ui/public/LikeActions'
+import { postMetaClass, postMetaDateClass, postTitleClass } from '@/ui/public/post/postChrome'
+import { TableOfContents } from '@/ui/public/post/TableOfContents'
 
 export type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 
@@ -136,7 +136,7 @@ export function DetailBodyChrome({
           {children}
         </div>
       </div>
-      <LikeButton permalink={permalink} likes={likes} />
+      <LikeButton permalink={permalink} commentKey={commentKey} likes={likes} />
       {afterLikeButton}
       {commentsEnabled && (
         <Suspense fallback={<CommentsSkeleton />}>

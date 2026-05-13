@@ -125,22 +125,41 @@ src/
 - Each component receives explicit props. No reads from sessions, route
   params, request objects, or environment variables. State lives at the
   route module or the closest interactive parent.
-- Sub-areas:
-  - `ui/primitives/` — Header, Footer, Image, Tooltip, Popup,
-    QRDialog, ScrollTopButton.
-  - `ui/components/` — shadcn/ui primitives (Base UI variant). The
-    layout matches `components.json` so `npx shadcn@latest add/diff`
-    works out of the box. Public and admin trees both consume these
-    primitives directly; the public site and the admin shell share a
-    single token cascade defined once at `:root` in `tailwind.css`.
-  - `ui/post/`, `ui/pagination/`, `ui/toc/`, `ui/sidebar/`,
-    `ui/search/`, `ui/like/`, `ui/comments/`, `ui/admin/` — Domain UIs.
+- Three tiers, by intent:
+  - **`ui/components/`** — shadcn/ui primitives (Base UI variant),
+    flat by convention so `npx shadcn@latest add/diff` works out of
+    the box (`components.json` aliases `components` / `ui` here).
+    Subgrouping is reserved for special cases (none today). Public
+    and admin trees both consume these primitives directly; one
+    token cascade in `:root` (see `tailwind.css`) covers both.
+  - **`ui/public/`** — public-site components, grouped by domain:
+    - `chrome/` — site shell pieces (`Header`, `Footer`, `BaseLayout`,
+      `PublicChrome`, `BrandLogo`, `NavigationSplash`,
+      `ScrollTopButton`, `ThemeToggle`) plus the site-level fallback
+      views (`ErrorView`, `NotWordPressView`).
+    - `post/` — public reading experience (post / page detail bodies,
+      list views, pagination, TOC, archives, categories) flat inside.
+    - `comments/` — public comment thread + form.
+    - `widgets/` — small isomorphic display primitives reused across
+      public surfaces (`Image`, `Popup`, `QRDialog`,
+      `use-image-loaded`).
+    - Single-file domain leaves at the top of `ui/public/`:
+      `Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`.
+  - **`ui/admin/`** — admin panel, already grouped by domain
+    (`categories/`, `comments/`, `editor/`, `friends/`, `images/`,
+    `musics/`, `pages/`, `posts/`, `settings/`, `tags/`, `users/`,
+    plus `auth/` for the login + install forms, `shared/` for
+    cross-domain admin pieces, and `shell/` for `AdminShell`,
+    `AdminScrollTopButton`, `AdminErrorFallback`).
+- Cross-cutting modules sit at the top of `ui/` because they serve
+  both public and admin:
   - `ui/pt/` — PortableText SSR renderer (`render.tsx`,
     `Footnotes.tsx`, `image-meta-context.tsx`) and the custom-block
     React components under `ui/pt/blocks/` (CodeBlock, BlockImage,
     MusicPlayer, Solution, Friends).
   - `ui/icons/` — Static-export icon library plus inline SVG pieces.
-  - `ui/lib/` — UI-only utilities (e.g. `cn()`).
+  - `ui/lib/` — UI-only utilities (e.g. `cn()`); shadcn's
+    `aliases.lib` is pinned here.
 - For raw HTML, use `dangerouslySetInnerHTML` directly on the host
   element. Do not recreate a generic `Html` wrapper.
 - For conditional classNames, use `cn()` from `@/ui/lib/cn`. The helper
@@ -152,7 +171,7 @@ src/
   `tests/contract.tailwind-tokens.test.ts`. The full rationale (why we
   extend, why `leading` is intentionally omitted) lives in `cn.ts`'s
   module comment.
-- Use `<Image />` from `@/ui/primitives/Image` for transformed remote
+- Use `<Image />` from `@/ui/public/widgets/Image` for transformed remote
   images. Use named imports from `@/ui/icons` for inline SVG; never
   `<Icon name="..." />` string lookups (defeats static analysis).
 
@@ -317,7 +336,7 @@ Use aliases instead of relative paths. The only allowed relative imports:
       **【已发布的草稿】** (confirms parity).
 - The marker discriminator is
   `'draft' | 'unpublished-draft' | 'published-draft' | null` and
-  lives in `@/ui/post/post/PageDetailBody`. The single service
+  lives in `@/ui/public/post/PageDetailBody`. The single service
   function `loadPageDraftPreviewBySlug` returns
   `{ page, hasNewerDraft }`; the route picks the marker from
   `(meta.published, hasNewerDraft)` so the UI never has to know

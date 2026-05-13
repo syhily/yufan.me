@@ -2,7 +2,7 @@ import { getClientPostsWithMetadata, listClientPosts } from '@/server/posts/quer
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { toListingPostCard } from '@/shared/catalog'
-import { ArchivesBody } from '@/ui/post/archives/ArchivesBody'
+import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
 
 import type { Route } from './+types/archives'
 

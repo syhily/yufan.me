@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { CommentItem } from '@/shared/comments'
 
-import { commentTreeReducer, createCommentTreeState } from '@/ui/comments/Comments'
-import { applyLikeOptimistic, createLikeButtonState } from '@/ui/like/LikeActions'
+import { commentTreeReducer, createCommentTreeState } from '@/ui/public/comments/Comments'
+import { applyLikeOptimistic, createLikeButtonState } from '@/ui/public/LikeActions'
 
 function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
   return {

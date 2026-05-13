@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { NavigationItem } from '@/shared/blog-config'
 
-import { BaseLayout } from '@/ui/primitives/BaseLayout'
+import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 // `public.css` is the public site's complete cascade (Bootstrap reboot/grid/
 // utilities, hand-written component partials — two colocated next to their
 // consumer (`@/ui/post/post.css`, `@/ui/post/toc/toc.css`) — and Tailwind v4
@@ -22,7 +22,7 @@ import { BaseLayout } from '@/ui/primitives/BaseLayout'
 //      pulling in this public cascade.
 //
 // IMPORTANT: do not re-export `PublicChrome` (or any binding from this
-// module) from `@/root` or `@/ui/primitives/BaseLayout`. A re-export
+// module) from `@/root` or `@/ui/public/chrome/BaseLayout`. A re-export
 // statically pins the module — the live binding must be observable —
 // which would drag `public.css` into the wp-admin chunk and break the
 // cascade contract documented in `tailwind.css` (the un-layered

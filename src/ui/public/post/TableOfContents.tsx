@@ -7,7 +7,7 @@ import type { TocOpts } from '@/shared/toc'
 import { generateToC } from '@/shared/toc'
 import { useSeoSettingsOptional } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { TocItems } from '@/ui/post/toc/TocItems'
+import { TocItems } from '@/ui/public/post/TocItems'
 
 // TOC toggle button. The class chain is sliced into semantic
 // groups (layout / box / typography & colour / motion / hover /

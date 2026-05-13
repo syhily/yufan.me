@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vite-plus/test'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 
-import { CommentReplyForm } from '@/ui/comments/CommentReplyForm'
-import { Comments } from '@/ui/comments/Comments'
+import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
+import { Comments } from '@/ui/public/comments/Comments'
 
 import { renderInRouter } from './_helpers/render'
 

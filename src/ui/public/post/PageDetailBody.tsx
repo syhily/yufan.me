@@ -5,9 +5,9 @@ import type { DetailPageComments } from '@/shared/comments'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
-import { DetailBodyChrome, type DraftMarker } from '@/ui/post/DetailBodyChrome'
-import { Footer } from '@/ui/primitives/Footer'
-import { Image } from '@/ui/primitives/Image'
+import { Footer } from '@/ui/public/chrome/Footer'
+import { DetailBodyChrome, type DraftMarker } from '@/ui/public/post/DetailBodyChrome'
+import { Image } from '@/ui/public/widgets/Image'
 
 export type { DraftMarker }
 

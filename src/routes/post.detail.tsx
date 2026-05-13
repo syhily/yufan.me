@@ -11,8 +11,8 @@ import { bundleFromMatches, routeMeta, seoForPost } from '@/server/seo/meta'
 import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { toClientPost, toDetailPostShell } from '@/shared/catalog'
-import { PostDetailBody } from '@/ui/post/post/PostDetailBody'
 import { PortableTextBody } from '@/ui/pt/render'
+import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 
 import type { Route } from './+types/post.detail'
 

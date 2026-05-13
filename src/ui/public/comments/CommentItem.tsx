@@ -10,8 +10,6 @@ import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
-import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
-import { CommentsContext, type CommentsContextValue } from '@/ui/comments/comments-context'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +25,8 @@ import { Button } from '@/ui/components/button'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { PortableTextBody } from '@/ui/pt/render'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
+import { CommentsContext, type CommentsContextValue } from '@/ui/public/comments/comments-context'
 
 export interface CommentItemProps {
   depth: number

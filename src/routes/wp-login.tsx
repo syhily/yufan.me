@@ -11,7 +11,7 @@ import {
   destroySession,
 } from '@/server/session'
 import { safeRedirectPath } from '@/shared/safe-url'
-import { AdminCredentialsForm } from '@/ui/admin/AdminCredentialsForm'
+import { AdminCredentialsForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 
 import type { Route } from './+types/wp-login'

@@ -476,7 +476,7 @@ describe('contract: module and bundle boundaries', () => {
   it('keeps the legacy forms partial fully retired', () => {
     // `forms.css` is gone. Its sole remaining rule (`.flex-avatar` and
     // its `<img>` descendant — the `.form-control*` family had already
-    // into the two avatar wrappers under `@/ui/comments/`:
+    // into the two avatar wrappers under `@/ui/public/comments/`:
     //
     //   - `CommentItem.tsx` 的 thread-row avatar wrapper
     //   - `CommentReplyForm.tsx` 的 form-level avatar wrapper
@@ -568,7 +568,7 @@ describe('contract: module and bundle boundaries', () => {
     // bar/`#` decorations entirely. The matchers are intentionally
     // anchored on the literal `content: …` payloads (the value that
     // actually paints the decoration) rather than on the full chain.
-    const sidebarSource = readFileSync('src/ui/sidebar/Sidebar.tsx', 'utf8')
+    const sidebarSource = readFileSync('src/ui/public/Sidebar.tsx', 'utf8')
     expect(sidebarSource).toMatch(/before:content-\['']/)
     expect(sidebarSource).toMatch(/before:content-\['#']/)
 
@@ -967,12 +967,12 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('keeps the wp-decoy status text mirrored between server and ErrorView', () => {
-    // `src/ui/post/ErrorView.tsx` lives under `src/ui/` so it may not
+    // `src/ui/public/chrome/ErrorView.tsx` lives under `src/ui/` so it may not
     // import from `src/server/`. The literal `'Not WordPress'` is
     // duplicated so the UI module stays boundary-clean; this test makes
     // sure the two copies agree.
     const server = readFileSync('src/server/route-helpers/wp-decoy.ts', 'utf8')
-    const ui = readFileSync('src/ui/post/ErrorView.tsx', 'utf8')
+    const ui = readFileSync('src/ui/public/chrome/ErrorView.tsx', 'utf8')
 
     expect(server).toContain("export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'")
     expect(ui).toContain("const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'")
@@ -1004,7 +1004,7 @@ describe('contract: module and bundle boundaries', () => {
     // This contract makes both invariants visible at PR time.
     const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
-    const commentItem = readFileSync('src/ui/comments/CommentItem.tsx', 'utf8')
+    const commentItem = readFileSync('src/ui/public/comments/CommentItem.tsx', 'utf8')
 
     expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
     expect(publicCss).not.toMatch(/^\s*\.comment-content\s*\{/m)
@@ -1096,8 +1096,8 @@ describe('contract: module and bundle boundaries', () => {
     expect(tailwindCss).toMatch(/&\.post-content\s*\{/)
     expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
 
-    const detailChrome = readFileSync('src/ui/post/DetailBodyChrome.tsx', 'utf8')
-    const commentItem = readFileSync('src/ui/comments/CommentItem.tsx', 'utf8')
+    const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
+    const commentItem = readFileSync('src/ui/public/comments/CommentItem.tsx', 'utf8')
 
     // post-content class is inlined in DetailBodyChrome; Post/Page DetailBody are thin wrappers.
     expect(detailChrome).toMatch(/cn\(\s*'post-content'\s*,/)
@@ -1128,7 +1128,7 @@ describe('contract: module and bundle boundaries', () => {
     //      `[data-popup-id="…"]` selector for the `document` click
     //      test. They must NOT re-introduce the legacy class hooks
     //      (`.qr-dialog-popup`, `.global-search-popup`).
-    const popup = readFileSync('src/ui/primitives/Popup.tsx', 'utf8')
+    const popup = readFileSync('src/ui/public/widgets/Popup.tsx', 'utf8')
     expect(popup).toMatch(/popupId\?:\s*string/)
     expect(popup).toMatch(/data-popup-id=\{popupId\}/)
     // The legacy `className?: string` prop has been removed from the
@@ -1136,13 +1136,13 @@ describe('contract: module and bundle boundaries', () => {
     // the portalised container.
     expect(popup).not.toMatch(/^\s*className\?:\s*string/m)
 
-    const qr = readFileSync('src/ui/primitives/QRDialog.tsx', 'utf8')
+    const qr = readFileSync('src/ui/public/widgets/QRDialog.tsx', 'utf8')
     expect(qr).toMatch(/popupId=\{QR_POPUP_ID\}/)
     expect(qr).toMatch(/\[data-popup-id="\$\{QR_POPUP_ID\}"\]/)
     expect(qr).not.toMatch(/'\.qr-dialog-popup'/)
     expect(qr).not.toMatch(/'qr-dialog-popup'/)
 
-    const search = readFileSync('src/ui/search/Search.tsx', 'utf8')
+    const search = readFileSync('src/ui/public/Search.tsx', 'utf8')
     expect(search).toMatch(/popupId=\{SEARCH_POPUP_ID\}/)
     expect(search).toMatch(/\[data-popup-id="\$\{SEARCH_POPUP_ID\}"\]/)
     expect(search).not.toMatch(/'\.global-search-popup'/)
@@ -1193,7 +1193,7 @@ describe('contract: module and bundle boundaries', () => {
     //      AND the back-to-top `<li>` (`ScrollTopButton.tsx`) must
     //      carry `transform-gpu` so iOS Safari keeps them on the
     //      GPU compositor across URL-bar resizes.
-    const scrollTop = readFileSync('src/ui/primitives/ScrollTopButton.tsx', 'utf8')
+    const scrollTop = readFileSync('src/ui/public/chrome/ScrollTopButton.tsx', 'utf8')
     expect(scrollTop).toMatch(/\btransform-gpu\b/)
     expect(scrollTop).toMatch(/\bopacity-0\b/)
     expect(scrollTop).toMatch(/\bopacity-100\b/)
@@ -1206,7 +1206,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(scrollTop).not.toMatch(/show\s*\?\s*'block'\s*:\s*'hidden'/)
     expect(scrollTop).not.toMatch(/show\s*\?\s*'hidden'\s*:\s*'block'/)
 
-    const baseLayout = readFileSync('src/ui/primitives/BaseLayout.tsx', 'utf8')
+    const baseLayout = readFileSync('src/ui/public/chrome/BaseLayout.tsx', 'utf8')
     expect(baseLayout).toMatch(/\btransform-gpu\b/)
   })
 })

@@ -1,7 +1,7 @@
 import type { Friend } from '@/shared/catalog'
 
 import { shuffle } from '@/shared/tools'
-import { Image } from '@/ui/primitives/Image'
+import { Image } from '@/ui/public/widgets/Image'
 
 export interface FriendsProps {
   friends: Friend[]

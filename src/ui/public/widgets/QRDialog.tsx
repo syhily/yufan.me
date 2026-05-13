@@ -11,7 +11,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 
 import { Button, buttonVariants } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
-import { Popup } from '@/ui/primitives/Popup'
+import { Popup } from '@/ui/public/widgets/Popup'
 
 export interface QRDialogProps extends VariantProps<typeof buttonVariants> {
   url: string

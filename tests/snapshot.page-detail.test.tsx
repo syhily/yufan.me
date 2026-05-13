@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { MarkdownHeading } from '@/shared/catalog'
 
-import { PageDetailBody } from '@/ui/post/post/PageDetailBody'
+import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
 
 import { makePage } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'

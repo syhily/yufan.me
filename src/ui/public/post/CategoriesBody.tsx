@@ -3,8 +3,8 @@ import { Link } from 'react-router'
 import type { ClientCategory } from '@/shared/catalog'
 
 import { cn } from '@/ui/lib/cn'
-import { postTitleClass } from '@/ui/post/postChrome'
-import { Image } from '@/ui/primitives/Image'
+import { postTitleClass } from '@/ui/public/post/postChrome'
+import { Image } from '@/ui/public/widgets/Image'
 
 export interface CategoriesBodyProps {
   title: string

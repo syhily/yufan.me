@@ -6,10 +6,10 @@ import type { DetailPageComments } from '@/shared/comments'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
-import { LikeShare } from '@/ui/like/LikeActions'
-import { DetailBodyChrome } from '@/ui/post/DetailBodyChrome'
-import { postMetaTagsClass } from '@/ui/post/postChrome'
-import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
+import { LikeShare } from '@/ui/public/LikeActions'
+import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
+import { postMetaTagsClass } from '@/ui/public/post/postChrome'
+import { Sidebar, type SidebarData } from '@/ui/public/Sidebar'
 
 export interface PostDetailBodyProps {
   post: DetailPostShell

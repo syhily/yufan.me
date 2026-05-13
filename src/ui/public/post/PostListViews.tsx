@@ -8,10 +8,10 @@ import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/cata
 import { formatShowDate } from '@/shared/formatter'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { Pagination } from '@/ui/post/pagination/Pagination'
-import { postTitleClass } from '@/ui/post/postChrome'
-import { Image } from '@/ui/primitives/Image'
-import { Sidebar, type SidebarData } from '@/ui/sidebar/Sidebar'
+import { Pagination } from '@/ui/public/post/Pagination'
+import { postTitleClass } from '@/ui/public/post/postChrome'
+import { Sidebar, type SidebarData } from '@/ui/public/Sidebar'
+import { Image } from '@/ui/public/widgets/Image'
 
 export interface HomeLayoutBodyProps {
   resolvedPosts: ListingPostCardWithMetadata[]

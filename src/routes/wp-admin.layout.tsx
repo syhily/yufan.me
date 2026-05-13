@@ -4,7 +4,7 @@ import type { RouteHandle } from '@/root'
 
 import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext, reuseOrIssueCsrfToken } from '@/server/session'
-import { AdminErrorFallback } from '@/ui/admin/AdminErrorFallback'
+import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
 
 import type { Route } from './+types/wp-admin.layout'

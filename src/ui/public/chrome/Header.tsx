@@ -10,10 +10,10 @@ import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
 import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { BrandLogo } from '@/ui/primitives/BrandLogo'
-import { QRDialog } from '@/ui/primitives/QRDialog'
-import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
-import { SearchIconButton } from '@/ui/search/Search'
+import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
+import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
+import { SearchIconButton } from '@/ui/public/Search'
+import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
 export interface HeaderProps {
   navigation: NavigationItem[]

@@ -8,9 +8,9 @@ import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
-import { PageDetailBody } from '@/ui/post/post/PageDetailBody'
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
+import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
 
 import type { Route } from './+types/page.detail'
 

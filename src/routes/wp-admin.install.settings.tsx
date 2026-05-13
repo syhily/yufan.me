@@ -5,7 +5,7 @@ import { SETTINGS_INSTALL_FIELDS, requireStageTwoSession } from '@/server/instal
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { issueCsrfToken, processAuthFormSubmission, seedInstallSettingsWithSession } from '@/server/session'
 import { getSupportedTimeZones } from '@/server/settings/timezones'
-import { SettingsInstallForm } from '@/ui/admin/SettingsInstallForm'
+import { SettingsInstallForm } from '@/ui/admin/auth/SettingsInstallForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 
 import type { Route } from './+types/wp-admin.install.settings'

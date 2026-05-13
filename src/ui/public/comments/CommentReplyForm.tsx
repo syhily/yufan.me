@@ -11,10 +11,10 @@ import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
-import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/comments/CommentBodyEditor'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
+import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
 
 export interface CommentReplyFormProps {
   commentKey: string

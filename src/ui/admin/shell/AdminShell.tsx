@@ -23,8 +23,8 @@ import { Button } from '@/ui/components/button'
 import { Separator } from '@/ui/components/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
-import { BrandLogo } from '@/ui/primitives/BrandLogo'
-import { ThemeToggle } from '@/ui/primitives/ThemeToggle'
+import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
+import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 
 interface NavItem {
   to: string

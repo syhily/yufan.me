@@ -5,10 +5,10 @@ import type { ClientPostWithMetadata } from '@/shared/catalog'
 
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Input } from '@/ui/components/input'
-import { Pagination } from '@/ui/post/pagination/Pagination'
-import { PostListingBody, PostSquare } from '@/ui/post/post/PostListViews'
 import { CodeBlock } from '@/ui/pt/blocks/CodeBlock'
-import { SearchBar } from '@/ui/search/Search'
+import { Pagination } from '@/ui/public/post/Pagination'
+import { PostListingBody, PostSquare } from '@/ui/public/post/PostListViews'
+import { SearchBar } from '@/ui/public/Search'
 
 import { makePost } from './_helpers/catalog'
 import { renderInRouter } from './_helpers/render'

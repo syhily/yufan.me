@@ -1,5 +1,5 @@
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
-import type { SidebarData } from '@/ui/sidebar/Sidebar'
+import type { SidebarData } from '@/ui/public/Sidebar'
 
 import { getCategoryLinks, listAllTags } from '@/server/catalog/queries'
 import {
@@ -16,7 +16,7 @@ import { loadSidebarData } from '@/server/sidebar/load'
 import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { formatLocalDate } from '@/shared/formatter'
-import { HomeLayoutBody } from '@/ui/post/post/PostListViews'
+import { HomeLayoutBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/home'
 

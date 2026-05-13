@@ -4,7 +4,7 @@ import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { getImageSrcset, getImageUrl } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { useImageLoaded } from '@/ui/primitives/use-image-loaded'
+import { useImageLoaded } from '@/ui/public/widgets/use-image-loaded'
 
 export interface RawImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'width' | 'height' | 'ref'> {
   src: string

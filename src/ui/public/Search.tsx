@@ -11,7 +11,7 @@ import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { Input } from '@/ui/components/input'
 import { useSidebarSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { Popup } from '@/ui/primitives/Popup'
+import { Popup } from '@/ui/public/widgets/Popup'
 
 // Sidebar search: real GET form first, React Router navigation second.
 

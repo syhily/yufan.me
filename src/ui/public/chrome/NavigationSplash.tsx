@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigation } from 'react-router'
 
 import { cn } from '@/ui/lib/cn'
-import { BrandLogo } from '@/ui/primitives/BrandLogo'
+import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 // React Router 7 SSR client navigation fetches the new route's `.data`
 // payload over the wire. On slow loaders the old page stays painted

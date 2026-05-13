@@ -7,9 +7,9 @@ import { API_ACTIONS } from '@/shared/api-actions'
 import { getImageSrcset } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
-import { DARK_IMAGE_DIM_CLASS } from '@/ui/primitives/Image'
-import { useImageLoaded } from '@/ui/primitives/use-image-loaded'
 import { useImageMeta } from '@/ui/pt/image-meta-context'
+import { DARK_IMAGE_DIM_CLASS } from '@/ui/public/widgets/Image'
+import { useImageLoaded } from '@/ui/public/widgets/use-image-loaded'
 
 // `<img>` override for PortableText image blocks. Wires the thumbhash
 // placeholder into the tree and lazily resolves missing hashes through a
