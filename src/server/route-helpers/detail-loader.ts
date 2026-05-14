@@ -5,9 +5,10 @@ import { redirect } from 'react-router'
 import type { EntityTarget } from '@/server/db/target'
 import type { ClientTag, SidebarPostLink } from '@/shared/catalog'
 
+import { trackAccess } from '@/server/analytics/track'
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/comments/page-data'
 import { notFound } from '@/server/route-helpers/http'
-import { issueCsrfToken, resolveSessionContext, tryGetSessionContext } from '@/server/session'
+import { issueCsrfToken, resolveSessionContext, tryGetSessionContext, userSession } from '@/server/session'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 
@@ -60,6 +61,21 @@ export async function loadPublicDetailData({
   const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
   const { session } = sessionContext
   const trackView = !isPrefetchRequest(request)
+  const isAdmin = userSession(session)?.role === 'admin'
+
+  // Append-only access-log write for the analytics dashboard. Lives
+  // alongside (not inside) the existing `bumpPageView` flow: the
+  // counter increment happens via `loadDetailPageCritical` (called
+  // from `loadDetailPageStreaming` below), the time-series write
+  // happens here. Skipping admin sessions matches the existing
+  // counter-bump exemption (`loadDetailPageCritical` only calls
+  // `bumpPageView` for non-admins) — the dashboard owner shouldn't
+  // be in their own visitor metrics. `void`d — never blocks the
+  // loader.
+  if (trackView && !isAdmin) {
+    void trackAccess(request, target)
+  }
+
   const [, streaming, issued] = await Promise.all([
     preload(),
     loadDetailPageStreaming(session, target, { trackView }),
