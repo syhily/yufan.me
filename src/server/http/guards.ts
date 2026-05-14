@@ -17,7 +17,7 @@ const requireAuth = createMiddleware<Env>(async (c, next) => {
   await next()
 })
 
-const requireRoleMw = (role: Role) =>
+export const requireRoleMw = (role: Role) =>
   createMiddleware<Env>(async (c, next) => {
     const user = c.var.session.get('user')
     if (!user) throw new HTTPException(401, { message: '未登录' })

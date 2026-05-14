@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import type { MetricRow, MetricType } from '@/shared/analytics/dto'
 
 import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
@@ -21,7 +20,7 @@ export interface MetricListProps {
 
 export function MetricList({ type, initial, className }: MetricListProps) {
   const state = useAnalyticsState()
-  const fetcher = useApiFetcher<unknown, MetricRow[]>(API_ACTIONS.analytics.metrics)
+  const fetcher = useApiFetcher<unknown, MetricRow[]>({ path: '/api/analytics/metrics', method: 'GET' })
 
   useEffect(() => {
     // Re-fetch whenever the URL state changes so the list stays in

@@ -131,7 +131,6 @@ describe('shared/api-actions', () => {
       ...Object.values(API_ACTIONS.image),
       ...Object.values(API_ACTIONS.music),
       ...Object.values(API_ACTIONS.admin),
-      ...Object.values(API_ACTIONS.analytics),
     ]
     expect(new Set(flat).size).toBe(flat.length)
     expect(flat.length).toBe(API_ACTION_LIST.length)
