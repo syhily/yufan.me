@@ -45,12 +45,12 @@ export const metric = pgTable(
     // in place of the historical URL-based `key`. `type` mirrors the
     // `content` table convention (`varchar(16)`, no DB enum, see the
     // `content` discriminator comment block below) so future entity
-    // types extend without a `pg_enum_add` migration. NULL only on the
-    // narrow window before the cleanup migration backfills orphan rows.
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    // types extend without a `pg_enum_add` migration.
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
     publicId: uuid('public_id')
       .notNull()
+      .default(sql`gen_random_uuid()`)
       .$defaultFn(() => randomUUID()),
     voteUp: bigint('vote_up', { mode: 'number' }),
     voteDown: bigint('vote_down', { mode: 'number' }),
@@ -71,8 +71,8 @@ export const like = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     token: varchar('token', { length: 255 }),
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
   },
   (table) => [index('idx_like_token').on(table.token), index('idx_like_owner').on(table.type, table.ownerId)],
 )
@@ -93,8 +93,8 @@ export const comment = pgTable(
       .$type<CommentBody>()
       .notNull()
       .default(sql`'[]'::jsonb`),
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),
     isVerified: boolean('is_verified').default(false),
     ua: text('ua'),
@@ -625,6 +625,7 @@ export const postSearchIndex = pgTable(
     embedding: vector('embedding', { dimensions: 1536 }),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .notNull()
+      .default(sql`now()`)
       .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_post_search_embedding').using('hnsw', table.embedding.op('vector_cosine_ops'))],
