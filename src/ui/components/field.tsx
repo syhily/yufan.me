@@ -177,7 +177,7 @@ function FieldError({ className, children, errors, ...props }: FieldErrorProps) 
     }
     return (
       <ul className="ml-4 flex list-disc flex-col gap-1">
-        {uniqueErrors.map((error, index) => (error?.message ? <li key={index}>{error.message}</li> : null))}
+        {uniqueErrors.map((error) => (error?.message ? <li key={error.message}>{error.message}</li> : null))}
       </ul>
     )
   }, [children, errors])

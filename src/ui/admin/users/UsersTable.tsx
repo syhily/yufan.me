@@ -324,6 +324,8 @@ function UsersSkeleton() {
   return (
     <>
       {Array.from({ length: 5 }).map((_, i) => (
+        // Skeleton rows — identical placeholders, swapped wholesale on load.
+        // oxlint-disable-next-line react/no-array-index-key
         <TableRow key={i}>
           <TableCell className="px-3">
             <Skeleton className="size-4 rounded" />

@@ -6,6 +6,7 @@ import { useDetachPublicCss } from '@/client/hooks/use-detach-public-css'
 import { getRouteRequestContext, hasAtLeast, reuseOrIssueCsrfToken } from '@/server/session'
 import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { AdminShell } from '@/ui/admin/shell/AdminShell'
+import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/wp-admin.layout'
 // The wp-admin SPA only needs Tailwind v4 (with the `` prefix) plus the
@@ -52,8 +53,17 @@ export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps)
   useDetachPublicCss()
   const { pathname } = useLocation()
   return (
-    <AdminShell currentUser={loaderData.currentUser} pathname={pathname}>
-      <Outlet context={{ csrfToken: loaderData.csrfToken, currentUser: loaderData.currentUser }} />
-    </AdminShell>
+    <>
+      {/*
+        globalCss already loads on every route via root.tsx's <Layout>;
+        admin additionally pulls in postCss so the page-body editor
+        preview and any in-admin `.prose-blog` rendering see the same
+        serif typography the public article surface gets.
+      */}
+      <PostFontLinks />
+      <AdminShell currentUser={loaderData.currentUser} pathname={pathname}>
+        <Outlet context={{ csrfToken: loaderData.csrfToken, currentUser: loaderData.currentUser }} />
+      </AdminShell>
+    </>
   )
 }

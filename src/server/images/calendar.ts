@@ -11,10 +11,25 @@ import { compressImage } from '@/server/images/compress'
 const WIDTH = 600
 const HEIGHT = 880
 
-function ensureFonts(): void {
-  if (!GlobalFonts.has('OPPOSerif')) {
-    GlobalFonts.register(oppoSerif(), 'OPPOSerif')
+// Single-flight font registration mirroring `og.ts`. See that file for
+// the rationale on retry-on-error + null-buffer degrade.
+let calendarFontReady: Promise<void> | null = null
+function ensureFonts(): Promise<void> {
+  if (calendarFontReady === null) {
+    calendarFontReady = (async () => {
+      if (GlobalFonts.has('OPPOSerif')) {
+        return
+      }
+      const buffer = await oppoSerif()
+      if (buffer !== null && !GlobalFonts.has('OPPOSerif')) {
+        GlobalFonts.register(buffer, 'OPPOSerif')
+      }
+    })().catch((err) => {
+      calendarFontReady = null
+      throw err
+    })
   }
+  return calendarFontReady
 }
 
 async function fetchDailyQuote(date: Date) {
@@ -81,7 +96,7 @@ function wrapText(ctx: SKRSContext2D, text: string, maxWidth: number) {
 export type CalendarTheme = 'light' | 'dark'
 
 export async function renderCalendar(date: Date, theme: CalendarTheme = 'light'): Promise<Buffer> {
-  ensureFonts()
+  await ensureFonts()
 
   // Generate the required data from date.
   const quoteData = await fetchDailyQuote(date)

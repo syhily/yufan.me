@@ -12,6 +12,7 @@ export const SETTINGS_SECTIONS = [
   'cache',
   'rateLimit',
   'search',
+  'fonts',
 ] as const
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
@@ -43,6 +44,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   cache: 'cache',
   rateLimit: 'rateLimit',
   search: 'search',
+  fonts: 'fonts',
 } as const satisfies Record<SettingsSection, string>
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
@@ -98,6 +100,11 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     to: '/wp-admin/settings/search',
     label: '文章搜索',
     description: 'AI 向量搜索与关键词搜索切换、OpenAI 配置',
+  },
+  fonts: {
+    to: '/wp-admin/settings/fonts',
+    label: '字体配置',
+    description: 'OG 图与日历图渲染所用的远程 TTF 字体地址',
   },
 }
 

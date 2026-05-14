@@ -370,7 +370,7 @@ function titleFor(kind: UploadKind): string {
       return `上传分类封面 · ${kind.slug}`
     case 'friend':
       return `上传友链海报 · ${kind.host}`
-    default:
+    case 'generic':
       return '上传图片'
   }
 }

@@ -1,4 +1,5 @@
 import {
+  ChartLineIcon,
   FileTextIcon,
   FolderIcon,
   HomeIcon,
@@ -58,6 +59,13 @@ const NAV: NavItem[] = [
   { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon, minRole: 'author' },
   { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users', minRole: 'admin' },
   { to: '/wp-admin/sessions', label: '会话管理', icon: SmartphoneIcon, minRole: 'admin' },
+  {
+    to: '/wp-admin/analytics',
+    label: '访问统计',
+    icon: ChartLineIcon,
+    matchPrefix: '/wp-admin/analytics',
+    minRole: 'admin',
+  },
   {
     to: '/wp-admin/settings/general',
     label: '系统设置',

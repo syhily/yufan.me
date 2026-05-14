@@ -13,6 +13,7 @@ import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { toClientPost, toDetailPostShell } from '@/shared/catalog'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
+import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/post.detail'
 
@@ -74,23 +75,26 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
   const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta } = loaderData
   return (
-    <PostDetailBody
-      post={post}
-      headings={post.headings}
-      visibleTags={visibleTags}
-      admin={detail.admin}
-      likes={detail.likes}
-      commentKey={detail.commentKey}
-      commentCsrfToken={detail.csrfToken}
-      commentsPromise={detail.comments}
-      currentUser={detail.currentUser}
-      sidebar={{
-        posts: sidebarPosts,
-        tags,
-        recentComments: detail.recentComments,
-      }}
-    >
-      <PortableTextBody body={body} headingSlugs={post.headings.map((h) => h.slug)} imageMeta={imageMeta} />
-    </PostDetailBody>
+    <>
+      <PostFontLinks />
+      <PostDetailBody
+        post={post}
+        headings={post.headings}
+        visibleTags={visibleTags}
+        admin={detail.admin}
+        likes={detail.likes}
+        commentKey={detail.commentKey}
+        commentCsrfToken={detail.csrfToken}
+        commentsPromise={detail.comments}
+        currentUser={detail.currentUser}
+        sidebar={{
+          posts: sidebarPosts,
+          tags,
+          recentComments: detail.recentComments,
+        }}
+      >
+        <PortableTextBody body={body} headingSlugs={post.headings.map((h) => h.slug)} imageMeta={imageMeta} />
+      </PostDetailBody>
+    </>
   )
 }

@@ -461,6 +461,8 @@ function MyCommentsSkeleton() {
   return (
     <>
       {Array.from({ length: 3 }).map((_, i) => (
+        // Skeleton cards — identical placeholders, swapped wholesale on load.
+        // oxlint-disable-next-line react/no-array-index-key
         <Card key={i}>
           <CardContent className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">

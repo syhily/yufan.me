@@ -11,6 +11,7 @@ import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
 import { Friends } from '@/ui/pt/blocks/Friends'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PageDetailBody } from '@/ui/public/post/PageDetailBody'
+import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
 
 import type { Route } from './+types/page.detail'
 
@@ -68,24 +69,27 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   const { page, body, friends, showFriends, draftMarker, detail, imageMeta, footnotesSectionTitle } = loaderData
   return (
-    <PageDetailBody
-      page={page}
-      headings={page.headings}
-      draftMarker={draftMarker}
-      likes={detail.likes}
-      commentKey={detail.commentKey}
-      commentCsrfToken={detail.csrfToken}
-      commentsPromise={detail.comments}
-      currentUser={detail.currentUser}
-      admin={detail.admin}
-    >
-      <PortableTextBody
-        body={body}
-        imageMeta={imageMeta}
-        headingSlugs={page.headings.map((h) => h.slug)}
-        footnotesSectionTitle={footnotesSectionTitle}
-      />
-      {showFriends && <Friends friends={[...friends]} />}
-    </PageDetailBody>
+    <>
+      <PostFontLinks />
+      <PageDetailBody
+        page={page}
+        headings={page.headings}
+        draftMarker={draftMarker}
+        likes={detail.likes}
+        commentKey={detail.commentKey}
+        commentCsrfToken={detail.csrfToken}
+        commentsPromise={detail.comments}
+        currentUser={detail.currentUser}
+        admin={detail.admin}
+      >
+        <PortableTextBody
+          body={body}
+          imageMeta={imageMeta}
+          headingSlugs={page.headings.map((h) => h.slug)}
+          footnotesSectionTitle={footnotesSectionTitle}
+        />
+        {showFriends && <Friends friends={[...friends]} />}
+      </PageDetailBody>
+    </>
   )
 }

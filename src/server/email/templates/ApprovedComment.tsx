@@ -1,5 +1,4 @@
-import { Link, Text } from 'react-email'
-
+import { Link, Text } from '@/server/email/render'
 import { EmailLayout } from '@/server/email/templates/layout/EmailLayout'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 

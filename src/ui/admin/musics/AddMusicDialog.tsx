@@ -289,7 +289,11 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
           <div className="flex flex-col gap-2">
             {isSearching && results.length === 0 ? (
-              Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} className="h-16 w-full rounded-md" />)
+              Array.from({ length: 3 }).map((_, index) => (
+                // Skeleton placeholders — identical, swapped wholesale on load.
+                // oxlint-disable-next-line react/no-array-index-key
+                <Skeleton key={index} className="h-16 w-full rounded-md" />
+              ))
             ) : results.length === 0 ? (
               <p className="text-sm text-muted-foreground">输入关键词后点击搜索。</p>
             ) : (
@@ -358,6 +362,9 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                           {formatSeconds(currentTime)}
                         </span>
                         <div
+                          // Custom click-to-seek progress bar. `<input type="range">`
+                          // would lose the styled track + per-pixel click handler.
+                          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
                           role="slider"
                           aria-label="预览进度"
                           aria-valuemin={0}

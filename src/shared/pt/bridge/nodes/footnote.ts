@@ -59,7 +59,14 @@ function walkMainColumnFootnoteRefs(body: PortableTextBody, visit: (targetKey: s
           }
         }
         return
-      default:
+      // Leaf blocks that cannot host footnote refs — explicit no-op
+      // keeps `switch-exhaustiveness-check` happy without a default.
+      case 'code':
+      case 'horizontalRule':
+      case 'image':
+      case 'mathBlock':
+      case 'mermaid':
+      case 'musicPlayer':
         return
     }
   }
@@ -224,7 +231,13 @@ function syncBlock(block: Block, keyToIndex: Map<string, number>): Block {
           }),
         })),
       }
-    default:
+    // Leaf blocks carry no footnote refs — return unchanged.
+    case 'code':
+    case 'horizontalRule':
+    case 'image':
+    case 'mathBlock':
+    case 'mermaid':
+    case 'musicPlayer':
       return block
   }
 }

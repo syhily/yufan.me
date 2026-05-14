@@ -11,6 +11,23 @@ export const env = createEnv({
     DATABASE_URL: z.url(),
     REDIS_URL: z.url(),
     SESSION_SECRET: z.string().min(1),
+
+    // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional —
+    // when unset (or unreadable) the analytics ingestion pipeline
+    // (`@/server/analytics/geoip`) returns null-only geo fields and
+    // every other column on `access_log` still populates. Lives in
+    // env (not the `setting` table) because it's a deploy-time file
+    // path tied to whatever volume mount ships the binary; rotating
+    // it never makes sense to do from an admin UI.
+    MAXMIND_DB_PATH: z.string().min(1).optional(),
+
+    // When `true`, admin sessions' visits to the home page and post /
+    // page detail pages are written to `access_log` like any other
+    // visitor. Default `false` keeps the dashboard owner out of their
+    // own visitor metrics (matches the `bumpPageView` exemption on
+    // `metric.pv`). Flip to `true` on dev environments where you want
+    // to see your own visits land in the table during analytics work.
+    ANALYTICS_TRACK_ADMIN: z.stringbool().default(false),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
@@ -25,4 +42,13 @@ export const env = createEnv({
 // image config (the rehype plugin is gone — image metadata is now
 // resolved at SSR time against the `image` table), so there is no
 // build-time dependency on these values either.
-export const { DATABASE_URL, HOST, LOG_LEVEL, PORT, REDIS_URL, SESSION_SECRET } = env
+export const {
+  ANALYTICS_TRACK_ADMIN,
+  DATABASE_URL,
+  HOST,
+  LOG_LEVEL,
+  MAXMIND_DB_PATH,
+  PORT,
+  REDIS_URL,
+  SESSION_SECRET,
+} = env

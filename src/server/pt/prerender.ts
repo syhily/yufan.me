@@ -126,7 +126,10 @@ function collectBlock(
       // the case explicitly to avoid an "unknown block type"
       // warning if a stricter `default` ever gets added.
       return
-    default:
+    // Leaf blocks with no nested content the prerender pass cares about.
+    case 'horizontalRule':
+    case 'image':
+    case 'musicPlayer':
       return
   }
 }

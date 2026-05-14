@@ -1,6 +1,7 @@
 import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loader'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
+import { trackAccess } from '@/server/analytics/track'
 import { getCategoryLinks, listAllTags } from '@/server/catalog/queries'
 import {
   countPublicPosts,
@@ -11,7 +12,7 @@ import {
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { metaWithFallback } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
+import { getRouteRequestContext, userSession } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
@@ -32,6 +33,14 @@ export async function loader({
   params,
 }: Route.LoaderArgs): Promise<ListingPageLoaderData<HomeExtra>> {
   const { session } = getRouteRequestContext({ request, context })
+
+  // Time-series access-log write for the analytics dashboard. The
+  // homepage isn't a content detail page so we pass a null target —
+  // the row still counts toward visits / visitors / referers. The
+  // admin-exemption (so the dashboard owner doesn't pollute their
+  // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
+  // so it can apply the exemption and honour `ANALYTICS_TRACK_ADMIN`.
+  void trackAccess(request, null, { isAdmin: userSession(session)?.role === 'admin' })
 
   const content = requireBlogSettingsSection('content')
   const homePageSize = content.pagination.posts

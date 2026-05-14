@@ -54,8 +54,10 @@ export interface AdminCategoriesListResult {
 // computed on catalog build). Counts include hidden + scheduled posts
 // so the column matches what the delete-block guard sees.
 async function categoryPostCounter(): Promise<(name: string) => Promise<number>> {
-  return async (name: string) =>
-    (await listPostsByCategory(name, { includeHidden: true, includeScheduled: true })).length
+  return async (name: string) => {
+    const posts = await listPostsByCategory(name, { includeHidden: true, includeScheduled: true })
+    return posts.length
+  }
 }
 
 export async function listCategoriesForAdmin(filters: AdminCategoriesListFilters): Promise<AdminCategoriesListResult> {

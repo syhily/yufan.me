@@ -37,7 +37,8 @@ export async function searchLoader({
       throw redirect(pagePath(rootPath, totalPages))
     }
   }
-  const posts = (await getPostsBySlugs(hits, searchPostOptions())).map((p) => toListingPostCard(toClientPost(p)))
+  const hitPosts = await getPostsBySlugs(hits, searchPostOptions())
+  const posts = hitPosts.map((p) => toListingPostCard(toClientPost(p)))
   const resolvedPosts = await getClientPostsWithMetadata(posts, {
     likes: true,
     views: true,

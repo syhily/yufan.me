@@ -38,6 +38,7 @@ export function Pagination({ current, total, rootPath }: PaginationProps) {
             // Index suffix because the same array can carry two ellipses
             // (left + right) in the windowed layout; the page-number key
             // is unique only inside the number subset.
+            // oxlint-disable-next-line react/no-array-index-key
             <Ellipsis key={`ellipsis-${i}`} />
           ) : (
             <PageItem key={item} pageNum={item} current={current} rootPath={rootPath} />

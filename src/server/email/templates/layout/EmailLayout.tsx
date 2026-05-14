@@ -1,7 +1,7 @@
 import { TZDate } from '@date-fns/tz'
 import { getYear } from 'date-fns'
-import { Body, Container, Html, Img, Link, Section, Text } from 'react-email'
 
+import { Body, Container, Html, Img, Link, Section, Text } from '@/server/email/render'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 interface Props {

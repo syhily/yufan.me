@@ -149,8 +149,8 @@ export async function latestDistinctCommentIds(adminIds: bigint[], limit: number
   WHERE     rn = 1
   ORDER BY  created_at DESC
   LIMIT     ${limit}`
-  const rows = (await db.execute(query)).rows
-  return rows.map((row: { id: unknown }) => BigInt(String(row.id)))
+  const result = await db.execute(query)
+  return result.rows.map((row) => BigInt(String((row as { id: unknown }).id)))
 }
 
 export async function commentsByIds(ids: bigint[], limit: number): Promise<PendingCommentRow[]> {

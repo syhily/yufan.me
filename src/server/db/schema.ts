@@ -3,7 +3,9 @@ import {
   bigint,
   bigserial,
   boolean,
+  doublePrecision,
   index,
+  inet,
   integer,
   jsonb,
   pgEnum,
@@ -43,12 +45,12 @@ export const metric = pgTable(
     // in place of the historical URL-based `key`. `type` mirrors the
     // `content` table convention (`varchar(16)`, no DB enum, see the
     // `content` discriminator comment block below) so future entity
-    // types extend without a `pg_enum_add` migration. NULL only on the
-    // narrow window before the cleanup migration backfills orphan rows.
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    // types extend without a `pg_enum_add` migration.
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
     publicId: uuid('public_id')
       .notNull()
+      .default(sql`gen_random_uuid()`)
       .$defaultFn(() => randomUUID()),
     voteUp: bigint('vote_up', { mode: 'number' }),
     voteDown: bigint('vote_down', { mode: 'number' }),
@@ -69,8 +71,8 @@ export const like = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).$defaultFn(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
     token: varchar('token', { length: 255 }),
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
   },
   (table) => [index('idx_like_token').on(table.token), index('idx_like_owner').on(table.type, table.ownerId)],
 )
@@ -91,8 +93,8 @@ export const comment = pgTable(
       .$type<CommentBody>()
       .notNull()
       .default(sql`'[]'::jsonb`),
-    type: varchar('type', { length: 16 }).$type<'post' | 'page'>(),
-    ownerId: bigint('owner_id', { mode: 'bigint' }),
+    type: varchar('type', { length: 16 }).$type<'post' | 'page'>().notNull(),
+    ownerId: bigint('owner_id', { mode: 'bigint' }).notNull(),
     userId: bigint('user_id', { mode: 'bigint' }).notNull(),
     isVerified: boolean('is_verified').default(false),
     ua: text('ua'),
@@ -623,6 +625,7 @@ export const postSearchIndex = pgTable(
     embedding: vector('embedding', { dimensions: 1536 }),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .notNull()
+      .default(sql`now()`)
       .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_post_search_embedding').using('hnsw', table.embedding.op('vector_cosine_ops'))],
@@ -632,3 +635,81 @@ export type PageMetaRow = typeof page.$inferSelect
 export type NewPageMeta = typeof page.$inferInsert
 export type PostMetaRow = typeof post.$inferSelect
 export type NewPostMeta = typeof post.$inferInsert
+
+// Append-only time-series access log feeding the analytics dashboard
+// (`/wp-admin/analytics`). One row per non-bot SSR request to a content
+// route. Backed by a TimescaleDB hypertable created in the companion
+// `*_access_log_timescale` migration; the Drizzle definition only
+// declares the relational shape.
+//
+// Two columns deserve a comment block:
+//
+// - `(entity_type, entity_id)` discriminator mirrors the convention the
+//   `metric` / `like` / `comment` tables already use. Plain Postgres
+//   columns (no FK) because Timescale hypertables can't reference
+//   non-hypertable rows; orphan rows after a hard-delete of a post /
+//   page are accepted (the rare admin hard-delete already invalidates
+//   counter rows the same way).
+//
+// - `visitor_hash` is a SHA-256 of `(ip || dailySalt)` truncated to 32
+//   hex chars. UV counting `COUNT(DISTINCT visitor_hash)` on a 32-char
+//   text column is materially faster than `COUNT(DISTINCT ip)` on
+//   `inet`, and the hash survives a future "drop raw IP" pivot without
+//   breaking the dashboards. We deliberately store both — see
+//   `docs/blog-analytics-plan.md §6.1`.
+//
+// Retention / compression / continuous aggregates live in the Timescale
+// migration; do NOT replicate those policies in Drizzle DDL.
+export const accessLog = pgTable(
+  'access_log',
+  {
+    ts: timestamp('ts', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+
+    visitorHash: text('visitor_hash').notNull(),
+    sessionId: text('session_id'),
+
+    ip: inet('ip'),
+
+    path: text('path').notNull(),
+    entityType: varchar('entity_type', { length: 16 }).$type<'post' | 'page'>(),
+    entityId: bigint('entity_id', { mode: 'bigint' }),
+
+    referer: text('referer'),
+    refererHost: text('referer_host'),
+
+    country: text('country'),
+    region: text('region'),
+    city: text('city'),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    timezone: text('timezone'),
+
+    language: text('language'),
+
+    ua: text('ua'),
+    browser: text('browser'),
+    browserVersion: text('browser_version'),
+    os: text('os'),
+    osVersion: text('os_version'),
+    device: text('device'),
+    deviceType: text('device_type'),
+
+    isBot: boolean('is_bot').notNull().default(false),
+  },
+  (table) => [
+    // Compound indexes covering the common dashboard query shapes.
+    // Timescale also auto-creates `(ts DESC)` per chunk so we don't
+    // duplicate that here.
+    index('idx_access_log_entity_ts').on(table.entityType, table.entityId, table.ts),
+    index('idx_access_log_path_ts').on(table.path, table.ts),
+    index('idx_access_log_country_ts').on(table.country, table.ts),
+    index('idx_access_log_visitor_ts').on(table.visitorHash, table.ts),
+    index('idx_access_log_referer_host_ts').on(table.refererHost, table.ts),
+    index('idx_access_log_is_bot_ts').on(table.isBot, table.ts),
+  ],
+)
+
+export type AccessLogRow = typeof accessLog.$inferSelect
+export type NewAccessLog = typeof accessLog.$inferInsert

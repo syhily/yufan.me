@@ -10,7 +10,9 @@ export function headingLevelFromStyle(style: StandardBlockStyle | undefined): nu
       return 3
     case 'h4':
       return 4
-    default:
+    case 'blockquote':
+    case 'normal':
+    case undefined:
       return null
   }
 }

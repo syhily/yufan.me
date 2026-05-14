@@ -7,6 +7,7 @@ import {
   cacheSchema,
   commentsSchema,
   contentSchema,
+  fontsSchema,
   footerSchema,
   generalSchema,
   mailSchema,
@@ -223,6 +224,22 @@ export const SECTION_REGISTRY = {
         model: 'text-embedding-3-small',
         similarityThreshold: 0.5,
       },
+    },
+  },
+  fonts: {
+    scope: 'blog.fonts',
+    schema: fontsSchema,
+    key: 'fonts',
+    // Empty defaults — every consumer degrades silently to fallback
+    // system fonts until the admin pastes URLs at
+    // `/wp-admin/settings/fonts`. So a fresh install renders the
+    // home / archives / OG image without throwing, just with system
+    // typography.
+    defaults: {
+      og: { url: '' },
+      calendar: { url: '' },
+      globalCss: [],
+      postCss: [],
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

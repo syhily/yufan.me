@@ -1,3 +1,8 @@
+// `expect((await fn()).field)` is the compact assertion idiom we use
+// throughout the suite. Extracting an intermediate variable on every
+// line would double the file length without adding clarity.
+// oxlint-disable unicorn/no-await-expression-member
+
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 // Tiny in-memory Redis double that supports just the two commands the

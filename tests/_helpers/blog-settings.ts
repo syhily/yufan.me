@@ -128,4 +128,10 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
       similarityThreshold: 0.5,
     },
   },
+  fonts: {
+    og: { url: '' },
+    calendar: { url: '' },
+    globalCss: [],
+    postCss: [],
+  },
 }

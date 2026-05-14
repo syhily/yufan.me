@@ -255,6 +255,10 @@ function CardSummary({ payload }: CardSummaryProps) {
   if (payload === null) {
     return <div className="text-xs text-muted-foreground">无效的负载</div>
   }
+  // 3 block types get specialized summaries; every other PT block type
+  // falls through to the generic `_type: …` debug label. Enumerating
+  // each fallback case explicitly buys nothing here.
+  // oxlint-disable-next-line typescript/switch-exhaustiveness-check
   switch (payload._type) {
     case 'musicPlayer':
       return <MusicBlockSummary payload={payload} />

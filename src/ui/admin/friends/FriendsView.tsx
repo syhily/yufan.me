@@ -346,6 +346,8 @@ function FriendsSkeleton() {
   return (
     <>
       {Array.from({ length: 4 }).map((_, i) => (
+        // Skeleton rows — identical placeholders, swapped wholesale on load.
+        // oxlint-disable-next-line react/no-array-index-key
         <TableRow key={i}>
           <TableCell>
             <Skeleton className="h-10 w-20 rounded" />

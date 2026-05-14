@@ -8,7 +8,8 @@ import type { Route } from './+types/archives'
 
 export async function loader(_: Route.LoaderArgs) {
   const listingNowIso = new Date().toISOString()
-  const posts = (await listClientPosts({ includeHidden: true, includeScheduled: false })).map(toListingPostCard)
+  const rawPosts = await listClientPosts({ includeHidden: true, includeScheduled: false })
+  const posts = rawPosts.map(toListingPostCard)
   const resolvedPosts = await getClientPostsWithMetadata(posts, {
     likes: true,
     views: true,

@@ -6,6 +6,7 @@ import type {
   CacheSettings,
   CommentsSettings,
   ContentSettings,
+  FontsSettings,
   FooterSettings,
   MailSettings,
   NavigationSettings,
@@ -56,6 +57,7 @@ const SECTION_CONTEXTS: SectionContextMap = {
   cache: makeContext('cache'),
   rateLimit: makeContext('rateLimit'),
   search: makeContext('search'),
+  fonts: makeContext('fonts'),
 }
 
 interface BlogSettingsProviderProps {
@@ -207,4 +209,11 @@ export function useSearchSettings(): SearchSettings {
 }
 export function useSearchSettingsOptional(): SearchSettings | undefined {
   return useSectionOptional('search')
+}
+
+export function useFontsSettings(): FontsSettings {
+  return useSection('useFontsSettings', 'fonts')
+}
+export function useFontsSettingsOptional(): FontsSettings | undefined {
+  return useSectionOptional('fonts')
 }

@@ -177,6 +177,21 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     typeof (value.search as Record<string, unknown>).mode === 'string' &&
     typeof (value.search as Record<string, unknown>).model === 'string' &&
     typeof (value.search as Record<string, unknown>).similarityThreshold === 'number',
+  fonts: (value) => {
+    for (const slot of ['og', 'calendar'] as const) {
+      const v = (value[slot] ?? null) as Record<string, unknown> | null
+      if (v === null || typeof v.url !== 'string') {
+        return false
+      }
+    }
+    for (const slot of ['globalCss', 'postCss'] as const) {
+      const v = value[slot]
+      if (!Array.isArray(v) || v.some((entry) => typeof entry !== 'string')) {
+        return false
+      }
+    }
+    return true
+  },
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)

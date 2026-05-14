@@ -49,7 +49,10 @@ export interface AdminTagsListResult {
 // hidden + scheduled posts so the column matches what the
 // delete-block guard sees.
 async function tagPostCounter(): Promise<(name: string) => Promise<number>> {
-  return async (name: string) => (await listPostsByTag(name, { includeHidden: true, includeScheduled: true })).length
+  return async (name: string) => {
+    const posts = await listPostsByTag(name, { includeHidden: true, includeScheduled: true })
+    return posts.length
+  }
 }
 
 // Server-side pagination: parallel `[rows, total, postCounter]` so we
