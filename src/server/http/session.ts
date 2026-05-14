@@ -1,0 +1,36 @@
+import { createMiddleware } from 'hono/factory'
+
+import { resolveSessionContext } from '@/server/auth/primitives'
+import { commitSession } from '@/server/auth/session-storage'
+import { getClientAddress } from '@/shared/request'
+
+import type { Env } from './context'
+
+export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {
+  const sessionCtx = await resolveSessionContext(c.req.raw)
+  c.set('session', sessionCtx.session)
+  c.set('sessionDirty', false)
+  c.set('viewer', sessionCtx.user ? { userId: sessionCtx.user.id, role: sessionCtx.user.role } : null)
+  c.set('clientAddress', getClientAddress(c.req.raw))
+
+  await next()
+
+  if (c.var.sessionDirty) {
+    const setCookie = await commitSession(c.var.session)
+    c.header('Set-Cookie', setCookie, { append: true })
+  }
+})
+
+/**
+ * Build the two context bags that React Router loaders expect.
+ * Returned shape matches the existing `sessionContext` / `requestContext`
+ * set by the legacy RR middleware in `src/server/middleware/session.ts`.
+ */
+export function buildRouteContexts(c: { var: Env['Variables']; req: { raw: Request; url: string } }) {
+  const session = c.var.session
+  const user = session.get('user')
+  return {
+    session: { session, user, role: user?.role ?? null },
+    request: { clientAddress: c.var.clientAddress, url: new URL(c.req.url) },
+  }
+}
