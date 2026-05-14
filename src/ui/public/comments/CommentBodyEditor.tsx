@@ -37,7 +37,6 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { cn } from '@/ui/lib/cn'
 import { COMMENT_SLASH_COMMANDS } from '@/ui/public/comments/comment-slash-commands'
-import { EmojiSuggestionExtension } from '@/ui/public/comments/EmojiSuggestion'
 
 // Simplified Tiptap editor for comment bodies. Mirrors the admin
 // `PageBodyEditor` shape but loads only the extensions needed for the
@@ -71,7 +70,7 @@ export interface CommentBodyEditorProps {
   className?: string
 }
 
-const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式，: Emoji'
+const DEFAULT_PLACEHOLDER = '写下你的评论…  / 命令，$ 公式'
 
 const EMPTY_BODY: CommentBody = []
 
@@ -124,7 +123,6 @@ export function CommentBodyEditor({
       // preview surface that's perfectly usable in the comment form.
       BlockCardNode,
       SlashCommandsExtension.configure({ commands: COMMENT_SLASH_COMMANDS }),
-      EmojiSuggestionExtension,
     ],
     [placeholderText],
   )
@@ -449,7 +447,7 @@ function ToolDivider() {
 function CommentEditorHint() {
   return (
     <div className="border-t border-line/60 px-3 py-1.5 text-xs text-ink-4">
-      输入 <code>/</code> 块级命令，<code>$</code> 内联公式，<code>:</code> Emoji。
+      输入 <code>/</code> 块级命令，<code>$</code> 内联公式。
     </div>
   )
 }

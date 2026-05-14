@@ -29,6 +29,11 @@ export function RealtimeFeed({ className }: { className?: string }) {
             <ul className="flex flex-col gap-1">
               {ordered.map((e, idx) => (
                 <li
+                  // `ts` is the access event's millisecond timestamp;
+                  // two events on the same ms tie-break by their
+                  // arrival index in the rolling window. Items are
+                  // append-only and never reorder.
+                  // oxlint-disable-next-line react/no-array-index-key
                   key={`${e.ts}-${idx}`}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/40"
                 >

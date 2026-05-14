@@ -1,11 +1,11 @@
 import { createElement } from 'react'
-import { render } from 'react-email'
 
 import type { CommentAndUser } from '@/server/comments/types'
 import type { EntityTarget } from '@/server/db/target'
 import type { Comment, User } from '@/server/db/types'
 
 import { entityCommentUrl, findEntitySlugTitle } from '@/server/comments/url'
+import { render } from '@/server/email/render'
 import ApprovedComment from '@/server/email/templates/ApprovedComment'
 import AuthorInvite from '@/server/email/templates/AuthorInvite'
 import NewComment from '@/server/email/templates/NewComment'
@@ -149,7 +149,7 @@ export async function sendNewComment(commentInfo: CommentAndUser, target: Entity
     log.warn('Skipping new-comment email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
   }
-  const html = await render(
+  const html = render(
     createElement(NewComment, {
       postTitle: entity.title,
       postLink: entity.url,
@@ -176,7 +176,7 @@ export async function sendNewReply(
     log.warn('Skipping reply email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
   }
-  const html = await render(
+  const html = render(
     createElement(NewReply, {
       receiver: sourceUser.name,
       postTitle: entity.title,
@@ -203,7 +203,7 @@ export async function sendAuthorInvite(
   inviterEmail?: string,
 ): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = await render(
+  const html = render(
     createElement(AuthorInvite, {
       receiver: user.name,
       inviter: inviterName,
@@ -218,7 +218,7 @@ export async function sendAuthorInvite(
 // Sent when a user requests a password reset.
 export async function sendPasswordReset(user: User, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = await render(
+  const html = render(
     createElement(PasswordReset, {
       receiver: user.name,
       link,
@@ -235,7 +235,7 @@ export async function sendApprovedComment(comment: Comment, user: User, target: 
     log.warn('Skipping approval email: target entity not found', { target })
     return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
   }
-  const html = await render(
+  const html = render(
     createElement(ApprovedComment, {
       receiver: user.name,
       postTitle: entity.title,

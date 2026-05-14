@@ -44,6 +44,8 @@ export default defineConfig({
     'import/no-duplicates': 'error',
     'import/no-self-import': 'error',
     'import/no-webpack-loader-syntax': 'error',
+    // Mutable named exports break tree-shaking and confuse module consumers.
+    'import/no-mutable-exports': 'error',
 
     // Promise / async correctness. Fire-and-forget work should be written as
     // `void task().catch(...)` so the intent is visible to reviewers and lint.
@@ -70,6 +72,13 @@ export default defineConfig({
     'react/react-in-jsx-scope': 'off',
     'react/style-prop-object': 'error',
     'react/void-dom-elements-no-children': 'error',
+    // Legacy guard. Zero violations today; cheap insurance against a
+    // tutorial-copy slipping `ref="..."` (string ref) into modern code.
+    'react/no-string-refs': 'error',
+    // `posts.map((p, i) => <Card key={i} />)` survives an insert but
+    // shuffles state on a delete. Default to stable keys. Existing
+    // backlog (~22 sites) is `warn` for incremental cleanup.
+    'react/no-array-index-key': 'warn',
 
     // TypeScript rules that catch runtime bugs without forcing noisy style preferences.
     'typescript/await-thenable': 'error',
@@ -93,7 +102,16 @@ export default defineConfig({
     'typescript/prefer-nullish-coalescing': 'off',
     'typescript/prefer-optional-chain': 'off',
     'typescript/restrict-plus-operands': 'warn',
-    'typescript/switch-exhaustiveness-check': 'off',
+    // `${obj}` silently produces `"[object Object]"`. Caught us once in a
+    // log line; the cost of locking it down is zero today.
+    'typescript/no-base-to-string': 'error',
+    // Spreading a non-iterable / Map / Set into an array or object produces
+    // surprising shapes. Rule has no current violations.
+    'typescript/no-misused-spread': 'error',
+    // Tagged-union exhaustiveness on `'post' | 'page'` discriminators and
+    // PortableText block types. 7 sites today are missing default branches;
+    // warn lets the backlog drain without blocking.
+    'typescript/switch-exhaustiveness-check': 'warn',
 
     // React Router and SSR routes intentionally forward props and render trusted HTML.
     'react/jsx-props-no-spread-multi': 'off',
@@ -108,5 +126,21 @@ export default defineConfig({
 
     // Server modules intentionally read the validated env facade instead of raw process.env.
     'node/no-process-env': 'off',
+
+    // Catch `module.exports = ...` slipping into an ESM file.
+    'node/no-exports-assign': 'error',
+
+    // Throw hygiene + the silent-await-in-Promise.all() footgun.
+    'unicorn/error-message': 'error',
+    'unicorn/throw-new-error': 'error',
+    'unicorn/no-await-in-promise-methods': 'error',
+    // `await foo.bar.baz` parses as `(await foo).bar.baz` only when the
+    // expression starts with await — surprising in property-chain reads.
+    'unicorn/no-await-expression-member': 'warn',
+
+    // A11y additions. Both are zero-violation guards against empty headings
+    // and broken `<a>` (`href="#"` or missing href).
+    'jsx-a11y/heading-has-content': 'error',
+    'jsx-a11y/anchor-is-valid': 'error',
   },
 })

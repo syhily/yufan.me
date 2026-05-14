@@ -194,8 +194,10 @@ src/
 ## Path Aliases
 
 - `@/*` → `./src/*`
-- `~/*` → `./public/*`
-- `~/*` → `./public/*` (public static assets)
+
+Files under `public/` are served as-is at the root URL (`/logo.svg`,
+`/favicon.ico`, …) — reference them by absolute URL in JSX / config,
+not by a TypeScript import. There is no `~/*` alias.
 
 Use aliases instead of relative paths. The only allowed relative imports:
 

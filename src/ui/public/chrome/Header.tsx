@@ -361,6 +361,10 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
           <nav className={siteMenuClass} onClick={() => setMenuOpen(false)}>
             <ul className={siteMenuListClass}>
               {navigation.map((menu, i) => (
+                // Public nav is read-only on the client and only re-renders
+                // when an admin saves new settings, which produces a full
+                // remount. Index-based key never shuffles state in practice.
+                // oxlint-disable-next-line react/no-array-index-key
                 <li key={`menu-${i}`} className={siteMenuItemClass}>
                   {isExternalNavTarget(menu) ? (
                     <a href={menu.link} target={menu.target} className={siteMenuLinkClass}>

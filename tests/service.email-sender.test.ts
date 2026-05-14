@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-// Email templates pull in `react-email` which expects a server runtime;
-// stub them with trivial React components so the import chain is cheap
-// and we can focus on the sender's transport / config branches.
+// Stub email templates with trivial React components so the import
+// chain is cheap and we can focus on the sender's transport / config
+// branches.
 vi.mock('@/server/email/templates/NewComment', () => ({
   default: () => null,
 }))
@@ -12,8 +12,8 @@ vi.mock('@/server/email/templates/NewReply', () => ({
 vi.mock('@/server/email/templates/ApprovedComment', () => ({
   default: () => null,
 }))
-vi.mock('react-email', () => ({
-  render: vi.fn(async () => '<p>stub</p>'),
+vi.mock('@/server/email/render', () => ({
+  render: vi.fn(() => '<p>stub</p>'),
 }))
 vi.mock('@/server/pt/comment-to-html', () => ({
   commentBodyToHtml: vi.fn(() => '<p>stub</p>'),

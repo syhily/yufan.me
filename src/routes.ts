@@ -112,6 +112,7 @@ export default [
       route('wp-admin/settings/cache', 'routes/wp-admin.settings.cache.tsx'),
       route('wp-admin/settings/rate-limit', 'routes/wp-admin.settings.rate-limit.tsx'),
       route('wp-admin/settings/search', 'routes/wp-admin.settings.search.tsx'),
+      route('wp-admin/settings/fonts', 'routes/wp-admin.settings.fonts.tsx'),
     ]),
   ]),
 ] satisfies RouteConfig

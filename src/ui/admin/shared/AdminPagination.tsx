@@ -52,6 +52,10 @@ export function AdminPagination({ totalPages, currentPage, onChange }: AdminPagi
       <PaginationContent>
         {items.map((item, i) =>
           item === 'ellipsis' ? (
+            // Two ellipses can appear (left + right window edges); the
+            // page-number siblings use the page number itself as key,
+            // leaving only `ellipsis-${i}` to disambiguate the two.
+            // oxlint-disable-next-line react/no-array-index-key
             <PaginationItem key={`ellipsis-${i}`}>
               <PaginationEllipsis />
             </PaginationItem>

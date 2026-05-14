@@ -17,6 +17,12 @@ interface NavigationEditorProps {
 }
 
 interface NavRow {
+  // Stable per-row identity for React `key`. Generated client-side
+  // (`crypto.randomUUID()`) and never persisted — `fromState` strips
+  // it before the row hits `setting.blog.navigation`. Without this,
+  // reordering / deleting rows shuffles focus state because React
+  // would key on the array index.
+  clientId: string
   text: string
   link: string
   newTab: boolean
@@ -39,6 +45,7 @@ export function NavigationEditor({ navigation }: NavigationEditorProps) {
     source: navigation,
     toState: (source) => ({
       rows: source.navigation.map((item) => ({
+        clientId: crypto.randomUUID(),
         text: item.text,
         link: item.link,
         newTab: item.target === '_blank',
@@ -69,7 +76,10 @@ export function NavigationEditor({ navigation }: NavigationEditorProps) {
       return { rows: next }
     })
   }
-  const add = () => setDraft((prev) => ({ rows: [...prev.rows, { text: '', link: '/', newTab: false }] }))
+  const add = () =>
+    setDraft((prev) => ({
+      rows: [...prev.rows, { clientId: crypto.randomUUID(), text: '', link: '/', newTab: false }],
+    }))
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
@@ -84,7 +94,7 @@ export function NavigationEditor({ navigation }: NavigationEditorProps) {
           ) : (
             draft.rows.map((row, index) => (
               <div
-                key={index}
+                key={row.clientId}
                 className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-end"
               >
                 <div className="flex flex-1 flex-col gap-2 sm:flex-row">

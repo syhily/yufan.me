@@ -214,6 +214,8 @@ export function TagsSkeleton() {
   return (
     <>
       {Array.from({ length: 6 }).map((_, i) => (
+        // Skeleton rows — identical placeholders, swapped wholesale on load.
+        // oxlint-disable-next-line react/no-array-index-key
         <TableRow key={i}>
           <TableCell colSpan={4}>
             <Skeleton className="h-4 w-1/3" />

@@ -552,7 +552,8 @@ function headingDepthFromStyle(style: StandardBlockStyle): number | null {
       return 3
     case 'h4':
       return 4
-    default:
+    case 'blockquote':
+    case 'normal':
       return null
   }
 }

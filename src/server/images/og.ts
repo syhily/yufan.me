@@ -132,14 +132,34 @@ export interface OpenGraphProps {
   cover: string
 }
 
-function ensureFonts(): void {
-  if (!GlobalFonts.has('OPPOSans')) {
-    GlobalFonts.register(oppoSans(), 'OPPOSans')
+// Single-flight font registration: if a deploy spike fires 50 OG
+// renders in parallel, only the first one fetches the TTF — the rest
+// await the same Promise. Buffer is null when the admin hasn't
+// configured the URL yet (or the fetch failed); in that case we skip
+// `GlobalFonts.register` and Canvas falls back to its built-in CJK
+// shaper so the OG image still renders, just with system typography.
+let ogFontReady: Promise<void> | null = null
+function ensureFonts(): Promise<void> {
+  if (ogFontReady === null) {
+    ogFontReady = (async () => {
+      if (GlobalFonts.has('OPPOSans')) {
+        return
+      }
+      const buffer = await oppoSans()
+      if (buffer !== null && !GlobalFonts.has('OPPOSans')) {
+        GlobalFonts.register(buffer, 'OPPOSans')
+      }
+    })().catch((err) => {
+      // Reset so a later request retries instead of poisoning the cache.
+      ogFontReady = null
+      throw err
+    })
   }
+  return ogFontReady
 }
 
 export async function drawOpenGraph({ title, summary, cover }: OpenGraphProps): Promise<Buffer> {
-  ensureFonts()
+  await ensureFonts()
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const seo = requireBlogSettingsSection('seo')
 

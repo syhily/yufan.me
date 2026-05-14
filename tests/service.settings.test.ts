@@ -112,6 +112,12 @@ const fixtureBundle: BlogSettingsBundle = {
       similarityThreshold: 0.5,
     },
   },
+  fonts: {
+    og: { url: '' },
+    calendar: { url: '' },
+    globalCss: [],
+    postCss: [],
+  },
 }
 
 // Decompose the bundle into the actual `Setting[]` rows the DB would
@@ -131,6 +137,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     cache: 'blog.cache',
     rateLimit: 'blog.rateLimit',
     search: 'blog.search',
+    fonts: 'blog.fonts',
   }
   const rows: Setting[] = []
   let id = 1n

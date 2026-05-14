@@ -240,6 +240,10 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         if (onlyOtherSide) {
           return (
             <li
+              // `entry.key` is the diff entry's PT-block `_key`. The idx
+              // suffix disambiguates the rare case where the same `_key`
+              // appears twice in the same diff (move + edit pair).
+              // oxlint-disable-next-line react/no-array-index-key
               key={`${entry.key}-${idx}`}
               className="rounded border border-dashed border-muted bg-muted/30 px-2 py-2 text-xs text-muted-foreground"
             >
@@ -249,6 +253,8 @@ export function DiffPanel({ diff, side }: DiffPanelProps) {
         }
         return (
           <li
+            // Same composite-key reasoning as the `onlyOtherSide` branch above.
+            // oxlint-disable-next-line react/no-array-index-key
             key={`${entry.key}-${idx}`}
             className={cn(
               'rounded border px-2 py-2 text-sm',
@@ -297,12 +303,20 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
   const parts = inlineCharDiff(leftText, rightText)
   return (
     <p className="line-clamp-6 leading-relaxed wrap-break-word">
+      {/*
+        `parts` comes from diff-match-patch — opaque `{op, text}`
+        tuples with no stable identity beyond their position in the
+        diff sequence. The list is recomputed wholesale on every
+        re-render so index keys are the stable identity here.
+      */}
       {parts.map((part, idx) => {
         if (part.op === 0) {
+          // oxlint-disable-next-line react/no-array-index-key
           return <span key={idx}>{part.text}</span>
         }
         if (side === 'right' && part.op === 1) {
           return (
+            // oxlint-disable-next-line react/no-array-index-key
             <span key={idx} className="rounded bg-emerald-200/70 px-0.5 text-emerald-950">
               {part.text}
             </span>
@@ -310,6 +324,7 @@ function BlockInlineDiff({ leftBlock, rightBlock, side }: BlockInlineDiffProps) 
         }
         if (side === 'left' && part.op === -1) {
           return (
+            // oxlint-disable-next-line react/no-array-index-key
             <span key={idx} className="rounded bg-rose-200/70 px-0.5 text-rose-950 line-through">
               {part.text}
             </span>

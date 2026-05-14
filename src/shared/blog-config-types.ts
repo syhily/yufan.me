@@ -294,6 +294,52 @@ export interface SearchSettings {
   }
 }
 
+// Font configuration — both server-side TTFs (for Canvas image
+// rendering) and browser-side @font-face CSS bundles (for live page
+// rendering). Every slot is a public URL; empty string is the
+// "not configured" sentinel and each consumer degrades gracefully:
+//
+//   - Canvas slots (`og`, `calendar`): empty url skips
+//     `GlobalFonts.register()` so Canvas falls back to system CJK
+//     shaping. The OG / calendar image still renders, just with uglier
+//     typography.
+//   - CSS slots (`globalCss`, `postCss`): empty url skips emitting the
+//     `<link rel="stylesheet">`. Browser falls back to the CSS-stack
+//     fallback fonts declared in `tailwind.css` (`--font-sans`,
+//     `--font-serif`, `--font-code`).
+//
+// `@napi-rs/canvas` only accepts FreeType inputs — **TTF/OTF, not
+// WOFF/WOFF2** — so the admin help text must surface that constraint
+// on the Canvas slots. The CSS slots, in contrast, should reference
+// a `.css` file that itself loads woff2 chunks (the standard
+// `cn-font-split` output reshipped to a CDN).
+export interface FontsSettings {
+  /** TTF/OTF URL for the OG-image renderer (post title + site name). */
+  og: { url: string }
+  /** TTF/OTF URL for the calendar image renderer (day digits). */
+  calendar: { url: string }
+  /**
+   * CSS bundle URLs injected into every page's `<head>`. Each entry
+   * becomes one `<link rel="stylesheet">`. Typical use: one URL per
+   * font family — e.g. `[opposans.css, iosevka.css]` for the site-wide
+   * body + monospace fonts. Each CSS file should declare its
+   * `@font-face` rules pointing at woff2 chunks (we ship the
+   * `cn-font-split` output to a CDN). Empty array = no global font
+   * stylesheets injected (browser falls back to the CSS-stack defaults
+   * declared in `tailwind.css`).
+   */
+  globalCss: string[]
+  /**
+   * CSS bundle URLs injected only on `/posts/:slug` and `/:slug` (page
+   * detail) routes. Each entry becomes one `<link rel="stylesheet">`.
+   * Reserved for heavy fonts that only the long-form prose surface
+   * needs (e.g. OPPO Serif). Loaded lazily so the home / archives /
+   * admin pages don't pay the bandwidth. Empty array = no extra
+   * stylesheets on detail pages.
+   */
+  postCss: string[]
+}
+
 // Composed bundle of every section. Each field is `null` until the
 // corresponding `setting('blog.<section>')` row has been seeded by the
 // install flow or the admin panel. A "fully installed" deployment has
@@ -319,4 +365,5 @@ export interface BlogSettingsBundle {
   cache: CacheSettings | null
   rateLimit: RateLimitSettings | null
   search: SearchSettings | null
+  fonts: FontsSettings | null
 }

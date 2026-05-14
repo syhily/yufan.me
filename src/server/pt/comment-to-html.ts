@@ -16,7 +16,7 @@ import type { LinkMarkDef, MathInlineMarkDef, Span } from '@/shared/pt/schema'
 //     — MathML support across mail clients is poor enough that the
 //     TeX source is a better default.
 //   * Has no React dependency, so server code can compose the HTML
-//     into `react-email` `dangerouslySetInnerHTML` without crossing
+//     into an email template `dangerouslySetInnerHTML` without crossing
 //     the `server → ui` import boundary.
 //
 // This module ONLY handles the comment dialect. The (richer) blog

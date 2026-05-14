@@ -256,7 +256,8 @@ async function hydrateFriendImages(friends: Friend[]): Promise<void> {
 }
 
 export async function listAllFriends(): Promise<Friend[]> {
-  const friends = (await listPublicFriends()).map((row) => ({
+  const rows = await listPublicFriends()
+  const friends = rows.map((row) => ({
     website: row.website,
     description: row.description,
     homepage: row.homepage,

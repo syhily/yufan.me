@@ -855,20 +855,32 @@ describe('contract: module and bundle boundaries', () => {
     expect(source).not.toContain('db/types/comment')
   })
 
-  it('side-effect imports TTFs in root.tsx so vite-plugin-font emits split webfont CSS into the root chunk', () => {
+  it('keeps fonts off the repo and out of every CSS bundle (everything flows through blog.fonts admin settings)', () => {
     const globals = readFileSync('src/assets/styles/public.css', 'utf8')
     const root = readFileSync('src/root.tsx', 'utf8')
 
+    // The repo must not ship any TTF/WOFF2 binary or pre-baked font CSS.
+    // Fonts live entirely on the configured CDN, referenced at runtime by
+    // the admin-editable URLs in `blog.fonts`.
+    expect(files('src/assets/fonts', '-g', '*.ttf', '-g', '*.woff2', '-g', '*.css')).toEqual([])
+
+    // No local CSS reference any of the historical chunk filenames.
     expect(globals).not.toContain('opposans.css')
     expect(globals).not.toContain('opposerif.css')
     expect(globals).not.toContain('iosevka.css')
-    expect(root).toContain("import '@/assets/fonts/opposans.ttf'")
-    expect(root).toContain("import '@/assets/fonts/opposerif.ttf'")
-    expect(root).toContain("import '@/assets/fonts/iosevka.ttf'")
-    expect(root).not.toContain('/fonts/opposans.css')
-    expect(root).not.toContain('/fonts/opposerif.css')
-    expect(root).not.toContain('/fonts/iosevka.css')
-    expect(files('public/fonts', '-g', '*.css')).toEqual([])
+
+    // Root must not statically import any `.ttf` (the removed
+    // `vite-plugin-font` rewrite path) — every font stylesheet now
+    // arrives as a runtime `<link>` driven off `useFontsSettings()`.
+    expect(root).not.toContain("from '@/assets/fonts/")
+    expect(root).not.toContain("import '@/assets/fonts/")
+    expect(root).not.toContain('.ttf')
+
+    // Root reads `globalCss` from the loader bundle and emits `<link>`s
+    // for each entry. Anchor the contract on the array access so a
+    // future refactor that drops the per-section read jumps out here.
+    expect(root).toContain('blogSettings?.fonts?.globalCss')
+    expect(root).toContain('<link key={url} rel="stylesheet" href={url} />')
   })
 
   it('keeps admin Tailwind layouts on flex/grid gap instead of space utilities', () => {

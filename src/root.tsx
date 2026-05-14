@@ -3,15 +3,6 @@ import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-rou
 import { lazy, Suspense } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
-// Side-effect imports: `vite-plugin-font` rewrites each `.ttf` import into a
-// module whose body statically imports the generated split-webfont CSS
-// (`metrics.css` + `result.css`). Keeping these at the top of `root.tsx` —
-// the highest static-import ancestor of every page — lets Vite collect the
-// stylesheets into the SSR `<Links />` output so first paint never depends
-// on a third-party CDN.
-import '@/assets/fonts/opposans.ttf'
-import '@/assets/fonts/opposerif.ttf'
-import '@/assets/fonts/iosevka.ttf'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
@@ -146,8 +137,18 @@ export function shouldRevalidate({ formAction, defaultShouldRevalidate }: Should
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const rootData = useRouteLoaderData<{ theme?: 'dark' | 'light' | null }>('root')
+  // Pull both the theme cookie and the admin-configured site-wide font
+  // CSS URLs off the root loader data. `fonts` is null when the
+  // settings row hasn't been seeded yet (pre-install) — in that
+  // case `globalCss` is `[]` and no font `<link>` is emitted, so the
+  // page falls back to the system-stack fonts declared in
+  // `tailwind.css` without any pre-paint flash.
+  const rootData = useRouteLoaderData<{
+    theme?: 'dark' | 'light' | null
+    blogSettings?: { fonts?: { globalCss?: string[] } | null } | null
+  }>('root')
   const theme = rootData?.theme ?? null
+  const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
 
   return (
     <html lang="zh-CN" className={theme ?? undefined}>
@@ -155,6 +156,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content={theme ?? 'light dark'} />
+        {globalFontCss.map((url) => (
+          <link key={url} rel="stylesheet" href={url} />
+        ))}
         <Meta />
         <Links />
       </head>

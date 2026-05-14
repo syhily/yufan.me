@@ -46,6 +46,9 @@ export function MetricList({ type, initial, className }: MetricListProps) {
     return (
       <div className={cn('flex flex-col gap-2', className)}>
         {Array.from({ length: 5 }).map((_, i) => (
+          // Skeleton placeholders — identical non-interactive items
+          // that disappear in one shot when data arrives.
+          // oxlint-disable-next-line react/no-array-index-key
           <Skeleton key={i} className="h-8 w-full rounded-md" />
         ))}
       </div>

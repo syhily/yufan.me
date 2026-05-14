@@ -294,6 +294,8 @@ function ImagesGridSkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
       {Array.from({ length: 24 }).map((_, i) => (
+        // Skeleton tiles — identical placeholders, swapped wholesale on load.
+        // oxlint-disable-next-line react/no-array-index-key
         <Skeleton key={i} className="aspect-square w-full rounded-md" />
       ))}
     </div>

@@ -89,6 +89,12 @@ const fixture: BlogSettingsBundle = {
       similarityThreshold: 0.5,
     },
   },
+  fonts: {
+    og: { url: '' },
+    calendar: { url: '' },
+    globalCss: [],
+    postCss: [],
+  },
 }
 
 beforeAll(() => {
