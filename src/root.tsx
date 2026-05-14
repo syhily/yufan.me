@@ -6,9 +6,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } f
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { installGateMiddleware } from '@/server/middleware/install-gate'
-import { sessionMiddleware } from '@/server/middleware/session'
-import { visitorCookieMiddleware } from '@/server/middleware/visitor-cookie'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
@@ -58,11 +55,7 @@ const PublicChromeLazy = lazy(() =>
 // the splat) call `assertNotWordPressDecoy()` at the top of their
 // loader, so the throw originates inside a leaf loader and bubbles up
 // to the public layout's `ErrorBoundary` exactly like a normal 404.
-export const middleware: MiddlewareFunction<Response>[] = [
-  sessionMiddleware,
-  installGateMiddleware,
-  visitorCookieMiddleware,
-]
+export const middleware: MiddlewareFunction<Response>[] = []
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   // `meta()` runs on both SSR and after every client-side navigation,
