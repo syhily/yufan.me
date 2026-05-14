@@ -2,6 +2,7 @@ import type { EntityTarget } from '@/server/db/target'
 
 import { pushAccessEvent } from '@/server/analytics/batcher'
 import { enrichEvent } from '@/server/analytics/enrich'
+import { ANALYTICS_TRACK_ADMIN } from '@/server/env'
 import { getLogger } from '@/server/logger'
 import { getClientAddress } from '@/shared/request'
 
@@ -47,6 +48,14 @@ export interface TrackAccessOptions {
   now?: Date
   /** Skip the bot check (useful in tests). */
   skipBotFilter?: boolean
+  /**
+   * Set by callers that have already resolved the session role. Admin
+   * visits are skipped by default (matches the `bumpPageView` admin
+   * exemption — dashboard owners shouldn't pollute their own visitor
+   * metrics). Set `ANALYTICS_TRACK_ADMIN=true` in `.env` to override
+   * for local debugging.
+   */
+  isAdmin?: boolean
 }
 
 export async function trackAccess(
@@ -55,6 +64,9 @@ export async function trackAccess(
   options: TrackAccessOptions = {},
 ): Promise<void> {
   try {
+    if (options.isAdmin && !ANALYTICS_TRACK_ADMIN) {
+      return
+    }
     if (isPrefetchRequest(request)) {
       return
     }

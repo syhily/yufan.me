@@ -36,13 +36,11 @@ export async function loader({
 
   // Time-series access-log write for the analytics dashboard. The
   // homepage isn't a content detail page so we pass a null target —
-  // the row still counts toward visits / visitors / referers.
-  // Skip when the visitor is an admin (mirrors the post / page
-  // detail loader's admin-exemption) so the dashboard owner doesn't
-  // pollute their own visitor metrics.
-  if (userSession(session)?.role !== 'admin') {
-    void trackAccess(request, null)
-  }
+  // the row still counts toward visits / visitors / referers. The
+  // admin-exemption (so the dashboard owner doesn't pollute their
+  // own visitor metrics) lives inside `trackAccess`; pass `isAdmin`
+  // so it can apply the exemption and honour `ANALYTICS_TRACK_ADMIN`.
+  void trackAccess(request, null, { isAdmin: userSession(session)?.role === 'admin' })
 
   const content = requireBlogSettingsSection('content')
   const homePageSize = content.pagination.posts

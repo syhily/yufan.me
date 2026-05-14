@@ -67,13 +67,11 @@ export async function loadPublicDetailData({
   // alongside (not inside) the existing `bumpPageView` flow: the
   // counter increment happens via `loadDetailPageCritical` (called
   // from `loadDetailPageStreaming` below), the time-series write
-  // happens here. Skipping admin sessions matches the existing
-  // counter-bump exemption (`loadDetailPageCritical` only calls
-  // `bumpPageView` for non-admins) — the dashboard owner shouldn't
-  // be in their own visitor metrics. `void`d — never blocks the
-  // loader.
-  if (trackView && !isAdmin) {
-    void trackAccess(request, target)
+  // happens here. The admin-exemption (matching `bumpPageView`'s)
+  // and the `ANALYTICS_TRACK_ADMIN` override both live inside
+  // `trackAccess`. `void`d — never blocks the loader.
+  if (trackView) {
+    void trackAccess(request, target, { isAdmin })
   }
 
   const [, streaming, issued] = await Promise.all([

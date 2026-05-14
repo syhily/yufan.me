@@ -6,7 +6,7 @@ export default defineConfig({
   bracketSpacing: true,
   endOfLine: 'lf',
   insertFinalNewline: true,
-  ignorePatterns: ['.agents/**/*', '.cursor/**/*', 'public/**/*.css'],
+  ignorePatterns: ['.agents/**/*', 'docs/**/*', 'drizzle/**/*'],
   jsxSingleQuote: false,
   objectWrap: 'preserve',
   printWidth: 120,

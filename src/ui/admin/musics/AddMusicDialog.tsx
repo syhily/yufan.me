@@ -358,6 +358,9 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
                           {formatSeconds(currentTime)}
                         </span>
                         <div
+                          // Custom click-to-seek progress bar. `<input type="range">`
+                          // would lose the styled track + per-pixel click handler.
+                          // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role
                           role="slider"
                           aria-label="预览进度"
                           aria-valuemin={0}
