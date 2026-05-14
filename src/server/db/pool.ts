@@ -1,4 +1,5 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
+import type { Pool } from 'pg'
 
 import { drizzle } from 'drizzle-orm/node-postgres'
 
@@ -27,4 +28,13 @@ export const db: NodePgDatabase = globalForDb.db ?? drizzle({ connection: DATABA
 
 if (!globalForDb.db) {
   globalForDb.db = db
+}
+
+// Direct access to the underlying `node-postgres` Pool. Drizzle's typed
+// `db` surface doesn't include `$client` (we drop the extra generic on
+// purpose, see the comment above), so the analytics batcher needs to
+// reach the raw pool through this helper to acquire a `PoolClient` for
+// `pg-copy-streams`. Every other call site should keep using `db`.
+export function getRawPool(): Pool {
+  return (db as unknown as { $client: Pool }).$client
 }
