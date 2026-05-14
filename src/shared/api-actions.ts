@@ -133,6 +133,13 @@ export const API_ACTIONS = {
     revokeSession: defineApiAction('api/actions/admin/revokeSession', 'POST'),
     revokeUserSessions: defineApiAction('api/actions/admin/revokeUserSessions', 'POST'),
   },
+  analytics: {
+    counters: defineApiAction('api/actions/analytics/counters', 'GET'),
+    views: defineApiAction('api/actions/analytics/views', 'GET'),
+    heatmap: defineApiAction('api/actions/analytics/heatmap', 'GET'),
+    metrics: defineApiAction('api/actions/analytics/metrics', 'GET'),
+    events: defineApiAction('api/actions/analytics/events', 'GET'),
+  },
 } as const
 
 export const API_ACTION_LIST = [
@@ -142,4 +149,5 @@ export const API_ACTION_LIST = [
   ...Object.values(API_ACTIONS.image),
   ...Object.values(API_ACTIONS.music),
   ...Object.values(API_ACTIONS.admin),
+  ...Object.values(API_ACTIONS.analytics),
 ] as const
