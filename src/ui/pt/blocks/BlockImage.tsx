@@ -3,7 +3,6 @@ import type { ImgHTMLAttributes, Ref } from 'react'
 import { useEffect, useState } from 'react'
 
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { getImageSrcset } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
@@ -108,15 +107,14 @@ export function BlockImage({
     }
 
     let cancelled = false
-    const url = `${API_ACTIONS.image.resolveThumbhash.path}?src=${encodeURIComponent(src)}`
+    const url = `/api/image/thumbhash?src=${encodeURIComponent(src)}`
     void fetch(url)
       .then((response) => response.json())
       .then((json: unknown) => {
         if (cancelled) {
           return
         }
-        const data = (json as { data?: { thumbhash?: string | null; width?: number | null; height?: number | null } })
-          ?.data
+        const data = json as { thumbhash?: string | null; width?: number | null; height?: number | null } | undefined
         const next: ResolvedImageMeta = {}
         if (typeof data?.thumbhash === 'string' && data.thumbhash !== '') {
           next.thumbhash = data.thumbhash

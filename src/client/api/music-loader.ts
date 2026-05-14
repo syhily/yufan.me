@@ -1,7 +1,5 @@
 import type { PublicMusicMeta } from '@/shared/music'
 
-import { API_ACTIONS } from '@/shared/api-actions'
-
 // Browser-side resolver for `<MusicPlayer />`. Talks to the internal
 // public GET endpoint (`/api/actions/music/get?id=<playerId>`), which
 // returns the audio + cover URL pair (resolved against the configured
@@ -15,7 +13,7 @@ import { API_ACTIONS } from '@/shared/api-actions'
 export type MusicMeta = PublicMusicMeta
 
 export async function loadMusic(id: string): Promise<MusicMeta | null> {
-  const url = `${API_ACTIONS.music.get.path}?id=${encodeURIComponent(id)}`
+  const url = `/api/music/get?id=${encodeURIComponent(id)}`
   let resp: Response
   try {
     resp = await fetch(url, {
@@ -27,11 +25,11 @@ export async function loadMusic(id: string): Promise<MusicMeta | null> {
   if (!resp.ok) {
     return null
   }
-  let envelope: { data?: { music?: MusicMeta } }
+  let body: { music?: MusicMeta }
   try {
-    envelope = (await resp.json()) as { data?: { music?: MusicMeta } }
+    body = (await resp.json()) as { music?: MusicMeta }
   } catch {
     return null
   }
-  return envelope.data?.music ?? null
+  return body.music ?? null
 }

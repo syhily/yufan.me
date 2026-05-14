@@ -86,6 +86,11 @@ function mountRoute(app: Hono<Env>, route: AppRoute, handler: Function, options:
     }
 
     const result = await handler({ params, query, body, headers }, ctx)
+    if (result.headers && typeof result.headers === 'object') {
+      for (const [k, v] of Object.entries(result.headers)) {
+        if (v !== undefined) c.header(k, String(v))
+      }
+    }
     return c.json(result.body, result.status as any)
   })
 }

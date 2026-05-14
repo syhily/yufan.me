@@ -8,7 +8,9 @@ import type { Env } from './context'
 import { accountController } from './controllers/account.controller'
 import { analyticsController } from './controllers/analytics.controller'
 import { authController } from './controllers/auth.controller'
-import { adminRoute, authedRoute, requireRoleMw } from './guards'
+import { imageController } from './controllers/image.controller'
+import { musicController } from './controllers/music.controller'
+import { adminRoute, authedRoute, publicRoute, requireRoleMw } from './guards'
 
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
@@ -101,6 +103,10 @@ export function createApiApp(): Hono<Env> {
       },
     })
   })
+
+  // Public resource routes
+  publicRoute(app, apiContract.image, imageController as any)
+  publicRoute(app, apiContract.music, musicController as any)
 
   // Auth routes (admin only)
   adminRoute(app, apiContract.auth, authController as any)

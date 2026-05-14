@@ -129,7 +129,7 @@ describe('route revalidation helpers', () => {
   it('keeps non-comment submissions on the default path', () => {
     expect(
       commentAwareRevalidate({
-        formAction: API_ACTIONS.image.resolveThumbhash.path,
+        formAction: API_ACTIONS.admin.listUsers.path,
         defaultShouldRevalidate: true,
       } as never),
     ).toBe(true)

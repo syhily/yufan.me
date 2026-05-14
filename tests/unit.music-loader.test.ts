@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { loadMusic } from '@/client/api/music-loader'
-import { API_ACTIONS } from '@/shared/api-actions'
 
 // `loadMusic` is the browser-side resolver fed straight into APlayer.
 // It MUST go through the internal API so feed-cache headers and the
@@ -29,7 +28,7 @@ describe('client/music — loadMusic', () => {
     const calls: string[] = []
     globalThis.fetch = (async (input: string) => {
       calls.push(input)
-      return new Response(JSON.stringify({ data: { music: meta } }), {
+      return new Response(JSON.stringify({ music: meta }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -39,7 +38,7 @@ describe('client/music — loadMusic', () => {
 
     expect(out).toEqual(meta)
     expect(calls).toHaveLength(1)
-    expect(calls[0]).toBe(`${API_ACTIONS.music.get.path}?id=abcdef0123456789`)
+    expect(calls[0]).toBe(`/api/music/get?id=abcdef0123456789`)
   })
 
   it('returns null on a 404 envelope', async () => {
@@ -61,7 +60,7 @@ describe('client/music — loadMusic', () => {
     const calls: string[] = []
     globalThis.fetch = (async (input: string) => {
       calls.push(input)
-      return new Response(JSON.stringify({ data: { music: null } }), { status: 200 })
+      return new Response(JSON.stringify({ music: null }), { status: 200 })
     }) as unknown as typeof fetch
 
     await loadMusic('weird id with spaces')

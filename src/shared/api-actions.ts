@@ -52,12 +52,6 @@ export const API_ACTIONS = {
     cancelDeleteOwn: defineApiAction('api/actions/comment/cancelDeleteOwn', 'POST'),
     listMine: defineApiAction('api/actions/comment/listMine', 'GET'),
   },
-  image: {
-    resolveThumbhash: defineApiAction('api/actions/image/resolveThumbhash', 'GET'),
-  },
-  music: {
-    get: defineApiAction('api/actions/music/get', 'GET'),
-  },
   admin: {
     listUsers: defineApiAction('api/actions/admin/listUsers', 'GET'),
     getUser: defineApiAction('api/actions/admin/getUser', 'POST'),
@@ -126,7 +120,6 @@ export const API_ACTIONS = {
 
 export const API_ACTION_LIST = [
   ...Object.values(API_ACTIONS.comment),
-  ...Object.values(API_ACTIONS.image),
-  ...Object.values(API_ACTIONS.music),
+
   ...Object.values(API_ACTIONS.admin),
 ] as const
