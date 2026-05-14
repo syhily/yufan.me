@@ -20,8 +20,8 @@ describe('contract: cache-control on derived assets', () => {
   })
 
   it('sitemap.xml stays cacheable for 1 hour', () => {
-    const source = read('src/routes/sitemap.ts')
-    expect(source).toContain("'Cache-Control': 'public, max-age=3600'")
+    const source = read('src/server/http/resources/sitemap.ts')
+    expect(source).toContain("'public, max-age=3600'")
   })
 
   it('avatar route emits a cache-control header (not a cache-busting default)', () => {

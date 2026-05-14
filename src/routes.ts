@@ -1,7 +1,5 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-import { API_ACTION_LIST } from './shared/api-actions'
-
 // See `src/routes/_README.md` for the long-form rationale behind every
 // block below (file-naming convention, why specific layouts wrap which
 // URLs, splat ordering, feed `id` disambiguators, etc.). Keep this
@@ -36,21 +34,12 @@ export default [
   route('my/profile', 'routes/my.redirect.profile.ts'),
   // Resource routes outside the public layout — see _README.md §C.
   route('tags', 'routes/tags.index.ts'),
-  // Feed URLs — see _README.md §D for the URL ↔ module ↔ id table.
-  route('feed', 'routes/feed.rss.ts'),
-  route('feed/atom', 'routes/feed.atom.ts'),
-  route('cats/:slug/feed', 'routes/feed.rss.ts', { id: 'category-feed-rss' }),
-  route('cats/:slug/feed/atom', 'routes/feed.atom.ts', { id: 'category-feed-atom' }),
-  route('tags/:slug/feed', 'routes/feed.rss.ts', { id: 'tag-feed-rss' }),
-  route('tags/:slug/feed/atom', 'routes/feed.atom.ts', { id: 'tag-feed-atom' }),
+  // Feed / sitemap resource routes now served by Hono — see server.ts
   route('search', 'routes/search.index.ts'),
-  route('sitemap.xml', 'routes/sitemap.ts'),
   route('images/og/:slug.png', 'routes/image.og.ts'),
   route('images/calendar/:year/:time.png', 'routes/image.calendar.ts'),
   route('images/calendar/dark/:year/:time.png', 'routes/image.calendar.dark.ts'),
   route('images/avatar/:hash.png', 'routes/image.avatar.ts'),
-  // API resource routes generated from `API_ACTION_LIST` — see _README.md §E.
-  ...API_ACTION_LIST.map((action) => route(action.route, action.file)),
   // Auth split-screen layout — see _README.md §F.
   layout('routes/admin.layout.tsx', [
     route('wp-login.php', 'routes/wp-login.tsx'),

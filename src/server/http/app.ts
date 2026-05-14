@@ -6,6 +6,7 @@ import { apiContract } from '@/shared/contracts'
 import type { Env } from './context'
 
 import { accountController } from './controllers/account.controller'
+import { adminController } from './controllers/admin.controller'
 import { analyticsController } from './controllers/analytics.controller'
 import { authController } from './controllers/auth.controller'
 import { commentController } from './controllers/comment.controller'
@@ -109,6 +110,9 @@ export function createApiApp(): Hono<Env> {
   publicRoute(app, apiContract.comment, commentController as any)
   publicRoute(app, apiContract.image, imageController as any)
   publicRoute(app, apiContract.music, musicController as any)
+
+  // Admin routes
+  adminRoute(app, apiContract.admin, adminController as any)
 
   // Auth routes (admin only)
   adminRoute(app, apiContract.auth, authController as any)

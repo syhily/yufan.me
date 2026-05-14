@@ -7,6 +7,8 @@ import { requestContext, sessionContext } from '@/server/auth/context'
 import { createApiApp } from '@/server/http/app'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
 import { buildOpenApiDocument } from '@/server/http/openapi'
+import { feedRouter } from '@/server/http/resources/feed'
+import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
 
@@ -19,6 +21,10 @@ export default await createHonoServer({
 
     // ─── API (ts-rest contracts) ────────────────────────
     app.route('/', createApiApp())
+
+    // ─── Public resource routes ───────────────────────────
+    app.route('/', feedRouter)
+    app.route('/', sitemapRouter)
 
     if (process.env.NODE_ENV !== 'production') {
       app.get('/openapi.json', (c) => c.json(buildOpenApiDocument()))

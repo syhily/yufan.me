@@ -1,100 +1,83 @@
 export type ApiActionMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
-// `defineApiAction` is the single source of truth for every internal API
-// action. It returns a descriptor that the client uses (`API_ACTIONS.x.y`),
-// the server route module imports (the `route` is also the URL), AND the
-// route manifest `src/routes.ts` consumes — `file` is the on-disk path of
-// the matching resource route module, derived deterministically from
-// `route` so adding a new endpoint touches exactly one file.
-//
-// The `route` shape MUST follow `api/actions/<domain>/<name>`. The matching
-// module path then is `routes/api/actions/<domain>.<name>.ts`. We assert
-// the shape with a readable error so a typo is caught at module load.
-function defineApiAction<const Route extends string, const Method extends ApiActionMethod>(
-  route: Route,
-  method: Method,
-) {
-  const segments = route.split('/')
-  if (segments.length !== 4 || segments[0] !== 'api' || segments[1] !== 'actions') {
-    throw new Error(
-      `defineApiAction: expected route shape 'api/actions/<domain>/<name>', received '${route}'. ` +
-        `The shape feeds the auto-generated route manifest in src/routes.ts; please follow the convention.`,
-    )
-  }
-  const file = `routes/api/actions/${segments[2]}.${segments[3]}.ts` as const
-  return {
-    route,
-    path: `/${route}` as const,
-    method,
-    file,
-  }
+export type ApiActionDescriptor = {
+  path: string
+  method: ApiActionMethod
+}
+
+// Helper for admin endpoints that now live under Hono (no longer React Router
+// resource routes, so they skip the `api/actions/<domain>/<name>` assertion).
+function adminAction<const M extends ApiActionMethod>(path: `api/admin/${string}`, method: M) {
+  return { path: `/${path}` as const, method }
 }
 
 export const API_ACTIONS = {
   admin: {
-    listUsers: defineApiAction('api/actions/admin/listUsers', 'GET'),
-    getUser: defineApiAction('api/actions/admin/getUser', 'POST'),
-    softDeleteUser: defineApiAction('api/actions/admin/softDeleteUser', 'DELETE'),
-    restoreUser: defineApiAction('api/actions/admin/restoreUser', 'POST'),
-    muteUser: defineApiAction('api/actions/admin/muteUser', 'PATCH'),
-    bulkApproveUserComments: defineApiAction('api/actions/admin/bulkApproveUserComments', 'POST'),
-    bulkSoftDeleteUserComments: defineApiAction('api/actions/admin/bulkSoftDeleteUserComments', 'DELETE'),
-    getSettings: defineApiAction('api/actions/admin/getSettings', 'GET'),
-    updateSettings: defineApiAction('api/actions/admin/updateSettings', 'PATCH'),
-    getCacheStats: defineApiAction('api/actions/admin/getCacheStats', 'GET'),
-    clearCache: defineApiAction('api/actions/admin/clearCache', 'POST'),
-    sendTestMail: defineApiAction('api/actions/admin/sendTestMail', 'POST'),
-    listFriends: defineApiAction('api/actions/admin/listFriends', 'GET'),
-    upsertFriend: defineApiAction('api/actions/admin/upsertFriend', 'POST'),
-    deleteFriend: defineApiAction('api/actions/admin/deleteFriend', 'DELETE'),
-    listCategories: defineApiAction('api/actions/admin/listCategories', 'GET'),
-    upsertCategory: defineApiAction('api/actions/admin/upsertCategory', 'POST'),
-    deleteCategory: defineApiAction('api/actions/admin/deleteCategory', 'DELETE'),
-    reorderCategories: defineApiAction('api/actions/admin/reorderCategories', 'POST'),
-    listTags: defineApiAction('api/actions/admin/listTags', 'GET'),
-    upsertTag: defineApiAction('api/actions/admin/upsertTag', 'POST'),
-    deleteTag: defineApiAction('api/actions/admin/deleteTag', 'DELETE'),
-    listImages: defineApiAction('api/actions/admin/listImages', 'GET'),
-    uploadImage: defineApiAction('api/actions/admin/uploadImage', 'POST'),
-    deleteImage: defineApiAction('api/actions/admin/deleteImage', 'DELETE'),
-    updateImageNote: defineApiAction('api/actions/admin/updateImageNote', 'PATCH'),
-    recalculateImageThumbhash: defineApiAction('api/actions/admin/recalculateImageThumbhash', 'POST'),
-    listMusic: defineApiAction('api/actions/admin/listMusic', 'GET'),
-    searchMusic: defineApiAction('api/actions/admin/searchMusic', 'GET'),
-    addMusic: defineApiAction('api/actions/admin/addMusic', 'POST'),
-    updateMusic: defineApiAction('api/actions/admin/updateMusic', 'PATCH'),
-    deleteMusic: defineApiAction('api/actions/admin/deleteMusic', 'DELETE'),
-    listPages: defineApiAction('api/actions/admin/listPages', 'GET'),
-    getPage: defineApiAction('api/actions/admin/getPage', 'GET'),
-    upsertPageMeta: defineApiAction('api/actions/admin/upsertPageMeta', 'POST'),
-    deletePage: defineApiAction('api/actions/admin/deletePage', 'DELETE'),
-    restorePage: defineApiAction('api/actions/admin/restorePage', 'POST'),
-    listPageRevisions: defineApiAction('api/actions/admin/listPageRevisions', 'GET'),
-    saveDraft: defineApiAction('api/actions/admin/saveDraft', 'POST'),
-    publishLatest: defineApiAction('api/actions/admin/publishLatest', 'POST'),
-    unpublishPage: defineApiAction('api/actions/admin/unpublishPage', 'POST'),
-    previewPage: defineApiAction('api/actions/admin/previewPage', 'POST'),
-    listPosts: defineApiAction('api/actions/admin/listPosts', 'GET'),
-    getPost: defineApiAction('api/actions/admin/getPost', 'GET'),
-    upsertPostMeta: defineApiAction('api/actions/admin/upsertPostMeta', 'POST'),
-    deletePost: defineApiAction('api/actions/admin/deletePost', 'DELETE'),
-    restorePost: defineApiAction('api/actions/admin/restorePost', 'POST'),
-    listPostRevisions: defineApiAction('api/actions/admin/listPostRevisions', 'GET'),
-    savePostDraft: defineApiAction('api/actions/admin/savePostDraft', 'POST'),
-    publishPostLatest: defineApiAction('api/actions/admin/publishPostLatest', 'POST'),
-    unpublishPost: defineApiAction('api/actions/admin/unpublishPost', 'POST'),
-    previewPost: defineApiAction('api/actions/admin/previewPost', 'POST'),
-    renderMath: defineApiAction('api/actions/admin/renderMath', 'POST'),
-    renderMermaid: defineApiAction('api/actions/admin/renderMermaid', 'POST'),
-    reindexSearch: defineApiAction('api/actions/admin/reindexSearch', 'POST'),
-    approveCommentDeletion: defineApiAction('api/actions/admin/approveCommentDeletion', 'POST'),
-    listPendingDashboard: defineApiAction('api/actions/admin/listPendingDashboard', 'GET'),
-    inviteAuthor: defineApiAction('api/actions/admin/inviteAuthor', 'POST'),
-    updateUserRole: defineApiAction('api/actions/admin/updateUserRole', 'POST'),
-    sendPasswordReset: defineApiAction('api/actions/admin/sendPasswordReset', 'POST'),
-    revokeSession: defineApiAction('api/actions/admin/revokeSession', 'POST'),
-    revokeUserSessions: defineApiAction('api/actions/admin/revokeUserSessions', 'POST'),
+    listUsers: adminAction('api/admin/listUsers', 'GET'),
+    getUser: adminAction('api/admin/getUser', 'POST'),
+    softDeleteUser: adminAction('api/admin/softDeleteUser', 'DELETE'),
+    restoreUser: adminAction('api/admin/restoreUser', 'POST'),
+    muteUser: adminAction('api/admin/muteUser', 'PATCH'),
+    bulkApproveUserComments: adminAction('api/admin/bulkApproveUserComments', 'POST'),
+    bulkSoftDeleteUserComments: adminAction('api/admin/bulkSoftDeleteUserComments', 'DELETE'),
+    getSettings: adminAction('api/admin/getSettings', 'GET'),
+    updateSettings: adminAction('api/admin/updateSettings', 'PATCH'),
+    getCacheStats: adminAction('api/admin/getCacheStats', 'GET'),
+    clearCache: adminAction('api/admin/clearCache', 'POST'),
+    sendTestMail: adminAction('api/admin/sendTestMail', 'POST'),
+    listFriends: adminAction('api/admin/listFriends', 'GET'),
+    upsertFriend: adminAction('api/admin/upsertFriend', 'POST'),
+    deleteFriend: adminAction('api/admin/deleteFriend', 'DELETE'),
+    listCategories: adminAction('api/admin/listCategories', 'GET'),
+    upsertCategory: adminAction('api/admin/upsertCategory', 'POST'),
+    deleteCategory: adminAction('api/admin/deleteCategory', 'DELETE'),
+    reorderCategories: adminAction('api/admin/reorderCategories', 'POST'),
+    listTags: adminAction('api/admin/listTags', 'GET'),
+    upsertTag: adminAction('api/admin/upsertTag', 'POST'),
+    deleteTag: adminAction('api/admin/deleteTag', 'DELETE'),
+    listImages: adminAction('api/admin/listImages', 'GET'),
+    uploadImage: adminAction('api/admin/uploadImage', 'POST'),
+    deleteImage: adminAction('api/admin/deleteImage', 'DELETE'),
+    updateImageNote: adminAction('api/admin/updateImageNote', 'PATCH'),
+    recalculateImageThumbhash: adminAction('api/admin/recalculateImageThumbhash', 'POST'),
+    listMusic: adminAction('api/admin/listMusic', 'GET'),
+    searchMusic: adminAction('api/admin/searchMusic', 'GET'),
+    addMusic: adminAction('api/admin/addMusic', 'POST'),
+    updateMusic: adminAction('api/admin/updateMusic', 'PATCH'),
+    deleteMusic: adminAction('api/admin/deleteMusic', 'DELETE'),
+    listPages: adminAction('api/admin/listPages', 'GET'),
+    getPage: adminAction('api/admin/getPage', 'GET'),
+    upsertPageMeta: adminAction('api/admin/upsertPageMeta', 'POST'),
+    deletePage: adminAction('api/admin/deletePage', 'DELETE'),
+    restorePage: adminAction('api/admin/restorePage', 'POST'),
+    listPageRevisions: adminAction('api/admin/listPageRevisions', 'GET'),
+    saveDraft: adminAction('api/admin/saveDraft', 'POST'),
+    publishLatest: adminAction('api/admin/publishLatest', 'POST'),
+    unpublishPage: adminAction('api/admin/unpublishPage', 'POST'),
+    previewPage: adminAction('api/admin/previewPage', 'POST'),
+    listPosts: adminAction('api/admin/listPosts', 'GET'),
+    getPost: adminAction('api/admin/getPost', 'GET'),
+    upsertPostMeta: adminAction('api/admin/upsertPostMeta', 'POST'),
+    deletePost: adminAction('api/admin/deletePost', 'DELETE'),
+    restorePost: adminAction('api/admin/restorePost', 'POST'),
+    listPostRevisions: adminAction('api/admin/listPostRevisions', 'GET'),
+    savePostDraft: adminAction('api/admin/savePostDraft', 'POST'),
+    publishPostLatest: adminAction('api/admin/publishPostLatest', 'POST'),
+    unpublishPost: adminAction('api/admin/unpublishPost', 'POST'),
+    previewPost: adminAction('api/admin/previewPost', 'POST'),
+    renderMath: adminAction('api/admin/renderMath', 'POST'),
+    renderMermaid: adminAction('api/admin/renderMermaid', 'POST'),
+    reindexSearch: adminAction('api/admin/reindexSearch', 'POST'),
+    approveCommentDeletion: adminAction('api/admin/approveCommentDeletion', 'POST'),
+    listPendingDashboard: adminAction('api/admin/listPendingDashboard', 'GET'),
+    inviteAuthor: adminAction('api/admin/inviteAuthor', 'POST'),
+    updateUserRole: adminAction('api/admin/updateUserRole', 'POST'),
+    sendPasswordReset: adminAction('api/admin/sendPasswordReset', 'POST'),
+    revokeSession: adminAction('api/admin/revokeSession', 'POST'),
+    revokeUserSessions: adminAction('api/admin/revokeUserSessions', 'POST'),
   },
 } as const
 
-export const API_ACTION_LIST = [...Object.values(API_ACTIONS.admin)] as const
+// Empty — all API routes now live in the Hono layer.
+export const API_ACTION_LIST: readonly { route: string; path: string; method: ApiActionMethod; file: string }[] =
+  [] as const

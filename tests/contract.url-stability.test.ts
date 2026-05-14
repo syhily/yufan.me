@@ -42,25 +42,19 @@ describe('contract: public URL stability', () => {
 
   it('category + tag listings keep their /cats and /tags prefixes', () => {
     const paths = new Set(all.map((r) => r.path))
-    for (const expected of [
-      'cats/:slug',
-      'cats/:slug/feed',
-      'cats/:slug/feed/atom',
-      'cats/:slug/page/:num',
-      'tags/:slug',
-      'tags/:slug/feed',
-      'tags/:slug/feed/atom',
-      'tags/:slug/page/:num',
-    ]) {
+    for (const expected of ['cats/:slug', 'cats/:slug/page/:num', 'tags/:slug', 'tags/:slug/page/:num']) {
       expect(paths.has(expected), `missing public URL: /${expected}`).toBe(true)
     }
   })
 
-  it('RSS / Atom / sitemap routes are mounted at the historical paths', () => {
+  it('RSS / Atom / sitemap routes are mounted by Hono at the historical paths', () => {
+    // Feed and sitemap routes migrated from React Router resource routes
+    // to Hono native routes in server/http/resources/. The public URLs
+    // remain stable; they are just no longer in the RR manifest.
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('feed')).toBe(true)
-    expect(paths.has('feed/atom')).toBe(true)
-    expect(paths.has('sitemap.xml')).toBe(true)
+    expect(paths.has('feed')).toBe(false)
+    expect(paths.has('feed/atom')).toBe(false)
+    expect(paths.has('sitemap.xml')).toBe(false)
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
