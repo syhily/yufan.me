@@ -102,6 +102,7 @@ import { updateMusicMetadata } from '@/server/music/service'
 import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/rate-limit'
 import { tryPasswordResetByTargetRateLimit } from '@/server/rate-limit'
+import { parseInput } from '@/server/route-helpers/api-handler'
 import { ActionFailure } from '@/server/route-helpers/errors'
 import { indexPost } from '@/server/search/indexer'
 import { userSession } from '@/server/session'
@@ -194,12 +195,20 @@ export const adminController = {
   deleteCategory: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const ok = await deleteAdminCategory(BigInt(args.params.id))
+    if (!ok) {
+      return { status: 404 as const, body: { error: { message: '分类不存在' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
   },
   deleteFriend: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const ok = await deleteAdminFriend(BigInt(args.params.id))
+    if (!ok) {
+      return { status: 404 as const, body: { error: { message: '友链不存在' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
   },
   deleteImage: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -499,10 +508,39 @@ export const adminController = {
     return { status: 200 as const, body: { processed, failed, total, nextOffset } }
   },
   renderMath: async (args: any, ctx: any) => {
-    return { status: 200 as const, body: null }
+    const payload = args.body
+    const tex = payload.tex
+    if (tex.trim() === '') {
+      return { status: 200 as const, body: { mathml: '', error: null } }
+    }
+    let renderer: KatexRenderer
+    try {
+      renderer = await getKatexRenderer()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'KaTeX 加载失败'
+      return { status: 200 as const, body: { mathml: '', error: message } }
+    }
+    try {
+      const mathml = await renderer.render(tex, payload.display)
+      return { status: 200 as const, body: { mathml, error: null } }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '公式渲染失败'
+      return { status: 200 as const, body: { mathml: '', error: message } }
+    }
   },
   renderMermaid: async (args: any, ctx: any) => {
-    return { status: 200 as const, body: null }
+    const payload = args.body
+    const code = payload.code
+    if (code.trim() === '') {
+      return { status: 200 as const, body: { svg: '', error: null } }
+    }
+    try {
+      const svg = await renderMermaidSVGAsync(code)
+      return { status: 200 as const, body: { svg, error: null } }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '图表渲染失败'
+      return { status: 200 as const, body: { svg: '', error: message } }
+    }
   },
   reorderCategories: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -724,7 +762,79 @@ export const adminController = {
     return { status: 200 as const, body: { user: updated } }
   },
   uploadImage: async (args: any, ctx: any) => {
-    return { status: 200 as const, body: null }
+    const sessionUser = userSession(ctx.session)
+    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
+      return { status: 403 as const, body: { error: { message: '权限不足' } } }
+
+    const settings = requireBlogSettingsSection('assets')
+
+    let formData: FormData
+    try {
+      formData = await ctx.request.formData()
+    } catch {
+      return { status: 400 as const, body: { error: { message: '无法解析 multipart 请求体' } } }
+    }
+
+    const fileEntry = formData.get('file')
+    if (!(fileEntry instanceof Blob)) {
+      return {
+        status: 400 as const,
+        body: {
+          error: { message: '缺少图片文件 (file 字段必填)', issues: [{ message: 'file 字段必填', path: ['file'] }] },
+        },
+      }
+    }
+    if (fileEntry.size > settings.upload.maxBytes) {
+      return {
+        status: 413 as const,
+        body: { error: { message: `图片体积超过上限（${formatBytes(settings.upload.maxBytes)}）` } },
+      }
+    }
+
+    const metadataObj: Record<string, string> = {}
+    for (const [key, value] of formData.entries()) {
+      if (key === 'file') continue
+      if (typeof value === 'string') {
+        metadataObj[key] = value
+      }
+    }
+
+    const metadata = await parseInput(uploadImageMetadataSchema, metadataObj)
+
+    const buffer = Buffer.from(await fileEntry.arrayBuffer())
+    const uploader = { id: BigInt(sessionUser.id), name: sessionUser.name }
+
+    let image
+    if (metadata.kind === 'generic') {
+      image = await uploadImage({
+        kind: { kind: 'generic' },
+        buffer,
+        note: metadata.note ?? null,
+        uploader,
+        maxBytes: settings.upload.maxBytes,
+        jpegQuality: settings.upload.jpegQuality,
+      })
+    } else if (metadata.kind === 'category') {
+      image = await uploadImage({
+        kind: { kind: 'category', slug: metadata.slug },
+        buffer,
+        note: metadata.note ?? null,
+        uploader,
+        maxBytes: settings.upload.maxBytes,
+        jpegQuality: settings.upload.jpegQuality,
+      })
+    } else {
+      image = await uploadImage({
+        kind: { kind: 'friend', host: metadata.host },
+        buffer,
+        note: metadata.note ?? null,
+        uploader,
+        maxBytes: settings.upload.maxBytes,
+        jpegQuality: settings.upload.jpegQuality,
+      })
+    }
+
+    return { status: 200 as const, body: { image } }
   },
   upsertCategory: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -778,4 +888,14 @@ export const adminController = {
     })
     return { status: 200 as const, body: { tag } }
   },
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${Math.round(bytes / (1024 * 1024))} MB`
+  }
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`
+  }
+  return `${bytes} B`
 }
