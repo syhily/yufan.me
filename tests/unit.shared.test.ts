@@ -125,9 +125,8 @@ describe('shared/api-actions', () => {
     }
   })
 
-  it('auth/comment/image/music/admin/analytics grouping is exhaustively listed in API_ACTION_LIST', () => {
+  it('comment/image/music/admin/analytics grouping is exhaustively listed in API_ACTION_LIST', () => {
     const flat = [
-      ...Object.values(API_ACTIONS.auth),
       ...Object.values(API_ACTIONS.comment),
       ...Object.values(API_ACTIONS.image),
       ...Object.values(API_ACTIONS.music),
@@ -156,7 +155,7 @@ describe('routes/_shared/revalidate', () => {
   it('recognizes comment action URLs in relative, absolute, and query-string forms', () => {
     expect(isCommentAction(API_ACTIONS.comment.replyComment.path)).toBe(true)
     expect(isCommentAction(`https://yufan.me${API_ACTIONS.comment.replyComment.path}?from=reply`)).toBe(true)
-    expect(isCommentAction(API_ACTIONS.auth.updateUser.path)).toBe(false)
+    expect(isCommentAction(API_ACTIONS.image.resolveThumbhash.path)).toBe(false)
   })
 
   it('skips detail-route revalidation after comment submissions only', () => {
@@ -168,7 +167,7 @@ describe('routes/_shared/revalidate', () => {
     ).toBe(false)
     expect(
       commentAwareRevalidate({
-        formAction: API_ACTIONS.auth.updateUser.path,
+        formAction: API_ACTIONS.image.resolveThumbhash.path,
         defaultShouldRevalidate: true,
       } as never),
     ).toBe(true)

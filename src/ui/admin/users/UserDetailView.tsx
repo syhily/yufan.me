@@ -48,7 +48,7 @@ import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const GET = API_ACTIONS.admin.getUser
-const UPDATE = API_ACTIONS.auth.updateUser
+const UPDATE_PATH = '/api/auth/users'
 const UPDATE_ROLE = API_ACTIONS.admin.updateUserRole
 // Initial colour offered when an admin first ticks the "自定义字体颜色"
 // checkbox. Mirrors the public `--badge-text` light value so the picker
@@ -155,7 +155,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   useFetcherResult(muteFetcher, { action: MUTE, onSuccess: (payload) => setUser(payload.user) })
   useFetcherResult(sendResetFetcher, { action: SEND_RESET, onSuccess: () => {} })
   useFetcherResult(revokeSessionsFetcher, { action: REVOKE_USER_SESSIONS, onSuccess: () => {} })
-  useFetcherResult(updateFetcher, { action: UPDATE, onSuccess: () => reloadUser() })
+  useFetcherResult(updateFetcher, { action: { path: UPDATE_PATH } as any, onSuccess: () => reloadUser() })
   useFetcherResult(updateRoleFetcher, {
     action: UPDATE_ROLE,
     onSuccess: (payload) => {
@@ -542,7 +542,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                     e.preventDefault()
                     // Allow `null` so unticking the override checkbox
                     // can clear the column on save.
-                    const payload: Record<string, string | null> = { userId: user.id, name, email }
+                    const payload: Record<string, string | null> = { name, email }
                     if (link) {
                       payload.link = link
                     }
@@ -554,9 +554,9 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                     }
                     payload.badgeTextColor = useTextOverride ? badgeTextColor : null
                     void updateFetcher.submit(payload, {
-                      method: UPDATE.method,
+                      method: 'PATCH',
                       encType: 'application/json',
-                      action: UPDATE.path,
+                      action: `${UPDATE_PATH}/${user.id}`,
                     })
                   }}
                   className="grid gap-4 sm:grid-cols-2"

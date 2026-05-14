@@ -29,7 +29,6 @@ describe('shared API action contract', () => {
   it('declares every action route exactly once', () => {
     const routes = API_ACTION_LIST.map((action) => action.route)
     expect(new Set(routes).size).toBe(routes.length)
-    expect(routes).toContain(API_ACTIONS.auth.updateUser.route)
     expect(routes).toContain(API_ACTIONS.comment.loadAll.route)
   })
 

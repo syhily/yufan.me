@@ -26,7 +26,7 @@ import { Label } from '@/ui/components/label'
 // so the picker lands on a sensible value rather than `#000000`.
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
-const UPDATE_USER = API_ACTIONS.auth.updateUser
+const UPDATE_USER_PATH = '/api/auth/users'
 
 export interface EditUserDialogProps {
   comment: AdminComment | null
@@ -71,7 +71,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
   // historical runaway-loop bug where every parent re-render triggered
   // a fresh reload while the close animation still held the dialog open.
   useFetcherResult(fetcher, {
-    action: UPDATE_USER,
+    action: { path: UPDATE_USER_PATH } as any,
     onSuccess: () => onSaved(),
   })
 
@@ -94,7 +94,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // Use `string | null` so we can explicitly clear the badge
             // text-colour override (sends a literal JSON `null`); empty
             // strings get filtered/normalised on the server.
-            const payload: Record<string, string | null> = { userId: idStr(comment.userId), name, email }
+            const payload: Record<string, string | null> = { name, email }
             if (link) {
               payload.link = link
             }
@@ -108,9 +108,9 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // previous override by unticking the checkbox.
             payload.badgeTextColor = useTextOverride ? badgeTextColor : null
             void fetcher.submit(payload, {
-              method: UPDATE_USER.method,
+              method: 'PATCH',
               encType: 'application/json',
-              action: UPDATE_USER.path,
+              action: `${UPDATE_USER_PATH}/${idStr(comment.userId)}`,
             })
           }}
           className="grid gap-4 sm:grid-cols-2"

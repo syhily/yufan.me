@@ -31,12 +31,6 @@ function defineApiAction<const Route extends string, const Method extends ApiAct
 }
 
 export const API_ACTIONS = {
-  auth: {
-    // The browser sign-in / sign-up flows go directly through React Router's
-    // `<Form>` -> route `action`. Only mutations that genuinely need a JSON
-    // channel remain here.
-    updateUser: defineApiAction('api/actions/auth/updateUser', 'PATCH'),
-  },
   comment: {
     increaseLike: defineApiAction('api/actions/comment/increaseLike', 'POST'),
     decreaseLike: defineApiAction('api/actions/comment/decreaseLike', 'DELETE'),
@@ -138,7 +132,6 @@ export const API_ACTIONS = {
 } as const
 
 export const API_ACTION_LIST = [
-  ...Object.values(API_ACTIONS.auth),
   ...Object.values(API_ACTIONS.comment),
   ...Object.values(API_ACTIONS.image),
   ...Object.values(API_ACTIONS.music),

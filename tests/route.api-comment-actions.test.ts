@@ -77,7 +77,6 @@ const rateLimit = await import('@/server/rate-limit')
 const likes = await import('@/server/comments/likes')
 
 const { action: loadAllAction } = await import('@/routes/api/actions/comment.loadAll')
-const { action: updateUserAction } = await import('@/routes/api/actions/auth.updateUser')
 const { action: increaseLikeAction } = await import('@/routes/api/actions/comment.increaseLike')
 
 beforeEach(() => {
@@ -152,61 +151,6 @@ describe('api/comment.loadAll action', () => {
 // `seedInstallSettingsWithSession` flows lives in
 // `service.auth-flow.test.ts` (helper level) and `route.wp-login.test.ts`
 // (route action level).
-
-describe('api/auth.updateUser action', () => {
-  it('rejects non-admins with 403', async () => {
-    session.current = regularSession()
-    const res = await updateUserAction(
-      makeLoaderArgs({
-        request: jsonRequest('PATCH', { userId: '1', name: 'updated' }),
-        session: session.current,
-      }),
-    )
-    expect(res.status).toBe(403)
-  })
-
-  it("returns 404 when the user doesn't exist", async () => {
-    session.current = adminSession()
-    vi.mocked(userQuery.updateUserById).mockResolvedValueOnce(null)
-    const res = await updateUserAction(
-      makeLoaderArgs({
-        request: jsonRequest('PATCH', { userId: '999', name: 'updated' }),
-        session: session.current,
-      }),
-    )
-    expect(res.status).toBe(404)
-  })
-
-  it('returns success: true for a valid admin update', async () => {
-    session.current = adminSession()
-    vi.mocked(userQuery.updateUserById).mockResolvedValueOnce({ id: 1n } as never)
-    const res = await updateUserAction(
-      makeLoaderArgs({
-        request: jsonRequest('PATCH', {
-          userId: '1',
-          name: 'updated',
-          link: 'https://example.com',
-        }),
-        session: session.current,
-      }),
-    )
-    expect(res.status).toBe(200)
-    const body = (await res.json()) as { data: { success: boolean } }
-    expect(body.data.success).toBe(true)
-  })
-
-  it('rejects unsafe user links before they reach the database', async () => {
-    session.current = adminSession()
-    const res = await updateUserAction(
-      makeLoaderArgs({
-        request: jsonRequest('PATCH', { userId: '1', link: 'javascript:alert(1)' }),
-        session: session.current,
-      }),
-    )
-    expect(res.status).toBe(400)
-    expect(userQuery.updateUserById).not.toHaveBeenCalled()
-  })
-})
 
 // `comment.increaseLike` gates `increaseLikes` on the configurable
 // per-IP rate limit. The mocks above default to `exceeded: false`
