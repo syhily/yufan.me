@@ -90,6 +90,12 @@ export default [
     route('wp-admin/posts/:id/edit', 'routes/wp-admin.posts.edit.tsx'),
     route('wp-admin/images', 'routes/wp-admin.images.tsx'),
     route('wp-admin/musics', 'routes/wp-admin.musics.tsx'),
+    // Analytics dashboard. Layout owns the date-range + filters URL
+    // state; child routes paint Overview and the Realtime feed.
+    route('wp-admin/analytics', 'routes/wp-admin.analytics.layout.tsx', [
+      index('routes/wp-admin.analytics.overview.tsx'),
+      route('realtime', 'routes/wp-admin.analytics.realtime.tsx'),
+    ]),
     // Settings sub-layout — see _README.md §H.
     layout('routes/wp-admin.settings.layout.tsx', [
       route('wp-admin/settings', 'routes/wp-admin.settings.index.tsx'),
