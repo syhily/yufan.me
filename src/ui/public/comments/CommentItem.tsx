@@ -8,7 +8,6 @@ import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useApiFetcher, useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
@@ -365,25 +364,34 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
   const siteIdentity = useSiteIdentity()
   const leaf = useCommentsLeafContext(propAdmin)
   const revalidator = useRevalidator()
-  const approve = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.approve, {
-    onSuccess: () => leaf.onApproved(comment.id),
-  })
-  const remove = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.delete, {
-    onSuccess: () => leaf.onDeleted(comment.id),
-  })
+  const approve = useApiFetcher<CommentRidInput, null>(
+    { path: '/api/comment/comments/:rid/approve', method: 'PATCH' as const },
+    {
+      onSuccess: () => leaf.onApproved(comment.id),
+    },
+  )
+  const remove = useApiFetcher<CommentRidInput, null>(
+    { path: '/api/comment/comments/:rid', method: 'DELETE' as const },
+    {
+      onSuccess: () => leaf.onDeleted(comment.id),
+    },
+  )
 
   // Visitor-scoped delete-request toggles. Both endpoints are POST + JSON
   // and take a plain `{ commentId }` payload, so `useApiFetcher` works
   // directly — no query-string round trip like `comment.updateOwn`.
   const requestDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(
-    API_ACTIONS.comment.requestDeleteOwn,
+    { path: '/api/comment/own/delete-request', method: 'POST' as const },
     {
       onSuccess: () => void revalidator.revalidate(),
     },
   )
-  const cancelDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(API_ACTIONS.comment.cancelDeleteOwn, {
-    onSuccess: () => void revalidator.revalidate(),
-  })
+  const cancelDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(
+    { path: '/api/comment/own/delete-cancel', method: 'POST' as const },
+    {
+      onSuccess: () => void revalidator.revalidate(),
+    },
+  )
 
   const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
   const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
@@ -535,24 +543,30 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
-  const raw = useApiFetcher<never, CommentRawOutput>(API_ACTIONS.comment.getRaw, {
-    onSuccess: (payload) => {
-      const loadedBody = (payload.body ?? []) as CommentBody
-      setInitialBody(loadedBody)
-      setBody(loadedBody)
-      setBodyKey((k) => k + 1)
-      setLoaded(true)
+  const raw = useApiFetcher<never, CommentRawOutput>(
+    { path: '/api/comment/comments/raw', method: 'GET' as const },
+    {
+      onSuccess: (payload) => {
+        const loadedBody = (payload.body ?? []) as CommentBody
+        setInitialBody(loadedBody)
+        setBody(loadedBody)
+        setBodyKey((k) => k + 1)
+        setLoaded(true)
+      },
     },
-  })
-  const editAction = useApiFetcher<CommentEditInput, CommentEditOutput>(API_ACTIONS.comment.edit, {
-    onSuccess: (payload) => {
-      // Drive the parent reducer first so the freshly-edited content appears
-      // in the tree before the editor closes (keeps the post-save flicker
-      // confined to the edit area instead of the whole row).
-      leaf.onEdited(payload.comment)
-      onSaved(payload.comment)
+  )
+  const editAction = useApiFetcher<CommentEditInput, CommentEditOutput>(
+    { path: '/api/comment/comments/:rid', method: 'PATCH' as const },
+    {
+      onSuccess: (payload) => {
+        // Drive the parent reducer first so the freshly-edited content appears
+        // in the tree before the editor closes (keeps the post-save flicker
+        // confined to the edit area instead of the whole row).
+        leaf.onEdited(payload.comment)
+        onSaved(payload.comment)
+      },
     },
-  })
+  )
 
   // Load the raw PT body on first mount.
   const rawLoad = raw.load
@@ -602,7 +616,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
 //   the row back to pending; we let `useRevalidator()` re-fetch the loader
 //   so the parent tree re-renders with the new state instead of guessing
 //   client-side
-const OWN_UPDATE_OWN = API_ACTIONS.comment.updateOwn
+const OWN_UPDATE_OWN = { path: '/api/comment/own/update', method: 'POST' as const }
 
 interface OwnEditAreaProps {
   comment: CommentItemType

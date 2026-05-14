@@ -5,7 +5,6 @@ import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { AdminComment } from '@/shared/comments'
 
 import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { idStr } from '@/shared/tools'
@@ -25,8 +24,8 @@ import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
-const APPROVE = API_ACTIONS.comment.approve
-const DELETE = API_ACTIONS.comment.delete
+const APPROVE = { path: '/api/comment/comments/:rid/approve', method: 'PATCH' as const }
+const DELETE = { path: '/api/comment/comments/:rid', method: 'DELETE' as const }
 
 export interface AdminCommentRowProps {
   comment: AdminComment

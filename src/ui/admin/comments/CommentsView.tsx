@@ -12,7 +12,6 @@ import type { AdminComment } from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
@@ -30,9 +29,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 
-const LOAD_ALL = API_ACTIONS.comment.loadAll
-const SEARCH_PAGES = API_ACTIONS.comment.searchPages
-const SEARCH_AUTHORS = API_ACTIONS.comment.searchAuthors
+const LOAD_ALL = { path: '/api/comment/all', method: 'POST' as const }
+const SEARCH_PAGES = { path: '/api/comment/search/pages', method: 'GET' as const }
+const SEARCH_AUTHORS = { path: '/api/comment/search/authors', method: 'GET' as const }
 
 // How long to wait after the user stops typing in a Combobox input
 // before firing the autocomplete request. 250ms feels snappy without

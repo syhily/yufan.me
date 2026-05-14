@@ -8,7 +8,6 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
 import { Button } from '@/ui/components/button'
@@ -77,35 +76,41 @@ export function CommentReplyForm({
     }
   }, [guestProfile, user])
 
-  const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(API_ACTIONS.comment.replyComment, {
-    onSuccess: (data) => {
-      setSubmitError(null)
-      if (data.csrfToken) {
-        onCsrfRotated(data.csrfToken)
-      }
-      onReplied(data.comment, replyToId)
-      // Persist guest info for future visits.
-      if (!user) {
-        saveGuestProfile({
-          name: data.comment.name,
-          email: data.comment.email,
-          link: data.comment.link ?? undefined,
-          avatar: avatarSrc,
-        })
-      }
-      // Clear the editor + remount via bodyKey bump.
-      setBody(EMPTY_COMMENT_BODY)
-      setBodyKey((k) => k + 1)
-      formRef.current?.reset()
+  const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(
+    { path: '/api/comment/comments', method: 'POST' as const },
+    {
+      onSuccess: (data) => {
+        setSubmitError(null)
+        if (data.csrfToken) {
+          onCsrfRotated(data.csrfToken)
+        }
+        onReplied(data.comment, replyToId)
+        // Persist guest info for future visits.
+        if (!user) {
+          saveGuestProfile({
+            name: data.comment.name,
+            email: data.comment.email,
+            link: data.comment.link ?? undefined,
+            avatar: avatarSrc,
+          })
+        }
+        // Clear the editor + remount via bodyKey bump.
+        setBody(EMPTY_COMMENT_BODY)
+        setBodyKey((k) => k + 1)
+        formRef.current?.reset()
+      },
+      onError: (error) => {
+        setSubmitError(error.message)
+      },
     },
-    onError: (error) => {
-      setSubmitError(error.message)
-    },
-  })
+  )
 
-  const avatar = useApiFetcher<FindAvatarInput, FindAvatarOutput>(API_ACTIONS.comment.findAvatar, {
-    onSuccess: (payload) => setAvatarSrc(payload.avatar),
-  })
+  const avatar = useApiFetcher<FindAvatarInput, FindAvatarOutput>(
+    { path: '/api/comment/avatar', method: 'POST' as const },
+    {
+      onSuccess: (payload) => setAvatarSrc(payload.avatar),
+    },
+  )
 
   const admin = user?.admin === true
   const isPending = reply.isPending

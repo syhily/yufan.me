@@ -125,37 +125,24 @@ describe('shared/api-actions', () => {
     }
   })
 
-  it('comment/admin grouping is exhaustively listed in API_ACTION_LIST', () => {
-    const flat = [...Object.values(API_ACTIONS.comment), ...Object.values(API_ACTIONS.admin)]
+  it('admin grouping is exhaustively listed in API_ACTION_LIST', () => {
+    const flat = [...Object.values(API_ACTIONS.admin)]
     expect(new Set(flat).size).toBe(flat.length)
     expect(flat.length).toBe(API_ACTION_LIST.length)
-  })
-
-  it('PII-bearing endpoints are POST (validateLikeToken/findAvatar/loadAll)', () => {
-    expect(API_ACTIONS.comment.validateLikeToken.method).toBe('POST')
-    expect(API_ACTIONS.comment.findAvatar.method).toBe('POST')
-    expect(API_ACTIONS.comment.loadAll.method).toBe('POST')
-  })
-
-  it('read-only endpoints stay GET (loadComments / getRaw / searchPages / searchAuthors)', () => {
-    expect(API_ACTIONS.comment.loadComments.method).toBe('GET')
-    expect(API_ACTIONS.comment.getRaw.method).toBe('GET')
-    expect(API_ACTIONS.comment.searchPages.method).toBe('GET')
-    expect(API_ACTIONS.comment.searchAuthors.method).toBe('GET')
   })
 })
 
 describe('routes/_shared/revalidate', () => {
   it('recognizes comment action URLs in relative, absolute, and query-string forms', () => {
-    expect(isCommentAction(API_ACTIONS.comment.replyComment.path)).toBe(true)
-    expect(isCommentAction(`https://yufan.me${API_ACTIONS.comment.replyComment.path}?from=reply`)).toBe(true)
+    expect(isCommentAction('/api/comment/comments')).toBe(true)
+    expect(isCommentAction('https://yufan.me/api/comment/comments?from=reply')).toBe(true)
     expect(isCommentAction(API_ACTIONS.admin.listUsers.path)).toBe(false)
   })
 
   it('skips detail-route revalidation after comment submissions only', () => {
     expect(
       commentAwareRevalidate({
-        formAction: API_ACTIONS.comment.replyComment.path,
+        formAction: '/api/comment/comments',
         defaultShouldRevalidate: true,
       } as never),
     ).toBe(false)

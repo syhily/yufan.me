@@ -7,7 +7,6 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useFetcherResult } from '@/client/api/fetcher'
 import { toast } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -20,7 +19,7 @@ import {
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
 
-const UPDATE_OWN = API_ACTIONS.comment.updateOwn
+const UPDATE_OWN = { path: '/api/comment/own/update', method: 'POST' as const }
 
 // Self-edit dialog for `/wp-admin/my/comments`. Differs from the
 // admin `EditCommentDialog`:

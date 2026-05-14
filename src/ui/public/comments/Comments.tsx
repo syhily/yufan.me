@@ -12,7 +12,6 @@ import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
 
 import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
 import { CommentItem } from '@/ui/public/comments/CommentItem'
@@ -257,7 +256,10 @@ function CommentsRoot({
   const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
-  const revokeToken = useApiFetcher<CommentRidInput, RevokeCommentTokenOutput>(API_ACTIONS.comment.revokeToken)
+  const revokeToken = useApiFetcher<CommentRidInput, RevokeCommentTokenOutput>({
+    path: '/api/comment/tokens/revoke',
+    method: 'POST' as const,
+  })
   const onDismissMyComment = useCallback(
     (id: bigint | string) => {
       const key = asKey(id)
@@ -287,15 +289,18 @@ function CommentsRoot({
   // Load the current user's own comments (including pending) via token cookie.
   const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
   const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
-  const myComments = useApiFetcher<never, MyCommentsOutput>(API_ACTIONS.comment.myComments, {
-    onSuccess: (payload) => {
-      if (payload.comments.length > 0) {
-        dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt })
-        setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
-        setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt)))
-      }
+  const myComments = useApiFetcher<never, MyCommentsOutput>(
+    { path: '/api/comment/mine', method: 'GET' as const },
+    {
+      onSuccess: (payload) => {
+        if (payload.comments.length > 0) {
+          dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt })
+          setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
+          setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt)))
+        }
+      },
     },
-  })
+  )
 
   useEffect(() => {
     if (!admin && !user) {
@@ -392,15 +397,18 @@ function CommentsLoadMore() {
   const rootsLoadedRef = useRef(ctx.state.rootsLoaded)
   rootsLoadedRef.current = ctx.state.rootsLoaded
 
-  const loadMore = useApiFetcher<never, LoadCommentsOutput>(API_ACTIONS.comment.loadComments, {
-    onSuccess: (payload) => {
-      ctx.dispatch({
-        type: 'append',
-        items: payload.comments,
-        rootsLoaded: rootsLoadedRef.current + payload.comments.length,
-      })
+  const loadMore = useApiFetcher<never, LoadCommentsOutput>(
+    { path: '/api/comment/comments', method: 'GET' as const },
+    {
+      onSuccess: (payload) => {
+        ctx.dispatch({
+          type: 'append',
+          items: payload.comments,
+          rootsLoaded: rootsLoadedRef.current + payload.comments.length,
+        })
+      },
     },
-  })
+  )
 
   if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) {
     return null

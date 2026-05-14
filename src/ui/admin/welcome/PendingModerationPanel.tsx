@@ -28,8 +28,8 @@ function pickRandomLine(): string {
 }
 
 const LIST = API_ACTIONS.admin.listPendingDashboard
-const APPROVE = API_ACTIONS.comment.approve
-const DELETE = API_ACTIONS.comment.delete
+const APPROVE = { path: '/api/comment/comments/:rid/approve', method: 'PATCH' as const }
+const DELETE = { path: '/api/comment/comments/:rid', method: 'DELETE' as const }
 const APPROVE_DELETION = API_ACTIONS.admin.approveCommentDeletion
 
 const PAGE_SIZE = 5

@@ -8,7 +8,6 @@ import type { MyCommentsStatus } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -25,8 +24,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
-const REQUEST_DELETE = API_ACTIONS.comment.requestDeleteOwn
-const CANCEL_DELETE = API_ACTIONS.comment.cancelDeleteOwn
+const REQUEST_DELETE = { path: '/api/comment/own/delete-request', method: 'POST' as const }
+const CANCEL_DELETE = { path: '/api/comment/own/delete-cancel', method: 'POST' as const }
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

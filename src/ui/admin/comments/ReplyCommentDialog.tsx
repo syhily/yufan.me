@@ -9,7 +9,6 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useFetcherResult } from '@/client/api/fetcher'
 import { toast } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -23,7 +22,7 @@ import {
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
 
-const REPLY = API_ACTIONS.comment.replyComment
+const REPLY = { path: '/api/comment/comments', method: 'POST' as const }
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null

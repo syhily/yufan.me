@@ -11,7 +11,6 @@ import type {
 } from '@/shared/api-types'
 
 import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { joinUrl } from '@/shared/urls'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
@@ -80,7 +79,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
-    API_ACTIONS.comment.validateLikeToken,
+    { path: '/api/comment/likes/validate', method: 'POST' as const },
     {
       onSuccess: (data) => {
         setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
@@ -91,19 +90,25 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     },
   )
 
-  const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
-    onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
-      localStorage.setItem(tokenStorageKey(permalink), data.token)
+  const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(
+    { path: '/api/comment/likes', method: 'POST' as const },
+    {
+      onSuccess: (data) => {
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
+        localStorage.setItem(tokenStorageKey(permalink), data.token)
+      },
     },
-  })
+  )
 
-  const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
-    onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
-      localStorage.removeItem(tokenStorageKey(permalink))
+  const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(
+    { path: '/api/comment/likes', method: 'DELETE' as const },
+    {
+      onSuccess: (data) => {
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
+        localStorage.removeItem(tokenStorageKey(permalink))
+      },
     },
-  })
+  )
 
   // Sync local island state to React Router loader data. Detail routes reuse
   // the same component instance when navigating `/posts/a` -> `/posts/b`, so

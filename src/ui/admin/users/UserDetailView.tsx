@@ -61,7 +61,7 @@ const SOFT_DELETE = API_ACTIONS.admin.softDeleteUser
 const RESTORE = API_ACTIONS.admin.restoreUser
 const BULK_APPROVE = API_ACTIONS.admin.bulkApproveUserComments
 const BULK_DELETE = API_ACTIONS.admin.bulkSoftDeleteUserComments
-const COMMENTS_LOAD = API_ACTIONS.comment.loadAll
+const COMMENTS_LOAD = { path: '/api/comment/all', method: 'POST' as const }
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 

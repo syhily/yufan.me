@@ -1,10 +1,23 @@
 import type { ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { API_ACTIONS } from '@/shared/api-actions'
-
-const COMMENT_ACTION_PATHS: ReadonlySet<string> = new Set(
-  Object.values(API_ACTIONS.comment).map((action) => action.path),
-)
+const COMMENT_ACTION_PATHS: ReadonlySet<string> = new Set([
+  '/api/comment/likes',
+  '/api/comment/likes/validate',
+  '/api/comment/avatar',
+  '/api/comment/comments',
+  '/api/comment/comments/raw',
+  '/api/comment/tokens/revoke',
+  '/api/comment/mine',
+  '/api/comment/own/update',
+  '/api/comment/own/delete-request',
+  '/api/comment/own/delete-cancel',
+  '/api/comment/own/list',
+  '/api/comment/comments/:rid/approve',
+  '/api/comment/comments/:rid',
+  '/api/comment/all',
+  '/api/comment/search/pages',
+  '/api/comment/search/authors',
+])
 
 // All public routes (listings, indexes, detail pages) share the same
 // revalidation policy: opt out for comment-action submissions (the comment

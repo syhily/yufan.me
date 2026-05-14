@@ -29,7 +29,7 @@ describe('shared API action contract', () => {
   it('declares every action route exactly once', () => {
     const routes = API_ACTION_LIST.map((action) => action.route)
     expect(new Set(routes).size).toBe(routes.length)
-    expect(routes).toContain(API_ACTIONS.comment.loadAll.route)
+    expect(routes).toContain(API_ACTIONS.admin.listUsers.route)
   })
 
   it('enumerates exactly one action per file under src/routes/api/actions/*.ts', () => {

@@ -119,7 +119,7 @@ describe('route revalidation helpers', () => {
 
   it('skips comment-action revalidation for listing and detail routes', () => {
     const args = {
-      formAction: API_ACTIONS.comment.replyComment.path,
+      formAction: '/api/comment/comments',
       defaultShouldRevalidate: true,
     } as never
 

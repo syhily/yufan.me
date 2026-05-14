@@ -31,27 +31,6 @@ function defineApiAction<const Route extends string, const Method extends ApiAct
 }
 
 export const API_ACTIONS = {
-  comment: {
-    increaseLike: defineApiAction('api/actions/comment/increaseLike', 'POST'),
-    decreaseLike: defineApiAction('api/actions/comment/decreaseLike', 'DELETE'),
-    validateLikeToken: defineApiAction('api/actions/comment/validateLikeToken', 'POST'),
-    findAvatar: defineApiAction('api/actions/comment/findAvatar', 'POST'),
-    replyComment: defineApiAction('api/actions/comment/replyComment', 'POST'),
-    approve: defineApiAction('api/actions/comment/approve', 'PATCH'),
-    delete: defineApiAction('api/actions/comment/delete', 'DELETE'),
-    loadComments: defineApiAction('api/actions/comment/loadComments', 'GET'),
-    getRaw: defineApiAction('api/actions/comment/getRaw', 'GET'),
-    edit: defineApiAction('api/actions/comment/edit', 'PATCH'),
-    myComments: defineApiAction('api/actions/comment/myComments', 'GET'),
-    revokeToken: defineApiAction('api/actions/comment/revokeToken', 'POST'),
-    searchPages: defineApiAction('api/actions/comment/searchPages', 'GET'),
-    searchAuthors: defineApiAction('api/actions/comment/searchAuthors', 'GET'),
-    loadAll: defineApiAction('api/actions/comment/loadAll', 'POST'),
-    updateOwn: defineApiAction('api/actions/comment/updateOwn', 'POST'),
-    requestDeleteOwn: defineApiAction('api/actions/comment/requestDeleteOwn', 'POST'),
-    cancelDeleteOwn: defineApiAction('api/actions/comment/cancelDeleteOwn', 'POST'),
-    listMine: defineApiAction('api/actions/comment/listMine', 'GET'),
-  },
   admin: {
     listUsers: defineApiAction('api/actions/admin/listUsers', 'GET'),
     getUser: defineApiAction('api/actions/admin/getUser', 'POST'),
@@ -118,8 +97,4 @@ export const API_ACTIONS = {
   },
 } as const
 
-export const API_ACTION_LIST = [
-  ...Object.values(API_ACTIONS.comment),
-
-  ...Object.values(API_ACTIONS.admin),
-] as const
+export const API_ACTION_LIST = [...Object.values(API_ACTIONS.admin)] as const
