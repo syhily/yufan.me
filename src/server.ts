@@ -4,6 +4,7 @@ import { RouterContextProvider } from 'react-router'
 import { createHonoServer } from 'react-router-hono-server/node'
 
 import { requestContext, sessionContext } from '@/server/auth/context'
+import { createApiApp } from '@/server/http/app'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
@@ -15,6 +16,9 @@ export default await createHonoServer({
     app.use(honoSessionMiddleware)
     app.use(honoInstallGateMiddleware)
     app.use(honoVisitorCookieMiddleware)
+
+    // ─── API (ts-rest contracts) ────────────────────────
+    app.route('/', createApiApp())
 
     if (process.env.NODE_ENV !== 'production') {
       app.get('/openapi.json', (c) => c.json(buildOpenApiDocument()))

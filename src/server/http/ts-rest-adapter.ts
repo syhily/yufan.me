@@ -4,7 +4,7 @@ import type { MiddlewareHandler } from 'hono'
 
 import { isAppRoute } from '@ts-rest/core'
 import { HTTPException } from 'hono/http-exception'
-import { ZodError } from 'zod'
+import { ZodError, type ZodType } from 'zod'
 
 import type { Env } from './context'
 
@@ -15,9 +15,9 @@ interface HandlerContext {
   clientAddress: string
 }
 
-// Extract the output type from a Zod-like schema at the type level.
-// Falls back to `undefined` when the field is absent or not a schema.
-type SchemaOutput<T> = T extends { _output: infer O } ? O : undefined
+// Extract the output type from a Zod schema at the type level.
+// Compatible with Zod v4 (uses ZodType<..., ..., O> instead of _output).
+type SchemaOutput<T> = T extends ZodType<any, any, infer O> ? O : undefined
 
 type HandlerArgs<R extends AppRoute> = {
   query: SchemaOutput<R['query']>

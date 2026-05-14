@@ -6,7 +6,6 @@ import type { MySessionItem } from '@/routes/wp-admin.my.sessions'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 
 import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { formatUserAgentLabel } from '@/shared/user-agent'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -17,7 +16,7 @@ import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const REVOKE = API_ACTIONS.account.revokeSession
+const REVOKE_PATH = '/api/account/sessions'
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -32,7 +31,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   useFetcherResult(revoke, {
-    action: REVOKE,
+    action: { path: REVOKE_PATH } as any,
     onSuccess: () => {
       // Self-revoke is short-circuited to the logout endpoint inside
       // `onRevoke`, so by the time this handler fires we're always
@@ -64,10 +63,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        void revoke.submit(
-          { sessionId: sid },
-          { method: REVOKE.method, encType: 'application/json', action: REVOKE.path },
-        )
+        void revoke.submit(null, { method: 'DELETE', action: `${REVOKE_PATH}/${sid}` })
       },
     })
   }

@@ -5,7 +5,6 @@ import { useFetcher, useRevalidator } from 'react-router'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 
 import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -18,8 +17,8 @@ import { Label } from '@/ui/components/label'
 import { Separator } from '@/ui/components/separator'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const UPDATE_PROFILE = API_ACTIONS.account.updateProfile
-const UPDATE_PASSWORD = API_ACTIONS.account.updatePassword
+const UPDATE_PROFILE_PATH = '/api/account/profile'
+const UPDATE_PASSWORD_PATH = '/api/account/password'
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export interface MyProfileUser {
@@ -62,7 +61,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
 
   useFetcherResult(profileFetcher, {
-    action: UPDATE_PROFILE,
+    action: { path: UPDATE_PROFILE_PATH } as any,
     onSuccess: () => {
       setProfileMessage('已保存。')
       // Re-run the route loader so the avatar / stats card picks up
@@ -71,7 +70,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
     },
   })
   useFetcherResult(passwordFetcher, {
-    action: UPDATE_PASSWORD,
+    action: { path: UPDATE_PASSWORD_PATH } as any,
     onSuccess: () => {
       setPasswordMessage('密码已更新；其他设备的会话已注销。')
       setOldPassword('')
@@ -191,9 +190,9 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                     payload.badgeColor = badgeColor || null
                   }
                   void profileFetcher.submit(payload, {
-                    method: UPDATE_PROFILE.method,
+                    method: 'PATCH',
                     encType: 'application/json',
-                    action: UPDATE_PROFILE.path,
+                    action: UPDATE_PROFILE_PATH,
                   })
                 }}
                 className="grid gap-4 sm:grid-cols-2"
@@ -270,9 +269,9 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                   void passwordFetcher.submit(
                     { oldPassword, newPassword },
                     {
-                      method: UPDATE_PASSWORD.method,
+                      method: 'PATCH',
                       encType: 'application/json',
-                      action: UPDATE_PASSWORD.path,
+                      action: UPDATE_PASSWORD_PATH,
                     },
                   )
                 }}
