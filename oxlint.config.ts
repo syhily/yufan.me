@@ -7,7 +7,7 @@ export default defineConfig({
     node: true,
     es2022: true,
   },
-  ignorePatterns: ['.agents/**/*', 'public/**/*.css'],
+  ignorePatterns: ['.agents/**/*', 'docs/**/*', 'drizzle/**/*'],
   settings: {
     react: {
       version: '19.2.5',

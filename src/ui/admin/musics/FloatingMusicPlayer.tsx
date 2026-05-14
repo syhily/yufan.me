@@ -114,8 +114,7 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
   const displayCover = meta?.pic ?? track.coverUrl
 
   return (
-    <div
-      role="region"
+    <section
       aria-label="浮动音乐播放器"
       className={cn(
         // Right-middle pin. `top-1/2 -translate-y-1/2` keeps the dock
@@ -207,6 +206,6 @@ export function FloatingMusicPlayer({ track, onClose }: FloatingMusicPlayerProps
           )}
         </div>
       </div>
-    </div>
+    </section>
   )
 }
