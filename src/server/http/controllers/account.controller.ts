@@ -5,6 +5,7 @@ import type { accountContract } from '@/shared/contracts/account'
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
 import { findUserById, updateUserById } from '@/server/db/query/user'
+import { forbidden, notFound, ok } from '@/server/http/response'
 import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 
 export const accountController: ContractImpl<typeof accountContract> = {
@@ -18,10 +19,9 @@ export const accountController: ContractImpl<typeof accountContract> = {
       receiveEmail?: boolean
     }
     const viewer = requireViewer(ctx)
-    const userId = BigInt(viewer.userId)
-    const dbUser = await findUserById(userId)
+    const dbUser = await findUserById(BigInt(viewer.userId))
     if (!dbUser) {
-      return { status: 404, body: { error: { message: '用户不存在' } } }
+      return notFound('用户不存在')
     }
 
     const canSetBadge = viewer.role === 'admin' || viewer.role === 'author'
@@ -46,8 +46,7 @@ export const accountController: ContractImpl<typeof accountContract> = {
         patch.badgeTextColor = body.badgeTextColor ?? undefined
       }
     }
-    const updated = await updateUserById(userId, patch)
-    return { status: 200, body: { user: updated! } }
+    return ok({ user: (await updateUserById(BigInt(viewer.userId), patch))! })
   },
 
   updatePassword: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -56,16 +55,15 @@ export const accountController: ContractImpl<typeof accountContract> = {
     const { session } = ctx
     const dbUser = await findUserById(BigInt(viewer.userId))
     if (!dbUser) {
-      return { status: 404, body: { error: { message: '用户不存在' } } }
+      return notFound('用户不存在')
     }
-    const ok = await bcrypt.compare(body.oldPassword, dbUser.password)
-    if (!ok) {
-      return { status: 403, body: { error: { message: '原密码错误' } } }
+    const ok_ = await bcrypt.compare(body.oldPassword, dbUser.password)
+    if (!ok_) {
+      return forbidden('原密码错误')
     }
-    const hashed = await bcrypt.hash(body.newPassword, 12)
-    await updateUserById(dbUser.id, { password: hashed })
+    await updateUserById(dbUser.id, { password: await bcrypt.hash(body.newPassword, 12) })
     await revokeAllSessionsOfUser(dbUser.id, session.id)
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   revokeSession: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -75,12 +73,12 @@ export const accountController: ContractImpl<typeof accountContract> = {
     const currentSession = body.sessionId === session.id
     const meta = await findSessionMeta(body.sessionId)
     if (!meta) {
-      return { status: 200, body: { success: true, currentSession } }
+      return ok({ success: true, currentSession })
     }
     if (meta.userId.toString() !== viewer.userId) {
-      return { status: 403, body: { error: { message: '无权操作该会话' } } }
+      return forbidden('无权操作该会话')
     }
     await revokeSessionById(body.sessionId, meta.userId)
-    return { status: 200, body: { success: true, currentSession } }
+    return ok({ success: true, currentSession })
   },
 }
