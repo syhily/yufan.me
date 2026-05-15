@@ -25,7 +25,6 @@ import {
   findPostMetaById,
   findPostMetaBySlug,
   findPublicPostMetaBySlug,
-  insertPostMeta,
   listPostMetas,
   listPublicPostMetas,
   listRevisions,

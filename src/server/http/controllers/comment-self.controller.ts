@@ -1,5 +1,3 @@
-import { HTTPException } from 'hono/http-exception'
-
 import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { isCommentOwner } from '@/server/auth/rbac'

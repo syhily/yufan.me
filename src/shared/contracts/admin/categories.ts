@@ -26,7 +26,7 @@ export const adminCategoriesContract = c.router(
         id: z.string().min(1).optional(),
         name: z.string().trim().min(1).max(20),
         slug: z.string().optional(),
-        cover: z.string().url().max(500),
+        cover: z.url().max(500),
         description: z.string().max(999).optional(),
         sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
       }),

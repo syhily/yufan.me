@@ -5,7 +5,7 @@ import { standardMutationErrors } from './_errors'
 
 export const updateUserBody = z.object({
   name: z.string().min(1).optional(),
-  email: z.string().email().optional(),
+  email: z.email().optional(),
   link: z.string().optional(),
   badgeName: z.string().optional(),
   badgeColor: z.string().optional(),

@@ -1,6 +1,5 @@
 import { HTTPException } from 'hono/http-exception'
 
-import type { BlogSession } from '@/server/auth/session-storage'
 import type { PublicContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { AvatarStatus, cacheAvatar } from '@/server/cache/avatar'
