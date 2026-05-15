@@ -23,10 +23,10 @@ import {
   type ContractImpl,
   type HandlerContext,
 } from '@/server/http/ts-rest-adapter'
-import { deriveSlug } from '@/server/slug'
-import { collectHeadings } from '@/shared/pt/schema'
 
-import type { ContentDraftBody, ContentListQuery, ContentPreviewBody } from './content'
+import type { ContentDraftBody, ContentListQuery } from './content'
+
+import { contentPreview } from './content'
 
 interface UpsertPostMetaBody {
   id?: string
@@ -179,10 +179,6 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
     return ok({ post })
   },
 
-  preview: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const b = body<ContentPreviewBody>(_args)
-    const html = await renderPortableTextToHtml(b.body)
-    const headings = collectHeadings(b.body, deriveSlug)
-    return ok({ html, headings })
-  },
+  preview: async (args: Record<string, unknown>, _ctx: HandlerContext) =>
+    contentPreview(args, renderPortableTextToHtml),
 }
