@@ -61,10 +61,37 @@ function tagL3(value: unknown): unknown {
   return str === '' ? str : `{E}${str}{/E}`
 }
 
+function serializeError(err: Error): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    name: err.name,
+    message: err.message,
+  }
+  if (err.stack) {
+    out.stack = err.stack
+  }
+  // `cause` may itself be an Error — recurse so the chain survives JSON.stringify.
+  const cause = (err as Error & { cause?: unknown }).cause
+  if (cause !== undefined) {
+    out.cause = cause instanceof Error ? serializeError(cause) : cause
+  }
+  // Preserve any extra enumerable own props (e.g. node `code`, `errno`).
+  for (const key of Object.keys(err)) {
+    if (key in out) {
+      continue
+    }
+    ;(out as Record<string, unknown>)[key] = (err as unknown as Record<string, unknown>)[key]
+  }
+  return out
+}
+
 function applyPrivacyTags(context: LogContext): LogContext {
   const tagged: LogContext = {}
   for (const [key, value] of Object.entries(context)) {
-    tagged[key] = L3_KEYS.has(key) ? tagL3(value) : value
+    if (value instanceof Error) {
+      tagged[key] = serializeError(value)
+    } else {
+      tagged[key] = L3_KEYS.has(key) ? tagL3(value) : value
+    }
   }
   return tagged
 }
