@@ -10,7 +10,7 @@ import { userSession } from '@/server/session'
 import { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
 export const adminFriendsController: ContractImpl<typeof adminFriendsContract> = {
-  listFriends: async (args: any, ctx: any) => {
+  listFriends: async (args, ctx) => {
     const payload = args.query
     const result = await listFriendsForAdmin({
       q: payload.q,
@@ -20,7 +20,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
     })
     return { status: 200 as const, body: result }
   },
-  upsertFriend: async (args: any, ctx: any) => {
+  upsertFriend: async (args, ctx) => {
     const payload = args.body
     const friend = await upsertAdminFriend({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,
@@ -33,7 +33,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
     })
     return { status: 200 as const, body: { friend } }
   },
-  deleteFriend: async (args: any, ctx: any) => {
+  deleteFriend: async (args, ctx) => {
     const ok = await deleteAdminFriend(BigInt(args.params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '友链不存在' } } }

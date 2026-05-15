@@ -14,7 +14,7 @@ import { userSession } from '@/server/session'
 import { adminMusicContract } from '@/shared/contracts/admin/music'
 
 export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
-  listMusic: async (args: any, ctx: any) => {
+  listMusic: async (args, ctx) => {
     const result = await listMusicForAdmin({
       q: args.query.q,
       offset: args.query.offset,
@@ -22,19 +22,19 @@ export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
     })
     return { status: 200 as const, body: result }
   },
-  searchMusic: async (args: any, ctx: any) => {
+  searchMusic: async (args, ctx) => {
     const result = await searchMusic(args.query.keyword, args.query.limit)
     return { status: 200 as const, body: result }
   },
-  addMusic: async (args: any, ctx: any) => {
+  addMusic: async (args, ctx) => {
     const music = await addMusic({
       source: args.body.source,
       sourceId: args.body.sourceId,
-      uploader: { id: BigInt(ctx.viewer.userId), name: userSession(ctx.session)?.name ?? '' },
+      uploader: { id: BigInt(ctx.viewer!.userId), name: userSession(ctx.session)?.name ?? '' },
     })
     return { status: 200 as const, body: { music } }
   },
-  updateMusic: async (args: any, ctx: any) => {
+  updateMusic: async (args, ctx) => {
     const music = await updateMusicMetadata({
       id: BigInt(args.params.id),
       name: args.body.name,
@@ -44,8 +44,8 @@ export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
     })
     return { status: 200 as const, body: { music } }
   },
-  deleteMusic: async (args: any, ctx: any) => {
-    await deleteMusic(BigInt(args.params.id), { userId: ctx.viewer.userId, role: ctx.viewer.role })
+  deleteMusic: async (args, ctx) => {
+    await deleteMusic(BigInt(args.params.id), { userId: ctx.viewer!.userId, role: ctx.viewer!.role })
     return { status: 200 as const, body: { success: true } }
   },
 }

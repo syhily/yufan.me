@@ -1,15 +1,6 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/cms/posts/preview'
-import { deletePostSchema } from '@/server/cms/posts/schema'
-import { getPostSchema } from '@/server/cms/posts/schema'
-import { listPostRevisionsSchema } from '@/server/cms/posts/schema'
-import { listPostsSchema } from '@/server/cms/posts/schema'
-import { previewPostBodySchema } from '@/server/cms/posts/schema'
-import { restorePostSchema } from '@/server/cms/posts/schema'
-import { savePostBodySchema } from '@/server/cms/posts/schema'
-import { unpublishPostSchema } from '@/server/cms/posts/schema'
-import { upsertPostMetaSchema } from '@/server/cms/posts/schema'
 import { createPost, updatePostMeta } from '@/server/cms/posts/service'
 import { deletePost } from '@/server/cms/posts/service'
 import { getPostDetailForAdmin } from '@/server/cms/posts/service'
@@ -19,14 +10,13 @@ import { publishLatest as publishPostLatest } from '@/server/cms/posts/service'
 import { restorePost } from '@/server/cms/posts/service'
 import { saveDraft as savePostDraft } from '@/server/cms/posts/service'
 import { unpublishPost } from '@/server/cms/posts/service'
-import { userSession } from '@/server/session'
 import { deriveSlug } from '@/server/slug'
 import { adminPostsContract } from '@/shared/contracts/admin/posts'
 import { collectHeadings } from '@/shared/pt/schema'
 
-export const adminPostsController = {
+export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
   // TODO: add `satisfies ContractImpl<typeof adminPostsContract>` once all response schemas are strict
-  listPosts: async (args: any, ctx: any) => {
+  listPosts: async (args, ctx) => {
     const result = await listPostsForAdmin(
       {
         q: args.query.q,
@@ -41,68 +31,68 @@ export const adminPostsController = {
         sortOrder: args.query.sortOrder,
         authorId: args.query.authorId,
       },
-      ctx.viewer,
+      ctx.viewer ?? undefined,
     )
     return { status: 200 as const, body: result }
   },
-  getPost: async (args: any, ctx: any) => {
-    const detail = await getPostDetailForAdmin(BigInt(args.params.id), ctx.viewer)
+  getPost: async (args, ctx) => {
+    const detail = await getPostDetailForAdmin(BigInt(args.params.id), ctx.viewer ?? undefined)
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: detail }
   },
-  deletePost: async (args: any, ctx: any) => {
-    const result = await deletePost(BigInt(args.params.id), ctx.viewer)
+  deletePost: async (args, ctx) => {
+    const result = await deletePost(BigInt(args.params.id), ctx.viewer ?? undefined)
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  restorePost: async (args: any, ctx: any) => {
-    const result = await restorePost(BigInt(args.body.id), ctx.viewer)
+  restorePost: async (args, ctx) => {
+    const result = await restorePost(BigInt(args.params.id), ctx.viewer ?? undefined)
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '文章不存在或未被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  unpublishPost: async (args: any, ctx: any) => {
-    const post = await unpublishPost(BigInt(args.body.id), ctx.viewer)
+  unpublishPost: async (args, ctx) => {
+    const post = await unpublishPost(BigInt(args.body.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { post } }
   },
-  savePostDraft: async (args: any, ctx: any) => {
+  savePostDraft: async (args, ctx) => {
     const result = await savePostDraft(
       {
         postId: BigInt(args.body.id),
         body: args.body.body,
         expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
         force: args.body.force,
-        authorId: BigInt(ctx.viewer.userId),
+        authorId: BigInt(ctx.viewer!.userId),
       },
-      ctx.viewer,
+      ctx.viewer ?? undefined,
     )
     return { status: 200 as const, body: result }
   },
-  publishPostLatest: async (args: any, ctx: any) => {
+  publishPostLatest: async (args, ctx) => {
     const result = await publishPostLatest(
       {
         postId: BigInt(args.body.id),
         body: args.body.body,
         expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
         force: args.body.force,
-        authorId: BigInt(ctx.viewer.userId),
+        authorId: BigInt(ctx.viewer!.userId),
         publishedAt: args.body.publishedAt !== undefined ? new Date(args.body.publishedAt) : undefined,
       },
-      ctx.viewer,
+      ctx.viewer ?? undefined,
     )
     return { status: 200 as const, body: result }
   },
-  previewPost: async (args: any, ctx: any) => {
+  previewPost: async (args, ctx) => {
     const html = await renderPostPortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
   },
-  upsertPostMeta: async (args: any, ctx: any) => {
+  upsertPostMeta: async (args, ctx) => {
     const meta = {
       slug: args.body.slug,
       title: args.body.title,
@@ -123,15 +113,15 @@ export const adminPostsController = {
           : new Date(args.body.pinnedAt),
       publishedAt: args.body.publishedAt === undefined ? undefined : new Date(args.body.publishedAt),
     }
-    const sessionUserId = BigInt(ctx.viewer.userId)
+    const sessionUserId = BigInt(ctx.viewer!.userId)
     const post =
       args.body.id === undefined
-        ? await createPost(meta, sessionUserId, ctx.viewer)
-        : await updatePostMeta({ id: BigInt(args.body.id), ...meta }, ctx.viewer)
+        ? await createPost(meta, sessionUserId, ctx.viewer ?? undefined)
+        : await updatePostMeta({ id: BigInt(args.body.id), ...meta }, ctx.viewer ?? undefined)
     return { status: 200 as const, body: { post } }
   },
-  listPostRevisions: async (args: any, ctx: any) => {
-    const revisions = await listPostRevisionsForAdmin(BigInt(args.query.id), ctx.viewer)
+  listPostRevisions: async (args, ctx) => {
+    const revisions = await listPostRevisionsForAdmin(BigInt(args.query.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { revisions } }
   },
 }

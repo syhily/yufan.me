@@ -13,7 +13,7 @@ import { userSession } from '@/server/session'
 import { adminRendersContract } from '@/shared/contracts/admin/renders'
 
 export const adminRendersController: ContractImpl<typeof adminRendersContract> = {
-  renderMath: async (args: any, ctx: any) => {
+  renderMath: async (args, ctx) => {
     const payload = args.body
     const tex = payload.tex
     if (tex.trim() === '') {
@@ -34,7 +34,7 @@ export const adminRendersController: ContractImpl<typeof adminRendersContract> =
       return { status: 200 as const, body: { mathml: '', error: message } }
     }
   },
-  renderMermaid: async (args: any, ctx: any) => {
+  renderMermaid: async (args, ctx) => {
     const payload = args.body
     const code = payload.code
     if (code.trim() === '') {
@@ -48,7 +48,7 @@ export const adminRendersController: ContractImpl<typeof adminRendersContract> =
       return { status: 200 as const, body: { svg: '', error: message } }
     }
   },
-  reindexSearch: async (args: any, ctx: any) => {
+  reindexSearch: async (args, ctx) => {
     const payload = args.body
     const rows = await db
       .select({

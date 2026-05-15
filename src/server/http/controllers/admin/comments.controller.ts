@@ -10,7 +10,7 @@ import { userSession } from '@/server/session'
 import { adminCommentsContract } from '@/shared/contracts/admin/comments'
 
 export const adminCommentsController: ContractImpl<typeof adminCommentsContract> = {
-  approveCommentDeletion: async (args: any, ctx: any) => {
+  approveCommentDeletion: async (args, ctx) => {
     const payload = args.body
     const id = BigInt(payload.commentId)
     const c = await findCommentWithUserById(id)
@@ -23,19 +23,19 @@ export const adminCommentsController: ContractImpl<typeof adminCommentsContract>
     if (payload.approve) {
       await softDeleteCommentById(id)
       getLogger('audit.comment').info('delete request approved', {
-        actor: ctx.viewer.userId,
+        actor: ctx.viewer!.userId,
         commentId: payload.commentId,
       })
     } else {
       await adminClearDeleteRequest(id)
       getLogger('audit.comment').info('delete request rejected', {
-        actor: ctx.viewer.userId,
+        actor: ctx.viewer!.userId,
         commentId: payload.commentId,
       })
     }
     return { status: 200 as const, body: { success: true } }
   },
-  listPendingDashboard: async (args: any, ctx: any) => {
+  listPendingDashboard: async (args, ctx) => {
     const payload = args.query
     const result = await loadAdminPendingDashboard(payload.kind, payload.offset, payload.limit)
     return { status: 200 as const, body: result }

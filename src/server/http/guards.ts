@@ -8,6 +8,7 @@ import { hasAtLeast, type Role } from '@/server/auth/rbac'
 
 import type { Env } from './context'
 
+import { csrfGuard } from './csrf'
 import { mountContract, type ContractImpl } from './ts-rest-adapter'
 
 const requireAuth = createMiddleware<Env>(async (c, next) => {
@@ -33,12 +34,12 @@ export function publicRoute<R extends AppRouter>(app: Hono<Env>, contract: R, im
 
 // ─── Authed route mount (任何登录用户) ────────────────
 export function authedRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) {
-  mountContract(app, contract, impl, { middleware: [requireAuth] })
+  mountContract(app, contract, impl, { middleware: [requireAuth, csrfGuard] })
 }
 
 // ─── Role-gated route mount ──────────────────────────
 export function roleRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>, role: Role) {
-  mountContract(app, contract, impl, { middleware: [requireRoleMw(role)] })
+  mountContract(app, contract, impl, { middleware: [requireRoleMw(role), csrfGuard] })
 }
 
 export const adminRoute = <R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) =>

@@ -1,15 +1,6 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/cms/pages/preview'
-import { deletePageSchema } from '@/server/cms/pages/schema'
-import { getPageSchema } from '@/server/cms/pages/schema'
-import { listPageRevisionsSchema } from '@/server/cms/pages/schema'
-import { listPagesSchema } from '@/server/cms/pages/schema'
-import { previewPageBodySchema } from '@/server/cms/pages/schema'
-import { restorePageSchema } from '@/server/cms/pages/schema'
-import { savePageBodySchema } from '@/server/cms/pages/schema'
-import { unpublishPageSchema } from '@/server/cms/pages/schema'
-import { upsertPageMetaSchema } from '@/server/cms/pages/schema'
 import { createPage, updatePageMeta } from '@/server/cms/pages/service'
 import { deletePage } from '@/server/cms/pages/service'
 import { getPageDetailForAdmin } from '@/server/cms/pages/service'
@@ -19,14 +10,13 @@ import { publishLatest as publishPageLatest } from '@/server/cms/pages/service'
 import { restorePage } from '@/server/cms/pages/service'
 import { saveDraft as savePageDraft } from '@/server/cms/pages/service'
 import { unpublishPage } from '@/server/cms/pages/service'
-import { userSession } from '@/server/session'
 import { deriveSlug } from '@/server/slug'
 import { adminPagesContract } from '@/shared/contracts/admin/pages'
 import { collectHeadings } from '@/shared/pt/schema'
 
-export const adminPagesController = {
+export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   // TODO: add `satisfies ContractImpl<typeof adminPagesContract>` once all response schemas are strict
-  listPages: async (args: any, ctx: any) => {
+  listPages: async (args, ctx) => {
     const result = await listPagesForAdmin({
       q: args.query.q,
       deletedStatus: args.query.deletedStatus,
@@ -35,58 +25,58 @@ export const adminPagesController = {
     })
     return { status: 200 as const, body: result }
   },
-  getPage: async (args: any, ctx: any) => {
+  getPage: async (args, ctx) => {
     const detail = await getPageDetailForAdmin(BigInt(args.params.id))
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: detail }
   },
-  deletePage: async (args: any, ctx: any) => {
+  deletePage: async (args, ctx) => {
     const result = await deletePage(BigInt(args.params.id))
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  restorePage: async (args: any, ctx: any) => {
-    const result = await restorePage(BigInt(args.body.id))
+  restorePage: async ({ params }, ctx) => {
+    const result = await restorePage(BigInt(params.id))
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '页面不存在或未被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  unpublishPage: async (args: any, ctx: any) => {
+  unpublishPage: async (args, ctx) => {
     const page = await unpublishPage(BigInt(args.body.id))
     return { status: 200 as const, body: { page } }
   },
-  saveDraft: async (args: any, ctx: any) => {
+  saveDraft: async (args, { viewer }) => {
     const result = await savePageDraft({
       pageId: BigInt(args.body.id),
       body: args.body.body,
       expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
       force: args.body.force,
-      authorId: BigInt(ctx.viewer.userId),
+      authorId: BigInt(viewer!.userId),
     })
     return { status: 200 as const, body: result }
   },
-  publishLatest: async (args: any, ctx: any) => {
+  publishLatest: async (args, { viewer }) => {
     const result = await publishPageLatest({
       pageId: BigInt(args.body.id),
       body: args.body.body,
       expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
       force: args.body.force,
-      authorId: BigInt(ctx.viewer.userId),
+      authorId: BigInt(viewer!.userId),
       publishedAt: args.body.publishedAt !== undefined ? new Date(args.body.publishedAt) : undefined,
     })
     return { status: 200 as const, body: result }
   },
-  previewPage: async (args: any, ctx: any) => {
+  previewPage: async (args, ctx) => {
     const html = await renderPagePortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
   },
-  upsertPageMeta: async (args: any, ctx: any) => {
+  upsertPageMeta: async (args, { viewer }) => {
     const meta = {
       slug: args.body.slug,
       title: args.body.title,
@@ -100,14 +90,14 @@ export const adminPagesController = {
       showFriends: args.body.showFriends,
       publishedAt: args.body.publishedAt === undefined ? undefined : new Date(args.body.publishedAt),
     }
-    const sessionUserId = BigInt(ctx.viewer.userId)
+    const sessionUserId = BigInt(viewer!.userId)
     const page =
       args.body.id === undefined
         ? await createPage(meta, sessionUserId)
         : await updatePageMeta({ id: BigInt(args.body.id), ...meta })
     return { status: 200 as const, body: { page } }
   },
-  listPageRevisions: async (args: any, ctx: any) => {
+  listPageRevisions: async (args, ctx) => {
     const revisions = await listPageRevisionsForAdmin(BigInt(args.query.id))
     return { status: 200 as const, body: { revisions } }
   },

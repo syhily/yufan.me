@@ -16,7 +16,7 @@ import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 
 export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
-  listImages: async (args: any, ctx: any) => {
+  listImages: async (args, ctx) => {
     const result = await listImagesForAdmin({
       q: args.query.q,
       kind: args.query.kind,
@@ -25,19 +25,19 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
     })
     return { status: 200 as const, body: result }
   },
-  deleteImage: async (args: any, ctx: any) => {
-    await deleteImage(BigInt(args.params.id), ctx.viewer)
+  deleteImage: async (args, ctx) => {
+    await deleteImage(BigInt(args.params.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { success: true } }
   },
-  updateImageNote: async (args: any, ctx: any) => {
-    const image = await updateImageNote(BigInt(args.params.id), args.body.note ?? null, ctx.viewer)
+  updateImageNote: async (args, ctx) => {
+    const image = await updateImageNote(BigInt(args.params.id), args.body.note ?? null, ctx.viewer ?? undefined)
     return { status: 200 as const, body: { image } }
   },
-  recalculateImageThumbhash: async (args: any, ctx: any) => {
-    const image = await recalculateImageThumbhash(BigInt(args.body.id), ctx.viewer)
+  recalculateImageThumbhash: async (args, ctx) => {
+    const image = await recalculateImageThumbhash(BigInt(args.body.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { image } }
   },
-  uploadImage: async (args: any, ctx: any) => {
+  uploadImage: async (args, ctx) => {
     const settings = requireBlogSettingsSection('assets')
 
     let formData: FormData

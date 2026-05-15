@@ -10,7 +10,6 @@ import { sendPasswordReset as sendPasswordResetEmail } from '@/server/email/send
 import { getLogger } from '@/server/logger'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/rate-limit'
 import { tryPasswordResetByTargetRateLimit } from '@/server/rate-limit'
-import { userSession } from '@/server/session'
 import { bulkApproveCommentsForUser } from '@/server/users/service'
 import { bulkDeleteCommentsForUser } from '@/server/users/service'
 import { fetchAdminUserDto, muteAdminUser } from '@/server/users/service'
@@ -20,18 +19,17 @@ import { softDeleteAdminUser } from '@/server/users/service'
 import { adminUsersContract } from '@/shared/contracts/admin/users'
 
 export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
-  listUsers: async (args: any, ctx: any) => {
-    const payload = args.query
+  listUsers: async ({ query }) => {
     const result = await listUsersForAdmin(
-      payload.offset,
-      payload.limit,
+      query.offset,
+      query.limit,
       {
-        q: payload.q,
-        role: payload.role ?? 'all',
-        includeDeleted: payload.includeDeleted ?? false,
-        hasPosts: payload.hasPosts ?? false,
+        q: query.q,
+        role: query.role ?? 'all',
+        includeDeleted: query.includeDeleted ?? false,
+        hasPosts: query.hasPosts ?? false,
       },
-      payload.sortBy ?? 'recent',
+      query.sortBy ?? 'recent',
     )
     return {
       status: 200 as const,
@@ -42,20 +40,19 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
       },
     }
   },
-  getUser: async (args: any, ctx: any) => {
-    const user = await fetchAdminUserDto(BigInt(args.params.id))
+  getUser: async ({ params }) => {
+    const user = await fetchAdminUserDto(BigInt(params.id))
     if (!user) {
       return { status: 404 as const, body: { error: { message: '用户不存在' } } }
     }
     return { status: 200 as const, body: { user } }
   },
-  softDeleteUser: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
-    if (viewer.userId === payload.userId) {
+  softDeleteUser: async ({ params }, { viewer }) => {
+    const userId = params.id
+    if (viewer!.userId === userId) {
       return { status: 403 as const, body: { error: { message: '不能删除自己。' } } }
     }
-    const targetId = BigInt(payload.userId)
+    const targetId = BigInt(userId)
     const target = await findUserById(targetId)
     if (!target) {
       return { status: 404 as const, body: { error: { message: '用户不存在' } } }
@@ -72,25 +69,22 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     }
     await revokeAllSessionsOfUser(targetId)
     getLogger('audit.user').info('user soft deleted', {
-      actor: viewer.userId,
-      target: payload.userId,
+      actor: viewer!.userId,
+      target: userId,
       role: target.role,
     })
     return { status: 200 as const, body: { success: true } }
   },
-  restoreUser: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
-    const ok = await restoreAdminUser(BigInt(payload.userId))
+  restoreUser: async ({ params }, { viewer }) => {
+    const ok = await restoreAdminUser(BigInt(params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '用户不存在' } } }
     }
-    getLogger('audit.user').info('user restored', { actor: viewer.userId, target: payload.userId })
+    getLogger('audit.user').info('user restored', { actor: viewer!.userId, target: params.id })
     return { status: 200 as const, body: { success: true } }
   },
-  muteUser: async (args: any, ctx: any) => {
-    const payload = args.body
-    const updated = await muteAdminUser(BigInt(payload.userId), payload.muted)
+  muteUser: async ({ params, body }) => {
+    const updated = await muteAdminUser(BigInt(params.id), body.muted)
     if (!updated) {
       return { status: 404 as const, body: { error: { message: '用户不存在或为管理员（管理员不可禁言）' } } }
     }
@@ -100,64 +94,61 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     }
     return { status: 200 as const, body: { user: dto } }
   },
-  updateUserRole: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
-    if (viewer.userId === payload.userId) {
+  updateUserRole: async ({ params, body }, { viewer }) => {
+    const userId = params.id
+    if (viewer!.userId === userId) {
       return { status: 403 as const, body: { error: { message: '不能修改自己的角色。' } } }
     }
-    const targetId = BigInt(payload.userId)
+    const targetId = BigInt(userId)
     const target = await findUserById(targetId)
     if (!target) {
       return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
     }
-    if (target.role === 'admin' && payload.role !== 'admin') {
+    if (target.role === 'admin' && body.role !== 'admin') {
       const adminCount = await countAdmins()
       if (adminCount <= 1) {
         return { status: 409 as const, body: { error: { message: '不能降级唯一的管理员。' } } }
       }
     }
-    const updated = await updateUserRole(targetId, payload.role)
+    const updated = await updateUserRole(targetId, body.role)
     if (updated) {
       await revokeAllSessionsOfUser(targetId)
       getLogger('audit.user').info('user role changed', {
-        actor: viewer.userId,
-        target: payload.userId,
+        actor: viewer!.userId,
+        target: userId,
         from: target.role,
-        to: payload.role,
+        to: body.role,
       })
     }
     return { status: 200 as const, body: { user: updated } }
   },
-  inviteAuthor: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
-    const existing = await findUserByEmail(payload.email)
+  inviteAuthor: async ({ body }, { viewer, clientAddress, request, session }) => {
+    const existing = await findUserByEmail(body.email)
     if (existing !== null) {
       return { status: 409 as const, body: { error: { message: '该邮箱已被注册。' } } }
     }
-    const ipLimit = await tryInviteRateLimit(ctx.clientAddress)
-    const emailLimit = await tryInviteByEmailRateLimit(BigInt(viewer.userId), payload.email)
+    const ipLimit = await tryInviteRateLimit(clientAddress)
+    const emailLimit = await tryInviteByEmailRateLimit(BigInt(viewer!.userId), body.email)
     if (ipLimit.exceeded || emailLimit.exceeded) {
       return { status: 429 as const, body: { error: { message: '邀请发送过于频繁，请稍后再试。' } } }
     }
-    const [user] = await insertAuthor(payload.name, payload.email)
+    const [user] = await insertAuthor(body.name, body.email)
     if (!user) {
       return { status: 500 as const, body: { error: { message: '创建作者账户失败。' } } }
     }
     const { token } = await issueSetupToken(user.id)
-    const origin = new URL(ctx.request.url).origin
+    const origin = new URL(request.url).origin
     const link = `${origin}/wp-login.php?action=accept-invite&token=${encodeURIComponent(token)}`
-    const inviterSession = ctx.session.get('user')
+    const inviterSession = session.get('user')
     const inviter = inviterSession?.name ?? '管理员'
     const sendResult = await sendAuthorInvite(user, link, inviter, inviterSession?.email)
     if (!sendResult.ok) {
       await revokeTokensFor(user.id, 'author-invite')
       await softDeleteUserById(user.id)
       getLogger('audit.user').warn('author invite rolled back: email send failed', {
-        actor: viewer.userId,
+        actor: viewer!.userId,
         target: String(user.id),
-        email: payload.email,
+        email: body.email,
         reason: sendResult.reason,
         message: sendResult.message,
       })
@@ -167,76 +158,67 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
       }
     }
     getLogger('audit.user').info('author invited', {
-      actor: viewer.userId,
+      actor: viewer!.userId,
       target: String(user.id),
-      email: payload.email,
+      email: body.email,
     })
     return { status: 200 as const, body: { success: true } }
   },
-  sendPasswordReset: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
-    const targetId = BigInt(payload.userId)
-    const user = await findUserById(targetId)
+  sendPasswordReset: async ({ body }, { viewer, request }) => {
+    const user = await findUserByEmail(body.email)
     if (!user) {
       return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
     }
-    const limit = await tryPasswordResetByTargetRateLimit(targetId)
+    const limit = await tryPasswordResetByTargetRateLimit(user.id)
     if (limit.exceeded) {
       return { status: 429 as const, body: { error: { message: '该用户的重置邮件发送过于频繁，请稍后再试。' } } }
     }
     const { token } = await issueResetToken(user.id)
-    const origin = new URL(ctx.request.url).origin
+    const origin = new URL(request.url).origin
     const link = `${origin}/wp-login.php?action=resetpassword&token=${encodeURIComponent(token)}`
     await sendPasswordResetEmail(user, link)
-    getLogger('audit.user').info('password reset sent', { actor: viewer.userId, target: payload.userId })
+    getLogger('audit.user').info('password reset sent', { actor: viewer!.userId, target: String(user.id) })
     return { status: 200 as const, body: { success: true } }
   },
-  revokeSession: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
-    const currentSession = payload.sessionId === ctx.session.id
-    const meta = await findSessionMeta(payload.sessionId)
+  revokeSession: async ({ body }, { viewer, session }) => {
+    const currentSession = body.sessionId === session.id
+    const meta = await findSessionMeta(body.sessionId)
     if (!meta) {
       return { status: 200 as const, body: { success: true, currentSession } }
     }
-    await revokeSessionById(payload.sessionId, meta.userId)
+    await revokeSessionById(body.sessionId, meta.userId)
     getLogger('audit.session').info('session revoked by admin', {
-      actor: viewer.userId,
+      actor: viewer!.userId,
       target: meta.userId.toString(),
-      sessionId: payload.sessionId,
+      sessionId: body.sessionId,
       selfRevoke: currentSession,
     })
     return { status: 200 as const, body: { success: true, currentSession } }
   },
-  revokeUserSessions: async (args: any, ctx: any) => {
-    const payload = args.body
-    const viewer = ctx.viewer
+  revokeUserSessions: async ({ body }, { viewer }) => {
     let targetId: bigint
     try {
-      targetId = BigInt(payload.userId)
+      targetId = BigInt(body.userId)
     } catch {
       return { status: 400 as const, body: { error: { message: '用户 ID 无效。' } } }
     }
     const target = await findUserById(targetId)
     if (!target) {
-      return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
+      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
     }
     await revokeAllSessionsOfUser(targetId)
     getLogger('audit.session').info('all sessions revoked by admin', {
-      actor: viewer.userId,
-      target: payload.userId,
+      actor: viewer!.userId,
+      target: body.userId,
     })
     return { status: 200 as const, body: { success: true } }
   },
-  bulkApproveUserComments: async (args: any, ctx: any) => {
-    const payload = args.body
-    const result = await bulkApproveCommentsForUser(BigInt(payload.userId))
+  bulkApproveUserComments: async ({ body }) => {
+    const result = await bulkApproveCommentsForUser(BigInt(body.userId))
     return { status: 200 as const, body: result }
   },
-  bulkSoftDeleteUserComments: async (args: any, ctx: any) => {
-    const payload = args.body
-    const result = await bulkDeleteCommentsForUser(BigInt(payload.userId))
+  bulkSoftDeleteUserComments: async ({ body }) => {
+    const result = await bulkDeleteCommentsForUser(BigInt(body.userId))
     return { status: 200 as const, body: result }
   },
 }
