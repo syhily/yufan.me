@@ -54,7 +54,8 @@ export async function loadPagePreview({
 }): Promise<PagePreviewResult> {
   const entry = await getEntryBySlug(slug)
   if (entry !== null && entry.type === 'post') {
-    redirectPermanent(`/posts/${entry.slug}`)
+    const search = new URL(request.url).search
+    redirectPermanent(`/posts/${entry.slug}${search}`)
   }
 
   const publishedPage =

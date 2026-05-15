@@ -1,6 +1,9 @@
 import { data } from 'react-router'
 
+import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
+
 import { getTagsByNames, listAllTags } from '@/server/catalog/queries'
+import { loadPostDraftPreviewBySlug } from '@/server/cms/posts/service'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
 import { findPostBySlug, selectSidebarPosts } from '@/server/posts/query'
 import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/route-helpers/detail-loader'
@@ -8,6 +11,7 @@ import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpe
 import { canonicalPostPath } from '@/server/route-helpers/paths'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/seo/meta'
+import { tryGetSessionContext, resolveSessionContext } from '@/server/session'
 import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { toClientPost, toDetailPostShell } from '@/shared/catalog'
@@ -21,6 +25,9 @@ export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
+  const url = new URL(request.url)
+  const wantsDraftPreview = url.searchParams.get('draft') === 'true'
+
   const sourcePost = requireDetailSource((await findPostBySlug(params.slug)) ?? undefined)
   const clientPost = toClientPost(sourcePost)
   const canonical = canonicalPostPath(params.slug, clientPost.slug)
@@ -28,16 +35,36 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     redirectPermanent(canonical)
   }
 
+  let draftBody = sourcePost.body
+  let draftImageSources = sourcePost.imageSources
+  let draftMarker: DraftMarker = null
+
+  if (wantsDraftPreview) {
+    const sessionCtx = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
+    if (sessionCtx.role === 'admin') {
+      const preview = await loadPostDraftPreviewBySlug(params.slug)
+      if (preview !== null) {
+        if (preview.hasNewerDraft) {
+          draftBody = preview.post.body
+          draftImageSources = preview.post.imageSources
+          draftMarker = 'unpublished-draft'
+        } else {
+          draftMarker = 'published-draft'
+        }
+      }
+    }
+  }
+
   const post = toDetailPostShell(clientPost)
 
-  const etag = weakEtag(['post', clientPost.id, post.updated])
-  if (ifNoneMatch(request, etag)) {
+  const etag = draftMarker === null ? weakEtag(['post', clientPost.id, post.updated]) : null
+  if (etag !== null && ifNoneMatch(request, etag)) {
     throw notModifiedResponse(etag)
   }
 
   const [visibleTags, imageMeta, sidebarTags, sidebarPosts] = await Promise.all([
     getTagsByNames(post.tags),
-    resolveImageMetaBySources(sourcePost.imageSources).then((r) => Object.fromEntries(r)),
+    resolveImageMetaBySources(draftImageSources).then((r) => Object.fromEntries(r)),
     listAllTags().then(selectSidebarTags),
     selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),
   ])
@@ -50,17 +77,23 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     sidebar: { posts: sidebarPosts, tags: sidebarTags },
   })
 
+  const headers: Record<string, string> = { 'Set-Cookie': commentCsrfSetCookie }
+  if (etag !== null) {
+    headers.ETag = etag
+  }
+
   return data(
     {
       post,
-      body: sourcePost.body,
+      body: draftBody,
       visibleTags,
       sidebarPosts,
       tags: sidebarTags,
       detail,
       imageMeta,
+      draftMarker,
     },
-    { headers: { 'Set-Cookie': commentCsrfSetCookie, ETag: etag } },
+    { headers },
   )
 }
 
@@ -73,13 +106,14 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta } = loaderData
+  const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta, draftMarker } = loaderData
   return (
     <>
       <PostFontLinks />
       <PostDetailBody
         post={post}
         headings={post.headings}
+        draftMarker={draftMarker}
         visibleTags={visibleTags}
         admin={detail.admin}
         likes={detail.likes}

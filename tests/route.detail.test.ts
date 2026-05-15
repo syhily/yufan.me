@@ -204,6 +204,24 @@ describe('routes/page.detail loader', () => {
     ).rejects.toMatchObject({ status: 301 })
   })
 
+  it('301-redirects to /posts/:slug preserving query params', async () => {
+    let thrown: unknown
+    try {
+      await pageRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/hello?draft=true&other=1'),
+          session,
+          params: { slug: 'hello' },
+        }),
+      )
+    } catch (error) {
+      thrown = error
+    }
+    expect(thrown).toBeInstanceOf(Response)
+    expect((thrown as Response).status).toBe(301)
+    expect((thrown as Response).headers.get('Location')).toBe('/posts/hello?draft=true&other=1')
+  })
+
   it('404s when neither page nor post matches the slug', async () => {
     await expect(
       pageRoute.loader(

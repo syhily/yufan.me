@@ -7,7 +7,7 @@ import type { DetailPageComments } from '@/shared/comments'
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { LikeShare } from '@/ui/public/LikeActions'
-import { DetailBodyChrome } from '@/ui/public/post/DetailBodyChrome'
+import { DetailBodyChrome, type DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 import { postMetaTagsClass } from '@/ui/public/post/postChrome'
 import { Sidebar, type SidebarData } from '@/ui/public/Sidebar'
 
@@ -25,6 +25,7 @@ export interface PostDetailBodyProps {
   currentUser?: CommentFormUser
   sidebar: SidebarData
   children: ReactNode
+  draftMarker?: DraftMarker
 }
 
 export function PostDetailBody({
@@ -39,6 +40,7 @@ export function PostDetailBody({
   currentUser,
   sidebar,
   children,
+  draftMarker = null,
 }: PostDetailBodyProps) {
   const config = useSiteIdentity()
   const postContentRef = useRef<HTMLDivElement>(null)
@@ -65,6 +67,7 @@ export function PostDetailBody({
                 showUpdated={post.showUpdated}
                 headings={headings}
                 toc={post.toc}
+                draftMarker={draftMarker}
                 likes={likes}
                 permalink={post.permalink}
                 commentKey={commentKey}

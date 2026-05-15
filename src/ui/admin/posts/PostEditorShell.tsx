@@ -1327,7 +1327,7 @@ interface PostActionBannerProps {
 // avoid the link disappearing mid-action — autosave / further
 // edits don't toggle it either.
 function PostActionBanner({ kind, slug, onClose }: PostActionBannerProps) {
-  const href = kind === 'draft' ? `/${slug}?draft=true` : `/${slug}`
+  const href = kind === 'draft' ? `/posts/${slug}?draft=true` : `/posts/${slug}`
   const message =
     kind === 'draft'
       ? '草稿已保存，可通过下方链接预览最新内容（仅管理员可见草稿）：'
