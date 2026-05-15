@@ -2,6 +2,10 @@ import { serve } from '@hono/node-server'
 import { swaggerUI } from '@hono/swagger-ui'
 import { Hono } from 'hono'
 import { requestId } from 'hono/request-id'
+import { serveStatic } from 'hono/serve-static'
+import { existsSync } from 'node:fs'
+import { readFile, stat } from 'node:fs/promises'
+import { extname } from 'node:path'
 import { RouterContextProvider, createRequestHandler } from 'react-router'
 
 import type { Env } from '@/server/http/context'
@@ -22,6 +26,25 @@ import { requestLoggerMiddleware } from '@/server/middleware/request-logger'
 import { sessionMiddleware } from '@/server/middleware/session-hono'
 import { visitorCookieMiddleware } from '@/server/middleware/visitor-cookie-hono'
 import { wpDecoyMiddleware } from '@/server/middleware/wp-decoy'
+
+const MIME = new Map([
+  ['.html', 'text/html; charset=utf-8'],
+  ['.css', 'text/css; charset=utf-8'],
+  ['.js', 'application/javascript; charset=utf-8'],
+  ['.json', 'application/json; charset=utf-8'],
+  ['.svg', 'image/svg+xml'],
+  ['.png', 'image/png'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.gif', 'image/gif'],
+  ['.ico', 'image/x-icon'],
+  ['.webp', 'image/webp'],
+  ['.woff', 'font/woff'],
+  ['.woff2', 'font/woff2'],
+  ['.txt', 'text/plain; charset=utf-8'],
+  ['.xml', 'application/xml; charset=utf-8'],
+  ['.webmanifest', 'application/manifest+json; charset=utf-8'],
+])
 
 export function createApp(): Hono<Env> {
   const app = new Hono<Env>()
@@ -62,6 +85,34 @@ export function createApp(): Hono<Env> {
   app.route('/', analyticsEventsRouter)
   app.route('/', tagsRouter)
   app.route('/', searchRouter)
+
+  // Static files — serve from build/client/ (production) or public/ (dev).
+  // Must sit before the React Router catch-all so assets are served directly.
+  const staticRoot = import.meta.env.PROD ? './build/client' : './public'
+  app.use(
+    '*',
+    serveStatic({
+      root: staticRoot,
+      getContent: async (filePath, c) => {
+        if (!existsSync(filePath)) {
+          return null
+        }
+        try {
+          const s = await stat(filePath)
+          if (!s.isFile()) {
+            return null
+          }
+        } catch {
+          return null
+        }
+        const ext = extname(filePath).toLowerCase()
+        const mime = MIME.get(ext) ?? 'application/octet-stream'
+        const content = await readFile(filePath)
+        c.header('Content-Type', mime)
+        return c.body(content)
+      },
+    }),
+  )
 
   // Catch-all → React Router SSR.
   app.all('*', async (c) => {
