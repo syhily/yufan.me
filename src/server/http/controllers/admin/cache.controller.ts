@@ -3,6 +3,11 @@ import type { adminCacheContract } from '@/shared/contracts/admin/cache'
 
 import { getAdminCacheStats, clearAdminCache } from '@/server/cache/admin'
 import { ok } from '@/server/http/response'
+import { body } from '@/server/http/ts-rest-adapter'
+
+interface ClearCacheBody {
+  target: string
+}
 
 export const adminCacheController: ContractImpl<typeof adminCacheContract> = {
   getStats: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -11,8 +16,8 @@ export const adminCacheController: ContractImpl<typeof adminCacheContract> = {
   },
 
   clear: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { target: string }
-    const result = await clearAdminCache(body.target as Parameters<typeof clearAdminCache>[0])
+    const b = body<ClearCacheBody>(args)
+    const result = await clearAdminCache(b.target as Parameters<typeof clearAdminCache>[0])
     return ok(result)
   },
 }

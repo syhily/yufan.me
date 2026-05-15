@@ -5,16 +5,21 @@ import type { adminSearchContract } from '@/shared/contracts/admin/search'
 import { db } from '@/server/db/pool'
 import { content, post } from '@/server/db/schema'
 import { ok } from '@/server/http/response'
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { body, requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { getLogger } from '@/server/logger'
 import { indexPost } from '@/server/search/indexer'
 
 const log = getLogger('search.reindex')
 
+interface ReindexBody {
+  batchSize: number
+  offset: number
+}
+
 export const adminSearchController: ContractImpl<typeof adminSearchContract> = {
   reindex: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     requireViewer(ctx)
-    const body = args.body as { batchSize: number; offset: number }
+    const b = body<ReindexBody>(args)
 
     // Total count of published posts
     const totalRows = await db
@@ -36,8 +41,8 @@ export const adminSearchController: ContractImpl<typeof adminSearchContract> = {
       .innerJoin(content, eq(content.id, sql`${post.publishedRevisionId}`))
       .where(and(isNull(post.deletedAt), eq(post.published, true), isNotNull(post.publishedRevisionId)))
       .orderBy(post.id)
-      .limit(body.batchSize)
-      .offset(body.offset)
+      .limit(b.batchSize)
+      .offset(b.offset)
 
     let processed = 0
     let failed = 0
@@ -52,7 +57,7 @@ export const adminSearchController: ContractImpl<typeof adminSearchContract> = {
       }
     }
 
-    const nextOffset = body.offset + rows.length < total ? body.offset + rows.length : null
+    const nextOffset = b.offset + rows.length < total ? b.offset + rows.length : null
 
     return ok({
       processed,

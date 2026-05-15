@@ -3,11 +3,16 @@ import type { adminMailContract } from '@/shared/contracts/admin/mail'
 
 import { sendTestMail } from '@/server/email/sender'
 import { ok } from '@/server/http/response'
+import { body } from '@/server/http/ts-rest-adapter'
+
+interface SendTestMailBody {
+  to: string
+}
 
 export const adminMailController: ContractImpl<typeof adminMailContract> = {
   sendTest: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { to: string }
-    const result = await sendTestMail(body.to)
+    const b = body<SendTestMailBody>(args)
+    const result = await sendTestMail(b.to)
     if (!result.ok) {
       const status =
         result.reason === 'unconfigured'

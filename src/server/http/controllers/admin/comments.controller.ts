@@ -10,7 +10,30 @@ import {
 } from '@/server/comments/admin'
 import { findCommentWithUserAndTarget } from '@/server/db/query/comment'
 import { ok, notFound } from '@/server/http/response'
-import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import {
+  body,
+  query,
+  asId,
+  requireViewer,
+  resolveId,
+  type ContractImpl,
+  type HandlerContext,
+} from '@/server/http/ts-rest-adapter'
+
+interface LoadAllCommentsBody {
+  offset: number
+  limit: number
+  pageKey?: string
+  userId?: string
+  status?: 'all' | 'pending' | 'approved'
+}
+
+interface AdminCommentsSearchQuery {
+  q?: string
+  limit?: number
+  ids?: string[]
+  key?: string
+}
 
 export const adminCommentsController: ContractImpl<typeof adminCommentsContract> = {
   approve: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -34,7 +57,7 @@ export const adminCommentsController: ContractImpl<typeof adminCommentsContract>
     if (!comment) {
       return notFound('评论不存在')
     }
-    const target = comment.type && comment.ownerId ? await findCommentWithUserAndTarget(BigInt(id)) : null
+    const target = comment.type && comment.ownerId ? await findCommentWithUserAndTarget(asId(id)) : null
     return ok({
       id: String(comment.id),
       body: comment.body,
@@ -47,38 +70,22 @@ export const adminCommentsController: ContractImpl<typeof adminCommentsContract>
   },
 
   loadAll: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as {
-      offset: number
-      limit: number
-      pageKey?: string
-      userId?: string
-      status?: 'all' | 'pending' | 'approved'
-    }
-    const userId = body.userId ? BigInt(body.userId) : undefined
-    const result = await loadAllComments(body.offset, body.limit, body.pageKey, userId, body.status)
+    const b = body<LoadAllCommentsBody>(args)
+    const userId = b.userId ? asId(b.userId) : undefined
+    const result = await loadAllComments(b.offset, b.limit, b.pageKey, userId, b.status)
     return ok(result)
   },
 
   searchPages: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const q = args.query as {
-      q?: string
-      limit?: number
-      ids?: string[]
-      key?: string
-    }
+    const q = query<AdminCommentsSearchQuery>(args)
     const publicIds = q.key ? [q.key] : q.ids
     const options = await searchPageOptions(q.q, q.limit ?? 20, publicIds)
     return ok({ options })
   },
 
   searchAuthors: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const q = args.query as {
-      q?: string
-      limit?: number
-      ids?: string[]
-      key?: string
-    }
-    const authorIds = q.ids?.length ? q.ids.map((s) => BigInt(s)) : undefined
+    const q = query<AdminCommentsSearchQuery>(args)
+    const authorIds = q.ids?.length ? q.ids.map((s) => asId(s)) : undefined
     const options = await searchAuthorOptions(q.q, q.limit ?? 20, authorIds)
     return ok({ options: options.map((o) => ({ id: String(o.id), name: o.name })) })
   },

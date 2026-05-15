@@ -9,20 +9,44 @@ import {
 } from '@/server/categories/service'
 import { findCategoryById } from '@/server/db/query/category'
 import { ok, notFound } from '@/server/http/response'
-import { resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { body, query, asId, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { listPostsByCategory } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
+interface CategoryListQuery {
+  q?: string
+}
+
+interface CreateCategoryBody {
+  name: string
+  slug?: string
+  cover: string
+  description?: string
+  sortOrder?: number
+}
+
+interface UpdateCategoryBody {
+  name?: string
+  slug?: string
+  cover?: string
+  description?: string
+  sortOrder?: number
+}
+
+interface ReorderCategoryBody {
+  orderedIds: string[]
+}
+
 export const adminCategoriesController: ContractImpl<typeof adminCategoriesContract> = {
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const q = args.query as { q?: string }
+    const q = query<CategoryListQuery>(args)
     const result = await listCategoriesForAdmin({ q: q.q })
     return ok({ categories: result.categories, total: result.total })
   },
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const row = await findCategoryById(BigInt(id))
+    const row = await findCategoryById(asId(id))
     if (!row) {
       return notFound('分类不存在')
     }
@@ -32,19 +56,13 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
 
   create: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     try {
-      const body = args.body as {
-        name: string
-        slug?: string
-        cover: string
-        description?: string
-        sortOrder?: number
-      }
+      const b = body<CreateCategoryBody>(args)
       const category = await upsertAdminCategory({
-        name: body.name,
-        slug: body.slug,
-        cover: body.cover,
-        description: body.description ?? '',
-        sortOrder: body.sortOrder ?? 0,
+        name: b.name,
+        slug: b.slug,
+        cover: b.cover,
+        description: b.description ?? '',
+        sortOrder: b.sortOrder ?? 0,
       })
       return ok({ category })
     } catch (e) {
@@ -57,25 +75,19 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
 
   update: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const existing = await findCategoryById(BigInt(id))
+    const existing = await findCategoryById(asId(id))
     if (!existing) {
       return notFound('分类不存在')
     }
     try {
-      const body = args.body as {
-        name?: string
-        slug?: string
-        cover?: string
-        description?: string
-        sortOrder?: number
-      }
+      const b = body<UpdateCategoryBody>(args)
       const category = await upsertAdminCategory({
-        id: BigInt(id),
-        name: body.name ?? existing.name,
-        slug: body.slug,
-        cover: body.cover ?? existing.cover,
-        description: body.description ?? existing.description,
-        sortOrder: body.sortOrder ?? existing.sortOrder,
+        id: asId(id),
+        name: b.name ?? existing.name,
+        slug: b.slug,
+        cover: b.cover ?? existing.cover,
+        description: b.description ?? existing.description,
+        sortOrder: b.sortOrder ?? existing.sortOrder,
       })
       return ok({ category })
     } catch (e) {
@@ -88,7 +100,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const deleted = await deleteAdminCategory(BigInt(id))
+    const deleted = await deleteAdminCategory(asId(id))
     if (!deleted) {
       return notFound('分类不存在')
     }
@@ -97,8 +109,8 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
 
   reorder: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     try {
-      const body = args.body as { orderedIds: string[] }
-      const categories = await reorderAdminCategories(body.orderedIds)
+      const b = body<ReorderCategoryBody>(args)
+      const categories = await reorderAdminCategories(b.orderedIds)
       return ok({ categories })
     } catch (e) {
       if (e instanceof ActionFailure) {

@@ -21,7 +21,7 @@ import {
 import { findMetricByPublicId } from '@/server/db/query/metric'
 import { findUserIdByEmail } from '@/server/db/query/user'
 import { ok, notFound, forbidden, unauthorized, internalError, rateLimited } from '@/server/http/response'
-import { type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { body, query, params, asId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { fetchQQAvatarImage, isQQEmail } from '@/server/images/avatar-fetch'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail, tryLikeIncreaseRateLimit } from '@/server/rate-limit'
 import { DomainError } from '@/server/route-helpers/errors'
@@ -39,9 +39,61 @@ function targetType(type: string | null): 'post' | 'page' {
   return type
 }
 
+interface LoadCommentsQuery {
+  page_key: string
+  offset: number
+}
+
+interface ReplyCommentBody {
+  csrf: string
+  email: string
+  page_key: string
+  subtitle: string
+  [key: string]: unknown
+}
+
+interface LikeKeyBody {
+  key: string
+}
+
+interface LikeKeyTokenBody {
+  key: string
+  token: string
+}
+
+interface FindAvatarBody {
+  email: string
+}
+
+interface EditCommentParams {
+  rid: string
+}
+
+interface EditCommentBody {
+  body: unknown
+}
+
+interface RevokeTokenBody {
+  rid: string
+}
+
+interface UpdateOwnCommentBody {
+  rid: string
+  body: unknown
+}
+
+interface DeleteOwnCommentBody {
+  rid: string
+}
+
+interface ListMineQuery {
+  offset?: number
+  limit?: number
+}
+
 export const commentController: ContractImpl<typeof commentContract> = {
   loadComments: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const q = args.query as { page_key: string; offset: number }
+    const q = query<LoadCommentsQuery>(args)
     const metricRow = await findMetricByPublicId(q.page_key)
     if (metricRow === null || metricRow.type === null || metricRow.ownerId === null) {
       return notFound('评论目标不存在')
@@ -57,8 +109,8 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   replyComment: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const body = args.body as Record<string, unknown>
-    const [csrfOk] = await validateRequestCsrf(ctx.request, body.csrf as string)
+    const b = body<ReplyCommentBody>(args)
+    const [csrfOk] = await validateRequestCsrf(ctx.request, b.csrf)
     if (!csrfOk) {
       return forbidden('页面安全令牌已失效，请刷新后重试。')
     }
@@ -68,12 +120,12 @@ export const commentController: ContractImpl<typeof commentContract> = {
       if (byIp.exceeded) {
         throw new DomainError('RATE_LIMITED')
       }
-      const byEmail = await tryCommentPostRateLimitByEmail(body.email as string)
+      const byEmail = await tryCommentPostRateLimitByEmail(b.email)
       if (byEmail.exceeded) {
         throw new DomainError('RATE_LIMITED')
       }
     }
-    const { subtitle: _subtitle, csrf: _csrf, ...commentPayload } = body
+    const { subtitle: _subtitle, csrf: _csrf, ...commentPayload } = b
     const comment = await createComment(
       commentPayload as unknown as CommentReq,
       ctx.request,
@@ -86,42 +138,42 @@ export const commentController: ContractImpl<typeof commentContract> = {
 
     if (!isAdmin) {
       const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds
-      const token = await issueCommentToken(comment.id, comment.userId, body.page_key as string, ttl)
+      const token = await issueCommentToken(comment.id, comment.userId, b.page_key, ttl)
       const existing = parseCommentTokensCookie(ctx.request.headers.get('Cookie') ?? '')
-      const next = appendCommentToken(existing, body.page_key as string, token, ttl)
+      const next = appendCommentToken(existing, b.page_key, token, ttl)
       responseHeaders['Set-Cookie'] += `, ${serializeCommentTokensCookie(next)}`
     }
     return { status: 200, body: { comment: comment as unknown, csrfToken: rotated.token }, headers: responseHeaders }
   },
 
   increaseLike: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const body = args.body as { key: string }
+    const b = body<LikeKeyBody>(args)
     const limit = await tryLikeIncreaseRateLimit(ctx.clientAddress)
     if (limit.exceeded) {
       return rateLimited('点赞过于频繁，请稍后再试。')
     }
-    const metricRow = await findMetricByPublicId(body.key)
+    const metricRow = await findMetricByPublicId(b.key)
     if (metricRow === null || metricRow.type === null || metricRow.ownerId === null) {
       return notFound('评论目标不存在')
     }
     const target = { type: targetType(metricRow.type), ownerId: metricRow.ownerId }
-    return ok({ ...(await increaseLikes(target)), key: body.key })
+    return ok({ ...(await increaseLikes(target)), key: b.key })
   },
 
   decreaseLike: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { key: string; token: string }
-    const metricRow = await findMetricByPublicId(body.key)
+    const b = body<LikeKeyTokenBody>(args)
+    const metricRow = await findMetricByPublicId(b.key)
     if (metricRow === null || metricRow.type === null || metricRow.ownerId === null) {
       return notFound('评论目标不存在')
     }
     const target = { type: targetType(metricRow.type), ownerId: metricRow.ownerId }
-    await decreaseLikes(target, body.token)
-    return ok({ key: body.key, likes: await queryLikes(target) })
+    await decreaseLikes(target, b.token)
+    return ok({ key: b.key, likes: await queryLikes(target) })
   },
 
   validateLikeToken: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { key: string; token: string }
-    const metricRow = await findMetricByPublicId(body.key)
+    const b = body<LikeKeyTokenBody>(args)
+    const metricRow = await findMetricByPublicId(b.key)
     if (metricRow === null) {
       return ok({ valid: false })
     }
@@ -131,12 +183,12 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   findAvatar: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { email: string }
-    const id = await findUserIdByEmail(body.email)
-    const hash = id === null ? await encodedEmail(body.email) : id
-    if (isQQEmail(body.email)) {
-      const canonicalHash = await encodedEmail(body.email)
-      const buffer = await fetchQQAvatarImage(body.email)
+    const b = body<FindAvatarBody>(args)
+    const id = await findUserIdByEmail(b.email)
+    const hash = id === null ? await encodedEmail(b.email) : id
+    if (isQQEmail(b.email)) {
+      const canonicalHash = await encodedEmail(b.email)
+      const buffer = await fetchQQAvatarImage(b.email)
       if (buffer !== null) {
         await cacheAvatar({ email: canonicalHash, status: AvatarStatus.HAVE_AVATAR, buffer })
       } else {
@@ -149,15 +201,15 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   edit: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const params = args.params as { rid: string }
-    const body = args.body as { body: unknown }
+    const p = params<EditCommentParams>(args)
+    const b = body<EditCommentBody>(args)
     const sessionUser = getUserSession(ctx.session)
     const isAdmin = sessionUser?.role === 'admin'
     if (!isAdmin) {
       const cookie = parseCommentTokensCookie(ctx.request.headers.get('Cookie') ?? '')
-      const { ok: ownerByToken } = await verifyCommentOwnership(cookie, params.rid)
+      const { ok: ownerByToken } = await verifyCommentOwnership(cookie, p.rid)
       if (!ownerByToken) {
-        const commentId = BigInt(params.rid)
+        const commentId = asId(p.rid)
         const row = await findCommentWithUserById(commentId)
         const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
         if (!ownerBySession) {
@@ -165,7 +217,7 @@ export const commentController: ContractImpl<typeof commentContract> = {
         }
       }
     }
-    const updated = await updateComment(params.rid, body.body as Parameters<typeof updateComment>[1])
+    const updated = await updateComment(p.rid, b.body as Parameters<typeof updateComment>[1])
     if (!updated) {
       return internalError('更新评论失败')
     }
@@ -173,13 +225,13 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   revokeToken: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const body = args.body as { rid: string }
+    const b = body<RevokeTokenBody>(args)
     const cookie = parseCommentTokensCookie(ctx.request.headers.get('Cookie') ?? '')
     const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
 
     let targetToken: string | null = null
     for (const entry of validEntries) {
-      if (entry.payload.commentId === body.rid) {
+      if (entry.payload.commentId === b.rid) {
         targetToken = entry.token
         break
       }
@@ -204,12 +256,12 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   updateOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const body = args.body as { rid: string; body: unknown }
+    const b = body<UpdateOwnCommentBody>(args)
     const sessionUser = getUserSession(ctx.session)
     if (!sessionUser) {
       return unauthorized()
     }
-    const updated = await updateOwnComment(body.rid, body.body as Parameters<typeof updateOwnComment>[1])
+    const updated = await updateOwnComment(b.rid, b.body as Parameters<typeof updateOwnComment>[1])
     if (!updated) {
       return internalError('更新评论失败')
     }
@@ -217,19 +269,18 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   requestDeleteOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const body = args.body as { rid: string }
+    const b = body<DeleteOwnCommentBody>(args)
     const sessionUser = getUserSession(ctx.session)
     if (!sessionUser) {
       return unauthorized()
     }
-    await requestDeleteComment(BigInt(body.rid), BigInt(sessionUser.id))
+    await requestDeleteComment(asId(b.rid), asId(sessionUser.id))
     return ok({ success: true })
   },
 
   cancelDeleteOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const body = args.body as { rid: string }
+    const _b = body<DeleteOwnCommentBody>(args)
     const sessionUser = getUserSession(ctx.session)
-    void body
     if (!sessionUser) {
       return unauthorized()
     }
@@ -241,9 +292,9 @@ export const commentController: ContractImpl<typeof commentContract> = {
     if (!sessionUser) {
       return unauthorized()
     }
-    const query = args.query as { offset?: number; limit?: number }
-    const comments = await listMyComments(BigInt(sessionUser.id), query.offset ?? 0, query.limit ?? 20)
-    const total = await countMyComments(BigInt(sessionUser.id))
+    const q = query<ListMineQuery>(args)
+    const comments = await listMyComments(asId(sessionUser.id), q.offset ?? 0, q.limit ?? 20)
+    const total = await countMyComments(asId(sessionUser.id))
     return ok({ comments: comments as unknown[], total })
   },
 }

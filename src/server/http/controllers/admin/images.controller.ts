@@ -1,7 +1,15 @@
 import type { adminImagesContract } from '@/shared/contracts/admin/images'
 
 import { ok, badRequest, unauthorized } from '@/server/http/response'
-import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import {
+  body,
+  query,
+  asId,
+  requireViewer,
+  resolveId,
+  type ContractImpl,
+  type HandlerContext,
+} from '@/server/http/ts-rest-adapter'
 import {
   deleteImage,
   listImagesForAdmin,
@@ -12,14 +20,20 @@ import {
 import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
+interface ImagesListQuery {
+  q?: string
+  kind?: 'generic' | 'category' | 'friend' | 'all'
+  offset?: number
+  limit?: number
+}
+
+interface UpdateNoteBody {
+  note?: string | null
+}
+
 export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const q = args.query as {
-      q?: string
-      kind?: 'generic' | 'category' | 'friend' | 'all'
-      offset?: number
-      limit?: number
-    }
+    const q = query<ImagesListQuery>(args)
     const result = await listImagesForAdmin({
       q: q.q,
       kind: q.kind,
@@ -71,7 +85,7 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
       return unauthorized()
     }
     const buffer = Buffer.from(await fileEntry.arrayBuffer())
-    const uploader = { id: BigInt(viewer.userId), name: adminUser.name }
+    const uploader = { id: asId(viewer.userId), name: adminUser.name }
 
     let image
     if (kind === 'generic') {
@@ -109,22 +123,22 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    await deleteImage(BigInt(id), viewer)
+    await deleteImage(asId(id), viewer)
     return ok({ success: true })
   },
 
   updateNote: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const body = args.body as { note?: string | null }
-    const image = await updateImageNote(BigInt(id), body.note ?? null, viewer)
+    const b = body<UpdateNoteBody>(args)
+    const image = await updateImageNote(asId(id), b.note ?? null, viewer)
     return ok({ image })
   },
 
   recalculateThumbhash: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const image = await recalculateImageThumbhash(BigInt(id), viewer)
+    const image = await recalculateImageThumbhash(asId(id), viewer)
     return ok({ image })
   },
 }

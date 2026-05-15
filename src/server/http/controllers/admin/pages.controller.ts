@@ -15,18 +15,54 @@ import {
   updatePageMeta,
 } from '@/server/cms/pages/service'
 import { ok, notFound } from '@/server/http/response'
-import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import {
+  body,
+  query,
+  asId,
+  requireViewer,
+  resolveId,
+  type ContractImpl,
+  type HandlerContext,
+} from '@/server/http/ts-rest-adapter'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
 
+interface PagesListQuery {
+  q?: string
+  deletedStatus?: 'all' | 'deleted' | 'normal'
+  offset?: number
+  limit?: number
+}
+
+interface UpsertPageMetaBody {
+  id?: string
+  slug?: string
+  title: string
+  summary?: string
+  cover?: string
+  og?: string | null
+  published?: boolean
+  commentsEnabled?: boolean
+  showToc?: boolean
+  showUpdated?: boolean
+  showFriends?: boolean
+  publishedAt?: string
+}
+
+interface PageDraftBody {
+  body: PortableTextBody
+  expectedClientRevisionToken?: string | null
+  force?: boolean
+  publishedAt?: string
+}
+
+interface PreviewBody {
+  body: PortableTextBody
+}
+
 export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const q = args.query as {
-      q?: string
-      deletedStatus?: 'all' | 'deleted' | 'normal'
-      offset?: number
-      limit?: number
-    }
+    const q = query<PagesListQuery>(args)
     const result = await listPagesForAdmin({
       q: q.q,
       deletedStatus: q.deletedStatus,
@@ -38,7 +74,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const detail = await getPageDetailForAdmin(BigInt(id))
+    const detail = await getPageDetailForAdmin(asId(id))
     if (detail === null) {
       return notFound('页面不存在或已被删除。')
     }
@@ -47,44 +83,29 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
 
   upsertMeta: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const body = args.body as {
-      id?: string
-      slug?: string
-      title: string
-      summary?: string
-      cover?: string
-      og?: string | null
-      published?: boolean
-      commentsEnabled?: boolean
-      showToc?: boolean
-      showUpdated?: boolean
-      showFriends?: boolean
-      publishedAt?: string
-    }
+    const b = body<UpsertPageMetaBody>(args)
     const meta = {
-      slug: body.slug,
-      title: body.title,
-      summary: body.summary,
-      cover: body.cover,
-      og: body.og,
-      published: body.published,
-      commentsEnabled: body.commentsEnabled,
-      showToc: body.showToc,
-      showUpdated: body.showUpdated,
-      showFriends: body.showFriends,
-      publishedAt: body.publishedAt === undefined ? undefined : new Date(body.publishedAt),
+      slug: b.slug,
+      title: b.title,
+      summary: b.summary,
+      cover: b.cover,
+      og: b.og,
+      published: b.published,
+      commentsEnabled: b.commentsEnabled,
+      showToc: b.showToc,
+      showUpdated: b.showUpdated,
+      showFriends: b.showFriends,
+      publishedAt: b.publishedAt === undefined ? undefined : new Date(b.publishedAt),
     }
-    const sessionUserId = BigInt(viewer.userId)
+    const sessionUserId = asId(viewer.userId)
     const page =
-      body.id === undefined
-        ? await createPage(meta, sessionUserId)
-        : await updatePageMeta({ id: BigInt(body.id), ...meta })
+      b.id === undefined ? await createPage(meta, sessionUserId) : await updatePageMeta({ id: asId(b.id), ...meta })
     return ok({ page })
   },
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const result = await deletePage(BigInt(id))
+    const result = await deletePage(asId(id))
     if (!result.deleted) {
       return notFound('页面不存在或已被删除。')
     }
@@ -93,7 +114,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
 
   restore: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const result = await restorePage(BigInt(id))
+    const result = await restorePage(asId(id))
     if (!result.restored) {
       return notFound('页面不存在或未被删除。')
     }
@@ -102,25 +123,20 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
 
   listRevisions: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const revisions = await listRevisionsForAdmin(BigInt(id))
+    const revisions = await listRevisionsForAdmin(asId(id))
     return ok({ revisions })
   },
 
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const body = args.body as {
-      body: PortableTextBody
-      expectedClientRevisionToken?: string | null
-      force?: boolean
-      publishedAt?: string
-    }
+    const b = body<PageDraftBody>(args)
     const result = await saveDraft({
-      pageId: BigInt(id),
-      body: body.body,
-      expectedClientRevisionToken: body.expectedClientRevisionToken ?? undefined,
-      force: body.force,
-      authorId: BigInt(viewer.userId),
+      pageId: asId(id),
+      body: b.body,
+      expectedClientRevisionToken: b.expectedClientRevisionToken ?? undefined,
+      force: b.force,
+      authorId: asId(viewer.userId),
     })
     return ok(result)
   },
@@ -128,33 +144,28 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const body = args.body as {
-      body: PortableTextBody
-      expectedClientRevisionToken?: string | null
-      force?: boolean
-      publishedAt?: string
-    }
+    const b = body<PageDraftBody>(args)
     const result = await publishLatest({
-      pageId: BigInt(id),
-      body: body.body,
-      expectedClientRevisionToken: body.expectedClientRevisionToken ?? undefined,
-      force: body.force,
-      authorId: BigInt(viewer.userId),
-      publishedAt: body.publishedAt !== undefined ? new Date(body.publishedAt) : undefined,
+      pageId: asId(id),
+      body: b.body,
+      expectedClientRevisionToken: b.expectedClientRevisionToken ?? undefined,
+      force: b.force,
+      authorId: asId(viewer.userId),
+      publishedAt: b.publishedAt !== undefined ? new Date(b.publishedAt) : undefined,
     })
     return ok(result)
   },
 
   unpublish: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const page = await unpublishPage(BigInt(id))
+    const page = await unpublishPage(asId(id))
     return ok({ page })
   },
 
   preview: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = _args.body as { body: PortableTextBody }
-    const html = await renderPortableTextToHtml(body.body)
-    const headings = collectHeadings(body.body, deriveSlug)
+    const b = body<PreviewBody>(_args)
+    const html = await renderPortableTextToHtml(b.body)
+    const headings = collectHeadings(b.body, deriveSlug)
     return ok({ html, headings })
   },
 }

@@ -4,12 +4,22 @@ import type { ContractImpl, HandlerContext } from '@/server/http/ts-rest-adapter
 import type { adminEditorContract } from '@/shared/contracts/admin/editor'
 
 import { ok } from '@/server/http/response'
+import { body } from '@/server/http/ts-rest-adapter'
 import { getKatexRenderer } from '@/server/pt/katex-renderer'
+
+interface RenderMathBody {
+  tex: string
+  display: boolean
+}
+
+interface RenderMermaidBody {
+  code: string
+}
 
 export const adminEditorController: ContractImpl<typeof adminEditorContract> = {
   renderMath: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { tex: string; display: boolean }
-    const tex = body.tex
+    const b = body<RenderMathBody>(args)
+    const tex = b.tex
     if (tex.trim() === '') {
       return ok({ mathml: '', error: null })
     }
@@ -21,7 +31,7 @@ export const adminEditorController: ContractImpl<typeof adminEditorContract> = {
       return ok({ mathml: '', error: message })
     }
     try {
-      const mathml = await renderer.render(tex, body.display)
+      const mathml = await renderer.render(tex, b.display)
       return ok({ mathml, error: null })
     } catch (err) {
       const message = err instanceof Error ? err.message : '公式渲染失败'
@@ -30,8 +40,8 @@ export const adminEditorController: ContractImpl<typeof adminEditorContract> = {
   },
 
   renderMermaid: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const body = args.body as { code: string }
-    const code = body.code
+    const b = body<RenderMermaidBody>(args)
+    const code = b.code
     if (code.trim() === '') {
       return ok({ svg: '', error: null })
     }

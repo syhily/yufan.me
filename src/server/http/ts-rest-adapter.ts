@@ -148,3 +148,26 @@ export function resolveId(args: Record<string, unknown>): string {
   }
   throw new HTTPException(400, { message: '缺少资源 ID (path param :id 或 body/query 中的 id/userId)' })
 }
+
+// ── Typed accessor helpers ──────────────────────────────────
+// Eliminate `args.body as SomeType` anti-pattern across all controllers.
+
+/** Extract and type-narrow the request body. */
+export function body<T>(args: Record<string, unknown>): T {
+  return (args.body ?? {}) as T
+}
+
+/** Extract and type-narrow the query parameters. */
+export function query<T>(args: Record<string, unknown>): T {
+  return (args.query ?? {}) as T
+}
+
+/** Extract and type-narrow the path parameters. */
+export function params<T>(args: Record<string, unknown>): T {
+  return (args.params ?? {}) as T
+}
+
+/** Safely convert a string ID to BigInt for database operations. */
+export function asId(value: string): bigint {
+  return BigInt(value)
+}
