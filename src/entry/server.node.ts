@@ -13,8 +13,9 @@ import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
 import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
-import { redirectRouter } from '@/server/http/resources/redirects'
+import { searchRouter } from '@/server/http/resources/search'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
+import { tagsRouter } from '@/server/http/resources/tags'
 import { clientAddressMiddleware } from '@/server/middleware/client-address'
 import { installGateMiddleware } from '@/server/middleware/install-gate-hono'
 import { sessionMiddleware } from '@/server/middleware/session-hono'
@@ -54,7 +55,8 @@ export function createApp(): Hono<Env> {
   app.route('/', sitemapRouter)
   app.route('/', imagesRouter)
   app.route('/', analyticsEventsRouter)
-  app.route('/', redirectRouter)
+  app.route('/', tagsRouter)
+  app.route('/', searchRouter)
 
   // Catch-all → React Router SSR.
   app.all('*', async (c) => {

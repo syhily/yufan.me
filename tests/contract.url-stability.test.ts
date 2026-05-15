@@ -39,7 +39,7 @@ function honoRegisteredPaths(): Set<string> {
     'src/server/http/resources/feed.ts',
     'src/server/http/resources/sitemap.ts',
     'src/server/http/resources/images.ts',
-    'src/server/http/resources/redirects.ts',
+    'src/server/http/resources/search.ts',
   ]
   for (const file of sources) {
     try {

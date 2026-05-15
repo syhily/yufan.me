@@ -86,7 +86,7 @@ vi.mock('@/server/search', () => ({
 const categoryRoute = await import('@/routes/category.list')
 const tagRoute = await import('@/routes/tag.list')
 const searchRoute = await import('@/routes/search.list')
-const { redirectRouter } = await import('@/server/http/resources/redirects')
+const { searchRouter } = await import('@/server/http/resources/search')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -206,14 +206,14 @@ describe('routes/search.list loader', () => {
 
 describe('routes/redirect search handler', () => {
   it('canonicalises progressive-enhancement search form submissions', async () => {
-    const response = await redirectRouter.request('http://localhost/search?q=react router')
+    const response = await searchRouter.request('http://localhost/search?q=react router')
 
     expect(response.status).toBe(301)
     expect(response.headers.get('Location')).toBe('/search/react%20router')
   })
 
   it('redirects empty /search visits home', async () => {
-    const response = await redirectRouter.request('http://localhost/search?q=   ')
+    const response = await searchRouter.request('http://localhost/search?q=   ')
 
     expect(response.status).toBe(301)
     expect(response.headers.get('Location')).toBe('/')
