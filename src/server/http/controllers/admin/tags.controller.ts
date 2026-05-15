@@ -1,6 +1,6 @@
 import type { adminTagsContract } from '@/shared/contracts/admin/tags'
 
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/tags/service'
 
 export const adminTagsController: ContractImpl<typeof adminTagsContract> = {
@@ -22,7 +22,7 @@ export const adminTagsController: ContractImpl<typeof adminTagsContract> = {
 
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const ok = await deleteAdminTag(BigInt(id), viewer)
     if (!ok) {
       return { status: 404, body: { error: { message: '标签不存在' } } }

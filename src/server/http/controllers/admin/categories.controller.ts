@@ -8,7 +8,7 @@ import {
   upsertAdminCategory,
 } from '@/server/categories/service'
 import { findCategoryById } from '@/server/db/query/category'
-import { type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { listPostsByCategory } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
@@ -20,7 +20,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
   },
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const row = await findCategoryById(BigInt(id))
     if (!row) {
       return { status: 404, body: { error: { message: '分类不存在' } } }
@@ -55,7 +55,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
   },
 
   update: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const existing = await findCategoryById(BigInt(id))
     if (!existing) {
       return { status: 404, body: { error: { message: '分类不存在' } } }
@@ -86,7 +86,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
   },
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const ok = await deleteAdminCategory(BigInt(id))
     if (!ok) {
       return { status: 404, body: { error: { message: '分类不存在' } } }

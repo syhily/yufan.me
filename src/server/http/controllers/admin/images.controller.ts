@@ -1,6 +1,6 @@
 import type { adminImagesContract } from '@/shared/contracts/admin/images'
 
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import {
   deleteImage,
   listImagesForAdmin,
@@ -107,14 +107,14 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
 
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     await deleteImage(BigInt(id), viewer)
     return { status: 200, body: { success: true } }
   },
 
   updateNote: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const body = args.body as { note?: string | null }
     const image = await updateImageNote(BigInt(id), body.note ?? null, viewer)
     return { status: 200, body: { image } }
@@ -122,7 +122,7 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
 
   recalculateThumbhash: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const image = await recalculateImageThumbhash(BigInt(id), viewer)
     return { status: 200, body: { image } }
   },

@@ -1,7 +1,7 @@
 import type { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
-import { type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
 export const adminFriendsController: ContractImpl<typeof adminFriendsContract> = {
@@ -46,7 +46,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
   },
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const ok = await deleteAdminFriend(BigInt(id))
     if (!ok) {
       return { status: 404, body: { error: { message: '友链不存在' } } }

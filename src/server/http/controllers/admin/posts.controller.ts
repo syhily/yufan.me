@@ -14,7 +14,7 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/cms/posts/service'
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
 
@@ -55,7 +55,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
 
   get: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const detail = await getPostDetailForAdmin(BigInt(id), viewer)
     if (detail === null) {
       return { status: 404, body: { error: { message: '文章不存在或已被删除。' } } }
@@ -110,7 +110,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
 
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const result = await deletePost(BigInt(id), viewer)
     if (!result.deleted) {
       return { status: 404, body: { error: { message: '文章不存在或已被删除。' } } }
@@ -120,7 +120,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
 
   restore: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const result = await restorePost(BigInt(id), viewer)
     if (!result.restored) {
       return { status: 404, body: { error: { message: '文章不存在或未被删除。' } } }
@@ -130,14 +130,14 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
 
   listRevisions: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const revisions = await listRevisionsForAdmin(BigInt(id), viewer)
     return { status: 200, body: { revisions } }
   },
 
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const body = args.body as {
       body: PortableTextBody
       expectedClientRevisionToken?: string | null
@@ -159,7 +159,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
 
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const body = args.body as {
       body: PortableTextBody
       expectedClientRevisionToken?: string | null
@@ -182,7 +182,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
 
   unpublish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const post = await unpublishPost(BigInt(id), viewer)
     return { status: 200, body: { post } }
   },

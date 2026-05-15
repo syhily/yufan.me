@@ -14,7 +14,7 @@ import {
   unpublishPage,
   updatePageMeta,
 } from '@/server/cms/pages/service'
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
 
@@ -36,7 +36,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   },
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const detail = await getPageDetailForAdmin(BigInt(id))
     if (detail === null) {
       return { status: 404, body: { error: { message: '页面不存在或已被删除。' } } }
@@ -82,7 +82,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   },
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const result = await deletePage(BigInt(id))
     if (!result.deleted) {
       return { status: 404, body: { error: { message: '页面不存在或已被删除。' } } }
@@ -91,7 +91,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   },
 
   restore: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const result = await restorePage(BigInt(id))
     if (!result.restored) {
       return { status: 404, body: { error: { message: '页面不存在或未被删除。' } } }
@@ -100,14 +100,14 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   },
 
   listRevisions: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const revisions = await listRevisionsForAdmin(BigInt(id))
     return { status: 200, body: { revisions } }
   },
 
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const body = args.body as {
       body: PortableTextBody
       expectedClientRevisionToken?: string | null
@@ -126,7 +126,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
 
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const body = args.body as {
       body: PortableTextBody
       expectedClientRevisionToken?: string | null
@@ -145,7 +145,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   },
 
   unpublish: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const page = await unpublishPage(BigInt(id))
     return { status: 200, body: { page } }
   },

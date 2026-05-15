@@ -1,6 +1,6 @@
 import type { adminMusicContract } from '@/shared/contracts/admin/music'
 
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetadata } from '@/server/music/service'
 import { userSession } from '@/server/session'
 
@@ -33,7 +33,7 @@ export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
   },
 
   update: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     const body = args.body as { name: string; artist: string[]; album?: string; lyric?: string | null }
     const music = await updateMusicMetadata({
       id: BigInt(id),
@@ -47,7 +47,7 @@ export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
 
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = args.params as { id: string }
+    const id = resolveId(args)
     await deleteMusic(BigInt(id), { userId: viewer.userId, role: viewer.role })
     return { status: 200, body: { success: true } }
   },
