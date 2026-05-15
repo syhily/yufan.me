@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const settingSection = z.enum([
   'general',
@@ -45,5 +45,5 @@ export const adminSettingsContract = c.router(
       summary: '管理后台：更新指定设置分组',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

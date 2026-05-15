@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const cacheBucketId = z.enum(['og', 'calendar', 'avatar', 'imageMeta', 'embeddingSearch', 'searchResult'])
 
@@ -69,5 +69,5 @@ export const adminCacheContract = c.router(
       summary: '管理后台：清除缓存',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

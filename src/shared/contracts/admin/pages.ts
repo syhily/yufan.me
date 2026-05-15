@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const adminRevisionDto = z.object({
   id: z.string(),
@@ -208,5 +208,5 @@ export const adminPagesContract = c.router(
       summary: '管理后台：预览页面渲染',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

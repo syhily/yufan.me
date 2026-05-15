@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const adminCategoryDto = z.object({
   id: z.string(),
@@ -104,5 +104,5 @@ export const adminCategoriesContract = c.router(
       summary: '管理后台：分类排序',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

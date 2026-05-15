@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const adminFriendDto = z.object({
   id: z.string(),
@@ -64,5 +64,5 @@ export const adminFriendsContract = c.router(
       summary: '管理后台：删除友链',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

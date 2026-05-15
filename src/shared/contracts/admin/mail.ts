@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors } from '../_errors'
+import { errorResponse, standardMutationErrors } from '../_errors'
 
 export const adminMailContract = c.router(
   {
@@ -16,5 +16,5 @@ export const adminMailContract = c.router(
       summary: '管理后台：发送测试邮件',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

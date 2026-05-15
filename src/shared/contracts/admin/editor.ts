@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors } from '../_errors'
+import { errorResponse, standardMutationErrors } from '../_errors'
 
 export const adminEditorContract = c.router(
   {
@@ -31,5 +31,5 @@ export const adminEditorContract = c.router(
       summary: '管理后台：渲染 Mermaid 图表预览',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

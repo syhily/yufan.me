@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from './_base'
-import { standardReadErrors } from './_errors'
+import { errorResponse, standardReadErrors } from './_errors'
 
 export const analyticsQuery = z.object({
   preset: z.string().optional(),
@@ -82,5 +82,5 @@ export const analyticsContract = c.router(
       summary: '分析面板：按维度聚合的指标',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

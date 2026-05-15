@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from './_base'
-import { standardMutationErrors, standardReadErrors } from './_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from './_errors'
 
 // ─── Schemas ────────────────────────────────────────────
 
@@ -156,5 +156,5 @@ export const commentContract = c.router(
       summary: '用户自己的评论列表',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

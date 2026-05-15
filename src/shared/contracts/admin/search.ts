@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors } from '../_errors'
+import { errorResponse, standardMutationErrors } from '../_errors'
 
 // ─── Schemas ────────────────────────────────────────────
 
@@ -32,5 +32,5 @@ export const adminSearchContract = c.router(
       summary: '管理后台：重建搜索索引',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

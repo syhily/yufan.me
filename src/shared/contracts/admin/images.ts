@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const adminImageDto = z.object({
   id: z.string(),
@@ -93,5 +93,5 @@ export const adminImagesContract = c.router(
       summary: '管理后台：重新计算图片缩略哈希',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

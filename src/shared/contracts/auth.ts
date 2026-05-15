@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 
 import { c } from './_base'
-import { standardMutationErrors } from './_errors'
+import { errorResponse, standardMutationErrors } from './_errors'
 
 export const updateUserBody = z
   .object({
@@ -35,5 +35,5 @@ export const authContract = c.router(
       summary: '管理员更新指定用户资料',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

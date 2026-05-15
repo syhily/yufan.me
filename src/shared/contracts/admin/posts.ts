@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 const adminRevisionDto = z.object({
   id: z.string(),
@@ -239,5 +239,5 @@ export const adminPostsContract = c.router(
       summary: '管理后台：预览文章渲染',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

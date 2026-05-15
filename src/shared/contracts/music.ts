@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from './_base'
-import { standardReadErrors } from './_errors'
+import { errorResponse, standardReadErrors } from './_errors'
 
 export const musicGetQuery = z.object({
   id: z
@@ -33,5 +33,5 @@ export const musicContract = c.router(
       summary: '获取音乐播放器元数据',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

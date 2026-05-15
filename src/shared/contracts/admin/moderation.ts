@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 // ─── Schemas ────────────────────────────────────────────
 
@@ -89,5 +89,5 @@ export const adminModerationContract = c.router(
       summary: '管理后台：待处理事项（欢迎面板）',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )
