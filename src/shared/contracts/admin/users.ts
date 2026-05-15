@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '../_base'
-import { standardMutationErrors, standardReadErrors } from '../_errors'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '../_errors'
 
 export const listUsersQuery = z.object({
   offset: z.coerce.number().int().min(0).default(0),
@@ -120,5 +120,5 @@ export const adminUsersContract = c.router(
       summary: '管理后台：发送密码重置邮件',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )
