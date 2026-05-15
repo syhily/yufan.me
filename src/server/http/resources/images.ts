@@ -44,10 +44,24 @@ const AVATAR_HEADERS: HeadersInit = {
 }
 
 // ─── Router ───────────────────────────────────────────────────────
+//
+// Hono's path parser footgun: in a pattern like `/foo/:name.png`,
+// `.png` is NOT a literal suffix — the `:` capture group greedily
+// includes the `.` and the resulting param name becomes `name.png`
+// (try `c.req.param()` on such a route). We therefore declare each
+// image endpoint with an explicit `{[^/]+\\.png}` regex constraint
+// on a `:filename` param and strip the extension in the handler.
+// This was the cause of the "all avatars degrade to default"
+// regression — every request was hitting `param('hash')` →
+// `undefined` → fallback redirect.
+
+function stripPng(filename: string): string {
+  return filename.replace(/\.png$/, '')
+}
 
 export const imagesRouter = new Hono<Env>()
-  .get('/images/og/:slug.png', async (c) => {
-    const slug = c.req.param('slug')
+  .get('/images/og/:filename{[^/]+\\.png}', async (c) => {
+    const slug = stripPng(c.req.param('filename'))
     if (!slug) {
       return ogFallback(c)
     }
@@ -87,22 +101,22 @@ export const imagesRouter = new Hono<Env>()
     Object.entries(OG_HEADERS).forEach(([k, v]) => c.header(k, v))
     return c.body(new Uint8Array(buffer))
   })
-  .get('/images/calendar/:year/:time.png', async (c) => {
-    const params = c.req.param()
+  .get('/images/calendar/:year/:filename{[^/]+\\.png}', async (c) => {
+    const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
     const res = await serveCalendar(params, 'light', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
-  .get('/images/calendar/dark/:year/:time.png', async (c) => {
-    const params = c.req.param()
+  .get('/images/calendar/dark/:year/:filename{[^/]+\\.png}', async (c) => {
+    const params = { year: c.req.param('year'), time: stripPng(c.req.param('filename')) }
     const headers = { 'Cache-Control': 'public, max-age=86400' }
     const res = await serveCalendar(params, 'dark', headers)
     res.headers.forEach((v, k) => c.header(k, v))
     return c.body(await res.arrayBuffer())
   })
-  .get('/images/avatar/:hash.png', async (c) => {
-    const hash = c.req.param('hash')
+  .get('/images/avatar/:filename{[^/]+\\.png}', async (c) => {
+    const hash = stripPng(c.req.param('filename'))
     if (!hash) {
       return c.redirect(defaultAvatarUrl())
     }
