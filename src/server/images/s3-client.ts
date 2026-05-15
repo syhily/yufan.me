@@ -16,7 +16,7 @@ import { Readable } from 'node:stream'
 import type { AssetsSettings } from '@/shared/blog-config'
 
 import { getLogger } from '@/server/logger'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 // Lazily-built `S3Client` keyed by the JSON-serialised storage config.

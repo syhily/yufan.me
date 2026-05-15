@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import { buildObjectKey, extractHostForFriendKey } from '@/server/images/key'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 describe('server/images/key — buildObjectKey', () => {
   describe('kind: generic', () => {

@@ -13,8 +13,8 @@ import type {
   UserIdInput,
 } from '@/client/api/legacy-types'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useAdminMutation } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'

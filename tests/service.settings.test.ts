@@ -25,7 +25,7 @@ vi.mock('@/server/cache/storage', () => ({
 const settingQueries = await import('@/server/db/query/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/settings/snapshot')
-const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { ActionFailure } = await import('@/server/route-helpers/errors')
 const { requireBlogSettingsSection } = await import('@/shared/blog-config')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section

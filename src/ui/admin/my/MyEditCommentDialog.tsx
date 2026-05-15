@@ -6,8 +6,8 @@ import { toast } from 'sonner'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,

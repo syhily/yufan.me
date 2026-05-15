@@ -55,7 +55,7 @@ vi.mock('@/server/cache/storage', () => ({
 }))
 
 const { clearAdminCache, getAdminCacheStats } = await import('@/server/cache/admin')
-const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { ActionFailure } = await import('@/server/route-helpers/errors')
 const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 

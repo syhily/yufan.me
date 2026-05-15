@@ -28,12 +28,12 @@ import type {
 } from '@/shared/cms-posts'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useApiFetcher, submitApiAction } from '@/client/api/fetcher'
 import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
 import { usePostAutosave } from '@/client/hooks/use-post-autosave'
 import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { DraftConflictDialog } from '@/ui/admin/editor/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor/FloatingPublishButton'

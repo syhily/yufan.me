@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import { describe, expect, it } from 'vite-plus/test'
 
 import { processImageBuffer } from '@/server/images/process'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 // Generate a tiny in-memory PNG so we don't need any test fixtures on
 // disk. sharp can decode whatever we give it; the pipeline re-encodes

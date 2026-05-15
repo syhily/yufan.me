@@ -5,7 +5,7 @@ import { storage } from '@/server/cache/storage'
 import { findImagesByStoragePaths } from '@/server/db/query/image'
 import { getPublicBaseUrl } from '@/server/images/storage'
 import { getLogger } from '@/server/logger'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 // Image metadata resolver. Looks up matching `image` rows by

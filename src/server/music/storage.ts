@@ -1,6 +1,6 @@
 import { deleteImageObject, getImageStorageContext, putImageObject } from '@/server/images/s3-client'
 import { getPublicBaseUrl } from '@/server/images/storage'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 // Music files share the same S3 bucket and the same `assets.storage`
 // toggle as the image library — see AGENTS.md "Content" section. The

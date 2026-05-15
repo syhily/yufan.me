@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vite-plus/test'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { notFound, pngResponse } from '@/server/route-helpers/http'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parsePageNum, redirectListingOverflow } from '@/server/route-helpers/pagination'
 import { canonicalPostPath, searchRootPath } from '@/server/route-helpers/paths'
 import { commentAwareRevalidate } from '@/server/route-helpers/revalidate'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { slicePosts } from '@/shared/formatter'
 
 describe('route shared helpers', () => {

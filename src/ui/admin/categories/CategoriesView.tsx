@@ -11,8 +11,8 @@ import type {
   ReorderCategoriesOutput,
 } from '@/shared/categories'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useAdminMutation } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 import { useCategoriesController } from '@/ui/admin/categories/useCategoriesController'

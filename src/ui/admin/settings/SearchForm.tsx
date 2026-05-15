@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import type { SearchLoaderShape } from '@/shared/settings'
 
-import { API_ACTIONS } from '@/shared/api-actions'
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'

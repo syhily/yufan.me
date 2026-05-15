@@ -38,7 +38,7 @@ import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/db/query/li
 import { ensureMetric } from '@/server/db/query/metric'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 

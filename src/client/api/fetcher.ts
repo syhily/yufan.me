@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useFetcher } from 'react-router'
 import { toast } from 'sonner'
 
-import type { ApiActionMethod } from '@/shared/api-actions'
+import type { ApiActionMethod } from '@/client/api/api-descriptors'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 
 export type { ApiEnvelope }

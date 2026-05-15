@@ -8,7 +8,7 @@ import {
   snapshotAllBuckets,
   snapshotReservedBuckets,
 } from '@/server/cache/buckets'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 export type { AdminCacheStatsDto, ClearCacheResultDto, ClearCacheTarget } from '@/shared/cache-types'
 

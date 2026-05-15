@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 
 import type { AdminMusicDto, UpdateMusicInput, UpdateMusicOutput } from '@/shared/music'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useAdminMutation } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,

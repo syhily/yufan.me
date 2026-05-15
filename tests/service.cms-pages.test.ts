@@ -44,7 +44,7 @@ vi.mock('@/server/db/query/like', () => ({
 }))
 
 const repo = await import('@/server/cms/pages/repository')
-const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { ActionFailure } = await import('@/server/route-helpers/errors')
 const service = await import('@/server/cms/pages/service')
 
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {

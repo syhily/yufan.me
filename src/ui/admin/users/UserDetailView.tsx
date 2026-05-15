@@ -27,8 +27,8 @@ import type {
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { AdminComment } from '@/shared/comments'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 type Role = NonNullable<AdminUserDto['role']>
 import { formatLocalDate } from '@/shared/formatter'
 import { idStr } from '@/shared/tools'

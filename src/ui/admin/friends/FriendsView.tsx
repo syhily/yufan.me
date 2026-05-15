@@ -19,8 +19,8 @@ import type {
   ListFriendsOutput,
 } from '@/shared/friends'
 
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { useAdminMutation } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { safeHref } from '@/shared/safe-url'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { useFriendsController } from '@/ui/admin/friends/useFriendsController'

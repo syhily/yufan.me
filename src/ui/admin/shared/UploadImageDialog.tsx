@@ -5,7 +5,7 @@ import { useFetcher } from 'react-router'
 import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminImageDto, UploadImageOutput } from '@/shared/images'
 
-import { API_ACTIONS } from '@/shared/api-actions'
+import { API_ACTIONS } from '@/client/api/api-descriptors'
 import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 import { Button } from '@/ui/components/button'
 import {
