@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/cms/pages/preview'
 import {
@@ -17,8 +17,8 @@ import { deriveSlug } from '@/server/slug'
 import { adminPagesContract } from '@/shared/contracts/admin/pages'
 import { collectHeadings } from '@/shared/pt/schema'
 
-export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
-  // TODO: add `satisfies ContractImpl<typeof adminPagesContract>` once all response schemas are strict
+export const adminPagesController: AuthedContractImpl<typeof adminPagesContract> = {
+  // TODO: add `satisfies AuthedContractImpl<typeof adminPagesContract>` once all response schemas are strict
   listPages: async (args, _ctx) => {
     const result = await listPagesForAdmin({
       q: args.query.q,

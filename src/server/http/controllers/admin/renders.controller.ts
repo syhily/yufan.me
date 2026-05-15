@@ -1,7 +1,7 @@
 import { renderMermaidSVGAsync } from 'beautiful-mermaid'
 import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
 
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { db } from '@/server/db/pool'
@@ -11,7 +11,7 @@ import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer
 import { indexPost } from '@/server/search/indexer'
 import { adminRendersContract } from '@/shared/contracts/admin/renders'
 
-export const adminRendersController: ContractImpl<typeof adminRendersContract> = {
+export const adminRendersController: AuthedContractImpl<typeof adminRendersContract> = {
   renderMath: async (args, _ctx) => {
     const payload = args.body
     const tex = payload.tex

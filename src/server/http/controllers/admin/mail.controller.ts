@@ -1,9 +1,9 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { sendTestMail } from '@/server/email/sender'
 import { adminMailContract } from '@/shared/contracts/admin/mail'
 
-export const adminMailController: ContractImpl<typeof adminMailContract> = {
+export const adminMailController: AuthedContractImpl<typeof adminMailContract> = {
   sendTestMail: async (args, _ctx) => {
     const payload = args.body
     const result = await sendTestMail(payload.to)

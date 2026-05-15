@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/cms/posts/preview'
 import {
@@ -17,8 +17,8 @@ import { deriveSlug } from '@/server/slug'
 import { adminPostsContract } from '@/shared/contracts/admin/posts'
 import { collectHeadings } from '@/shared/pt/schema'
 
-export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
-  // TODO: add `satisfies ContractImpl<typeof adminPostsContract>` once all response schemas are strict
+export const adminPostsController: AuthedContractImpl<typeof adminPostsContract> = {
+  // TODO: add `satisfies AuthedContractImpl<typeof adminPostsContract>` once all response schemas are strict
   listPosts: async (args, ctx) => {
     const result = await listPostsForAdmin(
       {

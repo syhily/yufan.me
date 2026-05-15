@@ -1,11 +1,11 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { loadAdminPendingDashboard } from '@/server/comments/admin'
 import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/db/query/comment'
 import { getLogger } from '@/server/logger'
 import { adminCommentsContract } from '@/shared/contracts/admin/comments'
 
-export const adminCommentsController: ContractImpl<typeof adminCommentsContract> = {
+export const adminCommentsController: AuthedContractImpl<typeof adminCommentsContract> = {
   approveCommentDeletion: async (args, ctx) => {
     const payload = args.body
     const id = BigInt(payload.commentId)

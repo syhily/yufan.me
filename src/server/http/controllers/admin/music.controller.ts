@@ -1,10 +1,10 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetadata } from '@/server/music/service'
 import { userSession } from '@/server/session'
 import { adminMusicContract } from '@/shared/contracts/admin/music'
 
-export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
+export const adminMusicController: AuthedContractImpl<typeof adminMusicContract> = {
   listMusic: async (args, _ctx) => {
     const result = await listMusicForAdmin({
       q: args.query.q,

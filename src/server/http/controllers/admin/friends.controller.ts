@@ -1,9 +1,9 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
 import { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
-export const adminFriendsController: ContractImpl<typeof adminFriendsContract> = {
+export const adminFriendsController: AuthedContractImpl<typeof adminFriendsContract> = {
   listFriends: async (args, _ctx) => {
     const payload = args.query
     const result = await listFriendsForAdmin({

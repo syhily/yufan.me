@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { uploadImageMetadataSchema } from '@/server/images/schema'
 import {
@@ -13,7 +13,7 @@ import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 
-export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
+export const adminImagesController: AuthedContractImpl<typeof adminImagesContract> = {
   listImages: async (args, _ctx) => {
     const result = await listImagesForAdmin({
       q: args.query.q,

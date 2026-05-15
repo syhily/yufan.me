@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import {
   approveComment,
@@ -9,7 +9,7 @@ import {
 } from '@/server/comments/admin'
 import { commentAdminContract } from '@/shared/contracts/comment-admin'
 
-export const commentAdminController: ContractImpl<typeof commentAdminContract> = {
+export const commentAdminController: AuthedContractImpl<typeof commentAdminContract> = {
   approve: async ({ params }) => {
     await approveComment(params.rid)
     return { status: 200 as const, body: null }

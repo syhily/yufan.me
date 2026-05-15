@@ -6,13 +6,20 @@ import { isAppRoute } from '@ts-rest/core'
 import { HTTPException } from 'hono/http-exception'
 import { ZodError } from 'zod'
 
+import type { ViewerContext } from '@/server/auth/rbac'
+
 import type { Env } from './context'
 
-interface HandlerContext {
+export interface HandlerContext {
   request: Request
   session: Env['Variables']['session']
-  viewer: Env['Variables']['viewer'] | null
+  viewer: ViewerContext | null
   clientAddress: string
+}
+
+/** Context available on routes that have passed auth guards. */
+export interface AuthedHandlerContext extends Omit<HandlerContext, 'viewer'> {
+  viewer: ViewerContext
 }
 
 // Extract the output type from a Zod schema at the type level.
@@ -38,13 +45,19 @@ type HandlerReturn<R extends AppRoute> = {
   [K in keyof R['responses'] & (string | number)]: ResponseEntry<R, K>
 }[keyof R['responses'] & (string | number)]
 
-export type ContractImpl<R extends AppRouter> = {
+export type ContractImpl<R extends AppRouter, Ctx extends HandlerContext = HandlerContext> = {
   [K in keyof R as K extends `_${string}` ? never : K]: R[K] extends AppRoute
-    ? (args: HandlerArgs<R[K]>, ctx: HandlerContext) => Promise<HandlerReturn<R[K]>>
+    ? (args: HandlerArgs<R[K]>, ctx: Ctx) => Promise<HandlerReturn<R[K]>>
     : R[K] extends AppRouter
-      ? ContractImpl<R[K]>
+      ? ContractImpl<R[K], Ctx>
       : never
 }
+
+/** Shorthand for public routes where viewer may be null. */
+export type PublicContractImpl<R extends AppRouter> = ContractImpl<R, HandlerContext>
+
+/** Shorthand for authed routes where viewer is guaranteed non-null. */
+export type AuthedContractImpl<R extends AppRouter> = ContractImpl<R, AuthedHandlerContext>
 
 export interface MountOptions {
   middleware?: MiddlewareHandler<Env>[]

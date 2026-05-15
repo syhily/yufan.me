@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import {
   deleteAdminCategory,
@@ -8,7 +8,7 @@ import {
 } from '@/server/categories/service'
 import { adminCategoriesContract } from '@/shared/contracts/admin/categories'
 
-export const adminCategoriesController: ContractImpl<typeof adminCategoriesContract> = {
+export const adminCategoriesController: AuthedContractImpl<typeof adminCategoriesContract> = {
   listCategories: async (args, _ctx) => {
     const payload = args.query
     const result = await listCategoriesForAdmin({ q: payload.q })

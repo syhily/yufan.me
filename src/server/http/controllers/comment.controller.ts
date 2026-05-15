@@ -43,11 +43,11 @@ function metricTarget(key: string) {
   }
 }
 
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { PublicContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { commentContract } from '@/shared/contracts/comment'
 
-export const commentController: ContractImpl<typeof commentContract> = {
+export const commentController: PublicContractImpl<typeof commentContract> = {
   // ─── Likes ─────────────────────────────────────────────
 
   increaseLike: async (

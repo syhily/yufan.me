@@ -1,9 +1,9 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { clearAdminCache, getAdminCacheStats } from '@/server/cache/admin'
 import { adminCacheContract } from '@/shared/contracts/admin/cache'
 
-export const adminCacheController: ContractImpl<typeof adminCacheContract> = {
+export const adminCacheController: AuthedContractImpl<typeof adminCacheContract> = {
   getCacheStats: async (_args, _ctx) => {
     const result = await getAdminCacheStats()
     return { status: 200 as const, body: result }

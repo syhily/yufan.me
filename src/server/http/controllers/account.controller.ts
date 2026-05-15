@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs'
 
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
 import { findUserById, updateUserById } from '@/server/db/query/user'
 import { accountContract } from '@/shared/contracts/account'
 
-export const accountController: ContractImpl<typeof accountContract> = {
+export const accountController: AuthedContractImpl<typeof accountContract> = {
   updateProfile: async ({ body }, { viewer }) => {
     if (!viewer) {
       return { status: 401 as const, body: { error: { message: '未登录' } } }

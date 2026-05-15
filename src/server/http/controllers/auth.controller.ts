@@ -1,9 +1,9 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { updateUserById } from '@/server/db/query/user'
 import { authContract } from '@/shared/contracts/auth'
 
-export const authController: ContractImpl<typeof authContract> = {
+export const authController: AuthedContractImpl<typeof authContract> = {
   updateUser: async ({ params, body }, { viewer }) => {
     if (!viewer) {
       return { status: 401 as const, body: { error: { message: '未登录' } } }

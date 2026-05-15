@@ -9,7 +9,7 @@ import { hasAtLeast, type Role } from '@/server/auth/rbac'
 import type { Env } from './context'
 
 import { csrfGuard } from './csrf'
-import { mountContract, type ContractImpl } from './ts-rest-adapter'
+import { mountContract, type ContractImpl, type AuthedContractImpl, type PublicContractImpl } from './ts-rest-adapter'
 
 const requireAuth = createMiddleware<Env>(async (c, next) => {
   const user = c.var.session.get('user')
@@ -34,22 +34,22 @@ export const requireRoleMw = (role: Role) =>
   })
 
 // ─── Public route mount (无鉴权) ──────────────────────
-export function publicRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) {
+export function publicRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: PublicContractImpl<R>) {
   mountContract(app, contract, impl)
 }
 
 // ─── Authed route mount (任何登录用户) ────────────────
-export function authedRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) {
-  mountContract(app, contract, impl, { middleware: [requireAuth, csrfGuard] })
+export function authedRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: AuthedContractImpl<R>) {
+  mountContract(app, contract, impl as ContractImpl<R>, { middleware: [requireAuth, csrfGuard] })
 }
 
 // ─── Role-gated route mount ──────────────────────────
-export function roleRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>, role: Role) {
-  mountContract(app, contract, impl, { middleware: [requireRoleMw(role), csrfGuard] })
+export function roleRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: AuthedContractImpl<R>, role: Role) {
+  mountContract(app, contract, impl as ContractImpl<R>, { middleware: [requireRoleMw(role), csrfGuard] })
 }
 
-export const adminRoute = <R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) =>
+export const adminRoute = <R extends AppRouter>(app: Hono<Env>, contract: R, impl: AuthedContractImpl<R>) =>
   roleRoute(app, contract, impl, 'admin')
 
-export const authorRoute = <R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) =>
+export const authorRoute = <R extends AppRouter>(app: Hono<Env>, contract: R, impl: AuthedContractImpl<R>) =>
   roleRoute(app, contract, impl, 'author')

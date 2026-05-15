@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { parseAnalyticsSearch, queryCounters, queryHeatmap, queryMetric, queryViews } from '@/server/analytics/query'
 import { METRIC_TYPES } from '@/shared/analytics/dto'
@@ -36,7 +36,7 @@ function buildAnalyticsInput(query: {
   return parseAnalyticsSearch(sp)
 }
 
-export const analyticsController: ContractImpl<typeof analyticsContract> = {
+export const analyticsController: AuthedContractImpl<typeof analyticsContract> = {
   counters: async ({ query }) => {
     const input = buildAnalyticsInput(query)
     return { status: 200 as const, body: await queryCounters(input) }

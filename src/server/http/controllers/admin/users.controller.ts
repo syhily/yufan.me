@@ -1,4 +1,4 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
@@ -26,7 +26,7 @@ import {
 } from '@/server/users/service'
 import { adminUsersContract } from '@/shared/contracts/admin/users'
 
-export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
+export const adminUsersController: AuthedContractImpl<typeof adminUsersContract> = {
   listUsers: async ({ query }) => {
     const result = await listUsersForAdmin(
       query.offset,

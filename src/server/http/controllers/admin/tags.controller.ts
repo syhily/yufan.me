@@ -1,9 +1,9 @@
-import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/tags/service'
 import { adminTagsContract } from '@/shared/contracts/admin/tags'
 
-export const adminTagsController: ContractImpl<typeof adminTagsContract> = {
+export const adminTagsController: AuthedContractImpl<typeof adminTagsContract> = {
   listTags: async (args, _ctx) => {
     const payload = args.query
     const result = await listTagsForAdmin({ q: payload.q, offset: payload.offset, limit: payload.limit })
