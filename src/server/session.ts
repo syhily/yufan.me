@@ -17,8 +17,6 @@ export {
   tryGetSessionContext,
 } from '@/server/auth/context'
 
-export { sessionMiddleware } from '@/server/middleware/session'
-
 export type { AuthFlowResult, InstallSettingsSeed, SignUpAdminSeed } from '@/server/auth/flows'
 export {
   processAuthFormSubmission,

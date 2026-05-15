@@ -18,7 +18,7 @@ const requireAdmin = createMiddleware<Env>(async (c, next) => {
   await next()
 })
 
-export const analyticsEventsRouter = new Hono<Env>().use(requireAdmin).get('/api/analytics/events', (c) => {
+export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events', requireAdmin, (c) => {
   const sinceParam = c.req.query('since')
   let lastSeen = sinceParam ? new Date(sinceParam) : new Date(Date.now() - 60_000)
   if (Number.isNaN(lastSeen.getTime())) {

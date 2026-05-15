@@ -71,7 +71,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  const validateMutation = useApiMutation(
+  const { mutate: validateToken } = useApiMutation(
     (input: { key: string; token: string }) => unwrap(api.comment.validateLikeToken({ body: input })),
     {
       onSuccess: (data) => {
@@ -113,8 +113,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     if (!token) {
       return
     }
-    validateMutation.mutate({ key: commentKey, token })
-  }, [permalink, commentKey, initialLikes, validateMutation])
+    validateToken({ key: commentKey, token })
+  }, [permalink, commentKey, initialLikes, validateToken])
 
   const isPending = increaseMutation.isPending || decreaseMutation.isPending
 

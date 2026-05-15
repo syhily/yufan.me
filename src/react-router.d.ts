@@ -11,5 +11,8 @@ declare module 'react-router' {
     session: BlogSession
     viewer: ViewerContext | null
     clientAddress: string
+    user?: import('@/server/auth/primitives').SessionUser
+    role: import('@/shared/roles').Role | null
+    url: URL
   }
 }

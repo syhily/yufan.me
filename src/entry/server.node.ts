@@ -6,11 +6,9 @@ import { serveStatic } from 'hono/serve-static'
 import { existsSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { extname } from 'node:path'
-import { RouterContextProvider, createRequestHandler } from 'react-router'
 
 import type { Env } from '@/server/http/context'
 
-import { requestContext, sessionContext } from '@/server/auth/context'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { buildOpenApiDocument } from '@/server/http/openapi'
@@ -51,6 +49,34 @@ export function createApp(): Hono<Env> {
 
   app.onError(onErrorHandler)
 
+  // Static files — serve before install gate so public assets (logos, favicon,
+  // manifest, etc.) are accessible even when the site hasn't been installed yet.
+  const staticRoot = import.meta.env.PROD ? './build/client' : './public'
+  app.use(
+    '*',
+    serveStatic({
+      root: staticRoot,
+      getContent: async (filePath, c) => {
+        if (!existsSync(filePath)) {
+          return null
+        }
+        try {
+          const s = await stat(filePath)
+          if (!s.isFile()) {
+            return null
+          }
+        } catch {
+          return null
+        }
+        const ext = extname(filePath).toLowerCase()
+        const mime = MIME.get(ext) ?? 'application/octet-stream'
+        const content = await readFile(filePath)
+        c.header('Content-Type', mime)
+        return c.body(content)
+      },
+    }),
+  )
+
   // Global middleware — order matters.
   app.use('*', requestId())
   app.use('*', clientAddressMiddleware)
@@ -86,39 +112,15 @@ export function createApp(): Hono<Env> {
   app.route('/', tagsRouter)
   app.route('/', searchRouter)
 
-  // Static files — serve from build/client/ (production) or public/ (dev).
-  // Must sit before the React Router catch-all so assets are served directly.
-  const staticRoot = import.meta.env.PROD ? './build/client' : './public'
-  app.use(
-    '*',
-    serveStatic({
-      root: staticRoot,
-      getContent: async (filePath, c) => {
-        if (!existsSync(filePath)) {
-          return null
-        }
-        try {
-          const s = await stat(filePath)
-          if (!s.isFile()) {
-            return null
-          }
-        } catch {
-          return null
-        }
-        const ext = extname(filePath).toLowerCase()
-        const mime = MIME.get(ext) ?? 'application/octet-stream'
-        const content = await readFile(filePath)
-        c.header('Content-Type', mime)
-        return c.body(content)
-      },
-    }),
-  )
-
-  // Catch-all → React Router SSR.
+  // Catch-all → React Router SSR (dev mode: @hono/vite-dev-server uses our app
+  // directly; prod mode: react-router-hono-server wraps our app and its own
+  // reactRouterApp runs after our routes).
   app.all('*', async (c) => {
+    const { RouterContextProvider, createRequestHandler } = await import('react-router')
     const build = await import('virtual:react-router/server-build')
     const handler = createRequestHandler(build, import.meta.env.PROD ? 'production' : 'development')
 
+    const { sessionContext, requestContext } = await import('@/server/auth/context')
     const ctx = new RouterContextProvider()
     const user = c.var.session.get('user')
     ctx.set(sessionContext, { session: c.var.session, user, role: user?.role ?? null })

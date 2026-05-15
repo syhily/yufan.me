@@ -1,4 +1,4 @@
-import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
+import type { ShouldRevalidateFunctionArgs } from 'react-router'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useState } from 'react'
@@ -7,9 +7,6 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } f
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { installGateMiddleware } from '@/server/middleware/install-gate'
-import { sessionMiddleware } from '@/server/middleware/session'
-import { visitorCookieMiddleware } from '@/server/middleware/visitor-cookie'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
@@ -38,13 +35,12 @@ const PublicChromeLazy = lazy(() =>
   import('@/ui/public/chrome/PublicChrome').then((m) => ({ default: m.PublicChrome })),
 )
 
-// Order matters:
-//   1. Session middleware decrypts the cookie + populates request
-//      context.
-//   2. Install gate redirects to `/wp-admin/install.php` when the
-//      deployment hasn't been installed yet (no admin user OR no
-//      `setting` row). Sits AFTER session so the gate's exemption list
-//      can be reasoned about against the same context every loader sees.
+// Session, install gate, and visitor cookie are handled by Hono
+// middleware at the HTTP perimeter (see src/entry/server.node.ts).
+// The Hono bridge copies session/viewer into React Router context so
+// loaders can read them via getRouteRequestContext(). No RR-level
+// middleware is needed — adding it would double-resolve the session
+// and re-run install-gate DB queries on every page request.
 //
 // WordPress probe interception is NOT a root middleware. React Router
 // routes a middleware throw thrown BEFORE `next()` to the ErrorBoundary
@@ -59,11 +55,6 @@ const PublicChromeLazy = lazy(() =>
 // the splat) call `assertNotWordPressDecoy()` at the top of their
 // loader, so the throw originates inside a leaf loader and bubbles up
 // to the public layout's `ErrorBoundary` exactly like a normal 404.
-export const middleware: MiddlewareFunction<Response>[] = [
-  sessionMiddleware,
-  installGateMiddleware,
-  visitorCookieMiddleware,
-]
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   // `meta()` runs on both SSR and after every client-side navigation,

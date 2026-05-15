@@ -3,11 +3,10 @@ import type { LoaderFunctionArgs, RouterContextProvider } from 'react-router'
 import { createContext } from 'react-router'
 
 import type { SessionContext } from '@/server/auth/primitives'
+import type { Role } from '@/shared/roles'
 
 export interface RequestContextValue {
-  /** Best-effort caller IP, threaded through proxy headers in the middleware. */
   clientAddress: string
-  /** Parsed `request.url` (so handlers don't reconstruct it per call). */
   url: URL
 }
 
@@ -16,28 +15,49 @@ export interface RouteRequestContext extends SessionContext, RequestContextValue
 export const sessionContext = createContext<SessionContext>()
 export const requestContext = createContext<RequestContextValue>()
 
-export function tryGetSessionContext(context: Readonly<RouterContextProvider> | undefined): SessionContext | undefined {
-  if (context === undefined) {
-    return undefined
-  }
-  try {
-    return context.get(sessionContext)
-  } catch {
-    return undefined
-  }
+type AppLoadContext = {
+  session: SessionContext['session']
+  user: SessionContext['user']
+  role: Role | null
+  clientAddress: string
+  url: URL
 }
 
-export function tryGetRequestContext(
-  context: Readonly<RouterContextProvider> | undefined,
-): RequestContextValue | undefined {
-  if (context === undefined) {
+/** Try to read session from either RouterContextProvider or plain AppLoadContext. */
+export function tryGetSessionContext(context: unknown): SessionContext | undefined {
+  if (!context) {
     return undefined
   }
-  try {
-    return context.get(requestContext)
-  } catch {
+  // RouterContextProvider path (old RR middleware / test helpers)
+  if (typeof (context as RouterContextProvider).get === 'function') {
+    try {
+      return (context as RouterContextProvider).get(sessionContext)
+    } catch {
+      return undefined
+    }
+  }
+  // Plain AppLoadContext path (Hono getLoadContext bridge)
+  const ctx = context as AppLoadContext
+  if (!ctx.session) {
     return undefined
   }
+  return { session: ctx.session, user: ctx.user, role: ctx.role }
+}
+
+/** Try to read request context from either RouterContextProvider or plain AppLoadContext. */
+export function tryGetRequestContext(context: unknown): RequestContextValue | undefined {
+  if (!context) {
+    return undefined
+  }
+  if (typeof (context as RouterContextProvider).get === 'function') {
+    try {
+      return (context as RouterContextProvider).get(requestContext)
+    } catch {
+      return undefined
+    }
+  }
+  const ctx = context as AppLoadContext
+  return { clientAddress: ctx.clientAddress, url: ctx.url }
 }
 
 type AnyRouteArgs = {
@@ -46,14 +66,27 @@ type AnyRouteArgs = {
 }
 
 export function getRouteRequestContext(args: AnyRouteArgs): RouteRequestContext {
-  const context = args.context as Readonly<RouterContextProvider>
-  const session = context.get(sessionContext)
-  const requestData = context.get(requestContext)
+  const context = args.context as unknown
+  // RouterContextProvider path
+  if (typeof (context as RouterContextProvider).get === 'function') {
+    const c = context as RouterContextProvider
+    const session = c.get(sessionContext)
+    const requestData = c.get(requestContext)
+    return {
+      session: session.session,
+      user: session.user,
+      role: session.role,
+      clientAddress: requestData.clientAddress,
+      url: requestData.url,
+    }
+  }
+  // Plain AppLoadContext path
+  const ctx = context as AppLoadContext
   return {
-    session: session.session,
-    user: session.user,
-    role: session.role,
-    clientAddress: requestData.clientAddress,
-    url: requestData.url,
+    session: ctx.session,
+    user: ctx.user,
+    role: ctx.role,
+    clientAddress: ctx.clientAddress,
+    url: ctx.url,
   }
 }
