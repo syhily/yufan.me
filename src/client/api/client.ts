@@ -36,7 +36,16 @@ export function readCsrfMeta(): string | undefined {
 }
 
 const link = new RPCLink({
-  url: '/rpc',
+  // RPCLink does `new URL(baseUrl)` internally and the `URL` constructor
+  // throws on relative inputs ("Invalid URL"), so we resolve `/rpc`
+  // against `location.origin` lazily. Lazy because:
+  //   - `client.ts` is allowed to import-transitively from SSR-side
+  //     code (typing only), so we must NOT touch `window` at module
+  //     load — the function is only invoked once a request actually
+  //     fires, which by construction is the browser.
+  //   - Storybook / Vitest may stub `location`; reading it per-call
+  //     instead of once-at-construction keeps those overrides honest.
+  url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
     const token = readCsrfMeta()
     return token ? { 'x-csrf-token': token } : {}

@@ -138,22 +138,40 @@ export interface OpenGraphProps {
 // configured the URL yet (or the fetch failed); in that case we skip
 // `GlobalFonts.register` and Canvas falls back to its built-in CJK
 // shaper so the OG image still renders, just with system typography.
+//
+// CRITICAL: the single-flight promise must NOT memoize the "skipped"
+// path. If the admin starts with an empty URL, paste a URL later, and
+// we'd kept a resolved no-op promise here, every subsequent render
+// would short-circuit on that cached resolution and never re-attempt
+// the fetch — the dynamic-URL strategy would only take effect after a
+// process restart. So we clear `ogFontReady` whenever the font is
+// *not* registered after the work runs, both on success-but-null and
+// on caught error.
 let ogFontReady: Promise<void> | null = null
 function ensureFonts(): Promise<void> {
+  // Fast path: font already registered. No promise indirection needed.
+  if (GlobalFonts.has('OPPOSans')) {
+    return Promise.resolve()
+  }
   if (ogFontReady === null) {
     ogFontReady = (async () => {
-      if (GlobalFonts.has('OPPOSans')) {
-        return
-      }
       const buffer = await oppoSans()
       if (buffer !== null && !GlobalFonts.has('OPPOSans')) {
         GlobalFonts.register(buffer, 'OPPOSans')
       }
-    })().catch((err) => {
-      // Reset so a later request retries instead of poisoning the cache.
-      ogFontReady = null
-      throw err
-    })
+    })()
+      .catch((err) => {
+        ogFontReady = null
+        throw err
+      })
+      .finally(() => {
+        // If the work resolved without actually registering (null
+        // buffer, snapshot race), drop the single-flight so the next
+        // render re-reads settings and re-fetches.
+        if (!GlobalFonts.has('OPPOSans')) {
+          ogFontReady = null
+        }
+      })
   }
   return ogFontReady
 }

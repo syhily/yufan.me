@@ -72,8 +72,18 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<Buffer | null> {
   const fonts = requireBlogSettingsSection('fonts')
   const url = fonts[slot].url
   if (url === '') {
+    // Common misconfiguration on fresh installs: paste-the-URL-later
+    // story. Single info log per cold replica so the operator can
+    // tell from logs that the font slot is unconfigured rather than
+    // failing — `ogFontReady` in og.ts intentionally retries every
+    // request, but we don't want to log on each retry.
+    if (!loggedEmpty.has(slot)) {
+      log.info('Canvas font slot has no URL configured; using fallback system font', { slot })
+      loggedEmpty.add(slot)
+    }
     return null
   }
+  loggedEmpty.delete(slot)
   const inProcess = inProcessByUrl.get(url)
   if (inProcess !== undefined) {
     return inProcess
@@ -82,6 +92,7 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<Buffer | null> {
     const key = `fonts:cache:${createHash('sha256').update(url).digest('hex')}`
     const buffer = await loadBuffer(key, () => fetchFontBuffer(url), FONT_CACHE_TTL_SECONDS)
     inProcessByUrl.set(url, buffer)
+    log.info('Loaded Canvas font slot', { slot, url, bytes: buffer.byteLength })
     return buffer
   } catch (err) {
     log.warn('Failed to load Canvas font slot', {
@@ -92,6 +103,11 @@ async function loadFontSlot(slot: 'og' | 'calendar'): Promise<Buffer | null> {
     return null
   }
 }
+
+// Deduplicates the "no URL configured" log so operators see it once
+// per replica, not on every render. Re-armed when a URL gets pasted
+// (cleared on the first successful resolve).
+const loggedEmpty = new Set<'og' | 'calendar'>()
 
 export function oppoSans(): Promise<Buffer | null> {
   return loadFontSlot('og')

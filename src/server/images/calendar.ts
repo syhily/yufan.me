@@ -12,22 +12,31 @@ const WIDTH = 600
 const HEIGHT = 880
 
 // Single-flight font registration mirroring `og.ts`. See that file for
-// the rationale on retry-on-error + null-buffer degrade.
+// the full rationale; in short, both the cached-empty-URL path AND the
+// catch path must clear `calendarFontReady` so the next render
+// re-reads settings — otherwise pasting a URL after first render takes
+// effect only on process restart.
 let calendarFontReady: Promise<void> | null = null
 function ensureFonts(): Promise<void> {
+  if (GlobalFonts.has('OPPOSerif')) {
+    return Promise.resolve()
+  }
   if (calendarFontReady === null) {
     calendarFontReady = (async () => {
-      if (GlobalFonts.has('OPPOSerif')) {
-        return
-      }
       const buffer = await oppoSerif()
       if (buffer !== null && !GlobalFonts.has('OPPOSerif')) {
         GlobalFonts.register(buffer, 'OPPOSerif')
       }
-    })().catch((err) => {
-      calendarFontReady = null
-      throw err
-    })
+    })()
+      .catch((err) => {
+        calendarFontReady = null
+        throw err
+      })
+      .finally(() => {
+        if (!GlobalFonts.has('OPPOSerif')) {
+          calendarFontReady = null
+        }
+      })
   }
   return calendarFontReady
 }

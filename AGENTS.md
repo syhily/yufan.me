@@ -734,12 +734,12 @@ chose from `src/server/http/orpc-base.ts`. The audit surface is one
 src/server/http/controllers/` reveals every procedure and its guard
 in one pass.
 
-| Base procedure | What it does                                | Use for                               |
-| -------------- | ------------------------------------------- | ------------------------------------- |
-| `publicProc`   | No auth gate; `csrfGuard` on non-GET        | Anonymous reads + mutations with CSRF |
-| `authedProc`   | `requireAuth` middleware + `csrfGuard`      | Any logged-in user                    |
-| `authorProc`   | `requireRole('author')` + `csrfGuard`       | Authors and admins                    |
-| `adminProc`    | `requireRole('admin')` + `csrfGuard`        | Admins only                           |
+| Base procedure | What it does                           | Use for                               |
+| -------------- | -------------------------------------- | ------------------------------------- |
+| `publicProc`   | No auth gate; `csrfGuard` on non-GET   | Anonymous reads + mutations with CSRF |
+| `authedProc`   | `requireAuth` middleware + `csrfGuard` | Any logged-in user                    |
+| `authorProc`   | `requireRole('author')` + `csrfGuard`  | Authors and admins                    |
+| `adminProc`    | `requireRole('admin')` + `csrfGuard`   | Admins only                           |
 
 The composed router lives at `src/server/http/api-router.ts`; the
 sub-tree shape (`admin: { users: …, posts: … }`) mirrors the URL

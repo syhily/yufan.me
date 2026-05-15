@@ -14,15 +14,18 @@ Source code for [yufan.me](https://yufan.me): a React Router full-stack blog wit
 
 ## Stack
 
-| Layer      | Choice                                                                                             |
-| ---------- | -------------------------------------------------------------------------------------------------- |
-| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                      |
-| UI         | React 19, TSX only                                                                                 |
-| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))        |
-| Content    | Posts and pages persist as PortableText in `page` / `post` + `content` tables, edited in admin     |
-| Data       | Postgres (Drizzle), Redis (sessions, rate limits, caches)                                          |
-| Assets     | S3-compatible bucket when enabled in settings                                                      |
-| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), shadcn/ui (Base UI) under `src/ui/components/` |
+| Layer      | Choice                                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------- |
+| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                                   |
+| HTTP host  | Hono (via `react-router-hono-server`) — perimeter middleware, resource routers, oRPC mount                      |
+| API        | oRPC (`@orpc/server` + `@orpc/client`) at `/rpc/*` — typed end-to-end from `typeof apiRouter`, Zod input/output |
+| UI         | React 19, TSX only                                                                                              |
+| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))                     |
+| Content    | Posts and pages persist as PortableText in `page` / `post` + `content` tables, edited in admin                  |
+| Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                                       |
+| Data       | Postgres (Drizzle), Redis (sessions, rate limits, caches)                                                       |
+| Assets     | S3-compatible bucket when enabled in settings                                                                   |
+| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), shadcn/ui (Base UI) under `src/ui/components/`              |
 
 ## Repository layout
 
@@ -30,7 +33,7 @@ Imports flow one way: `routes` may call `server` / `shared` / `ui` / `client`; `
 
 ```
 src/
-├── routes/     Loaders, actions, meta, page components, resource routes, /api/actions/*
+├── routes/     Loaders, actions, meta, page components, resource routes
 ├── server/     DB, Redis, sessions, catalog, mail, S3 dispatch, settings
 ├── client/     Hooks, fetchers, browser-only code
 ├── ui/         Presentational components and the PortableText renderer
