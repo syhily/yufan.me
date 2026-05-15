@@ -1,5 +1,5 @@
 import type { AppRoute, AppRouter, ContractNoBodyType } from '@ts-rest/core'
-import type { Context, Hono, MiddlewareHandler } from 'hono'
+import type { Context, Hono, HonoRequest, MiddlewareHandler } from 'hono'
 import type { output, ZodType } from 'zod'
 
 import { isAppRoute } from '@ts-rest/core'
@@ -93,7 +93,7 @@ function mountRoute(app: Hono<Env>, route: AppRoute, handler: HandlerFn, options
   const routeHandler = async (c: Context<Env>) => {
     const params = route.pathParams ? validate(route.pathParams, c.req.param()) : undefined
     const query = route.query ? validate(route.query, parseQuery(c.req.query())) : undefined
-    const body = 'body' in route && route.body ? validate(route.body, await readBody(c.req.raw, route)) : undefined
+    const body = 'body' in route && route.body ? validate(route.body, await readBody(c.req, route)) : undefined
     const headers =
       route.headers && hasParseMethod(route.headers) ? validate(route.headers, headerObj(c.req.raw.headers)) : undefined
 
@@ -151,11 +151,11 @@ function validate(schema: unknown, input: unknown) {
   }
 }
 
-async function readBody(req: Request, route: AppRoute): Promise<unknown> {
+async function readBody(req: HonoRequest, route: AppRoute): Promise<unknown> {
   if (route.method === 'GET' || route.method === 'DELETE') {
     return undefined
   }
-  const ct = req.headers.get('content-type') ?? ''
+  const ct = req.header('content-type') ?? ''
   if (ct.startsWith('application/json')) {
     return req.json()
   }
