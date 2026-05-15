@@ -252,7 +252,7 @@ export interface DeletePageInput {
 }
 
 export interface DeletePageOutput {
-  success: true
+  success: boolean
 }
 
 export interface RestorePageInput {
@@ -260,7 +260,7 @@ export interface RestorePageInput {
 }
 
 export interface RestorePageOutput {
-  success: true
+  success: boolean
 }
 
 // `unpublishPage` flips `meta.published` to false without touching

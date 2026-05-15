@@ -76,5 +76,5 @@ export interface BulkSoftDeleteOutput {
 }
 
 export interface AdminMutationSuccessOutput {
-  success: true
+  success: boolean
 }

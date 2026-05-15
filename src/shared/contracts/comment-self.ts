@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { CommentItem } from '@/shared/comments'
+
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 
 import { c } from './_base'
@@ -13,7 +15,7 @@ const listMineQuery = z.object({
 })
 
 const listMineResponse = z.object({
-  comments: z.array(z.any()),
+  comments: z.array(z.custom<CommentItem>()),
   total: z.number().int(),
   pending: z.number().int(),
   deleteRequested: z.number().int(),

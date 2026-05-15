@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { CommentItem } from '@/shared/comments'
+
 import { c } from './_base'
 import { standardMutationErrors, standardReadErrors } from './_errors'
 
@@ -10,7 +12,7 @@ const myCommentsQuery = z.object({
 })
 
 const myCommentsResponse = z.object({
-  comments: z.array(z.any()),
+  comments: z.array(z.custom<CommentItem>()),
   expiresAt: z.record(z.string(), z.number()),
 })
 

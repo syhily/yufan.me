@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { CommentItem } from '@/shared/comments'
+
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 
@@ -46,7 +48,7 @@ const commentReplyBody = z
   })
 
 const commentReplyResponse = z.object({
-  comment: z.any(),
+  comment: z.custom<CommentItem>(),
   csrfToken: z.string(),
 })
 
@@ -56,12 +58,12 @@ const loadCommentsQuery = z.object({
 })
 
 const loadCommentsResponse = z.object({
-  comments: z.array(z.any()),
+  comments: z.array(z.custom<CommentItem>()),
   next: z.boolean(),
 })
 
 const rawCommentResponse = z.object({
-  body: z.any(),
+  body: commentBodySchema,
 })
 
 const editCommentBody = z.object({
@@ -70,7 +72,7 @@ const editCommentBody = z.object({
 })
 
 const editCommentResponse = z.object({
-  comment: z.any(),
+  comment: z.custom<CommentItem>(),
 })
 
 export const commentPublicContract = c.router(

@@ -85,7 +85,7 @@ export function MailForm({ mail }: MailFormProps) {
   // Test-send fetcher lives outside `useSettingsForm` because the
   // POST `sendTestMail` action is a side-effect, not a settings write
   // (it doesn't trigger a snapshot revalidation).
-  const testMutation = useApiMutation<{ to: string }, { success: true }>(
+  const testMutation = useApiMutation<{ to: string }, { success: boolean }>(
     ({ to }) => unwrap(api.admin.sendTestMail({ body: { to } })),
     {
       onSuccess: () =>

@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import type { AdminComment } from '@/shared/comments'
+
 import { c } from './_base'
 import { standardMutationErrors, standardReadErrors } from './_errors'
 
@@ -12,7 +14,7 @@ const loadAllBody = z.object({
 })
 
 const loadAllResponse = z.object({
-  comments: z.array(z.any()),
+  comments: z.array(z.custom<AdminComment>()),
   total: z.number().int(),
   hasMore: z.boolean(),
   statusCounts: z.object({
@@ -30,7 +32,7 @@ const filterAutocompleteQuery = z.object({
 })
 
 const searchPagesResponse = z.object({
-  pages: z.array(z.any()),
+  pages: z.array(z.object({ key: z.string(), title: z.string().nullable() })),
 })
 
 const searchAuthorsResponse = z.object({
@@ -44,7 +46,7 @@ export const commentAdminContract = c.router(
       path: '/comment/comments/:rid/approve',
       pathParams: z.object({ rid: z.string() }),
       body: c.noBody(),
-      responses: { 200: z.any(), ...standardMutationErrors },
+      responses: { 200: z.null(), ...standardMutationErrors },
       summary: '管理员审核通过评论',
     },
     delete: {
@@ -52,7 +54,7 @@ export const commentAdminContract = c.router(
       path: '/comment/comments/:rid',
       pathParams: z.object({ rid: z.string() }),
       body: c.noBody(),
-      responses: { 200: z.any(), ...standardMutationErrors },
+      responses: { 200: z.null(), ...standardMutationErrors },
       summary: '管理员删除评论',
     },
     loadAll: {

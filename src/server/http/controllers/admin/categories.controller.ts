@@ -21,7 +21,7 @@ export const adminCategoriesController: AuthedContractImpl<typeof adminCategorie
       name: payload.name,
       slug: payload.slug,
       cover: payload.cover,
-      description: payload.description,
+      description: payload.description ?? '',
       sortOrder: payload.sortOrder,
     })
     return { status: 200 as const, body: { category } }

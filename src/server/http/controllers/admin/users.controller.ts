@@ -128,7 +128,8 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
         to: body.role,
       })
     }
-    return { status: 200 as const, body: { user: updated } }
+    const dto = await fetchAdminUserDto(targetId)
+    return { status: 200 as const, body: { user: dto } }
   },
   inviteAuthor: async ({ body }, { viewer, clientAddress, request, session }) => {
     const existing = await findUserByEmail(body.email)

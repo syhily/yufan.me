@@ -165,7 +165,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     },
   )
 
-  const updateRoleMutation = useApiMutation<{ userId: string; role: Role }, { user: AdminUserDto }>(
+  const updateRoleMutation = useApiMutation<{ userId: string; role: Role }, { user: AdminUserDto | null }>(
     (vars) => unwrap(api.admin.updateUserRole({ params: { id: vars.userId }, body: { role: vars.role } })),
     {
       onSuccess: () => {

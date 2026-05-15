@@ -31,7 +31,7 @@ export const adminMusicController: AuthedContractImpl<typeof adminMusicContract>
       name: args.body.name,
       artist: args.body.artist,
       album: args.body.album,
-      lyric: args.body.lyric,
+      lyric: args.body.lyric ?? null,
     })
     return { status: 200 as const, body: { music } }
   },

@@ -21,7 +21,7 @@ export const adminRendersController: AuthedContractImpl<typeof adminRendersContr
       return { status: 200 as const, body: { mathml: '', error: message } }
     }
     try {
-      const mathml = await renderer.render(tex, payload.display)
+      const mathml = await renderer.render(tex, payload.display ?? false)
       return { status: 200 as const, body: { mathml, error: null } }
     } catch (err) {
       const message = err instanceof Error ? err.message : '公式渲染失败'

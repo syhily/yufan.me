@@ -1,4 +1,5 @@
 import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AdminImageKind } from '@/shared/images'
 
 import { uploadImageMetadataSchema } from '@/server/images/schema'
 import {
@@ -17,7 +18,7 @@ export const adminImagesController: AuthedContractImpl<typeof adminImagesContrac
   listImages: async (args, _ctx) => {
     const result = await listImagesForAdmin({
       q: args.query.q,
-      kind: args.query.kind,
+      kind: args.query.kind as AdminImageKind | 'all' | undefined,
       offset: args.query.offset,
       limit: args.query.limit,
     })

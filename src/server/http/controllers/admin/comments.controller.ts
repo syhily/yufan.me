@@ -1,4 +1,5 @@
 import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import type { AdminPendingKind } from '@/shared/comments'
 
 import { loadAdminPendingDashboard } from '@/server/comments/admin'
 import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/db/query/comment'
@@ -33,7 +34,11 @@ export const adminCommentsController: AuthedContractImpl<typeof adminCommentsCon
   },
   listPendingDashboard: async (args, _ctx) => {
     const payload = args.query
-    const result = await loadAdminPendingDashboard(payload.kind, payload.offset, payload.limit)
+    const result = await loadAdminPendingDashboard(
+      payload.kind as AdminPendingKind,
+      payload.offset ?? 0,
+      payload.limit ?? 20,
+    )
     return { status: 200 as const, body: result }
   },
 }

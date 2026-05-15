@@ -86,7 +86,7 @@ export interface DeleteMusicInput {
 }
 
 export interface DeleteMusicOutput {
-  success: true
+  success: boolean
 }
 
 // Metadata-only edit. Audio / cover bytes, provider id triplet
