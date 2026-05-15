@@ -38,13 +38,10 @@ import { commentAdminController } from './controllers/comment-admin.controller'
 import { commentController } from './controllers/comment.controller'
 import { imageController } from './controllers/image.controller'
 import { musicController } from './controllers/music.controller'
-import { onErrorHandler } from './errors'
 import { adminRoute, authorRoute, authedRoute, publicRoute, requireRoleMw } from './guards'
 
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>().basePath('/api')
-
-  app.onError(onErrorHandler)
 
   // Account routes (any authenticated user)
   authedRoute(app, apiContract.account, accountController)

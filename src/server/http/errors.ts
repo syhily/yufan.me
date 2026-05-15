@@ -11,44 +11,45 @@ import type { Env } from './context'
 const log = getLogger('http.error')
 
 export function onErrorHandler(err: Error, c: Context<Env>): Response {
+  const requestId = c.var.requestId
+
   if (err instanceof HTTPException) {
-    const payload = {
-      error: {
-        message: err.message,
-        issues: err.cause as { message: string; path?: string[] }[] | undefined,
+    c.header('X-Request-Id', requestId)
+    return c.json(
+      {
+        error: {
+          message: err.message,
+          issues: err.cause as { message: string; path?: string[] }[] | undefined,
+        },
       },
-    }
-    return new Response(JSON.stringify(payload), {
-      status: err.status,
-      headers: { 'Content-Type': 'application/json' },
-    })
+      err.status as 400 | 401 | 403 | 404 | 409 | 413 | 429 | 500,
+    )
   }
 
   if (err instanceof ActionFailure) {
-    const payload = {
-      error: {
-        message: err.message,
-        issues: err.issues,
-      },
-    }
     if (err.headers) {
       const h = new Headers(err.headers)
       h.forEach((v, k) => c.header(k, v, { append: true }))
     }
-    return new Response(JSON.stringify(payload), {
-      status: err.status,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    c.header('X-Request-Id', requestId)
+    return c.json(
+      {
+        error: {
+          message: err.message,
+          issues: err.issues,
+        },
+      },
+      err.status as 400 | 401 | 403 | 404 | 409 | 413 | 429 | 500,
+    )
   }
 
   if (err instanceof DomainError) {
-    return new Response(JSON.stringify({ error: { message: err.message } }), {
-      status: domainStatus(err),
-      headers: { 'Content-Type': 'application/json' },
-    })
+    c.header('X-Request-Id', requestId)
+    return c.json({ error: { message: err.message } }, domainStatus(err) as 400 | 401 | 403 | 404 | 409 | 429 | 500)
   }
 
   if (err instanceof ZodError) {
+    c.header('X-Request-Id', requestId)
     return c.json(
       {
         error: {
@@ -60,7 +61,6 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
     )
   }
 
-  const requestId = c.var.requestId
   log.error('unexpected', { requestId, error: err })
   c.header('X-Request-Id', requestId)
   return c.json({ error: { message: '服务器内部错误' } }, 500)
