@@ -25,10 +25,8 @@ import { adminPostsContract } from '@/shared/contracts/admin/posts'
 import { collectHeadings } from '@/shared/pt/schema'
 
 export const adminPostsController = {
+  // TODO: add `satisfies ContractImpl<typeof adminPostsContract>` once all response schemas are strict
   listPosts: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await listPostsForAdmin(
       {
         q: args.query.q,
@@ -48,9 +46,6 @@ export const adminPostsController = {
     return { status: 200 as const, body: result }
   },
   getPost: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const detail = await getPostDetailForAdmin(BigInt(args.params.id), ctx.viewer)
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
@@ -58,9 +53,6 @@ export const adminPostsController = {
     return { status: 200 as const, body: detail }
   },
   deletePost: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await deletePost(BigInt(args.params.id), ctx.viewer)
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
@@ -68,9 +60,6 @@ export const adminPostsController = {
     return { status: 200 as const, body: { success: true } }
   },
   restorePost: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await restorePost(BigInt(args.body.id), ctx.viewer)
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '文章不存在或未被删除。' } } }
@@ -78,16 +67,10 @@ export const adminPostsController = {
     return { status: 200 as const, body: { success: true } }
   },
   unpublishPost: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const post = await unpublishPost(BigInt(args.body.id), ctx.viewer)
     return { status: 200 as const, body: { post } }
   },
   savePostDraft: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await savePostDraft(
       {
         postId: BigInt(args.body.id),
@@ -101,9 +84,6 @@ export const adminPostsController = {
     return { status: 200 as const, body: result }
   },
   publishPostLatest: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await publishPostLatest(
       {
         postId: BigInt(args.body.id),
@@ -118,17 +98,11 @@ export const adminPostsController = {
     return { status: 200 as const, body: result }
   },
   previewPost: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const html = await renderPostPortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
   },
   upsertPostMeta: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const meta = {
       slug: args.body.slug,
       title: args.body.title,
@@ -157,9 +131,6 @@ export const adminPostsController = {
     return { status: 200 as const, body: { post } }
   },
   listPostRevisions: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const revisions = await listPostRevisionsForAdmin(BigInt(args.query.id), ctx.viewer)
     return { status: 200 as const, body: { revisions } }
   },

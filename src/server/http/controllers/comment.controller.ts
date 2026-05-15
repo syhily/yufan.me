@@ -1,3 +1,5 @@
+import { HTTPException } from 'hono/http-exception'
+
 import type { BlogSession } from '@/server/auth/session-storage'
 
 import { isCommentOwner, type ViewerContext } from '@/server/auth/rbac'
@@ -34,7 +36,6 @@ import { findMetricByPublicId } from '@/server/db/query/metric'
 import { findUserIdByEmail } from '@/server/db/query/user'
 import { fetchQQAvatarImage, isQQEmail } from '@/server/images/avatar-fetch'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail, tryLikeIncreaseRateLimit } from '@/server/rate-limit'
-import { ActionFailure, DomainError } from '@/server/route-helpers/errors'
 import { clearCsrfCookie, issueCsrfToken, userSession, validateRequestCsrf } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/comment-token'
@@ -45,7 +46,7 @@ function metricTarget(key: string) {
   return async () => {
     const row = await findMetricByPublicId(key)
     if (row === null || row.type === null || row.ownerId === null) {
-      throw new ActionFailure(404, '评论目标不存在')
+      throw new HTTPException(404, { message: '评论目标不存在' })
     }
     return { type: row.type as 'post' | 'page', ownerId: row.ownerId }
   }
@@ -60,7 +61,7 @@ export const commentController = {
   ) => {
     const limit = await tryLikeIncreaseRateLimit(clientAddress)
     if (limit.exceeded) {
-      throw new DomainError('RATE_LIMITED', '点赞过于频繁，请稍后再试。')
+      return { status: 429 as const, body: { error: { message: '点赞过于频繁，请稍后再试。' } } }
     }
     const target = await metricTarget(body.key)()
     return { status: 200 as const, body: { ...(await increaseLikes(target)), key: body.key } }
@@ -139,11 +140,11 @@ export const commentController = {
     if (!isAdmin) {
       const byIp = await tryCommentPostRateLimit(clientAddress)
       if (byIp.exceeded) {
-        throw new DomainError('RATE_LIMITED')
+        return { status: 429 as const, body: { error: { message: '请求过于频繁，请稍后再试。' } } }
       }
       const byEmail = await tryCommentPostRateLimitByEmail(body.email)
       if (byEmail.exceeded) {
-        throw new DomainError('RATE_LIMITED')
+        return { status: 429 as const, body: { error: { message: '请求过于频繁，请稍后再试。' } } }
       }
     }
 
@@ -177,12 +178,12 @@ export const commentController = {
   ) => {
     const row = await findMetricByPublicId(query.page_key)
     if (row === null || row.type === null || row.ownerId === null) {
-      throw new ActionFailure(404, '评论目标不存在')
+      return { status: 404 as const, body: { error: { message: '评论目标不存在' } } }
     }
     const target = { type: row.type as 'post' | 'page', ownerId: row.ownerId }
     const comments = await loadComments(session, target, query.offset)
     if (comments === null) {
-      throw new ActionFailure(500, '无法连接到评论服务器')
+      return { status: 500 as const, body: { error: { message: '无法连接到评论服务器' } } }
     }
     const items = await parseComments(comments.comments)
     const next = requireBlogSettingsSection('comments').comments.size + query.offset < comments.roots_count
@@ -200,14 +201,14 @@ export const commentController = {
       const cookie = parseCommentTokensCookie(request.headers.get('Cookie'))
       const { ok, cleaned } = await verifyCommentOwnership(cookie, query.rid)
       if (!ok) {
-        throw new ActionFailure(403, '无权查看该评论')
+        return { status: 403 as const, body: { error: { message: '无权查看该评论' } } }
       }
       setCookies.push(serializeCommentTokensCookie(cleaned))
     }
 
     const comment = await getCommentById(query.rid)
     if (!comment) {
-      throw new ActionFailure(404, '评论不存在')
+      return { status: 404 as const, body: { error: { message: '评论不存在' } } }
     }
 
     return {
@@ -285,18 +286,18 @@ export const commentController = {
     if (!viewer) return { status: 401 as const, body: { error: { message: '未登录' } } }
     const commentId = BigInt(body.commentId ?? '0')
     if (commentId === 0n) {
-      throw new ActionFailure(400, '缺少 commentId')
+      return { status: 400 as const, body: { error: { message: '缺少 commentId' } } }
     }
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(viewer, c)) {
-      throw new ActionFailure(404, '资源不存在。')
+      return { status: 404 as const, body: { error: { message: '资源不存在。' } } }
     }
     if (c.deleteRequestedAt !== null) {
-      throw new ActionFailure(409, '已申请删除，无法编辑。')
+      return { status: 409 as const, body: { error: { message: '已申请删除，无法编辑。' } } }
     }
     const replyCount = await countApprovedRepliesOfComment(commentId)
     if (replyCount > 0) {
-      throw new ActionFailure(409, '已有回复，无法再编辑。')
+      return { status: 409 as const, body: { error: { message: '已有回复，无法再编辑。' } } }
     }
     await updateOwnComment(String(commentId), body.body as any)
     return { status: 200 as const, body: { success: true } }
@@ -307,7 +308,7 @@ export const commentController = {
     const commentId = BigInt(body.commentId)
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(viewer, c)) {
-      throw new ActionFailure(404, '资源不存在。')
+      return { status: 404 as const, body: { error: { message: '资源不存在。' } } }
     }
     if (c.deleteRequestedAt !== null) {
       return { status: 200 as const, body: { success: true } }
@@ -321,11 +322,11 @@ export const commentController = {
     const commentId = BigInt(body.commentId)
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(viewer, c)) {
-      throw new ActionFailure(404, '资源不存在。')
+      return { status: 404 as const, body: { error: { message: '资源不存在。' } } }
     }
     const ok = await clearDeleteRequest(commentId, BigInt(viewer.userId))
     if (!ok) {
-      throw new ActionFailure(409, '无法撤回删除申请。')
+      return { status: 409 as const, body: { error: { message: '无法撤回删除申请。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
@@ -383,14 +384,14 @@ export const commentController = {
         const ownerBySession = sessionUser !== undefined && row !== null && row.userId.toString() === sessionUser.id
 
         if (!ownerBySession) {
-          throw new ActionFailure(403, '无权编辑该评论')
+          return { status: 403 as const, body: { error: { message: '无权编辑该评论' } } }
         }
       }
     }
 
     const updated = await updateComment(params.rid, body.body as any)
     if (!updated) {
-      throw new ActionFailure(500, '更新评论失败')
+      return { status: 500 as const, body: { error: { message: '更新评论失败' } } }
     }
 
     return {
@@ -423,19 +424,21 @@ export const commentController = {
     }
   },
 
-  searchPages: async ({ query }: { query: { q?: string; limit: number; ids?: string[]; key?: string } }) => {
+  searchPages: async ({ query }: { query: { q?: string; limit: number; ids?: string; key?: string } }) => {
     const keys = query.key ? [query.key] : undefined
     const pages = await searchPageOptions(query.q, query.limit, keys)
     return { status: 200 as const, body: { pages } }
   },
 
-  searchAuthors: async ({ query }: { query: { q?: string; limit: number; ids?: string[]; key?: string } }) => {
-    function parseBigIntIds(raw: string[] | undefined): bigint[] | undefined {
+  searchAuthors: async ({ query }: { query: { q?: string; limit: number; ids?: string; key?: string } }) => {
+    function parseBigIntIds(raw: string | undefined): bigint[] | undefined {
       if (!raw || raw.length === 0) return undefined
       const out: bigint[] = []
-      for (const value of raw) {
+      for (const value of raw.split(',')) {
+        const trimmed = value.trim()
+        if (!trimmed) continue
         try {
-          out.push(BigInt(value))
+          out.push(BigInt(trimmed))
         } catch {
           /* drop */
         }

@@ -4,20 +4,18 @@ import { sendTestMail } from '@/server/email/sender'
 import { userSession } from '@/server/session'
 import { adminMailContract } from '@/shared/contracts/admin/mail'
 
-export const adminMailController = {
+export const adminMailController: ContractImpl<typeof adminMailContract> = {
   sendTestMail: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const result = await sendTestMail(payload.to)
     if (!result.ok) {
       if (result.reason === 'unconfigured') {
-        return { status: 412 as const, body: { error: { message: result.message } } }
+        return { status: 400 as const, body: { error: { message: result.message } } }
       }
-      if (result.reason === 'upstream' && typeof result.status === 'number') {
-        return { status: result.status as number, body: { error: { message: result.message } } }
+      if (result.reason === 'upstream') {
+        return { status: 502 as const, body: { error: { message: result.message } } }
       }
-      return { status: 502 as const, body: { error: { message: result.message } } }
+      return { status: 500 as const, body: { error: { message: result.message } } }
     }
     return { status: 200 as const, body: { success: true } }
   },

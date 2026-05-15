@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/cms/pages/schema'
 import { c } from '@/shared/contracts/_base'
 import { standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
 
@@ -10,16 +11,15 @@ export const adminPagesContract = c.router(
     listPages: {
       method: 'GET',
       path: '/admin/list-pages',
-      query: z.any(),
-      responses: { 200: z.any(), ...standardMutationErrors },
+      query: listPagesSchema,
+      responses: { 200: z.any(), ...standardReadErrors },
       summary: 'listPages',
     },
     getPage: {
       method: 'GET',
       path: '/admin/get-page/:id',
       pathParams: idParam,
-      query: z.any(),
-      responses: { 200: z.any(), ...standardMutationErrors },
+      responses: { 200: z.any(), ...standardReadErrors },
       summary: 'getPage',
     },
     deletePage: {
@@ -33,50 +33,50 @@ export const adminPagesContract = c.router(
       method: 'POST',
       path: '/admin/restore-page/:id',
       pathParams: idParam,
-      body: z.any() /* TODO: use restorePageSchema */,
+      body: c.noBody(),
       responses: { 200: z.any(), ...standardMutationErrors },
       summary: 'restorePage',
     },
     unpublishPage: {
       method: 'POST',
       path: '/admin/unpublish-page',
-      body: z.any() /* TODO: use unpublishPageSchema */,
+      body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.any(), ...standardMutationErrors },
       summary: 'unpublishPage',
     },
     saveDraft: {
       method: 'POST',
       path: '/admin/save-draft',
-      body: z.any() /* TODO: use savePageBodySchema */,
+      body: savePageBodySchema,
       responses: { 200: z.any(), ...standardMutationErrors },
       summary: 'saveDraft',
     },
     publishLatest: {
       method: 'POST',
       path: '/admin/publish-latest',
-      body: z.any() /* TODO: use savePageBodySchema */,
+      body: savePageBodySchema,
       responses: { 200: z.any(), ...standardMutationErrors },
       summary: 'publishLatest',
     },
     previewPage: {
       method: 'POST',
       path: '/admin/preview-page',
-      body: z.any() /* TODO: use previewPageBodySchema */,
+      body: z.object({ body: z.any() }),
       responses: { 200: z.any(), ...standardMutationErrors },
       summary: 'previewPage',
     },
     upsertPageMeta: {
       method: 'POST',
       path: '/admin/upsert-page-meta',
-      body: z.any() /* TODO: use upsertPageMetaSchema */,
+      body: upsertPageMetaSchema,
       responses: { 200: z.any(), ...standardMutationErrors },
       summary: 'upsertPageMeta',
     },
     listPageRevisions: {
       method: 'GET',
       path: '/admin/list-page-revisions',
-      query: z.any(),
-      responses: { 200: z.any(), ...standardMutationErrors },
+      query: z.object({ id: z.string().min(1) }),
+      responses: { 200: z.any(), ...standardReadErrors },
       summary: 'listPageRevisions',
     },
   },

@@ -9,10 +9,8 @@ import { getLogger } from '@/server/logger'
 import { userSession } from '@/server/session'
 import { adminCommentsContract } from '@/shared/contracts/admin/comments'
 
-export const adminCommentsController = {
+export const adminCommentsController: ContractImpl<typeof adminCommentsContract> = {
   approveCommentDeletion: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const id = BigInt(payload.commentId)
     const c = await findCommentWithUserById(id)
@@ -38,8 +36,6 @@ export const adminCommentsController = {
     return { status: 200 as const, body: { success: true } }
   },
   listPendingDashboard: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.query
     const result = await loadAdminPendingDashboard(payload.kind, payload.offset, payload.limit)
     return { status: 200 as const, body: result }

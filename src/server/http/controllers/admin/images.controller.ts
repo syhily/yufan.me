@@ -15,11 +15,8 @@ import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 
-export const adminImagesController = {
+export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
   listImages: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await listImagesForAdmin({
       q: args.query.q,
       kind: args.query.kind,
@@ -29,31 +26,18 @@ export const adminImagesController = {
     return { status: 200 as const, body: result }
   },
   deleteImage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     await deleteImage(BigInt(args.params.id), ctx.viewer)
     return { status: 200 as const, body: { success: true } }
   },
   updateImageNote: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const image = await updateImageNote(BigInt(args.params.id), args.body.note ?? null, ctx.viewer)
     return { status: 200 as const, body: { image } }
   },
   recalculateImageThumbhash: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const image = await recalculateImageThumbhash(BigInt(args.body.id), ctx.viewer)
     return { status: 200 as const, body: { image } }
   },
   uploadImage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
-
     const settings = requireBlogSettingsSection('assets')
 
     let formData: FormData
@@ -90,6 +74,8 @@ export const adminImagesController = {
     const metadata = await parseInput(uploadImageMetadataSchema, metadataObj)
 
     const buffer = Buffer.from(await fileEntry.arrayBuffer())
+    const sessionUser = userSession(ctx.session)
+    if (!sessionUser) return { status: 401 as const, body: { error: { message: '未登录' } } }
     const uploader = { id: BigInt(sessionUser.id), name: sessionUser.name }
 
     let image

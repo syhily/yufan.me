@@ -41,15 +41,15 @@ import { onErrorHandler } from './errors'
 import { adminRoute, authorRoute, authedRoute, publicRoute, requireRoleMw } from './guards'
 
 export function createApiApp(): Hono<Env> {
-  const app = new Hono<Env>()
+  const app = new Hono<Env>().basePath('/api')
 
   app.onError(onErrorHandler)
 
   // Account routes (any authenticated user)
-  authedRoute(app, apiContract.account, accountController as any)
+  authedRoute(app, apiContract.account, accountController)
 
   // Analytics routes (admin only)
-  adminRoute(app, apiContract.analytics, analyticsController as any)
+  adminRoute(app, apiContract.analytics, analyticsController)
 
   // Analytics SSE events stream (admin only, native Hono route)
   const POLL_INTERVAL_MS = 2_000
@@ -135,27 +135,27 @@ export function createApiApp(): Hono<Env> {
   })
 
   // Public resource routes
-  publicRoute(app, apiContract.comment, commentController as any)
-  publicRoute(app, apiContract.image, imageController as any)
-  publicRoute(app, apiContract.music, musicController as any)
+  publicRoute(app, apiContract.comment, commentController)
+  publicRoute(app, apiContract.image, imageController)
+  publicRoute(app, apiContract.music, musicController)
 
   // Admin routes — split by domain and guard
-  adminRoute(app, adminUsersContract, adminUsersController as any)
-  adminRoute(app, adminSettingsContract, adminSettingsController as any)
-  adminRoute(app, adminCacheContract, adminCacheController as any)
-  adminRoute(app, adminMailContract, adminMailController as any)
-  adminRoute(app, adminFriendsContract, adminFriendsController as any)
-  adminRoute(app, adminCategoriesContract, adminCategoriesController as any)
-  authorRoute(app, adminTagsContract, adminTagsController as any)
-  authorRoute(app, adminImagesContract, adminImagesController as any)
-  authorRoute(app, adminMusicContract, adminMusicController as any)
-  adminRoute(app, adminPagesContract, adminPagesController as any)
-  authorRoute(app, adminPostsContract, adminPostsController as any)
-  adminRoute(app, adminCommentsContract, adminCommentsController as any)
-  adminRoute(app, adminRendersContract, adminRendersController as any)
+  adminRoute(app, adminUsersContract, adminUsersController)
+  adminRoute(app, adminSettingsContract, adminSettingsController)
+  adminRoute(app, adminCacheContract, adminCacheController)
+  adminRoute(app, adminMailContract, adminMailController)
+  adminRoute(app, adminFriendsContract, adminFriendsController)
+  adminRoute(app, adminCategoriesContract, adminCategoriesController)
+  authorRoute(app, adminTagsContract, adminTagsController)
+  authorRoute(app, adminImagesContract, adminImagesController)
+  authorRoute(app, adminMusicContract, adminMusicController)
+  adminRoute(app, adminPagesContract, adminPagesController)
+  authorRoute(app, adminPostsContract, adminPostsController)
+  adminRoute(app, adminCommentsContract, adminCommentsController)
+  adminRoute(app, adminRendersContract, adminRendersController)
 
   // Auth routes (admin only)
-  adminRoute(app, apiContract.auth, authController as any)
+  adminRoute(app, apiContract.auth, authController)
 
   return app
 }

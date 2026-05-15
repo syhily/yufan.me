@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 
 import type { SearchLoaderShape } from '@/shared/settings'
 
+import { api } from '@/client/api/client'
+import { unwrap } from '@/client/api/unwrap'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
@@ -95,18 +97,7 @@ export function SearchForm({ search }: SearchFormProps) {
 
     try {
       while (true) {
-        const res = await fetch('/api/admin/reindex-search', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ batchSize: 5, offset }),
-        })
-
-        if (!res.ok) {
-          const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } }
-          throw new Error(err.error?.message || `HTTP ${res.status}`)
-        }
-
-        const data = (await res.json()) as {
+        const data = (await unwrap(api.admin.reindexSearch({ body: { batchSize: 5, offset } }))) as {
           processed: number
           failed: number
           total: number

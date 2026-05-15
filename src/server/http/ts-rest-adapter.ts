@@ -1,10 +1,11 @@
 import type { AppRoute, AppRouter } from '@ts-rest/core'
 import type { Hono } from 'hono'
 import type { MiddlewareHandler } from 'hono'
+import type { output } from 'zod'
 
 import { isAppRoute } from '@ts-rest/core'
 import { HTTPException } from 'hono/http-exception'
-import { ZodError, type ZodType } from 'zod'
+import { ZodError } from 'zod'
 
 import type { Env } from './context'
 
@@ -16,8 +17,8 @@ interface HandlerContext {
 }
 
 // Extract the output type from a Zod schema at the type level.
-// Compatible with Zod v4 (uses ZodType<..., ..., O> instead of _output).
-type SchemaOutput<T> = T extends ZodType<any, any, infer O> ? O : undefined
+// Uses Zod v4's public `output<T>` utility.
+type SchemaOutput<T> = T extends { _zod: infer _ } ? output<T> : undefined
 
 type HandlerArgs<R extends AppRoute> = {
   query: SchemaOutput<R['query']>
@@ -26,12 +27,18 @@ type HandlerArgs<R extends AppRoute> = {
   headers: SchemaOutput<R['headers']>
 }
 
+type NumericStatus<S> = S extends `${infer N extends number}` ? N : S extends number ? S : never
+
+type ResponseEntry<R extends AppRoute, K extends string | number> = K extends keyof R['responses']
+  ? { status: NumericStatus<K>; body: SchemaOutput<R['responses'][K]> }
+  : never
+
 type HandlerReturn<R extends AppRoute> = {
-  [K in keyof R['responses']]: { status: K; body: SchemaOutput<R['responses'][K]> }
-}[keyof R['responses']]
+  [K in keyof R['responses'] & (string | number)]: ResponseEntry<R, K>
+}[keyof R['responses'] & (string | number)]
 
 export type ContractImpl<R extends AppRouter> = {
-  [K in keyof R]: R[K] extends AppRoute
+  [K in keyof R as K extends `_${string}` ? never : K]: R[K] extends AppRoute
     ? (args: HandlerArgs<R[K]>, ctx: HandlerContext) => Promise<HandlerReturn<R[K]>>
     : R[K] extends AppRouter
       ? ContractImpl<R[K]>
@@ -123,7 +130,10 @@ async function readBody(req: Request, route: AppRoute): Promise<unknown> {
   if (route.method === 'GET' || route.method === 'DELETE') return undefined
   const ct = req.headers.get('content-type') ?? ''
   if (ct.startsWith('application/json')) return req.json()
-  if (ct.startsWith('application/x-www-form-urlencoded') || ct.startsWith('multipart/form-data')) {
+  if (ct.startsWith('multipart/form-data')) {
+    return req.formData()
+  }
+  if (ct.startsWith('application/x-www-form-urlencoded')) {
     const fd = await req.formData()
     return Object.fromEntries(fd.entries())
   }

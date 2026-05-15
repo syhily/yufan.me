@@ -27,7 +27,7 @@ export function PageEditorRoute({ pageId, navigate }: PageEditorRouteProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const getPageQuery = useApiQuery<AdminPageDetailDto>(['admin', 'getPage', pageId], () =>
-    unwrap(api.admin.getPage({ params: { id: pageId }, query: {} })),
+    unwrap(api.admin.getPage({ params: { id: pageId } })),
   )
 
   useEffect(() => {

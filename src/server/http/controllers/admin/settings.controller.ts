@@ -14,16 +14,12 @@ function safeBigInt(value: string): bigint | null {
   }
 }
 
-export const adminSettingsController = {
+export const adminSettingsController: ContractImpl<typeof adminSettingsContract> = {
   getSettings: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await getAdminBlogSettings()
     return { status: 200 as const, body: result }
   },
   updateSettings: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     const editorId = safeBigInt(viewer.userId)

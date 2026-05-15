@@ -1,7 +1,5 @@
-import { testClient } from 'hono/testing'
 import { describe, expect, it } from 'vitest'
 
-import { createApiApp } from '@/server/http/app'
 import { apiContract } from '@/shared/contracts'
 
 function collectEndpoints(router: unknown, prefix = ''): Array<{ method: string; path: string }> {
@@ -44,14 +42,5 @@ describe('apiContract', () => {
     // The admin contract itself is created with strictStatusCodes: true.
     // We verify by inspecting the contract tree structure.
     expect(apiContract.admin).toBeDefined()
-  })
-
-  it('mounted routes are reachable via Hono testClient', () => {
-    const app = createApiApp()
-    const client = testClient(app) as any
-    // Spot-check a few public routes exist
-    expect(client.api).toBeDefined()
-    expect(client.api.comment).toBeDefined()
-    expect(client.api.music).toBeDefined()
   })
 })

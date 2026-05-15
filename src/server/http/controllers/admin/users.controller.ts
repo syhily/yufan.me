@@ -19,10 +19,8 @@ import { restoreAdminUser } from '@/server/users/service'
 import { softDeleteAdminUser } from '@/server/users/service'
 import { adminUsersContract } from '@/shared/contracts/admin/users'
 
-export const adminUsersController = {
+export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
   listUsers: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.query
     const result = await listUsersForAdmin(
       payload.offset,
@@ -45,18 +43,13 @@ export const adminUsersController = {
     }
   },
   getUser: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    const payload = args.body
-    const user = await fetchAdminUserDto(BigInt(payload.userId))
+    const user = await fetchAdminUserDto(BigInt(args.params.id))
     if (!user) {
       return { status: 404 as const, body: { error: { message: '用户不存在' } } }
     }
     return { status: 200 as const, body: { user } }
   },
   softDeleteUser: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     if (viewer.userId === payload.userId) {
@@ -86,8 +79,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { success: true } }
   },
   restoreUser: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     const ok = await restoreAdminUser(BigInt(payload.userId))
@@ -98,8 +89,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { success: true } }
   },
   muteUser: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const updated = await muteAdminUser(BigInt(payload.userId), payload.muted)
     if (!updated) {
@@ -112,8 +101,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { user: dto } }
   },
   updateUserRole: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     if (viewer.userId === payload.userId) {
@@ -143,8 +130,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { user: updated } }
   },
   inviteAuthor: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     const existing = await findUserByEmail(payload.email)
@@ -177,7 +162,7 @@ export const adminUsersController = {
         message: sendResult.message,
       })
       return {
-        status: 502 as const,
+        status: 500 as const,
         body: { error: { message: `邮件发送失败，已回滚账户创建：${sendResult.message}` } },
       }
     }
@@ -189,8 +174,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { success: true } }
   },
   sendPasswordReset: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     const targetId = BigInt(payload.userId)
@@ -210,8 +193,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { success: true } }
   },
   revokeSession: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     const currentSession = payload.sessionId === ctx.session.id
@@ -229,8 +210,6 @@ export const adminUsersController = {
     return { status: 200 as const, body: { success: true, currentSession } }
   },
   revokeUserSessions: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const viewer = ctx.viewer
     let targetId: bigint
@@ -251,15 +230,11 @@ export const adminUsersController = {
     return { status: 200 as const, body: { success: true } }
   },
   bulkApproveUserComments: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const result = await bulkApproveCommentsForUser(BigInt(payload.userId))
     return { status: 200 as const, body: result }
   },
   bulkSoftDeleteUserComments: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const result = await bulkDeleteCommentsForUser(BigInt(payload.userId))
     return { status: 200 as const, body: result }

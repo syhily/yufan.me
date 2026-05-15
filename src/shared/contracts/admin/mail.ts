@@ -9,7 +9,11 @@ export const adminMailContract = c.router(
       method: 'POST',
       path: '/admin/send-test-mail',
       body: z.any() /* TODO: use sendTestMailSchema */,
-      responses: { 200: z.any(), ...standardMutationErrors },
+      responses: {
+        200: z.any(),
+        502: z.object({ error: z.object({ message: z.string() }) }),
+        ...standardMutationErrors,
+      },
       summary: 'sendTestMail',
     },
   },

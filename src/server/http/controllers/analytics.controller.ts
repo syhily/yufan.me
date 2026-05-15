@@ -1,3 +1,5 @@
+import { HTTPException } from 'hono/http-exception'
+
 import type { CountersDto, HeatmapCell, MetricRow, ViewsPoint } from '@/shared/analytics/dto'
 
 import { parseAnalyticsSearch, queryCounters, queryHeatmap, queryMetric, queryViews } from '@/server/analytics/query'
@@ -89,7 +91,7 @@ export const analyticsController = {
     const input = buildAnalyticsInput(query)
     const type = query.type
     if (!METRIC_SET.has(type)) {
-      return { status: 400 as const, body: { error: { message: `unknown metric type: ${type}` } } }
+      throw new HTTPException(400, { message: `unknown metric type: ${type}` })
     }
     return {
       status: 200 as const,

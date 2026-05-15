@@ -132,7 +132,7 @@ export function PostsView() {
       }),
   })
 
-  const restoreApi = useApiMutation((id: string) => unwrap(api.admin.restorePost({ params: { id }, body: {} })), {
+  const restoreApi = useApiMutation((id: string) => unwrap(api.admin.restorePost({ params: { id } })), {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({

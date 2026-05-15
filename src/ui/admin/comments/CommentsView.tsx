@@ -80,7 +80,7 @@ export function CommentsView({
   })
 
   const loadMutation = useApiMutation<LoadAllInput, LoadAllOutput>(
-    (input) => unwrap(api.comment.loadAll({ body: input })) as Promise<LoadAllOutput>,
+    (input) => unwrap(api.comment.loadAll({ body: input })),
     {
       onSuccess: (payload) => {
         dispatch({

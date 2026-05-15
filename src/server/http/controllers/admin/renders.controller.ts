@@ -12,7 +12,7 @@ import { indexPost } from '@/server/search/indexer'
 import { userSession } from '@/server/session'
 import { adminRendersContract } from '@/shared/contracts/admin/renders'
 
-export const adminRendersController = {
+export const adminRendersController: ContractImpl<typeof adminRendersContract> = {
   renderMath: async (args: any, ctx: any) => {
     const payload = args.body
     const tex = payload.tex
@@ -49,8 +49,6 @@ export const adminRendersController = {
     }
   },
   reindexSearch: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const rows = await db
       .select({

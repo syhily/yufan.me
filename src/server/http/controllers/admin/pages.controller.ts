@@ -25,9 +25,8 @@ import { adminPagesContract } from '@/shared/contracts/admin/pages'
 import { collectHeadings } from '@/shared/pt/schema'
 
 export const adminPagesController = {
+  // TODO: add `satisfies ContractImpl<typeof adminPagesContract>` once all response schemas are strict
   listPages: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await listPagesForAdmin({
       q: args.query.q,
       deletedStatus: args.query.deletedStatus,
@@ -37,8 +36,6 @@ export const adminPagesController = {
     return { status: 200 as const, body: result }
   },
   getPage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const detail = await getPageDetailForAdmin(BigInt(args.params.id))
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
@@ -46,8 +43,6 @@ export const adminPagesController = {
     return { status: 200 as const, body: detail }
   },
   deletePage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await deletePage(BigInt(args.params.id))
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
@@ -55,8 +50,6 @@ export const adminPagesController = {
     return { status: 200 as const, body: { success: true } }
   },
   restorePage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await restorePage(BigInt(args.body.id))
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '页面不存在或未被删除。' } } }
@@ -64,14 +57,10 @@ export const adminPagesController = {
     return { status: 200 as const, body: { success: true } }
   },
   unpublishPage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const page = await unpublishPage(BigInt(args.body.id))
     return { status: 200 as const, body: { page } }
   },
   saveDraft: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await savePageDraft({
       pageId: BigInt(args.body.id),
       body: args.body.body,
@@ -82,8 +71,6 @@ export const adminPagesController = {
     return { status: 200 as const, body: result }
   },
   publishLatest: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const result = await publishPageLatest({
       pageId: BigInt(args.body.id),
       body: args.body.body,
@@ -95,15 +82,11 @@ export const adminPagesController = {
     return { status: 200 as const, body: result }
   },
   previewPage: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const html = await renderPagePortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
   },
   upsertPageMeta: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const meta = {
       slug: args.body.slug,
       title: args.body.title,
@@ -125,8 +108,6 @@ export const adminPagesController = {
     return { status: 200 as const, body: { page } }
   },
   listPageRevisions: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const revisions = await listPageRevisionsForAdmin(BigInt(args.query.id))
     return { status: 200 as const, body: { revisions } }
   },

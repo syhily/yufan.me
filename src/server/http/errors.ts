@@ -4,7 +4,7 @@ import { HTTPException } from 'hono/http-exception'
 import { ZodError } from 'zod'
 
 import { getLogger } from '@/server/logger'
-import { DomainError, domainStatus } from '@/server/route-helpers/errors'
+import { ActionFailure, DomainError, domainStatus } from '@/server/route-helpers/errors'
 
 import type { Env } from './context'
 
@@ -18,11 +18,34 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
         issues: err.cause as { message: string; path?: string[] }[] | undefined,
       },
     }
-    return c.json(payload, err.status as any)
+    return new Response(JSON.stringify(payload), {
+      status: err.status,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  if (err instanceof ActionFailure) {
+    const payload = {
+      error: {
+        message: err.message,
+        issues: err.issues,
+      },
+    }
+    if (err.headers) {
+      const h = new Headers(err.headers)
+      h.forEach((v, k) => c.header(k, v, { append: true }))
+    }
+    return new Response(JSON.stringify(payload), {
+      status: err.status,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   if (err instanceof DomainError) {
-    return c.json({ error: { message: err.message } }, domainStatus(err) as any)
+    return new Response(JSON.stringify({ error: { message: err.message } }), {
+      status: domainStatus(err),
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 
   if (err instanceof ZodError) {

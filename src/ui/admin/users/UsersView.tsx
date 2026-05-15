@@ -70,7 +70,12 @@ export function UsersView() {
 
   const muteMutation = useApiMutation<MuteUserInput, MuteUserOutput>(
     (vars) =>
-      unwrap(api.admin.muteUser({ params: { id: vars.userId }, body: { userId: vars.userId, muted: vars.muted } })),
+      unwrap(
+        api.admin.muteUser({
+          params: { id: vars.userId },
+          body: { muted: vars.muted === true || vars.muted === 'true' },
+        }),
+      ),
     {
       onSuccess: (payload) => {
         dispatch({ type: 'patchUser', user: payload.user })
@@ -106,7 +111,7 @@ export function UsersView() {
   )
 
   const bulkDeleteMutation = useApiMutation<UserIdInput, BulkSoftDeleteOutput>(
-    (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({})),
+    (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({ body: vars })),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })

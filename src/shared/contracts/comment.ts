@@ -83,7 +83,11 @@ const loadAllResponse = z.object({
   comments: z.array(z.any()),
   total: z.number().int(),
   hasMore: z.boolean(),
-  statusCounts: z.record(z.string(), z.number()),
+  statusCounts: z.object({
+    all: z.number().int(),
+    pending: z.number().int(),
+    approved: z.number().int(),
+  }),
 })
 
 const filterAutocompleteQuery = z.object({

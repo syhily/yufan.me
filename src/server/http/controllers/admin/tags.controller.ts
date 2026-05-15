@@ -9,19 +9,13 @@ import { listTagsForAdmin } from '@/server/tags/service'
 import { upsertAdminTag } from '@/server/tags/service'
 import { adminTagsContract } from '@/shared/contracts/admin/tags'
 
-export const adminTagsController = {
+export const adminTagsController: ContractImpl<typeof adminTagsContract> = {
   listTags: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.query
     const result = await listTagsForAdmin({ q: payload.q, offset: payload.offset, limit: payload.limit })
     return { status: 200 as const, body: result }
   },
   upsertTag: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const tag = await upsertAdminTag({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,
@@ -31,9 +25,6 @@ export const adminTagsController = {
     return { status: 200 as const, body: { tag } }
   },
   deleteTag: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
-      return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const ok = await deleteAdminTag(BigInt(payload.id), ctx.viewer)
     if (!ok) {

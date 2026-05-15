@@ -5,6 +5,7 @@ import { createHonoServer } from 'react-router-hono-server/node'
 
 import { requestContext, sessionContext } from '@/server/auth/context'
 import { createApiApp } from '@/server/http/app'
+import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { feedRouter } from '@/server/http/resources/feed'
@@ -16,6 +17,7 @@ import { honoWpDecoyMiddleware } from '@/server/http/wp-decoy'
 
 export default await createHonoServer({
   configure(app) {
+    app.onError(onErrorHandler as unknown as Parameters<typeof app.onError>[0])
     app.use(requestId())
     app.use(honoWpDecoyMiddleware)
     app.use(honoSessionMiddleware)

@@ -9,10 +9,8 @@ import { upsertAdminFriend } from '@/server/friends/service'
 import { userSession } from '@/server/session'
 import { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
-export const adminFriendsController = {
+export const adminFriendsController: ContractImpl<typeof adminFriendsContract> = {
   listFriends: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.query
     const result = await listFriendsForAdmin({
       q: payload.q,
@@ -23,8 +21,6 @@ export const adminFriendsController = {
     return { status: 200 as const, body: result }
   },
   upsertFriend: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const payload = args.body
     const friend = await upsertAdminFriend({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,
@@ -38,8 +34,6 @@ export const adminFriendsController = {
     return { status: 200 as const, body: { friend } }
   },
   deleteFriend: async (args: any, ctx: any) => {
-    const sessionUser = userSession(ctx.session)
-    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
     const ok = await deleteAdminFriend(BigInt(args.params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '友链不存在' } } }

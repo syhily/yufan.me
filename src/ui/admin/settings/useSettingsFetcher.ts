@@ -46,7 +46,7 @@ export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptio
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const updateMutation = useApiMutation<{ section: string; payload: unknown }, { success: true }>(
-    ({ section, payload }) => unwrap(api.admin.updateSettings({ params: { id: section }, body: { section, payload } })),
+    ({ section, payload }) => unwrap(api.admin.updateSettings({ body: { section, payload } })),
     {
       onSuccess: () => {
         setStatus('saved')

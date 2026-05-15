@@ -14,7 +14,7 @@ import { apiContract } from '@/shared/contracts'
  *   await unwrap(api.admin.users.mute({ params: { id }, body: { muted: true } }))
  */
 export const api = initClient(apiContract, {
-  baseUrl: '',
+  baseUrl: '/api',
   baseHeaders: {
     'Content-Type': 'application/json',
   },

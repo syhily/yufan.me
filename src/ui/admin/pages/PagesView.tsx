@@ -95,7 +95,7 @@ export function PagesView() {
   const submitDelete = deleteMutation.mutate
 
   const restoreMutation = useApiMutation<RestorePageInput, RestorePageOutput>(
-    (input) => unwrap(api.admin.restorePage({ params: { id: input.id }, body: {} })),
+    (input) => unwrap(api.admin.restorePage({ params: { id: input.id } })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })

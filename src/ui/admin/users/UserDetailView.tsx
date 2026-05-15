@@ -77,7 +77,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const queryClient = useQueryClient()
 
   const userQuery = useApiQuery<GetUserOutput>(['admin', 'user', userId], () =>
-    unwrap(api.admin.getUser({ params: { id: userId }, body: { userId } })),
+    unwrap(api.admin.getUser({ params: { id: userId } })),
   )
 
   const commentsQuery = useApiQuery(['admin', 'comments', userId], () =>
@@ -111,7 +111,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     },
   )
 
-  const sendResetMutation = useApiMutation<{ userId: string }, { success: boolean }>((vars) =>
+  const sendResetMutation = useApiMutation<{ email: string }, { success: boolean }>((vars) =>
     unwrap(api.admin.sendPasswordReset({ body: vars })),
   )
 
@@ -119,9 +119,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     unwrap(api.admin.revokeUserSessions({ body: vars })),
   )
 
-  const muteMutation = useApiMutation<{ userId: string; muted: string }, MuteUserOutput>(
-    (vars) =>
-      unwrap(api.admin.muteUser({ params: { id: vars.userId }, body: { userId: vars.userId, muted: vars.muted } })),
+  const muteMutation = useApiMutation<{ userId: string; muted: boolean }, MuteUserOutput>(
+    (vars) => unwrap(api.admin.muteUser({ params: { id: vars.userId }, body: { muted: vars.muted } })),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -158,7 +157,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const bulkDeleteMutation = useApiMutation<{ userId: string }, BulkSoftDeleteOutput>(
-    (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({})),
+    (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({ body: vars })),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -168,8 +167,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const updateRoleMutation = useApiMutation<{ userId: string; role: Role }, { user: AdminUserDto }>(
-    (vars) =>
-      unwrap(api.admin.updateUserRole({ params: { id: vars.userId }, body: { userId: vars.userId, role: vars.role } })),
+    (vars) => unwrap(api.admin.updateUserRole({ params: { id: vars.userId }, body: { role: vars.role } })),
     {
       onSuccess: () => {
         setRoleDraft('')
@@ -347,7 +345,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '用户将收到一封包含一次性重置链接的邮件。链接 15 分钟内有效。',
                         actionLabel: '发送',
                         destructive: false,
-                        onConfirm: () => void sendResetMutation.mutate({ userId: user.id }),
+                        onConfirm: () => void sendResetMutation.mutate({ email: user.email }),
                       })
                     }
                   >
@@ -388,8 +386,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         // destructive icon (`Trash2`) reads as "delete"
                         // and miscues the action.
                         actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
-                        onConfirm: () =>
-                          void muteMutation.mutate({ userId: user.id, muted: user.isMuted ? 'false' : 'true' }),
+                        onConfirm: () => void muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
                       })
                     }
                   >
