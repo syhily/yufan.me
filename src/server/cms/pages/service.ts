@@ -90,7 +90,9 @@ function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
 
 let cachedPages: CmsPage[] | null = null
 let cachedPagesAt = 0
-const PAGE_CACHE_TTL_MS = 60_000
+// Short TTL so multi-process deployments (Docker multi-replica) don't
+// stay stale long when another instance invalidates the catalog.
+const PAGE_CACHE_TTL_MS = 10_000
 
 subscribeCatalogInvalidate((kind) => {
   if (kind === 'page' || kind === 'taxonomy') {

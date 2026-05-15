@@ -80,10 +80,10 @@ function isCatalogVisible(meta: PostMetaRow, asOf: Date = new Date()): boolean {
 // Process-level cache for catalog post metas. Invalidated explicitly by
 // admin writes via `subscribeCatalogInvalidate`; the TTL is a stale-while-
 // revalidate floor for environments where the subscription channel doesn't
-// fire (e.g. external DB edits).
+// fire (e.g. external DB edits or multi-process deployments).
 let cachedPostMetas: CmsPost[] | null = null
 let cachedPostMetasAt = 0
-const POST_META_CACHE_TTL_MS = 60_000
+const POST_META_CACHE_TTL_MS = 10_000
 
 subscribeCatalogInvalidate((kind) => {
   if (kind === 'post' || kind === 'taxonomy') {
