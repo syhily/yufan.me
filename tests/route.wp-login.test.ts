@@ -22,20 +22,38 @@ const state = vi.hoisted(() => {
   }
 })
 
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
+// `getRouteRequestContext` lives in `@/server/auth/context` and is
+// re-exported from `@/server/session`. The route module imports it
+// from the original path, so the mock has to land there to be
+// effective.
+vi.mock('@/server/auth/context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/context')>('@/server/auth/context')
+  return {
+    ...actual,
+    getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
+      session: state.session,
+      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@yufan.me' } : undefined,
+      role: state.loggedIn ? ('admin' as const) : null,
+      clientAddress: '127.0.0.1',
+      url: new URL(request.url),
+    })),
+  }
+})
+
+vi.mock('@/server/auth/flows', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/flows')>('@/server/auth/flows')
+  return {
+    ...actual,
+    processAuthFormSubmission: mocks.processAuthFormSubmission,
+  }
+})
+
+vi.mock('@/server/auth/session-storage', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/session-storage')>('@/server/auth/session-storage')
   return {
     ...actual,
     commitSession: vi.fn(async () => 'blog_session=stub'),
     destroySession: vi.fn(async () => 'blog_session=deleted'),
-    getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
-      session: state.session,
-      user: state.loggedIn ? { id: '1', name: 'admin', email: 'admin@yufan.me' } : undefined,
-      admin: state.loggedIn,
-      clientAddress: '127.0.0.1',
-      url: new URL(request.url),
-    })),
-    processAuthFormSubmission: mocks.processAuthFormSubmission,
   }
 })
 

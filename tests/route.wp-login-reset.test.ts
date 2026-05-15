@@ -40,21 +40,46 @@ const sessionMocks = vi.hoisted(() => ({
   destroySession: vi.fn(async () => 'blog_session=deleted'),
 }))
 
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
+// The route module imports each helper from its original location.
+// Mocking the `@/server/session` re-export does nothing — Vitest only
+// catches the import at the path the consumer actually used.
+
+vi.mock('@/server/auth/csrf', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/csrf')>('@/server/auth/csrf')
+  return {
+    ...actual,
+    validateRequestCsrf: sessionMocks.validateRequestCsrf,
+    clearCsrfCookie: sessionMocks.clearCsrfCookie,
+  }
+})
+
+vi.mock('@/server/auth/session-storage', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/session-storage')>('@/server/auth/session-storage')
   return {
     ...actual,
     commitSession: sessionMocks.commitSession,
     destroySession: sessionMocks.destroySession,
-    validateRequestCsrf: sessionMocks.validateRequestCsrf,
-    clearCsrfCookie: sessionMocks.clearCsrfCookie,
+  }
+})
+
+vi.mock('@/server/auth/context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/context')>('@/server/auth/context')
+  return {
+    ...actual,
     getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
       session: state.session,
       user: undefined,
-      admin: false,
+      role: null,
       clientAddress: '203.0.113.7',
       url: new URL(request.url),
     })),
+  }
+})
+
+vi.mock('@/server/auth/flows', async () => {
+  const actual = await vi.importActual<typeof import('@/server/auth/flows')>('@/server/auth/flows')
+  return {
+    ...actual,
     processAuthFormSubmission: vi.fn(async () => ({ ok: true })),
   }
 })
