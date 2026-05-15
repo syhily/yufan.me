@@ -42,21 +42,11 @@ export function createApp(): Hono<Env> {
 
   // API (ts-rest contracts).
   app.route('/', createApiApp())
-  // 301 redirects for old API URLs → new RESTful URLs.
+  // 308 redirects for old API URLs → new RESTful URLs (preserves method).
   app.all('/api/actions/*', (c) => {
     const oldPath = new URL(c.req.url).pathname
-    const newPath = oldPath
-      .replace('/api/actions/account/', '/api/account/')
-      .replace('/api/actions/analytics/', '/api/analytics/')
-      .replace('/api/actions/auth/', '/api/auth/')
-      .replace('/api/actions/comment/', '/api/comment/')
-      .replace('/api/actions/image/', '/api/image/')
-      .replace('/api/actions/music/', '/api/music/')
-      .replace('/api/actions/admin/', '/api/admin/')
-      .replace('updateProfile', 'profile')
-      .replace('updatePassword', 'password')
-      .replace('revokeSession', 'sessions/revoke')
-    return c.redirect(newPath, 301)
+    const newPath = oldPath.replace('/api/actions/', '/api/')
+    return c.redirect(newPath, 308)
   })
 
   // Resource routes (non-JSON: feeds, sitemap, SSE, images, redirects).
