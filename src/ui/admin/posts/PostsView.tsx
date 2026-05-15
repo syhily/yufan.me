@@ -24,7 +24,6 @@ import type {
   RestorePostInput,
   RestorePostOutput,
 } from '@/shared/cms-posts'
-import type { ListPostsOutput } from '@/shared/cms-posts'
 import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
 import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
