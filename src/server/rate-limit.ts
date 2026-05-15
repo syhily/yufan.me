@@ -40,7 +40,7 @@ const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${
 // the fallback path behaves identically to the seeded path.
 const FALLBACK_RATE_LIMITS: RateLimitSettings = rateLimitDefaults
 
-function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
+export function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
   // We deliberately read the snapshot synchronously every call — the
   // in-process slot is a single-pointer load, so the cost is
   // negligible and an admin save takes effect on the very next
