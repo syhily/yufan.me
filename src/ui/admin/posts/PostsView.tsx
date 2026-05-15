@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
+import type { AdminUserDto, ListUsersInput, ListUsersOutput } from '@/client/api/fetcher'
 import type { ListCategoriesInput, ListCategoriesOutput } from '@/shared/categories'
 import type {
   AdminPostDto,
@@ -23,6 +24,7 @@ import type {
   RestorePostInput,
   RestorePostOutput,
 } from '@/shared/cms-posts'
+import type { ListPostsOutput } from '@/shared/cms-posts'
 import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
 import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
