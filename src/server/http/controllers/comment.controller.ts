@@ -57,7 +57,7 @@ export const commentController = {
 
   increaseLike: async (
     { body }: { body: { key: string } },
-    { clientAddress, session }: { clientAddress: string; session: BlogSession },
+    { clientAddress, session: _session }: { clientAddress: string; session: BlogSession },
   ) => {
     const limit = await tryLikeIncreaseRateLimit(clientAddress)
     if (limit.exceeded) {
@@ -283,7 +283,9 @@ export const commentController = {
     { body }: { body: { commentId: string; body: unknown } },
     { viewer }: { viewer: ViewerContext | null },
   ) => {
-    if (!viewer) return { status: 401 as const, body: { error: { message: '未登录' } } }
+    if (!viewer) {
+      return { status: 401 as const, body: { error: { message: '未登录' } } }
+    }
     const commentId = BigInt(body.commentId ?? '0')
     if (commentId === 0n) {
       return { status: 400 as const, body: { error: { message: '缺少 commentId' } } }
@@ -304,7 +306,9 @@ export const commentController = {
   },
 
   requestDeleteOwn: async ({ body }: { body: { commentId: string } }, { viewer }: { viewer: ViewerContext | null }) => {
-    if (!viewer) return { status: 401 as const, body: { error: { message: '未登录' } } }
+    if (!viewer) {
+      return { status: 401 as const, body: { error: { message: '未登录' } } }
+    }
     const commentId = BigInt(body.commentId)
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(viewer, c)) {
@@ -318,7 +322,9 @@ export const commentController = {
   },
 
   cancelDeleteOwn: async ({ body }: { body: { commentId: string } }, { viewer }: { viewer: ViewerContext | null }) => {
-    if (!viewer) return { status: 401 as const, body: { error: { message: '未登录' } } }
+    if (!viewer) {
+      return { status: 401 as const, body: { error: { message: '未登录' } } }
+    }
     const commentId = BigInt(body.commentId)
     const c = await findCommentWithUserById(commentId)
     if (!c || !isCommentOwner(viewer, c)) {
@@ -335,7 +341,9 @@ export const commentController = {
     { query }: { query: { offset?: number; limit?: number } },
     { viewer }: { viewer: ViewerContext | null },
   ) => {
-    if (!viewer) return { status: 401 as const, body: { error: { message: '未登录' } } }
+    if (!viewer) {
+      return { status: 401 as const, body: { error: { message: '未登录' } } }
+    }
     const userId = BigInt(viewer.userId)
     const offset = query.offset ?? 0
     const limit = Math.min(query.limit ?? 20, 100)
@@ -432,11 +440,15 @@ export const commentController = {
 
   searchAuthors: async ({ query }: { query: { q?: string; limit: number; ids?: string; key?: string } }) => {
     function parseBigIntIds(raw: string | undefined): bigint[] | undefined {
-      if (!raw || raw.length === 0) return undefined
+      if (!raw || raw.length === 0) {
+        return undefined
+      }
       const out: bigint[] = []
       for (const value of raw.split(',')) {
         const trimmed = value.trim()
-        if (!trimmed) continue
+        if (!trimmed) {
+          continue
+        }
         try {
           out.push(BigInt(trimmed))
         } catch {

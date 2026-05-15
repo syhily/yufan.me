@@ -61,7 +61,7 @@ export function TagsView() {
   }, [listData, dispatch])
 
   const reload = useCallback(() => {
-    refetch()
+    void refetch()
   }, [refetch])
 
   // The fetcher hook's success callback doesn't receive the original

@@ -1,7 +1,5 @@
 import { useEffect, useRef } from 'react'
 
-import type { PublicMusicMeta as MusicMeta } from '@/shared/music'
-
 import { loadMusic } from '@/client/api/music'
 import { cn } from '@/ui/lib/cn'
 

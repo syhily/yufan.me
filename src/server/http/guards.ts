@@ -13,7 +13,9 @@ import { mountContract, type ContractImpl } from './ts-rest-adapter'
 
 const requireAuth = createMiddleware<Env>(async (c, next) => {
   const user = c.var.session.get('user')
-  if (!user) throw new HTTPException(401, { message: '未登录' })
+  if (!user) {
+    throw new HTTPException(401, { message: '未登录' })
+  }
   c.set('viewer', { userId: user.id, role: user.role })
   await next()
 })
@@ -21,8 +23,12 @@ const requireAuth = createMiddleware<Env>(async (c, next) => {
 export const requireRoleMw = (role: Role) =>
   createMiddleware<Env>(async (c, next) => {
     const user = c.var.session.get('user')
-    if (!user) throw new HTTPException(401, { message: '未登录' })
-    if (!hasAtLeast(user.role, role)) throw new HTTPException(403, { message: '权限不足' })
+    if (!user) {
+      throw new HTTPException(401, { message: '未登录' })
+    }
+    if (!hasAtLeast(user.role, role)) {
+      throw new HTTPException(403, { message: '权限不足' })
+    }
     c.set('viewer', { userId: user.id, role: user.role })
     await next()
   })

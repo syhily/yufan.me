@@ -2,7 +2,7 @@ import { EditIcon, ExternalLinkIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-
 import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags'
+import type { AdminTagDto, UpsertTagInput } from '@/shared/tags'
 
 import { api } from '@/client/api/client'
 import { useApiMutation } from '@/client/api/query'

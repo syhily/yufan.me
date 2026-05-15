@@ -1,22 +1,20 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-import { deleteImageSchema } from '@/server/images/schema'
-import { listImagesSchema } from '@/server/images/schema'
-import { recalculateThumbhashSchema } from '@/server/images/schema'
-import { updateImageNoteSchema } from '@/server/images/schema'
 import { uploadImageMetadataSchema } from '@/server/images/schema'
-import { deleteImage } from '@/server/images/service'
-import { listImagesForAdmin } from '@/server/images/service'
-import { recalculateImageThumbhash } from '@/server/images/service'
-import { updateImageNote } from '@/server/images/service'
-import { uploadImage } from '@/server/images/service'
+import {
+  deleteImage,
+  listImagesForAdmin,
+  recalculateImageThumbhash,
+  updateImageNote,
+  uploadImage,
+} from '@/server/images/service'
 import { parseInput } from '@/server/route-helpers/errors'
 import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 
 export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
-  listImages: async (args, ctx) => {
+  listImages: async (args, _ctx) => {
     const result = await listImagesForAdmin({
       q: args.query.q,
       kind: args.query.kind,
@@ -65,7 +63,9 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
 
     const metadataObj: Record<string, string> = {}
     for (const [key, value] of formData.entries()) {
-      if (key === 'file') continue
+      if (key === 'file') {
+        continue
+      }
       if (typeof value === 'string') {
         metadataObj[key] = value
       }
@@ -75,7 +75,9 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
 
     const buffer = Buffer.from(await fileEntry.arrayBuffer())
     const sessionUser = userSession(ctx.session)
-    if (!sessionUser) return { status: 401 as const, body: { error: { message: '未登录' } } }
+    if (!sessionUser) {
+      return { status: 401 as const, body: { error: { message: '未登录' } } }
+    }
     const uploader = { id: BigInt(sessionUser.id), name: sessionUser.name }
 
     let image

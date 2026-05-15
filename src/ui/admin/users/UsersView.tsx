@@ -6,7 +6,6 @@ import type {
   AdminUserDto,
   BulkApproveOutput,
   BulkSoftDeleteOutput,
-  ListUsersInput,
   ListUsersOutput,
   MuteUserInput,
   MuteUserOutput,
@@ -87,7 +86,7 @@ export function UsersView() {
     (vars) => unwrap(api.admin.softDeleteUser({ params: { id: vars.userId } })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
       },
     },
   )
@@ -96,7 +95,7 @@ export function UsersView() {
     (vars) => unwrap(api.admin.restoreUser({ params: { id: vars.userId }, body: vars })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
       },
     },
   )
@@ -105,7 +104,7 @@ export function UsersView() {
     (vars) => unwrap(api.admin.bulkApproveUserComments({ body: vars })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
       },
     },
   )
@@ -114,7 +113,7 @@ export function UsersView() {
     (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({ body: vars })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
       },
     },
   )
@@ -282,7 +281,9 @@ export function UsersView() {
       <InviteAuthorDialog
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        onInvited={() => queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })}
+        onInvited={() => {
+          void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        }}
       />
     </>
   )

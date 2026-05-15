@@ -67,7 +67,9 @@ export function createApiApp(): Hono<Env> {
       start(controller) {
         let closed = false
         const close = () => {
-          if (closed) return
+          if (closed) {
+            return
+          }
           closed = true
           clearInterval(pollTimer)
           clearInterval(heartbeatTimer)
@@ -81,7 +83,9 @@ export function createApiApp(): Hono<Env> {
         c.req.raw.signal.addEventListener('abort', close)
 
         const send = (eventName: string, data: unknown) => {
-          if (closed) return
+          if (closed) {
+            return
+          }
           try {
             controller.enqueue(encoder.encode(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`))
           } catch {
@@ -98,7 +102,9 @@ export function createApiApp(): Hono<Env> {
 
         const pollTimer = setInterval(() => {
           void (async () => {
-            if (closed) return
+            if (closed) {
+              return
+            }
             try {
               const rows = await queryRealtimeTail(lastSeen)
               if (rows.length > 0) {
@@ -113,7 +119,9 @@ export function createApiApp(): Hono<Env> {
         }, POLL_INTERVAL_MS)
 
         const heartbeatTimer = setInterval(() => {
-          if (closed) return
+          if (closed) {
+            return
+          }
           try {
             controller.enqueue(encoder.encode(': keep-alive\n\n'))
           } catch {

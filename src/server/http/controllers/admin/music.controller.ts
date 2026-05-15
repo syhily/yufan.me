@@ -1,20 +1,11 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-import { addMusicSchema } from '@/server/music/schema'
-import { deleteMusicSchema } from '@/server/music/schema'
-import { listMusicSchema } from '@/server/music/schema'
-import { searchMusicSchema } from '@/server/music/schema'
-import { updateMusicSchema } from '@/server/music/schema'
-import { addMusic } from '@/server/music/service'
-import { deleteMusic } from '@/server/music/service'
-import { listMusicForAdmin } from '@/server/music/service'
-import { searchMusic } from '@/server/music/service'
-import { updateMusicMetadata } from '@/server/music/service'
+import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetadata } from '@/server/music/service'
 import { userSession } from '@/server/session'
 import { adminMusicContract } from '@/shared/contracts/admin/music'
 
 export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
-  listMusic: async (args, ctx) => {
+  listMusic: async (args, _ctx) => {
     const result = await listMusicForAdmin({
       q: args.query.q,
       offset: args.query.offset,
@@ -22,7 +13,7 @@ export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
     })
     return { status: 200 as const, body: result }
   },
-  searchMusic: async (args, ctx) => {
+  searchMusic: async (args, _ctx) => {
     const result = await searchMusic(args.query.keyword, args.query.limit)
     return { status: 200 as const, body: result }
   },
@@ -34,7 +25,7 @@ export const adminMusicController: ContractImpl<typeof adminMusicContract> = {
     })
     return { status: 200 as const, body: { music } }
   },
-  updateMusic: async (args, ctx) => {
+  updateMusic: async (args, _ctx) => {
     const music = await updateMusicMetadata({
       id: BigInt(args.params.id),
       name: args.body.name,

@@ -1,12 +1,8 @@
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm'
-
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { loadAdminPendingDashboard } from '@/server/comments/admin'
-import { db } from '@/server/db/pool'
 import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/db/query/comment'
 import { getLogger } from '@/server/logger'
-import { userSession } from '@/server/session'
 import { adminCommentsContract } from '@/shared/contracts/admin/comments'
 
 export const adminCommentsController: ContractImpl<typeof adminCommentsContract> = {
@@ -35,7 +31,7 @@ export const adminCommentsController: ContractImpl<typeof adminCommentsContract>
     }
     return { status: 200 as const, body: { success: true } }
   },
-  listPendingDashboard: async (args, ctx) => {
+  listPendingDashboard: async (args, _ctx) => {
     const payload = args.query
     const result = await loadAdminPendingDashboard(payload.kind, payload.offset, payload.limit)
     return { status: 200 as const, body: result }

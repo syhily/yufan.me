@@ -3,19 +3,27 @@ import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
 import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/auth/verification-tokens'
-import { countAdmins, findUserById, updateUserRole } from '@/server/db/query/user'
-import { findUserByEmail, insertAuthor, softDeleteUserById } from '@/server/db/query/user'
-import { sendAuthorInvite } from '@/server/email/sender'
-import { sendPasswordReset as sendPasswordResetEmail } from '@/server/email/sender'
+import {
+  countAdmins,
+  findUserByEmail,
+  findUserById,
+  insertAuthor,
+  softDeleteUserById,
+  updateUserRole,
+} from '@/server/db/query/user'
+import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
-import { tryInviteByEmailRateLimit, tryInviteRateLimit } from '@/server/rate-limit'
-import { tryPasswordResetByTargetRateLimit } from '@/server/rate-limit'
-import { bulkApproveCommentsForUser } from '@/server/users/service'
-import { bulkDeleteCommentsForUser } from '@/server/users/service'
-import { fetchAdminUserDto, muteAdminUser } from '@/server/users/service'
-import { listUsersForAdmin, toAdminUserDto } from '@/server/users/service'
-import { restoreAdminUser } from '@/server/users/service'
-import { softDeleteAdminUser } from '@/server/users/service'
+import { tryInviteByEmailRateLimit, tryInviteRateLimit, tryPasswordResetByTargetRateLimit } from '@/server/rate-limit'
+import {
+  bulkApproveCommentsForUser,
+  bulkDeleteCommentsForUser,
+  fetchAdminUserDto,
+  listUsersForAdmin,
+  muteAdminUser,
+  restoreAdminUser,
+  softDeleteAdminUser,
+  toAdminUserDto,
+} from '@/server/users/service'
 import { adminUsersContract } from '@/shared/contracts/admin/users'
 
 export const adminUsersController: ContractImpl<typeof adminUsersContract> = {

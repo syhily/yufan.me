@@ -16,12 +16,24 @@ function buildAnalyticsInput(query: {
   entityId?: string
 }) {
   const sp = new URLSearchParams()
-  if (query.preset) sp.set('preset', query.preset)
-  if (query.startAt) sp.set('startAt', query.startAt)
-  if (query.endAt) sp.set('endAt', query.endAt)
-  if (query.filters) sp.set('filters', query.filters)
-  if (query.entityType) sp.set('entityType', query.entityType)
-  if (query.entityId) sp.set('entityId', query.entityId)
+  if (query.preset) {
+    sp.set('preset', query.preset)
+  }
+  if (query.startAt) {
+    sp.set('startAt', query.startAt)
+  }
+  if (query.endAt) {
+    sp.set('endAt', query.endAt)
+  }
+  if (query.filters) {
+    sp.set('filters', query.filters)
+  }
+  if (query.entityType) {
+    sp.set('entityType', query.entityType)
+  }
+  if (query.entityId) {
+    sp.set('entityId', query.entityId)
+  }
   return parseAnalyticsSearch(sp)
 }
 

@@ -1,22 +1,25 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/cms/pages/preview'
-import { createPage, updatePageMeta } from '@/server/cms/pages/service'
-import { deletePage } from '@/server/cms/pages/service'
-import { getPageDetailForAdmin } from '@/server/cms/pages/service'
-import { listPagesForAdmin } from '@/server/cms/pages/service'
-import { listRevisionsForAdmin as listPageRevisionsForAdmin } from '@/server/cms/pages/service'
-import { publishLatest as publishPageLatest } from '@/server/cms/pages/service'
-import { restorePage } from '@/server/cms/pages/service'
-import { saveDraft as savePageDraft } from '@/server/cms/pages/service'
-import { unpublishPage } from '@/server/cms/pages/service'
+import {
+  createPage,
+  deletePage,
+  getPageDetailForAdmin,
+  listPagesForAdmin,
+  listRevisionsForAdmin as listPageRevisionsForAdmin,
+  publishLatest as publishPageLatest,
+  restorePage,
+  saveDraft as savePageDraft,
+  unpublishPage,
+  updatePageMeta,
+} from '@/server/cms/pages/service'
 import { deriveSlug } from '@/server/slug'
 import { adminPagesContract } from '@/shared/contracts/admin/pages'
 import { collectHeadings } from '@/shared/pt/schema'
 
 export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   // TODO: add `satisfies ContractImpl<typeof adminPagesContract>` once all response schemas are strict
-  listPages: async (args, ctx) => {
+  listPages: async (args, _ctx) => {
     const result = await listPagesForAdmin({
       q: args.query.q,
       deletedStatus: args.query.deletedStatus,
@@ -25,28 +28,28 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
     })
     return { status: 200 as const, body: result }
   },
-  getPage: async (args, ctx) => {
+  getPage: async (args, _ctx) => {
     const detail = await getPageDetailForAdmin(BigInt(args.params.id))
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: detail }
   },
-  deletePage: async (args, ctx) => {
+  deletePage: async (args, _ctx) => {
     const result = await deletePage(BigInt(args.params.id))
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  restorePage: async ({ params }, ctx) => {
+  restorePage: async ({ params }, _ctx) => {
     const result = await restorePage(BigInt(params.id))
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '页面不存在或未被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  unpublishPage: async (args, ctx) => {
+  unpublishPage: async (args, _ctx) => {
     const page = await unpublishPage(BigInt(args.body.id))
     return { status: 200 as const, body: { page } }
   },
@@ -71,7 +74,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
     })
     return { status: 200 as const, body: result }
   },
-  previewPage: async (args, ctx) => {
+  previewPage: async (args, _ctx) => {
     const html = await renderPagePortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
@@ -97,7 +100,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
         : await updatePageMeta({ id: BigInt(args.body.id), ...meta })
     return { status: 200 as const, body: { page } }
   },
-  listPageRevisions: async (args, ctx) => {
+  listPageRevisions: async (args, _ctx) => {
     const revisions = await listPageRevisionsForAdmin(BigInt(args.query.id))
     return { status: 200 as const, body: { revisions } }
   },

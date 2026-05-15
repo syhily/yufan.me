@@ -30,13 +30,25 @@ export const accountController = {
     }
     const canSetBadge = viewer.role === 'admin' || viewer.role === 'author'
     const patch: Parameters<typeof updateUserById>[1] = {}
-    if (body.name !== undefined) patch.name = body.name
-    if (body.link !== undefined) patch.link = body.link ?? undefined
-    if (body.receiveEmail !== undefined) patch.receiveEmail = body.receiveEmail
+    if (body.name !== undefined) {
+      patch.name = body.name
+    }
+    if (body.link !== undefined) {
+      patch.link = body.link ?? undefined
+    }
+    if (body.receiveEmail !== undefined) {
+      patch.receiveEmail = body.receiveEmail
+    }
     if (canSetBadge) {
-      if (body.badgeName !== undefined) patch.badgeName = body.badgeName ?? undefined
-      if (body.badgeColor !== undefined) patch.badgeColor = body.badgeColor ?? undefined
-      if (body.badgeTextColor !== undefined) patch.badgeTextColor = body.badgeTextColor ?? undefined
+      if (body.badgeName !== undefined) {
+        patch.badgeName = body.badgeName ?? undefined
+      }
+      if (body.badgeColor !== undefined) {
+        patch.badgeColor = body.badgeColor ?? undefined
+      }
+      if (body.badgeTextColor !== undefined) {
+        patch.badgeTextColor = body.badgeTextColor ?? undefined
+      }
     }
     const updated = await updateUserById(userId, patch)
     return { status: 200 as const, body: { user: updated } }

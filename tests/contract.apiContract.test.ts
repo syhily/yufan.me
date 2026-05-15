@@ -7,7 +7,9 @@ function collectEndpoints(router: unknown, prefix = ''): Array<{ method: string;
   const node = router as Record<string, unknown>
 
   for (const [key, value] of Object.entries(node)) {
-    if (key.startsWith('_')) continue
+    if (key.startsWith('_')) {
+      continue
+    }
     if (value && typeof value === 'object') {
       const v = value as Record<string, unknown>
       if ('method' in v && 'path' in v) {

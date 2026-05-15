@@ -24,12 +24,12 @@ const updateUserRoleBody = z.object({
 })
 
 const inviteAuthorBody = z.object({
-  email: z.string().email().min(1),
+  email: z.email().min(1),
   name: z.string().min(1).max(100),
 })
 
 const sendPasswordResetBody = z.object({
-  email: z.string().email().min(1),
+  email: z.email().min(1),
 })
 
 const revokeSessionBody = z.object({

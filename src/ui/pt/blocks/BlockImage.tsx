@@ -111,7 +111,9 @@ export function BlockImage({
     void api.image
       .resolveThumbhash({ query: { src } })
       .then((res) => {
-        if (cancelled || res.status !== 200) return
+        if (cancelled || res.status !== 200) {
+          return
+        }
         const data = res.body
         const next: ResolvedImageMeta = {}
         if (typeof data.thumbhash === 'string' && data.thumbhash !== '') {

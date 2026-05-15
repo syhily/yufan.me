@@ -1,6 +1,5 @@
 import type { AppRoute, AppRouter, ContractNoBodyType } from '@ts-rest/core'
-import type { Context, Hono } from 'hono'
-import type { MiddlewareHandler } from 'hono'
+import type { Context, Hono, MiddlewareHandler } from 'hono'
 import type { output, ZodType } from 'zod'
 
 import { isAppRoute } from '@ts-rest/core'
@@ -113,7 +112,9 @@ function mountRoute(app: Hono<Env>, route: AppRoute, handler: HandlerFn, options
 
     if (result.headers && typeof result.headers === 'object') {
       for (const [k, v] of Object.entries(result.headers)) {
-        if (v === undefined) continue
+        if (v === undefined) {
+          continue
+        }
         if (Array.isArray(v)) {
           for (const item of v) {
             c.header(k, String(item), { append: true })
@@ -151,9 +152,13 @@ function validate(schema: unknown, input: unknown) {
 }
 
 async function readBody(req: Request, route: AppRoute): Promise<unknown> {
-  if (route.method === 'GET' || route.method === 'DELETE') return undefined
+  if (route.method === 'GET' || route.method === 'DELETE') {
+    return undefined
+  }
   const ct = req.headers.get('content-type') ?? ''
-  if (ct.startsWith('application/json')) return req.json()
+  if (ct.startsWith('application/json')) {
+    return req.json()
+  }
   if (ct.startsWith('multipart/form-data')) {
     return req.formData()
   }

@@ -1,23 +1,20 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-import { categoryIdSchema } from '@/server/categories/schema'
-import { listCategoriesSchema } from '@/server/categories/schema'
-import { reorderCategoriesSchema } from '@/server/categories/schema'
-import { upsertCategorySchema } from '@/server/categories/schema'
-import { deleteAdminCategory } from '@/server/categories/service'
-import { listCategoriesForAdmin } from '@/server/categories/service'
-import { reorderAdminCategories } from '@/server/categories/service'
-import { upsertAdminCategory } from '@/server/categories/service'
-import { userSession } from '@/server/session'
+import {
+  deleteAdminCategory,
+  listCategoriesForAdmin,
+  reorderAdminCategories,
+  upsertAdminCategory,
+} from '@/server/categories/service'
 import { adminCategoriesContract } from '@/shared/contracts/admin/categories'
 
 export const adminCategoriesController: ContractImpl<typeof adminCategoriesContract> = {
-  listCategories: async (args, ctx) => {
+  listCategories: async (args, _ctx) => {
     const payload = args.query
     const result = await listCategoriesForAdmin({ q: payload.q })
     return { status: 200 as const, body: result }
   },
-  upsertCategory: async (args, ctx) => {
+  upsertCategory: async (args, _ctx) => {
     const payload = args.body
     const category = await upsertAdminCategory({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,
@@ -29,14 +26,14 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
     })
     return { status: 200 as const, body: { category } }
   },
-  deleteCategory: async (args, ctx) => {
+  deleteCategory: async (args, _ctx) => {
     const ok = await deleteAdminCategory(BigInt(args.params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '分类不存在' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  reorderCategories: async (args, ctx) => {
+  reorderCategories: async (args, _ctx) => {
     const payload = args.body
     const categories = await reorderAdminCategories(payload.orderedIds)
     return { status: 200 as const, body: { categories } }

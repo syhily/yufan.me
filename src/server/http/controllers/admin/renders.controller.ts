@@ -9,11 +9,10 @@ import { content, post } from '@/server/db/schema'
 import { getLogger } from '@/server/logger'
 import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
 import { indexPost } from '@/server/search/indexer'
-import { userSession } from '@/server/session'
 import { adminRendersContract } from '@/shared/contracts/admin/renders'
 
 export const adminRendersController: ContractImpl<typeof adminRendersContract> = {
-  renderMath: async (args, ctx) => {
+  renderMath: async (args, _ctx) => {
     const payload = args.body
     const tex = payload.tex
     if (tex.trim() === '') {
@@ -34,7 +33,7 @@ export const adminRendersController: ContractImpl<typeof adminRendersContract> =
       return { status: 200 as const, body: { mathml: '', error: message } }
     }
   },
-  renderMermaid: async (args, ctx) => {
+  renderMermaid: async (args, _ctx) => {
     const payload = args.body
     const code = payload.code
     if (code.trim() === '') {
@@ -48,7 +47,7 @@ export const adminRendersController: ContractImpl<typeof adminRendersContract> =
       return { status: 200 as const, body: { svg: '', error: message } }
     }
   },
-  reindexSearch: async (args, ctx) => {
+  reindexSearch: async (args, _ctx) => {
     const payload = args.body
     const rows = await db
       .select({

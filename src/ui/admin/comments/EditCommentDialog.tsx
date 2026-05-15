@@ -59,7 +59,9 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   }, [comment?.id])
 
   useEffect(() => {
-    if (!comment || !rawData) return
+    if (!comment || !rawData) {
+      return
+    }
     const loadedBody = (rawData.body ?? []) as CommentBody
     setInitialBody(loadedBody)
     setBody(loadedBody)

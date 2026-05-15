@@ -11,10 +11,10 @@ import {
   Volume2Icon,
   VolumeOffIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminComment, LoadAllOutput } from '@/shared/comments'
+import type { AdminComment } from '@/shared/comments'
 import type {
   AdminMutationSuccessOutput,
   AdminUserDto,
@@ -22,7 +22,6 @@ import type {
   BulkSoftDeleteOutput,
   GetUserOutput,
   MuteUserOutput,
-  UpdateUserOutput,
 } from '@/shared/users'
 
 import { api } from '@/client/api/client'
@@ -106,7 +105,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
       },
     },
   )
@@ -123,7 +122,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     (vars) => unwrap(api.admin.muteUser({ params: { id: vars.userId }, body: { muted: vars.muted } })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
       },
     },
   )
@@ -141,7 +140,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     (vars) => unwrap(api.admin.restoreUser({ params: { id: vars.userId }, body: vars })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
       },
     },
   )
@@ -150,8 +149,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     (vars) => unwrap(api.admin.bulkApproveUserComments({ body: vars })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
-        queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
       },
     },
   )
@@ -160,8 +159,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({ body: vars })),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
-        queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
       },
     },
   )
@@ -171,7 +170,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     {
       onSuccess: () => {
         setRoleDraft('')
-        queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
       },
     },
   )
@@ -320,7 +319,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           description: '修改角色后，该用户的所有会话将被强制登出。',
                           actionLabel: '确认修改',
                           destructive: false,
-                          onConfirm: () => void updateRoleMutation.mutate({ userId: user.id, role: nextRole }),
+                          onConfirm: () => updateRoleMutation.mutate({ userId: user.id, role: nextRole }),
                         })
                       }}
                     >
@@ -345,7 +344,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '用户将收到一封包含一次性重置链接的邮件。链接 15 分钟内有效。',
                         actionLabel: '发送',
                         destructive: false,
-                        onConfirm: () => void sendResetMutation.mutate({ email: user.email }),
+                        onConfirm: () => sendResetMutation.mutate({ email: user.email }),
                       })
                     }
                   >
@@ -363,7 +362,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         actionLabel: '强制登出',
                         destructive: true,
                         actionIcon: <LogOutIcon data-icon />,
-                        onConfirm: () => void revokeSessionsMutation.mutate({ userId: user.id }),
+                        onConfirm: () => revokeSessionsMutation.mutate({ userId: user.id }),
                       })
                     }
                   >
@@ -386,7 +385,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         // destructive icon (`Trash2`) reads as "delete"
                         // and miscues the action.
                         actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
-                        onConfirm: () => void muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
+                        onConfirm: () => muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
                       })
                     }
                   >
@@ -411,7 +410,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '所有待审核评论将立即通过审核并对所有访客可见。',
                         actionLabel: '通过',
                         destructive: false,
-                        onConfirm: () => void bulkApproveMutation.mutate({ userId: user.id }),
+                        onConfirm: () => bulkApproveMutation.mutate({ userId: user.id }),
                       })
                     }
                   >
@@ -419,11 +418,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   </Button>
                 )}
                 {user.deletedAt ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => void restoreMutation.mutate({ userId: user.id })}
-                  >
+                  <Button type="button" variant="outline" onClick={() => restoreMutation.mutate({ userId: user.id })}>
                     <RotateCcwIcon /> 恢复用户
                   </Button>
                 ) : (
@@ -437,7 +432,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           description: '此操作为软删除，用户记录保留，但在统计与列表中默认隐藏。',
                           actionLabel: '删除',
                           destructive: true,
-                          onConfirm: () => void deleteMutation.mutate({ userId: user.id }),
+                          onConfirm: () => deleteMutation.mutate({ userId: user.id }),
                         })
                       }
                     >
@@ -455,7 +450,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '此操作为软删除，可后续通过数据库恢复。',
                         actionLabel: '删除',
                         destructive: true,
-                        onConfirm: () => void bulkDeleteMutation.mutate({ userId: user.id }),
+                        onConfirm: () => bulkDeleteMutation.mutate({ userId: user.id }),
                       })
                     }
                   >
@@ -489,7 +484,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                       payload.badgeColor = badgeColor
                     }
                     payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-                    void updateMutation.mutate({ ...payload, userId: user.id })
+                    updateMutation.mutate({ ...payload, userId: user.id })
                   }}
                   className="grid gap-4 sm:grid-cols-2"
                 >

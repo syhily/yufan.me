@@ -6,7 +6,7 @@ import { z } from 'zod'
 import type { Env } from '@/server/http/context'
 
 import { onErrorHandler } from '@/server/http/errors'
-import { mountContract, type ContractImpl } from '@/server/http/ts-rest-adapter'
+import { mountContract } from '@/server/http/ts-rest-adapter'
 
 const c = initContract()
 

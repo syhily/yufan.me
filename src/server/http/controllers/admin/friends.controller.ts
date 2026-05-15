@@ -1,16 +1,10 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-import { friendIdSchema } from '@/server/friends/schema'
-import { listFriendsSchema } from '@/server/friends/schema'
-import { upsertFriendSchema } from '@/server/friends/schema'
-import { deleteAdminFriend } from '@/server/friends/service'
-import { listFriendsForAdmin } from '@/server/friends/service'
-import { upsertAdminFriend } from '@/server/friends/service'
-import { userSession } from '@/server/session'
+import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
 import { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
 export const adminFriendsController: ContractImpl<typeof adminFriendsContract> = {
-  listFriends: async (args, ctx) => {
+  listFriends: async (args, _ctx) => {
     const payload = args.query
     const result = await listFriendsForAdmin({
       q: payload.q,
@@ -20,7 +14,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
     })
     return { status: 200 as const, body: result }
   },
-  upsertFriend: async (args, ctx) => {
+  upsertFriend: async (args, _ctx) => {
     const payload = args.body
     const friend = await upsertAdminFriend({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,
@@ -33,7 +27,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
     })
     return { status: 200 as const, body: { friend } }
   },
-  deleteFriend: async (args, ctx) => {
+  deleteFriend: async (args, _ctx) => {
     const ok = await deleteAdminFriend(BigInt(args.params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '友链不存在' } } }

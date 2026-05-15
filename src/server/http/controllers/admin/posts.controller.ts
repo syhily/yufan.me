@@ -1,15 +1,18 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/cms/posts/preview'
-import { createPost, updatePostMeta } from '@/server/cms/posts/service'
-import { deletePost } from '@/server/cms/posts/service'
-import { getPostDetailForAdmin } from '@/server/cms/posts/service'
-import { listPostsForAdmin } from '@/server/cms/posts/service'
-import { listRevisionsForAdmin as listPostRevisionsForAdmin } from '@/server/cms/posts/service'
-import { publishLatest as publishPostLatest } from '@/server/cms/posts/service'
-import { restorePost } from '@/server/cms/posts/service'
-import { saveDraft as savePostDraft } from '@/server/cms/posts/service'
-import { unpublishPost } from '@/server/cms/posts/service'
+import {
+  createPost,
+  deletePost,
+  getPostDetailForAdmin,
+  listPostsForAdmin,
+  listRevisionsForAdmin as listPostRevisionsForAdmin,
+  publishLatest as publishPostLatest,
+  restorePost,
+  saveDraft as savePostDraft,
+  unpublishPost,
+  updatePostMeta,
+} from '@/server/cms/posts/service'
 import { deriveSlug } from '@/server/slug'
 import { adminPostsContract } from '@/shared/contracts/admin/posts'
 import { collectHeadings } from '@/shared/pt/schema'
@@ -87,7 +90,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
     )
     return { status: 200 as const, body: result }
   },
-  previewPost: async (args, ctx) => {
+  previewPost: async (args, _ctx) => {
     const html = await renderPostPortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }

@@ -7,7 +7,7 @@ import { standardMutationErrors } from './_errors'
 
 export const updateProfileBody = z.object({
   name: z.string().min(1).max(50).optional(),
-  link: z.string().url().max(255).optional().nullable(),
+  link: z.url().max(255).optional().nullable(),
   badgeName: z.string().max(20).optional().nullable(),
   badgeColor: z.string().max(7).optional().nullable(),
   badgeTextColor: z.string().max(7).optional().nullable(),

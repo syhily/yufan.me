@@ -34,7 +34,7 @@ const commentReplyBody = z
   .object({
     page_key: z.string(),
     name: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentBodySchema,
     csrf: z.string().min(1),
@@ -164,7 +164,7 @@ export const commentContract = c.router(
     findAvatar: {
       method: 'POST',
       path: '/comment/avatar',
-      body: z.object({ email: z.string().email() }),
+      body: z.object({ email: z.email() }),
       responses: { 200: avatarResponse, ...standardMutationErrors },
       summary: '查找头像',
     },

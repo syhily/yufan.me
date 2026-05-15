@@ -1,16 +1,10 @@
 import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-import { userSession } from '@/server/session'
-import { listTagsSchema } from '@/server/tags/schema'
-import { tagIdSchema } from '@/server/tags/schema'
-import { upsertTagSchema } from '@/server/tags/schema'
-import { deleteAdminTag } from '@/server/tags/service'
-import { listTagsForAdmin } from '@/server/tags/service'
-import { upsertAdminTag } from '@/server/tags/service'
+import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/tags/service'
 import { adminTagsContract } from '@/shared/contracts/admin/tags'
 
 export const adminTagsController: ContractImpl<typeof adminTagsContract> = {
-  listTags: async (args, ctx) => {
+  listTags: async (args, _ctx) => {
     const payload = args.query
     const result = await listTagsForAdmin({ q: payload.q, offset: payload.offset, limit: payload.limit })
     return { status: 200 as const, body: result }

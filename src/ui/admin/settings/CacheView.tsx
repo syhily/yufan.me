@@ -6,10 +6,10 @@ import type { CacheSettings } from '@/shared/blog-config'
 import type {
   AdminCacheStatsDto,
   CacheBucketId,
+  ClearCacheResultDto,
   ClearCacheTarget,
   ReservedCacheBucketStats,
 } from '@/shared/cache-types'
-import type { ClearCacheResultDto } from '@/shared/cache-types'
 
 import { api } from '@/client/api/client'
 import { useApiMutation } from '@/client/api/query'

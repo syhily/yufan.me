@@ -68,7 +68,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
   // Refetches the current view. Used after each per-row mutation so the
   // approved/rejected row falls off the list and the counts update.
   const refresh = useCallback(() => {
-    refetch()
+    void refetch()
   }, [refetch])
 
   const approveApi = useApiMutation(
