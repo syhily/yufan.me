@@ -260,7 +260,7 @@ function CommentsRoot({
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
   const revokeToken = useApiMutation<CommentRidInput, RevokeCommentTokenOutput>((vars) =>
-    unwrap(api.comment.revokeToken({ body: vars })),
+    unwrap(api.commentToken.revokeToken({ body: vars })),
   )
   const onDismissMyComment = useCallback(
     (id: bigint | string) => {
@@ -292,7 +292,7 @@ function CommentsRoot({
   const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
   const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
   const myComments = useApiMutation<{ page_key: string }, MyCommentsOutput>(
-    (vars) => unwrap(api.comment.myComments({ query: vars })),
+    (vars) => unwrap(api.commentToken.myComments({ query: vars })),
     {
       onSuccess: (payload) => {
         if (payload.comments.length > 0) {
@@ -400,7 +400,7 @@ function CommentsLoadMore() {
   rootsLoadedRef.current = ctx.state.rootsLoaded
 
   const loadMore = useApiMutation<LoadCommentsInput, LoadCommentsOutput>(
-    (vars) => unwrap(api.comment.loadComments({ query: vars })),
+    (vars) => unwrap(api.commentPublic.loadComments({ query: vars })),
     {
       onSuccess: (payload) => {
         ctx.dispatch({

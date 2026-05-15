@@ -6,7 +6,7 @@ import { apiContract } from '@/shared/contracts'
 
 describe('contract type inference', () => {
   it('infers comment list response body', () => {
-    type Body = ClientInferResponseBody<typeof apiContract.comment.loadComments, 200>
+    type Body = ClientInferResponseBody<typeof apiContract.commentPublic.loadComments, 200>
     expectTypeOf<Body>().toMatchTypeOf<{ comments: unknown[]; next: boolean }>()
   })
 

@@ -41,7 +41,7 @@ export function ReplyCommentDialog({
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
   const mutation = useApiMutation<ReplyCommentInput, ReplyCommentOutput>(
-    (input) => unwrap(api.comment.replyComment({ body: input })),
+    (input) => unwrap(api.commentPublic.replyComment({ body: input })),
     {
       onSuccess: (payload) => {
         if (payload.csrfToken) {

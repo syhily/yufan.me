@@ -34,7 +34,7 @@ export interface MyEditCommentDialogProps {
 
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
   const update = useApiMutation<{ commentId: string; body: CommentBody }, { success: boolean }>(
-    (vars) => unwrap(api.comment.updateOwn({ body: vars })),
+    (vars) => unwrap(api.commentSelf.updateOwn({ body: vars })),
     {
       onSuccess: () => onSaved(),
     },

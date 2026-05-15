@@ -84,7 +84,7 @@ export function CommentReplyForm({
   }, [guestProfile, user])
 
   const reply = useApiMutation<ReplyCommentInput, ReplyCommentOutput>(
-    (vars) => unwrap(api.comment.replyComment({ body: vars })),
+    (vars) => unwrap(api.commentPublic.replyComment({ body: vars })),
     {
       onSuccess: (data) => {
         setSubmitError(null)
@@ -113,7 +113,7 @@ export function CommentReplyForm({
   )
 
   const avatar = useApiMutation<FindAvatarInput, FindAvatarOutput>(
-    (vars) => unwrap(api.comment.findAvatar({ body: vars })),
+    (vars) => unwrap(api.commentPublic.findAvatar({ body: vars })),
     {
       onSuccess: (payload) => setAvatarSrc(payload.avatar),
     },

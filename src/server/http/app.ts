@@ -35,7 +35,9 @@ import { adminUsersController } from './controllers/admin/users.controller'
 import { analyticsController } from './controllers/analytics.controller'
 import { authController } from './controllers/auth.controller'
 import { commentAdminController } from './controllers/comment-admin.controller'
-import { commentController } from './controllers/comment.controller'
+import { commentPublicController } from './controllers/comment-public.controller'
+import { commentSelfController } from './controllers/comment-self.controller'
+import { commentTokenController } from './controllers/comment-token.controller'
 import { imageController } from './controllers/image.controller'
 import { musicController } from './controllers/music.controller'
 import { adminRoute, authorRoute, authedRoute, publicRoute } from './guards'
@@ -57,9 +59,13 @@ export function createApiApp(): Hono<Env> {
   adminRoute(app, apiContract.analytics, analyticsController)
 
   // Public resource routes
-  publicRoute(app, apiContract.comment, commentController)
+  publicRoute(app, apiContract.commentPublic, commentPublicController)
+  publicRoute(app, apiContract.commentToken, commentTokenController)
   publicRoute(app, apiContract.image, imageController)
   publicRoute(app, apiContract.music, musicController)
+
+  // Self-service comment routes (authed)
+  authedRoute(app, apiContract.commentSelf, commentSelfController)
 
   // Admin comment routes (approve, delete, loadAll, search)
   adminRoute(app, apiContract.commentAdmin, commentAdminController)
