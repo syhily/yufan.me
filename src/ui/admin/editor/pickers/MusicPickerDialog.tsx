@@ -1,16 +1,15 @@
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { AdminMusicDto, ListMusicInput, ListMusicOutput } from '@/shared/music'
+import type { AdminMusicDto, ListMusicOutput } from '@/shared/music'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
-
-const LIST_MUSIC = API_ACTIONS.admin.listMusic
 
 // Music picker. Pulls from the local admin library, with an inline
 // "添加音乐" affordance that opens the same `AddMusicDialog` used at
@@ -44,9 +43,17 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
   const [musics, setMusics] = useState<AdminMusicDto[] | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
-  const { load } = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST_MUSIC, {
-    onSuccess: (payload) => setMusics(payload.musics),
-  })
+  const listQuery = useApiQuery<ListMusicOutput>(
+    ['admin', 'musics', q],
+    () => unwrap(api.admin.listMusic({ query: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 } })),
+    { enabled: false },
+  )
+
+  useEffect(() => {
+    if (listQuery.data) {
+      setMusics(listQuery.data.musics)
+    }
+  }, [listQuery.data])
 
   const lastFetchedQRef = useRef<string | null>(null)
   useEffect(() => {
@@ -62,12 +69,12 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
       () => {
         lastFetchedQRef.current = trimmed
         setMusics(null)
-        load({ limit: 60, q: trimmed === '' ? undefined : trimmed })
+        void listQuery.refetch()
       },
       lastFetchedQRef.current === null ? 0 : 300,
     )
     return () => clearTimeout(handle)
-  }, [q, open, load])
+  }, [q, open, listQuery])
 
   return (
     <>

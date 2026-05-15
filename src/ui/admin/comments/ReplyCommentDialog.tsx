@@ -1,11 +1,13 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { AdminComment, ReplyCommentInput, ReplyCommentOutput } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { toast } from '@/client/api/use-admin-mutation'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -18,8 +20,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
-
-const REPLY = { path: '/api/comment/comments', method: 'POST' as const }
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null
@@ -40,14 +40,17 @@ export function ReplyCommentDialog({
   onReplied,
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
-  const fetcher = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(REPLY, {
-    onSuccess: (payload) => {
-      if (payload.csrfToken) {
-        onCsrfRotated(payload.csrfToken)
-      }
-      onReplied()
+  const mutation = useApiMutation<ReplyCommentInput, ReplyCommentOutput>(
+    (input) => unwrap(api.comment.replyComment({ body: input })),
+    {
+      onSuccess: (payload) => {
+        if (payload.csrfToken) {
+          onCsrfRotated(payload.csrfToken)
+        }
+        onReplied()
+      },
     },
-  })
+  )
   // Reply body is PortableText, not plain text — the public reply form
   // posts the same shape, and the API perimeter validates against
   // `commentBodySchema`. Keeping the admin reply on the same editor
@@ -66,7 +69,7 @@ export function ReplyCommentDialog({
   }, [comment?.id])
 
   const open = comment !== null
-  const submitting = fetcher.isPending
+  const submitting = mutation.isPending
   const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
@@ -96,7 +99,7 @@ export function ReplyCommentDialog({
               toast.error('该评论缺少有效的目标页面标识，无法回复')
               return
             }
-            fetcher.submit({
+            mutation.mutate({
               page_key: comment.pagePublicId,
               name: authorName,
               email: authorEmail,

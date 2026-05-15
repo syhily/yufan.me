@@ -90,7 +90,7 @@ export function CommentBodyEditor({
 }: CommentBodyEditorProps) {
   // Pin the latest `onBodyChange` so re-renders from the parent don't
   // tear the editor's transaction handler. Same pattern as
-  // `useApiFetcher` and `PageBodyEditor`.
+  // TanStack Query mutations and `PageBodyEditor`.
   const onBodyChangeRef = useRef(onBodyChange)
   onBodyChangeRef.current = onBodyChange
 

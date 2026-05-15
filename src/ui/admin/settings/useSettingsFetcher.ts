@@ -3,10 +3,9 @@ import { useRevalidator } from 'react-router'
 
 import type { SettingsSection } from '@/shared/settings'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
-
-const UPDATE = API_ACTIONS.admin.updateSettings
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 
 interface UseSettingsFetcherOptions {
   section: SettingsSection
@@ -46,25 +45,28 @@ export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptio
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const updateFetcher = useApiFetcher<{ section: string; payload: unknown }, { success: true }>(UPDATE, {
-    onSuccess: () => {
-      setStatus('saved')
-      onSaved?.()
-      void revalidator.revalidate()
+  const updateMutation = useApiMutation<{ section: string; payload: unknown }, { success: true }>(
+    ({ section, payload }) => unwrap(api.admin.updateSettings({ params: { id: section }, body: { section, payload } })),
+    {
+      onSuccess: () => {
+        setStatus('saved')
+        onSaved?.()
+        void revalidator.revalidate()
+      },
+      onError: (error) => {
+        setStatus('error')
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setStatus('error')
-      setErrorMessage(error.message)
-    },
-  })
+  )
 
   const save = useCallback(
     (payload: unknown) => {
       setStatus('saving')
       setErrorMessage(null)
-      updateFetcher.submit({ section, payload })
+      updateMutation.mutate({ section, payload })
     },
-    [section, updateFetcher],
+    [section, updateMutation],
   )
 
   const revert = useCallback(() => {
@@ -76,7 +78,7 @@ export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptio
   return {
     save,
     revert,
-    isPending: updateFetcher.isPending,
+    isPending: updateMutation.isPending,
     status,
     errorMessage,
   }

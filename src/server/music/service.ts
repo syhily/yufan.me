@@ -47,7 +47,7 @@ import { ErrorMessages } from '@/server/route-helpers/errors'
 // Domain-level entry points for the music admin library. Coordinates
 // the "search → download → process → S3 PUT → DB insert" pipeline
 // when the admin clicks "添加" in the dialog, and exposes the read
-// paths the public `/api/actions/music/get` route and the SSR
+// paths the public `/api/music/get` route and the SSR
 // `<MusicPlayer />` use.
 
 const log = getLogger('music.service')

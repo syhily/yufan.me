@@ -1,10 +1,11 @@
 import { PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { DeleteTagInput, DeleteTagOutput, ListTagsInput, ListTagsOutput } from '@/shared/tags'
+import type { ListTagsOutput } from '@/shared/tags'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -16,9 +17,6 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
-
-const LIST = API_ACTIONS.admin.listTags
-const DELETE = API_ACTIONS.admin.deleteTag
 
 // Same step ladder the comment moderation table uses, so the two
 // admin list pages feel identical when an editor jumps between them.
@@ -40,20 +38,31 @@ export function TagsView() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const listApi = useAdminMutation<ListTagsInput, ListTagsOutput>(LIST, {
-    onSuccess: (payload) =>
-      dispatch({ type: 'loaded', rows: payload.tags, total: payload.total, hasMore: payload.hasMore }),
-    errorMessage: '加载标签列表失败',
-  })
-  const { load: loadTags, isPending: isListPending } = listApi
+  const {
+    data: listData,
+    isPending: isListPending,
+    refetch,
+  } = useApiQuery<ListTagsOutput>(['admin', 'tags', state.q, state.currentPage, state.pageSize], () =>
+    unwrap(
+      api.admin.listTags({
+        query: {
+          q: state.q || undefined,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
+      }),
+    ),
+  )
+
+  useEffect(() => {
+    if (listData) {
+      dispatch({ type: 'loaded', rows: listData.tags, total: listData.total, hasMore: listData.hasMore })
+    }
+  }, [listData, dispatch])
 
   const reload = useCallback(() => {
-    loadTags({
-      q: state.q || undefined,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-    })
-  }, [loadTags, state.q, state.currentPage, state.pageSize])
+    refetch()
+  }, [refetch])
 
   // The fetcher hook's success callback doesn't receive the original
   // request payload, so latch the in-flight delete id into a ref. Once
@@ -63,7 +72,7 @@ export function TagsView() {
   // because in that case the row stays put and the error message is
   // surfaced through the confirm dialog.
   const pendingDeleteIdRef = useRef<string | null>(null)
-  const deleteApi = useAdminMutation<DeleteTagInput, DeleteTagOutput>(DELETE, {
+  const deleteApi = useApiMutation((id: string) => unwrap(api.admin.deleteTag({ params: { id } })), {
     onSuccess: () => {
       const id = pendingDeleteIdRef.current
       pendingDeleteIdRef.current = null
@@ -87,10 +96,6 @@ export function TagsView() {
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
@@ -240,7 +245,7 @@ export function TagsView() {
                             destructive: true,
                             onConfirm: () => {
                               pendingDeleteIdRef.current = row.id
-                              deleteApi.submit({ id: row.id })
+                              deleteApi.mutate(row.id)
                             },
                           })
                         }

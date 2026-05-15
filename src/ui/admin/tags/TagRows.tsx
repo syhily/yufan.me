@@ -1,17 +1,18 @@
 import { EditIcon, ExternalLinkIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
 
-const UPSERT = API_ACTIONS.admin.upsertTag
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i
 
 export interface TagDraft {
@@ -117,18 +118,17 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
     nameInputRef.current?.focus()
   }, [])
 
-  const upsertApi = useAdminMutation<UpsertTagInput, UpsertTagOutput>(UPSERT, {
-    successMessage: '标签已保存',
+  const upsertApi = useApiMutation((vars: UpsertTagInput) => unwrap(api.admin.upsertTag({ body: vars })), {
     onSuccess: (payload) => {
+      toast.success('标签已保存')
       setErrorMessage(null)
       onSaved(payload.tag)
     },
     onError: (error) => {
       setErrorMessage(error.message)
-      return true
     },
   })
-  const { submit, isPending } = upsertApi
+  const { mutate: submit, isPending } = upsertApi
 
   const trimmedName = draft.name.trim()
   const trimmedSlug = draft.slug.trim()

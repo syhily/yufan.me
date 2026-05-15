@@ -6,8 +6,9 @@ import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router
 
 import type { AdminSessionItem } from '@/routes/wp-admin.sessions'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'
 import { formatUserAgentLabel } from '@/shared/user-agent'
@@ -24,8 +25,6 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
-
-const REVOKE = API_ACTIONS.admin.revokeSession
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -82,14 +81,17 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
   const navigate = useNavigate()
   const revalidator = useRevalidator()
   const [searchParams] = useSearchParams()
-  const revoke = useApiFetcher<{ sessionId: string }, { success: boolean; currentSession: boolean }>(REVOKE, {
-    onSuccess: () => {
-      // Self-revoke is short-circuited to the logout endpoint inside
-      // `onRevoke`, so by the time this handler fires we know it was
-      // a different device — a list re-fetch is enough.
-      void revalidator.revalidate()
+  const revoke = useApiMutation<{ sessionId: string }, { success: boolean; currentSession: boolean }>(
+    (vars) => unwrap(api.admin.revokeSession({ body: vars })),
+    {
+      onSuccess: () => {
+        // Self-revoke is short-circuited to the logout endpoint inside
+        // `onRevoke`, so by the time this handler fires we know it was
+        // a different device — a list re-fetch is enough.
+        void revalidator.revalidate()
+      },
     },
-  })
+  )
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const updateParams = useCallback(
@@ -145,7 +147,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        revoke.submit({ sessionId: item.sid })
+        revoke.mutate({ sessionId: item.sid })
       },
     })
   }

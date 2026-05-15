@@ -4,15 +4,14 @@ import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminPostDetailDto, GetPostInput } from '@/shared/cms-posts'
+import type { AdminPostDetailDto } from '@/shared/cms-posts'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'
-
-const GET_POST = API_ACTIONS.admin.getPost
 
 export interface PostEditorRouteProps {
   postId: string
@@ -23,26 +22,27 @@ export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
   const [detail, setDetail] = useState<AdminPostDetailDto | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const getPostApi = useAdminMutation<GetPostInput, AdminPostDetailDto>(GET_POST, {
-    onSuccess: (payload) => {
-      setDetail(payload)
-      setErrorMessage(null)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { load } = getPostApi
+  const postQuery = useApiQuery<AdminPostDetailDto>(['admin', 'getPost', postId], () =>
+    unwrap(api.admin.getPost({ params: { id: postId }, query: {} })),
+  )
 
   useEffect(() => {
-    load({ id: postId })
-  }, [load, postId])
+    if (postQuery.data) {
+      setDetail(postQuery.data)
+      setErrorMessage(null)
+    }
+  }, [postQuery.data])
+
+  useEffect(() => {
+    if (postQuery.error) {
+      setErrorMessage(postQuery.error.message)
+    }
+  }, [postQuery.error])
 
   if (errorMessage !== null) {
     return <PostEditorError message={errorMessage} />
   }
-  if (detail === null) {
+  if (postQuery.isPending || detail === null) {
     return <PostEditorSkeleton />
   }
   return <PostEditorShell mode="edit" detail={detail} navigate={navigate} />

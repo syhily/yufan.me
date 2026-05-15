@@ -9,14 +9,16 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useId, useState, type ReactNode, useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 
 import type { AdminCategoryDto, ListCategoriesOutput } from '@/shared/categories'
 import type { AdminPostDto } from '@/shared/cms-posts'
 import type { AdminImageDto } from '@/shared/images'
 import type { AdminTagDto, ListTagsOutput } from '@/shared/tags'
 
-import { toast, useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { POST_META_TOGGLE_FIELDS } from '@/shared/cms-posts'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { DateTimePicker } from '@/ui/admin/pages/DateTimePicker'
@@ -856,14 +858,15 @@ interface CategoryFieldProps {
 
 function CategoryField({ value, onChange, disabled }: CategoryFieldProps) {
   const [categories, setCategories] = useState<AdminCategoryDto[]>([])
-  const listApi = useAdminMutation<Record<string, never>, ListCategoriesOutput>(API_ACTIONS.admin.listCategories, {
-    onSuccess: (payload) => setCategories(payload.categories),
-  })
+  const categoriesQuery = useApiQuery<ListCategoriesOutput>(['admin', 'listCategories'], () =>
+    unwrap(api.admin.listCategories({ query: {} })),
+  )
 
   useEffect(() => {
-    listApi.load({})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listApi.load])
+    if (categoriesQuery.data) {
+      setCategories(categoriesQuery.data.categories)
+    }
+  }, [categoriesQuery.data])
 
   return (
     <div className="grid gap-2">
@@ -897,14 +900,15 @@ interface TagsFieldProps {
 function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const [input, setInput] = useState('')
   const [tags, setTags] = useState<AdminTagDto[]>([])
-  const listApi = useAdminMutation<Record<string, never>, ListTagsOutput>(API_ACTIONS.admin.listTags, {
-    onSuccess: (payload) => setTags(payload.tags),
-  })
+  const tagsQuery = useApiQuery<ListTagsOutput>(['admin', 'listTags'], () =>
+    unwrap(api.admin.listTags({ query: { limit: 100 } })),
+  )
 
   useEffect(() => {
-    listApi.load({})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listApi.load])
+    if (tagsQuery.data) {
+      setTags(tagsQuery.data.tags)
+    }
+  }, [tagsQuery.data])
 
   const addTag = useCallback(
     (raw: string) => {

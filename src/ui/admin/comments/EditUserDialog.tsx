@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 
 import type { AdminComment } from '@/shared/comments'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -30,8 +32,11 @@ export interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProps) {
-  const fetcher = useApiFetcher<Record<string, string | null>, { success: boolean }>(
-    { path: '/api/auth/users/:id', method: 'PATCH' },
+  const mutation = useApiMutation<Record<string, string | null>, { success: boolean }>(
+    (payload) => {
+      const { id, ...body } = payload
+      return unwrap(api.auth.updateUser({ params: { id: id! }, body }))
+    },
     { onSuccess: () => onSaved() },
   )
   const [name, setName] = useState('')
@@ -63,7 +68,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
   }, [comment])
 
   const open = comment !== null
-  const submitting = fetcher.isPending
+  const submitting = mutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -94,7 +99,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // Always include `badgeTextColor` so admins can also clear a
             // previous override by unticking the checkbox.
             payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-            fetcher.submit(payload)
+            mutation.mutate(payload)
           }}
           className="grid gap-4 sm:grid-cols-2"
         >

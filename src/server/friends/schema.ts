@@ -18,7 +18,7 @@ const optionalText = (max: number) =>
     .transform((value) => (value === undefined || value === '' ? undefined : value))
 
 // `offset` / `limit` are coerced from query strings (the action is a
-// GET and `useApiFetcher` serialises numbers via `String(value)`).
+// GET and query params serialise numbers via `String(value)`).
 // Hard upper bound on `limit` matches the tag list (100); the client
 // only ever picks from {10, 20, 50, 100}.
 export const listFriendsSchema = z.object({

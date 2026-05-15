@@ -1,10 +1,8 @@
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useEffect, useRef, useState } from 'react'
 
-import type { AdminImageDto, UploadImageOutput } from '@/shared/images'
+import type { AdminImageDto } from '@/shared/images'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 import { Button } from '@/ui/components/button'
 import {
@@ -17,8 +15,6 @@ import {
 } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-
-const UPLOAD = API_ACTIONS.admin.uploadImage
 
 // Upload variants. The fixed-aspect variants pre-set the locked
 // 1280×425 ratio used by category covers and friend posters; the
@@ -68,15 +64,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
   // on the way to "1280") doesn't immediately clamp / re-encode.
   const [targetWidthDraft, setTargetWidthDraft] = useState<string>('')
   const encoderRef = useRef<(() => Promise<{ blob: Blob; width: number; height: number }>) | null>(null)
-
-  const fetcher = useApiFetcher<FormData, UploadImageOutput>(UPLOAD, {
-    onSuccess: (data) => {
-      onUploaded(data.image)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-    },
-  })
+  const [isPending, setIsPending] = useState(false)
 
   // Reset internal state every time the dialog opens. Without this, the
   // previous selection's preview would flash for a moment when the
@@ -98,6 +86,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
     setTargetWidth(null)
     setTargetWidthDraft('')
     encoderRef.current = null
+    setIsPending(false)
   }, [open])
 
   const onSelectFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,6 +146,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
       return
     }
     setErrorMessage(null)
+    setIsPending(true)
     try {
       const encoded = await encoderRef.current()
       const formData = new FormData()
@@ -172,11 +162,21 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
         formData.append('note', note.trim())
       }
 
-      fetcher.submit(formData)
+      const response = await fetch('/api/admin/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.error?.message || '上传失败')
+      }
+      onUploaded(data.image)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '上传失败')
+    } finally {
+      setIsPending(false)
     }
-  }, [file, kind, note, fetcher])
+  }, [file, kind, note, onUploaded])
 
   const onSubmit: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault()
@@ -184,7 +184,6 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
   }
 
   const lockedAspect = kind.kind === 'generic' ? undefined : LOCKED_ASPECT
-  const isPending = fetcher.isPending
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !isPending && onClose()}>

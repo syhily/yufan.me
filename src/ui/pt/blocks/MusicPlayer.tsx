@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-import { loadMusic } from '@/client/api/music-loader'
+import type { PublicMusicMeta as MusicMeta } from '@/shared/music'
+
+import { loadMusic } from '@/client/api/music'
 import { cn } from '@/ui/lib/cn'
 
 export interface MusicPlayerProps {
@@ -78,7 +80,7 @@ export function scheduleMusicPlayerInit(
 // aplayer.js payload.
 //
 // Metadata is fetched through the internal public API
-// (`/api/actions/music/get?id=<playerId>`) which resolves the audio /
+// (`/api/music/get?id=<playerId>`) which resolves the audio /
 // cover URL pair against the configured S3 public base URL on the
 // server side. The client never has to know about asset hosts or
 // storage settings.

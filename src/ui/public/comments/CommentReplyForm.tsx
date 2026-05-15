@@ -11,7 +11,9 @@ import type {
 } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
@@ -39,7 +41,7 @@ export interface CommentReplyFormProps {
 // `<fetcher.Form>` path was retired alongside the markdown pipeline:
 // PortableText bodies can't be cleanly form-encoded, and the editor
 // already lifts the body up as React state, so going through
-// `useApiFetcher` is both simpler and lighter-weight.
+// `useApiMutation` is both simpler and lighter-weight.
 export function CommentReplyForm({
   commentKey,
   csrfToken,
@@ -81,8 +83,8 @@ export function CommentReplyForm({
     }
   }, [guestProfile, user])
 
-  const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(
-    { path: '/api/comment/comments', method: 'POST' as const },
+  const reply = useApiMutation<ReplyCommentInput, ReplyCommentOutput>(
+    (vars) => unwrap(api.comment.replyComment({ body: vars })),
     {
       onSuccess: (data) => {
         setSubmitError(null)
@@ -110,8 +112,8 @@ export function CommentReplyForm({
     },
   )
 
-  const avatar = useApiFetcher<FindAvatarInput, FindAvatarOutput>(
-    { path: '/api/comment/avatar', method: 'POST' as const },
+  const avatar = useApiMutation<FindAvatarInput, FindAvatarOutput>(
+    (vars) => unwrap(api.comment.findAvatar({ body: vars })),
     {
       onSuccess: (payload) => setAvatarSrc(payload.avatar),
     },
@@ -127,7 +129,7 @@ export function CommentReplyForm({
     }
     const email = event.currentTarget.value
     if (email && email.includes('@')) {
-      avatar.submit({ email })
+      avatar.mutate({ email })
     } else {
       setAvatarSrc('/images/default-avatar.png')
     }
@@ -156,7 +158,7 @@ export function CommentReplyForm({
       subtitle: subtitle === '' ? undefined : subtitle,
     }
     setSubmitError(null)
-    reply.submit(payload)
+    reply.mutate(payload)
   }
 
   return (

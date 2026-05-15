@@ -57,7 +57,7 @@ export interface ListImagesOutput {
 
 // Multipart upload payload. The wire-format envelope is documented here
 // for reference; the actual transport is `multipart/form-data` because
-// `defineApiAction`'s helper drops file entries.
+// JSON request bodies cannot carry binary Blob entries.
 //
 // Required fields:
 //   - `kind` — discriminator, validated server-side

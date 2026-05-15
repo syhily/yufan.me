@@ -22,6 +22,20 @@ export default await createHonoServer({
     app.use(honoInstallGateMiddleware)
     app.use(honoVisitorCookieMiddleware)
 
+    // Legacy API redirect — /api/actions/* was the old RPC prefix.
+    // GET requests are forwarded with their query string; mutations return
+    // 410 because body parameters cannot survive a cross-style redirect.
+    app.all('/api/actions/*', (c) => {
+      if (c.req.method === 'GET' || c.req.method === 'HEAD') {
+        const url = new URL(c.req.url)
+        const legacyPath = url.pathname.replace(/^\/api\/actions\//, '/api/')
+        const kebabPath = legacyPath.replace(/\/([a-z]+)([A-Z])/g, '/$1-$2').toLowerCase()
+        url.pathname = kebabPath
+        return c.redirect(url.toString(), 301)
+      }
+      return c.json({ error: { message: '旧版 API 已停用，请改用 REST 契约端点。' } }, 410)
+    })
+
     // ─── API (ts-rest contracts) ────────────────────────
     app.route('/', createApiApp())
 

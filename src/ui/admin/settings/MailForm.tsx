@@ -1,8 +1,9 @@
 import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
@@ -37,8 +38,6 @@ interface FormState {
    */
   apiKey: string
 }
-
-const TEST = API_ACTIONS.admin.sendTestMail
 
 interface TestStatus {
   state: 'idle' | 'pending' | 'success' | 'error'
@@ -86,16 +85,20 @@ export function MailForm({ mail }: MailFormProps) {
   // Test-send fetcher lives outside `useSettingsForm` because the
   // POST `sendTestMail` action is a side-effect, not a settings write
   // (it doesn't trigger a snapshot revalidation).
-  const testFetcher = useApiFetcher<{ to: string }, { success: true }>(TEST, {
-    onSuccess: () => setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),
-    onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
-  })
+  const testMutation = useApiMutation<{ to: string }, { success: true }>(
+    ({ to }) => unwrap(api.admin.sendTestMail({ body: { to } })),
+    {
+      onSuccess: () =>
+        setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),
+      onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
+    },
+  )
   const submitTest = useCallback(() => {
     setTestStatus({ state: 'pending', message: null })
-    testFetcher.submit({ to: testTo.trim() })
-  }, [testFetcher, testTo])
+    testMutation.mutate({ to: testTo.trim() })
+  }, [testMutation, testTo])
 
-  const isTestPending = testFetcher.isPending
+  const isTestPending = testMutation.isPending
   const apiKeyConfigured = mail.apiKeyMask !== null
   // Test send only requires host + sender + an apiKey to actually exist
   // on the server — the local draft might still have an unsaved API key

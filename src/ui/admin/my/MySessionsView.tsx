@@ -4,7 +4,9 @@ import { useRevalidator } from 'react-router'
 
 import type { MySessionItem } from '@/routes/wp-admin.my.sessions'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { formatUserAgentLabel } from '@/shared/user-agent'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -15,8 +17,6 @@ import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const REVOKE = { path: '/api/account/sessions/:sid', method: 'DELETE' as const }
-
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export interface MySessionsViewProps {
@@ -26,14 +26,17 @@ export interface MySessionsViewProps {
 export function MySessionsView({ items }: MySessionsViewProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
-  const revoke = useApiFetcher<{ sid: string }, { success: boolean; currentSession: boolean }>(REVOKE, {
-    onSuccess: () => {
-      // Self-revoke is short-circuited to the logout endpoint inside
-      // `onRevoke`, so by the time this handler fires we're always
-      // revoking a different device — a list re-fetch is enough.
-      void revalidator.revalidate()
+  const revoke = useApiMutation<{ sid: string }, { success: boolean; currentSession: boolean }>(
+    (vars) => unwrap(api.account.revokeSession({ params: { id: vars.sid } })),
+    {
+      onSuccess: () => {
+        // Self-revoke is short-circuited to the logout endpoint inside
+        // `onRevoke`, so by the time this handler fires we're always
+        // revoking a different device — a list re-fetch is enough.
+        void revalidator.revalidate()
+      },
     },
-  })
+  )
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const submitting = revoke.isPending
@@ -59,7 +62,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        revoke.submit({ sid })
+        revoke.mutate({ sid })
       },
     })
   }

@@ -9,17 +9,13 @@ import {
   Trash2Icon,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  AdminMusicDto,
-  DeleteMusicInput,
-  DeleteMusicOutput,
-  ListMusicInput,
-  ListMusicOutput,
-} from '@/shared/music'
+import type { AdminMusicDto, DeleteMusicOutput, ListMusicOutput } from '@/shared/music'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'
 import { FloatingMusicPlayer, type FloatingMusicPlayerTrack } from '@/ui/admin/musics/FloatingMusicPlayer'
@@ -35,9 +31,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
-
-const LIST = API_ACTIONS.admin.listMusic
-const DELETE = API_ACTIONS.admin.deleteMusic
 
 const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
   value: String(n),
@@ -57,42 +50,63 @@ export function MusicsView() {
   const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null)
   const [playingTrack, setPlayingTrack] = useState<FloatingMusicPlayerTrack | null>(null)
 
-  const listApi = useAdminMutation<ListMusicInput, ListMusicOutput>(LIST, {
-    onSuccess: (payload) =>
-      dispatch({ type: 'loaded', rows: payload.musics, total: payload.total, hasMore: payload.hasMore }),
-    errorMessage: '加载音乐列表失败',
-  })
-  const { load: loadMusic, isPending: isListPending } = listApi
+  const listQuery = useApiQuery<ListMusicOutput>(['admin', 'musics', state.q, state.currentPage, state.pageSize], () =>
+    unwrap(
+      api.admin.listMusic({
+        query: {
+          q: state.q || undefined,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
+      }),
+    ),
+  )
+
+  useEffect(() => {
+    if (listQuery.data) {
+      dispatch({
+        type: 'loaded',
+        rows: listQuery.data.musics,
+        total: listQuery.data.total,
+        hasMore: listQuery.data.hasMore,
+      })
+    }
+  }, [listQuery.data, dispatch])
+
+  useEffect(() => {
+    if (listQuery.error) {
+      toast.error('加载音乐列表失败', { description: listQuery.error.message })
+    }
+  }, [listQuery.error])
+
+  const isListPending = listQuery.isFetching
 
   const reload = useCallback(() => {
-    loadMusic({
-      q: state.q || undefined,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-    })
-  }, [loadMusic, state.q, state.currentPage, state.pageSize])
+    void listQuery.refetch()
+  }, [listQuery])
 
-  const deleteApi = useAdminMutation<DeleteMusicInput, DeleteMusicOutput>(DELETE, {
-    onSuccess: () => undefined,
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const { submit: submitDelete } = deleteApi
+  const deleteMutation = useApiMutation<string, DeleteMusicOutput>(
+    (id) => unwrap(api.admin.deleteMusic({ params: { id } })),
+    {
+      onSuccess: () => undefined,
+      onError: (error) => {
+        toast.error('操作失败', { description: error.message })
+        setConfirm({
+          title: '删除失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        })
+      },
+    },
+  )
+  const { mutate: submitDelete } = deleteMutation
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
@@ -115,7 +129,7 @@ export function MusicsView() {
         destructive: true,
         onConfirm: () => {
           dispatch({ type: 'removeMusic', id: music.id })
-          submitDelete({ id: music.id })
+          submitDelete(music.id)
         },
       })
     },

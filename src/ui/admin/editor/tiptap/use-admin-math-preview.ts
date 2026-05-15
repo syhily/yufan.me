@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { RenderMathInput, RenderMathOutput } from '@/shared/cms-pages'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 
 const DEBOUNCE_MS = 200
 
@@ -24,20 +25,23 @@ export function useAdminMathPreview(
   const [previewMathml, setPreviewMathml] = useState('')
   const [renderError, setRenderError] = useState<string | null>(null)
 
-  const renderMath = useApiFetcher<RenderMathInput, RenderMathOutput>(API_ACTIONS.admin.renderMath, {
-    onSuccess: (result) => {
-      if (result.error !== null) {
-        setRenderError(result.error)
-        return
-      }
-      setRenderError(null)
-      lastValidMathml.current = result.mathml
-      setPreviewMathml(result.mathml)
+  const renderMath = useApiMutation<RenderMathInput, RenderMathOutput>(
+    (vars) => unwrap(api.admin.renderMath({ body: vars })),
+    {
+      onSuccess: (result) => {
+        if (result.error !== null) {
+          setRenderError(result.error)
+          return
+        }
+        setRenderError(null)
+        lastValidMathml.current = result.mathml
+        setPreviewMathml(result.mathml)
+      },
+      onError: () => {
+        setRenderError('渲染服务暂不可用')
+      },
     },
-    onError: () => {
-      setRenderError('渲染服务暂不可用')
-    },
-  })
+  )
 
   useEffect(() => {
     if (tex.trim() === '') {
@@ -47,13 +51,13 @@ export function useAdminMathPreview(
       return
     }
     const timer = setTimeout(() => {
-      renderMath.submit({ tex, display })
+      renderMath.mutate({ tex, display })
     }, DEBOUNCE_MS)
     return () => {
       clearTimeout(timer)
     }
     // oxlint-disable-next-line exhaustive-deps
-  }, [tex, display, renderMath.submit])
+  }, [tex, display, renderMath.mutate])
 
   const showSpinner = previewMathml === '' && renderMath.isPending
   const previewHtml = previewMathml !== '' ? previewMathml : lastValidMathml.current

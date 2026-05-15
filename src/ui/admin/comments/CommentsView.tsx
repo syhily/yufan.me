@@ -1,17 +1,13 @@
 import { RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  AdminComment,
-  FilterAutocompleteInput,
-  LoadAllInput,
-  LoadAllOutput,
-  SearchAuthorsOutput,
-  SearchPagesOutput,
-} from '@/shared/comments'
+import type { AdminComment, LoadAllInput, LoadAllOutput } from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
@@ -28,10 +24,6 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
-
-const LOAD_ALL = { path: '/api/comment/all', method: 'POST' as const }
-const SEARCH_PAGES = { path: '/api/comment/search/pages', method: 'GET' as const }
-const SEARCH_AUTHORS = { path: '/api/comment/search/authors', method: 'GET' as const }
 
 // How long to wait after the user stops typing in a Combobox input
 // before firing the autocomplete request. 250ms feels snappy without
@@ -87,48 +79,64 @@ export function CommentsView({
     initialStatus,
   })
 
-  const loadApi = useAdminMutation<LoadAllInput, LoadAllOutput>(LOAD_ALL, {
-    errorMessage: '加载评论列表失败',
-    onSuccess: (payload) => {
-      dispatch({
-        type: 'loaded',
-        comments: payload.comments,
-        total: payload.total,
-        hasMore: payload.hasMore,
-        statusCounts: payload.statusCounts,
-      })
+  const loadMutation = useApiMutation<LoadAllInput, LoadAllOutput>(
+    (input) => unwrap(api.comment.loadAll({ body: input })) as Promise<LoadAllOutput>,
+    {
+      onSuccess: (payload) => {
+        dispatch({
+          type: 'loaded',
+          comments: payload.comments,
+          total: payload.total,
+          hasMore: payload.hasMore,
+          statusCounts: payload.statusCounts,
+        })
+      },
+      onError: (error) => {
+        toast.error('加载评论列表失败', { description: error.message })
+      },
     },
+  )
+
+  const [debouncedPageQuery, setDebouncedPageQuery] = useState('')
+  const [pageQuery, setPageQuery] = useDebouncedSearch({
+    delayMs: FILTER_QUERY_DEBOUNCE_MS,
+    onChange: (value) => setDebouncedPageQuery(value),
   })
-  const pagesApi = useAdminMutation<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES)
-  const authorsApi = useAdminMutation<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS)
-  const authorRehydrateApi = useAdminMutation<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS, {
-    onSuccess: (payload) => {
-      const fetched = payload.authors
-      if (fetched.length === 0) {
-        return
-      }
-      // The endpoint returns up to N matches but for `ids=<single>` we
-      // only ever care about the first row (and `searchAuthors` honours
-      // `inArray(user.id, ids)`, so any returned row is by definition a
-      // valid match for one of our ids).
-      dispatch({ type: 'renameFilterAuthor', label: fetched[0].name })
-    },
+
+  const [debouncedAuthorQuery, setDebouncedAuthorQuery] = useState('')
+  const [authorQuery, setAuthorQuery] = useDebouncedSearch({
+    delayMs: FILTER_QUERY_DEBOUNCE_MS,
+    onChange: (value) => setDebouncedAuthorQuery(value),
   })
-  const pageRehydrateApi = useAdminMutation<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES, {
-    onSuccess: (payload) => {
-      const fetched = payload.pages
-      if (fetched.length === 0) {
-        return
-      }
-      const title = fetched[0].title || '无标题'
-      dispatch({ type: 'renameFilterPage', label: title })
-    },
-  })
-  const { submit: loadComments, isPending: isCommentsLoading } = loadApi
-  const { load: loadPages, data: pagesData, isPending: isPagesPending } = pagesApi
-  const { load: loadAuthors, data: authorsData, isPending: isAuthorsPending } = authorsApi
-  const { load: rehydrateAuthor } = authorRehydrateApi
-  const { load: rehydratePage } = pageRehydrateApi
+
+  const { data: pagesData, isLoading: isPagesPending } = useApiQuery(['comment-search-pages', debouncedPageQuery], () =>
+    unwrap(api.comment.searchPages({ query: debouncedPageQuery ? { q: debouncedPageQuery } : {} })),
+  )
+
+  const { data: authorsData, isLoading: isAuthorsPending } = useApiQuery(
+    ['comment-search-authors', debouncedAuthorQuery],
+    () => unwrap(api.comment.searchAuthors({ query: debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {} })),
+  )
+
+  const { data: authorRehydrateData } = useApiQuery(
+    ['comment-rehydrate-author', initialAuthorId],
+    () =>
+      initialAuthorId
+        ? unwrap(api.comment.searchAuthors({ query: { ids: initialAuthorId } }))
+        : Promise.resolve({ authors: [] }),
+    { enabled: !!initialAuthorId },
+  )
+
+  const { data: pageRehydrateData } = useApiQuery(
+    ['comment-rehydrate-page', initialPageKey],
+    () =>
+      initialPageKey
+        ? unwrap(api.comment.searchPages({ query: { key: initialPageKey } }))
+        : Promise.resolve({ pages: [] }),
+    { enabled: !!initialPageKey },
+  )
+
+  const { mutate: loadComments, isPending: isCommentsLoading } = loadMutation
 
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
@@ -140,33 +148,19 @@ export function CommentsView({
     setReplyCsrfToken(commentCsrfToken)
   }, [commentCsrfToken])
 
-  /*
-   * Mount-only: if the page was opened with `?userId=2232` we have a
-   * Combobox value but no human label, so the trigger renders the bare
-   * id ("2232"). Fire one lookup against `searchAuthors?ids=2232` to
-   * resolve the matching `name` and rename the filter label. Subsequent
-   * label updates triggered by the user's own selection are handled
-   * directly inside `onValueChange`, so this effect never needs to run
-   * again — the empty deps array enforces that.
-   */
   useEffect(() => {
-    if (!initialAuthorId) {
+    if (!authorRehydrateData?.authors.length) {
       return
     }
-    rehydrateAuthor({ ids: initialAuthorId })
-  }, [initialAuthorId, rehydrateAuthor])
+    dispatch({ type: 'renameFilterAuthor', label: authorRehydrateData.authors[0].name })
+  }, [authorRehydrateData, dispatch])
 
-  // Page-key flavour of the same rehydrate dance. See the matching
-  // author-rehydrate block above for the rationale; the only material
-  // difference is the wire format (`?key=<single>` rather than
-  // `?ids=<csv>`) because page keys are URL strings that aren't
-  // comma-safe.
   useEffect(() => {
-    if (!initialPageKey) {
+    if (!pageRehydrateData?.pages.length) {
       return
     }
-    rehydratePage({ key: initialPageKey })
-  }, [initialPageKey, rehydratePage])
+    dispatch({ type: 'renameFilterPage', label: pageRehydrateData.pages[0].title || '无标题' })
+  }, [pageRehydrateData, dispatch])
 
   const reload = useCallback(() => {
     const offset = state.currentPage * state.pageSize
@@ -182,30 +176,6 @@ export function CommentsView({
   useEffect(() => {
     reload()
   }, [reload])
-
-  // --- Lazy-loaded filter dropdowns ---------------------------------
-  //
-  // The two filter Comboboxes (page-title, author-name) used to load
-  // every option in one shot at mount time. That doesn't scale to large
-  // sites, and Base UI's client-side filter had an edge case where the
-  // selected item leaked through as an empty row. Now: each Combobox
-  // owns a `pageQuery`/`authorQuery` controlled-input string, every
-  // change is debounced for `FILTER_QUERY_DEBOUNCE_MS`, and the matching
-  // server endpoint returns the top-N hits. We pass `filter={null}` to
-  // Base UI so it doesn't re-filter on top of what we already filtered
-  // server-side.
-  const [pageQuery, setPageQuery] = useDebouncedSearch({
-    delayMs: FILTER_QUERY_DEBOUNCE_MS,
-    onChange: (value) => {
-      loadPages(value ? { q: value } : undefined)
-    },
-  })
-  const [authorQuery, setAuthorQuery] = useDebouncedSearch({
-    delayMs: FILTER_QUERY_DEBOUNCE_MS,
-    onChange: (value) => {
-      loadAuthors(value ? { q: value } : undefined)
-    },
-  })
 
   // Server-returned items, normalised to `{ value, label }` so Base UI
   // Combobox can auto-display labels via `Combobox.Value`. We also splice

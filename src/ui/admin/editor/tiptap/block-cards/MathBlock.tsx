@@ -3,7 +3,8 @@ import { useState } from 'react'
 
 import type { Block, MathBlock } from '@/shared/pt/schema'
 
-import { fetchRenderMath } from '@/client/api/render-math-fetch'
+import { api } from '@/client/api/client'
+import { unwrap } from '@/client/api/unwrap'
 import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'
@@ -70,7 +71,7 @@ export function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlock
     }
     setSaving(true)
     try {
-      const out = await fetchRenderMath({ tex: draft, display: true })
+      const out = await unwrap(api.admin.renderMath({ body: { tex: draft, display: true } }))
       const mathml = out.error === null && out.mathml !== '' ? out.mathml : ''
       onCommit({ ...payload, tex: draft }, mathml)
     } finally {

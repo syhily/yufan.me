@@ -2,7 +2,7 @@ import type { MarkdownHeading } from '@/shared/catalog'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 // Wire-format DTOs and request shapes for the `/wp-admin/pages` editor +
-// the `/api/actions/admin.{listPages,…}` resource routes. Lives in
+// the `/api/admin/list-pages` ts-rest contract. Lives in
 // `@/shared` so server (admin actions, service layer) and client
 // (admin UI fetcher hooks) import the same shape without crossing the
 // server/client boundary. Bigints are stringified — the public site

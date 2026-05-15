@@ -2,7 +2,9 @@ import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Ico
 
 import type { AdminComment } from '@/shared/comments'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { idStr } from '@/shared/tools'
@@ -21,9 +23,6 @@ import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
-
-const APPROVE = { path: '/api/comment/comments/:rid/approve', method: 'PATCH' as const }
-const DELETE = { path: '/api/comment/comments/:rid', method: 'DELETE' as const }
 
 export interface AdminCommentRowProps {
   comment: AdminComment
@@ -61,18 +60,24 @@ export function AdminCommentRow({
   const authorHref = safeHref(comment.link)
   const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
 
-  const approveFetcher = useApiFetcher<{ rid: string }, null>(APPROVE, {
-    onSuccess: () => onApproved(),
-  })
-  const deleteFetcher = useApiFetcher<{ rid: string }, null>(DELETE, {
-    onSuccess: () => onDeleted(),
-  })
+  const approveMutation = useApiMutation<{ rid: string }, null>(
+    ({ rid }) => unwrap(api.comment.approve({ params: { rid } })),
+    {
+      onSuccess: () => onApproved(),
+    },
+  )
+  const deleteMutation = useApiMutation<{ rid: string }, null>(
+    ({ rid }) => unwrap(api.comment.delete({ params: { rid } })),
+    {
+      onSuccess: () => onDeleted(),
+    },
+  )
 
   const submitApprove = () => {
-    approveFetcher.submit({ rid: idStr(comment.id) })
+    approveMutation.mutate({ rid: idStr(comment.id) })
   }
   const submitDelete = () => {
-    deleteFetcher.submit({ rid: idStr(comment.id) })
+    deleteMutation.mutate({ rid: idStr(comment.id) })
   }
 
   const initial = (comment.name || comment.email || '?').slice(0, 1).toUpperCase()
@@ -103,7 +108,7 @@ export function AdminCommentRow({
             type="button"
             variant="outline"
             size="sm"
-            disabled={approveFetcher.isPending}
+            disabled={approveMutation.isPending}
             onClick={() => onConfirmApprove(submitApprove)}
             className="h-8 gap-1 px-3 text-xs sm:h-9 sm:gap-1.5 sm:px-3.5 sm:text-sm"
           >
@@ -137,7 +142,7 @@ export function AdminCommentRow({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              disabled={deleteFetcher.isPending}
+              disabled={deleteMutation.isPending}
               onClick={() => onConfirmDelete(submitDelete)}
             >
               <Trash2Icon /> 删除评论

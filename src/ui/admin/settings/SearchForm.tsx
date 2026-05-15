@@ -1,10 +1,9 @@
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { SearchLoaderShape } from '@/shared/settings'
 
-import { toast } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
@@ -96,22 +95,23 @@ export function SearchForm({ search }: SearchFormProps) {
 
     try {
       while (true) {
-        const res = await fetch(API_ACTIONS.admin.reindexSearch.path, {
+        const res = await fetch('/api/admin/reindex-search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ batchSize: 5, offset }),
         })
 
-        const envelope = (await res.json()) as {
-          data?: { processed: number; failed: number; total: number; nextOffset: number | null }
-          error?: { message: string }
+        if (!res.ok) {
+          const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } }
+          throw new Error(err.error?.message || `HTTP ${res.status}`)
         }
 
-        if (!res.ok || envelope.error) {
-          throw new Error(envelope.error?.message || `HTTP ${res.status}`)
+        const data = (await res.json()) as {
+          processed: number
+          failed: number
+          total: number
+          nextOffset: number | null
         }
-
-        const data = envelope.data!
         total = data.total
         processed += data.processed
         failed += data.failed

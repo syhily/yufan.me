@@ -1,20 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { loadMusic } from '@/client/api/music-loader'
+import { loadMusic } from '@/client/api/music'
 
 // `loadMusic` is the browser-side resolver fed straight into APlayer.
 // It MUST go through the internal API so feed-cache headers and the
 // install-gate stay in effect; the legacy `cat.yufan.me/musics/<id>.json`
 // origin lookup is gone.
 
-const originalFetch = globalThis.fetch
-
-afterEach(() => {
-  globalThis.fetch = originalFetch
-  vi.restoreAllMocks()
-})
-
 describe('client/music — loadMusic', () => {
+  const originalFetch = globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    vi.restoreAllMocks()
+  })
   it('hits the internal music.get endpoint and returns the unwrapped meta', async () => {
     const meta = {
       id: 'abcdef0123456789',

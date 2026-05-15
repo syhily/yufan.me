@@ -3,7 +3,8 @@ import { useState } from 'react'
 
 import type { Block, MermaidBlock } from '@/shared/pt/schema'
 
-import { fetchRenderMermaid } from '@/client/api/render-mermaid-fetch'
+import { api } from '@/client/api/client'
+import { unwrap } from '@/client/api/unwrap'
 import { useAdminMermaidPreview } from '@/ui/admin/editor/tiptap/use-admin-mermaid-preview'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -103,7 +104,7 @@ export function MermaidBlockSourceEditor({ payload, onCommit, onCancel }: Mermai
     }
     setSaving(true)
     try {
-      const out = await fetchRenderMermaid({ code: draft })
+      const out = await unwrap(api.admin.renderMermaid({ body: { code: draft } }))
       const svg = out.error === null && out.svg !== '' ? out.svg : ''
       onCommit({ ...payload, code: draft }, svg)
     } finally {

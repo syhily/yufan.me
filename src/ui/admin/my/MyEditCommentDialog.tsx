@@ -1,10 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { toast } from '@/client/api/use-admin-mutation'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -16,8 +18,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
-
-const UPDATE_OWN = { path: '/api/comment/own/update', method: 'POST' as const }
 
 // Self-edit dialog for `/wp-admin/my/comments`. Differs from the
 // admin `EditCommentDialog`:
@@ -33,9 +33,12 @@ export interface MyEditCommentDialogProps {
 }
 
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
-  const fetcher = useApiFetcher<{ commentId: string; body: CommentBody }, { success: boolean }>(UPDATE_OWN, {
-    onSuccess: () => onSaved(),
-  })
+  const update = useApiMutation<{ commentId: string; body: CommentBody }, { success: boolean }>(
+    (vars) => unwrap(api.comment.updateOwn({ body: vars })),
+    {
+      onSuccess: () => onSaved(),
+    },
+  )
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
@@ -55,7 +58,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
   }, [target?.id])
 
   const open = target !== null
-  const submitting = fetcher.isPending
+  const submitting = update.isPending
   const dialogKey = target?.id ?? 'empty'
 
   return (
@@ -77,7 +80,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
               toast.error('评论内容不能为空')
               return
             }
-            fetcher.submit({ commentId: target.id, body })
+            update.mutate({ commentId: target.id, body })
           }}
           className="flex flex-col gap-4"
         >

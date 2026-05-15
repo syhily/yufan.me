@@ -1,11 +1,13 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
-import type { AdminComment, CommentEditOutput, CommentRawOutput } from '@/shared/comments'
+import type { AdminComment, CommentEditOutput } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { toast } from '@/client/api/use-admin-mutation'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -19,9 +21,6 @@ import {
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
 
-const EDIT = { path: '/api/comment/comments/:rid', method: 'PATCH' as const }
-const GET_RAW = { path: '/api/comment/comments/raw', method: 'GET' as const }
-
 export interface EditCommentDialogProps {
   comment: AdminComment | null
   onClose: () => void
@@ -34,22 +33,18 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
-  const rawFetcher = useApiFetcher<{ rid: string }, CommentRawOutput>(GET_RAW, {
-    onSuccess: (payload) => {
-      if (loaded) {
-        return
-      }
-      const loadedBody = (payload.body ?? []) as CommentBody
-      setInitialBody(loadedBody)
-      setBody(loadedBody)
-      setBodyKey((k) => k + 1)
-      setLoaded(true)
-    },
-  })
+  const { data: rawData } = useApiQuery(
+    ['comment-raw', comment?.id ?? 'empty'],
+    () => (comment ? unwrap(api.comment.getRaw({ query: { rid: idStr(comment.id) } })) : Promise.resolve({ body: [] })),
+    { enabled: !!comment },
+  )
 
-  const editFetcher = useApiFetcher<{ rid: string; body: CommentBody }, CommentEditOutput>(EDIT, {
-    onSuccess: (payload) => onSaved({ body: payload.comment.body }),
-  })
+  const editMutation = useApiMutation<{ rid: string; body: CommentBody }, CommentEditOutput>(
+    ({ rid, body }) => unwrap(api.comment.edit({ params: { rid }, body: { body } })),
+    {
+      onSuccess: (payload) => onSaved({ body: payload.comment.body }),
+    },
+  )
 
   useEffect(() => {
     if (!comment) {
@@ -59,13 +54,21 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
       return
     }
     setLoaded(false)
-    rawFetcher.load({ rid: idStr(comment.id) })
     // intentionally only refetch when comment id changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comment?.id])
 
+  useEffect(() => {
+    if (!comment || !rawData) return
+    const loadedBody = (rawData.body ?? []) as CommentBody
+    setInitialBody(loadedBody)
+    setBody(loadedBody)
+    setBodyKey((k) => k + 1)
+    setLoaded(true)
+  }, [rawData, comment])
+
   const open = comment !== null
-  const submitting = editFetcher.isPending
+  const submitting = editMutation.isPending
   const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
@@ -85,7 +88,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
               toast.error('评论内容不能为空')
               return
             }
-            editFetcher.submit({ rid: idStr(comment.id), body })
+            editMutation.mutate({ rid: idStr(comment.id), body })
           }}
           className="flex flex-col gap-4"
         >

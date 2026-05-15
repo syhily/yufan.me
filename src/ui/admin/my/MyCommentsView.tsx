@@ -6,7 +6,9 @@ import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin.my.
 import type { MyCommentsStatus } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -22,9 +24,6 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
-
-const REQUEST_DELETE = { path: '/api/comment/own/delete-request', method: 'POST' as const }
-const CANCEL_DELETE = { path: '/api/comment/own/delete-cancel', method: 'POST' as const }
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -153,28 +152,34 @@ export function MyCommentsView({
     return match ?? { value: entity, label: entity }
   }, [entity, entityOptions])
 
-  const requestDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(REQUEST_DELETE, {
-    onSuccess: () => {
-      void revalidator.revalidate()
+  const requestDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
+    (vars) => unwrap(api.comment.requestDeleteOwn({ body: vars })),
+    {
+      onSuccess: () => {
+        void revalidator.revalidate()
+      },
     },
-  })
-  const cancelDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(CANCEL_DELETE, {
-    onSuccess: () => {
-      void revalidator.revalidate()
+  )
+  const cancelDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
+    (vars) => unwrap(api.comment.cancelDeleteOwn({ body: vars })),
+    {
+      onSuccess: () => {
+        void revalidator.revalidate()
+      },
     },
-  })
+  )
 
   const submitting = requestDelete.isPending || cancelDelete.isPending
 
   const onRequestDelete = useCallback(
     (id: string) => {
-      requestDelete.submit({ commentId: id })
+      requestDelete.mutate({ commentId: id })
     },
     [requestDelete],
   )
   const onCancelDelete = useCallback(
     (id: string) => {
-      cancelDelete.submit({ commentId: id })
+      cancelDelete.mutate({ commentId: id })
     },
     [cancelDelete],
   )

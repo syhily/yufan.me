@@ -1,8 +1,9 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -15,8 +16,6 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 
-const INVITE = API_ACTIONS.admin.inviteAuthor
-
 interface Props {
   open: boolean
   onClose: () => void
@@ -24,18 +23,21 @@ interface Props {
 }
 
 export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
-  const fetcher = useApiFetcher<{ name: string; email: string }, { success: boolean }>(INVITE, {
-    onSuccess: () => {
-      setName('')
-      setEmail('')
-      onInvited()
+  const invite = useApiMutation<{ name: string; email: string }, { success: boolean }>(
+    (vars) => unwrap(api.admin.inviteAuthor({ body: vars })),
+    {
+      onSuccess: () => {
+        setName('')
+        setEmail('')
+        onInvited()
+      },
     },
-  })
+  )
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
 
-  const submitting = fetcher.isPending
-  const error = fetcher.error?.message
+  const submitting = invite.isPending
+  const error = invite.error?.message
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -47,7 +49,7 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            fetcher.submit({ name, email })
+            invite.mutate({ name, email })
           }}
           className="grid gap-4"
         >

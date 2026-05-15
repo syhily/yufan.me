@@ -2,7 +2,9 @@ import { KeyRoundIcon, SaveIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -15,8 +17,6 @@ import { Label } from '@/ui/components/label'
 import { Separator } from '@/ui/components/separator'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const UPDATE_PROFILE_PATH = '/api/account/profile'
-const UPDATE_PASSWORD_PATH = '/api/account/password'
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export interface MyProfileUser {
@@ -47,8 +47,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
 
-  const profileFetcher = useApiFetcher<Record<string, string | null>, { user: unknown }>(
-    { path: UPDATE_PROFILE_PATH, method: 'PATCH' },
+  const profileMutation = useApiMutation<Record<string, string | null>, { user: unknown }>(
+    (body) => unwrap(api.account.updateProfile({ body })),
     {
       onSuccess: () => {
         setProfileMessage('已保存。')
@@ -58,8 +58,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
       },
     },
   )
-  const passwordFetcher = useApiFetcher<{ oldPassword: string; newPassword: string }, { success: boolean }>(
-    { path: UPDATE_PASSWORD_PATH, method: 'PATCH' },
+  const passwordMutation = useApiMutation<{ oldPassword: string; newPassword: string }, { success: boolean }>(
+    (body) => unwrap(api.account.updatePassword({ body })),
     {
       onSuccess: () => {
         setPasswordMessage('密码已更新；其他设备的会话已注销。')
@@ -78,8 +78,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
 
-  const profileError = profileFetcher.error?.message
-  const passwordError = passwordFetcher.error?.message
+  const profileError = profileMutation.error?.message
+  const passwordError = passwordMutation.error?.message
   // Only privileged roles (admin / author) can paint a custom badge
   // next to their comments. Visitors keep the field hidden — the
   // server-side updateProfile action enforces the same rule.
@@ -189,7 +189,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                     payload.badgeName = badgeName || null
                     payload.badgeColor = badgeColor || null
                   }
-                  profileFetcher.submit(payload)
+                  profileMutation.mutate(payload)
                 }}
                 className="grid gap-4 sm:grid-cols-2"
               >
@@ -244,8 +244,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                 {profileError && <div className="text-sm text-destructive sm:col-span-2">{profileError}</div>}
                 {profileMessage && <div className="text-sm text-green-600 sm:col-span-2">{profileMessage}</div>}
                 <div className="flex justify-end gap-2 sm:col-span-2">
-                  <Button type="submit" disabled={profileFetcher.isPending}>
-                    <SaveIcon data-icon /> {profileFetcher.isPending ? '保存中…' : '保存'}
+                  <Button type="submit" disabled={profileMutation.isPending}>
+                    <SaveIcon data-icon /> {profileMutation.isPending ? '保存中…' : '保存'}
                   </Button>
                 </div>
               </form>
@@ -262,7 +262,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                 onSubmit={(e) => {
                   e.preventDefault()
                   setPasswordMessage(null)
-                  passwordFetcher.submit({ oldPassword, newPassword })
+                  passwordMutation.mutate({ oldPassword, newPassword })
                 }}
                 className="grid gap-4 sm:grid-cols-2"
               >
@@ -290,8 +290,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                 {passwordError && <div className="text-sm text-destructive sm:col-span-2">{passwordError}</div>}
                 {passwordMessage && <div className="text-sm text-green-600 sm:col-span-2">{passwordMessage}</div>}
                 <div className="flex justify-end gap-2 sm:col-span-2">
-                  <Button type="submit" variant="outline" disabled={passwordFetcher.isPending}>
-                    <KeyRoundIcon data-icon /> {passwordFetcher.isPending ? '更新中…' : '修改密码'}
+                  <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
+                    <KeyRoundIcon data-icon /> {passwordMutation.isPending ? '更新中…' : '修改密码'}
                   </Button>
                 </div>
               </form>

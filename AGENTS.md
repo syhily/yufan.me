@@ -92,8 +92,9 @@ src/
   - `server/route-helpers/` — Legacy response helpers (`ok`, `fail`,
     `ActionFailure`) still used by some service layers during the
     migration window.
-  - `server/middleware/` — React Router root middleware (request
-    context population, install gating, WordPress probe interception).
+  - `server/middleware/` — Historical React Router middleware. All
+    perimeter middleware (session, install-gate, wp-decoy, visitor-cookie)
+    now lives in `server/http/` as Hono middleware.
   - `server/auth/` + `server/session.ts` — Cookie session, CSRF,
     request context, login flow. `tests/contract.cookie.test.ts` treats
     these file paths as a contract; keep them in sync.
@@ -117,10 +118,11 @@ src/
 
 ### `src/client/` — Browser Only
 
-- Hooks, `useApiFetcher`, the `API_ACTIONS` manifest + types.
-  **Migration in progress**: new code should call endpoints through
-  the ts-rest contract layer (`shared/contracts/`) rather than adding
-  to `API_ACTIONS`.
+- Hooks, browser APIs, and the ts-rest client (`@/client/api/client`).
+  All HTTP calls go through `api.<domain>.<endpoint>(...)` defined in
+  `shared/contracts/`; `unwrap()` turns non-2xx responses into thrown
+  `ApiError`. TanStack Query wrappers (`useApiQuery`, `useApiMutation`)
+  live in `@/client/api/query`.
 - Heavy widgets (e.g. `qrcode.react`) reach the bundle through
   React.lazy + Suspense from a UI component, not via top-level imports
   (see `bundle-dynamic-imports`).
@@ -191,9 +193,8 @@ src/
   caller already exist. Anything that needs `pg` / `ioredis` / `node:*`
   belongs in `server/`.
 - See `src/shared/` for the authoritative list. Notable groupings:
-  wire & primitives (`api-actions`, `api-envelope`, `api-types`,
-  `urls`, `safe-url`, `request`, `security`, `tools`, `formatter`,
-  `contracts`);
+  wire & primitives (`contracts`, `urls`, `safe-url`, `request`,
+  `security`, `tools`, `formatter`);
   `toc`, `images`, `pagination`); per-domain DTOs (`categories`,
   `comments`, `friends`, `music`, `socials`, `tags`, `users`,
   `cache-types`, `catalog`); settings & blog config (`settings`,
@@ -542,9 +543,8 @@ reviewers cite during PR review: `server-no-shared-module-state`,
 - All interactivity lives in React components/hooks under `@/client/`
   and `@/ui/`. `src/assets/scripts` is intentionally absent — there is
   no separate browser-script pipeline.
-- Interactive components call resource URLs through `API_ACTIONS`
-  (`@/client/api/actions`) and `useApiFetcher` (`@/client/api/fetcher`).
-  They must not import server modules.
+- Interactive components call resource URLs through the ts-rest client
+  (`api` from `@/client/api/client`). They must not import server modules.
 - Avoid adding new client dependencies unless the interaction needs them.
 
 ### iOS auto-zoom contract
@@ -584,9 +584,10 @@ focused and restores the previous value on blur.
 
 ## Sessions, Env, And Security
 
-- Sessions use React Router `createSessionStorage` with Redis
-  persistence and a signed `__session` cookie. `SESSION_SECRET`
-  required.
+- Sessions use Hono middleware (`server/http/session.ts`) which wraps
+  React Router `createSessionStorage` with Redis persistence and a signed
+  `__session` cookie. `SESSION_SECRET` required. The middleware populates
+  `c.var.session` and commits `Set-Cookie` after the response is built.
 - Server environment access goes through `@/server/env` (built on
   `@t3-oss/env-core` + Zod). When adding env vars, update the t3-env
   schema, `src/env.d.ts`, and `.env.example` together.
@@ -636,7 +637,7 @@ focused and restores the previous value on blur.
     upload toggle OFF; the admin opts in later at
     `/wp-admin/settings/assets`. The route loader requires an
     authenticated admin session.
-- `installGateMiddleware` (`@/server/middleware/install-gate`) reads
+- `honoInstallGateMiddleware` (`@/server/http/install-gate.ts`) reads
   `getInstallState()` and routes:
   - no admin row → `/wp-admin/install.php`
   - admin present but `blog.general` and/or `blog.assets` missing →
@@ -650,9 +651,10 @@ focused and restores the previous value on blur.
 - Pre-existing deployments missing optional sections are backfilled
   lazily on next snapshot hydration through `loadSettingsFromDb()` and
   `upsertSetting`. The backfill is best-effort and swallows DB errors.
-- Admin section saves go through `API_ACTIONS.admin.updateSettings`,
-  which validates against `SECTION_REGISTRY[section].schema` and writes
-  ONLY that one row. There is no aggregate "reset to defaults" action.
+- Admin section saves go through `api.admin.updateSettings` (ts-rest
+  contract), which validates against `SECTION_REGISTRY[section].schema`
+  and writes ONLY that one row. There is no aggregate "reset to defaults"
+  action.
 
 ## API Layer (Hono + ts-rest)
 
@@ -671,6 +673,13 @@ focused and restores the previous value on blur.
   calendars, avatars).
 - **OpenAPI** (`/openapi.json` + `/docs`) is auto-generated from the
   contract tree in development.
+
+## Permission Matrix
+
+The API security policy is a single readable block in
+`src/server/http/app.ts`. Opening that file shows every mounted contract
+and its guard (`publicRoute`, `authedRoute`, `adminRoute`, `authorRoute`).
+There is no secondary config file or decorator-based RBAC scatter.
 
 ## Assets
 
@@ -731,6 +740,17 @@ These are landmines from past refactors. Do not reintroduce them.
   to change them.
 - When moving files, update imports and documentation in the same
   change.
+- **Hono / ts-rest defensive rules:**
+  - Do not write business logic inside controllers — controllers only
+    orchestrate service calls.
+  - Do not throw `HTTPException` from service layers — throw `DomainError`
+    and let `onErrorHandler` (`server/http/errors.ts`) map it to the
+    correct HTTP status.
+  - Do not bypass `apiContract` to add ad-hoc Hono routes. Non-JSON
+    resource routes (RSS, sitemap, images) belong in
+    `server/http/resources/`; everything else goes through the contract.
+  - Do not use raw `fetch('/api/...')` string拼接 in client code —
+    always call `api.<domain>.<endpoint>(...)` from `@/client/api/client`.
 
 ## Git And Commits
 

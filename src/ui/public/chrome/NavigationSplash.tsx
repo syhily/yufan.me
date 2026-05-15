@@ -13,7 +13,7 @@ import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 //
 // We watch `useNavigation()` only (covers `loading` + `submitting`,
 // including back/forward and POST→revalidate). `useFetchers()` is
-// intentionally not included — `useApiFetcher` flows (likes, comment
+// intentionally not included — `useApiMutation` flows (likes, comment
 // posts, admin saves) own their own pending UI; a global splash on
 // those would be a visual lie about page change.
 //

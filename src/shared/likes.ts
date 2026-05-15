@@ -5,7 +5,7 @@ export interface IncreaseLikeInput {
 export interface IncreaseLikeOutput {
   key: string
   likes: number
-  token: string
+  token?: string
 }
 
 export interface DecreaseLikeInput {

@@ -161,7 +161,7 @@ export interface ErrorResp {
 export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'
 
 // ---------------------------------------------------------------------------
-// API input/output types (migrated from @/shared/api-types)
+// Comment API input/output types (consumed by both client and server)
 // ---------------------------------------------------------------------------
 
 export interface CommentReplyInput {
@@ -234,7 +234,7 @@ export interface MyCommentsOutput {
 }
 
 export interface RevokeCommentTokenOutput {
-  success: true
+  success: boolean
 }
 
 export interface SearchPagesOutput {

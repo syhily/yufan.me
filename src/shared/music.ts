@@ -106,7 +106,7 @@ export interface UpdateMusicOutput {
   music: AdminMusicDto
 }
 
-// Public GET payload — what `/api/actions/music/get?id=...` returns
+// Public GET payload — what `/api/music/get?id=...` returns
 // to the browser-side `<MusicPlayer />` so APlayer can render. Kept
 // intentionally aligned with the historical `MusicMeta` shape from
 // the static `cat.yufan.me/musics/<id>.json` files so the legacy

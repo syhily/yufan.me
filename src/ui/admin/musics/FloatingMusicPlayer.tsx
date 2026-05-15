@@ -1,7 +1,9 @@
 import { ChevronRightIcon, Music2Icon, XIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { loadMusic, type MusicMeta } from '@/client/api/music-loader'
+import type { PublicMusicMeta as MusicMeta } from '@/shared/music'
+
+import { loadMusic } from '@/client/api/music'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
