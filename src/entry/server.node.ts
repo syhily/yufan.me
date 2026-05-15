@@ -43,6 +43,9 @@ export function createApp(): Hono<Env> {
     app.get('/docs', swaggerUI({ url: '/openapi.json' }))
   }
 
+  // Health check.
+  app.get('/health', (c) => c.json({ status: 'ok', uptime: process.uptime() }))
+
   // API (ts-rest contracts).
   app.route('/', createApiApp())
   // 308 redirects for old API URLs → new RESTful URLs (preserves method).
