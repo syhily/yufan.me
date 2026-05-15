@@ -3,7 +3,7 @@ import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'reac
 
 import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'

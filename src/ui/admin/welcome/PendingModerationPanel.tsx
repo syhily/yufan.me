@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import type { ListPendingDashboardInput, ListPendingDashboardOutput } from '@/shared/api-types'
 import type { AdminPendingItemDto } from '@/shared/comments'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { Badge } from '@/ui/components/badge'

@@ -20,7 +20,7 @@ import type {
   RestorePageOutput,
 } from '@/shared/cms-pages'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'

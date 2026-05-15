@@ -6,7 +6,7 @@ import { Link } from 'react-router'
 
 import type { AdminPostDetailDto, GetPostInput } from '@/shared/cms-posts'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 import { Button } from '@/ui/components/button'

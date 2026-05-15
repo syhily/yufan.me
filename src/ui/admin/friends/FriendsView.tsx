@@ -19,7 +19,7 @@ import type {
   ListFriendsOutput,
 } from '@/shared/friends'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { safeHref } from '@/shared/safe-url'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'

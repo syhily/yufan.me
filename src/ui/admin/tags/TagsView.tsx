@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { DeleteTagInput, DeleteTagOutput, ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'

@@ -9,13 +9,14 @@ import {
   XIcon,
 } from 'lucide-react'
 import { useId, useState, type ReactNode, useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 
 import type { AdminCategoryDto, ListCategoriesOutput } from '@/shared/categories'
 import type { AdminPostDto } from '@/shared/cms-posts'
 import type { AdminImageDto } from '@/shared/images'
 import type { AdminTagDto, ListTagsOutput } from '@/shared/tags'
 
-import { toast, useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { POST_META_TOGGLE_FIELDS } from '@/shared/cms-posts'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'

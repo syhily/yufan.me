@@ -6,7 +6,7 @@ import { Link } from 'react-router'
 
 import type { AdminPageDetailDto, GetPageInput } from '@/shared/cms-pages'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 import { Button } from '@/ui/components/button'

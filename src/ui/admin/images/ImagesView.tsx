@@ -14,7 +14,7 @@ import type {
   UpdateImageNoteOutput,
 } from '@/shared/images'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { ImageCard } from '@/ui/admin/images/ImageCard'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'

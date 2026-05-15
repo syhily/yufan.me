@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import type { AdminCategoryDto, UpsertCategoryInput, UpsertCategoryOutput } from '@/shared/categories'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'

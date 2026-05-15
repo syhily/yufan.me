@@ -11,7 +11,7 @@ import type {
 import type { AdminComment } from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { idStr } from '@/shared/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'

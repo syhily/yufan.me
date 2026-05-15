@@ -1,9 +1,9 @@
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { SearchLoaderShape } from '@/shared/settings'
 
-import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'

@@ -1,12 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
+import { toast } from 'sonner'
 
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useFetcherResult } from '@/client/api/fetcher'
-import { toast } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import {

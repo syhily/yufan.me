@@ -18,7 +18,7 @@ import type {
   ListMusicOutput,
 } from '@/shared/music'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'

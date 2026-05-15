@@ -26,7 +26,7 @@ import type {
 } from '@/shared/cms-posts'
 import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'

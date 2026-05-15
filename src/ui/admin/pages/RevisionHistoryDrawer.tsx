@@ -5,7 +5,7 @@ import type { AdminRevisionDto, ListPageRevisionsInput, ListPageRevisionsOutput 
 import type { ListPostRevisionsInput, ListPostRevisionsOutput } from '@/shared/cms-posts'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
+import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Badge } from '@/ui/components/badge'
