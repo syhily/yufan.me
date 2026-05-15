@@ -2,7 +2,8 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminComment, CommentEditOutput } from '@/shared/comments'
+import type { CommentEditOutput } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { api } from '@/client/api/client'

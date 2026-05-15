@@ -14,7 +14,7 @@ import {
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminComment } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 import type {
   AdminMutationSuccessOutput,
   AdminUserDto,

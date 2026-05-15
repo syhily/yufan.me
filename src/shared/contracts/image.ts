@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from './_base'
-import { standardReadErrors } from './_errors'
+import { errorResponse, standardReadErrors } from './_errors'
 
 export const imageContract = c.router(
   {
@@ -22,5 +22,5 @@ export const imageContract = c.router(
       summary: '解析图片 thumbhash、宽度和高度',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

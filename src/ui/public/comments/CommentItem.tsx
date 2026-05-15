@@ -2,13 +2,8 @@ import { XIcon } from 'lucide-react'
 import { use, useEffect, useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import type {
-  CommentEditInput,
-  CommentEditOutput,
-  CommentRawOutput,
-  CommentItem as CommentItemType,
-  CommentRidInput,
-} from '@/shared/comments'
+import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { api } from '@/client/api/client'

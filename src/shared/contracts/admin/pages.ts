@@ -1,10 +1,15 @@
 import { z } from 'zod'
 
-import type { AdminPageDetailDto, AdminPageDto, AdminRevisionDto, ListPagesOutput } from '@/shared/cms-pages'
-
 import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/cms/pages/schema'
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
+import {
+  adminPageDetailDto,
+  adminPageDto,
+  adminRevisionDto,
+  listPageRevisionsOutputDto,
+  listPagesOutputDto,
+} from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 const idParam = z.object({ id: z.string().min(1) })
@@ -15,14 +20,14 @@ export const adminPagesContract = c.router(
       method: 'GET',
       path: '/admin/pages',
       query: listPagesSchema,
-      responses: { 200: z.custom<ListPagesOutput>(), ...standardReadErrors },
+      responses: { 200: listPagesOutputDto, ...standardReadErrors },
       summary: 'listPages',
     },
     getPage: {
       method: 'GET',
       path: '/admin/pages/:id',
       pathParams: idParam,
-      responses: { 200: z.custom<AdminPageDetailDto>(), ...standardReadErrors },
+      responses: { 200: adminPageDetailDto, ...standardReadErrors },
       summary: 'getPage',
     },
     deletePage: {
@@ -44,7 +49,7 @@ export const adminPagesContract = c.router(
       method: 'POST',
       path: '/admin/pages/unpublish',
       body: z.object({ id: z.string().min(1) }),
-      responses: { 200: z.object({ page: z.custom<AdminPageDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ page: adminPageDto }), ...standardMutationErrors },
       summary: 'unpublishPage',
     },
     savePageDraft: {
@@ -53,8 +58,8 @@ export const adminPagesContract = c.router(
       body: savePageBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
-          z.object({ status: z.literal('saved'), revision: z.custom<AdminRevisionDto>() }),
-          z.object({ status: z.literal('conflict'), latest: z.custom<AdminRevisionDto>(), expectedToken: z.string() }),
+          z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
+          z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
         ]),
         ...standardMutationErrors,
       },
@@ -66,8 +71,8 @@ export const adminPagesContract = c.router(
       body: savePageBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
-          z.object({ status: z.literal('saved'), revision: z.custom<AdminRevisionDto>() }),
-          z.object({ status: z.literal('conflict'), latest: z.custom<AdminRevisionDto>(), expectedToken: z.string() }),
+          z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
+          z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
         ]),
         ...standardMutationErrors,
       },
@@ -90,16 +95,16 @@ export const adminPagesContract = c.router(
       method: 'POST',
       path: '/admin/pages/meta',
       body: upsertPageMetaSchema,
-      responses: { 200: z.object({ page: z.custom<AdminPageDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ page: adminPageDto }), ...standardMutationErrors },
       summary: 'upsertPageMeta',
     },
     listPageRevisions: {
       method: 'GET',
       path: '/admin/pages/revisions',
       query: z.object({ id: z.string().min(1) }),
-      responses: { 200: z.object({ revisions: z.array(z.custom<AdminRevisionDto>()) }), ...standardReadErrors },
+      responses: { 200: listPageRevisionsOutputDto, ...standardReadErrors },
       summary: 'listPageRevisions',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

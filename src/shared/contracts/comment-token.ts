@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { CommentItem } from '@/shared/comments'
-
 import { c } from './_base'
-import { standardMutationErrors, standardReadErrors } from './_errors'
+import { commentItemDto } from './_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from './_errors'
 
 const successResponse = z.object({ success: z.boolean() })
 
@@ -12,7 +11,7 @@ const myCommentsQuery = z.object({
 })
 
 const myCommentsResponse = z.object({
-  comments: z.array(z.custom<CommentItem>()),
+  comments: z.array(commentItemDto),
   expiresAt: z.record(z.string(), z.number()),
 })
 
@@ -33,5 +32,5 @@ export const commentTokenContract = c.router(
       summary: '获取当前访客的匿名评论',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

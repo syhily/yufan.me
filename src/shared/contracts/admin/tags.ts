@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { AdminTagDto } from '@/shared/tags'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import { adminTagDto } from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -18,7 +17,7 @@ export const adminTagsContract = c.router(
         limit: z.coerce.number().optional(),
       }),
       responses: {
-        200: z.object({ tags: z.array(z.custom<AdminTagDto>()), total: z.number(), hasMore: z.boolean() }),
+        200: z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() }),
         ...standardMutationErrors,
       },
       summary: 'listTags',
@@ -31,7 +30,7 @@ export const adminTagsContract = c.router(
         name: z.string().trim().min(1).max(20),
         slug: z.string().optional(),
       }),
-      responses: { 200: z.object({ tag: z.custom<AdminTagDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ tag: adminTagDto }), ...standardMutationErrors },
       summary: 'upsertTag',
     },
     deleteTag: {
@@ -42,5 +41,5 @@ export const adminTagsContract = c.router(
       summary: 'deleteTag',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

@@ -2,6 +2,7 @@ import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { isCommentOwner } from '@/server/auth/rbac'
 import { updateOwnComment } from '@/server/comments/admin'
+import { asCommentItemsWire } from '@/server/comments/wire'
 import {
   countApprovedRepliesOfComment,
   clearDeleteRequest,
@@ -67,7 +68,7 @@ export const commentSelfController: AuthedContractImpl<typeof commentSelfContrac
     return {
       status: 200 as const,
       body: {
-        comments,
+        comments: asCommentItemsWire(comments),
         total: counts.total,
         pending: counts.pending,
         deleteRequested: counts.deleteRequested,

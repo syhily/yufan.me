@@ -1,7 +1,7 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import type { AdminComment } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 
 import { api } from '@/client/api/client'
 import { useApiMutation } from '@/client/api/query'

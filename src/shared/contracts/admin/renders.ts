@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 export const adminRendersContract = c.router(
   {
@@ -35,5 +35,5 @@ export const adminRendersContract = c.router(
       summary: 'reindexSearch',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

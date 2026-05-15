@@ -1,9 +1,13 @@
 import { z } from 'zod'
 
-import type { AddMusicOutput, ListMusicOutput, SearchMusicOutput, UpdateMusicOutput } from '@/shared/music'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import {
+  addMusicOutputDto,
+  listMusicOutputDto,
+  searchMusicOutputDto,
+  updateMusicOutputDto,
+} from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -17,21 +21,21 @@ export const adminMusicContract = c.router(
         offset: z.coerce.number().optional(),
         limit: z.coerce.number().optional(),
       }),
-      responses: { 200: z.custom<ListMusicOutput>(), ...standardMutationErrors },
+      responses: { 200: listMusicOutputDto, ...standardMutationErrors },
       summary: 'listMusic',
     },
     searchMusic: {
       method: 'GET',
       path: '/admin/musics/search',
       query: z.object({ keyword: z.string(), limit: z.coerce.number().optional() }),
-      responses: { 200: z.custom<SearchMusicOutput>(), ...standardMutationErrors },
+      responses: { 200: searchMusicOutputDto, ...standardMutationErrors },
       summary: 'searchMusic',
     },
     addMusic: {
       method: 'POST',
       path: '/admin/musics',
       body: z.object({ source: z.literal('netease'), sourceId: z.string().trim().min(1).max(64) }),
-      responses: { 200: z.custom<AddMusicOutput>(), ...standardMutationErrors },
+      responses: { 200: addMusicOutputDto, ...standardMutationErrors },
       summary: 'addMusic',
     },
     updateMusic: {
@@ -44,7 +48,7 @@ export const adminMusicContract = c.router(
         album: z.string().trim().max(200).optional().default(''),
         lyric: z.string().max(50_000).optional(),
       }),
-      responses: { 200: z.custom<UpdateMusicOutput>(), ...standardMutationErrors },
+      responses: { 200: updateMusicOutputDto, ...standardMutationErrors },
       summary: 'updateMusic',
     },
     deleteMusic: {
@@ -55,5 +59,5 @@ export const adminMusicContract = c.router(
       summary: 'deleteMusic',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { AdminUserDto } from '@/shared/users'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
+import { adminUserDto } from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -49,7 +48,7 @@ export const adminUsersContract = c.router(
       path: '/admin/users',
       query: listUsersQuery,
       responses: {
-        200: z.object({ users: z.array(z.custom<AdminUserDto>()), total: z.number(), hasMore: z.boolean() }),
+        200: z.object({ users: z.array(adminUserDto), total: z.number(), hasMore: z.boolean() }),
         ...standardReadErrors,
       },
       summary: 'listUsers',
@@ -58,7 +57,7 @@ export const adminUsersContract = c.router(
       method: 'GET',
       path: '/admin/users/:id',
       pathParams: idParam,
-      responses: { 200: z.object({ user: z.custom<AdminUserDto>() }), ...standardReadErrors },
+      responses: { 200: z.object({ user: adminUserDto }), ...standardReadErrors },
       summary: 'getUser',
     },
     softDeleteUser: {
@@ -81,7 +80,7 @@ export const adminUsersContract = c.router(
       path: '/admin/users/:id/mute',
       pathParams: idParam,
       body: muteUserBody,
-      responses: { 200: z.object({ user: z.custom<AdminUserDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ user: adminUserDto }), ...standardMutationErrors },
       summary: 'muteUser',
     },
     updateUserRole: {
@@ -89,7 +88,7 @@ export const adminUsersContract = c.router(
       path: '/admin/users/:id/role',
       pathParams: idParam,
       body: updateUserRoleBody,
-      responses: { 200: z.object({ user: z.custom<AdminUserDto>().nullable() }), ...standardMutationErrors },
+      responses: { 200: z.object({ user: adminUserDto.nullable() }), ...standardMutationErrors },
       summary: 'updateUserRole',
     },
     inviteAuthor: {
@@ -135,5 +134,5 @@ export const adminUsersContract = c.router(
       summary: 'bulkSoftDeleteUserComments',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

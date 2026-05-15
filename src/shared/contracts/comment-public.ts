@@ -1,12 +1,11 @@
 import { z } from 'zod'
 
-import type { CommentItem } from '@/shared/comments'
-
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { httpUrlOrEmptyStringSchema } from '@/shared/safe-url'
 
 import { c } from './_base'
-import { standardMutationErrors, standardReadErrors } from './_errors'
+import { commentItemDto } from './_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from './_errors'
 
 const COMMENT_HONEYPOT_MAX_LEN = 240
 
@@ -48,7 +47,7 @@ const commentReplyBody = z
   })
 
 const commentReplyResponse = z.object({
-  comment: z.custom<CommentItem>(),
+  comment: commentItemDto,
   csrfToken: z.string(),
 })
 
@@ -58,7 +57,7 @@ const loadCommentsQuery = z.object({
 })
 
 const loadCommentsResponse = z.object({
-  comments: z.array(z.custom<CommentItem>()),
+  comments: z.array(commentItemDto),
   next: z.boolean(),
 })
 
@@ -72,7 +71,7 @@ const editCommentBody = z.object({
 })
 
 const editCommentResponse = z.object({
-  comment: z.custom<CommentItem>(),
+  comment: commentItemDto,
 })
 
 export const commentPublicContract = c.router(
@@ -135,5 +134,5 @@ export const commentPublicContract = c.router(
       summary: '编辑评论内容',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

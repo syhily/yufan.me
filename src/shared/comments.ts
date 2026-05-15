@@ -127,7 +127,7 @@ export interface AdminCommentsResult {
 
 export interface DetailPageComments {
   commentData: Comments | null
-  commentItems: CommentItem[]
+  commentItems: CommentItemWire[]
 }
 
 export interface CommentReq {
@@ -205,18 +205,28 @@ export interface FilterAutocompleteInput {
   key?: string
 }
 
+// Output DTOs below intentionally use the **wire** comment types
+// (`CommentItemWire` / `AdminCommentWire` from `@/shared/contracts/_dtos`)
+// rather than the legacy `CommentItem` / `AdminComment` interfaces
+// declared earlier in this file. The wire shapes match what
+// `JSON.stringify` actually emits: bigint ids stringified, Date
+// timestamps ISO-encoded. The legacy interfaces are kept for the
+// server-side query layer (Drizzle types still see them as bigint /
+// Date) and will be reconciled in a follow-up.
+import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/_dtos'
+
 export interface ReplyCommentOutput {
-  comment: CommentItem
+  comment: CommentItemWire
   /** Next CSRF token for a follow-up `replyComment` without full page reload. */
   csrfToken: string
 }
 
 export interface CommentEditOutput {
-  comment: CommentItem
+  comment: CommentItemWire
 }
 
 export interface LoadCommentsOutput {
-  comments: CommentItem[]
+  comments: CommentItemWire[]
   next: boolean
 }
 
@@ -225,7 +235,7 @@ export interface CommentRawOutput {
 }
 
 export interface MyCommentsOutput {
-  comments: CommentItem[]
+  comments: CommentItemWire[]
   /**
    * Map from comment id string to token expiration timestamp (ms).
    * The UI uses this to show "editable for X more minutes" hints.
@@ -248,7 +258,7 @@ export interface SearchAuthorsOutput {
 export type LoadAllInput = LoadAllCommentsInput
 
 export interface LoadAllOutput {
-  comments: AdminComment[]
+  comments: AdminCommentWire[]
   total: number
   hasMore: boolean
   /**

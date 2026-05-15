@@ -9,6 +9,7 @@ import {
   searchAuthorOptions,
   searchPageOptions,
 } from '@/server/comments/admin'
+import { asAdminCommentsWire } from '@/server/comments/wire'
 import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/db/query/comment'
 import { getLogger } from '@/server/logger'
 import { commentAdminContract } from '@/shared/contracts/comment-admin'
@@ -35,7 +36,7 @@ export const commentAdminController: AuthedContractImpl<typeof commentAdminContr
     return {
       status: 200 as const,
       body: {
-        comments: result.comments,
+        comments: asAdminCommentsWire(result.comments),
         total: result.total,
         hasMore: result.hasMore,
         statusCounts: result.statusCounts,

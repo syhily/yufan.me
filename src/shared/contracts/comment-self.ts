@@ -1,11 +1,10 @@
 import { z } from 'zod'
 
-import type { CommentItem } from '@/shared/comments'
-
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 
 import { c } from './_base'
-import { standardMutationErrors, standardReadErrors } from './_errors'
+import { commentItemDto } from './_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from './_errors'
 
 const successResponse = z.object({ success: z.boolean() })
 
@@ -15,7 +14,7 @@ const listMineQuery = z.object({
 })
 
 const listMineResponse = z.object({
-  comments: z.array(z.custom<CommentItem>()),
+  comments: z.array(commentItemDto),
   total: z.number().int(),
   pending: z.number().int(),
   deleteRequested: z.number().int(),
@@ -53,5 +52,5 @@ export const commentSelfContract = c.router(
       summary: '登录用户查看自己的评论',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

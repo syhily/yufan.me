@@ -9,6 +9,7 @@ import { updateComment, getCommentById } from '@/server/comments/admin'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/comments/likes'
 import { parseComments, loadComments, createComment } from '@/server/comments/loader'
 import { appendCommentToken, issueCommentToken, verifyCommentOwnership } from '@/server/comments/token'
+import { asCommentItemsWire, asCommentItemWire } from '@/server/comments/wire'
 import { findCommentWithUserById } from '@/server/db/query/comment'
 import { findMetricByPublicId } from '@/server/db/query/metric'
 import { findUserIdByEmail } from '@/server/db/query/user'
@@ -120,7 +121,7 @@ export const commentPublicController: PublicContractImpl<typeof commentPublicCon
 
     return {
       status: 200 as const,
-      body: { comment, csrfToken: rotated.token },
+      body: { comment: asCommentItemWire(comment), csrfToken: rotated.token },
       headers: { 'Set-Cookie': setCookies },
     }
   },
@@ -137,7 +138,7 @@ export const commentPublicController: PublicContractImpl<typeof commentPublicCon
     }
     const items = await parseComments(comments.comments)
     const next = requireBlogSettingsSection('comments').comments.size + query.offset < comments.roots_count
-    return { status: 200 as const, body: { comments: items, next } }
+    return { status: 200 as const, body: { comments: asCommentItemsWire(items), next } }
   },
 
   getRaw: async ({ query }, { request, session }) => {
@@ -194,7 +195,7 @@ export const commentPublicController: PublicContractImpl<typeof commentPublicCon
 
     return {
       status: 200 as const,
-      body: { comment: updated },
+      body: { comment: asCommentItemWire(updated) },
       headers: setCookies.length > 0 ? { 'Set-Cookie': setCookies } : undefined,
     }
   },

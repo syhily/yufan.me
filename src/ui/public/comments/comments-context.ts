@@ -1,7 +1,7 @@
 import { createContext, use } from 'react'
 
 import type { CommentFormUser } from '@/shared/catalog'
-import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 
 // Public-detail comments island state, lifted into a Context so the recursive
 // `<CommentItem>` tree no longer threads `actions={…}` / `replyForm` /

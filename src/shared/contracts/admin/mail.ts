@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 export const adminMailContract = c.router(
   {
@@ -17,5 +17,5 @@ export const adminMailContract = c.router(
       summary: 'sendTestMail',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

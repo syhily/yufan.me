@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { AdminComment, AdminPendingDashboardDto } from '@/shared/comments'
-
 import { c } from './_base'
-import { standardMutationErrors, standardReadErrors } from './_errors'
+import { adminCommentDto, adminPendingDashboardDto } from './_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from './_errors'
 
 const loadAllBody = z.object({
   offset: z.number().min(0),
@@ -14,7 +13,7 @@ const loadAllBody = z.object({
 })
 
 const loadAllResponse = z.object({
-  comments: z.array(z.custom<AdminComment>()),
+  comments: z.array(adminCommentDto),
   total: z.number().int(),
   hasMore: z.boolean(),
   statusCounts: z.object({
@@ -89,9 +88,9 @@ export const commentAdminContract = c.router(
       method: 'GET',
       path: '/admin/comments/pending-dashboard',
       query: z.object({ kind: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
-      responses: { 200: z.custom<AdminPendingDashboardDto>(), ...standardMutationErrors },
+      responses: { 200: adminPendingDashboardDto, ...standardMutationErrors },
       summary: 'listPendingDashboard',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

@@ -4,7 +4,7 @@ import { METRIC_TYPES } from '@/shared/analytics/dto'
 import { PRESET_KEYS } from '@/shared/analytics/time'
 
 import { c } from './_base'
-import { standardReadErrors } from './_errors'
+import { errorResponse, standardReadErrors } from './_errors'
 
 // ─── Schemas ────────────────────────────────────────────
 
@@ -98,5 +98,5 @@ export const analyticsContract = c.router(
       summary: 'Top-N 指标列表',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

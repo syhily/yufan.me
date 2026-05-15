@@ -1,16 +1,15 @@
 import { z } from 'zod'
 
-import type { BlogSettingsBundle } from '@/shared/blog-config-types'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
+import { blogSettingsBundleDto } from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
 
 export const adminSettingsContract = c.router(
   {
     getSettings: {
       method: 'GET',
       path: '/admin/settings',
-      responses: { 200: z.object({ bundle: z.custom<BlogSettingsBundle>().nullable() }), ...standardReadErrors },
+      responses: { 200: z.object({ bundle: blogSettingsBundleDto.nullable() }), ...standardReadErrors },
       summary: 'getSettings',
     },
     updateSettings: {
@@ -21,5 +20,5 @@ export const adminSettingsContract = c.router(
       summary: 'updateSettings',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

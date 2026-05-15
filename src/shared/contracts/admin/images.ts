@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { AdminImageDto, ListImagesOutput } from '@/shared/images'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -18,7 +17,7 @@ export const adminImagesContract = c.router(
         offset: z.number().optional(),
         limit: z.number().optional(),
       }),
-      responses: { 200: z.custom<ListImagesOutput>(), ...standardMutationErrors },
+      responses: { 200: listImagesOutputDto, ...standardMutationErrors },
       summary: 'listImages',
     },
     deleteImage: {
@@ -33,14 +32,14 @@ export const adminImagesContract = c.router(
       path: '/admin/images/:id/note',
       pathParams: idParam,
       body: z.object({ note: z.string().nullable().optional() }),
-      responses: { 200: z.object({ image: z.custom<AdminImageDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ image: adminImageDto }), ...standardMutationErrors },
       summary: 'updateImageNote',
     },
     recalculateImageThumbhash: {
       method: 'POST',
       path: '/admin/images/recalculate-thumbhash',
       body: z.object({ id: z.string().min(1) }),
-      responses: { 200: z.object({ image: z.custom<AdminImageDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ image: adminImageDto }), ...standardMutationErrors },
       summary: 'recalculateImageThumbhash',
     },
     uploadImage: {
@@ -48,9 +47,9 @@ export const adminImagesContract = c.router(
       path: '/admin/images/upload',
       contentType: 'multipart/form-data',
       body: z.unknown(),
-      responses: { 200: z.object({ image: z.custom<AdminImageDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ image: adminImageDto }), ...standardMutationErrors },
       summary: 'uploadImage',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

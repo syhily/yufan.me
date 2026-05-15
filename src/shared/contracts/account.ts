@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from './_base'
-import { standardMutationErrors } from './_errors'
+import { errorResponse, standardMutationErrors } from './_errors'
 
 // ─── Schemas ────────────────────────────────────────────
 
@@ -60,7 +60,5 @@ export const accountContract = c.router(
       summary: '撤销指定会话',
     },
   },
-  {
-    strictStatusCodes: true,
-  },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

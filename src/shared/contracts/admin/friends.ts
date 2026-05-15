@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { AdminFriendDto } from '@/shared/friends'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import { adminFriendDto } from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -19,7 +18,7 @@ export const adminFriendsContract = c.router(
         limit: z.number().optional(),
       }),
       responses: {
-        200: z.object({ friends: z.array(z.custom<AdminFriendDto>()), total: z.number(), hasMore: z.boolean() }),
+        200: z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }),
         ...standardMutationErrors,
       },
       summary: 'listFriends',
@@ -36,7 +35,7 @@ export const adminFriendsContract = c.router(
         rssUrl: z.union([z.url().max(500), z.literal(''), z.null()]).optional(),
         visible: z.boolean().optional().default(true),
       }),
-      responses: { 200: z.object({ friend: z.custom<AdminFriendDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ friend: adminFriendDto }), ...standardMutationErrors },
       summary: 'upsertFriend',
     },
     deleteFriend: {
@@ -47,5 +46,5 @@ export const adminFriendsContract = c.router(
       summary: 'deleteFriend',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

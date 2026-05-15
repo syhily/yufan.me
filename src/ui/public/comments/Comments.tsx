@@ -3,7 +3,6 @@ import { flushSync } from 'react-dom'
 
 import type { CommentFormUser } from '@/shared/catalog'
 import type {
-  CommentItem as CommentItemType,
   Comments as CommentsData,
   CommentRidInput,
   LoadCommentsInput,
@@ -11,6 +10,7 @@ import type {
   MyCommentsOutput,
   RevokeCommentTokenOutput,
 } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 
 import { api } from '@/client/api/client'
 import { useApiMutation } from '@/client/api/query'

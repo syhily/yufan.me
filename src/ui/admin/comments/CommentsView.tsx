@@ -2,7 +2,8 @@ import { RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminComment, LoadAllInput, LoadAllOutput } from '@/shared/comments'
+import type { LoadAllInput, LoadAllOutput } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
 import { api } from '@/client/api/client'

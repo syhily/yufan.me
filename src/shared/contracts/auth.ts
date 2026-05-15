@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { c } from './_base'
-import { standardMutationErrors } from './_errors'
+import { errorResponse, standardMutationErrors } from './_errors'
 
 export const updateUserBody = z.object({
   name: z.string().min(1).optional(),
@@ -26,7 +26,5 @@ export const authContract = c.router(
       summary: '管理员更新用户信息',
     },
   },
-  {
-    strictStatusCodes: true,
-  },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

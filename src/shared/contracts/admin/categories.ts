@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-import type { AdminCategoryDto } from '@/shared/categories'
-
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors } from '@/shared/contracts/_errors'
+import { adminCategoryDto } from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -14,7 +13,7 @@ export const adminCategoriesContract = c.router(
       path: '/admin/categories',
       query: z.object({ q: z.string().optional() }),
       responses: {
-        200: z.object({ categories: z.array(z.custom<AdminCategoryDto>()), total: z.number() }),
+        200: z.object({ categories: z.array(adminCategoryDto), total: z.number() }),
         ...standardMutationErrors,
       },
       summary: 'listCategories',
@@ -30,7 +29,7 @@ export const adminCategoriesContract = c.router(
         description: z.string().max(999).optional(),
         sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
       }),
-      responses: { 200: z.object({ category: z.custom<AdminCategoryDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ category: adminCategoryDto }), ...standardMutationErrors },
       summary: 'upsertCategory',
     },
     deleteCategory: {
@@ -44,9 +43,9 @@ export const adminCategoriesContract = c.router(
       method: 'POST',
       path: '/admin/categories/reorder',
       body: z.object({ orderedIds: z.array(z.string().min(1)).min(1).max(500) }),
-      responses: { 200: z.object({ categories: z.array(z.custom<AdminCategoryDto>()) }), ...standardMutationErrors },
+      responses: { 200: z.object({ categories: z.array(adminCategoryDto) }), ...standardMutationErrors },
       summary: 'reorderCategories',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

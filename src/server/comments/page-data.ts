@@ -6,6 +6,7 @@ import type { DetailPageComments } from '@/shared/comments'
 import { userSession } from '@/server/auth/primitives'
 import { queryLikes } from '@/server/comments/likes'
 import { ensureCommentPage, loadComments, parseComments } from '@/server/comments/loader'
+import { asCommentItemsWire } from '@/server/comments/wire'
 import { bumpPageView } from '@/server/metrics/batcher'
 import { loadSidebarData } from '@/server/sidebar/load'
 
@@ -36,7 +37,7 @@ export type { DetailPageComments } from '@/shared/comments'
 async function loadCommentsAndItems(session: BlogSession, target: EntityTarget): Promise<DetailPageComments> {
   const commentData = await loadComments(session, target, 0, { ensurePage: false })
   const commentItems = commentData && commentData.comments.length > 0 ? await parseComments(commentData.comments) : []
-  return { commentData, commentItems }
+  return { commentData, commentItems: asCommentItemsWire(commentItems) }
 }
 
 // "Critical" detail data: everything the page needs to paint above the fold

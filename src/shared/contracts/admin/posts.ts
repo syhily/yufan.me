@@ -1,7 +1,5 @@
 import { z } from 'zod'
 
-import type { AdminPostDetailDto, AdminPostDto, AdminRevisionDto, ListPostsOutput } from '@/shared/cms-posts'
-
 import {
   listPostsSchema,
   previewPostBodySchema,
@@ -9,7 +7,14 @@ import {
   upsertPostMetaSchema,
 } from '@/server/cms/posts/schema'
 import { c } from '@/shared/contracts/_base'
-import { standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
+import {
+  adminPostDetailDto,
+  adminPostDto,
+  adminRevisionDto,
+  listPostRevisionsOutputDto,
+  listPostsOutputDto,
+} from '@/shared/contracts/_dtos'
+import { errorResponse, standardMutationErrors, standardReadErrors } from '@/shared/contracts/_errors'
 
 const idParam = z.object({ id: z.string().min(1) })
 
@@ -19,14 +24,14 @@ export const adminPostsContract = c.router(
       method: 'GET',
       path: '/admin/posts',
       query: listPostsSchema,
-      responses: { 200: z.custom<ListPostsOutput>(), ...standardReadErrors },
+      responses: { 200: listPostsOutputDto, ...standardReadErrors },
       summary: 'listPosts',
     },
     getPost: {
       method: 'GET',
       path: '/admin/posts/:id',
       pathParams: idParam,
-      responses: { 200: z.custom<AdminPostDetailDto>(), ...standardReadErrors },
+      responses: { 200: adminPostDetailDto, ...standardReadErrors },
       summary: 'getPost',
     },
     deletePost: {
@@ -48,7 +53,7 @@ export const adminPostsContract = c.router(
       method: 'POST',
       path: '/admin/posts/unpublish',
       body: z.object({ id: z.string().min(1) }),
-      responses: { 200: z.object({ post: z.custom<AdminPostDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ post: adminPostDto }), ...standardMutationErrors },
       summary: 'unpublishPost',
     },
     savePostDraft: {
@@ -57,8 +62,8 @@ export const adminPostsContract = c.router(
       body: savePostBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
-          z.object({ status: z.literal('saved'), revision: z.custom<AdminRevisionDto>() }),
-          z.object({ status: z.literal('conflict'), latest: z.custom<AdminRevisionDto>(), expectedToken: z.string() }),
+          z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
+          z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
         ]),
         ...standardMutationErrors,
       },
@@ -70,8 +75,8 @@ export const adminPostsContract = c.router(
       body: savePostBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
-          z.object({ status: z.literal('saved'), revision: z.custom<AdminRevisionDto>() }),
-          z.object({ status: z.literal('conflict'), latest: z.custom<AdminRevisionDto>(), expectedToken: z.string() }),
+          z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
+          z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
         ]),
         ...standardMutationErrors,
       },
@@ -94,16 +99,16 @@ export const adminPostsContract = c.router(
       method: 'POST',
       path: '/admin/posts/meta',
       body: upsertPostMetaSchema,
-      responses: { 200: z.object({ post: z.custom<AdminPostDto>() }), ...standardMutationErrors },
+      responses: { 200: z.object({ post: adminPostDto }), ...standardMutationErrors },
       summary: 'upsertPostMeta',
     },
     listPostRevisions: {
       method: 'GET',
       path: '/admin/posts/revisions',
       query: z.object({ id: z.string().min(1) }),
-      responses: { 200: z.object({ revisions: z.array(z.custom<AdminRevisionDto>()) }), ...standardReadErrors },
+      responses: { 200: listPostRevisionsOutputDto, ...standardReadErrors },
       summary: 'listPostRevisions',
     },
   },
-  { strictStatusCodes: true },
+  { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
 )

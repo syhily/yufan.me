@@ -2,6 +2,7 @@ import type { PublicContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { parseComments } from '@/server/comments/loader'
 import { cleanupExpiredTokens, revokeCommentToken } from '@/server/comments/token'
+import { asCommentItemsWire } from '@/server/comments/wire'
 import { findCommentsByIds } from '@/server/db/query/comment'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/comment-token'
 import { commentTokenContract } from '@/shared/contracts/comment-token'
@@ -59,7 +60,7 @@ export const commentTokenController: PublicContractImpl<typeof commentTokenContr
 
     return {
       status: 200 as const,
-      body: { comments: items, expiresAt },
+      body: { comments: asCommentItemsWire(items), expiresAt },
       headers: { 'Set-Cookie': [serializeCommentTokensCookie(cleaned)] },
     }
   },
