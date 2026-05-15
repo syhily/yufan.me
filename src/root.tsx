@@ -121,7 +121,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
 // runtime: `admin` flips on three POST endpoints (login, install,
 // logout); `blogSettings` flips whenever an admin saves a settings page.
 // Revalidate when any of those actions submit, plus when an admin
-// settings save fires from `/api/actions/admin/updateSettings` (the
+// settings save fires from `/api/admin/settings` (the
 // settings layout already calls `useRevalidator()`, but admin saves
 // going through other tabs need this safety net too).
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
@@ -129,7 +129,7 @@ export function shouldRevalidate({ formAction, defaultShouldRevalidate }: Should
     formAction &&
     (formAction.startsWith('/wp-login.php') ||
       formAction.startsWith('/wp-admin/install') ||
-      formAction.startsWith('/api/actions/admin/updateSettings'))
+      formAction.startsWith('/api/admin/settings'))
   ) {
     return defaultShouldRevalidate
   }
