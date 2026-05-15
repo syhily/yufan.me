@@ -6,7 +6,6 @@ export type Env = {
     requestId: string
     clientAddress: string
     session: BlogSession
-    sessionDirty: boolean
     viewer: ViewerContext | null
   }
 }
