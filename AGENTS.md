@@ -69,12 +69,11 @@ src/
 
 - `*.tsx` are page route modules with `loader` / `action` / `meta` /
   default component.
-- `*.ts` are resource routes (feeds, sitemap, generated images, API
-  endpoints).
-- Internal client APIs live as resource routes under
-  `src/routes/api/actions/<domain>.<name>.ts` and serve
-  `/api/actions/<domain>/<name>`. They export `loader` (GET) or `action`
-  (POST/PATCH/DELETE) only — never a default component.
+- `*.ts` are resource routes (feeds, sitemap, generated images).
+- **API endpoints have migrated to Hono** — they live in
+  `src/server/http/controllers/` (ts-rest contracts) and
+  `src/server/http/resources/` (native Hono routers for binary/XML
+  output). The `src/routes/api/actions/` tree has been removed.
 - Route modules orchestrate: read session/context at the perimeter, call
   into `server/`, project DTOs through `shared/`, render with `ui/`.
   No DB queries, Redis access, or markdown parsing inline.
@@ -85,9 +84,14 @@ src/
 
 - Sub-areas (each owns its loader, schema, and helpers):
   - `server/db/` — Drizzle pool, schema, query helpers, migrations.
-  - `server/http/` + `server/route-helpers/` — Resource-route perimeter
-    (`runApi`, `defineApiAction`, `ok`, `fail`), cache-header profiles,
-    common response helpers.
+  - `server/http/` — Hono + ts-rest API perimeter. Controllers
+    (`server/http/controllers/`), resource routers
+    (`server/http/resources/`), guards (`server/http/guards.ts`),
+    ts-rest adapter (`server/http/ts-rest-adapter.ts`), and OpenAPI
+    export (`server/http/openapi.ts`).
+  - `server/route-helpers/` — Legacy response helpers (`ok`, `fail`,
+    `ActionFailure`) still used by some service layers during the
+    migration window.
   - `server/middleware/` — React Router root middleware (request
     context population, install gating, WordPress probe interception).
   - `server/auth/` + `server/session.ts` — Cookie session, CSRF,
@@ -114,6 +118,9 @@ src/
 ### `src/client/` — Browser Only
 
 - Hooks, `useApiFetcher`, the `API_ACTIONS` manifest + types.
+  **Migration in progress**: new code should call endpoints through
+  the ts-rest contract layer (`shared/contracts/`) rather than adding
+  to `API_ACTIONS`.
 - Heavy widgets (e.g. `qrcode.react`) reach the bundle through
   React.lazy + Suspense from a UI component, not via top-level imports
   (see `bundle-dynamic-imports`).
@@ -186,6 +193,7 @@ src/
 - See `src/shared/` for the authoritative list. Notable groupings:
   wire & primitives (`api-actions`, `api-envelope`, `api-types`,
   `urls`, `safe-url`, `request`, `security`, `tools`, `formatter`,
+  `contracts`);
   `toc`, `images`, `pagination`); per-domain DTOs (`categories`,
   `comments`, `friends`, `music`, `socials`, `tags`, `users`,
   `cache-types`, `catalog`); settings & blog config (`settings`,
@@ -217,6 +225,9 @@ Use aliases instead of relative paths. The only allowed relative imports:
   flow.
 - Keep auth and session reads in loaders/actions. UI receives plain DTO
   props.
+- **Non-page requests** (API, feeds, sitemap, generated images) are
+  served by Hono native routes mounted in `server.ts`, NOT by React
+  Router resource routes.
 
 ## Content
 
@@ -642,6 +653,24 @@ focused and restores the previous value on blur.
 - Admin section saves go through `API_ACTIONS.admin.updateSettings`,
   which validates against `SECTION_REGISTRY[section].schema` and writes
   ONLY that one row. There is no aggregate "reset to defaults" action.
+
+## API Layer (Hono + ts-rest)
+
+- **Contracts** (`shared/contracts/`) define the API surface: method,
+  path, Zod input schemas, and Zod response schemas. This is the
+  single source of truth for both server and client.
+- **Controllers** (`server/http/controllers/`) implement the contracts.
+  Each controller is a plain object whose keys match the contract
+  endpoints. Business logic lives in `server/<domain>/service.ts`;
+  controllers only orchestrate.
+- **Guards** (`server/http/guards.ts`) mount contracts with RBAC:
+  `publicRoute`, `authedRoute`, `adminRoute`, `authorRoute`. The
+  permission matrix is readable from `server/http/app.ts` alone.
+- **Resource routers** (`server/http/resources/`) are native Hono
+  routers for non-JSON output (RSS/Atom, sitemap.xml, OG images,
+  calendars, avatars).
+- **OpenAPI** (`/openapi.json` + `/docs`) is auto-generated from the
+  contract tree in development.
 
 ## Assets
 
