@@ -660,26 +660,73 @@ focused and restores the previous value on blur.
 
 - **Contracts** (`shared/contracts/`) define the API surface: method,
   path, Zod input schemas, and Zod response schemas. This is the
-  single source of truth for both server and client.
+  single source of truth for both server and client. Output DTOs that
+  ship across the wire live in `shared/contracts/_dtos.ts`, each
+  paired with a compile-time `Equals<z.infer, TInterface>` parity
+  assertion against the canonical `src/shared/*.ts` interface — drift
+  becomes a build error.
 - **Controllers** (`server/http/controllers/`) implement the contracts.
   Each controller is a plain object whose keys match the contract
   endpoints. Business logic lives in `server/<domain>/service.ts`;
   controllers only orchestrate.
+- **Adapter** (`server/http/ts-rest-adapter.ts`) compiles a contract
+  router onto Hono. It runs input Zod validation, then runs the
+  handler, then runs **output Zod validation** against
+  `route.responses[status]`. In dev a mismatch throws 500 with the
+  Zod issue list as `cause`; in prod it logs a `warn` at
+  `http.response-mismatch` and ships the body unchanged.
 - **Guards** (`server/http/guards.ts`) mount contracts with RBAC:
-  `publicRoute`, `authedRoute`, `adminRoute`, `authorRoute`. The
-  permission matrix is readable from `server/http/app.ts` alone.
+  `publicRoute`, `authedRoute`, `adminRoute`, `authorRoute`. All four
+  attach `csrfGuard` to non-GET requests so CSRF lives on one layer;
+  controllers never call `validateRequestCsrf` themselves.
 - **Resource routers** (`server/http/resources/`) are native Hono
   routers for non-JSON output (RSS/Atom, sitemap.xml, OG images,
-  calendars, avatars).
+  calendars, avatars, plus legacy `/tags` and `/search` redirects).
 - **OpenAPI** (`/openapi.json` + `/docs`) is auto-generated from the
   contract tree in development.
+- **Legacy redirects** (`server/http/legacy-redirects.ts`) ship an
+  explicit `/api/actions/* → /api/<resource>` table. Unknown legacy
+  paths return 410 Gone.
+
+### Adding a new API endpoint (3 steps)
+
+1. **Contract** — add the route to the right
+   `shared/contracts/<domain>.ts` file, using existing schemas in
+   `_dtos.ts` for output shapes. New DTOs go in `_dtos.ts` with a
+   `_<name>Parity` assertion against the corresponding TS interface.
+2. **Controller** — add a method to the matching controller object
+   under `server/http/controllers/`. Keys must match the contract
+   verb (`list`, `get`, `softDelete`, …). Return
+   `{ status: <numeric literal> as const, body: <matching schema> }`;
+   the adapter handles HTTP serialisation.
+3. **Mount** — if the contract is already mounted in
+   `server/http/app.ts` (most domains are), nothing else to do.
+   For a brand-new domain, add one line under the permission matrix
+   selecting `publicRoute / authedRoute / adminRoute / authorRoute`.
+
+UI calls land on `api.<domain>.<resource>.<verb>({ ... })` (e.g.
+`api.admin.users.list({ query: { ... } })`) and unwrap via
+`unwrap()` from `@/client/api/unwrap`.
 
 ## Permission Matrix
 
 The API security policy is a single readable block in
 `src/server/http/app.ts`. Opening that file shows every mounted contract
-and its guard (`publicRoute`, `authedRoute`, `adminRoute`, `authorRoute`).
+and its guard:
+
+| Guard | What it does | Use for |
+|---|---|---|
+| `publicRoute` | No auth; `csrfGuard` on non-GET | Anonymous reads + mutations with CSRF |
+| `authedRoute` | `requireAuth` + `csrfGuard` | Any logged-in user |
+| `roleRoute(_, _, _, 'author')` (or `authorRoute`) | `requireRoleMw('author')` + `csrfGuard` | Authors and admins |
+| `roleRoute(_, _, _, 'admin')` (or `adminRoute`) | `requireRoleMw('admin')` + `csrfGuard` | Admins only |
+
 There is no secondary config file or decorator-based RBAC scatter.
+The repo-wide invariants on every leaf route (a 2xx success
+response, a 500 fallback, an error response on mutation methods)
+are guarded by `tests/contract.contract-shape.test.ts`; the
+permission matrix itself is exercised end-to-end by
+`tests/e2e.permission-matrix.test.ts`.
 
 ## Assets
 
