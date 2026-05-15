@@ -86,7 +86,7 @@ export const adminPagesContract = c.router(
       responses: {
         200: z.object({
           html: z.string(),
-          headings: z.array(z.object({ text: z.string(), depth: z.number(), slug: z.string() })),
+          headings: z.array(z.object({ text: z.string(), depth: z.coerce.number(), slug: z.string() })),
         }),
         ...standardMutationErrors,
       },

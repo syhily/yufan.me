@@ -14,8 +14,8 @@ export const adminImagesContract = c.router(
       query: z.object({
         q: z.string().optional(),
         kind: z.string().optional(),
-        offset: z.number().optional(),
-        limit: z.number().optional(),
+        offset: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
       }),
       responses: { 200: listImagesOutputDto, ...standardMutationErrors },
       summary: '管理后台：图片列表',

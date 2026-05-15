@@ -14,8 +14,8 @@ export const imageContract = c.router(
       responses: {
         200: z.object({
           thumbhash: z.string().nullable(),
-          width: z.number().nullable(),
-          height: z.number().nullable(),
+          width: z.coerce.number().nullable(),
+          height: z.coerce.number().nullable(),
         }),
         ...standardReadErrors,
       },

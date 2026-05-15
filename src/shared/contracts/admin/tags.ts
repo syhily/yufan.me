@@ -17,7 +17,7 @@ export const adminTagsContract = c.router(
         limit: z.coerce.number().optional(),
       }),
       responses: {
-        200: z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() }),
+        200: z.object({ tags: z.array(adminTagDto), total: z.coerce.number(), hasMore: z.boolean() }),
         ...standardMutationErrors,
       },
       summary: '管理后台：标签列表',

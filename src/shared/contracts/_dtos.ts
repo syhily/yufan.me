@@ -67,7 +67,7 @@ const isoDateTime = z.iso.datetime()
 
 // ─── markdown / portable-text ──────────────────────────
 const markdownHeadingDto = z.object({
-  depth: z.number().int().min(1).max(6),
+  depth: z.coerce.number().int().min(1).max(6),
   slug: z.string(),
   text: z.string(),
 })
@@ -88,8 +88,8 @@ export const adminUserDto = z.object({
   deletedAt: isoDateTime.nullable(),
   lastIp: z.string().nullable(),
   lastUa: z.string().nullable(),
-  commentCount: z.number().int().nonnegative(),
-  pendingCount: z.number().int().nonnegative(),
+  commentCount: z.coerce.number().int().nonnegative(),
+  pendingCount: z.coerce.number().int().nonnegative(),
   lastCommentAt: isoDateTime.nullable(),
 })
 
@@ -100,8 +100,8 @@ export const adminCategoryDto = z.object({
   slug: z.string(),
   cover: z.string(),
   description: z.string(),
-  sortOrder: z.number().int(),
-  postCount: z.number().int().nonnegative(),
+  sortOrder: z.coerce.number().int(),
+  postCount: z.coerce.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
 })
@@ -110,7 +110,7 @@ export const adminTagDto = z.object({
   id: idString,
   name: z.string(),
   slug: z.string(),
-  postCount: z.number().int().nonnegative(),
+  postCount: z.coerce.number().int().nonnegative(),
   createdAt: isoDateTime,
   updatedAt: isoDateTime,
 })
@@ -136,9 +136,9 @@ export const adminImageDto = z.object({
   storagePath: z.string(),
   publicUrl: z.string(),
   mimeType: z.string(),
-  width: z.number().int().nonnegative(),
-  height: z.number().int().nonnegative(),
-  byteSize: z.number().int().nonnegative(),
+  width: z.coerce.number().int().nonnegative(),
+  height: z.coerce.number().int().nonnegative(),
+  byteSize: z.coerce.number().int().nonnegative(),
   thumbhash: z.string().nullable(),
   uploaderId: idString.nullable(),
   uploaderName: z.string().nullable(),
@@ -149,7 +149,7 @@ export const adminImageDto = z.object({
 
 export const listImagesOutputDto = z.object({
   images: z.array(adminImageDto),
-  total: z.number().int().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   hasMore: z.boolean(),
 })
 
@@ -197,7 +197,7 @@ export const publicMusicMetaDto = z.object({
 
 export const listMusicOutputDto = z.object({
   musics: z.array(adminMusicDto),
-  total: z.number().int().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   hasMore: z.boolean(),
 })
 
@@ -233,7 +233,7 @@ export const adminPostDto = z.object({
   authorName: z.string().nullable(),
   pinnedAt: isoDateTime.nullable(),
   firstPublishedAt: isoDateTime.nullable(),
-  commentCount: z.number().int().nonnegative(),
+  commentCount: z.coerce.number().int().nonnegative(),
   commentPublicId: z.string(),
 })
 
@@ -256,13 +256,13 @@ export const adminPageDto = z.object({
   deletedAt: isoDateTime.nullable(),
   authorId: idString.nullable(),
   authorName: z.string().nullable(),
-  commentCount: z.number().int().nonnegative(),
+  commentCount: z.coerce.number().int().nonnegative(),
   commentPublicId: z.string(),
 })
 
 export const adminRevisionDto = z.object({
   id: idString,
-  revisionNo: z.number().int().nonnegative(),
+  revisionNo: z.coerce.number().int().nonnegative(),
   status: z.enum(['draft', 'published']),
   body: portableTextBodySchema,
   imageSources: z.array(z.string()),
@@ -287,13 +287,13 @@ export const adminPageDetailDto = z.object({
 
 export const listPostsOutputDto = z.object({
   posts: z.array(adminPostDto),
-  total: z.number().int().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   hasMore: z.boolean(),
 })
 
 export const listPagesOutputDto = z.object({
   pages: z.array(adminPageDto),
-  total: z.number().int().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   hasMore: z.boolean(),
 })
 
@@ -325,12 +325,12 @@ const commentBaseDto = z.object({
   isVerified: z.boolean().nullable(),
   ua: z.string().nullable(),
   ip: z.string().nullable(),
-  rid: z.number().int().nonnegative(),
+  rid: z.coerce.number().int().nonnegative(),
   isCollapsed: z.boolean().nullable(),
   isPending: z.boolean().nullable(),
   isPinned: z.boolean().nullable(),
-  voteUp: z.number().nullable(),
-  voteDown: z.number().nullable(),
+  voteUp: z.coerce.number().nullable(),
+  voteDown: z.coerce.number().nullable(),
   rootId: idString.nullable(),
   name: z.string(),
   email: z.string(),
@@ -370,12 +370,12 @@ export const adminPendingItemDto = z.object({
 
 export const adminPendingDashboardDto = z.object({
   items: z.array(adminPendingItemDto),
-  total: z.number().int().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   hasMore: z.boolean(),
   counts: z.object({
-    all: z.number().int().nonnegative(),
-    approval: z.number().int().nonnegative(),
-    deletion: z.number().int().nonnegative(),
+    all: z.coerce.number().int().nonnegative(),
+    approval: z.coerce.number().int().nonnegative(),
+    deletion: z.coerce.number().int().nonnegative(),
   }),
 })
 
@@ -388,9 +388,9 @@ const cacheBucketStatsDto = z.object({
   label: z.string(),
   description: z.string(),
   prefix: z.string(),
-  ttlSeconds: z.number().int().nonnegative(),
+  ttlSeconds: z.coerce.number().int().nonnegative(),
   pattern: z.string(),
-  keyCount: z.number().int().nonnegative(),
+  keyCount: z.coerce.number().int().nonnegative(),
 })
 
 const reservedCacheBucketStatsDto = z.object({
@@ -399,19 +399,21 @@ const reservedCacheBucketStatsDto = z.object({
   description: z.string(),
   prefix: z.string(),
   pattern: z.string(),
-  keyCount: z.number().int().nonnegative(),
+  keyCount: z.coerce.number().int().nonnegative(),
 })
 
 export const adminCacheStatsDto = z.object({
   buckets: z.array(cacheBucketStatsDto),
   reserved: z.array(reservedCacheBucketStatsDto),
-  total: z.number().int().nonnegative(),
+  total: z.coerce.number().int().nonnegative(),
   generatedAt: isoDateTime,
 })
 
 export const clearCacheResultDto = z.object({
-  cleared: z.array(z.object({ bucketId: cacheBucketId, label: z.string(), removed: z.number().int().nonnegative() })),
-  total: z.number().int().nonnegative(),
+  cleared: z.array(
+    z.object({ bucketId: cacheBucketId, label: z.string(), removed: z.coerce.number().int().nonnegative() }),
+  ),
+  total: z.coerce.number().int().nonnegative(),
   refreshedStats: adminCacheStatsDto,
 })
 

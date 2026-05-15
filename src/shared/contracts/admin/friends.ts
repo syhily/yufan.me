@@ -14,11 +14,11 @@ export const adminFriendsContract = c.router(
       query: z.object({
         q: z.string().optional(),
         includeHidden: z.coerce.boolean().optional(),
-        offset: z.number().optional(),
-        limit: z.number().optional(),
+        offset: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
       }),
       responses: {
-        200: z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }),
+        200: z.object({ friends: z.array(adminFriendDto), total: z.coerce.number(), hasMore: z.boolean() }),
         ...standardMutationErrors,
       },
       summary: '管理后台：友链列表',

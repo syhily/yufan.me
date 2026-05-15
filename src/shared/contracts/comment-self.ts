@@ -15,9 +15,9 @@ const listMineQuery = z.object({
 
 const listMineResponse = z.object({
   comments: z.array(commentItemDto),
-  total: z.number().int(),
-  pending: z.number().int(),
-  deleteRequested: z.number().int(),
+  total: z.coerce.number().int(),
+  pending: z.coerce.number().int(),
+  deleteRequested: z.coerce.number().int(),
   hasMore: z.boolean(),
 })
 

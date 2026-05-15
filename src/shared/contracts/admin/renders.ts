@@ -22,13 +22,13 @@ export const adminRendersContract = c.router(
     reindexSearch: {
       method: 'POST',
       path: '/admin/renders/reindex-search',
-      body: z.object({ offset: z.number().optional(), batchSize: z.number().optional() }),
+      body: z.object({ offset: z.coerce.number().optional(), batchSize: z.coerce.number().optional() }),
       responses: {
         200: z.object({
-          processed: z.number(),
-          failed: z.number(),
-          total: z.number(),
-          nextOffset: z.number().nullable(),
+          processed: z.coerce.number(),
+          failed: z.coerce.number(),
+          total: z.coerce.number(),
+          nextOffset: z.coerce.number().nullable(),
         }),
         ...standardMutationErrors,
       },

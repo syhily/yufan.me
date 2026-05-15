@@ -13,7 +13,7 @@ export const adminCategoriesContract = c.router(
       path: '/admin/categories',
       query: z.object({ q: z.string().optional() }),
       responses: {
-        200: z.object({ categories: z.array(adminCategoryDto), total: z.number() }),
+        200: z.object({ categories: z.array(adminCategoryDto), total: z.coerce.number() }),
         ...standardMutationErrors,
       },
       summary: '管理后台：分类列表',

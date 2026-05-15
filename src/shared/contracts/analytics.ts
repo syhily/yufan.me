@@ -20,28 +20,28 @@ export const analyticsQuery = z.object({
 })
 
 export const countersResponse = z.object({
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
-  referers: z.number().int().nonnegative(),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
+  referers: z.coerce.number().int().nonnegative(),
 })
 
 export const viewsPoint = z.object({
   time: z.string(),
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
 })
 
 export const heatmapCell = z.object({
-  weekday: z.number().int().min(0).max(6),
-  hour: z.number().int().min(0).max(23),
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
+  weekday: z.coerce.number().int().min(0).max(6),
+  hour: z.coerce.number().int().min(0).max(23),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
 })
 
 export const metricRow = z.object({
   name: z.string(),
-  visits: z.number().int().nonnegative(),
-  visitors: z.number().int().nonnegative(),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
 })
 
 export const metricsQuery = analyticsQuery.extend({

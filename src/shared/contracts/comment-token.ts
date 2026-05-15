@@ -12,7 +12,7 @@ const myCommentsQuery = z.object({
 
 const myCommentsResponse = z.object({
   comments: z.array(commentItemDto),
-  expiresAt: z.record(z.string(), z.number()),
+  expiresAt: z.record(z.string(), z.coerce.number()),
 })
 
 export const commentTokenContract = c.router(

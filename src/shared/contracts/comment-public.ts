@@ -16,13 +16,13 @@ const likeTokenResponse = z.object({
 
 const likeResponse = z.object({
   key: z.string(),
-  likes: z.number().int().nonnegative(),
+  likes: z.coerce.number().int().nonnegative(),
   token: z.string().optional(),
 })
 
 const decreaseLikeResponse = z.object({
   key: z.string(),
-  likes: z.number().int().nonnegative(),
+  likes: z.coerce.number().int().nonnegative(),
 })
 
 const avatarResponse = z.object({
@@ -40,7 +40,7 @@ const commentReplyBody = z
     // `csrfGuard` middleware also accepts `X-CSRF-Token` header; the
     // body field remains accepted as a fallback for legacy callers.
     csrf: z.string().min(1).optional(),
-    rid: z.number().optional(),
+    rid: z.coerce.number().optional(),
     subtitle: z.string().max(COMMENT_HONEYPOT_MAX_LEN).optional().default(''),
   })
   .superRefine((val, ctx) => {

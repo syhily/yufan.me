@@ -5,8 +5,8 @@ import { adminCommentDto, adminPendingDashboardDto } from './_dtos'
 import { errorResponse, standardMutationErrors, standardReadErrors } from './_errors'
 
 const loadAllBody = z.object({
-  offset: z.number().min(0),
-  limit: z.number().min(1).max(100),
+  offset: z.coerce.number().min(0),
+  limit: z.coerce.number().min(1).max(100),
   pageKey: z.string().optional(),
   userId: z.string().optional(),
   status: z.enum(['all', 'pending', 'approved']).optional(),
@@ -14,12 +14,12 @@ const loadAllBody = z.object({
 
 const loadAllResponse = z.object({
   comments: z.array(adminCommentDto),
-  total: z.number().int(),
+  total: z.coerce.number().int(),
   hasMore: z.boolean(),
   statusCounts: z.object({
-    all: z.number().int(),
-    pending: z.number().int(),
-    approved: z.number().int(),
+    all: z.coerce.number().int(),
+    pending: z.coerce.number().int(),
+    approved: z.coerce.number().int(),
   }),
 })
 
@@ -87,7 +87,11 @@ export const commentAdminContract = c.router(
     listPendingDashboard: {
       method: 'GET',
       path: '/admin/comments/pending-dashboard',
-      query: z.object({ kind: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
+      query: z.object({
+        kind: z.string().optional(),
+        offset: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
+      }),
       responses: { 200: adminPendingDashboardDto, ...standardMutationErrors },
       summary: 'listPendingDashboard',
     },
