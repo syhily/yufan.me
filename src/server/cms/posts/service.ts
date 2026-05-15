@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm'
+
 import type { PublishLatestResult, SaveDraftResult } from '@/server/cms/pages/repository'
 import type { ContentRow, PostMetaRow } from '@/server/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
@@ -34,9 +36,11 @@ import {
   updatePostMetaById,
   type ListPostsFilters,
 } from '@/server/cms/posts/repository'
+import { db } from '@/server/db/pool'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/db/query/like'
 import { ensureMetricsBatch } from '@/server/db/query/metric'
 import { seedTagIfMissing } from '@/server/db/query/tag'
+import { post as postMetaTable } from '@/server/db/schema'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
 import { ActionFailure, ErrorMessages } from '@/server/route-helpers/errors'
@@ -49,11 +53,13 @@ import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 const auditLog = getLogger('audit.cms.posts')
 
 /** Auto-create any tags that don't already exist in the database. */
-async function ensureTagsExist(tagNames: string[]): Promise<void> {
+async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {
   if (tagNames.length === 0) {
     return
   }
-  await Promise.all(tagNames.map((name) => seedTagIfMissing({ name, slug: resolveSlugForTaxonomy(undefined, name) })))
+  await Promise.all(
+    tagNames.map((name) => seedTagIfMissing({ name, slug: resolveSlugForTaxonomy(undefined, name) }, tx)),
+  )
 }
 
 // --- Public catalog helpers -------------------------------------------------
@@ -303,25 +309,31 @@ export async function createPost(
   if (collision !== null) {
     throw new ActionFailure(409, `slug "${slug}" 已被其它文章占用。`)
   }
-  await ensureTagsExist(input.tags ?? [])
   const now = new Date()
-  const row = await insertPostMeta({
-    slug,
-    title: input.title,
-    summary: input.summary ?? '',
-    cover: input.cover ?? '',
-    og: input.og ?? null,
-    published: input.published ?? false,
-    commentsEnabled: input.commentsEnabled ?? true,
-    showToc: input.showToc ?? false,
-    showUpdated: input.showUpdated ?? false,
-    visible: input.visible ?? true,
-    pinnedAt: input.pinnedAt === undefined ? null : input.pinnedAt,
-    category: input.category ?? '',
-    tags: input.tags ?? [],
-    alias: input.alias ?? [],
-    publishedAt: input.publishedAt ?? now,
-    authorId,
+  const row = await db.transaction(async (tx) => {
+    await ensureTagsExist(input.tags ?? [], tx)
+    const [inserted] = await tx
+      .insert(postMetaTable)
+      .values({
+        slug,
+        title: input.title,
+        summary: input.summary ?? '',
+        cover: input.cover ?? '',
+        og: input.og ?? null,
+        published: input.published ?? false,
+        commentsEnabled: input.commentsEnabled ?? true,
+        showToc: input.showToc ?? false,
+        showUpdated: input.showUpdated ?? false,
+        visible: input.visible ?? true,
+        pinnedAt: input.pinnedAt === undefined ? null : input.pinnedAt,
+        category: input.category ?? '',
+        tags: input.tags ?? [],
+        alias: input.alias ?? [],
+        publishedAt: input.publishedAt ?? now,
+        authorId,
+      })
+      .returning()
+    return inserted
   })
   invalidateCatalog('post')
   return toAdminPostDto(row)
@@ -331,33 +343,42 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
   if (input.id === undefined) {
     throw new ActionFailure(400, 'updatePostMeta requires an id')
   }
+  const id = input.id
   const slug = resolveSlugForPost(input.slug, input.title)
   ensureSlugLegal(slug)
-  const existing = await findPostMetaById(input.id)
+  const existing = await findPostMetaById(id)
   assertOwnPostOr404(existing, viewer)
   if (existing.slug !== slug) {
     const collision = await findPostMetaBySlug(slug)
-    if (collision !== null && collision.id !== input.id) {
+    if (collision !== null && collision.id !== id) {
       throw new ActionFailure(409, `slug "${slug}" 已被其它文章占用。`)
     }
   }
-  await ensureTagsExist(input.tags ?? [])
-  const updated = await updatePostMetaById(input.id, {
-    slug,
-    title: input.title,
-    summary: input.summary ?? existing.summary,
-    cover: input.cover ?? existing.cover,
-    og: input.og === undefined ? existing.og : input.og,
-    published: input.published ?? existing.published,
-    commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
-    showToc: input.showToc ?? existing.showToc,
-    showUpdated: input.showUpdated ?? existing.showUpdated,
-    visible: input.visible ?? existing.visible,
-    pinnedAt: input.pinnedAt === undefined ? existing.pinnedAt : input.pinnedAt,
-    category: input.category ?? existing.category,
-    tags: input.tags ?? existing.tags,
-    alias: input.alias ?? existing.alias,
-    publishedAt: input.publishedAt ?? existing.publishedAt,
+  const updated = await db.transaction(async (tx) => {
+    await ensureTagsExist(input.tags ?? [], tx)
+    const [result] = await tx
+      .update(postMetaTable)
+      .set({
+        slug,
+        title: input.title,
+        summary: input.summary ?? existing.summary,
+        cover: input.cover ?? existing.cover,
+        og: input.og === undefined ? existing.og : input.og,
+        published: input.published ?? existing.published,
+        commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
+        showToc: input.showToc ?? existing.showToc,
+        showUpdated: input.showUpdated ?? existing.showUpdated,
+        visible: input.visible ?? existing.visible,
+        pinnedAt: input.pinnedAt === undefined ? existing.pinnedAt : input.pinnedAt,
+        category: input.category ?? existing.category,
+        tags: input.tags ?? existing.tags,
+        alias: input.alias ?? existing.alias,
+        publishedAt: input.publishedAt ?? existing.publishedAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(postMetaTable.id, id))
+      .returning()
+    return result ?? null
   })
   if (updated === null) {
     throw new ActionFailure(404, '文章不存在或已被删除。')

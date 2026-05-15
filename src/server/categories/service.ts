@@ -2,6 +2,7 @@ import type { CategoryRow } from '@/server/db/types'
 import type { AdminCategoryDto } from '@/shared/categories'
 
 import { invalidateCatalog } from '@/server/catalog/invalidate'
+import { listPublicPosts } from '@/server/cms/posts/repository'
 import {
   type AdminCategoriesListFilters,
   deleteCategory as deleteCategoryRow,
@@ -60,10 +61,25 @@ async function categoryPostCounter(): Promise<(name: string) => Promise<number>>
   }
 }
 
+// Bulk-count posts per category in a single query, then project into a
+// Map. Replaces the N+1 `categoryPostCounter` for list views while
+// keeping the per-category helper for single-row upserts.
+async function countPostsByCategories(): Promise<Map<string, number>> {
+  const metas = await listPublicPosts({ includeHidden: true, includeScheduled: true })
+  const counts = new Map<string, number>()
+  for (const meta of metas) {
+    const cat = meta.category
+    if (cat) {
+      counts.set(cat, (counts.get(cat) ?? 0) + 1)
+    }
+  }
+  return counts
+}
+
 export async function listCategoriesForAdmin(filters: AdminCategoriesListFilters): Promise<AdminCategoriesListResult> {
-  const [rows, countOf] = await Promise.all([listAdminCategoryRows(filters), categoryPostCounter()])
+  const [rows, counts] = await Promise.all([listAdminCategoryRows(filters), countPostsByCategories()])
   return {
-    categories: await Promise.all(rows.map(async (row) => toAdminCategoryDto(row, await countOf(row.name)))),
+    categories: rows.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0)),
     total: rows.length,
   }
 }

@@ -3,6 +3,7 @@ import type { AdminTagDto } from '@/shared/tags'
 
 import { hasAtLeast, type Role } from '@/server/auth/rbac'
 import { invalidateCatalog } from '@/server/catalog/invalidate'
+import { listPublicPosts } from '@/server/cms/posts/repository'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -54,6 +55,21 @@ async function tagPostCounter(): Promise<(name: string) => Promise<number>> {
   }
 }
 
+// Bulk-count posts per tag in a single query, then project into a Map.
+// Replaces the N+1 `tagPostCounter` for list views while keeping the
+// per-tag helper for single-row upserts.
+async function countPostsByTags(): Promise<Map<string, number>> {
+  const metas = await listPublicPosts({ includeHidden: true, includeScheduled: true })
+  const counts = new Map<string, number>()
+  for (const meta of metas) {
+    const tags = (meta.tags as string[]) ?? []
+    for (const tag of tags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1)
+    }
+  }
+  return counts
+}
+
 // Server-side pagination: parallel `[rows, total, postCounter]` so we
 // pay only one round-trip for the page-of-rows query, the COUNT(*),
 // and the catalog snapshot. `total` is the full filtered count
@@ -61,13 +77,13 @@ async function tagPostCounter(): Promise<(name: string) => Promise<number>> {
 // correct number of pagination buttons.
 export async function listTagsForAdmin(filters: AdminTagsListFilters): Promise<AdminTagsListResult> {
   const offset = filters.offset ?? 0
-  const [rows, total, countOf] = await Promise.all([
+  const [rows, total, counts] = await Promise.all([
     listAdminTagRows(filters),
     countAdminTags({ q: filters.q }),
-    tagPostCounter(),
+    countPostsByTags(),
   ])
   return {
-    tags: await Promise.all(rows.map(async (row) => toAdminTagDto(row, await countOf(row.name)))),
+    tags: rows.map((row) => toAdminTagDto(row, counts.get(row.name) ?? 0)),
     total,
     hasMore: offset + rows.length < total,
   }

@@ -113,9 +113,9 @@ export async function deleteTag(id: bigint): Promise<boolean> {
 // (name) DO NOTHING` so a re-run never overwrites a row the admin
 // has since edited (slug rename, …). Returns `true` when a new row
 // was inserted, `false` when the row already exists.
-export async function seedTagIfMissing(values: NewTag): Promise<boolean> {
+export async function seedTagIfMissing(values: NewTag, tx = db): Promise<boolean> {
   const now = new Date()
-  const result = await db
+  const result = await tx
     .insert(tag)
     .values({ ...values, createdAt: now, updatedAt: now })
     .onConflictDoNothing({ target: tag.name })
