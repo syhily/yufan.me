@@ -131,18 +131,8 @@
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
-    "@ts-rest/core": {
-      "zod": "$zod"
-    },
-    "@ts-rest/open-api": {
-      "zod": "$zod"
-    },
-    "@anatine/zod-openapi": {
-      "zod": "$zod"
-    },
-    "@hono/node-ws": {
-      "@hono/node-server": "$@hono/node-server"
-    }
+    "zod": "$zod",
+    "@hono/node-server": "$@hono/node-server"
   },
   "packageManager": "npm@11.14.1"
 }
