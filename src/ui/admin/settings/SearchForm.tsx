@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 
 import type { SearchLoaderShape } from '@/shared/settings'
 
-import { API_ACTIONS } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
@@ -96,22 +96,14 @@ export function SearchForm({ search }: SearchFormProps) {
 
     try {
       while (true) {
-        const res = await fetch(API_ACTIONS.admin.reindexSearch.path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ batchSize: 5, offset }),
-        })
+        const result = await api.admin.search.reindex({ body: { batchSize: 5, offset } })
 
-        const envelope = (await res.json()) as {
-          data?: { processed: number; failed: number; total: number; nextOffset: number | null }
-          error?: { message: string }
+        if (result.status !== 200) {
+          const errBody = result.body as { error?: { message?: string } } | undefined
+          throw new Error(errBody?.error?.message || `HTTP ${result.status}`)
         }
 
-        if (!res.ok || envelope.error) {
-          throw new Error(envelope.error?.message || `HTTP ${res.status}`)
-        }
-
-        const data = envelope.data!
+        const data = result.body
         total = data.total
         processed += data.processed
         failed += data.failed
