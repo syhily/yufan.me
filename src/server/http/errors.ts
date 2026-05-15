@@ -45,7 +45,10 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
 
   if (err instanceof DomainError) {
     c.header('X-Request-Id', requestId)
-    return c.json({ error: { message: err.message } }, domainStatus(err) as 400 | 401 | 403 | 404 | 409 | 429 | 500)
+    return c.json(
+      { error: { message: err.message, issues: err.issues } },
+      domainStatus(err) as 400 | 401 | 403 | 404 | 409 | 429 | 500,
+    )
   }
 
   if (err instanceof ZodError) {

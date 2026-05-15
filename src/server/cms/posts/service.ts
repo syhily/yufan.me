@@ -43,7 +43,7 @@ import { seedTagIfMissing } from '@/server/db/query/tag'
 import { post as postMetaTable } from '@/server/db/schema'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
-import { ActionFailure, ErrorMessages } from '@/server/route-helpers/errors'
+import { DomainError, ErrorMessages } from '@/server/route-helpers/errors'
 import { indexPost, removePostIndex } from '@/server/search/indexer'
 import { deriveSlug } from '@/server/slug'
 import { resolveSlugForTaxonomy } from '@/server/taxonomies/service'
@@ -202,10 +202,10 @@ export async function listPostsForAdmin(
 
 function assertOwnPostOr404(meta: PostMetaRow | null, viewer?: ViewerContext): asserts meta is PostMetaRow {
   if (!meta) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   if (viewer && !canEditPost(viewer, meta)) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 }
 
@@ -272,13 +272,13 @@ export interface UpsertPostMetaInput {
 
 function ensureSlugLegal(slug: string): void {
   if (!SLUG_PATTERN.test(slug)) {
-    throw new ActionFailure(400, '文章 slug 格式不合法（仅允许小写字母、数字、`-` `_` `.`）。')
+    throw new DomainError('BAD_REQUEST', '文章 slug 格式不合法（仅允许小写字母、数字、`-` `_` `.`）。')
   }
   if (slug.length > 80) {
-    throw new ActionFailure(400, '文章 slug 长度不得超过 80 个字符。')
+    throw new DomainError('BAD_REQUEST', '文章 slug 长度不得超过 80 个字符。')
   }
   if (RESERVED_POST_SLUGS.has(slug)) {
-    throw new ActionFailure(400, `slug "${slug}" 是站点保留路径。`)
+    throw new DomainError('BAD_REQUEST', `slug "${slug}" 是站点保留路径。`)
   }
 }
 
@@ -288,7 +288,7 @@ function resolveSlugForPost(explicit: string | undefined, title: string): string
   }
   const derived = deriveSlug(title)
   if (derived === '') {
-    throw new ActionFailure(400, '无法从标题推导出 slug，请手动填写。', [
+    throw new DomainError('BAD_REQUEST', '无法从标题推导出 slug，请手动填写。', [
       { message: '标题推导出空 slug，请手动填写', path: ['slug'] },
     ])
   }
@@ -307,7 +307,7 @@ export async function createPost(
   ensureSlugLegal(slug)
   const collision = await findPostMetaBySlug(slug)
   if (collision !== null) {
-    throw new ActionFailure(409, `slug "${slug}" 已被其它文章占用。`)
+    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
   }
   const now = new Date()
   const row = await db.transaction(async (tx) => {
@@ -341,7 +341,7 @@ export async function createPost(
 
 export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: ViewerContext): Promise<AdminPostDto> {
   if (input.id === undefined) {
-    throw new ActionFailure(400, 'updatePostMeta requires an id')
+    throw new DomainError('BAD_REQUEST', 'updatePostMeta requires an id')
   }
   const id = input.id
   const slug = resolveSlugForPost(input.slug, input.title)
@@ -351,7 +351,7 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
   if (existing.slug !== slug) {
     const collision = await findPostMetaBySlug(slug)
     if (collision !== null && collision.id !== id) {
-      throw new ActionFailure(409, `slug "${slug}" 已被其它文章占用。`)
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它文章占用。`)
     }
   }
   const updated = await db.transaction(async (tx) => {
@@ -381,7 +381,7 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
     return result ?? null
   })
   if (updated === null) {
-    throw new ActionFailure(404, '文章不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   invalidateCatalog('post')
   return toAdminPostDto(updated)
@@ -420,7 +420,7 @@ export async function unpublishPost(id: bigint, viewer?: ViewerContext): Promise
   assertOwnPostOr404(existing, viewer)
   const updated = await updatePostMetaById(id, { published: false })
   if (updated === null) {
-    throw new ActionFailure(404, '文章不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   invalidateCatalog('post')
   await removePostIndex(id).catch(() => undefined)
@@ -522,7 +522,7 @@ async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody
   try {
     return await canonicalizePortableTextBody(value)
   } catch (error) {
-    throw new ActionFailure(400, '正文格式不合法。', extractZodIssues(error))
+    throw new DomainError('BAD_REQUEST', '正文格式不合法。', extractZodIssues(error))
   }
 }
 

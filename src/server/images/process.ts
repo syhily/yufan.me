@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import { rgbaToThumbHash } from 'thumbhash'
 
-import { ActionFailure } from '@/server/route-helpers/errors'
+import { DomainError } from '@/server/route-helpers/errors'
 
 // Image processing pipeline shared by every upload entry point. Takes
 // the browser-encoded blob (already JPEG, already cropped/resized to
@@ -57,7 +57,7 @@ export async function processImageBuffer(input: ProcessImageInput): Promise<Proc
   try {
     pipeline = sharp(input.buffer, { failOn: 'error' }).rotate()
   } catch (error) {
-    throw new ActionFailure(400, '无法解析图片数据', [
+    throw new DomainError('BAD_REQUEST', '无法解析图片数据', [
       { message: error instanceof Error ? error.message : String(error) },
     ])
   }
@@ -75,7 +75,7 @@ export async function processImageBuffer(input: ProcessImageInput): Promise<Proc
     }
     normalisedBuffer = await staged.jpeg({ quality: input.jpegQuality, mozjpeg: true, progressive: true }).toBuffer()
   } catch (error) {
-    throw new ActionFailure(400, '图片重新编码失败', [
+    throw new DomainError('BAD_REQUEST', '图片重新编码失败', [
       { message: error instanceof Error ? error.message : String(error) },
     ])
   }
@@ -84,7 +84,7 @@ export async function processImageBuffer(input: ProcessImageInput): Promise<Proc
   const width = normalisedMeta.width
   const height = normalisedMeta.height
   if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
-    throw new ActionFailure(400, '图片尺寸无效')
+    throw new DomainError('BAD_REQUEST', '图片尺寸无效')
   }
 
   const thumbhash = await computeThumbhash(normalisedBuffer, width, height)

@@ -38,7 +38,7 @@ import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/db/query/li
 import { ensureMetric } from '@/server/db/query/metric'
 import { getLogger } from '@/server/logger'
 import { canonicalizePortableTextBody } from '@/server/pt/canonicalize'
-import { ActionFailure } from '@/server/route-helpers/errors'
+import { DomainError } from '@/server/route-helpers/errors'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 
@@ -310,13 +310,13 @@ export interface UpsertPageMetaInput {
 
 function ensureSlugLegal(slug: string): void {
   if (!SLUG_PATTERN.test(slug)) {
-    throw new ActionFailure(400, '页面 slug 格式不合法（仅允许小写字母、数字、`-` `_` `.`）。')
+    throw new DomainError('BAD_REQUEST', '页面 slug 格式不合法（仅允许小写字母、数字、`-` `_` `.`）。')
   }
   if (slug.length > 80) {
-    throw new ActionFailure(400, '页面 slug 长度不得超过 80 个字符。')
+    throw new DomainError('BAD_REQUEST', '页面 slug 长度不得超过 80 个字符。')
   }
   if (RESERVED_PAGE_SLUGS.has(slug)) {
-    throw new ActionFailure(400, `slug "${slug}" 是站点保留路径。`)
+    throw new DomainError('BAD_REQUEST', `slug "${slug}" 是站点保留路径。`)
   }
 }
 
@@ -331,7 +331,7 @@ function resolveSlugForPage(explicit: string | undefined, title: string): string
   }
   const derived = deriveSlug(title)
   if (derived === '') {
-    throw new ActionFailure(400, '无法从标题推导出 slug，请手动填写。', [
+    throw new DomainError('BAD_REQUEST', '无法从标题推导出 slug，请手动填写。', [
       { message: '标题推导出空 slug，请手动填写', path: ['slug'] },
     ])
   }
@@ -345,7 +345,7 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
   // catalog snapshot rebuild after invalidate.
   const collision = await findPageMetaBySlug(slug)
   if (collision !== null) {
-    throw new ActionFailure(409, `slug "${slug}" 已被其它页面占用。`)
+    throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
   }
   const now = new Date()
   const row = await insertPageMeta({
@@ -372,18 +372,18 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
 
 export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminPageDto> {
   if (input.id === undefined) {
-    throw new ActionFailure(400, 'updatePageMeta requires an id')
+    throw new DomainError('BAD_REQUEST', 'updatePageMeta requires an id')
   }
   const slug = resolveSlugForPage(input.slug, input.title)
   ensureSlugLegal(slug)
   const existing = await findPageMetaById(input.id)
   if (existing === null) {
-    throw new ActionFailure(404, '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   if (existing.slug !== slug) {
     const collision = await findPageMetaBySlug(slug)
     if (collision !== null && collision.id !== input.id) {
-      throw new ActionFailure(409, `slug "${slug}" 已被其它页面占用。`)
+      throw new DomainError('CONFLICT', `slug "${slug}" 已被其它页面占用。`)
     }
   }
   const updated = await updatePageMetaById(input.id, {
@@ -400,7 +400,7 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
     publishedAt: input.publishedAt ?? existing.publishedAt,
   })
   if (updated === null) {
-    throw new ActionFailure(404, '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   invalidateCatalog('page')
   return toAdminPageDto(updated)
@@ -425,11 +425,11 @@ export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
 export async function unpublishPage(id: bigint): Promise<AdminPageDto> {
   const existing = await findPageMetaById(id)
   if (existing === null) {
-    throw new ActionFailure(404, '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   const updated = await updatePageMetaById(id, { published: false })
   if (updated === null) {
-    throw new ActionFailure(404, '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   invalidateCatalog('page')
   return toAdminPageDto(updated)
@@ -470,7 +470,7 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   // rollback error on the operator's screen.
   const meta = await findPageMetaById(input.pageId)
   if (meta === null) {
-    throw new ActionFailure(404, '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   // Validate body + pre-render heavy blocks (Shiki / KaTeX /
   // Mermaid) so SSR public renders stay cheap. The pre-render is
@@ -554,7 +554,7 @@ async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody
   try {
     return await canonicalizePortableTextBody(value)
   } catch (error) {
-    throw new ActionFailure(400, '正文格式不合法。', extractZodIssues(error))
+    throw new DomainError('BAD_REQUEST', '正文格式不合法。', extractZodIssues(error))
   }
 }
 
@@ -603,7 +603,7 @@ export async function loadEditorBody(id: bigint): Promise<{
 }> {
   const meta = await findPageMetaById(id)
   if (meta === null) {
-    throw new ActionFailure(404, '页面不存在或已被删除。')
+    throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
   const [draft, published] = await Promise.all([
     findLatestDraft('page', meta.id),

@@ -16,7 +16,7 @@ import {
   updateTag,
 } from '@/server/db/query/tag'
 import { listPostsByTag } from '@/server/posts/query'
-import { ActionFailure, ErrorMessages } from '@/server/route-helpers/errors'
+import { DomainError, ErrorMessages } from '@/server/route-helpers/errors'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -113,12 +113,12 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
 
   // Authors may only create tags; renaming is admin-only.
   if (viewer && !hasAtLeast(viewer.role, 'admin')) {
-    throw new ActionFailure(403, ErrorMessages.FORBIDDEN)
+    throw new DomainError('FORBIDDEN', ErrorMessages.FORBIDDEN)
   }
 
   const existing = await findTagById(input.id)
   if (existing === null) {
-    throw new ActionFailure(404, '标签不存在')
+    throw new DomainError('NOT_FOUND', '标签不存在')
   }
   await ensureUniqueOnUpdateTaxonomy(
     findTagByName,
@@ -132,7 +132,7 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
   )
   const updated = await updateTag(input.id, { name: input.name, slug })
   if (updated === null) {
-    throw new ActionFailure(404, '标签不存在')
+    throw new DomainError('NOT_FOUND', '标签不存在')
   }
   invalidateCatalog('taxonomy')
   const countOf = await tagPostCounter()

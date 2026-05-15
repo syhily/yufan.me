@@ -74,10 +74,12 @@ const DEFAULT_MESSAGES: Record<DomainErrorCode, string> = {
 // more specific than the per-code default.
 export class DomainError extends Error {
   readonly code: DomainErrorCode
+  readonly issues?: { message: string; path?: string[] }[]
 
-  constructor(code: DomainErrorCode, message?: string) {
+  constructor(code: DomainErrorCode, message?: string, issues?: { message: string; path?: string[] }[]) {
     super(message ?? DEFAULT_MESSAGES[code])
     this.code = code
+    this.issues = issues
     this.name = 'DomainError'
   }
 }

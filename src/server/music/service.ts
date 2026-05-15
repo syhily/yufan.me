@@ -41,7 +41,7 @@ import {
   putMusicCover,
   safeBuildMusicPublicUrl,
 } from '@/server/music/storage'
-import { ActionFailure, ErrorMessages } from '@/server/route-helpers/errors'
+import { DomainError, ErrorMessages } from '@/server/route-helpers/errors'
 
 // Domain-level entry points for the music admin library. Coordinates
 // the "search → download → process → S3 PUT → DB insert" pipeline
@@ -185,7 +185,7 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
   // lyric_id) to be able to fall back when a prefilled URL 404s.
   const hit = await getSong(input.sourceId)
   if (hit === null) {
-    throw new ActionFailure(404, `上游未找到 sourceId=${input.sourceId} 的歌曲`)
+    throw new DomainError('NOT_FOUND', `上游未找到 sourceId=${input.sourceId} 的歌曲`)
   }
 
   const metadata = mergeMetadata(hit, input.prefill)
@@ -242,7 +242,7 @@ export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
   } catch (error) {
     log.error('Music insert failed; rolling back S3 uploads', { sourceId: input.sourceId, playerId, error })
     await Promise.allSettled([deleteMusicObject(audioStoragePath), deleteMusicObject(coverStoragePath)])
-    throw new ActionFailure(500, '音乐元数据写入失败，请稍后重试')
+    throw new DomainError('INTERNAL', '音乐元数据写入失败，请稍后重试')
   }
 
   return toAdminMusicDto(row, input.uploader?.name ?? null)
@@ -277,10 +277,10 @@ export async function updateMusicMetadata(
 ): Promise<AdminMusicDto> {
   const existing = await findMusicById(input.id)
   if (existing === null || existing.deletedAt !== null) {
-    throw new ActionFailure(404, '音乐不存在')
+    throw new DomainError('NOT_FOUND', '音乐不存在')
   }
   if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
   const updated = await updateMusic(input.id, {
@@ -290,7 +290,7 @@ export async function updateMusicMetadata(
     lyric: input.lyric,
   })
   if (updated === null) {
-    throw new ActionFailure(404, '音乐不存在')
+    throw new DomainError('NOT_FOUND', '音乐不存在')
   }
 
   // Re-fetch through the admin projection so the response carries
@@ -298,7 +298,7 @@ export async function updateMusicMetadata(
   // re-derive it.
   const projected = await findAdminMusicRowById(input.id)
   if (projected === null) {
-    throw new ActionFailure(404, '音乐不存在')
+    throw new DomainError('NOT_FOUND', '音乐不存在')
   }
   return toAdminMusicDto(projected, projected.uploaderName)
 }
@@ -306,10 +306,10 @@ export async function updateMusicMetadata(
 export async function deleteMusic(id: bigint, viewer?: MusicViewerContext): Promise<void> {
   const existing = await findMusicById(id)
   if (existing === null) {
-    throw new ActionFailure(404, '音乐不存在')
+    throw new DomainError('NOT_FOUND', '音乐不存在')
   }
   if (viewer && viewer.role !== 'admin' && existing.uploaderId?.toString() !== viewer.userId) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
   // Mirror the image library: try S3 best-effort, always proceed to
@@ -319,7 +319,7 @@ export async function deleteMusic(id: bigint, viewer?: MusicViewerContext): Prom
 
   const deleted = await softDeleteMusic(id)
   if (deleted === null) {
-    throw new ActionFailure(404, '音乐不存在')
+    throw new DomainError('NOT_FOUND', '音乐不存在')
   }
 }
 
@@ -355,7 +355,7 @@ async function generateUniquePlayerId(): Promise<string> {
     }
     log.warn('playerId collision; retrying', { candidate, attempt })
   }
-  throw new ActionFailure(500, 'playerId 生成失败：连续 5 次冲突')
+  throw new DomainError('INTERNAL', 'playerId 生成失败：连续 5 次冲突')
 }
 
 async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'cover'): Promise<Buffer> {
@@ -372,24 +372,24 @@ async function downloadBinary(url: string, maxBytes: number, what: 'audio' | 'co
     })
   } catch (error) {
     log.error('Music asset fetch failed', { url, what, error })
-    throw new ActionFailure(502, `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
+    throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败，请稍后再试`)
   }
   if (!response.ok) {
     log.error('Music asset fetch returned non-2xx', { url, what, status: response.status })
-    throw new ActionFailure(502, `${what === 'audio' ? '下载音频' : '下载封面'}失败：${response.status}`)
+    throw new DomainError('INTERNAL', `${what === 'audio' ? '下载音频' : '下载封面'}失败：${response.status}`)
   }
 
   const length = response.headers.get('content-length')
   if (length !== null) {
     const expected = Number.parseInt(length, 10)
     if (Number.isFinite(expected) && expected > maxBytes) {
-      throw new ActionFailure(413, `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
+      throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
     }
   }
 
   const arrayBuf = await response.arrayBuffer()
   if (arrayBuf.byteLength > maxBytes) {
-    throw new ActionFailure(413, `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
+    throw new DomainError('BAD_REQUEST', `${what === 'audio' ? '音频' : '封面'}体积超过上限`)
   }
   return Buffer.from(arrayBuf)
 }

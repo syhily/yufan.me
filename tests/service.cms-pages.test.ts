@@ -6,7 +6,7 @@ import type { ContentRow } from '@/server/db/types'
 // CMS page service — drives the save/publish state machine through
 // the repository's mocked transactional helpers. The repository
 // itself is mocked to keep this test layer focused on:
-//   1. ActionFailure surfacing (slug validation, missing rows),
+//   1. DomainError surfacing (slug validation, missing rows),
 //   2. body validation through the PortableText perimeter,
 //   3. DTO projection (CmsPage, AdminPageDto, AdminRevisionDto),
 //   4. conflict-vs-saved branching translated to the wire shape.
@@ -44,7 +44,7 @@ vi.mock('@/server/db/query/like', () => ({
 }))
 
 const repo = await import('@/server/cms/pages/repository')
-const { ActionFailure } = await import('@/server/route-helpers/errors')
+const { DomainError } = await import('@/server/route-helpers/errors')
 const service = await import('@/server/cms/pages/service')
 
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
@@ -147,18 +147,18 @@ describe('cms/pages/service — listPagesForAdmin / getPageDetailForAdmin', () =
 
 describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   it('rejects slugs that contain illegal characters', async () => {
-    await expect(service.createPage({ slug: 'About Me', title: 'x' }, null)).rejects.toBeInstanceOf(ActionFailure)
+    await expect(service.createPage({ slug: 'About Me', title: 'x' }, null)).rejects.toBeInstanceOf(DomainError)
   })
 
   it('rejects reserved slugs that would shadow public routes', async () => {
     for (const slug of ['posts', 'cats', 'tags', 'wp-admin', 'api']) {
-      await expect(service.createPage({ slug, title: 't' }, null)).rejects.toBeInstanceOf(ActionFailure)
+      await expect(service.createPage({ slug, title: 't' }, null)).rejects.toBeInstanceOf(DomainError)
     }
   })
 
   it('rejects an existing slug on create with HTTP 409 semantics', async () => {
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ slug: 'about' }))
-    await expect(service.createPage({ slug: 'about', title: 't' }, null)).rejects.toMatchObject({ status: 409 })
+    await expect(service.createPage({ slug: 'about', title: 't' }, null)).rejects.toMatchObject({ code: 'CONFLICT' })
   })
 
   it('updatePageMeta tolerates a same-slug edit (no collision check fires)', async () => {
@@ -173,29 +173,31 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about' }))
     vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(metaRow({ id: 99n, slug: 'guestbook' }))
     await expect(service.updatePageMeta({ id: 7n, slug: 'guestbook', title: 't' })).rejects.toMatchObject({
-      status: 409,
+      code: 'CONFLICT',
     })
   })
 
   it('updatePageMeta returns 404 when the row was already deleted', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
-    await expect(service.updatePageMeta({ id: 7n, slug: 'about', title: 't' })).rejects.toMatchObject({ status: 404 })
+    await expect(service.updatePageMeta({ id: 7n, slug: 'about', title: 't' })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
   })
 })
 
 describe('cms/pages/service — saveDraft / publishLatest body validation', () => {
-  it('rejects a malformed body (zod issues become ActionFailure 400)', async () => {
+  it('rejects a malformed body (zod issues become DomainError 400)', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 1n }))
     await expect(
       service.saveDraft({ pageId: 1n, body: [{ _type: 'unknown', _key: 'k' }], authorId: null }),
-    ).rejects.toMatchObject({ status: 400 })
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
     expect(repo.saveDraftRevision).not.toHaveBeenCalled()
   })
 
   it('rejects when the page row is missing without touching the transaction', async () => {
     vi.mocked(repo.findPageMetaById).mockResolvedValue(null)
     await expect(service.saveDraft({ pageId: 1n, body: VALID_BODY, authorId: null })).rejects.toMatchObject({
-      status: 404,
+      code: 'NOT_FOUND',
     })
     expect(repo.saveDraftRevision).not.toHaveBeenCalled()
   })
