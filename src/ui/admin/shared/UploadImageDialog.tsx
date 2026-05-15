@@ -1,10 +1,9 @@
 import { RotateCwIcon, SaveIcon, UploadIcon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, useCallback, useEffect, useRef, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminImageDto, UploadImageOutput } from '@/shared/images'
 
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 import { Button } from '@/ui/components/button'
@@ -49,7 +48,6 @@ export interface UploadImageDialogProps {
 const LOCKED_ASPECT: LockedAspect = { width: 1280, height: 425 }
 
 export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadImageDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<UploadImageOutput>>()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [file, setFile] = useState<File | null>(null)
@@ -70,25 +68,15 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
   // on the way to "1280") doesn't immediately clamp / re-encode.
   const [targetWidthDraft, setTargetWidthDraft] = useState<string>('')
   const encoderRef = useRef<(() => Promise<{ blob: Blob; width: number; height: number }>) | null>(null)
-  const [submitting, setSubmitting] = useState(false)
 
-  // Stash the latest callbacks in a ref so the fetcher-drain effect
-  // below can stay keyed only on `fetcher.state` + `fetcher.data`.
-  // Parents typically pass inline arrows (e.g. `onUploaded={(img) =>
-  // dispatch(...)}`); listing them in the effect deps would cause the
-  // effect to refire on every parent render, which — combined with a
-  // sticky `fetcher.data` after a successful upload — triggers an
-  // infinite "Maximum update depth exceeded" loop because the success
-  // handler dispatches a state change in the parent. Same caller-
-  // transparency contract used by `useApiFetcher`.
-  const callbacks = useRef({ onUploaded, onClose })
-  callbacks.current = { onUploaded, onClose }
-
-  // Once-per-response guard for the fetcher-drain effect. Without this,
-  // the React Router fetcher's sticky `fetcher.data` payload gets
-  // re-dispatched every render after a successful upload (the
-  // payload reference doesn't change until the next submit).
-  const lastHandledData = useRef<unknown>(null)
+  const fetcher = useApiFetcher<FormData, UploadImageOutput>(UPLOAD, {
+    onSuccess: (data) => {
+      onUploaded(data.image)
+    },
+    onError: (error) => {
+      setErrorMessage(error.message)
+    },
+  })
 
   // Reset internal state every time the dialog opens. Without this, the
   // previous selection's preview would flash for a moment when the
@@ -110,31 +98,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
     setTargetWidth(null)
     setTargetWidthDraft('')
     encoderRef.current = null
-    lastHandledData.current = null
   }, [open])
-
-  // Drain the fetcher result. Once per response: the `lastHandledData`
-  // ref guard prevents re-dispatching when the parent rerenders for
-  // unrelated reasons. We can't use `useApiFetcher` directly because
-  // the upload uses multipart/form-data, but the envelope shape is
-  // identical so the success/error fan-out is the same.
-  useEffect(() => {
-    if (fetcher.state !== 'idle' || !fetcher.data) {
-      return
-    }
-    if (fetcher.data === lastHandledData.current) {
-      return
-    }
-    lastHandledData.current = fetcher.data
-    setSubmitting(false)
-    if (fetcher.data.error) {
-      setErrorMessage(fetcher.data.error.message)
-      return
-    }
-    if (fetcher.data.data) {
-      callbacks.current.onUploaded(fetcher.data.data.image)
-    }
-  }, [fetcher.state, fetcher.data])
 
   const onSelectFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const next = event.target.files?.[0] ?? null
@@ -192,7 +156,6 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
       setErrorMessage('图片尚未准备好，请稍候再试')
       return
     }
-    setSubmitting(true)
     setErrorMessage(null)
     try {
       const encoded = await encoderRef.current()
@@ -209,13 +172,8 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
         formData.append('note', note.trim())
       }
 
-      await fetcher.submit(formData, {
-        method: 'POST',
-        action: UPLOAD.path,
-        encType: 'multipart/form-data',
-      })
+      fetcher.submit(formData)
     } catch (err) {
-      setSubmitting(false)
       setErrorMessage(err instanceof Error ? err.message : '上传失败')
     }
   }, [file, kind, note, fetcher])
@@ -226,7 +184,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
   }
 
   const lockedAspect = kind.kind === 'generic' ? undefined : LOCKED_ASPECT
-  const isPending = fetcher.state !== 'idle' || submitting
+  const isPending = fetcher.isPending
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && !isPending && onClose()}>

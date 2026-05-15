@@ -159,3 +159,120 @@ export interface ErrorResp {
  *   - `deleted`          — soft-deleted, still inside the grace window.
  */
 export type MyCommentsStatus = 'all' | 'pending' | 'deleteRequested' | 'deleted'
+
+// ---------------------------------------------------------------------------
+// API input/output types (migrated from @/shared/api-types)
+// ---------------------------------------------------------------------------
+
+export interface CommentReplyInput {
+  page_key: string
+  name: string
+  email: string
+  link?: string
+  body: CommentBody
+  csrf: string
+  rid?: number
+  subtitle?: string
+}
+
+export type ReplyCommentInput = CommentReplyInput
+
+export interface CommentRidInput {
+  rid: string
+}
+
+export interface CommentEditInput extends CommentRidInput {
+  body: CommentBody
+}
+
+export interface LoadCommentsInput {
+  page_key: string
+  offset: number
+}
+
+export interface LoadAllCommentsInput {
+  offset: number
+  limit: number
+  pageKey?: string
+  userId?: string
+  status?: 'all' | 'pending' | 'approved'
+}
+
+export interface FilterAutocompleteInput {
+  q?: string
+  limit?: number
+  ids?: string | string[]
+  key?: string
+}
+
+export interface ReplyCommentOutput {
+  comment: CommentItem
+  /** Next CSRF token for a follow-up `replyComment` without full page reload. */
+  csrfToken: string
+}
+
+export interface CommentEditOutput {
+  comment: CommentItem
+}
+
+export interface LoadCommentsOutput {
+  comments: CommentItem[]
+  next: boolean
+}
+
+export interface CommentRawOutput {
+  body: CommentBody
+}
+
+export interface MyCommentsOutput {
+  comments: CommentItem[]
+  /**
+   * Map from comment id string to token expiration timestamp (ms).
+   * The UI uses this to show "editable for X more minutes" hints.
+   */
+  expiresAt: Record<string, number>
+}
+
+export interface RevokeCommentTokenOutput {
+  success: true
+}
+
+export interface SearchPagesOutput {
+  pages: { key: string; title: string | null }[]
+}
+
+export interface SearchAuthorsOutput {
+  authors: { id: string; name: string }[]
+}
+
+export type LoadAllInput = LoadAllCommentsInput
+
+export interface LoadAllOutput {
+  comments: AdminComment[]
+  total: number
+  hasMore: boolean
+  /**
+   * Counts for each status filter under the SAME page/user filter
+   * context (so picking an author and then switching tabs always shows
+   * that author's counts). The currently-selected tab's count equals
+   * `total`, but we ship all three so the unselected tabs can still
+   * render their badges without an extra round-trip.
+   */
+  statusCounts: { all: number; pending: number; approved: number }
+}
+
+export interface FindAvatarInput {
+  email: string
+}
+
+export interface FindAvatarOutput {
+  avatar: string
+}
+
+export interface ListPendingDashboardInput {
+  kind?: AdminPendingKind
+  offset?: number
+  limit?: number
+}
+
+export type ListPendingDashboardOutput = AdminPendingDashboardDto

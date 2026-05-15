@@ -279,11 +279,11 @@ export const commentController = {
   // ─── Self-service (visitor) ────────────────────────────
 
   updateOwn: async (
-    { query, body }: { query: { commentId: string }; body: unknown },
+    { body }: { body: { commentId: string; body: unknown } },
     { viewer }: { viewer: ViewerContext | null },
   ) => {
     if (!viewer) return { status: 401 as const, body: { error: { message: '未登录' } } }
-    const commentId = BigInt(query.commentId ?? '0')
+    const commentId = BigInt(body.commentId ?? '0')
     if (commentId === 0n) {
       throw new ActionFailure(400, '缺少 commentId')
     }
@@ -298,7 +298,7 @@ export const commentController = {
     if (replyCount > 0) {
       throw new ActionFailure(409, '已有回复，无法再编辑。')
     }
-    await updateOwnComment(String(commentId), body as any)
+    await updateOwnComment(String(commentId), body.body as any)
     return { status: 200 as const, body: { success: true } }
   },
 

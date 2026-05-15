@@ -12,10 +12,12 @@ import { imagesRouter } from '@/server/http/resources/images'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
+import { honoWpDecoyMiddleware } from '@/server/http/wp-decoy'
 
 export default await createHonoServer({
   configure(app) {
     app.use(requestId())
+    app.use(honoWpDecoyMiddleware)
     app.use(honoSessionMiddleware)
     app.use(honoInstallGateMiddleware)
     app.use(honoVisitorCookieMiddleware)

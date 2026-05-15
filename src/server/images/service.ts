@@ -20,7 +20,7 @@ import { processImageBuffer } from '@/server/images/process'
 import { buildPublicUrl, invalidateImageEnhanceCacheFor } from '@/server/images/render-enhance'
 import { deleteImage as deleteStoredImage, getImage, putImage } from '@/server/images/storage'
 import { getLogger } from '@/server/logger'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { ErrorMessages } from '@/server/route-helpers/errors'
 import { classifyImageKind } from '@/shared/images'
 

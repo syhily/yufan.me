@@ -15,7 +15,7 @@ import {
   updateTag,
 } from '@/server/db/query/tag'
 import { listPostsByTag } from '@/server/posts/query'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { ErrorMessages } from '@/server/route-helpers/errors'
 import {
   deleteAdminTaxonomy,

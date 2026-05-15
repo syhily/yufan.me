@@ -2,7 +2,7 @@ import Meting from '@meting/core'
 import { z } from 'zod'
 
 import { getLogger } from '@/server/logger'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 // Thin, netease-only wrapper around `@meting/core`. Every method
 // returns a Zod-validated payload so an upstream API drift surfaces as

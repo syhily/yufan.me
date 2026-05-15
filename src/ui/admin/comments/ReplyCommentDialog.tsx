@@ -1,13 +1,10 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { ReplyCommentOutput } from '@/shared/api-types'
-import type { AdminComment } from '@/shared/comments'
+import type { AdminComment, ReplyCommentInput, ReplyCommentOutput } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { toast } from '@/client/api/use-admin-mutation'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
@@ -43,7 +40,14 @@ export function ReplyCommentDialog({
   onReplied,
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<ReplyCommentOutput>>()
+  const fetcher = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(REPLY, {
+    onSuccess: (payload) => {
+      if (payload.csrfToken) {
+        onCsrfRotated(payload.csrfToken)
+      }
+      onReplied()
+    },
+  })
   // Reply body is PortableText, not plain text — the public reply form
   // posts the same shape, and the API perimeter validates against
   // `commentBodySchema`. Keeping the admin reply on the same editor
@@ -61,18 +65,8 @@ export function ReplyCommentDialog({
     setBodyKey((k) => k + 1)
   }, [comment?.id])
 
-  useFetcherResult(fetcher, {
-    action: REPLY,
-    onSuccess: (payload) => {
-      if (payload.csrfToken) {
-        onCsrfRotated(payload.csrfToken)
-      }
-      onReplied()
-    },
-  })
-
   const open = comment !== null
-  const submitting = fetcher.state !== 'idle'
+  const submitting = fetcher.isPending
   const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
@@ -102,17 +96,14 @@ export function ReplyCommentDialog({
               toast.error('该评论缺少有效的目标页面标识，无法回复')
               return
             }
-            void fetcher.submit(
-              {
-                page_key: comment.pagePublicId,
-                name: authorName,
-                email: authorEmail,
-                body,
-                rid: Number.parseInt(idStr(comment.id), 10),
-                csrf: csrfToken,
-              },
-              { method: REPLY.method, encType: 'application/json', action: REPLY.path },
-            )
+            fetcher.submit({
+              page_key: comment.pagePublicId,
+              name: authorName,
+              email: authorEmail,
+              body,
+              rid: Number.parseInt(idStr(comment.id), 10),
+              csrf: csrfToken,
+            })
           }}
           className="flex flex-col gap-4"
         >

@@ -2,12 +2,11 @@ import type { DateRange } from 'react-day-picker'
 
 import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
+import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { AdminSessionItem } from '@/routes/wp-admin.sessions'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'
@@ -83,7 +82,14 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
   const navigate = useNavigate()
   const revalidator = useRevalidator()
   const [searchParams] = useSearchParams()
-  const revoke = useFetcher<ApiEnvelope<{ success: boolean; currentSession: boolean }>>()
+  const revoke = useApiFetcher<{ sessionId: string }, { success: boolean; currentSession: boolean }>(REVOKE, {
+    onSuccess: () => {
+      // Self-revoke is short-circuited to the logout endpoint inside
+      // `onRevoke`, so by the time this handler fires we know it was
+      // a different device — a list re-fetch is enough.
+      void revalidator.revalidate()
+    },
+  })
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const updateParams = useCallback(
@@ -117,17 +123,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.q])
 
-  useFetcherResult(revoke, {
-    action: REVOKE,
-    onSuccess: () => {
-      // Self-revoke is short-circuited to the logout endpoint inside
-      // `onRevoke`, so by the time this handler fires we know it was
-      // a different device — a list re-fetch is enough.
-      void revalidator.revalidate()
-    },
-  })
-
-  const submitting = revoke.state !== 'idle'
+  const submitting = revoke.isPending
 
   const onRevoke = (item: AdminSessionItem) => {
     setConfirm({
@@ -149,10 +145,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        void revoke.submit(
-          { sessionId: item.sid },
-          { method: REVOKE.method, encType: 'application/json', action: REVOKE.path },
-        )
+        revoke.submit({ sessionId: item.sid })
       },
     })
   }

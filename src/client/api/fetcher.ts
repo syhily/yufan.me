@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useFetcher } from 'react-router'
 
-import type { ApiActionMethod } from '@/shared/api-actions'
-import type { ApiEnvelope } from '@/shared/api-envelope'
-
-export type { ApiEnvelope }
+export type ApiActionMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 // Descriptor produced by `defineApiAction` in `@/shared/api-actions`. Passing
 // the descriptor (instead of `path` + `method` separately) keeps every island
@@ -78,9 +75,9 @@ export interface UseApiFetcherResult<I, O> {
   // GET load. Optional query params are URL-encoded; otherwise we just hit
   // the action's bare path.
   load: (query?: Record<string, ApiQueryValue>) => void
-  // Latest unwrapped success payload (mirrors `fetcher.data?.data`).
+  // Latest unwrapped success payload.
   data: O | undefined
-  // Latest error envelope (mirrors `fetcher.data?.error`).
+  // Latest error envelope.
   error: { message: string } | undefined
   // True while the underlying fetcher is loading or submitting.
   // This includes the trailing React Router revalidation phase
@@ -102,65 +99,109 @@ export interface UseApiFetcherResult<I, O> {
 
 export type ApiQueryValue = string | number | boolean | null | undefined
 
-export function useFetcherResult<O>(
-  fetcher: FetcherResultSource<ApiEnvelope<O>>,
-  options?: UseFetcherResultOptions<O>,
-): void {
+// ---------------------------------------------------------------------------
+// Path parameter substitution
+// ---------------------------------------------------------------------------
+
+const UNHANDLED = Symbol('unhandled')
+
+/**
+ * Extract path parameters (`:name`) from a payload and substitute them into
+ * the URL path. Remaining keys become the body/query object.
+ *
+ * Example:
+ *   extractPathParams('/api/items/:id', { id: '123', name: 'foo' })
+ *   // => { path: '/api/items/123', remainder: { name: 'foo' } }
+ */
+function extractPathParams(
+  path: string,
+  payload: Record<string, unknown>,
+): { path: string; remainder: Record<string, unknown> } {
+  let resultPath = path
+  const remainder: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(payload)) {
+    const placeholder = `:${key}`
+    if (resultPath.includes(placeholder)) {
+      resultPath = resultPath.replace(placeholder, encodeURIComponent(String(value)))
+    } else {
+      remainder[key] = value
+    }
+  }
+  return { path: resultPath, remainder }
+}
+
+// ---------------------------------------------------------------------------
+// Response normalisation (supports both legacy envelope and direct body)
+// ---------------------------------------------------------------------------
+
+interface LegacyEnvelope<T> {
+  data?: T
+  error?: { message: string }
+}
+
+function isLegacyEnvelope<T>(value: unknown): value is LegacyEnvelope<T> {
+  return value !== null && typeof value === 'object' && ('data' in value || 'error' in value)
+}
+
+function normaliseResponse<T>(value: unknown): { data?: T; error?: { message: string } } {
+  if (isLegacyEnvelope<T>(value)) {
+    return { data: value.data, error: value.error }
+  }
+  // Direct body (ts-rest / Hono style)
+  return { data: value as T }
+}
+
+// ---------------------------------------------------------------------------
+// useFetcherResult
+// ---------------------------------------------------------------------------
+
+export function useFetcherResult<O>(fetcher: FetcherResultSource<unknown>, options?: UseFetcherResultOptions<O>): void {
   const latest = useRef(options)
   latest.current = options
 
-  const lastHandled = useRef<unknown>(null)
+  const lastHandled = useRef<unknown>(UNHANDLED)
   useEffect(() => {
-    const data = fetcher.data
-    if (fetcher.state !== 'idle' || !data) {
+    const raw = fetcher.data
+    if (fetcher.state !== 'idle' || raw === undefined) {
       return
     }
-    if (data === lastHandled.current) {
+    if (raw === lastHandled.current) {
       return
     }
-    lastHandled.current = data
+    lastHandled.current = raw
 
     const { action, onSuccess, onError } = latest.current ?? {}
-    if (data.error) {
+    const { data, error } = normaliseResponse<O>(raw)
+
+    if (error) {
       if (onError) {
-        onError(data.error, action)
+        onError(error, action)
       } else if (action) {
-        console.error(`[api] ${action.method} ${action.path} failed`, data.error)
+        console.error(`[api] ${action.method} ${action.path} failed`, error)
       } else {
-        console.error('[api] request failed', data.error)
+        console.error('[api] request failed', error)
       }
       return
     }
-    if (data.data !== undefined) {
-      onSuccess?.(data.data)
-    }
+
+    onSuccess?.(data as O)
   }, [fetcher.state, fetcher.data])
 }
 
-// Minimal wrapper around `useFetcher<ApiEnvelope<O>>`. Two responsibilities:
-// 1. Stable `submit(payload)` / `load(query)` callbacks that JSON-encode
-//    or URL-encode the call site's typed payload exactly once per descriptor.
-// 2. A *single* `useEffect` that drains `fetcher.data` once per response and
-//    fans the unwrapped envelope out to `onSuccess` / `onError`.
-//
-// Forms that don't need a result callback (e.g. `<fetcher.Form>` posting a
-// reply with the server-rendered tree updating from loader data) should use
-// the underlying `useFetcher` directly. This hook is for islands that still
-// want the typed JSON channel.
+// ---------------------------------------------------------------------------
+// useApiFetcher
+// ---------------------------------------------------------------------------
+
 export function useApiFetcher<I, O>(
   action: ApiActionDescriptor,
   options?: UseApiFetcherOptions<O>,
 ): UseApiFetcherResult<I, O> {
-  const fetcher = useFetcher<ApiEnvelope<O>>()
+  const fetcher = useFetcher<unknown>()
 
-  // Pin the latest options + fetcher in a single ref so the result-draining
-  // effect can stay keyed on `fetcher.state` + `fetcher.data` only — re-running
-  // on identity changes of inline `options.onSuccess` would refire the
-  // callback every render in a parent that rebuilds the options object inline.
   const latest = useRef({ fetcher, options })
   latest.current = { fetcher, options }
 
-  useFetcherResult(fetcher, {
+  useFetcherResult<O>(fetcher, {
     action,
     onSuccess: (data) => latest.current.options?.onSuccess?.(data),
     onError: (error) => {
@@ -173,17 +214,21 @@ export function useApiFetcher<I, O>(
     },
   })
 
-  // `useCallback` keeps `submit` / `load` referentially stable across
-  // renders, so consumers can list them in their own `useEffect` deps
-  // without triggering loops. `fetcher.submit` / `fetcher.load` themselves
-  // are not stable across renders, but they always read the latest closure
-  // through the `latest` ref above.
   const submitAsync = useCallback(
     (payload: I): Promise<void> => {
-      return latest.current.fetcher.submit(payload as never, {
+      if (payload instanceof FormData) {
+        return latest.current.fetcher.submit(payload as never, {
+          method: action.method,
+          encType: 'multipart/form-data',
+          action: action.path,
+        })
+      }
+      const { path, remainder } = extractPathParams(action.path, (payload ?? {}) as Record<string, unknown>)
+      const body = Object.keys(remainder).length > 0 ? remainder : undefined
+      return latest.current.fetcher.submit(body as never, {
         method: action.method,
         encType: 'application/json',
-        action: action.path,
+        action: path,
       })
     },
     [action.method, action.path],
@@ -198,29 +243,28 @@ export function useApiFetcher<I, O>(
 
   const load = useCallback(
     (query?: Record<string, ApiQueryValue>) => {
-      if (!query) {
-        void latest.current.fetcher.load(action.path)
-        return
-      }
+      const { path, remainder } = extractPathParams(action.path, (query ?? {}) as Record<string, unknown>)
       const search = new URLSearchParams()
-      for (const [k, v] of Object.entries(query)) {
+      for (const [k, v] of Object.entries(remainder)) {
         if (v === null || v === undefined) {
           continue
         }
         search.set(k, String(v))
       }
       const queryString = search.toString()
-      void latest.current.fetcher.load(queryString ? `${action.path}?${queryString}` : action.path)
+      void latest.current.fetcher.load(queryString ? `${path}?${queryString}` : path)
     },
     [action.path],
   )
+
+  const { data, error } = normaliseResponse<O>(fetcher.data)
 
   return {
     submit,
     submitAsync,
     load,
-    data: fetcher.data?.data,
-    error: fetcher.data?.error,
+    data,
+    error,
     isPending: fetcher.state !== 'idle',
     isSubmitting: fetcher.state === 'submitting',
   }

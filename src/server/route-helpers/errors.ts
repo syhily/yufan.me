@@ -113,3 +113,28 @@ export const ErrorMessages = {
   FORBIDDEN: '权限不足，需要更高角色。',
   NOT_FOUND: '资源不存在。',
 } as const
+
+// -----------------------------------------------------------------------------
+// Zod input parsing
+// -----------------------------------------------------------------------------
+
+import type { ZodError, ZodType } from 'zod'
+
+function zodFailure(error: ZodError): ActionFailure {
+  return new ActionFailure(
+    400,
+    '输入数据无效',
+    error.issues.map((issue) => ({
+      message: issue.message,
+      path: issue.path.map(String),
+    })),
+  )
+}
+
+export async function parseInput<T>(schema: ZodType<T>, input: unknown): Promise<T> {
+  const result = await schema.safeParseAsync(input)
+  if (result.success) {
+    return result.data
+  }
+  throw zodFailure(result.error)
+}

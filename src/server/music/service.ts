@@ -41,7 +41,7 @@ import {
   putMusicCover,
   safeBuildMusicPublicUrl,
 } from '@/server/music/storage'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { ErrorMessages } from '@/server/route-helpers/errors'
 
 // Domain-level entry points for the music admin library. Coordinates

@@ -1,13 +1,17 @@
 import { XIcon } from 'lucide-react'
 import { use, useEffect, useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/shared/api-types'
-import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type {
+  CommentEditInput,
+  CommentEditOutput,
+  CommentRawOutput,
+  CommentItem as CommentItemType,
+  CommentRidInput,
+} from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher, useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
@@ -626,7 +630,12 @@ interface OwnEditAreaProps {
 
 function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
   const revalidator = useRevalidator()
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const fetcher = useApiFetcher<{ commentId: string; body: CommentBody }, { success: boolean }>(OWN_UPDATE_OWN, {
+    onSuccess: () => {
+      void revalidator.revalidate()
+      onSaved()
+    },
+  })
   // `comment.body` is the full `PortableTextBody` dialect; the editor
   // expects the narrower `CommentBody`. Comment bodies are validated
   // against `commentBodySchema` at insert/update time, so the runtime
@@ -635,28 +644,13 @@ function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
   const [body, setBody] = useState<CommentBody>(seed)
   const [bodyKey, setBodyKey] = useState(0)
 
-  useFetcherResult(fetcher, {
-    action: OWN_UPDATE_OWN,
-    onSuccess: () => {
-      void revalidator.revalidate()
-      onSaved()
-    },
-  })
-
-  const submitting = fetcher.state !== 'idle'
+  const submitting = fetcher.isPending
 
   const handleSave = () => {
     if (isCommentBodyBlank(body)) {
       return
     }
-    // `updateOwn` reads `commentId` off the query string; the JSON body
-    // carries the PortableText payload directly. Same shape as
-    // `MyEditCommentDialog` so the server contract stays single-call-site.
-    void fetcher.submit(body as never, {
-      method: OWN_UPDATE_OWN.method,
-      encType: 'application/json',
-      action: `${OWN_UPDATE_OWN.path}?commentId=${encodeURIComponent(String(comment.id))}`,
-    })
+    fetcher.submit({ commentId: String(comment.id), body })
   }
 
   return (

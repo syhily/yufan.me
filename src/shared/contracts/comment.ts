@@ -208,8 +208,7 @@ export const commentContract = c.router(
     updateOwn: {
       method: 'POST',
       path: '/comment/own/update',
-      query: z.object({ commentId: z.string() }),
-      body: commentBodySchema,
+      body: z.object({ commentId: z.string(), body: commentBodySchema }),
       responses: { 200: successResponse, ...standardMutationErrors },
       summary: '访客修改自己的评论',
     },

@@ -1,4 +1,3 @@
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { RenderMermaidInput, RenderMermaidOutput } from '@/shared/cms-pages'
 
 import { API_ACTIONS } from '@/shared/api-actions'
@@ -14,20 +13,17 @@ export async function fetchRenderMermaid(input: RenderMermaidInput): Promise<Ren
     body: JSON.stringify(input),
     credentials: 'same-origin',
   })
-  let envelope: ApiEnvelope<RenderMermaidOutput>
+
+  let body: RenderMermaidOutput
   try {
-    envelope = (await res.json()) as ApiEnvelope<RenderMermaidOutput>
+    body = (await res.json()) as RenderMermaidOutput
   } catch {
     return { svg: '', error: 'Invalid JSON response' }
   }
-  if (!res.ok || envelope.error !== undefined) {
-    return {
-      svg: '',
-      error: envelope.error?.message ?? `HTTP ${res.status}`,
-    }
+
+  if (!res.ok) {
+    return { svg: '', error: `HTTP ${res.status}` }
   }
-  if (envelope.data === undefined) {
-    return { svg: '', error: 'Empty envelope' }
-  }
-  return envelope.data
+
+  return body
 }

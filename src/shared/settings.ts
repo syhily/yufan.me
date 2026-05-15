@@ -151,3 +151,15 @@ export interface SearchLoaderShape {
   }
   apiKeyMask: string | null
 }
+
+export interface UpdateSettingsOutput {
+  success: true
+}
+
+export interface SendTestMailInput {
+  to: string
+}
+
+export interface SendTestMailOutput {
+  success: true
+}

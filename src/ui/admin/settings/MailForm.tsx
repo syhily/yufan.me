@@ -1,11 +1,7 @@
 import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { SendTestMailOutput } from '@/shared/api-types'
-
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
@@ -90,23 +86,16 @@ export function MailForm({ mail }: MailFormProps) {
   // Test-send fetcher lives outside `useSettingsForm` because the
   // POST `sendTestMail` action is a side-effect, not a settings write
   // (it doesn't trigger a snapshot revalidation).
-  const testFetcher = useFetcher<ApiEnvelope<SendTestMailOutput>>()
-  const submitTest = useCallback(() => {
-    setTestStatus({ state: 'pending', message: null })
-    void testFetcher.submit({ to: testTo.trim() } as never, {
-      method: TEST.method,
-      encType: 'application/json',
-      action: TEST.path,
-    })
-  }, [testFetcher, testTo])
-
-  useFetcherResult(testFetcher, {
-    action: TEST,
+  const testFetcher = useApiFetcher<{ to: string }, { success: true }>(TEST, {
     onSuccess: () => setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),
     onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
   })
+  const submitTest = useCallback(() => {
+    setTestStatus({ state: 'pending', message: null })
+    testFetcher.submit({ to: testTo.trim() })
+  }, [testFetcher, testTo])
 
-  const isTestPending = testFetcher.state !== 'idle'
+  const isTestPending = testFetcher.isPending
   const apiKeyConfigured = mail.apiKeyMask !== null
   // Test send only requires host + sender + an apiKey to actually exist
   // on the server — the local draft might still have an unsaved API key

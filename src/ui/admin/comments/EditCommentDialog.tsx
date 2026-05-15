@@ -1,13 +1,10 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { CommentEditOutput, CommentRawOutput } from '@/shared/api-types'
-import type { AdminComment } from '@/shared/comments'
+import type { AdminComment, CommentEditOutput, CommentRawOutput } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { toast } from '@/client/api/use-admin-mutation'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
@@ -32,28 +29,12 @@ export interface EditCommentDialogProps {
 }
 
 export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDialogProps) {
-  const rawFetcher = useFetcher<ApiEnvelope<CommentRawOutput>>()
-  const editFetcher = useFetcher<ApiEnvelope<CommentEditOutput>>()
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    if (!comment) {
-      setLoaded(false)
-      setInitialBody(EMPTY_COMMENT_BODY)
-      setBody(EMPTY_COMMENT_BODY)
-      return
-    }
-    setLoaded(false)
-    void rawFetcher.load(`${GET_RAW.path}?rid=${encodeURIComponent(idStr(comment.id))}`)
-    // intentionally only refetch when comment id changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comment?.id])
-
-  useFetcherResult(rawFetcher, {
-    action: GET_RAW,
+  const rawFetcher = useApiFetcher<{ rid: string }, CommentRawOutput>(GET_RAW, {
     onSuccess: (payload) => {
       if (loaded) {
         return
@@ -66,13 +47,25 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
     },
   })
 
-  useFetcherResult(editFetcher, {
-    action: EDIT,
+  const editFetcher = useApiFetcher<{ rid: string; body: CommentBody }, CommentEditOutput>(EDIT, {
     onSuccess: (payload) => onSaved({ body: payload.comment.body }),
   })
 
+  useEffect(() => {
+    if (!comment) {
+      setLoaded(false)
+      setInitialBody(EMPTY_COMMENT_BODY)
+      setBody(EMPTY_COMMENT_BODY)
+      return
+    }
+    setLoaded(false)
+    rawFetcher.load({ rid: idStr(comment.id) })
+    // intentionally only refetch when comment id changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comment?.id])
+
   const open = comment !== null
-  const submitting = editFetcher.state !== 'idle'
+  const submitting = editFetcher.isPending
   const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
@@ -92,10 +85,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
               toast.error('评论内容不能为空')
               return
             }
-            void editFetcher.submit(
-              { rid: idStr(comment.id), body },
-              { method: EDIT.method, encType: 'application/json', action: EDIT.path },
-            )
+            editFetcher.submit({ rid: idStr(comment.id), body })
           }}
           className="flex flex-col gap-4"
         >

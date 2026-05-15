@@ -1,0 +1,133 @@
+import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+
+import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/cms/pages/preview'
+import { deletePageSchema } from '@/server/cms/pages/schema'
+import { getPageSchema } from '@/server/cms/pages/schema'
+import { listPageRevisionsSchema } from '@/server/cms/pages/schema'
+import { listPagesSchema } from '@/server/cms/pages/schema'
+import { previewPageBodySchema } from '@/server/cms/pages/schema'
+import { restorePageSchema } from '@/server/cms/pages/schema'
+import { savePageBodySchema } from '@/server/cms/pages/schema'
+import { unpublishPageSchema } from '@/server/cms/pages/schema'
+import { upsertPageMetaSchema } from '@/server/cms/pages/schema'
+import { createPage, updatePageMeta } from '@/server/cms/pages/service'
+import { deletePage } from '@/server/cms/pages/service'
+import { getPageDetailForAdmin } from '@/server/cms/pages/service'
+import { listPagesForAdmin } from '@/server/cms/pages/service'
+import { listRevisionsForAdmin as listPageRevisionsForAdmin } from '@/server/cms/pages/service'
+import { publishLatest as publishPageLatest } from '@/server/cms/pages/service'
+import { restorePage } from '@/server/cms/pages/service'
+import { saveDraft as savePageDraft } from '@/server/cms/pages/service'
+import { unpublishPage } from '@/server/cms/pages/service'
+import { userSession } from '@/server/session'
+import { deriveSlug } from '@/server/slug'
+import { adminPagesContract } from '@/shared/contracts/admin/pages'
+import { collectHeadings } from '@/shared/pt/schema'
+
+export const adminPagesController = {
+  listPages: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const result = await listPagesForAdmin({
+      q: args.query.q,
+      deletedStatus: args.query.deletedStatus,
+      offset: args.query.offset,
+      limit: args.query.limit,
+    })
+    return { status: 200 as const, body: result }
+  },
+  getPage: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const detail = await getPageDetailForAdmin(BigInt(args.params.id))
+    if (detail === null) {
+      return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
+    }
+    return { status: 200 as const, body: detail }
+  },
+  deletePage: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const result = await deletePage(BigInt(args.params.id))
+    if (!result.deleted) {
+      return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
+  },
+  restorePage: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const result = await restorePage(BigInt(args.body.id))
+    if (!result.restored) {
+      return { status: 404 as const, body: { error: { message: '页面不存在或未被删除。' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
+  },
+  unpublishPage: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const page = await unpublishPage(BigInt(args.body.id))
+    return { status: 200 as const, body: { page } }
+  },
+  saveDraft: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const result = await savePageDraft({
+      pageId: BigInt(args.body.id),
+      body: args.body.body,
+      expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
+      force: args.body.force,
+      authorId: BigInt(ctx.viewer.userId),
+    })
+    return { status: 200 as const, body: result }
+  },
+  publishLatest: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const result = await publishPageLatest({
+      pageId: BigInt(args.body.id),
+      body: args.body.body,
+      expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
+      force: args.body.force,
+      authorId: BigInt(ctx.viewer.userId),
+      publishedAt: args.body.publishedAt !== undefined ? new Date(args.body.publishedAt) : undefined,
+    })
+    return { status: 200 as const, body: result }
+  },
+  previewPage: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const html = await renderPagePortableTextToHtml(args.body.body)
+    const headings = collectHeadings(args.body.body, deriveSlug)
+    return { status: 200 as const, body: { html, headings } }
+  },
+  upsertPageMeta: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const meta = {
+      slug: args.body.slug,
+      title: args.body.title,
+      summary: args.body.summary,
+      cover: args.body.cover,
+      og: args.body.og,
+      published: args.body.published,
+      commentsEnabled: args.body.commentsEnabled,
+      showToc: args.body.showToc,
+      showUpdated: args.body.showUpdated,
+      showFriends: args.body.showFriends,
+      publishedAt: args.body.publishedAt === undefined ? undefined : new Date(args.body.publishedAt),
+    }
+    const sessionUserId = BigInt(ctx.viewer.userId)
+    const page =
+      args.body.id === undefined
+        ? await createPage(meta, sessionUserId)
+        : await updatePageMeta({ id: BigInt(args.body.id), ...meta })
+    return { status: 200 as const, body: { page } }
+  },
+  listPageRevisions: async (args: any, ctx: any) => {
+    const sessionUser = userSession(ctx.session)
+    if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
+    const revisions = await listPageRevisionsForAdmin(BigInt(args.query.id))
+    return { status: 200 as const, body: { revisions } }
+  },
+}

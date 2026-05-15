@@ -66,7 +66,7 @@ export interface RateLimitResult {
 // silently no-ops on subsequent hits within the window (Redis 7.0+;
 // older servers without NX support extend the TTL on every hit, which
 // is still correct just less ideal).
-async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
+export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
   const redis = redisInstance()
   const pipeline = redis.pipeline()
   pipeline.incr(key)

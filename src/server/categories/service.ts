@@ -15,7 +15,7 @@ import {
   updateCategory,
 } from '@/server/db/query/category'
 import { listPostsByCategory } from '@/server/posts/query'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,

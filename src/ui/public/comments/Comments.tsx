@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
+import type { CommentFormUser } from '@/shared/catalog'
 import type {
+  CommentItem as CommentItemType,
+  Comments as CommentsData,
   CommentRidInput,
   LoadCommentsInput,
   LoadCommentsOutput,
   MyCommentsOutput,
   RevokeCommentTokenOutput,
-} from '@/shared/api-types'
-import type { CommentFormUser } from '@/shared/catalog'
-import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
+} from '@/shared/comments'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { Button } from '@/ui/components/button'

@@ -2,8 +2,7 @@ import { ArrowRightIcon, CheckIcon, LightbulbIcon, RefreshCwIcon, Trash2Icon, XI
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { ListPendingDashboardInput, ListPendingDashboardOutput } from '@/shared/api-types'
-import type { AdminPendingItemDto } from '@/shared/comments'
+import type { AdminPendingItemDto, ListPendingDashboardInput, ListPendingDashboardOutput } from '@/shared/comments'
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'
 import { API_ACTIONS } from '@/shared/api-actions'

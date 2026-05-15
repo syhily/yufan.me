@@ -12,22 +12,20 @@ import {
   VolumeOffIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { Link } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
+import type { AdminComment, LoadAllOutput } from '@/shared/comments'
 import type {
   AdminMutationSuccessOutput,
   AdminUserDto,
   BulkApproveOutput,
   BulkSoftDeleteOutput,
   GetUserOutput,
-  LoadAllOutput,
   MuteUserOutput,
   UpdateUserOutput,
-} from '@/shared/api-types'
-import type { AdminComment } from '@/shared/comments'
+} from '@/shared/users'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 type Role = NonNullable<AdminUserDto['role']>
 import { formatLocalDate } from '@/shared/formatter'
@@ -72,17 +70,6 @@ export interface UserDetailViewProps {
 
 export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const config = useSiteIdentity()
-  const userFetcher = useFetcher<ApiEnvelope<GetUserOutput>>()
-  const updateFetcher = useFetcher<ApiEnvelope<UpdateUserOutput>>()
-  const sendResetFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const revokeSessionsFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const muteFetcher = useFetcher<ApiEnvelope<MuteUserOutput>>()
-  const deleteFetcher = useFetcher<ApiEnvelope<AdminMutationSuccessOutput>>()
-  const restoreFetcher = useFetcher<ApiEnvelope<AdminMutationSuccessOutput>>()
-  const bulkApproveFetcher = useFetcher<ApiEnvelope<BulkApproveOutput>>()
-  const bulkDeleteFetcher = useFetcher<ApiEnvelope<BulkSoftDeleteOutput>>()
-  const commentsFetcher = useFetcher<ApiEnvelope<LoadAllOutput>>()
-  const updateRoleFetcher = useFetcher<ApiEnvelope<{ user: AdminUserDto }>>()
 
   const [user, setUser] = useState<AdminUserDto | null>(null)
   const [comments, setComments] = useState<AdminComment[]>([])
@@ -99,43 +86,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const [badgeTextColor, setBadgeTextColor] = useState(DEFAULT_BADGE_TEXT_COLOR)
   const [roleDraft, setRoleDraft] = useState<Role | ''>('')
 
-  // React Router's `useFetcher()` returns a fresh wrapper object on every
-  // render. Closing over it directly in `useCallback` deps would re-fire
-  // every render and trigger "Maximum update depth exceeded". Keep the
-  // fetcher reference in a ref and depend only on `userId`.
-  const userFetcherRef = useRef(userFetcher)
-  userFetcherRef.current = userFetcher
-  const commentsFetcherRef = useRef(commentsFetcher)
-  commentsFetcherRef.current = commentsFetcher
-
-  const reloadUser = useCallback(() => {
-    void userFetcherRef.current.submit(
-      { userId },
-      { method: GET.method, encType: 'application/json', action: GET.path },
-    )
-  }, [userId])
-
-  const reloadComments = useCallback(() => {
-    void commentsFetcherRef.current.submit(
-      { offset: 0, limit: 10, userId },
-      { method: COMMENTS_LOAD.method, encType: 'application/json', action: COMMENTS_LOAD.path },
-    )
-  }, [userId])
-
-  useEffect(() => {
-    reloadUser()
-    reloadComments()
-  }, [reloadUser, reloadComments])
-
-  // All eight `useFetcher`s used to drain via hand-rolled `useEffect`
-  // blocks that closed over `reloadUser`/`reloadComments`/`navigate`.
-  // Those closures changed identity on every render, so the effects
-  // re-fired while `fetcher.data` was still set and triggered redundant
-  // reload bursts. `useFetcherResult` ref-stashes the callbacks AND
-  // memoises against the response identity, so each branch fires
-  // exactly once per server response.
-  useFetcherResult(userFetcher, {
-    action: GET,
+  const userFetcher = useApiFetcher<{ userId: string }, GetUserOutput>(GET, {
     onSuccess: (payload) => {
       const u = payload.user
       setUser(u)
@@ -148,38 +99,75 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
       setBadgeTextColor(u.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
     },
   })
-  useFetcherResult(commentsFetcher, {
-    action: COMMENTS_LOAD,
-    onSuccess: (payload) => setComments(payload.comments),
+
+  const commentsFetcher = useApiFetcher<{ offset: number; limit: number; userId: string }, LoadAllOutput>(
+    COMMENTS_LOAD,
+    {
+      onSuccess: (payload) => setComments(payload.comments),
+    },
+  )
+
+  // `useApiFetcher` returns a fresh wrapper object on every render, but
+  // its `.load` and `.submit` methods are stable. We still keep a ref
+  // so `reloadUser` / `reloadComments` don't need the fetcher object in
+  // their dependency arrays.
+  const userFetcherRef = useRef(userFetcher)
+  userFetcherRef.current = userFetcher
+  const commentsFetcherRef = useRef(commentsFetcher)
+  commentsFetcherRef.current = commentsFetcher
+
+  const reloadUser = useCallback(() => {
+    userFetcherRef.current.load({ userId })
+  }, [userId])
+
+  const reloadComments = useCallback(() => {
+    commentsFetcherRef.current.submit({ offset: 0, limit: 10, userId })
+  }, [userId])
+
+  useEffect(() => {
+    reloadUser()
+    reloadComments()
+  }, [reloadUser, reloadComments])
+
+  const updateFetcher = useApiFetcher<Record<string, string | null> & { userId: string }, UpdateUserOutput>(
+    { path: `${UPDATE_PATH}/:userId`, method: 'PATCH' },
+    { onSuccess: () => reloadUser() },
+  )
+
+  const sendResetFetcher = useApiFetcher<{ userId: string }, { success: boolean }>(SEND_RESET)
+
+  const revokeSessionsFetcher = useApiFetcher<{ userId: string }, { success: boolean }>(REVOKE_USER_SESSIONS)
+
+  const muteFetcher = useApiFetcher<{ userId: string; muted: string }, MuteUserOutput>(MUTE, {
+    onSuccess: (payload) => setUser(payload.user),
   })
-  useFetcherResult(muteFetcher, { action: MUTE, onSuccess: (payload) => setUser(payload.user) })
-  useFetcherResult(sendResetFetcher, { action: SEND_RESET, onSuccess: () => {} })
-  useFetcherResult(revokeSessionsFetcher, { action: REVOKE_USER_SESSIONS, onSuccess: () => {} })
-  useFetcherResult(updateFetcher, { action: { path: UPDATE_PATH } as any, onSuccess: () => reloadUser() })
-  useFetcherResult(updateRoleFetcher, {
-    action: UPDATE_ROLE,
+
+  const deleteFetcher = useApiFetcher<{ userId: string }, AdminMutationSuccessOutput>(SOFT_DELETE, {
+    onSuccess: () => void navigate('/wp-admin/users'),
+  })
+
+  const restoreFetcher = useApiFetcher<{ userId: string }, AdminMutationSuccessOutput>(RESTORE, {
+    onSuccess: () => reloadUser(),
+  })
+
+  const bulkApproveFetcher = useApiFetcher<{ userId: string }, BulkApproveOutput>(BULK_APPROVE, {
+    onSuccess: () => {
+      reloadUser()
+      reloadComments()
+    },
+  })
+
+  const bulkDeleteFetcher = useApiFetcher<{ userId: string }, BulkSoftDeleteOutput>(BULK_DELETE, {
+    onSuccess: () => {
+      reloadUser()
+      reloadComments()
+    },
+  })
+
+  const updateRoleFetcher = useApiFetcher<{ userId: string; role: Role }, { user: AdminUserDto }>(UPDATE_ROLE, {
     onSuccess: (payload) => {
       setUser(payload.user)
       setRoleDraft('')
-    },
-  })
-  useFetcherResult(restoreFetcher, { action: RESTORE, onSuccess: () => reloadUser() })
-  useFetcherResult(deleteFetcher, {
-    action: SOFT_DELETE,
-    onSuccess: () => void navigate('/wp-admin/users'),
-  })
-  useFetcherResult(bulkApproveFetcher, {
-    action: BULK_APPROVE,
-    onSuccess: () => {
-      reloadUser()
-      reloadComments()
-    },
-  })
-  useFetcherResult(bulkDeleteFetcher, {
-    action: BULK_DELETE,
-    onSuccess: () => {
-      reloadUser()
-      reloadComments()
     },
   })
 
@@ -188,7 +176,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   }
 
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
-  const updateError = updateFetcher.data?.error?.message
+  const updateError = updateFetcher.error?.message
 
   return (
     <>
@@ -327,11 +315,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           description: '修改角色后，该用户的所有会话将被强制登出。',
                           actionLabel: '确认修改',
                           destructive: false,
-                          onConfirm: () =>
-                            void updateRoleFetcher.submit(
-                              { userId: user.id, role: nextRole },
-                              { method: UPDATE_ROLE.method, encType: 'application/json', action: UPDATE_ROLE.path },
-                            ),
+                          onConfirm: () => void updateRoleFetcher.submit({ userId: user.id, role: nextRole }),
                         })
                       }}
                     >
@@ -356,15 +340,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '用户将收到一封包含一次性重置链接的邮件。链接 15 分钟内有效。',
                         actionLabel: '发送',
                         destructive: false,
-                        onConfirm: () =>
-                          void sendResetFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: SEND_RESET.method,
-                              encType: 'application/json',
-                              action: SEND_RESET.path,
-                            },
-                          ),
+                        onConfirm: () => void sendResetFetcher.submit({ userId: user.id }),
                       })
                     }
                   >
@@ -382,15 +358,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         actionLabel: '强制登出',
                         destructive: true,
                         actionIcon: <LogOutIcon data-icon />,
-                        onConfirm: () =>
-                          void revokeSessionsFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: REVOKE_USER_SESSIONS.method,
-                              encType: 'application/json',
-                              action: REVOKE_USER_SESSIONS.path,
-                            },
-                          ),
+                        onConfirm: () => void revokeSessionsFetcher.submit({ userId: user.id }),
                       })
                     }
                   >
@@ -414,10 +382,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         // and miscues the action.
                         actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
                         onConfirm: () =>
-                          void muteFetcher.submit(
-                            { userId: user.id, muted: user.isMuted ? 'false' : 'true' },
-                            { method: MUTE.method, encType: 'application/json', action: MUTE.path },
-                          ),
+                          void muteFetcher.submit({ userId: user.id, muted: user.isMuted ? 'false' : 'true' }),
                       })
                     }
                   >
@@ -442,15 +407,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '所有待审核评论将立即通过审核并对所有访客可见。',
                         actionLabel: '通过',
                         destructive: false,
-                        onConfirm: () =>
-                          void bulkApproveFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: BULK_APPROVE.method,
-                              encType: 'application/json',
-                              action: BULK_APPROVE.path,
-                            },
-                          ),
+                        onConfirm: () => void bulkApproveFetcher.submit({ userId: user.id }),
                       })
                     }
                   >
@@ -461,16 +418,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() =>
-                      void restoreFetcher.submit(
-                        { userId: user.id },
-                        {
-                          method: RESTORE.method,
-                          encType: 'application/json',
-                          action: RESTORE.path,
-                        },
-                      )
-                    }
+                    onClick={() => void restoreFetcher.submit({ userId: user.id })}
                   >
                     <RotateCcwIcon /> 恢复用户
                   </Button>
@@ -485,15 +433,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           description: '此操作为软删除，用户记录保留，但在统计与列表中默认隐藏。',
                           actionLabel: '删除',
                           destructive: true,
-                          onConfirm: () =>
-                            void deleteFetcher.submit(
-                              { userId: user.id },
-                              {
-                                method: SOFT_DELETE.method,
-                                encType: 'application/json',
-                                action: SOFT_DELETE.path,
-                              },
-                            ),
+                          onConfirm: () => void deleteFetcher.submit({ userId: user.id }),
                         })
                       }
                     >
@@ -511,15 +451,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '此操作为软删除，可后续通过数据库恢复。',
                         actionLabel: '删除',
                         destructive: true,
-                        onConfirm: () =>
-                          void bulkDeleteFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: BULK_DELETE.method,
-                              encType: 'application/json',
-                              action: BULK_DELETE.path,
-                            },
-                          ),
+                        onConfirm: () => void bulkDeleteFetcher.submit({ userId: user.id }),
                       })
                     }
                   >
@@ -553,11 +485,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                       payload.badgeColor = badgeColor
                     }
                     payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-                    void updateFetcher.submit(payload, {
-                      method: 'PATCH',
-                      encType: 'application/json',
-                      action: `${UPDATE_PATH}/${user.id}`,
-                    })
+                    void updateFetcher.submit({ ...payload, userId: user.id })
                   }}
                   className="grid gap-4 sm:grid-cols-2"
                 >
@@ -647,8 +575,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   </div>
                   {updateError && <div className="text-sm text-destructive sm:col-span-2">{updateError}</div>}
                   <div className="flex justify-end gap-2 sm:col-span-2">
-                    <Button type="submit" disabled={updateFetcher.state !== 'idle'}>
-                      <SaveIcon data-icon /> {updateFetcher.state !== 'idle' ? '保存中…' : '保存'}
+                    <Button type="submit" disabled={updateFetcher.isPending}>
+                      <SaveIcon data-icon /> {updateFetcher.isPending ? '保存中…' : '保存'}
                     </Button>
                   </div>
                 </form>
@@ -666,7 +594,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                 <CardDescription>最近 10 条评论；点击文章标题可跳转到评论详情。</CardDescription>
               </CardHeader>
               <CardContent>
-                {commentsFetcher.state !== 'idle' && comments.length === 0 ? (
+                {commentsFetcher.isPending && comments.length === 0 ? (
                   <Skeleton className="h-32 w-full" />
                 ) : comments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">该用户暂无评论。</p>

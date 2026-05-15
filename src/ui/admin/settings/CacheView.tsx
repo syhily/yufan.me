@@ -1,13 +1,17 @@
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { ClearCacheOutput, GetCacheStatsOutput } from '@/shared/api-types'
 import type { CacheSettings } from '@/shared/blog-config'
-import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
+import type {
+  AdminCacheStatsDto,
+  CacheBucketId,
+  ClearCacheTarget,
+  ReservedCacheBucketStats,
+} from '@/shared/cache-types'
+import type { ClearCacheResultDto } from '@/shared/cache-types'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
@@ -19,7 +23,7 @@ import { Button } from '@/ui/components/button'
 type CacheSlice = CacheSettings['cache']
 
 interface CacheViewProps {
-  stats: GetCacheStatsOutput
+  stats: AdminCacheStatsDto
   cache: CacheSlice
 }
 
@@ -37,25 +41,11 @@ const CLEAR = API_ACTIONS.admin.clearCache
 // orchestration: own the fetcher, dispatch `submitClear` / confirm
 // flows, and hand each bucket its slice of the cache.
 export function CacheView({ stats, cache }: CacheViewProps) {
-  const fetcher = useFetcher<ApiEnvelope<ClearCacheOutput>>()
   const revalidator = useRevalidator()
   const [status, setStatus] = useState<ClearStatus>(idleClearStatus)
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
 
-  const submitClear = useCallback(
-    (target: ClearCacheTarget) => {
-      setStatus({ state: 'pending', target, message: null })
-      void fetcher.submit({ target } as never, {
-        method: CLEAR.method,
-        encType: 'application/json',
-        action: CLEAR.path,
-      })
-    },
-    [fetcher],
-  )
-
-  useFetcherResult(fetcher, {
-    action: CLEAR,
+  const fetcher = useApiFetcher<{ target: ClearCacheTarget }, ClearCacheResultDto>(CLEAR, {
     onError: (error) => {
       setStatus((prev) => ({
         state: 'error',
@@ -73,8 +63,16 @@ export function CacheView({ stats, cache }: CacheViewProps) {
     },
   })
 
+  const submitClear = useCallback(
+    (target: ClearCacheTarget) => {
+      setStatus({ state: 'pending', target, message: null })
+      fetcher.submit({ target })
+    },
+    [fetcher],
+  )
+
   const totalKeys = stats.buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
-  const isClearPending = fetcher.state !== 'idle'
+  const isClearPending = fetcher.isPending
 
   // `cache` is already a primitive-value map keyed by bucket id, so
   // `BucketCard` can read its own slice directly as `cache[bucket.id]`.

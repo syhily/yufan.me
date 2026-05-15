@@ -12,7 +12,7 @@ import {
   listPublicFriendRows,
   updateFriend,
 } from '@/server/db/query/friend'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 // Public projection (no `id`/`visible`/`createdAt`/`updatedAt`/`rssUrl`).
 // The `Friend` shape exported from `@/shared/catalog` already matches —

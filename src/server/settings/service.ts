@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
 import { findSettingByScope, upsertSetting } from '@/server/db/query/setting'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { SECTION_REGISTRY, type SettingsSection } from '@/server/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/settings/snapshot'
 

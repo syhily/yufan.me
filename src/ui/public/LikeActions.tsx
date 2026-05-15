@@ -8,7 +8,7 @@ import type {
   IncreaseLikeOutput,
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
-} from '@/shared/api-types'
+} from '@/shared/likes'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'

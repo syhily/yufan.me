@@ -1,11 +1,10 @@
 import { LogOutIcon, MonitorIcon, RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
 import type { MySessionItem } from '@/routes/wp-admin.my.sessions'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { formatUserAgentLabel } from '@/shared/user-agent'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -16,7 +15,7 @@ import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const REVOKE_PATH = '/api/account/sessions'
+const REVOKE = { path: '/api/account/sessions/:sid', method: 'DELETE' as const }
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -27,11 +26,7 @@ export interface MySessionsViewProps {
 export function MySessionsView({ items }: MySessionsViewProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
-  const revoke = useFetcher<ApiEnvelope<{ success: boolean; currentSession: boolean }>>()
-  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
-
-  useFetcherResult(revoke, {
-    action: { path: REVOKE_PATH } as any,
+  const revoke = useApiFetcher<{ sid: string }, { success: boolean; currentSession: boolean }>(REVOKE, {
     onSuccess: () => {
       // Self-revoke is short-circuited to the logout endpoint inside
       // `onRevoke`, so by the time this handler fires we're always
@@ -39,8 +34,9 @@ export function MySessionsView({ items }: MySessionsViewProps) {
       void revalidator.revalidate()
     },
   })
+  const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const submitting = revoke.state !== 'idle'
+  const submitting = revoke.isPending
 
   const onRevoke = (sid: string, isCurrent: boolean) => {
     setConfirm({
@@ -63,7 +59,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        void revoke.submit(null, { method: 'DELETE', action: `${REVOKE_PATH}/${sid}` })
+        revoke.submit({ sid })
       },
     })
   }

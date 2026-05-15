@@ -1,5 +1,5 @@
 import { invalidateCatalog } from '@/server/catalog/invalidate'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { deriveSlug } from '@/server/slug'
 
 // Shared helpers for admin taxonomy CRUD (categories & tags). The two

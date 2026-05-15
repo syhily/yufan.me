@@ -2,13 +2,13 @@ import { RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type {
+  AdminComment,
   FilterAutocompleteInput,
   LoadAllInput,
   LoadAllOutput,
   SearchAuthorsOutput,
   SearchPagesOutput,
-} from '@/shared/api-types'
-import type { AdminComment } from '@/shared/comments'
+} from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
 import { useAdminMutation } from '@/client/api/use-admin-mutation'

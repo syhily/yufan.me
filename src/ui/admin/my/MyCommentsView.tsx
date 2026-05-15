@@ -1,13 +1,12 @@
 import { PencilIcon, RefreshCwIcon, RotateCcwIcon, SearchIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
+import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin.my.comments'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { MyCommentsStatus } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -154,39 +153,28 @@ export function MyCommentsView({
     return match ?? { value: entity, label: entity }
   }, [entity, entityOptions])
 
-  const requestDelete = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const cancelDelete = useFetcher<ApiEnvelope<{ success: boolean }>>()
-
-  useFetcherResult(requestDelete, {
-    action: REQUEST_DELETE,
+  const requestDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(REQUEST_DELETE, {
     onSuccess: () => {
       void revalidator.revalidate()
     },
   })
-  useFetcherResult(cancelDelete, {
-    action: CANCEL_DELETE,
+  const cancelDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(CANCEL_DELETE, {
     onSuccess: () => {
       void revalidator.revalidate()
     },
   })
 
-  const submitting = requestDelete.state !== 'idle' || cancelDelete.state !== 'idle'
+  const submitting = requestDelete.isPending || cancelDelete.isPending
 
   const onRequestDelete = useCallback(
     (id: string) => {
-      void requestDelete.submit(
-        { commentId: id },
-        { method: REQUEST_DELETE.method, encType: 'application/json', action: REQUEST_DELETE.path },
-      )
+      requestDelete.submit({ commentId: id })
     },
     [requestDelete],
   )
   const onCancelDelete = useCallback(
     (id: string) => {
-      void cancelDelete.submit(
-        { commentId: id },
-        { method: CANCEL_DELETE.method, encType: 'application/json', action: CANCEL_DELETE.path },
-      )
+      cancelDelete.submit({ commentId: id })
     },
     [cancelDelete],
   )

@@ -38,3 +38,43 @@ export interface AdminUserDto {
   pendingCount: number
   lastCommentAt: string | null
 }
+
+export interface UpdateUserInput {
+  userId: string
+  name?: string
+  email?: string
+  link?: string
+  badgeName?: string
+  badgeColor?: string
+  badgeTextColor?: string | null
+}
+
+export interface UpdateUserOutput {
+  success: true
+}
+
+export interface ListUsersOutput {
+  users: AdminUserDto[]
+  total: number
+  hasMore: boolean
+}
+
+export interface GetUserOutput {
+  user: AdminUserDto
+}
+
+export interface MuteUserOutput {
+  user: AdminUserDto
+}
+
+export interface BulkApproveOutput {
+  approved: number
+}
+
+export interface BulkSoftDeleteOutput {
+  deleted: number
+}
+
+export interface AdminMutationSuccessOutput {
+  success: true
+}

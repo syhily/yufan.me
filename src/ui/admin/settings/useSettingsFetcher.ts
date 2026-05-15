@@ -1,11 +1,9 @@
 import { useCallback, useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { UpdateSettingsOutput } from '@/shared/api-types'
 import type { SettingsSection } from '@/shared/settings'
 
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 
 const UPDATE = API_ACTIONS.admin.updateSettings
@@ -43,31 +41,12 @@ interface UseSettingsFetcherResult {
 // response" semantics that prevent the revalidate snowball described in
 // the original comment.
 export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptions): UseSettingsFetcherResult {
-  const updateFetcher = useFetcher<ApiEnvelope<UpdateSettingsOutput>>()
   const revalidator = useRevalidator()
 
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const save = useCallback(
-    (payload: unknown) => {
-      setStatus('saving')
-      setErrorMessage(null)
-      // `useFetcher.submit` types JSON bodies pretty narrowly; the
-      // `{ section, payload }` envelope is exactly what `defineApiAction`
-      // expects on the server, so cast it to the framework's loose
-      // `SubmitTarget` type instead of fighting TypeScript.
-      void updateFetcher.submit({ section, payload } as never, {
-        method: UPDATE.method,
-        encType: 'application/json',
-        action: UPDATE.path,
-      })
-    },
-    [section, updateFetcher],
-  )
-
-  useFetcherResult(updateFetcher, {
-    action: UPDATE,
+  const updateFetcher = useApiFetcher<{ section: string; payload: unknown }, { success: true }>(UPDATE, {
     onSuccess: () => {
       setStatus('saved')
       onSaved?.()
@@ -79,12 +58,16 @@ export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptio
     },
   })
 
+  const save = useCallback(
+    (payload: unknown) => {
+      setStatus('saving')
+      setErrorMessage(null)
+      updateFetcher.submit({ section, payload })
+    },
+    [section, updateFetcher],
+  )
+
   const revert = useCallback(() => {
-    // `revalidate()` re-fires every active loader (the settings layout
-    // loader returns the bucketed `bundle`, which the surrounding form
-    // re-snapshots on prop change). Clear the saved/error tag so the
-    // bar doesn't keep showing "已保存" after the user explicitly
-    // throws away local edits.
     setStatus('idle')
     setErrorMessage(null)
     void revalidator.revalidate()
@@ -93,7 +76,7 @@ export function useSettingsFetcher({ section, onSaved }: UseSettingsFetcherOptio
   return {
     save,
     revert,
-    isPending: updateFetcher.state !== 'idle',
+    isPending: updateFetcher.isPending,
     status,
     errorMessage,
   }

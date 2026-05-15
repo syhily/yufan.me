@@ -1,10 +1,7 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-
-import { useFetcherResult } from '@/client/api/fetcher'
+import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'
 import { Button } from '@/ui/components/button'
 import {
@@ -27,21 +24,18 @@ interface Props {
 }
 
 export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-
-  useFetcherResult(fetcher, {
-    action: INVITE,
+  const fetcher = useApiFetcher<{ name: string; email: string }, { success: boolean }>(INVITE, {
     onSuccess: () => {
       setName('')
       setEmail('')
       onInvited()
     },
   })
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
 
-  const submitting = fetcher.state !== 'idle'
-  const error = fetcher.data?.error?.message
+  const submitting = fetcher.isPending
+  const error = fetcher.error?.message
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -53,10 +47,7 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            void fetcher.submit(
-              { name, email },
-              { method: INVITE.method, encType: 'application/json', action: INVITE.path },
-            )
+            fetcher.submit({ name, email })
           }}
           className="grid gap-4"
         >

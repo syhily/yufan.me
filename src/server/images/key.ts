@@ -1,4 +1,4 @@
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 // S3 object key generator for the three upload entry points. Pure
 // functions only — no DB, no S3, no settings — so the unit tests can

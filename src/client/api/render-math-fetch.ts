@@ -1,4 +1,3 @@
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { RenderMathInput, RenderMathOutput } from '@/shared/cms-pages'
 
 import { API_ACTIONS } from '@/shared/api-actions'
@@ -14,20 +13,17 @@ export async function fetchRenderMath(input: RenderMathInput): Promise<RenderMat
     body: JSON.stringify(input),
     credentials: 'same-origin',
   })
-  let envelope: ApiEnvelope<RenderMathOutput>
+
+  let body: RenderMathOutput
   try {
-    envelope = (await res.json()) as ApiEnvelope<RenderMathOutput>
+    body = (await res.json()) as RenderMathOutput
   } catch {
     return { mathml: '', error: 'Invalid JSON response' }
   }
-  if (!res.ok || envelope.error !== undefined) {
-    return {
-      mathml: '',
-      error: envelope.error?.message ?? `HTTP ${res.status}`,
-    }
+
+  if (!res.ok) {
+    return { mathml: '', error: `HTTP ${res.status}` }
   }
-  if (envelope.data === undefined) {
-    return { mathml: '', error: 'Empty envelope' }
-  }
-  return envelope.data
+
+  return body
 }

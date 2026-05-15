@@ -1,7 +1,7 @@
 import sharp from 'sharp'
 import { rgbaToThumbHash } from 'thumbhash'
 
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 
 // Image processing pipeline shared by every upload entry point. Takes
 // the browser-encoded blob (already JPEG, already cropped/resized to

@@ -79,5 +79,3 @@ export const API_ACTIONS = {
 } as const
 
 // Empty — all API routes now live in the Hono layer.
-export const API_ACTION_LIST: readonly { route: string; path: string; method: ApiActionMethod; file: string }[] =
-  [] as const
