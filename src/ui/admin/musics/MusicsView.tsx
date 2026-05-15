@@ -85,22 +85,19 @@ export function MusicsView() {
     void listQuery.refetch()
   }, [listQuery])
 
-  const deleteMutation = useApiMutation<string, DeleteMusicOutput>(
-    (id) => unwrap(api.admin.music.delete({ params: { id } })),
-    {
-      onSuccess: () => undefined,
-      onError: (error) => {
-        toast.error('操作失败', { description: error.message })
-        setConfirm({
-          title: '删除失败',
-          description: error.message,
-          actionLabel: '我知道了',
-          destructive: false,
-          onConfirm: () => undefined,
-        })
-      },
+  const deleteMutation = useApiMutation<string, void>((id) => unwrap(api.admin.music.delete({ params: { id } })), {
+    onSuccess: () => undefined,
+    onError: (error) => {
+      toast.error('操作失败', { description: error.message })
+      setConfirm({
+        title: '删除失败',
+        description: error.message,
+        actionLabel: '我知道了',
+        destructive: false,
+        onConfirm: () => undefined,
+      })
     },
-  )
+  })
   const { mutate: submitDelete } = deleteMutation
 
   const [qInput, setQInput] = useDebouncedSearch({

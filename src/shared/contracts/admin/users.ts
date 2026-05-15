@@ -41,6 +41,18 @@ const userIdBody = z.object({
   userId: z.string().min(1),
 })
 
+// Adopted from the retired single-endpoint `apiContract.auth` contract.
+// Admin-level profile edit — covers name / email / link / badge fields.
+// Used by the admin user-detail view and the comment moderation editor.
+const updateUserBody = z.object({
+  name: z.string().min(1).optional(),
+  email: z.email().optional(),
+  link: z.string().optional(),
+  badgeName: z.string().optional(),
+  badgeColor: z.string().optional(),
+  badgeTextColor: z.union([z.string(), z.null()]).optional(),
+})
+
 export const adminUsersContract = c.router(
   {
     list: {
@@ -60,11 +72,20 @@ export const adminUsersContract = c.router(
       responses: { 200: z.object({ user: adminUserDto }), ...standardReadErrors },
       summary: '管理后台：单个用户详情',
     },
+    update: {
+      method: 'PATCH',
+      path: '/admin/users/:id',
+      pathParams: idParam,
+      body: updateUserBody,
+      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      summary: '管理后台：更新用户资料（名称 / 邮箱 / 链接 / 徽章）',
+    },
     softDelete: {
       method: 'DELETE',
       path: '/admin/users/:id',
       pathParams: idParam,
-      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      body: c.noBody(),
+      responses: { 204: c.noBody(), ...standardMutationErrors },
       summary: '管理后台：软删除用户',
     },
     restore: {

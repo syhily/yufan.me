@@ -50,7 +50,7 @@ export const adminPostsController: AuthedContractImpl<typeof adminPostsContract>
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
     }
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
   restore: async (args, ctx) => {
     const result = await restorePost(BigInt(args.params.id), ctx.viewer ?? undefined)

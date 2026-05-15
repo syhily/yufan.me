@@ -82,7 +82,7 @@ export function UsersView() {
     },
   )
 
-  const deleteMutation = useApiMutation<UserIdInput, AdminMutationSuccessOutput>(
+  const deleteMutation = useApiMutation<UserIdInput, void>(
     (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
     {
       onSuccess: () => {

@@ -34,7 +34,8 @@ export const adminPagesContract = c.router(
       method: 'DELETE',
       path: '/admin/pages/:id',
       pathParams: idParam,
-      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      body: c.noBody(),
+      responses: { 204: c.noBody(), ...standardMutationErrors },
       summary: '管理后台：软删除页面',
     },
     restore: {

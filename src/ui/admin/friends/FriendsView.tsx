@@ -97,7 +97,7 @@ export function FriendsView() {
     void listQuery.refetch()
   }, [listQuery])
 
-  const deleteMutation = useApiMutation<DeleteFriendInput, DeleteFriendOutput>(
+  const deleteMutation = useApiMutation<DeleteFriendInput, void>(
     (input) => unwrap(api.admin.friends.delete({ params: { id: input.id } })),
     {
       onError: (error) => {

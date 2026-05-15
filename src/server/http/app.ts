@@ -19,7 +19,6 @@ import { adminSettingsController } from './controllers/admin/settings.controller
 import { adminTagsController } from './controllers/admin/tags.controller'
 import { adminUsersController } from './controllers/admin/users.controller'
 import { analyticsController } from './controllers/analytics.controller'
-import { authController } from './controllers/auth.controller'
 import { commentAdminController } from './controllers/comment-admin.controller'
 import { commentPublicController } from './controllers/comment-public.controller'
 import { commentSelfController } from './controllers/comment-self.controller'
@@ -77,9 +76,6 @@ export function createApiApp(): Hono<Env> {
   adminRoute(app, apiContract.admin.pages, adminPagesController)
   authorRoute(app, apiContract.admin.posts, adminPostsController)
   adminRoute(app, apiContract.admin.renders, adminRendersController)
-
-  // Auth routes (admin only)
-  adminRoute(app, apiContract.auth, authController)
 
   return app
 }

@@ -2,7 +2,6 @@ import { c } from './_base'
 import { accountContract } from './account'
 import { adminContract } from './admin'
 import { analyticsContract } from './analytics'
-import { authContract } from './auth'
 import { commentAdminContract } from './comment-admin'
 import { commentPublicContract } from './comment-public'
 import { commentSelfContract } from './comment-self'
@@ -14,7 +13,6 @@ export const apiContract = c.router({
   account: accountContract,
   admin: adminContract,
   analytics: analyticsContract,
-  auth: authContract,
   commentAdmin: commentAdminContract,
   commentPublic: commentPublicContract,
   commentSelf: commentSelfContract,

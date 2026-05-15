@@ -31,7 +31,7 @@ export const adminCategoriesController: AuthedContractImpl<typeof adminCategorie
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '分类不存在' } } }
     }
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
   reorder: async (args, _ctx) => {
     const payload = args.body

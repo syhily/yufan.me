@@ -40,7 +40,7 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
   restore: async ({ params }, _ctx) => {
     const result = await restorePage(BigInt(params.id))

@@ -76,7 +76,7 @@ export function PagesView() {
     void listQuery.refetch()
   }, [listQuery])
 
-  const deleteMutation = useApiMutation<DeletePageInput, DeletePageOutput>(
+  const deleteMutation = useApiMutation<DeletePageInput, void>(
     (input) => unwrap(api.admin.pages.delete({ params: { id: input.id } })),
     {
       onSuccess: () => {

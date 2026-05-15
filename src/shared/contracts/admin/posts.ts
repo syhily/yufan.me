@@ -38,7 +38,8 @@ export const adminPostsContract = c.router(
       method: 'DELETE',
       path: '/admin/posts/:id',
       pathParams: idParam,
-      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      body: c.noBody(),
+      responses: { 204: c.noBody(), ...standardMutationErrors },
       summary: '管理后台：软删除文章',
     },
     restore: {

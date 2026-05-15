@@ -37,6 +37,6 @@ export const adminMusicController: AuthedContractImpl<typeof adminMusicContract>
   },
   delete: async (args, ctx) => {
     await deleteMusic(BigInt(args.params.id), { userId: ctx.viewer!.userId, role: ctx.viewer!.role })
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
 }

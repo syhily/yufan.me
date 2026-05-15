@@ -62,7 +62,7 @@ export function CategoriesView() {
     void listQuery.refetch()
   }, [listQuery])
 
-  const deleteMutation = useApiMutation<DeleteCategoryInput, DeleteCategoryOutput>(
+  const deleteMutation = useApiMutation<DeleteCategoryInput, void>(
     (input) => unwrap(api.admin.categories.delete({ params: { id: input.id } })),
     {
       onSuccess: () => {

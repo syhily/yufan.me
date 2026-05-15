@@ -9,6 +9,7 @@ import {
   findUserById,
   insertAuthor,
   softDeleteUserById,
+  updateUserById,
   updateUserRole,
 } from '@/server/db/query/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/email/sender'
@@ -55,6 +56,21 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
     }
     return { status: 200 as const, body: { user } }
   },
+  update: async ({ params, body }) => {
+    // Allow-listed patch — never pass arbitrary body fields to the DB layer.
+    const updated = await updateUserById(BigInt(params.id), {
+      name: body.name,
+      email: body.email,
+      link: body.link,
+      badgeName: body.badgeName,
+      badgeColor: body.badgeColor,
+      badgeTextColor: body.badgeTextColor,
+    })
+    if (updated === null) {
+      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
+  },
   softDelete: async ({ params }, { viewer }) => {
     const userId = params.id
     if (viewer!.userId === userId) {
@@ -81,7 +97,7 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
       target: userId,
       role: target.role,
     })
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
   restore: async ({ params }, { viewer }) => {
     const ok = await restoreAdminUser(BigInt(params.id))

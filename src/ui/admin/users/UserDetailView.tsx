@@ -102,7 +102,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const updateMutation = useApiMutation(
     (vars: Record<string, string | null> & { userId: string }) => {
       const { userId, ...body } = vars
-      return unwrap(api.auth.updateUser({ params: { id: userId }, body }))
+      return unwrap(api.admin.users.update({ params: { id: userId }, body }))
     },
     {
       onSuccess: () => {
@@ -128,7 +128,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     },
   )
 
-  const deleteMutation = useApiMutation<{ userId: string }, AdminMutationSuccessOutput>(
+  const deleteMutation = useApiMutation<{ userId: string }, void>(
     (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
     {
       onSuccess: () => {

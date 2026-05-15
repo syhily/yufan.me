@@ -26,7 +26,7 @@ export const adminImagesController: AuthedContractImpl<typeof adminImagesContrac
   },
   delete: async (args, ctx) => {
     await deleteImage(BigInt(args.params.id), ctx.viewer ?? undefined)
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
   updateNote: async (args, ctx) => {
     const image = await updateImageNote(BigInt(args.params.id), args.body.note ?? null, ctx.viewer ?? undefined)

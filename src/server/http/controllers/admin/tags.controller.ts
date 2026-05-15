@@ -27,6 +27,6 @@ export const adminTagsController: AuthedContractImpl<typeof adminTagsContract> =
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '标签不存在' } } }
     }
-    return { status: 200 as const, body: { success: true } }
+    return { status: 204 as const, body: undefined }
   },
 }

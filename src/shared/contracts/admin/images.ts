@@ -24,7 +24,8 @@ export const adminImagesContract = c.router(
       method: 'DELETE',
       path: '/admin/images/:id',
       pathParams: idParam,
-      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      body: c.noBody(),
+      responses: { 204: c.noBody(), ...standardMutationErrors },
       summary: '管理后台：删除图片',
     },
     updateNote: {
