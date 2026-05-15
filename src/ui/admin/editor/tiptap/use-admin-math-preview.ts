@@ -25,23 +25,20 @@ export function useAdminMathPreview(
   const [previewMathml, setPreviewMathml] = useState('')
   const [renderError, setRenderError] = useState<string | null>(null)
 
-  const renderMath = useApiMutation<RenderMathInput, RenderMathOutput>(
-    (vars) => unwrap(api.admin.renders.math({ body: vars })),
-    {
-      onSuccess: (result) => {
-        if (result.error !== null) {
-          setRenderError(result.error)
-          return
-        }
-        setRenderError(null)
-        lastValidMathml.current = result.mathml
-        setPreviewMathml(result.mathml)
-      },
-      onError: () => {
-        setRenderError('渲染服务暂不可用')
-      },
+  const renderMath = useApiMutation<RenderMathInput, RenderMathOutput>((vars) => unwrap(api.admin.renders.math(vars)), {
+    onSuccess: (result) => {
+      if (result.error !== null) {
+        setRenderError(result.error)
+        return
+      }
+      setRenderError(null)
+      lastValidMathml.current = result.mathml
+      setPreviewMathml(result.mathml)
     },
-  )
+    onError: () => {
+      setRenderError('渲染服务暂不可用')
+    },
+  })
 
   useEffect(() => {
     if (tex.trim() === '') {

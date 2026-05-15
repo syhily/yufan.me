@@ -1,79 +1,108 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
 import { isCommentOwner } from '@/server/auth/rbac'
 import { updateOwnComment } from '@/server/comments/admin'
 import { asCommentItemsWire } from '@/server/comments/wire'
 import {
-  countApprovedRepliesOfComment,
   clearDeleteRequest,
+  countApprovedRepliesOfComment,
+  countMyComments,
   findCommentWithUserById,
   listMyComments,
-  countMyComments,
   requestDeleteComment,
 } from '@/server/db/query/comment'
-import { commentSelfContract } from '@/shared/contracts/comment-self'
+import { authedProc } from '@/server/http/orpc-base'
+import { commentItemDto } from '@/shared/contracts/_dtos'
+import { commentBodySchema } from '@/shared/pt/comment-schema'
 
-export const commentSelfController: AuthedContractImpl<typeof commentSelfContract> = {
-  updateOwn: async ({ body }, { viewer }) => {
-    const commentId = BigInt(body.commentId ?? '0')
+const successOutput = z.object({ success: z.boolean() })
+
+const updateOwn = authedProc
+  .input(z.object({ commentId: z.string(), body: commentBodySchema }))
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
+    const commentId = BigInt(input.commentId ?? '0')
     if (commentId === 0n) {
-      return { status: 400 as const, body: { error: { message: '缺少 commentId' } } }
+      throw new ORPCError('BAD_REQUEST', { message: '缺少 commentId' })
     }
     const c = await findCommentWithUserById(commentId)
-    if (!c || !isCommentOwner(viewer, c)) {
-      return { status: 404 as const, body: { error: { message: '资源不存在。' } } }
+    if (!c || !isCommentOwner(context.viewer, c)) {
+      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
     }
     if (c.deleteRequestedAt !== null) {
-      return { status: 409 as const, body: { error: { message: '已申请删除，无法编辑。' } } }
+      throw new ORPCError('CONFLICT', { message: '已申请删除，无法编辑。' })
     }
     const replyCount = await countApprovedRepliesOfComment(commentId)
     if (replyCount > 0) {
-      return { status: 409 as const, body: { error: { message: '已有回复，无法再编辑。' } } }
+      throw new ORPCError('CONFLICT', { message: '已有回复，无法再编辑。' })
     }
-    await updateOwnComment(String(commentId), body.body as any)
-    return { status: 200 as const, body: { success: true } }
-  },
+    await updateOwnComment(String(commentId), input.body as never)
+    return { success: true }
+  })
 
-  requestDeleteOwn: async ({ body }, { viewer }) => {
-    const commentId = BigInt(body.commentId)
+const requestDeleteOwn = authedProc
+  .input(z.object({ commentId: z.string() }))
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
+    const commentId = BigInt(input.commentId)
     const c = await findCommentWithUserById(commentId)
-    if (!c || !isCommentOwner(viewer, c)) {
-      return { status: 404 as const, body: { error: { message: '资源不存在。' } } }
+    if (!c || !isCommentOwner(context.viewer, c)) {
+      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
     }
     if (c.deleteRequestedAt !== null) {
-      return { status: 200 as const, body: { success: true } }
+      return { success: true }
     }
-    await requestDeleteComment(commentId, BigInt(viewer.userId))
-    return { status: 200 as const, body: { success: true } }
-  },
+    await requestDeleteComment(commentId, BigInt(context.viewer.userId))
+    return { success: true }
+  })
 
-  cancelDeleteOwn: async ({ body }, { viewer }) => {
-    const commentId = BigInt(body.commentId)
+const cancelDeleteOwn = authedProc
+  .input(z.object({ commentId: z.string() }))
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
+    const commentId = BigInt(input.commentId)
     const c = await findCommentWithUserById(commentId)
-    if (!c || !isCommentOwner(viewer, c)) {
-      return { status: 404 as const, body: { error: { message: '资源不存在。' } } }
+    if (!c || !isCommentOwner(context.viewer, c)) {
+      throw new ORPCError('NOT_FOUND', { message: '资源不存在。' })
     }
-    const ok = await clearDeleteRequest(commentId, BigInt(viewer.userId))
+    const ok = await clearDeleteRequest(commentId, BigInt(context.viewer.userId))
     if (!ok) {
-      return { status: 409 as const, body: { error: { message: '无法撤回删除申请。' } } }
+      throw new ORPCError('CONFLICT', { message: '无法撤回删除申请。' })
     }
-    return { status: 200 as const, body: { success: true } }
-  },
+    return { success: true }
+  })
 
-  listMine: async ({ query }, { viewer }) => {
-    const userId = BigInt(viewer.userId)
-    const offset = query.offset ?? 0
-    const limit = Math.min(query.limit ?? 20, 100)
+const listMine = authedProc
+  .input(
+    z.object({ offset: z.coerce.number().min(0).default(0), limit: z.coerce.number().min(1).max(100).default(20) }),
+  )
+  .output(
+    z.object({
+      comments: z.array(commentItemDto),
+      total: z.number().int(),
+      pending: z.number().int(),
+      deleteRequested: z.number().int(),
+      hasMore: z.boolean(),
+    }),
+  )
+  .handler(async ({ input, context }) => {
+    const userId = BigInt(context.viewer.userId)
+    const offset = input.offset
+    const limit = Math.min(input.limit, 100)
     const [comments, counts] = await Promise.all([listMyComments(userId, offset, limit), countMyComments(userId)])
     return {
-      status: 200 as const,
-      body: {
-        comments: asCommentItemsWire(comments),
-        total: counts.total,
-        pending: counts.pending,
-        deleteRequested: counts.deleteRequested,
-        hasMore: offset + comments.length < counts.total,
-      },
+      comments: asCommentItemsWire(comments),
+      total: counts.total,
+      pending: counts.pending,
+      deleteRequested: counts.deleteRequested,
+      hasMore: offset + comments.length < counts.total,
     }
-  },
+  })
+
+export const commentSelfRouter = {
+  updateOwn,
+  requestDeleteOwn,
+  cancelDeleteOwn,
+  listMine,
 }

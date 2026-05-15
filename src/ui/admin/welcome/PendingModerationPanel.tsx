@@ -54,7 +54,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     refetch,
   } = useApiQuery<ListPendingDashboardOutput>(
     ['admin', 'pending', 'all', offset, PAGE_SIZE],
-    () => unwrap(api.commentAdmin.listPendingDashboard({ query: { kind: 'all', offset, limit: PAGE_SIZE } })),
+    () => unwrap(api.commentAdmin.listPendingDashboard({ kind: 'all', offset, limit: PAGE_SIZE })),
     { initialData: initial },
   )
 
@@ -71,28 +71,22 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     void refetch()
   }, [refetch])
 
-  const approveApi = useApiMutation(
-    (vars: { rid: string }) => unwrap(api.commentAdmin.approve({ params: { rid: vars.rid } })),
-    {
-      onSuccess: () => {
-        toast.success('已通过该评论。')
-        refresh()
-      },
-      onError: () => toast.error('操作失败'),
+  const approveApi = useApiMutation((vars: { rid: string }) => unwrap(api.commentAdmin.approve({ rid: vars.rid })), {
+    onSuccess: () => {
+      toast.success('已通过该评论。')
+      refresh()
     },
-  )
-  const rejectApi = useApiMutation(
-    (vars: { rid: string }) => unwrap(api.commentAdmin.delete({ params: { rid: vars.rid } })),
-    {
-      onSuccess: () => {
-        toast.success('已拒绝并删除该评论。')
-        refresh()
-      },
-      onError: () => toast.error('操作失败'),
+    onError: () => toast.error('操作失败'),
+  })
+  const rejectApi = useApiMutation((vars: { rid: string }) => unwrap(api.commentAdmin.delete({ rid: vars.rid })), {
+    onSuccess: () => {
+      toast.success('已拒绝并删除该评论。')
+      refresh()
     },
-  )
+    onError: () => toast.error('操作失败'),
+  })
   const approveDeletionApi = useApiMutation(
-    (vars: { commentId: string; approve: boolean }) => unwrap(api.commentAdmin.approveCommentDeletion({ body: vars })),
+    (vars: { commentId: string; approve: boolean }) => unwrap(api.commentAdmin.approveCommentDeletion(vars)),
     {
       onSuccess: (data) => {
         toast.success(data ? '已处理该删除申请。' : '已处理。')

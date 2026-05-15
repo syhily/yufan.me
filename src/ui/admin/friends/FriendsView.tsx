@@ -12,7 +12,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminFriendDto, DeleteFriendInput, DeleteFriendOutput, ListFriendsOutput } from '@/shared/friends'
+import type { AdminFriendDto, DeleteFriendInput, ListFriendsOutput } from '@/shared/friends'
 
 import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery } from '@/client/api/query'
@@ -64,12 +64,10 @@ export function FriendsView() {
     () =>
       unwrap(
         api.admin.friends.list({
-          query: {
-            q: state.q || undefined,
-            includeHidden: state.includeHidden ? 'true' : undefined,
-            offset: state.currentPage * state.pageSize,
-            limit: state.pageSize,
-          },
+          q: state.q || undefined,
+          includeHidden: state.includeHidden ? 'true' : undefined,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
         }),
       ),
   )
@@ -98,7 +96,7 @@ export function FriendsView() {
   }, [listQuery])
 
   const deleteMutation = useApiMutation<DeleteFriendInput, void>(
-    (input) => unwrap(api.admin.friends.delete({ params: { id: input.id } })),
+    (input) => unwrap(api.admin.friends.delete({ id: input.id })),
     {
       onError: (error) => {
         toast.error('删除友链失败', { description: error.message })

@@ -1,9 +1,15 @@
-import { generateOpenApi } from '@ts-rest/open-api'
+import { OpenAPIGenerator } from '@orpc/openapi'
 
-import { apiContract } from '@/shared/contracts'
+import { apiRouter } from './api-router'
+
+// Dev-only OpenAPI document generated from the live oRPC router.
+// Mounted at `/openapi.json` + Swagger UI at `/docs` (see
+// `src/server.ts`). The router is the single source of truth; this
+// helper is a thin facade over `@orpc/openapi`'s generator.
+const generator = new OpenAPIGenerator()
 
 export function buildOpenApiDocument() {
-  return generateOpenApi(apiContract, {
+  return generator.generate(apiRouter, {
     info: {
       title: 'Yufan.me API',
       version: '1.0.0',

@@ -81,7 +81,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const validate = useApiMutation<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
-    (vars) => unwrap(api.commentPublic.validateLikeToken({ body: vars })),
+    (vars) => unwrap(api.commentPublic.validateLikeToken(vars)),
     {
       onSuccess: (data) => {
         setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
@@ -93,7 +93,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   )
 
   const increase = useApiMutation<IncreaseLikeInput, IncreaseLikeOutput>(
-    (vars) => unwrap(api.commentPublic.increaseLike({ body: vars })),
+    (vars) => unwrap(api.commentPublic.increaseLike(vars)),
     {
       onSuccess: (data) => {
         setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
@@ -105,7 +105,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   )
 
   const decrease = useApiMutation<DecreaseLikeInput, DecreaseLikeOutput>(
-    (vars) => unwrap(api.commentPublic.decreaseLike({ body: vars })),
+    (vars) => unwrap(api.commentPublic.decreaseLike(vars)),
     {
       onSuccess: (data) => {
         setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))

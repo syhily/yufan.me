@@ -1,20 +1,26 @@
-import type { PublicContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
+import { publicProc } from '@/server/http/orpc-base'
 import { getMusicMetaForPlayer } from '@/server/music/service'
-import { musicContract } from '@/shared/contracts/music'
+import { publicMusicMetaDto } from '@/shared/contracts/_dtos'
 
-export const musicController: PublicContractImpl<typeof musicContract> = {
-  get: async ({ query }: { query: { id: string } }) => {
-    const meta = await getMusicMetaForPlayer(query.id)
+const get = publicProc
+  .input(
+    z.object({
+      id: z
+        .string()
+        .trim()
+        .regex(/^[a-z0-9]{16}$/, 'invalid player id'),
+    }),
+  )
+  .output(z.object({ music: publicMusicMetaDto }))
+  .handler(async ({ input }) => {
+    const meta = await getMusicMetaForPlayer(input.id)
     if (meta === null) {
-      return { status: 404 as const, body: { error: { message: '音乐不存在或已下线' } } }
+      throw new ORPCError('NOT_FOUND', { message: '音乐不存在或已下线' })
     }
-    return {
-      status: 200 as const,
-      body: { music: meta },
-      headers: {
-        'Cache-Control': 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=86400',
-      },
-    }
-  },
-}
+    return { music: meta }
+  })
+
+export const musicRouter = { get }

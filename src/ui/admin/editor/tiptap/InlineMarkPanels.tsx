@@ -92,7 +92,7 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
       if (trimmed !== '') {
         setApplying(true)
         try {
-          const out = await unwrap(api.admin.renders.math({ body: { tex, display: false } }))
+          const out = await unwrap(api.admin.renders.math({ tex, display: false }))
           if (controller.signal.aborted) {
             return
           }

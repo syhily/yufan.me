@@ -60,18 +60,15 @@ export function AdminCommentRow({
   const authorHref = safeHref(comment.link)
   const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
 
-  const approveMutation = useApiMutation<{ rid: string }, null>(
-    ({ rid }) => unwrap(api.commentAdmin.approve({ params: { rid } })),
+  const approveMutation = useApiMutation<{ rid: string }, void>(
+    ({ rid }) => unwrap(api.commentAdmin.approve({ rid })),
     {
       onSuccess: () => onApproved(),
     },
   )
-  const deleteMutation = useApiMutation<{ rid: string }, null>(
-    ({ rid }) => unwrap(api.commentAdmin.delete({ params: { rid } })),
-    {
-      onSuccess: () => onDeleted(),
-    },
-  )
+  const deleteMutation = useApiMutation<{ rid: string }, void>(({ rid }) => unwrap(api.commentAdmin.delete({ rid })), {
+    onSuccess: () => onDeleted(),
+  })
 
   const submitApprove = () => {
     approveMutation.mutate({ rid: idStr(comment.id) })

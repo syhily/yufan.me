@@ -70,10 +70,14 @@ src/
 - `*.tsx` are page route modules with `loader` / `action` / `meta` /
   default component.
 - `*.ts` are resource routes (feeds, sitemap, generated images).
-- **API endpoints have migrated to Hono** — they live in
-  `src/server/http/controllers/` (ts-rest contracts) and
-  `src/server/http/resources/` (native Hono routers for binary/XML
-  output). The `src/routes/api/actions/` tree has been removed.
+- **API endpoints live on the oRPC + Hono perimeter** — controllers
+  build procedures under `src/server/http/controllers/` from base
+  procedures in `src/server/http/orpc-base.ts`; the composed
+  `apiRouter` (`src/server/http/api-router.ts`) is mounted at
+  `/rpc/*` via `RPCHandler`. Non-JSON output (RSS/Atom, sitemap.xml,
+  OG images, calendars, avatars) lives in `src/server/http/resources/`
+  as native Hono routers. The legacy `src/routes/api/actions/` tree
+  and the `/api/actions/*` redirect table are both removed.
 - Route modules orchestrate: read session/context at the perimeter, call
   into `server/`, project DTOs through `shared/`, render with `ui/`.
   No DB queries, Redis access, or markdown parsing inline.
@@ -84,11 +88,13 @@ src/
 
 - Sub-areas (each owns its loader, schema, and helpers):
   - `server/db/` — Drizzle pool, schema, query helpers, migrations.
-  - `server/http/` — Hono + ts-rest API perimeter. Controllers
-    (`server/http/controllers/`), resource routers
-    (`server/http/resources/`), guards (`server/http/guards.ts`),
-    ts-rest adapter (`server/http/ts-rest-adapter.ts`), and OpenAPI
-    export (`server/http/openapi.ts`).
+  - `server/http/` — Hono + oRPC API perimeter. Procedure base
+    factory (`server/http/orpc-base.ts`), controllers building
+    procedures (`server/http/controllers/`), composed router
+    (`server/http/api-router.ts`), resource routers
+    (`server/http/resources/`), Hono RBAC helper for resource routers
+    (`server/http/hono-rbac.ts`), and OpenAPI export
+    (`server/http/openapi.ts`).
   - `server/route-helpers/` — Legacy response helpers (`ok`, `fail`,
     `ActionFailure`) still used by some service layers during the
     migration window.
@@ -118,10 +124,12 @@ src/
 
 ### `src/client/` — Browser Only
 
-- Hooks, browser APIs, and the ts-rest client (`@/client/api/client`).
-  All HTTP calls go through `api.<domain>.<endpoint>(...)` defined in
-  `shared/contracts/`; `unwrap()` turns non-2xx responses into thrown
-  `ApiError`. TanStack Query wrappers (`useApiQuery`, `useApiMutation`)
+- Hooks, browser APIs, and the oRPC client (`@/client/api/client`).
+  All HTTP calls go through `api.<domain>.<endpoint>(flatInput)` —
+  the typed client is built from `typeof apiRouter`, so
+  procedure signatures flow automatically. `unwrap()` translates
+  oRPC's `ORPCError` rejections into the existing `ApiError` class.
+  TanStack Query wrappers (`useApiQuery`, `useApiMutation`)
   live in `@/client/api/query`.
 - Heavy widgets (e.g. `qrcode.react`) reach the bundle through
   React.lazy + Suspense from a UI component, not via top-level imports
@@ -543,8 +551,10 @@ reviewers cite during PR review: `server-no-shared-module-state`,
 - All interactivity lives in React components/hooks under `@/client/`
   and `@/ui/`. `src/assets/scripts` is intentionally absent — there is
   no separate browser-script pipeline.
-- Interactive components call resource URLs through the ts-rest client
-  (`api` from `@/client/api/client`). They must not import server modules.
+- Interactive components call resource URLs through the oRPC client
+  (`api` from `@/client/api/client`). They must not import server modules
+  (a type-only import to satisfy `RouterClient<ApiRouter>` typing is the
+  one allowed exception, since `import type` erases at compile time).
 - Avoid adding new client dependencies unless the interaction needs them.
 
 ### iOS auto-zoom contract
@@ -651,82 +661,91 @@ focused and restores the previous value on blur.
 - Pre-existing deployments missing optional sections are backfilled
   lazily on next snapshot hydration through `loadSettingsFromDb()` and
   `upsertSetting`. The backfill is best-effort and swallows DB errors.
-- Admin section saves go through `api.admin.updateSettings` (ts-rest
-  contract), which validates against `SECTION_REGISTRY[section].schema`
+- Admin section saves go through `api.admin.settings.update` (oRPC
+  procedure), which validates against `SECTION_REGISTRY[section].schema`
   and writes ONLY that one row. There is no aggregate "reset to defaults"
   action.
 
-## API Layer (Hono + ts-rest)
+## API Layer (Hono + oRPC)
 
-- **Contracts** (`shared/contracts/`) define the API surface: method,
-  path, Zod input schemas, and Zod response schemas. This is the
-  single source of truth for both server and client. Output DTOs that
-  ship across the wire live in `shared/contracts/_dtos.ts`, each
-  paired with a compile-time `Equals<z.infer, TInterface>` parity
-  assertion against the canonical `src/shared/*.ts` interface — drift
-  becomes a build error.
-- **Controllers** (`server/http/controllers/`) implement the contracts.
-  Each controller is a plain object whose keys match the contract
-  endpoints. Business logic lives in `server/<domain>/service.ts`;
-  controllers only orchestrate.
-- **Adapter** (`server/http/ts-rest-adapter.ts`) compiles a contract
-  router onto Hono. It runs input Zod validation, then runs the
-  handler, then runs **output Zod validation** against
-  `route.responses[status]`. In dev a mismatch throws 500 with the
-  Zod issue list as `cause`; in prod it logs a `warn` at
-  `http.response-mismatch` and ships the body unchanged.
-- **Guards** (`server/http/guards.ts`) mount contracts with RBAC:
-  `publicRoute`, `authedRoute`, `adminRoute`, `authorRoute`. All four
-  attach `csrfGuard` to non-GET requests so CSRF lives on one layer;
-  controllers never call `validateRequestCsrf` themselves.
+- **Base procedures** (`server/http/orpc-base.ts`) declare four flavours
+  built off `os.$context<HandlerContext>()`: `publicProc`, `authedProc`,
+  `adminProc`, `authorProc`. Each chains its own auth/role middleware
+  via `.use(requireAuth)` / `.use(requireRole(role))`. The leaf
+  procedure picks one of the four and inherits the guard automatically.
+- **Procedures live alongside controllers**
+  (`server/http/controllers/<domain>.controller.ts`). Each file builds
+  one or more procedures with `procBase.input(zod).output(zod).handler(({input, context}) => …)`
+  and exports a `<domain>Router` object grouping them. Business logic
+  lives in `server/<domain>/service.ts`; the handler only orchestrates.
+- **Zod DTOs** in `shared/contracts/_dtos.ts` are reused verbatim from
+  the ts-rest era — each one paired with a compile-time
+  `Equals<z.infer, TInterface>` parity assertion against the canonical
+  `src/shared/*.ts` interface. Drift becomes a build error.
+- **Router composition** (`server/http/api-router.ts`) groups the
+  per-domain routers into a single `apiRouter` tree, exported as
+  `ApiRouter`. The `admin: {…}` sub-tree mirrors the URL hierarchy.
+- **Mount** (`server/http/app.ts`) wires one `RPCHandler` at `/rpc/*`
+  with `csrfGuard` running upstream (CSRF lives on one layer; handlers
+  never call `validateRequestCsrf` themselves). Per-procedure response
+  headers (e.g. `Set-Cookie` for csrf rotation) ride through a mutable
+  `responseHeaders: Headers` field on the context and are merged onto
+  the final `Response` by the bridge.
 - **Resource routers** (`server/http/resources/`) are native Hono
   routers for non-JSON output (RSS/Atom, sitemap.xml, OG images,
-  calendars, avatars, plus legacy `/tags` and `/search` redirects).
-- **OpenAPI** (`/openapi.json` + `/docs`) is auto-generated from the
-  contract tree in development.
-- **Legacy redirects** (`server/http/legacy-redirects.ts`) ship an
-  explicit `/api/actions/* → /api/<resource>` table. Unknown legacy
-  paths return 410 Gone.
+  calendars, avatars). Their RBAC needs come from
+  `server/http/hono-rbac.ts::requireRoleMw` since they live outside
+  the oRPC tree.
+- **OpenAPI** (`/openapi.json` + `/docs`) is auto-generated from
+  `apiRouter` via `@orpc/openapi`'s `OpenAPIGenerator` in development.
 
 ### Adding a new API endpoint (3 steps)
 
-1. **Contract** — add the route to the right
-   `shared/contracts/<domain>.ts` file, using existing schemas in
-   `_dtos.ts` for output shapes. New DTOs go in `_dtos.ts` with a
-   `_<name>Parity` assertion against the corresponding TS interface.
-2. **Controller** — add a method to the matching controller object
-   under `server/http/controllers/`. Keys must match the contract
-   verb (`list`, `get`, `softDelete`, …). Return
-   `{ status: <numeric literal> as const, body: <matching schema> }`;
-   the adapter handles HTTP serialisation.
-3. **Mount** — if the contract is already mounted in
-   `server/http/app.ts` (most domains are), nothing else to do.
-   For a brand-new domain, add one line under the permission matrix
-   selecting `publicRoute / authedRoute / adminRoute / authorRoute`.
+1. **DTO** — if the response/input needs a new Zod schema shared
+   with the UI, add it to `shared/contracts/_dtos.ts` with a
+   `_<name>Parity` assertion against the corresponding TS interface
+   in `src/shared/*.ts`. Otherwise inline a `z.object({...})`
+   alongside the procedure.
+2. **Procedure** — append a procedure to the matching
+   `server/http/controllers/<domain>.controller.ts`:
+   `const create = adminProc.input(...).output(...).handler(({input,
+context}) => …)`. Export it on the file's `<domain>Router` object.
+3. **Compose** — if the controller is already wired in
+   `server/http/api-router.ts` (most are), nothing else to do.
+   For a brand-new domain, add one line under `apiRouter` /
+   `apiRouter.admin`.
 
-UI calls land on `api.<domain>.<resource>.<verb>({ ... })` (e.g.
-`api.admin.users.list({ query: { ... } })`) and unwrap via
-`unwrap()` from `@/client/api/unwrap`.
+UI calls land on `api.<domain>.<resource>.<verb>(flatInput)` (e.g.
+`api.admin.users.list({ offset: 0, limit: 20 })` — note the **single
+flat input object**, no `{ body, query, params }` buckets) and
+unwrap via `unwrap()` from `@/client/api/unwrap`. Service-side errors
+are thrown as `ORPCError('CODE', { message })`; `unwrap()` bridges
+them back to the existing `ApiError(message, status, issues)` shape
+so UI consumers (toast handlers, error boundaries) work unchanged.
+Use `.output(z.void())` for 204-like procedures; the RPC envelope
+still emits a 200 with `null` payload, but the client receives
+`undefined`.
 
 ## Permission Matrix
 
-The API security policy is a single readable block in
-`src/server/http/app.ts`. Opening that file shows every mounted contract
-and its guard:
+The API security policy is encoded in the base procedure each leaf
+chose from `src/server/http/orpc-base.ts`. The audit surface is one
+`grep`: `grep -rn "adminProc\|authorProc\|authedProc\|publicProc"
+src/server/http/controllers/` reveals every procedure and its guard
+in one pass.
 
-| Guard | What it does | Use for |
-|---|---|---|
-| `publicRoute` | No auth; `csrfGuard` on non-GET | Anonymous reads + mutations with CSRF |
-| `authedRoute` | `requireAuth` + `csrfGuard` | Any logged-in user |
-| `roleRoute(_, _, _, 'author')` (or `authorRoute`) | `requireRoleMw('author')` + `csrfGuard` | Authors and admins |
-| `roleRoute(_, _, _, 'admin')` (or `adminRoute`) | `requireRoleMw('admin')` + `csrfGuard` | Admins only |
+| Base procedure | What it does                                | Use for                               |
+| -------------- | ------------------------------------------- | ------------------------------------- |
+| `publicProc`   | No auth gate; `csrfGuard` on non-GET        | Anonymous reads + mutations with CSRF |
+| `authedProc`   | `requireAuth` middleware + `csrfGuard`      | Any logged-in user                    |
+| `authorProc`   | `requireRole('author')` + `csrfGuard`       | Authors and admins                    |
+| `adminProc`    | `requireRole('admin')` + `csrfGuard`        | Admins only                           |
 
-There is no secondary config file or decorator-based RBAC scatter.
-The repo-wide invariants on every leaf route (a 2xx success
-response, a 500 fallback, an error response on mutation methods)
-are guarded by `tests/contract.contract-shape.test.ts`; the
-permission matrix itself is exercised end-to-end by
-`tests/e2e.permission-matrix.test.ts`.
+The composed router lives at `src/server/http/api-router.ts`; the
+sub-tree shape (`admin: { users: …, posts: … }`) mirrors the URL
+hierarchy after the `/rpc/` prefix (`/rpc/admin/users/list`).
+Smoke coverage for the four base procedures and the wire format
+lives in `tests/server.http.orpc-smoke.test.ts`.
 
 ## Assets
 
@@ -787,17 +806,25 @@ These are landmines from past refactors. Do not reintroduce them.
   to change them.
 - When moving files, update imports and documentation in the same
   change.
-- **Hono / ts-rest defensive rules:**
-  - Do not write business logic inside controllers — controllers only
+- **Hono / oRPC defensive rules:**
+  - Do not write business logic inside procedure handlers — they only
     orchestrate service calls.
-  - Do not throw `HTTPException` from service layers — throw `DomainError`
-    and let `onErrorHandler` (`server/http/errors.ts`) map it to the
-    correct HTTP status.
-  - Do not bypass `apiContract` to add ad-hoc Hono routes. Non-JSON
+  - Throw `ORPCError('CODE', { message })` from procedures (or services
+    they invoke) for non-2xx flows. `onErrorHandler`
+    (`server/http/errors.ts`) handles the rest. Service layers should
+    not throw `HTTPException` (that was the Hono-direct path).
+  - Do not bypass `apiRouter` to add ad-hoc Hono RPC routes. Non-JSON
     resource routes (RSS, sitemap, images) belong in
-    `server/http/resources/`; everything else goes through the contract.
-  - Do not use raw `fetch('/api/...')` string拼接 in client code —
-    always call `api.<domain>.<endpoint>(...)` from `@/client/api/client`.
+    `server/http/resources/`; everything else goes through the oRPC
+    router.
+  - Do not use raw `fetch('/rpc/...')` string拼接 in client code —
+    always call `api.<domain>.<endpoint>(flatInput)` from
+    `@/client/api/client`. The oRPC client handles serialization,
+    multipart for Blob inputs, error normalization, and the
+    `{ json: ... }` RPC envelope.
+  - The old ts-rest three-bucket call shape (`{ body, query, params }`)
+    is gone. Procedure inputs are a single flat object that the
+    contract's `z.object({...})` validates.
 
 ## Git And Commits
 

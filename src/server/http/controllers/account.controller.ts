@@ -1,79 +1,112 @@
+import { ORPCError } from '@orpc/server'
 import bcrypt from 'bcryptjs'
-
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { z } from 'zod'
 
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
 import { findUserById, updateUserById } from '@/server/db/query/user'
-import { accountContract } from '@/shared/contracts/account'
+import { authedProc } from '@/server/http/orpc-base'
 
-export const accountController: AuthedContractImpl<typeof accountContract> = {
-  updateProfile: async ({ body }, { viewer }) => {
-    if (!viewer) {
-      return { status: 401 as const, body: { error: { message: '未登录' } } }
-    }
+// ─── Input schemas ──────────────────────────────────────
+// Kept inline (was previously in `src/shared/contracts/account.ts`,
+// which is deleted as part of the oRPC migration). Schemas live next
+// to the procedure that owns them; UI input types are inferred from
+// the router via `InferRouterInputs`.
+
+const updateProfileInput = z.object({
+  name: z.string().min(1).max(50).optional(),
+  link: z.url().max(255).optional().nullable(),
+  badgeName: z.string().max(20).optional().nullable(),
+  badgeColor: z.string().max(7).optional().nullable(),
+  badgeTextColor: z.string().max(7).optional().nullable(),
+  receiveEmail: z.boolean().optional(),
+})
+
+const updatePasswordInput = z.object({
+  oldPassword: z.string().min(1),
+  newPassword: z.string().min(6).max(128),
+})
+
+const revokeSessionInput = z.object({
+  id: z.string().min(1),
+})
+
+// ─── Procedures ─────────────────────────────────────────
+
+const updateProfile = authedProc
+  .input(updateProfileInput)
+  .output(z.object({ user: z.unknown() }))
+  .handler(async ({ input, context }) => {
+    const { viewer } = context
     const userId = BigInt(viewer.userId)
     const dbUser = await findUserById(userId)
     if (!dbUser) {
-      return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
     const canSetBadge = viewer.role === 'admin' || viewer.role === 'author'
     const patch: Parameters<typeof updateUserById>[1] = {}
-    if (body.name !== undefined) {
-      patch.name = body.name
+    if (input.name !== undefined) {
+      patch.name = input.name
     }
-    if (body.link !== undefined) {
-      patch.link = body.link ?? undefined
+    if (input.link !== undefined) {
+      patch.link = input.link ?? undefined
     }
-    if (body.receiveEmail !== undefined) {
-      patch.receiveEmail = body.receiveEmail
+    if (input.receiveEmail !== undefined) {
+      patch.receiveEmail = input.receiveEmail
     }
     if (canSetBadge) {
-      if (body.badgeName !== undefined) {
-        patch.badgeName = body.badgeName ?? undefined
+      if (input.badgeName !== undefined) {
+        patch.badgeName = input.badgeName ?? undefined
       }
-      if (body.badgeColor !== undefined) {
-        patch.badgeColor = body.badgeColor ?? undefined
+      if (input.badgeColor !== undefined) {
+        patch.badgeColor = input.badgeColor ?? undefined
       }
-      if (body.badgeTextColor !== undefined) {
-        patch.badgeTextColor = body.badgeTextColor ?? undefined
+      if (input.badgeTextColor !== undefined) {
+        patch.badgeTextColor = input.badgeTextColor ?? undefined
       }
     }
     const updated = await updateUserById(userId, patch)
-    return { status: 200 as const, body: { user: updated } }
-  },
+    return { user: updated }
+  })
 
-  updatePassword: async ({ body }, { viewer, session }) => {
-    if (!viewer) {
-      return { status: 401 as const, body: { error: { message: '未登录' } } }
-    }
+const updatePassword = authedProc
+  .input(updatePasswordInput)
+  .output(z.object({ success: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    const { viewer, session } = context
     const dbUser = await findUserById(BigInt(viewer.userId))
     if (!dbUser) {
-      return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
-    const ok = await bcrypt.compare(body.oldPassword, dbUser.password)
+    const ok = await bcrypt.compare(input.oldPassword, dbUser.password)
     if (!ok) {
-      return { status: 403 as const, body: { error: { message: '原密码错误。' } } }
+      throw new ORPCError('FORBIDDEN', { message: '原密码错误。' })
     }
-    const hashed = await bcrypt.hash(body.newPassword, 12)
+    const hashed = await bcrypt.hash(input.newPassword, 12)
     await updateUserById(dbUser.id, { password: hashed })
     await revokeAllSessionsOfUser(dbUser.id, session.id)
-    return { status: 200 as const, body: { success: true } }
-  },
+    return { success: true }
+  })
 
-  revokeSession: async ({ params }, { viewer, session }) => {
-    if (!viewer) {
-      return { status: 401 as const, body: { error: { message: '未登录' } } }
-    }
-    const currentSession = params.id === session.id
-    const meta = await findSessionMeta(params.id)
+const revokeSession = authedProc
+  .input(revokeSessionInput)
+  .output(z.object({ success: z.boolean(), currentSession: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    const { viewer, session } = context
+    const currentSession = input.id === session.id
+    const meta = await findSessionMeta(input.id)
     if (!meta) {
-      return { status: 200 as const, body: { success: true, currentSession } }
+      return { success: true, currentSession }
     }
     if (meta.userId.toString() !== viewer.userId) {
-      return { status: 403 as const, body: { error: { message: '无权操作该会话。' } } }
+      throw new ORPCError('FORBIDDEN', { message: '无权操作该会话。' })
     }
-    await revokeSessionById(params.id, meta.userId)
-    return { status: 200 as const, body: { success: true, currentSession } }
-  },
+    await revokeSessionById(input.id, meta.userId)
+    return { success: true, currentSession }
+  })
+
+export const accountRouter = {
+  updateProfile,
+  updatePassword,
+  revokeSession,
 }

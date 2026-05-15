@@ -42,14 +42,12 @@ export function UsersView() {
     () =>
       unwrap(
         api.admin.users.list({
-          query: {
-            offset: state.currentPage * state.pageSize,
-            limit: state.pageSize,
-            q: state.q || undefined,
-            role: state.role !== 'all' ? state.role : undefined,
-            includeDeleted: state.includeDeleted ? true : undefined,
-            sortBy: state.sortBy !== 'recent' ? state.sortBy : undefined,
-          },
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+          q: state.q || undefined,
+          role: state.role !== 'all' ? state.role : undefined,
+          includeDeleted: state.includeDeleted ? true : undefined,
+          sortBy: state.sortBy !== 'recent' ? state.sortBy : undefined,
         }),
       ),
   )
@@ -68,13 +66,7 @@ export function UsersView() {
   const isUsersLoading = listQuery.isPending
 
   const muteMutation = useApiMutation<MuteUserInput, MuteUserOutput>(
-    (vars) =>
-      unwrap(
-        api.admin.users.mute({
-          params: { id: vars.userId },
-          body: { muted: vars.muted === true || vars.muted === 'true' },
-        }),
-      ),
+    (vars) => unwrap(api.admin.users.mute({ id: vars.userId, muted: vars.muted === true || vars.muted === 'true' })),
     {
       onSuccess: (payload) => {
         dispatch({ type: 'patchUser', user: payload.user })
@@ -83,7 +75,7 @@ export function UsersView() {
   )
 
   const deleteMutation = useApiMutation<UserIdInput, void>(
-    (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
+    (vars) => unwrap(api.admin.users.softDelete({ id: vars.userId })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -92,7 +84,7 @@ export function UsersView() {
   )
 
   const restoreMutation = useApiMutation<UserIdInput, AdminMutationSuccessOutput>(
-    (vars) => unwrap(api.admin.users.restore({ params: { id: vars.userId }, body: vars })),
+    (vars) => unwrap(api.admin.users.restore({ id: vars.userId, ...vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -101,7 +93,7 @@ export function UsersView() {
   )
 
   const bulkApproveMutation = useApiMutation<UserIdInput, BulkApproveOutput>(
-    (vars) => unwrap(api.admin.users.bulkApproveComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkApproveComments(vars)),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -110,7 +102,7 @@ export function UsersView() {
   )
 
   const bulkDeleteMutation = useApiMutation<UserIdInput, BulkSoftDeleteOutput>(
-    (vars) => unwrap(api.admin.users.bulkDeleteComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkDeleteComments(vars)),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })

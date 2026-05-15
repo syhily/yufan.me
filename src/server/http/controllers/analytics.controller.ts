@@ -1,66 +1,100 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
 import { parseAnalyticsSearch, queryCounters, queryHeatmap, queryMetric, queryViews } from '@/server/analytics/query'
+import { adminProc } from '@/server/http/orpc-base'
 import { METRIC_TYPES } from '@/shared/analytics/dto'
-import { analyticsContract } from '@/shared/contracts/analytics'
+import { PRESET_KEYS } from '@/shared/analytics/time'
+
+const presetKey = z.enum(PRESET_KEYS as unknown as [string, ...string[]])
+
+const analyticsInput = z.object({
+  preset: presetKey.optional(),
+  startAt: z.string().optional(),
+  endAt: z.string().optional(),
+  filters: z.string().optional(),
+  entityType: z.enum(['post', 'page']).optional(),
+  entityId: z.string().optional(),
+})
+
+const metricsInput = analyticsInput.extend({
+  type: z.enum(METRIC_TYPES as unknown as [string, ...string[]]),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+})
+
+const countersOutput = z.object({
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
+  referers: z.coerce.number().int().nonnegative(),
+})
+
+const viewsPointOutput = z.object({
+  time: z.string(),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
+})
+
+const heatmapCellOutput = z.object({
+  weekday: z.coerce.number().int().min(0).max(6),
+  hour: z.coerce.number().int().min(0).max(23),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
+})
+
+const metricRowOutput = z.object({
+  name: z.string(),
+  visits: z.coerce.number().int().nonnegative(),
+  visitors: z.coerce.number().int().nonnegative(),
+})
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
-function buildAnalyticsInput(query: {
-  preset?: string
-  startAt?: string
-  endAt?: string
-  filters?: string
-  entityType?: string
-  entityId?: string
-}) {
+function buildAnalyticsInput(input: z.infer<typeof analyticsInput>) {
   const sp = new URLSearchParams()
-  if (query.preset) {
-    sp.set('preset', query.preset)
+  if (input.preset) {
+    sp.set('preset', input.preset)
   }
-  if (query.startAt) {
-    sp.set('startAt', query.startAt)
+  if (input.startAt) {
+    sp.set('startAt', input.startAt)
   }
-  if (query.endAt) {
-    sp.set('endAt', query.endAt)
+  if (input.endAt) {
+    sp.set('endAt', input.endAt)
   }
-  if (query.filters) {
-    sp.set('filters', query.filters)
+  if (input.filters) {
+    sp.set('filters', input.filters)
   }
-  if (query.entityType) {
-    sp.set('entityType', query.entityType)
+  if (input.entityType) {
+    sp.set('entityType', input.entityType)
   }
-  if (query.entityId) {
-    sp.set('entityId', query.entityId)
+  if (input.entityId) {
+    sp.set('entityId', input.entityId)
   }
   return parseAnalyticsSearch(sp)
 }
 
-export const analyticsController: AuthedContractImpl<typeof analyticsContract> = {
-  counters: async ({ query }) => {
-    const input = buildAnalyticsInput(query)
-    return { status: 200 as const, body: await queryCounters(input) }
-  },
+const counters = adminProc
+  .input(analyticsInput)
+  .output(countersOutput)
+  .handler(({ input }) => queryCounters(buildAnalyticsInput(input)))
 
-  views: async ({ query }) => {
-    const input = buildAnalyticsInput(query)
-    return { status: 200 as const, body: await queryViews(input) }
-  },
+const views = adminProc
+  .input(analyticsInput)
+  .output(z.array(viewsPointOutput))
+  .handler(({ input }) => queryViews(buildAnalyticsInput(input)))
 
-  heatmap: async ({ query }) => {
-    const input = buildAnalyticsInput(query)
-    return { status: 200 as const, body: await queryHeatmap(input) }
-  },
+const heatmap = adminProc
+  .input(analyticsInput)
+  .output(z.array(heatmapCellOutput))
+  .handler(({ input }) => queryHeatmap(buildAnalyticsInput(input)))
 
-  metrics: async ({ query }) => {
-    const input = buildAnalyticsInput(query)
-    const type = query.type
-    if (!METRIC_SET.has(type)) {
-      return { status: 400 as const, body: { error: { message: `unknown metric type: ${type}` } } }
+const metrics = adminProc
+  .input(metricsInput)
+  .output(z.array(metricRowOutput))
+  .handler(({ input }) => {
+    if (!METRIC_SET.has(input.type)) {
+      throw new ORPCError('BAD_REQUEST', { message: `unknown metric type: ${input.type}` })
     }
-    return {
-      status: 200 as const,
-      body: await queryMetric(input, type as (typeof METRIC_TYPES)[number], query.limit),
-    }
-  },
-}
+    return queryMetric(buildAnalyticsInput(input), input.type as (typeof METRIC_TYPES)[number], input.limit)
+  })
+
+export const analyticsRouter = { counters, views, heatmap, metrics }

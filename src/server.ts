@@ -11,7 +11,6 @@ import { requestContext, sessionContext } from '@/server/auth/context'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
-import { findLegacyRedirect } from '@/server/http/legacy-redirects'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
 import { feedRouter } from '@/server/http/resources/feed'
@@ -53,23 +52,7 @@ const server = await createHonoServer<Env>({
     app.get('/health', (c) => c.json({ status: 'ok' }))
     app.get('/ready', (c) => c.json({ status: 'ok' }))
 
-    // Legacy `/api/actions/*` redirects. The new contract paths are
-    // resource-style (`/api/admin/users`) and don't share a syntactic
-    // transform with the old camelCase RPC names, so we look the path
-    // up in an explicit table (see legacy-redirects.ts). Unknown
-    // legacy paths return 410 Gone — preferable to a 404 because the
-    // wire signal is "this endpoint moved, refresh your client".
-    app.all('/api/actions/*', (c) => {
-      const url = new URL(c.req.url)
-      const match = findLegacyRedirect(url.pathname)
-      if (!match) {
-        return c.json({ error: { message: '旧版 API 已停用，请改用 REST 契约端点。' } }, 410)
-      }
-      url.pathname = match.target
-      return c.redirect(url.toString(), match.status)
-    })
-
-    // ─── API (ts-rest contracts) ────────────────────────
+    // ─── API (oRPC at /rpc/*) ────────────────────────────
     app.route('/', createApiApp())
 
     // ─── Public resource routes ───────────────────────────

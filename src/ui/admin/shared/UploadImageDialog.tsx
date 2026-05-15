@@ -151,20 +151,16 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
     setIsPending(true)
     try {
       const encoded = await encoderRef.current()
-      const formData = new FormData()
-      formData.append('file', encoded.blob, file.name.replace(/\.[^.]+$/, '.jpg'))
-      formData.append('kind', kind.kind)
-      if (kind.kind === 'category') {
-        formData.append('slug', kind.slug)
-      }
-      if (kind.kind === 'friend') {
-        formData.append('host', kind.host)
-      }
-      if (note.trim() !== '') {
-        formData.append('note', note.trim())
-      }
-
-      const data = await unwrap(api.admin.images.upload({ body: formData }))
+      // oRPC's RPC link serializes Blob inputs as `multipart/form-data`
+      // automatically; metadata travels alongside in the same envelope.
+      const trimmedNote = note.trim()
+      const metadata =
+        kind.kind === 'category'
+          ? { kind: 'category' as const, slug: kind.slug, ...(trimmedNote !== '' ? { note: trimmedNote } : {}) }
+          : kind.kind === 'friend'
+            ? { kind: 'friend' as const, host: kind.host, ...(trimmedNote !== '' ? { note: trimmedNote } : {}) }
+            : { kind: 'generic' as const, ...(trimmedNote !== '' ? { note: trimmedNote } : {}) }
+      const data = await unwrap(api.admin.images.upload({ file: encoded.blob, metadata }))
       onUploaded(data.image)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '上传失败')

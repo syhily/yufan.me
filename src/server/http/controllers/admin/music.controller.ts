@@ -1,42 +1,70 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { z } from 'zod'
 
 import { userSession } from '@/server/auth/primitives'
+import { authorProc } from '@/server/http/orpc-base'
 import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetadata } from '@/server/music/service'
-import { adminMusicContract } from '@/shared/contracts/admin/music'
+import {
+  addMusicOutputDto,
+  listMusicOutputDto,
+  searchMusicOutputDto,
+  updateMusicOutputDto,
+} from '@/shared/contracts/_dtos'
 
-export const adminMusicController: AuthedContractImpl<typeof adminMusicContract> = {
-  list: async (args, _ctx) => {
-    const result = await listMusicForAdmin({
-      q: args.query.q,
-      offset: args.query.offset,
-      limit: args.query.limit,
-    })
-    return { status: 200 as const, body: result }
-  },
-  search: async (args, _ctx) => {
-    const result = await searchMusic(args.query.keyword, args.query.limit)
-    return { status: 200 as const, body: result }
-  },
-  add: async (args, ctx) => {
+const list = authorProc
+  .input(
+    z.object({
+      q: z.string().optional(),
+      offset: z.coerce.number().optional(),
+      limit: z.coerce.number().optional(),
+    }),
+  )
+  .output(listMusicOutputDto)
+  .handler(({ input }) => listMusicForAdmin({ q: input.q, offset: input.offset, limit: input.limit }))
+
+const search = authorProc
+  .input(z.object({ keyword: z.string(), limit: z.coerce.number().optional() }))
+  .output(searchMusicOutputDto)
+  .handler(({ input }) => searchMusic(input.keyword, input.limit))
+
+const add = authorProc
+  .input(z.object({ source: z.literal('netease'), sourceId: z.string().trim().min(1).max(64) }))
+  .output(addMusicOutputDto)
+  .handler(async ({ input, context }) => {
     const music = await addMusic({
-      source: args.body.source,
-      sourceId: args.body.sourceId,
-      uploader: { id: BigInt(ctx.viewer!.userId), name: userSession(ctx.session)?.name ?? '' },
+      source: input.source,
+      sourceId: input.sourceId,
+      uploader: { id: BigInt(context.viewer.userId), name: userSession(context.session)?.name ?? '' },
     })
-    return { status: 200 as const, body: { music } }
-  },
-  update: async (args, _ctx) => {
+    return { music }
+  })
+
+const update = authorProc
+  .input(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().trim().min(1).max(200),
+      artist: z.array(z.string().trim().min(1).max(80)).min(1).max(20),
+      album: z.string().trim().max(200).optional().default(''),
+      lyric: z.string().max(50_000).optional(),
+    }),
+  )
+  .output(updateMusicOutputDto)
+  .handler(async ({ input }) => {
     const music = await updateMusicMetadata({
-      id: BigInt(args.params.id),
-      name: args.body.name,
-      artist: args.body.artist,
-      album: args.body.album,
-      lyric: args.body.lyric ?? null,
+      id: BigInt(input.id),
+      name: input.name,
+      artist: input.artist,
+      album: input.album,
+      lyric: input.lyric ?? null,
     })
-    return { status: 200 as const, body: { music } }
-  },
-  delete: async (args, ctx) => {
-    await deleteMusic(BigInt(args.params.id), { userId: ctx.viewer!.userId, role: ctx.viewer!.role })
-    return { status: 204 as const, body: undefined }
-  },
-}
+    return { music }
+  })
+
+const remove = authorProc
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.void())
+  .handler(async ({ input, context }) => {
+    await deleteMusic(BigInt(input.id), { userId: context.viewer.userId, role: context.viewer.role })
+  })
+
+export const adminMusicRouter = { list, search, add, update, delete: remove }

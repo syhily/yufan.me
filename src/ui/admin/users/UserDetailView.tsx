@@ -77,11 +77,11 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const queryClient = useQueryClient()
 
   const userQuery = useApiQuery<GetUserOutput>(['admin', 'user', userId], () =>
-    unwrap(api.admin.users.get({ params: { id: userId } })),
+    unwrap(api.admin.users.get({ id: userId })),
   )
 
   const commentsQuery = useApiQuery(queryKeys.admin.comments(userId), () =>
-    unwrap(api.commentAdmin.loadAll({ body: { offset: 0, limit: 10, userId } })),
+    unwrap(api.commentAdmin.loadAll({ offset: 0, limit: 10, userId })),
   )
 
   const user = userQuery.data?.user ?? null
@@ -102,7 +102,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const updateMutation = useApiMutation(
     (vars: Record<string, string | null> & { userId: string }) => {
       const { userId, ...body } = vars
-      return unwrap(api.admin.users.update({ params: { id: userId }, body }))
+      return unwrap(api.admin.users.update({ id: userId, ...body }))
     },
     {
       onSuccess: () => {
@@ -112,15 +112,15 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const sendResetMutation = useApiMutation<{ email: string }, { success: boolean }>((vars) =>
-    unwrap(api.admin.users.sendPasswordReset({ body: vars })),
+    unwrap(api.admin.users.sendPasswordReset(vars)),
   )
 
   const revokeSessionsMutation = useApiMutation<{ userId: string }, { success: boolean }>((vars) =>
-    unwrap(api.admin.users.revokeAllSessions({ body: vars })),
+    unwrap(api.admin.users.revokeAllSessions(vars)),
   )
 
   const muteMutation = useApiMutation<{ userId: string; muted: boolean }, MuteUserOutput>(
-    (vars) => unwrap(api.admin.users.mute({ params: { id: vars.userId }, body: { muted: vars.muted } })),
+    (vars) => unwrap(api.admin.users.mute({ id: vars.userId, muted: vars.muted })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -129,7 +129,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const deleteMutation = useApiMutation<{ userId: string }, void>(
-    (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
+    (vars) => unwrap(api.admin.users.softDelete({ id: vars.userId })),
     {
       onSuccess: () => {
         void navigate('/wp-admin/users')
@@ -138,7 +138,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const restoreMutation = useApiMutation<{ userId: string }, AdminMutationSuccessOutput>(
-    (vars) => unwrap(api.admin.users.restore({ params: { id: vars.userId }, body: vars })),
+    (vars) => unwrap(api.admin.users.restore({ id: vars.userId, ...vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -147,7 +147,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const bulkApproveMutation = useApiMutation<{ userId: string }, BulkApproveOutput>(
-    (vars) => unwrap(api.admin.users.bulkApproveComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkApproveComments(vars)),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -157,7 +157,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const bulkDeleteMutation = useApiMutation<{ userId: string }, BulkSoftDeleteOutput>(
-    (vars) => unwrap(api.admin.users.bulkDeleteComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkDeleteComments(vars)),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -167,7 +167,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const updateRoleMutation = useApiMutation<{ userId: string; role: Role }, { user: AdminUserDto | null }>(
-    (vars) => unwrap(api.admin.users.updateRole({ params: { id: vars.userId }, body: { role: vars.role } })),
+    (vars) => unwrap(api.admin.users.updateRole({ id: vars.userId, role: vars.role })),
     {
       onSuccess: () => {
         setRoleDraft('')

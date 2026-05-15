@@ -37,13 +37,12 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
 
   const { data: rawData } = useApiQuery(
     queryKeys.comment.raw(comment ? idStr(comment.id) : 'empty'),
-    () =>
-      comment ? unwrap(api.commentPublic.getRaw({ query: { rid: idStr(comment.id) } })) : Promise.resolve({ body: [] }),
+    () => (comment ? unwrap(api.commentPublic.getRaw({ rid: idStr(comment.id) })) : Promise.resolve({ body: [] })),
     { enabled: !!comment },
   )
 
   const editMutation = useApiMutation<{ rid: string; body: CommentBody }, CommentEditOutput>(
-    ({ rid, body }) => unwrap(api.commentPublic.edit({ params: { rid }, body: { body } })),
+    ({ rid, body }) => unwrap(api.commentPublic.edit({ rid, body })),
     {
       onSuccess: (payload) => onSaved({ body: payload.comment.body }),
     },

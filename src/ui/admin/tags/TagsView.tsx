@@ -45,11 +45,9 @@ export function TagsView() {
   } = useApiQuery<ListTagsOutput>(['admin', 'tags', state.q, state.currentPage, state.pageSize], () =>
     unwrap(
       api.admin.tags.list({
-        query: {
-          q: state.q || undefined,
-          offset: state.currentPage * state.pageSize,
-          limit: state.pageSize,
-        },
+        q: state.q || undefined,
+        offset: state.currentPage * state.pageSize,
+        limit: state.pageSize,
       }),
     ),
   )
@@ -72,7 +70,7 @@ export function TagsView() {
   // because in that case the row stays put and the error message is
   // surfaced through the confirm dialog.
   const pendingDeleteIdRef = useRef<string | null>(null)
-  const deleteApi = useApiMutation((id: string) => unwrap(api.admin.tags.delete({ params: { id } })), {
+  const deleteApi = useApiMutation((id: string) => unwrap(api.admin.tags.delete({ id })), {
     onSuccess: () => {
       const id = pendingDeleteIdRef.current
       pendingDeleteIdRef.current = null

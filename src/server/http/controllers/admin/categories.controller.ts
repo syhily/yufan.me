@@ -1,4 +1,5 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
 import {
   deleteAdminCategory,
@@ -6,36 +7,54 @@ import {
   reorderAdminCategories,
   upsertAdminCategory,
 } from '@/server/categories/service'
-import { adminCategoriesContract } from '@/shared/contracts/admin/categories'
+import { adminProc } from '@/server/http/orpc-base'
+import { adminCategoryDto } from '@/shared/contracts/_dtos'
 
-export const adminCategoriesController: AuthedContractImpl<typeof adminCategoriesContract> = {
-  list: async (args, _ctx) => {
-    const payload = args.query
-    const result = await listCategoriesForAdmin({ q: payload.q })
-    return { status: 200 as const, body: result }
-  },
-  upsert: async (args, _ctx) => {
-    const payload = args.body
+const list = adminProc
+  .input(z.object({ q: z.string().optional() }))
+  .output(z.object({ categories: z.array(adminCategoryDto), total: z.number() }))
+  .handler(({ input }) => listCategoriesForAdmin({ q: input.q }))
+
+const upsert = adminProc
+  .input(
+    z.object({
+      id: z.string().min(1).optional(),
+      name: z.string().trim().min(1).max(20),
+      slug: z.string().optional(),
+      cover: z.url().max(500),
+      description: z.string().max(999).optional(),
+      sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
+    }),
+  )
+  .output(z.object({ category: adminCategoryDto }))
+  .handler(async ({ input }) => {
     const category = await upsertAdminCategory({
-      id: payload.id !== undefined ? BigInt(payload.id) : undefined,
-      name: payload.name,
-      slug: payload.slug,
-      cover: payload.cover,
-      description: payload.description ?? '',
-      sortOrder: payload.sortOrder,
+      id: input.id !== undefined ? BigInt(input.id) : undefined,
+      name: input.name,
+      slug: input.slug,
+      cover: input.cover,
+      description: input.description ?? '',
+      sortOrder: input.sortOrder,
     })
-    return { status: 200 as const, body: { category } }
-  },
-  delete: async (args, _ctx) => {
-    const ok = await deleteAdminCategory(BigInt(args.params.id))
+    return { category }
+  })
+
+const remove = adminProc
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.void())
+  .handler(async ({ input }) => {
+    const ok = await deleteAdminCategory(BigInt(input.id))
     if (!ok) {
-      return { status: 404 as const, body: { error: { message: '分类不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '分类不存在' })
     }
-    return { status: 204 as const, body: undefined }
-  },
-  reorder: async (args, _ctx) => {
-    const payload = args.body
-    const categories = await reorderAdminCategories(payload.orderedIds)
-    return { status: 200 as const, body: { categories } }
-  },
-}
+  })
+
+const reorder = adminProc
+  .input(z.object({ orderedIds: z.array(z.string().min(1)).min(1).max(500) }))
+  .output(z.object({ categories: z.array(adminCategoryDto) }))
+  .handler(async ({ input }) => {
+    const categories = await reorderAdminCategories(input.orderedIds)
+    return { categories }
+  })
+
+export const adminCategoriesRouter = { list, upsert, delete: remove, reorder }

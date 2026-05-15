@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import type {
   AdminCategoryDto,
   DeleteCategoryInput,
-  DeleteCategoryOutput,
   ListCategoriesOutput,
   ReorderCategoriesInput,
   ReorderCategoriesOutput,
@@ -41,7 +40,7 @@ export function CategoriesView() {
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const listQuery = useApiQuery<ListCategoriesOutput>(['admin', 'listCategories', state.q], () =>
-    unwrap(api.admin.categories.list({ query: { q: state.q || undefined } })),
+    unwrap(api.admin.categories.list({ q: state.q || undefined })),
   )
 
   useEffect(() => {
@@ -63,7 +62,7 @@ export function CategoriesView() {
   }, [listQuery])
 
   const deleteMutation = useApiMutation<DeleteCategoryInput, void>(
-    (input) => unwrap(api.admin.categories.delete({ params: { id: input.id } })),
+    (input) => unwrap(api.admin.categories.delete({ id: input.id })),
     {
       onSuccess: () => {
         toast.success('已删除分类')
@@ -82,7 +81,7 @@ export function CategoriesView() {
   const submitDelete = deleteMutation.mutate
 
   const reorderMutation = useApiMutation<ReorderCategoriesInput, ReorderCategoriesOutput>(
-    (input) => unwrap(api.admin.categories.reorder({ body: input })),
+    (input) => unwrap(api.admin.categories.reorder(input)),
     {
       onSuccess: (payload) => dispatch({ type: 'replaceRows', rows: payload.categories }),
       onError: (error) => {

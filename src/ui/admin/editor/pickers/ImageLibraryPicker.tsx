@@ -48,10 +48,7 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
 
   const listQuery = useApiQuery(
     queryKeys.admin.imagesList(q),
-    () =>
-      unwrap(
-        api.admin.images.list({ query: { kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() } }),
-      ),
+    () => unwrap(api.admin.images.list({ kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() })),
     { enabled: open },
   )
 

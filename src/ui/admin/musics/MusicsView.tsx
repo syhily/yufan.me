@@ -11,7 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminMusicDto, DeleteMusicOutput, ListMusicOutput } from '@/shared/music'
+import type { AdminMusicDto, ListMusicOutput } from '@/shared/music'
 
 import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery } from '@/client/api/query'
@@ -53,11 +53,9 @@ export function MusicsView() {
   const listQuery = useApiQuery<ListMusicOutput>(['admin', 'musics', state.q, state.currentPage, state.pageSize], () =>
     unwrap(
       api.admin.music.list({
-        query: {
-          q: state.q || undefined,
-          offset: state.currentPage * state.pageSize,
-          limit: state.pageSize,
-        },
+        q: state.q || undefined,
+        offset: state.currentPage * state.pageSize,
+        limit: state.pageSize,
       }),
     ),
   )
@@ -85,7 +83,7 @@ export function MusicsView() {
     void listQuery.refetch()
   }, [listQuery])
 
-  const deleteMutation = useApiMutation<string, void>((id) => unwrap(api.admin.music.delete({ params: { id } })), {
+  const deleteMutation = useApiMutation<string, void>((id) => unwrap(api.admin.music.delete({ id })), {
     onSuccess: () => undefined,
     onError: (error) => {
       toast.error('操作失败', { description: error.message })

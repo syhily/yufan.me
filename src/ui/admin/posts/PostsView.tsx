@@ -87,19 +87,17 @@ export function PostsView() {
     () =>
       unwrap(
         api.admin.posts.list({
-          query: {
-            q: state.q || undefined,
-            deletedStatus: state.deletedStatus,
-            offset: state.currentPage * state.pageSize,
-            limit: state.pageSize,
-            category: state.category || undefined,
-            tag: state.tag || undefined,
-            published: state.published,
-            visible: state.visible,
-            sortBy: state.sortBy,
-            sortOrder: state.sortOrder,
-            authorId: state.authorId || undefined,
-          },
+          q: state.q || undefined,
+          deletedStatus: state.deletedStatus,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+          category: state.category || undefined,
+          tag: state.tag || undefined,
+          published: state.published,
+          visible: state.visible,
+          sortBy: state.sortBy,
+          sortOrder: state.sortOrder,
+          authorId: state.authorId || undefined,
         }),
       ),
   )
@@ -120,7 +118,7 @@ export function PostsView() {
     void refetch()
   }, [refetch])
 
-  const deleteApi = useApiMutation((id: string) => unwrap(api.admin.posts.delete({ params: { id } })), {
+  const deleteApi = useApiMutation((id: string) => unwrap(api.admin.posts.delete({ id })), {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({
@@ -132,7 +130,7 @@ export function PostsView() {
       }),
   })
 
-  const restoreApi = useApiMutation((id: string) => unwrap(api.admin.posts.restore({ params: { id } })), {
+  const restoreApi = useApiMutation((id: string) => unwrap(api.admin.posts.restore({ id })), {
     onSuccess: () => reload(),
     onError: (error) =>
       setConfirm({
@@ -151,15 +149,15 @@ export function PostsView() {
 
   // Load filter option data
   const { data: categoriesData } = useApiQuery<ListCategoriesOutput>(['admin', 'categories', 'options'], () =>
-    unwrap(api.admin.categories.list({ query: {} })),
+    unwrap(api.admin.categories.list({})),
   )
 
   const { data: tagsData } = useApiQuery<ListTagsOutput>(['admin', 'tags', 'options'], () =>
-    unwrap(api.admin.tags.list({ query: { limit: 100 } })),
+    unwrap(api.admin.tags.list({ limit: 100 })),
   )
 
   const { data: usersData } = useApiQuery<ListUsersOutput>(['admin', 'users', 'options'], () =>
-    unwrap(api.admin.users.list({ query: { limit: 100, hasPosts: true } })),
+    unwrap(api.admin.users.list({ limit: 100, hasPosts: true })),
   )
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])

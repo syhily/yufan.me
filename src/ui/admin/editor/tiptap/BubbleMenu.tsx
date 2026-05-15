@@ -277,7 +277,7 @@ async function insertMathInline(editor: Editor) {
 
   let mathml: string | undefined
   if (tex.trim() !== '') {
-    const out = await unwrap(api.admin.renders.math({ body: { tex, display: false } }))
+    const out = await unwrap(api.admin.renders.math({ tex, display: false }))
     if (out.error === null && out.mathml !== '') {
       mathml = out.mathml
     }

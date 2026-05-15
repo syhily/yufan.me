@@ -54,12 +54,10 @@ export function ImagesView() {
   const listQuery = useApiQuery(queryKeys.admin.images(state.q, state.kind, state.currentPage, state.pageSize), () =>
     unwrap(
       api.admin.images.list({
-        query: {
-          q: state.q || undefined,
-          kind: state.kind === 'all' ? undefined : state.kind,
-          offset: state.currentPage * state.pageSize,
-          limit: state.pageSize,
-        },
+        q: state.q || undefined,
+        kind: state.kind === 'all' ? undefined : state.kind,
+        offset: state.currentPage * state.pageSize,
+        limit: state.pageSize,
       }),
     ),
   )
@@ -86,7 +84,7 @@ export function ImagesView() {
     void listQuery.refetch()
   }, [listQuery.refetch])
 
-  const deleteMutation = useApiMutation((id: string) => unwrap(api.admin.images.delete({ params: { id } })), {
+  const deleteMutation = useApiMutation((id: string) => unwrap(api.admin.images.delete({ id })), {
     onSuccess: () => {
       toast.success('删除成功')
     },
@@ -98,7 +96,7 @@ export function ImagesView() {
 
   const updateNoteMutation = useApiMutation(
     (vars: { id: string; note: string | null }) =>
-      unwrap(api.admin.images.updateNote({ params: { id: vars.id }, body: { note: vars.note } })),
+      unwrap(api.admin.images.updateNote({ id: vars.id, note: vars.note })),
     {
       onSuccess: (payload) => {
         dispatch({ type: 'patchImage', image: payload.image })
@@ -113,19 +111,16 @@ export function ImagesView() {
   const submitUpdateNote = updateNoteMutation.mutate
   const isUpdatingNote = updateNoteMutation.isPending
 
-  const recalculateMutation = useApiMutation(
-    (id: string) => unwrap(api.admin.images.recalculateThumbhash({ body: { id } })),
-    {
-      onSuccess: (payload) => {
-        dispatch({ type: 'patchImage', image: payload.image })
-        setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
-        toast.success('重新计算缩略图成功')
-      },
-      onError: (error) => {
-        toast.error('重新计算缩略图失败', { description: error.message })
-      },
+  const recalculateMutation = useApiMutation((id: string) => unwrap(api.admin.images.recalculateThumbhash({ id })), {
+    onSuccess: (payload) => {
+      dispatch({ type: 'patchImage', image: payload.image })
+      setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
+      toast.success('重新计算缩略图成功')
     },
-  )
+    onError: (error) => {
+      toast.error('重新计算缩略图失败', { description: error.message })
+    },
+  })
   const submitRecalculate = recalculateMutation.mutate
   const isRecalculating = recalculateMutation.isPending
 

@@ -618,6 +618,14 @@ describe('contract: module and bundle boundaries', () => {
         if (!trimmed.startsWith('import')) {
           return false
         }
+        // `import type` lines erase at compile time and never reach the
+        // client bundle — they only flow type signatures (e.g. the oRPC
+        // `ApiRouter` type that the client.ts pulls to type the
+        // `createORPCClient<ApiRouter>` call site). Runtime imports of
+        // `@/server/**` are still banned.
+        if (trimmed.startsWith('import type ') || trimmed.startsWith('import type{')) {
+          return false
+        }
         return /@\/server\//.test(trimmed) || /\.server(?:["']|$)/.test(trimmed)
       })
     })

@@ -48,7 +48,7 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const upsertMutation = useApiMutation<UpsertFriendInput, UpsertFriendOutput>(
-    (input) => unwrap(api.admin.friends.upsert({ body: input })),
+    (input) => unwrap(api.admin.friends.upsert(input)),
     {
       onSuccess: (payload) => {
         toast.success('友链已保存')

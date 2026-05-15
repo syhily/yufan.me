@@ -48,7 +48,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const revalidator = useRevalidator()
 
   const profileMutation = useApiMutation<Record<string, string | null>, { user: unknown }>(
-    (body) => unwrap(api.account.updateProfile({ body })),
+    (body) => unwrap(api.account.updateProfile(body)),
     {
       onSuccess: () => {
         setProfileMessage('已保存。')
@@ -59,7 +59,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
     },
   )
   const passwordMutation = useApiMutation<{ oldPassword: string; newPassword: string }, { success: boolean }>(
-    (body) => unwrap(api.account.updatePassword({ body })),
+    (body) => unwrap(api.account.updatePassword(body)),
     {
       onSuccess: () => {
         setPasswordMessage('密码已更新；其他设备的会话已注销。')

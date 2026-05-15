@@ -302,7 +302,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // the ts-rest client directly and tracks its own pending flag.
   const [isCreatingPage, setIsCreatingPage] = useState(false)
   const upsertMetaMutation = useApiMutation<UpsertPageMetaInput, UpsertPageMetaOutput>(
-    (input) => unwrap(api.admin.pages.upsertMeta({ body: input })),
+    (input) => unwrap(api.admin.pages.upsertMeta(input)),
     {
       onSuccess: (payload) => onMetaSaved(payload.page),
       onError: (error) => {
@@ -312,7 +312,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const saveDraftMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
-    (input) => unwrap(api.admin.pages.saveDraft({ body: input })),
+    (input) => unwrap(api.admin.pages.saveDraft(input)),
     {
       onSuccess: (payload) => onBodySaved(payload),
       onError: (error) => {
@@ -322,7 +322,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const publishMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
-    (input) => unwrap(api.admin.pages.publishLatest({ body: input })),
+    (input) => unwrap(api.admin.pages.publishLatest(input)),
     {
       onSuccess: (payload) => {
         onBodySaved(payload)
@@ -341,7 +341,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const unpublishMutation = useApiMutation<UnpublishPageInput, UnpublishPageOutput>(
-    (input) => unwrap(api.admin.pages.unpublish({ body: input })),
+    (input) => unwrap(api.admin.pages.unpublish(input)),
     {
       onSuccess: (payload) => {
         setStatus({ kind: 'saved', at: new Date() })
@@ -392,11 +392,9 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       try {
         const result = await unwrap(
           api.admin.pages.saveDraft({
-            body: {
-              id: detail.page.id,
-              body: snapshot,
-              expectedClientRevisionToken: expectedToken,
-            },
+            id: detail.page.id,
+            body: snapshot,
+            expectedClientRevisionToken: expectedToken,
           }),
         )
         handleBodySavedRef.current(result)
@@ -510,19 +508,17 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     try {
       const metaResult = await unwrap(
         api.admin.pages.upsertMeta({
-          body: {
-            ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-            title: meta.title.trim(),
-            summary: meta.summary.trim(),
-            cover: meta.cover.trim(),
-            og: meta.og.trim() === '' ? null : meta.og.trim(),
-            published: meta.published,
-            commentsEnabled: meta.commentsEnabled,
-            showToc: meta.showToc,
-            showUpdated: meta.showUpdated,
-            showFriends: meta.showFriends,
-            ...(publishedAt !== null ? { publishedAt } : {}),
-          },
+          ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
+          title: meta.title.trim(),
+          summary: meta.summary.trim(),
+          cover: meta.cover.trim(),
+          og: meta.og.trim() === '' ? null : meta.og.trim(),
+          published: meta.published,
+          commentsEnabled: meta.commentsEnabled,
+          showToc: meta.showToc,
+          showUpdated: meta.showUpdated,
+          showFriends: meta.showFriends,
+          ...(publishedAt !== null ? { publishedAt } : {}),
         }),
       )
       savedPage = metaResult.page
@@ -539,11 +535,9 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     try {
       draftResult = await unwrap(
         api.admin.pages.saveDraft({
-          body: {
-            id: savedPage.id,
-            body,
-            expectedClientRevisionToken: null,
-          },
+          id: savedPage.id,
+          body,
+          expectedClientRevisionToken: null,
         }),
       )
     } catch (error) {
@@ -840,12 +834,10 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     try {
       const result = await unwrap(
         api.admin.pages.saveDraft({
-          body: {
-            id: detail.page.id,
-            body: conflict.localBody,
-            expectedClientRevisionToken: expectedToken,
-            force: true,
-          },
+          id: detail.page.id,
+          body: conflict.localBody,
+          expectedClientRevisionToken: expectedToken,
+          force: true,
         }),
       )
       handleBodySavedRef.current(result)

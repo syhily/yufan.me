@@ -48,6 +48,9 @@
     "@meting/core": "^1.6.1",
     "@napi-rs/canvas": "^1.0.0",
     "@number-flow/react": "^0.6.0",
+    "@orpc/client": "^1.14.3",
+    "@orpc/openapi": "^1.14.3",
+    "@orpc/server": "^1.14.3",
     "@portabletext/react": "^6.2.0",
     "@react-router/node": "^7.15.1",
     "@shikijs/transformers": "^4.0.2",
@@ -69,8 +72,6 @@
     "@tiptap/react": "^3.23.4",
     "@tiptap/starter-kit": "^3.23.4",
     "@tiptap/suggestion": "^3.23.4",
-    "@ts-rest/core": "^3.53.0-rc.1",
-    "@ts-rest/open-api": "^3.53.0-rc.1",
     "aplayer-ts": "^2.6.0",
     "bcryptjs": "^3.0.3",
     "beautiful-mermaid": "^1.1.3",
@@ -129,9 +130,7 @@
   },
   "overrides": {
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
-    "zod": "$zod",
-    "@hono/node-server": "$@hono/node-server"
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
   },
   "packageManager": "npm@11.14.1"
 }

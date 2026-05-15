@@ -1,37 +1,63 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
-import { adminFriendsContract } from '@/shared/contracts/admin/friends'
+import { adminProc } from '@/server/http/orpc-base'
+import { adminFriendDto } from '@/shared/contracts/_dtos'
 
-export const adminFriendsController: AuthedContractImpl<typeof adminFriendsContract> = {
-  list: async (args, _ctx) => {
-    const payload = args.query
-    const result = await listFriendsForAdmin({
-      q: payload.q,
-      includeHidden: payload.includeHidden,
-      offset: payload.offset,
-      limit: payload.limit,
-    })
-    return { status: 200 as const, body: result }
-  },
-  upsert: async (args, _ctx) => {
-    const payload = args.body
+const list = adminProc
+  .input(
+    z.object({
+      q: z.string().optional(),
+      includeHidden: z.coerce.boolean().optional(),
+      offset: z.number().optional(),
+      limit: z.number().optional(),
+    }),
+  )
+  .output(z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }))
+  .handler(({ input }) =>
+    listFriendsForAdmin({
+      q: input.q,
+      includeHidden: input.includeHidden,
+      offset: input.offset,
+      limit: input.limit,
+    }),
+  )
+
+const upsert = adminProc
+  .input(
+    z.object({
+      id: z.string().min(1).optional(),
+      website: z.string().trim().min(1).max(80),
+      description: z.string().max(999).nullable().optional(),
+      homepage: z.url().max(500),
+      poster: z.url().max(500),
+      rssUrl: z.union([z.url().max(500), z.literal(''), z.null()]).optional(),
+      visible: z.boolean().optional().default(true),
+    }),
+  )
+  .output(z.object({ friend: adminFriendDto }))
+  .handler(async ({ input }) => {
     const friend = await upsertAdminFriend({
-      id: payload.id !== undefined ? BigInt(payload.id) : undefined,
-      website: payload.website,
-      description: payload.description ?? null,
-      homepage: payload.homepage,
-      poster: payload.poster,
-      rssUrl: payload.rssUrl ?? null,
-      visible: payload.visible,
+      id: input.id !== undefined ? BigInt(input.id) : undefined,
+      website: input.website,
+      description: input.description ?? null,
+      homepage: input.homepage,
+      poster: input.poster,
+      rssUrl: input.rssUrl ?? null,
+      visible: input.visible,
     })
-    return { status: 200 as const, body: { friend } }
-  },
-  delete: async (args, _ctx) => {
-    const ok = await deleteAdminFriend(BigInt(args.params.id))
+    return { friend }
+  })
+
+const remove = adminProc
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.void())
+  .handler(async ({ input }) => {
+    const ok = await deleteAdminFriend(BigInt(input.id))
     if (!ok) {
-      return { status: 404 as const, body: { error: { message: '友链不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '友链不存在' })
     }
-    return { status: 204 as const, body: undefined }
-  },
-}
+  })
+
+export const adminFriendsRouter = { list, upsert, delete: remove }

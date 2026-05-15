@@ -859,7 +859,7 @@ interface CategoryFieldProps {
 function CategoryField({ value, onChange, disabled }: CategoryFieldProps) {
   const [categories, setCategories] = useState<AdminCategoryDto[]>([])
   const categoriesQuery = useApiQuery<ListCategoriesOutput>(['admin', 'listCategories'], () =>
-    unwrap(api.admin.categories.list({ query: {} })),
+    unwrap(api.admin.categories.list({})),
   )
 
   useEffect(() => {
@@ -901,7 +901,7 @@ function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const [input, setInput] = useState('')
   const [tags, setTags] = useState<AdminTagDto[]>([])
   const tagsQuery = useApiQuery<ListTagsOutput>(['admin', 'listTags'], () =>
-    unwrap(api.admin.tags.list({ query: { limit: 100 } })),
+    unwrap(api.admin.tags.list({ limit: 100 })),
   )
 
   useEffect(() => {

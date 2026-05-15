@@ -1,3 +1,4 @@
+import { call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
@@ -43,75 +44,98 @@ vi.mock('@/server/rate-limit', () => ({
   tryPasswordResetByTargetRateLimit: vi.fn().mockResolvedValue({ exceeded: false }),
 }))
 
-const { adminUsersController } = await import('@/server/http/controllers/admin/users.controller')
+const { adminUsersRouter } = await import('@/server/http/controllers/admin/users.controller')
 const userQuery = await import('@/server/db/query/user')
 const usersService = await import('@/server/users/service')
 
-describe('adminUsersController.list', () => {
+describe('adminUsersRouter.list', () => {
   it('passes query params through to the service and projects each row', async () => {
+    const userRow = {
+      id: '7',
+      name: 'u',
+      email: 'u@example.test',
+      link: null,
+      badgeName: null,
+      badgeColor: null,
+      badgeTextColor: null,
+      role: 'visitor' as const,
+      isMuted: false,
+      emailVerified: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      deletedAt: null,
+      lastIp: null,
+      lastUa: null,
+      commentCount: 0,
+      pendingCount: 0,
+      lastCommentAt: null,
+    }
     vi.mocked(usersService.listUsersForAdmin).mockResolvedValueOnce({
-      users: [{ id: '7', name: 'u' } as never],
+      users: [userRow as never],
       total: 1,
       hasMore: false,
     })
     const ctx = makeAuthedCtx()
-    const res = await adminUsersController.list({ query: { offset: 0, limit: 20 } } as never, ctx)
-    expect(res.status).toBe(200)
-    expect((res.body as { total: number }).total).toBe(1)
+    const res = (await call(adminUsersRouter.list, { offset: 0, limit: 20 }, { context: ctx })) as {
+      total: number
+    }
+    expect(res.total).toBe(1)
   })
 })
 
-describe('adminUsersController.get', () => {
-  it('returns 404 when the user dto is null', async () => {
+describe('adminUsersRouter.get', () => {
+  it('throws NOT_FOUND when the user dto is null', async () => {
     vi.mocked(usersService.fetchAdminUserDto).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx()
-    const res = await adminUsersController.get({ params: { id: '999' } } as never, ctx)
-    expect(res.status).toBe(404)
+    await expect(call(adminUsersRouter.get, { id: '999' }, { context: ctx })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
   })
 })
 
-describe('adminUsersController.softDelete', () => {
+describe('adminUsersRouter.softDelete', () => {
   beforeEach(() => {
     vi.mocked(userQuery.findUserById).mockResolvedValue({ id: 2n, role: 'visitor' } as never)
   })
 
-  it('refuses with 403 when the viewer is the same user', async () => {
+  it('refuses with FORBIDDEN when the viewer is the same user', async () => {
     const ctx = makeAuthedCtx({ userId: '5' })
-    const res = await adminUsersController.softDelete({ params: { id: '5' } } as never, ctx)
-    expect(res.status).toBe(403)
+    await expect(call(adminUsersRouter.softDelete, { id: '5' }, { context: ctx })).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    })
   })
 
-  it('refuses with 409 when removing the last admin', async () => {
+  it('refuses with CONFLICT when removing the last admin', async () => {
     vi.mocked(userQuery.findUserById).mockResolvedValueOnce({ id: 9n, role: 'admin' } as never)
     vi.mocked(userQuery.countAdmins).mockResolvedValueOnce(1)
     const ctx = makeAuthedCtx({ userId: '1' })
-    const res = await adminUsersController.softDelete({ params: { id: '9' } } as never, ctx)
-    expect(res.status).toBe(409)
+    await expect(call(adminUsersRouter.softDelete, { id: '9' }, { context: ctx })).rejects.toMatchObject({
+      code: 'CONFLICT',
+    })
   })
 
-  it('returns 204 on successful deletion and revokes sessions', async () => {
+  it('resolves to undefined (void output) on successful deletion and revokes sessions', async () => {
     vi.mocked(userQuery.findUserById).mockResolvedValueOnce({ id: 9n, role: 'visitor' } as never)
     const ctx = makeAuthedCtx({ userId: '1' })
-    const res = await adminUsersController.softDelete({ params: { id: '9' } } as never, ctx)
-    expect(res.status).toBe(204)
+    const res = await call(adminUsersRouter.softDelete, { id: '9' }, { context: ctx })
+    expect(res).toBeUndefined()
     const sessionStorage = await import('@/server/auth/session-storage')
     expect(vi.mocked(sessionStorage.revokeAllSessionsOfUser)).toHaveBeenCalledWith(9n)
   })
 })
 
-describe('adminUsersController.update', () => {
-  it('returns 404 when updateUserById yields null', async () => {
+describe('adminUsersRouter.update', () => {
+  it('throws NOT_FOUND when updateUserById yields null', async () => {
     vi.mocked(userQuery.updateUserById).mockResolvedValueOnce(null as never)
     const ctx = makeAuthedCtx()
-    const res = await adminUsersController.update({ params: { id: '99' }, body: { name: 'X' } } as never, ctx)
-    expect(res.status).toBe(404)
+    await expect(call(adminUsersRouter.update, { id: '99', name: 'X' }, { context: ctx })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    })
   })
 
-  it('returns 200 success on a successful patch', async () => {
+  it('returns success on a successful patch', async () => {
     vi.mocked(userQuery.updateUserById).mockResolvedValueOnce({ id: '1', name: 'X' } as never)
     const ctx = makeAuthedCtx()
-    const res = await adminUsersController.update({ params: { id: '1' }, body: { name: 'X' } } as never, ctx)
-    expect(res.status).toBe(200)
-    expect(res.body).toEqual({ success: true })
+    const res = await call(adminUsersRouter.update, { id: '1', name: 'X' }, { context: ctx })
+    expect(res).toEqual({ success: true })
   })
 })

@@ -23,7 +23,7 @@ export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const postQuery = useApiQuery<AdminPostDetailDto>(['admin', 'getPost', postId], () =>
-    unwrap(api.admin.posts.get({ params: { id: postId } })),
+    unwrap(api.admin.posts.get({ id: postId })),
   )
 
   useEffect(() => {

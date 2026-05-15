@@ -26,14 +26,12 @@ export function MetricList({ type, initial, className }: MetricListProps) {
     () =>
       unwrap(
         api.analytics.metrics({
-          query: {
-            type,
-            preset: state.preset ?? undefined,
-            startAt: state.preset ? undefined : String(state.range.startAt),
-            endAt: state.preset ? undefined : String(state.range.endAt),
-            filters: Object.keys(state.filters).length > 0 ? JSON.stringify(state.filters) : undefined,
-            limit: 10,
-          },
+          type,
+          preset: state.preset ?? undefined,
+          startAt: state.preset ? undefined : String(state.range.startAt),
+          endAt: state.preset ? undefined : String(state.range.endAt),
+          filters: Object.keys(state.filters).length > 0 ? JSON.stringify(state.filters) : undefined,
+          limit: 10,
         }),
       ),
   )

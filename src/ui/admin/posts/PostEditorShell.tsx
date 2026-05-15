@@ -319,7 +319,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   // the ts-rest client directly and tracks its own pending flag.
   const [isCreatingPost, setIsCreatingPost] = useState(false)
   const upsertMetaMutation = useApiMutation<UpsertPostMetaInput, UpsertPostMetaOutput>(
-    (input) => unwrap(api.admin.posts.upsertMeta({ body: input })),
+    (input) => unwrap(api.admin.posts.upsertMeta(input)),
     {
       onSuccess: (payload) => onMetaSaved(payload.post),
       onError: (error) => {
@@ -329,7 +329,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
   )
   const saveDraftMutation = useApiMutation<SavePostBodyInput, SavePostBodyOutput>(
-    (input) => unwrap(api.admin.posts.saveDraft({ body: input })),
+    (input) => unwrap(api.admin.posts.saveDraft(input)),
     {
       onSuccess: (payload) => onBodySaved(payload),
       onError: (error) => {
@@ -339,7 +339,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
   )
   const publishMutation = useApiMutation<SavePostBodyInput, SavePostBodyOutput>(
-    (input) => unwrap(api.admin.posts.publishLatest({ body: input })),
+    (input) => unwrap(api.admin.posts.publishLatest(input)),
     {
       onSuccess: (payload) => {
         onBodySaved(payload)
@@ -358,7 +358,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
   )
   const unpublishMutation = useApiMutation<UnpublishPostInput, UnpublishPostOutput>(
-    (input) => unwrap(api.admin.posts.unpublish({ body: input })),
+    (input) => unwrap(api.admin.posts.unpublish(input)),
     {
       onSuccess: (payload) => {
         setStatus({ kind: 'saved', at: new Date() })
@@ -409,11 +409,9 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       try {
         const result = await unwrap(
           api.admin.posts.saveDraft({
-            body: {
-              id: detail.post.id,
-              body: snapshot,
-              expectedClientRevisionToken: expectedToken,
-            },
+            id: detail.post.id,
+            body: snapshot,
+            expectedClientRevisionToken: expectedToken,
           }),
         )
         handleBodySavedRef.current(result)
@@ -527,23 +525,21 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     try {
       const metaResult = await unwrap(
         api.admin.posts.upsertMeta({
-          body: {
-            ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-            title: meta.title.trim(),
-            summary: meta.summary.trim(),
-            cover: meta.cover.trim(),
-            og: meta.og.trim() === '' ? null : meta.og.trim(),
-            published: meta.published,
-            commentsEnabled: meta.commentsEnabled,
-            showToc: meta.showToc,
-            showUpdated: meta.showUpdated,
-            visible: meta.visible,
-            pinnedAt: meta.pinned ? new Date().toISOString() : null,
-            category: meta.category,
-            tags: meta.tags,
-            alias: meta.alias,
-            ...(publishedAt !== null ? { publishedAt } : {}),
-          },
+          ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
+          title: meta.title.trim(),
+          summary: meta.summary.trim(),
+          cover: meta.cover.trim(),
+          og: meta.og.trim() === '' ? null : meta.og.trim(),
+          published: meta.published,
+          commentsEnabled: meta.commentsEnabled,
+          showToc: meta.showToc,
+          showUpdated: meta.showUpdated,
+          visible: meta.visible,
+          pinnedAt: meta.pinned ? new Date().toISOString() : null,
+          category: meta.category,
+          tags: meta.tags,
+          alias: meta.alias,
+          ...(publishedAt !== null ? { publishedAt } : {}),
         }),
       )
       savedPost = metaResult.post
@@ -560,11 +556,9 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     try {
       draftResult = await unwrap(
         api.admin.posts.saveDraft({
-          body: {
-            id: savedPost.id,
-            body,
-            expectedClientRevisionToken: null,
-          },
+          id: savedPost.id,
+          body,
+          expectedClientRevisionToken: null,
         }),
       )
     } catch (error) {
@@ -865,12 +859,10 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     try {
       const result = await unwrap(
         api.admin.posts.saveDraft({
-          body: {
-            id: detail.post.id,
-            body: conflict.localBody,
-            expectedClientRevisionToken: expectedToken,
-            force: true,
-          },
+          id: detail.post.id,
+          body: conflict.localBody,
+          expectedClientRevisionToken: expectedToken,
+          force: true,
         }),
       )
       handleBodySavedRef.current(result)

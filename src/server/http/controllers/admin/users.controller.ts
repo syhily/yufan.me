@@ -1,4 +1,5 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
@@ -13,6 +14,7 @@ import {
   updateUserRole,
 } from '@/server/db/query/user'
 import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/email/sender'
+import { adminProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/logger'
 import { tryInviteByEmailRateLimit, tryInviteRateLimit, tryPasswordResetByTargetRateLimit } from '@/server/rate-limit'
 import {
@@ -25,225 +27,290 @@ import {
   softDeleteAdminUser,
   toAdminUserDto,
 } from '@/server/users/service'
-import { adminUsersContract } from '@/shared/contracts/admin/users'
+import { adminUserDto } from '@/shared/contracts/_dtos'
 
-export const adminUsersController: AuthedContractImpl<typeof adminUsersContract> = {
-  list: async ({ query }) => {
+const idInput = z.object({ id: z.string().min(1) })
+const userIdInput = z.object({ userId: z.string().min(1) })
+const successOutput = z.object({ success: z.boolean() })
+
+const list = adminProc
+  .input(
+    z.object({
+      offset: z.coerce.number().int().min(0).default(0),
+      limit: z.coerce.number().int().min(1).max(100).default(20),
+      q: z.string().trim().max(100).optional(),
+      role: z.enum(['all', 'admin', 'author', 'visitor', 'normal']).default('all'),
+      includeDeleted: z.coerce.boolean().default(false),
+      hasPosts: z.coerce.boolean().default(false),
+      sortBy: z.enum(['recent', 'commentCount']).default('recent'),
+    }),
+  )
+  .output(z.object({ users: z.array(adminUserDto), total: z.coerce.number(), hasMore: z.boolean() }))
+  .handler(async ({ input }) => {
     const result = await listUsersForAdmin(
-      query.offset,
-      query.limit,
-      {
-        q: query.q,
-        role: query.role ?? 'all',
-        includeDeleted: query.includeDeleted ?? false,
-        hasPosts: query.hasPosts ?? false,
-      },
-      query.sortBy ?? 'recent',
+      input.offset,
+      input.limit,
+      { q: input.q, role: input.role, includeDeleted: input.includeDeleted, hasPosts: input.hasPosts },
+      input.sortBy,
     )
-    return {
-      status: 200 as const,
-      body: {
-        users: result.users.map(toAdminUserDto),
-        total: result.total,
-        hasMore: result.hasMore,
-      },
-    }
-  },
-  get: async ({ params }) => {
-    const user = await fetchAdminUserDto(BigInt(params.id))
+    return { users: result.users.map(toAdminUserDto), total: result.total, hasMore: result.hasMore }
+  })
+
+const get = adminProc
+  .input(idInput)
+  .output(z.object({ user: adminUserDto }))
+  .handler(async ({ input }) => {
+    const user = await fetchAdminUserDto(BigInt(input.id))
     if (!user) {
-      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
-    return { status: 200 as const, body: { user } }
-  },
-  update: async ({ params, body }) => {
-    // Allow-listed patch — never pass arbitrary body fields to the DB layer.
-    const updated = await updateUserById(BigInt(params.id), {
-      name: body.name,
-      email: body.email,
-      link: body.link,
-      badgeName: body.badgeName,
-      badgeColor: body.badgeColor,
-      badgeTextColor: body.badgeTextColor,
-    })
+    return { user }
+  })
+
+const update = adminProc
+  .input(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1).optional(),
+      email: z.email().optional(),
+      link: z.string().optional(),
+      badgeName: z.string().optional(),
+      badgeColor: z.string().optional(),
+      badgeTextColor: z.union([z.string(), z.null()]).optional(),
+    }),
+  )
+  .output(successOutput)
+  .handler(async ({ input }) => {
+    const { id, ...patch } = input
+    const updated = await updateUserById(BigInt(id), patch)
     if (updated === null) {
-      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
-    return { status: 200 as const, body: { success: true } }
-  },
-  softDelete: async ({ params }, { viewer }) => {
-    const userId = params.id
-    if (viewer!.userId === userId) {
-      return { status: 403 as const, body: { error: { message: '不能删除自己。' } } }
+    return { success: true }
+  })
+
+const softDelete = adminProc
+  .input(idInput)
+  .output(z.void())
+  .handler(async ({ input, context }) => {
+    const userId = input.id
+    if (context.viewer.userId === userId) {
+      throw new ORPCError('FORBIDDEN', { message: '不能删除自己。' })
     }
     const targetId = BigInt(userId)
     const target = await findUserById(targetId)
     if (!target) {
-      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
     if (target.role === 'admin') {
       const adminCount = await countAdmins()
       if (adminCount <= 1) {
-        return { status: 409 as const, body: { error: { message: '不能删除唯一的管理员。' } } }
+        throw new ORPCError('CONFLICT', { message: '不能删除唯一的管理员。' })
       }
     }
     const ok = await softDeleteAdminUser(targetId)
     if (!ok) {
-      return { status: 404 as const, body: { error: { message: '用户不存在或已被删除' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在或已被删除' })
     }
     await revokeAllSessionsOfUser(targetId)
     getLogger('audit.user').info('user soft deleted', {
-      actor: viewer!.userId,
+      actor: context.viewer.userId,
       target: userId,
       role: target.role,
     })
-    return { status: 204 as const, body: undefined }
-  },
-  restore: async ({ params }, { viewer }) => {
-    const ok = await restoreAdminUser(BigInt(params.id))
+  })
+
+const restore = adminProc
+  .input(idInput)
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
+    const ok = await restoreAdminUser(BigInt(input.id))
     if (!ok) {
-      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
-    getLogger('audit.user').info('user restored', { actor: viewer!.userId, target: params.id })
-    return { status: 200 as const, body: { success: true } }
-  },
-  mute: async ({ params, body }) => {
-    const updated = await muteAdminUser(BigInt(params.id), body.muted)
+    getLogger('audit.user').info('user restored', { actor: context.viewer.userId, target: input.id })
+    return { success: true }
+  })
+
+const mute = adminProc
+  .input(z.object({ id: z.string().min(1), muted: z.boolean() }))
+  .output(z.object({ user: adminUserDto }))
+  .handler(async ({ input }) => {
+    const updated = await muteAdminUser(BigInt(input.id), input.muted)
     if (!updated) {
-      return { status: 404 as const, body: { error: { message: '用户不存在或为管理员（管理员不可禁言）' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在或为管理员（管理员不可禁言）' })
     }
     const dto = await fetchAdminUserDto(updated.id)
     if (!dto) {
-      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
-    return { status: 200 as const, body: { user: dto } }
-  },
-  updateRole: async ({ params, body }, { viewer }) => {
-    const userId = params.id
-    if (viewer!.userId === userId) {
-      return { status: 403 as const, body: { error: { message: '不能修改自己的角色。' } } }
+    return { user: dto }
+  })
+
+const updateRole = adminProc
+  .input(z.object({ id: z.string().min(1), role: z.enum(['admin', 'author', 'visitor']).nullable() }))
+  .output(z.object({ user: adminUserDto.nullable() }))
+  .handler(async ({ input, context }) => {
+    const userId = input.id
+    if (context.viewer.userId === userId) {
+      throw new ORPCError('FORBIDDEN', { message: '不能修改自己的角色。' })
     }
     const targetId = BigInt(userId)
     const target = await findUserById(targetId)
     if (!target) {
-      return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
-    if (target.role === 'admin' && body.role !== 'admin') {
+    if (target.role === 'admin' && input.role !== 'admin') {
       const adminCount = await countAdmins()
       if (adminCount <= 1) {
-        return { status: 409 as const, body: { error: { message: '不能降级唯一的管理员。' } } }
+        throw new ORPCError('CONFLICT', { message: '不能降级唯一的管理员。' })
       }
     }
-    const updated = await updateUserRole(targetId, body.role)
+    const updated = await updateUserRole(targetId, input.role)
     if (updated) {
       await revokeAllSessionsOfUser(targetId)
       getLogger('audit.user').info('user role changed', {
-        actor: viewer!.userId,
+        actor: context.viewer.userId,
         target: userId,
         from: target.role,
-        to: body.role,
+        to: input.role,
       })
     }
     const dto = await fetchAdminUserDto(targetId)
-    return { status: 200 as const, body: { user: dto } }
-  },
-  inviteAuthor: async ({ body }, { viewer, clientAddress, request, session }) => {
-    const existing = await findUserByEmail(body.email)
+    return { user: dto }
+  })
+
+const inviteAuthor = adminProc
+  .input(z.object({ email: z.email().min(1), name: z.string().min(1).max(100) }))
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
+    const existing = await findUserByEmail(input.email)
     if (existing !== null) {
-      return { status: 409 as const, body: { error: { message: '该邮箱已被注册。' } } }
+      throw new ORPCError('CONFLICT', { message: '该邮箱已被注册。' })
     }
-    const ipLimit = await tryInviteRateLimit(clientAddress)
-    const emailLimit = await tryInviteByEmailRateLimit(BigInt(viewer!.userId), body.email)
+    const ipLimit = await tryInviteRateLimit(context.clientAddress)
+    const emailLimit = await tryInviteByEmailRateLimit(BigInt(context.viewer.userId), input.email)
     if (ipLimit.exceeded || emailLimit.exceeded) {
-      return { status: 429 as const, body: { error: { message: '邀请发送过于频繁，请稍后再试。' } } }
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
     }
-    const [user] = await insertAuthor(body.name, body.email)
+    const [user] = await insertAuthor(input.name, input.email)
     if (!user) {
-      return { status: 500 as const, body: { error: { message: '创建作者账户失败。' } } }
+      throw new ORPCError('INTERNAL_SERVER_ERROR', { message: '创建作者账户失败。' })
     }
     const { token } = await issueSetupToken(user.id)
-    const origin = new URL(request.url).origin
+    const origin = new URL(context.request.url).origin
     const link = `${origin}/wp-login.php?action=accept-invite&token=${encodeURIComponent(token)}`
-    const inviterSession = session.get('user')
+    const inviterSession = context.session.get('user')
     const inviter = inviterSession?.name ?? '管理员'
     const sendResult = await sendAuthorInvite(user, link, inviter, inviterSession?.email)
     if (!sendResult.ok) {
       await revokeTokensFor(user.id, 'author-invite')
       await softDeleteUserById(user.id)
       getLogger('audit.user').warn('author invite rolled back: email send failed', {
-        actor: viewer!.userId,
+        actor: context.viewer.userId,
         target: String(user.id),
-        email: body.email,
+        email: input.email,
         reason: sendResult.reason,
         message: sendResult.message,
       })
-      return {
-        status: 500 as const,
-        body: { error: { message: `邮件发送失败，已回滚账户创建：${sendResult.message}` } },
-      }
+      throw new ORPCError('INTERNAL_SERVER_ERROR', {
+        message: `邮件发送失败，已回滚账户创建：${sendResult.message}`,
+      })
     }
     getLogger('audit.user').info('author invited', {
-      actor: viewer!.userId,
+      actor: context.viewer.userId,
       target: String(user.id),
-      email: body.email,
+      email: input.email,
     })
-    return { status: 200 as const, body: { success: true } }
-  },
-  sendPasswordReset: async ({ body }, { viewer, request }) => {
-    const user = await findUserByEmail(body.email)
+    return { success: true }
+  })
+
+const sendPasswordReset = adminProc
+  .input(z.object({ email: z.email().min(1) }))
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
+    const user = await findUserByEmail(input.email)
     if (!user) {
-      return { status: 404 as const, body: { error: { message: '用户不存在。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在。' })
     }
     const limit = await tryPasswordResetByTargetRateLimit(user.id)
     if (limit.exceeded) {
-      return { status: 429 as const, body: { error: { message: '该用户的重置邮件发送过于频繁，请稍后再试。' } } }
+      throw new ORPCError('TOO_MANY_REQUESTS', { message: '该用户的重置邮件发送过于频繁，请稍后再试。' })
     }
     const { token } = await issueResetToken(user.id)
-    const origin = new URL(request.url).origin
+    const origin = new URL(context.request.url).origin
     const link = `${origin}/wp-login.php?action=resetpassword&token=${encodeURIComponent(token)}`
     await sendPasswordResetEmail(user, link)
-    getLogger('audit.user').info('password reset sent', { actor: viewer!.userId, target: String(user.id) })
-    return { status: 200 as const, body: { success: true } }
-  },
-  revokeSession: async ({ body }, { viewer, session }) => {
-    const currentSession = body.sessionId === session.id
-    const meta = await findSessionMeta(body.sessionId)
+    getLogger('audit.user').info('password reset sent', {
+      actor: context.viewer.userId,
+      target: String(user.id),
+    })
+    return { success: true }
+  })
+
+const revokeSession = adminProc
+  .input(z.object({ sessionId: z.string().min(1) }))
+  .output(z.object({ success: z.boolean(), currentSession: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    const currentSession = input.sessionId === context.session.id
+    const meta = await findSessionMeta(input.sessionId)
     if (!meta) {
-      return { status: 200 as const, body: { success: true, currentSession } }
+      return { success: true, currentSession }
     }
-    await revokeSessionById(body.sessionId, meta.userId)
+    await revokeSessionById(input.sessionId, meta.userId)
     getLogger('audit.session').info('session revoked by admin', {
-      actor: viewer!.userId,
+      actor: context.viewer.userId,
       target: meta.userId.toString(),
-      sessionId: body.sessionId,
+      sessionId: input.sessionId,
       selfRevoke: currentSession,
     })
-    return { status: 200 as const, body: { success: true, currentSession } }
-  },
-  revokeAllSessions: async ({ body }, { viewer }) => {
+    return { success: true, currentSession }
+  })
+
+const revokeAllSessions = adminProc
+  .input(userIdInput)
+  .output(successOutput)
+  .handler(async ({ input, context }) => {
     let targetId: bigint
     try {
-      targetId = BigInt(body.userId)
+      targetId = BigInt(input.userId)
     } catch {
-      return { status: 400 as const, body: { error: { message: '用户 ID 无效。' } } }
+      throw new ORPCError('BAD_REQUEST', { message: '用户 ID 无效。' })
     }
     const target = await findUserById(targetId)
     if (!target) {
-      return { status: 404 as const, body: { error: { message: '用户不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '用户不存在' })
     }
     await revokeAllSessionsOfUser(targetId)
     getLogger('audit.session').info('all sessions revoked by admin', {
-      actor: viewer!.userId,
-      target: body.userId,
+      actor: context.viewer.userId,
+      target: input.userId,
     })
-    return { status: 200 as const, body: { success: true } }
-  },
-  bulkApproveComments: async ({ body }) => {
-    const result = await bulkApproveCommentsForUser(BigInt(body.userId))
-    return { status: 200 as const, body: result }
-  },
-  bulkDeleteComments: async ({ body }) => {
-    const result = await bulkDeleteCommentsForUser(BigInt(body.userId))
-    return { status: 200 as const, body: result }
-  },
+    return { success: true }
+  })
+
+const bulkApproveComments = adminProc
+  .input(userIdInput)
+  .output(z.object({ approved: z.coerce.number() }))
+  .handler(({ input }) => bulkApproveCommentsForUser(BigInt(input.userId)))
+
+const bulkDeleteComments = adminProc
+  .input(userIdInput)
+  .output(z.object({ deleted: z.coerce.number() }))
+  .handler(({ input }) => bulkDeleteCommentsForUser(BigInt(input.userId)))
+
+export const adminUsersRouter = {
+  list,
+  get,
+  update,
+  softDelete,
+  restore,
+  mute,
+  updateRole,
+  inviteAuthor,
+  sendPasswordReset,
+  revokeSession,
+  revokeAllSessions,
+  bulkApproveComments,
+  bulkDeleteComments,
 }

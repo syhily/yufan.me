@@ -81,23 +81,20 @@ export function CommentsView({
     initialStatus,
   })
 
-  const loadMutation = useApiMutation<LoadAllInput, LoadAllOutput>(
-    (input) => unwrap(api.commentAdmin.loadAll({ body: input })),
-    {
-      onSuccess: (payload) => {
-        dispatch({
-          type: 'loaded',
-          comments: payload.comments,
-          total: payload.total,
-          hasMore: payload.hasMore,
-          statusCounts: payload.statusCounts,
-        })
-      },
-      onError: (error) => {
-        toast.error('加载评论列表失败', { description: error.message })
-      },
+  const loadMutation = useApiMutation<LoadAllInput, LoadAllOutput>((input) => unwrap(api.commentAdmin.loadAll(input)), {
+    onSuccess: (payload) => {
+      dispatch({
+        type: 'loaded',
+        comments: payload.comments,
+        total: payload.total,
+        hasMore: payload.hasMore,
+        statusCounts: payload.statusCounts,
+      })
     },
-  )
+    onError: (error) => {
+      toast.error('加载评论列表失败', { description: error.message })
+    },
+  })
 
   const [debouncedPageQuery, setDebouncedPageQuery] = useState('')
   const [pageQuery, setPageQuery] = useDebouncedSearch({
@@ -113,19 +110,19 @@ export function CommentsView({
 
   const { data: pagesData, isLoading: isPagesPending } = useApiQuery(
     queryKeys.comment.searchPages(debouncedPageQuery),
-    () => unwrap(api.commentAdmin.searchPages({ query: debouncedPageQuery ? { q: debouncedPageQuery } : {} })),
+    () => unwrap(api.commentAdmin.searchPages(debouncedPageQuery ? { q: debouncedPageQuery } : {})),
   )
 
   const { data: authorsData, isLoading: isAuthorsPending } = useApiQuery(
     queryKeys.comment.searchAuthors(debouncedAuthorQuery),
-    () => unwrap(api.commentAdmin.searchAuthors({ query: debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {} })),
+    () => unwrap(api.commentAdmin.searchAuthors(debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {})),
   )
 
   const { data: authorRehydrateData } = useApiQuery(
     queryKeys.comment.rehydrateAuthor(initialAuthorId),
     () =>
       initialAuthorId
-        ? unwrap(api.commentAdmin.searchAuthors({ query: { ids: initialAuthorId } }))
+        ? unwrap(api.commentAdmin.searchAuthors({ ids: initialAuthorId }))
         : Promise.resolve({ authors: [] }),
     { enabled: !!initialAuthorId },
   )
@@ -133,9 +130,7 @@ export function CommentsView({
   const { data: pageRehydrateData } = useApiQuery(
     queryKeys.comment.rehydratePage(initialPageKey),
     () =>
-      initialPageKey
-        ? unwrap(api.commentAdmin.searchPages({ query: { key: initialPageKey } }))
-        : Promise.resolve({ pages: [] }),
+      initialPageKey ? unwrap(api.commentAdmin.searchPages({ key: initialPageKey })) : Promise.resolve({ pages: [] }),
     { enabled: !!initialPageKey },
   )
 

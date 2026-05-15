@@ -45,7 +45,7 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const upsertMutation = useApiMutation<UpsertCategoryInput, UpsertCategoryOutput>(
-    (input) => unwrap(api.admin.categories.upsert({ body: input })),
+    (input) => unwrap(api.admin.categories.upsert(input)),
     {
       onSuccess: (payload) => {
         toast.success('分类已保存')

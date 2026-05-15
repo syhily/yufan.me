@@ -1,3 +1,4 @@
+import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makePublicCtx } from './_helpers/mock-ctx'
@@ -77,40 +78,44 @@ vi.mock('@/shared/blog-config', () => ({
 const rateLimitMod = await import('@/server/rate-limit')
 const metricMod = await import('@/server/db/query/metric')
 const loaderMod = await import('@/server/comments/loader')
-const { commentPublicController } = await import('@/server/http/controllers/comment-public.controller')
+const { commentPublicRouter } = await import('@/server/http/controllers/comment-public.controller')
 
-describe('commentPublicController.increaseLike', () => {
-  it('returns 429 when the per-IP rate limit is exceeded', async () => {
+describe('commentPublicRouter.increaseLike', () => {
+  it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
     vi.mocked(rateLimitMod.tryLikeIncreaseRateLimit).mockResolvedValueOnce({ exceeded: true } as never)
     vi.mocked(metricMod.findMetricByPublicId).mockResolvedValue({ type: 'post', ownerId: 1n } as never)
     const ctx = makePublicCtx({ clientAddress: '1.2.3.4' })
-    const res = await commentPublicController.increaseLike({ body: { key: 'pk-1' } } as never, ctx)
-    expect(res.status).toBe(429)
+    await expect(call(commentPublicRouter.increaseLike, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
+      code: 'TOO_MANY_REQUESTS',
+    })
   })
 })
 
-describe('commentPublicController.findAvatar', () => {
+describe('commentPublicRouter.findAvatar', () => {
   it('returns the resolved avatar URL for non-QQ email', async () => {
     const ctx = makePublicCtx()
-    const res = await commentPublicController.findAvatar({ body: { email: 'someone@example.com' } } as never, ctx)
-    expect(res.status).toBe(200)
-    expect((res.body as { avatar: string }).avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/.+\.png$/)
+    const res = (await call(commentPublicRouter.findAvatar, { email: 'someone@example.com' }, { context: ctx })) as {
+      avatar: string
+    }
+    expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/.+\.png$/)
   })
 })
 
-describe('commentPublicController.loadComments', () => {
-  it('returns 404 when the metric public_id has no matching target', async () => {
+describe('commentPublicRouter.loadComments', () => {
+  it('throws NOT_FOUND when the metric public_id has no matching target', async () => {
     vi.mocked(metricMod.findMetricByPublicId).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
-    const res = await commentPublicController.loadComments({ query: { page_key: 'missing', offset: 0 } } as never, ctx)
-    expect(res.status).toBe(404)
+    await expect(
+      call(commentPublicRouter.loadComments, { page_key: 'missing', offset: 0 }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
-  it('returns 500 when the comment loader fails', async () => {
+  it('throws INTERNAL_SERVER_ERROR when the comment loader fails', async () => {
     vi.mocked(metricMod.findMetricByPublicId).mockResolvedValueOnce({ type: 'post', ownerId: 1n } as never)
     vi.mocked(loaderMod.loadComments).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
-    const res = await commentPublicController.loadComments({ query: { page_key: 'pk-1', offset: 0 } } as never, ctx)
-    expect(res.status).toBe(500)
+    await expect(
+      call(commentPublicRouter.loadComments, { page_key: 'pk-1', offset: 0 }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' })
   })
 })

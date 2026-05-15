@@ -1,4 +1,6 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
+
 import type { AdminPendingKind } from '@/shared/comments'
 
 import {
@@ -11,46 +13,82 @@ import {
 } from '@/server/comments/admin'
 import { asAdminCommentsWire } from '@/server/comments/wire'
 import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/db/query/comment'
+import { adminProc } from '@/server/http/orpc-base'
 import { getLogger } from '@/server/logger'
-import { commentAdminContract } from '@/shared/contracts/comment-admin'
+import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/_dtos'
 
-export const commentAdminController: AuthedContractImpl<typeof commentAdminContract> = {
-  approve: async ({ params }) => {
-    await approveComment(params.rid)
-    return { status: 204 as const, body: null }
-  },
+const approve = adminProc
+  .input(z.object({ rid: z.string() }))
+  .output(z.void())
+  .handler(async ({ input }) => {
+    await approveComment(input.rid)
+  })
 
-  delete: async ({ params }) => {
-    await deleteComment(params.rid)
-    return { status: 204 as const, body: null }
-  },
+const deleteOne = adminProc
+  .input(z.object({ rid: z.string() }))
+  .output(z.void())
+  .handler(async ({ input }) => {
+    await deleteComment(input.rid)
+  })
 
-  loadAll: async ({ body }) => {
+const loadAll = adminProc
+  .input(
+    z.object({
+      offset: z.number().min(0),
+      limit: z.number().min(1).max(100),
+      pageKey: z.string().optional(),
+      userId: z.string().optional(),
+      status: z.enum(['all', 'pending', 'approved']).optional(),
+    }),
+  )
+  .output(
+    z.object({
+      comments: z.array(adminCommentDto),
+      total: z.number().int(),
+      hasMore: z.boolean(),
+      statusCounts: z.object({
+        all: z.number().int(),
+        pending: z.number().int(),
+        approved: z.number().int(),
+      }),
+    }),
+  )
+  .handler(async ({ input }) => {
     const result = await loadAllComments(
-      body.offset,
-      body.limit,
-      body.pageKey,
-      body.userId ? BigInt(body.userId) : undefined,
-      body.status,
+      input.offset,
+      input.limit,
+      input.pageKey,
+      input.userId ? BigInt(input.userId) : undefined,
+      input.status,
     )
     return {
-      status: 200 as const,
-      body: {
-        comments: asAdminCommentsWire(result.comments),
-        total: result.total,
-        hasMore: result.hasMore,
-        statusCounts: result.statusCounts,
-      },
+      comments: asAdminCommentsWire(result.comments),
+      total: result.total,
+      hasMore: result.hasMore,
+      statusCounts: result.statusCounts,
     }
-  },
+  })
 
-  searchPages: async ({ query }) => {
-    const keys = query.key ? [query.key] : undefined
-    const pages = await searchPageOptions(query.q, query.limit, keys)
-    return { status: 200 as const, body: { pages } }
-  },
+const filterAutocompleteInput = z.object({
+  q: z.string().trim().max(100).optional(),
+  limit: z.coerce.number().min(1).max(50).default(20),
+  ids: z.string().max(400).optional(),
+  key: z.string().max(2048).optional(),
+})
 
-  searchAuthors: async ({ query }) => {
+const searchPages = adminProc
+  .input(filterAutocompleteInput)
+  .output(z.object({ pages: z.array(z.object({ key: z.string(), title: z.string().nullable() })) }))
+  .handler(async ({ input }) => {
+    const keys = input.key ? [input.key] : undefined
+    const pages = await searchPageOptions(input.q, input.limit, keys)
+    return { pages }
+  })
+
+const searchAuthors = adminProc
+  .input(filterAutocompleteInput)
+  .output(z.object({ authors: z.array(z.object({ id: z.string(), name: z.string() })) }))
+  .handler(async ({ input }) => {
     function parseBigIntIds(raw: string | undefined): bigint[] | undefined {
       if (!raw || raw.length === 0) {
         return undefined
@@ -69,50 +107,52 @@ export const commentAdminController: AuthedContractImpl<typeof commentAdminContr
       }
       return out.length > 0 ? out : undefined
     }
+    const ids = parseBigIntIds(input.ids)
+    const authors = await searchAuthorOptions(input.q, input.limit, ids)
+    return { authors: authors.map((author) => ({ id: String(author.id), name: author.name })) }
+  })
 
-    const ids = parseBigIntIds(query.ids)
-    const authors = await searchAuthorOptions(query.q, query.limit, ids)
-    return {
-      status: 200 as const,
-      body: {
-        authors: authors.map((author) => ({ id: String(author.id), name: author.name })),
-      },
-    }
-  },
-
-  approveCommentDeletion: async (args, ctx) => {
-    const payload = args.body
-    const id = BigInt(payload.commentId)
+const approveCommentDeletion = adminProc
+  .input(z.object({ commentId: z.string(), approve: z.boolean() }))
+  .output(z.object({ success: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    const id = BigInt(input.commentId)
     const c = await findCommentWithUserById(id)
     if (!c) {
-      return { status: 404 as const, body: { error: { message: '评论不存在。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '评论不存在。' })
     }
     if (c.deleteRequestedAt === null) {
-      return { status: 409 as const, body: { error: { message: '该评论没有待处理的删除申请。' } } }
+      throw new ORPCError('CONFLICT', { message: '该评论没有待处理的删除申请。' })
     }
-    if (payload.approve) {
+    if (input.approve) {
       await softDeleteCommentById(id)
       getLogger('audit.comment').info('delete request approved', {
-        actor: ctx.viewer!.userId,
-        commentId: payload.commentId,
+        actor: context.viewer.userId,
+        commentId: input.commentId,
       })
     } else {
       await adminClearDeleteRequest(id)
       getLogger('audit.comment').info('delete request rejected', {
-        actor: ctx.viewer!.userId,
-        commentId: payload.commentId,
+        actor: context.viewer.userId,
+        commentId: input.commentId,
       })
     }
-    return { status: 200 as const, body: { success: true } }
-  },
+    return { success: true }
+  })
 
-  listPendingDashboard: async (args, _ctx) => {
-    const payload = args.query
-    const result = await loadAdminPendingDashboard(
-      payload.kind as AdminPendingKind,
-      payload.offset ?? 0,
-      payload.limit ?? 20,
-    )
-    return { status: 200 as const, body: result }
-  },
+const listPendingDashboard = adminProc
+  .input(z.object({ kind: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }))
+  .output(adminPendingDashboardDto)
+  .handler(async ({ input }) => {
+    return loadAdminPendingDashboard(input.kind as AdminPendingKind, input.offset ?? 0, input.limit ?? 20)
+  })
+
+export const commentAdminRouter = {
+  approve,
+  delete: deleteOne,
+  loadAll,
+  searchPages,
+  searchAuthors,
+  approveCommentDeletion,
+  listPendingDashboard,
 }

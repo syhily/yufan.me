@@ -1,3 +1,4 @@
+import { call } from '@orpc/server'
 import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
@@ -8,7 +9,7 @@ vi.mock('@/server/cache/admin', () => ({
 }))
 
 const cacheMod = await import('@/server/cache/admin')
-const { adminCacheController } = await import('@/server/http/controllers/admin/cache.controller')
+const { adminCacheRouter } = await import('@/server/http/controllers/admin/cache.controller')
 
 const statsStub = {
   buckets: [
@@ -27,17 +28,16 @@ const statsStub = {
   generatedAt: new Date().toISOString(),
 }
 
-describe('adminCacheController.getStats', () => {
+describe('adminCacheRouter.getStats', () => {
   it('proxies the service stats verbatim', async () => {
     vi.mocked(cacheMod.getAdminCacheStats).mockResolvedValueOnce(statsStub as never)
     const ctx = makeAuthedCtx()
-    const res = await adminCacheController.getStats({ params: { id: 'og' }, query: {} } as never, ctx)
-    expect(res.status).toBe(200)
-    expect((res.body as { total: number }).total).toBe(3)
+    const res = (await call(adminCacheRouter.getStats, {}, { context: ctx })) as { total: number }
+    expect(res.total).toBe(3)
   })
 })
 
-describe('adminCacheController.clear', () => {
+describe('adminCacheRouter.clear', () => {
   it('forwards the target string to the service and ships the refreshed stats', async () => {
     vi.mocked(cacheMod.clearAdminCache).mockResolvedValueOnce({
       cleared: [{ bucketId: 'og', label: 'OG', removed: 2 }],
@@ -45,8 +45,7 @@ describe('adminCacheController.clear', () => {
       refreshedStats: statsStub,
     } as never)
     const ctx = makeAuthedCtx()
-    const res = await adminCacheController.clear({ body: { target: 'og' } } as never, ctx)
-    expect(res.status).toBe(200)
+    await call(adminCacheRouter.clear, { target: 'og' }, { context: ctx })
     expect(vi.mocked(cacheMod.clearAdminCache)).toHaveBeenCalledWith('og')
   })
 })

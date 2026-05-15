@@ -1,6 +1,6 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { dehydrate, HydrationBoundary, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useState } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 

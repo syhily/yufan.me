@@ -97,7 +97,7 @@ export function SearchForm({ search }: SearchFormProps) {
 
     try {
       while (true) {
-        const data = (await unwrap(api.admin.renders.reindexSearch({ body: { batchSize: 5, offset } }))) as {
+        const data = (await unwrap(api.admin.renders.reindexSearch({ batchSize: 5, offset }))) as {
           processed: number
           failed: number
           total: number

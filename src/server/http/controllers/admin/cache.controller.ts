@@ -1,16 +1,18 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { z } from 'zod'
 
 import { clearAdminCache, getAdminCacheStats } from '@/server/cache/admin'
-import { adminCacheContract } from '@/shared/contracts/admin/cache'
+import { adminProc } from '@/server/http/orpc-base'
+import { CACHE_BUCKET_IDS } from '@/shared/cache-types'
+import { adminCacheStatsDto, clearCacheResultDto } from '@/shared/contracts/_dtos'
 
-export const adminCacheController: AuthedContractImpl<typeof adminCacheContract> = {
-  getStats: async (_args, _ctx) => {
-    const result = await getAdminCacheStats()
-    return { status: 200 as const, body: result }
-  },
-  clear: async (args, _ctx) => {
-    const payload = args.body
-    const result = await clearAdminCache(payload.target)
-    return { status: 200 as const, body: result }
-  },
-}
+const getStats = adminProc
+  .input(z.object({}))
+  .output(adminCacheStatsDto)
+  .handler(() => getAdminCacheStats())
+
+const clear = adminProc
+  .input(z.object({ target: z.union([z.enum(CACHE_BUCKET_IDS), z.literal('all')]) }))
+  .output(clearCacheResultDto)
+  .handler(({ input }) => clearAdminCache(input.target))
+
+export const adminCacheRouter = { getStats, clear }

@@ -1,3 +1,4 @@
+import { ORPCError, call } from '@orpc/server'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
@@ -28,7 +29,7 @@ vi.mock('@/server/auth/sessions', () => ({
 const { findUserById, updateUserById } = await import('@/server/db/query/user')
 const { revokeAllSessionsOfUser } = await import('@/server/auth/session-storage')
 const { revokeSessionById } = await import('@/server/auth/sessions')
-const { accountController } = await import('@/server/http/controllers/account.controller')
+const { accountRouter } = await import('@/server/http/controllers/account.controller')
 
 const dbUserStub = {
   id: 1n,
@@ -56,7 +57,7 @@ const updatedUserStub = {
   receiveEmail: true,
 }
 
-describe('accountController.updateProfile', () => {
+describe('accountRouter.updateProfile', () => {
   beforeEach(() => {
     vi.mocked(findUserById).mockResolvedValue(dbUserStub as never)
     vi.mocked(updateUserById).mockResolvedValue(updatedUserStub as never)
@@ -64,27 +65,28 @@ describe('accountController.updateProfile', () => {
 
   it('updates name when supplied and returns the projected user', async () => {
     const ctx = makeAuthedCtx({ userId: '1', role: 'visitor' })
-    const res = await accountController.updateProfile({ body: { name: 'Alice the Updated' } } as never, ctx)
-    expect(res.status).toBe(200)
+    const res = await call(accountRouter.updateProfile, { name: 'Alice the Updated' }, { context: ctx })
+    expect(res.user).toBeDefined()
     expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(1n, expect.objectContaining({ name: 'Alice the Updated' }))
   })
 
   it('refuses to set badge fields for a non-admin visitor', async () => {
     const ctx = makeAuthedCtx({ userId: '1', role: 'visitor' })
-    await accountController.updateProfile({ body: { badgeName: 'visitor-cannot-set' } } as never, ctx)
+    await call(accountRouter.updateProfile, { badgeName: 'visitor-cannot-set' }, { context: ctx })
     const callPatch = vi.mocked(updateUserById).mock.calls.at(-1)?.[1]
     expect(callPatch).not.toHaveProperty('badgeName')
   })
 
-  it('returns 404 when the underlying user row is missing', async () => {
+  it('throws NOT_FOUND when the underlying user row is missing', async () => {
     vi.mocked(findUserById).mockResolvedValueOnce(null)
     const ctx = makeAuthedCtx({ userId: '404' })
-    const res = await accountController.updateProfile({ body: {} } as never, ctx)
-    expect(res.status).toBe(404)
+    await expect(call(accountRouter.updateProfile, {}, { context: ctx })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    } satisfies Partial<ORPCError<string, unknown>>)
   })
 })
 
-describe('accountController.updatePassword', () => {
+describe('accountRouter.updatePassword', () => {
   beforeEach(() => {
     vi.mocked(findUserById).mockResolvedValue(dbUserStub as never)
     vi.mocked(updateUserById).mockResolvedValue(updatedUserStub as never)
@@ -92,11 +94,12 @@ describe('accountController.updatePassword', () => {
 
   it('hashes the new password, persists it, and revokes other sessions', async () => {
     const ctx = makeAuthedCtx({ userId: '1', sessionId: 'keep-me' })
-    const res = await accountController.updatePassword(
-      { body: { oldPassword: 'whatever', newPassword: 'new-password-1' } } as never,
-      ctx,
+    const res = await call(
+      accountRouter.updatePassword,
+      { oldPassword: 'whatever', newPassword: 'new-password-1' },
+      { context: ctx },
     )
-    expect(res.status).toBe(200)
+    expect(res.success).toBe(true)
     expect(vi.mocked(updateUserById)).toHaveBeenCalledWith(
       1n,
       expect.objectContaining({ password: 'hashed:new-password' }),
@@ -104,24 +107,21 @@ describe('accountController.updatePassword', () => {
     expect(vi.mocked(revokeAllSessionsOfUser)).toHaveBeenCalledWith(1n, 'keep-me')
   })
 
-  it('returns 403 when the original password does not match', async () => {
+  it('throws FORBIDDEN when the original password does not match', async () => {
     const bcrypt = (await import('bcryptjs')).default
     vi.mocked(bcrypt.compare).mockResolvedValueOnce(false as never)
     const ctx = makeAuthedCtx({ userId: '1' })
-    const res = await accountController.updatePassword(
-      { body: { oldPassword: 'wrong', newPassword: 'new-password-1' } } as never,
-      ctx,
-    )
-    expect(res.status).toBe(403)
+    await expect(
+      call(accountRouter.updatePassword, { oldPassword: 'wrong', newPassword: 'new-password-1' }, { context: ctx }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' })
   })
 })
 
-describe('accountController.revokeSession', () => {
-  it('returns 200 with `currentSession: false` when the revoked id is not the caller session', async () => {
+describe('accountRouter.revokeSession', () => {
+  it('returns `currentSession: false` when the revoked id is not the caller session', async () => {
     vi.mocked(revokeSessionById).mockResolvedValue(true as never)
     const ctx = makeAuthedCtx({ userId: '1', sessionId: 'caller-session' })
-    const res = await accountController.revokeSession({ params: { id: 'other-session' } } as never, ctx)
-    expect(res.status).toBe(200)
-    expect(res.body).toEqual({ success: true, currentSession: false })
+    const res = await call(accountRouter.revokeSession, { id: 'other-session' }, { context: ctx })
+    expect(res).toEqual({ success: true, currentSession: false })
   })
 })

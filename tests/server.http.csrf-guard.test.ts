@@ -1,42 +1,13 @@
-import { initContract } from '@ts-rest/core'
 import { Hono } from 'hono'
 import { describe, expect, it, vi } from 'vite-plus/test'
-import { z } from 'zod'
 
 import type { Env } from '@/server/http/context'
 
 import { onErrorHandler } from '@/server/http/errors'
-import { mountContract } from '@/server/http/ts-rest-adapter'
 
 // `csrfGuard` reads from `X-CSRF-Token` header (preferred) and falls
 // back to `csrf` field in JSON/url-encoded body. Tests stub the
 // auth/csrf primitives so we exercise the middleware logic alone.
-
-const c = initContract()
-
-const testContract = c.router({
-  echo: {
-    method: 'POST',
-    path: '/echo',
-    body: z.object({ message: z.string(), csrf: z.string().optional() }),
-    responses: {
-      200: z.object({ received: z.string() }),
-    },
-  },
-  read: {
-    method: 'GET',
-    path: '/ping',
-    responses: { 200: z.object({ ok: z.boolean() }) },
-  },
-})
-
-const testController = {
-  echo: async ({ body }: { body: { message: string } }) => ({
-    status: 200,
-    body: { received: body.message },
-  }),
-  read: async () => ({ status: 200, body: { ok: true } }),
-}
 
 vi.mock('@/server/auth/csrf', async () => {
   return {
@@ -54,7 +25,14 @@ async function createApp(): Promise<Hono<Env>> {
   const { csrfGuard } = await import('@/server/http/csrf')
   const app = new Hono<Env>()
   app.onError(onErrorHandler)
-  mountContract(app, testContract, testController as never, { middleware: [csrfGuard] })
+  // Echo back the body as JSON; mirrors how the RPC handler would
+  // accept POSTs once it gets past CSRF.
+  app.use('*', csrfGuard)
+  app.get('/ping', (c) => c.json({ ok: true }))
+  app.post('/echo', async (c) => {
+    const body = (await c.req.json()) as { message: string }
+    return c.json({ received: body.message })
+  })
   return app
 }
 

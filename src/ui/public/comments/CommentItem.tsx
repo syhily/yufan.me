@@ -366,13 +366,13 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
   const leaf = useCommentsLeafContext(propAdmin)
   const revalidator = useRevalidator()
   const approve = useApiMutation<CommentRidInput, unknown>(
-    (vars) => unwrap(api.commentAdmin.approve({ params: { rid: vars.rid } })),
+    (vars) => unwrap(api.commentAdmin.approve({ rid: vars.rid })),
     {
       onSuccess: () => leaf.onApproved(comment.id),
     },
   )
   const remove = useApiMutation<CommentRidInput, unknown>(
-    (vars) => unwrap(api.commentAdmin.delete({ params: { rid: vars.rid } })),
+    (vars) => unwrap(api.commentAdmin.delete({ rid: vars.rid })),
     {
       onSuccess: () => leaf.onDeleted(comment.id),
     },
@@ -380,13 +380,13 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
 
   // Visitor-scoped delete-request toggles.
   const requestDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
-    (vars) => unwrap(api.commentSelf.requestDeleteOwn({ body: vars })),
+    (vars) => unwrap(api.commentSelf.requestDeleteOwn(vars)),
     {
       onSuccess: () => void revalidator.revalidate(),
     },
   )
   const cancelDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
-    (vars) => unwrap(api.commentSelf.cancelDeleteOwn({ body: vars })),
+    (vars) => unwrap(api.commentSelf.cancelDeleteOwn(vars)),
     {
       onSuccess: () => void revalidator.revalidate(),
     },
@@ -542,20 +542,17 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
-  const raw = useApiMutation<{ rid: string }, CommentRawOutput>(
-    (vars) => unwrap(api.commentPublic.getRaw({ query: vars })),
-    {
-      onSuccess: (payload) => {
-        const loadedBody = (payload.body ?? []) as CommentBody
-        setInitialBody(loadedBody)
-        setBody(loadedBody)
-        setBodyKey((k) => k + 1)
-        setLoaded(true)
-      },
+  const raw = useApiMutation<{ rid: string }, CommentRawOutput>((vars) => unwrap(api.commentPublic.getRaw(vars)), {
+    onSuccess: (payload) => {
+      const loadedBody = (payload.body ?? []) as CommentBody
+      setInitialBody(loadedBody)
+      setBody(loadedBody)
+      setBodyKey((k) => k + 1)
+      setLoaded(true)
     },
-  )
+  })
   const editAction = useApiMutation<CommentEditInput, CommentEditOutput>(
-    (vars) => unwrap(api.commentPublic.edit({ params: { rid: vars.rid }, body: { body: vars.body } })),
+    (vars) => unwrap(api.commentPublic.edit({ rid: vars.rid, body: vars.body })),
     {
       onSuccess: (payload) => {
         // Drive the parent reducer first so the freshly-edited content appears
@@ -623,7 +620,7 @@ interface OwnEditAreaProps {
 function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
   const revalidator = useRevalidator()
   const updateOwn = useApiMutation<{ commentId: string; body: CommentBody }, { success: boolean }>(
-    (vars) => unwrap(api.commentSelf.updateOwn({ body: vars })),
+    (vars) => unwrap(api.commentSelf.updateOwn(vars)),
     {
       onSuccess: () => {
         void revalidator.revalidate()

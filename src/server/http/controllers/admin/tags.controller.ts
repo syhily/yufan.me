@@ -1,32 +1,50 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
+import { authorProc } from '@/server/http/orpc-base'
 import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/tags/service'
-import { adminTagsContract } from '@/shared/contracts/admin/tags'
+import { adminTagDto } from '@/shared/contracts/_dtos'
 
-export const adminTagsController: AuthedContractImpl<typeof adminTagsContract> = {
-  list: async (args, _ctx) => {
-    const payload = args.query
-    const result = await listTagsForAdmin({ q: payload.q, offset: payload.offset, limit: payload.limit })
-    return { status: 200 as const, body: result }
-  },
-  upsert: async (args, ctx) => {
-    const payload = args.body
+const list = authorProc
+  .input(
+    z.object({
+      q: z.string().optional(),
+      offset: z.coerce.number().optional(),
+      limit: z.coerce.number().optional(),
+    }),
+  )
+  .output(z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() }))
+  .handler(({ input }) => listTagsForAdmin({ q: input.q, offset: input.offset, limit: input.limit }))
+
+const upsert = authorProc
+  .input(
+    z.object({
+      id: z.string().min(1).optional(),
+      name: z.string().trim().min(1).max(20),
+      slug: z.string().optional(),
+    }),
+  )
+  .output(z.object({ tag: adminTagDto }))
+  .handler(async ({ input, context }) => {
     const tag = await upsertAdminTag(
       {
-        id: payload.id !== undefined ? BigInt(payload.id) : undefined,
-        name: payload.name,
-        slug: payload.slug,
+        id: input.id !== undefined ? BigInt(input.id) : undefined,
+        name: input.name,
+        slug: input.slug,
       },
-      ctx.viewer ?? undefined,
+      context.viewer,
     )
-    return { status: 200 as const, body: { tag } }
-  },
-  delete: async (args, ctx) => {
-    const id = args.params.id
-    const ok = await deleteAdminTag(BigInt(id), ctx.viewer ?? undefined)
+    return { tag }
+  })
+
+const remove = authorProc
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.void())
+  .handler(async ({ input, context }) => {
+    const ok = await deleteAdminTag(BigInt(input.id), context.viewer)
     if (!ok) {
-      return { status: 404 as const, body: { error: { message: '标签不存在' } } }
+      throw new ORPCError('NOT_FOUND', { message: '标签不存在' })
     }
-    return { status: 204 as const, body: undefined }
-  },
-}
+  })
+
+export const adminTagsRouter = { list, upsert, delete: remove }

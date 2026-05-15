@@ -35,7 +35,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
   const mutation = useApiMutation<Record<string, string | null>, { success: boolean }>(
     (payload) => {
       const { id, ...body } = payload
-      return unwrap(api.admin.users.update({ params: { id: id! }, body }))
+      return unwrap(api.admin.users.update({ id: id!, ...body }))
     },
     { onSuccess: () => onSaved() },
   )

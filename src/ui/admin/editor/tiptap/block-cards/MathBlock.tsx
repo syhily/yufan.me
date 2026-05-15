@@ -71,7 +71,7 @@ export function MathBlockSourceEditor({ payload, onCommit, onCancel }: MathBlock
     }
     setSaving(true)
     try {
-      const out = await unwrap(api.admin.renders.math({ body: { tex: draft, display: true } }))
+      const out = await unwrap(api.admin.renders.math({ tex: draft, display: true }))
       const mathml = out.error === null && out.mathml !== '' ? out.mathml : ''
       onCommit({ ...payload, tex: draft }, mathml)
     } finally {

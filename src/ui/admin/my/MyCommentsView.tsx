@@ -153,7 +153,7 @@ export function MyCommentsView({
   }, [entity, entityOptions])
 
   const requestDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
-    (vars) => unwrap(api.commentSelf.requestDeleteOwn({ body: vars })),
+    (vars) => unwrap(api.commentSelf.requestDeleteOwn(vars)),
     {
       onSuccess: () => {
         void revalidator.revalidate()
@@ -161,7 +161,7 @@ export function MyCommentsView({
     },
   )
   const cancelDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
-    (vars) => unwrap(api.commentSelf.cancelDeleteOwn({ body: vars })),
+    (vars) => unwrap(api.commentSelf.cancelDeleteOwn(vars)),
     {
       onSuccess: () => {
         void revalidator.revalidate()

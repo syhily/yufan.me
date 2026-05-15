@@ -82,7 +82,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
   const revalidator = useRevalidator()
   const [searchParams] = useSearchParams()
   const revoke = useApiMutation<{ sessionId: string }, { success: boolean; currentSession: boolean }>(
-    (vars) => unwrap(api.admin.users.revokeSession({ body: vars })),
+    (vars) => unwrap(api.admin.users.revokeSession(vars)),
     {
       onSuccess: () => {
         // Self-revoke is short-circuited to the logout endpoint inside

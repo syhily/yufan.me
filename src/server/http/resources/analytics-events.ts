@@ -5,7 +5,7 @@ import { getLogger } from '@/server/logger'
 
 import type { Env } from '../context'
 
-import { requireRoleMw } from '../guards'
+import { requireRoleMw } from '../hono-rbac'
 
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 25_000

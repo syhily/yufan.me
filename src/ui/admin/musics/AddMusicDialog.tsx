@@ -98,7 +98,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const searchMutation = useApiMutation<SearchMusicInput, SearchMusicOutput>(
-    (vars) => unwrap(api.admin.music.search({ query: vars })),
+    (vars) => unwrap(api.admin.music.search(vars)),
     {
       onSuccess: (payload) => {
         setErrorMessage(null)
@@ -111,28 +111,23 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   )
   const { mutate: loadSearch, isPending: isSearching } = searchMutation
 
-  const addMutation = useApiMutation<AddMusicInput, AddMusicOutput>(
-    (vars) => unwrap(api.admin.music.add({ body: vars })),
-    {
-      onSuccess: (payload) => {
-        toast.success('音乐已添加')
-        setErrorMessage(null)
-        setAddingSourceId(null)
-        onAdded(payload.music)
-        // Mark the just-added hit so the list shows a clear "已添加" cue.
-        setResults(
-          (prev) =>
-            prev.map((hit) =>
-              hit.sourceId === payload.music.sourceId ? { ...hit, _added: true } : hit,
-            ) as typeof prev,
-        )
-      },
-      onError: (error) => {
-        setAddingSourceId(null)
-        setErrorMessage(error.message)
-      },
+  const addMutation = useApiMutation<AddMusicInput, AddMusicOutput>((vars) => unwrap(api.admin.music.add(vars)), {
+    onSuccess: (payload) => {
+      toast.success('音乐已添加')
+      setErrorMessage(null)
+      setAddingSourceId(null)
+      onAdded(payload.music)
+      // Mark the just-added hit so the list shows a clear "已添加" cue.
+      setResults(
+        (prev) =>
+          prev.map((hit) => (hit.sourceId === payload.music.sourceId ? { ...hit, _added: true } : hit)) as typeof prev,
+      )
     },
-  )
+    onError: (error) => {
+      setAddingSourceId(null)
+      setErrorMessage(error.message)
+    },
+  })
   const { mutate: submitAdd } = addMutation
 
   useEffect(() => {

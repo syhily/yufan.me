@@ -1,55 +1,56 @@
 import { renderMermaidSVGAsync } from 'beautiful-mermaid'
+import { z } from 'zod'
 
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
-
+import { adminProc } from '@/server/http/orpc-base'
 import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
 import { reindexSearchBatch } from '@/server/search/reindex-service'
-import { adminRendersContract } from '@/shared/contracts/admin/renders'
 
-export const adminRendersController: AuthedContractImpl<typeof adminRendersContract> = {
-  math: async (args, ctx) => {
-    if (ctx.viewer.role !== 'admin') {
-      return { status: 403 as const, body: { error: { message: '无权访问' } } }
-    }
-    const payload = args.body
-    const tex = payload.tex
-    if (tex.trim() === '') {
-      return { status: 200 as const, body: { mathml: '', error: null } }
+const math = adminProc
+  .input(z.object({ tex: z.string(), display: z.boolean().optional() }))
+  .output(z.object({ mathml: z.string(), error: z.string().nullable() }))
+  .handler(async ({ input }) => {
+    if (input.tex.trim() === '') {
+      return { mathml: '', error: null }
     }
     let renderer: KatexRenderer
     try {
       renderer = await getKatexRenderer()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'KaTeX 加载失败'
-      return { status: 200 as const, body: { mathml: '', error: message } }
+      return { mathml: '', error: err instanceof Error ? err.message : 'KaTeX 加载失败' }
     }
     try {
-      const mathml = await renderer.render(tex, payload.display ?? false)
-      return { status: 200 as const, body: { mathml, error: null } }
+      const mathml = await renderer.render(input.tex, input.display ?? false)
+      return { mathml, error: null }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '公式渲染失败'
-      return { status: 200 as const, body: { mathml: '', error: message } }
+      return { mathml: '', error: err instanceof Error ? err.message : '公式渲染失败' }
     }
-  },
-  mermaid: async (args, ctx) => {
-    if (ctx.viewer.role !== 'admin') {
-      return { status: 403 as const, body: { error: { message: '无权访问' } } }
-    }
-    const payload = args.body
-    const code = payload.code
-    if (code.trim() === '') {
-      return { status: 200 as const, body: { svg: '', error: null } }
+  })
+
+const mermaid = adminProc
+  .input(z.object({ code: z.string() }))
+  .output(z.object({ svg: z.string(), error: z.string().nullable() }))
+  .handler(async ({ input }) => {
+    if (input.code.trim() === '') {
+      return { svg: '', error: null }
     }
     try {
-      const svg = await renderMermaidSVGAsync(code)
-      return { status: 200 as const, body: { svg, error: null } }
+      const svg = await renderMermaidSVGAsync(input.code)
+      return { svg, error: null }
     } catch (err) {
-      const message = err instanceof Error ? err.message : '图表渲染失败'
-      return { status: 200 as const, body: { svg: '', error: message } }
+      return { svg: '', error: err instanceof Error ? err.message : '图表渲染失败' }
     }
-  },
-  reindexSearch: async (args, _ctx) => {
-    const result = await reindexSearchBatch(args.body)
-    return { status: 200 as const, body: result }
-  },
-}
+  })
+
+const reindexSearch = adminProc
+  .input(z.object({ offset: z.number().optional(), batchSize: z.number().optional() }))
+  .output(
+    z.object({
+      processed: z.number(),
+      failed: z.number(),
+      total: z.number(),
+      nextOffset: z.number().nullable(),
+    }),
+  )
+  .handler(({ input }) => reindexSearchBatch(input))
+
+export const adminRendersRouter = { math, mermaid, reindexSearch }

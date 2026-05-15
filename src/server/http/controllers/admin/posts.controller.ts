@@ -1,6 +1,13 @@
-import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
+import { ORPCError } from '@orpc/server'
+import { z } from 'zod'
 
 import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/cms/posts/preview'
+import {
+  listPostsSchema,
+  previewPostBodySchema,
+  savePostBodySchema,
+  upsertPostMetaSchema,
+} from '@/server/cms/posts/schema'
 import {
   createPost,
   deletePost,
@@ -13,118 +20,162 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/cms/posts/service'
+import { authorProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/slug'
-import { adminPostsContract } from '@/shared/contracts/admin/posts'
+import {
+  adminPostDetailDto,
+  adminPostDto,
+  adminRevisionDto,
+  listPostRevisionsOutputDto,
+  listPostsOutputDto,
+} from '@/shared/contracts/_dtos'
 import { collectHeadings } from '@/shared/pt/schema'
 
-export const adminPostsController: AuthedContractImpl<typeof adminPostsContract> = {
-  // TODO: add `satisfies AuthedContractImpl<typeof adminPostsContract>` once all response schemas are strict
-  list: async (args, ctx) => {
-    const result = await listPostsForAdmin(
-      {
-        q: args.query.q,
-        deletedStatus: args.query.deletedStatus,
-        offset: args.query.offset,
-        limit: args.query.limit,
-        category: args.query.category,
-        tag: args.query.tag,
-        published: args.query.published,
-        visible: args.query.visible,
-        sortBy: args.query.sortBy,
-        sortOrder: args.query.sortOrder,
-        authorId: args.query.authorId,
-      },
-      ctx.viewer ?? undefined,
-    )
-    return { status: 200 as const, body: result }
-  },
-  get: async (args, ctx) => {
-    const detail = await getPostDetailForAdmin(BigInt(args.params.id), ctx.viewer ?? undefined)
+const idInput = z.object({ id: z.string().min(1) })
+
+const saveResultOutput = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
+  z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
+])
+
+const list = authorProc
+  .input(listPostsSchema)
+  .output(listPostsOutputDto)
+  .handler(({ input, context }) => listPostsForAdmin(input, context.viewer))
+
+const get = authorProc
+  .input(idInput)
+  .output(adminPostDetailDto)
+  .handler(async ({ input, context }) => {
+    const detail = await getPostDetailForAdmin(BigInt(input.id), context.viewer)
     if (detail === null) {
-      return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
-    return { status: 200 as const, body: detail }
-  },
-  delete: async (args, ctx) => {
-    const result = await deletePost(BigInt(args.params.id), ctx.viewer ?? undefined)
+    return detail
+  })
+
+const remove = authorProc
+  .input(idInput)
+  .output(z.void())
+  .handler(async ({ input, context }) => {
+    const result = await deletePost(BigInt(input.id), context.viewer)
     if (!result.deleted) {
-      return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '文章不存在或已被删除。' })
     }
-    return { status: 204 as const, body: undefined }
-  },
-  restore: async (args, ctx) => {
-    const result = await restorePost(BigInt(args.params.id), ctx.viewer ?? undefined)
+  })
+
+const restore = authorProc
+  .input(idInput)
+  .output(z.object({ success: z.boolean() }))
+  .handler(async ({ input, context }) => {
+    const result = await restorePost(BigInt(input.id), context.viewer)
     if (!result.restored) {
-      return { status: 404 as const, body: { error: { message: '文章不存在或未被删除。' } } }
+      throw new ORPCError('NOT_FOUND', { message: '文章不存在或未被删除。' })
     }
-    return { status: 200 as const, body: { success: true } }
-  },
-  unpublish: async (args, ctx) => {
-    const post = await unpublishPost(BigInt(args.body.id), ctx.viewer ?? undefined)
-    return { status: 200 as const, body: { post } }
-  },
-  saveDraft: async (args, ctx) => {
-    const result = await savePostDraft(
+    return { success: true }
+  })
+
+const unpublish = authorProc
+  .input(z.object({ id: z.string().min(1) }))
+  .output(z.object({ post: adminPostDto }))
+  .handler(async ({ input, context }) => {
+    const post = await unpublishPost(BigInt(input.id), context.viewer)
+    return { post }
+  })
+
+const saveDraft = authorProc
+  .input(savePostBodySchema)
+  .output(saveResultOutput)
+  .handler(async ({ input, context }) => {
+    return savePostDraft(
       {
-        postId: BigInt(args.body.id),
-        body: args.body.body,
-        expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
-        force: args.body.force,
-        authorId: BigInt(ctx.viewer!.userId),
+        postId: BigInt(input.id),
+        body: input.body,
+        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
+        force: input.force,
+        authorId: BigInt(context.viewer.userId),
       },
-      ctx.viewer ?? undefined,
+      context.viewer,
     )
-    return { status: 200 as const, body: result }
-  },
-  publishLatest: async (args, ctx) => {
-    const result = await publishPostLatest(
+  })
+
+const publishLatest = authorProc
+  .input(savePostBodySchema)
+  .output(saveResultOutput)
+  .handler(async ({ input, context }) => {
+    return publishPostLatest(
       {
-        postId: BigInt(args.body.id),
-        body: args.body.body,
-        expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
-        force: args.body.force,
-        authorId: BigInt(ctx.viewer!.userId),
-        publishedAt: args.body.publishedAt !== undefined ? new Date(args.body.publishedAt) : undefined,
+        postId: BigInt(input.id),
+        body: input.body,
+        expectedClientRevisionToken: input.expectedClientRevisionToken ?? undefined,
+        force: input.force,
+        authorId: BigInt(context.viewer.userId),
+        publishedAt: input.publishedAt !== undefined ? new Date(input.publishedAt) : undefined,
       },
-      ctx.viewer ?? undefined,
+      context.viewer,
     )
-    return { status: 200 as const, body: result }
-  },
-  preview: async (args, _ctx) => {
-    const html = await renderPostPortableTextToHtml(args.body.body)
-    const headings = collectHeadings(args.body.body, deriveSlug)
-    return { status: 200 as const, body: { html, headings } }
-  },
-  upsertMeta: async (args, ctx) => {
+  })
+
+const preview = authorProc
+  .input(previewPostBodySchema)
+  .output(
+    z.object({
+      html: z.string(),
+      headings: z.array(z.object({ text: z.string(), depth: z.coerce.number(), slug: z.string() })),
+    }),
+  )
+  .handler(async ({ input }) => {
+    const html = await renderPostPortableTextToHtml(input.body)
+    const headings = collectHeadings(input.body, deriveSlug)
+    return { html, headings }
+  })
+
+const upsertMeta = authorProc
+  .input(upsertPostMetaSchema)
+  .output(z.object({ post: adminPostDto }))
+  .handler(async ({ input, context }) => {
     const meta = {
-      slug: args.body.slug,
-      title: args.body.title,
-      summary: args.body.summary,
-      cover: args.body.cover,
-      og: args.body.og,
-      published: args.body.published,
-      commentsEnabled: args.body.commentsEnabled,
-      showToc: args.body.showToc,
-      showUpdated: args.body.showUpdated,
-      visible: args.body.visible,
-      category: args.body.category,
-      tags: args.body.tags,
-      alias: args.body.alias,
-      pinnedAt:
-        args.body.pinnedAt === undefined || args.body.pinnedAt === null
-          ? args.body.pinnedAt
-          : new Date(args.body.pinnedAt),
-      publishedAt: args.body.publishedAt === undefined ? undefined : new Date(args.body.publishedAt),
+      slug: input.slug,
+      title: input.title,
+      summary: input.summary,
+      cover: input.cover,
+      og: input.og,
+      published: input.published,
+      commentsEnabled: input.commentsEnabled,
+      showToc: input.showToc,
+      showUpdated: input.showUpdated,
+      visible: input.visible,
+      category: input.category,
+      tags: input.tags,
+      alias: input.alias,
+      pinnedAt: input.pinnedAt === undefined || input.pinnedAt === null ? input.pinnedAt : new Date(input.pinnedAt),
+      publishedAt: input.publishedAt === undefined ? undefined : new Date(input.publishedAt),
     }
-    const sessionUserId = BigInt(ctx.viewer!.userId)
+    const sessionUserId = BigInt(context.viewer.userId)
     const post =
-      args.body.id === undefined
-        ? await createPost(meta, sessionUserId, ctx.viewer ?? undefined)
-        : await updatePostMeta({ id: BigInt(args.body.id), ...meta }, ctx.viewer ?? undefined)
-    return { status: 200 as const, body: { post } }
-  },
-  listRevisions: async (args, ctx) => {
-    const revisions = await listPostRevisionsForAdmin(BigInt(args.query.id), ctx.viewer ?? undefined)
-    return { status: 200 as const, body: { revisions } }
-  },
+      input.id === undefined
+        ? await createPost(meta, sessionUserId, context.viewer)
+        : await updatePostMeta({ id: BigInt(input.id), ...meta }, context.viewer)
+    return { post }
+  })
+
+const listRevisions = authorProc
+  .input(z.object({ id: z.string().min(1) }))
+  .output(listPostRevisionsOutputDto)
+  .handler(async ({ input, context }) => {
+    const revisions = await listPostRevisionsForAdmin(BigInt(input.id), context.viewer)
+    return { revisions }
+  })
+
+export const adminPostsRouter = {
+  list,
+  get,
+  delete: remove,
+  restore,
+  unpublish,
+  saveDraft,
+  publishLatest,
+  preview,
+  upsertMeta,
+  listRevisions,
 }
