@@ -1,5 +1,5 @@
 import type { AppRouter } from '@ts-rest/core'
-import type { Hono } from 'hono'
+import type { Hono, MiddlewareHandler } from 'hono'
 
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
@@ -32,19 +32,37 @@ const requireRoleMw = (role: Role) =>
     await next()
   })
 
-/** Mount with no auth — open to everyone. */
-export function publicRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) {
-  mountContract(app, contract, impl)
+type MiddlewareList = MiddlewareHandler<Env>[]
+
+/** Mount with no auth — open to everyone. Accepts optional extra middleware. */
+export function publicRoute<R extends AppRouter>(
+  app: Hono<Env>,
+  contract: R,
+  impl: ContractImpl<R>,
+  extra?: MiddlewareList,
+) {
+  mountContract(app, contract, impl, { middleware: [...(extra ?? [])] })
 }
 
-/** Mount requiring any logged-in user. */
-export function authedRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) {
-  mountContract(app, contract, impl, { middleware: [requireAuth] })
+/** Mount requiring any logged-in user. Accepts optional extra middleware. */
+export function authedRoute<R extends AppRouter>(
+  app: Hono<Env>,
+  contract: R,
+  impl: ContractImpl<R>,
+  extra?: MiddlewareList,
+) {
+  mountContract(app, contract, impl, { middleware: [requireAuth, ...(extra ?? [])] })
 }
 
-/** Mount gated to `role` or higher. */
-export function roleRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>, role: Role) {
-  mountContract(app, contract, impl, { middleware: [requireRoleMw(role)] })
+/** Mount gated to `role` or higher. Accepts optional extra middleware. */
+export function roleRoute<R extends AppRouter>(
+  app: Hono<Env>,
+  contract: R,
+  impl: ContractImpl<R>,
+  role: Role,
+  extra?: MiddlewareList,
+) {
+  mountContract(app, contract, impl, { middleware: [requireRoleMw(role), ...(extra ?? [])] })
 }
 
 export const adminRoute = <R extends AppRouter>(app: Hono<Env>, contract: R, impl: ContractImpl<R>) =>

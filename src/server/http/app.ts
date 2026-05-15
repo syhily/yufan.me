@@ -17,6 +17,7 @@ import { adminMusicController } from './controllers/admin/music.controller'
 import { adminPagesController } from './controllers/admin/pages.controller'
 import { adminPostsController } from './controllers/admin/posts.controller'
 import { adminSearchController } from './controllers/admin/search.controller'
+import { adminSessionsController } from './controllers/admin/sessions.controller'
 import { adminSettingsController } from './controllers/admin/settings.controller'
 import { adminTagsController } from './controllers/admin/tags.controller'
 import { adminUsersController } from './controllers/admin/users.controller'
@@ -48,6 +49,7 @@ export function createApiApp(): Hono<Env> {
   authorRoute(app, apiContract.admin.posts, adminPostsController)
   authorRoute(app, apiContract.admin.pages, adminPagesController)
   adminRoute(app, apiContract.admin.search, adminSearchController)
+  adminRoute(app, apiContract.admin.sessions, adminSessionsController)
   adminRoute(app, apiContract.admin.settings, adminSettingsController)
   adminRoute(app, apiContract.admin.tags, adminTagsController)
   adminRoute(app, apiContract.analytics, analyticsController)

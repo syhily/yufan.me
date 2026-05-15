@@ -12,6 +12,7 @@ import { adminMusicContract } from './admin/music'
 import { adminPagesContract } from './admin/pages'
 import { adminPostsContract } from './admin/posts'
 import { adminSearchContract } from './admin/search'
+import { adminSessionsContract } from './admin/sessions'
 import { adminSettingsContract } from './admin/settings'
 import { adminTagsContract } from './admin/tags'
 import { adminUsersContract } from './admin/users'
@@ -37,6 +38,7 @@ export const apiContract = c.router(
       pages: adminPagesContract,
       posts: adminPostsContract,
       search: adminSearchContract,
+      sessions: adminSessionsContract,
       settings: adminSettingsContract,
       tags: adminTagsContract,
       users: adminUsersContract,
