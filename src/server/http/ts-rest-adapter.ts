@@ -32,7 +32,15 @@ type HandlerReturn<_R extends AppRoute> = {
   headers?: Record<string, string>
 }
 
-export type ContractImpl<_R extends AppRouter = AppRouter> = Record<string, any>
+// ContractImpl enforces that every contract endpoint has a matching handler key.
+// Nested routers are recursively checked. This catches renamed/missing handlers
+// at compile time — a regression from the Plan's fully-typed version, but a
+// strict improvement over `Record<string, any>`.
+type RouteHandler = (args: Record<string, unknown>, ctx: HandlerContext) => Promise<HandlerReturn<AppRoute>>
+
+export type ContractImpl<R extends AppRouter> = {
+  [K in keyof R & string]: R[K] extends AppRoute ? RouteHandler : R[K] extends AppRouter ? ContractImpl<R[K]> : never
+}
 
 export interface MountOptions {
   middleware?: MiddlewareHandler<Env>[]
