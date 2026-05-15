@@ -17,8 +17,21 @@ import {
 
 const log = getLogger('audit.user')
 
-function getParams(args: Record<string, unknown>) {
-  return args.params as { id: string }
+// Resolves entity ID from path params (:id) or legacy body/query (userId).
+function resolveId(args: Record<string, unknown>): string {
+  const p = args.params as { id?: string } | undefined
+  if (p?.id) {
+    return p.id
+  }
+  const b = args.body as { userId?: string } | undefined
+  if (b?.userId) {
+    return b.userId
+  }
+  const q = args.query as { userId?: string } | undefined
+  if (q?.userId) {
+    return q.userId
+  }
+  throw new Error('id missing from path, body, or query')
 }
 
 export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
@@ -50,7 +63,7 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
   },
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = getParams(args)
+    const id = resolveId(args)
     const user = await fetchAdminUserDto(BigInt(id))
     if (!user) {
       return { status: 404, body: { error: { message: '用户不存在' } } }
@@ -59,7 +72,7 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
   },
 
   mute: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const { id } = getParams(args)
+    const id = resolveId(args)
     const body = args.body as { muted: boolean }
     const updated = await muteAdminUser(BigInt(id), body.muted)
     if (!updated) {
@@ -74,7 +87,7 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
 
   updateRole: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = getParams(args)
+    const id = resolveId(args)
     const body = args.body as { role: 'admin' | 'author' | 'visitor' }
     if (viewer.userId === id) {
       return { status: 403, body: { error: { message: '不能修改自己的角色。' } } }
@@ -100,7 +113,7 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
 
   softDelete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = getParams(args)
+    const id = resolveId(args)
     if (viewer.userId === id) {
       return { status: 403, body: { error: { message: '不能删除自己。' } } }
     }
@@ -126,7 +139,7 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
 
   restore: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = getParams(args)
+    const id = resolveId(args)
     const ok = await restoreAdminUser(BigInt(id))
     if (!ok) {
       return { status: 404, body: { error: { message: '用户不存在' } } }
@@ -155,7 +168,7 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
 
   revokeAllSessions: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const { id } = getParams(args)
+    const id = resolveId(args)
     const targetId = BigInt(id)
     const target = await findUserById(targetId)
     if (!target) {
