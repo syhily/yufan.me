@@ -4,11 +4,11 @@ import { clearAdminCache, getAdminCacheStats } from '@/server/cache/admin'
 import { adminCacheContract } from '@/shared/contracts/admin/cache'
 
 export const adminCacheController: AuthedContractImpl<typeof adminCacheContract> = {
-  getCacheStats: async (_args, _ctx) => {
+  getStats: async (_args, _ctx) => {
     const result = await getAdminCacheStats()
     return { status: 200 as const, body: result }
   },
-  clearCache: async (args, _ctx) => {
+  clear: async (args, _ctx) => {
     const payload = args.body
     const result = await clearAdminCache(payload.target)
     return { status: 200 as const, body: result }

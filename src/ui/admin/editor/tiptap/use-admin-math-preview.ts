@@ -26,7 +26,7 @@ export function useAdminMathPreview(
   const [renderError, setRenderError] = useState<string | null>(null)
 
   const renderMath = useApiMutation<RenderMathInput, RenderMathOutput>(
-    (vars) => unwrap(api.admin.renderMath({ body: vars })),
+    (vars) => unwrap(api.admin.renders.math({ body: vars })),
     {
       onSuccess: (result) => {
         if (result.error !== null) {

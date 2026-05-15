@@ -41,7 +41,7 @@ export function UsersView() {
     ['admin', 'users', state.currentPage, state.pageSize, state.q, state.role, state.includeDeleted, state.sortBy],
     () =>
       unwrap(
-        api.admin.listUsers({
+        api.admin.users.list({
           query: {
             offset: state.currentPage * state.pageSize,
             limit: state.pageSize,
@@ -70,7 +70,7 @@ export function UsersView() {
   const muteMutation = useApiMutation<MuteUserInput, MuteUserOutput>(
     (vars) =>
       unwrap(
-        api.admin.muteUser({
+        api.admin.users.mute({
           params: { id: vars.userId },
           body: { muted: vars.muted === true || vars.muted === 'true' },
         }),
@@ -83,7 +83,7 @@ export function UsersView() {
   )
 
   const deleteMutation = useApiMutation<UserIdInput, AdminMutationSuccessOutput>(
-    (vars) => unwrap(api.admin.softDeleteUser({ params: { id: vars.userId } })),
+    (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -92,7 +92,7 @@ export function UsersView() {
   )
 
   const restoreMutation = useApiMutation<UserIdInput, AdminMutationSuccessOutput>(
-    (vars) => unwrap(api.admin.restoreUser({ params: { id: vars.userId }, body: vars })),
+    (vars) => unwrap(api.admin.users.restore({ params: { id: vars.userId }, body: vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -101,7 +101,7 @@ export function UsersView() {
   )
 
   const bulkApproveMutation = useApiMutation<UserIdInput, BulkApproveOutput>(
-    (vars) => unwrap(api.admin.bulkApproveUserComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkApproveComments({ body: vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
@@ -110,7 +110,7 @@ export function UsersView() {
   )
 
   const bulkDeleteMutation = useApiMutation<UserIdInput, BulkSoftDeleteOutput>(
-    (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkDeleteComments({ body: vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })

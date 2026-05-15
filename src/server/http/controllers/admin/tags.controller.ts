@@ -4,12 +4,12 @@ import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/tags/
 import { adminTagsContract } from '@/shared/contracts/admin/tags'
 
 export const adminTagsController: AuthedContractImpl<typeof adminTagsContract> = {
-  listTags: async (args, _ctx) => {
+  list: async (args, _ctx) => {
     const payload = args.query
     const result = await listTagsForAdmin({ q: payload.q, offset: payload.offset, limit: payload.limit })
     return { status: 200 as const, body: result }
   },
-  upsertTag: async (args, ctx) => {
+  upsert: async (args, ctx) => {
     const payload = args.body
     const tag = await upsertAdminTag(
       {
@@ -21,7 +21,7 @@ export const adminTagsController: AuthedContractImpl<typeof adminTagsContract> =
     )
     return { status: 200 as const, body: { tag } }
   },
-  deleteTag: async (args, ctx) => {
+  delete: async (args, ctx) => {
     const id = args.params.id
     const ok = await deleteAdminTag(BigInt(id), ctx.viewer ?? undefined)
     if (!ok) {

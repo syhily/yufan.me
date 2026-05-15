@@ -77,7 +77,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const queryClient = useQueryClient()
 
   const userQuery = useApiQuery<GetUserOutput>(['admin', 'user', userId], () =>
-    unwrap(api.admin.getUser({ params: { id: userId } })),
+    unwrap(api.admin.users.get({ params: { id: userId } })),
   )
 
   const commentsQuery = useApiQuery(queryKeys.admin.comments(userId), () =>
@@ -112,15 +112,15 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const sendResetMutation = useApiMutation<{ email: string }, { success: boolean }>((vars) =>
-    unwrap(api.admin.sendPasswordReset({ body: vars })),
+    unwrap(api.admin.users.sendPasswordReset({ body: vars })),
   )
 
   const revokeSessionsMutation = useApiMutation<{ userId: string }, { success: boolean }>((vars) =>
-    unwrap(api.admin.revokeUserSessions({ body: vars })),
+    unwrap(api.admin.users.revokeAllSessions({ body: vars })),
   )
 
   const muteMutation = useApiMutation<{ userId: string; muted: boolean }, MuteUserOutput>(
-    (vars) => unwrap(api.admin.muteUser({ params: { id: vars.userId }, body: { muted: vars.muted } })),
+    (vars) => unwrap(api.admin.users.mute({ params: { id: vars.userId }, body: { muted: vars.muted } })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -129,7 +129,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const deleteMutation = useApiMutation<{ userId: string }, AdminMutationSuccessOutput>(
-    (vars) => unwrap(api.admin.softDeleteUser({ params: { id: vars.userId } })),
+    (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
     {
       onSuccess: () => {
         void navigate('/wp-admin/users')
@@ -138,7 +138,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const restoreMutation = useApiMutation<{ userId: string }, AdminMutationSuccessOutput>(
-    (vars) => unwrap(api.admin.restoreUser({ params: { id: vars.userId }, body: vars })),
+    (vars) => unwrap(api.admin.users.restore({ params: { id: vars.userId }, body: vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -147,7 +147,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const bulkApproveMutation = useApiMutation<{ userId: string }, BulkApproveOutput>(
-    (vars) => unwrap(api.admin.bulkApproveUserComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkApproveComments({ body: vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -157,7 +157,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const bulkDeleteMutation = useApiMutation<{ userId: string }, BulkSoftDeleteOutput>(
-    (vars) => unwrap(api.admin.bulkSoftDeleteUserComments({ body: vars })),
+    (vars) => unwrap(api.admin.users.bulkDeleteComments({ body: vars })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
@@ -167,7 +167,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const updateRoleMutation = useApiMutation<{ userId: string; role: Role }, { user: AdminUserDto | null }>(
-    (vars) => unwrap(api.admin.updateUserRole({ params: { id: vars.userId }, body: { role: vars.role } })),
+    (vars) => unwrap(api.admin.users.updateRole({ params: { id: vars.userId }, body: { role: vars.role } })),
     {
       onSuccess: () => {
         setRoleDraft('')

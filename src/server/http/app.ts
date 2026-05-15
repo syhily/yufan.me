@@ -2,18 +2,6 @@ import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 
 import { apiContract } from '@/shared/contracts'
-import { adminCacheContract } from '@/shared/contracts/admin/cache'
-import { adminCategoriesContract } from '@/shared/contracts/admin/categories'
-import { adminFriendsContract } from '@/shared/contracts/admin/friends'
-import { adminImagesContract } from '@/shared/contracts/admin/images'
-import { adminMailContract } from '@/shared/contracts/admin/mail'
-import { adminMusicContract } from '@/shared/contracts/admin/music'
-import { adminPagesContract } from '@/shared/contracts/admin/pages'
-import { adminPostsContract } from '@/shared/contracts/admin/posts'
-import { adminRendersContract } from '@/shared/contracts/admin/renders'
-import { adminSettingsContract } from '@/shared/contracts/admin/settings'
-import { adminTagsContract } from '@/shared/contracts/admin/tags'
-import { adminUsersContract } from '@/shared/contracts/admin/users'
 
 import type { Env } from './context'
 
@@ -50,6 +38,13 @@ export function createApiApp(): Hono<Env> {
     }),
   )
 
+  // ─── Permission matrix ────────────────────────────────
+  // Single block: `Ctrl-F` here to audit which contract sits under
+  // which guard. Each line is a contract + controller pair plus the
+  // RBAC factory (`publicRoute / authedRoute / adminRoute / authorRoute`)
+  // that wraps it. The nested admin tree means each sub-domain mounts
+  // independently — no flat-spread surprises.
+
   // Account routes (any authenticated user)
   authedRoute(app, apiContract.account, accountController)
 
@@ -68,19 +63,20 @@ export function createApiApp(): Hono<Env> {
   // Admin comment routes (approve, delete, loadAll, search)
   adminRoute(app, apiContract.commentAdmin, commentAdminController)
 
-  // Admin routes — split by domain and guard
-  adminRoute(app, adminUsersContract, adminUsersController)
-  adminRoute(app, adminSettingsContract, adminSettingsController)
-  adminRoute(app, adminCacheContract, adminCacheController)
-  adminRoute(app, adminMailContract, adminMailController)
-  adminRoute(app, adminFriendsContract, adminFriendsController)
-  adminRoute(app, adminCategoriesContract, adminCategoriesController)
-  authorRoute(app, adminTagsContract, adminTagsController)
-  authorRoute(app, adminImagesContract, adminImagesController)
-  authorRoute(app, adminMusicContract, adminMusicController)
-  adminRoute(app, adminPagesContract, adminPagesController)
-  authorRoute(app, adminPostsContract, adminPostsController)
-  adminRoute(app, adminRendersContract, adminRendersController)
+  // Admin routes — nested under `apiContract.admin.<domain>`. Authors
+  // can write tags / images / music / posts; everything else is admin-only.
+  adminRoute(app, apiContract.admin.users, adminUsersController)
+  adminRoute(app, apiContract.admin.settings, adminSettingsController)
+  adminRoute(app, apiContract.admin.cache, adminCacheController)
+  adminRoute(app, apiContract.admin.mail, adminMailController)
+  adminRoute(app, apiContract.admin.friends, adminFriendsController)
+  adminRoute(app, apiContract.admin.categories, adminCategoriesController)
+  authorRoute(app, apiContract.admin.tags, adminTagsController)
+  authorRoute(app, apiContract.admin.images, adminImagesController)
+  authorRoute(app, apiContract.admin.music, adminMusicController)
+  adminRoute(app, apiContract.admin.pages, adminPagesController)
+  authorRoute(app, apiContract.admin.posts, adminPostsController)
+  adminRoute(app, apiContract.admin.renders, adminRendersController)
 
   // Auth routes (admin only)
   adminRoute(app, apiContract.auth, authController)

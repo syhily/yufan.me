@@ -53,7 +53,7 @@ export function ImagesView() {
 
   const listQuery = useApiQuery(queryKeys.admin.images(state.q, state.kind, state.currentPage, state.pageSize), () =>
     unwrap(
-      api.admin.listImages({
+      api.admin.images.list({
         query: {
           q: state.q || undefined,
           kind: state.kind === 'all' ? undefined : state.kind,
@@ -86,7 +86,7 @@ export function ImagesView() {
     void listQuery.refetch()
   }, [listQuery.refetch])
 
-  const deleteMutation = useApiMutation((id: string) => unwrap(api.admin.deleteImage({ params: { id } })), {
+  const deleteMutation = useApiMutation((id: string) => unwrap(api.admin.images.delete({ params: { id } })), {
     onSuccess: () => {
       toast.success('删除成功')
     },
@@ -98,7 +98,7 @@ export function ImagesView() {
 
   const updateNoteMutation = useApiMutation(
     (vars: { id: string; note: string | null }) =>
-      unwrap(api.admin.updateImageNote({ params: { id: vars.id }, body: { note: vars.note } })),
+      unwrap(api.admin.images.updateNote({ params: { id: vars.id }, body: { note: vars.note } })),
     {
       onSuccess: (payload) => {
         dispatch({ type: 'patchImage', image: payload.image })
@@ -114,7 +114,7 @@ export function ImagesView() {
   const isUpdatingNote = updateNoteMutation.isPending
 
   const recalculateMutation = useApiMutation(
-    (id: string) => unwrap(api.admin.recalculateImageThumbhash({ body: { id } })),
+    (id: string) => unwrap(api.admin.images.recalculateThumbhash({ body: { id } })),
     {
       onSuccess: (payload) => {
         dispatch({ type: 'patchImage', image: payload.image })

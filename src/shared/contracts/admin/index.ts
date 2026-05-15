@@ -13,23 +13,23 @@ import { adminSettingsContract } from './settings'
 import { adminTagsContract } from './tags'
 import { adminUsersContract } from './users'
 
-export const adminContract = c.router(
-  {
-    ...adminUsersContract,
-    ...adminSettingsContract,
-    ...adminCacheContract,
-    ...adminMailContract,
-    ...adminFriendsContract,
-    ...adminCategoriesContract,
-    ...adminTagsContract,
-    ...adminImagesContract,
-    ...adminMusicContract,
-    ...adminPagesContract,
-    ...adminPostsContract,
-    ...adminRendersContract,
-  },
-  { strictStatusCodes: true },
-)
+// Nested admin router so the client SDK reads as `api.admin.users.list(...)`
+// rather than the legacy flat `api.admin.listUsers(...)`. The nested form
+// scopes endpoint names per domain (Plan §3.5, finalization Plan §F1.2).
+export const adminContract = c.router({
+  cache: adminCacheContract,
+  categories: adminCategoriesContract,
+  friends: adminFriendsContract,
+  images: adminImagesContract,
+  mail: adminMailContract,
+  music: adminMusicContract,
+  pages: adminPagesContract,
+  posts: adminPostsContract,
+  renders: adminRendersContract,
+  settings: adminSettingsContract,
+  tags: adminTagsContract,
+  users: adminUsersContract,
+})
 
 export {
   adminCacheContract,

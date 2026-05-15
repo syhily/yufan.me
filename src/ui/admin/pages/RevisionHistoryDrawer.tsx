@@ -65,8 +65,8 @@ export function RevisionHistoryDrawer({
     () =>
       unwrap(
         type === 'page'
-          ? api.admin.listPageRevisions({ query: { id: ownerId } })
-          : api.admin.listPostRevisions({ query: { id: ownerId } }),
+          ? api.admin.pages.listRevisions({ query: { id: ownerId } })
+          : api.admin.posts.listRevisions({ query: { id: ownerId } }),
       ),
     { enabled: open, staleTime: Infinity },
   )

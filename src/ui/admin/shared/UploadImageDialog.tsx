@@ -164,7 +164,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
         formData.append('note', note.trim())
       }
 
-      const data = await unwrap(api.admin.uploadImage({ body: formData }))
+      const data = await unwrap(api.admin.images.upload({ body: formData }))
       onUploaded(data.image)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '上传失败')

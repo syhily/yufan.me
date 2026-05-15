@@ -45,7 +45,7 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
 
   const listQuery = useApiQuery<ListMusicOutput>(
     ['admin', 'musics', q],
-    () => unwrap(api.admin.listMusic({ query: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 } })),
+    () => unwrap(api.admin.music.list({ query: { q: q.trim() === '' ? undefined : q.trim(), limit: 60 } })),
     { enabled: false },
   )
 

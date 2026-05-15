@@ -49,7 +49,7 @@ export function PagesView() {
 
   const listQuery = useApiQuery<ListPagesOutput>(['admin', 'listPages', state.q, state.deletedStatus], () =>
     unwrap(
-      api.admin.listPages({
+      api.admin.pages.list({
         query: {
           q: state.q || undefined,
           deletedStatus: state.deletedStatus,
@@ -77,7 +77,7 @@ export function PagesView() {
   }, [listQuery])
 
   const deleteMutation = useApiMutation<DeletePageInput, DeletePageOutput>(
-    (input) => unwrap(api.admin.deletePage({ params: { id: input.id } })),
+    (input) => unwrap(api.admin.pages.delete({ params: { id: input.id } })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })
@@ -95,7 +95,7 @@ export function PagesView() {
   const submitDelete = deleteMutation.mutate
 
   const restoreMutation = useApiMutation<RestorePageInput, RestorePageOutput>(
-    (input) => unwrap(api.admin.restorePage({ params: { id: input.id } })),
+    (input) => unwrap(api.admin.pages.restore({ params: { id: input.id } })),
     {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })

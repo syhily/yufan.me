@@ -5,7 +5,7 @@ import { errorResponse, standardMutationErrors } from '@/shared/contracts/_error
 
 export const adminMailContract = c.router(
   {
-    sendTestMail: {
+    sendTest: {
       method: 'POST',
       path: '/admin/mail/test',
       body: z.object({ to: z.email() }),
@@ -14,7 +14,7 @@ export const adminMailContract = c.router(
         502: z.object({ error: z.object({ message: z.string() }) }),
         ...standardMutationErrors,
       },
-      summary: 'sendTestMail',
+      summary: '管理后台：发送测试邮件',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

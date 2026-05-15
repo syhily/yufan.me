@@ -104,7 +104,7 @@ export function MermaidBlockSourceEditor({ payload, onCommit, onCancel }: Mermai
     }
     setSaving(true)
     try {
-      const out = await unwrap(api.admin.renderMermaid({ body: { code: draft } }))
+      const out = await unwrap(api.admin.renders.mermaid({ body: { code: draft } }))
       const svg = out.error === null && out.svg !== '' ? out.svg : ''
       onCommit({ ...payload, code: draft }, svg)
     } finally {

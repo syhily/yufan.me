@@ -5,7 +5,7 @@ import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetad
 import { adminMusicContract } from '@/shared/contracts/admin/music'
 
 export const adminMusicController: AuthedContractImpl<typeof adminMusicContract> = {
-  listMusic: async (args, _ctx) => {
+  list: async (args, _ctx) => {
     const result = await listMusicForAdmin({
       q: args.query.q,
       offset: args.query.offset,
@@ -13,11 +13,11 @@ export const adminMusicController: AuthedContractImpl<typeof adminMusicContract>
     })
     return { status: 200 as const, body: result }
   },
-  searchMusic: async (args, _ctx) => {
+  search: async (args, _ctx) => {
     const result = await searchMusic(args.query.keyword, args.query.limit)
     return { status: 200 as const, body: result }
   },
-  addMusic: async (args, ctx) => {
+  add: async (args, ctx) => {
     const music = await addMusic({
       source: args.body.source,
       sourceId: args.body.sourceId,
@@ -25,7 +25,7 @@ export const adminMusicController: AuthedContractImpl<typeof adminMusicContract>
     })
     return { status: 200 as const, body: { music } }
   },
-  updateMusic: async (args, _ctx) => {
+  update: async (args, _ctx) => {
     const music = await updateMusicMetadata({
       id: BigInt(args.params.id),
       name: args.body.name,
@@ -35,7 +35,7 @@ export const adminMusicController: AuthedContractImpl<typeof adminMusicContract>
     })
     return { status: 200 as const, body: { music } }
   },
-  deleteMusic: async (args, ctx) => {
+  delete: async (args, ctx) => {
     await deleteMusic(BigInt(args.params.id), { userId: ctx.viewer!.userId, role: ctx.viewer!.role })
     return { status: 200 as const, body: { success: true } }
   },

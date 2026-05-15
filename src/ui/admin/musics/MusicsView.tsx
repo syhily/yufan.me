@@ -52,7 +52,7 @@ export function MusicsView() {
 
   const listQuery = useApiQuery<ListMusicOutput>(['admin', 'musics', state.q, state.currentPage, state.pageSize], () =>
     unwrap(
-      api.admin.listMusic({
+      api.admin.music.list({
         query: {
           q: state.q || undefined,
           offset: state.currentPage * state.pageSize,
@@ -86,7 +86,7 @@ export function MusicsView() {
   }, [listQuery])
 
   const deleteMutation = useApiMutation<string, DeleteMusicOutput>(
-    (id) => unwrap(api.admin.deleteMusic({ params: { id } })),
+    (id) => unwrap(api.admin.music.delete({ params: { id } })),
     {
       onSuccess: () => undefined,
       onError: (error) => {

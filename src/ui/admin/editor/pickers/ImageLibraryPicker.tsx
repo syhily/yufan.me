@@ -50,7 +50,7 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
     queryKeys.admin.imagesList(q),
     () =>
       unwrap(
-        api.admin.listImages({ query: { kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() } }),
+        api.admin.images.list({ query: { kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() } }),
       ),
     { enabled: open },
   )

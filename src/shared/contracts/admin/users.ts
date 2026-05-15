@@ -43,7 +43,7 @@ const userIdBody = z.object({
 
 export const adminUsersContract = c.router(
   {
-    listUsers: {
+    list: {
       method: 'GET',
       path: '/admin/users',
       query: listUsersQuery,
@@ -51,87 +51,87 @@ export const adminUsersContract = c.router(
         200: z.object({ users: z.array(adminUserDto), total: z.number(), hasMore: z.boolean() }),
         ...standardReadErrors,
       },
-      summary: 'listUsers',
+      summary: '管理后台：用户列表',
     },
-    getUser: {
+    get: {
       method: 'GET',
       path: '/admin/users/:id',
       pathParams: idParam,
       responses: { 200: z.object({ user: adminUserDto }), ...standardReadErrors },
-      summary: 'getUser',
+      summary: '管理后台：单个用户详情',
     },
-    softDeleteUser: {
+    softDelete: {
       method: 'DELETE',
       path: '/admin/users/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'softDeleteUser',
+      summary: '管理后台：软删除用户',
     },
-    restoreUser: {
+    restore: {
       method: 'POST',
       path: '/admin/users/:id/restore',
       pathParams: idParam,
       body: userIdBody,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'restoreUser',
+      summary: '管理后台：恢复用户',
     },
-    muteUser: {
+    mute: {
       method: 'PATCH',
       path: '/admin/users/:id/mute',
       pathParams: idParam,
       body: muteUserBody,
       responses: { 200: z.object({ user: adminUserDto }), ...standardMutationErrors },
-      summary: 'muteUser',
+      summary: '管理后台：禁言 / 解除禁言',
     },
-    updateUserRole: {
+    updateRole: {
       method: 'POST',
       path: '/admin/users/:id/role',
       pathParams: idParam,
       body: updateUserRoleBody,
       responses: { 200: z.object({ user: adminUserDto.nullable() }), ...standardMutationErrors },
-      summary: 'updateUserRole',
+      summary: '管理后台：更新用户角色',
     },
     inviteAuthor: {
       method: 'POST',
       path: '/admin/users/invite',
       body: inviteAuthorBody,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'inviteAuthor',
+      summary: '管理后台：邀请新作者',
     },
     sendPasswordReset: {
       method: 'POST',
       path: '/admin/users/password-reset',
       body: sendPasswordResetBody,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'sendPasswordReset',
+      summary: '管理后台：发送密码重置邮件',
     },
     revokeSession: {
       method: 'POST',
       path: '/admin/users/revoke-session',
       body: revokeSessionBody,
       responses: { 200: z.object({ success: z.boolean(), currentSession: z.boolean() }), ...standardMutationErrors },
-      summary: 'revokeSession',
+      summary: '管理后台：撤销指定会话',
     },
-    revokeUserSessions: {
+    revokeAllSessions: {
       method: 'POST',
       path: '/admin/users/revoke-all-sessions',
       body: userIdBody,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'revokeUserSessions',
+      summary: '管理后台：撤销用户所有会话',
     },
-    bulkApproveUserComments: {
+    bulkApproveComments: {
       method: 'POST',
       path: '/admin/users/bulk-approve-comments',
       body: userIdBody,
       responses: { 200: z.object({ approved: z.number() }), ...standardMutationErrors },
-      summary: 'bulkApproveUserComments',
+      summary: '管理后台：批量通过用户评论',
     },
-    bulkSoftDeleteUserComments: {
+    bulkDeleteComments: {
       method: 'DELETE',
       path: '/admin/users/bulk-delete-comments',
       body: userIdBody,
       responses: { 200: z.object({ deleted: z.number() }), ...standardMutationErrors },
-      summary: 'bulkSoftDeleteUserComments',
+      summary: '管理后台：批量软删除用户评论',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

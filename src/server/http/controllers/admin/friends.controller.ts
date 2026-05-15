@@ -4,7 +4,7 @@ import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/ser
 import { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
 export const adminFriendsController: AuthedContractImpl<typeof adminFriendsContract> = {
-  listFriends: async (args, _ctx) => {
+  list: async (args, _ctx) => {
     const payload = args.query
     const result = await listFriendsForAdmin({
       q: payload.q,
@@ -14,7 +14,7 @@ export const adminFriendsController: AuthedContractImpl<typeof adminFriendsContr
     })
     return { status: 200 as const, body: result }
   },
-  upsertFriend: async (args, _ctx) => {
+  upsert: async (args, _ctx) => {
     const payload = args.body
     const friend = await upsertAdminFriend({
       id: payload.id !== undefined ? BigInt(payload.id) : undefined,
@@ -27,7 +27,7 @@ export const adminFriendsController: AuthedContractImpl<typeof adminFriendsContr
     })
     return { status: 200 as const, body: { friend } }
   },
-  deleteFriend: async (args, _ctx) => {
+  delete: async (args, _ctx) => {
     const ok = await deleteAdminFriend(BigInt(args.params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '友链不存在' } } }

@@ -63,7 +63,7 @@ export function FriendsView() {
     ['admin', 'listFriends', state.q, state.includeHidden, state.currentPage, state.pageSize],
     () =>
       unwrap(
-        api.admin.listFriends({
+        api.admin.friends.list({
           query: {
             q: state.q || undefined,
             includeHidden: state.includeHidden ? 'true' : undefined,
@@ -98,7 +98,7 @@ export function FriendsView() {
   }, [listQuery])
 
   const deleteMutation = useApiMutation<DeleteFriendInput, DeleteFriendOutput>(
-    (input) => unwrap(api.admin.deleteFriend({ params: { id: input.id } })),
+    (input) => unwrap(api.admin.friends.delete({ params: { id: input.id } })),
     {
       onError: (error) => {
         toast.error('删除友链失败', { description: error.message })

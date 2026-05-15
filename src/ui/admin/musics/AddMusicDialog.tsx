@@ -98,7 +98,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const searchMutation = useApiMutation<SearchMusicInput, SearchMusicOutput>(
-    (vars) => unwrap(api.admin.searchMusic({ query: vars })),
+    (vars) => unwrap(api.admin.music.search({ query: vars })),
     {
       onSuccess: (payload) => {
         setErrorMessage(null)
@@ -112,7 +112,7 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
   const { mutate: loadSearch, isPending: isSearching } = searchMutation
 
   const addMutation = useApiMutation<AddMusicInput, AddMusicOutput>(
-    (vars) => unwrap(api.admin.addMusic({ body: vars })),
+    (vars) => unwrap(api.admin.music.add({ body: vars })),
     {
       onSuccess: (payload) => {
         toast.success('音乐已添加')

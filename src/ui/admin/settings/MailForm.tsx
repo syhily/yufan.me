@@ -86,7 +86,7 @@ export function MailForm({ mail }: MailFormProps) {
   // POST `sendTestMail` action is a side-effect, not a settings write
   // (it doesn't trigger a snapshot revalidation).
   const testMutation = useApiMutation<{ to: string }, { success: boolean }>(
-    ({ to }) => unwrap(api.admin.sendTestMail({ body: { to } })),
+    ({ to }) => unwrap(api.admin.mail.sendTest({ body: { to } })),
     {
       onSuccess: () =>
         setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),

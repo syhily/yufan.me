@@ -19,7 +19,7 @@ import { collectHeadings } from '@/shared/pt/schema'
 
 export const adminPagesController: AuthedContractImpl<typeof adminPagesContract> = {
   // TODO: add `satisfies AuthedContractImpl<typeof adminPagesContract>` once all response schemas are strict
-  listPages: async (args, _ctx) => {
+  list: async (args, _ctx) => {
     const result = await listPagesForAdmin({
       q: args.query.q,
       deletedStatus: args.query.deletedStatus,
@@ -28,32 +28,32 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
     })
     return { status: 200 as const, body: result }
   },
-  getPage: async (args, _ctx) => {
+  get: async (args, _ctx) => {
     const detail = await getPageDetailForAdmin(BigInt(args.params.id))
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: detail }
   },
-  deletePage: async (args, _ctx) => {
+  delete: async (args, _ctx) => {
     const result = await deletePage(BigInt(args.params.id))
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  restorePage: async ({ params }, _ctx) => {
+  restore: async ({ params }, _ctx) => {
     const result = await restorePage(BigInt(params.id))
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '页面不存在或未被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  unpublishPage: async (args, _ctx) => {
+  unpublish: async (args, _ctx) => {
     const page = await unpublishPage(BigInt(args.body.id))
     return { status: 200 as const, body: { page } }
   },
-  savePageDraft: async (args, { viewer }) => {
+  saveDraft: async (args, { viewer }) => {
     const result = await savePageDraft({
       pageId: BigInt(args.body.id),
       body: args.body.body,
@@ -63,7 +63,7 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
     })
     return { status: 200 as const, body: result }
   },
-  publishPageLatest: async (args, { viewer }) => {
+  publishLatest: async (args, { viewer }) => {
     const result = await publishPageLatest({
       pageId: BigInt(args.body.id),
       body: args.body.body,
@@ -74,12 +74,12 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
     })
     return { status: 200 as const, body: result }
   },
-  previewPage: async (args, _ctx) => {
+  preview: async (args, _ctx) => {
     const html = await renderPagePortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
   },
-  upsertPageMeta: async (args, { viewer }) => {
+  upsertMeta: async (args, { viewer }) => {
     const meta = {
       slug: args.body.slug,
       title: args.body.title,
@@ -100,7 +100,7 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
         : await updatePageMeta({ id: BigInt(args.body.id), ...meta })
     return { status: 200 as const, body: { page } }
   },
-  listPageRevisions: async (args, _ctx) => {
+  listRevisions: async (args, _ctx) => {
     const revisions = await listPageRevisionsForAdmin(BigInt(args.query.id))
     return { status: 200 as const, body: { revisions } }
   },

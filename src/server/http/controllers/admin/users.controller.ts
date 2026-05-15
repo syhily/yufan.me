@@ -27,7 +27,7 @@ import {
 import { adminUsersContract } from '@/shared/contracts/admin/users'
 
 export const adminUsersController: AuthedContractImpl<typeof adminUsersContract> = {
-  listUsers: async ({ query }) => {
+  list: async ({ query }) => {
     const result = await listUsersForAdmin(
       query.offset,
       query.limit,
@@ -48,14 +48,14 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
       },
     }
   },
-  getUser: async ({ params }) => {
+  get: async ({ params }) => {
     const user = await fetchAdminUserDto(BigInt(params.id))
     if (!user) {
       return { status: 404 as const, body: { error: { message: '用户不存在' } } }
     }
     return { status: 200 as const, body: { user } }
   },
-  softDeleteUser: async ({ params }, { viewer }) => {
+  softDelete: async ({ params }, { viewer }) => {
     const userId = params.id
     if (viewer!.userId === userId) {
       return { status: 403 as const, body: { error: { message: '不能删除自己。' } } }
@@ -83,7 +83,7 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
     })
     return { status: 200 as const, body: { success: true } }
   },
-  restoreUser: async ({ params }, { viewer }) => {
+  restore: async ({ params }, { viewer }) => {
     const ok = await restoreAdminUser(BigInt(params.id))
     if (!ok) {
       return { status: 404 as const, body: { error: { message: '用户不存在' } } }
@@ -91,7 +91,7 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
     getLogger('audit.user').info('user restored', { actor: viewer!.userId, target: params.id })
     return { status: 200 as const, body: { success: true } }
   },
-  muteUser: async ({ params, body }) => {
+  mute: async ({ params, body }) => {
     const updated = await muteAdminUser(BigInt(params.id), body.muted)
     if (!updated) {
       return { status: 404 as const, body: { error: { message: '用户不存在或为管理员（管理员不可禁言）' } } }
@@ -102,7 +102,7 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
     }
     return { status: 200 as const, body: { user: dto } }
   },
-  updateUserRole: async ({ params, body }, { viewer }) => {
+  updateRole: async ({ params, body }, { viewer }) => {
     const userId = params.id
     if (viewer!.userId === userId) {
       return { status: 403 as const, body: { error: { message: '不能修改自己的角色。' } } }
@@ -204,7 +204,7 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
     })
     return { status: 200 as const, body: { success: true, currentSession } }
   },
-  revokeUserSessions: async ({ body }, { viewer }) => {
+  revokeAllSessions: async ({ body }, { viewer }) => {
     let targetId: bigint
     try {
       targetId = BigInt(body.userId)
@@ -222,11 +222,11 @@ export const adminUsersController: AuthedContractImpl<typeof adminUsersContract>
     })
     return { status: 200 as const, body: { success: true } }
   },
-  bulkApproveUserComments: async ({ body }) => {
+  bulkApproveComments: async ({ body }) => {
     const result = await bulkApproveCommentsForUser(BigInt(body.userId))
     return { status: 200 as const, body: result }
   },
-  bulkSoftDeleteUserComments: async ({ body }) => {
+  bulkDeleteComments: async ({ body }) => {
     const result = await bulkDeleteCommentsForUser(BigInt(body.userId))
     return { status: 200 as const, body: result }
   },

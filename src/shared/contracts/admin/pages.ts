@@ -16,43 +16,43 @@ const idParam = z.object({ id: z.string().min(1) })
 
 export const adminPagesContract = c.router(
   {
-    listPages: {
+    list: {
       method: 'GET',
       path: '/admin/pages',
       query: listPagesSchema,
       responses: { 200: listPagesOutputDto, ...standardReadErrors },
-      summary: 'listPages',
+      summary: '管理后台：页面列表',
     },
-    getPage: {
+    get: {
       method: 'GET',
       path: '/admin/pages/:id',
       pathParams: idParam,
       responses: { 200: adminPageDetailDto, ...standardReadErrors },
-      summary: 'getPage',
+      summary: '管理后台：页面详情',
     },
-    deletePage: {
+    delete: {
       method: 'DELETE',
       path: '/admin/pages/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'deletePage',
+      summary: '管理后台：软删除页面',
     },
-    restorePage: {
+    restore: {
       method: 'POST',
       path: '/admin/pages/:id/restore',
       pathParams: idParam,
       body: c.noBody(),
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'restorePage',
+      summary: '管理后台：恢复已删除页面',
     },
-    unpublishPage: {
+    unpublish: {
       method: 'POST',
       path: '/admin/pages/unpublish',
       body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ page: adminPageDto }), ...standardMutationErrors },
-      summary: 'unpublishPage',
+      summary: '管理后台：取消发布页面',
     },
-    savePageDraft: {
+    saveDraft: {
       method: 'POST',
       path: '/admin/pages/draft',
       body: savePageBodySchema,
@@ -63,9 +63,9 @@ export const adminPagesContract = c.router(
         ]),
         ...standardMutationErrors,
       },
-      summary: 'savePageDraft',
+      summary: '管理后台：保存页面草稿',
     },
-    publishPageLatest: {
+    publishLatest: {
       method: 'POST',
       path: '/admin/pages/publish',
       body: savePageBodySchema,
@@ -76,9 +76,9 @@ export const adminPagesContract = c.router(
         ]),
         ...standardMutationErrors,
       },
-      summary: 'publishPageLatest',
+      summary: '管理后台：发布最新草稿',
     },
-    previewPage: {
+    preview: {
       method: 'POST',
       path: '/admin/pages/preview',
       body: z.object({ body: portableTextBodySchema }),
@@ -89,21 +89,21 @@ export const adminPagesContract = c.router(
         }),
         ...standardMutationErrors,
       },
-      summary: 'previewPage',
+      summary: '管理后台：预览页面',
     },
-    upsertPageMeta: {
+    upsertMeta: {
       method: 'POST',
       path: '/admin/pages/meta',
       body: upsertPageMetaSchema,
       responses: { 200: z.object({ page: adminPageDto }), ...standardMutationErrors },
-      summary: 'upsertPageMeta',
+      summary: '管理后台：更新页面元数据',
     },
-    listPageRevisions: {
+    listRevisions: {
       method: 'GET',
       path: '/admin/pages/revisions',
       query: z.object({ id: z.string().min(1) }),
       responses: { 200: listPageRevisionsOutputDto, ...standardReadErrors },
-      summary: 'listPageRevisions',
+      summary: '管理后台：页面修订历史',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

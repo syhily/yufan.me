@@ -4,7 +4,7 @@ import { sendTestMail } from '@/server/email/sender'
 import { adminMailContract } from '@/shared/contracts/admin/mail'
 
 export const adminMailController: AuthedContractImpl<typeof adminMailContract> = {
-  sendTestMail: async (args, _ctx) => {
+  sendTest: async (args, _ctx) => {
     const payload = args.body
     const result = await sendTestMail(payload.to)
     if (!result.ok) {

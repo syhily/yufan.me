@@ -51,7 +51,7 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const updateMutation = useApiMutation<UpdateMusicInput, UpdateMusicOutput>(
-    (vars) => unwrap(api.admin.updateMusic({ params: { id: vars.id }, body: vars })),
+    (vars) => unwrap(api.admin.music.update({ params: { id: vars.id }, body: vars })),
     {
       onSuccess: (payload) => {
         toast.success('音乐已更新')

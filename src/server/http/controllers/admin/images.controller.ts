@@ -15,7 +15,7 @@ import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 
 export const adminImagesController: AuthedContractImpl<typeof adminImagesContract> = {
-  listImages: async (args, _ctx) => {
+  list: async (args, _ctx) => {
     const result = await listImagesForAdmin({
       q: args.query.q,
       kind: args.query.kind as AdminImageKind | 'all' | undefined,
@@ -24,19 +24,19 @@ export const adminImagesController: AuthedContractImpl<typeof adminImagesContrac
     })
     return { status: 200 as const, body: result }
   },
-  deleteImage: async (args, ctx) => {
+  delete: async (args, ctx) => {
     await deleteImage(BigInt(args.params.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { success: true } }
   },
-  updateImageNote: async (args, ctx) => {
+  updateNote: async (args, ctx) => {
     const image = await updateImageNote(BigInt(args.params.id), args.body.note ?? null, ctx.viewer ?? undefined)
     return { status: 200 as const, body: { image } }
   },
-  recalculateImageThumbhash: async (args, ctx) => {
+  recalculateThumbhash: async (args, ctx) => {
     const image = await recalculateImageThumbhash(BigInt(args.body.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { image } }
   },
-  uploadImage: async (args, ctx) => {
+  upload: async (args, ctx) => {
     const settings = requireBlogSettingsSection('assets')
 
     let formData: FormData

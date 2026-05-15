@@ -319,7 +319,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   // the ts-rest client directly and tracks its own pending flag.
   const [isCreatingPost, setIsCreatingPost] = useState(false)
   const upsertMetaMutation = useApiMutation<UpsertPostMetaInput, UpsertPostMetaOutput>(
-    (input) => unwrap(api.admin.upsertPostMeta({ body: input })),
+    (input) => unwrap(api.admin.posts.upsertMeta({ body: input })),
     {
       onSuccess: (payload) => onMetaSaved(payload.post),
       onError: (error) => {
@@ -329,7 +329,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
   )
   const saveDraftMutation = useApiMutation<SavePostBodyInput, SavePostBodyOutput>(
-    (input) => unwrap(api.admin.savePostDraft({ body: input })),
+    (input) => unwrap(api.admin.posts.saveDraft({ body: input })),
     {
       onSuccess: (payload) => onBodySaved(payload),
       onError: (error) => {
@@ -339,7 +339,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
   )
   const publishMutation = useApiMutation<SavePostBodyInput, SavePostBodyOutput>(
-    (input) => unwrap(api.admin.publishPostLatest({ body: input })),
+    (input) => unwrap(api.admin.posts.publishLatest({ body: input })),
     {
       onSuccess: (payload) => {
         onBodySaved(payload)
@@ -358,7 +358,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
   )
   const unpublishMutation = useApiMutation<UnpublishPostInput, UnpublishPostOutput>(
-    (input) => unwrap(api.admin.unpublishPost({ body: input })),
+    (input) => unwrap(api.admin.posts.unpublish({ body: input })),
     {
       onSuccess: (payload) => {
         setStatus({ kind: 'saved', at: new Date() })
@@ -408,7 +408,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
       }
       try {
         const result = await unwrap(
-          api.admin.savePostDraft({
+          api.admin.posts.saveDraft({
             body: {
               id: detail.post.id,
               body: snapshot,
@@ -526,7 +526,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     let savedPost: AdminPostDto
     try {
       const metaResult = await unwrap(
-        api.admin.upsertPostMeta({
+        api.admin.posts.upsertMeta({
           body: {
             ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
             title: meta.title.trim(),
@@ -559,7 +559,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     let draftResult: SavePostBodyOutput
     try {
       draftResult = await unwrap(
-        api.admin.savePostDraft({
+        api.admin.posts.saveDraft({
           body: {
             id: savedPost.id,
             body,
@@ -864,7 +864,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     setStatus({ kind: 'saving' })
     try {
       const result = await unwrap(
-        api.admin.savePostDraft({
+        api.admin.posts.saveDraft({
           body: {
             id: detail.post.id,
             body: conflict.localBody,

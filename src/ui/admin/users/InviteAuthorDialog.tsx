@@ -24,7 +24,7 @@ interface Props {
 
 export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
   const invite = useApiMutation<{ name: string; email: string }, { success: boolean }>(
-    (vars) => unwrap(api.admin.inviteAuthor({ body: vars })),
+    (vars) => unwrap(api.admin.users.inviteAuthor({ body: vars })),
     {
       onSuccess: () => {
         setName('')

@@ -41,7 +41,7 @@ export function CategoriesView() {
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
   const listQuery = useApiQuery<ListCategoriesOutput>(['admin', 'listCategories', state.q], () =>
-    unwrap(api.admin.listCategories({ query: { q: state.q || undefined } })),
+    unwrap(api.admin.categories.list({ query: { q: state.q || undefined } })),
   )
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export function CategoriesView() {
   }, [listQuery])
 
   const deleteMutation = useApiMutation<DeleteCategoryInput, DeleteCategoryOutput>(
-    (input) => unwrap(api.admin.deleteCategory({ params: { id: input.id } })),
+    (input) => unwrap(api.admin.categories.delete({ params: { id: input.id } })),
     {
       onSuccess: () => {
         toast.success('已删除分类')
@@ -82,7 +82,7 @@ export function CategoriesView() {
   const submitDelete = deleteMutation.mutate
 
   const reorderMutation = useApiMutation<ReorderCategoriesInput, ReorderCategoriesOutput>(
-    (input) => unwrap(api.admin.reorderCategories({ body: input })),
+    (input) => unwrap(api.admin.categories.reorder({ body: input })),
     {
       onSuccess: (payload) => dispatch({ type: 'replaceRows', rows: payload.categories }),
       onError: (error) => {

@@ -302,7 +302,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // the ts-rest client directly and tracks its own pending flag.
   const [isCreatingPage, setIsCreatingPage] = useState(false)
   const upsertMetaMutation = useApiMutation<UpsertPageMetaInput, UpsertPageMetaOutput>(
-    (input) => unwrap(api.admin.upsertPageMeta({ body: input })),
+    (input) => unwrap(api.admin.pages.upsertMeta({ body: input })),
     {
       onSuccess: (payload) => onMetaSaved(payload.page),
       onError: (error) => {
@@ -312,7 +312,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const saveDraftMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
-    (input) => unwrap(api.admin.savePageDraft({ body: input })),
+    (input) => unwrap(api.admin.pages.saveDraft({ body: input })),
     {
       onSuccess: (payload) => onBodySaved(payload),
       onError: (error) => {
@@ -322,7 +322,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const publishMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
-    (input) => unwrap(api.admin.publishPageLatest({ body: input })),
+    (input) => unwrap(api.admin.pages.publishLatest({ body: input })),
     {
       onSuccess: (payload) => {
         onBodySaved(payload)
@@ -341,7 +341,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const unpublishMutation = useApiMutation<UnpublishPageInput, UnpublishPageOutput>(
-    (input) => unwrap(api.admin.unpublishPage({ body: input })),
+    (input) => unwrap(api.admin.pages.unpublish({ body: input })),
     {
       onSuccess: (payload) => {
         setStatus({ kind: 'saved', at: new Date() })
@@ -391,7 +391,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       }
       try {
         const result = await unwrap(
-          api.admin.savePageDraft({
+          api.admin.pages.saveDraft({
             body: {
               id: detail.page.id,
               body: snapshot,
@@ -509,7 +509,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     let savedPage: AdminPageDto
     try {
       const metaResult = await unwrap(
-        api.admin.upsertPageMeta({
+        api.admin.pages.upsertMeta({
           body: {
             ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
             title: meta.title.trim(),
@@ -538,7 +538,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     let draftResult: SavePageBodyOutput
     try {
       draftResult = await unwrap(
-        api.admin.savePageDraft({
+        api.admin.pages.saveDraft({
           body: {
             id: savedPage.id,
             body,
@@ -839,7 +839,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     setStatus({ kind: 'saving' })
     try {
       const result = await unwrap(
-        api.admin.savePageDraft({
+        api.admin.pages.saveDraft({
           body: {
             id: detail.page.id,
             body: conflict.localBody,

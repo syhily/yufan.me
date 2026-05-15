@@ -8,7 +8,7 @@ const idParam = z.object({ id: z.string().min(1) })
 
 export const adminFriendsContract = c.router(
   {
-    listFriends: {
+    list: {
       method: 'GET',
       path: '/admin/friends',
       query: z.object({
@@ -21,9 +21,9 @@ export const adminFriendsContract = c.router(
         200: z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }),
         ...standardMutationErrors,
       },
-      summary: 'listFriends',
+      summary: '管理后台：友链列表',
     },
-    upsertFriend: {
+    upsert: {
       method: 'POST',
       path: '/admin/friends',
       body: z.object({
@@ -36,14 +36,14 @@ export const adminFriendsContract = c.router(
         visible: z.boolean().optional().default(true),
       }),
       responses: { 200: z.object({ friend: adminFriendDto }), ...standardMutationErrors },
-      summary: 'upsertFriend',
+      summary: '管理后台：新增 / 更新友链',
     },
-    deleteFriend: {
+    delete: {
       method: 'DELETE',
       path: '/admin/friends/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'deleteFriend',
+      summary: '管理后台：删除友链',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

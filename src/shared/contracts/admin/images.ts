@@ -8,7 +8,7 @@ const idParam = z.object({ id: z.string().min(1) })
 
 export const adminImagesContract = c.router(
   {
-    listImages: {
+    list: {
       method: 'GET',
       path: '/admin/images',
       query: z.object({
@@ -18,37 +18,37 @@ export const adminImagesContract = c.router(
         limit: z.number().optional(),
       }),
       responses: { 200: listImagesOutputDto, ...standardMutationErrors },
-      summary: 'listImages',
+      summary: '管理后台：图片列表',
     },
-    deleteImage: {
+    delete: {
       method: 'DELETE',
       path: '/admin/images/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'deleteImage',
+      summary: '管理后台：删除图片',
     },
-    updateImageNote: {
+    updateNote: {
       method: 'PATCH',
       path: '/admin/images/:id/note',
       pathParams: idParam,
       body: z.object({ note: z.string().nullable().optional() }),
       responses: { 200: z.object({ image: adminImageDto }), ...standardMutationErrors },
-      summary: 'updateImageNote',
+      summary: '管理后台：更新图片备注',
     },
-    recalculateImageThumbhash: {
+    recalculateThumbhash: {
       method: 'POST',
       path: '/admin/images/recalculate-thumbhash',
       body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ image: adminImageDto }), ...standardMutationErrors },
-      summary: 'recalculateImageThumbhash',
+      summary: '管理后台：重算 thumbhash',
     },
-    uploadImage: {
+    upload: {
       method: 'POST',
       path: '/admin/images/upload',
       contentType: 'multipart/form-data',
       body: z.unknown(),
       responses: { 200: z.object({ image: adminImageDto }), ...standardMutationErrors },
-      summary: 'uploadImage',
+      summary: '管理后台：上传图片',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

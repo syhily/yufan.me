@@ -118,7 +118,7 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
     nameInputRef.current?.focus()
   }, [])
 
-  const upsertApi = useApiMutation((vars: UpsertTagInput) => unwrap(api.admin.upsertTag({ body: vars })), {
+  const upsertApi = useApiMutation((vars: UpsertTagInput) => unwrap(api.admin.tags.upsert({ body: vars })), {
     onSuccess: (payload) => {
       toast.success('标签已保存')
       setErrorMessage(null)

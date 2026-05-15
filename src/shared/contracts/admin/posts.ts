@@ -20,43 +20,43 @@ const idParam = z.object({ id: z.string().min(1) })
 
 export const adminPostsContract = c.router(
   {
-    listPosts: {
+    list: {
       method: 'GET',
       path: '/admin/posts',
       query: listPostsSchema,
       responses: { 200: listPostsOutputDto, ...standardReadErrors },
-      summary: 'listPosts',
+      summary: '管理后台：文章列表',
     },
-    getPost: {
+    get: {
       method: 'GET',
       path: '/admin/posts/:id',
       pathParams: idParam,
       responses: { 200: adminPostDetailDto, ...standardReadErrors },
-      summary: 'getPost',
+      summary: '管理后台：文章详情',
     },
-    deletePost: {
+    delete: {
       method: 'DELETE',
       path: '/admin/posts/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'deletePost',
+      summary: '管理后台：软删除文章',
     },
-    restorePost: {
+    restore: {
       method: 'POST',
       path: '/admin/posts/:id/restore',
       pathParams: idParam,
       body: c.noBody(),
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'restorePost',
+      summary: '管理后台：恢复已删除文章',
     },
-    unpublishPost: {
+    unpublish: {
       method: 'POST',
       path: '/admin/posts/unpublish',
       body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ post: adminPostDto }), ...standardMutationErrors },
-      summary: 'unpublishPost',
+      summary: '管理后台：取消发布文章',
     },
-    savePostDraft: {
+    saveDraft: {
       method: 'POST',
       path: '/admin/posts/draft',
       body: savePostBodySchema,
@@ -67,9 +67,9 @@ export const adminPostsContract = c.router(
         ]),
         ...standardMutationErrors,
       },
-      summary: 'savePostDraft',
+      summary: '管理后台：保存文章草稿',
     },
-    publishPostLatest: {
+    publishLatest: {
       method: 'POST',
       path: '/admin/posts/publish',
       body: savePostBodySchema,
@@ -80,9 +80,9 @@ export const adminPostsContract = c.router(
         ]),
         ...standardMutationErrors,
       },
-      summary: 'publishPostLatest',
+      summary: '管理后台：发布最新草稿',
     },
-    previewPost: {
+    preview: {
       method: 'POST',
       path: '/admin/posts/preview',
       body: previewPostBodySchema,
@@ -93,21 +93,21 @@ export const adminPostsContract = c.router(
         }),
         ...standardMutationErrors,
       },
-      summary: 'previewPost',
+      summary: '管理后台：预览文章',
     },
-    upsertPostMeta: {
+    upsertMeta: {
       method: 'POST',
       path: '/admin/posts/meta',
       body: upsertPostMetaSchema,
       responses: { 200: z.object({ post: adminPostDto }), ...standardMutationErrors },
-      summary: 'upsertPostMeta',
+      summary: '管理后台：更新文章元数据',
     },
-    listPostRevisions: {
+    listRevisions: {
       method: 'GET',
       path: '/admin/posts/revisions',
       query: z.object({ id: z.string().min(1) }),
       responses: { 200: listPostRevisionsOutputDto, ...standardReadErrors },
-      summary: 'listPostRevisions',
+      summary: '管理后台：文章修订历史',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

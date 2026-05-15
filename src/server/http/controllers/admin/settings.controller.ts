@@ -13,11 +13,11 @@ function safeBigInt(value: string): bigint | null {
 }
 
 export const adminSettingsController: AuthedContractImpl<typeof adminSettingsContract> = {
-  getSettings: async (_args, _ctx) => {
+  get: async (_args, _ctx) => {
     const result = await getAdminBlogSettings()
     return { status: 200 as const, body: result }
   },
-  updateSettings: async (args, ctx) => {
+  update: async (args, ctx) => {
     const payload = args.body
     const viewer = ctx.viewer!
     const editorId = safeBigInt(viewer.userId)

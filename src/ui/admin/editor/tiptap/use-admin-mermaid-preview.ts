@@ -19,7 +19,7 @@ export function useAdminMermaidPreview(code: string): {
   const [renderError, setRenderError] = useState<string | null>(null)
 
   const renderMermaid = useApiMutation<RenderMermaidInput, RenderMermaidOutput>(
-    (vars) => unwrap(api.admin.renderMermaid({ body: vars })),
+    (vars) => unwrap(api.admin.renders.mermaid({ body: vars })),
     {
       onSuccess: (result) => {
         if (result.error !== null) {

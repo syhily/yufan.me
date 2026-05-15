@@ -19,7 +19,7 @@ import { collectHeadings } from '@/shared/pt/schema'
 
 export const adminPostsController: AuthedContractImpl<typeof adminPostsContract> = {
   // TODO: add `satisfies AuthedContractImpl<typeof adminPostsContract>` once all response schemas are strict
-  listPosts: async (args, ctx) => {
+  list: async (args, ctx) => {
     const result = await listPostsForAdmin(
       {
         q: args.query.q,
@@ -38,32 +38,32 @@ export const adminPostsController: AuthedContractImpl<typeof adminPostsContract>
     )
     return { status: 200 as const, body: result }
   },
-  getPost: async (args, ctx) => {
+  get: async (args, ctx) => {
     const detail = await getPostDetailForAdmin(BigInt(args.params.id), ctx.viewer ?? undefined)
     if (detail === null) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: detail }
   },
-  deletePost: async (args, ctx) => {
+  delete: async (args, ctx) => {
     const result = await deletePost(BigInt(args.params.id), ctx.viewer ?? undefined)
     if (!result.deleted) {
       return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  restorePost: async (args, ctx) => {
+  restore: async (args, ctx) => {
     const result = await restorePost(BigInt(args.params.id), ctx.viewer ?? undefined)
     if (!result.restored) {
       return { status: 404 as const, body: { error: { message: '文章不存在或未被删除。' } } }
     }
     return { status: 200 as const, body: { success: true } }
   },
-  unpublishPost: async (args, ctx) => {
+  unpublish: async (args, ctx) => {
     const post = await unpublishPost(BigInt(args.body.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { post } }
   },
-  savePostDraft: async (args, ctx) => {
+  saveDraft: async (args, ctx) => {
     const result = await savePostDraft(
       {
         postId: BigInt(args.body.id),
@@ -76,7 +76,7 @@ export const adminPostsController: AuthedContractImpl<typeof adminPostsContract>
     )
     return { status: 200 as const, body: result }
   },
-  publishPostLatest: async (args, ctx) => {
+  publishLatest: async (args, ctx) => {
     const result = await publishPostLatest(
       {
         postId: BigInt(args.body.id),
@@ -90,12 +90,12 @@ export const adminPostsController: AuthedContractImpl<typeof adminPostsContract>
     )
     return { status: 200 as const, body: result }
   },
-  previewPost: async (args, _ctx) => {
+  preview: async (args, _ctx) => {
     const html = await renderPostPortableTextToHtml(args.body.body)
     const headings = collectHeadings(args.body.body, deriveSlug)
     return { status: 200 as const, body: { html, headings } }
   },
-  upsertPostMeta: async (args, ctx) => {
+  upsertMeta: async (args, ctx) => {
     const meta = {
       slug: args.body.slug,
       title: args.body.title,
@@ -123,7 +123,7 @@ export const adminPostsController: AuthedContractImpl<typeof adminPostsContract>
         : await updatePostMeta({ id: BigInt(args.body.id), ...meta }, ctx.viewer ?? undefined)
     return { status: 200 as const, body: { post } }
   },
-  listPostRevisions: async (args, ctx) => {
+  listRevisions: async (args, ctx) => {
     const revisions = await listPostRevisionsForAdmin(BigInt(args.query.id), ctx.viewer ?? undefined)
     return { status: 200 as const, body: { revisions } }
   },

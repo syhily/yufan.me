@@ -45,7 +45,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
 
   const clearMutation = useApiMutation<{ target: ClearCacheTarget }, ClearCacheResultDto>(
-    ({ target }) => unwrap(api.admin.clearCache({ body: { target } })),
+    ({ target }) => unwrap(api.admin.cache.clear({ body: { target } })),
     {
       onError: (error) => {
         setStatus((prev) => ({

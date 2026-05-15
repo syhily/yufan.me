@@ -6,18 +6,18 @@ import { errorResponse, standardMutationErrors, standardReadErrors } from '@/sha
 
 export const adminSettingsContract = c.router(
   {
-    getSettings: {
+    get: {
       method: 'GET',
       path: '/admin/settings',
       responses: { 200: z.object({ bundle: blogSettingsBundleDto.nullable() }), ...standardReadErrors },
-      summary: 'getSettings',
+      summary: '管理后台：读取站点设置',
     },
-    updateSettings: {
+    update: {
       method: 'PATCH',
       path: '/admin/settings',
       body: z.object({ section: z.string(), payload: z.unknown() }),
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
-      summary: 'updateSettings',
+      summary: '管理后台：更新站点设置（按段落）',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },

@@ -7,20 +7,20 @@ import { errorResponse, standardMutationErrors } from '@/shared/contracts/_error
 
 export const adminCacheContract = c.router(
   {
-    getCacheStats: {
+    getStats: {
       method: 'GET',
       path: '/admin/cache/stats/:id',
       pathParams: z.object({ id: z.string().min(1) }),
       query: z.object({}),
       responses: { 200: adminCacheStatsDto, ...standardMutationErrors },
-      summary: 'getCacheStats',
+      summary: '管理后台：缓存桶统计',
     },
-    clearCache: {
+    clear: {
       method: 'POST',
       path: '/admin/cache/clear',
       body: z.object({ target: z.union([z.enum(CACHE_BUCKET_IDS), z.literal('all')]) }),
       responses: { 200: clearCacheResultDto, ...standardMutationErrors },
-      summary: 'clearCache',
+      summary: '管理后台：清空缓存桶',
     },
   },
   { strictStatusCodes: true, commonResponses: { 500: errorResponse } },
