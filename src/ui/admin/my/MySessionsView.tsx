@@ -1,11 +1,12 @@
 import { LogOutIcon, MonitorIcon, RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { MySessionItem } from '@/routes/wp-admin.my.sessions'
 
-import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { formatUserAgentLabel } from '@/shared/user-agent'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -16,8 +17,6 @@ import { Card, CardContent } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const REVOKE = API_ACTIONS.account.revokeSession
-
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export interface MySessionsViewProps {
@@ -27,20 +26,18 @@ export interface MySessionsViewProps {
 export function MySessionsView({ items }: MySessionsViewProps) {
   const config = useSiteIdentity()
   const revalidator = useRevalidator()
-  const revoke = useFetcher<ApiEnvelope<{ success: boolean; currentSession: boolean }>>()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  useFetcherResult(revoke, {
-    action: REVOKE,
-    onSuccess: () => {
-      // Self-revoke is short-circuited to the logout endpoint inside
-      // `onRevoke`, so by the time this handler fires we're always
-      // revoking a different device — a list re-fetch is enough.
-      void revalidator.revalidate()
+  const revokeMutation = useApiMutation(
+    (input: { sessionId: string }) => unwrap(api.account.revokeSession({ body: input })),
+    {
+      onSuccess: () => {
+        void revalidator.revalidate()
+      },
     },
-  })
+  )
 
-  const submitting = revoke.state !== 'idle'
+  const submitting = revokeMutation.isPending
 
   const onRevoke = (sid: string, isCurrent: boolean) => {
     setConfirm({
@@ -63,10 +60,7 @@ export function MySessionsView({ items }: MySessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        void revoke.submit(
-          { sessionId: sid },
-          { method: REVOKE.method, encType: 'application/json', action: REVOKE.path },
-        )
+        revokeMutation.mutate({ sessionId: sid })
       },
     })
   }
