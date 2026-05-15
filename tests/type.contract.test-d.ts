@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'vitest'
 
-import type { apiContract } from '@/shared/contracts'
+import { apiContract } from '@/shared/contracts'
 
 // Type-level regression tests. Any schema drift in the contracts fails at
 // compile time. This replaces the hand-typed api-types.ts pattern.
