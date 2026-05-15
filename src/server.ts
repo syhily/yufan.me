@@ -22,8 +22,9 @@ import { honoWpDecoyMiddleware } from '@/server/http/wp-decoy'
 import { getLogger } from '@/server/logger'
 
 const requestLog = getLogger('http.request')
+const leakedResponseLog = getLogger('http.leaked-response')
 
-export default await createHonoServer<Env>({
+const server = await createHonoServer<Env>({
   configure(app) {
     app.onError(onErrorHandler)
     app.use(requestId())
@@ -97,3 +98,43 @@ export default await createHonoServer<Env>({
     return context
   },
 })
+
+// Defensive: Hono's app.onError does not catch thrown Response objects (only
+// Error instances).  React Router loaders/actions throw Response/redirect()
+// as control flow, and in rare edge cases (streaming deferred boundaries,
+// middleware ordering bugs, or react-router-hono-server internal leakage) the
+// Response can bubble past Hono's error handler and crash the dev server with
+// "Unknown error: [object Response]".  Wrapping app.fetch lets us intercept
+// the leaked Response, log it for diagnostics, and return it normally.
+const originalFetch = server.fetch.bind(server)
+server.fetch = (request, env, executionContext) => {
+  try {
+    const result = originalFetch(request, env, executionContext)
+    if (result instanceof Promise) {
+      return result.catch((e) => {
+        if (e instanceof Response) {
+          leakedResponseLog.warn('leaked-response', {
+            url: request instanceof Request ? request.url : undefined,
+            status: e.status,
+            statusText: e.statusText,
+          })
+          return e
+        }
+        throw e
+      })
+    }
+    return result
+  } catch (e) {
+    if (e instanceof Response) {
+      leakedResponseLog.warn('leaked-response', {
+        url: request instanceof Request ? request.url : undefined,
+        status: e.status,
+        statusText: e.statusText,
+      })
+      return e
+    }
+    throw e
+  }
+}
+
+export default server
