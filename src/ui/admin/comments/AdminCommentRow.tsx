@@ -1,4 +1,4 @@
-import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Icon, UserIcon } from 'lucide-react'
+import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Icon, UserIcon, XIcon } from 'lucide-react'
 
 import type { AdminComment } from '@/shared/comments'
 
@@ -30,8 +30,10 @@ export interface AdminCommentRowProps {
   onReply: () => void
   onEditUser: () => void
   onApproved: () => void
+  onRejected: () => void
   onDeleted: () => void
   onConfirmApprove: (action: () => void) => void
+  onConfirmReject: (action: () => void) => void
   onConfirmDelete: (action: () => void) => void
   // The "来自：xxx" link calls back with both `pageKey` (for filtering)
   // and `pageTitle` (so the parent Combobox can hand the label to its
@@ -50,8 +52,10 @@ export function AdminCommentRow({
   onReply,
   onEditUser,
   onApproved,
+  onRejected,
   onDeleted,
   onConfirmApprove,
+  onConfirmReject,
   onConfirmDelete,
   onFilterByPage,
   onFilterByAuthor,
@@ -72,12 +76,21 @@ export function AdminCommentRow({
       onSuccess: () => onDeleted(),
     },
   )
+  const rejectMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.comments.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => onRejected(),
+    },
+  )
 
   const submitApprove = () => {
     approveMutation.mutate({ id: idStr(comment.id) })
   }
   const submitDelete = () => {
     deleteMutation.mutate({ id: idStr(comment.id) })
+  }
+  const submitReject = () => {
+    rejectMutation.mutate({ id: idStr(comment.id) })
   }
 
   const initial = (comment.name || comment.email || '?').slice(0, 1).toUpperCase()
@@ -104,16 +117,28 @@ export function AdminCommentRow({
     <div className="pointer-events-none absolute right-4 bottom-4 z-10 flex justify-end sm:top-4 sm:right-4 sm:bottom-auto">
       <div className="pointer-events-auto flex items-center gap-2">
         {comment.isPending && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={approveMutation.isPending}
-            onClick={() => onConfirmApprove(submitApprove)}
-            className="h-8 gap-1 px-3 text-xs sm:h-9 sm:gap-1.5 sm:px-3.5 sm:text-sm"
-          >
-            <CheckIcon /> 审核
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={approveMutation.isPending}
+              onClick={() => onConfirmApprove(submitApprove)}
+              className="h-8 gap-1 px-3 text-xs sm:h-9 sm:gap-1.5 sm:px-3.5 sm:text-sm"
+            >
+              <CheckIcon /> 审核
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={rejectMutation.isPending}
+              onClick={() => onConfirmReject(submitReject)}
+              className="h-8 gap-1 px-3 text-xs sm:h-9 sm:gap-1.5 sm:px-3.5 sm:text-sm"
+            >
+              <XIcon /> 拒绝
+            </Button>
+          </>
         )}
         <Button
           type="button"

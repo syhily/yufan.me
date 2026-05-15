@@ -2,7 +2,7 @@ import type { AppRoute, AppRouter } from '@ts-rest/core'
 import type { Hono, MiddlewareHandler } from 'hono'
 import type { z } from 'zod'
 
-import { isAppRoute } from '@ts-rest/core'
+import { isAppRoute, isAppRouteNoBody } from '@ts-rest/core'
 import { HTTPException } from 'hono/http-exception'
 
 import type { Env } from './context'
@@ -74,7 +74,9 @@ function mountRoute(app: Hono<Env>, route: AppRoute, handler: (...args: unknown[
     const query = route.query ? validate(route.query as ZodSchema, parseQuery(c.req.query())) : undefined
     // body only exists on mutation routes
     const body =
-      'body' in route && route.body ? validate(route.body as ZodSchema, await readBody(c.req.raw, route)) : undefined
+      'body' in route && route.body && !isAppRouteNoBody(route.body)
+        ? validate(route.body as ZodSchema, await readBody(c.req.raw, route))
+        : undefined
     const headers = route.headers ? validate(route.headers as ZodSchema, headerObj(c.req.raw.headers)) : undefined
 
     const ctx: HandlerContext = {

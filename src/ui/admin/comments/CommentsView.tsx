@@ -261,6 +261,17 @@ export function CommentsView({
       }),
     [],
   )
+  const askReject = useCallback(
+    (run: () => void) =>
+      setConfirm({
+        title: '拒绝该评论？',
+        description: '此操作将直接删除该评论，不会通知作者。',
+        actionLabel: '拒绝',
+        destructive: true,
+        onConfirm: run,
+      }),
+    [],
+  )
   const askDelete = useCallback(
     (run: () => void) =>
       setConfirm({
@@ -406,8 +417,10 @@ export function CommentsView({
                   onReply={() => setReplyTarget(comment)}
                   onEditUser={() => setEditUserTarget(comment)}
                   onApproved={() => dispatch({ type: 'approveComment', id: idStr(comment.id) })}
+                  onRejected={() => dispatch({ type: 'removeComment', id: idStr(comment.id) })}
                   onDeleted={() => dispatch({ type: 'removeComment', id: idStr(comment.id) })}
                   onConfirmApprove={askApprove}
+                  onConfirmReject={askReject}
                   onConfirmDelete={askDelete}
                   onFilterByPage={(pageKey, pageTitle) => {
                     dispatch({ type: 'setFilterPage', value: { value: pageKey, label: pageTitle } })
