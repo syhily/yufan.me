@@ -7,6 +7,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
 import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
@@ -34,7 +35,7 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const [loaded, setLoaded] = useState(false)
 
   const { data: rawData } = useApiQuery(
-    ['comment-raw', comment?.id ?? 'empty'],
+    queryKeys.comment.raw(comment ? idStr(comment.id) : 'empty'),
     () =>
       comment ? unwrap(api.commentPublic.getRaw({ query: { rid: idStr(comment.id) } })) : Promise.resolve({ body: [] }),
     { enabled: !!comment },

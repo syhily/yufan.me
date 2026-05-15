@@ -7,6 +7,7 @@ import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsCo
 
 import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
 import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
@@ -109,17 +110,18 @@ export function CommentsView({
     onChange: (value) => setDebouncedAuthorQuery(value),
   })
 
-  const { data: pagesData, isLoading: isPagesPending } = useApiQuery(['comment-search-pages', debouncedPageQuery], () =>
-    unwrap(api.commentAdmin.searchPages({ query: debouncedPageQuery ? { q: debouncedPageQuery } : {} })),
+  const { data: pagesData, isLoading: isPagesPending } = useApiQuery(
+    queryKeys.comment.searchPages(debouncedPageQuery),
+    () => unwrap(api.commentAdmin.searchPages({ query: debouncedPageQuery ? { q: debouncedPageQuery } : {} })),
   )
 
   const { data: authorsData, isLoading: isAuthorsPending } = useApiQuery(
-    ['comment-search-authors', debouncedAuthorQuery],
+    queryKeys.comment.searchAuthors(debouncedAuthorQuery),
     () => unwrap(api.commentAdmin.searchAuthors({ query: debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {} })),
   )
 
   const { data: authorRehydrateData } = useApiQuery(
-    ['comment-rehydrate-author', initialAuthorId],
+    queryKeys.comment.rehydrateAuthor(initialAuthorId),
     () =>
       initialAuthorId
         ? unwrap(api.commentAdmin.searchAuthors({ query: { ids: initialAuthorId } }))
@@ -128,7 +130,7 @@ export function CommentsView({
   )
 
   const { data: pageRehydrateData } = useApiQuery(
-    ['comment-rehydrate-page', initialPageKey],
+    queryKeys.comment.rehydratePage(initialPageKey),
     () =>
       initialPageKey
         ? unwrap(api.commentAdmin.searchPages({ query: { key: initialPageKey } }))

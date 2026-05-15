@@ -1,10 +1,10 @@
 import { data } from 'react-router'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { countMyComments } from '@/server/db/query/comment'
 import { findUserById } from '@/server/db/query/user'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
 
 import type { Route } from './+types/wp-admin.my.profile'

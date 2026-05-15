@@ -1,15 +1,15 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense } from 'react'
+import { dehydrate, HydrationBoundary, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense, useState } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
-import { queryClient } from '@/client/api/query-client'
+import { makeQueryClient } from '@/client/api/query-client'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
+import { getRouteRequestContext } from '@/server/auth/context'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
@@ -109,7 +109,11 @@ export function loader({ request, context }: Route.LoaderArgs) {
   // returns `null` when serving the install split-screen itself.
   const blogSettings = getBlogSettingsBundleSync()
 
-  return { admin, currentUser, blogSettings, theme }
+  // Create a per-request QueryClient for SSR dehydration.
+  const queryClient = makeQueryClient()
+  const dehydratedState = dehydrate(queryClient)
+
+  return { admin, currentUser, blogSettings, theme, dehydratedState }
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
@@ -184,6 +188,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // re-install per route. See `@/client/hooks/use-chunk-error-recovery`.
   useChunkErrorRecovery()
 
+  // One QueryClient per request on the server; one per browser session
+  // on the client.  HydrationBoundary seeds it with the dehydrated
+  // state produced by the root loader.
+  const [queryClient] = useState(() => makeQueryClient())
+
   // The bundle flows down through `BlogSettingsProvider` (per-section
   // contexts) and the route data path (`Route.MetaArgs.matches`). On
   // the server, non-React modules read the boot-hydrated snapshot in
@@ -197,12 +206,14 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // `useFooterSettings()` / etc.
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
-        <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-          <NavigationSplash />
-          <Outlet />
-        </BlogSettingsProvider>
-      </ThemeProvider>
+      <HydrationBoundary state={loaderData.dehydratedState}>
+        <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
+          <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+            <NavigationSplash />
+            <Outlet />
+          </BlogSettingsProvider>
+        </ThemeProvider>
+      </HydrationBoundary>
     </QueryClientProvider>
   )
 }

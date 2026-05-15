@@ -1,7 +1,7 @@
 import { redirect } from 'react-router'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { ensureNoSettingsOrRedirect } from '@/server/install/gate'
-import { getRouteRequestContext } from '@/server/session'
 
 // `src/routes/wp-admin.install.settings.tsx` per the route-orchestration
 // rule. The route module is now reduced to: parse args → call helpers →

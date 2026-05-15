@@ -1,6 +1,7 @@
 import type { AuthedContractImpl } from '@/server/http/ts-rest-adapter'
 import type { AdminImageKind } from '@/shared/images'
 
+import { userSession } from '@/server/auth/primitives'
 import { uploadImageMetadataSchema } from '@/server/images/schema'
 import {
   deleteImage,
@@ -10,7 +11,6 @@ import {
   uploadImage,
 } from '@/server/images/service'
 import { parseInput } from '@/server/route-helpers/errors'
-import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 

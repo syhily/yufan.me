@@ -1,12 +1,12 @@
+import type { BlogSession, SessionUser } from '@/server/auth/session-storage'
 import type { EntityTarget } from '@/server/db/target'
-import type { BlogSession, SessionUser } from '@/server/session'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { DetailPageComments } from '@/shared/comments'
 
+import { userSession } from '@/server/auth/primitives'
 import { queryLikes } from '@/server/comments/likes'
 import { ensureCommentPage, loadComments, parseComments } from '@/server/comments/loader'
 import { bumpPageView } from '@/server/metrics/batcher'
-import { userSession } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 
 // `SessionUser` carries the canonical `role`. The public reply form

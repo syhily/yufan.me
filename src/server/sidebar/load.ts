@@ -1,7 +1,7 @@
-import type { BlogSession } from '@/server/session'
+import type { BlogSession } from '@/server/auth/session-storage'
 
+import { userSession } from '@/server/auth/primitives'
 import { latestComments } from '@/server/comments/loader'
-import { userSession } from '@/server/session'
 
 export async function loadSidebarData(session: BlogSession) {
   const admin = userSession(session)?.role === 'admin'

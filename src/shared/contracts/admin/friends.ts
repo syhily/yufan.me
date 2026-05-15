@@ -11,7 +11,7 @@ export const adminFriendsContract = c.router(
   {
     listFriends: {
       method: 'GET',
-      path: '/admin/list-friends',
+      path: '/admin/friends',
       query: z.object({
         q: z.string().optional(),
         includeHidden: z.coerce.boolean().optional(),
@@ -26,7 +26,7 @@ export const adminFriendsContract = c.router(
     },
     upsertFriend: {
       method: 'POST',
-      path: '/admin/upsert-friend',
+      path: '/admin/friends',
       body: z.object({
         id: z.string().min(1).optional(),
         website: z.string().trim().min(1).max(80),
@@ -41,7 +41,7 @@ export const adminFriendsContract = c.router(
     },
     deleteFriend: {
       method: 'DELETE',
-      path: '/admin/delete-friend/:id',
+      path: '/admin/friends/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deleteFriend',

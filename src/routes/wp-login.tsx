@@ -1,8 +1,12 @@
 import bcrypt from 'bcryptjs'
 import { data, redirect } from 'react-router'
 
+import { getRouteRequestContext } from '@/server/auth/context'
+import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
+import { processAuthFormSubmission, signInWithSession } from '@/server/auth/flows'
 import { establishLoginSession, logout } from '@/server/auth/primitives'
 import { signInSchema } from '@/server/auth/schema'
+import { destroySession } from '@/server/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/auth/verification-tokens'
 import { countApprovedCommentsByUser } from '@/server/db/query/comment'
 import { findUserByEmail, findUserById, updateUserById } from '@/server/db/query/user'
@@ -10,15 +14,6 @@ import { sendPasswordReset } from '@/server/email/sender'
 import { ensureInstalledOrRedirect } from '@/server/install/gate'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import {
-  clearCsrfCookie,
-  destroySession,
-  getRouteRequestContext,
-  issueCsrfToken,
-  processAuthFormSubmission,
-  signInWithSession,
-  validateRequestCsrf,
-} from '@/server/session'
 import { safeRedirectPath } from '@/shared/safe-url'
 import { AdminCredentialsForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'

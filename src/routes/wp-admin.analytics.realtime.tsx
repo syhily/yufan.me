@@ -1,5 +1,5 @@
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
-import { getRouteRequestContext } from '@/server/session'
 import { RealtimeFeed } from '@/ui/admin/analytics/RealtimeFeed'
 
 import type { Route } from './+types/wp-admin.analytics.realtime'

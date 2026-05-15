@@ -11,7 +11,7 @@ export const adminCategoriesContract = c.router(
   {
     listCategories: {
       method: 'GET',
-      path: '/admin/list-categories',
+      path: '/admin/categories',
       query: z.object({ q: z.string().optional() }),
       responses: {
         200: z.object({ categories: z.array(z.custom<AdminCategoryDto>()), total: z.number() }),
@@ -21,7 +21,7 @@ export const adminCategoriesContract = c.router(
     },
     upsertCategory: {
       method: 'POST',
-      path: '/admin/upsert-category',
+      path: '/admin/categories',
       body: z.object({
         id: z.string().min(1).optional(),
         name: z.string().trim().min(1).max(20),
@@ -35,14 +35,14 @@ export const adminCategoriesContract = c.router(
     },
     deleteCategory: {
       method: 'DELETE',
-      path: '/admin/delete-category/:id',
+      path: '/admin/categories/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deleteCategory',
     },
     reorderCategories: {
       method: 'POST',
-      path: '/admin/reorder-categories',
+      path: '/admin/categories/reorder',
       body: z.object({ orderedIds: z.array(z.string().min(1)).min(1).max(500) }),
       responses: { 200: z.object({ categories: z.array(z.custom<AdminCategoryDto>()) }), ...standardMutationErrors },
       summary: 'reorderCategories',

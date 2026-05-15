@@ -6,6 +6,7 @@ import type { AdminImageDto, AdminImageKind } from '@/shared/images'
 
 import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
 import { unwrap } from '@/client/api/unwrap'
 import { ImageCard } from '@/ui/admin/images/ImageCard'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
@@ -50,7 +51,7 @@ export function ImagesView() {
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const listQuery = useApiQuery(['admin', 'images', state.q, state.kind, state.currentPage, state.pageSize], () =>
+  const listQuery = useApiQuery(queryKeys.admin.images(state.q, state.kind, state.currentPage, state.pageSize), () =>
     unwrap(
       api.admin.listImages({
         query: {

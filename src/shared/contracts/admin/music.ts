@@ -11,28 +11,28 @@ export const adminMusicContract = c.router(
   {
     listMusic: {
       method: 'GET',
-      path: '/admin/list-music',
+      path: '/admin/musics',
       query: z.object({ q: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
       responses: { 200: z.custom<ListMusicOutput>(), ...standardMutationErrors },
       summary: 'listMusic',
     },
     searchMusic: {
       method: 'GET',
-      path: '/admin/search-music',
+      path: '/admin/musics/search',
       query: z.object({ keyword: z.string(), limit: z.number().optional() }),
       responses: { 200: z.custom<SearchMusicOutput>(), ...standardMutationErrors },
       summary: 'searchMusic',
     },
     addMusic: {
       method: 'POST',
-      path: '/admin/add-music',
+      path: '/admin/musics',
       body: z.object({ source: z.literal('netease'), sourceId: z.string().trim().min(1).max(64) }),
       responses: { 200: z.custom<AddMusicOutput>(), ...standardMutationErrors },
       summary: 'addMusic',
     },
     updateMusic: {
       method: 'PATCH',
-      path: '/admin/update-music/:id',
+      path: '/admin/musics/:id',
       pathParams: idParam,
       body: z.object({
         name: z.string().trim().min(1).max(200),
@@ -45,7 +45,7 @@ export const adminMusicContract = c.router(
     },
     deleteMusic: {
       method: 'DELETE',
-      path: '/admin/delete-music/:id',
+      path: '/admin/musics/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deleteMusic',

@@ -2,6 +2,7 @@ import type { MetricRow, MetricType } from '@/shared/analytics/dto'
 
 import { api } from '@/client/api/client'
 import { useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
 import { unwrap } from '@/client/api/unwrap'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
@@ -21,7 +22,7 @@ export interface MetricListProps {
 export function MetricList({ type, initial, className }: MetricListProps) {
   const state = useAnalyticsState()
   const query = useApiQuery(
-    ['analytics', 'metrics', type, state.preset, state.range.startAt, state.range.endAt, state.filters],
+    queryKeys.analytics.metrics(type, state.preset, state.range.startAt, state.range.endAt, state.filters),
     () =>
       unwrap(
         api.analytics.metrics({

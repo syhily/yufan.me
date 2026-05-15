@@ -1,18 +1,18 @@
 import { QueryClient } from '@tanstack/react-query'
 
-/**
- * Default QueryClient for the ts-rest + TanStack Query layer.
- *
- * Created once per browser session. SSR dehydration is not implemented
- * yet — the root loader still returns the initial data directly and
- * client-side queries start from `undefined` (or seed with loader data
- * at the consumer level).
- */
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30_000,
-      refetchOnWindowFocus: false,
+export function makeQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-})
+  })
+}
+
+/**
+ * Browser singleton for SPA navigations after initial hydration.
+ * On the server a fresh instance should be created per request.
+ */
+export const browserQueryClient = makeQueryClient()

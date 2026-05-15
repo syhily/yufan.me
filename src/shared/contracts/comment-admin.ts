@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { AdminComment } from '@/shared/comments'
+import type { AdminComment, AdminPendingDashboardDto } from '@/shared/comments'
 
 import { c } from './_base'
 import { standardMutationErrors, standardReadErrors } from './_errors'
@@ -46,7 +46,7 @@ export const commentAdminContract = c.router(
       path: '/comment/comments/:rid/approve',
       pathParams: z.object({ rid: z.string() }),
       body: c.noBody(),
-      responses: { 200: z.null(), ...standardMutationErrors },
+      responses: { 204: z.null(), ...standardMutationErrors },
       summary: '管理员审核通过评论',
     },
     delete: {
@@ -54,7 +54,7 @@ export const commentAdminContract = c.router(
       path: '/comment/comments/:rid',
       pathParams: z.object({ rid: z.string() }),
       body: c.noBody(),
-      responses: { 200: z.null(), ...standardMutationErrors },
+      responses: { 204: z.null(), ...standardMutationErrors },
       summary: '管理员删除评论',
     },
     loadAll: {
@@ -77,6 +77,20 @@ export const commentAdminContract = c.router(
       query: filterAutocompleteQuery,
       responses: { 200: searchAuthorsResponse, ...standardReadErrors },
       summary: '搜索作者',
+    },
+    approveCommentDeletion: {
+      method: 'POST',
+      path: '/admin/comments/approve-deletion',
+      body: z.object({ commentId: z.string(), approve: z.boolean() }),
+      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      summary: 'approveCommentDeletion',
+    },
+    listPendingDashboard: {
+      method: 'GET',
+      path: '/admin/comments/pending-dashboard',
+      query: z.object({ kind: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
+      responses: { 200: z.custom<AdminPendingDashboardDto>(), ...standardMutationErrors },
+      summary: 'listPendingDashboard',
     },
   },
   { strictStatusCodes: true },

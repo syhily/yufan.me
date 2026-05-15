@@ -5,6 +5,7 @@ import type { AdminImageDto } from '@/shared/images'
 
 import { api } from '@/client/api/client'
 import { useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
 import { unwrap } from '@/client/api/unwrap'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'
@@ -46,7 +47,7 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
   const [uploadOpen, setUploadOpen] = useState(false)
 
   const listQuery = useApiQuery(
-    ['admin', 'images', q],
+    queryKeys.admin.imagesList(q),
     () =>
       unwrap(
         api.admin.listImages({ query: { kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() } }),

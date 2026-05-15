@@ -4,9 +4,9 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { settingsMeta } from '@/server/route-helpers/settings-meta'
-import { getRouteRequestContext } from '@/server/session'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 
 export const meta = settingsMeta('社交链接')

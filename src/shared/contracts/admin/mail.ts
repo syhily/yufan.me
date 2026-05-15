@@ -7,7 +7,7 @@ export const adminMailContract = c.router(
   {
     sendTestMail: {
       method: 'POST',
-      path: '/admin/send-test-mail',
+      path: '/admin/mail/test',
       body: z.object({ to: z.email() }),
       responses: {
         200: z.object({ success: z.boolean() }),

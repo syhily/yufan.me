@@ -53,7 +53,7 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
     const page = await unpublishPage(BigInt(args.body.id))
     return { status: 200 as const, body: { page } }
   },
-  saveDraft: async (args, { viewer }) => {
+  savePageDraft: async (args, { viewer }) => {
     const result = await savePageDraft({
       pageId: BigInt(args.body.id),
       body: args.body.body,
@@ -63,7 +63,7 @@ export const adminPagesController: AuthedContractImpl<typeof adminPagesContract>
     })
     return { status: 200 as const, body: result }
   },
-  publishLatest: async (args, { viewer }) => {
+  publishPageLatest: async (args, { viewer }) => {
     const result = await publishPageLatest({
       pageId: BigInt(args.body.id),
       body: args.body.body,

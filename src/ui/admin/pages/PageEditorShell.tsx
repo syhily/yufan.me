@@ -312,7 +312,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const saveDraftMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
-    (input) => unwrap(api.admin.saveDraft({ body: input })),
+    (input) => unwrap(api.admin.savePageDraft({ body: input })),
     {
       onSuccess: (payload) => onBodySaved(payload),
       onError: (error) => {
@@ -322,7 +322,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
   )
   const publishMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
-    (input) => unwrap(api.admin.publishLatest({ body: input })),
+    (input) => unwrap(api.admin.publishPageLatest({ body: input })),
     {
       onSuccess: (payload) => {
         onBodySaved(payload)
@@ -391,7 +391,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       }
       try {
         const result = await unwrap(
-          api.admin.saveDraft({
+          api.admin.savePageDraft({
             body: {
               id: detail.page.id,
               body: snapshot,
@@ -538,7 +538,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     let draftResult: SavePageBodyOutput
     try {
       draftResult = await unwrap(
-        api.admin.saveDraft({
+        api.admin.savePageDraft({
           body: {
             id: savedPage.id,
             body,
@@ -839,7 +839,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     setStatus({ kind: 'saving' })
     try {
       const result = await unwrap(
-        api.admin.saveDraft({
+        api.admin.savePageDraft({
           body: {
             id: detail.page.id,
             body: conflict.localBody,

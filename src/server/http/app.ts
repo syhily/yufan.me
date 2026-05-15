@@ -4,7 +4,6 @@ import { bodyLimit } from 'hono/body-limit'
 import { apiContract } from '@/shared/contracts'
 import { adminCacheContract } from '@/shared/contracts/admin/cache'
 import { adminCategoriesContract } from '@/shared/contracts/admin/categories'
-import { adminCommentsContract } from '@/shared/contracts/admin/comments'
 import { adminFriendsContract } from '@/shared/contracts/admin/friends'
 import { adminImagesContract } from '@/shared/contracts/admin/images'
 import { adminMailContract } from '@/shared/contracts/admin/mail'
@@ -21,7 +20,6 @@ import type { Env } from './context'
 import { accountController } from './controllers/account.controller'
 import { adminCacheController } from './controllers/admin/cache.controller'
 import { adminCategoriesController } from './controllers/admin/categories.controller'
-import { adminCommentsController } from './controllers/admin/comments.controller'
 import { adminFriendsController } from './controllers/admin/friends.controller'
 import { adminImagesController } from './controllers/admin/images.controller'
 import { adminMailController } from './controllers/admin/mail.controller'
@@ -82,7 +80,6 @@ export function createApiApp(): Hono<Env> {
   authorRoute(app, adminMusicContract, adminMusicController)
   adminRoute(app, adminPagesContract, adminPagesController)
   authorRoute(app, adminPostsContract, adminPostsController)
-  adminRoute(app, adminCommentsContract, adminCommentsController)
   adminRoute(app, adminRendersContract, adminRendersController)
 
   // Auth routes (admin only)

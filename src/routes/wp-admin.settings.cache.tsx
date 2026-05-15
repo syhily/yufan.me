@@ -1,7 +1,7 @@
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { getAdminCacheStats } from '@/server/cache/admin'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { CacheView } from '@/ui/admin/settings/CacheView'
 

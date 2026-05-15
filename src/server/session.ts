@@ -1,3 +1,12 @@
+/**
+ * @deprecated This barrel file is preserved only for test compatibility.
+ * All production source files have been migrated to direct imports.
+ * Do not add new imports here — import from the concrete source modules
+ * under `@/server/auth/*` instead.
+ *
+ * TODO: Remove once test mocks are rewritten to target individual modules.
+ */
+
 export type { BlogSession, BlogSessionData, SessionUser } from '@/server/auth/session-storage'
 export { commitSession, destroySession, getRequestSession, getSession } from '@/server/auth/session-storage'
 

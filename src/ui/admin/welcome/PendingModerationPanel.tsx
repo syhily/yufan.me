@@ -54,7 +54,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     refetch,
   } = useApiQuery<ListPendingDashboardOutput>(
     ['admin', 'pending', 'all', offset, PAGE_SIZE],
-    () => unwrap(api.admin.listPendingDashboard({ query: { kind: 'all', offset, limit: PAGE_SIZE } })),
+    () => unwrap(api.commentAdmin.listPendingDashboard({ query: { kind: 'all', offset, limit: PAGE_SIZE } })),
     { initialData: initial },
   )
 
@@ -92,7 +92,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     },
   )
   const approveDeletionApi = useApiMutation(
-    (vars: { commentId: string; approve: boolean }) => unwrap(api.admin.approveCommentDeletion({ body: vars })),
+    (vars: { commentId: string; approve: boolean }) => unwrap(api.commentAdmin.approveCommentDeletion({ body: vars })),
     {
       onSuccess: (data) => {
         toast.success(data ? '已处理该删除申请。' : '已处理。')

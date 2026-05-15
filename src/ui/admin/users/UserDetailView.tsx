@@ -28,6 +28,7 @@ import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery, useQueryClient } from '@/client/api/query'
 import { unwrap } from '@/client/api/unwrap'
 type Role = NonNullable<AdminUserDto['role']>
+import { queryKeys } from '@/client/api/query-keys'
 import { formatLocalDate } from '@/shared/formatter'
 import { idStr } from '@/shared/tools'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -79,7 +80,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
     unwrap(api.admin.getUser({ params: { id: userId } })),
   )
 
-  const commentsQuery = useApiQuery(['admin', 'comments', userId], () =>
+  const commentsQuery = useApiQuery(queryKeys.admin.comments(userId), () =>
     unwrap(api.commentAdmin.loadAll({ body: { offset: 0, limit: 10, userId } })),
   )
 

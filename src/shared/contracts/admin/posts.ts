@@ -17,28 +17,28 @@ export const adminPostsContract = c.router(
   {
     listPosts: {
       method: 'GET',
-      path: '/admin/list-posts',
+      path: '/admin/posts',
       query: listPostsSchema,
       responses: { 200: z.custom<ListPostsOutput>(), ...standardReadErrors },
       summary: 'listPosts',
     },
     getPost: {
       method: 'GET',
-      path: '/admin/get-post/:id',
+      path: '/admin/posts/:id',
       pathParams: idParam,
       responses: { 200: z.custom<AdminPostDetailDto>(), ...standardReadErrors },
       summary: 'getPost',
     },
     deletePost: {
       method: 'DELETE',
-      path: '/admin/delete-post/:id',
+      path: '/admin/posts/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deletePost',
     },
     restorePost: {
       method: 'POST',
-      path: '/admin/restore-post/:id',
+      path: '/admin/posts/:id/restore',
       pathParams: idParam,
       body: c.noBody(),
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
@@ -46,14 +46,14 @@ export const adminPostsContract = c.router(
     },
     unpublishPost: {
       method: 'POST',
-      path: '/admin/unpublish-post',
+      path: '/admin/posts/unpublish',
       body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ post: z.custom<AdminPostDto>() }), ...standardMutationErrors },
       summary: 'unpublishPost',
     },
     savePostDraft: {
       method: 'POST',
-      path: '/admin/save-post-draft',
+      path: '/admin/posts/draft',
       body: savePostBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
@@ -66,7 +66,7 @@ export const adminPostsContract = c.router(
     },
     publishPostLatest: {
       method: 'POST',
-      path: '/admin/publish-post-latest',
+      path: '/admin/posts/publish',
       body: savePostBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
@@ -79,7 +79,7 @@ export const adminPostsContract = c.router(
     },
     previewPost: {
       method: 'POST',
-      path: '/admin/preview-post',
+      path: '/admin/posts/preview',
       body: previewPostBodySchema,
       responses: {
         200: z.object({
@@ -92,14 +92,14 @@ export const adminPostsContract = c.router(
     },
     upsertPostMeta: {
       method: 'POST',
-      path: '/admin/upsert-post-meta',
+      path: '/admin/posts/meta',
       body: upsertPostMetaSchema,
       responses: { 200: z.object({ post: z.custom<AdminPostDto>() }), ...standardMutationErrors },
       summary: 'upsertPostMeta',
     },
     listPostRevisions: {
       method: 'GET',
-      path: '/admin/list-post-revisions',
+      path: '/admin/posts/revisions',
       query: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ revisions: z.array(z.custom<AdminRevisionDto>()) }), ...standardReadErrors },
       summary: 'listPostRevisions',

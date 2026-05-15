@@ -13,28 +13,28 @@ export const adminPagesContract = c.router(
   {
     listPages: {
       method: 'GET',
-      path: '/admin/list-pages',
+      path: '/admin/pages',
       query: listPagesSchema,
       responses: { 200: z.custom<ListPagesOutput>(), ...standardReadErrors },
       summary: 'listPages',
     },
     getPage: {
       method: 'GET',
-      path: '/admin/get-page/:id',
+      path: '/admin/pages/:id',
       pathParams: idParam,
       responses: { 200: z.custom<AdminPageDetailDto>(), ...standardReadErrors },
       summary: 'getPage',
     },
     deletePage: {
       method: 'DELETE',
-      path: '/admin/delete-page/:id',
+      path: '/admin/pages/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deletePage',
     },
     restorePage: {
       method: 'POST',
-      path: '/admin/restore-page/:id',
+      path: '/admin/pages/:id/restore',
       pathParams: idParam,
       body: c.noBody(),
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
@@ -42,14 +42,14 @@ export const adminPagesContract = c.router(
     },
     unpublishPage: {
       method: 'POST',
-      path: '/admin/unpublish-page',
+      path: '/admin/pages/unpublish',
       body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ page: z.custom<AdminPageDto>() }), ...standardMutationErrors },
       summary: 'unpublishPage',
     },
-    saveDraft: {
+    savePageDraft: {
       method: 'POST',
-      path: '/admin/save-draft',
+      path: '/admin/pages/draft',
       body: savePageBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
@@ -58,11 +58,11 @@ export const adminPagesContract = c.router(
         ]),
         ...standardMutationErrors,
       },
-      summary: 'saveDraft',
+      summary: 'savePageDraft',
     },
-    publishLatest: {
+    publishPageLatest: {
       method: 'POST',
-      path: '/admin/publish-latest',
+      path: '/admin/pages/publish',
       body: savePageBodySchema,
       responses: {
         200: z.discriminatedUnion('status', [
@@ -71,11 +71,11 @@ export const adminPagesContract = c.router(
         ]),
         ...standardMutationErrors,
       },
-      summary: 'publishLatest',
+      summary: 'publishPageLatest',
     },
     previewPage: {
       method: 'POST',
-      path: '/admin/preview-page',
+      path: '/admin/pages/preview',
       body: z.object({ body: portableTextBodySchema }),
       responses: {
         200: z.object({
@@ -88,14 +88,14 @@ export const adminPagesContract = c.router(
     },
     upsertPageMeta: {
       method: 'POST',
-      path: '/admin/upsert-page-meta',
+      path: '/admin/pages/meta',
       body: upsertPageMetaSchema,
       responses: { 200: z.object({ page: z.custom<AdminPageDto>() }), ...standardMutationErrors },
       summary: 'upsertPageMeta',
     },
     listPageRevisions: {
       method: 'GET',
-      path: '/admin/list-page-revisions',
+      path: '/admin/pages/revisions',
       query: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ revisions: z.array(z.custom<AdminRevisionDto>()) }), ...standardReadErrors },
       summary: 'listPageRevisions',

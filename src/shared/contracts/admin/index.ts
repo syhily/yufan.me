@@ -2,7 +2,6 @@ import { c } from '@/shared/contracts/_base'
 
 import { adminCacheContract } from './cache'
 import { adminCategoriesContract } from './categories'
-import { adminCommentsContract } from './comments'
 import { adminFriendsContract } from './friends'
 import { adminImagesContract } from './images'
 import { adminMailContract } from './mail'
@@ -27,7 +26,6 @@ export const adminContract = c.router(
     ...adminMusicContract,
     ...adminPagesContract,
     ...adminPostsContract,
-    ...adminCommentsContract,
     ...adminRendersContract,
   },
   { strictStatusCodes: true },
@@ -36,7 +34,6 @@ export const adminContract = c.router(
 export {
   adminCacheContract,
   adminCategoriesContract,
-  adminCommentsContract,
   adminFriendsContract,
   adminImagesContract,
   adminMailContract,

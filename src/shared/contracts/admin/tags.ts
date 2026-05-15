@@ -11,7 +11,7 @@ export const adminTagsContract = c.router(
   {
     listTags: {
       method: 'GET',
-      path: '/admin/list-tags',
+      path: '/admin/tags',
       query: z.object({ q: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
       responses: {
         200: z.object({ tags: z.array(z.custom<AdminTagDto>()), total: z.number(), hasMore: z.boolean() }),
@@ -21,7 +21,7 @@ export const adminTagsContract = c.router(
     },
     upsertTag: {
       method: 'POST',
-      path: '/admin/upsert-tag',
+      path: '/admin/tags',
       body: z.object({
         id: z.string().min(1).optional(),
         name: z.string().trim().min(1).max(20),
@@ -32,7 +32,7 @@ export const adminTagsContract = c.router(
     },
     deleteTag: {
       method: 'DELETE',
-      path: '/admin/delete-tag/:id',
+      path: '/admin/tags/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deleteTag',

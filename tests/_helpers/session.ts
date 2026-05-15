@@ -1,4 +1,4 @@
-import type { BlogSession, BlogSessionData, SessionUser } from '@/server/session'
+import type { BlogSession, BlogSessionData, SessionUser } from '@/server/auth/session-storage'
 
 // In-memory `BlogSession` doppelganger. `react-router`'s real `Session`
 // builds on top of `createSessionStorage`, which pulls Redis. Tests don't

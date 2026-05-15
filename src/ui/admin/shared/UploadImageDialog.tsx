@@ -3,6 +3,8 @@ import { type SubmitEventHandler, useCallback, useEffect, useRef, useState } fro
 
 import type { AdminImageDto } from '@/shared/images'
 
+import { api } from '@/client/api/client'
+import { unwrap } from '@/client/api/unwrap'
 import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 import { Button } from '@/ui/components/button'
 import {
@@ -162,14 +164,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
         formData.append('note', note.trim())
       }
 
-      const response = await fetch('/api/admin/upload-image', {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data?.error?.message || '上传失败')
-      }
+      const data = await unwrap(api.admin.uploadImage({ body: formData }))
       onUploaded(data.image)
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '上传失败')

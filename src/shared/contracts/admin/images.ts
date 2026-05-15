@@ -11,7 +11,7 @@ export const adminImagesContract = c.router(
   {
     listImages: {
       method: 'GET',
-      path: '/admin/list-images',
+      path: '/admin/images',
       query: z.object({
         q: z.string().optional(),
         kind: z.string().optional(),
@@ -23,14 +23,14 @@ export const adminImagesContract = c.router(
     },
     deleteImage: {
       method: 'DELETE',
-      path: '/admin/delete-image/:id',
+      path: '/admin/images/:id',
       pathParams: idParam,
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: 'deleteImage',
     },
     updateImageNote: {
       method: 'PATCH',
-      path: '/admin/update-image-note/:id',
+      path: '/admin/images/:id/note',
       pathParams: idParam,
       body: z.object({ note: z.string().nullable().optional() }),
       responses: { 200: z.object({ image: z.custom<AdminImageDto>() }), ...standardMutationErrors },
@@ -38,14 +38,15 @@ export const adminImagesContract = c.router(
     },
     recalculateImageThumbhash: {
       method: 'POST',
-      path: '/admin/recalculate-image-thumbhash',
+      path: '/admin/images/recalculate-thumbhash',
       body: z.object({ id: z.string().min(1) }),
       responses: { 200: z.object({ image: z.custom<AdminImageDto>() }), ...standardMutationErrors },
       summary: 'recalculateImageThumbhash',
     },
     uploadImage: {
       method: 'POST',
-      path: '/admin/upload-image',
+      path: '/admin/images/upload',
+      contentType: 'multipart/form-data',
       body: z.unknown(),
       responses: { 200: z.object({ image: z.custom<AdminImageDto>() }), ...standardMutationErrors },
       summary: 'uploadImage',

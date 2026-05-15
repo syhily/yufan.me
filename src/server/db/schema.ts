@@ -713,3 +713,35 @@ export const accessLog = pgTable(
 
 export type AccessLogRow = typeof accessLog.$inferSelect
 export type NewAccessLog = typeof accessLog.$inferInsert
+
+// ---------------------------------------------------------------------------
+// Audit log — durable record of admin mutations, auth events, and settings
+// changes. Written asynchronously (fire-and-forget) so the hot path never
+// blocks on the insert.
+// ---------------------------------------------------------------------------
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey(),
+    action: varchar('action', { length: 50 }).notNull(),
+    actorId: bigint('actor_id', { mode: 'bigint' }).references(() => user.id),
+    actorRole: varchar('actor_role', { length: 20 }),
+    resourceType: varchar('resource_type', { length: 50 }).notNull(),
+    resourceId: varchar('resource_id', { length: 100 }),
+    details: jsonb('details'),
+    ipAddress: inet('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index('idx_audit_log_actor').on(table.actorId),
+    index('idx_audit_log_resource').on(table.resourceType, table.resourceId),
+    index('idx_audit_log_created_at').on(table.createdAt),
+    index('idx_audit_log_action').on(table.action),
+  ],
+)
+
+export type AuditLogRow = typeof auditLog.$inferSelect
+export type NewAuditLog = typeof auditLog.$inferInsert

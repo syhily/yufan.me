@@ -1,6 +1,6 @@
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { MusicsView } from '@/ui/admin/musics/MusicsView'
 
 import type { Route } from './+types/wp-admin.musics'
