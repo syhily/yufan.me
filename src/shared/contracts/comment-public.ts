@@ -36,7 +36,10 @@ const commentReplyBody = z
     email: z.email(),
     link: httpUrlOrEmptyStringSchema.optional(),
     body: commentBodySchema,
-    csrf: z.string().min(1),
+    // CSRF token. Optional in the body schema because the
+    // `csrfGuard` middleware also accepts `X-CSRF-Token` header; the
+    // body field remains accepted as a fallback for legacy callers.
+    csrf: z.string().min(1).optional(),
     rid: z.number().optional(),
     subtitle: z.string().max(COMMENT_HONEYPOT_MAX_LEN).optional().default(''),
   })

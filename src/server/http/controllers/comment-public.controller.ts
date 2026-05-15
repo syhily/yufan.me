@@ -2,7 +2,7 @@ import { HTTPException } from 'hono/http-exception'
 
 import type { PublicContractImpl } from '@/server/http/ts-rest-adapter'
 
-import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
+import { issueCsrfToken } from '@/server/auth/csrf'
 import { userSession } from '@/server/auth/primitives'
 import { AvatarStatus, cacheAvatar } from '@/server/cache/avatar'
 import { updateComment, getCommentById } from '@/server/comments/admin'
@@ -80,15 +80,9 @@ export const commentPublicController: PublicContractImpl<typeof commentPublicCon
   },
 
   replyComment: async ({ body }, { request, clientAddress, session }) => {
-    const [csrfOk] = await validateRequestCsrf(request, body.csrf)
-    if (!csrfOk) {
-      return {
-        status: 403 as const,
-        body: { error: { message: '页面安全令牌已失效，请刷新后重试。' } },
-        headers: { 'Set-Cookie': [await clearCsrfCookie()] },
-      }
-    }
-
+    // CSRF is now enforced by `publicRoute`'s `csrfGuard` middleware
+    // (Plan §5.4 — single layer, no inline duplicate). The handler
+    // arrives here only after the token check passes.
     const isAdmin = userSession(session)?.role === 'admin'
 
     if (!isAdmin) {

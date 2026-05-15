@@ -34,8 +34,14 @@ export const requireRoleMw = (role: Role) =>
   })
 
 // ─── Public route mount (无鉴权) ──────────────────────
+// `csrfGuard` is applied to every public route too. The middleware
+// short-circuits GET / HEAD, so read endpoints are unaffected; only
+// POST / PATCH / DELETE require a valid CSRF token. This eliminates
+// the previous "inline csrf in the controller" pattern in
+// `comment-public.controller` and keeps the security perimeter on
+// one layer (Plan §5.4, finalization Plan §F2.2).
 export function publicRoute<R extends AppRouter>(app: Hono<Env>, contract: R, impl: PublicContractImpl<R>) {
-  mountContract(app, contract, impl)
+  mountContract(app, contract, impl, { middleware: [csrfGuard] })
 }
 
 // ─── Authed route mount (任何登录用户) ────────────────

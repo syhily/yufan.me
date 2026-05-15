@@ -187,7 +187,9 @@ function validateResponseBody(route: AppRoute, status: number, body: unknown): v
   if (!hasParseMethod(schema)) {
     return
   }
-  const result = (schema as { safeParse: (input: unknown) => { success: boolean; error?: ZodError } }).safeParse(body)
+  const result = (
+    schema as unknown as { safeParse: (input: unknown) => { success: boolean; error?: ZodError } }
+  ).safeParse(body)
   if (result.success) {
     return
   }
