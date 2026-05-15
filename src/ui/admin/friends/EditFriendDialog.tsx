@@ -1,9 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type { AdminFriendDto, UpsertFriendInput, UpsertFriendOutput } from '@/shared/friends'
+import type { AdminFriendDto } from '@/shared/friends'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { buildPublicBaseUrlFromStorage, extractFriendHostSafe } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
@@ -20,8 +23,6 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
-
-const UPSERT = API_ACTIONS.admin.upsertFriend
 
 // Discriminator: `friend === null` opens the dialog in "new friend"
 // mode; a populated `friend` opens it in "edit existing" mode. The
@@ -46,18 +47,28 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const upsertApi = useAdminMutation<UpsertFriendInput, UpsertFriendOutput>(UPSERT, {
-    successMessage: '友链已保存',
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      onSaved(payload.friend)
+  const upsertMutation = useApiMutation(
+    (input: {
+      id?: string
+      website: string
+      description?: string
+      homepage: string
+      poster: string
+      rssUrl?: string
+      visible?: boolean
+    }) => unwrap(api.admin.friends.upsert({ body: input })),
+    {
+      onSuccess: (data) => {
+        setErrorMessage(null)
+        onSaved(data.friend)
+        toast.success('友链已保存')
+      },
+      onError: (error) => {
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { submit, isPending } = upsertApi
+  )
+  const { mutate: submit, isPending } = upsertMutation
 
   // Reset the form whenever the parent toggles the dialog. `friend ===
   // undefined` means "closed" — leave the form alone so the close
@@ -119,7 +130,15 @@ export function EditFriendDialog({ friend, onClose, onSaved }: EditFriendDialogP
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            const payload: UpsertFriendInput = {
+            const payload: {
+              id?: string
+              website: string
+              description?: string
+              homepage: string
+              poster: string
+              rssUrl?: string
+              visible?: boolean
+            } = {
               ...(isEditing && friend ? { id: friend.id } : {}),
               website: draft.website.trim(),
               homepage: draft.homepage.trim(),

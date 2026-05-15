@@ -9,17 +9,14 @@ import {
   SearchIcon,
   Trash2Icon,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  AdminFriendDto,
-  DeleteFriendInput,
-  DeleteFriendOutput,
-  ListFriendsInput,
-  ListFriendsOutput,
-} from '@/shared/friends'
+import type { AdminFriendDto } from '@/shared/friends'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { safeHref } from '@/shared/safe-url'
 import { EditFriendDialog } from '@/ui/admin/friends/EditFriendDialog'
 import { useFriendsController } from '@/ui/admin/friends/useFriendsController'
@@ -43,9 +40,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
-const LIST = API_ACTIONS.admin.listFriends
-const DELETE = API_ACTIONS.admin.deleteFriend
-
 // Same step ladder the comment moderation and tag tables use, so the
 // three admin list pages feel identical when an editor jumps between
 // them. 10 is the default (set in `useFriendsController`).
@@ -65,40 +59,60 @@ export function FriendsView() {
   const [editTarget, setEditTarget] = useState<EditTarget>(undefined)
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useAdminMutation<ListFriendsInput, ListFriendsOutput>(LIST, {
-    onSuccess: (payload) =>
-      dispatch({ type: 'loaded', rows: payload.friends, total: payload.total, hasMore: payload.hasMore }),
-    errorMessage: '加载友链列表失败',
-  })
-  const { load: loadFriends, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(
+    () =>
+      [
+        'admin',
+        'friends',
+        {
+          q: state.q,
+          includeHidden: state.includeHidden,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
+      ] as const,
+    [state.q, state.includeHidden, state.currentPage, state.pageSize],
+  )
 
-  const reload = useCallback(() => {
-    loadFriends({
-      q: state.q || undefined,
-      includeHidden: state.includeHidden ? 'true' : undefined,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-    })
-  }, [loadFriends, state.q, state.includeHidden, state.currentPage, state.pageSize])
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () =>
+    unwrap(
+      api.admin.friends.list({
+        query: {
+          q: state.q || undefined,
+          includeHidden: state.includeHidden || undefined,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
+      }),
+    ),
+  )
 
-  const deleteApi = useAdminMutation<DeleteFriendInput, DeleteFriendOutput>(DELETE, {
-    // Optimistic-ish: drop the row from local state on success so we
-    // don't pay the round-trip to refetch the full list. The catalog
-    // reset on the server side keeps the public site in sync; the
-    // admin list cares only about its own snapshot.
-    onSuccess: () => undefined,
-    errorMessage: '删除友链失败',
-  })
-  const { submit: submitDelete } = deleteApi
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.friends, total: data.total, hasMore: data.hasMore })
+    }
+  }, [data, dispatch])
+
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.friends.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        toast.success('友链已删除')
+      },
+      onError: () => {
+        toast.error('删除友链失败')
+      },
+    },
+  )
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
@@ -114,7 +128,13 @@ export function FriendsView() {
     <>
       <AdminListPage>
         <AdminListPage.Header title="友链管理" description={`共 ${state.total} 条。公共页面以随机顺序展示。`}>
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setEditTarget(null)}>
@@ -222,7 +242,7 @@ export function FriendsView() {
                           destructive: true,
                           onConfirm: () => {
                             dispatch({ type: 'removeFriend', id: row.id })
-                            submitDelete({ id: row.id })
+                            deleteMutation.mutate({ id: row.id })
                           },
                         })
                       }

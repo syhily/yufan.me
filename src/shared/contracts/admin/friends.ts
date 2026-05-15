@@ -13,6 +13,7 @@ const adminFriendDto = z.object({
   visible: z.boolean(),
   sortOrder: z.number(),
   createdAt: z.string(),
+  updatedAt: z.string(),
 })
 
 export const listFriendsResponse = z.object({
