@@ -1,27 +1,20 @@
 import type { RenderMathInput, RenderMathOutput } from '@/shared/cms-pages'
 
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
 
-// Imperative `admin.renderMath` call for save flows. Uses the Hono REST API.
+// Imperative `admin.renderMath` call for save flows. Uses the ts-rest client.
 
 export async function fetchRenderMath(input: RenderMathInput): Promise<RenderMathOutput> {
-  const res = await fetch(API_ACTIONS.admin.renderMath.path, {
-    method: API_ACTIONS.admin.renderMath.method,
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(input),
-    credentials: 'same-origin',
-  })
-  let body: RenderMathOutput & { error?: { message?: string } }
   try {
-    body = (await res.json()) as RenderMathOutput & { error?: { message?: string } }
+    const result = await api.admin.editor.renderMath({ body: input })
+    if (result.status === 200) {
+      return result.body
+    }
+    return {
+      mathml: '',
+      error: (result.body as { error?: { message?: string } })?.error?.message ?? `HTTP ${String(result.status)}`,
+    }
   } catch {
     return { mathml: '', error: 'Invalid JSON response' }
   }
-  if (!res.ok || body.error) {
-    return { mathml: '', error: body.error?.message ?? `HTTP ${res.status}` }
-  }
-  if (body.mathml === undefined) {
-    return { mathml: '', error: 'Empty response' }
-  }
-  return { mathml: body.mathml, error: null }
 }
