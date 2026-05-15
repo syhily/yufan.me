@@ -69,3 +69,13 @@ export function groupBy<T, K extends string | number>(items: readonly T[], keyFn
   }
   return result
 }
+
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    return `${Math.round(bytes / (1024 * 1024))} MB`
+  }
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`
+  }
+  return `${bytes} B`
+}

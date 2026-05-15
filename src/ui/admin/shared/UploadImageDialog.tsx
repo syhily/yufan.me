@@ -6,6 +6,7 @@ import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminImageDto, UploadImageOutput } from '@/shared/images'
 
 import { API_ACTIONS } from '@/client/api/fetcher'
+import { formatBytes } from '@/shared/tools'
 import { ImageEditorCanvas, type LockedAspect } from '@/ui/admin/shared/ImageEditorCanvas'
 import { Button } from '@/ui/components/button'
 import {
@@ -373,14 +374,4 @@ function titleFor(kind: UploadKind): string {
     case 'generic':
       return '上传图片'
   }
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-  return `${bytes} B`
 }

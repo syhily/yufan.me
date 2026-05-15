@@ -19,6 +19,7 @@ import {
 } from '@/server/images/service'
 import { userSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { formatBytes } from '@/shared/tools'
 
 interface ImagesListQuery {
   q?: string
@@ -141,14 +142,4 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
     const image = await recalculateImageThumbhash(asId(id), viewer)
     return ok({ image })
   },
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${Math.round(bytes / (1024 * 1024))} MB`
-  }
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-  return `${bytes} B`
 }

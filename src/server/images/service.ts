@@ -22,6 +22,7 @@ import { deleteImage as deleteStoredImage, getImage, putImage } from '@/server/i
 import { getLogger } from '@/server/logger'
 import { ActionFailure, ErrorMessages } from '@/server/route-helpers/errors'
 import { classifyImageKind } from '@/shared/images'
+import { formatBytes } from '@/shared/tools'
 
 // Domain-level entry points for the admin image library. Coordinates
 // the four side effects an upload triggers (process → S3 PUT → DB
@@ -316,14 +317,4 @@ function clampLimit(value: number | undefined): number {
     return 200
   }
   return Math.floor(value)
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1024 * 1024) {
-    return `${Math.round(bytes / (1024 * 1024))} MB`
-  }
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`
-  }
-  return `${bytes} B`
 }
