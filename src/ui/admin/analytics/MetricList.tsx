@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
+import { useMemo } from 'react'
 
 import type { MetricRow, MetricType } from '@/shared/analytics/dto'
 
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
@@ -20,49 +22,44 @@ export interface MetricListProps {
 
 export function MetricList({ type, initial, className }: MetricListProps) {
   const state = useAnalyticsState()
-  const fetcher = useApiFetcher<unknown, MetricRow[]>(API_ACTIONS.analytics.metrics)
 
-  useEffect(() => {
-    // Re-fetch whenever the URL state changes so the list stays in
-    // lock-step with the date range / filters that the rest of the
-    // page is showing. `initial` covers the very first render.
-    fetcher.load({
+  const queryParams = useMemo(
+    () => ({
       type,
       preset: state.preset ?? undefined,
       startAt: state.preset ? undefined : String(state.range.startAt),
       endAt: state.preset ? undefined : String(state.range.endAt),
       filters: Object.keys(state.filters).length > 0 ? JSON.stringify(state.filters) : undefined,
-      limit: '10',
-    })
-    // We only want to re-fetch when the URL inputs change; the
-    // returned `fetcher` ref is stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, state.preset, state.range.startAt, state.range.endAt, JSON.stringify(state.filters)])
+      limit: '10' as const,
+    }),
+    [type, state.preset, state.range.startAt, state.range.endAt, JSON.stringify(state.filters)],
+  )
 
-  const rows = fetcher.data ?? initial ?? null
+  const { data: rows } = useApiQuery(['analytics', 'metrics', queryParams], () =>
+    unwrap(api.analytics.metrics({ query: queryParams })),
+  )
 
-  if (rows === null) {
+  const displayRows = rows ?? initial ?? null
+
+  if (displayRows === null) {
     return (
       <div className={cn('flex flex-col gap-2', className)}>
         {Array.from({ length: 5 }).map((_, i) => (
-          // Skeleton placeholders — identical non-interactive items
-          // that disappear in one shot when data arrives.
-          // oxlint-disable-next-line react/no-array-index-key
           <Skeleton key={i} className="h-8 w-full rounded-md" />
         ))}
       </div>
     )
   }
 
-  if (rows.length === 0) {
+  if (displayRows.length === 0) {
     return <div className={cn('py-6 text-center text-sm text-muted-foreground', className)}>暂无数据</div>
   }
 
-  const max = Math.max(...rows.map((r) => r.visits), 1)
+  const max = Math.max(...displayRows.map((r) => r.visits), 1)
 
   return (
     <ul className={cn('flex flex-col gap-1', className)}>
-      {rows.map((row) => {
+      {displayRows.map((row) => {
         const ratio = row.visits / max
         return (
           <li key={row.name}>
