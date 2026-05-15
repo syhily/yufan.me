@@ -1,16 +1,18 @@
 import { EditIcon, ExternalLinkIcon, SaveIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { type SubmitEventHandler, memo, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
-import type { AdminTagDto, UpsertTagInput, UpsertTagOutput } from '@/shared/tags'
+import type { AdminTagDto } from '@/shared/tags'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Skeleton } from '@/ui/components/skeleton'
 import { TableCell, TableRow } from '@/ui/components/table'
 
-const UPSERT = API_ACTIONS.admin.upsertTag
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/i
 
 export interface TagDraft {
@@ -107,27 +109,24 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
-  // Move focus into the name input on mount so the editor is ready
-  // for typing immediately. Using an effect (rather than `autoFocus`)
-  // keeps `jsx-a11y/no-autofocus` happy while preserving the UX —
-  // the row is rendered only as a deliberate user action (click on
-  // 编辑 / 新增标签), so a focus jump here is expected.
   useEffect(() => {
     nameInputRef.current?.focus()
   }, [])
 
-  const upsertApi = useAdminMutation<UpsertTagInput, UpsertTagOutput>(UPSERT, {
-    successMessage: '标签已保存',
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      onSaved(payload.tag)
+  const upsertMutation = useApiMutation(
+    (input: { id?: string; name: string; slug?: string }) => unwrap(api.admin.tags.upsert({ body: input })),
+    {
+      onSuccess: (data) => {
+        setErrorMessage(null)
+        onSaved(data.tag)
+        toast.success('标签已保存')
+      },
+      onError: (error) => {
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { submit, isPending } = upsertApi
+  )
+  const { mutate: submit, isPending } = upsertMutation
 
   const trimmedName = draft.name.trim()
   const trimmedSlug = draft.slug.trim()
@@ -153,7 +152,7 @@ export function TagEditorRow({ tagId, initialDraft, submitLabel, onCancel, onSav
       setErrorMessage(localError)
       return
     }
-    const payload: UpsertTagInput = {
+    const payload: { id?: string; name: string; slug?: string } = {
       ...(tagId ? { id: tagId } : {}),
       name: trimmedName,
     }

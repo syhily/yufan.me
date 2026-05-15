@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
@@ -10,52 +11,49 @@ import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 
-// Tiny SSR helpers shared across snapshot tests so each spec doesn't have to
-// know whether it should reach for `renderToString` (synchronous, no Suspense
-// boundary needed) or `prerenderToNodeStream` (the path the RSS/Atom feed
-// pipeline uses when it still needs an HTML string).
+function makeTestQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  })
+}
 
 /** Synchronously render a React element to an HTML string. */
 export function renderToHtml(element: ReactElement): string {
   return renderToString(
-    <ThemeProvider>
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
-    </ThemeProvider>,
+    <QueryClientProvider client={makeTestQueryClient()}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
 }
 
 // Render a component tree under a memory router so React Router 7 hooks
-// (`useLocation`, `useHref`, `useFetcher`, `<Link>`, …) can resolve. The
-// memory router is configured with a single catch-all route so the snapshot
-// matches what the SSR runtime would produce for `initialPath`. The tree is
-// also wrapped in a `BlogSettingsProvider` so components calling
-// per-section accessors resolve against a stable bundle fixture —
-// production renders sit behind the install gate, and tests need the
-// same invariant without bringing up the real loader chain.
+// (`useLocation`, `useHref`, `useFetcher`, `<Link>`, …) can resolve.
 export function renderInRouter(node: ReactNode, initialPath: string = '/'): string {
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   return renderToStaticMarkup(
-    <ThemeProvider>
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-        <RouterProvider router={router} />
-      </BlogSettingsProvider>
-    </ThemeProvider>,
+    <QueryClientProvider client={makeTestQueryClient()}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <RouterProvider router={router} />
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
 }
 
-/**
- * Stream-render a React tree the way our production SSR pipeline does, then
- * collect the result into a single string. Useful for snapshot-testing
- * components that depend on Suspense / server-only data fetching. The tree
- * is wrapped in a `BlogSettingsProvider` so consumers reading from any
- * per-section context see the test fixture instead of throwing.
- */
 export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
-    <ThemeProvider>
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
-    </ThemeProvider>,
+    <QueryClientProvider client={makeTestQueryClient()}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
   const chunks: Buffer[] = []
   for await (const chunk of prelude) {

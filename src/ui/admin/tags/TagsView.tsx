@@ -1,9 +1,10 @@
 import { PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
-import type { DeleteTagInput, DeleteTagOutput, ListTagsInput, ListTagsOutput } from '@/shared/tags'
-
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -15,9 +16,6 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
-
-const LIST = API_ACTIONS.admin.listTags
-const DELETE = API_ACTIONS.admin.deleteTag
 
 // Same step ladder the comment moderation table uses, so the two
 // admin list pages feel identical when an editor jumps between them.
@@ -39,57 +37,62 @@ export function TagsView() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const listApi = useAdminMutation<ListTagsInput, ListTagsOutput>(LIST, {
-    onSuccess: (payload) =>
-      dispatch({ type: 'loaded', rows: payload.tags, total: payload.total, hasMore: payload.hasMore }),
-    errorMessage: '加载标签列表失败',
-  })
-  const { load: loadTags, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(
+    () => ['admin', 'tags', { q: state.q, offset: state.currentPage * state.pageSize, limit: state.pageSize }] as const,
+    [state.q, state.currentPage, state.pageSize],
+  )
 
-  const reload = useCallback(() => {
-    loadTags({
-      q: state.q || undefined,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-    })
-  }, [loadTags, state.q, state.currentPage, state.pageSize])
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () =>
+    unwrap(
+      api.admin.tags.list({
+        query: {
+          q: state.q || undefined,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
+      }),
+    ),
+  )
 
-  // The fetcher hook's success callback doesn't receive the original
-  // request payload, so latch the in-flight delete id into a ref. Once
-  // the server confirms the delete, the success handler reads this id
-  // and dispatches the row removal — keeping the optimistic UI
-  // accurate even if the server rejects with 409 ("still referenced"),
-  // because in that case the row stays put and the error message is
-  // surfaced through the confirm dialog.
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.tags, total: data.total, hasMore: data.hasMore })
+    }
+  }, [data, dispatch])
+
   const pendingDeleteIdRef = useRef<string | null>(null)
-  const deleteApi = useAdminMutation<DeleteTagInput, DeleteTagOutput>(DELETE, {
-    onSuccess: () => {
-      const id = pendingDeleteIdRef.current
-      pendingDeleteIdRef.current = null
-      if (id) {
-        dispatch({ type: 'removeTag', id })
-      }
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.tags.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        const id = pendingDeleteIdRef.current
+        pendingDeleteIdRef.current = null
+        if (id) {
+          dispatch({ type: 'removeTag', id })
+        }
+        toast.success('标签已删除')
+      },
+      onError: (error) => {
+        pendingDeleteIdRef.current = null
+        setConfirm({
+          title: '无法删除标签',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        })
+      },
     },
-    onError: (error) => {
-      pendingDeleteIdRef.current = null
-      setConfirm({
-        title: '无法删除标签',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      })
-    },
-  })
+  )
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
@@ -119,7 +122,13 @@ export function TagsView() {
           title="标签管理"
           description={`共 ${state.total} 个标签。MDX 文章 frontmatter 中的 tags 字段引用这些名称。`}
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={handleStartCreate} disabled={isCreating}>
@@ -239,7 +248,7 @@ export function TagsView() {
                             destructive: true,
                             onConfirm: () => {
                               pendingDeleteIdRef.current = row.id
-                              deleteApi.submit({ id: row.id })
+                              deleteMutation.mutate({ id: row.id })
                             },
                           })
                         }

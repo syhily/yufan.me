@@ -1,6 +1,7 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { lazy, Suspense } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense, useState } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
@@ -183,83 +184,61 @@ export type RouteHandle = {
 
 export default function App({ loaderData }: Route.ComponentProps) {
   useFocusHash()
-  // Document-scoped install — every INPUT / TEXTAREA / SELECT across
-  // public + admin + login + install flows inherits the no-zoom
-  // behaviour from this single mount. Per-form re-installs are
-  // forbidden; see `@/client/hooks/use-ios-no-zoom` for the contract.
   useIosNoZoomOnFocus()
-  // Document-scoped chunk-load-error recovery: when a previous
-  // deploy's tab tries to fetch a JS / CSS chunk that the new
-  // deploy no longer serves, hard-reload to pick up the new bundle.
-  // Same single-install contract as the iOS hook above — never
-  // re-install per route. See `@/client/hooks/use-chunk-error-recovery`.
   useChunkErrorRecovery()
 
-  // The bundle flows down through `BlogSettingsProvider` (per-section
-  // contexts) and the route data path (`Route.MetaArgs.matches`). On
-  // the server, non-React modules read the boot-hydrated snapshot in
-  // `@/server/settings/snapshot`; on the client they don't run at
-  // all. There is no longer a render-time `globalThis` write here.
-  //
-  // The chrome is owned by the matched layout route (`public.layout.tsx`,
-  // `admin.layout.tsx`, or `wp-admin.layout.tsx`). The root just renders
-  // the route tree wrapped in the per-section settings contexts that UI
-  // components reach for through `useSiteIdentity()` /
-  // `useFooterSettings()` / etc.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { staleTime: 60_000, retry: false },
+        },
+      }),
+  )
+
   return (
-    <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
-      <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-        <NavigationSplash />
-        <Outlet />
-      </BlogSettingsProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
+        <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+          <NavigationSplash />
+          <Outlet />
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 
 export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
-  // A chunk error thrown during render (e.g. a `React.lazy()`
-  // component whose chunk 404s after a deploy) lands here instead of
-  // as an unhandled rejection, so the window-level listeners
-  // installed in `App` never see it. Trigger the same reload path.
   useReloadOnChunkError(error)
 
-  // The root `ErrorBoundary` mounts INSTEAD of `App`, so the surrounding
-  // `<BlogSettingsProvider>` from `App` is not in scope. The chrome
-  // below depends on the per-section accessors
-  // (Header/Footer/Image/…), so we re-establish the provider here
-  // using whichever bundle is reachable:
-  //   1. The root loader's `loaderData.blogSettings` (when the loader ran).
-  //   2. The SSR-only boot-hydrated snapshot
-  //      (`getBlogSettingsBundleSync()`); this is `null` on the client
-  //      because we no longer mirror the provider into `globalThis` —
-  //      which is fine because the same payload is reachable through
-  //      `loaderData` whenever the root loader actually ran.
   const blogSettings = loaderData?.blogSettings ?? getBlogSettingsBundleSync()
 
-  // Body decision is shared with `routes/public.layout.tsx`'s
-  // boundary via `<ErrorView />`. Keeping the body off-component
-  // guarantees scanner traffic and real 404s get the same shell.
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: { staleTime: 60_000, retry: false },
+        },
+      }),
+  )
+
   const body = <ErrorView error={error} isDev={import.meta.env.DEV} />
 
-  // Fallback for the (rare) case where we hit an error before any
-  // request ever populated the snapshot — e.g. the root loader threw on
-  // a deployment that hasn't been installed yet AND the install gate
-  // somehow let the request through. Render a chrome-less message so
-  // the user at least sees what went wrong instead of a blank page from
-  // a strict per-section accessor throw inside the chrome.
   return (
-    <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
-      <BlogSettingsProvider value={blogSettings ?? undefined}>
-        <Suspense fallback={null}>
-          {blogSettings ? (
-            <PublicChromeLazy currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
-              {body}
-            </PublicChromeLazy>
-          ) : (
-            body
-          )}
-        </Suspense>
-      </BlogSettingsProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider initialResolved={loaderData?.theme ?? undefined}>
+        <BlogSettingsProvider value={blogSettings ?? undefined}>
+          <Suspense fallback={null}>
+            {blogSettings ? (
+              <PublicChromeLazy currentUser={loaderData?.currentUser ?? null} pathname="/" search="">
+                {body}
+              </PublicChromeLazy>
+            ) : (
+              body
+            )}
+          </Suspense>
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
