@@ -1,6 +1,9 @@
-import { getMusicMetaForPlayer } from '@/server/music/service'
+import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-export const musicController = {
+import { getMusicMetaForPlayer } from '@/server/music/service'
+import { musicContract } from '@/shared/contracts/music'
+
+export const musicController: ContractImpl<typeof musicContract> = {
   get: async ({ query }: { query: { id: string } }) => {
     const meta = await getMusicMetaForPlayer(query.id)
     if (meta === null) {

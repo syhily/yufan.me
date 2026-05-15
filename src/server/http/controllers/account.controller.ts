@@ -1,25 +1,14 @@
 import bcrypt from 'bcryptjs'
 
+import type { ContractImpl } from '@/server/http/ts-rest-adapter'
+
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
 import { findUserById, updateUserById } from '@/server/db/query/user'
+import { accountContract } from '@/shared/contracts/account'
 
-export const accountController = {
-  updateProfile: async (
-    {
-      body,
-    }: {
-      body: {
-        name?: string
-        link?: string | null
-        badgeName?: string | null
-        badgeColor?: string | null
-        badgeTextColor?: string | null
-        receiveEmail?: boolean
-      }
-    },
-    { viewer }: { viewer: { userId: string; role: 'admin' | 'author' | 'visitor' } | null },
-  ) => {
+export const accountController: ContractImpl<typeof accountContract> = {
+  updateProfile: async ({ body }, { viewer }) => {
     if (!viewer) {
       return { status: 401 as const, body: { error: { message: '未登录' } } }
     }
@@ -54,10 +43,7 @@ export const accountController = {
     return { status: 200 as const, body: { user: updated } }
   },
 
-  updatePassword: async (
-    { body }: { body: { oldPassword: string; newPassword: string } },
-    { viewer, session }: { viewer: { userId: string } | null; session: { id: string } },
-  ) => {
+  updatePassword: async ({ body }, { viewer, session }) => {
     if (!viewer) {
       return { status: 401 as const, body: { error: { message: '未登录' } } }
     }
@@ -75,10 +61,7 @@ export const accountController = {
     return { status: 200 as const, body: { success: true } }
   },
 
-  revokeSession: async (
-    { params }: { params: { id: string } },
-    { viewer, session }: { viewer: { userId: string } | null; session: { id: string } },
-  ) => {
+  revokeSession: async ({ params }, { viewer, session }) => {
     if (!viewer) {
       return { status: 401 as const, body: { error: { message: '未登录' } } }
     }

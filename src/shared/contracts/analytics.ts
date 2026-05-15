@@ -92,6 +92,7 @@ export const analyticsContract = c.router(
       query: metricsQuery,
       responses: {
         200: z.array(metricRow),
+        400: z.object({ error: z.object({ message: z.string() }) }),
         ...standardReadErrors,
       },
       summary: 'Top-N 指标列表',

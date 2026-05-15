@@ -1,6 +1,9 @@
-import { loadImageThumbhash } from '@/server/images/render-enhance'
+import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
-export const imageController = {
+import { loadImageThumbhash } from '@/server/images/render-enhance'
+import { imageContract } from '@/shared/contracts/image'
+
+export const imageController: ContractImpl<typeof imageContract> = {
   resolveThumbhash: async ({ query }: { query: { src: string } }) => {
     const image = await loadImageThumbhash(query.src)
     return {

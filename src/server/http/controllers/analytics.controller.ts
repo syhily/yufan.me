@@ -1,9 +1,8 @@
-import { HTTPException } from 'hono/http-exception'
-
-import type { CountersDto, HeatmapCell, MetricRow, ViewsPoint } from '@/shared/analytics/dto'
+import type { ContractImpl } from '@/server/http/ts-rest-adapter'
 
 import { parseAnalyticsSearch, queryCounters, queryHeatmap, queryMetric, queryViews } from '@/server/analytics/query'
 import { METRIC_TYPES } from '@/shared/analytics/dto'
+import { analyticsContract } from '@/shared/contracts/analytics'
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
@@ -37,77 +36,31 @@ function buildAnalyticsInput(query: {
   return parseAnalyticsSearch(sp)
 }
 
-export const analyticsController = {
-  counters: async ({
-    query,
-  }: {
-    query: {
-      preset?: string
-      startAt?: string
-      endAt?: string
-      filters?: string
-      entityType?: string
-      entityId?: string
-    }
-  }) => {
+export const analyticsController: ContractImpl<typeof analyticsContract> = {
+  counters: async ({ query }) => {
     const input = buildAnalyticsInput(query)
-    return { status: 200 as const, body: (await queryCounters(input)) as CountersDto }
+    return { status: 200 as const, body: await queryCounters(input) }
   },
 
-  views: async ({
-    query,
-  }: {
-    query: {
-      preset?: string
-      startAt?: string
-      endAt?: string
-      filters?: string
-      entityType?: string
-      entityId?: string
-    }
-  }) => {
+  views: async ({ query }) => {
     const input = buildAnalyticsInput(query)
-    return { status: 200 as const, body: (await queryViews(input)) as ViewsPoint[] }
+    return { status: 200 as const, body: await queryViews(input) }
   },
 
-  heatmap: async ({
-    query,
-  }: {
-    query: {
-      preset?: string
-      startAt?: string
-      endAt?: string
-      filters?: string
-      entityType?: string
-      entityId?: string
-    }
-  }) => {
+  heatmap: async ({ query }) => {
     const input = buildAnalyticsInput(query)
-    return { status: 200 as const, body: (await queryHeatmap(input)) as HeatmapCell[] }
+    return { status: 200 as const, body: await queryHeatmap(input) }
   },
 
-  metrics: async ({
-    query,
-  }: {
-    query: {
-      preset?: string
-      startAt?: string
-      endAt?: string
-      filters?: string
-      entityType?: string
-      entityId?: string
-      type: string
-      limit: number
-    }
-  }) => {
+  metrics: async ({ query }) => {
     const input = buildAnalyticsInput(query)
     const type = query.type
     if (!METRIC_SET.has(type)) {
-      throw new HTTPException(400, { message: `unknown metric type: ${type}` })
+      return { status: 400 as const, body: { error: { message: `unknown metric type: ${type}` } } }
     }
     return {
       status: 200 as const,
-      body: (await queryMetric(input, type as (typeof METRIC_TYPES)[number], query.limit)) as MetricRow[],
+      body: await queryMetric(input, type as (typeof METRIC_TYPES)[number], query.limit),
     }
   },
 }
