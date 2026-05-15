@@ -170,7 +170,7 @@ export interface AddMusicPrefill {
  * which makes the import script safe to re-run.
  */
 export async function addMusic(input: AddMusicInputs): Promise<AdminMusicDto> {
-  ensureMusicStorageEnabled()
+  await ensureMusicStorageEnabled()
 
   // Idempotency: skip the whole upload-and-insert dance if we already
   // imported this song. The caller can decide whether to surface this
