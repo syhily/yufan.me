@@ -1,5 +1,6 @@
 import type { adminImagesContract } from '@/shared/contracts/admin/images'
 
+import { ok, badRequest, unauthorized } from '@/server/http/response'
 import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import {
   deleteImage,
@@ -25,7 +26,7 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
       offset: q.offset,
       limit: q.limit,
     })
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   upload: async (_args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -36,12 +37,12 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
     try {
       formData = await ctx.request.formData()
     } catch {
-      return { status: 400, body: { error: { message: '无法解析 multipart 请求体' } } }
+      return badRequest('无法解析 multipart 请求体')
     }
 
     const fileEntry = formData.get('file')
     if (!(fileEntry instanceof Blob)) {
-      return { status: 400, body: { error: { message: '缺少图片文件 (file 字段必填)' } } }
+      return badRequest('缺少图片文件 (file 字段必填)')
     }
     if (fileEntry.size > settings.upload.maxBytes) {
       return {
@@ -62,12 +63,12 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
 
     const kind = metadataObj.kind
     if (kind !== 'generic' && kind !== 'category' && kind !== 'friend') {
-      return { status: 400, body: { error: { message: '无效的图片类型' } } }
+      return badRequest('无效的图片类型')
     }
 
     const adminUser = userSession(ctx.session)
     if (!adminUser) {
-      return { status: 401, body: { error: { message: '未登录' } } }
+      return unauthorized()
     }
     const buffer = Buffer.from(await fileEntry.arrayBuffer())
     const uploader = { id: BigInt(viewer.userId), name: adminUser.name }
@@ -102,14 +103,14 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
       })
     }
 
-    return { status: 200, body: { image } }
+    return ok({ image })
   },
 
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     await deleteImage(BigInt(id), viewer)
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   updateNote: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -117,14 +118,14 @@ export const adminImagesController: ContractImpl<typeof adminImagesContract> = {
     const id = resolveId(args)
     const body = args.body as { note?: string | null }
     const image = await updateImageNote(BigInt(id), body.note ?? null, viewer)
-    return { status: 200, body: { image } }
+    return ok({ image })
   },
 
   recalculateThumbhash: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     const image = await recalculateImageThumbhash(BigInt(id), viewer)
-    return { status: 200, body: { image } }
+    return ok({ image })
   },
 }
 

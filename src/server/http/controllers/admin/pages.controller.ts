@@ -14,6 +14,7 @@ import {
   unpublishPage,
   updatePageMeta,
 } from '@/server/cms/pages/service'
+import { ok, notFound } from '@/server/http/response'
 import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
@@ -32,16 +33,16 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
       offset: q.offset,
       limit: q.limit,
     })
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const detail = await getPageDetailForAdmin(BigInt(id))
     if (detail === null) {
-      return { status: 404, body: { error: { message: '页面不存在或已被删除。' } } }
+      return notFound('页面不存在或已被删除。')
     }
-    return { status: 200, body: detail }
+    return ok(detail)
   },
 
   upsertMeta: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -78,31 +79,31 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
       body.id === undefined
         ? await createPage(meta, sessionUserId)
         : await updatePageMeta({ id: BigInt(body.id), ...meta })
-    return { status: 200, body: { page } }
+    return ok({ page })
   },
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const result = await deletePage(BigInt(id))
     if (!result.deleted) {
-      return { status: 404, body: { error: { message: '页面不存在或已被删除。' } } }
+      return notFound('页面不存在或已被删除。')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   restore: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const result = await restorePage(BigInt(id))
     if (!result.restored) {
-      return { status: 404, body: { error: { message: '页面不存在或未被删除。' } } }
+      return notFound('页面不存在或未被删除。')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   listRevisions: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const revisions = await listRevisionsForAdmin(BigInt(id))
-    return { status: 200, body: { revisions } }
+    return ok({ revisions })
   },
 
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -121,7 +122,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
       force: body.force,
       authorId: BigInt(viewer.userId),
     })
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -141,19 +142,19 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
       authorId: BigInt(viewer.userId),
       publishedAt: body.publishedAt !== undefined ? new Date(body.publishedAt) : undefined,
     })
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   unpublish: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const page = await unpublishPage(BigInt(id))
-    return { status: 200, body: { page } }
+    return ok({ page })
   },
 
   preview: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
     const body = _args.body as { body: PortableTextBody }
     const html = await renderPortableTextToHtml(body.body)
     const headings = collectHeadings(body.body, deriveSlug)
-    return { status: 200, body: { html, headings } }
+    return ok({ html, headings })
   },
 }

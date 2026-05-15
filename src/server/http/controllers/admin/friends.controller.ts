@@ -1,6 +1,7 @@
 import type { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
+import { ok, notFound } from '@/server/http/response'
 import { resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
@@ -13,7 +14,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
       offset: q.offset,
       limit: q.limit,
     })
-    return { status: 200, body: { friends: result.friends, total: result.total, hasMore: result.hasMore } }
+    return ok({ friends: result.friends, total: result.total, hasMore: result.hasMore })
   },
 
   upsert: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -36,7 +37,7 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
         rssUrl: body.rssUrl ?? null,
         visible: body.visible ?? true,
       })
-      return { status: 200, body: { friend } }
+      return ok({ friend })
     } catch (e) {
       if (e instanceof ActionFailure) {
         return { status: e.status, body: { error: { message: e.message } } }
@@ -47,10 +48,10 @@ export const adminFriendsController: ContractImpl<typeof adminFriendsContract> =
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const ok = await deleteAdminFriend(BigInt(id))
-    if (!ok) {
-      return { status: 404, body: { error: { message: '友链不存在' } } }
+    const deleted = await deleteAdminFriend(BigInt(id))
+    if (!deleted) {
+      return notFound('友链不存在')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 }

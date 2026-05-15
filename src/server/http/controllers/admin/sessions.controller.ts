@@ -2,6 +2,7 @@ import type { ContractImpl, HandlerContext } from '@/server/http/ts-rest-adapter
 import type { adminSessionsContract } from '@/shared/contracts/admin/sessions'
 
 import { findSessionMeta, listAllSessions, revokeSessionById } from '@/server/auth/sessions'
+import { ok } from '@/server/http/response'
 import { getLogger } from '@/server/logger'
 
 const log = getLogger('audit.session')
@@ -10,7 +11,7 @@ export const adminSessionsController: ContractImpl<typeof adminSessionsContract>
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     void (args.query as { q?: string; offset?: number; limit?: number })
     const result = await listAllSessions()
-    return { status: 200, body: { sessions: result as unknown[], total: result.length, hasMore: false } }
+    return ok({ sessions: result as unknown[], total: result.length, hasMore: false })
   },
 
   revoke: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -19,7 +20,7 @@ export const adminSessionsController: ContractImpl<typeof adminSessionsContract>
     const currentSession = params.sessionId === ctx.session.id
     const meta = await findSessionMeta(params.sessionId)
     if (!meta) {
-      return { status: 200, body: { success: true, currentSession } }
+      return ok({ success: true, currentSession })
     }
     await revokeSessionById(params.sessionId, meta.userId)
     log.info('session revoked by admin', {
@@ -28,6 +29,6 @@ export const adminSessionsController: ContractImpl<typeof adminSessionsContract>
       sessionId: params.sessionId,
       selfRevoke: currentSession,
     })
-    return { status: 200, body: { success: true, currentSession } }
+    return ok({ success: true, currentSession })
   },
 }

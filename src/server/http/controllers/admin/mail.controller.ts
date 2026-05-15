@@ -2,6 +2,7 @@ import type { ContractImpl, HandlerContext } from '@/server/http/ts-rest-adapter
 import type { adminMailContract } from '@/shared/contracts/admin/mail'
 
 import { sendTestMail } from '@/server/email/sender'
+import { ok } from '@/server/http/response'
 
 export const adminMailController: ContractImpl<typeof adminMailContract> = {
   sendTest: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -16,6 +17,6 @@ export const adminMailController: ContractImpl<typeof adminMailContract> = {
             : 502
       return { status, body: { error: { message: result.message } } }
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 }

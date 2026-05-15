@@ -2,6 +2,7 @@ import type { adminModerationContract } from '@/shared/contracts/admin/moderatio
 
 import { loadAdminPendingDashboard } from '@/server/comments/admin'
 import { deleteCommentById } from '@/server/db/query/comment'
+import { ok } from '@/server/http/response'
 import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { bulkApproveCommentsForUser, bulkDeleteCommentsForUser } from '@/server/users/service'
 
@@ -10,14 +11,14 @@ export const adminModerationController: ContractImpl<typeof adminModerationContr
     requireViewer(ctx)
     const body = args.body as { userId: string }
     const result = await bulkApproveCommentsForUser(BigInt(body.userId))
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   bulkSoftDeleteComments: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     requireViewer(ctx)
     const body = args.body as { userId: string }
     const result = await bulkDeleteCommentsForUser(BigInt(body.userId))
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   approveCommentDeletion: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -26,7 +27,7 @@ export const adminModerationController: ContractImpl<typeof adminModerationContr
     // Approving a deletion request means the admin accepts the user's
     // request and actually deletes the comment.
     await deleteCommentById(BigInt(body.commentId))
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   listPendingDashboard: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -36,6 +37,6 @@ export const adminModerationController: ContractImpl<typeof adminModerationContr
       limit?: number
     }
     const result = await loadAdminPendingDashboard(q.kind ?? 'all', q.offset ?? 0, q.limit ?? 20)
-    return { status: 200, body: result }
+    return ok(result)
   },
 }

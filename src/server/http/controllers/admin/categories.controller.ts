@@ -8,6 +8,7 @@ import {
   upsertAdminCategory,
 } from '@/server/categories/service'
 import { findCategoryById } from '@/server/db/query/category'
+import { ok, notFound } from '@/server/http/response'
 import { resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { listPostsByCategory } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/errors'
@@ -16,17 +17,17 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const q = args.query as { q?: string }
     const result = await listCategoriesForAdmin({ q: q.q })
-    return { status: 200, body: { categories: result.categories, total: result.total } }
+    return ok({ categories: result.categories, total: result.total })
   },
 
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const row = await findCategoryById(BigInt(id))
     if (!row) {
-      return { status: 404, body: { error: { message: '分类不存在' } } }
+      return notFound('分类不存在')
     }
     const posts = await listPostsByCategory(row.name, { includeHidden: true, includeScheduled: true })
-    return { status: 200, body: { category: toAdminCategoryDto(row, posts.length) } }
+    return ok({ category: toAdminCategoryDto(row, posts.length) })
   },
 
   create: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -45,7 +46,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
         description: body.description ?? '',
         sortOrder: body.sortOrder ?? 0,
       })
-      return { status: 200, body: { category } }
+      return ok({ category })
     } catch (e) {
       if (e instanceof ActionFailure) {
         return { status: e.status, body: { error: { message: e.message } } }
@@ -58,7 +59,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
     const id = resolveId(args)
     const existing = await findCategoryById(BigInt(id))
     if (!existing) {
-      return { status: 404, body: { error: { message: '分类不存在' } } }
+      return notFound('分类不存在')
     }
     try {
       const body = args.body as {
@@ -76,7 +77,7 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
         description: body.description ?? existing.description,
         sortOrder: body.sortOrder ?? existing.sortOrder,
       })
-      return { status: 200, body: { category } }
+      return ok({ category })
     } catch (e) {
       if (e instanceof ActionFailure) {
         return { status: e.status, body: { error: { message: e.message } } }
@@ -87,18 +88,18 @@ export const adminCategoriesController: ContractImpl<typeof adminCategoriesContr
 
   delete: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
-    const ok = await deleteAdminCategory(BigInt(id))
-    if (!ok) {
-      return { status: 404, body: { error: { message: '分类不存在' } } }
+    const deleted = await deleteAdminCategory(BigInt(id))
+    if (!deleted) {
+      return notFound('分类不存在')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   reorder: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     try {
       const body = args.body as { orderedIds: string[] }
       const categories = await reorderAdminCategories(body.orderedIds)
-      return { status: 200, body: { categories } }
+      return ok({ categories })
     } catch (e) {
       if (e instanceof ActionFailure) {
         return { status: e.status, body: { error: { message: e.message } } }

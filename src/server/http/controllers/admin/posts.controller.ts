@@ -14,6 +14,7 @@ import {
   unpublishPost,
   updatePostMeta,
 } from '@/server/cms/posts/service'
+import { ok, notFound } from '@/server/http/response'
 import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
@@ -50,7 +51,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
       },
       viewer,
     )
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   get: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -58,9 +59,9 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
     const id = resolveId(args)
     const detail = await getPostDetailForAdmin(BigInt(id), viewer)
     if (detail === null) {
-      return { status: 404, body: { error: { message: '文章不存在或已被删除。' } } }
+      return notFound('文章不存在或已被删除。')
     }
-    return { status: 200, body: detail }
+    return ok(detail)
   },
 
   upsertMeta: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -105,7 +106,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
       body.id === undefined
         ? await createPost(meta, sessionUserId, viewer)
         : await updatePostMeta({ id: BigInt(body.id), ...meta }, viewer)
-    return { status: 200, body: { post } }
+    return ok({ post })
   },
 
   delete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -113,9 +114,9 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
     const id = resolveId(args)
     const result = await deletePost(BigInt(id), viewer)
     if (!result.deleted) {
-      return { status: 404, body: { error: { message: '文章不存在或已被删除。' } } }
+      return notFound('文章不存在或已被删除。')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   restore: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -123,16 +124,16 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
     const id = resolveId(args)
     const result = await restorePost(BigInt(id), viewer)
     if (!result.restored) {
-      return { status: 404, body: { error: { message: '文章不存在或未被删除。' } } }
+      return notFound('文章不存在或未被删除。')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 
   listRevisions: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     const revisions = await listRevisionsForAdmin(BigInt(id), viewer)
-    return { status: 200, body: { revisions } }
+    return ok({ revisions })
   },
 
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -154,7 +155,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
       },
       viewer,
     )
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -177,20 +178,20 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
       },
       viewer,
     )
-    return { status: 200, body: result }
+    return ok(result)
   },
 
   unpublish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     const post = await unpublishPost(BigInt(id), viewer)
-    return { status: 200, body: { post } }
+    return ok({ post })
   },
 
   preview: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
     const body = _args.body as { body: PortableTextBody }
     const html = await renderPortableTextToHtml(body.body)
     const headings = collectHeadings(body.body, deriveSlug)
-    return { status: 200, body: { html, headings } }
+    return ok({ html, headings })
   },
 }

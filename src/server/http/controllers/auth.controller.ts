@@ -2,6 +2,7 @@ import type { ContractImpl, HandlerContext } from '@/server/http/ts-rest-adapter
 import type { authContract } from '@/shared/contracts/auth'
 
 import { updateUserById } from '@/server/db/query/user'
+import { ok, notFound } from '@/server/http/response'
 
 export const authController: ContractImpl<typeof authContract> = {
   updateUser: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -19,8 +20,8 @@ export const authController: ContractImpl<typeof authContract> = {
 
     const updated = await updateUserById(BigInt(userId), filtered)
     if (updated === null) {
-      return { status: 404, body: { error: { message: '用户不存在' } } }
+      return notFound('用户不存在')
     }
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 }

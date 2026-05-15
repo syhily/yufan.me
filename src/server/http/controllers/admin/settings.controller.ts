@@ -1,5 +1,6 @@
 import type { adminSettingsContract } from '@/shared/contracts/admin/settings'
 
+import { ok } from '@/server/http/response'
 import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/settings/service'
 
@@ -14,7 +15,7 @@ function safeBigInt(value: string): bigint | null {
 export const adminSettingsController: ContractImpl<typeof adminSettingsContract> = {
   getSettings: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
     const bundle = await getAdminBlogSettings()
-    return { status: 200, body: { bundle } }
+    return ok({ bundle })
   },
 
   updateSettings: async (args: Record<string, unknown>, ctx: HandlerContext) => {
@@ -26,6 +27,6 @@ export const adminSettingsController: ContractImpl<typeof adminSettingsContract>
       body.payload,
       editorId,
     )
-    return { status: 200, body: { success: true } }
+    return ok({ success: true })
   },
 }

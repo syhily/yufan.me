@@ -4,6 +4,7 @@ import type { adminSearchContract } from '@/shared/contracts/admin/search'
 
 import { db } from '@/server/db/pool'
 import { content, post } from '@/server/db/schema'
+import { ok } from '@/server/http/response'
 import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { getLogger } from '@/server/logger'
 import { indexPost } from '@/server/search/indexer'
@@ -53,14 +54,11 @@ export const adminSearchController: ContractImpl<typeof adminSearchContract> = {
 
     const nextOffset = body.offset + rows.length < total ? body.offset + rows.length : null
 
-    return {
-      status: 200,
-      body: {
-        processed,
-        failed,
-        total,
-        nextOffset,
-      },
-    }
+    return ok({
+      processed,
+      failed,
+      total,
+      nextOffset,
+    })
   },
 }
