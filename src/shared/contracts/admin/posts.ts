@@ -51,6 +51,22 @@ const savePostResult = z.discriminatedUnion('status', [
   z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
 ])
 
+export const listPostsResponse = z.object({ posts: z.array(adminPostDto), total: z.number(), hasMore: z.boolean() })
+export const getPostResponse = z.object({
+  post: adminPostDto,
+  latestRevision: adminRevisionDto.nullable(),
+  publishedRevision: adminRevisionDto.nullable(),
+})
+export const upsertPostMetaResponse = z.object({ post: adminPostDto })
+export const deletePostResponse = z.object({ success: z.boolean() })
+export const restorePostResponse = z.object({ success: z.boolean() })
+export const listPostRevisionsResponse = z.object({ revisions: z.array(adminRevisionDto) })
+export const unpublishPostResponse = z.object({ post: adminPostDto })
+export const previewPostResponse = z.object({
+  html: z.string(),
+  headings: z.array(z.object({ depth: z.number(), slug: z.string(), text: z.string() })),
+})
+
 export const adminPostsContract = c.router(
   {
     list: {
@@ -76,7 +92,7 @@ export const adminPostsContract = c.router(
         authorId: z.coerce.bigint().optional(),
       }),
       responses: {
-        200: z.object({ posts: z.array(adminPostDto), total: z.number(), hasMore: z.boolean() }),
+        200: listPostsResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：文章列表',
@@ -86,11 +102,7 @@ export const adminPostsContract = c.router(
       path: '/admin/posts/:id',
       pathParams: z.object({ id: z.string().min(1) }),
       responses: {
-        200: z.object({
-          post: adminPostDto,
-          latestRevision: adminRevisionDto.nullable(),
-          publishedRevision: adminRevisionDto.nullable(),
-        }),
+        200: getPostResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：文章详情',
@@ -143,7 +155,7 @@ export const adminPostsContract = c.router(
           .default([]),
       }),
       responses: {
-        200: z.object({ post: adminPostDto }),
+        200: upsertPostMetaResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：新建 / 更新文章元数据',
@@ -154,7 +166,7 @@ export const adminPostsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deletePostResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除文章',
@@ -165,7 +177,7 @@ export const adminPostsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: restorePostResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：恢复已删除文章',
@@ -175,7 +187,7 @@ export const adminPostsContract = c.router(
       path: '/admin/posts/:id/revisions',
       pathParams: z.object({ id: z.string().min(1) }),
       responses: {
-        200: z.object({ revisions: z.array(adminRevisionDto) }),
+        200: listPostRevisionsResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：文章修订历史',
@@ -218,7 +230,7 @@ export const adminPostsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ post: adminPostDto }),
+        200: unpublishPostResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：下架文章',
@@ -230,10 +242,7 @@ export const adminPostsContract = c.router(
         body: portableTextBodySchema,
       }),
       responses: {
-        200: z.object({
-          html: z.string(),
-          headings: z.array(z.object({ depth: z.number(), slug: z.string(), text: z.string() })),
-        }),
+        200: previewPostResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：预览文章渲染',

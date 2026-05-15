@@ -46,6 +46,22 @@ const savePageResult = z.discriminatedUnion('status', [
   z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
 ])
 
+export const listPagesResponse = z.object({ pages: z.array(adminPageDto), total: z.number(), hasMore: z.boolean() })
+export const getPageResponse = z.object({
+  page: adminPageDto,
+  latestRevision: adminRevisionDto.nullable(),
+  publishedRevision: adminRevisionDto.nullable(),
+})
+export const upsertPageMetaResponse = z.object({ page: adminPageDto })
+export const deletePageResponse = z.object({ success: z.boolean() })
+export const restorePageResponse = z.object({ success: z.boolean() })
+export const listPageRevisionsResponse = z.object({ revisions: z.array(adminRevisionDto) })
+export const unpublishPageResponse = z.object({ page: adminPageDto })
+export const previewPageResponse = z.object({
+  html: z.string(),
+  headings: z.array(z.object({ depth: z.number(), slug: z.string(), text: z.string() })),
+})
+
 export const adminPagesContract = c.router(
   {
     list: {
@@ -58,7 +74,7 @@ export const adminPagesContract = c.router(
         limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       responses: {
-        200: z.object({ pages: z.array(adminPageDto), total: z.number(), hasMore: z.boolean() }),
+        200: listPagesResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：页面列表',
@@ -68,11 +84,7 @@ export const adminPagesContract = c.router(
       path: '/admin/pages/:id',
       pathParams: z.object({ id: z.string().min(1) }),
       responses: {
-        200: z.object({
-          page: adminPageDto,
-          latestRevision: adminRevisionDto.nullable(),
-          publishedRevision: adminRevisionDto.nullable(),
-        }),
+        200: getPageResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：页面详情',
@@ -112,7 +124,7 @@ export const adminPagesContract = c.router(
         publishedAt: z.iso.datetime({ offset: true }).optional(),
       }),
       responses: {
-        200: z.object({ page: adminPageDto }),
+        200: upsertPageMetaResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：新建 / 更新页面元数据',
@@ -123,7 +135,7 @@ export const adminPagesContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deletePageResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除页面',
@@ -134,7 +146,7 @@ export const adminPagesContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: restorePageResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：恢复已删除页面',
@@ -144,7 +156,7 @@ export const adminPagesContract = c.router(
       path: '/admin/pages/:id/revisions',
       pathParams: z.object({ id: z.string().min(1) }),
       responses: {
-        200: z.object({ revisions: z.array(adminRevisionDto) }),
+        200: listPageRevisionsResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：页面修订历史',
@@ -187,7 +199,7 @@ export const adminPagesContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ page: adminPageDto }),
+        200: unpublishPageResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：下架页面',
@@ -199,10 +211,7 @@ export const adminPagesContract = c.router(
         body: portableTextBodySchema,
       }),
       responses: {
-        200: z.object({
-          html: z.string(),
-          headings: z.array(z.object({ depth: z.number(), slug: z.string(), text: z.string() })),
-        }),
+        200: previewPageResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：预览页面渲染',

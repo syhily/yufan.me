@@ -29,6 +29,9 @@ export const revokeSessionResponse = z.object({
   currentSession: z.boolean(),
 })
 
+export const updateProfileResponse = z.object({ user: clientUserDto })
+export const updatePasswordResponse = z.object({ success: z.boolean() })
+
 // ─── Contract ──────────────────────────────────────────
 
 export const accountContract = c.router(
@@ -38,7 +41,7 @@ export const accountContract = c.router(
       path: '/account/profile',
       body: updateProfileBody,
       responses: {
-        200: z.object({ user: clientUserDto }),
+        200: updateProfileResponse,
         ...standardMutationErrors,
       },
       summary: '更新当前用户资料',
@@ -49,7 +52,7 @@ export const accountContract = c.router(
       path: '/account/password',
       body: updatePasswordBody,
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: updatePasswordResponse,
         ...standardMutationErrors,
       },
       summary: '更新当前用户密码',
