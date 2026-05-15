@@ -8,6 +8,7 @@ import { createApiApp } from '@/server/http/app'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { feedRouter } from '@/server/http/resources/feed'
+import { imagesRouter } from '@/server/http/resources/images'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
@@ -24,7 +25,19 @@ export default await createHonoServer({
 
     // ─── Public resource routes ───────────────────────────
     app.route('/', feedRouter)
+    app.route('/', imagesRouter)
     app.route('/', sitemapRouter)
+
+    // Legacy RR redirects now served by Hono
+    app.get('/tags', (c) => {
+      c.header('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable')
+      return c.redirect('/', 301)
+    })
+    app.get('/search', (c) => {
+      const query = c.req.query('q')?.trim() ?? ''
+      c.header('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable')
+      return c.redirect(query ? `/search/${encodeURIComponent(query)}` : '/', 301)
+    })
 
     if (process.env.NODE_ENV !== 'production') {
       app.get('/openapi.json', (c) => c.json(buildOpenApiDocument()))

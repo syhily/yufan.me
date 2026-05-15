@@ -15,7 +15,7 @@ function read(relativePath: string): string {
 
 describe('contract: cache-control on derived assets', () => {
   it('og image responses keep the public/immutable 1-week policy', () => {
-    const source = read('src/routes/image.og.ts')
+    const source = read('src/server/http/resources/images.ts')
     expect(source).toContain("'Cache-Control': 'public, max-age=604800, immutable'")
   })
 
@@ -25,7 +25,7 @@ describe('contract: cache-control on derived assets', () => {
   })
 
   it('avatar route emits a cache-control header (not a cache-busting default)', () => {
-    const source = read('src/routes/image.avatar.ts')
+    const source = read('src/server/http/resources/images.ts')
     expect(source).toContain('Cache-Control')
   })
 })

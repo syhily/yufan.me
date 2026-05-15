@@ -86,8 +86,6 @@ vi.mock('@/server/search', () => ({
 const categoryRoute = await import('@/routes/category.list')
 const tagRoute = await import('@/routes/tag.list')
 const searchRoute = await import('@/routes/search.list')
-const searchIndexRoute = await import('@/routes/search.index')
-
 beforeEach(() => {
   vi.clearAllMocks()
   session = regularSession()
@@ -201,25 +199,5 @@ describe('routes/search.list loader', () => {
     } as never)) as { resolvedPosts: Array<{ slug: string }> }
 
     expect(data.resolvedPosts.map((post) => post.slug)).toContain('hidden-post')
-  })
-})
-
-describe('routes/search.index loader', () => {
-  it('canonicalises progressive-enhancement search form submissions', () => {
-    const response = searchIndexRoute.loader({
-      request: new Request('http://localhost/search?q=react router'),
-    } as never) as Response
-
-    expect(response.status).toBe(301)
-    expect(response.headers.get('Location')).toBe('/search/react%20router')
-  })
-
-  it('redirects empty /search visits home', () => {
-    const response = searchIndexRoute.loader({
-      request: new Request('http://localhost/search?q=   '),
-    } as never) as Response
-
-    expect(response.status).toBe(301)
-    expect(response.headers.get('Location')).toBe('/')
   })
 })

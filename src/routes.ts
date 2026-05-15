@@ -33,13 +33,7 @@ export default [
   route('my/comments', 'routes/my.redirect.comments.ts'),
   route('my/profile', 'routes/my.redirect.profile.ts'),
   // Resource routes outside the public layout — see _README.md §C.
-  route('tags', 'routes/tags.index.ts'),
-  // Feed / sitemap resource routes now served by Hono — see server.ts
-  route('search', 'routes/search.index.ts'),
-  route('images/og/:slug.png', 'routes/image.og.ts'),
-  route('images/calendar/:year/:time.png', 'routes/image.calendar.ts'),
-  route('images/calendar/dark/:year/:time.png', 'routes/image.calendar.dark.ts'),
-  route('images/avatar/:hash.png', 'routes/image.avatar.ts'),
+  // Feed / sitemap / image / tag / search resource routes now served by Hono — see server.ts
   // Auth split-screen layout — see _README.md §F.
   layout('routes/admin.layout.tsx', [
     route('wp-login.php', 'routes/wp-login.tsx'),

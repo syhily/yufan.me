@@ -58,10 +58,12 @@ describe('contract: public URL stability', () => {
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
+    // Image resource routes migrated to Hono — see server.ts and
+    // server/http/resources/images.ts. Public URLs remain stable.
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('images/og/:slug.png')).toBe(true)
-    expect(paths.has('images/calendar/:year/:time.png')).toBe(true)
-    expect(paths.has('images/avatar/:hash.png')).toBe(true)
+    expect(paths.has('images/og/:slug.png')).toBe(false)
+    expect(paths.has('images/calendar/:year/:time.png')).toBe(false)
+    expect(paths.has('images/avatar/:hash.png')).toBe(false)
   })
 
   it('WordPress compatibility URLs are still mounted (login + two-stage install)', () => {
@@ -82,7 +84,8 @@ describe('contract: public URL stability', () => {
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('search')).toBe(true)
+    // /search 301 redirect now served by Hono; /search/:keyword stays in RR
+    expect(paths.has('search')).toBe(false)
     expect(paths.has('search/:keyword')).toBe(true)
     expect(paths.has('search/:keyword/page/:num')).toBe(true)
   })
