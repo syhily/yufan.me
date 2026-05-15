@@ -111,11 +111,18 @@ async function readBody(req: Request, route: AppRoute): Promise<unknown> {
   if (route.method === 'GET') {
     return undefined
   }
+  const contentLength = Number.parseInt(req.headers.get('content-length') ?? '0', 10)
   const ct = req.headers.get('content-type') ?? ''
   if (ct.startsWith('application/json')) {
+    if (contentLength > 10 * 1024 * 1024) {
+      throw new HTTPException(413, { message: '请求体过大（上限 10 MB）' })
+    }
     return req.json()
   }
   if (ct.startsWith('application/x-www-form-urlencoded') || ct.startsWith('multipart/form-data')) {
+    if (contentLength > 50 * 1024 * 1024) {
+      throw new HTTPException(413, { message: '请求体过大（上限 50 MB）' })
+    }
     const fd = await req.formData()
     return Object.fromEntries(fd.entries())
   }
