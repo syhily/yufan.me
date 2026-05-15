@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 
-import { queryRealtimeTail } from '@/server/analytics/query'
 import { apiContract } from '@/shared/contracts'
 import { adminCacheContract } from '@/shared/contracts/admin/cache'
 import { adminCategoriesContract } from '@/shared/contracts/admin/categories'
@@ -38,7 +37,7 @@ import { commentAdminController } from './controllers/comment-admin.controller'
 import { commentController } from './controllers/comment.controller'
 import { imageController } from './controllers/image.controller'
 import { musicController } from './controllers/music.controller'
-import { adminRoute, authorRoute, authedRoute, publicRoute, requireRoleMw } from './guards'
+import { adminRoute, authorRoute, authedRoute, publicRoute } from './guards'
 
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>().basePath('/api')
@@ -48,97 +47,6 @@ export function createApiApp(): Hono<Env> {
 
   // Analytics routes (admin only)
   adminRoute(app, apiContract.analytics, analyticsController)
-
-  // Analytics SSE events stream (admin only, native Hono route)
-  const POLL_INTERVAL_MS = 2_000
-  const HEARTBEAT_INTERVAL_MS = 25_000
-
-  app.get('/api/analytics/events', requireRoleMw('admin'), async (c) => {
-    const sinceParam = c.req.query('since')
-    let lastSeen = sinceParam ? new Date(sinceParam) : new Date(Date.now() - 60_000)
-    if (Number.isNaN(lastSeen.getTime())) {
-      lastSeen = new Date(Date.now() - 60_000)
-    }
-
-    const encoder = new TextEncoder()
-    const stream = new ReadableStream<Uint8Array>({
-      start(controller) {
-        let closed = false
-        const close = () => {
-          if (closed) {
-            return
-          }
-          closed = true
-          clearInterval(pollTimer)
-          clearInterval(heartbeatTimer)
-          try {
-            controller.close()
-          } catch {
-            /* already closed */
-          }
-        }
-
-        c.req.raw.signal.addEventListener('abort', close)
-
-        const send = (eventName: string, data: unknown) => {
-          if (closed) {
-            return
-          }
-          try {
-            controller.enqueue(encoder.encode(`event: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`))
-          } catch {
-            close()
-          }
-        }
-
-        try {
-          controller.enqueue(encoder.encode(': hello\n\n'))
-        } catch {
-          close()
-          return
-        }
-
-        const pollTimer = setInterval(() => {
-          void (async () => {
-            if (closed) {
-              return
-            }
-            try {
-              const rows = await queryRealtimeTail(lastSeen)
-              if (rows.length > 0) {
-                const ordered = [...rows].reverse()
-                lastSeen = new Date(ordered[ordered.length - 1]!.ts)
-                send('events', ordered)
-              }
-            } catch {
-              // Transient DB error → swallow; the next tick will retry.
-            }
-          })()
-        }, POLL_INTERVAL_MS)
-
-        const heartbeatTimer = setInterval(() => {
-          if (closed) {
-            return
-          }
-          try {
-            controller.enqueue(encoder.encode(': keep-alive\n\n'))
-          } catch {
-            close()
-          }
-        }, HEARTBEAT_INTERVAL_MS)
-      },
-    })
-
-    return new Response(stream, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/event-stream; charset=utf-8',
-        'Cache-Control': 'no-cache, no-transform',
-        Connection: 'keep-alive',
-        'X-Accel-Buffering': 'no',
-      },
-    })
-  })
 
   // Public resource routes
   publicRoute(app, apiContract.comment, commentController)

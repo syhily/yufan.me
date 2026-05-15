@@ -3,11 +3,14 @@ import { requestId } from 'hono/request-id'
 import { RouterContextProvider } from 'react-router'
 import { createHonoServer } from 'react-router-hono-server/node'
 
+import type { Env } from '@/server/http/context'
+
 import { requestContext, sessionContext } from '@/server/auth/context'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
 import { buildOpenApiDocument } from '@/server/http/openapi'
+import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
 import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
@@ -15,9 +18,9 @@ import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/wp-decoy'
 
-export default await createHonoServer({
+export default await createHonoServer<Env>({
   configure(app) {
-    app.onError(onErrorHandler as unknown as Parameters<typeof app.onError>[0])
+    app.onError(onErrorHandler)
     app.use(requestId())
     app.use(honoWpDecoyMiddleware)
     app.use(honoSessionMiddleware)
@@ -42,6 +45,7 @@ export default await createHonoServer({
     app.route('/', createApiApp())
 
     // ─── Public resource routes ───────────────────────────
+    app.route('/', analyticsEventsRouter)
     app.route('/', feedRouter)
     app.route('/', imagesRouter)
     app.route('/', sitemapRouter)
@@ -63,7 +67,7 @@ export default await createHonoServer({
     }
   },
   getLoadContext(c) {
-    const { session, request } = buildRouteContexts(c as any)
+    const { session, request } = buildRouteContexts(c)
     const context = new RouterContextProvider()
     context.set(sessionContext, session)
     context.set(requestContext, request)
