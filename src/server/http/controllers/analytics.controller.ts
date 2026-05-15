@@ -8,39 +8,29 @@ import { METRIC_TYPES, type MetricType } from '@/shared/analytics/dto'
 
 const METRIC_SET = new Set<string>(METRIC_TYPES)
 
-function parseQuery(q: Record<string, string>): URLSearchParams {
-  const params = new URLSearchParams()
-  for (const [k, v] of Object.entries(q)) {
-    if (v !== undefined) {
-      params.set(k, v)
-    }
-  }
-  return params
+function analyticsInput(q: Record<string, string>) {
+  return parseAnalyticsSearch(new URLSearchParams(q))
 }
 
 export const analyticsController: ContractImpl<typeof analyticsContract> = {
   counters: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const q = query<Record<string, string>>(args)
-    const input = parseAnalyticsSearch(parseQuery(q))
-    return ok(await queryCounters(input))
+    return ok(await queryCounters(analyticsInput(q)))
   },
 
   views: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const q = query<Record<string, string>>(args)
-    const input = parseAnalyticsSearch(parseQuery(q))
-    return ok(await queryViews(input))
+    return ok(await queryViews(analyticsInput(q)))
   },
 
   heatmap: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const q = query<Record<string, string>>(args)
-    const input = parseAnalyticsSearch(parseQuery(q))
-    return ok(await queryHeatmap(input))
+    return ok(await queryHeatmap(analyticsInput(q)))
   },
 
   metrics: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const q = query<Record<string, string>>(args)
-    const params = parseQuery(q)
-    const input = parseAnalyticsSearch(params)
+    const input = analyticsInput(q)
     const type = q.type ?? ''
     if (!METRIC_SET.has(type)) {
       return badRequest(`unknown metric type: ${type}`)
