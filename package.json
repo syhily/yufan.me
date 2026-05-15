@@ -36,7 +36,7 @@
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1046.0",
+    "@aws-sdk/client-s3": "^3.1048.0",
     "@base-ui/react": "^1.4.1",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -49,8 +49,8 @@
     "@napi-rs/canvas": "^1.0.0",
     "@number-flow/react": "^0.6.0",
     "@portabletext/react": "^6.2.0",
-    "@react-router/node": "^7.15.0",
-    "@react-router/serve": "^7.15.0",
+    "@react-router/node": "^7.15.1",
+    "@react-router/serve": "^7.15.1",
     "@shikijs/transformers": "^4.0.2",
     "@t3-oss/env-core": "^0.13.11",
     "@tanstack/react-query": "^5.100.10",
@@ -96,10 +96,10 @@
     "pinyin-pro": "^3.28.1",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.6",
-    "react-day-picker": "^10.0.0",
+    "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.75.0",
-    "react-router": "^7.15.0",
+    "react-router": "^7.15.1",
     "react-router-hono-server": "^2.26.0",
     "sharp": "^0.34.5",
     "shiki": "^4.0.2",
@@ -113,11 +113,11 @@
   },
   "devDependencies": {
     "@portabletext/types": "^4.0.2",
-    "@react-router/dev": "^7.15.0",
+    "@react-router/dev": "^7.15.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.3.0",
     "@types/diff-match-patch": "^1.0.36",
-    "@types/node": "^25.7.0",
+    "@types/node": "^25.8.0",
     "@types/pg-copy-streams": "^1.2.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -129,9 +129,20 @@
     "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
   },
   "overrides": {
-    "koffi": "2.10.1",
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "vitest": "npm:@voidzero-dev/vite-plus-test@latest",
+    "@ts-rest/core": {
+      "zod": "$zod"
+    },
+    "@ts-rest/open-api": {
+      "zod": "$zod"
+    },
+    "@anatine/zod-openapi": {
+      "zod": "$zod"
+    },
+    "@hono/node-ws": {
+      "@hono/node-server": "$@hono/node-server"
+    }
   },
   "packageManager": "npm@11.14.1"
 }
