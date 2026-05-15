@@ -125,3 +125,26 @@ function headerObj(h: Headers): Record<string, string> {
 function normalizePath(p: string): string {
   return p.startsWith('/') ? p : `/${p}`
 }
+
+/** Resolve entity ID from path param (:id) or legacy body/query. */
+export function resolveId(args: Record<string, unknown>): string {
+  const p = args.params as { id?: string } | undefined
+  if (p?.id) {
+    return p.id
+  }
+  const b = args.body as { id?: string; userId?: string } | undefined
+  if (b?.id) {
+    return b.id
+  }
+  if (b?.userId) {
+    return b.userId
+  }
+  const q = args.query as { id?: string; userId?: string } | undefined
+  if (q?.id) {
+    return q.id
+  }
+  if (q?.userId) {
+    return q.userId
+  }
+  return ''
+}

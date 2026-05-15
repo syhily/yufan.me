@@ -1,4 +1,3 @@
-import type { ContractImpl, HandlerContext } from '@/server/http/ts-rest-adapter'
 import type { adminCategoriesContract } from '@/shared/contracts/admin/categories'
 
 import {
@@ -9,6 +8,7 @@ import {
   upsertAdminCategory,
 } from '@/server/categories/service'
 import { findCategoryById } from '@/server/db/query/category'
+import { type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { listPostsByCategory } from '@/server/posts/query'
 import { ActionFailure } from '@/server/route-helpers/errors'
 

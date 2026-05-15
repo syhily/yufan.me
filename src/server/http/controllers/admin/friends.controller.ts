@@ -1,7 +1,7 @@
-import type { ContractImpl, HandlerContext } from '@/server/http/ts-rest-adapter'
 import type { adminFriendsContract } from '@/shared/contracts/admin/friends'
 
 import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
+import { type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { ActionFailure } from '@/server/route-helpers/errors'
 
 export const adminFriendsController: ContractImpl<typeof adminFriendsContract> = {

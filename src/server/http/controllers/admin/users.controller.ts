@@ -4,7 +4,7 @@ import type { adminUsersContract } from '@/shared/contracts/admin/users'
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
 import { countAdmins, findUserById, updateUserRole, type UserRoleFilter } from '@/server/db/query/user'
-import { requireViewer, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
+import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { getLogger } from '@/server/logger'
 import {
   fetchAdminUserDto,
@@ -16,23 +16,6 @@ import {
 } from '@/server/users/service'
 
 const log = getLogger('audit.user')
-
-// Resolves entity ID from path params (:id) or legacy body/query (userId).
-function resolveId(args: Record<string, unknown>): string {
-  const p = args.params as { id?: string } | undefined
-  if (p?.id) {
-    return p.id
-  }
-  const b = args.body as { userId?: string } | undefined
-  if (b?.userId) {
-    return b.userId
-  }
-  const q = args.query as { userId?: string } | undefined
-  if (q?.userId) {
-    return q.userId
-  }
-  throw new Error('id missing from path, body, or query')
-}
 
 export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
