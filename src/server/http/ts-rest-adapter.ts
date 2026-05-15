@@ -177,7 +177,11 @@ export function params<T>(args: Record<string, unknown>): T {
   return (args.params ?? {}) as T
 }
 
-/** Safely convert a string ID to BigInt for database operations. */
+/** Safely convert a string ID to BigInt. Returns 400 on invalid input. */
 export function asId(value: string): bigint {
-  return BigInt(value)
+  try {
+    return BigInt(value)
+  } catch {
+    throw new HTTPException(400, { message: `无效的 ID 格式: ${value}` })
+  }
 }
