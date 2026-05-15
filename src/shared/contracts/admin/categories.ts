@@ -15,6 +15,18 @@ const adminCategoryDto = z.object({
   updatedAt: z.string(),
 })
 
+export const listCategoriesResponse = z.object({ categories: z.array(adminCategoryDto), total: z.number() })
+
+export const getCategoryResponse = z.object({ category: adminCategoryDto })
+
+export const createCategoryResponse = z.object({ category: adminCategoryDto })
+
+export const updateCategoryResponse = z.object({ category: adminCategoryDto })
+
+export const deleteCategoryResponse = z.object({ success: z.boolean() })
+
+export const reorderCategoriesResponse = z.object({ categories: z.array(adminCategoryDto) })
+
 export const adminCategoriesContract = c.router(
   {
     list: {
@@ -22,7 +34,7 @@ export const adminCategoriesContract = c.router(
       path: '/admin/categories',
       query: z.object({ q: z.string().trim().max(100).optional() }),
       responses: {
-        200: z.object({ categories: z.array(adminCategoryDto), total: z.number() }),
+        200: listCategoriesResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：分类列表',
@@ -32,7 +44,7 @@ export const adminCategoriesContract = c.router(
       path: '/admin/categories/:id',
       pathParams: z.object({ id: z.string().min(1) }),
       responses: {
-        200: z.object({ category: adminCategoryDto }),
+        200: getCategoryResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：分类详情',
@@ -54,7 +66,7 @@ export const adminCategoriesContract = c.router(
         sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
       }),
       responses: {
-        200: z.object({ category: adminCategoryDto }),
+        200: createCategoryResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：新建分类',
@@ -77,7 +89,7 @@ export const adminCategoriesContract = c.router(
         sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
       }),
       responses: {
-        200: z.object({ category: adminCategoryDto }),
+        200: updateCategoryResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：更新分类',
@@ -88,7 +100,7 @@ export const adminCategoriesContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deleteCategoryResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除分类',
@@ -98,7 +110,7 @@ export const adminCategoriesContract = c.router(
       path: '/admin/categories/reorder',
       body: z.object({ orderedIds: z.array(z.string().min(1)).min(1).max(500) }),
       responses: {
-        200: z.object({ categories: z.array(adminCategoryDto) }),
+        200: reorderCategoriesResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：分类排序',

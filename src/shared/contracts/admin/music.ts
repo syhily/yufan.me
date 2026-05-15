@@ -32,6 +32,16 @@ const metingSearchHitDto = z.object({
   previewUrl: z.string(),
 })
 
+export const listMusicResponse = z.object({ musics: z.array(adminMusicDto), total: z.number(), hasMore: z.boolean() })
+
+export const searchMusicResponse = z.object({ results: z.array(metingSearchHitDto) })
+
+export const addMusicResponse = z.object({ music: adminMusicDto })
+
+export const updateMusicResponse = z.object({ music: adminMusicDto })
+
+export const deleteMusicResponse = z.object({ success: z.boolean() })
+
 export const adminMusicContract = c.router(
   {
     list: {
@@ -43,7 +53,7 @@ export const adminMusicContract = c.router(
         limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       responses: {
-        200: z.object({ musics: z.array(adminMusicDto), total: z.number(), hasMore: z.boolean() }),
+        200: listMusicResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：音乐列表',
@@ -56,7 +66,7 @@ export const adminMusicContract = c.router(
         limit: z.coerce.number().int().min(1).max(30).optional(),
       }),
       responses: {
-        200: z.object({ results: z.array(metingSearchHitDto) }),
+        200: searchMusicResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：搜索音乐',
@@ -69,7 +79,7 @@ export const adminMusicContract = c.router(
         sourceId: z.string().trim().min(1).max(64),
       }),
       responses: {
-        200: z.object({ music: adminMusicDto }),
+        200: addMusicResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：添加音乐',
@@ -89,7 +99,7 @@ export const adminMusicContract = c.router(
           .transform((v) => (v === undefined || v.trim() === '' ? null : v)),
       }),
       responses: {
-        200: z.object({ music: adminMusicDto }),
+        200: updateMusicResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：更新音乐元数据',
@@ -100,7 +110,7 @@ export const adminMusicContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deleteMusicResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除音乐',

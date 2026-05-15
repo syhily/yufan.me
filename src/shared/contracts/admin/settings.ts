@@ -20,13 +20,17 @@ const settingSection = z.enum([
   'fonts',
 ])
 
+export const getSettingsResponse = z.object({ bundle: z.record(z.string(), z.unknown()).nullable() })
+
+export const updateSettingsResponse = z.object({ success: z.boolean() })
+
 export const adminSettingsContract = c.router(
   {
     getSettings: {
       method: 'GET',
       path: '/admin/settings',
       responses: {
-        200: z.object({ bundle: z.record(z.string(), z.unknown()).nullable() }),
+        200: getSettingsResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：获取所有设置',
@@ -39,7 +43,7 @@ export const adminSettingsContract = c.router(
         payload: z.unknown(),
       }),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: updateSettingsResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：更新指定设置分组',

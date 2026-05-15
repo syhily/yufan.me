@@ -3,6 +3,10 @@ import { z } from 'zod'
 import { c } from '../_base'
 import { errorResponse, standardMutationErrors } from '../_errors'
 
+export const renderMathResponse = z.object({ mathml: z.string(), error: z.string().nullable() })
+
+export const renderMermaidResponse = z.object({ svg: z.string(), error: z.string().nullable() })
+
 export const adminEditorContract = c.router(
   {
     renderMath: {
@@ -13,7 +17,7 @@ export const adminEditorContract = c.router(
         display: z.coerce.boolean(),
       }),
       responses: {
-        200: z.object({ mathml: z.string(), error: z.string().nullable() }),
+        200: renderMathResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：渲染 KaTeX 公式预览',
@@ -25,7 +29,7 @@ export const adminEditorContract = c.router(
         code: z.string().max(64 * 1024, 'Mermaid 源码过长'),
       }),
       responses: {
-        200: z.object({ svg: z.string(), error: z.string().nullable() }),
+        200: renderMermaidResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：渲染 Mermaid 图表预览',

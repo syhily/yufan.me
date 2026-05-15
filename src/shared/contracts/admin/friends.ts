@@ -15,6 +15,16 @@ const adminFriendDto = z.object({
   createdAt: z.string(),
 })
 
+export const listFriendsResponse = z.object({
+  friends: z.array(adminFriendDto),
+  total: z.number(),
+  hasMore: z.boolean(),
+})
+
+export const upsertFriendResponse = z.object({ friend: adminFriendDto })
+
+export const deleteFriendResponse = z.object({ success: z.boolean() })
+
 export const adminFriendsContract = c.router(
   {
     list: {
@@ -27,7 +37,7 @@ export const adminFriendsContract = c.router(
         limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       responses: {
-        200: z.object({ friends: z.array(adminFriendDto), total: z.number(), hasMore: z.boolean() }),
+        200: listFriendsResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：友链列表',
@@ -46,7 +56,7 @@ export const adminFriendsContract = c.router(
         visible: z.boolean().optional().default(true),
       }),
       responses: {
-        200: z.object({ friend: adminFriendDto }),
+        200: upsertFriendResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：创建或更新友链',
@@ -58,7 +68,7 @@ export const adminFriendsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deleteFriendResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除友链',

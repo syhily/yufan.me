@@ -92,6 +92,14 @@ const authorOptionSchema = z.object({
 
 // ─── Contract ──────────────────────────────────────────
 
+export const approveCommentResponse = z.object({ success: z.boolean() })
+
+export const deleteCommentResponse = z.object({ success: z.boolean() })
+
+export const searchPagesCommentResponse = z.object({ options: z.array(pageOptionSchema) })
+
+export const searchAuthorsCommentResponse = z.object({ options: z.array(authorOptionSchema) })
+
 export const adminCommentsContract = c.router(
   {
     approve: {
@@ -100,7 +108,7 @@ export const adminCommentsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: approveCommentResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：审核通过评论',
@@ -111,7 +119,7 @@ export const adminCommentsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deleteCommentResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除评论',
@@ -141,7 +149,7 @@ export const adminCommentsContract = c.router(
       path: '/admin/comments/search-pages',
       query: filterAutocompleteQuery,
       responses: {
-        200: z.object({ options: z.array(pageOptionSchema) }),
+        200: searchPagesCommentResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：搜索页面标题自动补全',
@@ -151,7 +159,7 @@ export const adminCommentsContract = c.router(
       path: '/admin/comments/search-authors',
       query: filterAutocompleteQuery,
       responses: {
-        200: z.object({ options: z.array(authorOptionSchema) }),
+        200: searchAuthorsCommentResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：搜索评论作者自动补全',

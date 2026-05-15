@@ -12,6 +12,12 @@ const adminTagDto = z.object({
   updatedAt: z.string(),
 })
 
+export const listTagsResponse = z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() })
+
+export const upsertTagResponse = z.object({ tag: adminTagDto })
+
+export const deleteTagResponse = z.object({ success: z.boolean() })
+
 export const adminTagsContract = c.router(
   {
     list: {
@@ -23,7 +29,7 @@ export const adminTagsContract = c.router(
         limit: z.coerce.number().int().min(1).max(100).optional(),
       }),
       responses: {
-        200: z.object({ tags: z.array(adminTagDto), total: z.number(), hasMore: z.boolean() }),
+        200: listTagsResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：标签列表',
@@ -43,7 +49,7 @@ export const adminTagsContract = c.router(
           .optional(),
       }),
       responses: {
-        200: z.object({ tag: adminTagDto }),
+        200: upsertTagResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：新建 / 更新标签',
@@ -54,7 +60,7 @@ export const adminTagsContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deleteTagResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除标签',

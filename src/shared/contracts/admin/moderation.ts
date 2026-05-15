@@ -46,6 +46,12 @@ const pendingDashboardDto = z.object({
 
 // ─── Contract ──────────────────────────────────────────
 
+export const bulkApproveCommentsResponse = z.object({ approved: z.number() })
+
+export const bulkSoftDeleteCommentsResponse = z.object({ deleted: z.number() })
+
+export const approveCommentDeletionResponse = z.object({ success: z.boolean() })
+
 export const adminModerationContract = c.router(
   {
     bulkApproveComments: {
@@ -53,7 +59,7 @@ export const adminModerationContract = c.router(
       path: '/admin/comments/bulk-approve',
       body: bulkCommentBody,
       responses: {
-        200: z.object({ approved: z.number() }),
+        200: bulkApproveCommentsResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：批量审核通过用户评论',
@@ -63,7 +69,7 @@ export const adminModerationContract = c.router(
       path: '/admin/comments/bulk-delete',
       body: bulkCommentBody,
       responses: {
-        200: z.object({ deleted: z.number() }),
+        200: bulkSoftDeleteCommentsResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：批量删除用户评论',
@@ -73,7 +79,7 @@ export const adminModerationContract = c.router(
       path: '/admin/comments/approve-deletion',
       body: approveDeletionBody,
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: approveCommentDeletionResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：批准评论删除请求',

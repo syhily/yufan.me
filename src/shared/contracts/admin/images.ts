@@ -20,6 +20,16 @@ const adminImageDto = z.object({
   updatedAt: z.string(),
 })
 
+export const listImagesResponse = z.object({ images: z.array(adminImageDto), total: z.number(), hasMore: z.boolean() })
+
+export const uploadImageResponse = z.object({ image: adminImageDto })
+
+export const deleteImageResponse = z.object({ success: z.boolean() })
+
+export const updateImageNoteResponse = z.object({ image: adminImageDto })
+
+export const recalculateThumbhashResponse = z.object({ image: adminImageDto })
+
 export const adminImagesContract = c.router(
   {
     list: {
@@ -32,7 +42,7 @@ export const adminImagesContract = c.router(
         limit: z.coerce.number().int().min(1).max(200).optional(),
       }),
       responses: {
-        200: z.object({ images: z.array(adminImageDto), total: z.number(), hasMore: z.boolean() }),
+        200: listImagesResponse,
         ...standardReadErrors,
       },
       summary: '管理后台：图片列表',
@@ -43,7 +53,7 @@ export const adminImagesContract = c.router(
       body: c.noBody(),
       contentType: 'multipart/form-data',
       responses: {
-        200: z.object({ image: adminImageDto }),
+        200: uploadImageResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：上传图片（multipart/form-data）',
@@ -54,7 +64,7 @@ export const adminImagesContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ success: z.boolean() }),
+        200: deleteImageResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：删除图片',
@@ -76,7 +86,7 @@ export const adminImagesContract = c.router(
           }),
       }),
       responses: {
-        200: z.object({ image: adminImageDto }),
+        200: updateImageNoteResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：更新图片备注',
@@ -87,7 +97,7 @@ export const adminImagesContract = c.router(
       pathParams: z.object({ id: z.string().min(1) }),
       body: c.noBody(),
       responses: {
-        200: z.object({ image: adminImageDto }),
+        200: recalculateThumbhashResponse,
         ...standardMutationErrors,
       },
       summary: '管理后台：重新计算图片缩略哈希',

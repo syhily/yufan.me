@@ -36,6 +36,14 @@ const metricRow = z.object({
   visitors: z.number(),
 })
 
+export const countersAnalyticsResponse = z.object({ visits: z.number(), visitors: z.number(), referers: z.number() })
+
+export const viewsAnalyticsResponse = z.array(viewsPoint)
+
+export const heatmapAnalyticsResponse = z.array(heatmapCell)
+
+export const metricsAnalyticsResponse = z.array(metricRow)
+
 export const analyticsContract = c.router(
   {
     counters: {
@@ -43,7 +51,7 @@ export const analyticsContract = c.router(
       path: '/analytics/counters',
       query: analyticsQuery,
       responses: {
-        200: z.object({ visits: z.number(), visitors: z.number(), referers: z.number() }),
+        200: countersAnalyticsResponse,
         ...standardReadErrors,
       },
       summary: '分析面板：访问计数摘要',
@@ -54,7 +62,7 @@ export const analyticsContract = c.router(
       path: '/analytics/views',
       query: analyticsQuery,
       responses: {
-        200: z.array(viewsPoint),
+        200: viewsAnalyticsResponse,
         ...standardReadErrors,
       },
       summary: '分析面板：时序访问量数据',
@@ -65,7 +73,7 @@ export const analyticsContract = c.router(
       path: '/analytics/heatmap',
       query: analyticsQuery,
       responses: {
-        200: z.array(heatmapCell),
+        200: heatmapAnalyticsResponse,
         ...standardReadErrors,
       },
       summary: '分析面板：访问热力图数据',
@@ -76,7 +84,7 @@ export const analyticsContract = c.router(
       path: '/analytics/metrics',
       query: metricQuery,
       responses: {
-        200: z.array(metricRow),
+        200: metricsAnalyticsResponse,
         ...standardReadErrors,
       },
       summary: '分析面板：按维度聚合的指标',
