@@ -7,7 +7,10 @@ import { reindexSearchBatch } from '@/server/search/reindex-service'
 import { adminRendersContract } from '@/shared/contracts/admin/renders'
 
 export const adminRendersController: AuthedContractImpl<typeof adminRendersContract> = {
-  renderMath: async (args, _ctx) => {
+  renderMath: async (args, ctx) => {
+    if (ctx.viewer.role !== 'admin') {
+      return { status: 403 as const, body: { error: { message: '无权访问' } } }
+    }
     const payload = args.body
     const tex = payload.tex
     if (tex.trim() === '') {
@@ -28,7 +31,10 @@ export const adminRendersController: AuthedContractImpl<typeof adminRendersContr
       return { status: 200 as const, body: { mathml: '', error: message } }
     }
   },
-  renderMermaid: async (args, _ctx) => {
+  renderMermaid: async (args, ctx) => {
+    if (ctx.viewer.role !== 'admin') {
+      return { status: 403 as const, body: { error: { message: '无权访问' } } }
+    }
     const payload = args.body
     const code = payload.code
     if (code.trim() === '') {

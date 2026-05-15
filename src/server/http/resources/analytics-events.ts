@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 
 import { queryRealtimeTail } from '@/server/analytics/query'
+import { getLogger } from '@/server/logger'
 
 import type { Env } from '../context'
 
@@ -20,6 +21,8 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       let closed = false
+      let pollInProgress = false
+
       const close = () => {
         if (closed) {
           return
@@ -27,6 +30,7 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
         closed = true
         clearInterval(pollTimer)
         clearInterval(heartbeatTimer)
+        c.req.raw.signal.removeEventListener('abort', close)
         try {
           controller.close()
         } catch {
@@ -55,10 +59,11 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
       }
 
       const pollTimer = setInterval(() => {
+        if (pollInProgress || closed) {
+          return
+        }
+        pollInProgress = true
         void (async () => {
-          if (closed) {
-            return
-          }
           try {
             const rows = await queryRealtimeTail(lastSeen)
             if (rows.length > 0) {
@@ -66,8 +71,12 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
               lastSeen = new Date(ordered[ordered.length - 1]!.ts)
               send('events', ordered)
             }
-          } catch {
-            // Transient DB error → swallow; the next tick will retry.
+          } catch (err) {
+            getLogger('analytics.sse').warn('queryRealtimeTail failed', {
+              error: err instanceof Error ? err.message : String(err),
+            })
+          } finally {
+            pollInProgress = false
           }
         })()
       }, POLL_INTERVAL_MS)
@@ -85,13 +94,10 @@ export const analyticsEventsRouter = new Hono<Env>().get('/api/analytics/events'
     },
   })
 
-  return new Response(stream, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    },
+  return c.body(stream, 200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
   })
 })
