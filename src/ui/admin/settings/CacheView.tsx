@@ -2,8 +2,7 @@ import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/client/api/fetcher'
-import type { ClearCacheOutput, GetCacheStatsOutput } from '@/client/api/fetcher'
+import type { ApiEnvelope, ClearCacheOutput, GetCacheStatsOutput } from '@/client/api/fetcher'
 import type { CacheSettings } from '@/shared/blog-config'
 import type { CacheBucketId, CacheBucketStats, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
 

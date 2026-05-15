@@ -76,27 +76,40 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
   get: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const user = await fetchAdminUserDto(asId(id))
-    return user ? ok({ user }) : notFound('用户不存在')
+    if (!user) {
+      return notFound('用户不存在')
+    }
+    return ok({ user })
   },
 
   mute: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
     const id = resolveId(args)
     const b = body<MuteBody>(args)
     const updated = await muteAdminUser(asId(id), b.muted)
-    if (!updated) return notFound('用户不存在或为管理员（管理员不可禁言）')
+    if (!updated) {
+      return notFound('用户不存在或为管理员（管理员不可禁言）')
+    }
     const dto = await fetchAdminUserDto(updated.id)
-    return dto ? ok({ user: dto }) : notFound('用户不存在')
+    if (!dto) {
+      return notFound('用户不存在')
+    }
+    return ok({ user: dto })
   },
 
   updateRole: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     const b = body<RoleBody>(args)
-    if (viewer.userId === id) return forbidden('不能修改自己的角色。')
+    if (viewer.userId === id) {
+      return forbidden('不能修改自己的角色。')
+    }
     const target = await findUserById(asId(id))
-    if (!target) return notFound('用户不存在。')
-    if (target.role === 'admin' && b.role !== 'admin' && (await countAdmins()) <= 1)
+    if (!target) {
+      return notFound('用户不存在。')
+    }
+    if (target.role === 'admin' && b.role !== 'admin' && (await countAdmins()) <= 1) {
       return conflict('不能降级唯一的管理员。')
+    }
     const updated = await updateUserRole(asId(id), b.role)
     if (updated) {
       await revokeAllSessionsOfUser(asId(id))
@@ -108,12 +121,20 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
   softDelete: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    if (viewer.userId === id) return forbidden('不能删除自己。')
+    if (viewer.userId === id) {
+      return forbidden('不能删除自己。')
+    }
     const target = await findUserById(asId(id))
-    if (!target) return notFound('用户不存在')
-    if (target.role === 'admin' && (await countAdmins()) <= 1) return conflict('不能删除唯一的管理员。')
+    if (!target) {
+      return notFound('用户不存在')
+    }
+    if (target.role === 'admin' && (await countAdmins()) <= 1) {
+      return conflict('不能删除唯一的管理员。')
+    }
     const ok_ = await softDeleteAdminUser(asId(id))
-    if (!ok_) return notFound('用户不存在或已被删除')
+    if (!ok_) {
+      return notFound('用户不存在或已被删除')
+    }
     await revokeAllSessionsOfUser(asId(id))
     log.info('user soft deleted', { actor: viewer.userId, target: id, role: target.role })
     return ok({ success: true })
@@ -123,7 +144,9 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     const ok_ = await restoreAdminUser(asId(id))
-    if (!ok_) return notFound('用户不存在')
+    if (!ok_) {
+      return notFound('用户不存在')
+    }
     log.info('user restored', { actor: viewer.userId, target: id })
     return ok({ success: true })
   },
@@ -133,7 +156,9 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     const b = body<SessionBody>(args)
     const currentSession = b.sessionId === ctx.session.id
     const meta = await findSessionMeta(b.sessionId)
-    if (!meta) return ok({ success: true, currentSession })
+    if (!meta) {
+      return ok({ success: true, currentSession })
+    }
     await revokeSessionById(b.sessionId, meta.userId)
     log.info('session revoked by admin', {
       actor: viewer.userId,
@@ -148,7 +173,9 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
     const target = await findUserById(asId(id))
-    if (!target) return notFound('用户不存在。')
+    if (!target) {
+      return notFound('用户不存在。')
+    }
     await revokeAllSessionsOfUser(asId(id))
     log.info('all sessions revoked by admin', { actor: viewer.userId, target: id })
     return ok({ success: true })
@@ -158,7 +185,9 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     const viewer = requireViewer(ctx)
     const b = body<InviteBody>(args)
     const users = await insertAuthor(b.name, b.email)
-    if (users.length === 0) return badRequest('创建用户失败')
+    if (users.length === 0) {
+      return badRequest('创建用户失败')
+    }
     const newUser = users[0]
     const tokenResult = await issueSetupToken(newUser.id)
     const website = requireBlogSettingsSection('siteIdentity').website
@@ -174,7 +203,9 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     requireViewer(ctx)
     const b = body<ResetBody>(args)
     const target = await findUserById(asId(b.userId))
-    if (!target) return notFound('用户不存在')
+    if (!target) {
+      return notFound('用户不存在')
+    }
     const tokenResult = await issueResetToken(asId(b.userId))
     const website = requireBlogSettingsSection('siteIdentity').website
     const resetLink = joinUrl(website, `/wp-admin/reset-password?token=${encodeURIComponent(tokenResult.token)}`)

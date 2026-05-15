@@ -17,6 +17,7 @@ import { Link, useFetcher } from 'react-router'
 import type {
   AdminMutationSuccessOutput,
   AdminUserDto,
+  ApiEnvelope,
   BulkApproveOutput,
   BulkSoftDeleteOutput,
   GetUserOutput,
@@ -24,7 +25,6 @@ import type {
   MuteUserOutput,
   UpdateUserOutput,
 } from '@/client/api/fetcher'
-import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
