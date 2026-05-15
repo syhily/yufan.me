@@ -5,7 +5,7 @@ import { useFetcher, useRevalidator } from 'react-router'
 import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { ClearCacheOutput, GetCacheStatsOutput } from '@/client/api/fetcher'
 import type { CacheSettings } from '@/shared/blog-config'
-import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
+import type { CacheBucketId, CacheBucketStats, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
@@ -72,7 +72,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
     },
   })
 
-  const totalKeys = stats.buckets.reduce((sum: number, bucket: ReservedCacheBucketStats) => sum + bucket.keyCount, 0)
+  const totalKeys = stats.buckets.reduce((sum: number, bucket: CacheBucketStats) => sum + bucket.keyCount, 0)
   const isClearPending = fetcher.state !== 'idle'
 
   // `cache` is already a primitive-value map keyed by bucket id, so
@@ -142,7 +142,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
         </Button>
       </div>
 
-      {stats.buckets.map((bucket: ReservedCacheBucketStats) => (
+      {stats.buckets.map((bucket: CacheBucketStats) => (
         <BucketCard
           key={bucket.id}
           bucket={bucket}
