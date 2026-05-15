@@ -43,5 +43,6 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
   }
 
   log.error('unexpected', { requestId: c.var.requestId, error: err })
+  c.header('X-Request-Id', c.var.requestId)
   return json(c, { error: { message: '服务器内部错误' } }, 500)
 }
