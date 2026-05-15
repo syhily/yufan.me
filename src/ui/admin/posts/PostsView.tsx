@@ -10,23 +10,15 @@ import {
   Trash2Icon,
   Undo2Icon,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminUserDto, ListUsersInput, ListUsersOutput } from '@/client/api/fetcher'
-import type { ListCategoriesInput, ListCategoriesOutput } from '@/shared/categories'
-import type {
-  AdminPostDto,
-  DeletePostInput,
-  DeletePostOutput,
-  ListPostsInput,
-  ListPostsOutput,
-  RestorePostInput,
-  RestorePostOutput,
-} from '@/shared/cms-posts'
-import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
+import type { AdminPostDto } from '@/shared/cms-posts'
+import type { AdminUserDto } from '@/shared/users'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -40,13 +32,6 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
-
-const LIST = API_ACTIONS.admin.listPosts
-const DELETE = API_ACTIONS.admin.deletePost
-const RESTORE = API_ACTIONS.admin.restorePost
-const LIST_CATEGORIES = API_ACTIONS.admin.listCategories
-const LIST_TAGS = API_ACTIONS.admin.listTags
-const LIST_USERS = API_ACTIONS.admin.listUsers
 
 const DELETED_STATUS_OPTIONS = [
   { value: 'all', label: '全部' },
@@ -75,66 +60,101 @@ export function PostsView() {
   const { state, dispatch } = usePostsController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useAdminMutation<ListPostsInput, ListPostsOutput>(LIST, {
-    onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.posts, total: payload.total }),
-    errorMessage: '加载文章列表失败',
-  })
-  const { load: loadPosts, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(
+    () =>
+      [
+        'admin',
+        'posts',
+        {
+          q: state.q,
+          deletedStatus: state.deletedStatus,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+          category: state.category,
+          tag: state.tag,
+          published: state.published,
+          visible: state.visible,
+          sortBy: state.sortBy,
+          sortOrder: state.sortOrder,
+          authorId: state.authorId,
+        },
+      ] as const,
+    [
+      state.q,
+      state.deletedStatus,
+      state.currentPage,
+      state.pageSize,
+      state.category,
+      state.tag,
+      state.published,
+      state.visible,
+      state.sortBy,
+      state.sortOrder,
+      state.authorId,
+    ],
+  )
 
-  const reload = useCallback(() => {
-    loadPosts({
-      q: state.q || undefined,
-      deletedStatus: state.deletedStatus,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-      category: state.category || undefined,
-      tag: state.tag || undefined,
-      published: state.published,
-      visible: state.visible,
-      sortBy: state.sortBy,
-      sortOrder: state.sortOrder,
-      authorId: state.authorId || undefined,
-    })
-  }, [
-    loadPosts,
-    state.q,
-    state.deletedStatus,
-    state.currentPage,
-    state.pageSize,
-    state.category,
-    state.tag,
-    state.published,
-    state.visible,
-    state.sortBy,
-    state.sortOrder,
-    state.authorId,
-  ])
-
-  const deleteApi = useAdminMutation<DeletePostInput, DeletePostOutput>(DELETE, {
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () =>
+    unwrap(
+      api.admin.posts.list({
+        query: {
+          q: state.q || undefined,
+          deletedStatus: state.deletedStatus,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+          category: state.category || undefined,
+          tag: state.tag || undefined,
+          published: state.published,
+          visible: state.visible,
+          sortBy: state.sortBy,
+          sortOrder: state.sortOrder,
+          authorId: state.authorId || undefined,
+        },
       }),
-  })
-  const { submit: submitDelete } = deleteApi
+    ),
+  )
 
-  const restoreApi = useAdminMutation<RestorePostInput, RestorePostOutput>(RESTORE, {
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '恢复失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const { submit: submitRestore } = restoreApi
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.posts, total: data.total })
+    }
+  }, [data, dispatch])
+
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.posts.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => void reload(),
+      onError: (error) =>
+        setConfirm({
+          title: '删除失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
+  const submitDelete = deleteMutation.mutate
+
+  const restoreMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.posts.restore({ params: { id: input.id } })),
+    {
+      onSuccess: () => void reload(),
+      onError: (error) =>
+        setConfirm({
+          title: '恢复失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
+  const submitRestore = restoreMutation.mutate
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
@@ -142,32 +162,21 @@ export function PostsView() {
   })
 
   // Load filter option data
-  const categoriesApi = useAdminMutation<ListCategoriesInput, ListCategoriesOutput>(LIST_CATEGORIES, {
-    onSuccess: () => undefined,
-  })
-  const tagsApi = useAdminMutation<ListTagsInput, ListTagsOutput>(LIST_TAGS, {
-    onSuccess: () => undefined,
-  })
-  const usersApi = useAdminMutation<ListUsersInput, ListUsersOutput>(LIST_USERS, {
-    onSuccess: () => undefined,
-  })
-
-  useEffect(() => {
-    categoriesApi.load({})
-    tagsApi.load({ limit: 100 })
-    usersApi.load({ limit: 100, hasPosts: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    reload()
-  }, [reload])
+  const categoriesQuery = useApiQuery(['admin', 'categories'] as const, () =>
+    unwrap(api.admin.categories.list({ query: {} })),
+  )
+  const tagsQuery = useApiQuery(['admin', 'tags'] as const, () =>
+    unwrap(api.admin.tags.list({ query: { limit: 100 } })),
+  )
+  const usersQuery = useApiQuery(['admin', 'users'] as const, () =>
+    unwrap(api.admin.users.list({ query: { limit: 100, hasPosts: true } })),
+  )
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
-  const categories = categoriesApi.data?.categories
-  const tags = tagsApi.data?.tags
-  const users = usersApi.data?.users
+  const categories = categoriesQuery.data?.categories
+  const tags = tagsQuery.data?.tags
+  const users = usersQuery.data?.users
 
   const categoryOptions = useMemo(
     () => [{ value: '', label: '全部分类' }, ...(categories ?? []).map((c) => ({ value: c.name, label: c.name }))],
@@ -191,7 +200,13 @@ export function PostsView() {
           title="文章管理"
           description={`共 ${state.total} 篇文章。点击「编辑」可进入富文本编辑器，编辑器右侧可同时调整文章元数据。`}
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button

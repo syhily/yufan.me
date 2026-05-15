@@ -1,13 +1,13 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
 import { toast } from 'sonner'
 
-import type { ApiEnvelope, ReplyCommentOutput } from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -20,8 +20,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
-
-const REPLY = API_ACTIONS.comment.replyComment
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null
@@ -42,7 +40,6 @@ export function ReplyCommentDialog({
   onReplied,
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<ReplyCommentOutput>>()
   // Reply body is PortableText, not plain text — the public reply form
   // posts the same shape, and the API perimeter validates against
   // `commentBodySchema`. Keeping the admin reply on the same editor
@@ -60,18 +57,21 @@ export function ReplyCommentDialog({
     setBodyKey((k) => k + 1)
   }, [comment?.id])
 
-  useFetcherResult(fetcher, {
-    action: REPLY,
-    onSuccess: (payload) => {
-      if (payload.csrfToken) {
-        onCsrfRotated(payload.csrfToken)
-      }
-      onReplied()
+  const replyMutation = useApiMutation(
+    (input: { page_key: string; name: string; email: string; body: CommentBody; rid?: number; csrf: string }) =>
+      unwrap(api.comment.replyComment({ body: input })),
+    {
+      onSuccess: (payload) => {
+        if (payload.csrfToken) {
+          onCsrfRotated(payload.csrfToken)
+        }
+        onReplied()
+      },
     },
-  })
+  )
 
   const open = comment !== null
-  const submitting = fetcher.state !== 'idle'
+  const submitting = replyMutation.isPending
   const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
@@ -101,17 +101,14 @@ export function ReplyCommentDialog({
               toast.error('该评论缺少有效的目标页面标识，无法回复')
               return
             }
-            void fetcher.submit(
-              {
-                page_key: comment.pagePublicId,
-                name: authorName,
-                email: authorEmail,
-                body,
-                rid: Number.parseInt(idStr(comment.id), 10),
-                csrf: csrfToken,
-              },
-              { method: REPLY.method, encType: 'application/json', action: REPLY.path },
-            )
+            replyMutation.mutate({
+              page_key: comment.pagePublicId ?? '',
+              name: authorName,
+              email: authorEmail,
+              body,
+              rid: Number.parseInt(idStr(comment.id), 10),
+              csrf: csrfToken,
+            })
           }}
           className="flex flex-col gap-4"
         >

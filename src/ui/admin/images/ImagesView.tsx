@@ -1,20 +1,12 @@
 import { ImageOffIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  AdminImageDto,
-  AdminImageKind,
-  DeleteImageInput,
-  DeleteImageOutput,
-  ListImagesInput,
-  ListImagesOutput,
-  RecalculateThumbhashInput,
-  RecalculateThumbhashOutput,
-  UpdateImageNoteInput,
-  UpdateImageNoteOutput,
-} from '@/shared/images'
+import type { AdminImageDto, AdminImageKind } from '@/shared/images'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { ImageCard } from '@/ui/admin/images/ImageCard'
 import { ImageDetailDialog } from '@/ui/admin/images/ImageDetailDialog'
 import { useImagesController } from '@/ui/admin/images/useImagesController'
@@ -28,11 +20,6 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
-
-const LIST = API_ACTIONS.admin.listImages
-const DELETE = API_ACTIONS.admin.deleteImage
-const UPDATE_NOTE = API_ACTIONS.admin.updateImageNote
-const RECALCULATE_THUMBHASH = API_ACTIONS.admin.recalculateImageThumbhash
 
 // Grid mode shows pure square thumbnails — far more rows fit per page
 // than the old table layout, so the page-size options stay generous.
@@ -63,60 +50,82 @@ export function ImagesView() {
   const [selectedImage, setSelectedImage] = useState<AdminImageDto | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const listApi = useAdminMutation<ListImagesInput, ListImagesOutput>(LIST, {
-    onSuccess: (payload) =>
-      dispatch({ type: 'loaded', rows: payload.images, total: payload.total, hasMore: payload.hasMore }),
-    errorMessage: '加载图片列表失败',
-  })
-  const { load: loadImages, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(
+    () =>
+      [
+        'admin',
+        'images',
+        { q: state.q, kind: state.kind, offset: state.currentPage * state.pageSize, limit: state.pageSize },
+      ] as const,
+    [state.q, state.kind, state.currentPage, state.pageSize],
+  )
 
-  const reload = useCallback(() => {
-    loadImages({
-      q: state.q || undefined,
-      kind: state.kind === 'all' ? undefined : state.kind,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-    })
-  }, [loadImages, state.q, state.kind, state.currentPage, state.pageSize])
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () =>
+    unwrap(
+      api.admin.images.list({
+        query: {
+          q: state.q || undefined,
+          kind: state.kind === 'all' ? undefined : state.kind,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
+      }),
+    ),
+  )
 
-  const deleteApi = useAdminMutation<DeleteImageInput, DeleteImageOutput>(DELETE, {
-    onSuccess: () => undefined,
-    errorMessage: '删除图片失败',
-  })
-  const { submit: submitDelete } = deleteApi
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.images, total: data.total, hasMore: data.hasMore })
+    }
+  }, [data, dispatch])
 
-  const updateNoteApi = useAdminMutation<UpdateImageNoteInput, UpdateImageNoteOutput>(UPDATE_NOTE, {
-    onSuccess: (payload) => {
-      dispatch({ type: 'patchImage', image: payload.image })
-      // Refresh the dialog selection so the dialog renders the latest
-      // note immediately after save without the parent juggling its
-      // own copy of the row.
-      setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.images.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => undefined,
+      onError: (error) => toast.error(error.message),
     },
-    errorMessage: '更新图片备注失败',
-  })
-  const { submit: submitUpdateNote, isPending: isUpdatingNote } = updateNoteApi
+  )
+  const submitDelete = deleteMutation.mutate
 
-  const recalculateApi = useAdminMutation<RecalculateThumbhashInput, RecalculateThumbhashOutput>(
-    RECALCULATE_THUMBHASH,
+  const updateNoteMutation = useApiMutation(
+    (input: { id: string; note: string | null }) =>
+      unwrap(api.admin.images.updateNote({ params: { id: input.id }, body: { note: input.note } })),
+    {
+      onSuccess: (payload) => {
+        dispatch({ type: 'patchImage', image: payload.image })
+        // Refresh the dialog selection so the dialog renders the latest
+        // note immediately after save without the parent juggling its
+        // own copy of the row.
+        setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
+      },
+      onError: (error) => toast.error(error.message),
+    },
+  )
+  const submitUpdateNote = updateNoteMutation.mutate
+  const isUpdatingNote = updateNoteMutation.isPending
+
+  const recalculateMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.images.recalculateThumbhash({ params: { id: input.id } })),
     {
       onSuccess: (payload) => {
         dispatch({ type: 'patchImage', image: payload.image })
         setSelectedImage((prev) => (prev !== null && prev.id === payload.image.id ? payload.image : prev))
       },
-      errorMessage: '重新计算缩略图失败',
+      onError: (error) => toast.error(error.message),
     },
   )
-  const { submit: submitRecalculate, isPending: isRecalculating } = recalculateApi
+  const submitRecalculate = recalculateMutation.mutate
+  const isRecalculating = recalculateMutation.isPending
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
@@ -165,7 +174,13 @@ export function ImagesView() {
     <>
       <AdminListPage>
         <AdminListPage.Header title="图片管理" description={`共 ${state.total} 条。删除时同步移除 S3 中的原始对象。`}>
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setUploadOpen(true)}>

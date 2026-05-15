@@ -1,19 +1,17 @@
 import { ArrowLeftIcon, CheckIcon, HistoryIcon, RefreshCcwIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { AdminRevisionDto, ListPageRevisionsInput, ListPageRevisionsOutput } from '@/shared/cms-pages'
-import type { ListPostRevisionsInput, ListPostRevisionsOutput } from '@/shared/cms-posts'
+import type { AdminRevisionDto } from '@/shared/cms-pages'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { diffBodies, DiffPanel } from '@/ui/admin/editor/portable-text-diff'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
-
-const LIST_PAGE_REVISIONS = API_ACTIONS.admin.listPageRevisions
-const LIST_POST_REVISIONS = API_ACTIONS.admin.listPostRevisions
 
 // Revision history drawer. Two stages:
 //
@@ -60,26 +58,20 @@ export function RevisionHistoryDrawer({
   const [revisions, setRevisions] = useState<AdminRevisionDto[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const listAction = type === 'page' ? LIST_PAGE_REVISIONS : LIST_POST_REVISIONS
-  const { load, isPending } = useAdminMutation<
-    ListPageRevisionsInput | ListPostRevisionsInput,
-    ListPageRevisionsOutput | ListPostRevisionsOutput
-  >(listAction, {
-    onSuccess: (payload) => setRevisions(payload.revisions),
-    errorMessage: '加载历史版本失败',
-  })
+  const { data, isPending, refetch } = useApiQuery(
+    ['admin', type === 'page' ? 'pages' : 'posts', 'revisions', ownerId],
+    () =>
+      type === 'page'
+        ? unwrap(api.admin.pages.listRevisions({ params: { id: ownerId } }))
+        : unwrap(api.admin.posts.listRevisions({ params: { id: ownerId } })),
+    { enabled: open && revisions === null },
+  )
 
-  // Fetch on first open. Re-opening reuses the cache; the operator
-  // refetches through the explicit refresh button. The endpoint is
-  // GET-only — `load(query)` URL-encodes `id` into the search params,
-  // which is the channel the loader (`readSearchInput`) expects.
-  // Calling `submit({ id })` would route through React Router's JSON
-  // body channel which is invalid for GET and surfaces as a 400/500.
   useEffect(() => {
-    if (open && revisions === null) {
-      load({ id: ownerId })
+    if (data) {
+      setRevisions(data.revisions)
     }
-  }, [open, revisions, load, ownerId])
+  }, [data])
 
   // Clear the selected detail view whenever the drawer closes so
   // the next open starts on the list.
@@ -136,7 +128,7 @@ export function RevisionHistoryDrawer({
               onSelect={setSelectedId}
               onRefresh={() => {
                 setRevisions(null)
-                load({ id: ownerId })
+                void refetch()
               }}
             />
           ) : (

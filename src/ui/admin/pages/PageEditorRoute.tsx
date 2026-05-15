@@ -1,17 +1,14 @@
 import type { NavigateFunction } from 'react-router'
 
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, GetPageInput } from '@/shared/cms-pages'
-
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'
-
-const GET_PAGE = API_ACTIONS.admin.getPage
 
 export interface PageEditorRouteProps {
   pageId: string
@@ -23,29 +20,14 @@ export interface PageEditorRouteProps {
 // separate from the shell so the shell stays plain-props +
 // straightforward to unit-test.
 export function PageEditorRoute({ pageId, navigate }: PageEditorRouteProps) {
-  const [detail, setDetail] = useState<AdminPageDetailDto | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const { data: detail, error: queryError } = useApiQuery(['admin', 'pages', 'detail', pageId], () =>
+    unwrap(api.admin.pages.get({ params: { id: pageId } })),
+  )
 
-  const getPageApi = useAdminMutation<GetPageInput, AdminPageDetailDto>(GET_PAGE, {
-    onSuccess: (payload) => {
-      setDetail(payload)
-      setErrorMessage(null)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { load } = getPageApi
-
-  useEffect(() => {
-    load({ id: pageId })
-  }, [load, pageId])
-
-  if (errorMessage !== null) {
-    return <PageEditorError message={errorMessage} />
+  if (queryError) {
+    return <PageEditorError message={queryError.message} />
   }
-  if (detail === null) {
+  if (detail === undefined) {
     return <PageEditorSkeleton />
   }
   return <PageEditorShell mode="edit" detail={detail} navigate={navigate} />

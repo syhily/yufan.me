@@ -1,9 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
-import type { AdminMusicDto, UpdateMusicInput, UpdateMusicOutput } from '@/shared/music'
+import type { AdminMusicDto } from '@/shared/music'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -16,8 +19,6 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
-
-const UPDATE = API_ACTIONS.admin.updateMusic
 
 // Discriminator: `music === undefined` keeps the dialog closed; a
 // populated `music` opens it in "edit existing" mode. The parent
@@ -49,18 +50,27 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
   const [draft, setDraft] = useState<MusicDraft>(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const updateApi = useAdminMutation<UpdateMusicInput, UpdateMusicOutput>(UPDATE, {
-    successMessage: '音乐已更新',
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      onSaved(payload.music)
+  const updateMutation = useApiMutation(
+    (input: { id: string; name: string; artist: string[]; album: string; lyric: string | undefined }) =>
+      unwrap(
+        api.admin.music.update({
+          params: { id: input.id },
+          body: { name: input.name, artist: input.artist, album: input.album, lyric: input.lyric },
+        }),
+      ),
+    {
+      onSuccess: (payload) => {
+        setErrorMessage(null)
+        toast.success('音乐已更新')
+        onSaved(payload.music)
+      },
+      onError: (error) => {
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { submit, isPending } = updateApi
+  )
+  const submit = updateMutation.mutate
+  const isPending = updateMutation.isPending
 
   useEffect(() => {
     if (music === undefined) {
@@ -101,12 +111,12 @@ export function EditMusicDialog({ music, onClose, onSaved }: EditMusicDialogProp
               setErrorMessage('至少填写一位歌手（多位用 / 分隔）')
               return
             }
-            const payload: UpdateMusicInput = {
+            const payload = {
               id: music.id,
               name: draft.name.trim(),
               artist: artistList,
               album: draft.album.trim(),
-              lyric: draft.lyric,
+              lyric: draft.lyric || undefined,
             }
             submit(payload)
           }}

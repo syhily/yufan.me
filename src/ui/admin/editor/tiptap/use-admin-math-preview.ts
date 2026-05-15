@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
-import type { RenderMathInput, RenderMathOutput } from '@/shared/cms-pages'
+import type { RenderMathInput } from '@/shared/cms-pages'
 
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 
 const DEBOUNCE_MS = 200
 
@@ -23,7 +25,7 @@ export function useAdminMathPreview(
   const [previewMathml, setPreviewMathml] = useState('')
   const [renderError, setRenderError] = useState<string | null>(null)
 
-  const renderMath = useApiFetcher<RenderMathInput, RenderMathOutput>(API_ACTIONS.admin.renderMath, {
+  const renderMath = useApiMutation((input: RenderMathInput) => unwrap(api.admin.editor.renderMath({ body: input })), {
     onSuccess: (result) => {
       if (result.error !== null) {
         setRenderError(result.error)
@@ -46,13 +48,13 @@ export function useAdminMathPreview(
       return
     }
     const timer = setTimeout(() => {
-      renderMath.submit({ tex, display })
+      renderMath.mutate({ tex, display })
     }, DEBOUNCE_MS)
     return () => {
       clearTimeout(timer)
     }
     // oxlint-disable-next-line exhaustive-deps
-  }, [tex, display, renderMath.submit])
+  }, [tex, display, renderMath.mutate])
 
   const showSpinner = previewMathml === '' && renderMath.isPending
   const previewHtml = previewMathml !== '' ? previewMathml : lastValidMathml.current

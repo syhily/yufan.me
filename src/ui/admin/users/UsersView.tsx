@@ -1,19 +1,11 @@
 import { MailIcon, Volume2Icon, VolumeOffIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type {
-  AdminMutationSuccessOutput,
-  AdminUserDto,
-  BulkApproveOutput,
-  BulkSoftDeleteOutput,
-  ListUsersInput,
-  ListUsersOutput,
-  MuteUserInput,
-  MuteUserOutput,
-  UserIdInput,
-} from '@/client/api/fetcher'
+import type { AdminUserDto } from '@/shared/users'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -23,13 +15,6 @@ import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { useUsersController } from '@/ui/admin/users/useUsersController'
 import { Button } from '@/ui/components/button'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
-
-const LIST = API_ACTIONS.admin.listUsers
-const SOFT_DELETE = API_ACTIONS.admin.softDeleteUser
-const RESTORE = API_ACTIONS.admin.restoreUser
-const MUTE = API_ACTIONS.admin.muteUser
-const BULK_APPROVE = API_ACTIONS.admin.bulkApproveUserComments
-const BULK_DELETE = API_ACTIONS.admin.bulkSoftDeleteUserComments
 
 // Orchestrator. Owns fetcher state, the controller dispatch, the
 // confirm-dialog reducer, and effect wiring. Presentation lives in
@@ -41,20 +26,6 @@ export function UsersView() {
   const config = useSiteIdentity()
   const { state, dispatch } = useUsersController()
 
-  const listApi = useAdminMutation<ListUsersInput, ListUsersOutput>(LIST, {
-    errorMessage: '加载用户列表失败',
-    onSuccess: (payload) => {
-      dispatch({ type: 'loaded', rows: payload.users, total: payload.total, hasMore: payload.hasMore })
-    },
-  })
-  const muteApi = useAdminMutation<MuteUserInput, MuteUserOutput>(MUTE, {
-    onSuccess: (payload) => {
-      dispatch({ type: 'patchUser', user: payload.user })
-    },
-  })
-  const { load: loadUsers, isPending: isUsersLoading } = listApi
-  const { submit: submitMuteApi } = muteApi
-
   // Debounce search input — fire one list request 300 ms after the last
   // keystroke instead of one per character.
   const [qInput, setQInput] = useDebouncedSearch({
@@ -62,29 +33,64 @@ export function UsersView() {
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
 
-  const reload = useCallback(() => {
-    loadUsers({
+  const queryParams = useMemo(
+    () => ({
       offset: state.currentPage * state.pageSize,
       limit: state.pageSize,
       q: state.q || undefined,
-      role: state.role !== 'all' ? state.role : undefined,
+      role: state.role !== 'all' ? (state.role as 'admin' | 'normal') : undefined,
       includeDeleted: state.includeDeleted ? true : undefined,
-      sortBy: state.sortBy !== 'recent' ? state.sortBy : undefined,
-    })
-  }, [loadUsers, state.currentPage, state.pageSize, state.q, state.role, state.includeDeleted, state.sortBy])
+      sortBy: state.sortBy !== 'recent' ? (state.sortBy as 'commentCount') : undefined,
+    }),
+    [state.currentPage, state.pageSize, state.q, state.role, state.includeDeleted, state.sortBy],
+  )
 
-  const deleteApi = useAdminMutation<UserIdInput, AdminMutationSuccessOutput>(SOFT_DELETE, { onSuccess: reload })
-  const restoreApi = useAdminMutation<UserIdInput, AdminMutationSuccessOutput>(RESTORE, { onSuccess: reload })
-  const bulkApproveApi = useAdminMutation<UserIdInput, BulkApproveOutput>(BULK_APPROVE, { onSuccess: reload })
-  const bulkDeleteApi = useAdminMutation<UserIdInput, BulkSoftDeleteOutput>(BULK_DELETE, { onSuccess: reload })
-  const { submit: submitDeleteApi } = deleteApi
-  const { submit: submitRestoreApi } = restoreApi
-  const { submit: submitBulkApproveApi } = bulkApproveApi
-  const { submit: submitBulkDeleteApi } = bulkDeleteApi
+  const {
+    data: listData,
+    isPending: isUsersLoading,
+    refetch,
+  } = useApiQuery(['admin', 'users', 'list', queryParams], () => unwrap(api.admin.users.list({ query: queryParams })))
+
+  const reload = useCallback(() => {
+    void refetch()
+  }, [refetch])
 
   useEffect(() => {
-    reload()
-  }, [reload])
+    if (listData) {
+      dispatch({ type: 'loaded', rows: listData.users, total: listData.total, hasMore: listData.hasMore })
+    }
+  }, [listData, dispatch])
+
+  const muteApi = useApiMutation(
+    (input: { userId: string; muted: boolean }) =>
+      unwrap(api.admin.users.mute({ params: { id: input.userId }, body: { muted: input.muted } })),
+    {
+      onSuccess: (data) => {
+        dispatch({ type: 'patchUser', user: data.user })
+      },
+    },
+  )
+
+  const deleteApi = useApiMutation(
+    (input: { userId: string }) => unwrap(api.admin.users.softDelete({ params: { id: input.userId } })),
+    { onSuccess: reload },
+  )
+
+  const restoreApi = useApiMutation(
+    (input: { userId: string }) => unwrap(api.admin.users.restore({ params: { id: input.userId } })),
+    { onSuccess: reload },
+  )
+
+  const bulkApproveApi = useApiMutation(
+    (input: { userId: string }) => unwrap(api.admin.moderation.bulkApproveComments({ body: { userId: input.userId } })),
+    { onSuccess: reload },
+  )
+
+  const bulkDeleteApi = useApiMutation(
+    (input: { userId: string }) =>
+      unwrap(api.admin.moderation.bulkSoftDeleteComments({ body: { userId: input.userId } })),
+    { onSuccess: reload },
+  )
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
@@ -111,9 +117,9 @@ export function UsersView() {
         // `Trash2` for destructive confirms reads as "delete" and
         // miscues 禁言.
         actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
-        onConfirm: () => submitMuteApi({ userId: user.id, muted: !user.isMuted }),
+        onConfirm: () => muteApi.mutate({ userId: user.id, muted: !user.isMuted }),
       }),
-    [submitMuteApi],
+    [muteApi.mutate],
   )
   const onSoftDelete = useCallback(
     (user: AdminUserDto) =>
@@ -122,11 +128,11 @@ export function UsersView() {
         description: '此操作为软删除，用户记录保留，但在统计与列表中默认隐藏。',
         actionLabel: '删除',
         destructive: true,
-        onConfirm: () => submitDeleteApi({ userId: user.id }),
+        onConfirm: () => deleteApi.mutate({ userId: user.id }),
       }),
-    [submitDeleteApi],
+    [deleteApi.mutate],
   )
-  const onRestore = useCallback((user: AdminUserDto) => submitRestoreApi({ userId: user.id }), [submitRestoreApi])
+  const onRestore = useCallback((user: AdminUserDto) => restoreApi.mutate({ userId: user.id }), [restoreApi.mutate])
   const onBulkApproveOne = useCallback(
     (user: AdminUserDto) =>
       setConfirm({
@@ -134,9 +140,9 @@ export function UsersView() {
         description: '所有待审核评论将立即通过审核并对所有访客可见。',
         actionLabel: '通过',
         destructive: false,
-        onConfirm: () => submitBulkApproveApi({ userId: user.id }),
+        onConfirm: () => bulkApproveApi.mutate({ userId: user.id }),
       }),
-    [submitBulkApproveApi],
+    [bulkApproveApi.mutate],
   )
   const onBulkDeleteCommentsOne = useCallback(
     (user: AdminUserDto) =>
@@ -145,9 +151,9 @@ export function UsersView() {
         description: '此操作为软删除，可后续通过数据库恢复。',
         actionLabel: '删除',
         destructive: true,
-        onConfirm: () => submitBulkDeleteApi({ userId: user.id }),
+        onConfirm: () => bulkDeleteApi.mutate({ userId: user.id }),
       }),
-    [submitBulkDeleteApi],
+    [bulkDeleteApi.mutate],
   )
 
   const onSelectedChange = useCallback(
@@ -165,12 +171,12 @@ export function UsersView() {
         destructive: false,
         onConfirm: () => {
           for (const id of selectedIds) {
-            submitBulkApproveApi({ userId: id })
+            bulkApproveApi.mutate({ userId: id })
           }
           dispatch({ type: 'clearSelection' })
         },
       }),
-    [selectedIds, submitBulkApproveApi, dispatch],
+    [selectedIds, bulkApproveApi.mutate, dispatch],
   )
   const onBulkDeleteSelected = useCallback(
     () =>
@@ -181,12 +187,12 @@ export function UsersView() {
         destructive: true,
         onConfirm: () => {
           for (const id of selectedIds) {
-            submitBulkDeleteApi({ userId: id })
+            bulkDeleteApi.mutate({ userId: id })
           }
           dispatch({ type: 'clearSelection' })
         },
       }),
-    [selectedIds, submitBulkDeleteApi, dispatch],
+    [selectedIds, bulkDeleteApi.mutate, dispatch],
   )
 
   return (

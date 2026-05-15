@@ -12,8 +12,8 @@ import {
 import { memo } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminUserDto } from '@/client/api/fetcher'
 import type { SiteIdentitySettings } from '@/shared/blog-config'
+import type { AdminUserDto } from '@/shared/users'
 
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'

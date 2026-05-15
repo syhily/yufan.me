@@ -1,15 +1,15 @@
 import { Music2Icon, PlusIcon, SearchIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { AdminMusicDto, ListMusicInput, ListMusicOutput } from '@/shared/music'
+import type { AdminMusicDto } from '@/shared/music'
 
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
-
-const LIST_MUSIC = API_ACTIONS.admin.listMusic
 
 // Music picker. Pulls from the local admin library, with an inline
 // "添加音乐" affordance that opens the same `AddMusicDialog` used at
@@ -43,9 +43,12 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
   const [musics, setMusics] = useState<AdminMusicDto[] | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
-  const { load } = useApiFetcher<ListMusicInput, ListMusicOutput>(LIST_MUSIC, {
-    onSuccess: (payload) => setMusics(payload.musics),
-  })
+  const searchMutation = useApiMutation(
+    (input: { limit: number; q?: string }) => unwrap(api.admin.music.list({ query: input })),
+    {
+      onSuccess: (payload) => setMusics(payload.musics),
+    },
+  )
 
   const lastFetchedQRef = useRef<string | null>(null)
   useEffect(() => {
@@ -61,12 +64,12 @@ export function MusicPickerDialog({ trigger, onPick, open: openProp, onOpenChang
       () => {
         lastFetchedQRef.current = trimmed
         setMusics(null)
-        load({ limit: 60, q: trimmed === '' ? undefined : trimmed })
+        searchMutation.mutate({ limit: 60, q: trimmed === '' ? undefined : trimmed })
       },
       lastFetchedQRef.current === null ? 0 : 300,
     )
     return () => clearTimeout(handle)
-  }, [q, open, load])
+  }, [q, open, searchMutation])
 
   return (
     <>

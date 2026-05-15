@@ -1,17 +1,14 @@
 import type { NavigateFunction } from 'react-router'
 
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminPostDetailDto, GetPostInput } from '@/shared/cms-posts'
-
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
 import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'
-
-const GET_POST = API_ACTIONS.admin.getPost
 
 export interface PostEditorRouteProps {
   postId: string
@@ -19,32 +16,17 @@ export interface PostEditorRouteProps {
 }
 
 export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
-  const [detail, setDetail] = useState<AdminPostDetailDto | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const query = useApiQuery(['admin', 'post', postId] as const, () =>
+    unwrap(api.admin.posts.get({ params: { id: postId } })),
+  )
 
-  const getPostApi = useAdminMutation<GetPostInput, AdminPostDetailDto>(GET_POST, {
-    onSuccess: (payload) => {
-      setDetail(payload)
-      setErrorMessage(null)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { load } = getPostApi
-
-  useEffect(() => {
-    load({ id: postId })
-  }, [load, postId])
-
-  if (errorMessage !== null) {
-    return <PostEditorError message={errorMessage} />
+  if (query.error) {
+    return <PostEditorError message={query.error.message} />
   }
-  if (detail === null) {
+  if (query.data === undefined) {
     return <PostEditorSkeleton />
   }
-  return <PostEditorShell mode="edit" detail={detail} navigate={navigate} />
+  return <PostEditorShell mode="edit" detail={query.data} navigate={navigate} />
 }
 
 function PostEditorError({ message }: { message: string }) {

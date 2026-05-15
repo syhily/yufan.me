@@ -1,16 +1,9 @@
 import { HeartIcon } from 'lucide-react'
 import { startTransition, useEffect, useOptimistic, useState } from 'react'
 
-import type {
-  DecreaseLikeInput,
-  DecreaseLikeOutput,
-  IncreaseLikeInput,
-  IncreaseLikeOutput,
-  ValidateLikeTokenInput,
-  ValidateLikeTokenOutput,
-} from '@/client/api/fetcher'
-
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { joinUrl } from '@/shared/urls'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
@@ -78,11 +71,11 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
-    API_ACTIONS.comment.validateLikeToken,
+  const validateMutation = useApiMutation(
+    (input: { key: string; token: string }) => unwrap(api.comment.validateLikeToken({ body: input })),
     {
       onSuccess: (data) => {
-        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
+        setBaseState((prev) => ({ ...prev, liked: data.valid }))
         if (!data.valid) {
           localStorage.removeItem(tokenStorageKey(permalink))
         }
@@ -90,37 +83,40 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     },
   )
 
-  const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
-    onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
-      localStorage.setItem(tokenStorageKey(permalink), data.token)
+  const increaseMutation = useApiMutation(
+    (input: { key: string }) => unwrap(api.comment.increaseLike({ body: input })),
+    {
+      onSuccess: (data) => {
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
+        localStorage.setItem(tokenStorageKey(permalink), data.token)
+      },
     },
-  })
+  )
 
-  const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
-    onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
-      localStorage.removeItem(tokenStorageKey(permalink))
+  const decreaseMutation = useApiMutation(
+    (input: { key: string; token: string }) => unwrap(api.comment.decreaseLike({ body: input })),
+    {
+      onSuccess: (data) => {
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
+        localStorage.removeItem(tokenStorageKey(permalink))
+      },
     },
-  })
+  )
 
   // Sync local island state to React Router loader data. Detail routes reuse
   // the same component instance when navigating `/posts/a` -> `/posts/b`, so
   // both the counter and local "liked" flag must be reset before validating
   // the new page's cached token.
-  const validateSubmit = validate.submit
   useEffect(() => {
     setBaseState(createLikeButtonState(commentKey, initialLikes))
     const token = localStorage.getItem(tokenStorageKey(permalink))
     if (!token) {
       return
     }
-    validateSubmit({ key: commentKey, token })
-  }, [permalink, commentKey, initialLikes, validateSubmit])
+    validateMutation.mutate({ key: commentKey, token })
+  }, [permalink, commentKey, initialLikes, validateMutation])
 
-  const isPending = increase.isPending || decrease.isPending
-  const increaseSubmitAsync = increase.submitAsync
-  const decreaseSubmitAsync = decrease.submitAsync
+  const isPending = increaseMutation.isPending || decreaseMutation.isPending
 
   const onClick = () => {
     if (isPending) {
@@ -137,12 +133,12 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
       }
       startTransition(async () => {
         addOptimistic('unlike')
-        await decreaseSubmitAsync({ key: commentKey, token })
+        await decreaseMutation.mutateAsync({ key: commentKey, token })
       })
     } else {
       startTransition(async () => {
         addOptimistic('like')
-        await increaseSubmitAsync({ key: commentKey })
+        await increaseMutation.mutateAsync({ key: commentKey })
       })
     }
   }

@@ -1,16 +1,16 @@
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/images'
+import type { AdminImageDto } from '@/shared/images'
 
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
-
-const LIST_IMAGES = API_ACTIONS.admin.listImages
 
 // Image picker dialog driven by `admin.listImages`. The trigger is a
 // caller-supplied React element (defaults to a "选择图片" button) so
@@ -51,9 +51,13 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
   // insertion path — no second round trip through the library list.
   const [uploadOpen, setUploadOpen] = useState(false)
 
-  const { load } = useApiFetcher<ListImagesInput, ListImagesOutput>(LIST_IMAGES, {
-    onSuccess: (payload) => setImages(payload.images),
-  })
+  const searchMutation = useApiMutation(
+    (input: { kind: 'generic' | 'category' | 'friend' | 'all'; limit: number; q?: string }) =>
+      unwrap(api.admin.images.list({ query: input })),
+    {
+      onSuccess: (payload) => setImages(payload.images),
+    },
+  )
 
   // Debounced search: refetch 300ms after the last keystroke. We
   // keep a ref to the last query we issued a fetch for so a setState
@@ -72,12 +76,12 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
       () => {
         lastFetchedQRef.current = trimmed
         setImages(null)
-        load({ kind: 'generic', limit: 60, q: trimmed === '' ? undefined : trimmed })
+        searchMutation.mutate({ kind: 'generic', limit: 60, q: trimmed === '' ? undefined : trimmed })
       },
       lastFetchedQRef.current === null ? 0 : 300,
     )
     return () => clearTimeout(handle)
-  }, [q, open, load])
+  }, [q, open, searchMutation])
 
   return (
     <>

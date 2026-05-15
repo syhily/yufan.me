@@ -1,17 +1,13 @@
 import { RefreshCwIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  FilterAutocompleteInput,
-  LoadAllInput,
-  LoadAllOutput,
-  SearchAuthorsOutput,
-  SearchPagesOutput,
-} from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { AdminCommentRow } from '@/ui/admin/comments/AdminCommentRow'
 import { EditCommentDialog } from '@/ui/admin/comments/EditCommentDialog'
@@ -28,10 +24,6 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empt
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
-
-const LOAD_ALL = API_ACTIONS.comment.loadAll
-const SEARCH_PAGES = API_ACTIONS.comment.searchPages
-const SEARCH_AUTHORS = API_ACTIONS.comment.searchAuthors
 
 // How long to wait after the user stops typing in a Combobox input
 // before firing the autocomplete request. 250ms feels snappy without
@@ -87,48 +79,70 @@ export function CommentsView({
     initialStatus,
   })
 
-  const loadApi = useAdminMutation<LoadAllInput, LoadAllOutput>(LOAD_ALL, {
-    errorMessage: '加载评论列表失败',
-    onSuccess: (payload) => {
-      dispatch({
-        type: 'loaded',
-        comments: payload.comments,
-        total: payload.total,
-        hasMore: payload.hasMore,
-        statusCounts: payload.statusCounts,
-      })
+  const loadAllMutation = useApiMutation(
+    (input: {
+      offset: number
+      limit: number
+      pageKey?: string
+      userId?: string
+      status?: 'all' | 'pending' | 'approved'
+    }) => unwrap(api.admin.comments.loadAll({ body: input })),
+    {
+      onSuccess: (payload) => {
+        dispatch({
+          type: 'loaded',
+          comments: payload.comments as unknown as AdminComment[],
+          total: payload.total,
+          hasMore: payload.hasMore,
+          statusCounts: payload.statusCounts,
+        })
+      },
+      onError: (error) => {
+        toast.error('加载评论列表失败', { description: error.message })
+      },
     },
-  })
-  const pagesApi = useAdminMutation<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES)
-  const authorsApi = useAdminMutation<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS)
-  const authorRehydrateApi = useAdminMutation<FilterAutocompleteInput, SearchAuthorsOutput>(SEARCH_AUTHORS, {
-    onSuccess: (payload) => {
-      const fetched = payload.authors
-      if (fetched.length === 0) {
-        return
-      }
-      // The endpoint returns up to N matches but for `ids=<single>` we
-      // only ever care about the first row (and `searchAuthors` honours
-      // `inArray(user.id, ids)`, so any returned row is by definition a
-      // valid match for one of our ids).
-      dispatch({ type: 'renameFilterAuthor', label: fetched[0].name })
+  )
+  const pagesMutation = useApiMutation((input: { query: { q?: string; limit?: number; ids?: string; key?: string } }) =>
+    unwrap(api.admin.comments.searchPages(input)),
+  )
+  const authorsMutation = useApiMutation(
+    (input: { query: { q?: string; limit?: number; ids?: string; key?: string } }) =>
+      unwrap(api.admin.comments.searchAuthors(input)),
+  )
+  const authorRehydrateMutation = useApiMutation(
+    (input: { query: { ids?: string; limit?: number } }) => unwrap(api.admin.comments.searchAuthors(input)),
+    {
+      onSuccess: (payload) => {
+        const fetched = payload.options
+        if (fetched.length === 0) {
+          return
+        }
+        // The endpoint returns up to N matches but for `ids=<single>` we
+        // only ever care about the first row (and `searchAuthors` honours
+        // `inArray(user.id, ids)`, so any returned row is by definition a
+        // valid match for one of our ids).
+        dispatch({ type: 'renameFilterAuthor', label: fetched[0].name })
+      },
     },
-  })
-  const pageRehydrateApi = useAdminMutation<FilterAutocompleteInput, SearchPagesOutput>(SEARCH_PAGES, {
-    onSuccess: (payload) => {
-      const fetched = payload.pages
-      if (fetched.length === 0) {
-        return
-      }
-      const title = fetched[0].title || '无标题'
-      dispatch({ type: 'renameFilterPage', label: title })
+  )
+  const pageRehydrateMutation = useApiMutation(
+    (input: { query: { key?: string; limit?: number } }) => unwrap(api.admin.comments.searchPages(input)),
+    {
+      onSuccess: (payload) => {
+        const fetched = payload.options
+        if (fetched.length === 0) {
+          return
+        }
+        const title = fetched[0].title || '无标题'
+        dispatch({ type: 'renameFilterPage', label: title })
+      },
     },
-  })
-  const { submit: loadComments, isPending: isCommentsLoading } = loadApi
-  const { load: loadPages, data: pagesData, isPending: isPagesPending } = pagesApi
-  const { load: loadAuthors, data: authorsData, isPending: isAuthorsPending } = authorsApi
-  const { load: rehydrateAuthor } = authorRehydrateApi
-  const { load: rehydratePage } = pageRehydrateApi
+  )
+  const { mutate: loadComments, isPending: isCommentsLoading } = loadAllMutation
+  const pagesData = pagesMutation.data
+  const isPagesPending = pagesMutation.isPending
+  const authorsData = authorsMutation.data
+  const isAuthorsPending = authorsMutation.isPending
 
   const [editTarget, setEditTarget] = useState<AdminComment | null>(null)
   const [replyTarget, setReplyTarget] = useState<AdminComment | null>(null)
@@ -153,8 +167,9 @@ export function CommentsView({
     if (!initialAuthorId) {
       return
     }
-    rehydrateAuthor({ ids: initialAuthorId })
-  }, [initialAuthorId, rehydrateAuthor])
+    authorRehydrateMutation.mutate({ query: { ids: initialAuthorId } })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAuthorId, authorRehydrateMutation.mutate])
 
   // Page-key flavour of the same rehydrate dance. See the matching
   // author-rehydrate block above for the rationale; the only material
@@ -165,8 +180,9 @@ export function CommentsView({
     if (!initialPageKey) {
       return
     }
-    rehydratePage({ key: initialPageKey })
-  }, [initialPageKey, rehydratePage])
+    pageRehydrateMutation.mutate({ query: { key: initialPageKey } })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPageKey, pageRehydrateMutation.mutate])
 
   const reload = useCallback(() => {
     const offset = state.currentPage * state.pageSize
@@ -197,13 +213,13 @@ export function CommentsView({
   const [pageQuery, setPageQuery] = useDebouncedSearch({
     delayMs: FILTER_QUERY_DEBOUNCE_MS,
     onChange: (value) => {
-      loadPages(value ? { q: value } : undefined)
+      pagesMutation.mutate({ query: { q: value || undefined, limit: 20 } })
     },
   })
   const [authorQuery, setAuthorQuery] = useDebouncedSearch({
     delayMs: FILTER_QUERY_DEBOUNCE_MS,
     onChange: (value) => {
-      loadAuthors(value ? { q: value } : undefined)
+      authorsMutation.mutate({ query: { q: value || undefined, limit: 20 } })
     },
   })
 
@@ -215,7 +231,7 @@ export function CommentsView({
   // disappear when the user starts typing a query that excludes their
   // current selection.
   const pageItems = useMemo<FilterItem[]>(() => {
-    const fetched = pagesData?.pages ?? []
+    const fetched = pagesData?.options ?? []
     const items = fetched.map((p) => ({ value: p.key, label: p.title || '无标题' }))
     if (state.filterPage && !items.some((i) => i.value === state.filterPage!.value)) {
       items.unshift(state.filterPage)
@@ -224,7 +240,7 @@ export function CommentsView({
   }, [pagesData, state.filterPage])
 
   const authorItems = useMemo<FilterItem[]>(() => {
-    const fetched = authorsData?.authors ?? []
+    const fetched = authorsData?.options ?? []
     const items = fetched.map((a) => ({ value: a.id, label: a.name }))
     if (state.filterAuthor && !items.some((i) => i.value === state.filterAuthor!.value)) {
       items.unshift(state.filterAuthor)

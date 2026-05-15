@@ -1,17 +1,12 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
-import type {
-  CommentRidInput,
-  LoadCommentsInput,
-  LoadCommentsOutput,
-  MyCommentsOutput,
-  RevokeCommentTokenOutput,
-} from '@/client/api/fetcher'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
 
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
 import { CommentItem } from '@/ui/public/comments/CommentItem'
@@ -256,11 +251,13 @@ function CommentsRoot({
   const onEdited = useCallback((comment: CommentItemType) => dispatch({ type: 'updateComment', comment }), [])
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
-  const revokeToken = useApiFetcher<CommentRidInput, RevokeCommentTokenOutput>(API_ACTIONS.comment.revokeToken)
+  const revokeTokenMutation = useApiMutation((input: { pageKey: string }) =>
+    unwrap(api.comment.revokeToken({ body: input })),
+  )
   const onDismissMyComment = useCallback(
     (id: bigint | string) => {
       const key = asKey(id)
-      revokeToken.submit({ rid: key })
+      revokeTokenMutation.mutate({ pageKey: key })
       setMyCommentIds((prev) => {
         const next = new Set(prev)
         next.delete(key)
@@ -272,7 +269,7 @@ function CommentsRoot({
         return next
       })
     },
-    [revokeToken],
+    [revokeTokenMutation],
   )
   const onReplied = useCallback((comment: CommentItemType, rid: number) => {
     dispatch({ type: 'insertReply', comment, rid })
@@ -286,22 +283,23 @@ function CommentsRoot({
   // Load the current user's own comments (including pending) via token cookie.
   const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
   const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
-  const myComments = useApiFetcher<never, MyCommentsOutput>(API_ACTIONS.comment.myComments, {
-    onSuccess: (payload) => {
-      if (payload.comments.length > 0) {
-        dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt })
-        setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
-        setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt)))
-      }
-    },
+  const myCommentsKey = useMemo(() => ['comment', 'mine', commentKey] as const, [commentKey])
+  const myCommentsQuery = useApiQuery(myCommentsKey, () => unwrap(api.comment.listMine({ query: { offset: 0 } })), {
+    enabled: !admin && !user,
   })
 
   useEffect(() => {
-    if (!admin && !user) {
-      myComments.load({ page_key: commentKey })
+    const data = myCommentsQuery.data
+    if (data) {
+      type MyCommentsRes = { comments: CommentItemType[]; total: number; expiresAt?: Record<string, number> }
+      const payload = data as unknown as MyCommentsRes
+      if (payload.comments.length > 0) {
+        dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt ?? {} })
+        setMyCommentIds(new Set(payload.comments.map((c) => asKey(c.id))))
+        setMyCommentExpiresAt(new Map(Object.entries(payload.expiresAt ?? {})))
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [commentKey, admin, user])
+  }, [myCommentsQuery.data])
 
   // The same reply form JSX flows through context to whichever depth
   // currently owns it (top-level or nested under the active comment).
@@ -391,29 +389,33 @@ function CommentsLoadMore() {
   const rootsLoadedRef = useRef(ctx.state.rootsLoaded)
   rootsLoadedRef.current = ctx.state.rootsLoaded
 
-  const loadMore = useApiFetcher<never, LoadCommentsOutput>(API_ACTIONS.comment.loadComments, {
-    onSuccess: (payload) => {
-      ctx.dispatch({
-        type: 'append',
-        items: payload.comments,
-        rootsLoaded: rootsLoadedRef.current + payload.comments.length,
-      })
+  const loadMoreMutation = useApiMutation(
+    (input: { page_key: string; offset: number }) => unwrap(api.comment.loadComments({ query: input })),
+    {
+      onSuccess: (data) => {
+        const payload = data as unknown as { comments: CommentItemType[]; next: boolean }
+        ctx.dispatch({
+          type: 'append',
+          items: payload.comments,
+          rootsLoaded: rootsLoadedRef.current + payload.comments.length,
+        })
+      },
     },
-  })
+  )
 
   if (ctx.state.rootsLoaded >= ctx.state.rootsTotal) {
     return null
   }
 
-  const moreLoading = loadMore.isPending
+  const moreLoading = loadMoreMutation.isPending
   const onLoadMore = () => {
-    if (loadMore.isPending) {
+    if (loadMoreMutation.isPending) {
       return
     }
-    loadMore.load({
+    loadMoreMutation.mutate({
       page_key: ctx.commentKey,
       offset: ctx.state.rootsLoaded,
-    } satisfies LoadCommentsInput)
+    })
   }
 
   return (

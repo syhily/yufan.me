@@ -7,20 +7,15 @@ import {
   Trash2Icon,
   Undo2Icon,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
-import type {
-  AdminPageDto,
-  DeletePageInput,
-  DeletePageOutput,
-  ListPagesInput,
-  ListPagesOutput,
-  RestorePageInput,
-  RestorePageOutput,
-} from '@/shared/cms-pages'
+import type { AdminPageDto } from '@/shared/cms-pages'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -34,10 +29,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
-const LIST = API_ACTIONS.admin.listPages
-const DELETE = API_ACTIONS.admin.deletePage
-const RESTORE = API_ACTIONS.admin.restorePage
-
 const DELETED_STATUS_OPTIONS = [
   { value: 'all', label: '全部' },
   { value: 'normal', label: '正常' },
@@ -48,53 +39,69 @@ export function PagesView() {
   const { state, dispatch } = usePagesController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useAdminMutation<ListPagesInput, ListPagesOutput>(LIST, {
-    onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.pages, total: payload.total }),
-    errorMessage: '加载页面列表失败',
-  })
-  const { load: loadPages, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(
+    () => ['admin', 'pages', { q: state.q, deletedStatus: state.deletedStatus }] as const,
+    [state.q, state.deletedStatus],
+  )
 
-  const reload = useCallback(() => {
-    loadPages({
-      q: state.q || undefined,
-      deletedStatus: state.deletedStatus,
-    })
-  }, [loadPages, state.q, state.deletedStatus])
-
-  const deleteApi = useAdminMutation<DeletePageInput, DeletePageOutput>(DELETE, {
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () =>
+    unwrap(
+      api.admin.pages.list({
+        query: { q: state.q || undefined, deletedStatus: state.deletedStatus },
       }),
-  })
-  const { submit: submitDelete } = deleteApi
+    ),
+  )
 
-  const restoreApi = useAdminMutation<RestorePageInput, RestorePageOutput>(RESTORE, {
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '恢复失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const { submit: submitRestore } = restoreApi
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.pages, total: data.total })
+    }
+  }, [data, dispatch])
+
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.pages.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        void reload()
+        toast.success('页面已删除')
+      },
+      onError: (error) =>
+        setConfirm({
+          title: '删除失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
+
+  const restoreMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.pages.restore({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        void reload()
+        toast.success('页面已恢复')
+      },
+      onError: (error) =>
+        setConfirm({
+          title: '恢复失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
 
@@ -105,7 +112,13 @@ export function PagesView() {
           title="页面管理"
           description={`共 ${state.total} 个页面。点击「编辑」可进入富文本编辑器，编辑器右侧可同时调整页面元数据。`}
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button
@@ -198,10 +211,10 @@ export function PagesView() {
                           description: '页面会被软删除（30 天内可恢复）。已发布的链接将立即返回 404。',
                           actionLabel: '删除',
                           destructive: true,
-                          onConfirm: () => submitDelete({ id: row.id }),
+                          onConfirm: () => deleteMutation.mutate({ id: row.id }),
                         })
                       }
-                      onRestore={() => submitRestore({ id: row.id })}
+                      onRestore={() => restoreMutation.mutate({ id: row.id })}
                     />
                   ))
                 )}

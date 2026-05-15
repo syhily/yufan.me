@@ -10,15 +10,11 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type {
-  AdminMusicDto,
-  DeleteMusicInput,
-  DeleteMusicOutput,
-  ListMusicInput,
-  ListMusicOutput,
-} from '@/shared/music'
+import type { AdminMusicDto } from '@/shared/music'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'
 import { FloatingMusicPlayer, type FloatingMusicPlayerTrack } from '@/ui/admin/musics/FloatingMusicPlayer'
@@ -34,9 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 import { cn } from '@/ui/lib/cn'
-
-const LIST = API_ACTIONS.admin.listMusic
-const DELETE = API_ACTIONS.admin.deleteMusic
 
 const PAGE_SIZE_OPTIONS: { value: string; label: string }[] = [10, 20, 50, 100].map((n) => ({
   value: String(n),
@@ -56,42 +49,54 @@ export function MusicsView() {
   const [copiedPlayerId, setCopiedPlayerId] = useState<string | null>(null)
   const [playingTrack, setPlayingTrack] = useState<FloatingMusicPlayerTrack | null>(null)
 
-  const listApi = useAdminMutation<ListMusicInput, ListMusicOutput>(LIST, {
-    onSuccess: (payload) =>
-      dispatch({ type: 'loaded', rows: payload.musics, total: payload.total, hasMore: payload.hasMore }),
-    errorMessage: '加载音乐列表失败',
-  })
-  const { load: loadMusic, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(
+    () =>
+      ['admin', 'music', { q: state.q, offset: state.currentPage * state.pageSize, limit: state.pageSize }] as const,
+    [state.q, state.currentPage, state.pageSize],
+  )
 
-  const reload = useCallback(() => {
-    loadMusic({
-      q: state.q || undefined,
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-    })
-  }, [loadMusic, state.q, state.currentPage, state.pageSize])
-
-  const deleteApi = useAdminMutation<DeleteMusicInput, DeleteMusicOutput>(DELETE, {
-    onSuccess: () => undefined,
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () =>
+    unwrap(
+      api.admin.music.list({
+        query: {
+          q: state.q || undefined,
+          offset: state.currentPage * state.pageSize,
+          limit: state.pageSize,
+        },
       }),
-  })
-  const { submit: submitDelete } = deleteApi
+    ),
+  )
+
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.musics, total: data.total, hasMore: data.hasMore })
+    }
+  }, [data, dispatch])
+
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.music.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => undefined,
+      onError: (error) =>
+        setConfirm({
+          title: '删除失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
+  const submitDelete = deleteMutation.mutate
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
@@ -128,7 +133,13 @@ export function MusicsView() {
           title="音乐管理"
           description={`共 ${state.total} 条。当前仅支持 NetEase；可在右侧浮动播放器试听，可编辑歌名、歌手、专辑、歌词等元数据，删除时同步移除 S3 中的音频与封面对象。`}
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setAddDialogOpen(true)}>

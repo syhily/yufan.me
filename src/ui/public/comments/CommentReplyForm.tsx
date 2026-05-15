@@ -1,12 +1,13 @@
 import { PencilIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { FindAvatarInput, FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/client/api/fetcher'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
@@ -76,38 +77,55 @@ export function CommentReplyForm({
     }
   }, [guestProfile, user])
 
-  const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(API_ACTIONS.comment.replyComment, {
-    onSuccess: (data) => {
-      setSubmitError(null)
-      if (data.csrfToken) {
-        onCsrfRotated(data.csrfToken)
-      }
-      onReplied(data.comment, replyToId)
-      // Persist guest info for future visits.
-      if (!user) {
-        saveGuestProfile({
-          name: data.comment.name,
-          email: data.comment.email,
-          link: data.comment.link ?? undefined,
-          avatar: avatarSrc,
-        })
-      }
-      // Clear the editor + remount via bodyKey bump.
-      setBody(EMPTY_COMMENT_BODY)
-      setBodyKey((k) => k + 1)
-      formRef.current?.reset()
+  const replyMutation = useApiMutation(
+    (input: {
+      page_key: string
+      name: string
+      email: string
+      link?: string
+      body: CommentBody
+      csrf: string
+      rid?: number
+      subtitle?: string
+    }) => unwrap(api.comment.replyComment({ body: input })),
+    {
+      onSuccess: (data) => {
+        const payload = data as unknown as { comment: CommentItemType; csrfToken: string }
+        setSubmitError(null)
+        if (payload.csrfToken) {
+          onCsrfRotated(payload.csrfToken)
+        }
+        onReplied(payload.comment, replyToId)
+        // Persist guest info for future visits.
+        if (!user) {
+          saveGuestProfile({
+            name: payload.comment.name,
+            email: payload.comment.email,
+            link: payload.comment.link ?? undefined,
+            avatar: avatarSrc,
+          })
+        }
+        // Clear the editor + remount via bodyKey bump.
+        setBody(EMPTY_COMMENT_BODY)
+        setBodyKey((k) => k + 1)
+        formRef.current?.reset()
+      },
+      onError: (error) => {
+        setSubmitError(error.message)
+      },
     },
-    onError: (error) => {
-      setSubmitError(error.message)
-    },
-  })
+  )
 
-  const avatar = useApiFetcher<FindAvatarInput, FindAvatarOutput>(API_ACTIONS.comment.findAvatar, {
-    onSuccess: (payload) => setAvatarSrc(payload.avatar),
+  const avatarMutation = useApiMutation((input: { email: string }) => unwrap(api.comment.findAvatar({ body: input })), {
+    onSuccess: (data) => {
+      if (data.url) {
+        setAvatarSrc(data.url)
+      }
+    },
   })
 
   const admin = user?.admin === true
-  const isPending = reply.isPending
+  const isPending = replyMutation.isPending
   const isReplying = replyToId !== 0 && replyTarget !== undefined
 
   const onEmailBlur = (event: React.FocusEvent<HTMLInputElement>) => {
@@ -116,7 +134,7 @@ export function CommentReplyForm({
     }
     const email = event.currentTarget.value
     if (email && email.includes('@')) {
-      avatar.submit({ email })
+      avatarMutation.mutate({ email })
     } else {
       setAvatarSrc('/images/default-avatar.png')
     }
@@ -134,7 +152,7 @@ export function CommentReplyForm({
     const email = readFormString(data, 'email') ?? user?.email ?? guestProfile?.email ?? ''
     const link = readFormString(data, 'link') ?? guestProfile?.link ?? ''
     const subtitle = readFormString(data, 'subtitle') ?? ''
-    const payload: ReplyCommentInput = {
+    const payload = {
       page_key: commentKey,
       name,
       email,
@@ -145,7 +163,7 @@ export function CommentReplyForm({
       subtitle: subtitle === '' ? undefined : subtitle,
     }
     setSubmitError(null)
-    reply.submit(payload)
+    replyMutation.mutate(payload)
   }
 
   return (

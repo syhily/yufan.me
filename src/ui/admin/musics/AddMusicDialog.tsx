@@ -1,16 +1,12 @@
 import { Loader2Icon, PlayIcon, PlusIcon, SearchIcon, SquareIcon, XIcon } from 'lucide-react'
 import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  AddMusicInput,
-  AddMusicOutput,
-  AdminMusicDto,
-  MetingSearchHit,
-  SearchMusicInput,
-  SearchMusicOutput,
-} from '@/shared/music'
+import type { AdminMusicDto, MetingSearchHit } from '@/shared/music'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -25,9 +21,6 @@ import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
-
-const SEARCH = API_ACTIONS.admin.searchMusic
-const ADD = API_ACTIONS.admin.addMusic
 
 // Result-count options. The schema caps `limit` at 30 server-side
 // (see `searchMusicSchema` in `@/server/music/schema`); the upper
@@ -97,37 +90,44 @@ export function AddMusicDialog({ open, onClose, onAdded }: AddMusicDialogProps) 
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const searchApi = useAdminMutation<SearchMusicInput, SearchMusicOutput>(SEARCH, {
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      setResults(payload.results)
+  const searchMutation = useApiMutation(
+    (input: { keyword: string; limit: number }) => unwrap(api.admin.music.search({ query: input })),
+    {
+      onSuccess: (payload) => {
+        setErrorMessage(null)
+        setResults(payload.results)
+      },
+      onError: (error) => {
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { load: loadSearch, isPending: isSearching } = searchApi
+  )
+  const loadSearch = searchMutation.mutate
+  const isSearching = searchMutation.isPending
 
-  const addApi = useAdminMutation<AddMusicInput, AddMusicOutput>(ADD, {
-    successMessage: '音乐已添加',
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      setAddingSourceId(null)
-      onAdded(payload.music)
-      // Mark the just-added hit so the list shows a clear "已添加" cue.
-      setResults(
-        (prev) =>
-          prev.map((hit) => (hit.sourceId === payload.music.sourceId ? { ...hit, _added: true } : hit)) as typeof prev,
-      )
+  const addMutation = useApiMutation(
+    (input: { source: 'netease'; sourceId: string }) => unwrap(api.admin.music.add({ body: input })),
+    {
+      onSuccess: (payload) => {
+        setErrorMessage(null)
+        setAddingSourceId(null)
+        toast.success('音乐已添加')
+        onAdded(payload.music)
+        // Mark the just-added hit so the list shows a clear "已添加" cue.
+        setResults(
+          (prev) =>
+            prev.map((hit) =>
+              hit.sourceId === payload.music.sourceId ? { ...hit, _added: true } : hit,
+            ) as typeof prev,
+        )
+      },
+      onError: (error) => {
+        setAddingSourceId(null)
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setAddingSourceId(null)
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { submit: submitAdd } = addApi
+  )
+  const submitAdd = addMutation.mutate
 
   useEffect(() => {
     if (!open) {

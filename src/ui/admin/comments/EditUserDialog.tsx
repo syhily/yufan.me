@@ -1,11 +1,11 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 
-import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -25,8 +25,6 @@ import { Label } from '@/ui/components/label'
 // so the picker lands on a sensible value rather than `#000000`.
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
-const UPDATE_USER = API_ACTIONS.auth.updateUser
-
 export interface EditUserDialogProps {
   comment: AdminComment | null
   onClose: () => void
@@ -34,7 +32,6 @@ export interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [link, setLink] = useState('')
@@ -63,19 +60,23 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
     setBadgeTextColor(comment.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
   }, [comment])
 
-  // `useFetcherResult` already memoises against `fetcher.data`'s
-  // identity (via its internal `lastHandled` ref) AND stashes the
-  // callbacks in a ref so an unstable parent `onSaved` closure can't
-  // re-enter this branch — see `@/client/api/fetcher`. That avoids the
-  // historical runaway-loop bug where every parent re-render triggered
-  // a fresh reload while the close animation still held the dialog open.
-  useFetcherResult(fetcher, {
-    action: UPDATE_USER,
-    onSuccess: () => onSaved(),
-  })
+  const updateUserMutation = useApiMutation(
+    (input: {
+      userId: string
+      name: string
+      email: string
+      link?: string
+      badgeName?: string
+      badgeColor?: string
+      badgeTextColor?: string | null
+    }) => unwrap(api.auth.updateUser({ body: input })),
+    {
+      onSuccess: () => onSaved(),
+    },
+  )
 
   const open = comment !== null
-  const submitting = fetcher.state !== 'idle'
+  const submitting = updateUserMutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -106,11 +107,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // Always include `badgeTextColor` so admins can also clear a
             // previous override by unticking the checkbox.
             payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-            void fetcher.submit(payload, {
-              method: UPDATE_USER.method,
-              encType: 'application/json',
-              action: UPDATE_USER.path,
-            })
+            updateUserMutation.mutate(payload as Parameters<typeof updateUserMutation.mutate>[0])
           }}
           className="grid gap-4 sm:grid-cols-2"
         >

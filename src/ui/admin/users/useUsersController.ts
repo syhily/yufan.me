@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 
-import type { AdminUserDto } from '@/client/api/fetcher'
+import type { AdminUserDto } from '@/shared/users'
 
 export type RoleFilter = 'all' | 'admin' | 'author' | 'visitor' | 'normal'
 export type SortOrder = 'recent' | 'commentCount'

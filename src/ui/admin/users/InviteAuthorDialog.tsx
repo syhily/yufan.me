@@ -1,10 +1,10 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
-import { useFetcher } from 'react-router'
+import { toast } from 'sonner'
 
-import type { ApiEnvelope } from '@/client/api/fetcher'
-
-import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -17,8 +17,6 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 
-const INVITE = API_ACTIONS.admin.inviteAuthor
-
 interface Props {
   open: boolean
   onClose: () => void
@@ -26,21 +24,24 @@ interface Props {
 }
 
 export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
 
-  useFetcherResult(fetcher, {
-    action: INVITE,
-    onSuccess: () => {
-      setName('')
-      setEmail('')
-      onInvited()
+  const mutation = useApiMutation(
+    (input: { name: string; email: string }) =>
+      unwrap(api.admin.users.inviteAuthor({ body: { name: input.name, email: input.email } })),
+    {
+      onSuccess: () => {
+        setName('')
+        setEmail('')
+        onInvited()
+        toast.success('邀请已发送')
+      },
     },
-  })
+  )
 
-  const submitting = fetcher.state !== 'idle'
-  const error = fetcher.data?.error?.message
+  const submitting = mutation.isPending
+  const error = mutation.error?.message
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -52,10 +53,7 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            void fetcher.submit(
-              { name, email },
-              { method: INVITE.method, encType: 'application/json', action: INVITE.path },
-            )
+            mutation.mutate({ name, email })
           }}
           className="grid gap-4"
         >

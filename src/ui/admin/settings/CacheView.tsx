@@ -2,9 +2,14 @@ import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import type { GetCacheStatsOutput } from '@/client/api/fetcher'
 import type { CacheSettings } from '@/shared/blog-config'
-import type { CacheBucketId, CacheBucketStats, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
+import type {
+  AdminCacheStatsDto,
+  CacheBucketId,
+  CacheBucketStats,
+  ClearCacheTarget,
+  ReservedCacheBucketStats,
+} from '@/shared/cache-types'
 
 import { api } from '@/client/api/client'
 import { useApiMutation } from '@/client/api/query'
@@ -19,7 +24,7 @@ import { Button } from '@/ui/components/button'
 type CacheSlice = CacheSettings['cache']
 
 interface CacheViewProps {
-  stats: GetCacheStatsOutput
+  stats: AdminCacheStatsDto
   cache: CacheSlice
 }
 

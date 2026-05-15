@@ -1,18 +1,13 @@
 import { XIcon } from 'lucide-react'
 import { use, useEffect, useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type {
-  ApiEnvelope,
-  CommentEditInput,
-  CommentEditOutput,
-  CommentRawOutput,
-  CommentRidInput,
-} from '@/client/api/fetcher'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { API_ACTIONS, useApiFetcher, useFetcherResult } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
@@ -369,39 +364,46 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
   const siteIdentity = useSiteIdentity()
   const leaf = useCommentsLeafContext(propAdmin)
   const revalidator = useRevalidator()
-  const approve = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.approve, {
-    onSuccess: () => leaf.onApproved(comment.id),
-  })
-  const remove = useApiFetcher<CommentRidInput, null>(API_ACTIONS.comment.delete, {
-    onSuccess: () => leaf.onDeleted(comment.id),
-  })
+  const approveMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.comments.approve({ params: input })),
+    {
+      onSuccess: () => leaf.onApproved(comment.id),
+    },
+  )
+  const removeMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.comments.delete({ params: input })),
+    {
+      onSuccess: () => leaf.onDeleted(comment.id),
+    },
+  )
 
-  // Visitor-scoped delete-request toggles. Both endpoints are POST + JSON
-  // and take a plain `{ commentId }` payload, so `useApiFetcher` works
-  // directly — no query-string round trip like `comment.updateOwn`.
-  const requestDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(
-    API_ACTIONS.comment.requestDeleteOwn,
+  // Visitor-scoped delete-request toggles.
+  const requestDeleteMutation = useApiMutation(
+    (input: { rid: string }) => unwrap(api.comment.requestDeleteOwn({ body: input })),
     {
       onSuccess: () => void revalidator.revalidate(),
     },
   )
-  const cancelDelete = useApiFetcher<{ commentId: string }, { success: boolean }>(API_ACTIONS.comment.cancelDeleteOwn, {
-    onSuccess: () => void revalidator.revalidate(),
-  })
+  const cancelDeleteMutation = useApiMutation(
+    (input: { rid: string }) => unwrap(api.comment.cancelDeleteOwn({ body: input })),
+    {
+      onSuccess: () => void revalidator.revalidate(),
+    },
+  )
 
   const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
   const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
   // Admin already has the admin-edit affordance below; don't duplicate
   // the button for an admin who happens to also own the row.
   const showOwnAffordances = isOwnedByCurrentUser && !leaf.admin
-  const ownEditDisabled = hasPendingDelete || requestDelete.isPending || cancelDelete.isPending
-  const deleteToggleDisabled = requestDelete.isPending || cancelDelete.isPending
+  const ownEditDisabled = hasPendingDelete || requestDeleteMutation.isPending || cancelDeleteMutation.isPending
+  const deleteToggleDisabled = requestDeleteMutation.isPending || cancelDeleteMutation.isPending
 
   const handleReply = () => leaf.onReply(Number(comment.id))
-  const handleApprove = () => approve.submit({ rid: String(comment.id) })
-  const handleDelete = () => remove.submit({ rid: String(comment.id) })
-  const handleRequestDelete = () => requestDelete.submit({ commentId: String(comment.id) })
-  const handleCancelDelete = () => cancelDelete.submit({ commentId: String(comment.id) })
+  const handleApprove = () => approveMutation.mutate({ id: String(comment.id) })
+  const handleDelete = () => removeMutation.mutate({ id: String(comment.id) })
+  const handleRequestDelete = () => requestDeleteMutation.mutate({ rid: String(comment.id) })
+  const handleCancelDelete = () => cancelDeleteMutation.mutate({ rid: String(comment.id) })
 
   return (
     <div className="flex flex-1 items-center gap-2 text-xs text-ink-4">
@@ -477,7 +479,7 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
               data-rid={comment.id}
               onMouseDown={(event) => event.preventDefault()}
               onClick={handleApprove}
-              disabled={approve.isPending}
+              disabled={approveMutation.isPending}
             >
               通过
             </button>
@@ -490,7 +492,7 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
                   className={cn(commentFooterButtonClass, 'text-alert')}
                   data-rid={comment.id}
                   onMouseDown={(event) => event.preventDefault()}
-                  disabled={remove.isPending}
+                  disabled={removeMutation.isPending}
                 >
                   删除
                 </button>
@@ -539,38 +541,42 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   const [bodyKey, setBodyKey] = useState(0)
   const [loaded, setLoaded] = useState(false)
 
-  const raw = useApiFetcher<never, CommentRawOutput>(API_ACTIONS.comment.getRaw, {
-    onSuccess: (payload) => {
-      const loadedBody = (payload.body ?? []) as CommentBody
+  const rawQuery = useApiQuery(['comment', 'raw', String(commentId)], () =>
+    unwrap(api.admin.comments.getRaw({ params: { id: String(commentId) } })),
+  )
+  const editMutation = useApiMutation(
+    (input: { rid: string; body: CommentBody }) =>
+      unwrap(api.comment.edit({ params: { rid: input.rid }, body: input })),
+    {
+      onSuccess: (data) => {
+        const payload = data as { comment: CommentItemType }
+        // Drive the parent reducer first so the freshly-edited content appears
+        // in the tree before the editor closes (keeps the post-save flicker
+        // confined to the edit area instead of the whole row).
+        leaf.onEdited(payload.comment)
+        onSaved(payload.comment)
+      },
+    },
+  )
+
+  // Load the raw PT body on first mount.
+  useEffect(() => {
+    if (rawQuery.data) {
+      const loadedBody = (rawQuery.data.body ?? []) as CommentBody
       setInitialBody(loadedBody)
       setBody(loadedBody)
       setBodyKey((k) => k + 1)
       setLoaded(true)
-    },
-  })
-  const editAction = useApiFetcher<CommentEditInput, CommentEditOutput>(API_ACTIONS.comment.edit, {
-    onSuccess: (payload) => {
-      // Drive the parent reducer first so the freshly-edited content appears
-      // in the tree before the editor closes (keeps the post-save flicker
-      // confined to the edit area instead of the whole row).
-      leaf.onEdited(payload.comment)
-      onSaved(payload.comment)
-    },
-  })
+    }
+  }, [rawQuery.data])
 
-  // Load the raw PT body on first mount.
-  const rawLoad = raw.load
-  useEffect(() => {
-    rawLoad({ rid: String(commentId) })
-  }, [commentId, rawLoad])
-
-  const saving = editAction.isPending
+  const saving = editMutation.isPending
 
   const handleSave = () => {
     if (isCommentBodyBlank(body)) {
       return
     }
-    editAction.submit({ rid: String(commentId), body })
+    editMutation.mutate({ rid: String(commentId), body })
   }
 
   return (
@@ -606,8 +612,6 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
 //   the row back to pending; we let `useRevalidator()` re-fetch the loader
 //   so the parent tree re-renders with the new state instead of guessing
 //   client-side
-const OWN_UPDATE_OWN = API_ACTIONS.comment.updateOwn
-
 interface OwnEditAreaProps {
   comment: CommentItemType
   onCancel: () => void
@@ -616,7 +620,6 @@ interface OwnEditAreaProps {
 
 function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
   const revalidator = useRevalidator()
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
   // `comment.body` is the full `PortableTextBody` dialect; the editor
   // expects the narrower `CommentBody`. Comment bodies are validated
   // against `commentBodySchema` at insert/update time, so the runtime
@@ -625,28 +628,23 @@ function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
   const [body, setBody] = useState<CommentBody>(seed)
   const [bodyKey, setBodyKey] = useState(0)
 
-  useFetcherResult(fetcher, {
-    action: OWN_UPDATE_OWN,
-    onSuccess: () => {
-      void revalidator.revalidate()
-      onSaved()
+  const updateOwnMutation = useApiMutation(
+    (input: { rid: string; body: CommentBody }) => unwrap(api.comment.updateOwn({ body: input })),
+    {
+      onSuccess: () => {
+        void revalidator.revalidate()
+        onSaved()
+      },
     },
-  })
+  )
 
-  const submitting = fetcher.state !== 'idle'
+  const submitting = updateOwnMutation.isPending
 
   const handleSave = () => {
     if (isCommentBodyBlank(body)) {
       return
     }
-    // `updateOwn` reads `commentId` off the query string; the JSON body
-    // carries the PortableText payload directly. Same shape as
-    // `MyEditCommentDialog` so the server contract stays single-call-site.
-    void fetcher.submit(body as never, {
-      method: OWN_UPDATE_OWN.method,
-      encType: 'application/json',
-      action: `${OWN_UPDATE_OWN.path}?commentId=${encodeURIComponent(String(comment.id))}`,
-    })
+    updateOwnMutation.mutate({ rid: String(comment.id), body })
   }
 
   return (
