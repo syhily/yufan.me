@@ -57,7 +57,7 @@ export interface DeleteCategoryInput {
 }
 
 export interface DeleteCategoryOutput {
-  success: true
+  success: boolean
 }
 
 // Drag-to-reorder payload. The admin UI sends the full ordered list of

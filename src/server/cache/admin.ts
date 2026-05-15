@@ -8,7 +8,7 @@ import {
   snapshotAllBuckets,
   snapshotReservedBuckets,
 } from '@/server/cache/buckets'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 
 export type { AdminCacheStatsDto, ClearCacheResultDto, ClearCacheTarget } from '@/shared/cache-types'
 
@@ -35,7 +35,7 @@ export async function clearAdminCache(target: ClearCacheTarget): Promise<ClearCa
     // The Zod schema on the API surface should have caught this already;
     // this branch is the belt-and-braces guard for code paths (tests,
     // future internal callers) that bypass the schema.
-    throw new ActionFailure(400, `未知的缓存分组：${target}`)
+    throw new DomainError('BAD_REQUEST', `未知的缓存分组：${target}`)
   }
   const removed = await clearBucket(bucket)
   return {

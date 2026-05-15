@@ -1,9 +1,9 @@
 import { data } from 'react-router'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { listAllSessions } from '@/server/auth/sessions'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { SessionsView } from '@/ui/admin/sessions/SessionsView'
 
 import type { Route } from './+types/wp-admin.sessions'

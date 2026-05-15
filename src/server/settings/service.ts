@@ -1,7 +1,7 @@
 import type { BlogSettingsBundle } from '@/shared/blog-config'
 
 import { findSettingByScope, upsertSetting } from '@/server/db/query/setting'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 import { SECTION_REGISTRY, type SettingsSection } from '@/server/settings/sections'
 import { hydrateBlogSettings, refreshBlogSettings } from '@/server/settings/snapshot'
 
@@ -43,8 +43,8 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   const meta = SECTION_REGISTRY[section]
   const parsed = await meta.schema.safeParseAsync(payload)
   if (!parsed.success) {
-    throw new ActionFailure(
-      400,
+    throw new DomainError(
+      'BAD_REQUEST',
       '设置数据无效',
       parsed.error.issues.map((issue) => ({
         message: issue.message,

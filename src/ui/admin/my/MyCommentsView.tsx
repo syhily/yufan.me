@@ -1,14 +1,14 @@
 import { PencilIcon, RefreshCwIcon, RotateCcwIcon, SearchIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
+import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin.my.comments'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { MyCommentsStatus } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { MyEditCommentDialog } from '@/ui/admin/my/MyEditCommentDialog'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -24,9 +24,6 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/components/tabs'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
-
-const REQUEST_DELETE = API_ACTIONS.comment.requestDeleteOwn
-const CANCEL_DELETE = API_ACTIONS.comment.cancelDeleteOwn
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -155,39 +152,34 @@ export function MyCommentsView({
     return match ?? { value: entity, label: entity }
   }, [entity, entityOptions])
 
-  const requestDelete = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const cancelDelete = useFetcher<ApiEnvelope<{ success: boolean }>>()
-
-  useFetcherResult(requestDelete, {
-    action: REQUEST_DELETE,
-    onSuccess: () => {
-      void revalidator.revalidate()
+  const requestDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
+    (vars) => unwrap(api.commentSelf.requestDeleteOwn({ body: vars })),
+    {
+      onSuccess: () => {
+        void revalidator.revalidate()
+      },
     },
-  })
-  useFetcherResult(cancelDelete, {
-    action: CANCEL_DELETE,
-    onSuccess: () => {
-      void revalidator.revalidate()
+  )
+  const cancelDelete = useApiMutation<{ commentId: string }, { success: boolean }>(
+    (vars) => unwrap(api.commentSelf.cancelDeleteOwn({ body: vars })),
+    {
+      onSuccess: () => {
+        void revalidator.revalidate()
+      },
     },
-  })
+  )
 
-  const submitting = requestDelete.state !== 'idle' || cancelDelete.state !== 'idle'
+  const submitting = requestDelete.isPending || cancelDelete.isPending
 
   const onRequestDelete = useCallback(
     (id: string) => {
-      void requestDelete.submit(
-        { commentId: id },
-        { method: REQUEST_DELETE.method, encType: 'application/json', action: REQUEST_DELETE.path },
-      )
+      requestDelete.mutate({ commentId: id })
     },
     [requestDelete],
   )
   const onCancelDelete = useCallback(
     (id: string) => {
-      void cancelDelete.submit(
-        { commentId: id },
-        { method: CANCEL_DELETE.method, encType: 'application/json', action: CANCEL_DELETE.path },
-      )
+      cancelDelete.mutate({ commentId: id })
     },
     [cancelDelete],
   )

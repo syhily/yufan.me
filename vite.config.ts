@@ -4,6 +4,7 @@ import type { Plugin, PluginOption } from 'vite'
 
 import { reactRouter } from '@react-router/dev/vite'
 import tailwindcss from '@tailwindcss/vite'
+import { reactRouterHonoServer } from 'react-router-hono-server/dev'
 import { defineConfig } from 'vite-plus'
 
 import oxfmtConfig from './oxfmt.config.ts'
@@ -43,7 +44,7 @@ export default defineConfig({
       ],
       thresholds: {
         lines: 70,
-        branches: 60,
+        branches: 75,
         functions: 70,
         statements: 70,
       },
@@ -52,7 +53,7 @@ export default defineConfig({
   staged: {
     '*.{js,jsx,ts,tsx,mjs,cjs}': 'vp fmt && vp lint',
   },
-  plugins: [...(reactRouter() as Plugin[]), tailwindcss()] as PluginOption[],
+  plugins: [reactRouterHonoServer(), ...(reactRouter() as Plugin[]), tailwindcss()] as PluginOption[],
   resolve: {
     tsconfigPaths: true,
   },

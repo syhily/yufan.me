@@ -4,15 +4,14 @@ import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminPageDetailDto, GetPageInput } from '@/shared/cms-pages'
+import type { AdminPageDetailDto } from '@/shared/cms-pages'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 import { Button } from '@/ui/components/button'
 import { Skeleton } from '@/ui/components/skeleton'
-
-const GET_PAGE = API_ACTIONS.admin.getPage
 
 export interface PageEditorRouteProps {
   pageId: string
@@ -27,21 +26,22 @@ export function PageEditorRoute({ pageId, navigate }: PageEditorRouteProps) {
   const [detail, setDetail] = useState<AdminPageDetailDto | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const getPageApi = useAdminMutation<GetPageInput, AdminPageDetailDto>(GET_PAGE, {
-    onSuccess: (payload) => {
-      setDetail(payload)
-      setErrorMessage(null)
-    },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { load } = getPageApi
+  const getPageQuery = useApiQuery<AdminPageDetailDto>(['admin', 'getPage', pageId], () =>
+    unwrap(api.admin.pages.get({ params: { id: pageId } })),
+  )
 
   useEffect(() => {
-    load({ id: pageId })
-  }, [load, pageId])
+    if (getPageQuery.data) {
+      setDetail(getPageQuery.data)
+      setErrorMessage(null)
+    }
+  }, [getPageQuery.data])
+
+  useEffect(() => {
+    if (getPageQuery.error) {
+      setErrorMessage(getPageQuery.error.message)
+    }
+  }, [getPageQuery.error])
 
   if (errorMessage !== null) {
     return <PageEditorError message={errorMessage} />

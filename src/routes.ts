@@ -1,12 +1,6 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-import { API_ACTION_LIST } from './shared/api-actions'
-
-// See `src/routes/_README.md` for the long-form rationale behind every
-// block below (file-naming convention, why specific layouts wrap which
-// URLs, splat ordering, feed `id` disambiguators, etc.). Keep this
-// manifest terse — extend the README first when you need to explain
-// "why".
+// See `src/routes/_README.md` for the rationale behind every block.
 export default [
   // Public layout — see _README.md §A (and §B for the splat).
   layout('routes/public.layout.tsx', [
@@ -25,32 +19,9 @@ export default [
     // Splat MUST stay last — see _README.md §B.
     route('*', 'routes/not-found.tsx'),
   ]),
-  // Backwards-compat redirects.
-  //
-  // Both `/my/comments` and `/my/profile` were promoted into the
-  // wp-admin shell to match the richness of the admin-side moderation
-  // and user-detail views (rich Tabs / search / pagination instead of
-  // the old plain stack). External bookmarks under `/my/*` survive
-  // via these 301s; the canonical URL is now `/wp-admin/my/*`.
+  // Backwards-compat redirects: /my/* → /wp-admin/my/*
   route('my/comments', 'routes/my.redirect.comments.ts'),
   route('my/profile', 'routes/my.redirect.profile.ts'),
-  // Resource routes outside the public layout — see _README.md §C.
-  route('tags', 'routes/tags.index.ts'),
-  // Feed URLs — see _README.md §D for the URL ↔ module ↔ id table.
-  route('feed', 'routes/feed.rss.ts'),
-  route('feed/atom', 'routes/feed.atom.ts'),
-  route('cats/:slug/feed', 'routes/feed.rss.ts', { id: 'category-feed-rss' }),
-  route('cats/:slug/feed/atom', 'routes/feed.atom.ts', { id: 'category-feed-atom' }),
-  route('tags/:slug/feed', 'routes/feed.rss.ts', { id: 'tag-feed-rss' }),
-  route('tags/:slug/feed/atom', 'routes/feed.atom.ts', { id: 'tag-feed-atom' }),
-  route('search', 'routes/search.index.ts'),
-  route('sitemap.xml', 'routes/sitemap.ts'),
-  route('images/og/:slug.png', 'routes/image.og.ts'),
-  route('images/calendar/:year/:time.png', 'routes/image.calendar.ts'),
-  route('images/calendar/dark/:year/:time.png', 'routes/image.calendar.dark.ts'),
-  route('images/avatar/:hash.png', 'routes/image.avatar.ts'),
-  // API resource routes generated from `API_ACTION_LIST` — see _README.md §E.
-  ...API_ACTION_LIST.map((action) => route(action.route, action.file)),
   // Auth split-screen layout — see _README.md §F.
   layout('routes/admin.layout.tsx', [
     route('wp-login.php', 'routes/wp-login.tsx'),
@@ -64,20 +35,9 @@ export default [
     route('wp-admin/comments', 'routes/wp-admin.comments.tsx'),
     route('wp-admin/users', 'routes/wp-admin.users.tsx'),
     route('wp-admin/users/:id', 'routes/wp-admin.users.detail.tsx'),
-    // Self-service profile editor — same shell as the admin user
-    // detail view, but scoped to the current session's own row.
     route('wp-admin/my/profile', 'routes/wp-admin.my.profile.tsx'),
-    // Self-service comment list — mirrors the admin moderation view
-    // (Tabs / search / pagination) but only exposes own-comment
-    // actions (申请删除 / 撤回删除); approve/reject/edit-user are
-    // admin-only and stay on `/wp-admin/comments`.
     route('wp-admin/my/comments', 'routes/wp-admin.my.comments.tsx'),
-    // Self-service active-session list. Mirrors the same shell as
-    // the admin site-wide view but scoped to the current user; each
-    // row's 注销 button hits `api/actions/account/revokeSession`.
     route('wp-admin/my/sessions', 'routes/wp-admin.my.sessions.tsx'),
-    // Admin site-wide session-management surface — search by user,
-    // filter by login-time range, sort by activity, revoke any row.
     route('wp-admin/sessions', 'routes/wp-admin.sessions.tsx'),
     route('wp-admin/friends', 'routes/wp-admin.friends.tsx'),
     route('wp-admin/categories', 'routes/wp-admin.categories.tsx'),
@@ -90,8 +50,6 @@ export default [
     route('wp-admin/posts/:id/edit', 'routes/wp-admin.posts.edit.tsx'),
     route('wp-admin/images', 'routes/wp-admin.images.tsx'),
     route('wp-admin/musics', 'routes/wp-admin.musics.tsx'),
-    // Analytics dashboard. Layout owns the date-range + filters URL
-    // state; child routes paint Overview and the Realtime feed.
     route('wp-admin/analytics', 'routes/wp-admin.analytics.layout.tsx', [
       index('routes/wp-admin.analytics.overview.tsx'),
       route('realtime', 'routes/wp-admin.analytics.realtime.tsx'),

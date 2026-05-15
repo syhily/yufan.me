@@ -14,7 +14,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-import { fetchRenderMath } from '@/client/api/render-math-fetch'
+import { api } from '@/client/api/client'
+import { unwrap } from '@/client/api/unwrap'
 import { generateBlockKey } from '@/shared/pt/schema'
 import { MathInlinePanel } from '@/ui/admin/editor/tiptap/InlineMarkPanels'
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
@@ -276,7 +277,7 @@ async function insertMathInline(editor: Editor) {
 
   let mathml: string | undefined
   if (tex.trim() !== '') {
-    const out = await fetchRenderMath({ tex, display: false })
+    const out = await unwrap(api.admin.renders.math({ body: { tex, display: false } }))
     if (out.error === null && out.mathml !== '') {
       mathml = out.mathml
     }

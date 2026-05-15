@@ -1,11 +1,9 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -18,8 +16,6 @@ import {
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 
-const INVITE = API_ACTIONS.admin.inviteAuthor
-
 interface Props {
   open: boolean
   onClose: () => void
@@ -27,21 +23,21 @@ interface Props {
 }
 
 export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const invite = useApiMutation<{ name: string; email: string }, { success: boolean }>(
+    (vars) => unwrap(api.admin.users.inviteAuthor({ body: vars })),
+    {
+      onSuccess: () => {
+        setName('')
+        setEmail('')
+        onInvited()
+      },
+    },
+  )
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
 
-  useFetcherResult(fetcher, {
-    action: INVITE,
-    onSuccess: () => {
-      setName('')
-      setEmail('')
-      onInvited()
-    },
-  })
-
-  const submitting = fetcher.state !== 'idle'
-  const error = fetcher.data?.error?.message
+  const submitting = invite.isPending
+  const error = invite.error?.message
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -53,10 +49,7 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            void fetcher.submit(
-              { name, email },
-              { method: INVITE.method, encType: 'application/json', action: INVITE.path },
-            )
+            invite.mutate({ name, email })
           }}
           className="grid gap-4"
         >

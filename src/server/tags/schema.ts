@@ -14,7 +14,7 @@ const slugSchema = z
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, 'Invalid slug')
 
 // `offset` / `limit` are coerced from query strings (the action is a
-// GET and `useApiFetcher` serialises numbers via `String(value)`).
+// GET and query params serialise numbers via `String(value)`).
 // Hard upper bound on `limit` matches the moderation list (100) so a
 // hostile caller can't request 10k rows in one shot; the client only
 // ever picks from {10, 20, 50, 100}. `offset` has no upper bound

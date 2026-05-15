@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react'
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Buffer } from 'node:buffer'
 import { renderToStaticMarkup, renderToString } from 'react-dom/server'
 import { prerenderToNodeStream } from 'react-dom/static'
@@ -10,6 +11,13 @@ import { ThemeProvider } from '@/ui/lib/ThemeProvider'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 
+const testQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false, gcTime: 0 },
+    mutations: { retry: false },
+  },
+})
+
 // Tiny SSR helpers shared across snapshot tests so each spec doesn't have to
 // know whether it should reach for `renderToString` (synchronous, no Suspense
 // boundary needed) or `prerenderToNodeStream` (the path the RSS/Atom feed
@@ -18,9 +26,11 @@ import { TEST_BLOG_SETTINGS_BUNDLE } from './blog-settings'
 /** Synchronously render a React element to an HTML string. */
 export function renderToHtml(element: ReactElement): string {
   return renderToString(
-    <ThemeProvider>
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
-    </ThemeProvider>,
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
 }
 
@@ -36,11 +46,13 @@ export function renderInRouter(node: ReactNode, initialPath: string = '/'): stri
   const routes: RouteObject[] = [{ path: '*', element: <>{node}</> }]
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] })
   return renderToStaticMarkup(
-    <ThemeProvider>
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
-        <RouterProvider router={router} />
-      </BlogSettingsProvider>
-    </ThemeProvider>,
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>
+          <RouterProvider router={router} />
+        </BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
 }
 
@@ -53,9 +65,11 @@ export function renderInRouter(node: ReactNode, initialPath: string = '/'): stri
  */
 export async function prerenderToHtml(element: ReactNode): Promise<string> {
   const { prelude } = await prerenderToNodeStream(
-    <ThemeProvider>
-      <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
-    </ThemeProvider>,
+    <QueryClientProvider client={testQueryClient}>
+      <ThemeProvider>
+        <BlogSettingsProvider value={TEST_BLOG_SETTINGS_BUNDLE}>{element}</BlogSettingsProvider>
+      </ThemeProvider>
+    </QueryClientProvider>,
   )
   const chunks: Buffer[] = []
   for await (const chunk of prelude) {
@@ -70,9 +84,14 @@ export async function prerenderToHtml(element: ReactNode): Promise<string> {
  * Pure regex-based; does not rebuild the DOM.
  */
 export function stableHtml(html: string): string {
-  return html
-    .replace(/\s+data-react[\w-]+="[^"]*"/g, '')
-    .replace(/<!--\$-->|<!--\/\$-->|<!--\$\?-->|<!--\$!-->|<!---->/g, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
+  return (
+    html
+      .replace(/\s+data-react[\w-]+="[^"]*"/g, '')
+      .replace(/<!--\$-->|<!--\/\$-->|<!--\$\?-->|<!--\$!-->|<!---->/g, '')
+      // Base UI generates volatile ids from React useId — strip them so
+      // snapshots stay stable across runs.
+      .replace(/id="base-ui-[^"]*"/g, 'id="base-ui-id"')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  )
 }

@@ -1,8 +1,8 @@
 import { RouterContextProvider } from 'react-router'
 
-import type { BlogSession, SessionUser } from '@/server/session'
+import type { BlogSession, SessionUser } from '@/server/auth/session-storage'
 
-import { requestContext, sessionContext } from '@/server/session'
+import { requestContext, sessionContext } from '@/server/auth/context'
 
 import { regularSession } from './session'
 

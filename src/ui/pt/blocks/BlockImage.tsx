@@ -2,8 +2,8 @@ import type { ImgHTMLAttributes, Ref } from 'react'
 
 import { useEffect, useState } from 'react'
 
+import { api } from '@/client/api/client'
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { getImageSrcset } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
@@ -108,25 +108,23 @@ export function BlockImage({
     }
 
     let cancelled = false
-    const url = `${API_ACTIONS.image.resolveThumbhash.path}?src=${encodeURIComponent(src)}`
-    void fetch(url)
-      .then((response) => response.json())
-      .then((json: unknown) => {
-        if (cancelled) {
+    void api.image
+      .resolveThumbhash({ query: { src } })
+      .then((res) => {
+        if (cancelled || res.status !== 200) {
           return
         }
-        const data = (json as { data?: { thumbhash?: string | null; width?: number | null; height?: number | null } })
-          ?.data
+        const data = res.body
         const next: ResolvedImageMeta = {}
-        if (typeof data?.thumbhash === 'string' && data.thumbhash !== '') {
+        if (typeof data.thumbhash === 'string' && data.thumbhash !== '') {
           next.thumbhash = data.thumbhash
           setThumbhash(data.thumbhash)
         }
-        if (typeof data?.width === 'number' && data.width > 0) {
+        if (typeof data.width === 'number' && data.width > 0) {
           next.width = data.width
           setWidth(data.width)
         }
-        if (typeof data?.height === 'number' && data.height > 0) {
+        if (typeof data.height === 'number' && data.height > 0) {
           next.height = data.height
           setHeight(data.height)
         }

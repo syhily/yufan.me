@@ -111,20 +111,11 @@ patterns per format is the React Router `id` (which has to stay
 unique). When you add a new scope, copy the existing pattern instead
 of forking the loader.
 
-### E. API resource routes generated from `API_ACTION_LIST`
+### E. API routes (Hono layer)
 
-```ts
-...API_ACTION_LIST.map((action) => route(action.route, action.file)),
-```
-
-Resource routes for every internal API action. Both the URL and the
-matching module path are derived from `API_ACTION_LIST` (see
-`defineApiAction` in `@/shared/api-actions`) so adding a new
-endpoint means adding **one** entry to that file —
-`routes.ts` picks it up automatically.
-
-`API_ACTION_LIST` is `readonly` and React Router wants a mutable
-manifest, but spreading is enough to satisfy the signature.
+All internal API endpoints live in the Hono server (`src/server/http/`)
+and are mounted via ts-rest contracts. They do **not** appear in
+`routes.ts` — the React Router manifest only contains page routes.
 
 ### F. Auth split-screen layout (`routes/admin.layout.tsx`)
 

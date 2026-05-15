@@ -1,12 +1,11 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { AdminComment } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
@@ -26,8 +25,6 @@ import { Label } from '@/ui/components/label'
 // so the picker lands on a sensible value rather than `#000000`.
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
 
-const UPDATE_USER = API_ACTIONS.auth.updateUser
-
 export interface EditUserDialogProps {
   comment: AdminComment | null
   onClose: () => void
@@ -35,7 +32,13 @@ export interface EditUserDialogProps {
 }
 
 export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const mutation = useApiMutation<Record<string, string | null>, { success: boolean }>(
+    (payload) => {
+      const { id, ...body } = payload
+      return unwrap(api.admin.users.update({ params: { id: id! }, body }))
+    },
+    { onSuccess: () => onSaved() },
+  )
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [link, setLink] = useState('')
@@ -64,19 +67,8 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
     setBadgeTextColor(comment.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
   }, [comment])
 
-  // `useFetcherResult` already memoises against `fetcher.data`'s
-  // identity (via its internal `lastHandled` ref) AND stashes the
-  // callbacks in a ref so an unstable parent `onSaved` closure can't
-  // re-enter this branch — see `@/client/api/fetcher`. That avoids the
-  // historical runaway-loop bug where every parent re-render triggered
-  // a fresh reload while the close animation still held the dialog open.
-  useFetcherResult(fetcher, {
-    action: UPDATE_USER,
-    onSuccess: () => onSaved(),
-  })
-
   const open = comment !== null
-  const submitting = fetcher.state !== 'idle'
+  const submitting = mutation.isPending
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -94,7 +86,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // Use `string | null` so we can explicitly clear the badge
             // text-colour override (sends a literal JSON `null`); empty
             // strings get filtered/normalised on the server.
-            const payload: Record<string, string | null> = { userId: idStr(comment.userId), name, email }
+            const payload: Record<string, string | null> = { name, email, id: idStr(comment.userId) }
             if (link) {
               payload.link = link
             }
@@ -107,11 +99,7 @@ export function EditUserDialog({ comment, onClose, onSaved }: EditUserDialogProp
             // Always include `badgeTextColor` so admins can also clear a
             // previous override by unticking the checkbox.
             payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-            void fetcher.submit(payload, {
-              method: UPDATE_USER.method,
-              encType: 'application/json',
-              action: UPDATE_USER.path,
-            })
+            mutation.mutate(payload)
           }}
           className="grid gap-4 sm:grid-cols-2"
         >

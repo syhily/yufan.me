@@ -42,32 +42,28 @@ describe('contract: public URL stability', () => {
 
   it('category + tag listings keep their /cats and /tags prefixes', () => {
     const paths = new Set(all.map((r) => r.path))
-    for (const expected of [
-      'cats/:slug',
-      'cats/:slug/feed',
-      'cats/:slug/feed/atom',
-      'cats/:slug/page/:num',
-      'tags/:slug',
-      'tags/:slug/feed',
-      'tags/:slug/feed/atom',
-      'tags/:slug/page/:num',
-    ]) {
+    for (const expected of ['cats/:slug', 'cats/:slug/page/:num', 'tags/:slug', 'tags/:slug/page/:num']) {
       expect(paths.has(expected), `missing public URL: /${expected}`).toBe(true)
     }
   })
 
-  it('RSS / Atom / sitemap routes are mounted at the historical paths', () => {
+  it('RSS / Atom / sitemap routes are mounted by Hono at the historical paths', () => {
+    // Feed and sitemap routes migrated from React Router resource routes
+    // to Hono native routes in server/http/resources/. The public URLs
+    // remain stable; they are just no longer in the RR manifest.
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('feed')).toBe(true)
-    expect(paths.has('feed/atom')).toBe(true)
-    expect(paths.has('sitemap.xml')).toBe(true)
+    expect(paths.has('feed')).toBe(false)
+    expect(paths.has('feed/atom')).toBe(false)
+    expect(paths.has('sitemap.xml')).toBe(false)
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
+    // Image resource routes migrated to Hono — see server.ts and
+    // server/http/resources/images.ts. Public URLs remain stable.
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('images/og/:slug.png')).toBe(true)
-    expect(paths.has('images/calendar/:year/:time.png')).toBe(true)
-    expect(paths.has('images/avatar/:hash.png')).toBe(true)
+    expect(paths.has('images/og/:slug.png')).toBe(false)
+    expect(paths.has('images/calendar/:year/:time.png')).toBe(false)
+    expect(paths.has('images/avatar/:hash.png')).toBe(false)
   })
 
   it('WordPress compatibility URLs are still mounted (login + two-stage install)', () => {
@@ -88,7 +84,8 @@ describe('contract: public URL stability', () => {
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('search')).toBe(true)
+    // /search 301 redirect now served by Hono; /search/:keyword stays in RR
+    expect(paths.has('search')).toBe(false)
     expect(paths.has('search/:keyword')).toBe(true)
     expect(paths.has('search/:keyword/page/:num')).toBe(true)
   })

@@ -1,12 +1,13 @@
 import { ArrowRightIcon, CheckIcon, LightbulbIcon, RefreshCwIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
-import type { ListPendingDashboardInput, ListPendingDashboardOutput } from '@/shared/api-types'
-import type { AdminPendingItemDto } from '@/shared/comments'
+import type { AdminPendingItemDto, ListPendingDashboardOutput } from '@/shared/comments'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery, useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -27,11 +28,6 @@ function pickRandomLine(): string {
   return EMPTY_STATE_LINES[Math.floor(Math.random() * EMPTY_STATE_LINES.length)] ?? EMPTY_STATE_LINES[0]!
 }
 
-const LIST = API_ACTIONS.admin.listPendingDashboard
-const APPROVE = API_ACTIONS.comment.approve
-const DELETE = API_ACTIONS.comment.delete
-const APPROVE_DELETION = API_ACTIONS.admin.approveCommentDeletion
-
 const PAGE_SIZE = 5
 // Compact metadata timestamp shown next to the author. Year is omitted
 // to keep the row light — the full ISO sits in the `<time title>` for
@@ -48,22 +44,18 @@ export interface PendingModerationPanelProps {
 
 export function PendingModerationPanel({ initial }: PendingModerationPanelProps) {
   const [offset, setOffset] = useState(0)
-  const [data, setData] = useState<ListPendingDashboardOutput>(initial)
   // Pick once per mount — the empty state stays stable while the admin
   // pages through the list / refreshes.
   const [emptyStateLine] = useState<string>(pickRandomLine)
 
-  const listApi = useAdminMutation<ListPendingDashboardInput, ListPendingDashboardOutput>(LIST, {
-    errorMessage: '加载待审列表失败',
-    onSuccess: (payload) => setData(payload),
-  })
-  const { load: loadList, isPending: isListPending } = listApi
-
-  const reload = useCallback(
-    (nextOffset: number) => {
-      loadList({ kind: 'all', offset: nextOffset, limit: PAGE_SIZE })
-    },
-    [loadList],
+  const {
+    data = initial,
+    isPending: isListPending,
+    refetch,
+  } = useApiQuery<ListPendingDashboardOutput>(
+    ['admin', 'pending', 'all', offset, PAGE_SIZE],
+    () => unwrap(api.commentAdmin.listPendingDashboard({ query: { kind: 'all', offset, limit: PAGE_SIZE } })),
+    { initialData: initial },
   )
 
   const switchPage = (nextOffset: number) => {
@@ -71,42 +63,56 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
       return
     }
     setOffset(nextOffset)
-    reload(nextOffset)
   }
 
   // Refetches the current view. Used after each per-row mutation so the
   // approved/rejected row falls off the list and the counts update.
   const refresh = useCallback(() => {
-    reload(offset)
-  }, [reload, offset])
+    void refetch()
+  }, [refetch])
 
-  const approveApi = useAdminMutation<{ rid: string }, null>(APPROVE, {
-    successMessage: '已通过该评论。',
-    onSuccess: refresh,
-  })
-  const rejectApi = useAdminMutation<{ rid: string }, null>(DELETE, {
-    successMessage: '已拒绝并删除该评论。',
-    onSuccess: refresh,
-  })
-  const approveDeletionApi = useAdminMutation<{ commentId: string; approve: boolean }, { success: boolean }>(
-    APPROVE_DELETION,
+  const approveApi = useApiMutation(
+    (vars: { rid: string }) => unwrap(api.commentAdmin.approve({ params: { rid: vars.rid } })),
     {
-      successMessage: (data) => (data ? '已处理该删除申请。' : '已处理。'),
-      onSuccess: refresh,
+      onSuccess: () => {
+        toast.success('已通过该评论。')
+        refresh()
+      },
+      onError: () => toast.error('操作失败'),
+    },
+  )
+  const rejectApi = useApiMutation(
+    (vars: { rid: string }) => unwrap(api.commentAdmin.delete({ params: { rid: vars.rid } })),
+    {
+      onSuccess: () => {
+        toast.success('已拒绝并删除该评论。')
+        refresh()
+      },
+      onError: () => toast.error('操作失败'),
+    },
+  )
+  const approveDeletionApi = useApiMutation(
+    (vars: { commentId: string; approve: boolean }) => unwrap(api.commentAdmin.approveCommentDeletion({ body: vars })),
+    {
+      onSuccess: (data) => {
+        toast.success(data ? '已处理该删除申请。' : '已处理。')
+        refresh()
+      },
+      onError: () => toast.error('操作失败'),
     },
   )
 
   const onApprove = (item: AdminPendingItemDto) => {
-    approveApi.submit({ rid: item.id })
+    approveApi.mutate({ rid: item.id })
   }
   const onReject = (item: AdminPendingItemDto) => {
-    rejectApi.submit({ rid: item.id })
+    rejectApi.mutate({ rid: item.id })
   }
   const onApproveDeletion = (item: AdminPendingItemDto) => {
-    approveDeletionApi.submit({ commentId: item.id, approve: true })
+    approveDeletionApi.mutate({ commentId: item.id, approve: true })
   }
   const onRejectDeletion = (item: AdminPendingItemDto) => {
-    approveDeletionApi.submit({ commentId: item.id, approve: false })
+    approveDeletionApi.mutate({ commentId: item.id, approve: false })
   }
 
   const anyMutationPending =

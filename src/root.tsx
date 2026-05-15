@@ -1,16 +1,15 @@
 import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { lazy, Suspense } from 'react'
+import { dehydrate, HydrationBoundary, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense, useState } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
+import { makeQueryClient } from '@/client/api/query-client'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { installGateMiddleware } from '@/server/middleware/install-gate'
-import { sessionMiddleware } from '@/server/middleware/session'
-import { visitorCookieMiddleware } from '@/server/middleware/visitor-cookie'
+import { getRouteRequestContext } from '@/server/auth/context'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { getBlogSettingsBundleSync } from '@/shared/blog-config'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
@@ -58,11 +57,7 @@ const PublicChromeLazy = lazy(() =>
 // the splat) call `assertNotWordPressDecoy()` at the top of their
 // loader, so the throw originates inside a leaf loader and bubbles up
 // to the public layout's `ErrorBoundary` exactly like a normal 404.
-export const middleware: MiddlewareFunction<Response>[] = [
-  sessionMiddleware,
-  installGateMiddleware,
-  visitorCookieMiddleware,
-]
+export const middleware: MiddlewareFunction<Response>[] = []
 
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   // `meta()` runs on both SSR and after every client-side navigation,
@@ -114,23 +109,21 @@ export function loader({ request, context }: Route.LoaderArgs) {
   // returns `null` when serving the install split-screen itself.
   const blogSettings = getBlogSettingsBundleSync()
 
-  return { admin, currentUser, blogSettings, theme }
+  // Create a per-request QueryClient for SSR dehydration.
+  const queryClient = makeQueryClient()
+  const dehydratedState = dehydrate(queryClient)
+
+  return { admin, currentUser, blogSettings, theme, dehydratedState }
 }
 
 // The root loader ships `{ admin, blogSettings }`. Both can change at
 // runtime: `admin` flips on three POST endpoints (login, install,
 // logout); `blogSettings` flips whenever an admin saves a settings page.
-// Revalidate when any of those actions submit, plus when an admin
-// settings save fires from `/api/actions/admin/updateSettings` (the
-// settings layout already calls `useRevalidator()`, but admin saves
-// going through other tabs need this safety net too).
+// Revalidate when any of those actions submit. The settings layout
+// calls `useRevalidator()` after a successful ts-rest mutation, so
+// admin saves through other tabs are already covered.
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
-  if (
-    formAction &&
-    (formAction.startsWith('/wp-login.php') ||
-      formAction.startsWith('/wp-admin/install') ||
-      formAction.startsWith('/api/actions/admin/updateSettings'))
-  ) {
+  if (formAction && (formAction.startsWith('/wp-login.php') || formAction.startsWith('/wp-admin/install'))) {
     return defaultShouldRevalidate
   }
   return false
@@ -195,6 +188,11 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // re-install per route. See `@/client/hooks/use-chunk-error-recovery`.
   useChunkErrorRecovery()
 
+  // One QueryClient per request on the server; one per browser session
+  // on the client.  HydrationBoundary seeds it with the dehydrated
+  // state produced by the root loader.
+  const [queryClient] = useState(() => makeQueryClient())
+
   // The bundle flows down through `BlogSettingsProvider` (per-section
   // contexts) and the route data path (`Route.MetaArgs.matches`). On
   // the server, non-React modules read the boot-hydrated snapshot in
@@ -207,12 +205,16 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // components reach for through `useSiteIdentity()` /
   // `useFooterSettings()` / etc.
   return (
-    <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
-      <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-        <NavigationSplash />
-        <Outlet />
-      </BlogSettingsProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <HydrationBoundary state={loaderData.dehydratedState}>
+        <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
+          <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
+            <NavigationSplash />
+            <Outlet />
+          </BlogSettingsProvider>
+        </ThemeProvider>
+      </HydrationBoundary>
+    </QueryClientProvider>
   )
 }
 

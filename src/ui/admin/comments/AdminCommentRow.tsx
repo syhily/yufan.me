@@ -1,11 +1,10 @@
 import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Icon, UserIcon } from 'lucide-react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { AdminComment } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { idStr } from '@/shared/tools'
@@ -24,9 +23,6 @@ import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
 const ADMIN_DATE_FORMAT = 'yyyy-LL-dd HH:mm'
-
-const APPROVE = API_ACTIONS.comment.approve
-const DELETE = API_ACTIONS.comment.delete
 
 export interface AdminCommentRowProps {
   comment: AdminComment
@@ -64,23 +60,24 @@ export function AdminCommentRow({
   const authorHref = safeHref(comment.link)
   const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
 
-  const approveFetcher = useFetcher<ApiEnvelope<null>>()
-  const deleteFetcher = useFetcher<ApiEnvelope<null>>()
-
-  useFetcherResult(approveFetcher, { action: APPROVE, onSuccess: () => onApproved() })
-  useFetcherResult(deleteFetcher, { action: DELETE, onSuccess: () => onDeleted() })
+  const approveMutation = useApiMutation<{ rid: string }, null>(
+    ({ rid }) => unwrap(api.commentAdmin.approve({ params: { rid } })),
+    {
+      onSuccess: () => onApproved(),
+    },
+  )
+  const deleteMutation = useApiMutation<{ rid: string }, null>(
+    ({ rid }) => unwrap(api.commentAdmin.delete({ params: { rid } })),
+    {
+      onSuccess: () => onDeleted(),
+    },
+  )
 
   const submitApprove = () => {
-    void approveFetcher.submit(
-      { rid: idStr(comment.id) },
-      { method: APPROVE.method, encType: 'application/json', action: APPROVE.path },
-    )
+    approveMutation.mutate({ rid: idStr(comment.id) })
   }
   const submitDelete = () => {
-    void deleteFetcher.submit(
-      { rid: idStr(comment.id) },
-      { method: DELETE.method, encType: 'application/json', action: DELETE.path },
-    )
+    deleteMutation.mutate({ rid: idStr(comment.id) })
   }
 
   const initial = (comment.name || comment.email || '?').slice(0, 1).toUpperCase()
@@ -111,7 +108,7 @@ export function AdminCommentRow({
             type="button"
             variant="outline"
             size="sm"
-            disabled={approveFetcher.state !== 'idle'}
+            disabled={approveMutation.isPending}
             onClick={() => onConfirmApprove(submitApprove)}
             className="h-8 gap-1 px-3 text-xs sm:h-9 sm:gap-1.5 sm:px-3.5 sm:text-sm"
           >
@@ -145,7 +142,7 @@ export function AdminCommentRow({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              disabled={deleteFetcher.state !== 'idle'}
+              disabled={deleteMutation.isPending}
               onClick={() => onConfirmDelete(submitDelete)}
             >
               <Trash2Icon /> 删除评论

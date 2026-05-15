@@ -4,7 +4,8 @@ import { getMarkRange } from '@tiptap/core'
 import { CheckIcon, EraserIcon, XIcon } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 
-import { fetchRenderMath } from '@/client/api/render-math-fetch'
+import { api } from '@/client/api/client'
+import { unwrap } from '@/client/api/unwrap'
 import { generateBlockKey } from '@/shared/pt/schema'
 import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/button'
@@ -91,7 +92,7 @@ export function MathInlinePanel({ editor }: MathInlinePanelProps) {
       if (trimmed !== '') {
         setApplying(true)
         try {
-          const out = await fetchRenderMath({ tex, display: false })
+          const out = await unwrap(api.admin.renders.math({ body: { tex, display: false } }))
           if (controller.signal.aborted) {
             return
           }

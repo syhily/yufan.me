@@ -28,13 +28,14 @@ import type {
 } from '@/shared/cms-pages'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { submitApiAction } from '@/client/api/submit'
+import { api } from '@/client/api/client'
+import { ApiError } from '@/client/api/error'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
 import { DraftConflictDialog } from '@/ui/admin/editor/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor/FloatingPublishButton'
@@ -57,11 +58,6 @@ import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/ui/components/sheet'
 import { cn } from '@/ui/lib/cn'
-
-const UPSERT_META = API_ACTIONS.admin.upsertPageMeta
-const SAVE_DRAFT = API_ACTIONS.admin.saveDraft
-const PUBLISH = API_ACTIONS.admin.publishLatest
-const UNPUBLISH = API_ACTIONS.admin.unpublishPage
 
 type Status =
   | { kind: 'idle' }
@@ -301,67 +297,86 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   }, [loadedDraft, initialBody, conflictResolved])
 
   // `create` mode chains upsertMeta → saveDraft → navigate, so it
-  // can't piggy-back on `useApiFetcher` (which exposes a synchronous
-  // `submit()` and an `onSuccess` callback). The chain runs through
-  // `submitApiAction` instead and tracks its own pending flag.
+  // can't piggy-back on `useApiMutation` (which exposes a fire-and-
+  // forget `mutate()` and an `onSuccess` callback). The chain awaits
+  // the ts-rest client directly and tracks its own pending flag.
   const [isCreatingPage, setIsCreatingPage] = useState(false)
-  const upsertMetaApi = useApiFetcher<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
-    onSuccess: (payload) => onMetaSaved(payload.page),
-    onError: (error) => {
-      setStatus({ kind: 'error', message: error.message })
-      cancelActionBanner()
+  const upsertMetaMutation = useApiMutation<UpsertPageMetaInput, UpsertPageMetaOutput>(
+    (input) => unwrap(api.admin.pages.upsertMeta({ body: input })),
+    {
+      onSuccess: (payload) => onMetaSaved(payload.page),
+      onError: (error) => {
+        setStatus({ kind: 'error', message: error.message })
+        cancelActionBanner()
+      },
     },
-  })
-  const saveDraftApi = useApiFetcher<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
-    onSuccess: (payload) => onBodySaved(payload),
-    onError: (error) => {
-      setStatus({ kind: 'error', message: error.message })
-      cancelActionBanner()
+  )
+  const saveDraftMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
+    (input) => unwrap(api.admin.pages.saveDraft({ body: input })),
+    {
+      onSuccess: (payload) => onBodySaved(payload),
+      onError: (error) => {
+        setStatus({ kind: 'error', message: error.message })
+        cancelActionBanner()
+      },
     },
-  })
-  const publishApi = useApiFetcher<SavePageBodyInput, SavePageBodyOutput>(PUBLISH, {
-    onSuccess: (payload) => {
-      onBodySaved(payload)
-      // Server-side publish flips `meta.published = true` in the
-      // same transaction as promoting the revision. Mirror that
-      // locally so the badge + toolbar swap to the published state
-      // immediately, without waiting for a route refresh.
-      if (payload.status === 'saved') {
-        setMeta((m) => ({ ...m, published: true }))
-      }
+  )
+  const publishMutation = useApiMutation<SavePageBodyInput, SavePageBodyOutput>(
+    (input) => unwrap(api.admin.pages.publishLatest({ body: input })),
+    {
+      onSuccess: (payload) => {
+        onBodySaved(payload)
+        // Server-side publish flips `meta.published = true` in the
+        // same transaction as promoting the revision. Mirror that
+        // locally so the badge + toolbar swap to the published state
+        // immediately, without waiting for a route refresh.
+        if (payload.status === 'saved') {
+          setMeta((m) => ({ ...m, published: true }))
+        }
+      },
+      onError: (error) => {
+        setStatus({ kind: 'error', message: error.message })
+        cancelActionBanner()
+      },
     },
-    onError: (error) => {
-      setStatus({ kind: 'error', message: error.message })
-      cancelActionBanner()
+  )
+  const unpublishMutation = useApiMutation<UnpublishPageInput, UnpublishPageOutput>(
+    (input) => unwrap(api.admin.pages.unpublish({ body: input })),
+    {
+      onSuccess: (payload) => {
+        setStatus({ kind: 'saved', at: new Date() })
+        lastPersistedMetaRef.current = metaDraftFromPage(payload.page)
+        const saveMs = Date.parse(payload.page.updatedAt)
+        if (!Number.isNaN(saveMs)) {
+          setDisplaySaveAtMs(saveMs)
+        }
+        setMeta(metaDraftFromPage(payload.page))
+        setServerPublishedAtIso(payload.page.publishedAt)
+        // Take the page offline = drop any leftover banner; the
+        // public URL is no longer accessible and the draft preview
+        // is now redundant (the page itself has no `published`
+        // baseline to overlay against).
+        setPreviewBanner(null)
+      },
+      onError: (error) => setStatus({ kind: 'error', message: error.message }),
     },
-  })
-  const unpublishApi = useApiFetcher<UnpublishPageInput, UnpublishPageOutput>(UNPUBLISH, {
-    onSuccess: (payload) => {
-      setStatus({ kind: 'saved', at: new Date() })
-      lastPersistedMetaRef.current = metaDraftFromPage(payload.page)
-      const saveMs = Date.parse(payload.page.updatedAt)
-      if (!Number.isNaN(saveMs)) {
-        setDisplaySaveAtMs(saveMs)
-      }
-      setMeta(metaDraftFromPage(payload.page))
-      setServerPublishedAtIso(payload.page.publishedAt)
-      // Take the page offline = drop any leftover banner; the
-      // public URL is no longer accessible and the draft preview
-      // is now redundant (the page itself has no `published`
-      // baseline to overlay against).
-      setPreviewBanner(null)
-    },
-    onError: (error) => setStatus({ kind: 'error', message: error.message }),
-  })
+  )
 
   // --- Autosave -------------------------------------------------------------
   // Disabled while a save is in flight, while a conflict dialog is
   // pending resolution, or in `create` mode (no `id` to save against
-  // yet). The flush hits `saveDraft` directly via `submitApiAction`
-  // so the autosave can `await` each round-trip — `useApiFetcher`'s
-  // sync `submit()` doesn't return a promise.
+  // yet). The flush hits `saveDraft` directly via the ts-rest client
+  // so the autosave can `await` each round-trip — `useApiMutation`'s
+  // fire-and-forget `mutate()` doesn't return a promise.
   const autosaveEnabled =
-    isEditing && conflict === null && !isPendingForAutosave({ upsertMetaApi, saveDraftApi, publishApi, unpublishApi })
+    isEditing &&
+    conflict === null &&
+    !isPendingForAutosave({
+      upsertMetaApi: upsertMetaMutation,
+      saveDraftApi: saveDraftMutation,
+      publishApi: publishMutation,
+      unpublishApi: unpublishMutation,
+    })
   // The `onBodySaved` reducer reads from a closure that captures
   // `detail`, `expectedToken`, etc. We mirror it through a ref so the
   // autosave flush always picks up the latest values without forcing
@@ -374,20 +389,22 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       if (!isEditing) {
         return
       }
-      const envelope = await submitApiAction<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
-        id: detail.page.id,
-        body: snapshot,
-        expectedClientRevisionToken: expectedToken,
-      })
-      if ('data' in envelope && envelope.data !== undefined) {
-        handleBodySavedRef.current(envelope.data)
-        return
-      }
-      if ('error' in envelope && envelope.error !== undefined) {
+      try {
+        const result = await unwrap(
+          api.admin.pages.saveDraft({
+            body: {
+              id: detail.page.id,
+              body: snapshot,
+              expectedClientRevisionToken: expectedToken,
+            },
+          }),
+        )
+        handleBodySavedRef.current(result)
+      } catch (error) {
         // Rethrow so the autosave loop schedules a retry. The
         // editor's status indicator picks up the message via the
         // `onStatusChange` surface below.
-        throw new Error(envelope.error.message)
+        throw new Error(error instanceof ApiError ? error.message : '保存失败')
       }
     },
     [isEditing, detail, expectedToken],
@@ -409,9 +426,9 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   })
 
   function onMetaSaved(saved: AdminPageDto) {
-    // `useApiFetcher.onSuccess` is the edit-mode path. Create mode
-    // routes through `persistCreate()` instead — the `submit()` call
-    // there bypasses this callback by using `submitApiAction`.
+    // `useApiMutation.onSuccess` is the edit-mode path. Create mode
+    // routes through `persistCreate()` instead — it awaits the ts-rest
+    // client directly and bypasses this callback.
     setStatus({ kind: 'saved', at: new Date() })
     lastPersistedMetaRef.current = metaDraftFromPage(saved)
     const saveMs = Date.parse(saved.updatedAt)
@@ -489,37 +506,48 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     setStatus({ kind: 'saving' })
 
     const publishedAt = localInputValueToIso(meta.publishedAt)
-    const metaEnvelope = await submitApiAction<UpsertPageMetaInput, UpsertPageMetaOutput>(UPSERT_META, {
-      ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
-      title: meta.title.trim(),
-      summary: meta.summary.trim(),
-      cover: meta.cover.trim(),
-      og: meta.og.trim() === '' ? null : meta.og.trim(),
-      published: meta.published,
-      commentsEnabled: meta.commentsEnabled,
-      showToc: meta.showToc,
-      showUpdated: meta.showUpdated,
-      showFriends: meta.showFriends,
-      ...(publishedAt !== null ? { publishedAt } : {}),
-    })
-    if (!('data' in metaEnvelope) || metaEnvelope.data === undefined) {
-      const errorMessage = 'error' in metaEnvelope && metaEnvelope.error ? metaEnvelope.error.message : '保存失败'
+    let savedPage: AdminPageDto
+    try {
+      const metaResult = await unwrap(
+        api.admin.pages.upsertMeta({
+          body: {
+            ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
+            title: meta.title.trim(),
+            summary: meta.summary.trim(),
+            cover: meta.cover.trim(),
+            og: meta.og.trim() === '' ? null : meta.og.trim(),
+            published: meta.published,
+            commentsEnabled: meta.commentsEnabled,
+            showToc: meta.showToc,
+            showUpdated: meta.showUpdated,
+            showFriends: meta.showFriends,
+            ...(publishedAt !== null ? { publishedAt } : {}),
+          },
+        }),
+      )
+      savedPage = metaResult.page
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : '保存失败'
       setStatus({ kind: 'error', message: errorMessage })
       setIsCreatingPage(false)
       return
     }
-    const savedPage = metaEnvelope.data.page
 
     // Push the body through `saveDraft`. `expectedClientRevisionToken: null`
     // because there's no revision yet — saveDraft creates the first one.
-    const draftEnvelope = await submitApiAction<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
-      id: savedPage.id,
-      body,
-      expectedClientRevisionToken: null,
-    })
-    if (!('data' in draftEnvelope) || draftEnvelope.data === undefined) {
-      const errorMessage =
-        'error' in draftEnvelope && draftEnvelope.error ? draftEnvelope.error.message : '保存正文失败'
+    let draftResult: SavePageBodyOutput
+    try {
+      draftResult = await unwrap(
+        api.admin.pages.saveDraft({
+          body: {
+            id: savedPage.id,
+            body,
+            expectedClientRevisionToken: null,
+          },
+        }),
+      )
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : '保存正文失败'
       setStatus({ kind: 'error', message: errorMessage })
       setIsCreatingPage(false)
       // The metadata row exists at this point so navigate the user
@@ -527,11 +555,11 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
       return
     }
-    if (draftEnvelope.data.status === 'conflict') {
+    if (draftResult.status === 'conflict') {
       // A genuinely unreachable branch on a brand-new page — a fresh
       // row can't have a competing revision — but treat it as a
       // soft failure rather than crashing.
-      setStatus({ kind: 'conflict', expectedToken: draftEnvelope.data.expectedToken })
+      setStatus({ kind: 'conflict', expectedToken: draftResult.expectedToken })
       setIsCreatingPage(false)
       void navigate(`/wp-admin/pages/${savedPage.id}/edit`, { replace: true })
       return
@@ -540,8 +568,8 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     // Migrate the LS slot from `cms-page-draft:new:<sessionId>` to
     // the edit-mode shape so a refresh on the edit screen still
     // loads the just-saved body without showing a conflict.
-    createDraft.migrateToEditKey(savedPage.id, draftEnvelope.data.revision.clientRevisionToken, body)
-    lastSavedBodyRef.current = draftEnvelope.data.revision.body
+    createDraft.migrateToEditKey(savedPage.id, draftResult.revision.clientRevisionToken, body)
+    lastSavedBodyRef.current = draftResult.revision.body
 
     setStatus({ kind: 'saved', at: new Date() })
     setIsCreatingPage(false)
@@ -592,7 +620,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // immediately on the server), and the body is pushed as a new
   // draft revision only when it diverges from the
   // last-known-persisted body. The two round-trips run in parallel
-  // and are tracked independently by their `useApiFetcher` slots.
+  // and are tracked independently by their `useApiMutation` slots.
   const persistSave = useCallback(() => {
     if (!isEditing) {
       return
@@ -615,7 +643,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     // the draft-preview banner: meta always submits, body only
     // when it diverged from the last persisted snapshot.
     pendingActionRef.current = { kind: 'draft', remaining: bodyDiverged ? 2 : 1 }
-    upsertMetaApi.submit({
+    upsertMetaMutation.mutate({
       id: detail.page.id,
       ...(meta.slug.trim() !== '' ? { slug: meta.slug.trim() } : {}),
       title: meta.title.trim(),
@@ -630,13 +658,13 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
       ...(publishedAt !== null ? { publishedAt } : {}),
     })
     if (bodyDiverged) {
-      saveDraftApi.submit({
+      saveDraftMutation.mutate({
         id: detail.page.id,
         body,
         expectedClientRevisionToken: expectedToken,
       })
     }
-  }, [upsertMetaApi, saveDraftApi, isEditing, detail, meta, body, expectedToken, serverPublishedAtIso])
+  }, [upsertMetaMutation, saveDraftMutation, isEditing, detail, meta, body, expectedToken, serverPublishedAtIso])
 
   const persistPublish = useCallback(() => {
     if (!isEditing) {
@@ -654,7 +682,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     // 发布草稿 only fans out to a single fetcher (`publishApi`),
     // so the post-action banner is gated on that one success.
     pendingActionRef.current = { kind: 'published', remaining: 1 }
-    publishApi.submit({
+    publishMutation.mutate({
       id: detail.page.id,
       body,
       expectedClientRevisionToken: expectedToken,
@@ -666,15 +694,15 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     // 保存草稿 from misreading the stale loader snapshot as "still
     // scheduled" and re-stamping `now()` redundantly.
     setServerPublishedAtIso(publishedAtIso ?? new Date().toISOString())
-  }, [publishApi, isEditing, detail, body, expectedToken, meta.publishedAt])
+  }, [publishMutation, isEditing, detail, body, expectedToken, meta.publishedAt])
 
   const persistUnpublish = useCallback(() => {
     if (!isEditing) {
       return
     }
     setStatus({ kind: 'saving' })
-    unpublishApi.submit({ id: detail.page.id })
-  }, [unpublishApi, isEditing, detail])
+    unpublishMutation.mutate({ id: detail.page.id })
+  }, [unpublishMutation, isEditing, detail])
 
   const publishState = useMemo<PublishState>(
     // We pass `meta.published` separately because `detail.page.published`
@@ -777,7 +805,10 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // revalidation, so a second click is allowed once the first
   // request has actually been answered.
   const isSubmittingAny =
-    upsertMetaApi.isSubmitting || saveDraftApi.isSubmitting || publishApi.isSubmitting || unpublishApi.isSubmitting
+    upsertMetaMutation.isPending ||
+    saveDraftMutation.isPending ||
+    publishMutation.isPending ||
+    unpublishMutation.isPending
   const isPending = isSubmittingAny || isCreatingPage
   // Per-button spinner flags. 保存草稿 fans out to meta + body, so
   // it spins while either leg is travelling; 发布草稿 / 取消发布
@@ -786,9 +817,9 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
   // contract, the user shouldn't see the publish button briefly
   // spin because their last keystroke triggered a debounced
   // background draft.
-  const isSavingDraft = upsertMetaApi.isSubmitting || saveDraftApi.isSubmitting
-  const isPublishing = publishApi.isSubmitting
-  const isUnpublishing = unpublishApi.isSubmitting
+  const isSavingDraft = upsertMetaMutation.isPending || saveDraftMutation.isPending
+  const isPublishing = publishMutation.isPending
+  const isUnpublishing = unpublishMutation.isPending
 
   // --- Conflict resolution handlers -----------------------------------------
   const adoptLocalDraft = useCallback(async () => {
@@ -806,16 +837,20 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     //    This burns the LS/server divergence in one round trip — the
     //    next opening of the page sees a single canonical revision.
     setStatus({ kind: 'saving' })
-    const envelope = await submitApiAction<SavePageBodyInput, SavePageBodyOutput>(SAVE_DRAFT, {
-      id: detail.page.id,
-      body: conflict.localBody,
-      expectedClientRevisionToken: expectedToken,
-      force: true,
-    })
-    if ('data' in envelope && envelope.data !== undefined) {
-      handleBodySavedRef.current(envelope.data)
-    } else if ('error' in envelope && envelope.error !== undefined) {
-      setStatus({ kind: 'error', message: envelope.error.message })
+    try {
+      const result = await unwrap(
+        api.admin.pages.saveDraft({
+          body: {
+            id: detail.page.id,
+            body: conflict.localBody,
+            expectedClientRevisionToken: expectedToken,
+            force: true,
+          },
+        }),
+      )
+      handleBodySavedRef.current(result)
+    } catch (error) {
+      setStatus({ kind: 'error', message: error instanceof ApiError ? error.message : '保存失败' })
     }
   }, [conflict, isEditing, detail, expectedToken])
 

@@ -1,17 +1,17 @@
 import { ImageIcon, SearchIcon, UploadIcon } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
-import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/images'
+import type { AdminImageDto } from '@/shared/images'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
+import { unwrap } from '@/client/api/unwrap'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
 import { Input } from '@/ui/components/input'
 import { cn } from '@/ui/lib/cn'
-
-const LIST_IMAGES = API_ACTIONS.admin.listImages
 
 // Image picker dialog driven by `admin.listImages`. The trigger is a
 // caller-supplied React element (defaults to a "选择图片" button) so
@@ -44,41 +44,16 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
     onOpenChange?.(next)
   }
   const [q, setQ] = useState('')
-  const [images, setImages] = useState<AdminImageDto[] | null>(null)
-  // When the operator clicks the upload affordance we close the
-  // picker and hand control to `<UploadImageDialog>`. On successful
-  // upload the picker's `onPick` runs with the new row so the caller
-  // (editor / cover input / meta sidebar) reuses its existing
-  // insertion path — no second round trip through the library list.
   const [uploadOpen, setUploadOpen] = useState(false)
 
-  const { load } = useApiFetcher<ListImagesInput, ListImagesOutput>(LIST_IMAGES, {
-    onSuccess: (payload) => setImages(payload.images),
-  })
-
-  // Debounced search: refetch 300ms after the last keystroke. We
-  // keep a ref to the last query we issued a fetch for so a setState
-  // round-trip from the response doesn't kick off another fetch.
-  const lastFetchedQRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (!open) {
-      lastFetchedQRef.current = null
-      return
-    }
-    const trimmed = q.trim()
-    if (lastFetchedQRef.current === trimmed) {
-      return
-    }
-    const handle = setTimeout(
-      () => {
-        lastFetchedQRef.current = trimmed
-        setImages(null)
-        load({ kind: 'generic', limit: 60, q: trimmed === '' ? undefined : trimmed })
-      },
-      lastFetchedQRef.current === null ? 0 : 300,
-    )
-    return () => clearTimeout(handle)
-  }, [q, open, load])
+  const listQuery = useApiQuery(
+    queryKeys.admin.imagesList(q),
+    () =>
+      unwrap(
+        api.admin.images.list({ query: { kind: 'generic', limit: 60, q: q.trim() === '' ? undefined : q.trim() } }),
+      ),
+    { enabled: open },
+  )
 
   return (
     <>
@@ -122,13 +97,13 @@ export function ImageLibraryPicker({ trigger, onPick, open: openProp, onOpenChan
             </Button>
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
-            {images === null ? (
+            {listQuery.isPending ? (
               <div className="p-8 text-center text-sm text-muted-foreground">加载中…</div>
-            ) : images.length === 0 ? (
+            ) : listQuery.data?.images.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">没有匹配的图片</div>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {images.map((image) => (
+                {listQuery.data?.images.map((image: AdminImageDto) => (
                   <ImageTile
                     key={image.id}
                     image={image}

@@ -1,9 +1,10 @@
 import { data } from 'react-router'
 
+import { issueCsrfToken } from '@/server/auth/csrf'
+import { processAuthFormSubmission, seedInstallSettingsWithSession } from '@/server/auth/flows'
 import { installSettingsSchema } from '@/server/auth/schema'
 import { SETTINGS_INSTALL_FIELDS, requireStageTwoSession } from '@/server/install/install-flow'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { issueCsrfToken, processAuthFormSubmission, seedInstallSettingsWithSession } from '@/server/session'
 import { getSupportedTimeZones } from '@/server/settings/timezones'
 import { SettingsInstallForm } from '@/ui/admin/auth/SettingsInstallForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'

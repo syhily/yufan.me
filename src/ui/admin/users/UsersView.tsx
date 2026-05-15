@@ -6,15 +6,15 @@ import type {
   AdminUserDto,
   BulkApproveOutput,
   BulkSoftDeleteOutput,
-  ListUsersInput,
   ListUsersOutput,
   MuteUserInput,
   MuteUserOutput,
   UserIdInput,
-} from '@/shared/api-types'
+} from '@/shared/users'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery, useQueryClient } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
@@ -24,13 +24,6 @@ import { UsersToolbar } from '@/ui/admin/users/UsersToolbar'
 import { useUsersController } from '@/ui/admin/users/useUsersController'
 import { Button } from '@/ui/components/button'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
-
-const LIST = API_ACTIONS.admin.listUsers
-const SOFT_DELETE = API_ACTIONS.admin.softDeleteUser
-const RESTORE = API_ACTIONS.admin.restoreUser
-const MUTE = API_ACTIONS.admin.muteUser
-const BULK_APPROVE = API_ACTIONS.admin.bulkApproveUserComments
-const BULK_DELETE = API_ACTIONS.admin.bulkSoftDeleteUserComments
 
 // Orchestrator. Owns fetcher state, the controller dispatch, the
 // confirm-dialog reducer, and effect wiring. Presentation lives in
@@ -42,19 +35,88 @@ export function UsersView() {
   const config = useSiteIdentity()
   const { state, dispatch } = useUsersController()
 
-  const listApi = useAdminMutation<ListUsersInput, ListUsersOutput>(LIST, {
-    errorMessage: '加载用户列表失败',
-    onSuccess: (payload) => {
-      dispatch({ type: 'loaded', rows: payload.users, total: payload.total, hasMore: payload.hasMore })
+  const queryClient = useQueryClient()
+
+  const listQuery = useApiQuery<ListUsersOutput>(
+    ['admin', 'users', state.currentPage, state.pageSize, state.q, state.role, state.includeDeleted, state.sortBy],
+    () =>
+      unwrap(
+        api.admin.users.list({
+          query: {
+            offset: state.currentPage * state.pageSize,
+            limit: state.pageSize,
+            q: state.q || undefined,
+            role: state.role !== 'all' ? state.role : undefined,
+            includeDeleted: state.includeDeleted ? true : undefined,
+            sortBy: state.sortBy !== 'recent' ? state.sortBy : undefined,
+          },
+        }),
+      ),
+  )
+
+  useEffect(() => {
+    if (listQuery.data) {
+      dispatch({
+        type: 'loaded',
+        rows: listQuery.data.users,
+        total: listQuery.data.total,
+        hasMore: listQuery.data.hasMore,
+      })
+    }
+  }, [listQuery.data])
+
+  const isUsersLoading = listQuery.isPending
+
+  const muteMutation = useApiMutation<MuteUserInput, MuteUserOutput>(
+    (vars) =>
+      unwrap(
+        api.admin.users.mute({
+          params: { id: vars.userId },
+          body: { muted: vars.muted === true || vars.muted === 'true' },
+        }),
+      ),
+    {
+      onSuccess: (payload) => {
+        dispatch({ type: 'patchUser', user: payload.user })
+      },
     },
-  })
-  const muteApi = useAdminMutation<MuteUserInput, MuteUserOutput>(MUTE, {
-    onSuccess: (payload) => {
-      dispatch({ type: 'patchUser', user: payload.user })
+  )
+
+  const deleteMutation = useApiMutation<UserIdInput, void>(
+    (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      },
     },
-  })
-  const { load: loadUsers, isPending: isUsersLoading } = listApi
-  const { submit: submitMuteApi } = muteApi
+  )
+
+  const restoreMutation = useApiMutation<UserIdInput, AdminMutationSuccessOutput>(
+    (vars) => unwrap(api.admin.users.restore({ params: { id: vars.userId }, body: vars })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      },
+    },
+  )
+
+  const bulkApproveMutation = useApiMutation<UserIdInput, BulkApproveOutput>(
+    (vars) => unwrap(api.admin.users.bulkApproveComments({ body: vars })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      },
+    },
+  )
+
+  const bulkDeleteMutation = useApiMutation<UserIdInput, BulkSoftDeleteOutput>(
+    (vars) => unwrap(api.admin.users.bulkDeleteComments({ body: vars })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      },
+    },
+  )
 
   // Debounce search input — fire one list request 300 ms after the last
   // keystroke instead of one per character.
@@ -62,30 +124,6 @@ export function UsersView() {
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  const reload = useCallback(() => {
-    loadUsers({
-      offset: state.currentPage * state.pageSize,
-      limit: state.pageSize,
-      q: state.q || undefined,
-      role: state.role !== 'all' ? state.role : undefined,
-      includeDeleted: state.includeDeleted ? true : undefined,
-      sortBy: state.sortBy !== 'recent' ? state.sortBy : undefined,
-    })
-  }, [loadUsers, state.currentPage, state.pageSize, state.q, state.role, state.includeDeleted, state.sortBy])
-
-  const deleteApi = useAdminMutation<UserIdInput, AdminMutationSuccessOutput>(SOFT_DELETE, { onSuccess: reload })
-  const restoreApi = useAdminMutation<UserIdInput, AdminMutationSuccessOutput>(RESTORE, { onSuccess: reload })
-  const bulkApproveApi = useAdminMutation<UserIdInput, BulkApproveOutput>(BULK_APPROVE, { onSuccess: reload })
-  const bulkDeleteApi = useAdminMutation<UserIdInput, BulkSoftDeleteOutput>(BULK_DELETE, { onSuccess: reload })
-  const { submit: submitDeleteApi } = deleteApi
-  const { submit: submitRestoreApi } = restoreApi
-  const { submit: submitBulkApproveApi } = bulkApproveApi
-  const { submit: submitBulkDeleteApi } = bulkDeleteApi
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(state.total / state.pageSize)), [state.total, state.pageSize])
 
@@ -112,9 +150,9 @@ export function UsersView() {
         // `Trash2` for destructive confirms reads as "delete" and
         // miscues 禁言.
         actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
-        onConfirm: () => submitMuteApi({ userId: user.id, muted: !user.isMuted }),
+        onConfirm: () => muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
       }),
-    [submitMuteApi],
+    [muteMutation],
   )
   const onSoftDelete = useCallback(
     (user: AdminUserDto) =>
@@ -123,11 +161,11 @@ export function UsersView() {
         description: '此操作为软删除，用户记录保留，但在统计与列表中默认隐藏。',
         actionLabel: '删除',
         destructive: true,
-        onConfirm: () => submitDeleteApi({ userId: user.id }),
+        onConfirm: () => deleteMutation.mutate({ userId: user.id }),
       }),
-    [submitDeleteApi],
+    [deleteMutation],
   )
-  const onRestore = useCallback((user: AdminUserDto) => submitRestoreApi({ userId: user.id }), [submitRestoreApi])
+  const onRestore = useCallback((user: AdminUserDto) => restoreMutation.mutate({ userId: user.id }), [restoreMutation])
   const onBulkApproveOne = useCallback(
     (user: AdminUserDto) =>
       setConfirm({
@@ -135,9 +173,9 @@ export function UsersView() {
         description: '所有待审核评论将立即通过审核并对所有访客可见。',
         actionLabel: '通过',
         destructive: false,
-        onConfirm: () => submitBulkApproveApi({ userId: user.id }),
+        onConfirm: () => bulkApproveMutation.mutate({ userId: user.id }),
       }),
-    [submitBulkApproveApi],
+    [bulkApproveMutation],
   )
   const onBulkDeleteCommentsOne = useCallback(
     (user: AdminUserDto) =>
@@ -146,9 +184,9 @@ export function UsersView() {
         description: '此操作为软删除，可后续通过数据库恢复。',
         actionLabel: '删除',
         destructive: true,
-        onConfirm: () => submitBulkDeleteApi({ userId: user.id }),
+        onConfirm: () => bulkDeleteMutation.mutate({ userId: user.id }),
       }),
-    [submitBulkDeleteApi],
+    [bulkDeleteMutation],
   )
 
   const onSelectedChange = useCallback(
@@ -166,12 +204,12 @@ export function UsersView() {
         destructive: false,
         onConfirm: () => {
           for (const id of selectedIds) {
-            submitBulkApproveApi({ userId: id })
+            bulkApproveMutation.mutate({ userId: id })
           }
           dispatch({ type: 'clearSelection' })
         },
       }),
-    [selectedIds, submitBulkApproveApi, dispatch],
+    [selectedIds, bulkApproveMutation, dispatch],
   )
   const onBulkDeleteSelected = useCallback(
     () =>
@@ -182,12 +220,12 @@ export function UsersView() {
         destructive: true,
         onConfirm: () => {
           for (const id of selectedIds) {
-            submitBulkDeleteApi({ userId: id })
+            bulkDeleteMutation.mutate({ userId: id })
           }
           dispatch({ type: 'clearSelection' })
         },
       }),
-    [selectedIds, submitBulkDeleteApi, dispatch],
+    [selectedIds, bulkDeleteMutation, dispatch],
   )
 
   return (
@@ -240,7 +278,13 @@ export function UsersView() {
       </AdminListPage>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
-      <InviteAuthorDialog open={inviteOpen} onClose={() => setInviteOpen(false)} onInvited={reload} />
+      <InviteAuthorDialog
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onInvited={() => {
+          void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+        }}
+      />
     </>
   )
 }

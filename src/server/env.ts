@@ -27,7 +27,10 @@ export const env = createEnv({
     // own visitor metrics (matches the `bumpPageView` exemption on
     // `metric.pv`). Flip to `true` on dev environments where you want
     // to see your own visits land in the table during analytics work.
-    ANALYTICS_TRACK_ADMIN: z.stringbool().default(false),
+    ANALYTICS_TRACK_ADMIN: z
+      .enum(['true', 'false'])
+      .transform((v) => v === 'true')
+      .default(false),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,

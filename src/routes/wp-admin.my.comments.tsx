@@ -4,6 +4,7 @@ import type { MyCommentsStatus } from '@/server/db/query/comment'
 import type { EntityType } from '@/server/db/target'
 import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schema'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import {
   countMyComments,
@@ -13,7 +14,6 @@ import {
   resolveEntitiesForComments,
 } from '@/server/db/query/comment'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/wp-admin.my.comments'

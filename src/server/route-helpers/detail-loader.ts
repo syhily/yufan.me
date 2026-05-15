@@ -6,9 +6,11 @@ import type { EntityTarget } from '@/server/db/target'
 import type { ClientTag, SidebarPostLink } from '@/shared/catalog'
 
 import { trackAccess } from '@/server/analytics/track'
+import { tryGetSessionContext } from '@/server/auth/context'
+import { issueCsrfToken } from '@/server/auth/csrf'
+import { resolveSessionContext, userSession } from '@/server/auth/primitives'
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/comments/page-data'
 import { notFound } from '@/server/route-helpers/http'
-import { issueCsrfToken, resolveSessionContext, tryGetSessionContext, userSession } from '@/server/session'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 

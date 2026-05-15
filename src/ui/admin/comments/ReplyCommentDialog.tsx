@@ -1,15 +1,14 @@
 import { SendIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
+import { toast } from 'sonner'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { ReplyCommentOutput } from '@/shared/api-types'
-import type { AdminComment } from '@/shared/comments'
+import type { ReplyCommentInput, ReplyCommentOutput } from '@/shared/comments'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { toast } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { idStr } from '@/shared/tools'
 import { Button } from '@/ui/components/button'
 import {
@@ -22,8 +21,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
-
-const REPLY = API_ACTIONS.comment.replyComment
 
 export interface ReplyCommentDialogProps {
   comment: AdminComment | null
@@ -44,7 +41,17 @@ export function ReplyCommentDialog({
   onReplied,
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<ReplyCommentOutput>>()
+  const mutation = useApiMutation<ReplyCommentInput, ReplyCommentOutput>(
+    (input) => unwrap(api.commentPublic.replyComment({ body: input })),
+    {
+      onSuccess: (payload) => {
+        if (payload.csrfToken) {
+          onCsrfRotated(payload.csrfToken)
+        }
+        onReplied()
+      },
+    },
+  )
   // Reply body is PortableText, not plain text — the public reply form
   // posts the same shape, and the API perimeter validates against
   // `commentBodySchema`. Keeping the admin reply on the same editor
@@ -62,18 +69,8 @@ export function ReplyCommentDialog({
     setBodyKey((k) => k + 1)
   }, [comment?.id])
 
-  useFetcherResult(fetcher, {
-    action: REPLY,
-    onSuccess: (payload) => {
-      if (payload.csrfToken) {
-        onCsrfRotated(payload.csrfToken)
-      }
-      onReplied()
-    },
-  })
-
   const open = comment !== null
-  const submitting = fetcher.state !== 'idle'
+  const submitting = mutation.isPending
   const dialogKey = comment ? idStr(comment.id) : 'empty'
 
   return (
@@ -103,17 +100,14 @@ export function ReplyCommentDialog({
               toast.error('该评论缺少有效的目标页面标识，无法回复')
               return
             }
-            void fetcher.submit(
-              {
-                page_key: comment.pagePublicId,
-                name: authorName,
-                email: authorEmail,
-                body,
-                rid: Number.parseInt(idStr(comment.id), 10),
-                csrf: csrfToken,
-              },
-              { method: REPLY.method, encType: 'application/json', action: REPLY.path },
-            )
+            mutation.mutate({
+              page_key: comment.pagePublicId,
+              name: authorName,
+              email: authorEmail,
+              body,
+              rid: Number.parseInt(idStr(comment.id), 10),
+              csrf: csrfToken,
+            })
           }}
           className="flex flex-col gap-4"
         >

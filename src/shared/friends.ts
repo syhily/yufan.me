@@ -60,5 +60,5 @@ export interface DeleteFriendInput {
 }
 
 export interface DeleteFriendOutput {
-  success: true
+  success: boolean
 }

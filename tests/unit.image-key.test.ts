@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import { buildObjectKey, extractHostForFriendKey } from '@/server/images/key'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 
 describe('server/images/key — buildObjectKey', () => {
   describe('kind: generic', () => {
@@ -29,10 +29,10 @@ describe('server/images/key — buildObjectKey', () => {
     })
 
     it('rejects slugs containing path separators or non-ASCII characters', () => {
-      expect(() => buildObjectKey({ kind: 'category', slug: '../escape' })).toThrow(ActionFailure)
-      expect(() => buildObjectKey({ kind: 'category', slug: 'has space' })).toThrow(ActionFailure)
-      expect(() => buildObjectKey({ kind: 'category', slug: '中文' })).toThrow(ActionFailure)
-      expect(() => buildObjectKey({ kind: 'category', slug: 'BIG' })).toThrow(ActionFailure)
+      expect(() => buildObjectKey({ kind: 'category', slug: '../escape' })).toThrow(DomainError)
+      expect(() => buildObjectKey({ kind: 'category', slug: 'has space' })).toThrow(DomainError)
+      expect(() => buildObjectKey({ kind: 'category', slug: '中文' })).toThrow(DomainError)
+      expect(() => buildObjectKey({ kind: 'category', slug: 'BIG' })).toThrow(DomainError)
     })
   })
 
@@ -43,7 +43,7 @@ describe('server/images/key — buildObjectKey', () => {
     })
 
     it('rejects hosts with a slash', () => {
-      expect(() => buildObjectKey({ kind: 'friend', host: 'blog.example.com/path' })).toThrow(ActionFailure)
+      expect(() => buildObjectKey({ kind: 'friend', host: 'blog.example.com/path' })).toThrow(DomainError)
     })
   })
 })
@@ -55,8 +55,8 @@ describe('server/images/key — extractHostForFriendKey', () => {
   })
 
   it('rejects values that are not parseable URLs', () => {
-    expect(() => extractHostForFriendKey('not-a-url')).toThrow(ActionFailure)
-    expect(() => extractHostForFriendKey('')).toThrow(ActionFailure)
+    expect(() => extractHostForFriendKey('not-a-url')).toThrow(DomainError)
+    expect(() => extractHostForFriendKey('')).toThrow(DomainError)
   })
 
   it('returns punycoded host for IDN URLs (whitelist still accepts xn-- form)', () => {

@@ -1,8 +1,8 @@
 import { useNavigate, useParams } from 'react-router'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { PostEditorRoute } from '@/ui/admin/posts/PostEditorRoute'
 
 import type { Route } from './+types/wp-admin.posts.edit'

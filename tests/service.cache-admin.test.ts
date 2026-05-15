@@ -55,7 +55,7 @@ vi.mock('@/server/cache/storage', () => ({
 }))
 
 const { clearAdminCache, getAdminCacheStats } = await import('@/server/cache/admin')
-const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { DomainError } = await import('@/server/route-helpers/errors')
 const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
@@ -133,8 +133,8 @@ describe('service: cache admin', () => {
     expect([...fixture.store.keys()]).toEqual(['session:xyz'])
   })
 
-  it('rejects unknown bucket targets with ActionFailure', async () => {
-    await expect(clearAdminCache('nope' as never)).rejects.toBeInstanceOf(ActionFailure)
+  it('rejects unknown bucket targets with DomainError', async () => {
+    await expect(clearAdminCache('nope' as never)).rejects.toBeInstanceOf(DomainError)
   })
 
   it('returns 0 deletions when the bucket is already empty', async () => {

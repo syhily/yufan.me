@@ -2,12 +2,13 @@ export function isNumeric(str: string): boolean {
   return /^-?\d+$/.test(str)
 }
 
-// Render a numeric/BigInt id as a plain decimal string. Drizzle returns
-// `bigint` columns as JS BigInts (e.g. `comment.id`, `userId`); wrapping each
-// site with `String(...)` clutters JSX and makes the intent ("stringify the
-// id for use as an HTML attribute / data-* prop") less obvious. `idStr`
-// makes that intent explicit and keeps the conversion in one place.
-export function idStr(value: bigint | number): string {
+// Render a numeric/BigInt id as a plain decimal string. Drizzle types
+// `bigint` columns as JS BigInts (e.g. `comment.id`, `userId`), but the
+// pg int8 type-parser actually returns those values as strings — so wire
+// DTOs ship strings. `idStr` accepts all three so call sites stay uniform
+// whether the id arrived from the server (bigint per TS, string at
+// runtime) or from a wire response (string at both levels).
+export function idStr(value: bigint | number | string): string {
   return String(value)
 }
 

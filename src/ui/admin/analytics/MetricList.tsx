@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
-
 import type { MetricRow, MetricType } from '@/shared/analytics/dto'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiQuery } from '@/client/api/query'
+import { queryKeys } from '@/client/api/query-keys'
+import { unwrap } from '@/client/api/unwrap'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
@@ -21,26 +21,24 @@ export interface MetricListProps {
 
 export function MetricList({ type, initial, className }: MetricListProps) {
   const state = useAnalyticsState()
-  const fetcher = useApiFetcher<unknown, MetricRow[]>(API_ACTIONS.analytics.metrics)
+  const query = useApiQuery(
+    queryKeys.analytics.metrics(type, state.preset, state.range.startAt, state.range.endAt, state.filters),
+    () =>
+      unwrap(
+        api.analytics.metrics({
+          query: {
+            type,
+            preset: state.preset ?? undefined,
+            startAt: state.preset ? undefined : String(state.range.startAt),
+            endAt: state.preset ? undefined : String(state.range.endAt),
+            filters: Object.keys(state.filters).length > 0 ? JSON.stringify(state.filters) : undefined,
+            limit: 10,
+          },
+        }),
+      ),
+  )
 
-  useEffect(() => {
-    // Re-fetch whenever the URL state changes so the list stays in
-    // lock-step with the date range / filters that the rest of the
-    // page is showing. `initial` covers the very first render.
-    fetcher.load({
-      type,
-      preset: state.preset ?? undefined,
-      startAt: state.preset ? undefined : String(state.range.startAt),
-      endAt: state.preset ? undefined : String(state.range.endAt),
-      filters: Object.keys(state.filters).length > 0 ? JSON.stringify(state.filters) : undefined,
-      limit: '10',
-    })
-    // We only want to re-fetch when the URL inputs change; the
-    // returned `fetcher` ref is stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, state.preset, state.range.startAt, state.range.endAt, JSON.stringify(state.filters)])
-
-  const rows = fetcher.data ?? initial ?? null
+  const rows = query.data ?? initial ?? null
 
   if (rows === null) {
     return (

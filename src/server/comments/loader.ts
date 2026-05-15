@@ -1,8 +1,11 @@
+import type { BlogSession } from '@/server/auth/session-storage'
 import type { CommentAndUser, CommentItem, CommentReq, Comments, LatestComment } from '@/server/comments/types'
 import type { PendingCommentRow } from '@/server/db/query/comment'
 import type { EntityTarget } from '@/server/db/target'
 import type { MetricRow, NewComment } from '@/server/db/types'
 
+import { userSession } from '@/server/auth/primitives'
+import { hasAtLeast } from '@/server/auth/rbac'
 import { withCommentBadgeTextColor } from '@/server/comments/badge'
 import { canonicalizeCommentBody } from '@/server/comments/canonicalize'
 import {
@@ -24,7 +27,6 @@ import { insertCommentUser, updateLastLogin } from '@/server/db/query/user'
 import { sendNewComment, sendNewReply } from '@/server/email/sender'
 import { getLogger } from '@/server/logger'
 import { DomainError } from '@/server/route-helpers/errors'
-import { hasAtLeast, userSession, type BlogSession } from '@/server/session'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { groupBy } from '@/shared/tools'
 const log = getLogger('comments.loader')

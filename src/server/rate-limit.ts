@@ -40,7 +40,7 @@ const likeIncreaseKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}like-increase:${
 // the fallback path behaves identically to the seeded path.
 const FALLBACK_RATE_LIMITS: RateLimitSettings = rateLimitDefaults
 
-function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
+export function readBucket(name: keyof RateLimitSettings): RateLimitBucket {
   // We deliberately read the snapshot synchronously every call — the
   // in-process slot is a single-pointer load, so the cost is
   // negligible and an admin save takes effect on the very next
@@ -66,7 +66,7 @@ export interface RateLimitResult {
 // silently no-ops on subsequent hits within the window (Redis 7.0+;
 // older servers without NX support extend the TTL on every hit, which
 // is still correct just less ideal).
-async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
+export async function tryKeyedRateLimit(key: string, bucket: RateLimitBucket): Promise<RateLimitResult> {
   const redis = redisInstance()
   const pipeline = redis.pipeline()
   pipeline.incr(key)

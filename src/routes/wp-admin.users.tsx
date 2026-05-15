@@ -1,6 +1,6 @@
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { UsersView } from '@/ui/admin/users/UsersView'
 
 import type { Route } from './+types/wp-admin.users'

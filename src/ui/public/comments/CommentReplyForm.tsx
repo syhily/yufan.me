@@ -1,14 +1,15 @@
 import { PencilIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type { FindAvatarInput, FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/api-types'
 import type { CommentFormUser } from '@/shared/catalog'
-import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { FindAvatarInput, FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
-import { API_ACTIONS } from '@/shared/api-actions'
 import { bodyToPlainText } from '@/shared/pt/schema'
 import { joinUrl } from '@/shared/urls'
 import { Button } from '@/ui/components/button'
@@ -35,7 +36,7 @@ export interface CommentReplyFormProps {
 // `<fetcher.Form>` path was retired alongside the markdown pipeline:
 // PortableText bodies can't be cleanly form-encoded, and the editor
 // already lifts the body up as React state, so going through
-// `useApiFetcher` is both simpler and lighter-weight.
+// `useApiMutation` is both simpler and lighter-weight.
 export function CommentReplyForm({
   commentKey,
   csrfToken,
@@ -77,35 +78,41 @@ export function CommentReplyForm({
     }
   }, [guestProfile, user])
 
-  const reply = useApiFetcher<ReplyCommentInput, ReplyCommentOutput>(API_ACTIONS.comment.replyComment, {
-    onSuccess: (data) => {
-      setSubmitError(null)
-      if (data.csrfToken) {
-        onCsrfRotated(data.csrfToken)
-      }
-      onReplied(data.comment, replyToId)
-      // Persist guest info for future visits.
-      if (!user) {
-        saveGuestProfile({
-          name: data.comment.name,
-          email: data.comment.email,
-          link: data.comment.link ?? undefined,
-          avatar: avatarSrc,
-        })
-      }
-      // Clear the editor + remount via bodyKey bump.
-      setBody(EMPTY_COMMENT_BODY)
-      setBodyKey((k) => k + 1)
-      formRef.current?.reset()
+  const reply = useApiMutation<ReplyCommentInput, ReplyCommentOutput>(
+    (vars) => unwrap(api.commentPublic.replyComment({ body: vars })),
+    {
+      onSuccess: (data) => {
+        setSubmitError(null)
+        if (data.csrfToken) {
+          onCsrfRotated(data.csrfToken)
+        }
+        onReplied(data.comment, replyToId)
+        // Persist guest info for future visits.
+        if (!user) {
+          saveGuestProfile({
+            name: data.comment.name,
+            email: data.comment.email,
+            link: data.comment.link ?? undefined,
+            avatar: avatarSrc,
+          })
+        }
+        // Clear the editor + remount via bodyKey bump.
+        setBody(EMPTY_COMMENT_BODY)
+        setBodyKey((k) => k + 1)
+        formRef.current?.reset()
+      },
+      onError: (error) => {
+        setSubmitError(error.message)
+      },
     },
-    onError: (error) => {
-      setSubmitError(error.message)
-    },
-  })
+  )
 
-  const avatar = useApiFetcher<FindAvatarInput, FindAvatarOutput>(API_ACTIONS.comment.findAvatar, {
-    onSuccess: (payload) => setAvatarSrc(payload.avatar),
-  })
+  const avatar = useApiMutation<FindAvatarInput, FindAvatarOutput>(
+    (vars) => unwrap(api.commentPublic.findAvatar({ body: vars })),
+    {
+      onSuccess: (payload) => setAvatarSrc(payload.avatar),
+    },
+  )
 
   const admin = user?.admin === true
   const isPending = reply.isPending
@@ -117,7 +124,7 @@ export function CommentReplyForm({
     }
     const email = event.currentTarget.value
     if (email && email.includes('@')) {
-      avatar.submit({ email })
+      avatar.mutate({ email })
     } else {
       setAvatarSrc('/images/default-avatar.png')
     }
@@ -146,7 +153,7 @@ export function CommentReplyForm({
       subtitle: subtitle === '' ? undefined : subtitle,
     }
     setSubmitError(null)
-    reply.submit(payload)
+    reply.mutate(payload)
   }
 
   return (

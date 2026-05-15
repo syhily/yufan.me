@@ -4,9 +4,9 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { settingsMeta } from '@/server/route-helpers/settings-meta'
-import { getRouteRequestContext } from '@/server/session'
 import { projectSearchForAdmin } from '@/server/settings/projection'
 import { SearchForm } from '@/ui/admin/settings/SearchForm'
 

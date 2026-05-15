@@ -1,4 +1,4 @@
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 
 // S3 object key generator for the three upload entry points. Pure
 // functions only — no DB, no S3, no settings — so the unit tests can
@@ -28,7 +28,7 @@ const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
  */
 function assertSafePathSegment(value: string, label: string): string {
   if (!SAFE_PATH_SEGMENT.test(value)) {
-    throw new ActionFailure(400, `${label}只能使用 ASCII 字母、数字、\`.\`、\`_\`、\`-\``, [
+    throw new DomainError('BAD_REQUEST', `${label}只能使用 ASCII 字母、数字、\`.\`、\`_\`、\`-\``, [
       { message: `非法${label}: \`${value}\``, path: [label] },
     ])
   }
@@ -67,17 +67,21 @@ export function buildObjectKey(spec: ImageKindSpec): string {
  * Examples:
  *   `https://blog.foo.com/bar?q=1` → `blog.foo.com`
  *   `http://Example.COM:8080`      → `example.com`
- *   `not-a-url`                    → throws `ActionFailure(400)`
+ *   `not-a-url`                    → throws `DomainError('BAD_REQUEST')`
  */
 export function extractHostForFriendKey(homepage: string): string {
   let host: string
   try {
     host = new URL(homepage).hostname.toLowerCase()
   } catch {
-    throw new ActionFailure(400, '友链主页 URL 无效，无法提取 host', [{ message: '主页 URL 无效', path: ['homepage'] }])
+    throw new DomainError('BAD_REQUEST', '友链主页 URL 无效，无法提取 host', [
+      { message: '主页 URL 无效', path: ['homepage'] },
+    ])
   }
   if (host === '') {
-    throw new ActionFailure(400, '友链主页 URL 无效，无法提取 host', [{ message: '主页 URL 无效', path: ['homepage'] }])
+    throw new DomainError('BAD_REQUEST', '友链主页 URL 无效，无法提取 host', [
+      { message: '主页 URL 无效', path: ['homepage'] },
+    ])
   }
   return assertSafePathSegment(host, '友链 host')
 }

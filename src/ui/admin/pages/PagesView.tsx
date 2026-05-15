@@ -9,19 +9,20 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
+import { toast } from 'sonner'
 
 import type {
   AdminPageDto,
   DeletePageInput,
   DeletePageOutput,
-  ListPagesInput,
   ListPagesOutput,
   RestorePageInput,
   RestorePageOutput,
 } from '@/shared/cms-pages'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery, useQueryClient } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
@@ -35,10 +36,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
-const LIST = API_ACTIONS.admin.listPages
-const DELETE = API_ACTIONS.admin.deletePage
-const RESTORE = API_ACTIONS.admin.restorePage
-
 const DELETED_STATUS_OPTIONS = [
   { value: 'all', label: '全部' },
   { value: 'normal', label: '正常' },
@@ -46,56 +43,79 @@ const DELETED_STATUS_OPTIONS = [
 ]
 
 export function PagesView() {
+  const queryClient = useQueryClient()
   const { state, dispatch } = usePagesController()
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  const listApi = useAdminMutation<ListPagesInput, ListPagesOutput>(LIST, {
-    onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.pages, total: payload.total }),
-    errorMessage: '加载页面列表失败',
-  })
-  const { load: loadPages, isPending: isListPending } = listApi
+  const listQuery = useApiQuery<ListPagesOutput>(['admin', 'listPages', state.q, state.deletedStatus], () =>
+    unwrap(
+      api.admin.pages.list({
+        query: {
+          q: state.q || undefined,
+          deletedStatus: state.deletedStatus,
+        },
+      }),
+    ),
+  )
+
+  useEffect(() => {
+    if (listQuery.data) {
+      dispatch({ type: 'loaded', rows: listQuery.data.pages, total: listQuery.data.total })
+    }
+  }, [listQuery.data])
+
+  useEffect(() => {
+    if (listQuery.error) {
+      toast.error('加载页面列表失败', { description: listQuery.error.message })
+    }
+  }, [listQuery.error])
+
+  const isListPending = listQuery.isFetching
 
   const reload = useCallback(() => {
-    loadPages({
-      q: state.q || undefined,
-      deletedStatus: state.deletedStatus,
-    })
-  }, [loadPages, state.q, state.deletedStatus])
+    void listQuery.refetch()
+  }, [listQuery])
 
-  const deleteApi = useAdminMutation<DeletePageInput, DeletePageOutput>(DELETE, {
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '删除失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const { submit: submitDelete } = deleteApi
+  const deleteMutation = useApiMutation<DeletePageInput, void>(
+    (input) => unwrap(api.admin.pages.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })
+      },
+      onError: (error) =>
+        setConfirm({
+          title: '删除失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
+  const submitDelete = deleteMutation.mutate
 
-  const restoreApi = useAdminMutation<RestorePageInput, RestorePageOutput>(RESTORE, {
-    onSuccess: () => reload(),
-    onError: (error) =>
-      setConfirm({
-        title: '恢复失败',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      }),
-  })
-  const { submit: submitRestore } = restoreApi
+  const restoreMutation = useApiMutation<RestorePageInput, RestorePageOutput>(
+    (input) => unwrap(api.admin.pages.restore({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'listPages'] })
+      },
+      onError: (error) =>
+        setConfirm({
+          title: '恢复失败',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        }),
+    },
+  )
+  const submitRestore = restoreMutation.mutate
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   const isLoading = isListPending && state.rows.length === 0
 

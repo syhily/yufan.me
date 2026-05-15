@@ -11,25 +11,24 @@ import {
   Volume2Icon,
   VolumeOffIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useFetcher } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/_dtos'
 import type {
   AdminMutationSuccessOutput,
   AdminUserDto,
   BulkApproveOutput,
   BulkSoftDeleteOutput,
   GetUserOutput,
-  LoadAllOutput,
   MuteUserOutput,
-  UpdateUserOutput,
-} from '@/shared/api-types'
-import type { AdminComment } from '@/shared/comments'
+} from '@/shared/users'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery, useQueryClient } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 type Role = NonNullable<AdminUserDto['role']>
+import { queryKeys } from '@/client/api/query-keys'
 import { formatLocalDate } from '@/shared/formatter'
 import { idStr } from '@/shared/tools'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -47,21 +46,10 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { PortableTextBody } from '@/ui/pt/render'
 
-const GET = API_ACTIONS.admin.getUser
-const UPDATE = API_ACTIONS.auth.updateUser
-const UPDATE_ROLE = API_ACTIONS.admin.updateUserRole
 // Initial colour offered when an admin first ticks the "自定义字体颜色"
 // checkbox. Mirrors the public `--badge-text` light value so the picker
 // lands on the most common choice rather than `#000000`.
 const DEFAULT_BADGE_TEXT_COLOR = '#ffffff'
-const MUTE = API_ACTIONS.admin.muteUser
-const SEND_RESET = API_ACTIONS.admin.sendPasswordReset
-const REVOKE_USER_SESSIONS = API_ACTIONS.admin.revokeUserSessions
-const SOFT_DELETE = API_ACTIONS.admin.softDeleteUser
-const RESTORE = API_ACTIONS.admin.restoreUser
-const BULK_APPROVE = API_ACTIONS.admin.bulkApproveUserComments
-const BULK_DELETE = API_ACTIONS.admin.bulkSoftDeleteUserComments
-const COMMENTS_LOAD = API_ACTIONS.comment.loadAll
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -72,20 +60,7 @@ export interface UserDetailViewProps {
 
 export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const config = useSiteIdentity()
-  const userFetcher = useFetcher<ApiEnvelope<GetUserOutput>>()
-  const updateFetcher = useFetcher<ApiEnvelope<UpdateUserOutput>>()
-  const sendResetFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const revokeSessionsFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
-  const muteFetcher = useFetcher<ApiEnvelope<MuteUserOutput>>()
-  const deleteFetcher = useFetcher<ApiEnvelope<AdminMutationSuccessOutput>>()
-  const restoreFetcher = useFetcher<ApiEnvelope<AdminMutationSuccessOutput>>()
-  const bulkApproveFetcher = useFetcher<ApiEnvelope<BulkApproveOutput>>()
-  const bulkDeleteFetcher = useFetcher<ApiEnvelope<BulkSoftDeleteOutput>>()
-  const commentsFetcher = useFetcher<ApiEnvelope<LoadAllOutput>>()
-  const updateRoleFetcher = useFetcher<ApiEnvelope<{ user: AdminUserDto }>>()
 
-  const [user, setUser] = useState<AdminUserDto | null>(null)
-  const [comments, setComments] = useState<AdminComment[]>([])
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const [name, setName] = useState('')
@@ -99,96 +74,114 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const [badgeTextColor, setBadgeTextColor] = useState(DEFAULT_BADGE_TEXT_COLOR)
   const [roleDraft, setRoleDraft] = useState<Role | ''>('')
 
-  // React Router's `useFetcher()` returns a fresh wrapper object on every
-  // render. Closing over it directly in `useCallback` deps would re-fire
-  // every render and trigger "Maximum update depth exceeded". Keep the
-  // fetcher reference in a ref and depend only on `userId`.
-  const userFetcherRef = useRef(userFetcher)
-  userFetcherRef.current = userFetcher
-  const commentsFetcherRef = useRef(commentsFetcher)
-  commentsFetcherRef.current = commentsFetcher
+  const queryClient = useQueryClient()
 
-  const reloadUser = useCallback(() => {
-    void userFetcherRef.current.submit(
-      { userId },
-      { method: GET.method, encType: 'application/json', action: GET.path },
-    )
-  }, [userId])
+  const userQuery = useApiQuery<GetUserOutput>(['admin', 'user', userId], () =>
+    unwrap(api.admin.users.get({ params: { id: userId } })),
+  )
 
-  const reloadComments = useCallback(() => {
-    void commentsFetcherRef.current.submit(
-      { offset: 0, limit: 10, userId },
-      { method: COMMENTS_LOAD.method, encType: 'application/json', action: COMMENTS_LOAD.path },
-    )
-  }, [userId])
+  const commentsQuery = useApiQuery(queryKeys.admin.comments(userId), () =>
+    unwrap(api.commentAdmin.loadAll({ body: { offset: 0, limit: 10, userId } })),
+  )
+
+  const user = userQuery.data?.user ?? null
+  const comments: AdminComment[] = commentsQuery.data?.comments ?? []
 
   useEffect(() => {
-    reloadUser()
-    reloadComments()
-  }, [reloadUser, reloadComments])
+    if (user) {
+      setName(user.name)
+      setEmail(user.email)
+      setLink(user.link ?? '')
+      setBadgeName(user.badgeName ?? '')
+      setBadgeColor(user.badgeColor ?? '#008c95')
+      setUseTextOverride(user.badgeTextColor !== null)
+      setBadgeTextColor(user.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
+    }
+  }, [user])
 
-  // All eight `useFetcher`s used to drain via hand-rolled `useEffect`
-  // blocks that closed over `reloadUser`/`reloadComments`/`navigate`.
-  // Those closures changed identity on every render, so the effects
-  // re-fired while `fetcher.data` was still set and triggered redundant
-  // reload bursts. `useFetcherResult` ref-stashes the callbacks AND
-  // memoises against the response identity, so each branch fires
-  // exactly once per server response.
-  useFetcherResult(userFetcher, {
-    action: GET,
-    onSuccess: (payload) => {
-      const u = payload.user
-      setUser(u)
-      setName(u.name)
-      setEmail(u.email)
-      setLink(u.link ?? '')
-      setBadgeName(u.badgeName ?? '')
-      setBadgeColor(u.badgeColor ?? '#008c95')
-      setUseTextOverride(u.badgeTextColor !== null)
-      setBadgeTextColor(u.badgeTextColor ?? DEFAULT_BADGE_TEXT_COLOR)
+  const updateMutation = useApiMutation(
+    (vars: Record<string, string | null> & { userId: string }) => {
+      const { userId, ...body } = vars
+      return unwrap(api.admin.users.update({ params: { id: userId }, body }))
     },
-  })
-  useFetcherResult(commentsFetcher, {
-    action: COMMENTS_LOAD,
-    onSuccess: (payload) => setComments(payload.comments),
-  })
-  useFetcherResult(muteFetcher, { action: MUTE, onSuccess: (payload) => setUser(payload.user) })
-  useFetcherResult(sendResetFetcher, { action: SEND_RESET, onSuccess: () => {} })
-  useFetcherResult(revokeSessionsFetcher, { action: REVOKE_USER_SESSIONS, onSuccess: () => {} })
-  useFetcherResult(updateFetcher, { action: UPDATE, onSuccess: () => reloadUser() })
-  useFetcherResult(updateRoleFetcher, {
-    action: UPDATE_ROLE,
-    onSuccess: (payload) => {
-      setUser(payload.user)
-      setRoleDraft('')
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      },
     },
-  })
-  useFetcherResult(restoreFetcher, { action: RESTORE, onSuccess: () => reloadUser() })
-  useFetcherResult(deleteFetcher, {
-    action: SOFT_DELETE,
-    onSuccess: () => void navigate('/wp-admin/users'),
-  })
-  useFetcherResult(bulkApproveFetcher, {
-    action: BULK_APPROVE,
-    onSuccess: () => {
-      reloadUser()
-      reloadComments()
+  )
+
+  const sendResetMutation = useApiMutation<{ email: string }, { success: boolean }>((vars) =>
+    unwrap(api.admin.users.sendPasswordReset({ body: vars })),
+  )
+
+  const revokeSessionsMutation = useApiMutation<{ userId: string }, { success: boolean }>((vars) =>
+    unwrap(api.admin.users.revokeAllSessions({ body: vars })),
+  )
+
+  const muteMutation = useApiMutation<{ userId: string; muted: boolean }, MuteUserOutput>(
+    (vars) => unwrap(api.admin.users.mute({ params: { id: vars.userId }, body: { muted: vars.muted } })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      },
     },
-  })
-  useFetcherResult(bulkDeleteFetcher, {
-    action: BULK_DELETE,
-    onSuccess: () => {
-      reloadUser()
-      reloadComments()
+  )
+
+  const deleteMutation = useApiMutation<{ userId: string }, void>(
+    (vars) => unwrap(api.admin.users.softDelete({ params: { id: vars.userId } })),
+    {
+      onSuccess: () => {
+        void navigate('/wp-admin/users')
+      },
     },
-  })
+  )
+
+  const restoreMutation = useApiMutation<{ userId: string }, AdminMutationSuccessOutput>(
+    (vars) => unwrap(api.admin.users.restore({ params: { id: vars.userId }, body: vars })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      },
+    },
+  )
+
+  const bulkApproveMutation = useApiMutation<{ userId: string }, BulkApproveOutput>(
+    (vars) => unwrap(api.admin.users.bulkApproveComments({ body: vars })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+      },
+    },
+  )
+
+  const bulkDeleteMutation = useApiMutation<{ userId: string }, BulkSoftDeleteOutput>(
+    (vars) => unwrap(api.admin.users.bulkDeleteComments({ body: vars })),
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] })
+      },
+    },
+  )
+
+  const updateRoleMutation = useApiMutation<{ userId: string; role: Role }, { user: AdminUserDto | null }>(
+    (vars) => unwrap(api.admin.users.updateRole({ params: { id: vars.userId }, body: { role: vars.role } })),
+    {
+      onSuccess: () => {
+        setRoleDraft('')
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'user'] })
+      },
+    },
+  )
 
   if (!user) {
     return <UserDetailSkeleton />
   }
 
   const initial = (user.name || user.email || '?').slice(0, 1).toUpperCase()
-  const updateError = updateFetcher.data?.error?.message
+  const updateError = updateMutation.error?.message
 
   return (
     <>
@@ -327,11 +320,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           description: '修改角色后，该用户的所有会话将被强制登出。',
                           actionLabel: '确认修改',
                           destructive: false,
-                          onConfirm: () =>
-                            void updateRoleFetcher.submit(
-                              { userId: user.id, role: nextRole },
-                              { method: UPDATE_ROLE.method, encType: 'application/json', action: UPDATE_ROLE.path },
-                            ),
+                          onConfirm: () => updateRoleMutation.mutate({ userId: user.id, role: nextRole }),
                         })
                       }}
                     >
@@ -356,15 +345,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '用户将收到一封包含一次性重置链接的邮件。链接 15 分钟内有效。',
                         actionLabel: '发送',
                         destructive: false,
-                        onConfirm: () =>
-                          void sendResetFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: SEND_RESET.method,
-                              encType: 'application/json',
-                              action: SEND_RESET.path,
-                            },
-                          ),
+                        onConfirm: () => sendResetMutation.mutate({ email: user.email }),
                       })
                     }
                   >
@@ -382,15 +363,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         actionLabel: '强制登出',
                         destructive: true,
                         actionIcon: <LogOutIcon data-icon />,
-                        onConfirm: () =>
-                          void revokeSessionsFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: REVOKE_USER_SESSIONS.method,
-                              encType: 'application/json',
-                              action: REVOKE_USER_SESSIONS.path,
-                            },
-                          ),
+                        onConfirm: () => revokeSessionsMutation.mutate({ userId: user.id }),
                       })
                     }
                   >
@@ -413,11 +386,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         // destructive icon (`Trash2`) reads as "delete"
                         // and miscues the action.
                         actionIcon: user.isMuted ? <Volume2Icon data-icon /> : <VolumeOffIcon data-icon />,
-                        onConfirm: () =>
-                          void muteFetcher.submit(
-                            { userId: user.id, muted: user.isMuted ? 'false' : 'true' },
-                            { method: MUTE.method, encType: 'application/json', action: MUTE.path },
-                          ),
+                        onConfirm: () => muteMutation.mutate({ userId: user.id, muted: !user.isMuted }),
                       })
                     }
                   >
@@ -442,15 +411,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '所有待审核评论将立即通过审核并对所有访客可见。',
                         actionLabel: '通过',
                         destructive: false,
-                        onConfirm: () =>
-                          void bulkApproveFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: BULK_APPROVE.method,
-                              encType: 'application/json',
-                              action: BULK_APPROVE.path,
-                            },
-                          ),
+                        onConfirm: () => bulkApproveMutation.mutate({ userId: user.id }),
                       })
                     }
                   >
@@ -458,20 +419,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   </Button>
                 )}
                 {user.deletedAt ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      void restoreFetcher.submit(
-                        { userId: user.id },
-                        {
-                          method: RESTORE.method,
-                          encType: 'application/json',
-                          action: RESTORE.path,
-                        },
-                      )
-                    }
-                  >
+                  <Button type="button" variant="outline" onClick={() => restoreMutation.mutate({ userId: user.id })}>
                     <RotateCcwIcon /> 恢复用户
                   </Button>
                 ) : (
@@ -485,15 +433,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                           description: '此操作为软删除，用户记录保留，但在统计与列表中默认隐藏。',
                           actionLabel: '删除',
                           destructive: true,
-                          onConfirm: () =>
-                            void deleteFetcher.submit(
-                              { userId: user.id },
-                              {
-                                method: SOFT_DELETE.method,
-                                encType: 'application/json',
-                                action: SOFT_DELETE.path,
-                              },
-                            ),
+                          onConfirm: () => deleteMutation.mutate({ userId: user.id }),
                         })
                       }
                     >
@@ -511,15 +451,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         description: '此操作为软删除，可后续通过数据库恢复。',
                         actionLabel: '删除',
                         destructive: true,
-                        onConfirm: () =>
-                          void bulkDeleteFetcher.submit(
-                            { userId: user.id },
-                            {
-                              method: BULK_DELETE.method,
-                              encType: 'application/json',
-                              action: BULK_DELETE.path,
-                            },
-                          ),
+                        onConfirm: () => bulkDeleteMutation.mutate({ userId: user.id }),
                       })
                     }
                   >
@@ -542,7 +474,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                     e.preventDefault()
                     // Allow `null` so unticking the override checkbox
                     // can clear the column on save.
-                    const payload: Record<string, string | null> = { userId: user.id, name, email }
+                    const payload: Record<string, string | null> = { name, email }
                     if (link) {
                       payload.link = link
                     }
@@ -553,11 +485,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                       payload.badgeColor = badgeColor
                     }
                     payload.badgeTextColor = useTextOverride ? badgeTextColor : null
-                    void updateFetcher.submit(payload, {
-                      method: UPDATE.method,
-                      encType: 'application/json',
-                      action: UPDATE.path,
-                    })
+                    updateMutation.mutate({ ...payload, userId: user.id })
                   }}
                   className="grid gap-4 sm:grid-cols-2"
                 >
@@ -647,8 +575,8 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                   </div>
                   {updateError && <div className="text-sm text-destructive sm:col-span-2">{updateError}</div>}
                   <div className="flex justify-end gap-2 sm:col-span-2">
-                    <Button type="submit" disabled={updateFetcher.state !== 'idle'}>
-                      <SaveIcon data-icon /> {updateFetcher.state !== 'idle' ? '保存中…' : '保存'}
+                    <Button type="submit" disabled={updateMutation.isPending}>
+                      <SaveIcon data-icon /> {updateMutation.isPending ? '保存中…' : '保存'}
                     </Button>
                   </div>
                 </form>
@@ -666,7 +594,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                 <CardDescription>最近 10 条评论；点击文章标题可跳转到评论详情。</CardDescription>
               </CardHeader>
               <CardContent>
-                {commentsFetcher.state !== 'idle' && comments.length === 0 ? (
+                {commentsQuery.isPending && comments.length === 0 ? (
                   <Skeleton className="h-32 w-full" />
                 ) : comments.length === 0 ? (
                   <p className="text-sm text-muted-foreground">该用户暂无评论。</p>

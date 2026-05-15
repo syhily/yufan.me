@@ -1,13 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useFetcher } from 'react-router'
+import { toast } from 'sonner'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { toast } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,
@@ -19,8 +18,6 @@ import {
 } from '@/ui/components/dialog'
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
-
-const UPDATE_OWN = API_ACTIONS.comment.updateOwn
 
 // Self-edit dialog for `/wp-admin/my/comments`. Differs from the
 // admin `EditCommentDialog`:
@@ -36,7 +33,12 @@ export interface MyEditCommentDialogProps {
 }
 
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
-  const fetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
+  const update = useApiMutation<{ commentId: string; body: CommentBody }, { success: boolean }>(
+    (vars) => unwrap(api.commentSelf.updateOwn({ body: vars })),
+    {
+      onSuccess: () => onSaved(),
+    },
+  )
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [body, setBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)
   const [bodyKey, setBodyKey] = useState(0)
@@ -55,13 +57,8 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target?.id])
 
-  useFetcherResult(fetcher, {
-    action: UPDATE_OWN,
-    onSuccess: () => onSaved(),
-  })
-
   const open = target !== null
-  const submitting = fetcher.state !== 'idle'
+  const submitting = update.isPending
   const dialogKey = target?.id ?? 'empty'
 
   return (
@@ -83,16 +80,7 @@ export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentD
               toast.error('评论内容不能为空')
               return
             }
-            // `updateOwn` reads `commentId` from the query string while
-            // the JSON body carries the PortableText payload directly.
-            // `as never` mirrors the same cast used in
-            // `@/client/api/fetcher` when the wire schema is not a
-            // plain object.
-            void fetcher.submit(body as never, {
-              method: UPDATE_OWN.method,
-              encType: 'application/json',
-              action: `${UPDATE_OWN.path}?commentId=${encodeURIComponent(target.id)}`,
-            })
+            update.mutate({ commentId: target.id, body })
           }}
           className="flex flex-col gap-4"
         >

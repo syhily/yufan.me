@@ -1,4 +1,4 @@
-import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 
 import { CommentItem } from '@/ui/public/comments/CommentItem'
 

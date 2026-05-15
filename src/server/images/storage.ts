@@ -1,6 +1,6 @@
 import type { AssetsSettings } from '@/shared/blog-config'
 
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { ActionFailure } from '@/server/route-helpers/errors'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 
 // Storage entry point used by the upload pipeline and the SSR

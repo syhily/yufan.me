@@ -20,8 +20,7 @@ import { processImageBuffer } from '@/server/images/process'
 import { buildPublicUrl, invalidateImageEnhanceCacheFor } from '@/server/images/render-enhance'
 import { deleteImage as deleteStoredImage, getImage, putImage } from '@/server/images/storage'
 import { getLogger } from '@/server/logger'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
-import { ErrorMessages } from '@/server/route-helpers/errors'
+import { DomainError, ErrorMessages } from '@/server/route-helpers/errors'
 import { classifyImageKind } from '@/shared/images'
 
 // Domain-level entry points for the admin image library. Coordinates
@@ -58,7 +57,7 @@ export interface UploadImageInputs {
 
 export async function uploadImage(input: UploadImageInputs): Promise<AdminImageDto> {
   if (input.buffer.byteLength > input.maxBytes) {
-    throw new ActionFailure(413, `图片体积超过上限（${formatBytes(input.maxBytes)}）`)
+    throw new DomainError('BAD_REQUEST', `图片体积超过上限（${formatBytes(input.maxBytes)}）`)
   }
 
   const processed = await processImageBuffer({
@@ -67,7 +66,7 @@ export async function uploadImage(input: UploadImageInputs): Promise<AdminImageD
   })
 
   if (processed.buffer.byteLength > input.maxBytes) {
-    throw new ActionFailure(413, `重编码后体积超过上限（${formatBytes(input.maxBytes)}）`)
+    throw new DomainError('BAD_REQUEST', `重编码后体积超过上限（${formatBytes(input.maxBytes)}）`)
   }
 
   const keySpec = toKeySpec(input.kind)
@@ -99,7 +98,7 @@ export async function uploadImage(input: UploadImageInputs): Promise<AdminImageD
       })
     } catch (error) {
       log.error('Generic image insert failed (storage_path collision?)', { objectKey, error })
-      throw new ActionFailure(500, '图片元数据写入失败，请稍后重试')
+      throw new DomainError('INTERNAL', '图片元数据写入失败，请稍后重试')
     }
   } else {
     row = await upsertImageByStoragePath({
@@ -147,10 +146,10 @@ export type ImageViewerContext = ViewerContext
 export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Promise<void> {
   const existing = await findImageById(id)
   if (existing === null) {
-    throw new ActionFailure(404, '图片不存在')
+    throw new DomainError('NOT_FOUND', '图片不存在')
   }
   if (viewer && !canEditImage(viewer, existing)) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
   try {
@@ -165,7 +164,7 @@ export async function deleteImage(id: bigint, viewer?: ImageViewerContext): Prom
 
   const deleted = await softDeleteImage(id)
   if (deleted === null) {
-    throw new ActionFailure(404, '图片不存在')
+    throw new DomainError('NOT_FOUND', '图片不存在')
   }
   await invalidateImageEnhanceCacheFor(deleted.storagePath)
 }
@@ -177,14 +176,14 @@ export async function updateImageNote(
 ): Promise<AdminImageDto> {
   const existing = await findImageById(id)
   if (existing === null) {
-    throw new ActionFailure(404, '图片不存在')
+    throw new DomainError('NOT_FOUND', '图片不存在')
   }
   if (viewer && !canEditImage(viewer, existing)) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
   const updated = await updateImageNoteWithUploader(id, note)
   if (updated === null) {
-    throw new ActionFailure(404, '图片不存在')
+    throw new DomainError('NOT_FOUND', '图片不存在')
   }
   return toAdminImageDto(updated, updated.uploaderName)
 }
@@ -192,18 +191,18 @@ export async function updateImageNote(
 export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewerContext): Promise<AdminImageDto> {
   const existing = await findAdminImageRowById(id)
   if (existing === null) {
-    throw new ActionFailure(404, '图片不存在')
+    throw new DomainError('NOT_FOUND', '图片不存在')
   }
   if (viewer && !canEditImage(viewer, existing)) {
-    throw new ActionFailure(404, ErrorMessages.NOT_FOUND)
+    throw new DomainError('NOT_FOUND', ErrorMessages.NOT_FOUND)
   }
 
   let buffer: Buffer
   try {
     buffer = await getImage(existing.storagePath)
   } catch (error) {
-    if (error instanceof ActionFailure && error.status === 404) {
-      throw new ActionFailure(404, 'S3 中未找到该图片对象')
+    if (error instanceof DomainError && error.code === 'NOT_FOUND') {
+      throw new DomainError('NOT_FOUND', 'S3 中未找到该图片对象')
     }
     const errorDetail =
       error instanceof Error ? { errorName: error.name, errorMessage: error.message } : { errorRaw: String(error) }
@@ -212,7 +211,7 @@ export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewer
       storagePath: existing.storagePath,
       ...errorDetail,
     })
-    throw new ActionFailure(503, '从 S3 获取图片失败，请检查存储配置')
+    throw new DomainError('INTERNAL', '从 S3 获取图片失败，请检查存储配置')
   }
 
   const processed = await processImageBuffer({
@@ -222,7 +221,7 @@ export async function recalculateImageThumbhash(id: bigint, viewer?: ImageViewer
 
   const updated = await updateImageThumbhashWithUploader(id, processed.thumbhash)
   if (updated === null) {
-    throw new ActionFailure(404, '图片不存在')
+    throw new DomainError('NOT_FOUND', '图片不存在')
   }
 
   await invalidateImageEnhanceCacheFor(existing.storagePath)
@@ -292,7 +291,7 @@ function resolvePublicUrl(row: ImageRow): string {
     const sep = base.includes('?') ? '&' : '?'
     return `${base}${sep}v=${row.updatedAt.getTime()}`
   } catch (error) {
-    if (error instanceof ActionFailure) {
+    if (error instanceof DomainError) {
       // Settings missing — fall back to a relative path so the admin
       // table at least shows the storage key. The form copy already
       // points the operator at /wp-admin/settings/assets.

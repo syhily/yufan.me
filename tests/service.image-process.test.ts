@@ -2,7 +2,7 @@ import sharp from 'sharp'
 import { describe, expect, it } from 'vite-plus/test'
 
 import { processImageBuffer } from '@/server/images/process'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 
 // Generate a tiny in-memory PNG so we don't need any test fixtures on
 // disk. sharp can decode whatever we give it; the pipeline re-encodes
@@ -46,9 +46,9 @@ describe('server/images/process — processImageBuffer', () => {
     expect(low.byteSize).toBeLessThanOrEqual(high.byteSize)
   })
 
-  it('throws ActionFailure(400) for unparseable input', async () => {
+  it('throws DomainError(400) for unparseable input', async () => {
     const garbage = Buffer.from('this is not an image')
-    await expect(processImageBuffer({ buffer: garbage, jpegQuality: 80 })).rejects.toBeInstanceOf(ActionFailure)
+    await expect(processImageBuffer({ buffer: garbage, jpegQuality: 80 })).rejects.toBeInstanceOf(DomainError)
   })
 
   it('coerces the output to the requested resize dimensions (used by the music import 300×300 cover path)', async () => {

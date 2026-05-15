@@ -1,12 +1,9 @@
 import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { SendTestMailOutput } from '@/shared/api-types'
-
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
@@ -41,8 +38,6 @@ interface FormState {
    */
   apiKey: string
 }
-
-const TEST = API_ACTIONS.admin.sendTestMail
 
 interface TestStatus {
   state: 'idle' | 'pending' | 'success' | 'error'
@@ -90,23 +85,20 @@ export function MailForm({ mail }: MailFormProps) {
   // Test-send fetcher lives outside `useSettingsForm` because the
   // POST `sendTestMail` action is a side-effect, not a settings write
   // (it doesn't trigger a snapshot revalidation).
-  const testFetcher = useFetcher<ApiEnvelope<SendTestMailOutput>>()
+  const testMutation = useApiMutation<{ to: string }, { success: boolean }>(
+    ({ to }) => unwrap(api.admin.mail.sendTest({ body: { to } })),
+    {
+      onSuccess: () =>
+        setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),
+      onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
+    },
+  )
   const submitTest = useCallback(() => {
     setTestStatus({ state: 'pending', message: null })
-    void testFetcher.submit({ to: testTo.trim() } as never, {
-      method: TEST.method,
-      encType: 'application/json',
-      action: TEST.path,
-    })
-  }, [testFetcher, testTo])
+    testMutation.mutate({ to: testTo.trim() })
+  }, [testMutation, testTo])
 
-  useFetcherResult(testFetcher, {
-    action: TEST,
-    onSuccess: () => setTestStatus({ state: 'success', message: '测试邮件已通过 Zeabur ZSend 发送，请到收件箱确认。' }),
-    onError: (error) => setTestStatus({ state: 'error', message: error.message ?? '测试发送失败' }),
-  })
-
-  const isTestPending = testFetcher.state !== 'idle'
+  const isTestPending = testMutation.isPending
   const apiKeyConfigured = mail.apiKeyMask !== null
   // Test send only requires host + sender + an apiKey to actually exist
   // on the server — the local draft might still have an unsaved API key

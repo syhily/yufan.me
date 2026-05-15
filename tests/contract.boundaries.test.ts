@@ -758,11 +758,7 @@ describe('contract: module and bundle boundaries', () => {
         file: 'src/ui/icons/brand-social-icons.tsx',
         specifier: './icon-props',
       },
-      {
-        key: 'routes.ts -> shared API actions',
-        file: 'src/routes.ts',
-        specifier: './shared/api-actions',
-      },
+      // (routes.ts no longer imports api-actions since all API routes moved to Hono)
       {
         key: 'search index -> openai helper',
         file: 'src/server/search/index.ts',
@@ -804,6 +800,14 @@ describe('contract: module and bundle boundaries', () => {
       if (file.startsWith('src/ui/admin/editor/tiptap/block-cards/') && specifier.startsWith('./')) {
         return true
       }
+      // Hono server layer uses relative imports for its own sub-tree
+      if (file.startsWith('src/server/http/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
+        return true
+      }
+      // Shared contracts use relative imports for their own sub-tree
+      if (file.startsWith('src/shared/contracts/') && specifier.startsWith('./')) {
+        return true
+      }
       return false
     }
 
@@ -832,7 +836,7 @@ describe('contract: module and bundle boundaries', () => {
     )
 
     expect(aliasedProjectImports).toEqual([])
-    expect(importSpecifiers).toContain('./shared/api-actions')
+    // routes.ts no longer imports api-actions since all API routes moved to Hono
   })
 
   it('keeps DOM/script islands out of the tree (React only)', () => {

@@ -1,5 +1,5 @@
 import { invalidateCatalog } from '@/server/catalog/invalidate'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 import { deriveSlug } from '@/server/slug'
 
 // Shared helpers for admin taxonomy CRUD (categories & tags). The two
@@ -25,7 +25,7 @@ export function resolveSlugForTaxonomy(explicit: string | undefined, name: strin
   }
   const derived = deriveSlug(name)
   if (derived === '') {
-    throw new ActionFailure(400, '无法从名称推导出 slug，请手动填写。', [
+    throw new DomainError('BAD_REQUEST', '无法从名称推导出 slug，请手动填写。', [
       { message: '名称推导出空 slug，请手动填写', path: ['slug'] },
     ])
   }
@@ -43,11 +43,13 @@ export async function ensureUniqueOnCreateTaxonomy<T extends { id: bigint }>(
 ): Promise<void> {
   const dupName = await findByName(name)
   if (dupName !== null) {
-    throw new ActionFailure(409, `已存在同名${entityLabel}「${name}」`, [{ message: '名称已被占用', path: ['name'] }])
+    throw new DomainError('CONFLICT', `已存在同名${entityLabel}「${name}」`, [
+      { message: '名称已被占用', path: ['name'] },
+    ])
   }
   const dupSlug = await findBySlug(slug)
   if (dupSlug !== null) {
-    throw new ActionFailure(409, `已存在相同 slug「${slug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
+    throw new DomainError('CONFLICT', `已存在相同 slug「${slug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
   }
 }
 
@@ -66,7 +68,7 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
   if (newName !== existingName) {
     const dupName = await findByName(newName)
     if (dupName !== null && dupName.id !== id) {
-      throw new ActionFailure(409, `已存在同名${entityLabel}「${newName}」`, [
+      throw new DomainError('CONFLICT', `已存在同名${entityLabel}「${newName}」`, [
         { message: '名称已被占用', path: ['name'] },
       ])
     }
@@ -74,7 +76,7 @@ export async function ensureUniqueOnUpdateTaxonomy<T extends { id: bigint }>(
   if (newSlug !== existingSlug) {
     const dupSlug = await findBySlug(newSlug)
     if (dupSlug !== null && dupSlug.id !== id) {
-      throw new ActionFailure(409, `已存在相同 slug「${newSlug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
+      throw new DomainError('CONFLICT', `已存在相同 slug「${newSlug}」`, [{ message: 'Slug 已被占用', path: ['slug'] }])
     }
   }
 }
@@ -101,8 +103,8 @@ export async function deleteAdminTaxonomy<T extends { name: string }>(
 
   const referencing = await deps.listPostsBy(existing.name, { includeHidden: true, includeScheduled: true })
   if (referencing.length > 0) {
-    throw new ActionFailure(
-      409,
+    throw new DomainError(
+      'CONFLICT',
       formatBlockMessage(
         entityLabel,
         existing.name,

@@ -5,12 +5,12 @@ import { data, Link } from 'react-router'
 
 import type { EntityType } from '@/server/db/target'
 
+import { getRouteRequestContext } from '@/server/auth/context'
 import { requireRole } from '@/server/auth/rbac'
 import { countPostMetas, listPostMetas } from '@/server/cms/posts/repository'
 import { loadAdminPendingDashboard } from '@/server/comments/admin'
 import { countMyComments, listMyComments, resolveEntitiesForComments } from '@/server/db/query/comment'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
-import { getRouteRequestContext } from '@/server/session'
 import { roleLabel } from '@/shared/roles'
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
 

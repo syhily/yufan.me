@@ -362,7 +362,7 @@ export async function countAdmins(): Promise<number> {
   return rows[0]?.count ?? 0
 }
 
-export async function updateUserRole(id: bigint, role: 'admin' | 'author' | 'visitor'): Promise<User | null> {
+export async function updateUserRole(id: bigint, role: 'admin' | 'author' | 'visitor' | null): Promise<User | null> {
   const updated = await db.update(user).set({ role }).where(eq(user.id, id)).returning()
   return updated[0] ?? null
 }

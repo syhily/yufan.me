@@ -2,6 +2,7 @@ import type { CategoryRow } from '@/server/db/types'
 import type { AdminCategoryDto } from '@/shared/categories'
 
 import { invalidateCatalog } from '@/server/catalog/invalidate'
+import { listPublicPosts } from '@/server/cms/posts/repository'
 import {
   type AdminCategoriesListFilters,
   deleteCategory as deleteCategoryRow,
@@ -15,7 +16,7 @@ import {
   updateCategory,
 } from '@/server/db/query/category'
 import { listPostsByCategory } from '@/server/posts/query'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 import {
   deleteAdminTaxonomy,
   ensureUniqueOnCreateTaxonomy,
@@ -60,10 +61,25 @@ async function categoryPostCounter(): Promise<(name: string) => Promise<number>>
   }
 }
 
+// Bulk-count posts per category in a single query, then project into a
+// Map. Replaces the N+1 `categoryPostCounter` for list views while
+// keeping the per-category helper for single-row upserts.
+async function countPostsByCategories(): Promise<Map<string, number>> {
+  const metas = await listPublicPosts({ includeHidden: true, includeScheduled: true })
+  const counts = new Map<string, number>()
+  for (const meta of metas) {
+    const cat = meta.category
+    if (cat) {
+      counts.set(cat, (counts.get(cat) ?? 0) + 1)
+    }
+  }
+  return counts
+}
+
 export async function listCategoriesForAdmin(filters: AdminCategoriesListFilters): Promise<AdminCategoriesListResult> {
-  const [rows, countOf] = await Promise.all([listAdminCategoryRows(filters), categoryPostCounter()])
+  const [rows, counts] = await Promise.all([listAdminCategoryRows(filters), countPostsByCategories()])
   return {
-    categories: await Promise.all(rows.map(async (row) => toAdminCategoryDto(row, await countOf(row.name)))),
+    categories: rows.map((row) => toAdminCategoryDto(row, counts.get(row.name) ?? 0)),
     total: rows.length,
   }
 }
@@ -112,7 +128,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
 
   const existing = await findCategoryById(input.id)
   if (existing === null) {
-    throw new ActionFailure(404, '分类不存在')
+    throw new DomainError('NOT_FOUND', '分类不存在')
   }
   await ensureUniqueOnUpdateTaxonomy(
     findCategoryByName,
@@ -132,7 +148,7 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
     sortOrder: input.sortOrder,
   })
   if (updated === null) {
-    throw new ActionFailure(404, '分类不存在')
+    throw new DomainError('NOT_FOUND', '分类不存在')
   }
   invalidateCatalog('taxonomy')
   const countOf = await categoryPostCounter()
@@ -150,7 +166,7 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
   const seen = new Set<string>()
   for (const id of orderedIds) {
     if (seen.has(id)) {
-      throw new ActionFailure(400, '排序请求存在重复的分类 id')
+      throw new DomainError('BAD_REQUEST', '排序请求存在重复的分类 id')
     }
     seen.add(id)
   }
@@ -160,12 +176,12 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
   // re-orders only the visible subset.
   const liveRows = await listPublicCategoryRows()
   if (liveRows.length !== orderedIds.length) {
-    throw new ActionFailure(409, '排序与最新分类列表不一致，请刷新后重试')
+    throw new DomainError('CONFLICT', '排序与最新分类列表不一致，请刷新后重试')
   }
   const liveIds = new Set(liveRows.map((row) => String(row.id)))
   for (const id of orderedIds) {
     if (!liveIds.has(id)) {
-      throw new ActionFailure(409, '排序与最新分类列表不一致，请刷新后重试')
+      throw new DomainError('CONFLICT', '排序与最新分类列表不一致，请刷新后重试')
     }
   }
 

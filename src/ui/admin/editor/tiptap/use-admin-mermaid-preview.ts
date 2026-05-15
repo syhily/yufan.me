@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { RenderMermaidInput, RenderMermaidOutput } from '@/shared/cms-pages'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 
 const DEBOUNCE_MS = 200
 
@@ -17,20 +18,23 @@ export function useAdminMermaidPreview(code: string): {
   const [previewSvg, setPreviewSvg] = useState('')
   const [renderError, setRenderError] = useState<string | null>(null)
 
-  const renderMermaid = useApiFetcher<RenderMermaidInput, RenderMermaidOutput>(API_ACTIONS.admin.renderMermaid, {
-    onSuccess: (result) => {
-      if (result.error !== null) {
-        setRenderError(result.error)
-        return
-      }
-      setRenderError(null)
-      lastValidSvg.current = result.svg
-      setPreviewSvg(result.svg)
+  const renderMermaid = useApiMutation<RenderMermaidInput, RenderMermaidOutput>(
+    (vars) => unwrap(api.admin.renders.mermaid({ body: vars })),
+    {
+      onSuccess: (result) => {
+        if (result.error !== null) {
+          setRenderError(result.error)
+          return
+        }
+        setRenderError(null)
+        lastValidSvg.current = result.svg
+        setPreviewSvg(result.svg)
+      },
+      onError: () => {
+        setRenderError('渲染服务暂不可用')
+      },
     },
-    onError: () => {
-      setRenderError('渲染服务暂不可用')
-    },
-  })
+  )
 
   useEffect(() => {
     if (code.trim() === '') {
@@ -40,13 +44,13 @@ export function useAdminMermaidPreview(code: string): {
       return
     }
     const timer = setTimeout(() => {
-      renderMermaid.submit({ code })
+      renderMermaid.mutate({ code })
     }, DEBOUNCE_MS)
     return () => {
       clearTimeout(timer)
     }
     // oxlint-disable-next-line exhaustive-deps
-  }, [code, renderMermaid.submit])
+  }, [code, renderMermaid.mutate])
 
   const showSpinner = previewSvg === '' && renderMermaid.isPending
   const previewHtml = previewSvg !== '' ? previewSvg : lastValidSvg.current

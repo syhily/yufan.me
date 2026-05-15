@@ -74,10 +74,12 @@ const DEFAULT_MESSAGES: Record<DomainErrorCode, string> = {
 // more specific than the per-code default.
 export class DomainError extends Error {
   readonly code: DomainErrorCode
+  readonly issues?: { message: string; path?: string[] }[]
 
-  constructor(code: DomainErrorCode, message?: string) {
+  constructor(code: DomainErrorCode, message?: string, issues?: { message: string; path?: string[] }[]) {
     super(message ?? DEFAULT_MESSAGES[code])
     this.code = code
+    this.issues = issues
     this.name = 'DomainError'
   }
 }
@@ -113,3 +115,28 @@ export const ErrorMessages = {
   FORBIDDEN: '权限不足，需要更高角色。',
   NOT_FOUND: '资源不存在。',
 } as const
+
+// -----------------------------------------------------------------------------
+// Zod input parsing
+// -----------------------------------------------------------------------------
+
+import type { ZodError, ZodType } from 'zod'
+
+function zodFailure(error: ZodError): ActionFailure {
+  return new ActionFailure(
+    400,
+    '输入数据无效',
+    error.issues.map((issue) => ({
+      message: issue.message,
+      path: issue.path.map(String),
+    })),
+  )
+}
+
+export async function parseInput<T>(schema: ZodType<T>, input: unknown): Promise<T> {
+  const result = await schema.safeParseAsync(input)
+  if (result.success) {
+    return result.data
+  }
+  throw zodFailure(result.error)
+}

@@ -1,10 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 import type { AdminCategoryDto, UpsertCategoryInput, UpsertCategoryOutput } from '@/shared/categories'
 
-import { useAdminMutation } from '@/client/api/use-admin-mutation'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
@@ -20,8 +22,6 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
-
-const UPSERT = API_ACTIONS.admin.upsertCategory
 
 // Discriminator: `category === null` opens the dialog in "new
 // category" mode; a populated `category` opens it in "edit existing"
@@ -44,18 +44,20 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const upsertApi = useAdminMutation<UpsertCategoryInput, UpsertCategoryOutput>(UPSERT, {
-    successMessage: '分类已保存',
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      onSaved(payload.category)
+  const upsertMutation = useApiMutation<UpsertCategoryInput, UpsertCategoryOutput>(
+    (input) => unwrap(api.admin.categories.upsert({ body: input })),
+    {
+      onSuccess: (payload) => {
+        toast.success('分类已保存')
+        setErrorMessage(null)
+        onSaved(payload.category)
+      },
+      onError: (error) => {
+        setErrorMessage(error.message)
+      },
     },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
-    },
-  })
-  const { submit, isPending } = upsertApi
+  )
+  const { mutate: submit, isPending } = upsertMutation
 
   useEffect(() => {
     if (category === undefined) {

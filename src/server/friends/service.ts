@@ -12,7 +12,7 @@ import {
   listPublicFriendRows,
   updateFriend,
 } from '@/server/db/query/friend'
-import { ActionFailure } from '@/server/route-helpers/api-handler'
+import { DomainError } from '@/server/route-helpers/errors'
 
 // Public projection (no `id`/`visible`/`createdAt`/`updatedAt`/`rssUrl`).
 // The `Friend` shape exported from `@/shared/catalog` already matches —
@@ -103,7 +103,9 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
   if (input.id === undefined) {
     const dup = await findFriendByHomepage(input.homepage)
     if (dup !== null) {
-      throw new ActionFailure(409, '已存在相同主页 URL 的友链', [{ message: '主页 URL 已存在', path: ['homepage'] }])
+      throw new DomainError('CONFLICT', '已存在相同主页 URL 的友链', [
+        { message: '主页 URL 已存在', path: ['homepage'] },
+      ])
     }
     const row = await insertFriend({
       website: input.website,
@@ -118,7 +120,7 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
 
   const existing = await findFriendById(input.id)
   if (existing === null) {
-    throw new ActionFailure(404, '友链不存在')
+    throw new DomainError('NOT_FOUND', '友链不存在')
   }
   // Allow the editor to keep the same `homepage` (it's the same row)
   // but reject collisions with OTHER rows so two friend entries can't
@@ -126,7 +128,9 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
   if (existing.homepage !== input.homepage) {
     const dup = await findFriendByHomepage(input.homepage)
     if (dup !== null && dup.id !== input.id) {
-      throw new ActionFailure(409, '已存在相同主页 URL 的友链', [{ message: '主页 URL 已存在', path: ['homepage'] }])
+      throw new DomainError('CONFLICT', '已存在相同主页 URL 的友链', [
+        { message: '主页 URL 已存在', path: ['homepage'] },
+      ])
     }
   }
   const updated = await updateFriend(input.id, {
@@ -138,7 +142,7 @@ export async function upsertAdminFriend(input: UpsertFriendInputs): Promise<Admi
     visible: input.visible,
   })
   if (updated === null) {
-    throw new ActionFailure(404, '友链不存在')
+    throw new DomainError('NOT_FOUND', '友链不存在')
   }
   return toAdminFriendDto(updated)
 }

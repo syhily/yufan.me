@@ -1,11 +1,10 @@
 import { KeyRoundIcon, SaveIcon } from 'lucide-react'
 import { useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
@@ -18,8 +17,6 @@ import { Label } from '@/ui/components/label'
 import { Separator } from '@/ui/components/separator'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-const UPDATE_PROFILE = API_ACTIONS.account.updateProfile
-const UPDATE_PASSWORD = API_ACTIONS.account.updatePassword
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
 export interface MyProfileUser {
@@ -48,9 +45,29 @@ export interface MyProfileViewProps {
 
 export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const config = useSiteIdentity()
-  const profileFetcher = useFetcher<ApiEnvelope<{ user: unknown }>>()
-  const passwordFetcher = useFetcher<ApiEnvelope<{ success: boolean }>>()
   const revalidator = useRevalidator()
+
+  const profileMutation = useApiMutation<Record<string, string | null>, { user: unknown }>(
+    (body) => unwrap(api.account.updateProfile({ body })),
+    {
+      onSuccess: () => {
+        setProfileMessage('已保存。')
+        // Re-run the route loader so the avatar / stats card picks up
+        // any name change without a full reload.
+        void revalidator.revalidate()
+      },
+    },
+  )
+  const passwordMutation = useApiMutation<{ oldPassword: string; newPassword: string }, { success: boolean }>(
+    (body) => unwrap(api.account.updatePassword({ body })),
+    {
+      onSuccess: () => {
+        setPasswordMessage('密码已更新；其他设备的会话已注销。')
+        setOldPassword('')
+        setNewPassword('')
+      },
+    },
+  )
 
   const [name, setName] = useState(user.name)
   const [link, setLink] = useState(user.link)
@@ -61,26 +78,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
 
-  useFetcherResult(profileFetcher, {
-    action: UPDATE_PROFILE,
-    onSuccess: () => {
-      setProfileMessage('已保存。')
-      // Re-run the route loader so the avatar / stats card picks up
-      // any name change without a full reload.
-      void revalidator.revalidate()
-    },
-  })
-  useFetcherResult(passwordFetcher, {
-    action: UPDATE_PASSWORD,
-    onSuccess: () => {
-      setPasswordMessage('密码已更新；其他设备的会话已注销。')
-      setOldPassword('')
-      setNewPassword('')
-    },
-  })
-
-  const profileError = profileFetcher.data?.error?.message
-  const passwordError = passwordFetcher.data?.error?.message
+  const profileError = profileMutation.error?.message
+  const passwordError = passwordMutation.error?.message
   // Only privileged roles (admin / author) can paint a custom badge
   // next to their comments. Visitors keep the field hidden — the
   // server-side updateProfile action enforces the same rule.
@@ -190,11 +189,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                     payload.badgeName = badgeName || null
                     payload.badgeColor = badgeColor || null
                   }
-                  void profileFetcher.submit(payload, {
-                    method: UPDATE_PROFILE.method,
-                    encType: 'application/json',
-                    action: UPDATE_PROFILE.path,
-                  })
+                  profileMutation.mutate(payload)
                 }}
                 className="grid gap-4 sm:grid-cols-2"
               >
@@ -249,8 +244,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                 {profileError && <div className="text-sm text-destructive sm:col-span-2">{profileError}</div>}
                 {profileMessage && <div className="text-sm text-green-600 sm:col-span-2">{profileMessage}</div>}
                 <div className="flex justify-end gap-2 sm:col-span-2">
-                  <Button type="submit" disabled={profileFetcher.state !== 'idle'}>
-                    <SaveIcon data-icon /> {profileFetcher.state !== 'idle' ? '保存中…' : '保存'}
+                  <Button type="submit" disabled={profileMutation.isPending}>
+                    <SaveIcon data-icon /> {profileMutation.isPending ? '保存中…' : '保存'}
                   </Button>
                 </div>
               </form>
@@ -267,14 +262,7 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                 onSubmit={(e) => {
                   e.preventDefault()
                   setPasswordMessage(null)
-                  void passwordFetcher.submit(
-                    { oldPassword, newPassword },
-                    {
-                      method: UPDATE_PASSWORD.method,
-                      encType: 'application/json',
-                      action: UPDATE_PASSWORD.path,
-                    },
-                  )
+                  passwordMutation.mutate({ oldPassword, newPassword })
                 }}
                 className="grid gap-4 sm:grid-cols-2"
               >
@@ -302,8 +290,8 @@ export function MyProfileView({ user, counts }: MyProfileViewProps) {
                 {passwordError && <div className="text-sm text-destructive sm:col-span-2">{passwordError}</div>}
                 {passwordMessage && <div className="text-sm text-green-600 sm:col-span-2">{passwordMessage}</div>}
                 <div className="flex justify-end gap-2 sm:col-span-2">
-                  <Button type="submit" variant="outline" disabled={passwordFetcher.state !== 'idle'}>
-                    <KeyRoundIcon data-icon /> {passwordFetcher.state !== 'idle' ? '更新中…' : '修改密码'}
+                  <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
+                    <KeyRoundIcon data-icon /> {passwordMutation.isPending ? '更新中…' : '修改密码'}
                   </Button>
                 </div>
               </form>

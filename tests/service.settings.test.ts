@@ -25,7 +25,7 @@ vi.mock('@/server/cache/storage', () => ({
 const settingQueries = await import('@/server/db/query/setting')
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/settings/service')
 const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/settings/snapshot')
-const { ActionFailure } = await import('@/server/route-helpers/api-handler')
+const { DomainError } = await import('@/server/route-helpers/errors')
 const { requireBlogSettingsSection } = await import('@/shared/blog-config')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section
@@ -203,12 +203,10 @@ describe('services/settings — getAdminBlogSettings', () => {
 })
 
 describe('services/settings — updateBlogSettingsSection', () => {
-  it('rejects an invalid section payload with ActionFailure(400)', async () => {
+  it('rejects an invalid section payload with DomainError(400)', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
 
-    await expect(updateBlogSettingsSection('general', { title: '' } as never, null)).rejects.toBeInstanceOf(
-      ActionFailure,
-    )
+    await expect(updateBlogSettingsSection('general', { title: '' } as never, null)).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -399,7 +397,7 @@ describe('services/settings — mail section', () => {
         { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'not-an-email' } },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 })
@@ -467,7 +465,7 @@ describe('services/settings — rateLimit section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -487,7 +485,7 @@ describe('services/settings — rateLimit section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -507,7 +505,7 @@ describe('services/settings — rateLimit section', () => {
         } as never,
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 })
@@ -557,7 +555,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -578,7 +576,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
     expect(settingQueries.upsertSetting).not.toHaveBeenCalled()
   })
 
@@ -599,7 +597,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
   })
 
   it('rejects a prefix that collides with the reserved rate-limit: surface', async () => {
@@ -619,7 +617,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
   })
 
   it('rejects a prefix that does not end with `-` or `:`', async () => {
@@ -639,7 +637,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
   })
 
   it('rejects TTL below 1 hour or above 30 days', async () => {
@@ -659,7 +657,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
 
     await expect(
       updateBlogSettingsSection(
@@ -675,7 +673,7 @@ describe('services/settings — cache section', () => {
         },
         null,
       ),
-    ).rejects.toBeInstanceOf(ActionFailure)
+    ).rejects.toBeInstanceOf(DomainError)
   })
 })
 

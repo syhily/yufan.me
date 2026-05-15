@@ -4,7 +4,6 @@ import { listAllFriends } from '@/server/catalog/queries'
 import { loadPagePreview } from '@/server/cms/pages/loader'
 import { loadPublicDetailData } from '@/server/route-helpers/detail-loader'
 import { detailHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
-import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
 import { bundleFromMatches, routeMeta, seoForPage } from '@/server/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
 import { resolveFootnotesSectionTitle } from '@/shared/footnotes-section-title'
@@ -20,7 +19,6 @@ export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  assertNotWordPressDecoy(request)
   const url = new URL(request.url)
   const wantsDraftPreview = url.searchParams.get('draft') === 'true'
 
@@ -71,6 +69,8 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
+      {/* CSRF anchor consumed by the ts-rest client — see wp-admin.layout. */}
+      <meta name="csrf-token" content={detail.csrfToken} />
       <PageDetailBody
         page={page}
         headings={page.headings}

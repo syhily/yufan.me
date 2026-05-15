@@ -4,6 +4,8 @@ import type { ResolvedImageMeta } from '@/server/images/render-enhance'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/toc'
 
+import { tryGetSessionContext } from '@/server/auth/context'
+import { resolveSessionContext } from '@/server/auth/primitives'
 import { getEntryBySlug } from '@/server/catalog'
 import { loadPageDraftPreviewBySlug } from '@/server/cms/pages/service'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'
@@ -11,7 +13,6 @@ import { buildDbPage, findPageBySlug } from '@/server/pages/query'
 import { redirectPermanent } from '@/server/route-helpers/detail-loader'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/route-helpers/etag'
 import { notFound } from '@/server/route-helpers/http'
-import { resolveSessionContext, tryGetSessionContext } from '@/server/session'
 
 type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 

@@ -8,10 +8,11 @@ import type {
   IncreaseLikeOutput,
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
-} from '@/shared/api-types'
+} from '@/shared/likes'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { joinUrl } from '@/shared/urls'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
@@ -52,7 +53,7 @@ export function applyLikeOptimistic(state: LikeButtonState, action: 'like' | 'un
 // React 19 client island: replaces the imperative
 // `src/assets/scripts/features/like-button.ts` glue. The button hydrates on
 // the post / page detail pages, validates any cached like token in
-// `localStorage`, and uses one `useApiFetcher` per direction so the SSR
+// `localStorage`, and uses one `useApiMutation` per direction so the SSR
 // HTML (count / heart) stays the source of truth on first paint.
 export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeButtonProps) {
   // baseState is the server-confirmed view. `useOptimistic` layers the
@@ -79,8 +80,8 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [baseState, setBaseState] = useState(createLikeButtonState(commentKey, initialLikes))
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
-  const validate = useApiFetcher<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
-    API_ACTIONS.comment.validateLikeToken,
+  const validate = useApiMutation<ValidateLikeTokenInput, ValidateLikeTokenOutput>(
+    (vars) => unwrap(api.commentPublic.validateLikeToken({ body: vars })),
     {
       onSuccess: (data) => {
         setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
@@ -91,37 +92,44 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
     },
   )
 
-  const increase = useApiFetcher<IncreaseLikeInput, IncreaseLikeOutput>(API_ACTIONS.comment.increaseLike, {
-    onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
-      localStorage.setItem(tokenStorageKey(permalink), data.token)
+  const increase = useApiMutation<IncreaseLikeInput, IncreaseLikeOutput>(
+    (vars) => unwrap(api.commentPublic.increaseLike({ body: vars })),
+    {
+      onSuccess: (data) => {
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
+        if (data.token) {
+          localStorage.setItem(tokenStorageKey(permalink), data.token)
+        }
+      },
     },
-  })
+  )
 
-  const decrease = useApiFetcher<DecreaseLikeInput, DecreaseLikeOutput>(API_ACTIONS.comment.decreaseLike, {
-    onSuccess: (data) => {
-      setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
-      localStorage.removeItem(tokenStorageKey(permalink))
+  const decrease = useApiMutation<DecreaseLikeInput, DecreaseLikeOutput>(
+    (vars) => unwrap(api.commentPublic.decreaseLike({ body: vars })),
+    {
+      onSuccess: (data) => {
+        setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
+        localStorage.removeItem(tokenStorageKey(permalink))
+      },
     },
-  })
+  )
 
   // Sync local island state to React Router loader data. Detail routes reuse
   // the same component instance when navigating `/posts/a` -> `/posts/b`, so
   // both the counter and local "liked" flag must be reset before validating
   // the new page's cached token.
-  const validateSubmit = validate.submit
   useEffect(() => {
     setBaseState(createLikeButtonState(commentKey, initialLikes))
     const token = localStorage.getItem(tokenStorageKey(permalink))
     if (!token) {
       return
     }
-    validateSubmit({ key: commentKey, token })
-  }, [permalink, commentKey, initialLikes, validateSubmit])
+    validate.mutate({ key: commentKey, token })
+  }, [permalink, commentKey, initialLikes, validate.mutate])
 
   const isPending = increase.isPending || decrease.isPending
-  const increaseSubmitAsync = increase.submitAsync
-  const decreaseSubmitAsync = decrease.submitAsync
+  const increaseMutateAsync = increase.mutateAsync
+  const decreaseMutateAsync = decrease.mutateAsync
 
   const onClick = () => {
     if (isPending) {
@@ -138,12 +146,12 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
       }
       startTransition(async () => {
         addOptimistic('unlike')
-        await decreaseSubmitAsync({ key: commentKey, token })
+        await decreaseMutateAsync({ key: commentKey, token })
       })
     } else {
       startTransition(async () => {
         addOptimistic('like')
-        await increaseSubmitAsync({ key: commentKey })
+        await increaseMutateAsync({ key: commentKey })
       })
     }
   }

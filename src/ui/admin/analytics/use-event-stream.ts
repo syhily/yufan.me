@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { RealtimeEvent } from '@/shared/analytics/dto'
 
-import { API_ACTIONS } from '@/shared/api-actions'
-
 // EventSource subscription hook for the realtime tail. Maintains a
 // rolling buffer of the latest `bufferSize` events and exposes the
 // connection state so the UI can show a "connecting / live / lost"
@@ -26,7 +24,7 @@ export function useEventStream({ bufferSize = 100, enabled = true }: UseEventStr
       return
     }
 
-    const url = new URL(API_ACTIONS.analytics.events.path, window.location.origin)
+    const url = new URL('/api/analytics/events', window.location.origin)
     if (lastSeenRef.current) {
       url.searchParams.set('since', lastSeenRef.current)
     }

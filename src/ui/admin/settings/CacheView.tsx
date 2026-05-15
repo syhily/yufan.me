@@ -1,14 +1,19 @@
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useFetcher, useRevalidator } from 'react-router'
+import { useRevalidator } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { ClearCacheOutput, GetCacheStatsOutput } from '@/shared/api-types'
 import type { CacheSettings } from '@/shared/blog-config'
-import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
+import type {
+  AdminCacheStatsDto,
+  CacheBucketId,
+  ClearCacheResultDto,
+  ClearCacheTarget,
+  ReservedCacheBucketStats,
+} from '@/shared/cache-types'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
@@ -19,11 +24,9 @@ import { Button } from '@/ui/components/button'
 type CacheSlice = CacheSettings['cache']
 
 interface CacheViewProps {
-  stats: GetCacheStatsOutput
+  stats: AdminCacheStatsDto
   cache: CacheSlice
 }
-
-const CLEAR = API_ACTIONS.admin.clearCache
 
 // Cache management page. Composes:
 //   1. A "一键清空" hero card with a floating CTA.
@@ -37,44 +40,41 @@ const CLEAR = API_ACTIONS.admin.clearCache
 // orchestration: own the fetcher, dispatch `submitClear` / confirm
 // flows, and hand each bucket its slice of the cache.
 export function CacheView({ stats, cache }: CacheViewProps) {
-  const fetcher = useFetcher<ApiEnvelope<ClearCacheOutput>>()
   const revalidator = useRevalidator()
   const [status, setStatus] = useState<ClearStatus>(idleClearStatus)
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
 
+  const clearMutation = useApiMutation<{ target: ClearCacheTarget }, ClearCacheResultDto>(
+    ({ target }) => unwrap(api.admin.cache.clear({ body: { target } })),
+    {
+      onError: (error) => {
+        setStatus((prev) => ({
+          state: 'error',
+          target: prev.target,
+          message: error.message || '操作失败',
+        }))
+      },
+      onSuccess: (result) => {
+        const summary =
+          result.cleared.length === 1
+            ? `已清空「${result.cleared[0]?.label ?? ''}」缓存（${result.cleared[0]?.removed ?? 0} 项）`
+            : `已清空全部缓存（${result.total} 项）`
+        setStatus((prev) => ({ state: 'success', target: prev.target, message: summary }))
+        void revalidator.revalidate()
+      },
+    },
+  )
+
   const submitClear = useCallback(
     (target: ClearCacheTarget) => {
       setStatus({ state: 'pending', target, message: null })
-      void fetcher.submit({ target } as never, {
-        method: CLEAR.method,
-        encType: 'application/json',
-        action: CLEAR.path,
-      })
+      clearMutation.mutate({ target })
     },
-    [fetcher],
+    [clearMutation],
   )
 
-  useFetcherResult(fetcher, {
-    action: CLEAR,
-    onError: (error) => {
-      setStatus((prev) => ({
-        state: 'error',
-        target: prev.target,
-        message: error.message || '操作失败',
-      }))
-    },
-    onSuccess: (result) => {
-      const summary =
-        result.cleared.length === 1
-          ? `已清空「${result.cleared[0]?.label ?? ''}」缓存（${result.cleared[0]?.removed ?? 0} 项）`
-          : `已清空全部缓存（${result.total} 项）`
-      setStatus((prev) => ({ state: 'success', target: prev.target, message: summary }))
-      void revalidator.revalidate()
-    },
-  })
-
   const totalKeys = stats.buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
-  const isClearPending = fetcher.state !== 'idle'
+  const isClearPending = clearMutation.isPending
 
   // `cache` is already a primitive-value map keyed by bucket id, so
   // `BucketCard` can read its own slice directly as `cache[bucket.id]`.

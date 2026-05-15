@@ -1,5 +1,4 @@
 import { notFound } from '@/server/route-helpers/http'
-import { assertNotWordPressDecoy } from '@/server/route-helpers/wp-decoy'
 
 import type { Route } from './+types/not-found'
 
@@ -16,8 +15,7 @@ import type { Route } from './+types/not-found'
 // to the client (text/plain, no chrome). The presence of `default`
 // makes it a UI route so the surrounding `ErrorBoundary` can render
 // the right view.
-export function loader({ request }: Route.LoaderArgs) {
-  assertNotWordPressDecoy(request)
+export function loader({ request: _request }: Route.LoaderArgs) {
   notFound()
 }
 

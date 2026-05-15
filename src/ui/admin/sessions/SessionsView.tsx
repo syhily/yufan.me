@@ -2,13 +2,13 @@ import type { DateRange } from 'react-day-picker'
 
 import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
+import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { AdminSessionItem } from '@/routes/wp-admin.sessions'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 
-import { useFetcherResult } from '@/client/api/fetcher'
-import { API_ACTIONS } from '@/shared/api-actions'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'
 import { formatUserAgentLabel } from '@/shared/user-agent'
@@ -25,8 +25,6 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/in
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/components/popover'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
-
-const REVOKE = API_ACTIONS.admin.revokeSession
 
 const DATE_FORMAT = 'yyyy-LL-dd HH:mm'
 
@@ -83,7 +81,17 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
   const navigate = useNavigate()
   const revalidator = useRevalidator()
   const [searchParams] = useSearchParams()
-  const revoke = useFetcher<ApiEnvelope<{ success: boolean; currentSession: boolean }>>()
+  const revoke = useApiMutation<{ sessionId: string }, { success: boolean; currentSession: boolean }>(
+    (vars) => unwrap(api.admin.users.revokeSession({ body: vars })),
+    {
+      onSuccess: () => {
+        // Self-revoke is short-circuited to the logout endpoint inside
+        // `onRevoke`, so by the time this handler fires we know it was
+        // a different device — a list re-fetch is enough.
+        void revalidator.revalidate()
+      },
+    },
+  )
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
   const updateParams = useCallback(
@@ -117,17 +125,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.q])
 
-  useFetcherResult(revoke, {
-    action: REVOKE,
-    onSuccess: () => {
-      // Self-revoke is short-circuited to the logout endpoint inside
-      // `onRevoke`, so by the time this handler fires we know it was
-      // a different device — a list re-fetch is enough.
-      void revalidator.revalidate()
-    },
-  })
-
-  const submitting = revoke.state !== 'idle'
+  const submitting = revoke.isPending
 
   const onRevoke = (item: AdminSessionItem) => {
     setConfirm({
@@ -149,10 +147,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
           window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
           return
         }
-        void revoke.submit(
-          { sessionId: item.sid },
-          { method: REVOKE.method, encType: 'application/json', action: REVOKE.path },
-        )
+        revoke.mutate({ sessionId: item.sid })
       },
     })
   }

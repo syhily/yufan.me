@@ -2,6 +2,8 @@ import type { ListingPageLoaderData } from '@/server/route-helpers/listing-loade
 import type { SidebarData } from '@/ui/public/Sidebar'
 
 import { trackAccess } from '@/server/analytics/track'
+import { getRouteRequestContext } from '@/server/auth/context'
+import { userSession } from '@/server/auth/primitives'
 import { getCategoryLinks, listAllTags } from '@/server/catalog/queries'
 import {
   countPublicPosts,
@@ -12,7 +14,6 @@ import {
 import { listingLoader } from '@/server/route-helpers/listing-loader'
 import { listingHeaders, publicShouldRevalidate } from '@/server/route-helpers/route-exports'
 import { metaWithFallback } from '@/server/seo/meta'
-import { getRouteRequestContext, userSession } from '@/server/session'
 import { loadSidebarData } from '@/server/sidebar/load'
 import { selectSidebarTags } from '@/server/sidebar/select'
 import { requireBlogSettingsSection } from '@/shared/blog-config'
