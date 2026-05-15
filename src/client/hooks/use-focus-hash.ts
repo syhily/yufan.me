@@ -1,28 +1,39 @@
-import { useEffect } from 'react'
+import { createContext, createElement, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 
 // Smooth-scroll to the URL hash on initial mount and whenever the hash
 // changes. Also flashes a comment node when the hash targets one
 // (`#user-comment-<id>`).
 //
-// Two timing concerns:
-//
-// 1. The target may not be in the DOM yet when the hash changes —
-//    comment threads on detail routes stream in through
-//    `<Suspense fallback={<CommentsSkeleton />}>` after the route
-//    loader resolves the comments promise. We watch DOM mutations
-//    until the target lands or a ceiling elapses.
-// 2. The flash must wait until the smooth scroll has come to rest so
-//    the highlight only starts once the user can actually see the
-//    target. We listen for `scrollend` with a fallback timeout for
-//    the cases where no scroll is needed (already in view) or the
-//    event never lands.
+// The flash is driven through React state (FlashingCommentHashContext)
+// instead of imperative `classList.add('active')` so the `active` class
+// is part of the React render tree. This prevents hydration mismatches
+// when React 19 streaming SSR places the comments chunk in the DOM
+// before the full hydration pass completes.
+
+const FLASH_DURATION_MS = 2100
 const TARGET_WAIT_MS = 5000
 const SCROLL_SETTLE_FALLBACK_MS = 300
 const NO_SCROLL_THRESHOLD_PX = 4
 
-export function useFocusHash(): void {
+const FlashingCommentHashContext = createContext<string | null>(null)
+
+/** Returns the currently-flashing comment hash, or null when idle. */
+export function useFlashingCommentHash(): string | null {
+  return useContext(FlashingCommentHashContext)
+}
+
+export function FocusHashProvider({ children }: { children: React.ReactNode }) {
   const { hash } = useLocation()
+  const [flashingHash, setFlashingHash] = useState<string | null>(null)
+  const flashTimeoutRef = useRef<number | undefined>(undefined)
+
+  const clearFlashTimeout = useCallback(() => {
+    if (flashTimeoutRef.current !== undefined) {
+      window.clearTimeout(flashTimeoutRef.current)
+      flashTimeoutRef.current = undefined
+    }
+  }, [])
 
   useEffect(() => {
     if (!hash) {
@@ -47,7 +58,7 @@ export function useFocusHash(): void {
 
     const isCommentHash = hash.startsWith('#user-comment-')
 
-    const focusOnce = (): boolean => {
+    const fire = (): boolean => {
       const target = document.querySelector<HTMLElement>(hash)
       if (target === null) {
         return false
@@ -57,29 +68,40 @@ export function useFocusHash(): void {
       const targetTop = rect.top + window.scrollY
       const distance = Math.abs(targetTop - window.scrollY)
 
-      const fire = () => {
+      const flash = () => {
         clearScrollListeners()
         if (isCommentHash) {
-          flashComment(target)
+          clearFlashTimeout()
+          // Reset the class first so the CSS animation restarts when
+          // re-targeting the same comment after a round-trip away from
+          // / back to the same hash.
+          setFlashingHash(null)
+          requestAnimationFrame(() => {
+            setFlashingHash(hash)
+            flashTimeoutRef.current = window.setTimeout(() => {
+              setFlashingHash(null)
+              flashTimeoutRef.current = undefined
+            }, FLASH_DURATION_MS)
+          })
         }
       }
 
       if (distance < NO_SCROLL_THRESHOLD_PX) {
-        fire()
+        flash()
         return true
       }
 
       window.scroll({ top: targetTop, left: 0, behavior: 'smooth' })
 
-      scrollEndHandler = fire
-      window.addEventListener('scrollend', fire, { once: true })
-      scrollSettleTimeoutId = window.setTimeout(fire, SCROLL_SETTLE_FALLBACK_MS)
+      scrollEndHandler = flash
+      window.addEventListener('scrollend', flash, { once: true })
+      scrollSettleTimeoutId = window.setTimeout(flash, SCROLL_SETTLE_FALLBACK_MS)
       return true
     }
 
-    if (!focusOnce()) {
+    if (!fire()) {
       observer = new MutationObserver(() => {
-        if (focusOnce()) {
+        if (fire()) {
           observer?.disconnect()
           observer = undefined
           if (targetWaitTimeoutId !== undefined) {
@@ -99,22 +121,7 @@ export function useFocusHash(): void {
       }
       clearScrollListeners()
     }
-  }, [hash])
-}
+  }, [hash, clearFlashTimeout])
 
-function flashComment(target: HTMLElement): void {
-  for (const node of document.querySelectorAll<HTMLElement>('article.comment-body')) {
-    node.classList.remove('active')
-  }
-  // The hash points at `<li id="user-comment-N">`; the visual flash
-  // lives on the `<article>` wrapper inside it so the highlight fills
-  // the full comment row including the avatar gutter.
-  const article = target.querySelector<HTMLElement>('article.comment-body')
-  if (article === null) {
-    return
-  }
-  // Force a reflow so the CSS animation restarts when re-targeting the
-  // same comment after a round-trip away from / back to the same hash.
-  void article.offsetWidth
-  article.classList.add('active')
+  return createElement(FlashingCommentHashContext.Provider, { value: flashingHash }, children)
 }

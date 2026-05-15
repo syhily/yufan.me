@@ -5,7 +5,7 @@ import { lazy, Suspense, useState } from 'react'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
-import { useFocusHash } from '@/client/hooks/use-focus-hash'
+import { FocusHashProvider } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
 import { bundleFromMatches, routeMeta } from '@/server/seo/meta'
 import { getRouteRequestContext } from '@/server/session'
@@ -174,7 +174,6 @@ export type RouteHandle = {
 }
 
 export default function App({ loaderData }: Route.ComponentProps) {
-  useFocusHash()
   useIosNoZoomOnFocus()
   useChunkErrorRecovery()
 
@@ -191,8 +190,10 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
         <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
-          <NavigationSplash />
-          <Outlet />
+          <FocusHashProvider>
+            <NavigationSplash />
+            <Outlet />
+          </FocusHashProvider>
         </BlogSettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>

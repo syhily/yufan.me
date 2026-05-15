@@ -85,12 +85,7 @@ function mountRoute(app: Hono<Env>, route: AppRoute, handler: (...args: unknown[
     }
 
     const result = (await handler({ params, query, body, headers }, ctx)) as HandlerReturn<AppRoute>
-    if (result.headers) {
-      for (const [key, value] of Object.entries(result.headers)) {
-        c.header(key, value, { append: true })
-      }
-    }
-    return c.json(result.body, result.status as any)
+    return safeJson(result.body, result.status, result.headers)
   })
 }
 
@@ -141,6 +136,16 @@ function headerObj(h: Headers): Record<string, string> {
 
 function normalizePath(p: string): string {
   return p.startsWith('/') ? p : `/${p}`
+}
+
+const bigintReplacer = (_: string, v: unknown) => (typeof v === 'bigint' ? Number(v) : v)
+
+function safeJson(data: unknown, status: number, headers?: Record<string, string>): Response {
+  const body = JSON.stringify(data, bigintReplacer)
+  return new Response(body, {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
+  })
 }
 
 /** Resolve entity ID from path param (:id) or legacy body/query. */

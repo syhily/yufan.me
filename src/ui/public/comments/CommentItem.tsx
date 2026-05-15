@@ -8,6 +8,7 @@ import type { CommentBody } from '@/shared/pt/comment-schema'
 import { api } from '@/client/api/client'
 import { useApiMutation, useApiQuery } from '@/client/api/query'
 import { unwrap } from '@/client/api/unwrap'
+import { useFlashingCommentHash } from '@/client/hooks/use-focus-hash'
 import { formatLocalDate } from '@/shared/formatter'
 import { safeHref } from '@/shared/safe-url'
 import { joinUrl } from '@/shared/urls'
@@ -188,9 +189,9 @@ function nestedCommentLiClass(): string {
 
 // `<article>` is not in reset.css, so the `display: flex`/min-width:0
 // chain travels without `important`. The `comment-body` literal is a
-// hook for `useFocusHash` which adds `.active` when the URL hash
-// targets this comment (`#user-comment-<id>`) so the flash animation
-// in `public.css` can replay.
+// hook for `FocusHashProvider` which sets `active` via
+// `useFlashingCommentHash` when the URL hash targets this comment
+// (`#user-comment-<id>`) so the flash animation in `public.css` can replay.
 const commentBodyClass = cn('comment-body', 'relative box-border flex max-w-full min-w-0 flex-1')
 
 const commentAuthorClass = cn('inline-flex max-w-full flex-wrap items-center gap-1.5', 'font-bold')
@@ -229,6 +230,7 @@ function commentContentClass(depth: number): string {
 
 function CommentLi({ comment, depth, pending, admin: propAdmin, children }: CommentLiProps) {
   const authorHref = safeHref(comment.link)
+  const flashingHash = useFlashingCommentHash()
   // `editing` is a small state machine — only one kind of editor can be
   // open at a time. `admin` opens the admin/legacy-token-backed
   // `<CommentEditArea>` (which round-trips through `comment.getRaw` /
@@ -242,13 +244,14 @@ function CommentLi({ comment, depth, pending, admin: propAdmin, children }: Comm
   const isOwnedByCurrentUser = leaf.currentUserId !== null && String(comment.userId) === leaf.currentUserId
   const hasPendingDelete = comment.deleteRequestedAt !== null && comment.deleteRequestedAt !== undefined
   const isPending = pending ?? comment.isPending ?? false
+  const isFlashing = flashingHash === `#user-comment-${comment.id}`
   return (
     <li
       id={`user-comment-${comment.id}`}
       className={depth === 1 ? rootCommentLiClass() : nestedCommentLiClass()}
       data-depth={depth}
     >
-      <article id={`div-comment-${comment.id}`} className={commentBodyClass}>
+      <article id={`div-comment-${comment.id}`} className={cn(commentBodyClass, isFlashing && 'active')}>
         <div
           className={commentAvatarClass(depth)}
           style={{
