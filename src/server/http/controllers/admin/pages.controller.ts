@@ -1,5 +1,4 @@
 import type { adminPagesContract } from '@/shared/contracts/admin/pages'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { renderPortableTextToHtml } from '@/server/cms/pages/preview'
 import {
@@ -27,12 +26,7 @@ import {
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
 
-interface PagesListQuery {
-  q?: string
-  deletedStatus?: 'all' | 'deleted' | 'normal'
-  offset?: number
-  limit?: number
-}
+import type { ContentDraftBody, ContentListQuery, ContentPreviewBody } from './content'
 
 interface UpsertPageMetaBody {
   id?: string
@@ -49,20 +43,9 @@ interface UpsertPageMetaBody {
   publishedAt?: string
 }
 
-interface PageDraftBody {
-  body: PortableTextBody
-  expectedClientRevisionToken?: string | null
-  force?: boolean
-  publishedAt?: string
-}
-
-interface PreviewBody {
-  body: PortableTextBody
-}
-
 export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   list: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const q = query<PagesListQuery>(args)
+    const q = query<ContentListQuery>(args)
     const result = await listPagesForAdmin({
       q: q.q,
       deletedStatus: q.deletedStatus,
@@ -130,7 +113,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const b = body<PageDraftBody>(args)
+    const b = body<ContentDraftBody>(args)
     const result = await saveDraft({
       pageId: asId(id),
       body: b.body,
@@ -144,7 +127,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const b = body<PageDraftBody>(args)
+    const b = body<ContentDraftBody>(args)
     const result = await publishLatest({
       pageId: asId(id),
       body: b.body,
@@ -163,7 +146,7 @@ export const adminPagesController: ContractImpl<typeof adminPagesContract> = {
   },
 
   preview: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const b = body<PreviewBody>(_args)
+    const b = body<ContentPreviewBody>(_args)
     const html = await renderPortableTextToHtml(b.body)
     const headings = collectHeadings(b.body, deriveSlug)
     return ok({ html, headings })

@@ -1,5 +1,4 @@
 import type { adminPostsContract } from '@/shared/contracts/admin/posts'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { renderPortableTextToHtml } from '@/server/cms/posts/preview'
 import {
@@ -27,19 +26,7 @@ import {
 import { deriveSlug } from '@/server/slug'
 import { collectHeadings } from '@/shared/pt/schema'
 
-interface PostsListQuery {
-  q?: string
-  deletedStatus?: 'all' | 'deleted' | 'normal'
-  offset?: number
-  limit?: number
-  category?: string
-  tag?: string
-  published?: boolean
-  visible?: boolean
-  sortBy?: 'publishedAt' | 'updatedAt'
-  sortOrder?: 'asc' | 'desc'
-  authorId?: bigint
-}
+import type { ContentDraftBody, ContentListQuery, ContentPreviewBody } from './content'
 
 interface UpsertPostMetaBody {
   id?: string
@@ -60,21 +47,12 @@ interface UpsertPostMetaBody {
   alias?: string[]
 }
 
-interface PostDraftBody {
-  body: PortableTextBody
-  expectedClientRevisionToken?: string | null
-  force?: boolean
-  publishedAt?: string
-}
-
-interface PreviewBody {
-  body: PortableTextBody
-}
+// PostDraftBody and PreviewBody are now ContentDraftBody / ContentPreviewBody from ./content
 
 export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
   list: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
-    const q = query<PostsListQuery>(args)
+    const q = query<ContentListQuery>(args)
     const result = await listPostsForAdmin(
       {
         q: q.q,
@@ -162,7 +140,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
   saveDraft: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const b = body<PostDraftBody>(args)
+    const b = body<ContentDraftBody>(args)
     const result = await saveDraft(
       {
         postId: asId(id),
@@ -179,7 +157,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
   publish: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const viewer = requireViewer(ctx)
     const id = resolveId(args)
-    const b = body<PostDraftBody>(args)
+    const b = body<ContentDraftBody>(args)
     const result = await publishLatest(
       {
         postId: asId(id),
@@ -202,7 +180,7 @@ export const adminPostsController: ContractImpl<typeof adminPostsContract> = {
   },
 
   preview: async (_args: Record<string, unknown>, _ctx: HandlerContext) => {
-    const b = body<PreviewBody>(_args)
+    const b = body<ContentPreviewBody>(_args)
     const html = await renderPortableTextToHtml(b.body)
     const headings = collectHeadings(b.body, deriveSlug)
     return ok({ html, headings })
