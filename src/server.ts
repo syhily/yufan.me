@@ -11,10 +11,12 @@ import { requestContext, sessionContext } from '@/server/auth/context'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/install-gate'
+import { findLegacyRedirect } from '@/server/http/legacy-redirects'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
 import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
+import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
@@ -51,18 +53,20 @@ const server = await createHonoServer<Env>({
     app.get('/health', (c) => c.json({ status: 'ok' }))
     app.get('/ready', (c) => c.json({ status: 'ok' }))
 
-    // Legacy API redirect — /api/actions/* was the old RPC prefix.
-    // GET requests are forwarded with their query string; mutations return
-    // 410 because body parameters cannot survive a cross-style redirect.
+    // Legacy `/api/actions/*` redirects. The new contract paths are
+    // resource-style (`/api/admin/users`) and don't share a syntactic
+    // transform with the old camelCase RPC names, so we look the path
+    // up in an explicit table (see legacy-redirects.ts). Unknown
+    // legacy paths return 410 Gone — preferable to a 404 because the
+    // wire signal is "this endpoint moved, refresh your client".
     app.all('/api/actions/*', (c) => {
-      if (c.req.method === 'GET' || c.req.method === 'HEAD') {
-        const url = new URL(c.req.url)
-        const legacyPath = url.pathname.replace(/^\/api\/actions\//, '/api/')
-        const kebabPath = legacyPath.replace(/\/([a-z]+)([A-Z])/g, '/$1-$2').toLowerCase()
-        url.pathname = kebabPath
-        return c.redirect(url.toString(), 301)
+      const url = new URL(c.req.url)
+      const match = findLegacyRedirect(url.pathname)
+      if (!match) {
+        return c.json({ error: { message: '旧版 API 已停用，请改用 REST 契约端点。' } }, 410)
       }
-      return c.json({ error: { message: '旧版 API 已停用，请改用 REST 契约端点。' } }, 410)
+      url.pathname = match.target
+      return c.redirect(url.toString(), match.status)
     })
 
     // ─── API (ts-rest contracts) ────────────────────────
@@ -73,17 +77,7 @@ const server = await createHonoServer<Env>({
     app.route('/', feedRouter)
     app.route('/', imagesRouter)
     app.route('/', sitemapRouter)
-
-    // Legacy RR redirects now served by Hono
-    app.get('/tags', (c) => {
-      c.header('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable')
-      return c.redirect('/', 301)
-    })
-    app.get('/search', (c) => {
-      const query = c.req.query('q')?.trim() ?? ''
-      c.header('Cache-Control', 'public, max-age=86400, s-maxage=604800, immutable')
-      return c.redirect(query ? `/search/${encodeURIComponent(query)}` : '/', 301)
-    })
+    app.route('/', redirectsRouter)
 
     if (process.env.NODE_ENV !== 'production') {
       app.get('/openapi.json', (c) => c.json(buildOpenApiDocument()))

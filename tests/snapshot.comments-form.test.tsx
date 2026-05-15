@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
 import type { CommentFormUser } from '@/shared/catalog'
-import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import { Comments } from '@/ui/public/comments/Comments'
@@ -60,9 +60,9 @@ describe('snapshot: Comments form variants', () => {
 
   it('offsets the reply textarea below the reply context overlay', () => {
     const replyTarget: CommentItemType = {
-      id: 42n,
-      createAt: new Date('2024-04-18T13:06:00.000Z'),
-      updatedAt: new Date('2024-04-18T13:06:00.000Z'),
+      id: '42',
+      createAt: '2024-04-18T13:06:00.000Z',
+      updatedAt: '2024-04-18T13:06:00.000Z',
       deleteAt: null,
       content: null,
       body: [
@@ -74,8 +74,8 @@ describe('snapshot: Comments form variants', () => {
         },
       ],
       type: 'post' as const,
-      ownerId: 1n,
-      userId: 1n,
+      ownerId: '1',
+      userId: '1',
       isVerified: true,
       ua: '',
       ip: '',
@@ -85,7 +85,7 @@ describe('snapshot: Comments form variants', () => {
       isPinned: false,
       voteUp: 0,
       voteDown: 0,
-      rootId: 1n,
+      rootId: '1',
       name: '雨帆',
       email: 'admin@yufan.me',
       emailVerified: true,

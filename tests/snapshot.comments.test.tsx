@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { CommentItem as CommentItemType } from '@/shared/comments'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/_dtos'
 
 import { Comment } from '@/ui/public/comments/Comment'
 import { CommentItem } from '@/ui/public/comments/CommentItem'
@@ -9,9 +9,9 @@ import { renderInRouter } from './_helpers/render'
 
 function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType {
   return {
-    id: 1n,
-    createAt: new Date('2024-01-15T08:30:00.000Z'),
-    updatedAt: new Date('2024-01-15T08:30:00.000Z'),
+    id: '1',
+    createAt: '2024-01-15T08:30:00.000Z',
+    updatedAt: '2024-01-15T08:30:00.000Z',
     deleteAt: null,
     content: null,
     body: [
@@ -23,8 +23,8 @@ function makeComment(overrides: Partial<CommentItemType> = {}): CommentItemType 
       },
     ],
     type: 'post' as const,
-    ownerId: 1n,
-    userId: 42n,
+    ownerId: '1',
+    userId: '42',
     isVerified: true,
     ua: '',
     ip: '',
@@ -86,9 +86,9 @@ describe('snapshot: comment HTML', () => {
 
   it('root comment with one nested child, admin viewer (edit/delete buttons)', () => {
     const child = makeComment({
-      id: 2n,
+      id: '2',
       rid: 1,
-      rootId: 1n,
+      rootId: '1',
       name: 'Bob',
       link: null,
       content: '<p>Reply.</p>',
@@ -107,7 +107,7 @@ describe('snapshot: comment HTML', () => {
 
   it('rendered list of two siblings', () => {
     const html = renderInRouter(
-      <Comment comments={[makeComment({ id: 1n }), makeComment({ id: 2n, name: 'Bob' })]} admin={false} />,
+      <Comment comments={[makeComment({ id: '1' }), makeComment({ id: '2', name: 'Bob' })]} admin={false} />,
     )
     expect(html).toMatchSnapshot()
   })

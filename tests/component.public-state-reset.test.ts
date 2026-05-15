@@ -1,21 +1,21 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { CommentItem } from '@/shared/comments'
+import type { CommentItemWire } from '@/shared/contracts/_dtos'
 
 import { commentTreeReducer, createCommentTreeState } from '@/ui/public/comments/Comments'
 import { applyLikeOptimistic, createLikeButtonState } from '@/ui/public/LikeActions'
 
-function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
+function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItemWire {
   return {
-    id,
-    createAt: new Date('2024-01-15T08:30:00.000Z'),
-    updatedAt: new Date('2024-01-15T08:30:00.000Z'),
+    id: String(id),
+    createAt: '2024-01-15T08:30:00.000Z',
+    updatedAt: '2024-01-15T08:30:00.000Z',
     deleteAt: null,
     content: null,
     body: [{ _type: 'block', _key: 'b1', style: 'normal', children: [{ _type: 'span', _key: 's1', text: 'Hello.' }] }],
     type: 'post',
-    ownerId,
-    userId: 42n,
+    ownerId: String(ownerId),
+    userId: '42',
     isVerified: true,
     ua: '',
     ip: '',
@@ -25,7 +25,7 @@ function makeComment(id: bigint, ownerId: bigint, name = 'Alice'): CommentItem {
     isPinned: false,
     voteUp: 0,
     voteDown: 0,
-    rootId: 0n,
+    rootId: '0',
     name,
     email: `${name.toLowerCase()}@example.com`,
     emailVerified: true,
@@ -70,7 +70,7 @@ describe('public detail island state reset', () => {
     })
 
     expect(state.replyToId).toBe(1)
-    expect(state.items.map((item) => item.ownerId)).toEqual([1n, 1n])
+    expect(state.items.map((item) => item.ownerId)).toEqual(['1', '1'])
 
     state = commentTreeReducer(state, {
       type: 'reset',
