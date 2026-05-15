@@ -52,7 +52,8 @@ server bundle and the client bundle stay independently reasonable.
 
 ```
 src/
-├── routes/           # Loader / action / meta / component orchestration.
+├── entry/             # Server entry point (Hono app).
+├── routes/            # Loader / action / meta / component orchestration.
 ├── server/           # SSR-only logic. DB, Redis, session, mail, cache, services.
 ├── client/           # Browser-side logic. Hooks, fetchers, browser APIs.
 ├── ui/               # Pure-props React components.
@@ -85,11 +86,15 @@ src/
 
 - Sub-areas (each owns its loader, schema, and helpers):
   - `server/db/` — Drizzle pool, schema, query helpers, migrations.
-  - `server/http/` + `server/route-helpers/` — Resource-route perimeter
-    (`runApi`, `defineApiAction`, `ok`, `fail`), cache-header profiles,
-    common response helpers.
-  - `server/middleware/` — React Router root middleware (request
-    context population, install gating, WordPress probe interception).
+  - `server/http/` — Hono + ts-rest API perimeter (contracts, controllers,
+    guards, resources, OpenAPI). See "API Layer" section below.
+  - `server/route-helpers/` — Legacy API perimeter (`runApi`,
+    `defineApiAction`, `ok`, `fail`), cache-header profiles, common
+    response helpers. New endpoints use `server/http/` instead.
+  - `server/middleware/` — Hono global middleware chain (request id,
+    client address, session, install gate, visitor cookie, WordPress
+    probe interception). Hono-native (`*-hono.ts`) alongside legacy
+    React Router middleware.
   - `server/auth/` + `server/session.ts` — Cookie session, CSRF,
     request context, login flow. `tests/contract.cookie.test.ts` treats
     these file paths as a contract; keep them in sync.
@@ -111,9 +116,71 @@ src/
 - May import from `shared/` and other `server/`. Must not import from
   `client/` or `ui/`.
 
+### Server HTTP Layer (`src/server/http/`)
+
+Hono serves as the HTTP perimeter. All non-page requests flow through
+ts-rest contracts; React Router handles SSR pages via a catch-all.
+
+- `server/http/context.ts` — Hono `Env` type (requestId, clientAddress,
+  session, sessionDirty, viewer).
+- `server/http/ts-rest-adapter.ts` — Contract-to-Hono-route adapter.
+  Validates path params / query / body against Zod schemas from the
+  contract and maps errors to `HTTPException`.
+- `server/http/guards.ts` — RBAC middleware factories: `publicRoute`,
+  `authedRoute`, `adminRoute`, `authorRoute`. Auth is declared at mount
+  time; the controller handler receives a guaranteed non-null viewer.
+- `server/http/errors.ts` — `onErrorHandler` mapping `HTTPException` /
+  `DomainError` / `ZodError` to JSON error responses.
+- `server/http/controllers/` — Contract implementations. Each controller
+  object satisfies `ContractImpl<typeof contract>`. Handlers receive
+  `(args: Record<string, unknown>, ctx: HandlerContext)` and return
+  `{ status, body }`. Business logic lives in domain services — controllers
+  only orchestrate service calls.
+- `server/http/resources/` — Non-JSON endpoints (feed XML, sitemap XML,
+  SSE event streams, redirects) mounted as plain Hono routers.
+- `server/http/app.ts` — `createApiApp()` composing all contracts with
+  their guard levels. The single file to audit API permissions.
+- `server/http/openapi.ts` — Auto-generated OpenAPI spec from the
+  contract tree, exposed at `/openapi.json` and `/docs` (dev only).
+
+### API Layer: Contracts, Controllers, Guards
+
+Three-layer pattern for every API domain:
+
+1. **Contract** (`shared/contracts/<domain>.ts`): defines method, path,
+   Zod input/output schemas, status codes, and summary. Uses
+   `initContract()` from `@ts-rest/core`. Served under `/api/*`.
+
+2. **Controller** (`server/http/controllers/<domain>.controller.ts`):
+   implements the contract. Each key matches a contract endpoint.
+   Orchestrates domain service calls; never contains business logic.
+
+3. **Guard** (`server/http/guards.ts`): RBAC middleware injected at
+   mount time in `app.ts`. `publicRoute` (no auth), `authedRoute` (any
+   logged-in user), `adminRoute` / `authorRoute` (role-gated).
+
+URL naming conventions:
+
+- `/<resources>` GET → list, `/<resources>/:id` GET → get
+- `/<resources>` POST → create, `/<resources>/:id` PATCH → update
+- `/<resources>/:id` DELETE → soft delete
+- `/<resources>/:id/<verb>` POST/PATCH → state transition
+
+Error responses follow `{ error: { message, issues? } }` shape defined
+in `shared/contracts/_errors.ts`.
+
+### Permission Matrix
+
+Open `server/http/app.ts` — every contract mount line declares the
+required role, making the full API security policy visible in one file.
+
 ### `src/client/` — Browser Only
 
 - Hooks, `useApiFetcher`, the `API_ACTIONS` manifest + types.
+- `client/api/client.ts` — ts-rest `initClient(apiContract)` singleton
+  for type-safe API calls from the browser.
+- `client/api/unwrap.ts` — Response unwrap helper that throws `ApiError` on
+  non-2xx statuses.
 - Heavy widgets (e.g. `qrcode.react`) reach the bundle through
   React.lazy + Suspense from a UI component, not via top-level imports
   (see `bundle-dynamic-imports`).
@@ -184,7 +251,7 @@ src/
   caller already exist. Anything that needs `pg` / `ioredis` / `node:*`
   belongs in `server/`.
 - See `src/shared/` for the authoritative list. Notable groupings:
-  wire & primitives (`api-actions`, `api-envelope`, `api-types`,
+  contracts (`contracts/` — ts-rest API contracts, the single source of truth for the API surface); wire & primitives (`api-actions`, `api-envelope`, `api-types`,
   `urls`, `safe-url`, `request`, `security`, `tools`, `formatter`,
   `toc`, `images`, `pagination`); per-domain DTOs (`categories`,
   `comments`, `friends`, `music`, `socials`, `tags`, `users`,
@@ -695,6 +762,12 @@ These are landmines from past refactors. Do not reintroduce them.
 - No `@/ui/admin/shadcn/components/ui/` nesting. shadcn primitives live
   at `@/ui/components/`; admin domain UIs at `@/ui/admin/`.
 - Keep server-only imports inside `src/server/` (or behind dynamic
+- Do not write business logic in controllers — only orchestrate service calls.
+- Do not throw HTTPException from services — throw DomainError, mapped by onError.
+- Do not bypass apiContract for API routes — use ts-rest contracts exclusively.
+- Do not use string fetch("/api/...") in client code — use the api client singleton.
+- Do not add Hono routes directly to the main app for JSON endpoints — use the
+  contract + controller + guard pattern.
   imports inside loaders/actions/resource routes if the call site must
   live elsewhere).
 - Preserve public URLs, feed URLs, image endpoints, WordPress

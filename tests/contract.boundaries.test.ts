@@ -804,6 +804,17 @@ describe('contract: module and bundle boundaries', () => {
       if (file.startsWith('src/ui/admin/editor/tiptap/block-cards/') && specifier.startsWith('./')) {
         return true
       }
+      // Internal relative imports within these tightly-coupled directories
+      // that form a single logical module are intentional.
+      if (file.startsWith('src/shared/contracts/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
+        return true
+      }
+      if (file.startsWith('src/server/http/') && specifier.startsWith('./')) {
+        return true
+      }
+      if (file.startsWith('src/client/api/') && specifier.startsWith('./')) {
+        return true
+      }
       return false
     }
 

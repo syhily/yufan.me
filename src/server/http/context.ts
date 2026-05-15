@@ -1,15 +1,12 @@
-import 'react-router'
 import type { ViewerContext } from '@/server/auth/rbac'
 import type { BlogSession } from '@/server/session'
 
-declare module 'react-router' {
-  interface Future {
-    v8_middleware: true
-  }
-
-  interface AppLoadContext {
-    session: BlogSession
-    viewer: ViewerContext | null
+export type Env = {
+  Variables: {
+    requestId: string
     clientAddress: string
+    session: BlogSession
+    sessionDirty: boolean
+    viewer: ViewerContext | null
   }
 }
