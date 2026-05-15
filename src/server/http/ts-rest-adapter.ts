@@ -146,5 +146,5 @@ export function resolveId(args: Record<string, unknown>): string {
   if (q?.userId) {
     return q.userId
   }
-  return ''
+  throw new HTTPException(400, { message: '缺少资源 ID (path param :id 或 body/query 中的 id/userId)' })
 }

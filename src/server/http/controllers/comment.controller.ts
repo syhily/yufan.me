@@ -2,7 +2,7 @@ import type { CommentReq } from '@/shared/comments'
 import type { commentContract } from '@/shared/contracts/comment'
 
 import { AvatarStatus, cacheAvatar } from '@/server/cache/avatar'
-import { updateComment } from '@/server/comments/admin'
+import { updateComment, updateOwnComment } from '@/server/comments/admin'
 import { decreaseLikes, increaseLikes, queryLikes } from '@/server/comments/likes'
 import { createComment, loadComments, parseComments } from '@/server/comments/loader'
 import {
@@ -12,7 +12,12 @@ import {
   revokeCommentToken,
   verifyCommentOwnership,
 } from '@/server/comments/token'
-import { findCommentWithUserById } from '@/server/db/query/comment'
+import {
+  findCommentWithUserById,
+  requestDeleteComment,
+  listMyComments,
+  countMyComments,
+} from '@/server/db/query/comment'
 import { findMetricByPublicId } from '@/server/db/query/metric'
 import { findUserIdByEmail } from '@/server/db/query/user'
 import { type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
@@ -204,7 +209,6 @@ export const commentController: ContractImpl<typeof commentContract> = {
     if (!sessionUser) {
       return { status: 401, body: { error: { message: '未登录' } } }
     }
-    const { updateOwnComment } = await import('@/server/comments/admin')
     const updated = await updateOwnComment(body.rid, body.body as Parameters<typeof updateOwnComment>[1])
     if (!updated) {
       return { status: 500, body: { error: { message: '更新评论失败' } } }
@@ -218,7 +222,6 @@ export const commentController: ContractImpl<typeof commentContract> = {
     if (!sessionUser) {
       return { status: 401, body: { error: { message: '未登录' } } }
     }
-    const { requestDeleteComment } = await import('@/server/db/query/comment')
     await requestDeleteComment(BigInt(body.rid), BigInt(sessionUser.id))
     return { status: 200, body: { success: true } }
   },
@@ -239,7 +242,6 @@ export const commentController: ContractImpl<typeof commentContract> = {
       return { status: 401, body: { error: { message: '未登录' } } }
     }
     const query = args.query as { offset?: number; limit?: number }
-    const { listMyComments, countMyComments } = await import('@/server/db/query/comment')
     const comments = await listMyComments(BigInt(sessionUser.id), query.offset ?? 0, query.limit ?? 20)
     const total = await countMyComments(BigInt(sessionUser.id))
     return { status: 200, body: { comments: comments as unknown[], total } }
