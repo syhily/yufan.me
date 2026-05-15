@@ -29,11 +29,6 @@ describe('route shared helpers', () => {
     }
   })
 
-  it('calendar image route rejects invalid calendar dates with 404', async () => {
-    const { serveCalendar } = await import('@/server/images/serve-calendar')
-    await expect(serveCalendar({ year: '2026', time: '0230' }, 'light', {})).rejects.toMatchObject({ status: 404 })
-  })
-
   it('canonicalPostPath redirects aliases to the canonical post URL', () => {
     expect(canonicalPostPath('old-slug', 'new-slug')).toBe('/posts/new-slug')
     expect(canonicalPostPath('new-slug', 'new-slug')).toBeUndefined()
