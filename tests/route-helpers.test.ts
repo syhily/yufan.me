@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { loader as calendarLoader } from '@/routes/image.calendar'
 import { notFound, pngResponse } from '@/server/route-helpers/http'
 import { listingSeo } from '@/server/route-helpers/listing-seo'
 import { parsePageNum, redirectListingOverflow } from '@/server/route-helpers/pagination'
@@ -31,12 +30,8 @@ describe('route shared helpers', () => {
   })
 
   it('calendar image route rejects invalid calendar dates with 404', async () => {
-    await expect(
-      calendarLoader({
-        params: { year: '2026', time: '0230' },
-        request: new Request('http://localhost/images/calendar/2026/0230.png'),
-      } as never),
-    ).rejects.toMatchObject({ status: 404 })
+    const { serveCalendar } = await import('@/server/images/serve-calendar')
+    await expect(serveCalendar({ year: '2026', time: '0230' }, 'light', {})).rejects.toMatchObject({ status: 404 })
   })
 
   it('canonicalPostPath redirects aliases to the canonical post URL', () => {

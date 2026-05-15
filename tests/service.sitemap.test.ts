@@ -19,18 +19,18 @@ vi.mock('@/server/pages/query', () => ({
   listAllPages: mocks.listAllPages,
 }))
 
-const { loader } = await import('@/routes/sitemap')
+const { sitemapRouter } = await import('@/server/http/resources/sitemap')
 
 function fakeCatalog(opts: { posts: ReturnType<typeof makePost>[]; pages: ReturnType<typeof makePage>[] }) {
   mocks.listAllPosts.mockResolvedValue(opts.posts)
   mocks.listAllPages.mockResolvedValue(opts.pages)
 }
 
-describe('routes/sitemap loader', () => {
+describe('routes/sitemap handler', () => {
   it('emits a well-formed XML envelope with the canonical Cache-Control', async () => {
     fakeCatalog({ posts: [], pages: [] })
 
-    const response = await loader({ request: new Request('http://x/sitemap.xml') } as never)
+    const response = await sitemapRouter.request('http://x/sitemap.xml')
 
     expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8')
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600')
@@ -65,7 +65,7 @@ describe('routes/sitemap loader', () => {
       ],
     })
 
-    const response = await loader({ request: new Request('http://x/sitemap.xml') } as never)
+    const response = await sitemapRouter.request('http://x/sitemap.xml')
     const xml = await response.text()
 
     expect(xml).toContain('<loc>https://yufan.me/posts/p1</loc>')
@@ -79,7 +79,7 @@ describe('routes/sitemap loader', () => {
     mocks.listAllPosts.mockResolvedValue([])
     mocks.listAllPages.mockResolvedValue([])
 
-    await loader({ request: new Request('http://x/sitemap.xml') } as never)
+    await sitemapRouter.request('http://x/sitemap.xml')
 
     expect(mocks.listAllPosts).toHaveBeenCalledWith({
       includeHidden: true,

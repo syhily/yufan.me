@@ -40,17 +40,17 @@ vi.mock('@/server/pages/query', () => ({
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? samplePage : null)),
 }))
 
-const { loader: ogLoader } = await import('@/routes/image.og')
+const { imagesRouter } = await import('@/server/http/resources/images')
 
-describe('routes/image.og loader', () => {
+describe('routes/images OG handler', () => {
   it('falls back (302 to /images/open-graph.png) when slug is empty', async () => {
-    const res = await ogLoader({ params: {} } as never)
+    const res = await imagesRouter.request('http://localhost/images/og/.png')
     expect(res.status).toBe(302)
     expect(res.headers.get('location')).toContain('open-graph.png')
   })
 
   it("falls back (302) when slug doesn't match any post or page", async () => {
-    const res = await ogLoader({ params: { slug: 'missing' } } as never)
+    const res = await imagesRouter.request('http://localhost/images/og/missing.png')
     expect(res.status).toBe(302)
     expect(res.headers.get('location')).toContain('open-graph.png')
   })
@@ -58,7 +58,7 @@ describe('routes/image.og loader', () => {
   it('returns the rendered OG PNG with the immutable cache header for a real post', async () => {
     drawOpenGraphMock.mockClear()
     loadBufferMock.mockClear()
-    const res = await ogLoader({ params: { slug: 'hello' } } as never)
+    const res = await imagesRouter.request('http://localhost/images/og/hello.png')
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toContain('image/png')
     expect(res.headers.get('cache-control')).toContain('immutable')
@@ -67,7 +67,7 @@ describe('routes/image.og loader', () => {
 
   it('returns the rendered OG PNG for a page (uses page.title + fallback summary)', async () => {
     drawOpenGraphMock.mockClear()
-    const res = await ogLoader({ params: { slug: 'about' } } as never)
+    const res = await imagesRouter.request('http://localhost/images/og/about.png')
     expect(res.status).toBe(200)
     expect(drawOpenGraphMock).toHaveBeenCalled()
   })
@@ -75,11 +75,9 @@ describe('routes/image.og loader', () => {
 
 // Avatar route uses fetch + DB; do a single contract test for the empty-hash
 // fallback case which is dependency-free.
-const { loader: avatarLoader } = await import('@/routes/image.avatar')
-
-describe('routes/image.avatar loader', () => {
+describe('routes/images avatar handler', () => {
   it('redirects to /images/default-avatar.png when hash is missing', async () => {
-    const res = await avatarLoader({ params: {} } as never)
+    const res = await imagesRouter.request('http://localhost/images/avatar/.png')
     expect(res.status).toBe(302)
     expect(res.headers.get('location')).toContain('default-avatar.png')
   })

@@ -4,11 +4,10 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 // the route surface without exercising the catalog / XML envelope (those are
 // covered separately by the `service.feed.*` test).
 //
-// Six public feed URLs share two route modules (`feed.rss.ts`, `feed.atom.ts`)
-// after the route-merge refactor. The shared `scopeFromUrl` helper figures
-// out whether a request is for the root, a category, or a tag based on the
-// pathname — so the test exercises all six URLs through the surviving two
-// loaders.
+// Six public feed URLs are served by the Hono feedRouter. The shared
+// `scopeFromUrl` helper figures out whether a request is for the root, a
+// category, or a tag based on the pathname — so the test exercises all six
+// URLs through the same router.
 
 const feedResponseMock = vi.fn(
   async (kind: string) =>
@@ -24,57 +23,50 @@ vi.mock('@/server/feed', () => ({
   generateFeeds: vi.fn(),
 }))
 
-const { loader: rssLoader } = await import('@/routes/feed.rss')
+const { feedRouter } = await import('@/server/http/resources/feed')
 const { scopeFromUrl } = await import('@/server/feed/scope')
-const { loader: atomLoader } = await import('@/routes/feed.atom')
 
-const callRss = (url: string, params: Record<string, string | undefined> = {}) =>
-  rssLoader({ request: new Request(url), params } as never)
-
-const callAtom = (url: string, params: Record<string, string | undefined> = {}) =>
-  atomLoader({ request: new Request(url), params } as never)
-
-describe('routes/feed loaders', () => {
+describe('routes/feed Hono router', () => {
   it("/feed delegates to feedResponse('rss') without a scope", async () => {
     feedResponseMock.mockClear()
-    await callRss('http://localhost/feed')
+    await feedRouter.request('http://localhost/feed')
     expect(feedResponseMock).toHaveBeenCalledWith('rss', undefined)
   })
 
   it("/feed/atom delegates to feedResponse('atom') without a scope", async () => {
     feedResponseMock.mockClear()
-    await callAtom('http://localhost/feed/atom')
+    await feedRouter.request('http://localhost/feed/atom')
     expect(feedResponseMock).toHaveBeenCalledWith('atom', undefined)
   })
 
-  it('/cats/:slug/feed delegates with category scoped to params.slug', async () => {
+  it('/cats/:slug/feed delegates with category scoped to the slug param', async () => {
     feedResponseMock.mockClear()
-    await callRss('http://localhost/cats/general/feed', { slug: 'general' })
+    await feedRouter.request('http://localhost/cats/general/feed')
     expect(feedResponseMock).toHaveBeenCalledWith('rss', { category: 'general' })
   })
 
-  it('/cats/:slug/feed/atom delegates with category scoped to params.slug', async () => {
+  it('/cats/:slug/feed/atom delegates with category scoped to the slug param', async () => {
     feedResponseMock.mockClear()
-    await callAtom('http://localhost/cats/general/feed/atom', { slug: 'general' })
+    await feedRouter.request('http://localhost/cats/general/feed/atom')
     expect(feedResponseMock).toHaveBeenCalledWith('atom', { category: 'general' })
   })
 
-  it('/tags/:slug/feed delegates with tag scoped to params.slug', async () => {
+  it('/tags/:slug/feed delegates with tag scoped to the slug param', async () => {
     feedResponseMock.mockClear()
-    await callRss('http://localhost/tags/typescript/feed', { slug: 'typescript' })
+    await feedRouter.request('http://localhost/tags/typescript/feed')
     expect(feedResponseMock).toHaveBeenCalledWith('rss', { tag: 'typescript' })
   })
 
-  it('/tags/:slug/feed/atom delegates with tag scoped to params.slug', async () => {
+  it('/tags/:slug/feed/atom delegates with tag scoped to the slug param', async () => {
     feedResponseMock.mockClear()
-    await callAtom('http://localhost/tags/typescript/feed/atom', { slug: 'typescript' })
+    await feedRouter.request('http://localhost/tags/typescript/feed/atom')
     expect(feedResponseMock).toHaveBeenCalledWith('atom', { tag: 'typescript' })
   })
 
   it('the response carries the canonical feed content-type headers', async () => {
-    const rss = await callRss('http://localhost/feed')
+    const rss = await feedRouter.request('http://localhost/feed')
     expect(rss.headers.get('content-type')).toContain('rss+xml')
-    const atom = await callAtom('http://localhost/feed/atom')
+    const atom = await feedRouter.request('http://localhost/feed/atom')
     expect(atom.headers.get('content-type')).toContain('atom+xml')
   })
 })

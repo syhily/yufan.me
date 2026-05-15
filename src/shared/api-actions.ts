@@ -138,7 +138,6 @@ export const API_ACTIONS = {
     views: defineApiAction('api/actions/analytics/views', 'GET'),
     heatmap: defineApiAction('api/actions/analytics/heatmap', 'GET'),
     metrics: defineApiAction('api/actions/analytics/metrics', 'GET'),
-    events: defineApiAction('api/actions/analytics/events', 'GET'),
   },
 } as const
 
