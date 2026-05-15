@@ -123,6 +123,38 @@ export const commentContract = c.router(
       },
       summary: '撤销编辑 token',
     },
+
+    updateOwn: {
+      method: 'POST',
+      path: '/comment/own',
+      body: z.object({ rid: z.string(), body: z.unknown() }),
+      responses: { 200: z.object({ comment: z.unknown() }), ...standardMutationErrors },
+      summary: '用户编辑自己的评论',
+    },
+
+    requestDeleteOwn: {
+      method: 'POST',
+      path: '/comment/own/delete',
+      body: z.object({ rid: z.string() }),
+      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      summary: '用户请求删除自己的评论',
+    },
+
+    cancelDeleteOwn: {
+      method: 'DELETE',
+      path: '/comment/own/delete',
+      body: z.object({ rid: z.string() }),
+      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      summary: '用户取消评论删除请求',
+    },
+
+    listMine: {
+      method: 'GET',
+      path: '/comment/my',
+      query: z.object({ offset: z.coerce.number().optional(), limit: z.coerce.number().optional() }),
+      responses: { 200: z.object({ comments: z.array(z.unknown()), total: z.number() }), ...standardReadErrors },
+      summary: '用户自己的评论列表',
+    },
   },
   { strictStatusCodes: true },
 )

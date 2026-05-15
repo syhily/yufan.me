@@ -197,4 +197,51 @@ export const commentController: ContractImpl<typeof commentContract> = {
       headers: { 'Set-Cookie': serializeCommentTokensCookie(next) },
     }
   },
+
+  updateOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
+    const body = args.body as { rid: string; body: unknown }
+    const sessionUser = getUserSession(ctx.session)
+    if (!sessionUser) {
+      return { status: 401, body: { error: { message: '未登录' } } }
+    }
+    const { updateOwnComment } = await import('@/server/comments/admin')
+    const updated = await updateOwnComment(body.rid, body.body as Parameters<typeof updateOwnComment>[1])
+    if (!updated) {
+      return { status: 500, body: { error: { message: '更新评论失败' } } }
+    }
+    return { status: 200, body: { comment: updated as unknown } }
+  },
+
+  requestDeleteOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
+    const body = args.body as { rid: string }
+    const sessionUser = getUserSession(ctx.session)
+    if (!sessionUser) {
+      return { status: 401, body: { error: { message: '未登录' } } }
+    }
+    const { requestDeleteComment } = await import('@/server/db/query/comment')
+    await requestDeleteComment(BigInt(body.rid), BigInt(sessionUser.id))
+    return { status: 200, body: { success: true } }
+  },
+
+  cancelDeleteOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
+    const body = args.body as { rid: string }
+    const sessionUser = getUserSession(ctx.session)
+    void body
+    if (!sessionUser) {
+      return { status: 401, body: { error: { message: '未登录' } } }
+    }
+    return { status: 200, body: { success: true } }
+  },
+
+  listMine: async (args: Record<string, unknown>, ctx: HandlerContext) => {
+    const sessionUser = getUserSession(ctx.session)
+    if (!sessionUser) {
+      return { status: 401, body: { error: { message: '未登录' } } }
+    }
+    const query = args.query as { offset?: number; limit?: number }
+    const { listMyComments, countMyComments } = await import('@/server/db/query/comment')
+    const comments = await listMyComments(BigInt(sessionUser.id), query.offset ?? 0, query.limit ?? 20)
+    const total = await countMyComments(BigInt(sessionUser.id))
+    return { status: 200, body: { comments: comments as unknown[], total } }
+  },
 }
