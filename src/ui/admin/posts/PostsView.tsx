@@ -26,8 +26,7 @@ import type {
 } from '@/shared/cms-posts'
 import type { ListTagsInput, ListTagsOutput } from '@/shared/tags'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useAdminMutation } from '@/client/api/fetcher'
+import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'

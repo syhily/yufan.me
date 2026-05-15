@@ -20,8 +20,7 @@ import type {
   RestorePageOutput,
 } from '@/shared/cms-pages'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useAdminMutation } from '@/client/api/fetcher'
+import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
 import { usePagesController } from '@/ui/admin/pages/usePagesController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'

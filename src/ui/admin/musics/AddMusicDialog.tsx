@@ -10,8 +10,7 @@ import type {
   SearchMusicOutput,
 } from '@/shared/music'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useAdminMutation } from '@/client/api/fetcher'
+import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,

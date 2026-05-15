@@ -1,6 +1,6 @@
 import type { ShouldRevalidateFunctionArgs } from 'react-router'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
+import { API_ACTIONS } from '@/client/api/fetcher'
 
 const COMMENT_ACTION_PATHS: ReadonlySet<string> = new Set(
   Object.values(API_ACTIONS.comment).map((action) => action.path),

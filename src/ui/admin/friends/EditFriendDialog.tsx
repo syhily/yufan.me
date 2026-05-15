@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import type { AdminFriendDto, UpsertFriendInput, UpsertFriendOutput } from '@/shared/friends'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useAdminMutation } from '@/client/api/fetcher'
+import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
 import { buildPublicBaseUrlFromStorage, extractFriendHostSafe } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'

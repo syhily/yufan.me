@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { AdminMusicDto, ListMusicInput, ListMusicOutput } from '@/shared/music'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'

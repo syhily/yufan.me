@@ -11,8 +11,7 @@ import type {
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
 import { Button } from '@/ui/components/button'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
 import { CommentItem } from '@/ui/public/comments/CommentItem'

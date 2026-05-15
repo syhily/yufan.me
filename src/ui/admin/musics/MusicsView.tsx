@@ -18,8 +18,7 @@ import type {
   ListMusicOutput,
 } from '@/shared/music'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useAdminMutation } from '@/client/api/fetcher'
+import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
 import { AddMusicDialog } from '@/ui/admin/musics/AddMusicDialog'
 import { EditMusicDialog } from '@/ui/admin/musics/EditMusicDialog'
 import { FloatingMusicPlayer, type FloatingMusicPlayerTrack } from '@/ui/admin/musics/FloatingMusicPlayer'

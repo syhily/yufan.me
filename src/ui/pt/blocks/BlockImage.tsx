@@ -2,7 +2,7 @@ import type { ImgHTMLAttributes, Ref } from 'react'
 
 import { useEffect, useState } from 'react'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
+import { API_ACTIONS } from '@/client/api/fetcher'
 import { useThumbhashBackground } from '@/client/hooks/use-thumbhash-bg'
 import { getImageSrcset } from '@/shared/images'
 import { useAssetsSettings } from '@/ui/lib/blog-config-context'

@@ -4,8 +4,7 @@ import { useFetcher } from 'react-router'
 
 import type { ApiEnvelope } from '@/shared/api-envelope'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useFetcherResult } from '@/client/api/fetcher'
+import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
 import { Button } from '@/ui/components/button'
 import {
   Dialog,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
+import { API_ACTIONS } from '@/client/api/fetcher'
 import { ErrorMessages } from '@/server/route-helpers/errors'
 import { commentAwareRevalidate, isCommentAction } from '@/server/route-helpers/revalidate'
 import { safeHref, safeRedirectPath } from '@/shared/safe-url'

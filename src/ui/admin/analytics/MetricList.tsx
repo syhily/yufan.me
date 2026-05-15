@@ -2,8 +2,7 @@ import { useEffect } from 'react'
 
 import type { MetricRow, MetricType } from '@/shared/analytics/dto'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
 import { useAnalyticsState } from '@/ui/admin/analytics/use-analytics-state'
 import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'

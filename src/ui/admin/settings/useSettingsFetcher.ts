@@ -5,8 +5,7 @@ import type { UpdateSettingsOutput } from '@/client/api/legacy-types'
 import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { SettingsSection } from '@/shared/settings'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useFetcherResult } from '@/client/api/fetcher'
+import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
 
 const UPDATE = API_ACTIONS.admin.updateSettings
 

@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { RenderMermaidInput, RenderMermaidOutput } from '@/shared/cms-pages'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
 
 const DEBOUNCE_MS = 200
 

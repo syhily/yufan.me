@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/images'
 
-import { API_ACTIONS } from '@/client/api/api-descriptors'
-import { useApiFetcher } from '@/client/api/fetcher'
+import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
 import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { Button } from '@/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/ui/components/dialog'
