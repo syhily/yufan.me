@@ -15,16 +15,14 @@ const mockCtx: HandlerContext = {
 }
 
 vi.mock('@/server/db/query/user', () => ({
-  findUserById: vi
-    .fn()
-    .mockResolvedValue({
-      id: BigInt(1),
-      name: 'Test',
-      email: 'test@test.com',
-      password: 'hash',
-      link: null,
-      role: 'admin',
-    }),
+  findUserById: vi.fn().mockResolvedValue({
+    id: BigInt(1),
+    name: 'Test',
+    email: 'test@test.com',
+    password: 'hash',
+    link: null,
+    role: 'admin',
+  }),
   updateUserById: vi.fn().mockResolvedValue({ id: '1', name: 'Updated' }),
 }))
 
@@ -39,7 +37,8 @@ describe('accountController', () => {
   })
 
   it('updatePassword returns 404 for non-existent user', async () => {
-    vi.mocked((await import('@/server/db/query/user')).findUserById).mockResolvedValueOnce(null as any)
+    const userModule = await import('@/server/db/query/user')
+    vi.mocked(userModule.findUserById).mockResolvedValueOnce(null as any)
     const { accountController } = await import('@/server/http/controllers/account.controller')
     const result = await accountController.updatePassword(
       { body: { oldPassword: 'old', newPassword: 'new123456' } },
@@ -49,7 +48,8 @@ describe('accountController', () => {
   })
 
   it('revokeSession returns 200 for already-revoked session', async () => {
-    vi.mocked((await import('@/server/auth/sessions')).findSessionMeta).mockResolvedValueOnce(null)
+    const sessionsModule = await import('@/server/auth/sessions')
+    vi.mocked(sessionsModule.findSessionMeta).mockResolvedValueOnce(null)
     const { accountController } = await import('@/server/http/controllers/account.controller')
     const result = await accountController.revokeSession({ body: { sessionId: 'gone' } }, mockCtx)
     expect(result.status).toBe(200)

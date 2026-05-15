@@ -38,7 +38,8 @@ describe('adminPostsController', () => {
   })
 
   it('get returns 404 for null detail', async () => {
-    vi.mocked((await import('@/server/cms/posts/service')).getPostDetailForAdmin).mockResolvedValueOnce(null as any)
+    const svc = await import('@/server/cms/posts/service')
+    vi.mocked(svc.getPostDetailForAdmin).mockResolvedValueOnce(null as any)
     const { adminPostsController } = await import('@/server/http/controllers/admin/posts.controller')
     const result = await adminPostsController.get({ params: { id: '999' } }, mockCtx)
     expect(result.status).toBe(404)
