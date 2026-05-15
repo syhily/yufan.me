@@ -11,18 +11,22 @@ import type { Env } from './context'
 const log = getLogger('http.error')
 
 function json(c: Context<Env>, body: any, status: number): Response {
+  c.header('X-Request-Id', c.var.requestId)
   return c.json(body, status as any)
 }
 
 export function onErrorHandler(err: Error, c: Context<Env>): Response {
   if (err instanceof HTTPException) {
-    const payload = {
-      error: {
-        message: err.message,
-        issues: err.cause as { message: string; path?: string[] }[] | undefined,
+    return json(
+      c,
+      {
+        error: {
+          message: err.message,
+          issues: err.cause as { message: string; path?: string[] }[] | undefined,
+        },
       },
-    }
-    return json(c, payload, err.status)
+      err.status,
+    )
   }
 
   if (err instanceof DomainError) {
@@ -43,6 +47,5 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
   }
 
   log.error('unexpected', { requestId: c.var.requestId, error: err })
-  c.header('X-Request-Id', c.var.requestId)
   return json(c, { error: { message: '服务器内部错误' } }, 500)
 }

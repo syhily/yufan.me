@@ -99,9 +99,11 @@ function validate(schema: ZodSchema, input: unknown) {
   if (result.success) {
     return result.data
   }
+  const issues = result.error.issues.map((i) => ({ message: i.message, path: i.path.map(String) }))
+  const firstPath = issues[0]?.path?.join('.') ?? ''
   throw new HTTPException(400, {
-    message: '输入数据无效',
-    cause: result.error.issues.map((i) => ({ message: i.message, path: i.path.map(String) })),
+    message: firstPath ? `输入数据无效 (${firstPath})` : '输入数据无效',
+    cause: issues,
   })
 }
 
