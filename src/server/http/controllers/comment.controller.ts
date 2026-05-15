@@ -13,6 +13,7 @@ import {
   verifyCommentOwnership,
 } from '@/server/comments/token'
 import {
+  clearDeleteRequest,
   findCommentWithUserById,
   requestDeleteComment,
   listMyComments,
@@ -20,7 +21,7 @@ import {
 } from '@/server/db/query/comment'
 import { findMetricByPublicId } from '@/server/db/query/metric'
 import { findUserIdByEmail } from '@/server/db/query/user'
-import { ok, notFound, forbidden, unauthorized, internalError, rateLimited } from '@/server/http/response'
+import { conflict, forbidden, internalError, notFound, ok, rateLimited, unauthorized } from '@/server/http/response'
 import { body, query, params, asId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { fetchQQAvatarImage, isQQEmail } from '@/server/images/avatar-fetch'
 import { tryCommentPostRateLimit, tryCommentPostRateLimitByEmail, tryLikeIncreaseRateLimit } from '@/server/rate-limit'
@@ -175,11 +176,11 @@ export const commentController: ContractImpl<typeof commentContract> = {
     const b = body<LikeKeyTokenBody>(args)
     const metricRow = await findMetricByPublicId(b.key)
     if (metricRow === null) {
-      return ok({ valid: false })
+      return ok({ key: b.key, valid: false })
     }
     const target = { type: targetType(metricRow.type), ownerId: metricRow.ownerId! }
     const existing = await queryLikes(target)
-    return ok({ valid: existing > 0 })
+    return ok({ key: b.key, valid: existing > 0 })
   },
 
   findAvatar: async (args: Record<string, unknown>, _ctx: HandlerContext) => {
@@ -279,10 +280,19 @@ export const commentController: ContractImpl<typeof commentContract> = {
   },
 
   cancelDeleteOwn: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    const _b = body<DeleteOwnCommentBody>(args)
+    const b = body<DeleteOwnCommentBody>(args)
     const sessionUser = getUserSession(ctx.session)
     if (!sessionUser) {
       return unauthorized()
+    }
+    const commentId = asId(b.rid)
+    const row = await findCommentWithUserById(commentId)
+    if (!row || row.userId.toString() !== sessionUser.id) {
+      return notFound('评论不存在')
+    }
+    const ok_ = await clearDeleteRequest(commentId, asId(sessionUser.id))
+    if (!ok_) {
+      return conflict('无法撤回删除申请')
     }
     return ok({ success: true })
   },
