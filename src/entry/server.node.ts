@@ -18,6 +18,7 @@ import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { tagsRouter } from '@/server/http/resources/tags'
 import { clientAddressMiddleware } from '@/server/middleware/client-address'
 import { installGateMiddleware } from '@/server/middleware/install-gate-hono'
+import { requestLoggerMiddleware } from '@/server/middleware/request-logger'
 import { sessionMiddleware } from '@/server/middleware/session-hono'
 import { visitorCookieMiddleware } from '@/server/middleware/visitor-cookie-hono'
 import { wpDecoyMiddleware } from '@/server/middleware/wp-decoy'
@@ -34,6 +35,7 @@ export function createApp(): Hono<Env> {
   app.use('*', sessionMiddleware)
   app.use('*', installGateMiddleware)
   app.use('*', visitorCookieMiddleware)
+  app.use('*', requestLoggerMiddleware)
 
   // OpenAPI docs (dev only).
   if (import.meta.env.DEV) {
