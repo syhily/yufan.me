@@ -15,6 +15,7 @@ import {
 import {
   clearDeleteRequest,
   findCommentWithUserById,
+  findCommentsByIds,
   requestDeleteComment,
   listMyComments,
   countMyComments,
@@ -299,12 +300,30 @@ export const commentController: ContractImpl<typeof commentContract> = {
 
   listMine: async (args: Record<string, unknown>, ctx: HandlerContext) => {
     const sessionUser = getUserSession(ctx.session)
-    if (!sessionUser) {
-      return unauthorized()
+    // Logged-in users: query by session user id.
+    if (sessionUser) {
+      const q = query<ListMineQuery>(args)
+      const comments = await listMyComments(asId(sessionUser.id), q.offset ?? 0, q.limit ?? 20)
+      const total = await countMyComments(asId(sessionUser.id))
+      return ok({ comments: comments as unknown[], total })
     }
-    const q = query<ListMineQuery>(args)
-    const comments = await listMyComments(asId(sessionUser.id), q.offset ?? 0, q.limit ?? 20)
-    const total = await countMyComments(asId(sessionUser.id))
-    return ok({ comments: comments as unknown[], total })
+    // Anonymous visitors: resolve ownership via __comment_tokens cookie.
+    const cookie = parseCommentTokensCookie(ctx.request.headers.get('Cookie'))
+    const { cleaned, validEntries } = await cleanupExpiredTokens(cookie)
+    const commentIds: bigint[] = []
+    for (const entry of validEntries) {
+      commentIds.push(BigInt(entry.payload.commentId))
+    }
+    const comments = commentIds.length > 0 ? await findCommentsByIds(commentIds) : []
+    const items = await parseComments(comments)
+    const expiresAt: Record<string, number> = {}
+    for (const entry of validEntries) {
+      expiresAt[entry.payload.commentId] = entry.expiresAt
+    }
+    return {
+      status: 200,
+      body: { comments: items as unknown[], total: items.length, expiresAt },
+      headers: { 'Set-Cookie': serializeCommentTokensCookie(cleaned) },
+    }
   },
 }

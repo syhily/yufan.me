@@ -8,8 +8,9 @@ import {
   searchAuthorOptions,
   searchPageOptions,
 } from '@/server/comments/admin'
+import { verifyCommentOwnership } from '@/server/comments/token'
 import { findCommentWithUserAndTarget } from '@/server/db/query/comment'
-import { ok, notFound } from '@/server/http/response'
+import { forbidden, ok, notFound } from '@/server/http/response'
 import {
   body,
   query,
@@ -19,6 +20,7 @@ import {
   type ContractImpl,
   type HandlerContext,
 } from '@/server/http/ts-rest-adapter'
+import { parseCommentTokensCookie } from '@/shared/comment-token'
 
 interface LoadAllCommentsBody {
   offset: number
@@ -51,8 +53,15 @@ export const adminCommentsController: ContractImpl<typeof adminCommentsContract>
   },
 
   getRaw: async (args: Record<string, unknown>, ctx: HandlerContext) => {
-    requireViewer(ctx)
     const id = resolveId(args)
+    const isAdmin = ctx.viewer?.role === 'admin'
+    if (!isAdmin) {
+      const cookie = parseCommentTokensCookie(ctx.request.headers.get('Cookie'))
+      const { ok: ownerByToken } = await verifyCommentOwnership(cookie, id)
+      if (!ownerByToken) {
+        return forbidden('无权查看该评论')
+      }
+    }
     const comment = await getCommentById(id)
     if (!comment) {
       return notFound('评论不存在')

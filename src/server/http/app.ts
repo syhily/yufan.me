@@ -1,8 +1,11 @@
+import type { AppRouter } from '@ts-rest/core'
+
 import { Hono } from 'hono'
 
 import { apiContract } from '@/shared/contracts'
 
 import type { Env } from './context'
+import type { ContractImpl } from './ts-rest-adapter'
 
 import { accountController } from './controllers/account.controller'
 import { adminCacheController } from './controllers/admin/cache.controller'
@@ -39,6 +42,13 @@ export function createApiApp(): Hono<Env> {
   adminRoute(app, apiContract.admin.users, adminUsersController)
   adminRoute(app, apiContract.admin.cache, adminCacheController)
   adminRoute(app, apiContract.admin.categories, adminCategoriesController)
+  // getRaw is publicly accessible so comment owners can load their
+  // comment body for editing. Ownership is verified in the handler.
+  publicRoute(
+    app,
+    { getRaw: apiContract.admin.comments.getRaw } satisfies AppRouter,
+    { getRaw: adminCommentsController.getRaw } satisfies ContractImpl<AppRouter>,
+  )
   adminRoute(app, apiContract.admin.comments, adminCommentsController)
   adminRoute(app, apiContract.admin.editor, adminEditorController)
   adminRoute(app, apiContract.admin.friends, adminFriendsController)

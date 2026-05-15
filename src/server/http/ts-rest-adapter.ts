@@ -144,10 +144,25 @@ const bigintReplacer = (_: string, v: unknown) => (typeof v === 'bigint' ? Numbe
 
 function safeJson(data: unknown, status: number, headers?: Record<string, string>): Response {
   const body = JSON.stringify(data, bigintReplacer)
-  return new Response(body, {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...headers },
-  })
+  const resHeaders = new Headers({ 'content-type': 'application/json; charset=utf-8' })
+  if (headers) {
+    for (const [key, value] of Object.entries(headers)) {
+      if (key.toLowerCase() === 'set-cookie') {
+        // Multiple cookies are comma-joined by controllers. Split and
+        // append each as a separate Set-Cookie header so downstream
+        // HTTP stacks (Node.js, undici) don't misinterpret the comma
+        // as part of a single cookie value.
+        for (const cookie of value.split(', ')) {
+          if (cookie.trim()) {
+            resHeaders.append('Set-Cookie', cookie)
+          }
+        }
+      } else {
+        resHeaders.set(key, value)
+      }
+    }
+  }
+  return new Response(body, { status, headers: resHeaders })
 }
 
 /** Resolve entity ID from path param (:id) or legacy body/query. */
