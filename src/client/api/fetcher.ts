@@ -131,8 +131,13 @@ export function useFetcherResult<O>(
       }
       return
     }
+    // Support both old envelope { data: T } and new Hono direct { ...T } response formats.
     if (data.data !== undefined) {
       onSuccess?.(data.data)
+    } else {
+      // New Hono API returns data directly without { data: T } wrapper.
+      // Treat the entire response body as the success payload.
+      onSuccess?.(data as unknown as O)
     }
   }, [fetcher.state, fetcher.data])
 }
@@ -215,11 +220,15 @@ export function useApiFetcher<I, O>(
     [action.path],
   )
 
+  // Support both old envelope { data: T } and new Hono direct { ...T } format.
+  const raw = fetcher.data as Record<string, unknown> | undefined
+  const unwrapped = raw?.data !== undefined ? raw.data : raw?.error !== undefined ? undefined : raw
+
   return {
     submit,
     submitAsync,
     load,
-    data: fetcher.data?.data,
+    data: unwrapped as O | undefined,
     error: fetcher.data?.error,
     isPending: fetcher.state !== 'idle',
     isSubmitting: fetcher.state === 'submitting',
