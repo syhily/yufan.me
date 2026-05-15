@@ -32,10 +32,10 @@ type HandlerReturn<_R extends AppRoute> = {
   headers?: Record<string, string>
 }
 
-// ContractImpl enforces that every contract endpoint has a matching handler key.
+// ContractImpl: enforces that every contract endpoint has a matching handler key.
 // Nested routers are recursively checked. This catches renamed/missing handlers
-// at compile time — a regression from the Plan's fully-typed version, but a
-// strict improvement over `Record<string, any>`.
+// at compile time. Full parameter type inference requires upstream ts-rest/Zod v4
+// improvements — use body<T>()/query<T>()/params<T>() accessors in the meantime.
 type RouteHandler = (args: Record<string, unknown>, ctx: HandlerContext) => Promise<HandlerReturn<AppRoute>>
 
 export type ContractImpl<R extends AppRouter> = {
