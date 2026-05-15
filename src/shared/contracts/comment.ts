@@ -33,7 +33,7 @@ export const revokeTokenBody = z.object({ pageKey: z.string().min(1) })
 
 export const loadCommentsResponse = z.object({ comments: z.array(z.unknown()), next: z.boolean() })
 export const replyCommentResponse = z.object({ comment: z.unknown(), csrfToken: z.string() })
-export const increaseLikeResponse = z.object({ key: z.string(), likes: z.number() })
+export const increaseLikeResponse = z.object({ key: z.string(), likes: z.number(), token: z.string() })
 export const decreaseLikeResponse = z.object({ key: z.string(), likes: z.number() })
 export const validateLikeTokenResponse = z.object({ valid: z.boolean() })
 export const findAvatarResponse = z.object({ url: z.string().nullable() })
