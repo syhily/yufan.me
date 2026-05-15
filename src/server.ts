@@ -1,5 +1,7 @@
 import { swaggerUI } from '@hono/swagger-ui'
+import { compress } from 'hono/compress'
 import { requestId } from 'hono/request-id'
+import { secureHeaders } from 'hono/secure-headers'
 import { RouterContextProvider } from 'react-router'
 import { createHonoServer } from 'react-router-hono-server/node'
 
@@ -17,15 +19,36 @@ import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/wp-decoy'
+import { getLogger } from '@/server/logger'
+
+const requestLog = getLogger('http.request')
 
 export default await createHonoServer<Env>({
   configure(app) {
     app.onError(onErrorHandler)
     app.use(requestId())
+    app.use(compress())
+    app.use(secureHeaders())
+    app.use(async (c, next) => {
+      const start = Date.now()
+      await next()
+      const duration = Date.now() - start
+      requestLog.info('request', {
+        method: c.req.method,
+        path: c.req.path,
+        status: c.res.status,
+        duration,
+        requestId: c.var.requestId,
+      })
+    })
     app.use(honoWpDecoyMiddleware)
     app.use(honoSessionMiddleware)
     app.use(honoInstallGateMiddleware)
     app.use(honoVisitorCookieMiddleware)
+
+    // Health probes
+    app.get('/health', (c) => c.json({ status: 'ok' }))
+    app.get('/ready', (c) => c.json({ status: 'ok' }))
 
     // Legacy API redirect — /api/actions/* was the old RPC prefix.
     // GET requests are forwarded with their query string; mutations return

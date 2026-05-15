@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 
 import { apiContract } from '@/shared/contracts'
 import { adminCacheContract } from '@/shared/contracts/admin/cache'
@@ -41,6 +42,13 @@ import { adminRoute, authorRoute, authedRoute, publicRoute } from './guards'
 
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>().basePath('/api')
+
+  app.use(
+    bodyLimit({
+      maxSize: 10 * 1024 * 1024, // 10 MB
+      onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
+    }),
+  )
 
   // Account routes (any authenticated user)
   authedRoute(app, apiContract.account, accountController)
