@@ -8,7 +8,11 @@ import { ZodError } from 'zod'
 
 import type { ViewerContext } from '@/server/auth/rbac'
 
+import { getLogger } from '@/server/logger'
+
 import type { Env } from './context'
+
+const responseLog = getLogger('http.response-mismatch')
 
 export interface HandlerContext {
   request: Request
@@ -137,6 +141,19 @@ function mountRoute(app: Hono<Env>, route: AppRoute, handler: HandlerFn, options
         }
       }
     }
+
+    // Response schema enforcement.
+    //
+    // With z.custom retired in F1.1, every contract response now carries a
+    // real Zod schema. Validating handler return values closes the loop:
+    // in dev, drift surfaces as a 500 with an issue list; in prod it logs
+    // a warning so operators see schema regressions without breaking the
+    // request. 204 / no-body responses skip the check.
+    validateResponseBody(route, result.status, result.body)
+
+    if (result.status === 204) {
+      return c.body(null, 204)
+    }
     return c.json(result.body, result.status as Parameters<typeof c.json>[1])
   }
 
@@ -162,6 +179,36 @@ function validate(schema: unknown, input: unknown) {
     }
     throw err
   }
+}
+
+function validateResponseBody(route: AppRoute, status: number, body: unknown): void {
+  const responses = route.responses as Record<string | number, unknown>
+  const schema = responses[status]
+  if (!hasParseMethod(schema)) {
+    return
+  }
+  const result = (schema as { safeParse: (input: unknown) => { success: boolean; error?: ZodError } }).safeParse(body)
+  if (result.success) {
+    return
+  }
+  const issues =
+    result.error?.issues.map((i) => ({
+      path: i.path.map(String).join('.'),
+      message: i.message,
+    })) ?? []
+
+  if (import.meta.env.DEV) {
+    throw new HTTPException(500, {
+      message: `Response body mismatched schema (${route.method} ${route.path}, status ${status})`,
+      cause: issues,
+    })
+  }
+  responseLog.warn('response-schema-mismatch', {
+    method: route.method,
+    path: route.path,
+    status,
+    issues,
+  })
 }
 
 async function readBody(req: HonoRequest, route: AppRoute): Promise<unknown> {

@@ -111,4 +111,50 @@ describe('ts-rest-adapter', () => {
     })
     expect(res.status).toBe(400)
   })
+
+  it('flags response body that mismatches schema (dev → 500)', async () => {
+    const driftContract = c.router({
+      drift: {
+        method: 'GET',
+        path: '/drift',
+        responses: {
+          200: z.object({ count: z.number() }),
+        },
+      },
+    })
+    const driftController = {
+      // Intentionally wrong shape: `count` should be a number, not a string.
+      drift: async () => ({ status: 200, body: { count: 'oops' as unknown as number } }),
+    }
+    const app = new Hono<Env>()
+    app.onError(onErrorHandler)
+    mountContract(app, driftContract, driftController as any)
+    const res = await app.request('/drift')
+    // In dev (vitest defaults to dev) the adapter rejects the mismatched
+    // body with 500 + an issue list so the regression is unmissable.
+    expect(res.status).toBe(500)
+    const text = await res.text()
+    expect(text).toContain('count')
+  })
+
+  it('returns 204 with no body for noBody routes', async () => {
+    const noBodyContract = c.router({
+      remove: {
+        method: 'DELETE',
+        path: '/things/:id',
+        pathParams: z.object({ id: z.string() }),
+        body: c.noBody(),
+        responses: { 204: c.noBody() },
+      },
+    })
+    const noBodyController = {
+      remove: async () => ({ status: 204, body: undefined }),
+    }
+    const app = new Hono<Env>()
+    app.onError(onErrorHandler)
+    mountContract(app, noBodyContract, noBodyController as any)
+    const res = await app.request('/things/42', { method: 'DELETE' })
+    expect(res.status).toBe(204)
+    expect(await res.text()).toBe('')
+  })
 })
