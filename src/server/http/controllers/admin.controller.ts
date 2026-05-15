@@ -142,7 +142,12 @@ export const adminController = {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const music = await addMusic({
+      source: args.body.source,
+      sourceId: args.body.sourceId,
+      uploader: { id: BigInt(ctx.viewer.userId), name: sessionUser.name },
+    })
+    return { status: 200 as const, body: { music } }
   },
   approveCommentDeletion: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -214,24 +219,34 @@ export const adminController = {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    await deleteImage(BigInt(args.params.id), ctx.viewer)
+    return { status: 200 as const, body: { success: true } }
   },
   deleteMusic: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    await deleteMusic(BigInt(args.params.id), { userId: ctx.viewer.userId, role: ctx.viewer.role })
+    return { status: 200 as const, body: { success: true } }
   },
   deletePage: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await deletePage(BigInt(args.params.id))
+    if (!result.deleted) {
+      return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
   },
   deletePost: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await deletePost(BigInt(args.params.id), ctx.viewer)
+    if (!result.deleted) {
+      return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
   },
   deleteTag: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -253,13 +268,21 @@ export const adminController = {
   getPage: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const detail = await getPageDetailForAdmin(BigInt(args.params.id))
+    if (detail === null) {
+      return { status: 404 as const, body: { error: { message: '页面不存在或已被删除。' } } }
+    }
+    return { status: 200 as const, body: detail }
   },
   getPost: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const detail = await getPostDetailForAdmin(BigInt(args.params.id), ctx.viewer)
+    if (detail === null) {
+      return { status: 404 as const, body: { error: { message: '文章不存在或已被删除。' } } }
+    }
+    return { status: 200 as const, body: detail }
   },
   getSettings: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -346,23 +369,41 @@ export const adminController = {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await listImagesForAdmin({
+      q: args.query.q,
+      kind: args.query.kind,
+      offset: args.query.offset,
+      limit: args.query.limit,
+    })
+    return { status: 200 as const, body: result }
   },
   listMusic: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await listMusicForAdmin({
+      q: args.query.q,
+      offset: args.query.offset,
+      limit: args.query.limit,
+    })
+    return { status: 200 as const, body: result }
   },
   listPageRevisions: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const revisions = await listPageRevisionsForAdmin(BigInt(args.query.id))
+    return { status: 200 as const, body: { revisions } }
   },
   listPages: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await listPagesForAdmin({
+      q: args.query.q,
+      deletedStatus: args.query.deletedStatus,
+      offset: args.query.offset,
+      limit: args.query.limit,
+    })
+    return { status: 200 as const, body: result }
   },
   listPendingDashboard: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -375,13 +416,30 @@ export const adminController = {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const revisions = await listPostRevisionsForAdmin(BigInt(args.query.id), ctx.viewer)
+    return { status: 200 as const, body: { revisions } }
   },
   listPosts: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await listPostsForAdmin(
+      {
+        q: args.query.q,
+        deletedStatus: args.query.deletedStatus,
+        offset: args.query.offset,
+        limit: args.query.limit,
+        category: args.query.category,
+        tag: args.query.tag,
+        published: args.query.published,
+        visible: args.query.visible,
+        sortBy: args.query.sortBy,
+        sortOrder: args.query.sortOrder,
+        authorId: args.query.authorId,
+      },
+      ctx.viewer,
+    )
+    return { status: 200 as const, body: result }
   },
   listTags: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -432,30 +490,54 @@ export const adminController = {
   previewPage: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const html = await renderPagePortableTextToHtml(args.body.body)
+    const headings = collectHeadings(args.body.body, deriveSlug)
+    return { status: 200 as const, body: { html, headings } }
   },
   previewPost: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const html = await renderPostPortableTextToHtml(args.body.body)
+    const headings = collectHeadings(args.body.body, deriveSlug)
+    return { status: 200 as const, body: { html, headings } }
   },
   publishLatest: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await publishPageLatest({
+      pageId: BigInt(args.body.id),
+      body: args.body.body,
+      expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
+      force: args.body.force,
+      authorId: BigInt(ctx.viewer.userId),
+      publishedAt: args.body.publishedAt !== undefined ? new Date(args.body.publishedAt) : undefined,
+    })
+    return { status: 200 as const, body: result }
   },
   publishPostLatest: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await publishPostLatest(
+      {
+        postId: BigInt(args.body.id),
+        body: args.body.body,
+        expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
+        force: args.body.force,
+        authorId: BigInt(ctx.viewer.userId),
+        publishedAt: args.body.publishedAt !== undefined ? new Date(args.body.publishedAt) : undefined,
+      },
+      ctx.viewer,
+    )
+    return { status: 200 as const, body: result }
   },
   recalculateImageThumbhash: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const image = await recalculateImageThumbhash(BigInt(args.body.id), ctx.viewer)
+    return { status: 200 as const, body: { image } }
   },
   reindexSearch: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -552,13 +634,21 @@ export const adminController = {
   restorePage: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await restorePage(BigInt(args.body.id))
+    if (!result.restored) {
+      return { status: 404 as const, body: { error: { message: '页面不存在或未被删除。' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
   },
   restorePost: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await restorePost(BigInt(args.body.id), ctx.viewer)
+    if (!result.restored) {
+      return { status: 404 as const, body: { error: { message: '文章不存在或未被删除。' } } }
+    }
+    return { status: 200 as const, body: { success: true } }
   },
   restoreUser: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -616,19 +706,37 @@ export const adminController = {
   saveDraft: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await savePageDraft({
+      pageId: BigInt(args.body.id),
+      body: args.body.body,
+      expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
+      force: args.body.force,
+      authorId: BigInt(ctx.viewer.userId),
+    })
+    return { status: 200 as const, body: result }
   },
   savePostDraft: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await savePostDraft(
+      {
+        postId: BigInt(args.body.id),
+        body: args.body.body,
+        expectedClientRevisionToken: args.body.expectedClientRevisionToken ?? undefined,
+        force: args.body.force,
+        authorId: BigInt(ctx.viewer.userId),
+      },
+      ctx.viewer,
+    )
+    return { status: 200 as const, body: result }
   },
   searchMusic: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const result = await searchMusic(args.query.keyword, args.query.limit)
+    return { status: 200 as const, body: result }
   },
   sendPasswordReset: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -701,25 +809,35 @@ export const adminController = {
   unpublishPage: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const page = await unpublishPage(BigInt(args.body.id))
+    return { status: 200 as const, body: { page } }
   },
   unpublishPost: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const post = await unpublishPost(BigInt(args.body.id), ctx.viewer)
+    return { status: 200 as const, body: { post } }
   },
   updateImageNote: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const image = await updateImageNote(BigInt(args.params.id), args.body.note ?? null, ctx.viewer)
+    return { status: 200 as const, body: { image } }
   },
   updateMusic: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const music = await updateMusicMetadata({
+      id: BigInt(args.params.id),
+      name: args.body.name,
+      artist: args.body.artist,
+      album: args.body.album,
+      lyric: args.body.lyric,
+    })
+    return { status: 200 as const, body: { music } }
   },
   updateSettings: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
@@ -868,13 +986,56 @@ export const adminController = {
   upsertPageMeta: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (sessionUser?.role !== 'admin') return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const meta = {
+      slug: args.body.slug,
+      title: args.body.title,
+      summary: args.body.summary,
+      cover: args.body.cover,
+      og: args.body.og,
+      published: args.body.published,
+      commentsEnabled: args.body.commentsEnabled,
+      showToc: args.body.showToc,
+      showUpdated: args.body.showUpdated,
+      showFriends: args.body.showFriends,
+      publishedAt: args.body.publishedAt === undefined ? undefined : new Date(args.body.publishedAt),
+    }
+    const sessionUserId = BigInt(ctx.viewer.userId)
+    const page =
+      args.body.id === undefined
+        ? await createPage(meta, sessionUserId)
+        : await updatePageMeta({ id: BigInt(args.body.id), ...meta })
+    return { status: 200 as const, body: { page } }
   },
   upsertPostMeta: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
     if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'author'))
       return { status: 403 as const, body: { error: { message: '权限不足' } } }
-    return { status: 200 as const, body: null }
+    const meta = {
+      slug: args.body.slug,
+      title: args.body.title,
+      summary: args.body.summary,
+      cover: args.body.cover,
+      og: args.body.og,
+      published: args.body.published,
+      commentsEnabled: args.body.commentsEnabled,
+      showToc: args.body.showToc,
+      showUpdated: args.body.showUpdated,
+      visible: args.body.visible,
+      category: args.body.category,
+      tags: args.body.tags,
+      alias: args.body.alias,
+      pinnedAt:
+        args.body.pinnedAt === undefined || args.body.pinnedAt === null
+          ? args.body.pinnedAt
+          : new Date(args.body.pinnedAt),
+      publishedAt: args.body.publishedAt === undefined ? undefined : new Date(args.body.publishedAt),
+    }
+    const sessionUserId = BigInt(ctx.viewer.userId)
+    const post =
+      args.body.id === undefined
+        ? await createPost(meta, sessionUserId, ctx.viewer)
+        : await updatePostMeta({ id: BigInt(args.body.id), ...meta }, ctx.viewer)
+    return { status: 200 as const, body: { post } }
   },
   upsertTag: async (args: any, ctx: any) => {
     const sessionUser = userSession(ctx.session)
