@@ -31,8 +31,8 @@
     "db:generate": "vp exec drizzle-kit generate",
     "dev": "react-router dev",
     "prepare": "command -v vp >/dev/null 2>&1 && vp config || true",
-    "preview": "react-router-serve ./build/server/index.js",
-    "start": "react-router-serve ./build/server/index.js",
+    "preview": "node ./build/server/index.js",
+    "start": "node ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
@@ -50,7 +50,6 @@
     "@number-flow/react": "^0.6.0",
     "@portabletext/react": "^6.2.0",
     "@react-router/node": "^7.15.1",
-    "@react-router/serve": "^7.15.1",
     "@shikijs/transformers": "^4.0.2",
     "@t3-oss/env-core": "^0.13.11",
     "@tanstack/react-query": "^5.100.10",
