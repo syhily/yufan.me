@@ -7,13 +7,16 @@ import type { Env } from './context'
 import { accountController } from './controllers/account.controller'
 import { adminCacheController } from './controllers/admin/cache.controller'
 import { adminCategoriesController } from './controllers/admin/categories.controller'
+import { adminCommentsController } from './controllers/admin/comments.controller'
 import { adminEditorController } from './controllers/admin/editor.controller'
 import { adminFriendsController } from './controllers/admin/friends.controller'
 import { adminImagesController } from './controllers/admin/images.controller'
 import { adminMailController } from './controllers/admin/mail.controller'
+import { adminModerationController } from './controllers/admin/moderation.controller'
 import { adminMusicController } from './controllers/admin/music.controller'
 import { adminPagesController } from './controllers/admin/pages.controller'
 import { adminPostsController } from './controllers/admin/posts.controller'
+import { adminSearchController } from './controllers/admin/search.controller'
 import { adminSettingsController } from './controllers/admin/settings.controller'
 import { adminTagsController } from './controllers/admin/tags.controller'
 import { adminUsersController } from './controllers/admin/users.controller'
@@ -35,13 +38,16 @@ export function createApiApp(): Hono<Env> {
   adminRoute(app, apiContract.admin.users, adminUsersController)
   adminRoute(app, apiContract.admin.cache, adminCacheController)
   adminRoute(app, apiContract.admin.categories, adminCategoriesController)
+  adminRoute(app, apiContract.admin.comments, adminCommentsController)
   adminRoute(app, apiContract.admin.editor, adminEditorController)
   adminRoute(app, apiContract.admin.friends, adminFriendsController)
   adminRoute(app, apiContract.admin.images, adminImagesController)
   adminRoute(app, apiContract.admin.mail, adminMailController)
+  adminRoute(app, apiContract.admin.moderation, adminModerationController)
   adminRoute(app, apiContract.admin.music, adminMusicController)
   authorRoute(app, apiContract.admin.posts, adminPostsController)
   authorRoute(app, apiContract.admin.pages, adminPagesController)
+  adminRoute(app, apiContract.admin.search, adminSearchController)
   adminRoute(app, apiContract.admin.settings, adminSettingsController)
   adminRoute(app, apiContract.admin.tags, adminTagsController)
   adminRoute(app, apiContract.analytics, analyticsController)

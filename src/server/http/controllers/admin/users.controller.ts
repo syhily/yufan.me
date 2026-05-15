@@ -3,7 +3,9 @@ import type { adminUsersContract } from '@/shared/contracts/admin/users'
 
 import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
 import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
-import { countAdmins, findUserById, updateUserRole, type UserRoleFilter } from '@/server/db/query/user'
+import { issueSetupToken, issueResetToken } from '@/server/auth/verification-tokens'
+import { countAdmins, findUserById, insertAuthor, updateUserRole, type UserRoleFilter } from '@/server/db/query/user'
+import { sendAuthorInvite, sendPasswordReset } from '@/server/email/sender'
 import { requireViewer, resolveId, type ContractImpl, type HandlerContext } from '@/server/http/ts-rest-adapter'
 import { getLogger } from '@/server/logger'
 import {
@@ -14,6 +16,8 @@ import {
   softDeleteAdminUser,
   toAdminUserDto,
 } from '@/server/users/service'
+import { requireBlogSettingsSection } from '@/shared/blog-config'
+import { joinUrl } from '@/shared/urls'
 
 const log = getLogger('audit.user')
 
@@ -159,6 +163,40 @@ export const adminUsersController: ContractImpl<typeof adminUsersContract> = {
     }
     await revokeAllSessionsOfUser(targetId)
     log.info('all sessions revoked by admin', { actor: viewer.userId, target: id })
+    return { status: 200, body: { success: true } }
+  },
+
+  inviteAuthor: async (args: Record<string, unknown>, ctx: HandlerContext) => {
+    const viewer = requireViewer(ctx)
+    const body = args.body as { name: string; email: string }
+    const users = await insertAuthor(body.name, body.email)
+    if (users.length === 0) {
+      return { status: 500, body: { error: { message: '创建用户失败' } } }
+    }
+    const newUser = users[0]
+    const tokenResult = await issueSetupToken(newUser.id)
+    const website = requireBlogSettingsSection('siteIdentity').website
+    const inviteLink = joinUrl(website, `/wp-admin/accept-invite?token=${encodeURIComponent(tokenResult.token)}`)
+    const viewerUser = await findUserById(BigInt(viewer.userId))
+    const inviterName = viewerUser?.name ?? '管理员'
+    await sendAuthorInvite(newUser, inviteLink, inviterName)
+    log.info('author invited', { actor: viewer.userId, target: String(newUser.id), email: body.email })
+    return { status: 200, body: { success: true } }
+  },
+
+  sendPasswordReset: async (args: Record<string, unknown>, ctx: HandlerContext) => {
+    requireViewer(ctx)
+    const body = args.body as { userId: string }
+    const targetId = BigInt(body.userId)
+    const target = await findUserById(targetId)
+    if (!target) {
+      return { status: 404, body: { error: { message: '用户不存在' } } }
+    }
+    const tokenResult = await issueResetToken(targetId)
+    const website = requireBlogSettingsSection('siteIdentity').website
+    const resetLink = joinUrl(website, `/wp-admin/reset-password?token=${encodeURIComponent(tokenResult.token)}`)
+    await sendPasswordReset(target, resetLink)
+    log.info('password reset sent', { actor: ctx.viewer?.userId, target: body.userId })
     return { status: 200, body: { success: true } }
   },
 }

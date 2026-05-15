@@ -100,6 +100,25 @@ export const adminUsersContract = c.router(
       responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
       summary: '管理后台：撤销用户所有会话',
     },
+    inviteAuthor: {
+      method: 'POST',
+      path: '/admin/users/invite',
+      body: z.object({
+        name: z.string().min(1).max(100),
+        email: z.email(),
+      }),
+      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      summary: '管理后台：邀请新作者',
+    },
+    sendPasswordReset: {
+      method: 'POST',
+      path: '/admin/users/password-reset',
+      body: z.object({
+        userId: z.string().min(1),
+      }),
+      responses: { 200: z.object({ success: z.boolean() }), ...standardMutationErrors },
+      summary: '管理后台：发送密码重置邮件',
+    },
   },
   { strictStatusCodes: true },
 )
