@@ -12,14 +12,18 @@ export const adminMusicContract = c.router(
     listMusic: {
       method: 'GET',
       path: '/admin/musics',
-      query: z.object({ q: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
+      query: z.object({
+        q: z.string().optional(),
+        offset: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
+      }),
       responses: { 200: z.custom<ListMusicOutput>(), ...standardMutationErrors },
       summary: 'listMusic',
     },
     searchMusic: {
       method: 'GET',
       path: '/admin/musics/search',
-      query: z.object({ keyword: z.string(), limit: z.number().optional() }),
+      query: z.object({ keyword: z.string(), limit: z.coerce.number().optional() }),
       responses: { 200: z.custom<SearchMusicOutput>(), ...standardMutationErrors },
       summary: 'searchMusic',
     },

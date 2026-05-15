@@ -12,7 +12,11 @@ export const adminTagsContract = c.router(
     listTags: {
       method: 'GET',
       path: '/admin/tags',
-      query: z.object({ q: z.string().optional(), offset: z.number().optional(), limit: z.number().optional() }),
+      query: z.object({
+        q: z.string().optional(),
+        offset: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
+      }),
       responses: {
         200: z.object({ tags: z.array(z.custom<AdminTagDto>()), total: z.number(), hasMore: z.boolean() }),
         ...standardMutationErrors,

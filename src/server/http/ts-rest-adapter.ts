@@ -170,7 +170,15 @@ async function readBody(req: HonoRequest, route: AppRoute): Promise<unknown> {
   }
   const ct = req.header('content-type') ?? ''
   if (ct.startsWith('application/json')) {
-    return req.json()
+    const text = await req.text()
+    if (!text.trim()) {
+      throw new HTTPException(400, { message: '请求体不能为空' })
+    }
+    try {
+      return JSON.parse(text)
+    } catch {
+      throw new HTTPException(400, { message: '无效的 JSON 请求体' })
+    }
   }
   if (ct.startsWith('multipart/form-data')) {
     return req.formData()
