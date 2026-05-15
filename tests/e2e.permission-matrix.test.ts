@@ -203,4 +203,30 @@ describe('permission matrix (E2E)', () => {
     })
     expect(res.status).toBe(200)
   })
+
+  it('admin mutation without CSRF returns 403 (was the "保存提示令牌失效" bug)', async () => {
+    // Regression for the report: admin saves submit through the
+    // ts-rest client, which had no way to surface the HttpOnly CSRF
+    // cookie. The middleware now reads the token from the
+    // `X-CSRF-Token` header; the client picks it up from a
+    // `<meta name="csrf-token">` tag rendered by the admin layout.
+    // Without the header, the guard still rejects mutations.
+    const app = mountTestApp({ user: { id: '1', role: 'admin' } })
+    const res = await app.request('/api/admin/users/9', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'New name' }),
+    })
+    expect(res.status).toBe(403)
+  })
+
+  it('admin mutation with X-CSRF-Token header returns 200', async () => {
+    const app = mountTestApp({ user: { id: '1', role: 'admin' } })
+    const res = await app.request('/api/admin/users/9', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': 'csrf-good' },
+      body: JSON.stringify({ name: 'New name' }),
+    })
+    expect(res.status).toBe(200)
+  })
 })

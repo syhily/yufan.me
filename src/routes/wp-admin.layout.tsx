@@ -63,6 +63,16 @@ export default function WpAdminLayoutRoute({ loaderData }: Route.ComponentProps)
         serif typography the public article surface gets.
       */}
       <PostFontLinks />
+      {/*
+        CSRF anchor for the ts-rest API client. The csrf cookie is
+        HttpOnly so JS can't read it; the client picks up the matching
+        token from this meta tag and sends it as `X-CSRF-Token` on
+        every mutation. React updates the `content` attribute when
+        the loader revalidates (token rotation, fresh login), so
+        long-lived admin sessions stay valid automatically. See
+        `src/client/api/client.ts`.
+      */}
+      <meta name="csrf-token" content={loaderData.csrfToken} />
       <AdminShell currentUser={loaderData.currentUser} pathname={pathname}>
         <Outlet context={{ csrfToken: loaderData.csrfToken, currentUser: loaderData.currentUser }} />
       </AdminShell>

@@ -77,6 +77,8 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
+      {/* CSRF anchor consumed by the ts-rest client — see wp-admin.layout. */}
+      <meta name="csrf-token" content={detail.csrfToken} />
       <PostDetailBody
         post={post}
         headings={post.headings}

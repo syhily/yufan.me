@@ -69,6 +69,8 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
+      {/* CSRF anchor consumed by the ts-rest client — see wp-admin.layout. */}
+      <meta name="csrf-token" content={detail.csrfToken} />
       <PageDetailBody
         page={page}
         headings={page.headings}
