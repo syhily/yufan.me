@@ -2,8 +2,8 @@ import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useFetcher } from 'react-router'
 
+import type { SendTestMailOutput } from '@/client/api/legacy-types'
 import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { SendTestMailOutput } from '@/shared/api-types'
 
 import { useFetcherResult } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'

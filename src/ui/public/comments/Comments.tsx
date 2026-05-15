@@ -7,7 +7,7 @@ import type {
   LoadCommentsOutput,
   MyCommentsOutput,
   RevokeCommentTokenOutput,
-} from '@/shared/api-types'
+} from '@/client/api/legacy-types'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType, Comments as CommentsData } from '@/shared/comments'
 

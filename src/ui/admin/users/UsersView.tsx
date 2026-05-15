@@ -11,7 +11,7 @@ import type {
   MuteUserInput,
   MuteUserOutput,
   UserIdInput,
-} from '@/shared/api-types'
+} from '@/client/api/legacy-types'
 
 import { useAdminMutation } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'

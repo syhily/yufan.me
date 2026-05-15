@@ -8,7 +8,7 @@ import type {
   IncreaseLikeOutput,
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
-} from '@/shared/api-types'
+} from '@/client/api/legacy-types'
 
 import { useApiFetcher } from '@/client/api/fetcher'
 import { API_ACTIONS } from '@/shared/api-actions'

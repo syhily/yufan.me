@@ -13,7 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminUserDto, ListUsersInput, ListUsersOutput } from '@/shared/api-types'
+import type { AdminUserDto, ListUsersInput, ListUsersOutput } from '@/client/api/legacy-types'
 import type { ListCategoriesInput, ListCategoriesOutput } from '@/shared/categories'
 import type {
   AdminPostDto,

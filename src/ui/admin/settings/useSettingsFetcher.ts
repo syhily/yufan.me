@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
+import type { UpdateSettingsOutput } from '@/client/api/legacy-types'
 import type { ApiEnvelope } from '@/shared/api-envelope'
-import type { UpdateSettingsOutput } from '@/shared/api-types'
 import type { SettingsSection } from '@/shared/settings'
 
 import { useFetcherResult } from '@/client/api/fetcher'

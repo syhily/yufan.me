@@ -14,7 +14,6 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useFetcher } from 'react-router'
 
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type {
   AdminMutationSuccessOutput,
   AdminUserDto,
@@ -24,7 +23,8 @@ import type {
   LoadAllOutput,
   MuteUserOutput,
   UpdateUserOutput,
-} from '@/shared/api-types'
+} from '@/client/api/legacy-types'
+import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { AdminComment } from '@/shared/comments'
 
 import { useFetcherResult } from '@/client/api/fetcher'
