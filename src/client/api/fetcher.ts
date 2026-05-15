@@ -234,3 +234,41 @@ export function useApiFetcher<I, O>(
     isSubmitting: fetcher.state === 'submitting',
   }
 }
+
+// Promise-returning counterpart to `useApiFetcher` for imperative save flows.
+export interface SubmitApiActionOptions {
+  signal?: AbortSignal
+}
+
+export async function submitApiAction<I, O>(
+  action: ApiActionDescriptor,
+  payload: I,
+  options: SubmitApiActionOptions = {},
+): Promise<ApiEnvelope<O>> {
+  try {
+    const response = await fetch(action.path, {
+      method: action.method,
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: options.signal,
+    })
+    const text = await response.text()
+    if (text === '') {
+      if (response.ok) {
+        return { data: undefined as unknown as O }
+      }
+      return { error: { message: response.statusText || 'request_failed' } }
+    }
+    let parsed: ApiEnvelope<O>
+    try {
+      parsed = JSON.parse(text) as ApiEnvelope<O>
+    } catch {
+      return { error: { message: text.slice(0, 256) } }
+    }
+    return parsed
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : String(cause)
+    return { error: { message } }
+  }
+}

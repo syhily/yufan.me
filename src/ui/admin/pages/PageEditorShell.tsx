@@ -28,8 +28,7 @@ import type {
 } from '@/shared/cms-pages'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { useApiFetcher } from '@/client/api/fetcher'
-import { submitApiAction } from '@/client/api/submit'
+import { useApiFetcher, submitApiAction } from '@/client/api/fetcher'
 import { useCreatePageDraft } from '@/client/hooks/use-create-page-draft'
 import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
