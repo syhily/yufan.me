@@ -29,7 +29,7 @@ describe('client/music — loadMusic', () => {
     const calls: string[] = []
     globalThis.fetch = (async (input: string) => {
       calls.push(input)
-      return new Response(JSON.stringify({ data: { music: meta } }), {
+      return new Response(JSON.stringify({ music: meta }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -61,7 +61,7 @@ describe('client/music — loadMusic', () => {
     const calls: string[] = []
     globalThis.fetch = (async (input: string) => {
       calls.push(input)
-      return new Response(JSON.stringify({ data: { music: null } }), { status: 200 })
+      return new Response(JSON.stringify({ music: null }), { status: 200 })
     }) as unknown as typeof fetch
 
     await loadMusic('weird id with spaces')

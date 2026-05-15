@@ -1,33 +1,27 @@
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { RenderMathInput, RenderMathOutput } from '@/shared/cms-pages'
 
 import { API_ACTIONS } from '@/shared/api-actions'
 
-/** Imperative `admin.renderMath` call for save flows (outside `useApiFetcher`). */
+// Imperative `admin.renderMath` call for save flows. Uses the Hono REST API.
+
 export async function fetchRenderMath(input: RenderMathInput): Promise<RenderMathOutput> {
   const res = await fetch(API_ACTIONS.admin.renderMath.path, {
     method: API_ACTIONS.admin.renderMath.method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(input),
     credentials: 'same-origin',
   })
-  let envelope: ApiEnvelope<RenderMathOutput>
+  let body: RenderMathOutput & { error?: { message?: string } }
   try {
-    envelope = (await res.json()) as ApiEnvelope<RenderMathOutput>
+    body = (await res.json()) as RenderMathOutput & { error?: { message?: string } }
   } catch {
     return { mathml: '', error: 'Invalid JSON response' }
   }
-  if (!res.ok || envelope.error !== undefined) {
-    return {
-      mathml: '',
-      error: envelope.error?.message ?? `HTTP ${res.status}`,
-    }
+  if (!res.ok || body.error) {
+    return { mathml: '', error: body.error?.message ?? `HTTP ${res.status}` }
   }
-  if (envelope.data === undefined) {
-    return { mathml: '', error: 'Empty envelope' }
+  if (body.mathml === undefined) {
+    return { mathml: '', error: 'Empty response' }
   }
-  return envelope.data
+  return { mathml: body.mathml, error: null }
 }

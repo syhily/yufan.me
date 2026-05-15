@@ -1,33 +1,27 @@
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { RenderMermaidInput, RenderMermaidOutput } from '@/shared/cms-pages'
 
 import { API_ACTIONS } from '@/shared/api-actions'
 
-/** Imperative `admin.renderMermaid` call for save flows (outside `useApiFetcher`). */
+// Imperative `admin.renderMermaid` call for save flows. Uses the Hono REST API.
+
 export async function fetchRenderMermaid(input: RenderMermaidInput): Promise<RenderMermaidOutput> {
   const res = await fetch(API_ACTIONS.admin.renderMermaid.path, {
     method: API_ACTIONS.admin.renderMermaid.method,
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(input),
     credentials: 'same-origin',
   })
-  let envelope: ApiEnvelope<RenderMermaidOutput>
+  let body: RenderMermaidOutput & { error?: { message?: string } }
   try {
-    envelope = (await res.json()) as ApiEnvelope<RenderMermaidOutput>
+    body = (await res.json()) as RenderMermaidOutput & { error?: { message?: string } }
   } catch {
     return { svg: '', error: 'Invalid JSON response' }
   }
-  if (!res.ok || envelope.error !== undefined) {
-    return {
-      svg: '',
-      error: envelope.error?.message ?? `HTTP ${res.status}`,
-    }
+  if (!res.ok || body.error) {
+    return { svg: '', error: body.error?.message ?? `HTTP ${res.status}` }
   }
-  if (envelope.data === undefined) {
-    return { svg: '', error: 'Empty envelope' }
+  if (body.svg === undefined) {
+    return { svg: '', error: 'Empty response' }
   }
-  return envelope.data
+  return { svg: body.svg, error: null }
 }
