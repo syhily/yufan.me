@@ -12,6 +12,7 @@ import { onErrorHandler } from '@/server/http/errors'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
 import { feedRouter } from '@/server/http/resources/feed'
+import { imagesRouter } from '@/server/http/resources/images'
 import { redirectRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { clientAddressMiddleware } from '@/server/middleware/client-address'
@@ -41,9 +42,27 @@ export function createApp(): Hono<Env> {
 
   // API (ts-rest contracts).
   app.route('/', createApiApp())
-  // Resource routes (non-JSON: feeds, sitemap, SSE, redirects).
+  // 301 redirects for old API URLs → new RESTful URLs.
+  app.all('/api/actions/*', (c) => {
+    const oldPath = new URL(c.req.url).pathname
+    const newPath = oldPath
+      .replace('/api/actions/account/', '/api/account/')
+      .replace('/api/actions/analytics/', '/api/analytics/')
+      .replace('/api/actions/auth/', '/api/auth/')
+      .replace('/api/actions/comment/', '/api/comment/')
+      .replace('/api/actions/image/', '/api/image/')
+      .replace('/api/actions/music/', '/api/music/')
+      .replace('/api/actions/admin/', '/api/admin/')
+      .replace('updateProfile', 'profile')
+      .replace('updatePassword', 'password')
+      .replace('revokeSession', 'sessions/revoke')
+    return c.redirect(newPath, 301)
+  })
+
+  // Resource routes (non-JSON: feeds, sitemap, SSE, images, redirects).
   app.route('/', feedRouter)
   app.route('/', sitemapRouter)
+  app.route('/', imagesRouter)
   app.route('/', analyticsEventsRouter)
   app.route('/', redirectRouter)
 

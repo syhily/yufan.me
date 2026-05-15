@@ -1,12 +1,14 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vite-plus/test'
 
 import routes from '@/routes'
 
 // External URL contract. AGENTS.md is explicit: "public URL / feed URL /
 // image endpoint / sitemap / WordPress 兼容路由 / SEO meta 输出 must remain
-// stable". A regression here is potentially user-visible (broken bookmarks,
-// search engine deindex, RSS reader churn). This file pins every public
-// route in the manifest so any rename forces an explicit test update.
+// stable". Route source of truth is now split: page routes in `src/routes.ts`,
+// resource routes in the Hono entry. This test checks both by reading source
+// files for URL patterns (avoids importing the full Hono app which pulls in
+// heavy server deps).
 
 interface RouteEntry {
   path?: string
@@ -30,18 +32,40 @@ function flatten(entries: unknown[]): RouteEntry[] {
   return out
 }
 
+function honoRegisteredPaths(): Set<string> {
+  const paths = new Set<string>()
+  const sources = [
+    'src/entry/server.node.ts',
+    'src/server/http/resources/feed.ts',
+    'src/server/http/resources/sitemap.ts',
+    'src/server/http/resources/images.ts',
+    'src/server/http/resources/redirects.ts',
+  ]
+  for (const file of sources) {
+    try {
+      const src = readFileSync(file, 'utf8')
+      for (const m of src.matchAll(/\.(?:get|post|patch|delete|put|all|route)\s*\(\s*['"]([^'"]+)['"]/g)) {
+        paths.add(m[1])
+      }
+    } catch {
+      /* skip missing files */
+    }
+  }
+  return paths
+}
+
 describe('contract: public URL stability', () => {
-  const all = flatten(routes)
+  // RR paths lack leading '/', Hono paths include it. Normalise.
+  const rrPaths = new Set(flatten(routes).map((r) => `/${r.path}`))
+  const allPaths = new Set([...rrPaths, ...honoRegisteredPaths()])
 
   it('home + paginated home are mounted at / and /page/:num', () => {
-    const home = all.find((r) => r.file === 'routes/home.tsx' && r.id === undefined)
-    const homePaged = all.find((r) => r.id === 'home-page')
-    expect(home).toBeDefined()
-    expect(homePaged?.path).toBe('page/:num')
+    const all = flatten(routes)
+    expect(all.find((r) => r.file === 'routes/home.tsx' && r.id === undefined)).toBeDefined()
+    expect(all.find((r) => r.id === 'home-page')?.path).toBe('page/:num')
   })
 
   it('category + tag listings keep their /cats and /tags prefixes', () => {
-    const paths = new Set(all.map((r) => r.path))
     for (const expected of [
       'cats/:slug',
       'cats/:slug/feed',
@@ -52,49 +76,42 @@ describe('contract: public URL stability', () => {
       'tags/:slug/feed/atom',
       'tags/:slug/page/:num',
     ]) {
-      expect(paths.has(expected), `missing public URL: /${expected}`).toBe(true)
+      expect(allPaths.has(`/${expected}`), `missing: /${expected}`).toBe(true)
     }
   })
 
   it('RSS / Atom / sitemap routes are mounted at the historical paths', () => {
-    const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('feed')).toBe(true)
-    expect(paths.has('feed/atom')).toBe(true)
-    expect(paths.has('sitemap.xml')).toBe(true)
+    for (const path of ['/feed', '/feed/atom', '/sitemap.xml']) {
+      expect(allPaths.has(path), `missing: ${path}`).toBe(true)
+    }
   })
 
   it('image endpoints (/images/og /calendar /avatar) preserve their URL shape', () => {
-    const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('images/og/:slug.png')).toBe(true)
-    expect(paths.has('images/calendar/:year/:time.png')).toBe(true)
-    expect(paths.has('images/avatar/:hash.png')).toBe(true)
+    for (const path of ['/images/og/:slug.png', '/images/calendar/:year/:time.png', '/images/avatar/:hash.png']) {
+      expect(allPaths.has(path), `missing: ${path}`).toBe(true)
+    }
   })
 
-  it('WordPress compatibility URLs are still mounted (login + two-stage install)', () => {
-    const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('wp-login.php')).toBe(true)
-    expect(paths.has('wp-admin')).toBe(true)
-    // live on separate URLs so the install gate can route the user
-    // through the right page based on `getInstallState()`.
-    expect(paths.has('wp-admin/install.php')).toBe(true)
-    expect(paths.has('wp-admin/install/settings.php')).toBe(true)
+  it('WordPress compatibility URLs are still mounted', () => {
+    expect(rrPaths.has('/wp-login.php')).toBe(true)
+    expect(rrPaths.has('/wp-admin')).toBe(true)
+    expect(rrPaths.has('/wp-admin/install.php')).toBe(true)
+    expect(rrPaths.has('/wp-admin/install/settings.php')).toBe(true)
   })
 
   it('post + page detail pages still match /posts/:slug and /:slug', () => {
-    const paths = all.map((r) => r.path)
+    const paths = flatten(routes).map((r) => r.path)
     expect(paths).toContain('posts/:slug')
     expect(paths).toContain(':slug')
   })
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
-    const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('search')).toBe(true)
-    expect(paths.has('search/:keyword')).toBe(true)
-    expect(paths.has('search/:keyword/page/:num')).toBe(true)
+    expect(allPaths.has('/search')).toBe(true)
+    expect(rrPaths.has('/search/:keyword')).toBe(true)
+    expect(rrPaths.has('/search/:keyword/page/:num')).toBe(true)
   })
 
   it('the splat catch-all is mounted on routes/not-found.tsx', () => {
-    const splat = all.find((r) => r.path === '*')
-    expect(splat?.file).toBe('routes/not-found.tsx')
+    expect(flatten(routes).find((r) => r.path === '*')?.file).toBe('routes/not-found.tsx')
   })
 })

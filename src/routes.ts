@@ -1,12 +1,9 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes'
 
-import { API_ACTION_LIST } from './shared/api-actions'
-
-// See `src/routes/_README.md` for the long-form rationale behind every
-// block below (file-naming convention, why specific layouts wrap which
-// URLs, splat ordering, feed `id` disambiguators, etc.). Keep this
-// manifest terse — extend the README first when you need to explain
-// "why".
+// Resource routes (feeds, sitemap, OG images, calendar, avatars, tags/search
+// redirects, and all JSON API endpoints) are served by the Hono entry point
+// (`src/entry/server.node.ts`). This manifest only declares page routes that
+// render through React Router's SSR engine.
 export default [
   // Public layout — see _README.md §A (and §B for the splat).
   layout('routes/public.layout.tsx', [
@@ -26,32 +23,10 @@ export default [
     route('*', 'routes/not-found.tsx'),
   ]),
   // Backwards-compat redirects.
-  //
-  // Both `/my/comments` and `/my/profile` were promoted into the
-  // wp-admin shell to match the richness of the admin-side moderation
-  // and user-detail views (rich Tabs / search / pagination instead of
-  // the old plain stack). External bookmarks under `/my/*` survive
-  // via these 301s; the canonical URL is now `/wp-admin/my/*`.
   route('my/comments', 'routes/my.redirect.comments.ts'),
   route('my/profile', 'routes/my.redirect.profile.ts'),
-  // Resource routes outside the public layout — see _README.md §C.
-  route('tags', 'routes/tags.index.ts'),
-  // Feed URLs — see _README.md §D for the URL ↔ module ↔ id table.
-  route('feed', 'routes/feed.rss.ts'),
-  route('feed/atom', 'routes/feed.atom.ts'),
-  route('cats/:slug/feed', 'routes/feed.rss.ts', { id: 'category-feed-rss' }),
-  route('cats/:slug/feed/atom', 'routes/feed.atom.ts', { id: 'category-feed-atom' }),
-  route('tags/:slug/feed', 'routes/feed.rss.ts', { id: 'tag-feed-rss' }),
-  route('tags/:slug/feed/atom', 'routes/feed.atom.ts', { id: 'tag-feed-atom' }),
-  route('search', 'routes/search.index.ts'),
-  route('sitemap.xml', 'routes/sitemap.ts'),
-  route('images/og/:slug.png', 'routes/image.og.ts'),
-  route('images/calendar/:year/:time.png', 'routes/image.calendar.ts'),
-  route('images/calendar/dark/:year/:time.png', 'routes/image.calendar.dark.ts'),
-  route('images/avatar/:hash.png', 'routes/image.avatar.ts'),
-  // API resource routes generated from `API_ACTION_LIST` — see _README.md §E.
-  ...API_ACTION_LIST.map((action) => route(action.route, action.file)),
-  // Auth split-screen layout — see _README.md §F.
+
+  // Auth split-screen layout.
   layout('routes/admin.layout.tsx', [
     route('wp-login.php', 'routes/wp-login.tsx'),
     route('wp-admin/install.php', 'routes/wp-admin.install.tsx'),

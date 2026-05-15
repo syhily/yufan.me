@@ -759,11 +759,6 @@ describe('contract: module and bundle boundaries', () => {
         specifier: './icon-props',
       },
       {
-        key: 'routes.ts -> shared API actions',
-        file: 'src/routes.ts',
-        specifier: './shared/api-actions',
-      },
-      {
         key: 'search index -> openai helper',
         file: 'src/server/search/index.ts',
         specifier: './openai',
@@ -843,7 +838,6 @@ describe('contract: module and bundle boundaries', () => {
     )
 
     expect(aliasedProjectImports).toEqual([])
-    expect(importSpecifiers).toContain('./shared/api-actions')
   })
 
   it('keeps DOM/script islands out of the tree (React only)', () => {
