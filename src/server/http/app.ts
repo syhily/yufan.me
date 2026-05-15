@@ -34,6 +34,7 @@ import { adminTagsController } from './controllers/admin/tags.controller'
 import { adminUsersController } from './controllers/admin/users.controller'
 import { analyticsController } from './controllers/analytics.controller'
 import { authController } from './controllers/auth.controller'
+import { commentAdminController } from './controllers/comment-admin.controller'
 import { commentController } from './controllers/comment.controller'
 import { imageController } from './controllers/image.controller'
 import { musicController } from './controllers/music.controller'
@@ -146,6 +147,9 @@ export function createApiApp(): Hono<Env> {
   publicRoute(app, apiContract.comment, commentController)
   publicRoute(app, apiContract.image, imageController)
   publicRoute(app, apiContract.music, musicController)
+
+  // Admin comment routes (approve, delete, loadAll, search)
+  adminRoute(app, apiContract.commentAdmin, commentAdminController)
 
   // Admin routes — split by domain and guard
   adminRoute(app, adminUsersContract, adminUsersController)

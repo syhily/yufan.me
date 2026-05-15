@@ -371,13 +371,13 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
   const leaf = useCommentsLeafContext(propAdmin)
   const revalidator = useRevalidator()
   const approve = useApiMutation<CommentRidInput, unknown>(
-    (vars) => unwrap(api.comment.approve({ params: { rid: vars.rid } })),
+    (vars) => unwrap(api.commentAdmin.approve({ params: { rid: vars.rid } })),
     {
       onSuccess: () => leaf.onApproved(comment.id),
     },
   )
   const remove = useApiMutation<CommentRidInput, unknown>(
-    (vars) => unwrap(api.comment.delete({ params: { rid: vars.rid } })),
+    (vars) => unwrap(api.commentAdmin.delete({ params: { rid: vars.rid } })),
     {
       onSuccess: () => leaf.onDeleted(comment.id),
     },

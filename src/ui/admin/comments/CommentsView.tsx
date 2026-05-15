@@ -80,7 +80,7 @@ export function CommentsView({
   })
 
   const loadMutation = useApiMutation<LoadAllInput, LoadAllOutput>(
-    (input) => unwrap(api.comment.loadAll({ body: input })),
+    (input) => unwrap(api.commentAdmin.loadAll({ body: input })),
     {
       onSuccess: (payload) => {
         dispatch({
@@ -110,19 +110,19 @@ export function CommentsView({
   })
 
   const { data: pagesData, isLoading: isPagesPending } = useApiQuery(['comment-search-pages', debouncedPageQuery], () =>
-    unwrap(api.comment.searchPages({ query: debouncedPageQuery ? { q: debouncedPageQuery } : {} })),
+    unwrap(api.commentAdmin.searchPages({ query: debouncedPageQuery ? { q: debouncedPageQuery } : {} })),
   )
 
   const { data: authorsData, isLoading: isAuthorsPending } = useApiQuery(
     ['comment-search-authors', debouncedAuthorQuery],
-    () => unwrap(api.comment.searchAuthors({ query: debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {} })),
+    () => unwrap(api.commentAdmin.searchAuthors({ query: debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {} })),
   )
 
   const { data: authorRehydrateData } = useApiQuery(
     ['comment-rehydrate-author', initialAuthorId],
     () =>
       initialAuthorId
-        ? unwrap(api.comment.searchAuthors({ query: { ids: initialAuthorId } }))
+        ? unwrap(api.commentAdmin.searchAuthors({ query: { ids: initialAuthorId } }))
         : Promise.resolve({ authors: [] }),
     { enabled: !!initialAuthorId },
   )
@@ -131,7 +131,7 @@ export function CommentsView({
     ['comment-rehydrate-page', initialPageKey],
     () =>
       initialPageKey
-        ? unwrap(api.comment.searchPages({ query: { key: initialPageKey } }))
+        ? unwrap(api.commentAdmin.searchPages({ query: { key: initialPageKey } }))
         : Promise.resolve({ pages: [] }),
     { enabled: !!initialPageKey },
   )

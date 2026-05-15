@@ -80,7 +80,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   )
 
   const commentsQuery = useApiQuery(['admin', 'comments', userId], () =>
-    unwrap(api.comment.loadAll({ body: { offset: 0, limit: 10, userId } })),
+    unwrap(api.commentAdmin.loadAll({ body: { offset: 0, limit: 10, userId } })),
   )
 
   const user = userQuery.data?.user ?? null

@@ -4,16 +4,7 @@ import type { BlogSession } from '@/server/auth/session-storage'
 
 import { isCommentOwner, type ViewerContext } from '@/server/auth/rbac'
 import { AvatarStatus, cacheAvatar } from '@/server/cache/avatar'
-import {
-  approveComment,
-  deleteComment,
-  loadAllComments,
-  searchAuthorOptions,
-  searchPageOptions,
-  updateComment,
-  updateOwnComment,
-  getCommentById,
-} from '@/server/comments/admin'
+import { updateComment, updateOwnComment, getCommentById } from '@/server/comments/admin'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/comments/likes'
 import { parseComments, loadComments, createComment } from '@/server/comments/loader'
 import {
@@ -360,17 +351,7 @@ export const commentController = {
     }
   },
 
-  // ─── Admin moderation ──────────────────────────────────
-
-  approve: async ({ params }: { params: { rid: string } }) => {
-    await approveComment(params.rid)
-    return { status: 200 as const, body: null }
-  },
-
-  delete: async ({ params }: { params: { rid: string } }) => {
-    await deleteComment(params.rid)
-    return { status: 200 as const, body: null }
-  },
+  // ─── edit (supports both admin and self-service) ───────
 
   edit: async (
     { params, body }: { params: { rid: string }; body: { body: unknown } },
@@ -406,65 +387,6 @@ export const commentController = {
       status: 200 as const,
       body: { comment: updated },
       headers: setCookies.length > 0 ? { 'Set-Cookie': setCookies } : undefined,
-    }
-  },
-
-  loadAll: async ({
-    body,
-  }: {
-    body: { offset: number; limit: number; pageKey?: string; userId?: string; status?: 'all' | 'pending' | 'approved' }
-  }) => {
-    const result = await loadAllComments(
-      body.offset,
-      body.limit,
-      body.pageKey,
-      body.userId ? BigInt(body.userId) : undefined,
-      body.status,
-    )
-    return {
-      status: 200 as const,
-      body: {
-        comments: result.comments,
-        total: result.total,
-        hasMore: result.hasMore,
-        statusCounts: result.statusCounts,
-      },
-    }
-  },
-
-  searchPages: async ({ query }: { query: { q?: string; limit: number; ids?: string; key?: string } }) => {
-    const keys = query.key ? [query.key] : undefined
-    const pages = await searchPageOptions(query.q, query.limit, keys)
-    return { status: 200 as const, body: { pages } }
-  },
-
-  searchAuthors: async ({ query }: { query: { q?: string; limit: number; ids?: string; key?: string } }) => {
-    function parseBigIntIds(raw: string | undefined): bigint[] | undefined {
-      if (!raw || raw.length === 0) {
-        return undefined
-      }
-      const out: bigint[] = []
-      for (const value of raw.split(',')) {
-        const trimmed = value.trim()
-        if (!trimmed) {
-          continue
-        }
-        try {
-          out.push(BigInt(trimmed))
-        } catch {
-          /* drop */
-        }
-      }
-      return out.length > 0 ? out : undefined
-    }
-
-    const ids = parseBigIntIds(query.ids)
-    const authors = await searchAuthorOptions(query.q, query.limit, ids)
-    return {
-      status: 200 as const,
-      body: {
-        authors: authors.map((author) => ({ id: String(author.id), name: author.name })),
-      },
     }
   },
 }

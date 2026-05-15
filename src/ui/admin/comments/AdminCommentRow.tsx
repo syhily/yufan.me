@@ -61,13 +61,13 @@ export function AdminCommentRow({
   const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
 
   const approveMutation = useApiMutation<{ rid: string }, null>(
-    ({ rid }) => unwrap(api.comment.approve({ params: { rid } })),
+    ({ rid }) => unwrap(api.commentAdmin.approve({ params: { rid } })),
     {
       onSuccess: () => onApproved(),
     },
   )
   const deleteMutation = useApiMutation<{ rid: string }, null>(
-    ({ rid }) => unwrap(api.comment.delete({ params: { rid } })),
+    ({ rid }) => unwrap(api.commentAdmin.delete({ params: { rid } })),
     {
       onSuccess: () => onDeleted(),
     },

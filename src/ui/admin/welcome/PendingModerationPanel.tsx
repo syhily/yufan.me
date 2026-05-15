@@ -72,7 +72,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
   }, [refetch])
 
   const approveApi = useApiMutation(
-    (vars: { rid: string }) => unwrap(api.comment.approve({ params: { rid: vars.rid } })),
+    (vars: { rid: string }) => unwrap(api.commentAdmin.approve({ params: { rid: vars.rid } })),
     {
       onSuccess: () => {
         toast.success('已通过该评论。')
@@ -82,7 +82,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     },
   )
   const rejectApi = useApiMutation(
-    (vars: { rid: string }) => unwrap(api.comment.delete({ params: { rid: vars.rid } })),
+    (vars: { rid: string }) => unwrap(api.commentAdmin.delete({ params: { rid: vars.rid } })),
     {
       onSuccess: () => {
         toast.success('已拒绝并删除该评论。')
