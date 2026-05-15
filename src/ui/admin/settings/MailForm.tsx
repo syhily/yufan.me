@@ -2,7 +2,7 @@ import { SendIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useFetcher } from 'react-router'
 
-import type { SendTestMailOutput } from '@/client/api/legacy-types'
+import type { ApiEnvelope, SendTestMailOutput } from '@/client/api/fetcher'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'

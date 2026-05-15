@@ -7,7 +7,7 @@ import type {
   LoadAllOutput,
   SearchAuthorsOutput,
   SearchPagesOutput,
-} from '@/client/api/legacy-types'
+} from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 import type { FilterItem, FilterStatus } from '@/ui/admin/comments/useCommentsController'
 

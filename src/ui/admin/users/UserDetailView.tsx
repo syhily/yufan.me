@@ -23,7 +23,8 @@ import type {
   LoadAllOutput,
   MuteUserOutput,
   UpdateUserOutput,
-} from '@/client/api/legacy-types'
+} from '@/client/api/fetcher'
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
@@ -134,7 +135,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   // exactly once per server response.
   useFetcherResult(userFetcher, {
     action: GET,
-    onSuccess: (payload) => {
+    onSuccess: (payload: GetUserOutput) => {
       const u = payload.user
       setUser(u)
       setName(u.name)
@@ -148,16 +149,14 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   })
   useFetcherResult(commentsFetcher, {
     action: COMMENTS_LOAD,
-    onSuccess: (payload) => setComments(payload.comments),
+    onSuccess: (payload: LoadAllOutput) => setComments(payload.comments),
   })
-  useFetcherResult(muteFetcher, { action: MUTE, onSuccess: (payload) => setUser(payload.user) })
   useFetcherResult(sendResetFetcher, { action: SEND_RESET, onSuccess: () => {} })
   useFetcherResult(revokeSessionsFetcher, { action: REVOKE_USER_SESSIONS, onSuccess: () => {} })
   useFetcherResult(updateFetcher, { action: UPDATE, onSuccess: () => reloadUser() })
   useFetcherResult(updateRoleFetcher, {
     action: UPDATE_ROLE,
-    onSuccess: (payload) => {
-      setUser(payload.user)
+    onSuccess: () => {
       setRoleDraft('')
     },
   })

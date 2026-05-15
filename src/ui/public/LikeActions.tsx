@@ -8,7 +8,7 @@ import type {
   IncreaseLikeOutput,
   ValidateLikeTokenInput,
   ValidateLikeTokenOutput,
-} from '@/client/api/legacy-types'
+} from '@/client/api/fetcher'
 
 import { API_ACTIONS, useApiFetcher } from '@/client/api/fetcher'
 import { joinUrl } from '@/shared/urls'

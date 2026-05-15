@@ -12,7 +12,7 @@ import {
 import { memo } from 'react'
 import { Link } from 'react-router'
 
-import type { AdminUserDto } from '@/client/api/legacy-types'
+import type { AdminUserDto } from '@/client/api/fetcher'
 import type { SiteIdentitySettings } from '@/shared/blog-config'
 
 import { formatLocalDate } from '@/shared/formatter'

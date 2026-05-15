@@ -1,12 +1,7 @@
 import { PencilIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import type {
-  FindAvatarInput,
-  FindAvatarOutput,
-  ReplyCommentInput,
-  ReplyCommentOutput,
-} from '@/client/api/legacy-types'
+import type { FindAvatarInput, FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/client/api/fetcher'
 import type { CommentFormUser } from '@/shared/catalog'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 import { toast } from 'sonner'
 
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'

@@ -2,7 +2,13 @@ import { XIcon } from 'lucide-react'
 import { use, useEffect, useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
-import type { CommentEditInput, CommentEditOutput, CommentRawOutput, CommentRidInput } from '@/client/api/legacy-types'
+import type {
+  ApiEnvelope,
+  CommentEditInput,
+  CommentEditOutput,
+  CommentRawOutput,
+  CommentRidInput,
+} from '@/client/api/fetcher'
 import type { CommentItem as CommentItemType } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 

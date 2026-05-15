@@ -2,6 +2,7 @@ import { PencilIcon, RefreshCwIcon, RotateCcwIcon, SearchIcon, Trash2Icon, XIcon
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin.my.comments'
 import type { MyCommentsStatus } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'

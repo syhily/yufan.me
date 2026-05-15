@@ -11,7 +11,7 @@ import type {
   MuteUserInput,
   MuteUserOutput,
   UserIdInput,
-} from '@/client/api/legacy-types'
+} from '@/client/api/fetcher'
 
 import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'

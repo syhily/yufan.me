@@ -2,6 +2,7 @@ import { LogOutIcon, MonitorIcon, RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { MySessionItem } from '@/routes/wp-admin.my.sessions'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'

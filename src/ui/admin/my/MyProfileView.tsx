@@ -2,6 +2,8 @@ import { KeyRoundIcon, SaveIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
+import type { ApiEnvelope } from '@/client/api/fetcher'
+
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'
 import { roleLabel } from '@/shared/roles'

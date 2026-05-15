@@ -2,7 +2,7 @@ import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useFetcher, useRevalidator } from 'react-router'
 
-import type { ClearCacheOutput, GetCacheStatsOutput } from '@/client/api/legacy-types'
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { CacheSettings } from '@/shared/blog-config'
 import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/cache-types'
 
@@ -71,7 +71,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
     },
   })
 
-  const totalKeys = stats.buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
+  const totalKeys = stats.buckets.reduce((sum: number, bucket: ReservedCacheBucketStats) => sum + bucket.keyCount, 0)
   const isClearPending = fetcher.state !== 'idle'
 
   // `cache` is already a primitive-value map keyed by bucket id, so
@@ -141,7 +141,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
         </Button>
       </div>
 
-      {stats.buckets.map((bucket) => (
+      {stats.buckets.map((bucket: ReservedCacheBucketStats) => (
         <BucketCard
           key={bucket.id}
           bucket={bucket}
@@ -189,7 +189,7 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
       description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `vp` 或 Redis CLI 进行。"
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        {reserved.map((bucket) => (
+        {reserved.map((bucket: ReservedCacheBucketStats) => (
           <div key={bucket.id} className="rounded-md border bg-card p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h3 className="text-sm font-medium">{bucket.label}</h3>

@@ -2,6 +2,7 @@ import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useFetcher } from 'react-router'
 
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminComment } from '@/shared/comments'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'

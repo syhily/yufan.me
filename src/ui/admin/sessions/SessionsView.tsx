@@ -4,6 +4,7 @@ import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
+import type { ApiEnvelope } from '@/client/api/fetcher'
 import type { AdminSessionItem } from '@/routes/wp-admin.sessions'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
