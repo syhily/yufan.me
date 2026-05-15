@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { AdminSessionItem } from '@/routes/wp-admin.sessions'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'
 import { formatLocalDate } from '@/shared/formatter'

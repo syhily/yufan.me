@@ -24,7 +24,6 @@ import type {
   MuteUserOutput,
   UpdateUserOutput,
 } from '@/client/api/legacy-types'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { AdminComment } from '@/shared/comments'
 
 import { API_ACTIONS, useFetcherResult } from '@/client/api/fetcher'

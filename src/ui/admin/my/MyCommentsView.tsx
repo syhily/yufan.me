@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useFetcher, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin.my.comments'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { MyCommentsStatus } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 

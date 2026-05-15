@@ -4,7 +4,6 @@ import { useFetcher } from 'react-router'
 import { toast } from 'sonner'
 
 import type { ReplyCommentOutput } from '@/client/api/legacy-types'
-import type { ApiEnvelope } from '@/shared/api-envelope'
 import type { AdminComment } from '@/shared/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
