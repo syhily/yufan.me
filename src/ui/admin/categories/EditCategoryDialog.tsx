@@ -1,9 +1,12 @@
 import { SaveIcon, XIcon } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import type { AdminCategoryDto, UpsertCategoryInput, UpsertCategoryOutput } from '@/shared/categories'
+import type { AdminCategoryDto } from '@/shared/categories'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { buildPublicBaseUrlFromStorage, isSafeImageSegment } from '@/shared/images'
 import { CoverInputRow } from '@/ui/admin/shared/CoverInputRow'
 import { Button } from '@/ui/components/button'
@@ -19,8 +22,6 @@ import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { Textarea } from '@/ui/components/textarea'
 import { useAssetsSettingsOptional } from '@/ui/lib/blog-config-context'
-
-const UPSERT = API_ACTIONS.admin.upsertCategory
 
 // Discriminator: `category === null` opens the dialog in "new
 // category" mode; a populated `category` opens it in "edit existing"
@@ -43,18 +44,25 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const upsertApi = useAdminMutation<UpsertCategoryInput, UpsertCategoryOutput>(UPSERT, {
-    successMessage: '分类已保存',
-    onSuccess: (payload) => {
-      setErrorMessage(null)
-      onSaved(payload.category)
+  const upsertMutation = useApiMutation(
+    (input: { id?: string; name: string; slug?: string; cover: string; description?: string; sortOrder?: number }) => {
+      if (input.id) {
+        return unwrap(api.admin.categories.update({ params: { id: input.id }, body: input }))
+      }
+      return unwrap(api.admin.categories.create({ body: input }))
     },
-    onError: (error) => {
-      setErrorMessage(error.message)
-      return true
+    {
+      onSuccess: (data) => {
+        setErrorMessage(null)
+        onSaved(data.category)
+        toast.success('分类已保存')
+      },
+      onError: (error) => {
+        setErrorMessage(error.message)
+      },
     },
-  })
-  const { submit, isPending } = upsertApi
+  )
+  const { mutate: submit, isPending } = upsertMutation
 
   useEffect(() => {
     if (category === undefined) {
@@ -109,7 +117,14 @@ export function EditCategoryDialog({ category, onClose, onSaved }: EditCategoryD
           onSubmit={(e) => {
             e.preventDefault()
             const trimmedSlug = draft.slug.trim()
-            const payload: UpsertCategoryInput = {
+            const payload: {
+              id?: string
+              name: string
+              slug?: string
+              cover: string
+              description?: string
+              sortOrder?: number
+            } = {
               ...(isEditing && category ? { id: category.id } : {}),
               name: draft.name.trim(),
               // Only forward `slug` when the operator typed something.

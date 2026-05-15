@@ -1,17 +1,12 @@
 import { PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
-import type {
-  AdminCategoryDto,
-  DeleteCategoryInput,
-  DeleteCategoryOutput,
-  ListCategoriesInput,
-  ListCategoriesOutput,
-  ReorderCategoriesInput,
-  ReorderCategoriesOutput,
-} from '@/shared/categories'
+import type { AdminCategoryDto } from '@/shared/categories'
 
-import { API_ACTIONS, useAdminMutation } from '@/client/api/fetcher'
+import { api } from '@/client/api/client'
+import { useApiMutation, useApiQuery } from '@/client/api/query'
+import { unwrap } from '@/client/api/unwrap'
 import { CategoriesSkeleton, CategoryRow } from '@/ui/admin/categories/CategoryRow'
 import { EditCategoryDialog } from '@/ui/admin/categories/EditCategoryDialog'
 import { useCategoriesController } from '@/ui/admin/categories/useCategoriesController'
@@ -23,10 +18,6 @@ import { Card } from '@/ui/components/card'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
-
-const LIST = API_ACTIONS.admin.listCategories
-const DELETE = API_ACTIONS.admin.deleteCategory
-const REORDER = API_ACTIONS.admin.reorderCategories
 
 type EditTarget = AdminCategoryDto | null | undefined
 
@@ -42,61 +33,61 @@ export function CategoriesView() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
-  const listApi = useAdminMutation<ListCategoriesInput, ListCategoriesOutput>(LIST, {
-    onSuccess: (payload) => dispatch({ type: 'loaded', rows: payload.categories, total: payload.total }),
-    errorMessage: '加载分类失败',
-  })
-  const { load: loadCategories, isPending: isListPending } = listApi
+  const listQueryKey = useMemo(() => ['admin', 'categories', { q: state.q }] as const, [state.q])
 
-  const reload = useCallback(() => {
-    loadCategories({ q: state.q || undefined })
-  }, [loadCategories, state.q])
+  const {
+    data,
+    isPending: isListPending,
+    refetch: reload,
+  } = useApiQuery(listQueryKey, () => unwrap(api.admin.categories.list({ query: { q: state.q || undefined } })))
 
-  const deleteApi = useAdminMutation<DeleteCategoryInput, DeleteCategoryOutput>(DELETE, {
-    successMessage: '已删除分类',
-    onError: (error) => {
-      // The service blocks deletion when posts still reference the
-      // category (HTTP 409). Surface the message in a confirm-like
-      // alert dialog so the admin sees which posts to fix.
-      setConfirm({
-        title: '无法删除分类',
-        description: error.message,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      })
-      return true
+  useEffect(() => {
+    if (data) {
+      dispatch({ type: 'loaded', rows: data.categories, total: data.total })
+    }
+  }, [data, dispatch])
+
+  const deleteMutation = useApiMutation(
+    (input: { id: string }) => unwrap(api.admin.categories.delete({ params: { id: input.id } })),
+    {
+      onSuccess: () => {
+        toast.success('已删除分类')
+      },
+      onError: (error) => {
+        setConfirm({
+          title: '无法删除分类',
+          description: error.message,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        })
+      },
     },
-  })
-  const { submit: submitDelete } = deleteApi
+  )
 
-  const reorderApi = useAdminMutation<ReorderCategoriesInput, ReorderCategoriesOutput>(REORDER, {
-    onSuccess: (payload) => dispatch({ type: 'replaceRows', rows: payload.categories }),
-    onError: (error) => {
-      // Rollback to the canonical server state so the optimistic
-      // reorder doesn't linger after a 409 (stale set) or 400
-      // (validation) response.
-      setConfirm({
-        title: '排序保存失败',
-        description: `${error.message}。已重新加载最新顺序。`,
-        actionLabel: '我知道了',
-        destructive: false,
-        onConfirm: () => undefined,
-      })
-      reload()
-      return true
+  const reorderMutation = useApiMutation(
+    (input: { orderedIds: string[] }) => unwrap(api.admin.categories.reorder({ body: input })),
+    {
+      onSuccess: (payload) => {
+        dispatch({ type: 'replaceRows', rows: payload.categories })
+      },
+      onError: (error) => {
+        setConfirm({
+          title: '排序保存失败',
+          description: `${error.message}。已重新加载最新顺序。`,
+          actionLabel: '我知道了',
+          destructive: false,
+          onConfirm: () => undefined,
+        })
+        void reload()
+      },
     },
-  })
-  const { submit: submitReorder } = reorderApi
+  )
 
   const [qInput, setQInput] = useDebouncedSearch({
     delayMs: 300,
     onChange: (value) => dispatch({ type: 'setQ', value }),
   })
-
-  useEffect(() => {
-    reload()
-  }, [reload])
 
   // DnD only operates on the live full list. With a search filter
   // applied the rows are a subset, and reordering a subset would
@@ -104,7 +95,7 @@ export function CategoriesView() {
   // service guards against this server-side too, but we surface the
   // disable in the UI so admins don't see a drop that "fails".
   const dndEnabled = state.q.trim() === '' && state.rows.length > 1
-  const isReorderPending = reorderApi.isPending
+  const isReorderPending = reorderMutation.isPending
 
   // The dragging row id is tracked in a ref to avoid re-rendering the
   // whole list on every dragover. `setDraggingId` only fires on drag
@@ -144,9 +135,9 @@ export function CategoriesView() {
         return
       }
       dispatch({ type: 'reorderRows', orderedIds: next })
-      submitReorder({ orderedIds: next })
+      reorderMutation.mutate({ orderedIds: next })
     },
-    [dispatch, state.rows, submitReorder],
+    [dispatch, state.rows],
   )
 
   const isLoading = isListPending && state.rows.length === 0
@@ -158,7 +149,13 @@ export function CategoriesView() {
           title="分类管理"
           description={`共 ${state.total} 个分类。MDX 文章 frontmatter 中的 category 字段引用这些名称；拖拽行首手柄可调整顺序。`}
         >
-          <Button type="button" variant="outline" className="border-ink-4" onClick={reload} disabled={isListPending}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-ink-4"
+            onClick={() => void reload()}
+            disabled={isListPending}
+          >
             <RefreshCwIcon /> 刷新
           </Button>
           <Button type="button" onClick={() => setEditTarget(null)}>
@@ -234,7 +231,7 @@ export function CategoriesView() {
                             '此操作会从数据库直接删除该分类。如果仍有文章引用此分类，删除将被阻止；请先在 MDX frontmatter 中改写后再删除。',
                           actionLabel: '删除',
                           destructive: true,
-                          onConfirm: () => submitDelete({ id: row.id }),
+                          onConfirm: () => deleteMutation.mutate({ id: row.id }),
                         })
                       }
                     />
