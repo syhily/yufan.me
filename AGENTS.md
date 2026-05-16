@@ -176,15 +176,38 @@ or the closest interactive parent. Three tiers:
 - **`ui/public/`** — `chrome/`, `post/`, `comments/`, `widgets/`, plus
   single-file leaves (`Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`).
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
-  `categories`, `comments`, `editor`, `friends`, `images`, `musics`,
-  `my`, `pages`, `posts`, `sessions`, `settings`, `tags`, `users`,
-  `welcome`, plus `shared/` and `shell/`).
+  `categories`, `comments`, `editor`, `editor-shell`, `friends`,
+  `images`, `musics`, `my`, `pages`, `posts`, `sessions`, `settings`,
+  `tags`, `users`, `welcome`, plus `shared/` and `shell/`).
+  - `editor/` — the Tiptap micro-app (`PageBodyEditor`, `tiptap/`,
+    `toolbar/`, `pickers/`, `FootnoteEditorDialog`,
+    `portable-text-diff`). Self-contained; only `PageBodyEditor` is
+    imported by other admin domains.
+  - `editor-shell/` — the business-orchestration layer that wraps the
+    Tiptap editor into a draft/publish workflow:
+    `useEditorShellState` (shared FSM for both Post + Page editor
+    shells — body/meta drafts, draft-conflict resolution, autosave,
+    revision-token race, persist save/publish/unpublish, keyboard
+    shortcuts, layout toggles), `DraftConflictDialog`,
+    `FloatingPublishButton`, `PreviewPanel`, `RevisionsDrawer`,
+    `DateTimePicker`. `PostEditorShell.tsx` and `PageEditorShell.tsx`
+    consume the hook + sub-components and stay thin (~500 LOC each)
+    by encoding only their entity-specific bindings (DTO key shape,
+    API endpoint paths, sidebar component, mutation payload fields,
+    UI text). No new shared state belongs in either Shell — extend
+    `useEditorShellState` instead.
 
 Cross-cutting at the top of `ui/`:
 
-- `ui/pt/` — PortableText SSR renderer (`render.tsx`, `Footnotes.tsx`,
-  `image-meta-context.tsx`) + custom-block components under
-  `ui/pt/blocks/`.
+- `ui/pt/` — PortableText SSR renderer split across `render.tsx`
+  (entry, components map, recursive blocks, FootnotesSection),
+  `render-blocks.tsx` (12 block renderers + table inline-span
+  helpers), `render-marks.tsx` (3 mark renderers +
+  `renderMathMarkupOrTexFallback`), `render-shared.ts` (PT_INLINE
+  class tokens + 4 React contexts). Plus `Footnotes.tsx`,
+  `image-meta-context.tsx`, and custom-block components under
+  `ui/pt/blocks/` (CodeBlock, BlockImage, MusicPlayer, Solution,
+  Friends).
 - `ui/icons/` — Static-export icon library. Named imports only — no
   `<Icon name="..." />` string lookups.
 - `ui/lib/` — UI utilities (`cn`, `code-languages`, `ThemeProvider`,
@@ -583,6 +606,16 @@ Landmines from past refactors. Do not reintroduce:
   to change them.
 - When moving files, update imports and documentation in the same
   change.
+- **`ui/` complex-component LOC ceiling:** stateful orchestrators
+  (editor shells, multi-stage forms, comment threads, PortableText
+  renderers) should aim for ≤500 LOC per file. When a single file
+  grows past that, extract: shared state into a hook (e.g.
+  `useEditorShellState` for the Post + Page editor shells), reusable
+  sub-components into siblings (e.g. `ui/public/comments/comment-item/`
+  for the 7-file CommentItem split), or per-renderer modules
+  (`ui/pt/render-{shared,marks,blocks}` for the PortableText
+  pipeline). The benchmark is "another agent can read and modify the
+  file without scrolling past unrelated concerns."
 - **`server/` layering:**
   - `infra/*` imports nothing from `domains/`, `http/`, or `render/`.
   - `domains/*` modules use the locked
