@@ -5,7 +5,7 @@ import { cleanupExpiredTokens, revokeCommentToken } from '@/server/comments/toke
 import { asCommentItemsWire } from '@/server/comments/wire'
 import { publicProc } from '@/server/http/orpc-base'
 import { findCommentsByIds } from '@/server/infra/db/query/comment'
-import { commentItemDto } from '@/shared/contracts/index'
+import { commentItemDto } from '@/shared/contracts/comments'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 
 const revokeToken = publicProc

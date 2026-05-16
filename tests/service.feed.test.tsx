@@ -28,7 +28,7 @@ vi.mock('@/server/catalog/queries', () => ({
   getTagsByNames: mocks.getTagsByNames,
 }))
 
-const { feedResponse, generateFeeds } = await import('@/server/present/feed')
+const { feedResponse, generateFeeds } = await import('@/server/present/feed/generator')
 
 function fakeCatalog(
   opts: {

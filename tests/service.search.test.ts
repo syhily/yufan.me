@@ -49,7 +49,8 @@ function chainable(rows: unknown[]) {
   return handle
 }
 
-const { searchPostOptions, searchPosts } = await import('@/server/infra/search')
+const { searchPostOptions } = await import('@/server/infra/search/options')
+const { searchPosts } = await import('@/server/infra/search/search')
 
 beforeEach(() => {
   mocks.dbSelect.mockReset()

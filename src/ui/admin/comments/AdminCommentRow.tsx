@@ -1,6 +1,6 @@
 import { CheckIcon, EditIcon, LinkIcon, MoreHorizontalIcon, ReplyIcon, Trash2Icon, UserIcon } from 'lucide-react'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/index'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
 import { formatLocalDate } from '@/shared/utils/formatter'

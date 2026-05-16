@@ -13,7 +13,7 @@ import {
   listMyComments,
   requestDeleteComment,
 } from '@/server/infra/db/query/comment'
-import { commentItemDto } from '@/shared/contracts/index'
+import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 
 const successOutput = z.object({ success: z.boolean() })

@@ -6,7 +6,7 @@ import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/auth/context'
 import { resolveSessionContext } from '@/server/auth/primitives'
-import { getEntryBySlug } from '@/server/catalog'
+import { getEntryBySlug } from '@/server/catalog/catalog'
 import { buildDbPage, findPageBySlug } from '@/server/content/pages/query'
 import { loadPageDraftPreviewBySlug } from '@/server/content/pages/service'
 import { resolveImageMetaBySources } from '@/server/images/render-enhance'

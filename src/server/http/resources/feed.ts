@@ -2,7 +2,7 @@ import type { Context } from 'hono'
 
 import { Hono } from 'hono'
 
-import { feedResponse } from '@/server/present/feed'
+import { feedResponse } from '@/server/present/feed/generator'
 import { getSlug, scopeFromUrl } from '@/server/present/feed/scope'
 
 import type { Env } from '../context'

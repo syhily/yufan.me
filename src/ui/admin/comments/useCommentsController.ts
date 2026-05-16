@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/index'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 
 import { idStr } from '@/shared/utils/tools'
 

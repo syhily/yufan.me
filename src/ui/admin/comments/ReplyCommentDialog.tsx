@@ -2,7 +2,7 @@ import { SendIcon, XIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-import type { AdminCommentWire as AdminComment } from '@/shared/contracts/index'
+import type { AdminCommentWire as AdminComment } from '@/shared/contracts/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 
 import { useMutation, orpcQuery } from '@/client/api/query'

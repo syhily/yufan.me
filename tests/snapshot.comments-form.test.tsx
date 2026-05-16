@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/index'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'

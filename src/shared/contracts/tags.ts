@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type { AdminTagDto } from '@/shared/types/tags'
 
-import { idString, isoDateTime } from '@/shared/contracts/index'
+import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 export const adminTagDto = z.object({
   id: idString,

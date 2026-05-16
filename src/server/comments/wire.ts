@@ -16,7 +16,7 @@
 // `CommentItemWire` directly and collapse these helpers into a
 // single identity call.
 
-import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/index'
+import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
 import type { AdminComment, CommentAndUser, CommentItem } from '@/shared/types/comments'
 
 function asString(value: bigint | string | null | undefined): string {

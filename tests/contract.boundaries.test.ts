@@ -86,7 +86,7 @@ describe('contract: module and bundle boundaries', () => {
       .filter((file) => !file.startsWith('src/server/catalog/'))
       .filter((file) => {
         const source = readFileSync(file, 'utf8')
-        return /@\/server\/catalog\/(?:schema|catalog)(?:["'/])/.test(source)
+        return /@\/server\/catalog\/schema(?:["'/])/.test(source)
       })
 
     expect(offenders).toEqual([])
@@ -771,12 +771,12 @@ describe('contract: module and bundle boundaries', () => {
       // (routes.ts no longer imports api-actions since all API routes moved to Hono)
       {
         key: 'search index -> openai helper',
-        file: 'src/server/infra/search/index.ts',
+        file: 'src/server/infra/search/search.ts',
         specifier: './openai',
       },
       {
         key: 'search index -> options helper',
-        file: 'src/server/infra/search/index.ts',
+        file: 'src/server/infra/search/search.ts',
         specifier: './options',
       },
       {

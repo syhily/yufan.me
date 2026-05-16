@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import type { CommentItemWire } from '@/shared/contracts/index'
+import type { CommentItemWire } from '@/shared/contracts/comments'
 
 import { commentTreeReducer, createCommentTreeState } from '@/ui/public/comments/Comments'
 import { applyLikeOptimistic, createLikeButtonState } from '@/ui/public/LikeActions'

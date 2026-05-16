@@ -213,7 +213,7 @@ export interface FilterAutocompleteInput {
 // timestamps ISO-encoded. The legacy interfaces are kept for the
 // server-side query layer (Drizzle types still see them as bigint /
 // Date) and will be reconciled in a follow-up.
-import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/index'
+import type { AdminCommentWire, CommentItemWire } from '@/shared/contracts/comments'
 
 export interface ReplyCommentOutput {
   comment: CommentItemWire

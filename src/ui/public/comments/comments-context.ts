@@ -1,6 +1,6 @@
 import { createContext, use } from 'react'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/index'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 
 // Public-detail comments island state, lifted into a Context so the recursive

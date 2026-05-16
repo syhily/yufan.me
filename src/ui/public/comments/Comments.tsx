@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 
-import type { CommentItemWire as CommentItemType } from '@/shared/contracts/index'
+import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 import type { CommentFormUser } from '@/shared/types/catalog'
 import type {
   Comments as CommentsData,

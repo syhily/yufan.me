@@ -8,7 +8,7 @@ import type {
   UpdateMusicOutput,
 } from '@/shared/types/music'
 
-import { idString, isoDateTime } from '@/shared/contracts/index'
+import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 const metingSource = z.enum(['netease'])
 

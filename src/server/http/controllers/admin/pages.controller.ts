@@ -17,13 +17,13 @@ import {
 } from '@/server/content/pages/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
-import { adminRevisionDto } from '@/shared/contracts/index'
 import {
   adminPageDetailDto,
   adminPageDto,
   listPageRevisionsOutputDto,
   listPagesOutputDto,
 } from '@/shared/contracts/pages'
+import { adminRevisionDto } from '@/shared/contracts/revision'
 import { collectHeadings, portableTextBodySchema } from '@/shared/pt/schema'
 
 const idInput = z.object({ id: z.string().min(1) })

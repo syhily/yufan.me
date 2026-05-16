@@ -7,7 +7,7 @@ import type {
   ReservedCacheBucketStats,
 } from '@/shared/types/cache'
 
-import { isoDateTime } from '@/shared/contracts/index'
+import { isoDateTime } from '@/shared/contracts/primitives'
 
 const cacheBucketId = z.enum(['og', 'calendar', 'avatar', 'imageMeta', 'embeddingSearch', 'searchResult'])
 const reservedCacheBucketId = z.enum(['session', 'rateLimit'])

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type { AdminImageDto, ListImagesOutput } from '@/shared/types/images'
 
-import { idString, isoDateTime } from '@/shared/contracts/index'
+import { idString, isoDateTime } from '@/shared/contracts/primitives'
 
 export const adminImageDto = z.object({
   id: idString,

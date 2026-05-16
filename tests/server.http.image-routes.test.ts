@@ -25,7 +25,7 @@ vi.mock('@/server/infra/cache/avatar', () => ({
 vi.mock('@/server/infra/cache/image', () => ({
   loadBuffer: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
 }))
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/catalog/catalog', () => ({
   getEntryBySlug: vi.fn().mockResolvedValue({ type: 'post' }),
 }))
 vi.mock('@/server/images/avatar-fetch', () => ({
@@ -89,7 +89,7 @@ describe('imagesRouter avatar', () => {
 
 describe('imagesRouter og', () => {
   it('extracts the bare slug from `/images/og/<slug>.png`', async () => {
-    const { getEntryBySlug } = await import('@/server/catalog')
+    const { getEntryBySlug } = await import('@/server/catalog/catalog')
     await imagesRouter.request('/images/og/hello-world.png')
     expect(vi.mocked(getEntryBySlug)).toHaveBeenCalledWith('hello-world')
   })

@@ -71,5 +71,3 @@ export async function getEntryBySlug(slug: string): Promise<CatalogEntry | null>
 //   @/server/catalog/invalidate     invalidateCatalog, subscribe…
 //   @/server/catalog/snapshot       CatalogSnapshot, CatalogEntry types
 //   @/shared/types/catalog                projection helpers + DTOs
-export { CatalogConsistencyError } from '@/server/catalog/snapshot'
-export type { CatalogEntry, CatalogEntryType, CatalogSnapshot } from '@/server/catalog/snapshot'

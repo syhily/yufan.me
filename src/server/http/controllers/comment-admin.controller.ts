@@ -18,7 +18,7 @@ import {
 } from '@/server/infra/db/query/comment'
 import { getLogger } from '@/server/infra/logger'
 import { adminPendingDashboardDto } from '@/shared/contracts/comments'
-import { adminCommentDto } from '@/shared/contracts/index'
+import { adminCommentDto } from '@/shared/contracts/comments'
 
 const approve = adminProc
   .route({ method: 'POST', path: '/comment-admin/approve' })

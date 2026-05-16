@@ -11,8 +11,6 @@ import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 import { generateEmbedding } from './openai'
 import { searchPostOptions } from './options'
 
-export { searchPostOptions }
-
 const DEFAULT_SEARCH_SETTINGS = {
   enabled: false,
   mode: 'like' as const,

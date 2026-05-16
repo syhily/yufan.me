@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 import type { AdminPostDetailDto, AdminPostDto, ListPostsOutput } from '@/shared/types/posts'
 
-import { idString, isoDateTime, adminRevisionDto } from '@/shared/contracts/index'
+import { idString, isoDateTime } from '@/shared/contracts/primitives'
+import { adminRevisionDto } from '@/shared/contracts/revision'
 
 export const adminPostDto = z.object({
   id: idString,

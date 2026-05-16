@@ -34,7 +34,7 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/catalog/catalog', () => ({
   getEntryBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return { type: 'post', id: samplePost.id, slug }

@@ -22,13 +22,13 @@ import {
 } from '@/server/content/posts/service'
 import { authorProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
-import { adminRevisionDto } from '@/shared/contracts/index'
 import {
   adminPostDetailDto,
   adminPostDto,
   listPostRevisionsOutputDto,
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
+import { adminRevisionDto } from '@/shared/contracts/revision'
 import { collectHeadings } from '@/shared/pt/schema'
 
 const idInput = z.object({ id: z.string().min(1) })

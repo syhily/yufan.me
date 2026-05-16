@@ -22,7 +22,7 @@ import {
   tryLikeIncreaseRateLimit,
 } from '@/server/infra/rate-limit'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
-import { commentItemDto } from '@/shared/contracts/index'
+import { commentItemDto } from '@/shared/contracts/comments'
 import { commentBodySchema } from '@/shared/pt/comment-schema'
 import { parseCommentTokensCookie, serializeCommentTokensCookie } from '@/shared/utils/comment-token'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'

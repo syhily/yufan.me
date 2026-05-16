@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 import type { AdminPendingDashboardDto } from '@/shared/types/comments'
 
-import { idString, isoDateTime } from '@/shared/contracts/index'
+import { idString, isoDateTime } from '@/shared/contracts/primitives'
+import { commentBodySchema } from '@/shared/pt/comment-schema'
 
 export const adminPendingDashboardDto = z.object({
   items: z.array(
@@ -26,6 +27,52 @@ export const adminPendingDashboardDto = z.object({
     deletion: z.number().int().nonnegative(),
   }),
 })
+
+// ─── comments (shared by public + admin controllers) ───
+export const commentBaseDto = z.object({
+  id: idString,
+  createAt: isoDateTime,
+  updatedAt: isoDateTime,
+  deleteAt: isoDateTime.nullable(),
+  deleteRequestedAt: isoDateTime.nullable().optional(),
+  body: commentBodySchema,
+  content: z.string().nullable(),
+  type: z.enum(['post', 'page']).nullable(),
+  ownerId: idString.nullable(),
+  userId: idString,
+  isVerified: z.boolean().nullable(),
+  ua: z.string().nullable(),
+  ip: z.string().nullable(),
+  rid: z.number().int().nonnegative(),
+  isCollapsed: z.boolean().nullable(),
+  isPending: z.boolean().nullable(),
+  isPinned: z.boolean().nullable(),
+  voteUp: z.number().nullable(),
+  voteDown: z.number().nullable(),
+  rootId: idString.nullable(),
+  name: z.string(),
+  email: z.string(),
+  emailVerified: z.boolean(),
+  link: z.string().nullable(),
+  badgeName: z.string().nullable(),
+  badgeColor: z.string().nullable(),
+  badgeTextColor: z.string().nullable(),
+})
+
+export type CommentItemWire = z.infer<typeof commentBaseDto> & {
+  children?: CommentItemWire[]
+}
+
+export const commentItemDto: z.ZodType<CommentItemWire> = commentBaseDto.extend({
+  children: z.lazy(() => z.array(commentItemDto).optional()),
+}) as z.ZodType<CommentItemWire>
+
+export const adminCommentDto = commentBaseDto.extend({
+  pageTitle: z.string().nullable(),
+  pagePublicId: z.string().nullable(),
+})
+
+export type AdminCommentWire = z.infer<typeof adminCommentDto>
 
 // ─── parity assertion ──────────────────────────────────
 type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false

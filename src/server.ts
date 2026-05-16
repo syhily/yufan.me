@@ -17,6 +17,7 @@ import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/session'
+import { trailingSlashNormaliser } from '@/server/http/trailing-slash'
 import { honoVisitorCookieMiddleware } from '@/server/http/visitor-cookie'
 import { honoWpDecoyMiddleware } from '@/server/http/wp-decoy'
 import { getLogger } from '@/server/infra/logger'
@@ -42,6 +43,7 @@ const server = await createHonoServer<Env>({
         requestId: c.var.requestId,
       })
     })
+    app.use(trailingSlashNormaliser)
     app.use(honoWpDecoyMiddleware)
     app.use(honoSessionMiddleware)
     app.use(honoInstallGateMiddleware)

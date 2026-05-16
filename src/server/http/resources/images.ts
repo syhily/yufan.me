@@ -3,7 +3,7 @@ import type { Context } from 'hono'
 import { Hono } from 'hono'
 import crypto from 'node:crypto'
 
-import { getEntryBySlug } from '@/server/catalog'
+import { getEntryBySlug } from '@/server/catalog/catalog'
 import { findPageBySlug } from '@/server/content/pages/query'
 import { findPostBySlug } from '@/server/content/posts/query'
 import {
