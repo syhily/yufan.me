@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { RefObject, SubmitEventHandler } from 'react'
 
 import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -46,14 +46,14 @@ const sidebarSearchInputClass = cn(
 function useSearchSubmit() {
   const navigate = useNavigate()
   return useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
+    ((event) => {
       event.preventDefault()
       const formData = new FormData(event.currentTarget)
-      const q = String(formData.get('q') ?? '').trim()
+      const q = String((formData.get('q') as string | null) ?? '').trim()
       if (q) {
-        navigate(`/search/${encodeURIComponent(q)}`)
+        void navigate(`/search/${encodeURIComponent(q)}`)
       }
-    },
+    }) satisfies SubmitEventHandler<HTMLFormElement>,
     [navigate],
   )
 }
@@ -151,15 +151,15 @@ interface SearchPopupProps {
 function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
   const navigate = useNavigate()
   const handleSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
+    ((event) => {
       event.preventDefault()
       const formData = new FormData(event.currentTarget)
-      const q = String(formData.get('q') ?? '').trim()
+      const q = String((formData.get('q') as string | null) ?? '').trim()
       onClose()
       if (q) {
-        navigate(`/search/${encodeURIComponent(q)}`)
+        void navigate(`/search/${encodeURIComponent(q)}`)
       }
-    },
+    }) satisfies SubmitEventHandler<HTMLFormElement>,
     [navigate, onClose],
   )
 

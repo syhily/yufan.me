@@ -2,8 +2,7 @@ import { z } from 'zod'
 
 import type { AdminRevisionDto } from '@/shared/types/posts'
 
-import { idString, isoDateTime } from '@/shared/contracts/primitives'
-import { markdownHeadingDto } from '@/shared/contracts/primitives'
+import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
 import { portableTextBodySchema } from '@/shared/pt/schema'
 
 export const adminRevisionDto = z.object({
