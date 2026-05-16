@@ -43,8 +43,24 @@ const sidebarSearchInputClass = cn(
   'focus:shadow-none focus:outline-0',
 )
 
+function useSearchSubmit() {
+  const navigate = useNavigate()
+  return useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      const formData = new FormData(event.currentTarget)
+      const q = String(formData.get('q') ?? '').trim()
+      if (q) {
+        navigate(`/search/${encodeURIComponent(q)}`)
+      }
+    },
+    [navigate],
+  )
+}
+
 export function SearchBar() {
   const { sidebar } = useSidebarSettings()
+  const onSubmit = useSearchSubmit()
 
   if (!sidebar.search) {
     return <div id="search" className="mb-10" hidden />
@@ -52,7 +68,7 @@ export function SearchBar() {
 
   return (
     <div id="search" className="mb-10">
-      <Form method="get" action="/search">
+      <Form method="get" action="/search" onSubmit={onSubmit}>
         <label htmlFor="sidebar-search-input" className="sr-only">
           文章寻踪
         </label>
@@ -133,9 +149,23 @@ interface SearchPopupProps {
 }
 
 function SearchPopup({ open, onClose, inputRef }: SearchPopupProps) {
+  const navigate = useNavigate()
+  const handleSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      const formData = new FormData(event.currentTarget)
+      const q = String(formData.get('q') ?? '').trim()
+      onClose()
+      if (q) {
+        navigate(`/search/${encodeURIComponent(q)}`)
+      }
+    },
+    [navigate, onClose],
+  )
+
   return (
     <Popup open={open} onClose={onClose} size="md" popupId={SEARCH_POPUP_ID} aria-label="搜索文章">
-      <Form className="text-center" method="get" action="/search" onSubmit={onClose}>
+      <Form className="text-center" method="get" action="/search" onSubmit={handleSubmit}>
         <div className="px-4 py-4 md:px-12 md:py-8">
           <div className="mx-auto max-w-sm">
             <div className="mb-4 md:mb-6">

@@ -84,10 +84,10 @@ describe('contract: public URL stability', () => {
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
     const paths = new Set(all.map((r) => r.path))
-    // /search lives in RR as a redirect route (reads ?q= and redirects to
-    // /search/:keyword) so client-side <Form method="get" action="/search">
-    // works.  The Hono 301 in redirectsRouter still serves no-JS requests.
-    expect(paths.has('search')).toBe(true)
+    // /search 301 redirect is served by Hono redirectsRouter; client-side
+    // forms in Search.tsx intercept the submit and navigate directly to
+    // /search/:keyword so /search never needs a React Router route entry.
+    expect(paths.has('search')).toBe(false)
     expect(paths.has('search/:keyword')).toBe(true)
     expect(paths.has('search/:keyword/page/:num')).toBe(true)
   })
