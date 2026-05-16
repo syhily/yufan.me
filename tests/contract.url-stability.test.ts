@@ -84,8 +84,10 @@ describe('contract: public URL stability', () => {
 
   it('search routes (/search, /search/:keyword, paged) are unchanged', () => {
     const paths = new Set(all.map((r) => r.path))
-    // /search 301 redirect now served by Hono; /search/:keyword stays in RR
-    expect(paths.has('search')).toBe(false)
+    // /search lives in RR as a redirect route (reads ?q= and redirects to
+    // /search/:keyword) so client-side <Form method="get" action="/search">
+    // works.  The Hono 301 in redirectsRouter still serves no-JS requests.
+    expect(paths.has('search')).toBe(true)
     expect(paths.has('search/:keyword')).toBe(true)
     expect(paths.has('search/:keyword/page/:num')).toBe(true)
   })

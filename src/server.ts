@@ -56,6 +56,22 @@ const server = await createHonoServer<Env>({
     // ─── API (oRPC at /rpc/*) ────────────────────────────
     app.route('/', createApiApp())
 
+    // ─── Stale-chunk guard ────────────────────────────────
+    // react-router-hono-server registers serveStatic for
+    // /assets/* BEFORE configure().  When a stale tab requests a
+    // JS/CSS chunk from a previous deploy that no longer exists,
+    // serveStatic calls next() and the request would fall through
+    // to React Router's SSR catch-all, which returns HTML.  The
+    // browser then throws a SyntaxError (not a ChunkLoadError),
+    // so the client's useChunkErrorRecovery never fires.
+    //
+    // This handler sits AFTER serveStatic but BEFORE React Router.
+    // If the asset exists, serveStatic returns it and this is
+    // never reached.  If the asset is missing, we return 404 so
+    // the browser's dynamic import() surfaces a real fetch
+    // failure that is recognised by isChunkLoadError().
+    app.all('/assets/*', (c) => c.body(null, 404))
+
     // ─── Public resource routes ───────────────────────────
     app.route('/', analyticsEventsRouter)
     app.route('/', feedRouter)

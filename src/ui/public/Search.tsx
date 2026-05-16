@@ -3,7 +3,7 @@ import type { RefObject } from 'react'
 import { SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { Form } from 'react-router'
+import { Form, useNavigate } from 'react-router'
 
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
