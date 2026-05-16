@@ -3,6 +3,8 @@ import type { Context } from 'hono'
 import { Hono } from 'hono'
 import crypto from 'node:crypto'
 
+import type { Env } from '@/server/http/context'
+
 import { getEntryBySlug } from '@/server/catalog/catalog'
 import { findPageBySlug } from '@/server/content/pages/query'
 import { findPostBySlug } from '@/server/content/posts/query'
@@ -19,8 +21,6 @@ import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/infra/cache/avat
 import { loadBuffer } from '@/server/infra/cache/image'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
-
-import type { Env } from '../context'
 
 // ─── OG image ─────────────────────────────────────────────────────
 

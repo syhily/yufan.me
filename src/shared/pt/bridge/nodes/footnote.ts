@@ -1,3 +1,4 @@
+import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
 import type {
   Block,
   FootnoteDefinitionBlock,
@@ -7,8 +8,6 @@ import type {
   PortableTextBody,
   Span,
 } from '@/shared/pt/schema'
-
-import type { PmBlockNode, PmNode } from '../types'
 
 export function footnoteDefinitionBlockToPmNode(
   block: FootnoteDefinitionBlock,

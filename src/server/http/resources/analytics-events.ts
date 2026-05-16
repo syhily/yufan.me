@@ -1,11 +1,10 @@
 import { Hono } from 'hono'
 
+import type { Env } from '@/server/http/context'
+
 import { queryRealtimeTail } from '@/server/analytics/query'
+import { requireRoleMw } from '@/server/http/middlewares/hono-rbac'
 import { getLogger } from '@/server/infra/logger'
-
-import type { Env } from '../context'
-
-import { requireRoleMw } from '../middlewares/hono-rbac'
 
 const POLL_INTERVAL_MS = 2_000
 const HEARTBEAT_INTERVAL_MS = 25_000

@@ -1,9 +1,9 @@
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 
-import { clearCsrfCookie, validateRequestCsrf } from '@/server/auth/csrf'
+import type { Env } from '@/server/http/context'
 
-import type { Env } from '../context'
+import { clearCsrfCookie, validateRequestCsrf } from '@/server/auth/csrf'
 
 /**
  * CSRF guard for mutation routes.

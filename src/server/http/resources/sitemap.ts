@@ -1,8 +1,8 @@
 import { Hono } from 'hono'
 
-import { buildSitemapXml } from '@/server/present/seo/sitemap'
+import type { Env } from '@/server/http/context'
 
-import type { Env } from '../context'
+import { buildSitemapXml } from '@/server/present/seo/sitemap'
 
 export const sitemapRouter = new Hono<Env>().get('/sitemap.xml', async (c) => {
   const xml = await buildSitemapXml(c.req.raw)

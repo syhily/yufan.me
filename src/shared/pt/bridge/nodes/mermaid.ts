@@ -1,6 +1,5 @@
+import type { PmBlockNode } from '@/shared/pt/bridge/types'
 import type { Block } from '@/shared/pt/schema'
-
-import type { PmBlockNode } from '../types'
 
 export function mermaidBlockToPmNode(block: Extract<Block, { _type: 'mermaid' }>): PmBlockNode {
   return {

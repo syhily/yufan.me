@@ -1,8 +1,7 @@
+import type { PmNode, PmListNode, PmBlockNode } from '@/shared/pt/bridge/types'
 import type { Block, TextBlock } from '@/shared/pt/schema'
 
-import type { PmNode, PmListNode, PmBlockNode } from '../types'
-
-import { paragraphToTextBlock, textBlockToPmNode } from './text'
+import { paragraphToTextBlock, textBlockToPmNode } from '@/shared/pt/bridge/nodes/text'
 
 export function consumeListStreak(out: PmNode[], blocks: readonly Block[], start: number): number {
   const first = blocks[start] as TextBlock

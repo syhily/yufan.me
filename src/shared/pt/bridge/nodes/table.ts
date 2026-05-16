@@ -1,9 +1,8 @@
+import type { PmBlockNode } from '@/shared/pt/bridge/types'
 import type { LinkMarkDef, TableBlock, TableCell, TableRow, Span } from '@/shared/pt/schema'
 
-import type { PmBlockNode } from '../types'
-
-import { isBlock, isInline } from '../utils'
-import { pmMarkToSpanMark, pushSpan } from './text'
+import { pmMarkToSpanMark, pushSpan } from '@/shared/pt/bridge/nodes/text'
+import { isBlock, isInline } from '@/shared/pt/bridge/utils'
 
 export function tableBlockToPmNode(block: TableBlock): PmBlockNode {
   const hasHeaderRow = block.hasHeaderRow ?? false

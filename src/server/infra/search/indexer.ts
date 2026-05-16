@@ -5,9 +5,8 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 import { db } from '@/server/infra/db/pool'
 import { postSearchIndex } from '@/server/infra/db/schema'
 import { getLogger } from '@/server/infra/logger'
+import { generateEmbedding } from '@/server/infra/search/openai'
 import { bodyToPlainText } from '@/shared/pt/schema'
-
-import { generateEmbedding } from './openai'
 
 // pgvector column dimension. Must stay in sync with `postSearchIndex.embedding`
 // in `src/server/db/schema.ts`.

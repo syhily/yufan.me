@@ -1,21 +1,20 @@
 import type { Block, PortableTextBody } from '@/shared/pt/schema'
 
+import { codeBlockToPmNode } from '@/shared/pt/bridge/nodes/code'
+import { footnoteDefinitionBlockToPmNode } from '@/shared/pt/bridge/nodes/footnote'
+import { horizontalRuleBlockToPmNode } from '@/shared/pt/bridge/nodes/horizontalRule'
+import { imageBlockToPmNode } from '@/shared/pt/bridge/nodes/image'
+import { consumeListStreak } from '@/shared/pt/bridge/nodes/list'
+import { mathBlockToPmNode } from '@/shared/pt/bridge/nodes/math'
+import { mermaidBlockToPmNode } from '@/shared/pt/bridge/nodes/mermaid'
+import { musicPlayerBlockToPmNode } from '@/shared/pt/bridge/nodes/musicPlayer'
+import { solutionBlockToPmNode } from '@/shared/pt/bridge/nodes/solution'
+import { tableBlockToPmNode } from '@/shared/pt/bridge/nodes/table'
+import { textBlockToPmNode } from '@/shared/pt/bridge/nodes/text'
+import { twoColumnBlockToPmNode } from '@/shared/pt/bridge/nodes/twoColumn'
 import { validatePortableTextBody } from '@/shared/pt/schema'
 
 import type { PmDoc, PmNode, PmBlockNode } from './types'
-
-import { codeBlockToPmNode } from './nodes/code'
-import { footnoteDefinitionBlockToPmNode } from './nodes/footnote'
-import { horizontalRuleBlockToPmNode } from './nodes/horizontalRule'
-import { imageBlockToPmNode } from './nodes/image'
-import { consumeListStreak } from './nodes/list'
-import { mathBlockToPmNode } from './nodes/math'
-import { mermaidBlockToPmNode } from './nodes/mermaid'
-import { musicPlayerBlockToPmNode } from './nodes/musicPlayer'
-import { solutionBlockToPmNode } from './nodes/solution'
-import { tableBlockToPmNode } from './nodes/table'
-import { textBlockToPmNode } from './nodes/text'
-import { twoColumnBlockToPmNode } from './nodes/twoColumn'
 
 /**
  * Validate and convert untyped input into a ProseMirror `doc` node.

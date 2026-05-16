@@ -1,6 +1,5 @@
+import type { PmBlockNode } from '@/shared/pt/bridge/types'
 import type { CodeBlock } from '@/shared/pt/schema'
-
-import type { PmBlockNode } from '../types'
 
 export function codeBlockToPmNode(block: CodeBlock): PmBlockNode {
   return {

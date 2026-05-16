@@ -3,10 +3,10 @@ import type { Context } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { ZodError } from 'zod'
 
+import type { Env } from '@/server/http/context'
+
 import { getLogger } from '@/server/infra/logger'
 import { ActionFailure, DomainError, domainStatus } from '@/server/present/response/errors'
-
-import type { Env } from './context'
 
 const log = getLogger('http.error')
 

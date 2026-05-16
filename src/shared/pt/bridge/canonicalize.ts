@@ -1,9 +1,8 @@
 import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
+import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import { portableTextBlockSemanticFingerprint } from '@/shared/pt/semantics'
-
-import { pmDocToBody } from './pm-to-pt'
-import { bodyToPmDoc } from './pt-to-pm'
 
 /**
  * Canonicalise a PortableText body through the PT↔PM bridge.

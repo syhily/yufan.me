@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 
-import { cn } from '@/ui/lib/cn'
+import type { IconProps } from '@/ui/icons/icon-props'
 
-import type { IconProps } from './icon-props'
+import { cn } from '@/ui/lib/cn'
 
 function SvgIconRoot({
   name,
@@ -70,4 +70,4 @@ export function WeiboIcon(props: IconProps) {
   )
 }
 
-export type { IconProps } from './icon-props'
+export type { IconProps } from '@/ui/icons/icon-props'

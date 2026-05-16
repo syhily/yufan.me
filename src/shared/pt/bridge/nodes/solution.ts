@@ -1,6 +1,5 @@
+import type { PmBlockNode, PmNode } from '@/shared/pt/bridge/types'
 import type { SolutionBlock } from '@/shared/pt/schema'
-
-import type { PmBlockNode, PmNode } from '../types'
 
 export function solutionBlockToPmNode(
   block: SolutionBlock,

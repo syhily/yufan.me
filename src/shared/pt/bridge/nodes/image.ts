@@ -1,6 +1,5 @@
+import type { PmBlockNode } from '@/shared/pt/bridge/types'
 import type { ImageBlock } from '@/shared/pt/schema'
-
-import type { PmBlockNode } from '../types'
 
 export function imageBlockToPmNode(block: ImageBlock): PmBlockNode {
   const layout = block.layout === 'left' || block.layout === 'right' ? block.layout : undefined

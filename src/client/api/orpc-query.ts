@@ -1,6 +1,6 @@
 import { createORPCReactQueryUtils } from '@orpc/react-query'
 
-import { orpc } from './client'
+import { orpc } from '@/client/api/client'
 
 /**
  * Typed oRPC + TanStack Query integration.

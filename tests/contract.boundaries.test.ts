@@ -763,37 +763,7 @@ describe('contract: module and bundle boundaries', () => {
       // be resolved too late by Vite+'s config loader.
       { key: 'vite.config.ts -> ./oxfmt.config.ts', file: 'vite.config.ts', specifier: './oxfmt.config.ts' },
       { key: 'vite.config.ts -> ./oxlint.config.ts', file: 'vite.config.ts', specifier: './oxlint.config.ts' },
-      {
-        key: 'brand-social-icons.tsx -> icon-props',
-        file: 'src/ui/icons/brand-social-icons.tsx',
-        specifier: './icon-props',
-      },
       // (routes.ts no longer imports api-actions since all API routes moved to Hono)
-      {
-        key: 'search index -> openai helper',
-        file: 'src/server/infra/search/search.ts',
-        specifier: './openai',
-      },
-      {
-        key: 'search index -> options helper',
-        file: 'src/server/infra/search/search.ts',
-        specifier: './options',
-      },
-      {
-        key: 'search indexer -> openai helper',
-        file: 'src/server/infra/search/indexer.ts',
-        specifier: './openai',
-      },
-      {
-        key: 'client api query -> orpc-query',
-        file: 'src/client/api/query.ts',
-        specifier: './orpc-query',
-      },
-      {
-        key: 'client api orpc-query -> client',
-        file: 'src/client/api/orpc-query.ts',
-        specifier: './client',
-      },
     ] as const
     const explicitAllowedHits = new Set<string>()
 

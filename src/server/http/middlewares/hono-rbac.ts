@@ -1,9 +1,9 @@
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 
-import { hasAtLeast, type Role } from '@/server/auth/rbac'
+import type { Env } from '@/server/http/context'
 
-import type { Env } from '../context'
+import { hasAtLeast, type Role } from '@/server/auth/rbac'
 
 // Hono-side RBAC helpers for resource routers (`/api/analytics/events`
 // SSE stream, future resource endpoints) that live OUTSIDE the oRPC

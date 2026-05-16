@@ -6,14 +6,14 @@ import type {
   TwoColumnBlock,
 } from '@/shared/pt/schema'
 
-import type { PmDoc, PmNode, PmBlockNode } from './types'
+import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
+import { headingStyleFromLevel } from '@/shared/pt/bridge/nodes/heading'
+import { flattenList } from '@/shared/pt/bridge/nodes/list'
+import { pmTableToBlock } from '@/shared/pt/bridge/nodes/table'
+import { paragraphToTextBlock } from '@/shared/pt/bridge/nodes/text'
+import { isBlock, isInline, stringAttr, numberAttr } from '@/shared/pt/bridge/utils'
 
-import { synchronizeFootnoteIndices } from './nodes/footnote'
-import { headingStyleFromLevel } from './nodes/heading'
-import { flattenList } from './nodes/list'
-import { pmTableToBlock } from './nodes/table'
-import { paragraphToTextBlock } from './nodes/text'
-import { isBlock, isInline, stringAttr, numberAttr } from './utils'
+import type { PmDoc, PmNode, PmBlockNode } from './types'
 
 /** Convert a ProseMirror `doc` node back into a PortableText body. */
 export function pmDocToBody(doc: PmDoc): PortableTextBody {

@@ -2,11 +2,11 @@ import { RPCHandler } from '@orpc/server/fetch'
 import { Hono } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
 
-import type { Env } from './context'
-import type { HandlerContext } from './orpc-base'
+import type { Env } from '@/server/http/context'
+import type { HandlerContext } from '@/server/http/orpc-base'
 
-import { apiRouter } from './api-router'
-import { csrfGuard } from './middlewares/csrf'
+import { apiRouter } from '@/server/http/api-router'
+import { csrfGuard } from '@/server/http/middlewares/csrf'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
 //

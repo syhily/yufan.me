@@ -1,11 +1,10 @@
 import { createMiddleware } from 'hono/factory'
 import { HTTPException } from 'hono/http-exception'
 
+import type { Env } from '@/server/http/context'
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/blog'
 
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
-
-import type { Env } from '../context'
 
 /**
  * Rate-limit middleware factory. Uses the client IP as the discriminator.

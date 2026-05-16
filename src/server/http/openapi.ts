@@ -1,6 +1,6 @@
 import { OpenAPIGenerator } from '@orpc/openapi'
 
-import { apiRouter } from './api-router'
+import { apiRouter } from '@/server/http/api-router'
 
 // Dev-only OpenAPI document generated from the live oRPC router.
 // Mounted at `/openapi.json` + Swagger UI at `/docs` (see
