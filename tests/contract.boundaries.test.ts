@@ -1015,7 +1015,7 @@ describe('contract: module and bundle boundaries', () => {
     // This contract makes both invariants visible at PR time.
     const publicCss = readFileSync('src/assets/styles/public.css', 'utf8')
     const tailwindCss = readFileSync('src/assets/styles/tailwind.css', 'utf8')
-    const commentItem = readFileSync('src/ui/public/comments/CommentItem.tsx', 'utf8')
+    const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
     expect(publicCss).not.toMatch(/^\s*\.post-content\s*\{/m)
     expect(publicCss).not.toMatch(/^\s*\.comment-content\s*\{/m)
@@ -1108,7 +1108,7 @@ describe('contract: module and bundle boundaries', () => {
     expect(tailwindCss).toMatch(/&\.comment-content\s*\{/)
 
     const detailChrome = readFileSync('src/ui/public/post/DetailBodyChrome.tsx', 'utf8')
-    const commentItem = readFileSync('src/ui/public/comments/CommentItem.tsx', 'utf8')
+    const commentItem = readFileSync('src/ui/public/comments/comment-item/helpers.ts', 'utf8')
 
     // post-content class is inlined in DetailBodyChrome; Post/Page DetailBody are thin wrappers.
     expect(detailChrome).toMatch(/cn\(\s*'post-content'\s*,/)

@@ -25,11 +25,11 @@ import { usePostAutosave } from '@/client/hooks/use-post-autosave'
 import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-import { DraftConflictDialog } from '@/ui/admin/editor/DraftConflictDialog'
-import { FloatingPublishButton } from '@/ui/admin/editor/FloatingPublishButton'
+import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
+import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
+import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
+import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
-import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
-import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import {
   EMPTY_POST_META_DRAFT,
   localInputValueToIso,

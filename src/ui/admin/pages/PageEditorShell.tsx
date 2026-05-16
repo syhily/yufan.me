@@ -25,8 +25,10 @@ import { usePageAutosave } from '@/client/hooks/use-page-autosave'
 import { usePageLocalDraft } from '@/client/hooks/use-page-local-draft'
 import { useSyncScroll } from '@/client/hooks/use-sync-scroll'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-import { DraftConflictDialog } from '@/ui/admin/editor/DraftConflictDialog'
-import { FloatingPublishButton } from '@/ui/admin/editor/FloatingPublishButton'
+import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
+import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
+import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
+import { RevisionHistoryDrawer } from '@/ui/admin/editor-shell/RevisionsDrawer'
 import { PageBodyEditor } from '@/ui/admin/editor/PageBodyEditor'
 import {
   EMPTY_META_DRAFT,
@@ -39,8 +41,6 @@ import {
   type SidebarRevisionSummary,
   type SidebarSaveStatus,
 } from '@/ui/admin/pages/MetaSidebar'
-import { PreviewPane } from '@/ui/admin/pages/PreviewPane'
-import { RevisionHistoryDrawer } from '@/ui/admin/pages/RevisionHistoryDrawer'
 import { useAdminChromeFocus, useAdminScrollTopLift } from '@/ui/admin/shell/AdminShell'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'

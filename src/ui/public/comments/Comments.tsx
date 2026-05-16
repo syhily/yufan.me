@@ -13,7 +13,7 @@ import type {
 import { useMutation, orpcQuery } from '@/client/api/query'
 import { Button } from '@/ui/components/button'
 import { useCommentsSettings } from '@/ui/lib/blog-config-context'
-import { CommentItem } from '@/ui/public/comments/CommentItem'
+import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 import { CommentReplyForm } from '@/ui/public/comments/CommentReplyForm'
 import {
   CommentsContext,

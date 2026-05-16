@@ -62,17 +62,17 @@ schema/migrations.
 
 ## Stack
 
-| Layer      | Choice                                                                                            |
-| ---------- | ------------------------------------------------------------------------------------------------- |
-| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                     |
-| HTTP host  | Hono via `react-router-hono-server` — perimeter middlewares, resource routers, oRPC mount         |
-| API        | oRPC (`@orpc/server` + `@orpc/client`) at `/rpc/*`, Zod input/output, OpenAPI export in dev       |
-| UI         | React 19, TSX only, shadcn/ui (Base UI variant) under `src/ui/components/`                        |
-| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), one token cascade for public + admin          |
-| Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                        |
-| Data       | Postgres (Drizzle), Redis (sessions, rate limits, generated-image caches)                         |
-| Assets     | S3-compatible bucket, opt-in per blog                                                             |
-| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))       |
+| Layer      | Choice                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------- |
+| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                               |
+| HTTP host  | Hono via `react-router-hono-server` — perimeter middlewares, resource routers, oRPC mount   |
+| API        | oRPC (`@orpc/server` + `@orpc/client`) at `/rpc/*`, Zod input/output, OpenAPI export in dev |
+| UI         | React 19, TSX only, shadcn/ui (Base UI variant) under `src/ui/components/`                  |
+| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), one token cascade for public + admin    |
+| Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                   |
+| Data       | Postgres (Drizzle), Redis (sessions, rate limits, generated-image caches)                   |
+| Assets     | S3-compatible bucket, opt-in per blog                                                       |
+| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev)) |
 
 ## Architecture
 
@@ -140,15 +140,15 @@ admin console at `/wp-admin` is available to the new admin user.
 
 ## Content model
 
-| Surface              | Storage                            | Public URL                                     | Admin surface                  |
-| -------------------- | ---------------------------------- | ---------------------------------------------- | ------------------------------ |
-| Posts                | `post` + `content` (PortableText)  | `/posts/:slug`                                 | `/wp-admin/posts`              |
-| Pages                | `page` + `content` (PortableText)  | `/:slug`                                       | `/wp-admin/pages`              |
-| Categories / tags    | Postgres                           | `/cats/:slug`, `/tags/:slug`                   | `/wp-admin/{categories,tags}`  |
-| Friends              | Postgres                           | Friends grid (page meta toggle)                | `/wp-admin/friends`            |
-| Images               | Postgres + optional S3             | `<assetsHost>/images/...`                      | `/wp-admin/images`             |
-| Music                | Postgres + optional S3             | Embedded in PortableText via 16-char nanoid    | `/wp-admin/musics`             |
-| Comments             | Postgres (threaded, with likes)    | Inline on posts/pages, moderation in admin     | `/wp-admin/comments`           |
+| Surface           | Storage                           | Public URL                                  | Admin surface                 |
+| ----------------- | --------------------------------- | ------------------------------------------- | ----------------------------- |
+| Posts             | `post` + `content` (PortableText) | `/posts/:slug`                              | `/wp-admin/posts`             |
+| Pages             | `page` + `content` (PortableText) | `/:slug`                                    | `/wp-admin/pages`             |
+| Categories / tags | Postgres                          | `/cats/:slug`, `/tags/:slug`                | `/wp-admin/{categories,tags}` |
+| Friends           | Postgres                          | Friends grid (page meta toggle)             | `/wp-admin/friends`           |
+| Images            | Postgres + optional S3            | `<assetsHost>/images/...`                   | `/wp-admin/images`            |
+| Music             | Postgres + optional S3            | Embedded in PortableText via 16-char nanoid | `/wp-admin/musics`            |
+| Comments          | Postgres (threaded, with likes)   | Inline on posts/pages, moderation in admin  | `/wp-admin/comments`          |
 
 Slug generation runs through one server-side helper
 (`@/server/infra/slug::deriveSlug`) — `pinyin-pro` → whitespace
@@ -176,12 +176,12 @@ Every dynamic non-page request goes through the oRPC router at
 `/rpc/*`. The permission matrix is encoded in the **base procedure**
 each leaf picks:
 
-| Base         | Guard                                 | Use for                       |
-| ------------ | ------------------------------------- | ----------------------------- |
-| `publicProc` | No auth gate; CSRF on non-GET         | Anonymous reads + mutations   |
-| `authedProc` | `requireAuth` + CSRF                  | Any logged-in user            |
-| `authorProc` | `requireRole('author')` + CSRF        | Authors and admins            |
-| `adminProc`  | `requireRole('admin')` + CSRF         | Admins only                   |
+| Base         | Guard                          | Use for                     |
+| ------------ | ------------------------------ | --------------------------- |
+| `publicProc` | No auth gate; CSRF on non-GET  | Anonymous reads + mutations |
+| `authedProc` | `requireAuth` + CSRF           | Any logged-in user          |
+| `authorProc` | `requireRole('author')` + CSRF | Authors and admins          |
+| `adminProc`  | `requireRole('admin')` + CSRF  | Admins only                 |
 
 Audit the entire surface with one grep:
 

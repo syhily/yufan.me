@@ -1,6 +1,6 @@
 import type { CommentItemWire as CommentItemType } from '@/shared/contracts/comments'
 
-import { CommentItem } from '@/ui/public/comments/CommentItem'
+import { CommentItem } from '@/ui/public/comments/comment-item/CommentItem'
 
 export interface CommentProps {
   comments: CommentItemType[]
