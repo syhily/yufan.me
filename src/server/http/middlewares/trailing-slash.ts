@@ -28,8 +28,8 @@ export const trailingSlashNormaliser: MiddlewareHandler<Env> = async (c, next) =
   // Collapse multiple trailing slashes and redirect if any remain
   const normalised = path.replace(/\/+$/, '')
   if (normalised !== path) {
-    const query = c.req.query('') // returns raw query string (without leading ?) or empty string
-    const location = normalised + (query ? `?${query}` : '')
+    const search = new URL(c.req.url).search
+    const location = normalised + search
     return c.redirect(location, 301)
   }
 
