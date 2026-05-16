@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 
-import type { Env } from './context'
+import type { Env } from '../context'
 
 // WordPress probe detector. The site borrows the WordPress URL shape for
 // its real admin (`/wp-login.php`, `/wp-admin`, the two-stage install

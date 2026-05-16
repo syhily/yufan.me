@@ -4,7 +4,7 @@ import { getLogger } from '@/server/infra/logger'
 import { getInstallState } from '@/server/settings/install/gate'
 import { hydrateBlogSettings } from '@/server/settings/snapshot'
 
-import type { Env } from './context'
+import type { Env } from '../context'
 
 const log = getLogger('install.gate')
 

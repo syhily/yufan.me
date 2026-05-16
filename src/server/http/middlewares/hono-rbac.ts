@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 
 import { hasAtLeast, type Role } from '@/server/auth/rbac'
 
-import type { Env } from './context'
+import type { Env } from '../context'
 
 // Hono-side RBAC helpers for resource routers (`/api/analytics/events`
 // SSE stream, future resource endpoints) that live OUTSIDE the oRPC

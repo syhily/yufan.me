@@ -6,7 +6,7 @@ import type { Env } from './context'
 import type { HandlerContext } from './orpc-base'
 
 import { apiRouter } from './api-router'
-import { csrfGuard } from './csrf'
+import { csrfGuard } from './middlewares/csrf'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
 //

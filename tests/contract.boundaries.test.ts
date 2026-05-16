@@ -1007,7 +1007,7 @@ describe('contract: module and bundle boundaries', () => {
     // import from `src/server/`. The literal `'Not WordPress'` is
     // duplicated so the UI module stays boundary-clean; this test makes
     // sure the two copies agree.
-    const server = readFileSync('src/server/http/wp-decoy.ts', 'utf8')
+    const server = readFileSync('src/server/http/middlewares/wp-decoy.ts', 'utf8')
     const ui = readFileSync('src/ui/public/chrome/ErrorView.tsx', 'utf8')
 
     expect(server).toContain("export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'")

@@ -22,7 +22,7 @@ vi.mock('@/server/auth/csrf', async () => {
 })
 
 async function createApp(): Promise<Hono<Env>> {
-  const { csrfGuard } = await import('@/server/http/csrf')
+  const { csrfGuard } = await import('@/server/http/middlewares/csrf')
   const app = new Hono<Env>()
   app.onError(onErrorHandler)
   // Echo back the body as JSON; mirrors how the RPC handler would

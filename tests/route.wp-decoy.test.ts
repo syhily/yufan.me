@@ -5,7 +5,7 @@ import {
   isWordPressDecoyPath,
   NOT_WORDPRESS_STATUS_TEXT,
   notWordPressSite,
-} from '@/server/http/wp-decoy'
+} from '@/server/http/middlewares/wp-decoy'
 
 import { makePage, makePost } from './_helpers/catalog'
 import { makeLoaderArgs, unwrapLoaderData } from './_helpers/context'

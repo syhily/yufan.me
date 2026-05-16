@@ -5,7 +5,7 @@ import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/blog'
 
 import { readBucket, tryKeyedRateLimit } from '@/server/infra/rate-limit'
 
-import type { Env } from './context'
+import type { Env } from '../context'
 
 /**
  * Rate-limit middleware factory. Uses the client IP as the discriminator.

@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono'
 
-import type { Env } from './context'
+import type { Env } from '../context'
 
 /**
  * Normalise trailing slashes for public GET/HEAD routes.
