@@ -22,12 +22,12 @@ const state = vi.hoisted(() => {
   }
 })
 
-// `getRouteRequestContext` lives in `@/server/auth/context` and is
+// `getRouteRequestContext` lives in `@/server/domains/auth/context` and is
 // re-exported from `@/server/session`. The route module imports it
 // from the original path, so the mock has to land there to be
 // effective.
-vi.mock('@/server/auth/context', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/context')>('@/server/auth/context')
+vi.mock('@/server/domains/auth/context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
   return {
     ...actual,
     getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
@@ -40,16 +40,18 @@ vi.mock('@/server/auth/context', async () => {
   }
 })
 
-vi.mock('@/server/auth/flows', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/flows')>('@/server/auth/flows')
+vi.mock('@/server/domains/auth/flows', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/flows')>('@/server/domains/auth/flows')
   return {
     ...actual,
     processAuthFormSubmission: mocks.processAuthFormSubmission,
   }
 })
 
-vi.mock('@/server/auth/session-storage', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/session-storage')>('@/server/auth/session-storage')
+vi.mock('@/server/domains/auth/session-storage', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/session-storage')>(
+    '@/server/domains/auth/session-storage',
+  )
   return {
     ...actual,
     commitSession: vi.fn(async () => 'blog_session=stub'),
@@ -60,7 +62,7 @@ vi.mock('@/server/auth/session-storage', async () => {
 // BEFORE doing anything else. Stub the helper to a no-op so we
 // exercise the `redirect_to` sanitisation logic these tests target
 // without spinning up a Postgres connection.
-vi.mock('@/server/settings/install/gate', () => ({
+vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureInstalledOrRedirect: vi.fn(async () => null),
   ensureNoAdminOrRedirect: vi.fn(async () => null),
   ensureNoSettingsOrRedirect: vi.fn(async () => null),

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-vi.mock('@/server/infra/db/query/like', () => ({
+vi.mock('@/server/infra/db/operations/like', () => ({
   recordLikeAndCount: vi.fn(async () => 0),
   existsActiveLikeToken: vi.fn(),
   consumeActiveLikeToken: vi.fn(),
@@ -10,14 +10,14 @@ vi.mock('@/server/infra/db/query/like', () => ({
   purgeOldLikeTokens: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/infra/db/query/metric', () => ({
+vi.mock('@/server/infra/db/operations/metric', () => ({
   decrementMetricVotes: vi.fn(async () => undefined),
 }))
 
-const likeQueries = await import('@/server/infra/db/query/like')
-const metricQueries = await import('@/server/infra/db/query/metric')
+const likeQueries = await import('@/server/infra/db/operations/like')
+const metricQueries = await import('@/server/infra/db/operations/metric')
 const { increaseLikes, decreaseLikes, purgeStaleLikeTokens, queryLikes, queryMetadata, validateLikeToken } =
-  await import('@/server/comments/likes')
+  await import('@/server/domains/comments/likes')
 
 const POST_A = { type: 'post' as const, ownerId: 1n }
 const POST_B = { type: 'post' as const, ownerId: 2n }

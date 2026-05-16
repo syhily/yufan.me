@@ -1,35 +1,44 @@
 /**
  * @deprecated This barrel file is preserved only for test compatibility.
- * All production source files have been migrated to direct imports.
- * Do not add new imports here — import from the concrete source modules
- * under `@/server/auth/*` instead.
+ * Production code uses direct imports from `@/server/domains/auth/*`.
  *
- * TODO: Remove once test mocks are rewritten to target individual modules.
+ * TODO: Rewrite the test mocks below to target individual modules and
+ * then delete this file:
+ *   - tests/route.{listing,detail,wp-decoy,archives,page-detail-*,home}.test.ts
+ *   - tests/service.{auth,auth-flow,auth-sessions}.test.ts
+ *   - tests/route.wp-login{,-reset}.test.ts
+ *   - tests/service.cms-pages.test.ts (if it still imports `@/server/session`)
  */
 
-export type { BlogSession, BlogSessionData, SessionUser } from '@/server/auth/session-storage'
-export { commitSession, destroySession, getRequestSession, getSession } from '@/server/auth/session-storage'
+export type { BlogSession, BlogSessionData, SessionUser } from '@/server/domains/auth/session-storage'
+export { commitSession, destroySession, getRequestSession, getSession } from '@/server/domains/auth/session-storage'
 
-export type { SessionContext } from '@/server/auth/primitives'
-export { establishLoginSession, login, logout, resolveSessionContext, userSession } from '@/server/auth/primitives'
-export { hasAtLeast, requireRole, type Role, type ViewerContext } from '@/server/auth/rbac'
+export type { SessionContext } from '@/server/domains/auth/primitives'
+export {
+  establishLoginSession,
+  login,
+  logout,
+  resolveSessionContext,
+  userSession,
+} from '@/server/domains/auth/primitives'
+export { hasAtLeast, requireRole, type Role, type ViewerContext } from '@/server/domains/auth/rbac'
 
-export type { IssuedCsrfToken, ReusedCsrfToken } from '@/server/auth/csrf'
-export { clearCsrfCookie, issueCsrfToken, reuseOrIssueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
+export type { IssuedCsrfToken, ReusedCsrfToken } from '@/server/domains/auth/csrf'
+export { clearCsrfCookie, issueCsrfToken, reuseOrIssueCsrfToken, validateRequestCsrf } from '@/server/domains/auth/csrf'
 
-export type { RequestContextValue, RouteRequestContext } from '@/server/auth/context'
+export type { RequestContextValue, RouteRequestContext } from '@/server/domains/auth/context'
 export {
   getRouteRequestContext,
   requestContext,
   sessionContext,
   tryGetRequestContext,
   tryGetSessionContext,
-} from '@/server/auth/context'
+} from '@/server/domains/auth/context'
 
-export type { AuthFlowResult, InstallSettingsSeed, SignUpAdminSeed } from '@/server/auth/flows'
+export type { AuthFlowResult, InstallSettingsSeed, SignUpAdminSeed } from '@/server/domains/auth/flows'
 export {
   processAuthFormSubmission,
   seedInstallSettingsWithSession,
   signInWithSession,
   signUpInitialAdminWithSession,
-} from '@/server/auth/flows'
+} from '@/server/domains/auth/flows'

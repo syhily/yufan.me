@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { renderCalendar } from '@/server/images/calendar'
+import { renderCalendar } from '@/server/render/calendar/render'
 
 // `renderCalendar` mixes a third-party API (Shanbay daily quote), Chinese
 // lunar conversion, and napi-rs/canvas drawing. We mock fetch to keep the

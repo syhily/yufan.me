@@ -83,7 +83,7 @@ function files(...args: string[]): string[] {
 describe('contract: module and bundle boundaries', () => {
   it('keeps catalog private modules behind @/shared/types/catalog', () => {
     const offenders = files('src', 'tests', '-g', '*.ts', '-g', '*.tsx')
-      .filter((file) => !file.startsWith('src/server/catalog/'))
+      .filter((file) => !file.startsWith('src/server/domains/catalog/'))
       .filter((file) => {
         const source = readFileSync(file, 'utf8')
         return /@\/server\/catalog\/schema(?:["'/])/.test(source)
@@ -745,7 +745,7 @@ describe('contract: module and bundle boundaries', () => {
     const clientFacing = [
       ...files('src/ui', '-g', '*.ts', '-g', '*.tsx'),
       'src/shared/utils/formatter.ts',
-      'src/server/settings/sidebar/select.ts',
+      'src/server/http/loaders/sidebar.ts',
       'src/routes/home.tsx',
     ]
     const offenders = clientFacing.filter((file) => readFileSync(file, 'utf8').includes('luxon'))

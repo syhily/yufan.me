@@ -18,7 +18,7 @@ export const SETTINGS_SECTIONS = [
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
 
 // Section → `BlogSettingsBundle` field mapping. Lives here (and not in
-// `@/server/settings/sections.ts`) because every layer of the app
+// `@/server/domains/settings/sections.ts`) because every layer of the app
 // reaches for it: the server registry uses it to type its `key`
 // field, the snapshot builder uses it to project rows into the
 // in-memory bundle, and the React contexts file uses it to mint one

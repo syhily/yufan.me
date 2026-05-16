@@ -30,7 +30,7 @@ vi.mock('@/server/infra/db/pool', () => ({
   },
 }))
 
-const { upsertImageByStoragePath, insertImageIfMissing } = await import('@/server/infra/db/query/image')
+const { upsertImageByStoragePath, insertImageIfMissing } = await import('@/server/infra/db/operations/image')
 
 beforeEach(() => {
   vi.clearAllMocks()

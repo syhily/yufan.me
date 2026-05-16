@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { PageMetaDraft, UpsertPageMetaInput } from '@/shared/types/pages'
 
-import { upsertPageMetaSchema } from '@/server/content/pages/schema'
+import { upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import { EMPTY_PAGE_META_DRAFT, PAGE_META_TOGGLE_FIELDS, pageMetaDraftsEqual } from '@/shared/types/pages'
 import { POST_META_TOGGLE_FIELDS } from '@/shared/types/posts'
 

@@ -2,8 +2,8 @@ import { isRouteErrorResponse, Outlet, useLocation, useOutletContext, useRouteEr
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-import { getAdminBlogSettings } from '@/server/settings/service'
-import { getSupportedTimeZones } from '@/server/settings/timezones'
+import { getAdminBlogSettings } from '@/server/domains/settings/service'
+import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { SettingsShell } from '@/ui/admin/settings/SettingsShell'
 
 import type { Route } from './+types/wp-admin.settings.layout'
@@ -39,7 +39,7 @@ export interface SettingsOutletContext extends ParentContext {
   /**
    * Canonical IANA timezone list shared by every settings section that
    * renders a timezone picker (currently only the general form).
-   * Resolved once at module load by `@/server/settings/timezones` so
+   * Resolved once at module load by `@/server/domains/settings/timezones` so
    * we pay the `Intl.supportedValuesOf` cost once per process.
    */
   timeZones: readonly string[]

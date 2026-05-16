@@ -106,8 +106,8 @@ type QueryModuleSpec<TExports extends Record<string, (...args: never[]) => unkno
 
 /**
  * Build a typed bag of `vi.fn()` spies that mirrors the exports of a
- * `@/server/infra/db/query/*.ts` module. Pass the result to
- * `vi.mock("@/server/infra/db/query/comment", () => mocked)` (or use
+ * `@/server/infra/db/operations/*.ts` module. Pass the result to
+ * `vi.mock("@/server/infra/db/operations/comment", () => mocked)` (or use
  * `installQueryMock` below).
  */
 export function spyQueryModule<TExports extends Record<string, (...args: never[]) => unknown>>(

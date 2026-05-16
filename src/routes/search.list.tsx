@@ -1,8 +1,8 @@
-import type { ListingPageLoaderData } from '@/server/present/router/listing-loader'
+import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { listingHeaders, publicShouldRevalidate } from '@/server/present/router/route-exports'
-import { searchLoader } from '@/server/present/router/search-loader'
-import { metaWithFallback } from '@/server/present/seo/meta'
+import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { searchLoader } from '@/server/http/loaders/search'
+import { metaWithFallback } from '@/server/render/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/search.list'

@@ -18,7 +18,7 @@ vi.mock('@/shared/config/blog', () => ({
   requireBlogSettings: () => ({}),
 }))
 
-const { parseComments } = await import('@/server/comments/loader')
+const { parseComments } = await import('@/server/domains/comments/loader')
 
 function row(overrides: Omit<Partial<CommentAndUser>, 'id'> & { id: bigint }): CommentAndUser {
   const { id, ...rest } = overrides

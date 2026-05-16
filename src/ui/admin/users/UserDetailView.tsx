@@ -70,7 +70,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const userQuery = useQuery(orpcQuery.admin.users.get.queryOptions({ input: { id: userId } }))
 
   const commentsQuery = useQuery(
-    orpcQuery.commentAdmin.loadAll.queryOptions({
+    orpcQuery.admin.comments.loadAll.queryOptions({
       input: { offset: 0, limit: 10, userId },
     }),
   )

@@ -30,7 +30,7 @@ interface GeneralFormProps {
 }
 
 // Client-side schema mirrors the server's `generalSchema` in
-// `@/server/settings/schema.ts`. We duplicate it here instead of
+// `@/server/domains/settings/schema.ts`. We duplicate it here instead of
 // importing the server module so the client bundle does not pull in
 // `@/server/**`. The two copies move together — the server is still
 // the authoritative validator (the `updateSettings` action will reject

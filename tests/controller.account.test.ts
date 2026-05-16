@@ -12,23 +12,23 @@ vi.mock('bcryptjs', () => ({
   },
 }))
 
-vi.mock('@/server/infra/db/query/user', () => ({
+vi.mock('@/server/infra/db/operations/user', () => ({
   findUserById: vi.fn(),
   updateUserById: vi.fn(),
 }))
 
-vi.mock('@/server/auth/session-storage', () => ({
+vi.mock('@/server/domains/auth/session-storage', () => ({
   revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/server/auth/sessions', () => ({
+vi.mock('@/server/domains/auth/sessions', () => ({
   findSessionMeta: vi.fn(),
   revokeSessionById: vi.fn().mockResolvedValue(true),
 }))
 
-const { findUserById, updateUserById } = await import('@/server/infra/db/query/user')
-const { revokeAllSessionsOfUser } = await import('@/server/auth/session-storage')
-const { revokeSessionById } = await import('@/server/auth/sessions')
+const { findUserById, updateUserById } = await import('@/server/infra/db/operations/user')
+const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/session-storage')
+const { revokeSessionById } = await import('@/server/domains/auth/sessions')
 const { accountRouter } = await import('@/server/http/controllers/account.controller')
 
 const dbUserStub = {

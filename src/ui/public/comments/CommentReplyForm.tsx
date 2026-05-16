@@ -77,7 +77,7 @@ export function CommentReplyForm({
   }, [guestProfile, user])
 
   const reply = useMutation({
-    ...orpcQuery.commentPublic.replyComment.mutationOptions(),
+    ...orpcQuery.comments.replyComment.mutationOptions(),
     onSuccess: (data: ReplyCommentOutput) => {
       setSubmitError(null)
       if (data.csrfToken) {
@@ -104,7 +104,7 @@ export function CommentReplyForm({
   })
 
   const avatar = useMutation({
-    ...orpcQuery.commentPublic.findAvatar.mutationOptions(),
+    ...orpcQuery.comments.findAvatar.mutationOptions(),
     onSuccess: (payload: FindAvatarOutput) => setAvatarSrc(payload.avatar),
   })
 

@@ -1,7 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/friends/service'
+import { deleteAdminFriend, listFriendsForAdmin, upsertAdminFriend } from '@/server/domains/friends/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { adminFriendDto } from '@/shared/contracts/friends'
 

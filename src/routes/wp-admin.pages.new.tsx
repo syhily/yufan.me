@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
 
 import type { Route } from './+types/wp-admin.pages.new'

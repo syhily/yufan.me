@@ -11,8 +11,8 @@ import { describe, expect, it } from 'vite-plus/test'
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(here, '..')
 
-const feedSource = readFileSync(resolve(projectRoot, 'src/server/present/feed/generator.tsx'), 'utf8')
-const feedPtRenderSource = readFileSync(resolve(projectRoot, 'src/server/present/feed/feed-pt-render.tsx'), 'utf8')
+const feedSource = readFileSync(resolve(projectRoot, 'src/server/render/feed/generator.tsx'), 'utf8')
+const feedPtRenderSource = readFileSync(resolve(projectRoot, 'src/server/render/feed/feed-pt-render.tsx'), 'utf8')
 
 describe('contract: feed (RSS + Atom) shape', () => {
   it('declares the historical content-types for both RSS and Atom', () => {

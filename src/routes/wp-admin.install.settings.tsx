@@ -1,11 +1,11 @@
 import { data } from 'react-router'
 
-import { issueCsrfToken } from '@/server/auth/csrf'
-import { processAuthFormSubmission, seedInstallSettingsWithSession } from '@/server/auth/flows'
-import { installSettingsSchema } from '@/server/auth/schema'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
-import { SETTINGS_INSTALL_FIELDS, requireStageTwoSession } from '@/server/settings/install/install-flow'
-import { getSupportedTimeZones } from '@/server/settings/timezones'
+import { issueCsrfToken } from '@/server/domains/auth/csrf'
+import { processAuthFormSubmission, seedInstallSettingsWithSession } from '@/server/domains/auth/flows'
+import { installSettingsSchema } from '@/server/domains/auth/schema'
+import { SETTINGS_INSTALL_FIELDS, requireStageTwoSession } from '@/server/domains/settings/install-flow'
+import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { SettingsInstallForm } from '@/ui/admin/auth/SettingsInstallForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 

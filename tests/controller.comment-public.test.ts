@@ -12,57 +12,57 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryCommentPostRateLimitByEmail: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/query/metric', () => ({
+vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByPublicId: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/query/user', () => ({
+vi.mock('@/server/infra/db/operations/user', () => ({
   findUserIdByEmail: vi.fn().mockResolvedValue(null),
 }))
 
-vi.mock('@/server/comments/likes', () => ({
+vi.mock('@/server/domains/comments/likes', () => ({
   decreaseLikes: vi.fn(),
   increaseLikes: vi.fn().mockResolvedValue({ likes: 1, token: 't' }),
   queryLikes: vi.fn().mockResolvedValue(0),
   validateLikeToken: vi.fn(),
 }))
 
-vi.mock('@/server/comments/loader', () => ({
+vi.mock('@/server/domains/comments/loader', () => ({
   loadComments: vi.fn(),
   parseComments: vi.fn().mockResolvedValue([]),
   createComment: vi.fn(),
 }))
 
-vi.mock('@/server/images/avatar-fetch', () => ({
+vi.mock('@/server/render/avatar/fetch', () => ({
   fetchQQAvatarImage: vi.fn(),
   isQQEmail: () => false,
 }))
 
-vi.mock('@/server/infra/cache/avatar', () => ({
+vi.mock('@/server/render/avatar/cache', () => ({
   AvatarStatus: { HAVE_AVATAR: 'have', NO_AVATAR: 'none' },
   cacheAvatar: vi.fn(),
 }))
 
-vi.mock('@/server/comments/token', () => ({
+vi.mock('@/server/domains/comments/token', () => ({
   appendCommentToken: vi.fn(),
   issueCommentToken: vi.fn(),
   verifyCommentOwnership: vi.fn().mockResolvedValue({ ok: false, cleaned: [] }),
 }))
 
-vi.mock('@/server/comments/admin', () => ({
+vi.mock('@/server/domains/comments/moderation', () => ({
   updateComment: vi.fn(),
   getCommentById: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/query/comment', () => ({
+vi.mock('@/server/infra/db/operations/comment', () => ({
   findCommentWithUserById: vi.fn(),
 }))
 
-vi.mock('@/server/auth/primitives', () => ({
+vi.mock('@/server/domains/auth/primitives', () => ({
   userSession: () => undefined,
 }))
 
-vi.mock('@/server/auth/csrf', () => ({
+vi.mock('@/server/domains/auth/csrf', () => ({
   issueCsrfToken: vi.fn().mockResolvedValue({ token: 'csrf-x', setCookie: 'csrf=...' }),
 }))
 
@@ -76,37 +76,37 @@ vi.mock('@/shared/config/blog', () => ({
 }))
 
 const rateLimitMod = await import('@/server/infra/rate-limit')
-const metricMod = await import('@/server/infra/db/query/metric')
-const loaderMod = await import('@/server/comments/loader')
-const { commentPublicRouter } = await import('@/server/http/controllers/comment-public.controller')
+const metricMod = await import('@/server/infra/db/operations/metric')
+const loaderMod = await import('@/server/domains/comments/loader')
+const { commentsRouter } = await import('@/server/http/controllers/comments.controller')
 
-describe('commentPublicRouter.increaseLike', () => {
+describe('commentsRouter.increaseLike', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
     vi.mocked(rateLimitMod.tryLikeIncreaseRateLimit).mockResolvedValueOnce({ exceeded: true } as never)
     vi.mocked(metricMod.findMetricByPublicId).mockResolvedValue({ type: 'post', ownerId: 1n } as never)
     const ctx = makePublicCtx({ clientAddress: '1.2.3.4' })
-    await expect(call(commentPublicRouter.increaseLike, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
+    await expect(call(commentsRouter.increaseLike, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
       code: 'TOO_MANY_REQUESTS',
     })
   })
 })
 
-describe('commentPublicRouter.findAvatar', () => {
+describe('commentsRouter.findAvatar', () => {
   it('returns the resolved avatar URL for non-QQ email', async () => {
     const ctx = makePublicCtx()
-    const res = (await call(commentPublicRouter.findAvatar, { email: 'someone@example.com' }, { context: ctx })) as {
+    const res = (await call(commentsRouter.findAvatar, { email: 'someone@example.com' }, { context: ctx })) as {
       avatar: string
     }
     expect(res.avatar).toMatch(/^https:\/\/example\.test\/images\/avatar\/.+\.png$/)
   })
 })
 
-describe('commentPublicRouter.loadComments', () => {
+describe('commentsRouter.loadComments', () => {
   it('throws NOT_FOUND when the metric public_id has no matching target', async () => {
     vi.mocked(metricMod.findMetricByPublicId).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
     await expect(
-      call(commentPublicRouter.loadComments, { page_key: 'missing', offset: 0 }, { context: ctx }),
+      call(commentsRouter.loadComments, { page_key: 'missing', offset: 0 }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 
@@ -115,7 +115,7 @@ describe('commentPublicRouter.loadComments', () => {
     vi.mocked(loaderMod.loadComments).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
     await expect(
-      call(commentPublicRouter.loadComments, { page_key: 'pk-1', offset: 0 }, { context: ctx }),
+      call(commentsRouter.loadComments, { page_key: 'pk-1', offset: 0 }, { context: ctx }),
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 })

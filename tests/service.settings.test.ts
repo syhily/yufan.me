@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import type { Setting } from '@/server/infra/db/types'
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-vi.mock('@/server/infra/db/query/setting', () => ({
+vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingByScope: vi.fn(),
   findSettingsByScopePrefix: vi.fn(),
   upsertSetting: vi.fn(),
@@ -15,17 +15,17 @@ vi.mock('@/server/infra/db/query/setting', () => ({
 // fine locally, but on CI there is no Redis and `ioredis` retries
 // forever, blowing past every test timeout. Tests never assert on the
 // version key, so an in-memory no-op is plenty.
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   storage: {
     getItem: vi.fn(async () => null),
     setItem: vi.fn(async () => undefined),
   },
 }))
 
-const settingQueries = await import('@/server/infra/db/query/setting')
-const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/settings/service')
-const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/settings/snapshot')
-const { DomainError } = await import('@/server/present/response/errors')
+const settingQueries = await import('@/server/infra/db/operations/setting')
+const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { setBlogSettingsBundleForTests, getBlogSettingsBundleSync } = await import('@/server/domains/settings/snapshot')
+const { DomainError } = await import('@/server/infra/http/errors')
 const { requireBlogSettingsSection } = await import('@/shared/config/blog')
 
 // Bucketed settings fixture. The on-disk DB stores one row per section

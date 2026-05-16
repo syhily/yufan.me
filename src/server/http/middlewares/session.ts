@@ -2,8 +2,8 @@ import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
 
-import { resolveSessionContext } from '@/server/auth/primitives'
-import { commitSession } from '@/server/auth/session-storage'
+import { resolveSessionContext } from '@/server/domains/auth/primitives'
+import { commitSession } from '@/server/domains/auth/session-storage'
 import { getClientAddress } from '@/shared/utils/request'
 
 export const honoSessionMiddleware = createMiddleware<Env>(async (c, next) => {

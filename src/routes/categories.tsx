@@ -1,6 +1,6 @@
-import { listAllCategories } from '@/server/catalog/queries'
-import { listingHeaders, publicShouldRevalidate } from '@/server/present/router/route-exports'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { listAllCategories } from '@/server/domains/catalog/queries'
+import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { CategoriesBody } from '@/ui/public/post/CategoriesBody'
 
 import type { Route } from './+types/categories'

@@ -364,21 +364,21 @@ function CommentFooter({ comment, admin: propAdmin, onEditAdmin, onEditOwn }: Co
   const leaf = useCommentsLeafContext(propAdmin)
   const revalidator = useRevalidator()
   const approve = useMutation({
-    ...orpcQuery.commentAdmin.approve.mutationOptions(),
+    ...orpcQuery.admin.comments.approve.mutationOptions(),
     onSuccess: () => leaf.onApproved(comment.id),
   })
   const remove = useMutation({
-    ...orpcQuery.commentAdmin.delete.mutationOptions(),
+    ...orpcQuery.admin.comments.delete.mutationOptions(),
     onSuccess: () => leaf.onDeleted(comment.id),
   })
 
   // Visitor-scoped delete-request toggles.
   const requestDelete = useMutation({
-    ...orpcQuery.commentSelf.requestDeleteOwn.mutationOptions(),
+    ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: () => void revalidator.revalidate(),
   })
   const cancelDelete = useMutation({
-    ...orpcQuery.commentSelf.cancelDeleteOwn.mutationOptions(),
+    ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => void revalidator.revalidate(),
   })
 
@@ -533,7 +533,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
   const [loaded, setLoaded] = useState(false)
 
   const raw = useMutation({
-    ...orpcQuery.commentPublic.getRaw.mutationOptions(),
+    ...orpcQuery.comments.getRaw.mutationOptions(),
     onSuccess: (payload: CommentRawOutput) => {
       const loadedBody = (payload.body ?? []) as CommentBody
       setInitialBody(loadedBody)
@@ -543,7 +543,7 @@ function CommentEditArea({ commentId, onCancel, onSaved }: CommentEditAreaProps)
     },
   })
   const editAction = useMutation({
-    ...orpcQuery.commentPublic.edit.mutationOptions(),
+    ...orpcQuery.comments.edit.mutationOptions(),
     onSuccess: (payload: CommentEditOutput) => {
       // Drive the parent reducer first so the freshly-edited content appears
       // in the tree before the editor closes (keeps the post-save flicker
@@ -609,7 +609,7 @@ interface OwnEditAreaProps {
 function OwnEditArea({ comment, onCancel, onSaved }: OwnEditAreaProps) {
   const revalidator = useRevalidator()
   const updateOwn = useMutation({
-    ...orpcQuery.commentSelf.updateOwn.mutationOptions(),
+    ...orpcQuery.comments.updateOwn.mutationOptions(),
     onSuccess: () => {
       void revalidator.revalidate()
       onSaved()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { createInflight } from '@/server/infra/cache/inflight'
+import { createInflight } from '@/server/infra/redis/inflight'
 
 describe('shared/inflight — createInflight', () => {
   it('dedupes concurrent calls for the same key into a single promise', async () => {

@@ -9,7 +9,7 @@ import { adminSession, regularSession } from './_helpers/session'
 // pin the contract by mocking the DB query module — the real Drizzle calls
 // are out of scope for this layer.
 
-vi.mock('@/server/infra/db/query/comment', () => ({
+vi.mock('@/server/infra/db/operations/comment', () => ({
   pendingComments: vi.fn(),
   adminUserIds: vi.fn(),
   latestDistinctCommentIds: vi.fn(),
@@ -33,13 +33,13 @@ vi.mock('@/server/infra/db/query/comment', () => ({
   searchPages: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/query/metric', () => ({
+vi.mock('@/server/infra/db/operations/metric', () => ({
   ensureMetric: vi.fn(async () => seedMetric()),
   findMetricByPublicId: vi.fn(),
   findMetricByTarget: vi.fn(),
 }))
 
-vi.mock('@/server/analytics/pv-batcher', () => ({
+vi.mock('@/server/domains/analytics/pv-batcher', () => ({
   bumpPageView: vi.fn(),
 }))
 
@@ -67,9 +67,10 @@ vi.mock('@/shared/config/blog', () => ({
   },
 }))
 
-const queries = await import('@/server/infra/db/query/comment')
-const metricQueries = await import('@/server/infra/db/query/metric')
-const { loadComments, latestComments, pendingComments, parseComments } = await import('@/server/comments/loader')
+const queries = await import('@/server/infra/db/operations/comment')
+const metricQueries = await import('@/server/infra/db/operations/metric')
+const { loadComments, latestComments, pendingComments, parseComments } =
+  await import('@/server/domains/comments/loader')
 
 const POST_HELLO = { type: 'post' as const, ownerId: 1n }
 const POST_NEW = { type: 'post' as const, ownerId: 2n }

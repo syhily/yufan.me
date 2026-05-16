@@ -32,14 +32,14 @@ export function EditCommentDialog({ comment, onClose, onSaved }: EditCommentDial
   const [loaded, setLoaded] = useState(false)
 
   const { data: rawData } = useQuery(
-    orpcQuery.commentPublic.getRaw.queryOptions({
+    orpcQuery.comments.getRaw.queryOptions({
       input: { rid: comment ? idStr(comment.id) : '0' },
       enabled: !!comment,
     }),
   )
 
   const editMutation = useMutation({
-    ...orpcQuery.commentPublic.edit.mutationOptions(),
+    ...orpcQuery.comments.edit.mutationOptions(),
     onSuccess: (payload) => onSaved({ body: payload.comment.body }),
   })
 

@@ -1,9 +1,9 @@
 import { renderMermaidSVGAsync } from 'beautiful-mermaid'
 import { z } from 'zod'
 
+import { reindexSearchBatch } from '@/server/domains/posts/reindex'
+import { getKatexRenderer, type KatexRenderer } from '@/server/domains/pt/katex-renderer'
 import { adminProc } from '@/server/http/orpc-base'
-import { reindexSearchBatch } from '@/server/infra/search/reindex-service'
-import { getKatexRenderer, type KatexRenderer } from '@/server/pt/katex-renderer'
 
 const math = adminProc
   .route({ method: 'POST', path: '/admin/renders/math' })

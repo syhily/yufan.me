@@ -1,9 +1,9 @@
 import { ChartLineIcon, RadioIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { cn } from '@/ui/lib/cn'
 
 import type { Route } from './+types/wp-admin.analytics.layout'

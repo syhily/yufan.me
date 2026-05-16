@@ -29,7 +29,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(here, '..')
-const commentQueryPath = resolve(projectRoot, 'src/server/infra/db/query/comment.ts')
+const commentQueryPath = resolve(projectRoot, 'src/server/infra/db/operations/comment.ts')
 
 function readSource(): string {
   return readFileSync(commentQueryPath, 'utf8')

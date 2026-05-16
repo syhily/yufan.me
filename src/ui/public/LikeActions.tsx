@@ -72,7 +72,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   const [state, addOptimistic] = useOptimistic(baseState, applyLikeOptimistic)
 
   const validate = useMutation({
-    ...orpcQuery.commentPublic.validateLikeToken.mutationOptions(),
+    ...orpcQuery.comments.validateLikeToken.mutationOptions(),
     onSuccess: (data: ValidateLikeTokenOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: data.valid } : prev))
       if (!data.valid) {
@@ -82,7 +82,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   })
 
   const increase = useMutation({
-    ...orpcQuery.commentPublic.increaseLike.mutationOptions(),
+    ...orpcQuery.comments.increaseLike.mutationOptions(),
     onSuccess: (data: IncreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: true, likes: data.likes } : prev))
       if (data.token) {
@@ -92,7 +92,7 @@ export function LikeButton({ permalink, commentKey, likes: initialLikes }: LikeB
   })
 
   const decrease = useMutation({
-    ...orpcQuery.commentPublic.decreaseLike.mutationOptions(),
+    ...orpcQuery.comments.decreaseLike.mutationOptions(),
     onSuccess: (data: DecreaseLikeOutput) => {
       setBaseState((prev) => (data.key === prev.commentKey ? { ...prev, liked: false, likes: data.likes } : prev))
       localStorage.removeItem(tokenStorageKey(permalink))

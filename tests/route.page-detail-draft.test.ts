@@ -74,19 +74,21 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/domains/catalog/catalog', () => ({
   getEntryBySlug: vi.fn(async (slug: string) =>
     slug === 'about' ? { type: 'page', id: publishedPage.id, slug } : null,
   ),
 }))
-vi.mock('@/server/content/pages/query', () => ({
+vi.mock('@/server/domains/pages/repo', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? publishedPage : null)),
   buildDbPage: (p: unknown) => p,
 }))
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
+  listPublicPostMetas: vi.fn(async () => []),
   findPostBySlug: vi.fn(async () => null),
 }))
-vi.mock('@/server/catalog/queries', () => ({
+vi.mock('@/server/domains/catalog/queries', () => ({
   listAllFriends: vi.fn(async () => []),
 }))
 vi.mock('@/shared/types/catalog', async () => {
@@ -99,11 +101,11 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/content/pages/service', () => ({
+vi.mock('@/server/domains/pages/service', () => ({
   loadPageDraftPreviewBySlug: vi.fn(),
 }))
 
-vi.mock('@/server/comments/page-data', () => ({
+vi.mock('@/server/http/loaders/comments', () => ({
   loadDetailPageData: vi.fn(async () => ({
     admin: false,
     likes: { count: 0, liked: false },
@@ -129,13 +131,13 @@ vi.mock('@/server/comments/page-data', () => ({
   })),
 }))
 
-vi.mock('@/server/images/render-enhance', () => ({
+vi.mock('@/server/render/image-enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),
   loadImageThumbhash: vi.fn(async () => null),
 }))
 
 const pageRoute = await import('@/routes/page.detail')
-const pagesService = await import('@/server/content/pages/service')
+const pagesService = await import('@/server/domains/pages/service')
 const draftPreviewMock = vi.mocked(pagesService.loadPageDraftPreviewBySlug)
 
 type LoaderResult = {

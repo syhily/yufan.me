@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import { issueCsrfToken, validateRequestCsrf } from '@/server/auth/csrf'
+import { issueCsrfToken, validateRequestCsrf } from '@/server/domains/auth/csrf'
 import { encodedEmail, makeToken, timingSafeEqual } from '@/shared/utils/security'
 
 import { adminSession, makeSession, regularSession } from './_helpers/session'

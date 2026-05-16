@@ -2,8 +2,8 @@ import type { LoaderFunctionArgs } from 'react-router'
 
 import { redirect } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
 
 // `/wp-admin/settings` is the parent slot of the settings section; the
 // `general` page owns the chrome the user sees first. Mirrors the

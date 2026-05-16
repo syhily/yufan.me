@@ -18,7 +18,7 @@ import {
 // default. The chosen value lands on `codeBlock.attrs.language`,
 // which the PT bridge already round-trips into
 // `CodeBlock.language`; the SSR Shiki highlighter
-// (`@/server/content/pages/prerender`) then matches it against
+// (`@/server/domains/pages/prerender`) then matches it against
 // `bundledLanguages`, falling back to plain text on miss.
 //
 // The list is a curated subset chosen for everyday blogging — Shiki's

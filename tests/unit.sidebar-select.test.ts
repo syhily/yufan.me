@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { selectSidebarTags } from '@/server/settings/sidebar/select'
+import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 
 import { makePost, makeTag } from './_helpers/catalog'
 

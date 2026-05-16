@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
+import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/domains/settings/service'
 import { adminProc } from '@/server/http/orpc-base'
-import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/settings/service'
 import { SETTINGS_SECTIONS, type SettingsSection } from '@/shared/config/settings'
 import { blogSettingsBundleDto } from '@/shared/contracts/settings'
 

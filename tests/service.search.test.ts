@@ -23,7 +23,7 @@ vi.mock('@/server/infra/search/openai', () => ({
 // fine locally, but on CI there is no Redis and `ioredis` retries
 // forever, blowing past every test timeout. An in-memory no-op forces
 // every call to a cache miss so tests exercise the real query path.
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   storage: {
     getItem: vi.fn(async () => null),
     setItem: vi.fn(async () => undefined),

@@ -3,12 +3,12 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
-vi.mock('@/server/infra/cache/admin', () => ({
+vi.mock('@/server/infra/redis/admin-ops', () => ({
   clearAdminCache: vi.fn(),
   getAdminCacheStats: vi.fn(),
 }))
 
-const cacheMod = await import('@/server/infra/cache/admin')
+const cacheMod = await import('@/server/infra/redis/admin-ops')
 const { adminCacheRouter } = await import('@/server/http/controllers/admin/cache.controller')
 
 const statsStub = {

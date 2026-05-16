@@ -75,15 +75,15 @@ const redisStub = {
   },
 }
 
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   redisInstance: () => redisStub,
 }))
 
-vi.mock('@/server/infra/db/query/user', () => ({
+vi.mock('@/server/infra/db/operations/user', () => ({
   findUsersByIds: vi.fn(async () => []),
 }))
 
-const { listSessionsByUser, recordSessionLogin } = await import('@/server/auth/sessions')
+const { listSessionsByUser, recordSessionLogin } = await import('@/server/domains/auth/sessions')
 
 beforeEach(() => {
   userSets.clear()

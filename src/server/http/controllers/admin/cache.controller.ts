@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { adminProc } from '@/server/http/orpc-base'
-import { clearAdminCache, getAdminCacheStats } from '@/server/infra/cache/admin'
+import { clearAdminCache, getAdminCacheStats } from '@/server/infra/redis/admin-ops'
 import { adminCacheStatsDto, clearCacheResultDto } from '@/shared/contracts/cache'
 import { CACHE_BUCKET_IDS } from '@/shared/types/cache'
 const getStats = adminProc

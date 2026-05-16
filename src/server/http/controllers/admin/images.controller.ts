@@ -1,16 +1,16 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { userSession } from '@/server/auth/primitives'
-import { authorProc } from '@/server/http/orpc-base'
-import { uploadImageMetadataSchema } from '@/server/images/schema'
+import { userSession } from '@/server/domains/auth/primitives'
+import { uploadImageMetadataSchema } from '@/server/domains/images/schema'
 import {
   deleteImage,
   listImagesForAdmin,
   recalculateImageThumbhash,
   updateImageNote,
   uploadImage,
-} from '@/server/images/service'
+} from '@/server/domains/images/service'
+import { authorProc } from '@/server/http/orpc-base'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { adminImageDto, listImagesOutputDto } from '@/shared/contracts/images'
 

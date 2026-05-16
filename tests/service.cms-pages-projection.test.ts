@@ -11,7 +11,7 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 //      INSERT can't blank the public site).
 //   2. The DTO field shape stays stable (id stringification, ISO dates).
 
-const { toAdminRevisionDto, toCmsPage } = await import('@/server/content/pages/projection')
+const { toAdminRevisionDto, toCmsPage } = await import('@/server/domains/pages/projection')
 
 function metaRow(overrides: Partial<PageMetaRow> = {}): PageMetaRow {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')

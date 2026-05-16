@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { adminSession, regularSession } from './_helpers/session'
 
-vi.mock('@/server/comments/loader', () => ({
+vi.mock('@/server/domains/comments/loader', () => ({
   latestComments: vi.fn(),
 }))
 
-const loader = await import('@/server/comments/loader')
-const { loadSidebarData } = await import('@/server/settings/sidebar/load')
+const loader = await import('@/server/domains/comments/loader')
+const { loadSidebarData } = await import('@/server/http/loaders/sidebar')
 
 beforeEach(() => {
   vi.mocked(loader.latestComments).mockReset()

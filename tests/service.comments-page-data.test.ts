@@ -10,20 +10,20 @@ import { regularSession } from './_helpers/session'
 // dependency + scheduler jitter), which is impossible if any pair were
 // serialised.
 
-vi.mock('@/server/comments/loader', () => ({
+vi.mock('@/server/domains/comments/loader', () => ({
   ensureCommentPage: vi.fn(async () => seedMetric()),
   loadComments: vi.fn(),
   parseComments: vi.fn(async () => []),
 }))
-vi.mock('@/server/comments/likes', () => ({ queryLikes: vi.fn() }))
-vi.mock('@/server/settings/sidebar/load', () => ({ loadSidebarData: vi.fn() }))
-vi.mock('@/server/analytics/pv-batcher', () => ({ bumpPageView: vi.fn() }))
+vi.mock('@/server/domains/comments/likes', () => ({ queryLikes: vi.fn() }))
+vi.mock('@/server/http/loaders/sidebar', () => ({ loadSidebarData: vi.fn() }))
+vi.mock('@/server/domains/analytics/pv-batcher', () => ({ bumpPageView: vi.fn() }))
 
-const commentLoader = await import('@/server/comments/loader')
-const likes = await import('@/server/comments/likes')
-const sidebar = await import('@/server/settings/sidebar/load')
-const metrics = await import('@/server/analytics/pv-batcher')
-const { loadDetailPageData } = await import('@/server/comments/page-data')
+const commentLoader = await import('@/server/domains/comments/loader')
+const likes = await import('@/server/domains/comments/likes')
+const sidebar = await import('@/server/http/loaders/sidebar')
+const metrics = await import('@/server/domains/analytics/pv-batcher')
+const { loadDetailPageData } = await import('@/server/http/loaders/comments')
 
 const POST_TIMING = { type: 'post' as const, ownerId: 1n }
 const POST_EMPTY = { type: 'post' as const, ownerId: 2n }

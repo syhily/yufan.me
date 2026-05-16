@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { buildObjectKey, extractHostForFriendKey } from '@/server/images/key'
-import { DomainError } from '@/server/present/response/errors'
+import { buildObjectKey, extractHostForFriendKey } from '@/server/domains/images/key'
+import { DomainError } from '@/server/infra/http/errors'
 
 describe('server/images/key — buildObjectKey', () => {
   describe('kind: generic', () => {

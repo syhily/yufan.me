@@ -39,7 +39,7 @@ export function ReplyCommentDialog({
   onCsrfRotated,
 }: ReplyCommentDialogProps) {
   const mutation = useMutation({
-    ...orpcQuery.commentPublic.replyComment.mutationOptions(),
+    ...orpcQuery.comments.replyComment.mutationOptions(),
     onSuccess: (payload) => {
       if (payload.csrfToken) {
         onCsrfRotated(payload.csrfToken)

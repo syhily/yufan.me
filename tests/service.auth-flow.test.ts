@@ -20,7 +20,7 @@ import { emptySession } from './_helpers/session'
 // enough; we do *not* mock `commitSession` itself, because the merged
 // `signInWithSession` (in the same module) would still see the real export
 // — `vi.mock` only swaps the module's *named* exports, not internal calls.
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   redisInstance: () => ({
     get: vi.fn(async () => null),
     set: vi.fn(async () => 'OK'),
@@ -38,19 +38,19 @@ vi.mock('@/server/infra/cache/storage', () => ({
   }),
 }))
 
-vi.mock('@/server/infra/db/query/user', () => ({
+vi.mock('@/server/infra/db/operations/user', () => ({
   hasAdmin: vi.fn(async () => false),
   insertAdmin: vi.fn(async () => []),
   verifyUserPassword: vi.fn(),
   updateLastLogin: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/infra/db/query/setting', () => ({
+vi.mock('@/server/infra/db/operations/setting', () => ({
   upsertSetting: vi.fn(async () => undefined),
   findSettingByScope: vi.fn(async () => null),
 }))
 
-vi.mock('@/server/settings/snapshot', () => ({
+vi.mock('@/server/domains/settings/snapshot', () => ({
   refreshBlogSettings: vi.fn(async () => null),
 }))
 
@@ -58,9 +58,9 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 
-const userQuery = await import('@/server/infra/db/query/user')
-const settingQuery = await import('@/server/infra/db/query/setting')
-const settingsSnapshot = await import('@/server/settings/snapshot')
+const userQuery = await import('@/server/infra/db/operations/user')
+const settingQuery = await import('@/server/infra/db/operations/setting')
+const settingsSnapshot = await import('@/server/domains/settings/snapshot')
 const rateLimit = await import('@/server/infra/rate-limit')
 const { issueCsrfToken, seedInstallSettingsWithSession, signInWithSession, signUpInitialAdminWithSession } =
   await import('@/server/session')

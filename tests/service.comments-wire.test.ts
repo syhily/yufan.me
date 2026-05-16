@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { CommentAndUser, CommentItem } from '@/shared/types/comments'
 
-import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/comments/wire'
+import { asAdminCommentsWire, asCommentItemsWire, asCommentItemWire } from '@/server/domains/comments/projection'
 
 // The wire helpers bridge `CommentAndUser` (Drizzle row shape: bigint
 // ids, Date timestamps) onto the contract DTO (`CommentItemWire`:

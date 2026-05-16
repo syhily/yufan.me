@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { commentReplySchema } from '@/server/comments/schema'
+import { commentReplySchema } from '@/server/domains/comments/schema'
 
 const HELLO_BODY = [
   {

@@ -1,4 +1,4 @@
-import { notFound } from '@/server/present/response/http'
+import { notFound } from '@/server/infra/http/status'
 
 import type { Route } from './+types/not-found'
 

@@ -78,7 +78,7 @@ export function CommentsView({
   })
 
   const loadMutation = useMutation({
-    ...orpcQuery.commentAdmin.loadAll.mutationOptions(),
+    ...orpcQuery.admin.comments.loadAll.mutationOptions(),
     onSuccess: (payload) => {
       dispatch({
         type: 'loaded',
@@ -106,26 +106,26 @@ export function CommentsView({
   })
 
   const { data: pagesData, isLoading: isPagesPending } = useQuery(
-    orpcQuery.commentAdmin.searchPages.queryOptions({
+    orpcQuery.admin.comments.searchPages.queryOptions({
       input: debouncedPageQuery ? { q: debouncedPageQuery } : {},
     }),
   )
 
   const { data: authorsData, isLoading: isAuthorsPending } = useQuery(
-    orpcQuery.commentAdmin.searchAuthors.queryOptions({
+    orpcQuery.admin.comments.searchAuthors.queryOptions({
       input: debouncedAuthorQuery ? { q: debouncedAuthorQuery } : {},
     }),
   )
 
   const { data: authorRehydrateData } = useQuery(
-    orpcQuery.commentAdmin.searchAuthors.queryOptions({
+    orpcQuery.admin.comments.searchAuthors.queryOptions({
       input: initialAuthorId ? { ids: initialAuthorId } : {},
       enabled: !!initialAuthorId,
     }),
   )
 
   const { data: pageRehydrateData } = useQuery(
-    orpcQuery.commentAdmin.searchPages.queryOptions({
+    orpcQuery.admin.comments.searchPages.queryOptions({
       input: initialPageKey ? { key: initialPageKey } : {},
       enabled: !!initialPageKey,
     }),

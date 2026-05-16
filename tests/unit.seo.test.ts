@@ -4,8 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test'
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-import { pageTitle, routeMeta } from '@/server/present/seo/meta'
-import { setBlogSettingsBundleForTests } from '@/server/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
+import { pageTitle, routeMeta } from '@/server/render/seo/meta'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 

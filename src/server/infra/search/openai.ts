@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto'
 import OpenAI from 'openai'
 
-import { createInflight } from '@/server/infra/cache/inflight'
-import { storage } from '@/server/infra/cache/storage'
 import { getLogger } from '@/server/infra/logger'
+import { createInflight } from '@/server/infra/redis/inflight'
+import { storage } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'
 

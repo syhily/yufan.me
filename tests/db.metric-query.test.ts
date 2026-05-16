@@ -13,7 +13,7 @@ vi.mock('@/server/infra/db/pool', () => ({
   },
 }))
 
-const { incrementMetricPvBatch } = await import('@/server/infra/db/query/metric')
+const { incrementMetricPvBatch } = await import('@/server/infra/db/operations/metric')
 
 beforeEach(() => {
   vi.clearAllMocks()

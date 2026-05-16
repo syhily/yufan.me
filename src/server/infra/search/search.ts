@@ -1,10 +1,10 @@
 import { and, cosineDistance, desc, eq, gt, ilike, isNull, or, sql } from 'drizzle-orm'
 import { createHash } from 'node:crypto'
 
-import { storage } from '@/server/infra/cache/storage'
 import { db } from '@/server/infra/db/pool'
 import { post, postSearchIndex } from '@/server/infra/db/schema'
 import { getLogger } from '@/server/infra/logger'
+import { storage } from '@/server/infra/redis/storage'
 import { generateEmbedding } from '@/server/infra/search/openai'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { CACHE_BUCKET_FALLBACKS } from '@/shared/types/cache'

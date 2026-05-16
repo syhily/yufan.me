@@ -1,8 +1,8 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/content/pages/preview'
-import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/content/pages/schema'
+import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/domains/pages/preview'
+import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   createPage,
   deletePage,
@@ -14,7 +14,7 @@ import {
   saveDraft as savePageDraft,
   unpublishPage,
   updatePageMeta,
-} from '@/server/content/pages/service'
+} from '@/server/domains/pages/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
 import {

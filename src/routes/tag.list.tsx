@@ -1,11 +1,11 @@
-import type { ListingPageLoaderData } from '@/server/present/router/listing-loader'
+import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { findTagBySlug } from '@/server/catalog/queries'
-import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/content/posts/query'
-import { notFound } from '@/server/present/response/http'
-import { listingLoader } from '@/server/present/router/listing-loader'
-import { listingHeaders, publicShouldRevalidate } from '@/server/present/router/route-exports'
-import { metaWithFallback } from '@/server/present/seo/meta'
+import { findTagBySlug } from '@/server/domains/catalog/queries'
+import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repo'
+import { listingLoader } from '@/server/http/loaders/listing'
+import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { notFound } from '@/server/infra/http/status'
+import { metaWithFallback } from '@/server/render/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'
 
 import type { Route } from './+types/tag.list'

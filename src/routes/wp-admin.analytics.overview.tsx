@@ -3,9 +3,15 @@ import { useLoaderData } from 'react-router'
 
 import type { MetricGroup, MetricRow, MetricType } from '@/shared/contracts/analytics'
 
-import { parseAnalyticsSearch, queryCounters, queryHeatmap, queryMetric, queryViews } from '@/server/analytics/query'
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
+import {
+  parseAnalyticsSearch,
+  queryCounters,
+  queryHeatmap,
+  queryMetric,
+  queryViews,
+} from '@/server/domains/analytics/query'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
 import { METRIC_GROUPS, METRIC_GROUP_TABS } from '@/shared/contracts/analytics'
 import { Counters } from '@/ui/admin/analytics/Counters'
 import { DateRangePicker } from '@/ui/admin/analytics/DateRangePicker'

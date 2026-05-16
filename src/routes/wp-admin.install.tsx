@@ -1,11 +1,11 @@
 import { data } from 'react-router'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { issueCsrfToken } from '@/server/auth/csrf'
-import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/auth/flows'
-import { signUpAdminSchema } from '@/server/auth/schema'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
-import { ensureNoAdminOrRedirect } from '@/server/settings/install/gate'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { issueCsrfToken } from '@/server/domains/auth/csrf'
+import { processAuthFormSubmission, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
+import { signUpAdminSchema } from '@/server/domains/auth/schema'
+import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 

@@ -1,6 +1,7 @@
 import { accountRouter } from '@/server/http/controllers/account.controller'
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
 import { adminCategoriesRouter } from '@/server/http/controllers/admin/categories.controller'
+import { adminCommentsRouter } from '@/server/http/controllers/admin/comments.controller'
 import { adminFriendsRouter } from '@/server/http/controllers/admin/friends.controller'
 import { adminImagesRouter } from '@/server/http/controllers/admin/images.controller'
 import { adminMailRouter } from '@/server/http/controllers/admin/mail.controller'
@@ -12,10 +13,7 @@ import { adminSettingsRouter } from '@/server/http/controllers/admin/settings.co
 import { adminTagsRouter } from '@/server/http/controllers/admin/tags.controller'
 import { adminUsersRouter } from '@/server/http/controllers/admin/users.controller'
 import { analyticsRouter } from '@/server/http/controllers/analytics.controller'
-import { commentAdminRouter } from '@/server/http/controllers/comment-admin.controller'
-import { commentPublicRouter } from '@/server/http/controllers/comment-public.controller'
-import { commentSelfRouter } from '@/server/http/controllers/comment-self.controller'
-import { commentTokenRouter } from '@/server/http/controllers/comment-token.controller'
+import { commentsRouter } from '@/server/http/controllers/comments.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
 
@@ -28,10 +26,7 @@ import { musicRouter } from '@/server/http/controllers/music.controller'
 export const apiRouter = {
   account: accountRouter,
   analytics: analyticsRouter,
-  commentPublic: commentPublicRouter,
-  commentSelf: commentSelfRouter,
-  commentToken: commentTokenRouter,
-  commentAdmin: commentAdminRouter,
+  comments: commentsRouter,
   image: imageRouter,
   music: musicRouter,
   admin: {
@@ -47,6 +42,7 @@ export const apiRouter = {
     pages: adminPagesRouter,
     posts: adminPostsRouter,
     renders: adminRendersRouter,
+    comments: adminCommentsRouter,
   },
 }
 

@@ -1,0 +1,139 @@
+import { startOfDay, subDays } from 'date-fns'
+
+import type { EntityTarget } from '@/server/infra/db/target'
+
+import {
+  commentCountsByOwnerIds,
+  consumeActiveLikeToken,
+  existsActiveLikeToken,
+  metricsByOwnerIds,
+  metricVoteUp,
+  purgeOldLikeTokens,
+  recordLikeAndCount,
+} from '@/server/infra/db/operations/like'
+import { decrementMetricVotes } from '@/server/infra/db/operations/metric'
+import { targetKey } from '@/server/infra/db/target'
+import { getLogger } from '@/server/infra/logger'
+import { makeToken } from '@/shared/utils/security'
+
+const log = getLogger('comments.likes')
+
+export async function increaseLikes(target: EntityTarget): Promise<{ likes: number; token: string }> {
+  // 64 base64url chars ≈ 48 bytes ≈ 384 bits of entropy.
+  const token = makeToken(64)
+  // Transactional: insert + bump + RETURNING new count run as one statement
+  // pair so a concurrent decrement can't race in between and return us
+  // yesterday's number.
+  const likes = await recordLikeAndCount(token, target)
+  return { likes, token }
+}
+
+export async function decreaseLikes(target: EntityTarget, token: string) {
+  const consumed = await consumeActiveLikeToken(target, token)
+  if (consumed) {
+    await decrementMetricVotes(target)
+  }
+}
+
+export async function queryLikes(target: EntityTarget): Promise<number> {
+  return metricVoteUp(target)
+}
+
+/**
+ * Batch metric read for a list of entity targets. Fans out per-type so
+ * Drizzle stays on the cheap `eq + inArray` path. The returned map is
+ * keyed on `targetKey(target)` so callers look up an entry without
+ * juggling `(type, ownerId)` tuples; each value also carries the
+ * metric `publicId` UUID for downstream wire-format usage.
+ */
+export async function queryMetadata(
+  targets: EntityTarget[],
+  options: { likes: boolean; views: boolean; comments: boolean },
+): Promise<Map<string, { likes: number; views: number; comments: number; publicId: string }>> {
+  if (targets.length === 0) {
+    return new Map()
+  }
+  const postIds = targets.filter((t) => t.type === 'post').map((t) => t.ownerId)
+  const pageIds = targets.filter((t) => t.type === 'page').map((t) => t.ownerId)
+
+  const [postMetrics, pageMetrics, postCommentCounts, pageCommentCounts] = await Promise.all([
+    metricsByOwnerIds('post', postIds),
+    metricsByOwnerIds('page', pageIds),
+    options.comments ? commentCountsByOwnerIds('post', postIds) : Promise.resolve([]),
+    options.comments ? commentCountsByOwnerIds('page', pageIds) : Promise.resolve([]),
+  ])
+
+  const metricByTarget = new Map<string, { like: number | null; view: number | null; publicId: string }>()
+  for (const row of postMetrics) {
+    metricByTarget.set(targetKey(row), row)
+  }
+  for (const row of pageMetrics) {
+    metricByTarget.set(targetKey(row), row)
+  }
+
+  const commentCountByTarget = new Map<string, number>()
+  for (const row of postCommentCounts) {
+    commentCountByTarget.set(targetKey({ type: 'post', ownerId: row.ownerId }), row.count)
+  }
+  for (const row of pageCommentCounts) {
+    commentCountByTarget.set(targetKey({ type: 'page', ownerId: row.ownerId }), row.count)
+  }
+
+  const out = new Map<string, { likes: number; views: number; comments: number; publicId: string }>()
+  for (const target of targets) {
+    const key = targetKey(target)
+    const m = metricByTarget.get(key)
+    out.set(key, {
+      likes: m?.like ?? 0,
+      views: m?.view ?? 0,
+      comments: commentCountByTarget.get(key) ?? 0,
+      publicId: m?.publicId ?? '',
+    })
+  }
+  return out
+}
+
+/**
+ * Validate if a like token exists and is valid (not deleted).
+ *
+ * Token cleanup is owned by `startLikeTokenSweep()` (a guarded
+ * `setInterval` on the module-scope global), so this hot path no longer
+ * pays a `Math.random()` + opportunistic table scan per call. Dedicated
+ * cron jobs can still invoke `purgeStaleLikeTokens()` directly.
+ */
+export async function validateLikeToken(target: EntityTarget, token: string): Promise<boolean> {
+  ensureLikeTokenSweepStarted()
+  return existsActiveLikeToken(target, token)
+}
+
+/**
+ * Physically delete all soft-deleted like tokens older than 30 days. Safe to
+ * call from a cron job; also invoked by the in-process sweep below.
+ */
+export async function purgeStaleLikeTokens(): Promise<void> {
+  const thirtyDaysAgo = startOfDay(subDays(new Date(), 30))
+  await purgeOldLikeTokens(thirtyDaysAgo)
+}
+
+/**
+ * In-process sweep timer. Purges soft-deleted like tokens once an hour.
+ * Guarded by a `Symbol.for` global so HMR / accidental double imports
+ * never spawn duplicate timers in dev.
+ */
+const SWEEP_INTERVAL_MS = 60 * 60 * 1000
+const SWEEP_KEY = Symbol.for('yufan.me/likes/sweep')
+type SweepGlobal = { [SWEEP_KEY]?: NodeJS.Timeout }
+
+function ensureLikeTokenSweepStarted(): void {
+  const slot = globalThis as unknown as SweepGlobal
+  if (slot[SWEEP_KEY] !== undefined) {
+    return
+  }
+  slot[SWEEP_KEY] = setInterval(() => {
+    void purgeStaleLikeTokens().catch((err) => {
+      log.warn('background sweep failed', { error: err })
+    })
+  }, SWEEP_INTERVAL_MS)
+  // Don't pin the Node event loop — the timer is purely opportunistic.
+  slot[SWEEP_KEY]?.unref?.()
+}

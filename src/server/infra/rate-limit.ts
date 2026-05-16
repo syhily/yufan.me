@@ -2,13 +2,13 @@ import { createHash } from 'node:crypto'
 
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/blog'
 
-import { redisInstance } from '@/server/infra/cache/storage'
-import { rateLimitDefaults } from '@/server/settings/sections'
+import { rateLimitDefaults } from '@/server/domains/settings/sections'
+import { redisInstance } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 
 // All keys live under the reserved `rate-limit:` namespace so the
 // admin cache panel can never SCAN/UNLINK them by accident — see the
-// `RESERVED_CACHE_PREFIXES` enforcement in `@/server/settings/schema`.
+// `RESERVED_CACHE_PREFIXES` enforcement in `@/server/domains/settings/schema`.
 const RATE_LIMIT_NAMESPACE = 'rate-limit:'
 
 const signInKey = (ip: string) => `${RATE_LIMIT_NAMESPACE}signin:${ip}`

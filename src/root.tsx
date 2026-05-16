@@ -8,8 +8,8 @@ import { makeQueryClient } from '@/client/api/query-client'
 import { useChunkErrorRecovery, useReloadOnChunkError } from '@/client/hooks/use-chunk-error-recovery'
 import { useFocusHash } from '@/client/hooks/use-focus-hash'
 import { useIosNoZoomOnFocus } from '@/client/hooks/use-ios-no-zoom'
-import { getRouteRequestContext } from '@/server/auth/context'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { BlogSettingsProvider } from '@/ui/lib/blog-config-context'
 import { ThemeProvider, THEME_COOKIE } from '@/ui/lib/ThemeProvider'
@@ -196,7 +196,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // The bundle flows down through `BlogSettingsProvider` (per-section
   // contexts) and the route data path (`Route.MetaArgs.matches`). On
   // the server, non-React modules read the boot-hydrated snapshot in
-  // `@/server/settings/snapshot`; on the client they don't run at
+  // `@/server/domains/settings/snapshot`; on the client they don't run at
   // all. There is no longer a render-time `globalThis` write here.
   //
   // The chrome is owned by the matched layout route (`public.layout.tsx`,

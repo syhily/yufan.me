@@ -1,19 +1,19 @@
 import { data } from 'react-router'
 
-import type { MyCommentsStatus } from '@/server/infra/db/query/comment'
+import type { MyCommentsStatus } from '@/server/infra/db/operations/comment'
 import type { EntityType } from '@/server/infra/db/target'
 import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schema'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
 import {
   countMyComments,
   findParentCommentsByIds,
   listMyCommentEntities,
   listMyComments,
   resolveEntitiesForComments,
-} from '@/server/infra/db/query/comment'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+} from '@/server/infra/db/operations/comment'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 
 import type { Route } from './+types/wp-admin.my.comments'

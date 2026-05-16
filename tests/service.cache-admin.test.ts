@@ -44,19 +44,19 @@ function patternToRegex(pattern: string): RegExp {
   return new RegExp(`^${escaped}$`)
 }
 
-// `vi.mock('@/server/infra/cache/storage', …)` runs against the mock factory's
+// `vi.mock('@/server/infra/redis/storage', …)` runs against the mock factory's
 // return value at import time, so the redis instance shared by every
 // test is created before any `await import(...)` below.
 const fixture = createRedis()
 
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   redisInstance: () => fixture,
   storage: {},
 }))
 
-const { clearAdminCache, getAdminCacheStats } = await import('@/server/infra/cache/admin')
-const { DomainError } = await import('@/server/present/response/errors')
-const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
+const { clearAdminCache, getAdminCacheStats } = await import('@/server/infra/redis/admin-ops')
+const { DomainError } = await import('@/server/infra/http/errors')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
 describe('service: cache admin', () => {

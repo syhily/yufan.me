@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vite-plus/test'
 // silently widen the attack surface. We pin the source so any change is a
 // PR-visible diff.
 const here = dirname(fileURLToPath(import.meta.url))
-const sessionFile = resolve(here, '../src/server/auth/session-storage.ts')
+const sessionFile = resolve(here, '../src/server/domains/auth/session-storage.ts')
 const source = readFileSync(sessionFile, 'utf8')
 
 describe('contract: session cookie configuration', () => {

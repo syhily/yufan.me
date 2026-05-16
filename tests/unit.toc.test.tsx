@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vite-plus/test'
 
 import type { MarkdownHeading } from '@/shared/types/catalog'
 
-import { setBlogSettingsBundleForTests } from '@/server/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { TableOfContents } from '@/ui/public/post/TableOfContents'
 

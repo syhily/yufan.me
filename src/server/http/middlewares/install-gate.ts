@@ -2,9 +2,9 @@ import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
 
+import { getInstallState } from '@/server/domains/settings/install-gate'
+import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
 import { getLogger } from '@/server/infra/logger'
-import { getInstallState } from '@/server/settings/install/gate'
-import { hydrateBlogSettings } from '@/server/settings/snapshot'
 
 const log = getLogger('install.gate')
 

@@ -1,7 +1,7 @@
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
-import { hydrateBlogSettings } from '@/server/settings/snapshot'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { hydrateBlogSettings } from '@/server/domains/settings/snapshot'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MailForm } from '@/ui/admin/settings/MailForm'
 
 import type { Route } from './+types/wp-admin.settings.mail'

@@ -21,7 +21,7 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
   listClientPosts: mocks.listClientPosts,
   listAllPosts: mocks.listAllPosts,
   getClientPostsWithMetadata: mocks.getClientPostsWithMetadata,

@@ -1,6 +1,6 @@
-import { getClientPostsWithMetadata, listClientPosts } from '@/server/content/posts/query'
-import { listingHeaders, publicShouldRevalidate } from '@/server/present/router/route-exports'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { getClientPostsWithMetadata, listClientPosts } from '@/server/domains/posts/repo'
+import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { toListingPostCard } from '@/shared/types/catalog'
 import { ArchivesBody } from '@/ui/public/post/ArchivesBody'
 

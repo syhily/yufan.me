@@ -256,7 +256,7 @@ function CommentsRoot({
   const onApproved = useCallback((id: bigint | string) => dispatch({ type: 'approveComment', id }), [])
   const onDeleted = useCallback((id: bigint | string) => dispatch({ type: 'removeComment', id }), [])
   const revokeToken = useMutation({
-    ...orpcQuery.commentToken.revokeToken.mutationOptions(),
+    ...orpcQuery.comments.revokeToken.mutationOptions(),
   })
   const onDismissMyComment = useCallback(
     (id: bigint | string) => {
@@ -288,7 +288,7 @@ function CommentsRoot({
   const [myCommentIds, setMyCommentIds] = useState<Set<string>>(new Set())
   const [myCommentExpiresAt, setMyCommentExpiresAt] = useState<Map<string, number>>(new Map())
   const myComments = useMutation({
-    ...orpcQuery.commentToken.myComments.mutationOptions(),
+    ...orpcQuery.comments.myComments.mutationOptions(),
     onSuccess: (payload: MyCommentsOutput) => {
       if (payload.comments.length > 0) {
         dispatch({ type: 'mergeMyComments', comments: payload.comments, expiresAt: payload.expiresAt })
@@ -394,7 +394,7 @@ function CommentsLoadMore() {
   rootsLoadedRef.current = ctx.state.rootsLoaded
 
   const loadMore = useMutation({
-    ...orpcQuery.commentPublic.loadComments.mutationOptions(),
+    ...orpcQuery.comments.loadComments.mutationOptions(),
     onSuccess: (payload: LoadCommentsOutput) => {
       ctx.dispatch({
         type: 'append',

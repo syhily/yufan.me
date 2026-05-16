@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import type { PageMetaWithAuthor } from '@/server/content/pages/repository'
+import type { PageMetaWithAuthor } from '@/server/domains/pages/repo'
 import type { ContentRow } from '@/server/infra/db/types'
 
 // CMS page service — drives the save/publish state machine through
@@ -11,7 +11,7 @@ import type { ContentRow } from '@/server/infra/db/types'
 //   3. DTO projection (CmsPage, AdminPageDto, AdminRevisionDto),
 //   4. conflict-vs-saved branching translated to the wire shape.
 
-vi.mock('@/server/content/pages/repository', () => ({
+vi.mock('@/server/domains/pages/repo', () => ({
   countPageMetas: vi.fn(async () => 0),
   findContentById: vi.fn(),
   findLatestDraft: vi.fn(),
@@ -33,19 +33,19 @@ vi.mock('@/server/content/pages/repository', () => ({
 // `listPagesForAdmin` ensures a metric row per listed page and reads
 // counter rows back. Stub those out so this test focuses on repository
 // orchestration without needing the metric DB.
-vi.mock('@/server/infra/db/query/metric', () => ({
+vi.mock('@/server/infra/db/operations/metric', () => ({
   ensureMetric: vi.fn(async () => ({})),
   findMetricByPublicId: vi.fn(),
   findMetricByTarget: vi.fn(),
 }))
-vi.mock('@/server/infra/db/query/like', () => ({
+vi.mock('@/server/infra/db/operations/like', () => ({
   metricsByOwnerIds: vi.fn(async () => []),
   commentCountsByOwnerIds: vi.fn(async () => []),
 }))
 
-const repo = await import('@/server/content/pages/repository')
-const { DomainError } = await import('@/server/present/response/errors')
-const service = await import('@/server/content/pages/service')
+const repo = await import('@/server/domains/pages/repo')
+const { DomainError } = await import('@/server/infra/http/errors')
+const service = await import('@/server/domains/pages/service')
 
 function metaRow(overrides: Partial<PageMetaWithAuthor> = {}): PageMetaWithAuthor {
   const now = overrides.createdAt ?? new Date('2026-05-01T00:00:00.000Z')

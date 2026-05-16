@@ -1,0 +1,21 @@
+import type { CatalogEntry } from '@/server/domains/catalog/snapshot'
+
+import { CatalogConsistencyError } from '@/server/domains/catalog/snapshot'
+
+export function validateSlugFence(entries: ReadonlyArray<CatalogEntry>): void {
+  const seen = new Map<string, CatalogEntry[]>()
+  for (const entry of entries) {
+    const list = seen.get(entry.slug) ?? []
+    list.push(entry)
+    seen.set(entry.slug, list)
+  }
+  const conflicts: Array<{ slug: string; entries: CatalogEntry[] }> = []
+  for (const [slug, list] of seen) {
+    if (list.length > 1) {
+      conflicts.push({ slug, entries: list })
+    }
+  }
+  if (conflicts.length > 0) {
+    throw new CatalogConsistencyError(conflicts)
+  }
+}

@@ -16,10 +16,10 @@ const mocks = vi.hoisted(() => ({
   getTagsByNames: vi.fn(),
 }))
 
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
   listPublicPostsWithContent: mocks.listPublicPostsWithContent,
 }))
-vi.mock('@/server/catalog/queries', () => ({
+vi.mock('@/server/domains/catalog/queries', () => ({
   findCategoryBySlug: mocks.findCategoryBySlug,
   findCategoryByName: mocks.findCategoryByName,
   findTagBySlug: mocks.findTagBySlug,
@@ -28,7 +28,7 @@ vi.mock('@/server/catalog/queries', () => ({
   getTagsByNames: mocks.getTagsByNames,
 }))
 
-const { feedResponse, generateFeeds } = await import('@/server/present/feed/generator')
+const { feedResponse, generateFeeds } = await import('@/server/render/feed/generator')
 
 function fakeCatalog(
   opts: {

@@ -2,7 +2,7 @@ import { ORPCError, os } from '@orpc/server'
 
 import type { Env } from '@/server/http/context'
 
-import { hasAtLeast, type Role, type ViewerContext } from '@/server/auth/rbac'
+import { hasAtLeast, type Role, type ViewerContext } from '@/server/domains/auth/rbac'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
 // `app.ts` builds this from `c.var` after the perimeter middleware

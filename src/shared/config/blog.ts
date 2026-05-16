@@ -379,14 +379,14 @@ export interface BlogSettingsBundle {
 //
 // Lives in `@/shared/` (not `@/server/`) on purpose: this module is
 // reached transitively from route `meta()` exports (via
-// `@/server/present/seo/meta`), and `meta()` runs on the client too — so
+// `@/server/render/seo/meta`), and `meta()` runs on the client too — so
 // anything imported from it ends up in the browser bundle. Keeping the
 // reader here keeps the client bundle free of `pg` / `drizzle-orm` while
 // still letting SSR hand the latest DB-backed values to the live route
 // loaders.
 //
 // The writer half (DB query + hydration + refresh-on-write) lives in
-// `@/server/settings/snapshot` and stays server-only. Both modules talk
+// `@/server/domains/settings/snapshot` and stays server-only. Both modules talk
 // through the same module-internal slot via the
 // `BLOG_SETTINGS_SNAPSHOT_SLOT` symbol so a single in-process snapshot
 // is observable everywhere.
@@ -442,7 +442,7 @@ function withCacheFallbacks(value: CacheSettingsNonNull): CacheSettingsNonNull {
 
 // `BLOG_SETTINGS_SNAPSHOT_SLOT` is the cross-module bridge between the
 // shared reader and the server-only writer in
-// `@/server/settings/snapshot`. The export is INTENTIONALLY namespaced
+// `@/server/domains/settings/snapshot`. The export is INTENTIONALLY namespaced
 // under a non-obvious symbol so accidental consumers — anything that
 // isn't the snapshot writer — can't import it without thinking. The
 // snapshot writer re-exports a typed `set…ForServer()` helper that

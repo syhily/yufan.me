@@ -4,9 +4,9 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
-import { settingsMeta } from '@/server/present/seo/settings-meta'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { settingsMeta } from '@/server/render/seo/settings-meta'
 import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
 
 export const meta = settingsMeta('侧边栏')

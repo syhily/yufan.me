@@ -4,10 +4,10 @@ import { useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/wp-admin.settings.layout'
 
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
-import { settingsMeta } from '@/server/present/seo/settings-meta'
-import { projectAssetsForAdmin } from '@/server/settings/projection'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { projectAssetsForAdmin } from '@/server/domains/settings/projection'
+import { settingsMeta } from '@/server/render/seo/settings-meta'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 
 export const meta = settingsMeta('存储配置')

@@ -1,8 +1,8 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/domains/taxonomies/tags/service'
 import { authorProc } from '@/server/http/orpc-base'
-import { deleteAdminTag, listTagsForAdmin, upsertAdminTag } from '@/server/taxonomies/tag-service'
 import { adminTagDto } from '@/shared/contracts/tags'
 
 const list = authorProc

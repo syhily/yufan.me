@@ -1,6 +1,6 @@
-import { getRouteRequestContext } from '@/server/auth/context'
-import { requireRole } from '@/server/auth/rbac'
-import { bundleFromMatches, routeMeta } from '@/server/present/seo/meta'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { requireRole } from '@/server/domains/auth/rbac'
+import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { ImagesView } from '@/ui/admin/images/ImagesView'
 
 import type { Route } from './+types/wp-admin.images'

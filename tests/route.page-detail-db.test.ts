@@ -68,17 +68,19 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/domains/catalog/catalog', () => ({
   getEntryBySlug: vi.fn(async (slug: string) => (slug === 'about' ? { type: 'page', id: dbPage.id, slug } : null)),
 }))
-vi.mock('@/server/content/pages/query', () => ({
+vi.mock('@/server/domains/pages/repo', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? dbPage : null)),
   buildDbPage: (p: unknown) => p,
 }))
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
+  listPublicPostMetas: vi.fn(async () => []),
   findPostBySlug: vi.fn(async () => null),
 }))
-vi.mock('@/server/catalog/queries', () => ({
+vi.mock('@/server/domains/catalog/queries', () => ({
   listAllFriends: vi.fn(async () => []),
 }))
 vi.mock('@/shared/types/catalog', async () => {
@@ -94,7 +96,7 @@ vi.mock('@/shared/types/catalog', async () => {
 // Stub out the comments/data loader the same way `route.detail.test.ts`
 // does — the page.detail route awaits this for every request and we
 // don't have Postgres in unit tests.
-vi.mock('@/server/comments/page-data', () => ({
+vi.mock('@/server/http/loaders/comments', () => ({
   loadDetailPageData: vi.fn(async () => ({
     admin: false,
     likes: { count: 0, liked: false },
@@ -122,7 +124,7 @@ vi.mock('@/server/comments/page-data', () => ({
 
 // Image-meta resolution would otherwise hit Postgres for the
 // thumbhash lookup; we don't need it for this contract.
-vi.mock('@/server/images/render-enhance', () => ({
+vi.mock('@/server/render/image-enhance', () => ({
   resolveImageMetaBySources: vi.fn(async () => new Map()),
   loadImageThumbhash: vi.fn(async () => null),
 }))

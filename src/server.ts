@@ -6,7 +6,7 @@ import { createHonoServer } from 'react-router-hono-server/node'
 
 import type { Env } from '@/server/http/context'
 
-import { requestContext, sessionContext } from '@/server/auth/context'
+import { requestContext, sessionContext } from '@/server/domains/auth/context'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gate'

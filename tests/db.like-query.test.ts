@@ -57,7 +57,7 @@ vi.mock('@/server/infra/db/pool', () => ({
 }))
 
 const { consumeActiveLikeToken, existsActiveLikeToken, purgeOldLikeTokens } =
-  await import('@/server/infra/db/query/like')
+  await import('@/server/infra/db/operations/like')
 
 const POST_A = { type: 'post' as const, ownerId: 1n }
 

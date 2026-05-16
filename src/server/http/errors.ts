@@ -5,8 +5,8 @@ import { ZodError } from 'zod'
 
 import type { Env } from '@/server/http/context'
 
+import { ActionFailure, DomainError, domainStatus } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { ActionFailure, DomainError, domainStatus } from '@/server/present/response/errors'
 
 const log = getLogger('http.error')
 

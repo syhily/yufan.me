@@ -4,8 +4,8 @@ import { Hono } from 'hono'
 
 import type { Env } from '@/server/http/context'
 
-import { feedResponse } from '@/server/present/feed/generator'
-import { getSlug, scopeFromUrl } from '@/server/present/feed/scope'
+import { feedResponse } from '@/server/render/feed/generator'
+import { getSlug, scopeFromUrl } from '@/server/render/feed/scope'
 
 async function writeFeedResponse(c: Context<Env>, kind: 'rss' | 'atom', scope?: Parameters<typeof feedResponse>[1]) {
   const res = await feedResponse(kind, scope)

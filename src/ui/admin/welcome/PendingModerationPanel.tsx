@@ -52,7 +52,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     isPending: isListPending,
     refetch,
   } = useQuery(
-    orpcQuery.commentAdmin.listPendingDashboard.queryOptions({
+    orpcQuery.admin.comments.listPendingDashboard.queryOptions({
       input: { kind: 'all', offset, limit: PAGE_SIZE },
       initialData: initial,
     }),
@@ -72,7 +72,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
   }, [refetch])
 
   const approveApi = useMutation({
-    mutationFn: (vars: { rid: string }) => orpc.commentAdmin.approve({ rid: vars.rid }),
+    mutationFn: (vars: { rid: string }) => orpc.admin.comments.approve({ rid: vars.rid }),
     onSuccess: () => {
       toast.success('已通过该评论。')
       refresh()
@@ -80,7 +80,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     onError: () => toast.error('操作失败'),
   })
   const rejectApi = useMutation({
-    mutationFn: (vars: { rid: string }) => orpc.commentAdmin.delete({ rid: vars.rid }),
+    mutationFn: (vars: { rid: string }) => orpc.admin.comments.delete({ rid: vars.rid }),
     onSuccess: () => {
       toast.success('已拒绝并删除该评论。')
       refresh()
@@ -88,7 +88,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     onError: () => toast.error('操作失败'),
   })
   const approveDeletionApi = useMutation({
-    ...orpcQuery.commentAdmin.approveCommentDeletion.mutationOptions(),
+    ...orpcQuery.admin.comments.approveCommentDeletion.mutationOptions(),
     onSuccess: (data) => {
       toast.success(data ? '已处理该删除申请。' : '已处理。')
       refresh()

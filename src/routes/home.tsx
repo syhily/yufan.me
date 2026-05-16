@@ -1,21 +1,21 @@
-import type { ListingPageLoaderData } from '@/server/present/router/listing-loader'
+import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
-import { trackAccess } from '@/server/analytics/track'
-import { getRouteRequestContext } from '@/server/auth/context'
-import { userSession } from '@/server/auth/primitives'
-import { getCategoryLinks, listAllTags } from '@/server/catalog/queries'
+import { trackAccess } from '@/server/domains/analytics/track'
+import { getRouteRequestContext } from '@/server/domains/auth/context'
+import { userSession } from '@/server/domains/auth/primitives'
+import { getCategoryLinks, listAllTags } from '@/server/domains/catalog/queries'
 import {
   countPublicPosts,
   listPublicPostCardsPaginated,
   selectFeaturePosts,
   selectSidebarPosts,
-} from '@/server/content/posts/query'
-import { listingLoader } from '@/server/present/router/listing-loader'
-import { listingHeaders, publicShouldRevalidate } from '@/server/present/router/route-exports'
-import { metaWithFallback } from '@/server/present/seo/meta'
-import { loadSidebarData } from '@/server/settings/sidebar/load'
-import { selectSidebarTags } from '@/server/settings/sidebar/select'
+} from '@/server/domains/posts/repo'
+import { listingLoader } from '@/server/http/loaders/listing'
+import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { loadSidebarData } from '@/server/http/loaders/sidebar'
+import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
+import { metaWithFallback } from '@/server/render/seo/meta'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { HomeLayoutBody } from '@/ui/public/post/PostListViews'

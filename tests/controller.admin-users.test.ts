@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
-vi.mock('@/server/infra/db/query/user', () => ({
+vi.mock('@/server/infra/db/operations/user', () => ({
   countAdmins: vi.fn().mockResolvedValue(2),
   findUserByEmail: vi.fn().mockResolvedValue(null),
   findUserById: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock('@/server/infra/db/query/user', () => ({
   updateUserById: vi.fn(),
   updateUserRole: vi.fn(),
 }))
-vi.mock('@/server/users/service', () => ({
+vi.mock('@/server/domains/users/service', () => ({
   bulkApproveCommentsForUser: vi.fn().mockResolvedValue(0),
   bulkDeleteCommentsForUser: vi.fn().mockResolvedValue(0),
   fetchAdminUserDto: vi.fn(),
@@ -22,14 +22,14 @@ vi.mock('@/server/users/service', () => ({
   softDeleteAdminUser: vi.fn().mockResolvedValue(true),
   toAdminUserDto: (row: unknown) => row,
 }))
-vi.mock('@/server/auth/session-storage', () => ({
+vi.mock('@/server/domains/auth/session-storage', () => ({
   revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('@/server/auth/sessions', () => ({
+vi.mock('@/server/domains/auth/sessions', () => ({
   findSessionMeta: vi.fn(),
   revokeSessionById: vi.fn(),
 }))
-vi.mock('@/server/auth/verification-tokens', () => ({
+vi.mock('@/server/domains/auth/verification-tokens', () => ({
   issueResetToken: vi.fn(),
   issueSetupToken: vi.fn(),
   revokeTokensFor: vi.fn(),
@@ -45,8 +45,8 @@ vi.mock('@/server/infra/rate-limit', () => ({
 }))
 
 const { adminUsersRouter } = await import('@/server/http/controllers/admin/users.controller')
-const userQuery = await import('@/server/infra/db/query/user')
-const usersService = await import('@/server/users/service')
+const userQuery = await import('@/server/infra/db/operations/user')
+const usersService = await import('@/server/domains/users/service')
 
 describe('adminUsersRouter.list', () => {
   it('passes query params through to the service and projects each row', async () => {
@@ -118,7 +118,7 @@ describe('adminUsersRouter.softDelete', () => {
     const ctx = makeAuthedCtx({ userId: '1' })
     const res = await call(adminUsersRouter.softDelete, { id: '9' }, { context: ctx })
     expect(res).toBeUndefined()
-    const sessionStorage = await import('@/server/auth/session-storage')
+    const sessionStorage = await import('@/server/domains/auth/session-storage')
     expect(vi.mocked(sessionStorage.revokeAllSessionsOfUser)).toHaveBeenCalledWith(9n)
   })
 })

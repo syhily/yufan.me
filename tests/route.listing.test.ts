@@ -28,7 +28,7 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog/queries', () => ({
+vi.mock('@/server/domains/catalog/queries', () => ({
   findCategoryBySlug: vi.fn(async (slug: string) => (slug === 'general' ? sampleCategory : null)),
   findTagBySlug: vi.fn(async (slug: string) => (slug === 'typescript' ? sampleTag : null)),
 }))
@@ -42,7 +42,7 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
   listPostsByCategory: vi.fn(async (_name: string, options: { includeHidden?: boolean }) =>
     options?.includeHidden ? samplePosts : publicPosts,
   ),
@@ -70,7 +70,7 @@ vi.mock('@/server/content/posts/query', () => ({
   ),
 }))
 
-vi.mock('@/server/settings/sidebar/load', () => ({
+vi.mock('@/server/http/loaders/sidebar', () => ({
   loadSidebarData: vi.fn(async () => ({ recentComments: [], pendingComments: [] })),
 }))
 

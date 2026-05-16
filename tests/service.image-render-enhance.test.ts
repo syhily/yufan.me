@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { mockRedis } from './_helpers/redis'
 
-vi.mock('@/server/infra/db/query/image', () => ({
+vi.mock('@/server/infra/db/operations/image', () => ({
   findImagesByStoragePaths: vi.fn(async () => []),
 }))
 
@@ -11,14 +11,14 @@ vi.mock('@/server/infra/db/query/image', () => ({
 // of trying to reach a real Redis. The helper already implements the
 // `getItem`/`setItem`/`removeItem` surface this module needs.
 const fakeStorage = mockRedis()
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   storage: fakeStorage,
   redisInstance: () => fakeStorage,
 }))
 
-const queryImageMock = await import('@/server/infra/db/query/image')
-const { clearImageEnhanceCache, loadImageThumbhash } = await import('@/server/images/render-enhance')
-const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
+const queryImageMock = await import('@/server/infra/db/operations/image')
+const { clearImageEnhanceCache, loadImageThumbhash } = await import('@/server/render/image-enhance')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
 const NOW = new Date('2026-05-02T08:00:00Z')

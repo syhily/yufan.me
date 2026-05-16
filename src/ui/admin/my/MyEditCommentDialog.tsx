@@ -32,7 +32,7 @@ export interface MyEditCommentDialogProps {
 
 export function MyEditCommentDialog({ target, onClose, onSaved }: MyEditCommentDialogProps) {
   const update = useMutation({
-    ...orpcQuery.commentSelf.updateOwn.mutationOptions(),
+    ...orpcQuery.comments.updateOwn.mutationOptions(),
     onSuccess: () => onSaved(),
   })
   const [initialBody, setInitialBody] = useState<CommentBody>(EMPTY_COMMENT_BODY)

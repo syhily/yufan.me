@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { validateSlugFence } from '@/server/catalog/fence'
-import { CatalogConsistencyError, type CatalogEntry } from '@/server/catalog/snapshot'
+import { validateSlugFence } from '@/server/domains/catalog/fence'
+import { CatalogConsistencyError, type CatalogEntry } from '@/server/domains/catalog/snapshot'
 
 describe('catalog slug fence', () => {
   it('accepts disjoint page and post slug sets', () => {

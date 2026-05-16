@@ -1,8 +1,14 @@
 import { z } from 'zod'
 
-import { userSession } from '@/server/auth/primitives'
+import { userSession } from '@/server/domains/auth/primitives'
+import {
+  addMusic,
+  deleteMusic,
+  listMusicForAdmin,
+  searchMusic,
+  updateMusicMetadata,
+} from '@/server/domains/music/service'
 import { authorProc } from '@/server/http/orpc-base'
-import { addMusic, deleteMusic, listMusicForAdmin, searchMusic, updateMusicMetadata } from '@/server/music/service'
 import {
   addMusicOutputDto,
   listMusicOutputDto,

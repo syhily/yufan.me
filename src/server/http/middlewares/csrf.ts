@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 
 import type { Env } from '@/server/http/context'
 
-import { clearCsrfCookie, validateRequestCsrf } from '@/server/auth/csrf'
+import { clearCsrfCookie, validateRequestCsrf } from '@/server/domains/auth/csrf'
 
 /**
  * CSRF guard for mutation routes.

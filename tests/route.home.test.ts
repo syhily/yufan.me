@@ -52,7 +52,7 @@ const mocks = vi.hoisted(() => ({
   }),
 }))
 
-vi.mock('@/server/catalog/queries', () => ({
+vi.mock('@/server/domains/catalog/queries', () => ({
   listAllTags: mocks.listAllTags,
   getCategoryLink: vi.fn((name: string) => (name === sampleCategory.name ? sampleCategory.permalink : '')),
   getCategoryLinks: vi.fn(async (names: string[]) =>
@@ -70,7 +70,7 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
   listClientPosts: mocks.listClientPosts,
   countPublicPosts: vi.fn(async () => mocks.postCount),
   listPublicPostCardsPaginated: mocks.paginatedPosts,
@@ -84,7 +84,7 @@ vi.mock('@/server/content/posts/query', () => ({
   selectSidebarPosts: vi.fn(async () => []),
 }))
 
-vi.mock('@/server/settings/sidebar/load', () => ({
+vi.mock('@/server/http/loaders/sidebar', () => ({
   loadSidebarData: vi.fn(async () => ({
     admin: false,
     recentComments: [],

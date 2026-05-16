@@ -1,5 +1,5 @@
-import type { ViewerContext } from '@/server/auth/rbac'
-import type { BlogSession } from '@/server/auth/session-storage'
+import type { ViewerContext } from '@/server/domains/auth/rbac'
+import type { BlogSession } from '@/server/domains/auth/session-storage'
 
 export type Env = {
   Variables: {

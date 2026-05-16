@@ -44,8 +44,8 @@ const sessionMocks = vi.hoisted(() => ({
 // Mocking the `@/server/session` re-export does nothing — Vitest only
 // catches the import at the path the consumer actually used.
 
-vi.mock('@/server/auth/csrf', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/csrf')>('@/server/auth/csrf')
+vi.mock('@/server/domains/auth/csrf', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/csrf')>('@/server/domains/auth/csrf')
   return {
     ...actual,
     validateRequestCsrf: sessionMocks.validateRequestCsrf,
@@ -53,8 +53,10 @@ vi.mock('@/server/auth/csrf', async () => {
   }
 })
 
-vi.mock('@/server/auth/session-storage', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/session-storage')>('@/server/auth/session-storage')
+vi.mock('@/server/domains/auth/session-storage', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/session-storage')>(
+    '@/server/domains/auth/session-storage',
+  )
   return {
     ...actual,
     commitSession: sessionMocks.commitSession,
@@ -62,8 +64,8 @@ vi.mock('@/server/auth/session-storage', async () => {
   }
 })
 
-vi.mock('@/server/auth/context', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/context')>('@/server/auth/context')
+vi.mock('@/server/domains/auth/context', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/context')>('@/server/domains/auth/context')
   return {
     ...actual,
     getRouteRequestContext: vi.fn(({ request }: { request: Request }) => ({
@@ -76,15 +78,15 @@ vi.mock('@/server/auth/context', async () => {
   }
 })
 
-vi.mock('@/server/auth/flows', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/flows')>('@/server/auth/flows')
+vi.mock('@/server/domains/auth/flows', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/flows')>('@/server/domains/auth/flows')
   return {
     ...actual,
     processAuthFormSubmission: vi.fn(async () => ({ ok: true })),
   }
 })
 
-vi.mock('@/server/settings/install/gate', () => ({
+vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureInstalledOrRedirect: vi.fn(async () => null),
   ensureNoAdminOrRedirect: vi.fn(async () => null),
   ensureNoSettingsOrRedirect: vi.fn(async () => null),
@@ -98,8 +100,10 @@ const authPrimitivesMocks = vi.hoisted(() => ({
   login: vi.fn(async () => undefined),
 }))
 
-vi.mock('@/server/auth/primitives', async () => {
-  const actual = await vi.importActual<typeof import('@/server/auth/primitives')>('@/server/auth/primitives')
+vi.mock('@/server/domains/auth/primitives', async () => {
+  const actual = await vi.importActual<typeof import('@/server/domains/auth/primitives')>(
+    '@/server/domains/auth/primitives',
+  )
   return {
     ...actual,
     establishLoginSession: authPrimitivesMocks.establishLoginSession,
@@ -114,7 +118,7 @@ const tokenMocks = vi.hoisted(() => ({
   issueResetToken: vi.fn(async () => ({ token: 'tok-test' })),
 }))
 
-vi.mock('@/server/auth/verification-tokens', () => tokenMocks)
+vi.mock('@/server/domains/auth/verification-tokens', () => tokenMocks)
 
 const userQueryMocks = vi.hoisted(() => ({
   findUserById: vi.fn(),
@@ -122,9 +126,9 @@ const userQueryMocks = vi.hoisted(() => ({
   findUserByEmail: vi.fn(async () => null),
 }))
 
-vi.mock('@/server/infra/db/query/user', () => userQueryMocks)
+vi.mock('@/server/infra/db/operations/user', () => userQueryMocks)
 
-vi.mock('@/server/infra/db/query/comment', () => ({
+vi.mock('@/server/infra/db/operations/comment', () => ({
   countApprovedCommentsByUser: vi.fn(async () => 0),
 }))
 

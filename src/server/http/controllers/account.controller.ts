@@ -2,10 +2,10 @@ import { ORPCError } from '@orpc/server'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
-import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
-import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/sessions'
 import { authedProc } from '@/server/http/orpc-base'
-import { findUserById, updateUserById } from '@/server/infra/db/query/user'
+import { findUserById, updateUserById } from '@/server/infra/db/operations/user'
 
 // ─── Input schemas ──────────────────────────────────────
 // Kept inline (was previously in `src/shared/contracts/account.ts`,

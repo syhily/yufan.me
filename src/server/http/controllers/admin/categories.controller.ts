@@ -1,13 +1,13 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { adminProc } from '@/server/http/orpc-base'
 import {
   deleteAdminCategory,
   listCategoriesForAdmin,
   reorderAdminCategories,
   upsertAdminCategory,
-} from '@/server/taxonomies/category-service'
+} from '@/server/domains/taxonomies/categories/service'
+import { adminProc } from '@/server/http/orpc-base'
 import { adminCategoryDto } from '@/shared/contracts/categories'
 
 const list = adminProc

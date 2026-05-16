@@ -9,7 +9,7 @@ import { onErrorHandler } from '@/server/http/errors'
 // back to `csrf` field in JSON/url-encoded body. Tests stub the
 // auth/csrf primitives so we exercise the middleware logic alone.
 
-vi.mock('@/server/auth/csrf', async () => {
+vi.mock('@/server/domains/auth/csrf', async () => {
   return {
     validateRequestCsrf: async (_req: Request, token: string | undefined): Promise<[boolean, string]> => {
       if (token === 'good-token') {

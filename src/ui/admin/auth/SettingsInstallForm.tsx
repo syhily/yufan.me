@@ -11,7 +11,7 @@ export interface SettingsInstallFormProps {
   csrf: string
   /**
    * Canonical IANA / tzdata timezone list, supplied by the loader from
-   * `getSupportedTimeZones()` (see `@/server/settings/timezones`). The
+   * `getSupportedTimeZones()` (see `@/server/domains/settings/timezones`). The
    * combobox renders verbatim — the schema's `superRefine` rejects
    * anything outside this list at the perimeter.
    */

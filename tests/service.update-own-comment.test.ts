@@ -2,7 +2,7 @@ import type { Mock } from 'vite-plus/test'
 
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
-import type { CommentWithUser } from '@/server/infra/db/query/comment'
+import type { CommentWithUser } from '@/server/infra/db/operations/comment'
 
 // `updateOwnComment` (visitor self-edit of their own comment) branches
 // on the age of the row at edit time:
@@ -19,7 +19,7 @@ import type { CommentWithUser } from '@/server/infra/db/query/comment'
 // refetch → projection pipeline; the only differences are the SQL
 // helper picked and whether the email fires.
 
-vi.mock('@/server/infra/db/query/comment', () => ({
+vi.mock('@/server/infra/db/operations/comment', () => ({
   findCommentWithUserById: vi.fn(),
   updateOwnCommentBody: vi.fn(async () => undefined),
   updateOwnCommentBodyAndPending: vi.fn(async () => undefined),
@@ -36,7 +36,7 @@ vi.mock('@/server/infra/db/query/comment', () => ({
   updateCommentBodyAndContent: vi.fn(),
 }))
 
-vi.mock('@/server/infra/db/query/metric', () => ({
+vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByPublicId: vi.fn(),
 }))
 
@@ -48,13 +48,13 @@ vi.mock('@/server/infra/email/sender', () => ({
 // The canonicalize pipeline runs Shiki / KaTeX / Mermaid / Markdown
 // projection — heavy, and orthogonal to the moderation-state branch
 // we're testing. Stub it to a deterministic shape.
-vi.mock('@/server/comments/canonicalize', () => ({
+vi.mock('@/server/domains/comments/canonicalize', () => ({
   canonicalizeCommentBody: vi.fn(async (input: unknown) => ({ body: input, content: 'edited markdown' })),
 }))
 
-const queries = await import('@/server/infra/db/query/comment')
+const queries = await import('@/server/infra/db/operations/comment')
 const emails = await import('@/server/infra/email/sender')
-const { updateOwnComment } = await import('@/server/comments/admin')
+const { updateOwnComment } = await import('@/server/domains/comments/moderation')
 
 // `findCommentWithUserById` returns a deep Drizzle-inferred shape whose
 // `body` union covers every PT block variant. The test rows are

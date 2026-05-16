@@ -2,7 +2,7 @@ import { createMiddleware } from 'hono/factory'
 
 import type { Env } from '@/server/http/context'
 
-import { resolveVisitorCookie } from '@/server/analytics/visitor-cookie'
+import { resolveVisitorCookie } from '@/server/domains/analytics/visitor-cookie'
 
 const EXEMPT_PATH_PREFIXES = ['/__manifest', '/assets/', '/build/', '/api/', '/feed', '/sitemap.xml', '/images/']
 

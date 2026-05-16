@@ -1,10 +1,11 @@
 import { createElement } from 'react'
 
-import type { CommentAndUser } from '@/server/comments/types'
+import type { CommentAndUser } from '@/server/domains/comments/types'
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { Comment, User } from '@/server/infra/db/types'
 
-import { entityCommentUrl, findEntitySlugTitle } from '@/server/comments/url'
+import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/url'
+import { commentBodyToHtml } from '@/server/domains/pt/comment-to-html'
 import { render } from '@/server/infra/email/render'
 import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
@@ -12,7 +13,6 @@ import NewComment from '@/server/infra/email/templates/NewComment'
 import NewReply from '@/server/infra/email/templates/NewReply'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import { getLogger } from '@/server/infra/logger'
-import { commentBodyToHtml } from '@/server/pt/comment-to-html'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
 const log = getLogger('email')

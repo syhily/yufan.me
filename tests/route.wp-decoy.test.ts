@@ -50,7 +50,7 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/catalog', () => ({
+vi.mock('@/server/domains/catalog/catalog', () => ({
   getEntryBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello') {
       return { type: 'post', id: fixtures.samplePost.id, slug }
@@ -61,13 +61,15 @@ vi.mock('@/server/catalog', () => ({
     return null
   }),
 }))
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/posts/repo', () => ({
+  listPublicPostMetas: vi.fn(async () => []),
   findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
 }))
-vi.mock('@/server/content/pages/query', () => ({
+vi.mock('@/server/domains/pages/repo', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
 }))
-vi.mock('@/server/catalog/queries', () => ({
+vi.mock('@/server/domains/catalog/queries', () => ({
   listAllFriends: vi.fn(async () => []),
 }))
 vi.mock('@/shared/types/catalog', async () => {
@@ -86,7 +88,7 @@ vi.mock('@/ui/pt/render', () => ({
   PortableTextBody: () => null,
 }))
 
-vi.mock('@/server/comments/page-data', () => ({
+vi.mock('@/server/http/loaders/comments', () => ({
   loadDetailPageData: vi.fn(async () => ({
     admin: false,
     likes: { count: 0, liked: false },

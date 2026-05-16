@@ -121,7 +121,7 @@ const SAFE_PATH_SEGMENT = /^[a-z0-9._-]+$/
 /**
  * Isomorphic host extractor used by client-side cover dialogs to
  * preview the upload target before invoking the server. Mirrors
- * `extractHostForFriendKey` in `@/server/images/key`, but returns
+ * `extractHostForFriendKey` in `@/server/domains/images/key`, but returns
  * `null` instead of throwing so the form can disable the upload
  * button without crashing.
  */
@@ -161,7 +161,7 @@ export function isSafeImageSegment(value: string): boolean {
  * uploaded image from the `assets` settings section: `assets.asset`
  * provides host+scheme, and `assets.storage.enabled` gates
  * uploadability. The server's render-enhancer keeps an authoritative
- * copy of this logic (see `@/server/images/storage.getPublicBaseUrl`);
+ * copy of this logic (see `@/server/domains/images/storage.getPublicBaseUrl`);
  * this isomorphic mirror is what the admin "preview the auto-managed
  * cover URL" helpers in `EditFriendDialog` / `EditCategoryDialog` rely
  * on so the preview stays in sync without crossing the server import

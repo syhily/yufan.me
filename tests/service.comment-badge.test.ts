@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 
-import { commentBadgeTextColor, withCommentBadgeTextColor } from '@/server/comments/badge'
+import { commentBadgeTextColor, withCommentBadgeTextColor } from '@/server/domains/comments/badge'
 
 describe('services/comments/badge', () => {
   it('uses dark text for light badge backgrounds', () => {

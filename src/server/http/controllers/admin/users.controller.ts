@@ -1,26 +1,9 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { revokeAllSessionsOfUser } from '@/server/auth/session-storage'
-import { findSessionMeta, revokeSessionById } from '@/server/auth/sessions'
-import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/auth/verification-tokens'
-import { adminProc } from '@/server/http/orpc-base'
-import {
-  countAdmins,
-  findUserByEmail,
-  findUserById,
-  insertAuthor,
-  softDeleteUserById,
-  updateUserById,
-  updateUserRole,
-} from '@/server/infra/db/query/user'
-import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
-import { getLogger } from '@/server/infra/logger'
-import {
-  tryInviteByEmailRateLimit,
-  tryInviteRateLimit,
-  tryPasswordResetByTargetRateLimit,
-} from '@/server/infra/rate-limit'
+import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
+import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/sessions'
+import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import {
   bulkApproveCommentsForUser,
   bulkDeleteCommentsForUser,
@@ -30,7 +13,24 @@ import {
   restoreAdminUser,
   softDeleteAdminUser,
   toAdminUserDto,
-} from '@/server/users/service'
+} from '@/server/domains/users/service'
+import { adminProc } from '@/server/http/orpc-base'
+import {
+  countAdmins,
+  findUserByEmail,
+  findUserById,
+  insertAuthor,
+  softDeleteUserById,
+  updateUserById,
+  updateUserRole,
+} from '@/server/infra/db/operations/user'
+import { sendAuthorInvite, sendPasswordReset as sendPasswordResetEmail } from '@/server/infra/email/sender'
+import { getLogger } from '@/server/infra/logger'
+import {
+  tryInviteByEmailRateLimit,
+  tryInviteRateLimit,
+  tryPasswordResetByTargetRateLimit,
+} from '@/server/infra/rate-limit'
 import { adminUserDto } from '@/shared/contracts/users'
 
 const idInput = z.object({ id: z.string().min(1) })

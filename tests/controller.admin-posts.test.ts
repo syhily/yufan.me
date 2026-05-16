@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeAuthedCtx } from './_helpers/mock-ctx'
 
-vi.mock('@/server/content/posts/service', () => ({
+vi.mock('@/server/domains/posts/service', () => ({
   createPost: vi.fn(),
   deletePost: vi.fn(),
   getPostDetailForAdmin: vi.fn(),
@@ -16,11 +16,11 @@ vi.mock('@/server/content/posts/service', () => ({
   updatePostMeta: vi.fn(),
 }))
 
-vi.mock('@/server/content/posts/preview', () => ({
+vi.mock('@/server/domains/posts/preview', () => ({
   renderPortableTextToHtml: vi.fn(),
 }))
 
-const service = await import('@/server/content/posts/service')
+const service = await import('@/server/domains/posts/service')
 const { adminPostsRouter } = await import('@/server/http/controllers/admin/posts.controller')
 
 describe('adminPostsRouter.get', () => {

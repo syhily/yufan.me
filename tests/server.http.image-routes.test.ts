@@ -17,28 +17,28 @@ import { describe, expect, it, vi } from 'vite-plus/test'
 
 // Stub the heavy backends so we can assert routing without running the
 // real rendering pipeline.
-vi.mock('@/server/infra/cache/avatar', () => ({
+vi.mock('@/server/render/avatar/cache', () => ({
   AvatarStatus: { HAVE_AVATAR: 0, NO_AVATAR: 1 },
   cacheAvatar: vi.fn(),
   loadAvatar: vi.fn().mockResolvedValue(null),
 }))
-vi.mock('@/server/infra/cache/image', () => ({
+vi.mock('@/server/infra/redis/buffer-cache', () => ({
   loadBuffer: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
 }))
-vi.mock('@/server/catalog/catalog', () => ({
+vi.mock('@/server/domains/catalog/catalog', () => ({
   getEntryBySlug: vi.fn().mockResolvedValue({ type: 'post' }),
 }))
-vi.mock('@/server/images/avatar-fetch', () => ({
+vi.mock('@/server/render/avatar/fetch', () => ({
   defaultAvatarUrl: () => 'https://example.test/images/default-avatar.png',
   fetchAvatarImage: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
   fetchQQAvatarImage: vi.fn(),
   isQQEmail: () => false,
   resolveAvatarInfo: vi.fn().mockImplementation(async (hash: string) => ({ email: null, hash })),
 }))
-vi.mock('@/server/images/og', () => ({
+vi.mock('@/server/render/og/render', () => ({
   drawOpenGraph: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
 }))
-vi.mock('@/server/images/serve-calendar', () => ({
+vi.mock('@/server/render/calendar/serve', () => ({
   serveCalendar: vi.fn().mockImplementation(
     async (params: { year?: string; time?: string }) =>
       new Response(JSON.stringify(params), {
@@ -47,8 +47,11 @@ vi.mock('@/server/images/serve-calendar', () => ({
       }),
   ),
 }))
-vi.mock('@/server/content/pages/query', () => ({ findPageBySlug: vi.fn() }))
-vi.mock('@/server/content/posts/query', () => ({
+vi.mock('@/server/domains/pages/repo', () => ({
+  listPublicPageMetas: vi.fn(async () => []),
+  findPageBySlug: vi.fn(),
+}))
+vi.mock('@/server/domains/posts/repo', () => ({
   findPostBySlug: vi.fn().mockResolvedValue({ title: 'T', summary: 'S', cover: 'C' }),
 }))
 vi.mock('@/shared/config/blog', () => ({
@@ -67,7 +70,7 @@ const { imagesRouter } = await import('@/server/http/resources/images')
 
 describe('imagesRouter avatar', () => {
   it('extracts the bare hash from `/images/avatar/<hash>.png`', async () => {
-    const { resolveAvatarInfo } = await import('@/server/images/avatar-fetch')
+    const { resolveAvatarInfo } = await import('@/server/render/avatar/fetch')
     const res = await imagesRouter.request('/images/avatar/abcdef0123456789.png')
     // Route does NOT 404 (it now resolves the hash; the path-parser bug
     // would have driven this into the missing-param fallback).
@@ -76,7 +79,7 @@ describe('imagesRouter avatar', () => {
   })
 
   it('matches numeric ids the same way', async () => {
-    const { resolveAvatarInfo } = await import('@/server/images/avatar-fetch')
+    const { resolveAvatarInfo } = await import('@/server/render/avatar/fetch')
     await imagesRouter.request('/images/avatar/42.png')
     expect(vi.mocked(resolveAvatarInfo)).toHaveBeenCalledWith('42')
   })
@@ -89,7 +92,7 @@ describe('imagesRouter avatar', () => {
 
 describe('imagesRouter og', () => {
   it('extracts the bare slug from `/images/og/<slug>.png`', async () => {
-    const { getEntryBySlug } = await import('@/server/catalog/catalog')
+    const { getEntryBySlug } = await import('@/server/domains/catalog/catalog')
     await imagesRouter.request('/images/og/hello-world.png')
     expect(vi.mocked(getEntryBySlug)).toHaveBeenCalledWith('hello-world')
   })
@@ -97,13 +100,13 @@ describe('imagesRouter og', () => {
 
 describe('imagesRouter calendar', () => {
   it('extracts year + time from `/images/calendar/<year>/<time>.png`', async () => {
-    const { serveCalendar } = await import('@/server/images/serve-calendar')
+    const { serveCalendar } = await import('@/server/render/calendar/serve')
     await imagesRouter.request('/images/calendar/2024/12-25.png')
     expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith({ year: '2024', time: '12-25' }, 'light', expect.anything())
   })
 
   it('routes the dark variant to the dark theme', async () => {
-    const { serveCalendar } = await import('@/server/images/serve-calendar')
+    const { serveCalendar } = await import('@/server/render/calendar/serve')
     await imagesRouter.request('/images/calendar/dark/2024/01-01.png')
     expect(vi.mocked(serveCalendar)).toHaveBeenCalledWith({ year: '2024', time: '01-01' }, 'dark', expect.anything())
   })

@@ -68,12 +68,12 @@ function createRedis(): MockRedis {
 
 const redis = createRedis()
 
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   redisInstance: () => redis,
   storage: {},
 }))
 
-const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 const { tryRateLimit, tryCommentPostRateLimit, tryCommentPostRateLimitByEmail, tryLikeIncreaseRateLimit } =
   await import('@/server/infra/rate-limit')

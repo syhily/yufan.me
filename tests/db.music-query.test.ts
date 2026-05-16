@@ -41,7 +41,7 @@ vi.mock('@/server/infra/db/pool', () => ({
 }))
 
 const { insertMusic, findMusicByPlayerId, findMusicBySourceAndId, softDeleteMusic } =
-  await import('@/server/infra/db/query/music')
+  await import('@/server/infra/db/operations/music')
 
 beforeEach(() => {
   vi.clearAllMocks()

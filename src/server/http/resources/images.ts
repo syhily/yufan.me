@@ -5,20 +5,20 @@ import crypto from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
-import { getEntryBySlug } from '@/server/catalog/catalog'
-import { findPageBySlug } from '@/server/content/pages/query'
-import { findPostBySlug } from '@/server/content/posts/query'
+import { getEntryBySlug } from '@/server/domains/catalog/catalog'
+import { findPageBySlug } from '@/server/domains/pages/repo'
+import { findPostBySlug } from '@/server/domains/posts/repo'
+import { loadBuffer } from '@/server/infra/redis/buffer-cache'
+import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/render/avatar/cache'
 import {
   defaultAvatarUrl,
   fetchAvatarImage,
   fetchQQAvatarImage,
   isQQEmail,
   resolveAvatarInfo,
-} from '@/server/images/avatar-fetch'
-import { drawOpenGraph } from '@/server/images/og'
-import { serveCalendar } from '@/server/images/serve-calendar'
-import { AvatarStatus, cacheAvatar, loadAvatar } from '@/server/infra/cache/avatar'
-import { loadBuffer } from '@/server/infra/cache/image'
+} from '@/server/render/avatar/fetch'
+import { serveCalendar } from '@/server/render/calendar/serve'
+import { drawOpenGraph } from '@/server/render/og/render'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
 

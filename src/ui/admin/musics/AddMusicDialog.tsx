@@ -21,7 +21,7 @@ import { Skeleton } from '@/ui/components/skeleton'
 import { cn } from '@/ui/lib/cn'
 
 // Result-count options. The schema caps `limit` at 30 server-side
-// (see `searchMusicSchema` in `@/server/music/schema`); the upper
+// (see `searchMusicSchema` in `@/server/domains/music/schema`); the upper
 // bound here mirrors that. 10 is the default because the netease
 // front-end usually returns ~10 high-relevance hits before quality
 // drops off — going higher mostly adds longer-tail noise.

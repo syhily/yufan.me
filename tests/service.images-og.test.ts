@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 import sharp from 'sharp'
 import { describe, expect, it } from 'vite-plus/test'
 
-import { drawOpenGraph } from '@/server/images/og'
+import { drawOpenGraph } from '@/server/render/og/render'
 
 // We don't pin a byte-for-byte PNG hash because that would break on every
 // node-canvas / sharp / OS font-hinting upgrade. Instead pin the structural

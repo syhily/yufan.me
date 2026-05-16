@@ -1,8 +1,8 @@
 import sharp from 'sharp'
 import { describe, expect, it } from 'vite-plus/test'
 
-import { processImageBuffer } from '@/server/images/process'
-import { DomainError } from '@/server/present/response/errors'
+import { processImageBuffer } from '@/server/domains/images/process'
+import { DomainError } from '@/server/infra/http/errors'
 
 // Generate a tiny in-memory PNG so we don't need any test fixtures on
 // disk. sharp can decode whatever we give it; the pipeline re-encodes

@@ -14,7 +14,7 @@ export const env = createEnv({
 
     // Filesystem path to the MaxMind GeoLite2-City mmdb. Optional —
     // when unset (or unreadable) the analytics ingestion pipeline
-    // (`@/server/analytics/geoip`) returns null-only geo fields and
+    // (`@/server/domains/analytics/geoip`) returns null-only geo fields and
     // every other column on `access_log` still populates. Lives in
     // env (not the `setting` table) because it's a deploy-time file
     // path tied to whatever volume mount ships the binary; rotating

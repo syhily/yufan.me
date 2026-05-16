@@ -1,13 +1,13 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/content/posts/preview'
+import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/domains/posts/preview'
 import {
   listPostsSchema,
   previewPostBodySchema,
   savePostBodySchema,
   upsertPostMetaSchema,
-} from '@/server/content/posts/schema'
+} from '@/server/domains/posts/schema'
 import {
   createPost,
   deletePost,
@@ -19,7 +19,7 @@ import {
   saveDraft as savePostDraft,
   unpublishPost,
   updatePostMeta,
-} from '@/server/content/posts/service'
+} from '@/server/domains/posts/service'
 import { authorProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
 import {

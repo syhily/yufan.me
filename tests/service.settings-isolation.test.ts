@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { Setting } from '@/server/infra/db/types'
 
-vi.mock('@/server/infra/db/query/setting', () => ({
+vi.mock('@/server/infra/db/operations/setting', () => ({
   findSettingByScope: vi.fn(),
   findSettingsByScopePrefix: vi.fn(),
   upsertSetting: vi.fn(),
@@ -14,16 +14,16 @@ vi.mock('@/server/infra/db/query/setting', () => ({
 // fine locally, but on CI there is no Redis and `ioredis` retries
 // forever, blowing past every test timeout. Tests only assert on
 // `upsertSetting`, so an in-memory no-op is plenty.
-vi.mock('@/server/infra/cache/storage', () => ({
+vi.mock('@/server/infra/redis/storage', () => ({
   storage: {
     getItem: vi.fn(async () => null),
     setItem: vi.fn(async () => undefined),
   },
 }))
 
-const settingQueries = await import('@/server/infra/db/query/setting')
-const { updateBlogSettingsSection } = await import('@/server/settings/service')
-const { setBlogSettingsBundleForTests } = await import('@/server/settings/snapshot')
+const settingQueries = await import('@/server/infra/db/operations/setting')
+const { updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
 
 // Per-section UPSERT isolation. Before the storage refactor every
 // `updateBlogSettingsSection` call did a full-row SELECT → merge in

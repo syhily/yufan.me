@@ -151,13 +151,13 @@ export function MyCommentsView({
   }, [entity, entityOptions])
 
   const requestDelete = useMutation({
-    ...orpcQuery.commentSelf.requestDeleteOwn.mutationOptions(),
+    ...orpcQuery.comments.requestDeleteOwn.mutationOptions(),
     onSuccess: () => {
       void revalidator.revalidate()
     },
   })
   const cancelDelete = useMutation({
-    ...orpcQuery.commentSelf.cancelDeleteOwn.mutationOptions(),
+    ...orpcQuery.comments.cancelDeleteOwn.mutationOptions(),
     onSuccess: () => {
       void revalidator.revalidate()
     },

@@ -5,7 +5,7 @@ import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSectio
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
 import { Input } from '@/ui/components/input'
 
-// Bucket bounds (mirrored from `@/server/settings/schema.ts` so the
+// Bucket bounds (mirrored from `@/server/domains/settings/schema.ts` so the
 // admin form's `min` / `max` attributes match the server validator
 // without re-reaching for the schema at render time).
 const BOUNDS = {

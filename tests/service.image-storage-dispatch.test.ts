@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it } from 'vite-plus/test'
 
 import type { AssetsSettings } from '@/shared/config/blog'
 
-import { setBlogSettingsBundleForTests } from '@/server/settings/snapshot'
+import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
 
-const { deleteImage, getPublicBaseUrl, isUploadEnabled, putImage } = await import('@/server/images/storage')
+const { deleteImage, getPublicBaseUrl, isUploadEnabled, putImage } = await import('@/server/domains/images/storage')
 
 // Narrow once: the bundle types `assets` as nullable to express the
 // pre-install state, but the fixture always seeds it. Pulling the

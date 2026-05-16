@@ -59,11 +59,11 @@ export function AdminCommentRow({
   const truncatedUa = comment.ua ? (comment.ua.length > 50 ? `${comment.ua.substring(0, 50)}...` : comment.ua) : null
 
   const approveMutation = useMutation({
-    ...orpcQuery.commentAdmin.approve.mutationOptions(),
+    ...orpcQuery.admin.comments.approve.mutationOptions(),
     onSuccess: () => onApproved(),
   })
   const deleteMutation = useMutation({
-    ...orpcQuery.commentAdmin.delete.mutationOptions(),
+    ...orpcQuery.admin.comments.delete.mutationOptions(),
     onSuccess: () => onDeleted(),
   })
 
