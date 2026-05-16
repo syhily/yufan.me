@@ -11,7 +11,7 @@ import { NotWordPressView } from '@/ui/public/chrome/NotWordPressView'
 // boundary test asserts they stay in sync.
 const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
 
-// Shared error body for both `root.tsx` and `routes/public.layout.tsx`
+// Shared error body for both `root.tsx` and `routes/public/layout.tsx`
 // boundaries. Both call sites used to inline a near-identical
 // `isRouteErrorResponse` switch: WP-decoy 404 → `<NotWordPressView />`,
 // real 404 → "未找到页面 / 404", everything else → "内部错误 / 500"

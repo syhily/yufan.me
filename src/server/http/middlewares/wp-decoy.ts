@@ -62,7 +62,7 @@ export const NOT_WORDPRESS_STATUS_TEXT = 'Not WordPress'
 // the top of their loader. Throwing here — instead of from a root
 // middleware — means React Router treats the response like any other
 // loader error and walks up to the *closest* `ErrorBoundary`, which is
-// `routes/public.layout.tsx`'s synchronous `<PublicChrome>` shell. That
+// `routes/public/layout.tsx`'s synchronous `<PublicChrome>` shell. That
 // shell renders the same left-side menu / header / footer the regular
 // 404 view gets, instead of the chrome-less fallback that root's
 // boundary would produce when the throw originates above every

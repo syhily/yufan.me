@@ -83,9 +83,9 @@ vi.mock('@/server/infra/search', () => ({
   })),
 }))
 
-const categoryRoute = await import('@/routes/category.list')
-const tagRoute = await import('@/routes/tag.list')
-const searchRoute = await import('@/routes/search.list')
+const categoryRoute = await import('@/routes/public/category/list')
+const tagRoute = await import('@/routes/public/tag/list')
+const searchRoute = await import('@/routes/public/search/list')
 beforeEach(() => {
   vi.clearAllMocks()
   session = regularSession()

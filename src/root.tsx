@@ -20,7 +20,7 @@ import { NavigationSplash } from '@/ui/public/chrome/NavigationSplash'
 import type { Route } from './+types/root'
 
 // `PublicChrome` (which carries `public.css`) is reached *statically* by
-// every public URL through `routes/public.layout.tsx`, which is what makes
+// every public URL through `routes/public/layout.tsx`, which is what makes
 // the SSR `<Links />` output include the resolved stylesheet on first paint.
 // The root `ErrorBoundary` only fires for errors that propagate above the
 // route layouts (root middleware, root loader, or wp-decoy probes), so it
@@ -168,7 +168,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // Routes can opt-in to a custom chrome by exporting a `handle.layout` value.
 // `"admin"` marks routes that own their own chrome (admin SPA, login/install
 // split-screen). Routes can also disable the site footer with
-// `handle.footer = false` (see `routes/page.detail.tsx`).
+// `handle.footer = false` (see `routes/public/page/detail.tsx`).
 export type RouteHandle = {
   layout?: 'admin'
   footer?: boolean
@@ -238,7 +238,7 @@ export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
   //      `loaderData` whenever the root loader actually ran.
   const blogSettings = loaderData?.blogSettings ?? getBlogSettingsBundleSync()
 
-  // Body decision is shared with `routes/public.layout.tsx`'s
+  // Body decision is shared with `routes/public/layout.tsx`'s
   // boundary via `<ErrorView />`. Keeping the body off-component
   // guarantees scanner traffic and real 404s get the same shell.
   const body = <ErrorView error={error} isDev={import.meta.env.DEV} />

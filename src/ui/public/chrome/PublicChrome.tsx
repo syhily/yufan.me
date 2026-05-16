@@ -11,14 +11,14 @@ import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 // on this wrapper — so two contracts hold simultaneously:
 //
 //   1. The public site reaches `PublicChrome` through a static import from
-//      `routes/public.layout.tsx`. React Router can therefore include the
+//      `routes/public/layout.tsx`. React Router can therefore include the
 //      compiled `public.css` chunk in `<Links />` during SSR, eliminating
 //      the FOUC that occurs when stylesheets ride a `React.lazy()` chunk.
 //
 //   2. The wp-admin SPA never touches this file (its layout imports
 //      `tailwind.css` directly), so the admin chunk stays Bootstrap-free.
 //      The login / install split-screen also imports `tailwind.css`
-//      through `routes/admin.layout.tsx`, sharing admin tokens without
+//      through `routes/auth/layout.tsx`, sharing admin tokens without
 //      pulling in this public cascade.
 //
 // IMPORTANT: do not re-export `PublicChrome` (or any binding from this
@@ -46,7 +46,7 @@ export interface PublicChromeProps {
 
 // Thin wrapper that owns the public-site stylesheet cascade and renders the
 // shared `<BaseLayout>` chrome. Public routes mount this through
-// `routes/public.layout.tsx`; the root `ErrorBoundary` lazy-loads it so the
+// `routes/public/layout.tsx`; the root `ErrorBoundary` lazy-loads it so the
 // admin SPA chunk never statically depends on `public.css`.
 export function PublicChrome({ navigation, footer, currentUser, pathname, search, children }: PublicChromeProps) {
   return (

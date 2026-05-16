@@ -34,7 +34,7 @@ describe('contract: public URL stability', () => {
   const all = flatten(routes)
 
   it('home + paginated home are mounted at / and /page/:num', () => {
-    const home = all.find((r) => r.file === 'routes/home.tsx' && r.id === undefined)
+    const home = all.find((r) => r.file === 'routes/public/home.tsx' && r.id === undefined)
     const homePaged = all.find((r) => r.id === 'home-page')
     expect(home).toBeDefined()
     expect(homePaged?.path).toBe('page/:num')
@@ -92,8 +92,8 @@ describe('contract: public URL stability', () => {
     expect(paths.has('search/:keyword/page/:num')).toBe(true)
   })
 
-  it('the splat catch-all is mounted on routes/not-found.tsx', () => {
+  it('the splat catch-all is mounted on routes/public/not-found.tsx', () => {
     const splat = all.find((r) => r.path === '*')
-    expect(splat?.file).toBe('routes/not-found.tsx')
+    expect(splat?.file).toBe('routes/public/not-found.tsx')
   })
 })

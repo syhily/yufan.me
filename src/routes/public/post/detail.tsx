@@ -1,0 +1,102 @@
+import { data } from 'react-router'
+
+import { getTagsByNames, listAllTags } from '@/server/domains/catalog/queries'
+import { findPostBySlug, selectSidebarPosts } from '@/server/domains/posts/repo'
+import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/http/loaders/detail'
+import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
+import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
+import { resolveImageMetaBySources } from '@/server/render/image-enhance'
+import { bundleFromMatches, routeMeta, seoForPost } from '@/server/render/seo/meta'
+import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
+import { canonicalPostPath } from '@/shared/utils/paths'
+import { PortableTextBody } from '@/ui/pt/render'
+import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
+import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
+
+import type { Route } from './+types/detail'
+
+export const headers = detailHeaders
+export const shouldRevalidate = publicShouldRevalidate
+
+export async function loader({ request, context, params }: Route.LoaderArgs) {
+  const sourcePost = requireDetailSource((await findPostBySlug(params.slug)) ?? undefined)
+  const clientPost = toClientPost(sourcePost)
+  const canonical = canonicalPostPath(params.slug, clientPost.slug)
+  if (canonical !== undefined) {
+    redirectPermanent(canonical)
+  }
+
+  const post = toDetailPostShell(clientPost)
+
+  const etag = weakEtag(['post', clientPost.id, post.updated])
+  if (ifNoneMatch(request, etag)) {
+    throw notModifiedResponse(etag)
+  }
+
+  const [visibleTags, imageMeta, sidebarTags, sidebarPosts] = await Promise.all([
+    getTagsByNames(post.tags),
+    resolveImageMetaBySources(sourcePost.imageSources).then((r) => Object.fromEntries(r)),
+    listAllTags().then(selectSidebarTags),
+    selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),
+  ])
+
+  const { detail, commentCsrfSetCookie } = await loadPublicDetailData({
+    request,
+    context,
+    target: { type: 'post', ownerId: BigInt(post.id) },
+    preload: () => Promise.resolve(),
+    sidebar: { posts: sidebarPosts, tags: sidebarTags },
+  })
+
+  return data(
+    {
+      post,
+      body: sourcePost.body,
+      visibleTags,
+      sidebarPosts,
+      tags: sidebarTags,
+      detail,
+      imageMeta,
+    },
+    { headers: { 'Set-Cookie': commentCsrfSetCookie, ETag: etag } },
+  )
+}
+
+export function meta({ loaderData, matches }: Route.MetaArgs) {
+  const bundle = bundleFromMatches(matches)
+  if (!loaderData) {
+    return routeMeta(undefined, bundle)
+  }
+  return routeMeta(seoForPost(loaderData.post), bundle)
+}
+
+export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
+  const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta } = loaderData
+  return (
+    <>
+      <PostFontLinks />
+      {/* CSRF anchor consumed by the oRPC client — see wp-admin.layout. */}
+      <meta name="csrf-token" content={detail.csrfToken} />
+      <PostDetailBody
+        post={post}
+        headings={post.headings}
+        visibleTags={visibleTags}
+        admin={detail.admin}
+        likes={detail.likes}
+        commentKey={detail.commentKey}
+        commentCsrfToken={detail.csrfToken}
+        commentsPromise={detail.comments}
+        currentUser={detail.currentUser}
+        sidebar={{
+          posts: sidebarPosts,
+          tags,
+          recentComments: detail.recentComments,
+        }}
+      >
+        <PortableTextBody body={body} headingSlugs={post.headings.map((h) => h.slug)} imageMeta={imageMeta} />
+      </PostDetailBody>
+    </>
+  )
+}

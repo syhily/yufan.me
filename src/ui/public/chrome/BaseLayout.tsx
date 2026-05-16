@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 
 // NOTE: this component does NOT import `public.css`. The public stylesheet
 // cascade lives one level up in `@/ui/public/chrome/PublicChrome` so it can be
-// reached through a *static* import from `routes/public.layout.tsx` (which
+// reached through a *static* import from `routes/public/layout.tsx` (which
 // in turn lets React Router include the resolved `<link rel="stylesheet">`
 // tags in the SSR `<Links />` output, preventing FOUC on first paint).
 //

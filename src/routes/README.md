@@ -17,25 +17,55 @@ disambiguator.
 
 We do **not** use React Router's segment-based filename convention
 (`_index.tsx`, `($slug).tsx`, `…_._archive.tsx`). The URL is the
-contract — duplicating a slash hierarchy in filenames hides logical
-groupings (`category.list.tsx` is the same module behind both
-`/cats/:slug` and `/cats/:slug/page/:num`) and makes grep-for-feature
-harder. Instead, we use **`<area>.<role>[.subrole].tsx`**:
+contract — `routes.ts` is the manifest and the filesystem is just
+storage. Instead, route modules are **grouped by area into
+sub-directories**, and within each directory each file is named by
+its **role**:
 
-| Pattern                         | Example                                                                                                       | Meaning                                                                                                                                   |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `<area>.detail.tsx`             | `post.detail.tsx`, `page.detail.tsx`                                                                          | Single-resource page.                                                                                                                     |
-| `<area>.list.tsx`               | `category.list.tsx`, `tag.list.tsx`, `search.list.tsx`                                                        | Paginated listing — same module powers `/foo/:slug` AND `/foo/:slug/page/:num`.                                                           |
-| `<area>.index.ts`               | `tags.index.ts`, `search.index.ts`                                                                            | Resource route returning a JSON / RSS / sitemap payload (no React component).                                                             |
-| `<area>.<role>.ts`              | `feed.rss.ts`, `feed.atom.ts`, `image.og.ts`, `image.calendar.ts`, `image.avatar.ts`, `sitemap.ts`            | Resource route, role disambiguates one shared module across multiple URLs.                                                                |
-| `<area>.layout.tsx`             | `public.layout.tsx`, `admin.layout.tsx`, `wp-admin.layout.tsx`, `wp-admin.settings.layout.tsx`                | Pathless or pathed layout — owns chrome, error boundary, and revalidation policy for its children.                                        |
-| `wp-admin.<area>[.subrole].tsx` | `wp-admin.dashboard.tsx`, `wp-admin.comments.tsx`, `wp-admin.users.detail.tsx`, `wp-admin.settings.cache.tsx` | Admin shell pages. The double dot (`wp-admin.settings.cache`) keeps cache + general + localization + … visually grouped under one prefix. |
-| `wp-admin.install.<stage>.tsx`  | `wp-admin.install.tsx`, `wp-admin.install.settings.tsx`                                                       | Install gate pages.                                                                                                                       |
-| `wp-login.tsx`                  | n/a                                                                                                           | Standalone login page.                                                                                                                    |
+```
+src/routes/
+├── public/        # everything wrapped by public.layout
+│   ├── layout.tsx              # the chrome layout itself
+│   ├── home.tsx / archives.tsx / categories.tsx / not-found.tsx
+│   ├── category/list.tsx       # /cats/:slug + /cats/:slug/page/:num
+│   ├── tag/list.tsx            # /tags/:slug + paged
+│   ├── search/list.tsx         # /search/:keyword + paged
+│   ├── post/detail.tsx         # /posts/:slug
+│   └── page/detail.tsx         # /:slug
+├── my/                         # /my/* compat redirects → /wp-admin/my/*
+│   ├── redirect.comments.ts
+│   └── redirect.profile.ts
+├── auth/          # public split-screen layout: login + install
+│   ├── layout.tsx
+│   ├── wp-login.tsx
+│   └── install/{index,settings}.tsx
+└── wp-admin/      # the admin SPA shell
+    ├── layout.tsx, dashboard.tsx, welcome.tsx, …
+    ├── users/{index,detail}.tsx
+    ├── my/{profile,comments,sessions}.tsx
+    ├── pages/{index,new,edit}.tsx
+    ├── posts/{index,new,edit}.tsx
+    ├── analytics/{layout,overview,realtime}.tsx
+    └── settings/{layout,index,general,assets,…}.tsx
+```
 
-When you add a new route, copy whichever of the above patterns best
-matches the role and add the manifest entry in `@/routes`. Do not
-introduce a fifth pattern.
+Conventions inside an area directory:
+
+| Role file                | Meaning                                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `<area>/layout.tsx`      | Pathless or pathed layout — owns chrome, error boundary, and revalidation policy for its children.                      |
+| `<entity>/detail.tsx`    | Single-resource page (e.g. `public/post/detail.tsx`, `public/page/detail.tsx`, `wp-admin/users/detail.tsx`).            |
+| `<entity>/list.tsx`      | Paginated listing — the same module is mounted twice in `routes.ts` (e.g. `/cats/:slug` AND `/cats/:slug/page/:num`).   |
+| `<entity>/index.tsx`     | The bare-prefix admin page when a sibling `new.tsx`/`edit.tsx`/`detail.tsx` already lives in the same directory.        |
+| `<entity>/new.tsx`       | Admin create form (`/wp-admin/<entity>/new`).                                                                           |
+| `<entity>/edit.tsx`      | Admin edit form (`/wp-admin/<entity>/:id/edit`).                                                                        |
+| `<area>/<role>.tsx`      | Flat role within an area — e.g. `public/home.tsx`, `public/not-found.tsx`, `wp-admin/welcome.tsx`, `auth/wp-login.tsx`. |
+| `<area>/redirect.<x>.ts` | Tiny redirect-only resource route (e.g. `my/redirect.profile.ts`).                                                      |
+
+When you add a new route, pick the area directory it belongs to,
+choose a role filename from the table above, and add the manifest
+entry in `@/routes`. Do not introduce a fifth pattern, and **never**
+adopt React Router's segment-based filename convention.
 
 ---
 
@@ -47,9 +77,9 @@ to one of the sections below. If you find yourself wanting to write a
 multi-paragraph rationale inside the manifest itself, write it here
 instead and leave a single-line pointer in `routes.ts`.
 
-### A. Public layout (`routes/public.layout.tsx`)
+### A. Public layout (`routes/public/layout.tsx`)
 
-`public.layout.tsx` is a **pathless** layout (`layout(file, …)`) that
+`public/layout.tsx` is a **pathless** layout (`layout(file, …)`) that
 wraps every public-facing URL.
 
 It owns the `<PublicChrome>` wrapper which **statically imports
@@ -68,10 +98,10 @@ bundles.
 ### B. Splat catch-all inside the public layout
 
 ```ts
-route('*', 'routes/not-found.tsx'),
+route('*', 'routes/public/not-found.tsx'),
 ```
 
-The splat MUST stay last inside `public.layout.tsx`. React Router
+The splat MUST stay last inside `public/layout.tsx`. React Router
 treats `*` as the **lowest-priority** match, so this only fires for
 paths nothing else handles — multi-segment WordPress probes such as:
 
@@ -80,13 +110,13 @@ paths nothing else handles — multi-segment WordPress probes such as:
 - `/wp-includes/wlwmanifest.xml`
 
 Single-segment `.php` or `cgi-bin` probes hit `:slug` first and are
-intercepted inside `routes/page.detail.tsx` (see the wp-decoy
+intercepted inside `routes/public/page/detail.tsx` (see the wp-decoy
 helper).
 
 ### C. Resource routes outside the public layout
 
 Resource routes (feeds, sitemap, generated images, JSON APIs) sit
-**outside** `public.layout.tsx`. They never render `<Outlet />`
+**outside** `public/layout.tsx`. They never render `<Outlet />`
 chrome, never import `<PublicChrome>`, and must not pull
 `public.css` into their bundle. Each one returns a `Response`
 directly from a `loader` (GET) or `action` (POST/PATCH/DELETE).
@@ -117,22 +147,22 @@ All internal API endpoints live in the Hono server (`src/server/http/`)
 and are mounted as oRPC procedures. They do **not** appear in
 `routes.ts` — the React Router manifest only contains page routes.
 
-### F. Auth split-screen layout (`routes/admin.layout.tsx`)
+### F. Auth split-screen layout (`routes/auth/layout.tsx`)
 
-`routes/admin.layout.tsx` owns the public-facing left/right
+`routes/auth/layout.tsx` owns the public-facing left/right
 split-screen layout shared by login, the stage-1 install (admin
 sign-up), and the stage-2 install (settings). These three routes
 share the same chrome but are **independent** of the wp-admin SPA
 shell.
 
-### G. wp-admin SPA shell (`routes/wp-admin.layout.tsx`)
+### G. wp-admin SPA shell (`routes/wp-admin/layout.tsx`)
 
 The SPA admin shell owns its own chrome (sidebar + topbar) under
-`routes/wp-admin.layout.tsx`. It opts out of `BaseLayout` via
+`routes/wp-admin/layout.tsx`. It opts out of `BaseLayout` via
 `handle.layout = 'admin'` and does **not** reuse the public
 login/install split-screen layout from section F.
 
-### H. Settings sub-layout (`routes/wp-admin.settings.layout.tsx`)
+### H. Settings sub-layout (`routes/wp-admin/settings/layout.tsx`)
 
 Twelve `/wp-admin/settings/*` URLs share a single sub-layout that
 hydrates the full `BlogSettingsBundle` once and exposes the

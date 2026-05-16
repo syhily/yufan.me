@@ -114,8 +114,8 @@ vi.mock('@/server/http/loaders/comments', () => ({
   })),
 }))
 
-const postRoute = await import('@/routes/post.detail')
-const pageRoute = await import('@/routes/page.detail')
+const postRoute = await import('@/routes/public/post/detail')
+const pageRoute = await import('@/routes/public/page/detail')
 
 beforeEach(() => {
   vi.clearAllMocks()

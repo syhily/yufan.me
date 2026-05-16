@@ -92,7 +92,7 @@ vi.mock('@/server/http/loaders/sidebar', () => ({
   })),
 }))
 
-const { loader } = await import('@/routes/home')
+const { loader } = await import('@/routes/public/home')
 
 beforeEach(() => {
   vi.clearAllMocks()

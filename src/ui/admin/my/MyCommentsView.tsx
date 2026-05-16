@@ -2,7 +2,7 @@ import { PencilIcon, RefreshCwIcon, RotateCcwIcon, SearchIcon, Trash2Icon, XIcon
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
-import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin.my.comments'
+import type { MyCommentEntityOption, MyCommentItem } from '@/routes/wp-admin/my/comments'
 import type { CommentBody } from '@/shared/pt/comment-schema'
 import type { MyCommentsStatus } from '@/shared/types/comments'
 

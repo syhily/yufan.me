@@ -4,7 +4,7 @@ import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
-import type { AdminSessionItem } from '@/routes/wp-admin.sessions'
+import type { AdminSessionItem } from '@/routes/wp-admin/sessions'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
 import { formatLocalDate } from '@/shared/utils/formatter'

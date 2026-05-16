@@ -746,7 +746,7 @@ describe('contract: module and bundle boundaries', () => {
       ...files('src/ui', '-g', '*.ts', '-g', '*.tsx'),
       'src/shared/utils/formatter.ts',
       'src/server/http/loaders/sidebar.ts',
-      'src/routes/home.tsx',
+      'src/routes/public/home.tsx',
     ]
     const offenders = clientFacing.filter((file) => readFileSync(file, 'utf8').includes('luxon'))
 
@@ -911,7 +911,12 @@ describe('contract: module and bundle boundaries', () => {
 
   it('keeps raw arbitrary colors out of non-admin Tailwind surfaces', () => {
     const offenders = files('src/ui', 'src/routes', '-g', '*.ts', '-g', '*.tsx')
-      .filter((file) => !file.startsWith('src/ui/admin/') && !file.startsWith('src/routes/admin'))
+      .filter(
+        (file) =>
+          !file.startsWith('src/ui/admin/') &&
+          !file.startsWith('src/routes/auth/') &&
+          !file.startsWith('src/routes/wp-admin/'),
+      )
       .filter((file) => /(?:bg|text|border)-\[#/.test(readFileSync(file, 'utf8')))
 
     expect(offenders).toEqual([])

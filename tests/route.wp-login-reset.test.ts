@@ -141,7 +141,7 @@ vi.mock('@/server/infra/rate-limit', () => ({
   tryPasswordResetByEmailRateLimit: vi.fn(async () => ({ count: 1, exceeded: false })),
 }))
 
-const { action } = await import('@/routes/wp-login')
+const { action } = await import('@/routes/auth/wp-login')
 
 function resetRequest(body: Record<string, string>): Request {
   return new Request('http://localhost/wp-login.php?action=resetpassword', {

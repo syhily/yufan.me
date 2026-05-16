@@ -70,7 +70,7 @@ vi.mock('@/server/domains/settings/install-gate', () => ({
   getInstallState: vi.fn(async () => 'installed' as const),
 }))
 
-const { action, loader } = await import('@/routes/wp-login')
+const { action, loader } = await import('@/routes/auth/wp-login')
 
 beforeEach(() => {
   vi.clearAllMocks()

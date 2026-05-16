@@ -129,7 +129,7 @@ vi.mock('@/server/render/image-enhance', () => ({
   loadImageThumbhash: vi.fn(async () => null),
 }))
 
-const pageRoute = await import('@/routes/page.detail')
+const pageRoute = await import('@/routes/public/page/detail')
 
 beforeEach(() => {
   vi.clearAllMocks()

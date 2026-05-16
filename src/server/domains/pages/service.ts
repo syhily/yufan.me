@@ -301,7 +301,7 @@ export interface UpsertPageMetaInput {
   showUpdated?: boolean
   /**
    * Render the global friends grid at the bottom of the page (see
-   * `routes/page.detail.tsx`). Defaults to `false` on create — only
+   * `routes/public/page/detail.tsx`). Defaults to `false` on create — only
    * the legacy `links` page typically opts in.
    */
   showFriends?: boolean

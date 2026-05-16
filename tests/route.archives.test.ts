@@ -35,7 +35,7 @@ vi.mock('@/shared/types/catalog', async () => {
   }
 })
 
-const { loader } = await import('@/routes/archives')
+const { loader } = await import('@/routes/public/archives')
 
 const visiblePost = makePost({ slug: 'visible-post' })
 const hiddenPost = makePost({ slug: 'hidden-post', visible: false })

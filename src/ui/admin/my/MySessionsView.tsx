@@ -2,7 +2,7 @@ import { LogOutIcon, MonitorIcon, RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import type { MySessionItem } from '@/routes/wp-admin.my.sessions'
+import type { MySessionItem } from '@/routes/wp-admin/my/sessions'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
