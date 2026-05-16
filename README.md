@@ -4,49 +4,115 @@
   <img alt="Yufan Blog Logo" src="public/images/blog-poster.png">
 </picture>
 
-# Yufan Personal Blog
+# yufan.me
 
 [![Folo](https://badge.folo.is/feed/54772566650461214?color=FF5C00&labelColor=black&style=flat-square)](https://app.folo.is/share/feeds/54772566650461214)
 
-Source code for [yufan.me](https://yufan.me): a React Router full-stack blog with a built-in `/wp-admin` console. Posts, pages, taxonomies, images, music, and settings all live in Postgres and are edited from the admin console; bodies are persisted as PortableText.
+Source code for [yufan.me](https://yufan.me) — a self-hosted blog CMS
+running on React Router 7 (SSR), Hono, and oRPC. Posts, pages,
+taxonomies, comments, images, music, and per-section settings all live
+in Postgres and are edited from the built-in `/wp-admin` console.
+Bodies are stored as **PortableText** and authored through a Tiptap
+editor that round-trips losslessly to the wire format.
 
-**Contributors:** read [AGENTS.md](AGENTS.md) first — architecture, import boundaries, install/settings contracts, and tooling (`vp`) expectations.
+The repository is the whole product: the public site, the admin SPA,
+the API perimeter, the SSR renderer, the install gate, and the database
+schema/migrations.
+
+> **Contributors:** start at [AGENTS.md](AGENTS.md) — it documents the
+> import boundaries, the four-layer `src/server/` graph, the install
+> contract, the API permission matrix, and the Vite+ (`vp`) toolchain
+> expectations.
+
+## Highlights
+
+- **Postgres-backed content model.** Posts (`/posts/:slug`) and pages
+  (`/:slug`) share one global slug namespace; categories, tags, and
+  friends are first-class taxonomies with referential integrity. Page
+  drafts get an admin-only preview overlay; future-dated posts stay
+  excluded until publish time.
+- **PortableText body, Tiptap editor.** A single `@/shared/pt/schema`
+  Zod dialect is the wire format. The PT ↔ ProseMirror bridge
+  (`@/shared/pt/bridge`) is a single file; standard blocks map to
+  Tiptap built-ins, custom blocks (`image`, `code`, `mathBlock`,
+  `mermaid`, `musicPlayer`, `solution`, `footnoteDefinition`, `table`)
+  ride a generic `blockCard` node. Round-trip is contract-tested.
+- **Typed API, end-to-end.** Every HTTP call goes through `/rpc/*` via
+  oRPC. Procedures are declared from one of four base procedures
+  (`publicProc` / `authedProc` / `authorProc` / `adminProc`) and the
+  browser client is built from `typeof apiRouter`. Zod DTOs in
+  `shared/contracts/` are paired with compile-time parity assertions
+  against `shared/types/`.
+- **Section-scoped settings.** 14 JSONB rows under `setting` —
+  `blog.general`, `blog.assets`, `blog.navigation`, `blog.socials`,
+  `blog.content`, `blog.sidebar`, `blog.comments`, `blog.seo`,
+  `blog.footer`, `blog.mail`, `blog.cache`, `blog.rateLimit`,
+  `blog.search`, `blog.fonts`. Each section saves independently so
+  concurrent admin tabs cannot race.
+- **Two-stage install gate.** Until an admin row exists, every request
+  redirects to `/wp-admin/install.php`. After admin creation, stage 2
+  at `/wp-admin/install/settings.php` writes the 14 settings rows
+  atomically.
+- **Optional object storage.** S3 (or any S3-compatible bucket) is
+  gated by `assets.storage.enabled`. Off by default — the library is
+  read-only and uploads return 503 until a settings flip. Generated
+  Vite assets ship with the build image; S3 is for user media only.
+- **First-party analytics.** Visit ingestion + dashboards backed by
+  Postgres, with optional MaxMind GeoLite2 enrichment.
 
 ## Stack
 
-| Layer      | Choice                                                                                                          |
-| ---------- | --------------------------------------------------------------------------------------------------------------- |
-| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                                   |
-| HTTP host  | Hono (via `react-router-hono-server`) — perimeter middleware, resource routers, oRPC mount                      |
-| API        | oRPC (`@orpc/server` + `@orpc/client`) at `/rpc/*` — typed end-to-end from `typeof apiRouter`, Zod input/output |
-| UI         | React 19, TSX only                                                                                              |
-| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))                     |
-| Content    | Posts and pages persist as PortableText in `page` / `post` + `content` tables, edited in admin                  |
-| Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                                       |
-| Data       | Postgres (Drizzle), Redis (sessions, rate limits, caches)                                                       |
-| Assets     | S3-compatible bucket when enabled in settings                                                                   |
-| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), shadcn/ui (Base UI) under `src/ui/components/`              |
+| Layer      | Choice                                                                                            |
+| ---------- | ------------------------------------------------------------------------------------------------- |
+| App router | React Router 7 framework mode, SSR (`react-router.config.ts`)                                     |
+| HTTP host  | Hono via `react-router-hono-server` — perimeter middlewares, resource routers, oRPC mount         |
+| API        | oRPC (`@orpc/server` + `@orpc/client`) at `/rpc/*`, Zod input/output, OpenAPI export in dev       |
+| UI         | React 19, TSX only, shadcn/ui (Base UI variant) under `src/ui/components/`                        |
+| Styling    | Tailwind CSS v4 (`src/assets/styles/tailwind.css`), one token cascade for public + admin          |
+| Editor     | Tiptap (ProseMirror) ↔ PortableText bridge; SSR via `@portabletext/react`                        |
+| Data       | Postgres (Drizzle), Redis (sessions, rate limits, generated-image caches)                         |
+| Assets     | S3-compatible bucket, opt-in per blog                                                             |
+| Build      | Vite+ (`vp`) — Vite, Rolldown, Vitest, Oxlint, Oxfmt ([viteplus.dev](https://viteplus.dev))       |
 
-## Repository layout
+## Architecture
 
-Imports flow one way: `routes` may call `server` / `shared` / `ui` / `client`; `server` never touches `ui` or `client`; `shared` stays isomorphic.
+Five cooperating top-level layers under `src/` with a one-way import
+graph (`routes → server / ui / client / shared`; `server → shared`;
+`shared` stays isomorphic).
 
 ```
 src/
-├── routes/     Loaders, actions, meta, page components, resource routes
-├── server/     DB, Redis, sessions, catalog, mail, S3 dispatch, settings
-├── client/     Hooks, fetchers, browser-only code
-├── ui/         Presentational components and the PortableText renderer
-├── shared/     DTOs and helpers safe on server + client
-└── assets/     Fonts, icons, global CSS
+├── routes/      Route modules grouped into public/, auth/, my/, wp-admin/
+├── server/      SSR-only: infra/, domains/, http/, render/
+├── client/      Hooks, oRPC client, browser-only code
+├── ui/          Pure-props React components (public, admin, shadcn primitives, PortableText renderer)
+├── shared/      Isomorphic config, contracts, DTO types, PT schema, utils
+├── assets/      Fonts, icons, global CSS
+└── server.ts    Hono entry / SSR adapter
 ```
 
-## Prerequisites
+The `src/server/` tree is itself four layers, in strict order
+(`infra → domains → http`, `domains → render → http`):
 
-- Postgres and Redis reachable from the app
-- Global `vp` CLI (install via Vite+ docs)
+- **`infra/`** — Drizzle pool, Redis storage, generic HTTP vocabulary,
+  email, search, env, logger, rate limiter, slug pipeline. Zero
+  business knowledge.
+- **`domains/`** — One folder per business concept (`auth`, `catalog`,
+  `pages`, `posts`, `comments`, `images`, `music`, `friends`,
+  `taxonomies`, `settings`, `users`, `analytics`, `pt`, …). Locked
+  vocabulary: `schema.ts / repo.ts / service.ts / projection.ts /
+cache.ts`.
+- **`http/`** — Hono entry, oRPC procedure base, controllers,
+  middlewares, resource routers (RSS, sitemap, OG, redirects), React
+  Router loaders. Orchestration only — no business rules.
+- **`render/`** — SSR output products: SEO meta, RSS/Atom, OG images,
+  calendar SVGs, avatar fetch, react-prerender drain, image
+  post-processing. Never persists.
 
-## Getting started
+Deeper rationale and the rules each layer enforces live in
+[AGENTS.md](AGENTS.md).
+
+## Quick start
 
 ```bash
 git clone https://github.com/syhily/yufan.me.git
@@ -56,7 +122,7 @@ vp install
 vp dev
 ```
 
-Minimal `.env`:
+Minimum `.env`:
 
 ```text
 DATABASE_URL=postgres://user:pass@host:5432/db
@@ -64,7 +130,69 @@ REDIS_URL=redis://host:6379
 SESSION_SECRET=<high-entropy secret>
 ```
 
-First boot redirects to `/wp-admin/install.php` until an admin exists and core settings rows are seeded (see AGENTS.md → Configuration & Install).
+Optional: `MAXMIND_DB_PATH` for geo-enriched analytics,
+`ANALYTICS_TRACK_ADMIN` to include admin visits in dashboards.
+
+First boot redirects every request to `/wp-admin/install.php` until an
+admin row exists; stage 2 at `/wp-admin/install/settings.php` then
+seeds the 14 settings rows. After that the public site is live and the
+admin console at `/wp-admin` is available to the new admin user.
+
+## Content model
+
+| Surface              | Storage                            | Public URL                                     | Admin surface                  |
+| -------------------- | ---------------------------------- | ---------------------------------------------- | ------------------------------ |
+| Posts                | `post` + `content` (PortableText)  | `/posts/:slug`                                 | `/wp-admin/posts`              |
+| Pages                | `page` + `content` (PortableText)  | `/:slug`                                       | `/wp-admin/pages`              |
+| Categories / tags    | Postgres                           | `/cats/:slug`, `/tags/:slug`                   | `/wp-admin/{categories,tags}`  |
+| Friends              | Postgres                           | Friends grid (page meta toggle)                | `/wp-admin/friends`            |
+| Images               | Postgres + optional S3             | `<assetsHost>/images/...`                      | `/wp-admin/images`             |
+| Music                | Postgres + optional S3             | Embedded in PortableText via 16-char nanoid    | `/wp-admin/musics`             |
+| Comments             | Postgres (threaded, with likes)    | Inline on posts/pages, moderation in admin     | `/wp-admin/comments`           |
+
+Slug generation runs through one server-side helper
+(`@/server/infra/slug::deriveSlug`) — `pinyin-pro` → whitespace
+collapse → `github-slugger`. The page↔post namespace is global and
+enforced at catalog build time. Heading anchors are pre-computed at
+SSR so deep links survive across re-renders.
+
+## Admin console
+
+The `/wp-admin` SPA shares one Tiptap editor for posts and pages with
+a three-layer UX: top toolbar (image library / music picker / link /
+table / hr / undo-redo), floating bubble menus for text and table
+selections, and a `/`-driven slash menu for block insertion. Cells are
+inline-only and the image block is a React NodeView for inline alt +
+caption editing.
+
+The console also covers user management, sessions, taxonomy CRUD, the
+analytics dashboard (overview + realtime), an image library with
+inline category/friend uploads (locked to 1280×425), a music library
+with per-track lyrics, and per-section settings pages.
+
+## API & permissions
+
+Every dynamic non-page request goes through the oRPC router at
+`/rpc/*`. The permission matrix is encoded in the **base procedure**
+each leaf picks:
+
+| Base         | Guard                                 | Use for                       |
+| ------------ | ------------------------------------- | ----------------------------- |
+| `publicProc` | No auth gate; CSRF on non-GET         | Anonymous reads + mutations   |
+| `authedProc` | `requireAuth` + CSRF                  | Any logged-in user            |
+| `authorProc` | `requireRole('author')` + CSRF        | Authors and admins            |
+| `adminProc`  | `requireRole('admin')` + CSRF         | Admins only                   |
+
+Audit the entire surface with one grep:
+
+```bash
+grep -rn "adminProc\|authorProc\|authedProc\|publicProc" src/server/http/controllers/
+```
+
+OpenAPI is auto-generated from the router in development at
+`/openapi.json` and `/docs`. Non-JSON output (RSS/Atom, sitemap, OG
+images, redirects, analytics events) is served by native Hono resource
+routers under `src/server/http/resources/`.
 
 ## Commands
 
@@ -78,26 +206,33 @@ vp preview          # serve production build locally
 vp run db:generate  # Drizzle migration from schema edits
 ```
 
-Use `vp add` / `vp remove` / `vp update` for packages (do not call npm/pnpm/yarn directly per project convention).
+Use `vp add` / `vp remove` / `vp update` for packages — don't call
+`npm` / `pnpm` / `yarn` directly. The reasons (and the Vite+ pitfalls)
+are in [AGENTS.md](AGENTS.md).
 
 ## Configuration
 
-Runtime behaviour is driven by the `setting` table (`blog.general`, `blog.assets`, …), edited per section in `/wp-admin/settings/*`. There is no checked-in `blog.config.ts` or global defaults file — see AGENTS.md for the section registry and install gate.
+Runtime behaviour is driven by the `setting` table — **one JSONB row
+per section** under `scope='blog.<section>'`. There is no checked-in
+`blog.config.ts` or global defaults file; each section's schema lives
+beside its service in `src/server/domains/settings/` and the registry
+in `sections.ts` maps section ↔ DB scope ↔ Zod schema ↔ bundle key.
 
-## Content surfaces
-
-| Surface                     | Where it lives         | Public URL                                        |
-| --------------------------- | ---------------------- | ------------------------------------------------- |
-| Posts                       | Postgres + admin       | `/posts/:slug`                                    |
-| Pages                       | Postgres + admin       | `/:slug`                                          |
-| Categories / tags / friends | Postgres + admin       | `/cats/:slug`, `/tags/:slug`, grids via page meta |
-| Images / music              | Postgres + optional S3 | Admin libraries; PortableText body blocks         |
-
-Slug rules and collisions between posts and pages are enforced in the catalog — AGENTS.md documents the global slug namespace.
+The S3 toggle, credentials, bucket, asset CDN host, and upload limits
+all live under `setting('blog.assets')` (edited at
+`/wp-admin/settings/assets`) — not in env vars. The dispatcher reads
+the toggle on every PUT/DELETE so flipping storage on/off does not
+require a redeploy.
 
 ## Deployment
 
-The [Dockerfile](Dockerfile) runs `vp build` and ships `build/` with `npm run start` (`react-router-serve`). Default listen port `4321`. Generated Vite assets are **not** uploaded to S3 by the build; object storage is for user media only.
+The [Dockerfile](Dockerfile) runs `npm run build` against a Node 25
+Alpine base and ships `build/` with `npm run start`
+(`react-router-serve`). Default listen port `4321`. Generated Vite
+assets are **not** uploaded to S3 by the build; object storage is
+reserved for user media. Migrations under `drizzle/` are copied into
+the runtime image and applied by your deployment workflow before
+boot.
 
 ## License
 
