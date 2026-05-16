@@ -74,8 +74,11 @@ vi.mock('@/server/http/loaders/sidebar', () => ({
   loadSidebarData: vi.fn(async () => ({ recentComments: [], pendingComments: [] })),
 }))
 
-vi.mock('@/server/infra/search', () => ({
+vi.mock('@/server/infra/search/options', () => ({
   searchPostOptions: vi.fn(() => ({ includeHidden: true, includeScheduled: false })),
+}))
+
+vi.mock('@/server/infra/search/search', () => ({
   searchPosts: vi.fn(async () => ({
     hits: samplePosts.map((p) => p.slug),
     page: 1,
