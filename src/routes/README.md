@@ -32,9 +32,6 @@ src/routes/
 │   ├── search/list.tsx         # /search/:keyword + paged
 │   ├── post/detail.tsx         # /posts/:slug
 │   └── page/detail.tsx         # /:slug
-├── my/                         # /my/* compat redirects → /wp-admin/my/*
-│   ├── redirect.comments.ts
-│   └── redirect.profile.ts
 ├── auth/          # public split-screen layout: login + install
 │   ├── layout.tsx
 │   ├── wp-login.tsx

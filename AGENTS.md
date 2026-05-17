@@ -73,8 +73,7 @@ Page modules grouped into four nested trees, each with its own layout
 - `routes/auth/` — split-screen login + install: `wp-login`,
   `install/index` (`/wp-admin/install.php`), `install/settings`
   (`/wp-admin/install/settings.php`).
-- `routes/my/` — backwards-compat redirects (`/my/*` →
-  `/wp-admin/my/*`).
+
 - `routes/wp-admin/` — admin SPA. `dashboard`, `welcome`, `comments`,
   `users/{index,detail}`, `my/{profile,comments,sessions}`, `sessions`,
   `friends`, `categories`, `tags`, `pages/{index,new,edit}`,

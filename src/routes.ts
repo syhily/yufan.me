@@ -19,9 +19,7 @@ export default [
     // Splat MUST stay last — see README.md §B.
     route('*', 'routes/public/not-found.tsx'),
   ]),
-  // Backwards-compat redirects: /my/* → /wp-admin/my/*
-  route('my/comments', 'routes/my/redirect.comments.ts'),
-  route('my/profile', 'routes/my/redirect.profile.ts'),
+
   // Auth split-screen layout — see README.md §F.
   layout('routes/auth/layout.tsx', [
     route('wp-login.php', 'routes/auth/wp-login.tsx'),

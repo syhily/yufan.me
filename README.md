@@ -82,7 +82,7 @@ graph (`routes → server / ui / client / shared`; `server → shared`;
 
 ```
 src/
-├── routes/      Route modules grouped into public/, auth/, my/, wp-admin/
+├── routes/      Route modules grouped into public/, auth/, wp-admin/
 ├── server/      SSR-only: infra/, domains/, http/, render/
 ├── client/      Hooks, oRPC client, browser-only code
 ├── ui/          Pure-props React components (public, admin, shadcn primitives, PortableText renderer)
