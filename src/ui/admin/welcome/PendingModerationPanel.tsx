@@ -27,7 +27,7 @@ function pickRandomLine(): string {
   return EMPTY_STATE_LINES[Math.floor(Math.random() * EMPTY_STATE_LINES.length)] ?? EMPTY_STATE_LINES[0]!
 }
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 3
 // Compact metadata timestamp shown next to the author. Year is omitted
 // to keep the row light — the full ISO sits in the `<time title>` for
 // hover and a11y readers.
@@ -123,7 +123,7 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
     // tall monitors. Body is the only scroll container — header /
     // pagination stay pinned via `shrink-0`, items get `min-h-0
     // overflow-y-auto`.
-    <div className="flex h-[440px] max-h-[65vh] min-h-[320px] flex-col rounded-lg border bg-card p-5">
+    <div className="flex h-[340px] max-h-[50vh] min-h-[280px] flex-col rounded-lg border bg-card p-5">
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-lg font-medium">
@@ -137,10 +137,10 @@ export function PendingModerationPanel({ initial }: PendingModerationPanelProps)
             text link. */}
         <div className="flex items-center gap-1">
           <Button type="button" variant="ghost" size="sm" onClick={refresh} disabled={anyMutationPending}>
-            <RefreshCwIcon data-icon /> 刷新
+            <RefreshCwIcon data-icon /> <span className="hidden sm:inline">刷新</span>
           </Button>
           <Button type="button" variant="ghost" size="sm" render={<Link to="/wp-admin/comments?status=pending" />}>
-            进入评论管理 <ArrowRightIcon data-icon />
+            <span className="hidden sm:inline">进入评论管理</span> <ArrowRightIcon data-icon />
           </Button>
         </div>
       </div>

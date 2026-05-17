@@ -5,6 +5,7 @@ import { data, Link } from 'react-router'
 
 import type { EntityType } from '@/server/infra/db/target'
 
+import { queryCounters } from '@/server/domains/analytics/query'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { loadAdminPendingDashboard } from '@/server/domains/comments/moderation'
@@ -13,6 +14,7 @@ import { countMyComments, listMyComments, resolveEntitiesForComments } from '@/s
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { roleLabel } from '@/shared/utils/roles'
 import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
+import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
 import type { Route } from './+types/welcome'
 
@@ -26,7 +28,7 @@ const COMMENT_EXCERPT_LIMIT = 60
 // Must stay in lockstep with the `PAGE_SIZE` constant in
 // `PendingModerationPanel.tsx` — the panel's pagination math reads the
 // initial payload assuming this page size.
-const PENDING_PAGE_SIZE = 5
+const PENDING_PAGE_SIZE = 3
 
 function entityPermalink(type: EntityType, slug: string): string {
   return type === 'post' ? `/posts/${slug}` : `/${slug}`
@@ -89,22 +91,33 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Fan out every dashboard query in one go. Each branch is a small
   // count(*) or LIMIT-5 select, so the round-trip wins dominate the
   // per-query CPU cost.
-  const [pendingModeration, draftCount, publishedCount, myCommentCounts, recentDraftRows, recentMyCommentRows] =
-    await Promise.all([
-      admin ? loadAdminPendingDashboard('all', 0, PENDING_PAGE_SIZE) : Promise.resolve(null),
-      countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
-      countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'published' }),
-      countMyComments(userId),
-      listPostMetas({
-        authorId,
-        deletedStatus: 'normal',
-        lifecycle: 'draft',
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
-        limit: RECENT_DRAFTS_LIMIT,
-      }),
-      listMyComments(userId, 0, RECENT_MY_COMMENTS_LIMIT),
-    ])
+  const nowSec = Math.floor(now.getTime() / 1000)
+  const dayRange = { startAt: nowSec - 24 * 60 * 60, endAt: nowSec }
+
+  const [
+    pendingModeration,
+    visitSummary,
+    draftCount,
+    publishedCount,
+    myCommentCounts,
+    recentDraftRows,
+    recentMyCommentRows,
+  ] = await Promise.all([
+    admin ? loadAdminPendingDashboard('all', 0, PENDING_PAGE_SIZE) : Promise.resolve(null),
+    admin ? queryCounters({ range: dayRange, filters: {} }) : Promise.resolve(null),
+    countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
+    countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'published' }),
+    countMyComments(userId),
+    listPostMetas({
+      authorId,
+      deletedStatus: 'normal',
+      lifecycle: 'draft',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+      limit: RECENT_DRAFTS_LIMIT,
+    }),
+    listMyComments(userId, 0, RECENT_MY_COMMENTS_LIMIT),
+  ])
 
   // Project drafts: only id + title + updatedAt needed for the card.
   const recentDrafts: DraftSummary[] = recentDraftRows.map((row) => ({
@@ -136,6 +149,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     role: ctx.user.role,
     greeting,
     pendingModeration,
+    visitSummary,
     stats: {
       draftCount,
       publishedCount,
@@ -148,7 +162,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
-  const { name, role, greeting, pendingModeration, stats, recentDrafts, recentMyComments } = loaderData
+  const { name, role, greeting, pendingModeration, visitSummary, stats, recentDrafts, recentMyComments } = loaderData
+  const isAdmin = role === 'admin'
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between rounded-lg border bg-card p-6">
@@ -159,7 +174,12 @@ export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
           <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
         </div>
       </div>
-      {role === 'admin' && pendingModeration !== null && <PendingModerationPanel initial={pendingModeration} />}
+      {isAdmin && visitSummary !== null && (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <VisitSummaryCard summary={visitSummary} />
+          {pendingModeration !== null && <PendingModerationPanel initial={pendingModeration} />}
+        </div>
+      )}
       <StatsGrid stats={stats} />
       <div className="grid gap-4 lg:grid-cols-2">
         <RecentDraftsCard drafts={recentDrafts} />
