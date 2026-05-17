@@ -3,11 +3,18 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router'
 
 import type { NavigationItem } from '@/shared/config/blog'
+import type { SocialNetwork } from '@/shared/config/socials'
 
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { Button } from '@/ui/components/button'
+import { IconButtonContent } from '@/ui/components/icon-button-content'
+import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
+import { useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
+import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { UserMenu } from '@/ui/public/chrome/UserMenu'
+import { SearchIconButton } from '@/ui/public/Search'
+import { QRDialog } from '@/ui/public/widgets/QRDialog'
 
 export interface HeaderCurrentUser {
   id: string
@@ -204,6 +211,7 @@ const siteMenuLinkClass = cn(
 // (see `publicButtonVariants` in `@/ui/primitives/btn` —
 // `variant: 'dark'`, `size: 'iconSm'`, `shape: 'circle'`) so an
 // off-rail consumer can opt out without a `!`-modifier conflict.
+const siteSubmenuClass = cn('shrink-0 p-[25px]', 'max-md:py-5', 'lg:max-xl:px-[15px] lg:max-xl:py-5')
 
 // Internal navigation links that target the same site live in `<Link>` so
 // React Router can perform client-side transitions and `prefetch` the next
@@ -220,6 +228,11 @@ function isExternalNavTarget(menu: NavigationItem): boolean {
 // social network from the canonical `SOCIAL_NETWORK_ICONS` table shared
 // with the admin SocialsEditor. Adding a new network requires a single
 // edit in `@/ui/icons/social-icons.ts`.
+function SocialNavIcon({ network, className }: { network: SocialNetwork; className?: string }) {
+  const Icon = SOCIAL_NETWORK_ICONS[network]
+  return <Icon className={className} />
+}
+
 // The mobile drawer is intentionally NOT migrated to shadcn `Sheet` /
 // `@base-ui/react/dialog`. Those primitives only render their popup
 // inside a Portal, and our `.site-aside` markup doubles as the
@@ -230,6 +243,7 @@ function isExternalNavTarget(menu: NavigationItem): boolean {
 // focus restore + `role="dialog"` + `aria-modal`).
 export function Header({ navigation, currentUser, pathname, search }: HeaderProps) {
   const { title } = useSiteIdentity()
+  const { socials } = useSocialsSettings()
   const logoutQuery = new URLSearchParams({
     action: 'logout',
     redirect_to: `${pathname}${search}`,
@@ -371,6 +385,39 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
               ))}
             </ul>
           </nav>
+          <div className={siteSubmenuClass}>
+            {socials.map((social) => {
+              if (social.type === 'qrcode') {
+                return (
+                  <QRDialog
+                    key={social.name}
+                    url={social.link}
+                    name={social.name}
+                    title={social.title ?? social.name}
+                    trigger={<SocialNavIcon network={social.network} className="m-icon-inset" />}
+                  />
+                )
+              }
+              return (
+                <Button
+                  key={social.name}
+                  variant="dark"
+                  size="iconSm"
+                  shape="circle"
+                  className="mr-2"
+                  // oxlint-disable-next-line jsx-a11y/anchor-has-content
+                  render={<a href={social.link} target="_blank" rel="noreferrer" />}
+                  title={social.title ?? social.name}
+                >
+                  <IconButtonContent>
+                    <SocialNavIcon network={social.network} className="m-icon-inset" />
+                  </IconButtonContent>
+                </Button>
+              )
+            })}
+            <ThemeToggle mode="public" />
+            <SearchIconButton />
+          </div>
         </div>
       </header>
       <div className={mobileBrandClass}>
