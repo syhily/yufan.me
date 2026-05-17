@@ -271,21 +271,71 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 })
 
 describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2)', () => {
-  const baseSeed = {
+  const baseWizardData = {
     title: 'Yufan Blog',
+    description: 'Yufan Blog Description',
     website: 'https://yufan.me',
-    authorEmail: 'mailbox@yufan.me',
+    keywords: [],
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-LL-dd HH:mm',
+    initialYear: new Date().getFullYear(),
+    icpNo: '',
+    moeIcpNo: '',
+    navigation: { sideNav: [], footerNav: [] },
+    socials: [],
+    sidebar: {
+      widgets: [
+        { type: 'search' as const, enabled: false },
+        { type: 'recentPosts' as const, enabled: false, count: 5 },
+        { type: 'recentComments' as const, enabled: false, count: 5 },
+        { type: 'randomTags' as const, enabled: false, count: 20 },
+        { type: 'todayCalendar' as const, enabled: false },
+      ],
+    },
+    fonts: { og: { url: '' }, calendar: { url: '' }, globalCss: [], postCss: [] },
+    content: {
+      pagination: { posts: 10, category: 10, tags: 10, search: 10 },
+      feed: { full: false, size: 20 },
+      post: { sort: 'desc' as const, sortBy: 'publishedAt' as const, featureEnabled: false },
+      footnotes: { sectionTitle: '尾声礼记' },
+    },
+    comments: {
+      size: 10,
+      avatar: { mirror: 'https://www.gravatar.com/avatar', size: 80 },
+      tokenTtlSeconds: 1800,
+    },
+    assets: {
+      asset: { host: 'yufan.me', scheme: 'https' as const },
+      storage: {
+        enabled: false,
+        endpoint: '',
+        region: '',
+        bucket: '',
+        accessKeyId: '',
+        secretAccessKey: '',
+        forcePathStyle: false,
+        urlTemplate: '',
+      },
+      upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
+    },
+    mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' },
+    search: {
+      enabled: false,
+      mode: 'like' as const,
+      endpoint: '',
+      apiKey: '',
+      model: 'text-embedding-3-small',
+      similarityThreshold: 0.5,
+    },
   }
-  const adminCtx = { id: '7', name: 'Admin' }
+  const adminCtx = { id: '7', name: 'Admin', email: 'mailbox@yufan.me' }
 
   it('seeds the settings row using the authenticated admin id', async () => {
     const { request, token } = await buildSignedRequest('')
 
     const result = await seedInstallSettingsWithSession({
-      ...baseSeed,
+      data: baseWizardData,
       csrf: token,
       admin: adminCtx,
       session: emptySession(),
@@ -294,7 +344,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
 
     expect(result.ok).toBe(true)
     if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/wp-admin')
+      expect(result.data.redirectTo).toBe('/wp-admin/welcome')
     }
     // user-driven rows (`blog.general` for the site identity AND the
     // locale/timeZone/timeFormat trio, `blog.assets` for the music CDN
@@ -420,7 +470,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
 
   it('returns 403 and never touches the DB when the CSRF token is missing', async () => {
     const result = await seedInstallSettingsWithSession({
-      ...baseSeed,
+      data: baseWizardData,
       csrf: '',
       admin: adminCtx,
       session: emptySession(),

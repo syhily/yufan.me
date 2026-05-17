@@ -35,7 +35,7 @@ export {
   tryGetSessionContext,
 } from '@/server/domains/auth/context'
 
-export type { AuthFlowResult, InstallSettingsSeed, SignUpAdminSeed } from '@/server/domains/auth/flows'
+export type { AuthFlowResult, InstallWizardSeed, SignUpAdminSeed } from '@/server/domains/auth/flows'
 export {
   processAuthFormSubmission,
   seedInstallSettingsWithSession,

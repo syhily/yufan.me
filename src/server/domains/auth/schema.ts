@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-import { isSupportedTimeZone } from '@/server/domains/settings/timezones'
 import { httpUrlOrEmptyStringSchema } from '@/shared/utils/safe-url'
 
 // CSRF field is `csrf` — see `@/server/domains/auth/csrf` top-of-file note.
@@ -19,32 +18,10 @@ export const signUpAdminSchema = z.object({
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
 
-// fields the DB-backed snapshot needs before any public route can
-// above. Other admin settings sections (navigation, sidebar, mail, …)
-// are deliberately left blank — there are no defaults anywhere in the
-// codebase, so the editor visits the relevant `/wp-admin/settings/*`
-// page and fills them in explicitly.
-export const installSettingsSchema = z.object({
-  csrf: z.string().default(''),
-  // Site
-  title: z.string().trim().min(1).max(120),
-  website: z.url(),
-  authorEmail: z.email(),
-  // Localization
-  locale: z.string().trim().min(2).max(35),
-  // Same defence-in-depth as the `general` schema: the install dropdown
-  // already restricts the choices to `Intl.supportedValuesOf`, but a
-  // direct POST against this action must not be able to seed an
-  // unsupported zone that would later crash every formatter call.
-  timeZone: z
-    .string()
-    .trim()
-    .min(1)
-    .max(64)
-    .refine(isSupportedTimeZone, { message: '必须是 IANA 时区名（如 Asia/Shanghai、UTC）' }),
-  timeFormat: z.string().trim().min(1).max(40),
-})
-export type InstallSettingsInput = z.infer<typeof installSettingsSchema>
+// Install wizard no longer posts traditional FormData.
+// The final step submits the full InstallWizardData as JSON,
+// and the action validates each section against its own schema.
+// Per-section CSRF validation still happens in the action handler.
 
 export const updateUserSchema = z
   .object({
