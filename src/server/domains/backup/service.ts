@@ -2,9 +2,9 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { createGunzip, createGzip } from 'node:zlib'
 
-import { deleteS3Objects, getS3ObjectBuffer, listS3Objects, putS3Object } from '@/server/domains/images/s3-client'
 import { ActionFailure, DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
+import { deleteS3Objects, getS3ObjectBuffer, listS3Objects, putS3Object } from '@/server/infra/storage/s3-client'
 
 const execFileAsync = promisify(execFile)
 const log = getLogger('backup.service')

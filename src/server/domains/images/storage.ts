@@ -1,6 +1,7 @@
 import type { AssetsSettings } from '@/shared/config/blog'
 
 import { ActionFailure } from '@/server/infra/http/errors'
+import { deleteImageObject, getImageObject, putImageObject } from '@/server/infra/storage/s3-client'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
 // Storage entry point used by the upload pipeline and the SSR
@@ -8,7 +9,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 // `images.storage.enabled` toggle:
 //
 //   - Toggle ON  → every PUT/DELETE goes to the configured S3-
-//                  compatible bucket through `@/server/domains/images/s3-client`.
+//                  compatible bucket through `@/server/infra/storage/s3-client`.
 //                  The runtime resolves public URLs by joining
 //                  `<publicBaseUrl>/<storagePath>`.
 //   - Toggle OFF → every PUT/DELETE is refused with `ActionFailure(503)`.
@@ -17,17 +18,6 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 //                  rows whose `publicBaseUrl` was filled in earlier,
 //                  so flipping the toggle off does not break public
 //                  pages that already reference uploaded images.
-//
-// `@/server/domains/images/s3-client` is loaded behind a dynamic `import()`
-// because `@aws-sdk/core` ships an ESM index that does
-// `import './emitWarningIfUnsupportedVersion'` without the `.js`
-// extension. Node ESM (and the Vitest SSR loader) reject that import
-// at module-eval time. Rolldown bundles the SDK in `vp build` so
-// production never sees it, but every test file that transitively
-// touches storage.ts would otherwise fail to load. The `@aws-sdk/client-s3`
-// dependency itself is statically imported inside s3-client.ts, so it
-// is correctly declared in `dependencies` — only the evaluation is
-// deferred here.
 
 const UPLOAD_DISABLED_MESSAGE = '图片上传未开启；请到 /wp-admin/settings/assets 打开「启用 S3 上传」并填写存储桶配置。'
 
@@ -51,20 +41,17 @@ export interface PutImageInput {
 /** PUT to the configured S3 bucket. Refuses when the upload toggle is OFF. */
 export async function putImage(input: PutImageInput): Promise<void> {
   ensureUploadReady()
-  const { putImageObject } = await import('@/server/domains/images/s3-client')
   await putImageObject({ key: input.storagePath, body: input.body, contentType: input.contentType })
 }
 
 /** DELETE from the configured S3 bucket. Best-effort: missing objects are not an error. */
 export async function deleteImage(storagePath: string): Promise<void> {
   ensureUploadReady()
-  const { deleteImageObject } = await import('@/server/domains/images/s3-client')
   await deleteImageObject(storagePath)
 }
 
 /** GET from the configured S3 bucket. Throws on missing object or network failure. */
 export async function getImage(storagePath: string): Promise<Buffer> {
-  const { getImageObject } = await import('@/server/domains/images/s3-client')
   return getImageObject(storagePath)
 }
 

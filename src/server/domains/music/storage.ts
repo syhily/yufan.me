@@ -1,13 +1,6 @@
 import { getPublicBaseUrl } from '@/server/domains/images/storage'
 import { ActionFailure } from '@/server/infra/http/errors'
-
-// `@/server/domains/images/s3-client` is loaded behind dynamic `import()` for
-// the same reason as in `@/server/domains/images/storage` — `@aws-sdk/core`
-// ships an extension-less ESM import that Node ESM / the Vitest SSR
-// loader reject at module-eval time. Keeping the import deferred here
-// also lets the bundler hoist s3-client into the same async chunk used
-// by the image storage entry point (see Rolldown
-// `INEFFECTIVE_DYNAMIC_IMPORT` warning).
+import { deleteImageObject, getImageStorageContext, putImageObject } from '@/server/infra/storage/s3-client'
 
 // Music files share the same S3 bucket and the same `assets.storage`
 // toggle as the image library — see AGENTS.md "Content" section. The
@@ -27,7 +20,6 @@ import { ActionFailure } from '@/server/infra/http/errors'
  * the image library.
  */
 export async function putMusicAudio(key: string, body: Buffer): Promise<void> {
-  const { putImageObject } = await import('@/server/domains/images/s3-client')
   await putImageObject({
     key,
     body,
@@ -37,7 +29,6 @@ export async function putMusicAudio(key: string, body: Buffer): Promise<void> {
 
 /** Upload a JPEG cover object. */
 export async function putMusicCover(key: string, body: Buffer): Promise<void> {
-  const { putImageObject } = await import('@/server/domains/images/s3-client')
   await putImageObject({
     key,
     body,
@@ -47,7 +38,6 @@ export async function putMusicCover(key: string, body: Buffer): Promise<void> {
 
 /** Delete a music object (audio or cover) from S3. */
 export async function deleteMusicObject(key: string): Promise<void> {
-  const { deleteImageObject } = await import('@/server/domains/images/s3-client')
   await deleteImageObject(key)
 }
 
@@ -87,6 +77,5 @@ export function safeBuildMusicPublicUrl(storagePath: string): string | null {
  * audio bytes from the upstream provider.
  */
 export async function ensureMusicStorageEnabled(): Promise<void> {
-  const { getImageStorageContext } = await import('@/server/domains/images/s3-client')
-  getImageStorageContext()
+  await getImageStorageContext()
 }

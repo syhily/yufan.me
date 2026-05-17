@@ -121,7 +121,7 @@ cache.ts` plus feature-named files (`preview.ts`, `loader.ts`, etc.).
   verification-tokens), `catalog` (build, snapshot, queries, fence,
   invalidate), `comments` (loader, moderation, projection, likes, token,
   badge, url, canonicalize), `friends`, `images` (schema, service,
-  s3-client, storage, key, process), `music`, `pages`, `posts`, `pt`
+  storage, key, process), `music`, `pages`, `posts`, `pt`
   (Shiki/KaTeX/Mermaid prerender, canonicalize, comment-to-html),
   `settings` (sections, snapshot, install-flow, install-gate),
   `taxonomies/{categories,tags}`, `users`. Plus `content-revisions.ts`
@@ -372,7 +372,7 @@ viewport `<meta>` while any control is focused.
   `<storage.publicBaseUrl>/<storagePath>`.
 - `@/server/domains/images/storage` is gated on `assets.storage.enabled`
   in `setting('blog.assets')`. ON → PUT/DELETE through
-  `@/server/domains/images/s3-client`. OFF (default for fresh installs)
+  `@/server/infra/storage/s3-client`. OFF (default for fresh installs)
   → PUT/DELETE return `ActionFailure(503)`; the SSR enhancer still
   resolves historical rows against the saved `publicBaseUrl`. Toggling
   back on does not require re-pasting credentials.

@@ -1,17 +1,3 @@
-import type { FinalizeRequestMiddleware } from '@smithy/types'
-
-import {
-  DeleteObjectCommand,
-  DeleteObjectsCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  ListObjectsV2Command,
-  PutObjectCommand,
-  S3Client,
-  type S3ClientConfig,
-  type ServiceInputTypes,
-  type ServiceOutputTypes,
-} from '@aws-sdk/client-s3'
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
 
@@ -21,23 +7,35 @@ import { ActionFailure } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 
-// Lazily-built `S3Client` keyed by the JSON-serialised storage config.
-// `requireBlogSettingsSection('assets').storage` returns the most recent
-// snapshot bucket; whenever the admin saves the settings page the
-// snapshot is rewritten and we get a fresh object identity, so the
-// stringified key changes and we rebuild the client. The cache prevents
-// thrashing on every call within a single request — important because
-// the admin list view can resolve dozens of `publicUrl`s back-to-back.
-//
-// We hold at most one client at a time. When a fresh config arrives the
-// previous client is destroyed so its in-flight HTTP/2 connection pool
-// drains and we don't leak file descriptors after a key rotation.
+// `@aws-sdk/client-s3` is loaded lazily via `getAwsSdk()` because
+// `@aws-sdk/core` ships an ESM index that does
+// `import './emitWarningIfUnsupportedVersion'` without the `.js`
+// extension. Node ESM (and the Vitest SSR loader) reject that import
+// at module-eval time. Rolldown bundles the SDK in `vp build` so
+// production never sees it, but the lazy getter ensures test files
+// that transitively touch this module don't crash on import — the
+// AWS SDK is only evaluated when a function actually calls `getAwsSdk()`.
 
 const log = getLogger('images.s3')
 
+// --- Lazy AWS SDK loader ---
+
+type AwsSdk = typeof import('@aws-sdk/client-s3')
+
+let awsSdk: AwsSdk | undefined
+
+async function getAwsSdk(): Promise<AwsSdk> {
+  if (awsSdk === undefined) {
+    awsSdk = await import('@aws-sdk/client-s3')
+  }
+  return awsSdk
+}
+
+// --- Client cache ---
+
 interface CachedClient {
   fingerprint: string
-  client: S3Client
+  client: any
 }
 
 const globalForS3 = globalThis as unknown as {
@@ -55,19 +53,36 @@ function fingerprintFor(storage: AssetsSettings['storage']): string {
   })
 }
 
+// --- Public types ---
+
 export interface ImageStorageContext {
-  client: S3Client
+  client: any
   bucket: string
 }
+
+export interface PutImageObjectInput {
+  key: string
+  body: Buffer
+  contentType: string
+  cacheControl?: string
+}
+
+export interface S3ObjectMeta {
+  key: string
+  size: number
+  lastModified: Date
+}
+
+// --- Context resolver ---
 
 /**
  * Resolve the live S3 client + bucket name for the current request.
  * Throws `ActionFailure(503)` when the upload toggle is OFF or when
- * the credentials are half-configured. The dispatcher in
- * `@/server/domains/images/storage` is the canonical entry point — callers
- * should not reach this helper directly.
+ * the credentials are half-configured. Domain dispatchers (images,
+ * music, backup) are the canonical entry points — callers should not
+ * reach this helper directly.
  */
-export function getImageStorageContext(options?: { requireEnabled?: boolean }): ImageStorageContext {
+export async function getImageStorageContext(options?: { requireEnabled?: boolean }): Promise<ImageStorageContext> {
   const settings = requireBlogSettingsSection('assets')
   const storage = settings.storage
   if (options?.requireEnabled !== false && !storage.enabled) {
@@ -91,7 +106,9 @@ export function getImageStorageContext(options?: { requireEnabled?: boolean }): 
     }
   }
 
-  const config: S3ClientConfig = {
+  const sdk = await getAwsSdk()
+
+  const config = {
     endpoint: storage.endpoint,
     region: storage.region,
     forcePathStyle: storage.forcePathStyle,
@@ -103,10 +120,10 @@ export function getImageStorageContext(options?: { requireEnabled?: boolean }): 
     // the AWS SDK v3 expects hex, causing a false "Checksum mismatch" on
     // GetObject. WHEN_REQUIRED skips automatic response validation unless
     // the caller explicitly asks for it (ChecksumMode: ENABLED).
-    responseChecksumValidation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED' as const,
   }
-  const client = new S3Client(config)
-  installDeleteObjectsMd5Fallback(client)
+  const client = new sdk.S3Client(config)
+  installDeleteObjectsMd5Fallback(sdk, client)
   globalForS3.imageS3CachedClient = { fingerprint, client }
   return { client, bucket: storage.bucket }
 }
@@ -119,44 +136,24 @@ export function getImageStorageContext(options?: { requireEnabled?: boolean }): 
 // (https://github.com/aws/aws-sdk-js-v3/blob/main/supplemental-docs/MD5_FALLBACK.md)
 // is to install a middleware AFTER `flexibleChecksumsMiddleware` that
 // strips the modern checksum headers and replaces them with `Content-MD5`.
-// Doing it here centralises the workaround for every caller of
-// `getImageStorageContext()` (runtime image deletes, the music admin,
-// any future bulk-delete script).
-function installDeleteObjectsMd5Fallback(client: S3Client): void {
-  const middleware: FinalizeRequestMiddleware<ServiceInputTypes, ServiceOutputTypes> =
-    (next, context) => async (args) => {
-      if (context.commandName !== 'DeleteObjectsCommand') {
-        return next(args)
-      }
-      const request = args.request as { headers: Record<string, string>; body?: unknown }
-      for (const header of Object.keys(request.headers)) {
-        const lower = header.toLowerCase()
-        if (lower.startsWith('x-amz-checksum-') || lower.startsWith('x-amz-sdk-checksum-')) {
-          delete request.headers[header]
-        }
-      }
-      if (request.body !== undefined && request.body !== null) {
-        const body = Buffer.from(request.body as string | Uint8Array)
-        request.headers['Content-MD5'] = createHash('md5').update(body).digest('base64')
-      }
+function installDeleteObjectsMd5Fallback(_sdk: AwsSdk, client: any): void {
+  const middleware = (next: any, context: any) => async (args: any) => {
+    if (context.commandName !== 'DeleteObjectsCommand') {
       return next(args)
     }
-  // Two timing constraints:
-  //   1. `flexibleChecksumsMiddleware` runs in the `build` step and adds
-  //      `x-amz-checksum-*` headers — we must run AFTER it so we can
-  //      strip those headers and replace them with `Content-MD5`.
-  //   2. `httpSigningMiddleware` runs in the `finalizeRequest` step and
-  //      signs the request based on the headers it sees — we must run
-  //      BEFORE it, otherwise the new `Content-MD5` is unsigned and the
-  //      bucket rejects the request with `ErrUnsignedHeaders`.
-  //
-  // The SDK no longer registers `flexibleChecksumsMiddleware` on the
-  // client stack (it lives on the per-command stack), so an
-  // `addRelativeTo(after, 'flexibleChecksumsMiddleware')` would throw
-  // "middleware is not found". `httpSigningMiddleware`, however, IS on
-  // the client stack via `getHttpSigningPlugin`, so anchoring `before`
-  // it satisfies both constraints — anything in the `build` step has
-  // already executed by the time we reach `finalizeRequest`.
+    const request = args.request as { headers: Record<string, string>; body?: unknown }
+    for (const header of Object.keys(request.headers)) {
+      const lower = header.toLowerCase()
+      if (lower.startsWith('x-amz-checksum-') || lower.startsWith('x-amz-sdk-checksum-')) {
+        delete request.headers[header]
+      }
+    }
+    if (request.body !== undefined && request.body !== null) {
+      const body = Buffer.from(request.body as string | Uint8Array)
+      request.headers['Content-MD5'] = createHash('md5').update(body).digest('base64')
+    }
+    return next(args)
+  }
   client.middlewareStack.addRelativeTo(middleware, {
     relation: 'before',
     toMiddleware: 'httpSigningMiddleware',
@@ -165,17 +162,13 @@ function installDeleteObjectsMd5Fallback(client: S3Client): void {
   })
 }
 
-export interface PutImageObjectInput {
-  key: string
-  body: Buffer
-  contentType: string
-  cacheControl?: string
-}
+// --- Operations ---
 
 export async function putImageObject(input: PutImageObjectInput): Promise<void> {
-  const { client, bucket } = getImageStorageContext()
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext()
   await client.send(
-    new PutObjectCommand({
+    new sdk.PutObjectCommand({
       Bucket: bucket,
       Key: input.key,
       Body: input.body,
@@ -186,19 +179,18 @@ export async function putImageObject(input: PutImageObjectInput): Promise<void> 
 }
 
 export async function deleteImageObject(key: string): Promise<void> {
-  const { client, bucket } = getImageStorageContext()
-  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }))
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext()
+  await client.send(new sdk.DeleteObjectCommand({ Bucket: bucket, Key: key }))
 }
 
 export async function headImageObject(key: string): Promise<boolean> {
-  const { client, bucket } = getImageStorageContext()
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext()
   try {
-    await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+    await client.send(new sdk.HeadObjectCommand({ Bucket: bucket, Key: key }))
     return true
   } catch (error) {
-    // The AWS SDK throws on 404 with `name === 'NotFound'` (or
-    // `$metadata.httpStatusCode === 404`). Any other error bubbles up so
-    // callers don't silently mistake a 5xx for "object missing".
     if (error instanceof Error && (error.name === 'NotFound' || error.name === 'NoSuchKey')) {
       return false
     }
@@ -207,8 +199,9 @@ export async function headImageObject(key: string): Promise<boolean> {
 }
 
 export async function getImageObject(key: string): Promise<Buffer> {
-  const { client, bucket } = getImageStorageContext({ requireEnabled: false })
-  const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
   if (response.Body === undefined) {
     throw new ActionFailure(404, 'S3 对象不存在或内容为空')
   }
@@ -222,19 +215,14 @@ export async function getImageObject(key: string): Promise<Buffer> {
   })
 }
 
-export interface S3ObjectMeta {
-  key: string
-  size: number
-  lastModified: Date
-}
-
 export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
-  const { client, bucket } = getImageStorageContext({ requireEnabled: false })
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
   const objects: S3ObjectMeta[] = []
   let continuationToken: string | undefined
   do {
     const response = await client.send(
-      new ListObjectsV2Command({
+      new sdk.ListObjectsV2Command({
         Bucket: bucket,
         Prefix: prefix,
         ContinuationToken: continuationToken,
@@ -251,8 +239,9 @@ export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
 }
 
 export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
-  const { client, bucket } = getImageStorageContext({ requireEnabled: false })
-  const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext({ requireEnabled: false })
+  const response = await client.send(new sdk.GetObjectCommand({ Bucket: bucket, Key: key }))
   if (response.Body === undefined) {
     throw new ActionFailure(404, 'S3 对象不存在或内容为空')
   }
@@ -266,9 +255,10 @@ export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
 }
 
 export async function putS3Object(key: string, body: Buffer | Readable, contentType?: string): Promise<void> {
-  const { client, bucket } = getImageStorageContext()
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext()
   await client.send(
-    new PutObjectCommand({
+    new sdk.PutObjectCommand({
       Bucket: bucket,
       Key: key,
       Body: body,
@@ -282,9 +272,10 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
   if (keys.length === 0) {
     return
   }
-  const { client, bucket } = getImageStorageContext()
+  const sdk = await getAwsSdk()
+  const { client, bucket } = await getImageStorageContext()
   await client.send(
-    new DeleteObjectsCommand({
+    new sdk.DeleteObjectsCommand({
       Bucket: bucket,
       Delete: { Objects: keys.map((key) => ({ Key: key })) },
     }),
