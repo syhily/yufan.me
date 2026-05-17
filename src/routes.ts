@@ -63,7 +63,6 @@ export default [
       route('wp-admin/settings/sidebar', 'routes/wp-admin/settings/sidebar.tsx'),
       route('wp-admin/settings/comments', 'routes/wp-admin/settings/comments.tsx'),
       route('wp-admin/settings/seo', 'routes/wp-admin/settings/seo.tsx'),
-      route('wp-admin/settings/footer', 'routes/wp-admin/settings/footer.tsx'),
       route('wp-admin/settings/mail', 'routes/wp-admin/settings/mail.tsx'),
       route('wp-admin/settings/cache', 'routes/wp-admin/settings/cache.tsx'),
       route('wp-admin/settings/rate-limit', 'routes/wp-admin/settings/rate-limit.tsx'),

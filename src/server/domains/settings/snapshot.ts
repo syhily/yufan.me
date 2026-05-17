@@ -127,7 +127,7 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
   comments: (value) => typeof value.comments === 'object' && value.comments !== null,
   seo: (value) =>
     typeof value.toc === 'object' && value.toc !== null && typeof value.og === 'object' && value.og !== null,
-  footer: (value) => typeof value.footer === 'object' && value.footer !== null,
+
   mail: (value) => typeof value.mail === 'object' && value.mail !== null,
   // Each cache bucket carries `prefix` + `ttlSeconds`. Probe walks
   // every required bucket so a row missing newer surfaces (e.g. a

@@ -56,6 +56,9 @@ const generalFormSchema = z.object({
   locale: z.string().trim().min(2, 'BCP 47 标签至少 2 个字符').max(35, '最多 35 个字符'),
   timeZone: z.string().trim().min(1, '请选择时区').max(64, '最多 64 个字符'),
   timeFormat: z.string().trim().min(1, '请填写日期格式').max(40, '最多 40 个字符'),
+  initialYear: z.coerce.number().int().min(1970, '年份不能早于 1970').max(9999, '年份不能超过 9999'),
+  icpNo: z.string().trim().max(60, '最多 60 个字符').optional(),
+  moeIcpNo: z.string().trim().max(60, '最多 60 个字符').optional(),
 })
 type GeneralFormValues = z.infer<typeof generalFormSchema>
 
@@ -73,6 +76,9 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
     locale: source.locale,
     timeZone: source.timeZone,
     timeFormat: source.timeFormat,
+    initialYear: source.initialYear,
+    icpNo: source.icpNo ?? '',
+    moeIcpNo: source.moeIcpNo ?? '',
   }
 }
 
@@ -98,6 +104,9 @@ export function GeneralForm({ siteIdentity, timeZones }: GeneralFormProps) {
       locale: values.locale.trim(),
       timeZone: values.timeZone.trim(),
       timeFormat: values.timeFormat.trim(),
+      initialYear: values.initialYear,
+      icpNo: values.icpNo,
+      moeIcpNo: values.moeIcpNo,
     }),
   })
   const { register, control, formState } = form
@@ -182,6 +191,35 @@ export function GeneralForm({ siteIdentity, timeZones }: GeneralFormProps) {
               <PlusIcon data-icon /> 添加关键词
             </Button>
           </div>
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection title="页脚信息" description="网站页脚的版权年份与备案号。">
+        <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
+          {(controlProps) => (
+            <Input
+              id="general-initial-year"
+              type="number"
+              min={1970}
+              max={9999}
+              {...register('initialYear', { valueAsNumber: true })}
+              {...controlProps}
+            />
+          )}
+        </SettingsRow>
+        <SettingsRow label="ICP 备案号" htmlFor="general-icp" error={formState.errors.icpNo?.message}>
+          {(controlProps) => (
+            <Input
+              id="general-icp"
+              maxLength={60}
+              placeholder="例如：皖ICP备2021002315号-2"
+              {...register('icpNo')}
+              {...controlProps}
+            />
+          )}
+        </SettingsRow>
+        <SettingsRow label="萌国备案号" htmlFor="general-moe-icp" error={formState.errors.moeIcpNo?.message}>
+          {(controlProps) => <Input id="general-moe-icp" maxLength={60} {...register('moeIcpNo')} {...controlProps} />}
         </SettingsRow>
       </SettingsSection>
 

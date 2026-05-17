@@ -24,6 +24,9 @@ const fixture: BlogSettingsBundle = {
     locale: 'zh-CN',
     timeZone: 'UTC',
     timeFormat: 'yyyy-LL-dd HH:mm',
+    initialYear: 2024,
+    icpNo: '',
+    moeIcpNo: '',
   },
   assets: {
     asset: { host: 'cdn.test.example', scheme: 'https' },
@@ -64,7 +67,7 @@ const fixture: BlogSettingsBundle = {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },
   },
-  footer: { footer: { initialYear: 2024, icpNo: '', moeIcpNo: '' } },
+
   mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
   cache: {
     cache: {

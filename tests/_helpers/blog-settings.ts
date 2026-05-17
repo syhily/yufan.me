@@ -31,6 +31,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     locale: 'zh-CN',
     timeZone: 'Asia/Shanghai',
     timeFormat: 'yyyy-MM-dd',
+    initialYear: 2011,
+    icpNo: '皖ICP备2021002315号-2',
   },
   // Test fixture has the upload toggle ON with a fully-configured
   // bucket so the storage-dispatch / render-enhance suites can
@@ -100,7 +102,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
     og: { width: 1200, height: 768 },
   },
-  footer: { footer: { initialYear: 2011, icpNo: '皖ICP备2021002315号-2' } },
+
   mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' } },
   cache: {
     cache: {

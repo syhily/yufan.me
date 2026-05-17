@@ -294,6 +294,7 @@ function buildSiteIdentitySeed({
     locale,
     timeZone,
     timeFormat,
+    initialYear: new Date().getUTCFullYear(),
   }
 }
 
