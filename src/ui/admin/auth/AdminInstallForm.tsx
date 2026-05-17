@@ -1,3 +1,5 @@
+import { EyeIcon, EyeOffIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Form, useNavigation } from 'react-router'
 
 import { Button } from '@/ui/components/button'
@@ -14,6 +16,7 @@ export interface AdminInstallFormProps {
 export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Form method="post" id="adminInstallForm" className="flex flex-col gap-4">
@@ -29,15 +32,28 @@ export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="install-password">密码</Label>
-        <Input
-          id="install-password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={10}
-          disabled={isSubmitting}
-        />
+        <div className="relative">
+          <Input
+            id="install-password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password"
+            required
+            minLength={10}
+            disabled={isSubmitting}
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            disabled={isSubmitting}
+            className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none"
+            aria-label={showPassword ? '隐藏密码' : '显示密码'}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? <EyeOffIcon size={16} aria-hidden /> : <EyeIcon size={16} aria-hidden />}
+          </button>
+        </div>
         <p className="text-xs text-muted-foreground">至少 10 个字符。</p>
       </div>
 

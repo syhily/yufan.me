@@ -7,20 +7,6 @@ import { ensureNoSettingsOrRedirect } from '@/server/domains/settings/install-ga
 // rule. The route module is now reduced to: parse args → call helpers →
 // render. Anything that needs a `redirect()` or DB lookup lives here.
 
-/** Field allowlist for the stage-2 install form. The shape mirrors
- *  `installSettingsSchema` and is consumed by
- *  `processAuthFormSubmission` to project the FormData into the
- *  validated input. */
-export const SETTINGS_INSTALL_FIELDS = [
-  'csrf',
-  'title',
-  'website',
-  'authorEmail',
-  'locale',
-  'timeZone',
-  'timeFormat',
-] as const
-
 /** Canonical URL for stage 2. Used both to build the
  *  `/wp-login.php?redirect_to=…` bounce target and for `meta()` `og:url`. */
 export const SETTINGS_INSTALL_PATH = '/wp-admin/install/settings.php'

@@ -4,16 +4,12 @@ import { data, redirect } from 'react-router'
 
 import type { BlogSession } from '@/server/domains/auth/session-storage'
 import type { AssetsSettings, SiteIdentitySettings } from '@/shared/config/blog'
+import type { InstallWizardData } from '@/shared/types/install'
 
 import { clearCsrfCookie, issueCsrfToken, validateRequestCsrf } from '@/server/domains/auth/csrf'
 import { establishLoginSession, login } from '@/server/domains/auth/primitives'
 import { commitSession } from '@/server/domains/auth/session-storage'
-import {
-  ASSETS_STORAGE_INSTALL_DEFAULTS,
-  buildDefaultSectionPayloads,
-  SECTION_REGISTRY,
-  type SettingsSection,
-} from '@/server/domains/settings/sections'
+import { buildDefaultSectionPayloads, SECTION_REGISTRY, type SettingsSection } from '@/server/domains/settings/sections'
 import { refreshBlogSettings } from '@/server/domains/settings/snapshot'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { hasAdmin, insertAdmin } from '@/server/infra/db/operations/user'
@@ -176,134 +172,100 @@ export async function signUpInitialAdminWithSession({
   }
 }
 
-export interface InstallSettingsSeed {
+export interface InstallWizardSeed {
   csrf: string
-  title: string
-  website: string
-  authorEmail: string
-  locale: string
-  timeZone: string
-  timeFormat: string
+  data: InstallWizardData
+  admin: { id: string; name: string; email: string }
+  session: BlogSession
+  request: Request
 }
 
 export async function seedInstallSettingsWithSession({
   csrf,
-  title,
-  website,
-  authorEmail,
-  locale,
-  timeZone,
-  timeFormat,
+  data,
   admin,
   session,
   request,
-}: InstallSettingsSeed & {
-  admin: { id: string; name: string }
-  session: BlogSession
-  request: Request
-}): Promise<AuthFlowResult<{ redirectTo: string }>> {
+}: InstallWizardSeed): Promise<AuthFlowResult<{ redirectTo: string }>> {
   const csrfErr = await csrfFailure(request, session, csrf)
   if (csrfErr) {
     return csrfErr
   }
 
-  const siteIdentity = buildSiteIdentitySeed({
-    name: admin.name,
-    title,
-    website,
-    authorEmail,
-    locale,
-    timeZone,
-    timeFormat,
-  })
-  const assets = buildAssetsSeed({ website })
-
-  const generalCheck = SECTION_REGISTRY.general.schema.safeParse(siteIdentity)
-  if (!generalCheck.success) {
-    return {
-      ok: false,
-      status: 400,
-      message: '站点信息不符合 blog.general 的校验规则，无法初始化。',
-      headers: await commitHeaders(session),
-    }
-  }
-  const assetsCheck = SECTION_REGISTRY.assets.schema.safeParse(assets)
-  if (!assetsCheck.success) {
-    return {
-      ok: false,
-      status: 400,
-      message: '资源/存储信息不符合 blog.assets 的校验规则，无法初始化。',
-      headers: await commitHeaders(session),
-    }
+  // ── Build per-section payloads from wizard data ──
+  const siteIdentity: SiteIdentitySettings = {
+    title: data.title,
+    description: data.description,
+    website: data.website,
+    keywords: data.keywords,
+    author: { name: admin.name, email: admin.email, url: data.website },
+    locale: data.locale,
+    timeZone: data.timeZone,
+    timeFormat: data.timeFormat,
+    initialYear: data.initialYear,
+    icpNo: data.icpNo,
+    moeIcpNo: data.moeIcpNo,
   }
 
-  let defaultSections: { section: SettingsSection; payload: Record<string, unknown> }[]
-  try {
-    defaultSections = buildDefaultSectionPayloads()
-  } catch (error) {
-    return {
-      ok: false,
-      status: 500,
-      message: error instanceof Error ? `内置默认值校验失败：${error.message}` : '内置默认值校验失败。',
-      headers: await commitHeaders(session),
-    }
+  const assets: AssetsSettings = {
+    asset: data.assets.asset,
+    storage: data.assets.storage,
+    upload: data.assets.upload,
   }
 
-  const updatedBy = BigInt(admin.id)
-  await upsertSetting(
-    generalCheck.data as unknown as Record<string, unknown>,
-    updatedBy,
-    SECTION_REGISTRY.general.scope,
+  const defaultPayloads = buildDefaultSectionPayloads()
+  const defaultMap = new Map<SettingsSection, Record<string, unknown>>(
+    defaultPayloads.map((d) => [d.section, d.payload]),
   )
-  await upsertSetting(assetsCheck.data as unknown as Record<string, unknown>, updatedBy, SECTION_REGISTRY.assets.scope)
-  for (const { section, payload } of defaultSections) {
-    await upsertSetting(payload, updatedBy, SECTION_REGISTRY[section].scope)
+
+  const sections: { section: SettingsSection; payload: Record<string, unknown> }[] = [
+    { section: 'general', payload: siteIdentity as unknown as Record<string, unknown> },
+    { section: 'assets', payload: assets as unknown as Record<string, unknown> },
+    { section: 'navigation', payload: { navigation: data.navigation } as Record<string, unknown> },
+    { section: 'socials', payload: { socials: data.socials } as Record<string, unknown> },
+    { section: 'content', payload: data.content as unknown as Record<string, unknown> },
+    { section: 'sidebar', payload: { sidebar: data.sidebar } as Record<string, unknown> },
+    { section: 'comments', payload: { comments: data.comments } as Record<string, unknown> },
+    { section: 'seo', payload: defaultMap.get('seo') ?? {} },
+    { section: 'mail', payload: { mail: data.mail } as Record<string, unknown> },
+    { section: 'cache', payload: defaultMap.get('cache') ?? {} },
+    { section: 'rateLimit', payload: defaultMap.get('rateLimit') ?? {} },
+    { section: 'search', payload: { search: data.search } as Record<string, unknown> },
+    { section: 'fonts', payload: data.fonts as unknown as Record<string, unknown> },
+  ]
+
+  // ── Validate every section against its schema ──
+  for (const { section, payload } of sections) {
+    const meta = SECTION_REGISTRY[section]
+    const check = meta.schema.safeParse(payload)
+    if (!check.success) {
+      const first = check.error.issues[0]
+      const path = first ? first.path.join('.') : '<unknown>'
+      return {
+        ok: false,
+        status: 400,
+        message: `${meta.scope} 校验失败（${path}）：${first?.message ?? '未知错误'}`,
+        headers: await commitHeaders(session),
+      }
+    }
   }
+
+  // ── Write all sections ──
+  const updatedBy = BigInt(admin.id)
+  for (const { section, payload } of sections) {
+    const meta = SECTION_REGISTRY[section]
+    const check = meta.schema.safeParse(payload)
+    if (check.success) {
+      await upsertSetting(check.data as Record<string, unknown>, updatedBy, meta.scope)
+    }
+  }
+
   await refreshBlogSettings()
 
   return {
     ok: true,
-    data: { redirectTo: '/wp-admin' },
+    data: { redirectTo: '/wp-admin/welcome' },
     headers: await commitHeaders(session, await clearCsrfCookie()),
-  }
-}
-
-function buildSiteIdentitySeed({
-  name,
-  title,
-  website,
-  authorEmail,
-  locale,
-  timeZone,
-  timeFormat,
-}: {
-  name: string
-  title: string
-  website: string
-  authorEmail: string
-  locale: string
-  timeZone: string
-  timeFormat: string
-}): SiteIdentitySettings {
-  return {
-    title,
-    description: title,
-    website,
-    keywords: [],
-    author: { name, email: authorEmail, url: website },
-    locale,
-    timeZone,
-    timeFormat,
-    initialYear: new Date().getUTCFullYear(),
-  }
-}
-
-function buildAssetsSeed({ website }: { website: string }): AssetsSettings {
-  const url = new URL(website)
-  return {
-    asset: { host: url.host, scheme: url.protocol === 'https:' ? 'https' : 'http' },
-    storage: { ...ASSETS_STORAGE_INSTALL_DEFAULTS.storage },
-    upload: { ...ASSETS_STORAGE_INSTALL_DEFAULTS.upload },
   }
 }
 

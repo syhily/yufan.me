@@ -52,7 +52,7 @@ export default function AdminLayoutRoute() {
         <span className="hidden text-sm text-muted-foreground sm:inline">{siteTitle} · 管理入口</span>
       </header>
       <main className="flex flex-1 items-start justify-center px-4 pt-8 sm:items-center sm:py-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-lg">
           <Outlet />
         </div>
       </main>
