@@ -40,7 +40,7 @@ export interface BaseLayoutProps {
 export function BaseLayout({ navigation, footer, currentUser, pathname, search, children }: BaseLayoutProps) {
   const navigationSection = useNavigationSettings()
   const showFooter = footer !== undefined ? footer : true
-  const resolvedNavigation = navigation || navigationSection.navigation
+  const resolvedNavigation = navigation || navigationSection.navigation.sideNav
   const logoutQuery = new URLSearchParams({
     action: 'logout',
     redirect_to: `${pathname}${search}`,

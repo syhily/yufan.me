@@ -385,7 +385,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // schema validation is what `buildDefaultSectionPayloads()` does
     // internally, so reaching this point at all proves the registry
     // defaults are valid.
-    expect(byScope.get('blog.navigation')?.data).toEqual({ navigation: [] })
+    expect(byScope.get('blog.navigation')?.data).toEqual({ navigation: { sideNav: [], footerNav: [] } })
     expect(byScope.get('blog.socials')?.data).toEqual({ socials: [] })
     const footer = byScope.get('blog.footer')?.data
     expect(footer).toBeDefined()

@@ -71,7 +71,7 @@ export interface SectionMeta<
 // integrations / 1-day TTLs — so a fresh deployment looks "off" until
 // the admin opts into each surface from the matching `/wp-admin/
 // settings/<section>` page. (`assets` and `general` carry `defaults: null`
-const navigationDefaults = { navigation: [] } as const
+const navigationDefaults = { navigation: { sideNav: [], footerNav: [] } } as const
 const socialsDefaults = { socials: [] } as const
 const contentDefaults = {
   pagination: { posts: 10, category: 10, tags: 10, search: 10 },
@@ -113,7 +113,7 @@ const seoDefaults = {
 // process restarts on each deploy so the year stays current; tests
 // that need a fixed year freeze `Date` themselves before importing.
 const footerDefaults = {
-  footer: { initialYear: new Date().getUTCFullYear(), items: [] },
+  footer: { initialYear: new Date().getUTCFullYear() },
 } as const
 const mailDefaults = {
   // Disabled by default — the sender must supply a Zeabur ZSend host +

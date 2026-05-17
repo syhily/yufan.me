@@ -48,15 +48,25 @@ export const generalSchema = z.object({
 export type GeneralInput = z.infer<typeof generalSchema>
 
 export const navigationSchema = z.object({
-  navigation: z
-    .array(
-      z.object({
-        text: z.string().trim().min(1).max(40),
-        link: z.string().trim().min(1).max(200),
-        target: z.string().trim().max(20).optional(),
-      }),
-    )
-    .max(20),
+  navigation: z.object({
+    sideNav: z
+      .array(
+        z.object({
+          text: z.string().trim().min(1).max(40),
+          link: z.string().trim().min(1).max(200),
+          target: z.string().trim().max(20).optional(),
+        }),
+      )
+      .max(20),
+    footerNav: z
+      .array(
+        z.object({
+          type: z.enum(['social', 'themeToggle', 'search']),
+          network: z.enum(SOCIAL_NETWORKS).optional(),
+        }),
+      )
+      .max(5),
+  }),
 })
 export type NavigationInput = z.infer<typeof navigationSchema>
 
@@ -178,14 +188,6 @@ export const footerSchema = z.object({
     initialYear: z.coerce.number().int().min(1970).max(9999),
     icpNo: z.string().trim().max(60).optional(),
     moeIcpNo: z.string().trim().max(60).optional(),
-    items: z
-      .array(
-        z.object({
-          type: z.enum(['social', 'themeToggle', 'search']),
-          network: z.enum(SOCIAL_NETWORKS).optional(),
-        }),
-      )
-      .max(5),
   }),
 })
 export type FooterInput = z.infer<typeof footerSchema>

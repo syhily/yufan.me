@@ -5,7 +5,12 @@ import { formatLocalDate } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
-import { useFooterSettings, useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
+import {
+  useFooterSettings,
+  useNavigationSettings,
+  useSiteIdentity,
+  useSocialsSettings,
+} from '@/ui/lib/blog-config-context'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { SearchIconButton } from '@/ui/public/Search'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
@@ -68,17 +73,19 @@ function FooterNavItemRender({ item }: { item: FooterNavItem }) {
 export function Footer() {
   const siteIdentity = useSiteIdentity()
   const { website, title } = siteIdentity
-  const { footer } = useFooterSettings()
+  const { navigation } = useNavigationSettings()
   const thisYear = formatLocalDate(new Date(), 'yyyy', siteIdentity)
-  const { icpNo, moeIcpNo, initialYear, items } = footer
+  const { footer } = useFooterSettings()
+  const { icpNo, moeIcpNo, initialYear } = footer
   const hasIcp = icpNo || moeIcpNo
-  const hasNavItems = items && items.length > 0
+  const footerNavItems = navigation.footerNav
+  const hasNavItems = footerNavItems && footerNavItems.length > 0
 
   return (
     <footer className="mt-4 flex flex-1 flex-col items-center justify-center gap-1 border-t border-line py-6 text-center text-xs md:mt-4 md:py-8 lg:mt-5 lg:py-10">
       {hasNavItems && (
         <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
-          {items.map((item, index) => (
+          {footerNavItems.map((item, index) => (
             <FooterNavItemRender key={`${item.type}-${item.network ?? index}`} item={item} />
           ))}
         </div>
