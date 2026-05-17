@@ -85,11 +85,10 @@ const fixtureBundle: BlogSettingsBundle = {
     comments: { size: 10, avatar: { mirror: 'https://cdn.example.com/avatar', size: 80 }, tokenTtlSeconds: 1800 },
   },
   seo: {
-    twitter: '',
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },
   },
-  footer: { footer: { initialYear: 2024 } },
+  footer: { footer: { initialYear: 2024, items: [] } },
   mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
   cache: {
     cache: {

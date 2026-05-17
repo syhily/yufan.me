@@ -11,7 +11,6 @@ interface SeoFormProps {
 }
 
 interface FormState {
-  twitter: string
   tocMin: number
   tocMax: number
   ogWidth: number
@@ -26,14 +25,12 @@ export function SeoForm({ seo }: SeoFormProps) {
     section: 'seo',
     source: seo,
     toState: (source) => ({
-      twitter: source.twitter,
       tocMin: source.toc.minHeadingLevel,
       tocMax: source.toc.maxHeadingLevel,
       ogWidth: source.og.width,
       ogHeight: source.og.height,
     }),
     fromState: (state) => ({
-      twitter: state.twitter.trim(),
       toc: { minHeadingLevel: state.tocMin, maxHeadingLevel: state.tocMax },
       og: { width: state.ogWidth, height: state.ogHeight },
     }),
@@ -41,20 +38,11 @@ export function SeoForm({ seo }: SeoFormProps) {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <SettingsSection title="SEO" description="文章页 SEO meta 引用的字段。">
-        <SettingsRow
-          label="Twitter Handle"
-          htmlFor="seo-twitter"
-          hint="用于 twitter:site / twitter:creator meta；可省略前导 @。"
-        >
-          <Input
-            id="seo-twitter"
-            value={draft.twitter}
-            onChange={(e) => setDraft((prev) => ({ ...prev, twitter: e.target.value }))}
-            placeholder="syhily"
-            maxLength={60}
-          />
-        </SettingsRow>
+      <SettingsSection
+        title="SEO"
+        description="文章页 SEO meta 引用的字段。X Handle 自动从社交链接配置中读取，无需单独设置。"
+      >
+        <></>
       </SettingsSection>
 
       <SettingsSection title="目录 (TOC)" description="文章右侧目录的标题层级范围。">
@@ -87,7 +75,7 @@ export function SeoForm({ seo }: SeoFormProps) {
         <SettingsRow
           label="宽度 (px)"
           htmlFor="seo-og-width"
-          hint="600–4096，建议 ≥1200 以满足 Twitter / Facebook 卡片清晰度。"
+          hint="600–4096，建议 ≥1200 以满足 X / Facebook 卡片清晰度。"
         >
           <Input
             id="seo-og-width"

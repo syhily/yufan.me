@@ -128,7 +128,6 @@ export interface CommentsSettings {
 }
 
 export interface SeoSettings {
-  twitter: string
   toc: {
     minHeadingLevel: number
     maxHeadingLevel: number
@@ -139,11 +138,36 @@ export interface SeoSettings {
   }
 }
 
+export function extractXHandle(socials: Array<{ network: SocialNetwork; link: string }>): string | undefined {
+  const x = socials.find((s) => s.network === 'x')
+  if (!x || !x.link) {
+    return undefined
+  }
+  try {
+    const url = new URL(x.link)
+    const handle = url.pathname.replace(/^\//, '')
+    if (!handle) {
+      return undefined
+    }
+    return handle.startsWith('@') ? handle : `@${handle}`
+  } catch {
+    return undefined
+  }
+}
+
+export type FooterNavItemType = 'social' | 'themeToggle' | 'search'
+
+export interface FooterNavItem {
+  type: FooterNavItemType
+  network?: SocialNetwork // only when type === 'social'
+}
+
 export interface FooterSettings {
   footer: {
     initialYear: number
     icpNo?: string
     moeIcpNo?: string
+    items: FooterNavItem[]
   }
 }
 

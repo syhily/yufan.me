@@ -61,11 +61,10 @@ const fixture: BlogSettingsBundle = {
     comments: { size: 10, avatar: { mirror: 'https://cdn.test.example/avatar', size: 80 }, tokenTtlSeconds: 1800 },
   },
   seo: {
-    twitter: '@tester',
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },
   },
-  footer: { footer: { initialYear: 2024, icpNo: '', moeIcpNo: '' } },
+  footer: { footer: { initialYear: 2024, icpNo: '', moeIcpNo: '', items: [] } },
   mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
   cache: {
     cache: {

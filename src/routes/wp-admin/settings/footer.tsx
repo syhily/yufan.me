@@ -19,5 +19,5 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export default function WpAdminSettingsFooterRoute() {
   const { bundle } = useOutletContext<SettingsOutletContext>()
-  return <FooterForm footer={bundle.footer.footer} />
+  return <FooterForm footer={bundle.footer.footer} socials={bundle.socials.socials} />
 }

@@ -120,11 +120,11 @@ exports[`snapshot: SEO meta head > default (home / website) head 1`] = `
     "property": "twitter:description",
   },
   {
-    "content": "@syhily",
+    "content": "@amehochan",
     "property": "twitter:site",
   },
   {
-    "content": "@syhily",
+    "content": "@amehochan",
     "property": "twitter:creator",
   },
   {
@@ -262,11 +262,11 @@ exports[`snapshot: SEO meta head > listing head with paging links + noindex 1`] 
     "property": "twitter:description",
   },
   {
-    "content": "@syhily",
+    "content": "@amehochan",
     "property": "twitter:site",
   },
   {
-    "content": "@syhily",
+    "content": "@amehochan",
     "property": "twitter:creator",
   },
   {
@@ -443,11 +443,11 @@ exports[`snapshot: SEO meta head > post detail head includes article:tag entries
     "property": "twitter:description",
   },
   {
-    "content": "@syhily",
+    "content": "@amehochan",
     "property": "twitter:site",
   },
   {
-    "content": "@syhily",
+    "content": "@amehochan",
     "property": "twitter:creator",
   },
   {

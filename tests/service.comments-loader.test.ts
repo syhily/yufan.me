@@ -80,7 +80,9 @@ vi.mock('@/shared/config/blog', () => ({
     type: string,
   ) => {
     const widget = settings.sidebar.widgets.find((w) => w.type === type)
-    if (!widget || !widget.enabled) return 0
+    if (!widget || !widget.enabled) {
+      return 0
+    }
     return widget.count ?? 0
   },
 }))

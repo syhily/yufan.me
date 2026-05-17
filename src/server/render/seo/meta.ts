@@ -20,7 +20,7 @@ import type { MetaDescriptor } from 'react-router'
 // defensively.
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
-import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { extractXHandle, getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
 
 // Minimal sentinel rendered before the install flow has populated the
@@ -191,7 +191,7 @@ function twitterTags(
     imageUrl: string
     imageAlt: string
   },
-  twitter: string,
+  twitter: string | undefined,
 ): MetaDescriptor[] {
   const site = ensureTwitterHandle(twitter)
   const meta: MetaDescriptor[] = [
@@ -325,10 +325,10 @@ export function routeMeta(
   }
 
   const seo = resolved.seo ?? {
-    twitter: '',
     og: { width: 0, height: 0 },
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
   }
+  const socials = resolved.socials ?? { socials: [] }
 
   const resolvedTitle = pageTitle(title, resolved)
   const resolvedDescription = description || siteIdentity.description
@@ -352,7 +352,10 @@ export function routeMeta(
       seo.og,
     ),
     ...articleTags(variant, siteIdentity.author.name),
-    ...twitterTags({ title: resolvedTitle, description: resolvedDescription, imageUrl, imageAlt }, seo.twitter),
+    ...twitterTags(
+      { title: resolvedTitle, description: resolvedDescription, imageUrl, imageAlt },
+      extractXHandle(socials.socials),
+    ),
   ]
 
   if (canonical) {

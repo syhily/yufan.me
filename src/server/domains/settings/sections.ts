@@ -101,7 +101,6 @@ const commentsDefaults = {
   },
 } as const
 const seoDefaults = {
-  twitter: '',
   toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
   og: { width: 1200, height: 630 },
 } as const
@@ -114,7 +113,7 @@ const seoDefaults = {
 // process restarts on each deploy so the year stays current; tests
 // that need a fixed year freeze `Date` themselves before importing.
 const footerDefaults = {
-  footer: { initialYear: new Date().getUTCFullYear() },
+  footer: { initialYear: new Date().getUTCFullYear(), items: [] },
 } as const
 const mailDefaults = {
   // Disabled by default — the sender must supply a Zeabur ZSend host +
