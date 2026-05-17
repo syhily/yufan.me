@@ -119,7 +119,11 @@ const asideOverlayClass = cn(
 // `@layer base` Preflight per the W3C cascade-layers spec, so a
 // hypothetical future Preflight write that re-adds `h1 { padding:
 // 0 }` would still lose to the inset utilities below.
-const navbarBrandClass = cn('m-0 hidden shrink-0', 'lg:block lg:px-5 lg:py-3', 'xl:px-[25px] xl:pt-5 xl:pb-[15px]')
+const navbarBrandClass = cn(
+  'hidden shrink-0',
+  'lg:flex lg:items-center lg:justify-between lg:px-5 lg:py-3',
+  'xl:px-[25px] xl:pt-5 xl:pb-[15px]',
+)
 
 // `<img>` inside the navbar brand. Only ever rendered at `>=lg`
 // because the `<h1>` host is `display: none` below that breakpoint;
@@ -132,7 +136,7 @@ const navbarBrandImgClass = 'lg:max-h-15'
 // by inverting the base to `block` + `lg:hidden`. Background
 // `#fff` → `bg-canvas`; border `#ebf1f6` → `border-line`
 // (both registered in `tailwind.css`'s `@theme inline` block).
-const mobileBrandClass = cn('block border-b border-line bg-canvas py-4 lg:hidden')
+const mobileBrandClass = cn('block border-b border-line bg-canvas py-4 lg:hidden', 'sticky top-0 z-40')
 
 // `<img>` inside the mobile brand. Only rendered at `<lg`. The
 // legacy ladder shrinks 35px (`<md`) → 40px (`md..lg`); the `max-
@@ -377,11 +381,6 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
                   )}
                 </li>
               ))}
-              {currentUser && (
-                <li className={siteMenuItemClass}>
-                  <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
-                </li>
-              )}
             </ul>
           </nav>
           <div className={siteSubmenuClass}>
@@ -426,6 +425,11 @@ export function Header({ navigation, currentUser, pathname, search }: HeaderProp
               <BrandLogo className={mobileBrandImgClass} />
             </Link>
             <div className="flex-1" />
+            {currentUser && (
+              <div className="mr-3">
+                <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
+              </div>
+            )}
             <button
               ref={triggerRef}
               type="button"

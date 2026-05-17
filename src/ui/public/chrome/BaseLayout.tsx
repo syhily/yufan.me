@@ -7,6 +7,7 @@ import { Footer } from '@/ui/public/chrome/Footer'
 import { Header } from '@/ui/public/chrome/Header'
 import { ScrollTopButton } from '@/ui/public/chrome/ScrollTopButton'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
+import { UserMenu } from '@/ui/public/chrome/UserMenu'
 
 // NOTE: this component does NOT import `public.css`. The public stylesheet
 // cascade lives one level up in `@/ui/public/chrome/PublicChrome` so it can be
@@ -40,6 +41,10 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   const navigationSection = useNavigationSettings()
   const showFooter = footer !== undefined ? footer : true
   const resolvedNavigation = navigation || navigationSection.navigation
+  const logoutQuery = new URLSearchParams({
+    action: 'logout',
+    redirect_to: `${pathname}${search}`,
+  }).toString()
 
   // Body chrome layout. The `<lg` viewport stacks the sidebar above
   // the main column (`flex-direction: column`); from `lg` upward they
@@ -48,6 +53,11 @@ export function BaseLayout({ navigation, footer, currentUser, pathname, search, 
   return (
     <div className="flex flex-col lg:flex-row">
       <Header navigation={resolvedNavigation} currentUser={currentUser} pathname={pathname} search={search} />
+      {currentUser && (
+        <div className="fixed top-4 right-4 z-50 hidden lg:block">
+          <UserMenu currentUser={currentUser} logoutQuery={logoutQuery} />
+        </div>
+      )}
       <main className="flex flex-1 flex-col">
         {children}
         {showFooter && <Footer />}
