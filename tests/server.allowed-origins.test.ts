@@ -116,5 +116,24 @@ describe('server / allowedActionOrigins', () => {
         'build.allowedActionOrigins is read-only and non-configurable; skipping patch',
       )
     })
+
+    it('warns and skips when assignment throws (e.g. read-only inherited prop)', () => {
+      // In strict mode, assigning to a property that exists on the prototype
+      // chain as non-writable throws, while getOwnPropertyDescriptor returns
+      // undefined. This mirrors ESM module namespace object behaviour in builds.
+      const proto = Object.defineProperty({}, 'allowedActionOrigins', {
+        value: undefined,
+        writable: false,
+        configurable: false,
+        enumerable: true,
+      })
+      const build = Object.create(proto) as { allowedActionOrigins?: string[] }
+
+      patchBuildAllowedOrigins(build, ['yufan.me'])
+      expect(build.allowedActionOrigins).toBeUndefined()
+      expect(warnSpy).toHaveBeenCalledWith(
+        'build.allowedActionOrigins is read-only and non-configurable; skipping patch',
+      )
+    })
   })
 })

@@ -51,18 +51,27 @@ export function patchBuildAllowedOrigins(build: { allowedActionOrigins?: string[
 
   const descriptor = Object.getOwnPropertyDescriptor(build, 'allowedActionOrigins')
   if (!descriptor || descriptor.writable) {
-    ;(build as Record<string, unknown>).allowedActionOrigins = origins
-    return
+    try {
+      ;(build as Record<string, unknown>).allowedActionOrigins = origins
+      return
+    } catch {
+      // Object may be sealed, frozen, or a module namespace object.
+      // Fall through to attempt defineProperty or warn.
+    }
   }
 
-  if (descriptor.configurable) {
-    Object.defineProperty(build, 'allowedActionOrigins', {
-      value: origins,
-      writable: true,
-      configurable: true,
-      enumerable: true,
-    })
-    return
+  if (descriptor?.configurable) {
+    try {
+      Object.defineProperty(build, 'allowedActionOrigins', {
+        value: origins,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      })
+      return
+    } catch {
+      // defineProperty can also fail on module namespace objects.
+    }
   }
 
   leakedResponseLog.warn('build.allowedActionOrigins is read-only and non-configurable; skipping patch')
