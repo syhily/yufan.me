@@ -4,6 +4,7 @@ import type { BlogSettingsBundle } from '@/shared/config/blog'
 
 import {
   assetsSchema,
+  backupSchema,
   cacheSchema,
   commentsSchema,
   contentSchema,
@@ -234,6 +235,15 @@ export const SECTION_REGISTRY = {
       calendar: { url: '' },
       globalCss: [],
       postCss: [],
+    },
+  },
+  backup: {
+    scope: 'blog.backup',
+    schema: backupSchema,
+    key: 'backup',
+    defaults: {
+      scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+      retention: { enabled: true, days: 30 },
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

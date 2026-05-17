@@ -195,6 +195,13 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     }
     return true
   },
+  backup: (value) =>
+    typeof value.scheduled === 'object' &&
+    value.scheduled !== null &&
+    typeof (value.scheduled as Record<string, unknown>).enabled === 'boolean' &&
+    typeof value.retention === 'object' &&
+    value.retention !== null &&
+    typeof (value.retention as Record<string, unknown>).enabled === 'boolean',
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)

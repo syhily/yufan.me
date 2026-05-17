@@ -2,8 +2,11 @@ import { isRouteErrorResponse, Outlet, useLocation, useOutletContext, useRouteEr
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
+import { SECTION_REGISTRY, SETTINGS_SECTIONS } from '@/server/domains/settings/sections'
 import { getAdminBlogSettings } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
+import { upsertSetting } from '@/server/infra/db/operations/setting'
+import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/settings'
 import { SettingsShell } from '@/ui/admin/settings/SettingsShell'
 
 import type { Route } from './+types/layout'
@@ -61,16 +64,35 @@ export interface SettingsOutletContext extends ParentContext {
 export async function loader(_args: Route.LoaderArgs) {
   const { bundle } = await getAdminBlogSettings()
   if (bundle === null) {
-    throw new Response('Blog has not been installed yet.', { status: 503 })
+    throw new Response('站点尚未完成安装。', { status: 503 })
   }
+
+  // Eager backfill: any section that is null but carries registry defaults
+  // gets written to DB and populated in the bundle before we check.
+  // This prevents newly-added optional sections (e.g. backup) from breaking
+  // the entire admin panel on existing deployments whose DB predates them.
+  for (const section of SETTINGS_SECTIONS) {
+    const key = SECTION_TO_BUNDLE_KEY[section]
+    if ((bundle as unknown as Record<string, unknown>)[key] === null) {
+      const meta = SECTION_REGISTRY[section]
+      if (meta.defaults !== null) {
+        try {
+          await upsertSetting(meta.defaults, null, meta.scope)
+          ;(bundle as unknown as Record<string, unknown>)[key] = meta.defaults
+        } catch {
+          // Best-effort; if it fails we'll surface it below.
+        }
+      }
+    }
+  }
+
   const missing = Object.entries(bundle)
     .filter(([, value]) => value === null)
     .map(([key]) => key)
   if (missing.length > 0) {
     throw new Response(
-      `Settings bundle is missing the following sections: ${missing.join(', ')}. ` +
-        'The install flow should seed every section row up front, so this usually ' +
-        'means a row was manually truncated. Re-run install or restore from backup.',
+      `设置数据不完整，缺少以下 section：${missing.join('、')}。` +
+        '安装流程本应写入所有设置行，因此这通常意味着某行被手动删除。请重新运行安装流程或从备份还原。',
       { status: 503 },
     )
   }

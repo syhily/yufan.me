@@ -2,8 +2,10 @@ import type { FinalizeRequestMiddleware } from '@smithy/types'
 
 import {
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
   type S3ClientConfig,
@@ -218,6 +220,75 @@ export async function getImageObject(key: string): Promise<Buffer> {
     stream.on('end', () => resolve(Buffer.concat(chunks)))
     stream.on('error', (err: Error) => reject(err))
   })
+}
+
+export interface S3ObjectMeta {
+  key: string
+  size: number
+  lastModified: Date
+}
+
+export async function listS3Objects(prefix: string): Promise<S3ObjectMeta[]> {
+  const { client, bucket } = getImageStorageContext({ requireEnabled: false })
+  const objects: S3ObjectMeta[] = []
+  let continuationToken: string | undefined
+  do {
+    const response = await client.send(
+      new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
+    )
+    for (const item of response.Contents ?? []) {
+      if (item.Key && item.LastModified && item.Size !== undefined) {
+        objects.push({ key: item.Key, size: item.Size, lastModified: item.LastModified })
+      }
+    }
+    continuationToken = response.NextContinuationToken
+  } while (continuationToken)
+  return objects
+}
+
+export async function getS3ObjectBuffer(key: string): Promise<Buffer> {
+  const { client, bucket } = getImageStorageContext({ requireEnabled: false })
+  const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+  if (response.Body === undefined) {
+    throw new ActionFailure(404, 'S3 对象不存在或内容为空')
+  }
+  const stream = response.Body as Readable
+  const chunks: Buffer[] = []
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk: Buffer) => chunks.push(chunk))
+    stream.on('end', () => resolve(Buffer.concat(chunks)))
+    stream.on('error', (err: Error) => reject(err))
+  })
+}
+
+export async function putS3Object(key: string, body: Buffer | Readable, contentType?: string): Promise<void> {
+  const { client, bucket } = getImageStorageContext()
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      CacheControl: 'private, max-age=31536000',
+    }),
+  )
+}
+
+export async function deleteS3Objects(keys: string[]): Promise<void> {
+  if (keys.length === 0) {
+    return
+  }
+  const { client, bucket } = getImageStorageContext()
+  await client.send(
+    new DeleteObjectsCommand({
+      Bucket: bucket,
+      Delete: { Objects: keys.map((key) => ({ Key: key })) },
+    }),
+  )
 }
 
 // `buildPublicUrl` lives in `@/server/render/image-enhance` and

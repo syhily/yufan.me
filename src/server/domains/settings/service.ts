@@ -57,6 +57,11 @@ export async function updateBlogSettingsSection<S extends SettingsSection>(
   const nextRow = await applySectionPatch(section, validated)
   await upsertSetting(nextRow, updatedBy, meta.scope)
 
+  if (section === 'backup') {
+    const { rescheduleBackup } = await import('@/server/domains/backup/scheduler')
+    rescheduleBackup()
+  }
+
   return await refreshBlogSettings()
 }
 

@@ -21,9 +21,11 @@ import { GripVerticalIcon } from 'lucide-react'
 import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared/config/blog'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
+import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
+import { Switch } from '@/ui/components/switch'
 
 interface SidebarFormProps {
   sidebar: SidebarSettings
@@ -80,14 +82,18 @@ function SortableWidgetRow({
         <GripVerticalIcon className="size-4" />
       </button>
       <div className="flex-1">
-        <SettingsCheckboxRow
-          id={`sidebar-${widget.type}`}
-          rowLabel={WIDGET_LABELS[widget.type]}
-          checkboxLabel="启用"
-          hint={WIDGET_HINTS[widget.type]}
-          checked={widget.enabled}
-          onCheckedChange={(value) => onToggle(index, value)}
-        />
+        <SettingsRow label={WIDGET_LABELS[widget.type]} hint={WIDGET_HINTS[widget.type]}>
+          <div className="flex items-center gap-3">
+            <Switch
+              id={`sidebar-${widget.type}`}
+              checked={widget.enabled}
+              onCheckedChange={(value) => onToggle(index, value === true)}
+            />
+            <FieldLabel htmlFor={`sidebar-${widget.type}`} className="font-normal">
+              启用
+            </FieldLabel>
+          </div>
+        </SettingsRow>
         {hasCount && (
           <div className="mt-2 pl-0">
             <SettingsRow label="显示数量" htmlFor={`sidebar-${widget.type}-count`}>

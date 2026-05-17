@@ -7,6 +7,7 @@ RUN NODE_ENV=production npm run build
 
 FROM node:25-alpine AS runtime
 WORKDIR /app
+RUN apk add --no-cache postgresql-client
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev

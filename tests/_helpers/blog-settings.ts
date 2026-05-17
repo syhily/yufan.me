@@ -148,4 +148,8 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     globalCss: [],
     postCss: [],
   },
+  backup: {
+    scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+    retention: { enabled: true, days: 30 },
+  },
 }

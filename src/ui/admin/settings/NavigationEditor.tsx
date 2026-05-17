@@ -67,6 +67,17 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
   search: '搜索',
 }
 
+const TYPE_ITEMS: { value: FooterNavItem['type']; label: string }[] = [
+  { value: 'social', label: TYPE_LABELS.social },
+  { value: 'themeToggle', label: TYPE_LABELS.themeToggle },
+  { value: 'search', label: TYPE_LABELS.search },
+]
+
+const NETWORK_ITEMS = SOCIAL_NETWORKS.map((network) => ({
+  value: network,
+  label: SOCIAL_NETWORK_META[network].label,
+}))
+
 function SortableFooterNavRow({
   item,
   index,
@@ -104,6 +115,7 @@ function SortableFooterNavRow({
           <Label htmlFor={`footer-item-type-${index}`}>类型</Label>
           <Select
             value={item.type}
+            items={TYPE_ITEMS}
             onValueChange={(value) =>
               onUpdate(index, {
                 type: value as FooterNavItem['type'],
@@ -126,6 +138,7 @@ function SortableFooterNavRow({
             <Label htmlFor={`footer-item-network-${index}`}>平台</Label>
             <Select
               value={item.network}
+              items={NETWORK_ITEMS}
               onValueChange={(value) => onUpdate(index, { network: value as SocialNetwork })}
             >
               <SelectTrigger id={`footer-item-network-${index}`}>

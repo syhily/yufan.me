@@ -1,4 +1,5 @@
 import { accountRouter } from '@/server/http/controllers/account.controller'
+import { adminBackupRouter } from '@/server/http/controllers/admin/backup.controller'
 import { adminCacheRouter } from '@/server/http/controllers/admin/cache.controller'
 import { adminCategoriesRouter } from '@/server/http/controllers/admin/categories.controller'
 import { adminCommentsRouter } from '@/server/http/controllers/admin/comments.controller'
@@ -43,6 +44,7 @@ export const apiRouter = {
     posts: adminPostsRouter,
     renders: adminRendersRouter,
     comments: adminCommentsRouter,
+    backup: adminBackupRouter,
   },
 }
 

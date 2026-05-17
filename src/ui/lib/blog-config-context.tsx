@@ -2,6 +2,7 @@ import { createContext, type Context, type ReactNode, use } from 'react'
 
 import type {
   AssetsSettings,
+  BackupSettings,
   BlogSettingsBundle,
   CacheSettings,
   CommentsSettings,
@@ -56,6 +57,7 @@ const SECTION_CONTEXTS: SectionContextMap = {
   rateLimit: makeContext('rateLimit'),
   search: makeContext('search'),
   fonts: makeContext('fonts'),
+  backup: makeContext('backup'),
 }
 
 interface BlogSettingsProviderProps {
@@ -210,4 +212,11 @@ export function useFontsSettings(): FontsSettings {
 }
 export function useFontsSettingsOptional(): FontsSettings | undefined {
   return useSectionOptional('fonts')
+}
+
+export function useBackupSettings(): BackupSettings {
+  return useSection('useBackupSettings', 'backup')
+}
+export function useBackupSettingsOptional(): BackupSettings | undefined {
+  return useSectionOptional('backup')
 }

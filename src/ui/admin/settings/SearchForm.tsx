@@ -9,8 +9,9 @@ import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
 import { Button } from '@/ui/components/button'
-import { Checkbox } from '@/ui/components/checkbox'
+import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
+import { Switch } from '@/ui/components/switch'
 
 export type { SearchLoaderShape }
 
@@ -132,15 +133,15 @@ export function SearchForm({ search }: SearchFormProps) {
           label="启用 AI 向量搜索"
           hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询，无需 OpenAI 配置。"
         >
-          <div className="flex items-center gap-2">
-            <Checkbox
+          <div className="flex items-center gap-3">
+            <Switch
               id="search-enabled"
               checked={enabled}
               onCheckedChange={(value) => setDraft((prev) => ({ ...prev, enabled: value === true }))}
             />
-            <label htmlFor="search-enabled" className="cursor-pointer text-sm">
+            <FieldLabel htmlFor="search-enabled" className="font-normal">
               {enabled ? '已开启 — 使用 OpenAI Embedding 生成向量' : '已关闭 — 使用 Postgres LIKE 搜索'}
-            </label>
+            </FieldLabel>
           </div>
         </SettingsRow>
 

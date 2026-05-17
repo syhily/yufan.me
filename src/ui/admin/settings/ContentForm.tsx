@@ -1,10 +1,12 @@
 import type { ContentSettings } from '@/shared/config/blog'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
+import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Switch } from '@/ui/components/switch'
 
 interface ContentFormProps {
   // Per-section DTO: matches `setting('blog.content')`.
@@ -125,14 +127,18 @@ export function ContentForm({ content }: ContentFormProps) {
       </SettingsSection>
 
       <SettingsSection title="RSS / Atom Feed" description="决定 /feed 与 /feed/atom 输出的条目数与是否包含正文。">
-        <SettingsCheckboxRow
-          id="content-feed-full"
-          rowLabel="包含完整正文"
-          checkboxLabel="输出完整正文"
-          hint="关闭后只输出摘要 + 永久链接。订阅器中阅读体验更好但不利于离线阅读。"
-          checked={draft.feedFull}
-          onCheckedChange={(value) => setDraft((prev) => ({ ...prev, feedFull: value }))}
-        />
+        <SettingsRow label="包含完整正文" hint="关闭后只输出摘要 + 永久链接。订阅器中阅读体验更好但不利于离线阅读。">
+          <div className="flex items-center gap-3">
+            <Switch
+              id="content-feed-full"
+              checked={draft.feedFull}
+              onCheckedChange={(value) => setDraft((prev) => ({ ...prev, feedFull: value === true }))}
+            />
+            <FieldLabel htmlFor="content-feed-full" className="font-normal">
+              输出完整正文
+            </FieldLabel>
+          </div>
+        </SettingsRow>
         <SettingsRow label="Feed 条目数" htmlFor="content-feed-size">
           <Input
             id="content-feed-size"
@@ -188,14 +194,18 @@ export function ContentForm({ content }: ContentFormProps) {
             </SelectContent>
           </Select>
         </SettingsRow>
-        <SettingsCheckboxRow
-          id="content-post-feature-enabled"
-          rowLabel="开启置顶功能"
-          checkboxLabel="首页展示置顶文章"
-          hint="关闭后首页不展示精选文章，文章编辑页也不显示置顶开关。"
-          checked={draft.postFeatureEnabled}
-          onCheckedChange={(value) => setDraft((prev) => ({ ...prev, postFeatureEnabled: value }))}
-        />
+        <SettingsRow label="开启置顶功能" hint="关闭后首页不展示精选文章，文章编辑页也不显示置顶开关。">
+          <div className="flex items-center gap-3">
+            <Switch
+              id="content-post-feature-enabled"
+              checked={draft.postFeatureEnabled}
+              onCheckedChange={(value) => setDraft((prev) => ({ ...prev, postFeatureEnabled: value === true }))}
+            />
+            <FieldLabel htmlFor="content-post-feature-enabled" className="font-normal">
+              首页展示置顶文章
+            </FieldLabel>
+          </div>
+        </SettingsRow>
       </SettingsSection>
 
       <SettingsSection

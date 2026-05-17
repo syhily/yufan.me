@@ -13,6 +13,7 @@ export const blogSettingsBundleDto = z.object({
   seo: sectionPayload,
   mail: sectionPayload,
   cache: sectionPayload,
+  backup: sectionPayload,
 })
 
 // Intentionally omitted — blogSettingsBundleDto uses z.unknown().nullable()

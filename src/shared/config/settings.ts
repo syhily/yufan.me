@@ -12,6 +12,7 @@ export const SETTINGS_SECTIONS = [
   'rateLimit',
   'search',
   'fonts',
+  'backup',
 ] as const
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
@@ -43,6 +44,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   rateLimit: 'rateLimit',
   search: 'search',
   fonts: 'fonts',
+  backup: 'backup',
 } as const satisfies Record<SettingsSection, string>
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
@@ -102,6 +104,11 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     to: '/wp-admin/settings/fonts',
     label: '字体配置',
     description: 'OG 图与日历图渲染所用的远程 TTF 字体地址',
+  },
+  backup: {
+    to: '/wp-admin/settings/backup',
+    label: '备份与还原',
+    description: '数据库自动备份、手动备份与还原',
   },
 }
 

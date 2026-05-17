@@ -3,9 +3,10 @@ import type { AssetsLoaderShape } from '@/shared/config/settings'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
 import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
-import { Checkbox } from '@/ui/components/checkbox'
+import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
+import { Switch } from '@/ui/components/switch'
 
 export type { AssetsLoaderShape }
 
@@ -135,15 +136,15 @@ export function AssetsForm({ assets }: AssetsFormProps) {
         description="未开启时「图片管理」页面只能浏览历史图片，所有上传 / 替换入口都会返回 503。开启后需提供下方的 S3 兼容存储配置。"
       >
         <SettingsRow label="启用 S3 上传" hint="关闭后已经入库的图片仍按上方的资源域名解析，确保历史文章不会出现裂图。">
-          <div className="flex items-center gap-2">
-            <Checkbox
+          <div className="flex items-center gap-3">
+            <Switch
               id="assets-storage-enabled"
               checked={enabled}
               onCheckedChange={(value) => setDraft((prev) => ({ ...prev, enabled: value === true }))}
             />
-            <label htmlFor="assets-storage-enabled" className="cursor-pointer text-sm">
+            <FieldLabel htmlFor="assets-storage-enabled" className="font-normal">
               {enabled ? '已开启 — 上传到下方配置的 S3 兼容存储' : '已关闭 — 后台禁用上传，仅可浏览已上传的图片'}
-            </label>
+            </FieldLabel>
           </div>
         </SettingsRow>
       </SettingsSection>
@@ -221,15 +222,15 @@ export function AssetsForm({ assets }: AssetsFormProps) {
           label="Path-style 寻址"
           hint="部分自托管 S3 兼容服务（MinIO / 旧版 Ceph）需要开启；R2 / S3 默认走 virtual-hosted。"
         >
-          <div className="flex items-center gap-2">
-            <Checkbox
+          <div className="flex items-center gap-3">
+            <Switch
               id="assets-force-path-style"
               checked={draft.forcePathStyle}
               onCheckedChange={(value) => setDraft((prev) => ({ ...prev, forcePathStyle: value === true }))}
             />
-            <label htmlFor="assets-force-path-style" className="cursor-pointer text-sm">
+            <FieldLabel htmlFor="assets-force-path-style" className="font-normal">
               强制使用 path-style URL
-            </label>
+            </FieldLabel>
           </div>
         </SettingsRow>
         <SettingsRow

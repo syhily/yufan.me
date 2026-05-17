@@ -107,6 +107,10 @@ const fixture: BlogSettingsBundle = {
     globalCss: [],
     postCss: [],
   },
+  backup: {
+    scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+    retention: { enabled: true, days: 30 },
+  },
 }
 
 beforeAll(() => {

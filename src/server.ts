@@ -7,6 +7,7 @@ import { createHonoServer } from 'react-router-hono-server/node'
 import type { Env } from '@/server/http/context'
 
 import { requestContext, sessionContext } from '@/server/domains/auth/context'
+import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gate'
@@ -16,6 +17,8 @@ import { honoVisitorCookieMiddleware } from '@/server/http/middlewares/visitor-c
 import { honoWpDecoyMiddleware } from '@/server/http/middlewares/wp-decoy'
 import { buildOpenApiDocument } from '@/server/http/openapi'
 import { analyticsEventsRouter } from '@/server/http/resources/analytics-events'
+import { backupDownloadRouter } from '@/server/http/resources/backup-download'
+import { backupUploadRouter } from '@/server/http/resources/backup-upload'
 import { feedRouter } from '@/server/http/resources/feed'
 import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
@@ -78,6 +81,10 @@ const server = await createHonoServer<Env>({
     app.route('/', imagesRouter)
     app.route('/', sitemapRouter)
     app.route('/', redirectsRouter)
+
+    // ─── Admin backup resource routes ─────────────────────
+    app.route('/', backupDownloadRouter)
+    app.route('/', backupUploadRouter)
 
     // ─── Dev-only API docs ────────────────────────────────
     if (process.env.NODE_ENV !== 'production') {
@@ -153,5 +160,8 @@ server.fetch = (request, env, executionContext) => {
     throw e
   }
 }
+
+// Start backup scheduler after server is configured
+scheduleNextBackup()
 
 export default server

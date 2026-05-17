@@ -4,10 +4,12 @@ import { useCallback, useState } from 'react'
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsCheckboxRow, SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
+import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
 import { Button } from '@/ui/components/button'
+import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
+import { Switch } from '@/ui/components/switch'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
 // `MailLoaderData['mail']` mirrors the projection in the route loader.
@@ -116,14 +118,18 @@ export function MailForm({ mail }: MailFormProps) {
         title="邮件发送总开关"
         description="关闭后，所有评论通知 / 回复通知 / 审核通过通知都不会再发送（不会报错，仅记录 debug 日志）。「测试发送」按钮不受此开关影响，方便在正式启用前验证连接。"
       >
-        <SettingsCheckboxRow
-          id="mail-enabled"
-          rowLabel="启用邮件发送"
-          checkboxLabel="发送通知邮件"
-          hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。"
-          checked={draft.enabled}
-          onCheckedChange={(value) => setDraft((prev) => ({ ...prev, enabled: value }))}
-        />
+        <SettingsRow label="启用邮件发送" hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。">
+          <div className="flex items-center gap-3">
+            <Switch
+              id="mail-enabled"
+              checked={draft.enabled}
+              onCheckedChange={(value) => setDraft((prev) => ({ ...prev, enabled: value === true }))}
+            />
+            <FieldLabel htmlFor="mail-enabled" className="font-normal">
+              发送通知邮件
+            </FieldLabel>
+          </div>
+        </SettingsRow>
       </SettingsSection>
 
       <SettingsSection

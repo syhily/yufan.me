@@ -128,6 +128,10 @@ const fixtureBundle: BlogSettingsBundle = {
     globalCss: [],
     postCss: [],
   },
+  backup: {
+    scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
+    retention: { enabled: true, days: 30 },
+  },
 }
 
 // Decompose the bundle into the actual `Setting[]` rows the DB would
@@ -136,6 +140,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
   const map: Record<keyof BlogSettingsBundle, string> = {
     siteIdentity: 'blog.general',
     assets: 'blog.assets',
+    backup: 'blog.backup',
     navigation: 'blog.navigation',
     socials: 'blog.socials',
     content: 'blog.content',

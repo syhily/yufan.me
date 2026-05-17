@@ -373,6 +373,21 @@ export interface FontsSettings {
   postCss: string[]
 }
 
+export interface BackupSettings {
+  scheduled: {
+    enabled: boolean
+    frequency: 'daily' | 'weekly' | 'monthly'
+    hour: number
+    minute: 0 | 30
+    dayOfWeek?: number
+    dayOfMonth?: number
+  }
+  retention: {
+    enabled: boolean
+    days: number
+  }
+}
+
 // Composed bundle of every section. Each field is `null` until the
 // corresponding `setting('blog.<section>')` row has been seeded by the
 // install flow or the admin panel. A "fully installed" deployment has
@@ -399,6 +414,7 @@ export interface BlogSettingsBundle {
   rateLimit: RateLimitSettings | null
   search: SearchSettings | null
   fonts: FontsSettings | null
+  backup: BackupSettings | null
 }
 
 // Runtime half of the blog-config module. The pure-types half lives in
