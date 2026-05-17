@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 
-import { ClockIcon, FileCheck2Icon, FilePenLineIcon, MessageSquareIcon } from 'lucide-react'
+import { ArrowRightIcon, ClockIcon, FileCheck2Icon, FilePenLineIcon, MessageSquareIcon } from 'lucide-react'
 import { data, Link } from 'react-router'
 
 import type { EntityType } from '@/server/infra/db/target'
@@ -15,6 +15,7 @@ import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { roleLabel } from '@/shared/utils/roles'
 import { PendingModerationPanel, pickEmptyStateLine } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
+import { Button } from '@/ui/components/button'
 
 import type { Route } from './+types/welcome'
 
@@ -299,9 +300,9 @@ function RecentDraftsCard({ drafts }: { drafts: DraftSummary[] }) {
     <div className="rounded-lg border bg-card p-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-medium">最近草稿</h2>
-        <Link to="/wp-admin/posts?published=false" className="text-xs text-muted-foreground hover:text-foreground">
-          全部草稿 →
-        </Link>
+        <Button type="button" variant="ghost" size="sm" render={<Link to="/wp-admin/posts?published=false" />}>
+          <span className="hidden sm:inline">全部草稿</span> <ArrowRightIcon data-icon />
+        </Button>
       </div>
       {drafts.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">暂无草稿，去 创建一篇 吧。</p>
@@ -332,9 +333,9 @@ function RecentMyCommentsCard({ comments }: { comments: MyCommentSummary[] }) {
     <div className="rounded-lg border bg-card p-6">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-base font-medium">我的最近评论</h2>
-        <Link to="/wp-admin/my/comments" className="text-xs text-muted-foreground hover:text-foreground">
-          全部评论 →
-        </Link>
+        <Button type="button" variant="ghost" size="sm" render={<Link to="/wp-admin/my/comments" />}>
+          <span className="hidden sm:inline">全部评论</span> <ArrowRightIcon data-icon />
+        </Button>
       </div>
       {comments.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">你还没有发表过评论。</p>
