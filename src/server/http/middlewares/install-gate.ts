@@ -22,10 +22,14 @@ const EXEMPT_PATH_PREFIXES = [
 ]
 
 function isExempt(pathname: string): boolean {
-  if (EXEMPT_PATHS.has(pathname)) {
+  // React Router data requests append `.data` to the pathname (e.g.
+  // `/wp-admin/install.php.data`). Strip the suffix so the gate
+  // recognises exempt install / login routes and static assets.
+  const basePath = pathname.replace(/\.data$/, '')
+  if (EXEMPT_PATHS.has(basePath)) {
     return true
   }
-  return EXEMPT_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  return EXEMPT_PATH_PREFIXES.some((prefix) => basePath.startsWith(prefix))
 }
 
 export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) => {
