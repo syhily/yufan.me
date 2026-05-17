@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
+import type { SiteIdentitySettings } from '@/shared/config/blog'
+
 import { setBlogSettingsBundleForTests } from '@/server/domains/settings/snapshot'
 
 import { TEST_BLOG_SETTINGS_BUNDLE } from './_helpers/blog-settings'
@@ -49,7 +51,7 @@ describe('server / allowedActionOrigins', () => {
     it('returns an empty array when no website is configured', () => {
       setBlogSettingsBundleForTests({
         ...TEST_BLOG_SETTINGS_BUNDLE,
-        siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity, website: '' },
+        siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity, website: '' } as SiteIdentitySettings,
       })
       const original = process.env.NODE_ENV
       process.env.NODE_ENV = 'production'
@@ -62,7 +64,7 @@ describe('server / allowedActionOrigins', () => {
     it('ignores an invalid website URL', () => {
       setBlogSettingsBundleForTests({
         ...TEST_BLOG_SETTINGS_BUNDLE,
-        siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity, website: 'not-a-url' },
+        siteIdentity: { ...TEST_BLOG_SETTINGS_BUNDLE.siteIdentity, website: 'not-a-url' } as SiteIdentitySettings,
       })
       const original = process.env.NODE_ENV
       process.env.NODE_ENV = 'production'

@@ -47,7 +47,9 @@ export function resolveAllowedActionOrigins(): string[] {
 }
 
 export function patchBuildAllowedOrigins(build: { allowedActionOrigins?: string[] }, origins: string[]): void {
-  if (origins.length === 0) return
+  if (origins.length === 0) {
+    return
+  }
 
   const descriptor = Object.getOwnPropertyDescriptor(build, 'allowedActionOrigins')
   if (!descriptor || descriptor.writable) {
@@ -161,7 +163,7 @@ const server = await createHonoServer<Env>({
   },
   getLoadContext(c, { build }) {
     if (!build.allowedActionOrigins) {
-      patchBuildAllowedOrigins(build, resolveAllowedActionOrigins())
+      patchBuildAllowedOrigins(build as { allowedActionOrigins?: string[] }, resolveAllowedActionOrigins())
     }
     const { session, request } = buildRouteContexts(c)
     const context = new RouterContextProvider()
