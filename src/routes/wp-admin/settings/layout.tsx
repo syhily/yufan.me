@@ -30,7 +30,7 @@ export interface SettingsOutletContext extends ParentContext {
    * Bucketed settings document straight from the storage layer. Each
    * field maps 1:1 to a `setting('blog.<section>')` row, so a save to
    * one section never re-shapes another section's bucket. Per-section
-   * forms read `bundle.footer`, `bundle.cache`, etc.
+   * forms read `bundle.cache`, `bundle.mail`, etc.
    *
    * Every bucket is non-null: the layout loader enforces the invariant
    * before it forwards the bundle to children.

@@ -40,6 +40,9 @@ export interface SiteIdentitySettings {
   locale: string
   timeZone: string
   timeFormat: string
+  initialYear: number
+  icpNo?: string
+  moeIcpNo?: string
 }
 
 export interface NavigationItem {
@@ -163,14 +166,6 @@ export type FooterNavItemType = 'social' | 'themeToggle' | 'search'
 export interface FooterNavItem {
   type: FooterNavItemType
   network?: SocialNetwork // only when type === 'social'
-}
-
-export interface FooterSettings {
-  footer: {
-    initialYear: number
-    icpNo?: string
-    moeIcpNo?: string
-  }
 }
 
 // Outbound mail (Zeabur ZSend) configuration. The `apiKey` field is
@@ -398,7 +393,7 @@ export interface BlogSettingsBundle {
   sidebar: SidebarSettings | null
   comments: CommentsSettings | null
   seo: SeoSettings | null
-  footer: FooterSettings | null
+
   mail: MailSettings | null
   cache: CacheSettings | null
   rateLimit: RateLimitSettings | null

@@ -7,7 +7,6 @@ import type {
   CommentsSettings,
   ContentSettings,
   FontsSettings,
-  FooterSettings,
   MailSettings,
   NavigationSettings,
   RateLimitSettings,
@@ -52,7 +51,6 @@ const SECTION_CONTEXTS: SectionContextMap = {
   sidebar: makeContext('sidebar'),
   comments: makeContext('comments'),
   seo: makeContext('seo'),
-  footer: makeContext('footer'),
   mail: makeContext('mail'),
   cache: makeContext('cache'),
   rateLimit: makeContext('rateLimit'),
@@ -176,10 +174,6 @@ export function useSeoSettings(): SeoSettings {
 }
 export function useSeoSettingsOptional(): SeoSettings | undefined {
   return useSectionOptional('seo')
-}
-
-export function useFooterSettings(): FooterSettings {
-  return useSection('useFooterSettings', 'footer')
 }
 
 export function useMailSettings(): MailSettings {

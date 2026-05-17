@@ -65,7 +65,6 @@ async function renderEntryContent(entry: Post | Page): Promise<string> {
 export async function generateFeeds(options: FeedOptions = {}) {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
   const content = requireBlogSettingsSection('content')
-  const footer = requireBlogSettingsSection('footer')
   const { includeHidden = true, includeScheduled = false, size = content.feed.size, category, tag } = options
   if (category !== undefined && tag !== undefined) {
     throw new Error('Category and tag cannot be specified at the same time')
@@ -82,7 +81,7 @@ export async function generateFeeds(options: FeedOptions = {}) {
     language: 'zh-CN',
     image: joinUrl(siteIdentity.website, '/logo.svg'),
     favicon: joinUrl(siteIdentity.website, '/favicon.svg'),
-    copyright: `All rights reserved ${footer.footer.initialYear}, ${siteIdentity.author.name}`,
+    copyright: `All rights reserved ${siteIdentity.initialYear}, ${siteIdentity.author.name}`,
     updated: new Date(),
     generator: 'WordPress 3.2.1',
     feedLinks: {

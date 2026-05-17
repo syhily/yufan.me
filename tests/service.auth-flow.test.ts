@@ -306,7 +306,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // the very first public render after install can use the strict
     // per-section hooks (`useFooterSettings()`, `useNavigationSettings()`,
     // …) without throwing on a `null` bucket.
-    expect(settingQuery.upsertSetting).toHaveBeenCalledTimes(14)
+    expect(settingQuery.upsertSetting).toHaveBeenCalledTimes(13)
     const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
     const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: bigint | null }>()
     for (const [data, updatedBy, scope] of calls) {
@@ -318,7 +318,6 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
       'blog.comments',
       'blog.content',
       'blog.fonts',
-      'blog.footer',
       'blog.general',
       'blog.mail',
       'blog.navigation',
@@ -387,11 +386,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // defaults are valid.
     expect(byScope.get('blog.navigation')?.data).toEqual({ navigation: { sideNav: [], footerNav: [] } })
     expect(byScope.get('blog.socials')?.data).toEqual({ socials: [] })
-    const footer = byScope.get('blog.footer')?.data
-    expect(footer).toBeDefined()
-    expect((footer as Record<string, unknown>).footer).toMatchObject({
-      initialYear: expect.any(Number),
-    })
+    expect((general!.data as Record<string, unknown>).initialYear).toEqual(expect.any(Number))
     const cache = byScope.get('blog.cache')?.data
     expect(cache).toBeDefined()
     const cacheBuckets = (cache as Record<string, unknown>).cache as Record<string, Record<string, unknown>>

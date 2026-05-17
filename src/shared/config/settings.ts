@@ -7,7 +7,6 @@ export const SETTINGS_SECTIONS = [
   'sidebar',
   'comments',
   'seo',
-  'footer',
   'mail',
   'cache',
   'rateLimit',
@@ -39,7 +38,6 @@ export const SECTION_TO_BUNDLE_KEY = {
   sidebar: 'sidebar',
   comments: 'comments',
   seo: 'seo',
-  footer: 'footer',
   mail: 'mail',
   cache: 'cache',
   rateLimit: 'rateLimit',
@@ -88,7 +86,6 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   sidebar: { to: '/wp-admin/settings/sidebar', label: '侧边栏', description: '日历、搜索、推荐数量等开关' },
   comments: { to: '/wp-admin/settings/comments', label: '评论与头像', description: '评论分页与 Gravatar 镜像' },
   seo: { to: '/wp-admin/settings/seo', label: 'SEO 与目录', description: 'TOC 标题级别、OG 尺寸' },
-  footer: { to: '/wp-admin/settings/footer', label: '页脚', description: '起始年份、ICP 备案号' },
   mail: { to: '/wp-admin/settings/mail', label: '邮件服务', description: 'Zeabur ZSend 配置 / 测试发送' },
   cache: { to: '/wp-admin/settings/cache', label: '缓存管理', description: 'OG 图 / 头像 / 日历的 Redis 缓存' },
   rateLimit: {

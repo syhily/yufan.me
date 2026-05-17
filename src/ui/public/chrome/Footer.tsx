@@ -5,12 +5,7 @@ import { formatLocalDate } from '@/shared/utils/formatter'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
-import {
-  useFooterSettings,
-  useNavigationSettings,
-  useSiteIdentity,
-  useSocialsSettings,
-} from '@/ui/lib/blog-config-context'
+import { useNavigationSettings, useSiteIdentity, useSocialsSettings } from '@/ui/lib/blog-config-context'
 import { ThemeToggle } from '@/ui/public/chrome/ThemeToggle'
 import { SearchIconButton } from '@/ui/public/Search'
 import { QRDialog } from '@/ui/public/widgets/QRDialog'
@@ -72,11 +67,9 @@ function FooterNavItemRender({ item }: { item: FooterNavItem }) {
 
 export function Footer() {
   const siteIdentity = useSiteIdentity()
-  const { website, title } = siteIdentity
+  const { website, title, initialYear, icpNo, moeIcpNo } = siteIdentity
   const { navigation } = useNavigationSettings()
   const thisYear = formatLocalDate(new Date(), 'yyyy', siteIdentity)
-  const { footer } = useFooterSettings()
-  const { icpNo, moeIcpNo, initialYear } = footer
   const hasIcp = icpNo || moeIcpNo
   const footerNavItems = navigation.footerNav
   const hasNavItems = footerNavItems && footerNavItems.length > 0

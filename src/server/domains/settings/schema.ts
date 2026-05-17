@@ -44,6 +44,9 @@ export const generalSchema = z.object({
     .max(64)
     .refine(isSupportedTimeZone, { message: '必须是 IANA 时区名（如 Asia/Shanghai、UTC）' }),
   timeFormat: z.string().trim().min(1).max(40),
+  initialYear: z.coerce.number().int().min(1970).max(9999),
+  icpNo: z.string().trim().max(60).optional(),
+  moeIcpNo: z.string().trim().max(60).optional(),
 })
 export type GeneralInput = z.infer<typeof generalSchema>
 
@@ -182,15 +185,6 @@ export const seoSchema = z.object({
   }),
 })
 export type SeoInput = z.infer<typeof seoSchema>
-
-export const footerSchema = z.object({
-  footer: z.object({
-    initialYear: z.coerce.number().int().min(1970).max(9999),
-    icpNo: z.string().trim().max(60).optional(),
-    moeIcpNo: z.string().trim().max(60).optional(),
-  }),
-})
-export type FooterInput = z.infer<typeof footerSchema>
 
 // Mail / Zeabur ZSend integration. The host is bounded to a hostname
 // (no scheme — the sender hard-codes `https://`), the API key is left

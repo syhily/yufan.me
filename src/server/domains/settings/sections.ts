@@ -8,7 +8,6 @@ import {
   commentsSchema,
   contentSchema,
   fontsSchema,
-  footerSchema,
   generalSchema,
   mailSchema,
   navigationSchema,
@@ -104,17 +103,6 @@ const seoDefaults = {
   toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
   og: { width: 1200, height: 630 },
 } as const
-// `initialYear` is bound to the install-time current year so the
-// footer's "© 2024-2026" range starts from a sensible baseline. The
-// admin can backdate it from `/wp-admin/settings/footer` if the site's
-// real first-publish year is earlier.
-//
-// Stored as a stable object literal computed at module load time. The
-// process restarts on each deploy so the year stays current; tests
-// that need a fixed year freeze `Date` themselves before importing.
-const footerDefaults = {
-  footer: { initialYear: new Date().getUTCFullYear() },
-} as const
 const mailDefaults = {
   // Disabled by default — the sender must supply a Zeabur ZSend host +
   // API key + verified sender address before any outgoing mail flows.
@@ -204,7 +192,6 @@ export const SECTION_REGISTRY = {
   sidebar: { scope: 'blog.sidebar', schema: sidebarSchema, key: 'sidebar', defaults: sidebarDefaults },
   comments: { scope: 'blog.comments', schema: commentsSchema, key: 'comments', defaults: commentsDefaults },
   seo: { scope: 'blog.seo', schema: seoSchema, key: 'seo', defaults: seoDefaults },
-  footer: { scope: 'blog.footer', schema: footerSchema, key: 'footer', defaults: footerDefaults },
   mail: { scope: 'blog.mail', schema: mailSchema, key: 'mail', defaults: mailDefaults },
   cache: { scope: 'blog.cache', schema: cacheSchema, key: 'cache', defaults: cacheDefaults },
   // `rateLimit` is a pure runtime-policy section: every bucket has a

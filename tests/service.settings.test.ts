@@ -42,6 +42,7 @@ const fixtureBundle: BlogSettingsBundle = {
     locale: 'zh-CN',
     timeZone: 'UTC',
     timeFormat: 'yyyy-LL-dd HH:mm',
+    initialYear: 2024,
   },
   // The merged `assets` bucket carries the music CDN host, the S3
   // storage credentials, and the upload limits. The fixture mirrors
@@ -88,7 +89,7 @@ const fixtureBundle: BlogSettingsBundle = {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },
   },
-  footer: { footer: { initialYear: 2024 } },
+
   mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
   cache: {
     cache: {
@@ -141,7 +142,6 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     sidebar: 'blog.sidebar',
     comments: 'blog.comments',
     seo: 'blog.seo',
-    footer: 'blog.footer',
     mail: 'blog.mail',
     cache: 'blog.cache',
     rateLimit: 'blog.rateLimit',
@@ -254,6 +254,7 @@ describe('services/settings — updateBlogSettingsSection', () => {
         locale: 'zh-CN',
         timeZone: 'Asia/Shanghai',
         timeFormat: 'yyyy-LL-dd HH:mm',
+        initialYear: 2024,
       },
       42n,
     )

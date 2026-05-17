@@ -11,7 +11,6 @@ export const blogSettingsBundleDto = z.object({
   sidebar: sectionPayload,
   comments: sectionPayload,
   seo: sectionPayload,
-  footer: sectionPayload,
   mail: sectionPayload,
   cache: sectionPayload,
 })
