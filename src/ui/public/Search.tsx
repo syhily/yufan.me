@@ -8,7 +8,6 @@ import { Form, useNavigate } from 'react-router'
 import { Button } from '@/ui/components/button'
 import { IconButtonContent } from '@/ui/components/icon-button-content'
 import { Input } from '@/ui/components/input'
-import { useSidebarSettings } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { Popup } from '@/ui/public/widgets/Popup'
 
@@ -59,12 +58,7 @@ function useSearchSubmit() {
 }
 
 export function SearchBar() {
-  const { sidebar } = useSidebarSettings()
   const onSubmit = useSearchSubmit()
-
-  if (!sidebar.search) {
-    return <div id="search" className="mb-10" hidden />
-  }
 
   return (
     <div id="search" className="mb-10">

@@ -134,11 +134,13 @@ export type ContentInput = z.infer<typeof contentSchema>
 
 export const sidebarSchema = z.object({
   sidebar: z.object({
-    calendar: z.coerce.boolean(),
-    search: z.coerce.boolean(),
-    comment: z.coerce.number().int().min(0).max(50),
-    post: z.coerce.number().int().min(0).max(50),
-    tag: z.coerce.number().int().min(0).max(100),
+    widgets: z.array(
+      z.object({
+        type: z.enum(['search', 'recentPosts', 'recentComments', 'randomTags', 'todayCalendar']),
+        enabled: z.coerce.boolean(),
+        count: z.coerce.number().int().min(0).max(100).optional(),
+      }),
+    ),
   }),
 })
 export type SidebarInput = z.infer<typeof sidebarSchema>

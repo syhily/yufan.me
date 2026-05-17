@@ -32,11 +32,12 @@ export function redirectListingOverflow(
   pageNum: number,
   totalPage: number,
   rootPath: string,
+  allowEmpty = false,
 ): void {
   if (raw !== undefined && pageNum > totalPage && totalPage > 0) {
     throw redirect(pagePath(rootPath, totalPage))
   }
-  if (totalPage === 0) {
+  if (totalPage === 0 && !allowEmpty) {
     notFound()
   }
 }

@@ -106,7 +106,17 @@ describe('services/settings — write isolation', () => {
   it('saving sidebar does not read or rewrite the mail row', async () => {
     await updateBlogSettingsSection(
       'sidebar',
-      { sidebar: { calendar: false, search: true, comment: 5, post: 5, tag: 10 } },
+      {
+        sidebar: {
+          widgets: [
+            { type: 'search', enabled: true },
+            { type: 'recentPosts', enabled: true, count: 5 },
+            { type: 'recentComments', enabled: true, count: 5 },
+            { type: 'randomTags', enabled: true, count: 10 },
+            { type: 'todayCalendar', enabled: false },
+          ],
+        },
+      },
       null,
     )
 

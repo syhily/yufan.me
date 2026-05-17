@@ -27,7 +27,7 @@ import { insertCommentUser, updateLastLogin } from '@/server/infra/db/operations
 import { sendNewComment, sendNewReply } from '@/server/infra/email/sender'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
 import { groupBy } from '@/shared/utils/tools'
 const log = getLogger('comments.loader')
 
@@ -62,12 +62,12 @@ function toLatestComment(row: PendingCommentRow): LatestComment {
 }
 
 export async function pendingComments(): Promise<LatestComment[]> {
-  const rows = await pendingCommentsRepo(requireBlogSettingsSection('sidebar').sidebar.comment)
+  const rows = await pendingCommentsRepo(getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments'))
   return rows.map(toLatestComment)
 }
 
 export async function latestComments(): Promise<LatestComment[]> {
-  const limit = requireBlogSettingsSection('sidebar').sidebar.comment
+  const limit = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentComments')
   const ids = await adminUserIds()
   const distinctIds = await latestDistinctCommentIds(ids, limit)
   const rows = await commentsByIds(distinctIds, limit)

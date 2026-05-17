@@ -130,16 +130,30 @@ export interface SidebarProps {
 }
 
 export function Sidebar({ data }: SidebarProps) {
-  const { posts, tags, recentComments } = data
+  const { sidebar } = useSidebarSettings()
+  const enabledWidgets = sidebar.widgets.filter((w) => w.enabled)
+
+  if (enabledWidgets.length === 0) {
+    return null
+  }
 
   return (
     <aside className="box-border hidden w-full max-w-full shrink-0 px-3 xl:ml-auto xl:block xl:w-[29%] xl:max-w-[370px]">
       <div className={sidebarInnerClass}>
-        <SearchBar />
-        <RandomPosts posts={posts} />
-        <RecentComments comments={recentComments} />
-        <RandomTags tags={tags} />
-        <TodayCalendar />
+        {enabledWidgets.map((widget) => {
+          switch (widget.type) {
+            case 'search':
+              return <SearchBar key="search" />
+            case 'recentPosts':
+              return <RandomPosts key="recentPosts" posts={data.posts} />
+            case 'recentComments':
+              return <RecentComments key="recentComments" comments={data.recentComments} />
+            case 'randomTags':
+              return <RandomTags key="randomTags" tags={data.tags} />
+            case 'todayCalendar':
+              return <TodayCalendar key="todayCalendar" />
+          }
+        })}
       </div>
     </aside>
   )
@@ -174,8 +188,7 @@ interface RecentCommentsProps {
 }
 
 function RecentComments({ comments }: RecentCommentsProps) {
-  const { sidebar } = useSidebarSettings()
-  if (sidebar.comment <= 0 || comments.length === 0) {
+  if (comments.length === 0) {
     return null
   }
 
@@ -268,11 +281,7 @@ function WidgetTitle({ children, tooltip }: { children: string; tooltip: string 
 }
 
 function TodayCalendar() {
-  const { sidebar } = useSidebarSettings()
   const siteIdentity = useSiteIdentity()
-  if (!sidebar.calendar) {
-    return null
-  }
   const today = new Date()
   const year = formatLocalDate(today, 'yyyy', siteIdentity)
   const monthDay = formatLocalDate(today, 'LLdd', siteIdentity)

@@ -58,12 +58,30 @@ vi.mock('@/shared/config/blog', () => ({
       return { website: 'https://yufan.me', title: 'Yufan' }
     }
     if (key === 'sidebar') {
-      return { sidebar: { comment: 5 } }
+      return {
+        sidebar: {
+          widgets: [
+            { type: 'search', enabled: true },
+            { type: 'recentPosts', enabled: true, count: 5 },
+            { type: 'recentComments', enabled: true, count: 5 },
+            { type: 'randomTags', enabled: true, count: 20 },
+            { type: 'todayCalendar', enabled: true },
+          ],
+        },
+      }
     }
     if (key === 'comments') {
       return { comments: { size: 20 } }
     }
     return {}
+  },
+  getSidebarWidgetCount: (
+    settings: { sidebar: { widgets: Array<{ type: string; enabled: boolean; count?: number }> } },
+    type: string,
+  ) => {
+    const widget = settings.sidebar.widgets.find((w) => w.type === type)
+    if (!widget || !widget.enabled) return 0
+    return widget.count ?? 0
   },
 }))
 

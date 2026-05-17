@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 
-import { EyeIcon, HeartIcon, MessageCircleMoreIcon } from 'lucide-react'
+import { EyeIcon, HeartIcon, MessageCircleMoreIcon, PenLineIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
 import type { ListingPostCard, ListingPostCardWithMetadata } from '@/shared/types/catalog'
 
 import { formatShowDate } from '@/shared/utils/formatter'
-import { useSiteIdentity } from '@/ui/lib/blog-config-context'
+import { Button } from '@/ui/components/button'
+import { useSidebarSettings, useSiteIdentity } from '@/ui/lib/blog-config-context'
 import { cn } from '@/ui/lib/cn'
 import { Pagination } from '@/ui/public/post/Pagination'
 import { postTitleClass } from '@/ui/public/post/postChrome'
@@ -23,6 +24,7 @@ export interface HomeLayoutBodyProps {
   /** From `loaderData.listingNowIso` — stabilises relative dates across SSR + hydration. */
   listingNowIso: string
   children?: ReactNode
+  currentUser?: { role: string } | null
 }
 
 export function HomeLayoutBody({
@@ -34,23 +36,54 @@ export function HomeLayoutBody({
   sidebar,
   listingNowIso,
   children,
+  currentUser,
 }: HomeLayoutBodyProps) {
+  const { sidebar: sidebarSettings } = useSidebarSettings()
+  const hasSidebar = sidebarSettings.widgets.some((w) => w.enabled)
+
   return (
     <div className="pt-4 pb-0 md:pt-6 md:pb-0 lg:px-2 2xl:px-12 2xl:pt-12 2xl:pb-0">
       {pageNum === 1 && <FeaturePosts posts={featurePosts} />}
       <div className="mx-auto w-full px-3 sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl">
         <div className="-mx-3 flex flex-wrap">
-          <PostCards
-            pageNum={pageNum}
-            posts={resolvedPosts}
-            totalPage={totalPage}
-            categoryLinks={categoryLinks}
-            listingNowIso={listingNowIso}
-          />
+          {resolvedPosts.length === 0 ? (
+            <EmptyHomeState currentUser={currentUser} hasSidebar={hasSidebar} />
+          ) : (
+            <PostCards
+              pageNum={pageNum}
+              posts={resolvedPosts}
+              totalPage={totalPage}
+              categoryLinks={categoryLinks}
+              listingNowIso={listingNowIso}
+              hasSidebar={hasSidebar}
+            />
+          )}
           <Sidebar data={sidebar} />
         </div>
       </div>
       {children}
+    </div>
+  )
+}
+
+function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: string } | null; hasSidebar: boolean }) {
+  const canWrite = currentUser?.role === 'admin' || currentUser?.role === 'author'
+  return (
+    <div className={cn('box-border w-full max-w-full shrink-0 px-3', hasSidebar ? 'xl:w-[71%]' : 'xl:w-full')}>
+      <div className="flex h-(--size-empty-state) flex-auto flex-col text-center">
+        <div className="my-auto">
+          <div className="mb-2 inline-flex size-16 items-center justify-center rounded-full bg-brand/10 text-brand">
+            <PenLineIcon className="size-8" aria-hidden />
+          </div>
+          <div className="mb-6 text-ink-4">
+            <div className="mb-1 text-lg font-medium text-ink-1">还没有文章</div>
+            <div className="text-sm">
+              {canWrite ? '去写第一篇文章，开始你的博客之旅吧' : '博客正在建设中，敬请期待'}
+            </div>
+          </div>
+          {canWrite && <Button render={<Link to="/wp-admin/posts/new" prefetch="intent" />}>新建文章</Button>}
+        </div>
+      </div>
     </div>
   )
 }
@@ -186,12 +219,20 @@ export interface PostCardsProps {
   totalPage: number
   categoryLinks: Record<string, string>
   listingNowIso: string
+  hasSidebar?: boolean
 }
 
-export function PostCards({ pageNum, posts, totalPage, categoryLinks, listingNowIso }: PostCardsProps) {
+export function PostCards({
+  pageNum,
+  posts,
+  totalPage,
+  categoryLinks,
+  listingNowIso,
+  hasSidebar = true,
+}: PostCardsProps) {
   const config = useSiteIdentity()
   return (
-    <div className="box-border w-full max-w-full shrink-0 px-3 xl:w-[71%]">
+    <div className={cn('box-border w-full max-w-full shrink-0 px-3', hasSidebar ? 'xl:w-[71%]' : 'xl:w-full')}>
       <div>
         {posts.map((post) => (
           <div

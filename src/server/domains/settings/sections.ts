@@ -80,7 +80,15 @@ const contentDefaults = {
   footnotes: { sectionTitle: '尾声礼记' },
 } as const
 const sidebarDefaults = {
-  sidebar: { calendar: false, search: true, comment: 5, post: 5, tag: 20 },
+  sidebar: {
+    widgets: [
+      { type: 'search' as const, enabled: false },
+      { type: 'recentPosts' as const, enabled: false, count: 5 },
+      { type: 'recentComments' as const, enabled: false, count: 5 },
+      { type: 'randomTags' as const, enabled: false, count: 20 },
+      { type: 'todayCalendar' as const, enabled: false },
+    ],
+  },
 } as const
 const commentsDefaults = {
   comments: {
