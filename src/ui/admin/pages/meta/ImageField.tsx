@@ -1,0 +1,210 @@
+import { ImagePlusIcon, LinkIcon, SparklesIcon, XIcon } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
+
+import type { AdminImageDto } from '@/shared/types/images'
+
+import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
+import { Badge } from '@/ui/components/badge'
+import { Button } from '@/ui/components/button'
+import { Input } from '@/ui/components/input'
+import { Label } from '@/ui/components/label'
+import { cn } from '@/ui/lib/cn'
+
+export interface ImageFieldProps {
+  id: string
+  label: string
+  /** Current override URL. Empty string ⇒ "use default / unset". */
+  value: string
+  onChange: (next: string) => void
+  disabled?: boolean
+  /**
+   * Tailwind aspect class controlling the click-target shape. Cover
+   * fields use `aspect-[16/9]` (the list-card preview shape); OG
+   * fields use `aspect-[1200/630]` (the default OG render dimensions
+   * declared in `setting('blog.seo')`). Hard-coding the aspect at
+   * the call site keeps every preview tile pixel-perfect for its
+   * downstream surface.
+   */
+  aspect: string
+  /** Placeholder shown inside the collapsed "粘贴 URL" `<input>`. */
+  urlPlaceholder: string
+  /**
+   * Optional empty-state surface rendered *inside* the click target
+   * when `value === ''`. The OG field uses this to drop the live
+   * `<GeneratedOgPreview />` underneath the click overlay so the
+   * operator sees the auto-generated OG card and can click anywhere
+   * on it to override. When omitted, the empty-state shows a
+   * plus-icon placeholder.
+   */
+  emptyContent?: ReactNode
+  /**
+   * One-line hint rendered below the click target. Cover and OG use
+   * this to explain the click affordance and (for OG) to clarify
+   * whether the displayed preview is a generated default or the
+   * operator's override.
+   */
+  emptyHint?: string
+}
+
+// Image-first metadata field — see the post-side twin at
+// `@/ui/admin/posts/meta/ImageField` for the full state-machine
+// rationale. Kept verbatim here so each entity owns its own meta tree.
+export function ImageField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  aspect,
+  urlPlaceholder,
+  emptyContent,
+  emptyHint,
+}: ImageFieldProps) {
+  const [showUrl, setShowUrl] = useState(false)
+  const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
+  const hasValue = value !== ''
+
+  return (
+    <div className="grid gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label>
+          {label} <span className="text-xs font-normal text-muted-foreground">（可选）</span>
+        </Label>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            title={showUrl ? '收起 URL 输入' : '粘贴 URL'}
+            aria-label={showUrl ? `收起 ${label} 的 URL 输入` : `粘贴 ${label} 的 URL`}
+            aria-pressed={showUrl}
+            onClick={() => setShowUrl((prev) => !prev)}
+            disabled={disabled}
+          >
+            <LinkIcon />
+          </Button>
+          {hasValue ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              title="清空"
+              aria-label={`清空 ${label}`}
+              onClick={() => onChange('')}
+              disabled={disabled}
+            >
+              <XIcon />
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <ImageLibraryPicker
+        trigger={
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={hasValue ? `替换 ${label}` : `选择 ${label}`}
+            className={cn(
+              'group relative block w-full overflow-hidden rounded-md border bg-muted/30',
+              aspect,
+              'transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+              disabled
+                ? 'cursor-not-allowed opacity-60'
+                : 'cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30',
+            )}
+          >
+            {hasValue ? (
+              <img
+                src={value}
+                alt={`${label} 预览`}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+                }}
+              />
+            ) : emptyContent !== undefined ? (
+              emptyContent
+            ) : (
+              <span className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImagePlusIcon className="size-6" />
+                <span className="text-xs">点击选择 / 上传</span>
+              </span>
+            )}
+            <span
+              className={cn(
+                'pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 text-xs font-medium text-white opacity-0 transition',
+                'group-hover:opacity-100 group-focus-visible:opacity-100',
+              )}
+            >
+              {hasValue ? '点击替换' : '点击选择'}
+            </span>
+          </button>
+        }
+        onPick={handlePick}
+      />
+      {!hasValue && emptyHint !== undefined ? <p className="text-xs text-muted-foreground">{emptyHint}</p> : null}
+      {showUrl ? (
+        <Input
+          id={`${id}-url`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={urlPlaceholder}
+          maxLength={500}
+          disabled={disabled}
+        />
+      ) : hasValue ? (
+        <p className="truncate font-mono text-xs text-muted-foreground" title={value}>
+          {value}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export interface GeneratedOgPreviewProps {
+  /** Persisted slug of the page (the URL slot of `/images/og/:slug.png`). */
+  slug: string
+  /** Editor-side cover URL — folded into the cache-buster so the preview refreshes when the operator swaps covers. */
+  cover: string
+  /** Editor-side title — folded into the cache-buster for the same reason as `cover`. */
+  title: string
+  /** Editor-side summary — same reason. */
+  summary: string
+}
+
+// Live preview of the auto-generated OG card. Cache-buster derived
+// from the editor draft so a title/summary/cover change forces the
+// browser to refetch the freshly-generated OG.
+export function GeneratedOgPreview({ slug, cover, title, summary }: GeneratedOgPreviewProps) {
+  const buster = djb2Short(`${title}${summary}${cover}`)
+  const src = `/images/og/${encodeURIComponent(slug)}.png?_=${buster}`
+  return (
+    <>
+      <img
+        src={src}
+        alt="默认生成的 OG 预览"
+        loading="lazy"
+        decoding="async"
+        className="size-full object-cover"
+        onError={(e) => {
+          ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+        }}
+      />
+      <Badge variant="secondary" className="pointer-events-none absolute top-1.5 left-1.5 gap-1">
+        <SparklesIcon className="size-3" /> 默认生成
+      </Badge>
+    </>
+  )
+}
+
+// Tiny non-cryptographic hash used as a per-input browser cache
+// buster — collisions only cost a missed preview refresh.
+function djb2Short(input: string): string {
+  let hash = 5381
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 33) ^ input.charCodeAt(i)
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0').slice(0, 8)
+}
