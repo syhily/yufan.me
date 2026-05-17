@@ -181,8 +181,6 @@ export interface InstallSettingsSeed {
   title: string
   website: string
   authorEmail: string
-  assetHost: string
-  assetScheme: 'http' | 'https'
   locale: string
   timeZone: string
   timeFormat: string
@@ -193,8 +191,6 @@ export async function seedInstallSettingsWithSession({
   title,
   website,
   authorEmail,
-  assetHost,
-  assetScheme,
   locale,
   timeZone,
   timeFormat,
@@ -220,7 +216,7 @@ export async function seedInstallSettingsWithSession({
     timeZone,
     timeFormat,
   })
-  const assets = buildAssetsSeed({ assetHost, assetScheme })
+  const assets = buildAssetsSeed({ website })
 
   const generalCheck = SECTION_REGISTRY.general.schema.safeParse(siteIdentity)
   if (!generalCheck.success) {
@@ -301,15 +297,10 @@ function buildSiteIdentitySeed({
   }
 }
 
-function buildAssetsSeed({
-  assetHost,
-  assetScheme,
-}: {
-  assetHost: string
-  assetScheme: 'http' | 'https'
-}): AssetsSettings {
+function buildAssetsSeed({ website }: { website: string }): AssetsSettings {
+  const url = new URL(website)
   return {
-    asset: { host: assetHost, scheme: assetScheme },
+    asset: { host: url.host, scheme: url.protocol === 'https:' ? 'https' : 'http' },
     storage: { ...ASSETS_STORAGE_INSTALL_DEFAULTS.storage },
     upload: { ...ASSETS_STORAGE_INSTALL_DEFAULTS.upload },
   }
