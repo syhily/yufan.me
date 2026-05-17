@@ -7,7 +7,6 @@ import { createHonoServer } from 'react-router-hono-server/node'
 import type { Env } from '@/server/http/context'
 
 import { requestContext, sessionContext } from '@/server/domains/auth/context'
-import { getBlogSettingsBundleSync } from '@/server/domains/settings/snapshot'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
 import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gate'
@@ -25,59 +24,6 @@ import { getLogger } from '@/server/infra/logger'
 
 const requestLog = getLogger('http.request')
 const leakedResponseLog = getLogger('http.leaked-response')
-
-export function resolveAllowedActionOrigins(): string[] {
-  const origins: string[] = []
-
-  if (process.env.NODE_ENV === 'development') {
-    origins.push('localhost', '127.0.0.1')
-  }
-
-  const bundle = getBlogSettingsBundleSync()
-  if (bundle?.siteIdentity?.website) {
-    try {
-      const url = new URL(bundle.siteIdentity.website)
-      origins.push(url.host)
-    } catch {
-      // ignore invalid URL
-    }
-  }
-
-  return origins
-}
-
-export function patchBuildAllowedOrigins(build: { allowedActionOrigins?: string[] }, origins: string[]): void {
-  if (origins.length === 0) {
-    return
-  }
-
-  const descriptor = Object.getOwnPropertyDescriptor(build, 'allowedActionOrigins')
-  if (!descriptor || descriptor.writable) {
-    try {
-      ;(build as Record<string, unknown>).allowedActionOrigins = origins
-      return
-    } catch {
-      // Object may be sealed, frozen, or a module namespace object.
-      // Fall through to attempt defineProperty or warn.
-    }
-  }
-
-  if (descriptor?.configurable) {
-    try {
-      Object.defineProperty(build, 'allowedActionOrigins', {
-        value: origins,
-        writable: true,
-        configurable: true,
-        enumerable: true,
-      })
-      return
-    } catch {
-      // defineProperty can also fail on module namespace objects.
-    }
-  }
-
-  leakedResponseLog.warn('build.allowedActionOrigins is read-only and non-configurable; skipping patch')
-}
 
 const server = await createHonoServer<Env>({
   configure(app) {
@@ -161,10 +107,7 @@ const server = await createHonoServer<Env>({
       )
     }
   },
-  getLoadContext(c, { build }) {
-    if (!build.allowedActionOrigins) {
-      patchBuildAllowedOrigins(build as { allowedActionOrigins?: string[] }, resolveAllowedActionOrigins())
-    }
+  getLoadContext(c) {
     const { session, request } = buildRouteContexts(c)
     const context = new RouterContextProvider()
     context.set(sessionContext, session)
