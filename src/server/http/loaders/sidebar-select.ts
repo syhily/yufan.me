@@ -1,7 +1,7 @@
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 
 import { selectSidebarPosts as querySidebarPosts } from '@/server/domains/posts/repo'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
 import { sampleSize } from '@/shared/utils/tools'
 
 export async function selectSidebarPosts(count: number): Promise<SidebarPostLink[]> {
@@ -9,7 +9,7 @@ export async function selectSidebarPosts(count: number): Promise<SidebarPostLink
 }
 
 export function selectSidebarTags(tags: ClientTag[]): ClientTag[] {
-  const randomSize = requireBlogSettingsSection('sidebar').sidebar.tag
+  const randomSize = getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'randomTags')
   if (randomSize <= 0) {
     return []
   }

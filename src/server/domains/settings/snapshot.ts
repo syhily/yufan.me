@@ -116,7 +116,10 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     value.feed !== null &&
     typeof value.post === 'object' &&
     value.post !== null,
-  sidebar: (value) => typeof value.sidebar === 'object' && value.sidebar !== null,
+  sidebar: (value) =>
+    typeof value.sidebar === 'object' &&
+    value.sidebar !== null &&
+    Array.isArray((value.sidebar as Record<string, unknown>).widgets),
   comments: (value) => typeof value.comments === 'object' && value.comments !== null,
   seo: (value) =>
     typeof value.twitter === 'string' &&

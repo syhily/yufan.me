@@ -8,7 +8,7 @@ import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { resolveImageMetaBySources } from '@/server/render/image-enhance'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/render/seo/meta'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
 import { PortableTextBody } from '@/ui/pt/render'
@@ -39,7 +39,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     getTagsByNames(post.tags),
     resolveImageMetaBySources(sourcePost.imageSources).then((r) => Object.fromEntries(r)),
     listAllTags().then(selectSidebarTags),
-    selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post),
+    selectSidebarPosts(getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts')),
   ])
 
   const { detail, commentCsrfSetCookie } = await loadPublicDetailData({

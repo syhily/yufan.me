@@ -70,7 +70,17 @@ const fixtureBundle: BlogSettingsBundle = {
     feed: { full: false, size: 20 },
     post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
   },
-  sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 20 } },
+  sidebar: {
+    sidebar: {
+      widgets: [
+        { type: 'search', enabled: true },
+        { type: 'recentPosts', enabled: true, count: 5 },
+        { type: 'recentComments', enabled: true, count: 5 },
+        { type: 'randomTags', enabled: true, count: 20 },
+        { type: 'todayCalendar', enabled: true },
+      ],
+    },
+  },
   comments: {
     comments: { size: 10, avatar: { mirror: 'https://cdn.example.com/avatar', size: 80 }, tokenTtlSeconds: 1800 },
   },
@@ -180,7 +190,7 @@ describe('services/settings — getAdminBlogSettings', () => {
 
     expect(dto.bundle).not.toBeNull()
     expect(dto.bundle?.siteIdentity?.title).toBe(fixtureBundle.siteIdentity!.title)
-    expect(dto.bundle?.sidebar?.sidebar.calendar).toBe(true)
+    expect(dto.bundle?.sidebar?.sidebar.widgets[0].enabled).toBe(true)
   })
 
   it('treats a deployment as uninstalled when only some sections exist', async () => {

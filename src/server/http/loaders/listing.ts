@@ -86,6 +86,7 @@ export async function listingLoader<TExtra = undefined>({
   feedLinks,
   computeExtra,
   extra,
+  allowEmpty,
 }: {
   rawNum: string | undefined
   totalPosts: number
@@ -121,13 +122,19 @@ export async function listingLoader<TExtra = undefined>({
   computeExtra?: (args: ListingExtraArgs<ListingPostCardWithMetadata>) => Promise<TExtra> | TExtra
   /** Static extra payload, used when no async work is needed. */
   extra?: TExtra
+  /**
+   * When `true`, an empty catalog (zero posts) is allowed to render instead
+   * of throwing a 404. Used by the home page so a fresh blog can show a
+   * friendly empty-state CTA.
+   */
+  allowEmpty?: boolean
 }): Promise<ListingPageLoaderData<TExtra>> {
   const listingNowIso = new Date().toISOString()
   const pageNum = parseListingPage(rawNum, rootPath)
   const effectivePageSize = pageSize ?? requireBlogSettingsSection('content').pagination.posts
   const totalPage = calculateTotalPages(totalPosts, effectivePageSize, mergeTailWhenLessThan ?? 0)
 
-  redirectListingOverflow(rawNum, pageNum, totalPage, rootPath)
+  redirectListingOverflow(rawNum, pageNum, totalPage, rootPath, allowEmpty)
 
   const currentPosts =
     totalPage === 0 || pageNum > totalPage

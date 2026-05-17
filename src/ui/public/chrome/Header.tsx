@@ -120,8 +120,10 @@ const asideOverlayClass = cn(
 // hypothetical future Preflight write that re-adds `h1 { padding:
 // 0 }` would still lose to the inset utilities below.
 const navbarBrandClass = cn(
-  'hidden shrink-0',
-  'lg:flex lg:items-center lg:justify-between lg:px-5 lg:py-3',
+  'shrink-0',
+  'flex items-center justify-between',
+  'px-5 py-4',
+  'lg:px-5 lg:py-3',
   'xl:px-[25px] xl:pt-5 xl:pb-[15px]',
 )
 
@@ -129,7 +131,7 @@ const navbarBrandClass = cn(
 // because the `<h1>` host is `display: none` below that breakpoint;
 // the legacy `<md` 50px / `md..lg` 55px max-height rules are dead
 // code, collapsed to a single `lg:max-h-15` (60px) step.
-const navbarBrandImgClass = 'lg:max-h-15'
+const navbarBrandImgClass = 'max-h-10 lg:max-h-15'
 
 // Mobile brand row (`.mobile-brand`) — visible on `<lg` only.
 // Mirrors the legacy `display: block` flip in the `<lg` media query

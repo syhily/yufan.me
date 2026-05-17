@@ -79,7 +79,17 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     post: { sort: 'desc', sortBy: 'publishedAt', featureEnabled: false },
     footnotes: { sectionTitle: '尾声礼记' },
   },
-  sidebar: { sidebar: { calendar: true, search: true, comment: 5, post: 5, tag: 10 } },
+  sidebar: {
+    sidebar: {
+      widgets: [
+        { type: 'search', enabled: true },
+        { type: 'recentPosts', enabled: true, count: 5 },
+        { type: 'recentComments', enabled: true, count: 5 },
+        { type: 'randomTags', enabled: true, count: 10 },
+        { type: 'todayCalendar', enabled: true },
+      ],
+    },
+  },
   comments: {
     comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 }, tokenTtlSeconds: 1800 },
   },

@@ -89,17 +89,29 @@ export interface ContentSettings {
   }
 }
 
+export type SidebarWidgetType = 'search' | 'recentPosts' | 'recentComments' | 'randomTags' | 'todayCalendar'
+
+export interface SidebarWidget {
+  type: SidebarWidgetType
+  enabled: boolean
+  count?: number
+}
+
 export interface SidebarSettings {
   sidebar: {
-    calendar: boolean
-    search: boolean
-    /** Number of recent / pending comments shown in the sidebar widget. */
-    comment: number
-    /** Random-pick window for the sidebar's recommended posts widget. */
-    post: number
-    /** Random-pick window for the sidebar's tag cloud widget. */
-    tag: number
+    widgets: SidebarWidget[]
   }
+}
+
+export function getSidebarWidgetCount(
+  settings: SidebarSettings,
+  type: 'recentPosts' | 'recentComments' | 'randomTags',
+): number {
+  const widget = settings.sidebar.widgets.find((w) => w.type === type)
+  if (!widget || !widget.enabled) {
+    return 0
+  }
+  return widget.count ?? 0
 }
 
 export interface CommentsSettings {

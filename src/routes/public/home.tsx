@@ -1,3 +1,5 @@
+import { useRouteLoaderData } from 'react-router'
+
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 import type { SidebarData } from '@/ui/public/Sidebar'
 
@@ -16,7 +18,7 @@ import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/ro
 import { loadSidebarData } from '@/server/http/loaders/sidebar'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { metaWithFallback } from '@/server/render/seo/meta'
-import { requireBlogSettingsSection } from '@/shared/config/blog'
+import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
 import { formatLocalDate } from '@/shared/utils/formatter'
 import { HomeLayoutBody } from '@/ui/public/post/PostListViews'
 
@@ -60,7 +62,9 @@ export async function loader({
 
   // Kick off independent queries in parallel with the listing pipeline.
   const featurePromise = selectFeaturePosts(featureSeed)
-  const sidebarPostsPromise = selectSidebarPosts(requireBlogSettingsSection('sidebar').sidebar.post)
+  const sidebarPostsPromise = selectSidebarPosts(
+    getSidebarWidgetCount(requireBlogSettingsSection('sidebar'), 'recentPosts'),
+  )
   const tagsPromise = listAllTags()
 
   return listingLoader<HomeExtra>({
@@ -76,6 +80,7 @@ export async function loader({
     mergeTailWhenLessThan,
     metadata: { likes: true, views: true, comments: true },
     seoMode: 'skip-on-first-page',
+    allowEmpty: true,
     computeExtra: async ({ resolvedPosts }) => {
       const uniqueCategories = [...new Set(resolvedPosts.map((p) => p.category).filter(Boolean))]
       const [categoryLinks, featurePosts, tags] = await Promise.all([
@@ -117,6 +122,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 
 export default function HomeRoute({ loaderData }: Route.ComponentProps) {
   const { pageNum, totalPage, resolvedPosts, extra } = loaderData
+  const rootData = useRouteLoaderData<{ currentUser?: { role: string } | null }>('root')
   return (
     <HomeLayoutBody
       resolvedPosts={resolvedPosts}
@@ -126,6 +132,7 @@ export default function HomeRoute({ loaderData }: Route.ComponentProps) {
       featurePosts={extra.featurePosts}
       sidebar={extra.sidebar}
       listingNowIso={loaderData.listingNowIso}
+      currentUser={rootData?.currentUser ?? null}
     />
   )
 }
