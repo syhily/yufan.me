@@ -65,14 +65,14 @@ const asideShellClass = cn(
   // arbitrary-value reference is the right tool — Lesson 6 case B).
   'z-(--z-aside-drawer)',
   // Open-state (mobile only): flip visibility + pointer events back
-  // on, raise z above the surrounding chrome. Plain `z-10` is the
-  // higher overlay priority while the drawer animates open (the
-  // 1020 base z keeps the closed drawer above page content but
+  // on, raise z above the surrounding chrome. `z-50` sits above the
+  // sticky `mobile-brand` bar (`z-40`) while the drawer animates open
+  // (the 1020 base z keeps the closed drawer above page content but
   // below modals).
   'max-lg:data-[state=open]:opacity-100',
   'max-lg:data-[state=open]:visible',
   'max-lg:data-[state=open]:pointer-events-auto',
-  'max-lg:data-[state=open]:z-10',
+  'max-lg:data-[state=open]:z-50',
 )
 
 // Aside content panel (`.aside-inner`). On `>=lg` it's a normal flex
