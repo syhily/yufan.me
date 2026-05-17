@@ -79,7 +79,7 @@ export async function loadPublicDetailData({
   const [, streaming, issued] = await Promise.all([
     preload(),
     loadDetailPageStreaming(session, target, { trackView }),
-    issueCsrfToken(),
+    issueCsrfToken(request),
   ])
 
   return {

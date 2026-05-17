@@ -25,7 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // Pull the request context so we trip session middleware exactly once
   // even though we no longer write the CSRF token through the session.
   getRouteRequestContext({ request, context })
-  const { token: csrf, setCookie } = await issueCsrfToken()
+  const { token: csrf, setCookie } = await issueCsrfToken(request)
   return data({ csrf }, { headers: { 'Set-Cookie': setCookie } })
 }
 

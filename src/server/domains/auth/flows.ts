@@ -50,7 +50,7 @@ async function csrfFailure(request: Request, session: BlogSession, csrf: string)
     ok: false,
     status: 403,
     message: '页面安全令牌已失效，请刷新后重试。',
-    headers: await commitHeaders(session, await clearCsrfCookie()),
+    headers: await commitHeaders(session, await clearCsrfCookie(request)),
   }
 }
 
@@ -100,7 +100,7 @@ export async function signInWithSession({
   // sid it wrote to Redis. Stack the CSRF rotation cookie on top
   // instead of re-committing the in-memory session (which would mint
   // a second, orphan sid).
-  const rotated = await issueCsrfToken()
+  const rotated = await issueCsrfToken(request)
   const headers = new Headers()
   headers.append('Set-Cookie', established.setCookie)
   headers.append('Set-Cookie', rotated.setCookie)
@@ -164,7 +164,7 @@ export async function signUpInitialAdminWithSession({
   // of re-committing the in-memory session.
   const headers = new Headers()
   headers.append('Set-Cookie', established.setCookie)
-  headers.append('Set-Cookie', await clearCsrfCookie())
+  headers.append('Set-Cookie', await clearCsrfCookie(request))
   return {
     ok: true,
     data: { redirectTo: '/wp-admin/install/settings.php' },
@@ -265,7 +265,7 @@ export async function seedInstallSettingsWithSession({
   return {
     ok: true,
     data: { redirectTo: '/wp-admin/welcome' },
-    headers: await commitHeaders(session, await clearCsrfCookie()),
+    headers: await commitHeaders(session, await clearCsrfCookie(request)),
   }
 }
 

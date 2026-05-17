@@ -129,7 +129,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (!csrfOk) {
       return data(
         { error: '页面安全令牌已失效，请刷新后重试。' },
-        { headers: { 'Set-Cookie': await clearCsrfCookie() } },
+        { headers: { 'Set-Cookie': await clearCsrfCookie(request) } },
       )
     }
 
