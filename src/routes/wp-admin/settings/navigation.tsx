@@ -19,5 +19,5 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export default function WpAdminSettingsNavigationRoute() {
   const { bundle } = useOutletContext<SettingsOutletContext>()
-  return <NavigationEditor navigation={bundle.navigation} />
+  return <NavigationEditor navigation={bundle.navigation} socials={bundle.socials.socials} />
 }

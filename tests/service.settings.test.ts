@@ -63,7 +63,7 @@ const fixtureBundle: BlogSettingsBundle = {
     },
     upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
   },
-  navigation: { navigation: [] },
+  navigation: { navigation: { sideNav: [], footerNav: [] } },
   socials: { socials: [] },
   content: {
     pagination: { posts: 12, category: 12, tags: 12, search: 12 },
@@ -88,7 +88,7 @@ const fixtureBundle: BlogSettingsBundle = {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },
   },
-  footer: { footer: { initialYear: 2024, items: [] } },
+  footer: { footer: { initialYear: 2024 } },
   mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
   cache: {
     cache: {
@@ -326,7 +326,11 @@ describe('services/settings — updateBlogSettingsSection', () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue(bundleRows(fixtureBundle))
     vi.mocked(settingQueries.upsertSetting).mockResolvedValue(undefined as never)
 
-    await updateBlogSettingsSection('navigation', { navigation: [{ text: 'Home', link: '/' }] }, null)
+    await updateBlogSettingsSection(
+      'navigation',
+      { navigation: { sideNav: [{ text: 'Home', link: '/' }], footerNav: [] } },
+      null,
+    )
 
     // The non-mail path never queries the existing row — the bug the
     // refactor fixed (`SELECT ... merge ... UPSERT` racing concurrent
@@ -335,7 +339,10 @@ describe('services/settings — updateBlogSettingsSection', () => {
 
     const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.navigation')
-    expect((data as Record<string, unknown>).navigation).toEqual([{ text: 'Home', link: '/' }])
+    expect((data as Record<string, unknown>).navigation).toEqual({
+      sideNav: [{ text: 'Home', link: '/' }],
+      footerNav: [],
+    })
   })
 })
 

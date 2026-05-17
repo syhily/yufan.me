@@ -51,14 +51,17 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
   },
   navigation: {
-    navigation: [
-      { text: '首页', link: '/' },
-      { text: '分类', link: '/categories' },
-      { text: '归档', link: '/archives' },
-      { text: '关于', link: '/about' },
-      { text: '留言', link: '/guestbook' },
-      { text: '友链', link: '/links' },
-    ],
+    navigation: {
+      sideNav: [
+        { text: '首页', link: '/' },
+        { text: '分类', link: '/categories' },
+        { text: '归档', link: '/archives' },
+        { text: '关于', link: '/about' },
+        { text: '留言', link: '/guestbook' },
+        { text: '友链', link: '/links' },
+      ],
+      footerNav: [],
+    },
   },
   socials: {
     socials: [
@@ -97,7 +100,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
     og: { width: 1200, height: 768 },
   },
-  footer: { footer: { initialYear: 2011, icpNo: '皖ICP备2021002315号-2', items: [] } },
+  footer: { footer: { initialYear: 2011, icpNo: '皖ICP备2021002315号-2' } },
   mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' } },
   cache: {
     cache: {

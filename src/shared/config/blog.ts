@@ -49,7 +49,10 @@ export interface NavigationItem {
 }
 
 export interface NavigationSettings {
-  navigation: NavigationItem[]
+  navigation: {
+    sideNav: NavigationItem[]
+    footerNav: FooterNavItem[]
+  }
 }
 
 export interface SocialItem {
@@ -167,7 +170,6 @@ export interface FooterSettings {
     initialYear: number
     icpNo?: string
     moeIcpNo?: string
-    items: FooterNavItem[]
   }
 }
 

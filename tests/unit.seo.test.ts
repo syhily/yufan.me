@@ -39,7 +39,7 @@ const fixture: BlogSettingsBundle = {
     },
     upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
   },
-  navigation: { navigation: [] },
+  navigation: { navigation: { sideNav: [], footerNav: [] } },
   socials: { socials: [] },
   content: {
     pagination: { posts: 12, category: 12, tags: 12, search: 12 },
@@ -64,7 +64,7 @@ const fixture: BlogSettingsBundle = {
     toc: { minHeadingLevel: 2, maxHeadingLevel: 4 },
     og: { width: 1200, height: 630 },
   },
-  footer: { footer: { initialYear: 2024, icpNo: '', moeIcpNo: '', items: [] } },
+  footer: { footer: { initialYear: 2024, icpNo: '', moeIcpNo: '' } },
   mail: { mail: { enabled: false, host: '', apiKey: '', sender: '' } },
   cache: {
     cache: {
