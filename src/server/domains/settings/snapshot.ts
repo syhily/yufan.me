@@ -122,12 +122,11 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     Array.isArray((value.sidebar as Record<string, unknown>).widgets),
   comments: (value) => typeof value.comments === 'object' && value.comments !== null,
   seo: (value) =>
-    typeof value.twitter === 'string' &&
-    typeof value.toc === 'object' &&
-    value.toc !== null &&
-    typeof value.og === 'object' &&
-    value.og !== null,
-  footer: (value) => typeof value.footer === 'object' && value.footer !== null,
+    typeof value.toc === 'object' && value.toc !== null && typeof value.og === 'object' && value.og !== null,
+  footer: (value) =>
+    typeof value.footer === 'object' &&
+    value.footer !== null &&
+    Array.isArray((value.footer as Record<string, unknown>).items),
   mail: (value) => typeof value.mail === 'object' && value.mail !== null,
   // Each cache bucket carries `prefix` + `ttlSeconds`. Probe walks
   // every required bucket so a row missing newer surfaces (e.g. a

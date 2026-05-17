@@ -7,7 +7,7 @@
 // admin form editor need the same canonical list, while UI modules are
 // forbidden from importing server modules and shared modules cannot
 // import from server.
-export const SOCIAL_NETWORKS = ['github', 'twitter', 'wechat', 'weibo', 'qq'] as const
+export const SOCIAL_NETWORKS = ['github', 'x', 'wechat', 'weibo', 'qq'] as const
 export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number]
 
 export type SocialDisplayType = 'link' | 'qrcode'
@@ -43,13 +43,13 @@ export const SOCIAL_NETWORK_META: Record<SocialNetwork, SocialNetworkMeta> = {
     linkPlaceholder: 'https://github.com/your-handle',
     defaultName: 'GitHub',
   },
-  twitter: {
-    network: 'twitter',
-    label: 'Twitter / X',
+  x: {
+    network: 'x',
+    label: 'X',
     type: 'link',
     linkLabel: '主页链接',
     linkPlaceholder: 'https://x.com/your-handle',
-    defaultName: 'Twitter',
+    defaultName: 'X',
   },
   weibo: {
     network: 'weibo',

@@ -63,7 +63,7 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
   socials: {
     socials: [
       { name: 'GitHub', network: 'github', type: 'link', link: 'https://github.com/syhily' },
-      { name: 'Twitter', network: 'twitter', type: 'link', link: 'https://x.com/amehochan' },
+      { name: 'X', network: 'x', type: 'link', link: 'https://x.com/amehochan' },
       {
         name: 'Yufan Sheng',
         network: 'wechat',
@@ -94,11 +94,10 @@ export const TEST_BLOG_SETTINGS_BUNDLE: BlogSettingsBundle = {
     comments: { size: 10, avatar: { mirror: 'https://gravatar.loli.net/avatar', size: 120 }, tokenTtlSeconds: 1800 },
   },
   seo: {
-    twitter: 'syhily',
     toc: { minHeadingLevel: 2, maxHeadingLevel: 3 },
     og: { width: 1200, height: 768 },
   },
-  footer: { footer: { initialYear: 2011, icpNo: '皖ICP备2021002315号-2' } },
+  footer: { footer: { initialYear: 2011, icpNo: '皖ICP备2021002315号-2', items: [] } },
   mail: { mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@send.yufan.me' } },
   cache: {
     cache: {

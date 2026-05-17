@@ -2,7 +2,7 @@ import type { ComponentType } from 'react'
 
 import type { SocialNetwork } from '@/shared/config/socials'
 
-import { GithubIcon, type IconProps, QQIcon, TwitterIcon, WechatIcon, WeiboIcon } from '@/ui/icons/brand-social-icons'
+import { GithubIcon, type IconProps, QQIcon, WechatIcon, WeiboIcon, XIcon } from '@/ui/icons/brand-social-icons'
 
 // Single source of truth for the `SocialNetwork → icon component`
 // mapping shared by the public Header and the admin SocialsEditor.
@@ -14,7 +14,7 @@ import { GithubIcon, type IconProps, QQIcon, TwitterIcon, WechatIcon, WeiboIcon 
 // `@/shared/config/socials.ts → SOCIAL_NETWORKS`.
 export const SOCIAL_NETWORK_ICONS: Record<SocialNetwork, ComponentType<IconProps>> = {
   github: GithubIcon,
-  twitter: TwitterIcon,
+  x: XIcon,
   wechat: WechatIcon,
   weibo: WeiboIcon,
   qq: QQIcon,

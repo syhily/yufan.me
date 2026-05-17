@@ -120,7 +120,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <SettingsSection
         title="社交链接"
-        description="Header 右侧的社交账号入口。每个社交平台只能添加一条；展示方式（直接外跳 / 二维码弹窗）由平台决定，不可手动切换。"
+        description="社交平台账号与二维码。每个平台只能添加一条；展示方式（直接外跳 / 二维码弹窗）由平台决定，不可手动切换。配置好的社交链接可在底部导航菜单中引用。"
         groupFields={false}
         actions={
           <DropdownMenu>
@@ -171,7 +171,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                       <div className="flex flex-col leading-tight">
                         <span className="text-sm font-medium">{meta.label}</span>
                         <span className="text-xs text-muted-foreground">
-                          {meta.type === 'qrcode' ? '点击 Header 图标会弹出二维码' : '点击 Header 图标会直接外跳链接'}
+                          {meta.type === 'qrcode' ? '点击图标会弹出二维码' : '点击图标会直接外跳链接'}
                         </span>
                       </div>
                     </div>
@@ -219,7 +219,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                     <p className="text-xs text-muted-foreground">
                       {meta.type === 'qrcode'
                         ? `二维码弹窗标题下方的小字。留空则显示平台名「${meta.defaultName}」。`
-                        : `Header 图标的鼠标悬停提示。留空则显示平台名「${meta.defaultName}」。`}
+                        : `图标的鼠标悬停提示。留空则显示平台名「${meta.defaultName}」。`}
                     </p>
                   </div>
                   <div className="flex flex-col gap-3">
