@@ -30,14 +30,6 @@ export const installSettingsSchema = z.object({
   title: z.string().trim().min(1).max(120),
   website: z.url(),
   authorEmail: z.email(),
-  // Asset (mirrors `assetsSchema.asset`)
-  assetHost: z
-    .string()
-    .trim()
-    .min(1)
-    .max(253)
-    .regex(/^[a-z0-9.-]+$/i, '只能包含字母 / 数字 / `-` / `.`'),
-  assetScheme: z.enum(['http', 'https']),
   // Localization
   locale: z.string().trim().min(2).max(35),
   // Same defence-in-depth as the `general` schema: the install dropdown

@@ -5,7 +5,6 @@ import { Button } from '@/ui/components/button'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
 
 export interface SettingsInstallFormProps {
   csrf: string
@@ -17,13 +16,6 @@ export interface SettingsInstallFormProps {
    */
   timeZones: readonly string[]
 }
-
-type AssetScheme = 'http' | 'https'
-
-const SCHEME_OPTIONS: { value: AssetScheme; label: string }[] = [
-  { value: 'https', label: 'https' },
-  { value: 'http', label: 'http' },
-]
 
 interface TimeZoneItem {
   value: string
@@ -58,7 +50,7 @@ function pickInitialZone(timeZones: readonly string[]): string {
 // against the route action. Base UI's `Select` / `Combobox` are *not*
 // native form fields, so the controlled values are mirrored into hidden
 // `<input>`s and the action keeps reading the same field names
-// (`assetScheme`, `timeZone`) it always has.
+// (`timeZone`) it always has.
 //
 // Defaults are deliberate hints, not server-side fallbacks: an admin in
 // a hurry can keep `https`, the browser-detected (or `Asia/Shanghai`)
@@ -69,7 +61,6 @@ export function SettingsInstallForm({ csrf, timeZones }: SettingsInstallFormProp
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
 
-  const [assetScheme, setAssetScheme] = useState<AssetScheme>('https')
   const [timeZone, setTimeZone] = useState<string>(() => pickInitialZone(timeZones))
 
   // Adapt the timezone string list to the `{ value, label }` shape the
@@ -87,13 +78,11 @@ export function SettingsInstallForm({ csrf, timeZones }: SettingsInstallFormProp
     <Form method="post" id="settingsInstallForm" className="flex flex-col gap-6">
       <input type="hidden" name="csrf" value={csrf} />
       {/*
-       * Hidden mirrors for the two non-native form controls below so the
-       * `<Form method="post">` POST body keeps carrying the same field
-       * names the route action / Zod schema expect. Plain native inputs
-       * (`title`, `website`, `authorEmail`, `assetHost`, `locale`,
-       * `timeFormat`) submit themselves and don't need a mirror.
+       * Hidden mirror for the non-native timezone combobox so the
+       * `<Form method="post">` POST body carries the field the route
+       * action / Zod schema expect. Plain native inputs submit themselves
+       * and don't need a mirror.
        */}
-      <input type="hidden" name="assetScheme" value={assetScheme} />
       <input type="hidden" name="timeZone" value={timeZone} />
 
       <fieldset className="flex flex-col gap-4 border-0 p-0">
@@ -133,45 +122,6 @@ export function SettingsInstallForm({ csrf, timeZones }: SettingsInstallFormProp
             placeholder="hello@example.com"
           />
           <p className="text-xs text-muted-foreground">评论通知 / 待审核提醒发件人，可与管理员邮箱不同。</p>
-        </div>
-      </fieldset>
-
-      <fieldset className="flex flex-col gap-4 border-0 p-0">
-        <legend className="text-sm font-semibold">静态资源域名</legend>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="install-asset-scheme">协议</Label>
-          <Select
-            items={SCHEME_OPTIONS}
-            value={assetScheme}
-            onValueChange={(value) => setAssetScheme(((value as AssetScheme | null) ?? 'https') as AssetScheme)}
-            disabled={isSubmitting}
-          >
-            <SelectTrigger id="install-asset-scheme" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SCHEME_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="install-asset-host">CDN 域名</Label>
-          <Input
-            id="install-asset-host"
-            name="assetHost"
-            type="text"
-            required
-            maxLength={253}
-            disabled={isSubmitting}
-            placeholder="cdn.example.com"
-          />
-          <p className="text-xs text-muted-foreground">
-            必须与部署期 ENV 变量 ASSET_HOST 数值一致：MDX 编译流水线在数据库不可用阶段从 ENV 读取，运行期从这里读取。
-          </p>
         </div>
       </fieldset>
 

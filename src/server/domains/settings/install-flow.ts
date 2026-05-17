@@ -16,8 +16,6 @@ export const SETTINGS_INSTALL_FIELDS = [
   'title',
   'website',
   'authorEmail',
-  'assetHost',
-  'assetScheme',
   'locale',
   'timeZone',
   'timeFormat',
