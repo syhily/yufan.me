@@ -13,7 +13,7 @@ import { countPostMetas, listPostMetas } from '@/server/domains/posts/repo'
 import { countMyComments, listMyComments, resolveEntitiesForComments } from '@/server/infra/db/operations/comment'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { roleLabel } from '@/shared/utils/roles'
-import { PendingModerationPanel } from '@/ui/admin/welcome/PendingModerationPanel'
+import { PendingModerationPanel, pickEmptyStateLine } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
 
 import type { Route } from './+types/welcome'
@@ -150,6 +150,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     greeting,
     pendingModeration,
     visitSummary,
+    emptyStateLine: pickEmptyStateLine(),
     stats: {
       draftCount,
       publishedCount,
@@ -162,7 +163,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
-  const { name, role, greeting, pendingModeration, visitSummary, stats, recentDrafts, recentMyComments } = loaderData
+  const {
+    name,
+    role,
+    greeting,
+    pendingModeration,
+    visitSummary,
+    emptyStateLine,
+    stats,
+    recentDrafts,
+    recentMyComments,
+  } = loaderData
   const isAdmin = role === 'admin'
   return (
     <div className="flex flex-col gap-6">
@@ -177,7 +188,9 @@ export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
       {isAdmin && visitSummary !== null && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <VisitSummaryCard summary={visitSummary} />
-          {pendingModeration !== null && <PendingModerationPanel initial={pendingModeration} />}
+          {pendingModeration !== null && (
+            <PendingModerationPanel initial={pendingModeration} emptyStateLine={emptyStateLine} />
+          )}
         </div>
       )}
       <StatsGrid stats={stats} />

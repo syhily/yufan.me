@@ -12,10 +12,9 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
 
-// Empty-state copy. Picked once per mount via `useState` lazy init so a
-// re-render after an action doesn't shuffle the line out from under the
-// admin mid-read.
-const EMPTY_STATE_LINES: ReadonlyArray<string> = [
+// Empty-state copy. Picked once in the SSR loader so the same line is
+// used during hydration — no hydration mismatch.
+export const EMPTY_STATE_LINES: ReadonlyArray<string> = [
   '审核台空空如也，今日得清闲。',
   '万事妥帖，可以安心写新东西了。',
   '一切井然有序，去泡杯茶吧。',
@@ -23,7 +22,7 @@ const EMPTY_STATE_LINES: ReadonlyArray<string> = [
   '都处理完啦，去看看星辰大海。',
 ]
 
-function pickRandomLine(): string {
+export function pickEmptyStateLine(): string {
   return EMPTY_STATE_LINES[Math.floor(Math.random() * EMPTY_STATE_LINES.length)] ?? EMPTY_STATE_LINES[0]!
 }
 
@@ -39,13 +38,11 @@ const ROW_DATE_FORMAT = 'LL-dd HH:mm'
 // row's badge tells the admin which queue surfaced it.
 export interface PendingModerationPanelProps {
   initial: ListPendingDashboardOutput
+  emptyStateLine: string
 }
 
-export function PendingModerationPanel({ initial }: PendingModerationPanelProps) {
+export function PendingModerationPanel({ initial, emptyStateLine }: PendingModerationPanelProps) {
   const [offset, setOffset] = useState(0)
-  // Pick once per mount — the empty state stays stable while the admin
-  // pages through the list / refreshes.
-  const [emptyStateLine] = useState<string>(pickRandomLine)
 
   const {
     data,
