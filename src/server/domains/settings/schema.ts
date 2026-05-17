@@ -214,7 +214,7 @@ export type SendTestMailInput = z.infer<typeof sendTestMailSchema>
 // Per-bucket Redis cache configuration. Each bucket owns a stable id
 // (`og` / `calendar` / `avatar`) baked into the writers; the editor can
 // only rename the PREFIX and tune the TTL. The prefix has to end with
-// `-` or `:` so the SCAN MATCH `${prefix}*` can never reach into a
+// `:` so the SCAN MATCH `${prefix}*` can never reach into a
 // neighbouring bucket's namespace by accident (e.g. an `og` prefix
 // could otherwise match `ogre-foo`).
 //
@@ -225,9 +225,9 @@ export type SendTestMailInput = z.infer<typeof sendTestMailSchema>
 // retry immediately). `avatar-status` is the historical two-key
 // avatar layout — keeping it reserved means a future archeology dig
 // can't be silently shadowed.
-export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status-']
+export const RESERVED_CACHE_PREFIXES: readonly string[] = ['session:', 'rate-limit:', 'avatar-status:']
 
-const PREFIX_PATTERN = /^[a-z0-9_-]+[-:]$/i
+const PREFIX_PATTERN = /^[a-z0-9_-]+:$/i
 // 1 hour ≤ TTL ≤ 30 days. The lower bound keeps a typo from making a
 // cache useless (sub-minute TTL would treadmill regenerations and
 // hammer Redis); the upper bound keeps stale renders from outliving a
@@ -241,7 +241,7 @@ const cacheBucketSchema = z.object({
     .trim()
     .min(2)
     .max(40)
-    .regex(PREFIX_PATTERN, '前缀只能包含字母 / 数字 / `_` / `-`，且必须以 `-` 或 `:` 结尾'),
+    .regex(PREFIX_PATTERN, '前缀只能包含字母 / 数字 / `_` / `-`，且必须以 `:` 结尾'),
   ttlSeconds: z.coerce.number().int().min(MIN_TTL_SECONDS).max(MAX_TTL_SECONDS),
 })
 

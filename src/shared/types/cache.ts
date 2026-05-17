@@ -15,10 +15,10 @@ export const CACHE_BUCKET_IDS = [
 ] as const satisfies readonly [CacheBucketId, ...CacheBucketId[]]
 
 export const CACHE_BUCKET_FALLBACKS: Record<CacheBucketId, CacheBucketSlot> = {
-  og: { prefix: 'og-', ttlSeconds: 60 * 60 * 24 },
-  calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 * 24 },
-  avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 },
-  imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+  og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
+  calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
+  avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
+  imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
 
   embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
   searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },

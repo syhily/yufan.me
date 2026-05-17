@@ -86,7 +86,7 @@ const fixtureBundle: BlogSettingsBundle = {
       og: { prefix: 'og:', ttlSeconds: 3600 },
       calendar: { prefix: 'calendar:', ttlSeconds: 3600 },
       avatar: { prefix: 'avatar:', ttlSeconds: 3600 },
-      imageMeta: { prefix: 'image-meta-', ttlSeconds: 3600 },
+      imageMeta: { prefix: 'image-meta:', ttlSeconds: 3600 },
       embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
       searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
     },
@@ -519,10 +519,10 @@ describe('services/settings — cache section', () => {
       'cache',
       {
         cache: {
-          og: { prefix: 'opengraph-', ttlSeconds: 60 * 60 * 24 * 14 },
+          og: { prefix: 'opengraph:', ttlSeconds: 60 * 60 * 24 * 14 },
           calendar: { prefix: 'cal:', ttlSeconds: 60 * 60 * 12 },
-          avatar: { prefix: 'gravatar-', ttlSeconds: 60 * 60 * 24 * 3 },
-          imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+          avatar: { prefix: 'gravatar:', ttlSeconds: 60 * 60 * 24 * 3 },
+          imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
           embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
         },
@@ -533,9 +533,9 @@ describe('services/settings — cache section', () => {
     const [data, , scope] = vi.mocked(settingQueries.upsertSetting).mock.calls[0]
     expect(scope).toBe('blog.cache')
     const cache = (data as Record<string, unknown>).cache as Record<string, unknown>
-    expect((cache.og as Record<string, unknown>).prefix).toBe('opengraph-')
+    expect((cache.og as Record<string, unknown>).prefix).toBe('opengraph:')
     expect((cache.calendar as Record<string, unknown>).prefix).toBe('cal:')
-    expect((cache.avatar as Record<string, unknown>).prefix).toBe('gravatar-')
+    expect((cache.avatar as Record<string, unknown>).prefix).toBe('gravatar:')
   })
 
   it('rejects two buckets sharing the same prefix', async () => {
@@ -546,10 +546,10 @@ describe('services/settings — cache section', () => {
         'cache',
         {
           cache: {
-            og: { prefix: 'shared-', ttlSeconds: 60 * 60 },
-            calendar: { prefix: 'shared-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            og: { prefix: 'shared:', ttlSeconds: 60 * 60 },
+            calendar: { prefix: 'shared:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -567,10 +567,10 @@ describe('services/settings — cache section', () => {
         'cache',
         {
           cache: {
-            og: { prefix: 'og-', ttlSeconds: 60 * 60 },
-            calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'og-foo-', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            og: { prefix: 'og:', ttlSeconds: 60 * 60 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'og-foo:', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -589,9 +589,9 @@ describe('services/settings — cache section', () => {
         {
           cache: {
             og: { prefix: 'session:', ttlSeconds: 60 * 60 },
-            calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -608,10 +608,10 @@ describe('services/settings — cache section', () => {
         'cache',
         {
           cache: {
-            og: { prefix: 'rate-', ttlSeconds: 60 * 60 },
-            calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            og: { prefix: 'rate:', ttlSeconds: 60 * 60 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -620,7 +620,7 @@ describe('services/settings — cache section', () => {
     ).rejects.toBeInstanceOf(DomainError)
   })
 
-  it('rejects a prefix that does not end with `-` or `:`', async () => {
+  it('rejects a prefix that does not end with `:`', async () => {
     vi.mocked(settingQueries.findSettingsByScopePrefix).mockResolvedValue([])
 
     await expect(
@@ -629,9 +629,9 @@ describe('services/settings — cache section', () => {
         {
           cache: {
             og: { prefix: 'ogkey', ttlSeconds: 60 * 60 },
-            calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -648,10 +648,10 @@ describe('services/settings — cache section', () => {
         'cache',
         {
           cache: {
-            og: { prefix: 'og-', ttlSeconds: 60 },
-            calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            og: { prefix: 'og:', ttlSeconds: 60 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -664,10 +664,10 @@ describe('services/settings — cache section', () => {
         'cache',
         {
           cache: {
-            og: { prefix: 'og-', ttlSeconds: 60 * 60 },
-            calendar: { prefix: 'calendar-', ttlSeconds: 60 * 60 },
-            avatar: { prefix: 'avatar-', ttlSeconds: 60 * 60 * 24 * 365 },
-            imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+            og: { prefix: 'og:', ttlSeconds: 60 * 60 },
+            calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 },
+            avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 * 365 },
+            imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
             embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
           },
         },
@@ -699,9 +699,9 @@ describe('services/settings — snapshot reader', () => {
 
   it('requireBlogSettingsSection(cache) backfills missing bucket slots with fallbacks', () => {
     const legacyCache = {
-      og: { prefix: 'legacy-og-', ttlSeconds: 1234 },
-      calendar: { prefix: 'legacy-calendar-', ttlSeconds: 5678 },
-      avatar: { prefix: 'legacy-avatar-', ttlSeconds: 4321 },
+      og: { prefix: 'legacy-og:', ttlSeconds: 1234 },
+      calendar: { prefix: 'legacy-calendar:', ttlSeconds: 5678 },
+      avatar: { prefix: 'legacy-avatar:', ttlSeconds: 4321 },
     } as unknown as NonNullable<BlogSettingsBundle['cache']>['cache']
 
     const legacyLikeBundle: BlogSettingsBundle = {
@@ -713,10 +713,10 @@ describe('services/settings — snapshot reader', () => {
     setBlogSettingsBundleForTests(legacyLikeBundle)
 
     const cache = requireBlogSettingsSection('cache').cache
-    expect(cache.og).toEqual({ prefix: 'legacy-og-', ttlSeconds: 1234 })
-    expect(cache.calendar).toEqual({ prefix: 'legacy-calendar-', ttlSeconds: 5678 })
-    expect(cache.avatar).toEqual({ prefix: 'legacy-avatar-', ttlSeconds: 4321 })
-    expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
+    expect(cache.og).toEqual({ prefix: 'legacy-og:', ttlSeconds: 1234 })
+    expect(cache.calendar).toEqual({ prefix: 'legacy-calendar:', ttlSeconds: 5678 })
+    expect(cache.avatar).toEqual({ prefix: 'legacy-avatar:', ttlSeconds: 4321 })
+    expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
     expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
     expect(cache.embeddingSearch).toEqual({ prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 })
   })
@@ -749,7 +749,7 @@ describe('services/settings — snapshot reader', () => {
 
     expect(dto.bundle).not.toBeNull()
     const cache = dto.bundle!.cache!.cache
-    expect(cache.imageMeta).toEqual({ prefix: 'image-meta-', ttlSeconds: 60 * 60 })
+    expect(cache.imageMeta).toEqual({ prefix: 'image-meta:', ttlSeconds: 60 * 60 })
     const upsertCalls = vi.mocked(settingQueries.upsertSetting).mock.calls
     expect(upsertCalls.some((call) => call[2] === 'blog.cache')).toBe(true)
   })

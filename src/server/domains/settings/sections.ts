@@ -119,7 +119,7 @@ const mailDefaults = {
 // `:`-suffixed prefixes are the safe shape: the cache schema rejects
 // any prefix that's a strict prefix of (or equal to) another bucket's
 // prefix, AND any prefix that collides with the reserved `session:` /
-// `rate-limit:` / `avatar-status-` surfaces. The five default
+// `rate-limit:` / `avatar-status:` surfaces. The five default
 // prefixes below clear both bars without overlapping each other.
 //
 // `image-meta:` is routed through Redis so SSR
@@ -133,7 +133,7 @@ const cacheDefaults = {
     og: { prefix: 'og:', ttlSeconds: 60 * 60 * 24 },
     calendar: { prefix: 'calendar:', ttlSeconds: 60 * 60 * 24 },
     avatar: { prefix: 'avatar:', ttlSeconds: 60 * 60 * 24 },
-    imageMeta: { prefix: 'image-meta-', ttlSeconds: 60 * 60 },
+    imageMeta: { prefix: 'image-meta:', ttlSeconds: 60 * 60 },
 
     embeddingSearch: { prefix: 'embedding-search:', ttlSeconds: 60 * 60 * 24 * 7 },
     searchResult: { prefix: 'search-result:', ttlSeconds: 60 * 60 },
