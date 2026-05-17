@@ -181,7 +181,7 @@ const replyComment = publicProc
       rid: input.rid,
     }
     const comment = await createComment(commentPayload, request, clientAddress, session)
-    const rotated = await issueCsrfToken()
+    const rotated = await issueCsrfToken(request)
     responseHeaders.append('Set-Cookie', rotated.setCookie)
     if (!isAdmin) {
       const ttl = requireBlogSettingsSection('comments').comments.tokenTtlSeconds

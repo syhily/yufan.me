@@ -19,7 +19,9 @@ const csrfCookie = createCookie('csrf-token', {
   maxAge: CSRF_TOKEN_TTL_SECONDS,
   path: '/',
   sameSite: 'lax',
-  secure: import.meta.env.PROD,
+  // secure flag is determined per-request so the cookie works on both
+  // HTTP (development / local network) and HTTPS (production).  Callers
+  // pass the flag explicitly via serializeOptions.
   secrets: [SESSION_SECRET],
 })
 
@@ -28,9 +30,17 @@ export interface IssuedCsrfToken {
   setCookie: string
 }
 
-export async function issueCsrfToken(): Promise<IssuedCsrfToken> {
+function isSecureRequest(request: Request | undefined): boolean {
+  if (!request) {
+    return import.meta.env.PROD
+  }
+  const url = new URL(request.url)
+  return url.protocol === 'https:'
+}
+
+export async function issueCsrfToken(request?: Request): Promise<IssuedCsrfToken> {
   const token = makeToken(CSRF_TOKEN_LENGTH)
-  const setCookie = await csrfCookie.serialize(token)
+  const setCookie = await csrfCookie.serialize(token, { secure: isSecureRequest(request) })
   return { token, setCookie }
 }
 
@@ -46,7 +56,7 @@ export async function reuseOrIssueCsrfToken(request: Request): Promise<ReusedCsr
   if (existing !== null && existing !== '') {
     return { token: existing, setCookie: '' }
   }
-  return issueCsrfToken()
+  return issueCsrfToken(request)
 }
 
 export async function validateRequestCsrf(request: Request, formToken: string | undefined): Promise<[boolean, string]> {
@@ -64,6 +74,6 @@ export async function validateRequestCsrf(request: Request, formToken: string | 
   return [true, '']
 }
 
-export async function clearCsrfCookie(): Promise<string> {
-  return csrfCookie.serialize('', { maxAge: 0 })
+export async function clearCsrfCookie(request?: Request): Promise<string> {
+  return csrfCookie.serialize('', { maxAge: 0, secure: isSecureRequest(request) })
 }

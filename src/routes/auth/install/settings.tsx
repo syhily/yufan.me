@@ -17,7 +17,7 @@ import type { Route } from './+types/settings'
 export async function loader({ request, context }: Route.LoaderArgs) {
   await requireStageTwoSession({ request, context })
 
-  const { token: csrf, setCookie } = await issueCsrfToken()
+  const { token: csrf, setCookie } = await issueCsrfToken(request)
   return data({ csrf, timeZones: getSupportedTimeZones() }, { headers: { 'Set-Cookie': setCookie } })
 }
 

@@ -56,7 +56,7 @@ export const csrfGuard = createMiddleware<Env>(async (c, next) => {
 
   const [ok] = await validateRequestCsrf(c.req.raw, token)
   if (!ok) {
-    c.header('Set-Cookie', await clearCsrfCookie(), { append: true })
+    c.header('Set-Cookie', await clearCsrfCookie(c.req.raw), { append: true })
     throw new HTTPException(403, { message: '页面安全令牌已失效，请刷新后重试。' })
   }
 
