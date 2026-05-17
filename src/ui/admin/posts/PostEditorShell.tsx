@@ -133,7 +133,12 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
   })
 
   return (
-    <div className={cn('flex flex-col gap-4 p-4', state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]')}>
+    <div
+      className={cn(
+        'flex flex-col gap-0 p-0 md:gap-4 md:p-4',
+        state.previewOpen ? 'min-h-0 flex-1' : 'min-h-[calc(100vh-4rem)]',
+      )}
+    >
       {/* Toolbar splits into two intent groups that share a single row
        *  when there is room:
        *    LEFT  — navigation away (`返回列表`, `公开预览`)

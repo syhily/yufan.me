@@ -68,7 +68,7 @@ function PageEditorError({ message }: { message: string }) {
 
 function PageEditorSkeleton() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 p-4">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-0 md:gap-4 md:p-4">
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-24" />
         <Skeleton className="h-5 w-48" />
