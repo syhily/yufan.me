@@ -67,9 +67,9 @@ describe('services/settings — write isolation', () => {
         'cache',
         {
           cache: {
-            // The `:`-suffixed forms are the safe shape: `og-` (without
-            // a colon) collides with the `og:` reserved prefix and
-            // `avatar-` collides with the reserved `avatar-status-`.
+            // The `:`-suffixed forms are the safe shape: `og:` (with
+            // a colon) avoids collisions with neighbouring buckets and
+            // reserved prefixes like `session:` / `rate-limit:`.
             og: { prefix: 'og-bucket:', ttlSeconds: 60 * 60 * 24 },
             calendar: { prefix: 'cal-bucket:', ttlSeconds: 60 * 60 * 24 },
             avatar: { prefix: 'av-bucket:', ttlSeconds: 60 * 60 * 24 },

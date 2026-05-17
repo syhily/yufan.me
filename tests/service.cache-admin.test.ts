@@ -70,12 +70,12 @@ describe('service: cache admin', () => {
   })
 
   it('counts keys per bucket via SCAN', async () => {
-    // The shared fixture seeds historical prefixes (`og-`, `avatar-`,
-    // `calendar-`); see `tests/_helpers/blog-settings`.
-    fixture.store.set('og-hello-deadbeef', new Uint8Array([1, 2]))
-    fixture.store.set('og-world-cafef00d', new Uint8Array([3, 4]))
-    fixture.store.set('avatar-abc', new Uint8Array([5]))
-    fixture.store.set('calendar-2026-04-30', new Uint8Array([6]))
+    // The shared fixture seeds prefixes (`og:`, `avatar:`,
+    // `calendar:`); see `tests/_helpers/blog-settings`.
+    fixture.store.set('og:hello-deadbeef', new Uint8Array([1, 2]))
+    fixture.store.set('og:world-cafef00d', new Uint8Array([3, 4]))
+    fixture.store.set('avatar:abc', new Uint8Array([5]))
+    fixture.store.set('calendar:2026-04-30', new Uint8Array([6]))
     // Out-of-bucket noise (sessions, rate-limit) — must NOT show up.
     fixture.store.set('session:xyz', 'cookie-payload')
     fixture.store.set('rate-limit:1.2.3.4', '4')
@@ -95,26 +95,26 @@ describe('service: cache admin', () => {
   })
 
   it('clears only the targeted bucket', async () => {
-    fixture.store.set('og-hello-deadbeef', new Uint8Array([1]))
-    fixture.store.set('og-world-cafef00d', new Uint8Array([2]))
-    fixture.store.set('avatar-abc', new Uint8Array([3]))
+    fixture.store.set('og:hello-deadbeef', new Uint8Array([1]))
+    fixture.store.set('og:world-cafef00d', new Uint8Array([2]))
+    fixture.store.set('avatar:abc', new Uint8Array([3]))
     fixture.store.set('session:xyz', 'cookie-payload')
 
     const result = await clearAdminCache('og')
 
     expect(result.cleared).toEqual([{ bucketId: 'og', label: 'OG 图缓存', removed: 2 }])
     expect(result.total).toBe(2)
-    expect([...fixture.store.keys()].sort()).toEqual(['avatar-abc', 'session:xyz'])
+    expect([...fixture.store.keys()].sort()).toEqual(['avatar:abc', 'session:xyz'])
     // Refreshed snapshot should reflect the deletion.
     expect(result.refreshedStats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(0)
     expect(result.refreshedStats.buckets.find((bucket) => bucket.id === 'avatar')?.keyCount).toBe(1)
   })
 
   it('aggregates counts when clearing all buckets', async () => {
-    fixture.store.set('og-hello-deadbeef', new Uint8Array([1]))
-    fixture.store.set('avatar-abc', new Uint8Array([2]))
-    fixture.store.set('avatar-def', new Uint8Array([3]))
-    fixture.store.set('calendar-2026-04-30', new Uint8Array([4]))
+    fixture.store.set('og:hello-deadbeef', new Uint8Array([1]))
+    fixture.store.set('avatar:abc', new Uint8Array([2]))
+    fixture.store.set('avatar:def', new Uint8Array([3]))
+    fixture.store.set('calendar:2026-04-30', new Uint8Array([4]))
     fixture.store.set('session:xyz', 'cookie-payload')
 
     const result = await clearAdminCache('all')
@@ -154,27 +154,27 @@ describe('service: cache admin', () => {
       cache: {
         cache: {
           ...TEST_BLOG_SETTINGS_BUNDLE.cache!.cache,
-          og: { prefix: 'opengraph-', ttlSeconds: TEST_BLOG_SETTINGS_BUNDLE.cache!.cache.og.ttlSeconds },
+          og: { prefix: 'opengraph:', ttlSeconds: TEST_BLOG_SETTINGS_BUNDLE.cache!.cache.og.ttlSeconds },
         },
       },
     })
-    fixture.store.set('opengraph-fresh-deadbeef', new Uint8Array([1]))
-    fixture.store.set('og-stale-deadbeef', new Uint8Array([2])) // legacy key under the old prefix
-    fixture.store.set('avatar-abc', new Uint8Array([3]))
+    fixture.store.set('opengraph:fresh-deadbeef', new Uint8Array([1]))
+    fixture.store.set('og:stale-deadbeef', new Uint8Array([2])) // legacy key under the old prefix
+    fixture.store.set('avatar:abc', new Uint8Array([3]))
 
     const stats = await getAdminCacheStats()
-    expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph-*')
+    expect(stats.buckets.find((bucket) => bucket.id === 'og')?.pattern).toBe('opengraph:*')
     expect(stats.buckets.find((bucket) => bucket.id === 'og')?.keyCount).toBe(1)
 
     const cleared = await clearAdminCache('og')
     expect(cleared.total).toBe(1)
-    // Legacy `og-stale-…` key is NOT touched — that's the documented
+    // Legacy `og:stale-…` key is NOT touched — that's the documented
     // behaviour: old keys age out at their stored TTL.
-    expect([...fixture.store.keys()].sort()).toEqual(['avatar-abc', 'og-stale-deadbeef'])
+    expect([...fixture.store.keys()].sort()).toEqual(['avatar:abc', 'og:stale-deadbeef'])
   })
 
   it('exposes prefix + TTL on every stats entry', async () => {
-    fixture.store.set('og-hello-x', new Uint8Array([1]))
+    fixture.store.set('og:hello-x', new Uint8Array([1]))
     const stats = await getAdminCacheStats()
 
     const og = stats.buckets.find((bucket) => bucket.id === 'og')
@@ -189,9 +189,9 @@ describe('service: cache admin', () => {
   // panel is now the single source of truth for invalidation, so the
   // SCAN + UNLINK contract has to cover them too.
   it('scans and clears the imageMeta buckets the same way as og/avatar/calendar', async () => {
-    fixture.store.set('image-meta-images/2024/06/cover.jpg', JSON.stringify({ found: true }))
-    fixture.store.set('image-meta-images/2024/06/banner.jpg', JSON.stringify({ found: false }))
-    fixture.store.set('og-foo', new Uint8Array([1]))
+    fixture.store.set('image-meta:images/2024/06/cover.jpg', JSON.stringify({ found: true }))
+    fixture.store.set('image-meta:images/2024/06/banner.jpg', JSON.stringify({ found: false }))
+    fixture.store.set('og:foo', new Uint8Array([1]))
 
     const stats = await getAdminCacheStats()
     const counts = Object.fromEntries(stats.buckets.map((b) => [b.id, b.keyCount]))
