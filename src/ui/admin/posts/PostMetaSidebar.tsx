@@ -51,7 +51,7 @@ export const EMPTY_POST_META_DRAFT: PostMetaDraft = {
   summary: '',
   cover: '',
   og: '',
-  published: true,
+  published: false,
   commentsEnabled: true,
   showToc: false,
   showUpdated: false,

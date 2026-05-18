@@ -72,7 +72,6 @@ function buildPostUpsertPayload({
     summary: meta.summary.trim(),
     cover: meta.cover.trim(),
     og: meta.og.trim() === '' ? null : meta.og.trim(),
-    published: meta.published,
     commentsEnabled: meta.commentsEnabled,
     showToc: meta.showToc,
     showUpdated: meta.showUpdated,

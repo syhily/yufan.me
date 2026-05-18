@@ -358,7 +358,7 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
     // is "draft only". The page becomes public when the operator
     // hits "发布" (which both promotes the latest revision *and*
     // flips this flag in the same transaction).
-    published: input.published ?? false,
+    published: false,
     commentsEnabled: input.commentsEnabled ?? true,
     showToc: input.showToc ?? false,
     showUpdated: input.showUpdated ?? false,
@@ -392,7 +392,6 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
     summary: input.summary ?? existing.summary,
     cover: input.cover ?? existing.cover,
     og: input.og === undefined ? existing.og : input.og,
-    published: input.published ?? existing.published,
     commentsEnabled: input.commentsEnabled ?? existing.commentsEnabled,
     showToc: input.showToc ?? existing.showToc,
     showUpdated: input.showUpdated ?? existing.showUpdated,

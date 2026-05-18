@@ -181,7 +181,7 @@ export const EMPTY_PAGE_META_DRAFT: PageMetaDraft = {
   summary: '',
   cover: '',
   og: '',
-  published: true,
+  published: false,
   commentsEnabled: true,
   showToc: false,
   showUpdated: false,

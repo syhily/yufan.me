@@ -183,6 +183,40 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
       code: 'NOT_FOUND',
     })
   })
+
+  it('createPage always inserts published=false even when input says true', async () => {
+    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
+    vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
+
+    await service.createPage({ title: 'New Page', published: true }, null)
+
+    const patch = vi.mocked(repo.insertPageMeta).mock.calls[0][0]
+    expect(patch.published).toBe(false)
+  })
+
+  it('createPage inserts published=false when input omits the field', async () => {
+    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
+    vi.mocked(repo.insertPageMeta).mockResolvedValue(metaRow({ slug: 'new-page', published: false }))
+
+    await service.createPage({ title: 'New Page' }, null)
+
+    const patch = vi.mocked(repo.insertPageMeta).mock.calls[0][0]
+    expect(patch.published).toBe(false)
+  })
+
+  it('updatePageMeta never touches published even when input includes it', async () => {
+    vi.mocked(repo.findPageMetaById).mockResolvedValue(metaRow({ id: 7n, slug: 'about', published: true }))
+    vi.mocked(repo.findPageMetaBySlug).mockResolvedValue(null)
+    vi.mocked(repo.updatePageMetaById).mockResolvedValue(
+      metaRow({ id: 7n, slug: 'about', published: true, title: 'Updated' }),
+    )
+
+    const dto = await service.updatePageMeta({ id: 7n, slug: 'about', title: 'Updated', published: false })
+    expect(dto.title).toBe('Updated')
+
+    const patch = vi.mocked(repo.updatePageMetaById).mock.calls[0][1]
+    expect(patch).not.toHaveProperty('published')
+  })
 })
 
 describe('cms/pages/service — saveDraft / publishLatest body validation', () => {
