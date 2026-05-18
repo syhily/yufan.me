@@ -353,7 +353,7 @@ function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
     tags: (meta.tags as string[]) ?? [],
     category: meta.category,
     summary: meta.summary,
-    cover: meta.cover,
+    cover: meta.cover || '/images/open-graph.png',
     og: meta.og ?? undefined,
     published: meta.published,
     visible: meta.visible,

@@ -122,7 +122,8 @@ vi.mock('@/server/render/image-enhance', () => ({
 const postRoute = await import('@/routes/public/post/detail')
 const postsService = await import('@/server/domains/posts/service')
 const draftPreviewMock = vi.mocked(postsService.loadPostDraftPreviewBySlug)
-const findPostBySlugMock = vi.mocked((await import('@/server/domains/posts/repo')).findPostBySlug)
+const postsRepo = await import('@/server/domains/posts/repo')
+const findPostBySlugMock = vi.mocked(postsRepo.findPostBySlug)
 
 type LoaderResult = {
   post: { title: string }
