@@ -1,7 +1,6 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/domains/posts/preview'
 import {
   listPostsSchema,
   previewPostBodySchema,
@@ -22,6 +21,7 @@ import {
 } from '@/server/domains/posts/service'
 import { authorProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
+import { renderPortableTextToHtml as renderPostPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import {
   adminPostDetailDto,
   adminPostDto,
@@ -123,7 +123,7 @@ const preview = authorProc
   .input(previewPostBodySchema)
   .output(previewOutputDto)
   .handler(async ({ input }) => {
-    const html = await renderPostPortableTextToHtml(input.body)
+    const html = await renderPostPortableTextToHtml(input.body, [])
     const headings = collectHeadings(input.body, deriveSlug)
     return { html, headings }
   })

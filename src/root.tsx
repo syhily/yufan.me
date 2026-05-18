@@ -2,6 +2,7 @@ import type { MiddlewareFunction, ShouldRevalidateFunctionArgs } from 'react-rou
 
 import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useState } from 'react'
+import { preconnect, prefetchDNS } from 'react-dom'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData } from 'react-router'
 
 import { makeQueryClient } from '@/client/api/query-client'
@@ -139,10 +140,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // `tailwind.css` without any pre-paint flash.
   const rootData = useRouteLoaderData<{
     theme?: 'dark' | 'light' | null
-    blogSettings?: { fonts?: { globalCss?: string[] } | null } | null
+    blogSettings?: {
+      fonts?: { globalCss?: string[] } | null
+      assets?: { asset?: { host?: string } | null } | null
+    } | null
   }>('root')
   const theme = rootData?.theme ?? null
   const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
+  const assetHost = rootData?.blogSettings?.assets?.asset?.host
+
+  // Resource hints: preconnect to asset CDN and font hosts so the
+  // browser can set up TCP / TLS handshakes before the stylesheet
+  // `<link>`s are parsed.
+  const fontHosts: string[] = []
+  for (const url of globalFontCss) {
+    try {
+      const host = new URL(url).host
+      if (!fontHosts.includes(host)) {
+        fontHosts.push(host)
+      }
+    } catch {
+      // Invalid URL — skip.
+    }
+  }
+
+  if (assetHost) {
+    preconnect(`https://${assetHost}`, { crossOrigin: 'anonymous' })
+  }
+  for (const host of fontHosts) {
+    preconnect(`https://${host}`)
+    prefetchDNS(`https://${host}`)
+  }
 
   return (
     <html lang="zh-CN" className={theme ?? undefined}>

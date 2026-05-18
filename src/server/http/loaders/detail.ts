@@ -1,7 +1,5 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
-import { redirect } from 'react-router'
-
 import type { EntityTarget } from '@/server/infra/db/target'
 import type { ClientTag, SidebarPostLink } from '@/shared/types/catalog'
 
@@ -11,6 +9,8 @@ import { issueCsrfToken } from '@/server/domains/auth/csrf'
 import { resolveSessionContext, userSession } from '@/server/domains/auth/primitives'
 import { type DetailPageComments, loadDetailPageStreaming } from '@/server/http/loaders/comments'
 import { notFound } from '@/server/infra/http/status'
+
+export { redirectPermanent } from '@/server/infra/http/redirects'
 
 export type PublicDetailCritical = Awaited<ReturnType<typeof loadDetailPageStreaming>>['critical']
 
@@ -33,10 +33,6 @@ export function requireDetailSource<T>(source: T | undefined): T {
     notFound()
   }
   return source
-}
-
-export function redirectPermanent(location: string): never {
-  throw redirect(location, { status: 301 })
 }
 
 function isPrefetchRequest(request: Request): boolean {

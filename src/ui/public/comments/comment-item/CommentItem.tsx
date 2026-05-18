@@ -41,7 +41,7 @@ function RootComment({ comment, depth, pending, admin: propAdmin }: CommentItemP
           {children.map((child) => (
             <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
           ))}
-          {childrenTail && <li>{childrenTail}</li>}
+          {!!childrenTail && <li>{childrenTail}</li>}
         </ul>
       )}
     </CommentRow>
@@ -56,7 +56,7 @@ function NestedComment({ comment, depth, pending, admin: propAdmin }: CommentIte
   return (
     <>
       <CommentRow comment={comment} depth={depth} pending={pending} admin={propAdmin} />
-      {afterComment && <li>{afterComment}</li>}
+      {!!afterComment && <li>{afterComment}</li>}
       {children.map((child) => (
         <CommentItem key={asKey(child.id)} comment={child} depth={depth + 1} admin={propAdmin} />
       ))}

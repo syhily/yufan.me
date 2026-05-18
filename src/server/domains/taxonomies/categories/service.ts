@@ -4,6 +4,7 @@ import type { CategoryRow } from '@/server/infra/db/types'
 import type { Category } from '@/shared/types/catalog'
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
+import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { listPostsByCategory, listPublicPosts } from '@/server/domains/posts/repo'
 import {
   deleteAdminTaxonomy,
@@ -26,7 +27,6 @@ import {
 import { db } from '@/server/infra/db/pool'
 import { category as categoryTable, post as postMetaTable } from '@/server/infra/db/schema'
 import { DomainError } from '@/server/infra/http/errors'
-import { hydrateImageRefs } from '@/server/render/image-enhance'
 
 // Wire-format DTO returned by every admin category endpoint. Bigint
 // id stringified so the browser bundle never touches BigInt. The

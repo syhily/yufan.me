@@ -2,6 +2,7 @@ import type { FriendRow } from '@/server/infra/db/types'
 import type { Friend } from '@/shared/types/catalog'
 import type { AdminFriendDto } from '@/shared/types/friends'
 
+import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import {
   type AdminFriendsListFilters,
   countAdminFriends,
@@ -14,7 +15,6 @@ import {
   updateFriend,
 } from '@/server/infra/db/operations/friend'
 import { DomainError } from '@/server/infra/http/errors'
-import { hydrateImageRefs } from '@/server/render/image-enhance'
 
 // Public projection (no `id`/`visible`/`createdAt`/`updatedAt`/`rssUrl`).
 // The `Friend` shape exported from `@/shared/types/catalog` already matches —

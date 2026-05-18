@@ -22,6 +22,8 @@ import { Separator } from '@/ui/components/separator'
 // names; each button consults `editor.can()` so that, e.g., "merge
 // cells" greys out when fewer than two cells are selected.
 
+const TABLE_BUBBLE_MENU_OPTIONS = { placement: 'top' as const, offset: 8 }
+
 export interface TableBubbleMenuProps {
   editor: Editor
 }
@@ -30,10 +32,7 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
   return (
     <BubbleMenu
       editor={editor}
-      options={{
-        placement: 'top',
-        offset: 8,
-      }}
+      options={TABLE_BUBBLE_MENU_OPTIONS}
       shouldShow={({ editor: instance }) => instance.isEditable && instance.isActive('table')}
       className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md"
     >

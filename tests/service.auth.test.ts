@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { issueCsrfToken, validateRequestCsrf } from '@/server/domains/auth/csrf'
+import { userSession } from '@/server/domains/auth/primitives'
 import { encodedEmail, makeToken, timingSafeEqual } from '@/shared/utils/security'
 
 import { adminSession, makeSession, regularSession } from './_helpers/session'
@@ -61,20 +62,17 @@ describe('services/auth/csrf — issue/validate (double-submit cookie)', () => {
 })
 
 describe('services/auth/session — userSession + role', () => {
-  it('userSession returns the stored user payload (no nullable wrappers)', async () => {
-    const { userSession } = await import('@/server/session')
+  it('userSession returns the stored user payload (no nullable wrappers)', () => {
     const admin = adminSession()
     expect(userSession(admin)?.email).toBe('admin@yufan.me')
     expect(userSession(admin)?.role).toBe('admin')
   })
 
-  it('role is "visitor" for non-admin sessions', async () => {
-    const { userSession } = await import('@/server/session')
+  it('role is "visitor" for non-admin sessions', () => {
     expect(userSession(regularSession())?.role).toBe('visitor')
   })
 
-  it('role is undefined when the session has no user attached', async () => {
-    const { userSession } = await import('@/server/session')
+  it('role is undefined when the session has no user attached', () => {
     expect(userSession(makeSession())?.role).toBeUndefined()
   })
 })

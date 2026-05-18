@@ -154,7 +154,7 @@ async function copyEvents(events: EnrichedAccessEvent[]): Promise<void> {
 // quotes are doubled. Returns a single line terminated by `\n` so the
 // upstream `Readable.from(events.map(csvRow))` can fan rows through
 // the COPY stream one at a time.
-function csvRow(e: EnrichedAccessEvent): string {
+export function csvRow(e: EnrichedAccessEvent): string {
   const cols = [
     e.ts.toISOString(),
     e.visitorHash,
@@ -184,7 +184,7 @@ function csvRow(e: EnrichedAccessEvent): string {
   return cols.map(csvEscape).join(',') + '\n'
 }
 
-function csvEscape(value: string | number | null | undefined): string {
+export function csvEscape(value: string | number | null | undefined): string {
   if (value === null || value === undefined) {
     return '\\N'
   }
@@ -195,18 +195,19 @@ function csvEscape(value: string | number | null | undefined): string {
   return str
 }
 
+import { getOrCreateGlobalSingleton } from '@/server/infra/global-singleton'
+
 const GLOBAL_KEY = Symbol.for('yufan.me/analytics-batcher')
-type Holder = { [GLOBAL_KEY]?: AccessLogBatcher }
-const holder = globalThis as Holder
 
 function getBatcher(): AccessLogBatcher {
-  if (!holder[GLOBAL_KEY]) {
-    holder[GLOBAL_KEY] = new AccessLogBatcher({
-      flushIntervalMs: 1000,
-      flushThreshold: 100,
-    })
-  }
-  return holder[GLOBAL_KEY]!
+  return getOrCreateGlobalSingleton(
+    GLOBAL_KEY,
+    () =>
+      new AccessLogBatcher({
+        flushIntervalMs: 1000,
+        flushThreshold: 100,
+      }),
+  )
 }
 
 export function pushAccessEvent(event: EnrichedAccessEvent): void {

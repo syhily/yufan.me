@@ -12,6 +12,7 @@ import {
   ensureUniqueOnUpdateTaxonomy,
   resolveSlugForTaxonomy,
 } from '@/server/domains/taxonomies/shared'
+import { createProcessCache } from '@/server/infra/cache/process-cache'
 import {
   type AdminTagsListFilters,
   countAdminTags,
@@ -158,19 +159,19 @@ export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Pr
 
 // --- Public catalog queries -------------------------------------------------
 
-let tagCache: Tag[] | null = null
-let tagCacheAt = 0
-const TAG_CACHE_TTL_MS = 30_000
+const tagCache = createProcessCache<Tag[]>({ ttlMs: 30_000 })
 const tagInflight = createInflight<Tag[]>()
 
 export async function listAllTags(): Promise<Tag[]> {
-  if (tagCache !== null && Date.now() - tagCacheAt < TAG_CACHE_TTL_MS) {
-    return tagCache
+  const cached = tagCache.get()
+  if (cached !== null) {
+    return cached
   }
 
   return tagInflight('listAllTags', async () => {
-    if (tagCache !== null && Date.now() - tagCacheAt < TAG_CACHE_TTL_MS) {
-      return tagCache
+    const cachedInner = tagCache.get()
+    if (cachedInner !== null) {
+      return cachedInner
     }
 
     const now = new Date()
@@ -181,8 +182,7 @@ export async function listAllTags(): Promise<Tag[]> {
       .orderBy(asc(tagTable.name))
 
     if (tagRows.length === 0) {
-      tagCache = []
-      tagCacheAt = Date.now()
+      tagCache.set([])
       return []
     }
 
@@ -209,8 +209,7 @@ export async function listAllTags(): Promise<Tag[]> {
       permalink: `/tags/${row.slug}`,
     }))
 
-    tagCache = tags
-    tagCacheAt = Date.now()
+    tagCache.set(tags)
     return tags
   })
 }

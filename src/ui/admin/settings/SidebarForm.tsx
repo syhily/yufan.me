@@ -18,6 +18,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
 
+const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
+
 import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared/config/blog'
 
 import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
@@ -165,7 +167,7 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
-          modifiers={[restrictToVerticalAxis]}
+          modifiers={VERTICAL_AXIS_ONLY}
         >
           <SortableContext items={draft.widgets.map((w) => w.type)} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col gap-3">

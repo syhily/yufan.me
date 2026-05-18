@@ -46,6 +46,15 @@ vi.mock('@/server/infra/db/schema', () => ({
     tags: 'post.tags',
   },
   tag: { name: 'tag.name', slug: 'tag.slug' },
+  image: {
+    id: 'image.id',
+    createdAt: 'image.created_at',
+    updatedAt: 'image.updated_at',
+    storagePath: 'image.storage_path',
+    width: 'image.width',
+    height: 'image.height',
+    thumbhash: 'image.thumbhash',
+  },
 }))
 
 vi.mock('drizzle-orm', () => ({
@@ -58,7 +67,7 @@ vi.mock('drizzle-orm', () => ({
   }) as unknown as typeof import('drizzle-orm').sql,
 }))
 
-vi.mock('@/server/render/image-enhance', () => ({
+vi.mock('@/server/domains/images/image-meta', () => ({
   hydrateImageRefs: vi.fn(async () => undefined),
 }))
 

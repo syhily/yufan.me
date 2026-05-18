@@ -56,23 +56,7 @@ const unpublishedPage = {
   publishedRevisionId: null,
 }
 
-let adminFlag = false
 let currentSession = regularSession()
-
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => currentSession),
-    isAdmin: vi.fn(() => adminFlag),
-    userSession: vi.fn((s: { data?: { user?: unknown } } | undefined) => s?.data?.user),
-    resolveSessionContext: vi.fn(async () => ({
-      session: currentSession,
-      user: currentSession?.data?.user,
-      admin: adminFlag,
-    })),
-  }
-})
 
 // catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
@@ -145,7 +129,6 @@ type LoaderResult = {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  adminFlag = false
   currentSession = regularSession()
 })
 
@@ -203,7 +186,6 @@ describe('routes/page.detail draft preview', () => {
   })
 
   it('shows 【草稿】 for an admin viewing an unpublished page', async () => {
-    adminFlag = true
     currentSession = adminSession()
     draftPreviewMock.mockResolvedValueOnce({ page: unpublishedPage, hasNewerDraft: true })
 
@@ -222,7 +204,6 @@ describe('routes/page.detail draft preview', () => {
   })
 
   it('shows 【未发布的草稿】 for an admin opening a published page with `?draft=true` when a newer draft exists', async () => {
-    adminFlag = true
     currentSession = adminSession()
     // The service projects the meta + latest draft into a `CmsPage`
     // whose `body` is the draft. The route then swaps `sourcePage`
@@ -247,7 +228,6 @@ describe('routes/page.detail draft preview', () => {
   })
 
   it('shows 【已发布的草稿】 when an admin opens a published page with `?draft=true` and there is no newer draft', async () => {
-    adminFlag = true
     currentSession = adminSession()
     draftPreviewMock.mockResolvedValueOnce({
       page: publishedPage,
@@ -270,7 +250,6 @@ describe('routes/page.detail draft preview', () => {
   })
 
   it('does not paint a marker on a published page when `?draft=true` is absent (admin session)', async () => {
-    adminFlag = true
     currentSession = adminSession()
 
     const result = unwrapLoaderData<LoaderResult>(

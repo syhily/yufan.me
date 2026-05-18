@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react'
-
-import type { AdminCategoryDto } from '@/shared/types/categories'
-
 import { orpcQuery, useQuery } from '@/client/api/query'
 import { Label } from '@/ui/components/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -13,14 +9,8 @@ export interface CategoryFieldProps {
 }
 
 export function CategoryField({ value, onChange, disabled }: CategoryFieldProps) {
-  const [categories, setCategories] = useState<AdminCategoryDto[]>([])
   const categoriesQuery = useQuery(orpcQuery.admin.categories.list.queryOptions({ input: {} }))
-
-  useEffect(() => {
-    if (categoriesQuery.data) {
-      setCategories(categoriesQuery.data.categories)
-    }
-  }, [categoriesQuery.data])
+  const categories = categoriesQuery.data?.categories ?? []
 
   return (
     <div className="grid gap-2">

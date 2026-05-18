@@ -198,7 +198,7 @@ export function CommentReplyForm({
             onEmailBlur={onEmailBlur}
           />
           {!admin && <CommentFormHoneypot />}
-          {submitError && <div className="mb-2 text-xs text-alert">{submitError}</div>}
+          {!!submitError && <div className="mb-2 text-xs text-alert">{submitError}</div>}
           <div className="flex justify-end gap-2">
             {replyToId !== 0 && (
               <Button
@@ -258,7 +258,7 @@ function ReplyOverlay({ authorName, originalContent }: ReplyOverlayProps) {
   return (
     <div className={replyingToOverlayClass}>
       <span className="font-medium">回复 @{authorName}</span>
-      {originalContent && <span>: {originalContent}</span>}
+      {!!originalContent && <span>: {originalContent}</span>}
     </div>
   )
 }

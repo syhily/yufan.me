@@ -18,6 +18,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 
+const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
+
 import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/config/blog'
 import type { SocialNetwork } from '@/shared/config/socials'
 
@@ -384,7 +386,7 @@ export function NavigationEditor({ navigation, socials }: NavigationEditorProps)
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleFooterDragEnd}
-              modifiers={[restrictToVerticalAxis]}
+              modifiers={VERTICAL_AXIS_ONLY}
             >
               <SortableContext
                 items={draft.footerNavItems.map((i) => i.clientId)}

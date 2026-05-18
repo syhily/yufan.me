@@ -53,21 +53,6 @@ const dbPage = {
   publishedRevisionId: 42n,
 }
 
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => session),
-    isAdmin: vi.fn(() => false),
-    userSession: vi.fn((s) => s?.data?.user),
-    resolveSessionContext: vi.fn(async () => ({
-      session,
-      user: session?.data?.user,
-      admin: false,
-    })),
-  }
-})
-
 // catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),

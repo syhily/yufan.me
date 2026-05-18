@@ -40,7 +40,7 @@ vi.mock('@/server/infra/db/operations/metric', () => ({
   findMetricByPublicId: vi.fn(),
 }))
 
-vi.mock('@/server/infra/email/sender', () => ({
+vi.mock('@/server/domains/comments/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
 }))
@@ -53,7 +53,7 @@ vi.mock('@/server/domains/comments/canonicalize', () => ({
 }))
 
 const queries = await import('@/server/infra/db/operations/comment')
-const emails = await import('@/server/infra/email/sender')
+const emails = await import('@/server/domains/comments/email')
 const { updateOwnComment } = await import('@/server/domains/comments/moderation')
 
 // `findCommentWithUserById` returns a deep Drizzle-inferred shape whose

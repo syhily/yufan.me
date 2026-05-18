@@ -92,18 +92,19 @@ class PageViewBatcher {
   }
 }
 
+import { getOrCreateGlobalSingleton } from '@/server/infra/global-singleton'
+
 const GLOBAL_KEY = Symbol.for('yufan.me/metrics-batcher')
-type Holder = { [GLOBAL_KEY]?: PageViewBatcher }
-const holder = globalThis as Holder
 
 function getBatcher(): PageViewBatcher {
-  if (!holder[GLOBAL_KEY]) {
-    holder[GLOBAL_KEY] = new PageViewBatcher({
-      flushIntervalMs: 60_000,
-      flushThreshold: 50,
-    })
-  }
-  return holder[GLOBAL_KEY]!
+  return getOrCreateGlobalSingleton(
+    GLOBAL_KEY,
+    () =>
+      new PageViewBatcher({
+        flushIntervalMs: 60_000,
+        flushThreshold: 50,
+      }),
+  )
 }
 
 // Single source of truth for page-view increments.

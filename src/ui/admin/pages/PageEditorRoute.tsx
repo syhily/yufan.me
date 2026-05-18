@@ -1,10 +1,7 @@
 import type { NavigateFunction } from 'react-router'
 
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-
-import type { AdminPageDetailDto } from '@/shared/types/pages'
 
 import { orpcQuery, useQuery } from '@/client/api/query'
 import { PageEditorShell } from '@/ui/admin/pages/PageEditorShell'
@@ -21,31 +18,15 @@ export interface PageEditorRouteProps {
 // separate from the shell so the shell stays plain-props +
 // straightforward to unit-test.
 export function PageEditorRoute({ pageId, navigate }: PageEditorRouteProps) {
-  const [detail, setDetail] = useState<AdminPageDetailDto | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
   const getPageQuery = useQuery(orpcQuery.admin.pages.get.queryOptions({ input: { id: pageId } }))
 
-  useEffect(() => {
-    if (getPageQuery.data) {
-      setDetail(getPageQuery.data)
-      setErrorMessage(null)
-    }
-  }, [getPageQuery.data])
-
-  useEffect(() => {
-    if (getPageQuery.error) {
-      setErrorMessage(getPageQuery.error.message)
-    }
-  }, [getPageQuery.error])
-
-  if (errorMessage !== null) {
-    return <PageEditorError message={errorMessage} />
+  if (getPageQuery.error) {
+    return <PageEditorError message={getPageQuery.error.message} />
   }
-  if (detail === null) {
+  if (getPageQuery.isPending || getPageQuery.data === undefined) {
     return <PageEditorSkeleton />
   }
-  return <PageEditorShell mode="edit" detail={detail} navigate={navigate} />
+  return <PageEditorShell mode="edit" detail={getPageQuery.data} navigate={navigate} />
 }
 
 function PageEditorError({ message }: { message: string }) {
@@ -68,7 +49,7 @@ function PageEditorError({ message }: { message: string }) {
 
 function PageEditorSkeleton() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-0 md:gap-4 md:p-4">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-2 md:gap-4 md:p-4">
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-24" />
         <Skeleton className="h-5 w-48" />

@@ -2,6 +2,7 @@ import type { ImageRow } from '@/server/infra/db/types'
 import type { AdminImageDto, ListImagesInput, ListImagesOutput } from '@/shared/types/images'
 
 import { canEditImage, type ViewerContext } from '@/server/domains/auth/rbac'
+import { buildPublicUrl, invalidateImageEnhanceCacheFor } from '@/server/domains/images/image-meta'
 import { type ImageKindSpec, buildObjectKey } from '@/server/domains/images/key'
 import { processImageBuffer } from '@/server/domains/images/process'
 import { deleteImage as deleteStoredImage, getImage, putImage } from '@/server/domains/images/storage'
@@ -20,7 +21,6 @@ import {
 } from '@/server/infra/db/operations/image'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
-import { buildPublicUrl, invalidateImageEnhanceCacheFor } from '@/server/render/image-enhance'
 import { classifyImageKind } from '@/shared/types/images'
 
 // Domain-level entry points for the admin image library. Coordinates

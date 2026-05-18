@@ -40,7 +40,6 @@ export default [
     route('admin/posts', 'routes/admin/posts/index.tsx'),
     route('admin/posts/:postId/analytics', 'routes/admin/posts/analytics.tsx'),
     route('admin/pages', 'routes/admin/pages/index.tsx'),
-    route('admin/restore', 'routes/admin/restore.tsx'),
     route('admin/comments', 'routes/admin/comments.tsx'),
     route('admin/categories', 'routes/admin/categories.tsx'),
     route('admin/tags', 'routes/admin/tags.tsx'),

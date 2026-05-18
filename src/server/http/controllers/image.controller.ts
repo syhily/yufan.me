@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
+import { loadImageThumbhash } from '@/server/domains/images/image-meta'
 import { publicProc } from '@/server/http/orpc-base'
-import { loadImageThumbhash } from '@/server/render/image-enhance'
 
 const resolveThumbhash = publicProc
   .route({ method: 'GET', path: '/image/resolve-thumbhash' })

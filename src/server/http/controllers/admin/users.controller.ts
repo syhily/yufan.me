@@ -200,8 +200,10 @@ const inviteAuthor = adminProc
     if (existing !== null) {
       throw new ORPCError('CONFLICT', { message: '该邮箱已被注册。' })
     }
-    const ipLimit = await tryInviteRateLimit(context.clientAddress)
-    const emailLimit = await tryInviteByEmailRateLimit(BigInt(context.viewer.userId), input.email)
+    const [ipLimit, emailLimit] = await Promise.all([
+      tryInviteRateLimit(context.clientAddress),
+      tryInviteByEmailRateLimit(BigInt(context.viewer.userId), input.email),
+    ])
     if (ipLimit.exceeded || emailLimit.exceeded) {
       throw new ORPCError('TOO_MANY_REQUESTS', { message: '邀请发送过于频繁，请稍后再试。' })
     }

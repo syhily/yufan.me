@@ -1,8 +1,6 @@
 import { XIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import type { AdminTagDto } from '@/shared/types/tags'
-
 import { orpcQuery, useQuery } from '@/client/api/query'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
@@ -18,17 +16,11 @@ export interface TagsFieldProps {
 
 export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const [input, setInput] = useState('')
-  const [tags, setTags] = useState<AdminTagDto[]>([])
   const [open, setOpen] = useState(false)
   const [highlighted, setHighlighted] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const tagsQuery = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
-
-  useEffect(() => {
-    if (tagsQuery.data) {
-      setTags(tagsQuery.data.tags)
-    }
-  }, [tagsQuery.data])
+  const tags = tagsQuery.data?.tags ?? []
 
   const addTag = useCallback(
     (raw: string) => {

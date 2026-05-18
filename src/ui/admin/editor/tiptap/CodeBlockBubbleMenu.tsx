@@ -102,6 +102,8 @@ const KNOWN_VALUES = new Set(LANGUAGE_GROUPS.flatMap((group) => group.options.ma
 
 const PLACEHOLDER_VALUE = 'plaintext'
 
+const CODE_BLOCK_BUBBLE_MENU_OPTIONS = { placement: 'top' as const, offset: 8 }
+
 export interface CodeBlockBubbleMenuProps {
   editor: Editor
 }
@@ -110,7 +112,7 @@ export function CodeBlockBubbleMenu({ editor }: CodeBlockBubbleMenuProps) {
   return (
     <BubbleMenu
       editor={editor}
-      options={{ placement: 'top', offset: 8 }}
+      options={CODE_BLOCK_BUBBLE_MENU_OPTIONS}
       shouldShow={({ editor: instance }) => instance.isEditable && instance.isActive('codeBlock')}
       className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md"
     >

@@ -1,7 +1,6 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
-import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/domains/pages/preview'
 import { listPagesSchema, savePageBodySchema, upsertPageMetaSchema } from '@/server/domains/pages/schema'
 import {
   createPage,
@@ -17,6 +16,7 @@ import {
 } from '@/server/domains/pages/service'
 import { adminProc } from '@/server/http/orpc-base'
 import { deriveSlug } from '@/server/infra/slug'
+import { renderPortableTextToHtml as renderPagePortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import {
   adminPageDetailDto,
   adminPageDto,
@@ -113,7 +113,7 @@ const preview = adminProc
   .input(z.object({ body: portableTextBodySchema }))
   .output(previewOutputDto)
   .handler(async ({ input }) => {
-    const html = await renderPagePortableTextToHtml(input.body)
+    const html = await renderPagePortableTextToHtml(input.body, [])
     const headings = collectHeadings(input.body, deriveSlug)
     return { html, headings }
   })

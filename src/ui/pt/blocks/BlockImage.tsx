@@ -60,13 +60,16 @@ export function BlockImage({
   const meta = src ? imageMeta?.[src] : undefined
   const { asset, storage } = useAssetsSettings()
 
-  const initialWidth = readPositiveNumber(rest.width) ?? meta?.width
-  const initialHeight = readPositiveNumber(rest.height) ?? meta?.height
-  const initialThumbhash = rest['data-thumbhash'] ?? meta?.thumbhash
-  const [thumbhash, setThumbhash] = useState<string | undefined>(initialThumbhash)
-  const [width, setWidth] = useState<number | undefined>(initialWidth)
-  const [height, setHeight] = useState<number | undefined>(initialHeight)
+  const propWidth = readPositiveNumber(rest.width) ?? meta?.width
+  const propHeight = readPositiveNumber(rest.height) ?? meta?.height
+  const propThumbhash = rest['data-thumbhash'] ?? meta?.thumbhash
+
+  const [resolvedMeta, setResolvedMeta] = useState<ResolvedImageMeta | null>(null)
   const { ref: setRef, loaded, handleLoad } = useImageLoaded(externalRef, onLoad)
+
+  const thumbhash = resolvedMeta?.thumbhash ?? propThumbhash
+  const width = resolvedMeta?.width ?? propWidth
+  const height = resolvedMeta?.height ?? propHeight
 
   const srcset =
     src !== undefined && width !== undefined && height !== undefined
@@ -81,13 +84,7 @@ export function BlockImage({
       : undefined
 
   useEffect(() => {
-    setThumbhash(initialThumbhash)
-    setWidth(initialWidth)
-    setHeight(initialHeight)
-  }, [initialThumbhash, initialWidth, initialHeight])
-
-  useEffect(() => {
-    if (thumbhash !== undefined && thumbhash !== '' && width !== undefined && height !== undefined) {
+    if (propThumbhash !== undefined && propThumbhash !== '' && propWidth !== undefined && propHeight !== undefined) {
       return
     }
     if (src === undefined || src === '' || src.startsWith('data:')) {
@@ -95,15 +92,7 @@ export function BlockImage({
     }
     const cached = imageMetaBySrcCache.get(src)
     if (cached !== undefined) {
-      if (cached.thumbhash !== undefined) {
-        setThumbhash(cached.thumbhash)
-      }
-      if (cached.width !== undefined) {
-        setWidth(cached.width)
-      }
-      if (cached.height !== undefined) {
-        setHeight(cached.height)
-      }
+      setResolvedMeta(cached)
       return
     }
 
@@ -117,18 +106,17 @@ export function BlockImage({
         const next: ResolvedImageMeta = {}
         if (typeof data.thumbhash === 'string' && data.thumbhash !== '') {
           next.thumbhash = data.thumbhash
-          setThumbhash(data.thumbhash)
         }
         if (typeof data.width === 'number' && data.width > 0) {
           next.width = data.width
-          setWidth(data.width)
         }
         if (typeof data.height === 'number' && data.height > 0) {
           next.height = data.height
-          setHeight(data.height)
         }
         if (next.thumbhash !== undefined || next.width !== undefined || next.height !== undefined) {
           setImageMetaCache(src, next)
+          // oxlint-disable-next-line promise/no-callback-in-promise -- setResolvedMeta is a React state setter, not a traditional callback
+          setResolvedMeta(next)
         }
       })
       .catch(() => undefined)
@@ -136,7 +124,7 @@ export function BlockImage({
     return () => {
       cancelled = true
     }
-  }, [thumbhash, width, height, src])
+  }, [propThumbhash, propWidth, propHeight, src])
 
   const thumbhashStyle = useThumbhashBackground(thumbhash, loaded)
   const mergedStyle =

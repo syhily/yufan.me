@@ -1,85 +1,245 @@
-# Admin Dashboard 视觉重构计划
+# Admin Dashboard 视觉重构计划（修正版）
 
-> 目标：以 Ghost Admin (Shade Design System) 为设计基准，对整个 `/admin` 后台进行系统性视觉升级。核心策略：**直接复用 Ghost Shade 的组件代码和设计令牌**，同时**彻底拆分 Admin 与 Public 的 CSS 主题层**，并**提取 `post-content` / `comment-content` 为跨层公共组件**。
+> **目标**：以 Ghost Admin (Shade Design System) 为设计基准，对 `/admin` 后台进行系统性视觉升级。
+>
+> **策略**：
+> 1. 彻底拆分 Admin 与 Public 的 CSS 主题层
+> 2. 将 Ghost Shade 的设计 Token 映射到项目现有 Token 体系
+> 3. 从 Ghost Shade 复制组件样式，但保留项目的 Base UI 组件 API
+> 4. 提取 `post-content` / `comment-content` 为跨层公共组件
+>
+> **Ghost 参考目录**：`/Users/Yufan/Downloads/Ghost/apps/shade/`
+>
+> **关键 Token 文件**：
+> - Ghost 语义变量：`apps/shade/theme-variables.css`（HSL 格式，`--background`、`--sidebar-*` 等）
+> - Ghost 静态 Token：`apps/shade/tailwind.theme.css`（`--color-grey-*`、`--shadow-*`、`--radius-*` 等）
+> - 项目现有 Token：`src/assets/styles/tailwind.css` `:root` 块 + `@theme inline` 块
 
 ---
 
-## 一、Tailwind CSS 架构拆分：Admin / Public 主题隔离
+## 一、设计决策（已确认）
 
-### 1.1 当前问题
+| 决策 | 结论 | 理由 |
+|---|---|---|
+| Sidebar 亮色模式颜色 | **浅色**（Ghost 原始设计） | Ghost 在亮色模式下 sidebar 为 `hsl(240 11% 98%)`，暗色模式才为深色 |
+| Primitives（Box/Stack 等） | **跳过** | Ghost UI 组件内部不依赖 primitives；项目用 Tailwind 类名可达到一致视觉 |
+| Ghost Token 策略 | **映射到现有 Token** | 避免引入 50+ 新变量。在 `admin-theme.css` 中 `--focus-ring: var(--ring)` 等 |
+| `--radius` 变更 | Admin 侧改为 `0.5rem` | 在 `admin-theme.css` 中覆盖 `--radius`，不影响 Public 的 `0.3125rem` |
+| Button API | **保留 `useRender`** | 项目用 Base UI `useRender` + `render` prop，Ghost 用 Radix `Slot` + `asChild`，两者不兼容。保留项目 API，仅更新样式 |
 
-当前 `tailwind.css` 是一份 1000+ 行的单体文件，同时承载：
-- Tailwind v4 语法层（`@import 'tailwindcss'`, `@theme inline`, `@layer base`）
-- Public 页面的 `:root` / `.dark` 颜色值
-- Admin 页面的颜色值（共享同一套 token）
-- `prose-blog` @utility（含嵌套的 `&.post-content` / `&.comment-content`）
-- 全局动画 keyframes
+---
 
-这导致 admin 和 public 的视觉系统完全耦合。要改变 admin 的按钮颜色，public 的按钮也会变。
+## 二、Ghost Token → 项目 Token 映射表
 
-### 1.2 目标架构：四文件拆分
+Ghost Shade 组件引用的额外 Token，需在 `admin-theme.css` 中映射到项目已有变量。以下为预先审计的映射：
+
+| Ghost Token | 映射到项目 Token | 说明 |
+|---|---|---|
+| `--control-height` | `34px`（新值） | Ghost Button 的默认高度 |
+| `--focus-ring` | `var(--ring)` | focus ring 颜色 |
+| `--surface-elevated` | `var(--card)` | 浮层面板背景 |
+| `--surface-panel` | `var(--card)` | 面板背景 |
+| `--surface-page` | `var(--background)` | 页面背景 |
+| `--surface-overlay` | `var(--popover)` | 覆盖层背景 |
+| `--surface-inverse` | `var(--foreground)` | 反色表面 |
+| `--text-primary` | `var(--foreground)` | 主文本 |
+| `--text-secondary` | `var(--muted-foreground)` | 次文本 |
+| `--text-tertiary` | `var(--muted-foreground)` | 三级文本 |
+| `--text-inverse` | `var(--primary-foreground)` | 反色文本 |
+| `--border-subtle` | `var(--input)` | 弱边框 |
+| `--border-default` | `var(--border)` | 默认边框 |
+| `--border-strong` | `var(--line-widget)` | 强边框 |
+| `--state-info` | `var(--brand)` | 信息状态 |
+| `--state-success` | `#30cf43` | 成功状态（Ghost 绿） |
+| `--state-warning` | `var(--warn)` | 警告状态 |
+| `--state-danger` | `var(--destructive)` | 危险状态 |
+| `--shadow` | Ghost 原值 | 基础阴影 |
+| `--shadow-sm` | Ghost 原值 | 小阴影 |
+| `--shadow-md` | Ghost 原值 | 中阴影 |
+| `--shadow-lg` | Ghost 原值 | 大阴影 |
+| `--shadow-xl` | Ghost 原值 | 超大阴影 |
+| `--input-group-radius` | `9px`（新值） | Input 组圆角 |
+| `--mobile-navbar-height` | `64px`（新值） | 移动端导航高度 |
+
+> **Phase 0 实施时**：用 `grep -rn "var(--" /path/to/Ghost/shade/components/ui/*.tsx` 扫描所有待复制组件，生成精确的引用列表，与上表对照补充遗漏。
+
+---
+
+## 三、Tailwind CSS 架构拆分：Admin / Public 主题隔离
+
+### 3.1 目标架构
 
 ```
 src/assets/styles/
 ├── tailwind.css              ← 纯语法层（零颜色值）
-│   ├── @import 'tailwindcss'
+│   ├── @import 'tailwindcss' source(none)
 │   ├── @plugin '@tailwindcss/typography'
-│   ├── @custom-variant dark
+│   ├── @custom-variant dark { ... }
 │   ├── @source '../..'
-│   ├── @theme inline { ... }     ← 只注册变量映射，如 --color-background: var(--background)
+│   ├── @theme inline { ... }     ← 注册变量映射（含 Ghost 映射），如 --color-focus-ring: var(--focus-ring)
 │   ├── @layer base { ...reset... }
 │   ├── html { font-family... }   ← 无 background-color / color
 │   ├── @import './cursors.css'
-│   ├── @utility prose-blog {     ← 只保留 &.prose 部分（Typography 插件覆盖）
+│   ├── @utility prose-blog {     ← 仅保留 &.prose 部分（Typography 插件覆盖）
 │   │     &.prose { ... }
 │   │   }
 │   ├── @keyframes shake, comment-flash, comments-shimmer
-│   └── @layer utilities { ...medium-zoom z-index... }
+│   └── (无 post-content / comment-content)
 │
 ├── public-theme.css          ← Public 专属颜色值 + body 背景/文字色
-│   ├── :root { --background: #fbfbfd; --foreground: #151b2b; ... }
+│   ├── :root { --background: ...; --foreground: ...; ... }
 │   ├── .dark { ... }
 │   ├── @media (prefers-color-scheme: dark) { :root:not(.light,.dark) { ... } }
+│   ├── .dark pre.shiki { ... }
 │   └── html, body { background-color: var(--surface-body); color: var(--ink-2); }
 │
 ├── admin-theme.css           ← Admin 专属颜色值（Ghost Shade 风格）
-│   ├── :root[data-admin-theme] { --background: #ffffff; --foreground: #15171a; ... }
+│   ├── :root[data-admin-theme] { ... shadcn slots + Ghost Token 映射 ... }
 │   ├── :root[data-admin-theme].dark { ... }
 │   └── html[data-admin-theme] body { background-color: var(--background); color: var(--foreground); }
 │
 ├── prose-content.css         ← post-content + comment-content（公共内容层）
 │   ├── @utility post-content { ... }
-│   └── @utility comment-content { ... }
+│   ├── @utility comment-content { ... }
+│   └── @layer utilities { /* 表格样式 */ }
+│   （⚠️ 不含 @import 'tailwindcss'）
 │
 ├── aplayer.css               ← 现有，不动
 ├── cursors.css               ← 现有，不动
 ├── public.css                ← Public 入口
 │   └── @import './tailwind.css'; @import './public-theme.css'; @import './prose-content.css';
 └── admin.css                 ← Admin 入口
+    ├── @layer base, components, utilities;
+    ├── .medium-zoom-overlay, .medium-zoom-image--opened { z-index: 1080; }
     └── @import './tailwind.css'; @import './admin-theme.css'; @import './prose-content.css';
 ```
 
-### 1.3 运行时主题切换机制
+### 3.2 Admin Theme Token（`admin-theme.css`）
 
-**问题**：`useDetachPublicCss()` 只负责移除/恢复 `public.css`，但 `admin.css` 加载后不会自动卸载。当从 admin 导航回 public 时，DOM 中可能同时存在 admin.css 和 public.css，两者的 `:root` 定义会冲突。
+```css
+/* src/assets/styles/admin-theme.css */
 
-**解决方案**：使用 `<html data-admin-theme>` 属性作为 Admin token 的 CSS 选择器。
+:root[data-admin-theme] {
+  /* Ghost Shade shadcn slot aliases — HSL format matching Ghost */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(216 11% 9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(216 11% 9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(216 11% 9%);
+  --primary: hsl(216 11% 9%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(204 14% 93%);
+  --secondary-foreground: hsl(216 11% 9%);
+  --muted: hsl(200 12% 96%);
+  --muted-foreground: hsl(210 13% 55%);
+  --accent: hsl(200 12% 96%);
+  --accent-foreground: hsl(216 11% 9%);
+  --destructive: hsl(354 92% 50%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(204 15% 91%);
+  --input: hsl(204 14% 93%);
+  --ring: hsl(215 13% 63%);
+  --radius: 0.5rem;
 
-**实施步骤**：
+  /* Ghost Sidebar — 浅色模式 sidebar（跟随 Ghost 原始设计） */
+  --sidebar-background: hsl(240 11% 98%);
+  --sidebar-foreground: hsl(216 11% 9%);
+  --sidebar-primary: hsl(216 11% 9%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(204 14% 93%);
+  --sidebar-accent-foreground: hsl(216 11% 9%);
+  --sidebar-border: hsl(200 12% 96%);
+  --sidebar-ring: hsl(215 13% 63%);
 
-1. **CSS 层**：`admin-theme.css` 中所有 `:root` 选择器改为 `:root[data-admin-theme]`
-2. **SSR + CSR 动态切换**：在 `root.tsx` 的 `Layout` 组件中读取当前 URL，动态设置/移除属性
+  /* Ghost Token → 项目 Token 映射（第二章映射表） */
+  --control-height: 34px;
+  --focus-ring: var(--ring);
+  --surface-elevated: var(--card);
+  --surface-panel: var(--card);
+  --surface-page: var(--background);
+  --surface-overlay: var(--popover);
+  --surface-inverse: var(--foreground);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-tertiary: var(--muted-foreground);
+  --text-inverse: var(--primary-foreground);
+  --border-subtle: var(--input);
+  --border-default: var(--border);
+  --border-strong: hsl(210 13% 79%);
+  --state-info: hsl(198 100% 51%);
+  --state-success: hsl(144 100% 39%);
+  --state-warning: hsl(47 100% 50%);
+  --state-danger: var(--destructive);
+  --input-group-radius: 9px;
+  --mobile-navbar-height: 64px;
+
+  /* Ghost Shade shadows */
+  --shadow: 0 0 1px rgba(0,0,0,.05), 0 5px 18px rgba(0,0,0,.08);
+  --shadow-sm: 0 0 1px rgba(0,0,0,.12), 0 1px 6px rgba(0,0,0,.03), 0 8px 10px -8px rgba(0,0,0,.1);
+  --shadow-md: 0 0 1px rgba(0,0,0,0.12), 0 1px 6px rgba(0,0,0,.03), 0 8px 10px -8px rgba(0,0,0,0.05), 0 24px 37px -21px rgba(0,0,0,0.05);
+  --shadow-lg: 0 0 7px rgba(0,0,0,0.08), 0 2.1px 2.2px -5px rgba(0,0,0,0.011), 0 5.1px 5.3px -5px rgba(0,0,0,0.016), 0 9.5px 10px -5px rgba(0,0,0,0.02), 0 17px 17.9px -5px rgba(0,0,0,0.024), 0 31.8px 33.4px -5px rgba(0,0,0,0.029), 0 76px 80px -5px rgba(0,0,0,0.04);
+  --shadow-xl: 0 2.8px 2.2px rgba(0,0,0,0.02), 0 6.7px 5.3px rgba(0,0,0,0.028), 0 12.5px 10px rgba(0,0,0,0.035), 0 22.3px 17.9px rgba(0,0,0,0.042), 0 41.8px 33.4px rgba(0,0,0,0.05), 0 100px 80px rgba(0,0,0,0.07);
+}
+
+:root[data-admin-theme].dark {
+  --background: hsl(216 11% 9%);
+  --foreground: hsl(210 13% 88%);
+  --card: hsl(216 11% 9%);
+  --card-foreground: hsl(213 31% 91%);
+  --popover: hsl(216 11% 9%);
+  --popover-foreground: hsl(212 13% 72%);
+  --primary: hsl(200 12% 96%);
+  --primary-foreground: hsl(216 11% 9%);
+  --secondary: hsl(210 11% 25%);
+  --secondary-foreground: hsl(200 12% 96%);
+  --muted: hsl(210 11% 25%);
+  --muted-foreground: hsl(210 13% 63%);
+  --accent: hsl(210 11% 25%);
+  --accent-foreground: hsl(200 12% 96%);
+  --destructive: hsl(354 81% 31%);
+  --destructive-foreground: hsl(240 11% 98%);
+  --border: hsl(216 7% 14%);
+  --input: hsl(210 11% 25%);
+  --ring: hsl(210 11% 25%);
+
+  --sidebar-background: hsl(216 11% 6%);
+  --sidebar-foreground: hsl(200 12% 96%);
+  --sidebar-primary: hsl(210 11% 25%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(210 11% 17%);
+  --sidebar-accent-foreground: hsl(200 12% 96%);
+  --sidebar-border: hsl(210 11% 15%);
+  --sidebar-ring: hsl(210 13% 55%);
+
+  --border-strong: hsl(210 13% 55%);
+  --surface-elevated: hsl(210 11% 12%);
+}
+
+html[data-admin-theme] body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+```
+
+### 3.3 运行时主题切换机制
+
+使用 `<html data-admin-theme>` 属性作为 Admin token 的 CSS 选择器。
+
+**SSR + CSR 切换**：在 `root.tsx` 的 `Layout` 组件中读取 `useLocation()`，动态设置/移除属性：
 
 ```tsx
 // src/root.tsx — Layout 组件改动
 import { useLocation } from 'react-router'
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const rootData = useRouteLoaderData('root')
-  const location = useLocation()
+  const rootData = useRouteLoaderData<{
+    theme?: 'dark' | 'light' | null
+    blogSettings?: { fonts?: { globalCss?: string[] } | null } | null
+  }>('root')
   const theme = rootData?.theme ?? null
-
-  // 判断当前是否为 admin 路由（SSR + CSR 两用）
+  const globalFontCss = rootData?.blogSettings?.fonts?.globalCss ?? []
+  const location = useLocation()
   const isAdminRoute =
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/signin')
@@ -90,89 +250,93 @@ function Layout({ children }: { children: React.ReactNode }) {
       className={theme ?? undefined}
       data-admin-theme={isAdminRoute ? '' : undefined}
     >
-      {/* ... */}
+      {/* ... 其余不变 ... */}
     </html>
   )
 }
 ```
 
-3. **行为验证**：
-   - SSR 访问 `/admin` → `<html data-admin-theme>` → admin token 生效 ✅
-   - CSR 导航到 `/admin` → `useLocation()` 更新 → `<html data-admin-theme>` → admin token 生效 ✅
-   - CSR 导航到 `/` → `useLocation()` 更新 → `<html>` 无属性 → public token 生效 ✅
-   - `useDetachPublicCss()` 继续工作，admin.css 和 public.css 互不干扰
+**行为验证**：
+- SSR `/admin` → `<html data-admin-theme>` → admin token 生效 ✅
+- CSR → `/admin` → `useLocation()` 更新 → `<html data-admin-theme>` → admin token 生效 ✅
+- CSR → `/` → `<html>` 无属性 → public token 生效 ✅
+- `useDetachPublicCss()` 继续工作，admin.css 和 public.css 互不干扰 ✅
 
-### 1.4 Tailwind `@theme inline` 合并策略
+### 3.4 `@theme inline` 新增映射
 
-`tailwind.css` 的 `@theme inline` 需要同时兼容 Public 和 Admin 的变量映射。合并规则：
-
-- **保留现有项目的全部映射**（`--color-background`, `--color-surface-body`, `--color-ink-1` 等）
-- **追加 Ghost Shade 的映射**（`--color-sidebar-background`, `--color-text-primary`, `--shadow`, `--shadow-lg` 等）
-- **冲突时以 Ghost Shade 的语义为准**（如 `--radius` 从 `0.3125rem` 改为 `0.5rem`）
-- **新增映射需同步更新 `src/ui/lib/cn.ts`** 的 `tailwind-merge` 注册列表
-
----
-
-## 二、`post-content` / `comment-content` 提取为公共组件
-
-### 2.1 现状
-
-当前 `post-content` 和 `comment-content` 的样式嵌套在 `tailwind.css` 的 `@utility prose-blog` 中：
+在 `tailwind.css` 的 `@theme inline` 块中追加 Ghost Token 映射行：
 
 ```css
-@utility prose-blog {
-  &.prose { ... }
-  &.post-content { ... }      ← 200+ 行
-  &.comment-content { ... }   ← 70+ 行
+@theme inline {
+  /* ... 保留所有现有映射 ... */
+
+  /* Ghost Shade Token 映射 */
+  --color-focus-ring: var(--focus-ring);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-page: var(--surface-page);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-state-info: var(--state-info);
+  --color-state-success: var(--state-success);
+  --color-state-warning: var(--state-warning);
+  --color-state-danger: var(--state-danger);
+  --shadow-default: var(--shadow);
+  --shadow-ghost-sm: var(--shadow-sm);
+  --shadow-ghost-md: var(--shadow-md);
+  --shadow-ghost-lg: var(--shadow-lg);
+  --shadow-ghost-xl: var(--shadow-xl);
+  --spacing-control-height: var(--control-height);
 }
 ```
 
-使用方式是在组件中手写 className 组合：
-```tsx
-// public
-<div className="post-content prose-blog prose prose-lg max-w-none">
+**`cn.ts` 同步更新**：在对应列表中注册新增 Token 名。
 
-// admin preview
-<div className="post-content prose-blog prose prose-lg max-w-none">
+---
 
-// admin comment
-<div className="comment-content prose-blog prose prose-sm max-w-none">
-```
+## 四、`post-content` / `comment-content` 提取为公共组件
 
-这导致：
-- className 组合散落在 7+ 个文件中
-- admin 和 public 的样式硬耦合在一份 CSS 中
-- 无法独立演进 admin 和 public 的内容渲染风格
+### 4.1 CSS 层
 
-### 2.2 提取方案
-
-**CSS 层**：将 `.post-content` 和 `.comment-content` 从 `prose-blog` utility 中提取为独立的 `@utility`：
+将 `post-content` 和 `comment-content` 从 `@utility prose-blog` 提取为独立 `@utility`：
 
 ```css
 /* src/assets/styles/prose-content.css */
-@import 'tailwindcss' source(none);
+/* ⚠️ 不含 @import 'tailwindcss' */
 
 @utility post-content {
-  /* 原 tailwind.css 中 &.post-content 的全部内容 */
-  /* 需要把 prose-blog 中定义的内部变量（--prose-blog-table-border 等）在此重新定义 */
   --prose-blog-table-border: color-mix(in oklab, var(--line-muted) 78%, var(--ink-4) 22%);
   --prose-blog-table-header-bg: var(--surface);
   --prose-blog-table-stripe: color-mix(in oklab, var(--surface-soft) 55%, var(--canvas) 45%);
 
-  &.prose-blog.prose { ... }   /* 保持与 prose-blog 的组合关系 */
+  &.prose-blog.prose { /* 原 tailwind.css 中 &.post-content 的全部内容 */ }
 }
 
 @utility comment-content {
-  /* 原 tailwind.css 中 &.comment-content 的全部内容 */
-  &.prose-blog.prose { ... }
+  &.prose-blog.prose { /* 原 tailwind.css 中 &.comment-content 的全部内容 */ }
+}
+
+/* 表格样式 — 从原 tailwind.css @layer utilities 迁移 */
+@layer utilities {
+  .post-content.prose-blog.prose table.pt-table { ... }
+  /* ... 完整迁移 ... */
 }
 ```
 
-**组件层**：创建两个 React 公共组件，封装标准 className 组合：
+### 4.2 组件层
 
 ```tsx
 // src/ui/pt/PostContent.tsx
 import { cn } from '@/ui/lib/cn'
+
+export const POST_CONTENT_BASE_CLASSES = 'post-content prose-blog prose prose-lg max-w-none'
 
 interface PostContentProps {
   children: React.ReactNode
@@ -182,16 +346,15 @@ interface PostContentProps {
 
 export function PostContent({ children, className, ref }: PostContentProps) {
   return (
-    <div
-      ref={ref}
-      className={cn('post-content prose-blog prose prose-lg max-w-none', className)}
-    >
+    <div ref={ref} className={cn(POST_CONTENT_BASE_CLASSES, className)}>
       {children}
     </div>
   )
 }
 
 // src/ui/pt/CommentContent.tsx
+export const COMMENT_CONTENT_BASE_CLASSES = 'comment-content prose-blog prose prose-sm max-w-none'
+
 interface CommentContentProps {
   children: React.ReactNode
   className?: string
@@ -199,617 +362,518 @@ interface CommentContentProps {
 
 export function CommentContent({ children, className }: CommentContentProps) {
   return (
-    <div className={cn('comment-content prose-blog prose prose-sm max-w-none', className)}>
+    <div className={cn(COMMENT_CONTENT_BASE_CLASSES, className)}>
       {children}
     </div>
   )
 }
 ```
 
-### 2.3 替换范围
+### 4.3 替换范围
 
-| 原文件 | 原代码 | 替换为 |
-|--------|--------|--------|
-| `ui/public/post/DetailBodyChrome.tsx:135` | `<div className="post-content prose-blog prose prose-lg max-w-none">` | `<PostContent ref={postContentRef}>` |
-| `ui/admin/editor-shell/PreviewPanel.tsx:109` | `<div ref={previewPostContentRef} className="post-content prose-blog prose prose-lg max-w-none">` | `<PostContent ref={previewPostContentRef}>` |
-| `ui/admin/editor/PageBodyEditor.tsx:430` | `'post-content pt-body-editor prose-blog prose prose-lg max-w-none'` | `<PostContent className="pt-body-editor focus:outline-none">`（Editor 特殊处理）|
-| `ui/public/comments/comment-item/helpers.ts:146` | `cn('comment-content', 'prose-blog prose prose-sm max-w-none', ...)` | `commentContentClasses()` 辅助函数 或直接使用 `<CommentContent>` |
-| `ui/admin/users/UserDetailView.tsx:602` | `<div className="comment-content prose-blog prose ...">` | `<CommentContent className="mt-1 line-clamp-3 text-sm leading-snug [&>*]:!my-0">` |
-| `ui/admin/my/MyCommentsView.tsx:438` | `<div className="comment-content prose-blog my-2 prose ...">` | `<CommentContent className="my-2 mt-3 leading-[1.85]">` |
-| `ui/admin/comments/AdminCommentRow.tsx:251` | `<div className="comment-content prose-blog my-2 prose ...">` | `<CommentContent className="my-2 mt-3 leading-[1.85]">` |
-
-> **注意**：Editor 中的 `PageBodyEditor` 使用 Tiptap 的 `EditorContent` 组件，它直接接收 `className` prop，不便于包裹为 `<PostContent>`。此处可以保留 `className` 字符串，但改用从 `PostContent` 导出的常量：`const POST_CONTENT_CLASSES = 'post-content prose-blog prose prose-lg max-w-none'`。
+| 文件 | 原代码 | 替换为 |
+|---|---|---|
+| `ui/public/post/DetailBodyChrome.tsx` | `<div className="post-content prose-blog prose prose-lg max-w-none">` | `<PostContent ref={ref}>` |
+| `ui/admin/editor-shell/PreviewPanel.tsx` | `<div ref={ref} className="post-content prose-blog prose prose-lg max-w-none">` | `<PostContent ref={ref}>` |
+| `ui/admin/editor/PageBodyEditor.tsx` | `'post-content pt-body-editor prose-blog ...'` | 使用 `POST_CONTENT_BASE_CLASSES` 常量 |
+| `ui/public/comments/comment-item/helpers.ts` | `cn('comment-content', 'prose-blog prose prose-sm ...')` | `COMMENT_CONTENT_BASE_CLASSES` |
+| `ui/admin/users/UserDetailView.tsx` | `<div className="comment-content prose-blog prose ...">` | `<CommentContent>` |
+| `ui/admin/my/MyCommentsView.tsx` | `<div className="comment-content prose-blog my-2 prose ...">` | `<CommentContent>` |
+| `ui/admin/comments/AdminCommentRow.tsx` | `<div className="comment-content prose-blog my-2 prose ...">` | `<CommentContent>` |
 
 ---
 
-## 三、设计令牌迁移（Ghost Shade → 项目 Admin 主题）
+## 五、Ghost Shade 组件复用清单
 
-### 3.1 Admin 主题 Token（`admin-theme.css`）
+### 5.1 通用迁移规则
 
-直接从 Ghost Shade 的 `theme-variables.css` 复制并精简：
+每个从 Ghost Shade 复制/借鉴的组件都需要以下处理：
 
-```css
-/* src/assets/styles/admin-theme.css */
+1. **Import 路径**：`@/lib/utils` → `@/ui/lib/cn`
+2. **`forwardRef` → prop ref**：`React.forwardRef<T, P>((props, ref) => ...)` → `function Comp({ ref, ...props }: P & { ref?: React.Ref<T> }) { ... }`
+3. **`SHADE_APP_NAMESPACES` 移除**：所有 Portal 组件（Dialog、Sheet、DropdownMenu、Select、Popover、AlertDialog）中移除 `<div className={SHADE_APP_NAMESPACES}>` wrapper。CSS 变量会从 `<html data-admin-theme>` 继承到 body 下的 Portal content。
+4. **`inputSurface()` 内联**：不引入 Ghost 的 `input-surface.ts`，将样式逻辑直接写在组件中，使用项目映射后的 Token 名。
 
-:root[data-admin-theme] {
-  /* Primitive colours (Ghost) */
-  --black: #15171a;
-  --white: #fff;
-  --green: #30cf43;
-  --red: #f50b23;
+### 5.2 ★★★★★ 直接复制（样式替换）
 
-  /* Greys */
-  --grey-100: #f4f5f6;
-  --grey-150: #f1f3f4;
-  --grey-200: #ebeef0;
-  --grey-250: #e5e9ed;
-  --grey-300: #dde1e5;
-  --grey-400: #ced4d9;
-  --grey-500: #aeb7c1;
-  --grey-600: #95a1ad;
-  --grey-700: #7c8b9a;
-  --grey-800: #626d79;
-  --grey-900: #394047;
-  --grey-950: #222427;
-  --grey-975: #191b1e;
+| Ghost 源文件 | 项目目标 | 说明 |
+|---|---|---|
+| `badge.tsx` | `src/ui/components/badge.tsx` | 直接替换样式 |
+| `card.tsx` | `src/ui/components/card.tsx` | 直接替换样式 |
+| `avatar.tsx` | `src/ui/components/avatar.tsx` | 直接替换样式 |
+| `separator.tsx` | `src/ui/components/separator.tsx` | 直接替换样式 |
+| `skeleton.tsx` | `src/ui/components/skeleton.tsx` | 直接替换样式 |
+| `label.tsx` | `src/ui/components/label.tsx` | 直接替换样式 |
+| `sonner.tsx` | `src/ui/components/sonner.tsx` | Toast 样式对齐 |
+| `accordion.tsx` | `src/ui/components/accordion.tsx` | 新增 |
+| `tabs.tsx` | `src/ui/components/tabs.tsx` | 替换 |
+| `checkbox.tsx` | `src/ui/components/checkbox.tsx` | 替换 |
+| `switch.tsx` | `src/ui/components/switch.tsx` | 替换 |
+| `radio-group.tsx` | `src/ui/components/radio-group.tsx` | 替换 |
+| `calendar.tsx` | `src/ui/components/calendar.tsx` | 替换 |
+| `tooltip.tsx` | `src/ui/components/tooltip.tsx` | 替换 |
 
-  /* Semantic shadcn aliases */
-  --background: #ffffff;
-  --foreground: #15171a;
-  --card: #ffffff;
-  --card-foreground: #15171a;
-  --popover: #ffffff;
-  --popover-foreground: #15171a;
-  --primary: #15171a;
-  --primary-foreground: #ffffff;
-  --secondary: #f4f5f6;
-  --secondary-foreground: #15171a;
-  --muted: #f4f5f6;
-  --muted-foreground: #7c8b9a;
-  --accent: #f4f5f6;
-  --accent-foreground: #15171a;
-  --destructive: #f50b23;
-  --destructive-foreground: #ffffff;
-  --border: #ebeef0;
-  --input: #e5e9ed;
-  --ring: #30cf43;
-  --radius: 0.5rem;
+### 5.3 ★★★★☆ 样式替换 + API 保留
 
-  /* Sidebar (dark chrome) */
-  --sidebar-background: #191b1e;
-  --sidebar-foreground: #a9b0b7;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #191b1e;
-  --sidebar-accent: #222427;
-  --sidebar-accent-foreground: #e3e6e8;
-  --sidebar-border: #22252a;
-  --sidebar-ring: #30cf43;
+| Ghost 源文件 | 项目目标 | 说明 |
+|---|---|---|
+| `button.tsx` | `src/ui/components/button.tsx` | **保留 `useRender` + `render` prop API**，仅更新 `buttonVariants` 样式。保留 `destructive-soft`/`fab`/`light`/`dark`/`shape`/`block` variants。新增 Ghost 的 `dropdown` variant |
+| `input.tsx` | `src/ui/components/input.tsx` | 不引入 `inputSurface()`，内联映射后的样式 |
+| `textarea.tsx` | `src/ui/components/textarea.tsx` | 同 Input |
+| `table.tsx` | `src/ui/components/table.tsx` | 检查 API 兼容性后替换样式 |
 
-  /* Ghost Shade shadows */
-  --shadow: 0 0 1px rgba(0,0,0,.05), 0 5px 18px rgba(0,0,0,.08);
-  --shadow-sm: 0 0 1px rgba(0,0,0,.12), 0 1px 6px rgba(0,0,0,.03), 0 8px 10px -8px rgba(0,0,0,.1);
-  --shadow-md: 0 0 1px rgba(0,0,0,0.12), 0 1px 6px rgba(0,0,0,.03), 0 8px 10px -8px rgba(0,0,0,0.05), 0px 24px 37px -21px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 0 7px rgba(0, 0, 0, 0.08), 0 2.1px 2.2px -5px rgba(0, 0, 0, 0.011), 0 5.1px 5.3px -5px rgba(0, 0, 0, 0.016), 0 9.5px 10px -5px rgba(0, 0, 0, 0.02), 0 17px 17.9px -5px rgba(0, 0, 0, 0.024), 0 31.8px 33.4px -5px rgba(0, 0, 0, 0.029), 0 76px 80px -5px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 2.8px 2.2px rgba(0, 0, 0, 0.02), 0 6.7px 5.3px rgba(0, 0, 0, 0.028), 0 12.5px 10px rgba(0, 0, 0, 0.035), 0 22.3px 17.9px rgba(0, 0, 0, 0.042), 0 41.8px 33.4px rgba(0, 0, 0, 0.05), 0 100px 80px rgba(0, 0, 0, 0.07);
-}
+### 5.4 ★★★★☆ 复制 + 移除 `SHADE_APP_NAMESPACES`
 
-:root[data-admin-theme].dark {
-  --background: #15171a;
-  --foreground: #e3e6e8;
-  --card: #15171a;
-  --card-foreground: #e3e6e8;
-  --popover: #15171a;
-  --popover-foreground: #e3e6e8;
-  --primary: #ffffff;
-  --primary-foreground: #15171a;
-  --secondary: #222427;
-  --secondary-foreground: #e3e6e8;
-  --muted: #222427;
-  --muted-foreground: #7b8189;
-  --accent: #222427;
-  --accent-foreground: #e3e6e8;
-  --destructive: #f50b23;
-  --destructive-foreground: #ffffff;
-  --border: #22252a;
-  --input: #2e3338;
-  --ring: #30cf43;
+| Ghost 源文件 | 项目目标 | 说明 |
+|---|---|---|
+| `dialog.tsx` | `src/ui/components/dialog.tsx` | 移除 SHADE_APP_NAMESPACES wrapper |
+| `sheet.tsx` | `src/ui/components/sheet.tsx` | 移除 SHADE_APP_NAMESPACES wrapper |
+| `dropdown-menu.tsx` | `src/ui/components/dropdown-menu.tsx` | 移除 SHADE_APP_NAMESPACES wrapper |
+| `select.tsx` | `src/ui/components/select.tsx` | 移除 SHADE_APP_NAMESPACES + 内联 inputSurface |
+| `popover.tsx` | `src/ui/components/popover.tsx` | 移除 SHADE_APP_NAMESPACES wrapper |
+| `alert-dialog.tsx` | `src/ui/components/alert-dialog.tsx` | 新增，移除 SHADE_APP_NAMESPACES |
 
-  --sidebar-background: #0c0e10;
-  --sidebar-foreground: #e3e6e8;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #0c0e10;
-  --sidebar-accent: #222427;
-  --sidebar-accent-foreground: #e3e6e8;
-  --sidebar-border: #22252a;
-  --sidebar-ring: #30cf43;
-}
+### 5.5 ★★★☆☆ 参考实现（代码重写）
 
-html[data-admin-theme] body {
-  background-color: var(--background);
-  color: var(--foreground);
-}
-```
+| Ghost 源文件 | 说明 |
+|---|---|
+| `sidebar.tsx` (773 LOC) | 太重（含 cookie 状态/快捷键/rail/tooltip）。精简为项目专用版本（200-300 LOC），保留核心导航结构 |
 
-### 3.2 Public 主题 Token（`public-theme.css`）
-
-将现有 `tailwind.css` 中的 `:root` / `.dark` / `@media prefers-color-scheme` 块完整迁移到 `public-theme.css`，**不做任何颜色值改动**，确保 public 页面 100% 视觉回归安全。
-
----
-
-## 四、Ghost Shade 组件复用清单
-
-### 4.1 ★★★★★ 直接复制（零改动或极少改动）
-
-| Ghost Shade 源文件 | 项目目标位置 | 迁移说明 |
-|-------------------|-------------|---------|
-| `apps/shade/src/components/ui/button.tsx` | `src/ui/components/button.tsx` | 替换现有。保留项目额外 variant（destructive-soft, fab, light, dark, shape） |
-| `apps/shade/src/components/ui/badge.tsx` | `src/ui/components/badge.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/card.tsx` | `src/ui/components/card.tsx` | 直接替换。新增 `variant="outline"` |
-| `apps/shade/src/components/ui/avatar.tsx` | `src/ui/components/avatar.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/separator.tsx` | `src/ui/components/separator.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/skeleton.tsx` | `src/ui/components/skeleton.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/label.tsx` | `src/ui/components/label.tsx` | 新增/替换 |
-| `apps/shade/src/components/ui/sonner.tsx` | `src/ui/components/sonner.tsx` | Toast 样式对齐 |
-| `apps/shade/src/components/primitives/*.tsx` | `src/ui/primitives/*.tsx` | 新增 6 个 layout primitives（Box, Stack, Inline, Grid, Text, Container） |
-
-### 4.2 ★★★★☆ 适配复制（需调整）
-
-| Ghost Shade 源文件 | 项目目标位置 | 需调整内容 |
-|-------------------|-------------|-----------|
-| `apps/shade/src/components/ui/dialog.tsx` | `src/ui/components/dialog.tsx` | 移除 `SHADE_APP_NAMESPACES` wrapper |
-| `apps/shade/src/components/ui/sheet.tsx` | `src/ui/components/sheet.tsx` | 移除 `SHADE_APP_NAMESPACES` wrapper |
-| `apps/shade/src/components/ui/dropdown-menu.tsx` | `src/ui/components/dropdown-menu.tsx` | 移除 `SHADE_APP_NAMESPACES` wrapper |
-| `apps/shade/src/components/ui/select.tsx` | `src/ui/components/select.tsx` | 移除 `SHADE_APP_NAMESPACES`，内联 `inputSurface` 逻辑 |
-| `apps/shade/src/components/ui/popover.tsx` | `src/ui/components/popover.tsx` | 移除 `SHADE_APP_NAMESPACES` wrapper |
-| `apps/shade/src/components/ui/tooltip.tsx` | `src/ui/components/tooltip.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/alert-dialog.tsx` | `src/ui/components/alert-dialog.tsx` | 新增 |
-| `apps/shade/src/components/ui/accordion.tsx` | `src/ui/components/accordion.tsx` | 新增 |
-| `apps/shade/src/components/ui/tabs.tsx` | `src/ui/components/tabs.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/checkbox.tsx` | `src/ui/components/checkbox.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/switch.tsx` | `src/ui/components/switch.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/radio-group.tsx` | `src/ui/components/radio-group.tsx` | 直接替换 |
-| `apps/shade/src/components/ui/calendar.tsx` | `src/ui/components/calendar.tsx` | 若不同则替换 |
-
-### 4.3 ★★★☆☆ 参考实现（结构借鉴，代码重写）
-
-| Ghost Shade 源文件 | 借鉴内容 | 重写原因 |
-|-------------------|---------|---------|
-| `apps/shade/src/components/ui/sidebar.tsx` | 773 LOC，cookie 状态、快捷键、tooltip、rail | 太重。精简为项目专用版本（200-300 LOC） |
-| `apps/shade/src/components/ui/field.tsx` | 241 LOC，horizontal/vertical/responsive 表单布局 | 太 opinionated。适配项目现有表单模式 |
-| `apps/shade/src/components/ui/table.tsx` | 153 LOC，compound + head variant | 可直接复制，检查 API 兼容性 |
-| `apps/shade/src/components/ui/input.tsx` | 依赖 `inputSurface()` recipe | 内联 inputSurface 或单独提取 |
-
-### 4.4 不复用（项目专用，保持不动）
+### 5.6 不复用（项目专用）
 
 - `empty.tsx` — 项目自定义空状态
 - `combobox.tsx` — 项目自定义 searchable dropdown
-- `field.tsx`（现有的）— 基于 Base UI
+- `field.tsx` — 项目基于 Base UI 的版本
 - `editor/` 下所有 Tiptap 组件
 - `ui/pt/` 下 PortableText 渲染器
 - `ui/public/` 下所有 public 组件
 
-### 4.5 forwardRef → Prop Ref 批量迁移
+---
 
-Ghost Shade 使用 React 18 的 `forwardRef`。项目使用 React 19 的 prop ref。**每个复制过来的组件都需要此改动**：
+## 六、视觉一致性：与 Ghost Admin 形似
+
+### 6.1 Ghost Admin 布局解剖
+
+Ghost Admin 的视觉结构分为三层（基于 `apps/shade/` 组件 + `apps/admin-x-settings/` 页面分析）：
+
+```
+┌─────────────────────────────────────────────────────┐
+│ .gh-app (flex col, h-100vh, overflow-hidden)        │
+│ ┌───────────────────────────────────────────────────┐│
+│ │ .gh-viewport (flex, flex-grow, overflow-hidden)   ││
+│ │ ┌──────────┐ ┌──────────────────────────────────┐ ││
+│ │ │ Sidebar  │ │ .gh-main (flex col, flex-grow)    │ ││
+│ │ │ (shade)  │ │ ┌──────────────────────────────┐ │ ││
+│ │ │          │ │ │ Canvas Header (sticky)        │ │ ││
+│ │ │ Logo     │ │ │   Title (2.8rem, bold)       │ │ ││
+│ │ │ ──────── │ │ │   View Actions (filters, btn)│ │ ││
+│ │ │ Nav × N  │ │ ├──────────────────────────────┤ │ ││
+│ │ │          │ │ │ Canvas Body (scrollable)      │ │ ││
+│ │ │          │ │ │   max-width: 1400px           │ │ ││
+│ │ │          │ │ │   padding: 0 4vw 4vw          │ │ ││
+│ │ │ ──────── │ │ │                                │ │ ││
+│ │ │ UserMenu │ │ │                                │ │ ││
+│ │ └──────────┘ └──────────────────────────────────┘ ││
+│ └───────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────┘
+```
+
+### 6.2 关键视觉要素
+
+以下要素决定 Ghost Admin 的"形"，每个都需要精确复现：
+
+#### 页面标题
+
+- 字号：`2.8rem`（~44.8px），Ghost 使用 `--text-3xl`
+- 字重：`700`
+- 字间距：`-0.02em`
+- 行高：`1.25em`
+- 颜色：`var(--black)` / `var(--foreground)`
 
 ```tsx
-// Ghost Shade (React 18)
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button'
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
+// 所有列表页标题统一
+<h1 className="text-[2.8rem] font-bold tracking-[-0.02em] leading-tight text-foreground">
+  Posts
+</h1>
+```
 
-// 项目 (React 19)
-function Button({ className, variant, size, asChild = false, ref, ...props }: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) {
-  const Comp = asChild ? Slot : 'button'
-  return (
-    <Comp
-      className={cn(buttonVariants({ variant, size, className }))}
-      ref={ref}
-      {...props}
-    />
-  )
-}
+#### 内容区最大宽度
+
+- Ghost 使用 `--main-layout-content-maxwidth`，标准页面 `~1400px`，宽页面 `1600px`
+- 内容水平 padding：`var(--main-layout-content-sidepadding)` ≈ `4vw`（桌面端约 `40px`）
+
+```tsx
+<div className="mx-auto w-full max-w-[1400px] px-[4vw]">
+```
+
+#### Canvas Header（粘性标题栏）
+
+- 粘性定位（sticky top）
+- 背景色：`var(--background)`
+- 底部边框：`1px solid transparent`（滚动时可能显示）
+- 标题和操作按钮水平排列，`justify-between`
+- Ghost 的 filter/toolbar 区域有特定间距：`gap-8px`
+
+#### 列表项
+
+Ghost 列表页的标准模式：
+- 标题栏 + filter 按钮 + primary action 按钮（如 "New post"）
+- 列表项使用 `gh-expandable` 卡片（bordered card with sections）
+- 每个列表项：左侧内容 + 右侧状态/操作
+
+#### Sidebar
+
+Shade 的 Sidebar 组件（`apps/shade/src/components/ui/sidebar.tsx`）:
+- 宽度：约 `240px`（桌面端）
+- 背景：浅色模式 `hsl(240 11% 98%)`，暗色模式 `hsl(216 11% 6%)`
+- Logo 在顶部
+- Nav item：`rounded-md px-3 py-2 text-sm font-medium`
+- Active item：`bg-sidebar-accent`
+- 用户头像区在底部
+- 无顶部 header——sidebar 自身就是全局导航
+
+#### 全局排版
+
+- 字体：Inter（Ghost 使用 `--font-sans: Inter, ...`）
+- 基础字号：`1.4rem`（Ghost 使用 rem）
+- 行高：`1.5em`
+- 按钮：`h-9`（Ghost 的 `--control-height: 34px`），圆角 `rounded-md`
+- 输入框：统一 `h-9`，focus 绿色 ring
+
+### 6.3 Ghost vs 项目视觉差异表
+
+| 要素 | Ghost Admin | 项目当前 | 需调整 |
+|---|---|---|---|
+| Sidebar 位置 | 左侧固定，无顶部 header | 左侧 aside + 顶部 header | **移除顶部 header** |
+| Sidebar 宽度 | ~240px | `w-60`（240px） | ✅ 一致 |
+| Sidebar 亮色 | 近白 `hsl(240 11% 98%)` | `--surface` = `#f6f6f7` | 需更新为 Ghost 色 |
+| 页面标题字号 | `2.8rem` | 无统一标准 | **新增 Ghost 尺度** |
+| 内容区 max-width | `~1400px` | `max-w-7xl`（1280px） | 改为 `max-w-[1400px]` |
+| 按钮 control height | `34px` | `h-10`（40px） | 改为 `h-[34px]` |
+| 输入框高度 | `34px` | `h-9`（36px） | 改为 `h-[34px]` |
+| 按钮/输入圆角 | `rounded-md`（Ghost `--radius: 0.4rem`） | `rounded-md`（`0.3125rem`） | Admin 侧用 `0.4rem` |
+| Focus ring | 绿色 `#30cf43` / `25% opacity` | `--ring` / `50% opacity` | 更新为 Ghost 绿 |
+| 卡片间距 | `margin-bottom: 12px` | `gap-6`（24px） | 调整 |
+| 列表项分隔 | `border-b` 或 bordered card | 不统一 | 统一为 bordered card |
+
+### 6.4 形似实施要点
+
+**AdminShell 重写**（Module D）：
+
+```
+┌───────────┬──────────────────────────────────────────┐
+│ Sidebar   │ Main Content Area                        │
+│ w-[240px] │ ┌──────────────────────────────────────┐ │
+│           │ │ Canvas Header (sticky)                │ │
+│ ┌───────┐ │ │  Title (2.8rem)    [Filter] [Action] │ │
+│ │ Logo  │ │ ├──────────────────────────────────────┤ │
+│ ├───────┤ │ │                                      │ │
+│ │ Nav ×N│ │ │  Content (scrollable)                │ │
+│ │       │ │ │  max-w-[1400px] mx-auto px-[4vw]     │ │
+│ │       │ │ │                                      │ │
+│ │       │ │ │                                      │ │
+│ ├───────┤ │ └──────────────────────────────────────┘ │
+│ │User   │ │                                          │
+│ └───────┘ │                                          │
+└───────────┴──────────────────────────────────────────┘
+```
+
+- **无顶部 header**——sidebar 包含 Logo 和全局操作（ThemeToggle、UserMenu、BackToSite）
+- **内容区独立滚动**——`overflow-y-auto` 在 main 上，不在 sidebar 上
+- **Focus mode**——sidebar 隐藏，内容区全宽
+
+**列表页统一结构**（Module G）：
+
+```tsx
+// 标准列表页模板
+<section>
+  {/* Canvas Header */}
+  <div className="sticky top-0 z-10 border-b bg-background px-[4vw] py-6">
+    <div className="mx-auto flex max-w-[1400px] items-center justify-between">
+      <h1 className="text-[2.8rem] font-bold tracking-[-0.02em]">Posts</h1>
+      <div className="flex items-center gap-2">
+        {/* Filters */}
+        {/* Primary Action Button */}
+      </div>
+    </div>
+  </div>
+  {/* Canvas Body */}
+  <div className="mx-auto max-w-[1400px] px-[4vw] pb-8">
+    {/* List content */}
+  </div>
+</section>
+```
+
+**设置页全屏覆盖层**（Module H，第六章）：
+
+---
+
+## 七、Settings 页面重构：全屏覆盖层 + 连续滚动
+
+### 6.1 设计目标
+
+将 Settings 从 "侧边栏导航 + 14 个独立页面" 改为 Ghost Admin 风格的**全屏覆盖层**：
+
+- 点击 Sidebar 的 "系统设置" → 打开全屏 settings overlay
+- **左侧**：搜索框 + 分组导航（带滚动定位）
+- **右侧**：连续滚动的设置内容区，所有 14 个 section 纵向排列
+- **右上角**：Done / 关闭按钮
+- ESC 键关闭（带未保存提示）
+
+### 6.2 Ghost 参考实现
+
+Ghost 的 settings 在 `apps/admin-x-settings/` 中，核心结构：
+
+```
+main-content.tsx
+├── Page (fixed fullscreen overlay)
+│   ├── ExitSettingsButton (右上角 Done)
+│   ├── Sidebar (左侧：搜索 + 分组 nav)
+│   │   ├── 搜索框 (TextField, "/" 快捷键聚焦)
+│   │   └── SettingNavSection × N (分组 + SettingNavItem)
+│   └── Settings (右侧：连续滚动)
+│       └── GeneralSettings → SiteSettings → MembershipSettings → ...
+```
+
+关键设计：
+1. **搜索过滤**：输入关键词，不匹配的 nav item 隐藏，右侧只显示匹配的 section
+2. **滚动联动**：点击左侧 nav → 右侧滚动到对应 section；右侧滚动 → 左侧高亮跟随
+3. **分组**：nav 按 "General settings" / "Site" / "Advanced" 等分组
+4. **全屏沉浸**：fixed 定位覆盖整个 viewport，不与 admin sidebar 共存
+
+### 6.3 项目适配方案
+
+**路由变更**：
+
+```
+当前：/admin/settings/:section → 每个 section 一个页面
+目标：/admin/settings → 全屏 overlay（单一路由）
+```
+
+保留 `routes/admin/settings/layout.tsx` 作为 settings 的入口，但不再为每个 section 创建独立路由。14 个 section 的内容全部内联到一个滚动页面中。
+
+**组件结构**：
+
+```
+src/ui/admin/settings/
+├── SettingsOverlay.tsx          ← 全屏 overlay 容器
+│   ├── ExitSettingsButton
+│   ├── SettingsSidebar.tsx      ← 搜索 + 分组导航
+│   │   ├── 搜索框
+│   │   └── SectionNav × 4-5 分组
+│   └── SettingsContent.tsx      ← 右侧连续滚动内容
+│       ├── GeneralForm
+│       ├── NavigationEditor
+│       ├── SocialsEditor
+│       ├── ContentForm
+│       ├── SidebarForm
+│       ├── CommentsForm
+│       ├── SeoForm
+│       ├── MailForm
+│       ├── AssetsForm
+│       ├── SearchForm
+│       ├── FontsForm
+│       ├── ThresholdForm
+│       ├── LimitsForm
+│       └── CacheView + BackupView
+├── SettingsSection.tsx          ← 每个区块的卡片容器
+├── SettingsFormBar.tsx          ← 保存/重置操作栏（保留）
+├── useSettingsFetcher.ts        ← 保留
+├── useSettingsForm.ts           ← 保留
+└── *Form.tsx                    ← 各 section 的表单内容（保留）
+```
+
+**交互行为**：
+1. Sidebar 中点击 "系统设置" → 全屏 overlay 打开（可以用 `<Dialog>` 或直接 fixed 定位）
+2. 左侧搜索框实时过滤 section
+3. 左侧 nav 点击 → 右侧 `scrollIntoView` 对应 section
+4. 右侧滚动 → 通过 `IntersectionObserver` 高亮左侧对应 nav item
+5. 每个 section 内的保存/重置逻辑不变（仍然独立 per-section 保存）
+6. Done 按钮或 ESC 关闭 overlay → 返回 admin 主界面
+
+**移动端**：
+- 左侧 sidebar 隐藏，改为顶部搜索 + 汉堡菜单（Sheet）
+- 右侧内容区全宽
+
+**路由保留**：考虑到 SEO 和直接链接需求，可以保留 `/admin/settings/:section` 路由但改为打开 overlay 后自动滚动到对应 section。或者简化为单一 `/admin/settings` 路由。
+
+### 6.4 实施要点
+
+- **删除** `routes/admin/settings/{general,navigation,...}.tsx`（14 个独立页面路由）→ 合并为 `routes/admin/settings/index.tsx`
+- **重写** `SettingsShell.tsx` → `SettingsOverlay.tsx`
+- **新增** `SettingsSidebar.tsx`（搜索 + 分组 nav + 滚动联动）
+- **新增** `SettingsContent.tsx`（连续滚动容器）
+- **保留** 所有 `*Form.tsx` 的内部逻辑不变，只调整外层容器和间距
+- **删除** `SettingsRow.tsx`（Ghost 风格不需要两列 label/control 布局）
+
+---
+
+## 八、可并行执行的执行计划
+
+### Phase 0: Token 审计（串行，无代码变更）
+
+**目标**：生成精确的 Token 映射表。
+
+1. `grep -rn "var(--" /path/to/Ghost/shade/components/ui/*.tsx` 扫描所有待复制组件
+2. 与项目 `tailwind.css` `:root` 块交叉对比
+3. 验证第二章映射表的完整性，补充遗漏
+4. 输出最终映射表
+
+**预计产出**：25-30 个映射条目（第二章已列出大部分）。
+
+### Phase 1a: CSS 架构拆分（Module A，串行）
+
+**依赖**：Phase 0
+
+**任务清单**：
+1. 创建 `src/assets/styles/public-theme.css`：从 `tailwind.css` 移出 `:root` / `.dark` / `@media prefers-color-scheme` 块 + `html,body` 背景色
+2. 创建 `src/assets/styles/admin-theme.css`：第三章 3.2 节的完整内容
+3. 创建 `src/assets/styles/prose-content.css`：第四章 4.1 节的完整内容（不含 `@import 'tailwindcss'`）
+4. 重写 `src/assets/styles/tailwind.css`：移出颜色值和内容样式，新增 Ghost Token 映射行
+5. 更新 `src/assets/styles/public.css`：三个 import
+6. 更新 `src/assets/styles/admin.css`：保留 medium-zoom 样式 + 三个 import
+7. 更新 `src/ui/lib/cn.ts`：注册所有新增 Token
+8. 更新 `src/root.tsx` Layout：`data-admin-theme` 切换
+
+**验证**：`vp check` + `vp build` + Public 视觉无回归 + Admin 新 token 生效 + `tests/contract.tailwind-tokens.test.ts` 通过
+
+### Phase 1b: 基础组件迁移（Module B + C + E，并行）
+
+**依赖**：Phase 1a 完成
+
+#### Module B: Core UI Components
+
+- Button：保留 `useRender` + `render` prop，仅更新 `buttonVariants`
+- Badge / Card / Avatar / Separator / Skeleton / Label / Sonner：直接复制样式
+
+#### Module C: Overlays & Forms
+
+- Dialog / Sheet / DropdownMenu / Select / Popover / AlertDialog：移除 `SHADE_APP_NAMESPACES`
+- Input / Textarea / Select：内联 `inputSurface()` 逻辑，使用映射后的 Token
+- Accordion / Tabs / Checkbox / Switch / RadioGroup / Calendar / Tooltip：直接复制
+
+#### Module E: PostContent / CommentContent 提取
+
+- 创建 `PostContent.tsx` / `CommentContent.tsx`
+- 替换所有 7 个使用处
+
+### Phase 1c: Sidebar 重写（Module D）
+
+**依赖**：Module B + C
+
+- 参考 Ghost `sidebar.tsx` 精简重写（200-300 LOC）
+- 亮色模式浅色 sidebar（`--sidebar-background: hsl(240 11% 98%)`）
+- 保留 `AdminChromeContext`
+- 移动端 Sheet drawer
+
+### Phase 2: 页面层重构（Module F-J，并行）
+
+**依赖**：Phase 1 全部完成
+
+| Module | 范围 |
+|---|---|
+| F: Login & Auth | signin + install wizard |
+| G: List Views | 所有 admin 列表页 |
+| H: Settings | **全屏覆盖层重构**（第六章），SettingsOverlay + SettingsSidebar + SettingsContent + 14 个 *Form.tsx 间距适配 |
+| I: Dashboard & My | Welcome + My + Analytics + UserDetail |
+| J: Editor | Editor shell + Tiptap 组件 |
+
+**Module H 详解**：
+1. 创建 `SettingsOverlay.tsx` — 全屏 fixed 定位容器 + ESC 关闭
+2. 创建 `SettingsSidebar.tsx` — 搜索框 + 分组导航（参考 Ghost `sidebar.tsx` 搜索/过滤逻辑）
+3. 创建 `SettingsContent.tsx` — 连续滚动，纵向排列所有 14 个 section
+4. 实现滚动联动：点击 nav → `scrollIntoView`；`IntersectionObserver` → 高亮 nav
+5. 将 14 个 `routes/admin/settings/*.tsx` 路由合并为单一 `routes/admin/settings/index.tsx`
+6. 更新 AdminShell 中 "系统设置" 导航项，点击时打开 overlay
+7. 适配 `*Form.tsx` 的外层容器/间距，适配新 `SettingsSection` 卡片样式
+8. 移动端：隐藏 sidebar，改为顶部搜索 + Sheet drawer |
+
+### Phase 3: 收尾（Module K，串行）
+
+- 全局搜索替换（逐个审查）
+- Public 回归检查
+- `vp check` + `vp test` + `vp build`
+- License（`licenses/LICENSE.ghost-shade.txt`）
+- README.md / AGENTS.md 更新
+
+---
+
+## 九、依赖图
+
+```
+Phase 0（串行）
+└── Token 审计与映射表
+    │
+Phase 1a（串行）
+└── Module A: CSS 架构拆分
+    │
+Phase 1b（并行）
+├── Module B: Core UI
+├── Module C: Overlays & Forms
+└── Module E: Content 提取
+    │
+Phase 1c（串行）
+└── Module D: Sidebar（依赖 B + C）
+    │
+Phase 2（并行）
+├── Module F: Login & Auth
+├── Module G: List Views
+├── Module H: Settings 全屏覆盖层（第六章）
+├── Module I: Dashboard & My
+└── Module J: Editor
+    │
+Phase 3（串行）
+└── Module K: Polish & Docs
 ```
 
 ---
 
-## 五、可并行执行的 Agent 模块
+## 十、验收标准
 
-整个重构拆分为 **11 个独立 Agent 模块**，按 **Phase 1（并行）→ Phase 2（并行）→ Phase 3（串行）** 执行。
-
-### Phase 1：基础设施（5 个模块并行）
-
-> 模块 A/B/C/D/E 之间无依赖，可完全并行。
-
----
-
-#### Module A: CSS 架构拆分（Token + Theme + Prose Content）
-
-**负责人 Agent**: 1 个
-**输入**: 现有 `tailwind.css`, Ghost Shade `theme-variables.css` / `tailwind.theme.css`
-**输出**: 拆分后的 5 个 CSS 文件 + 更新的 `root.tsx`
-
-**任务清单**:
-1. 创建 `src/assets/styles/public-theme.css`：从现有 `tailwind.css` 提取 `:root` / `.dark` / `@media prefers-color-scheme` 全部 public 颜色值
-2. 创建 `src/assets/styles/admin-theme.css`：从 Ghost Shade 复制并精简 admin 颜色值，选择器使用 `:root[data-admin-theme]`
-3. 创建 `src/assets/styles/prose-content.css`：提取 `.post-content` 和 `.comment-content` 为独立 `@utility`
-4. 重写 `src/assets/styles/tailwind.css`：移除颜色值、移除 post-content/comment-content、保留语法层
-5. 更新 `src/assets/styles/public.css`：`@import './tailwind.css'; @import './public-theme.css'; @import './prose-content.css';`
-6. 更新 `src/assets/styles/admin.css`：`@import './tailwind.css'; @import './admin-theme.css'; @import './prose-content.css';`
-7. 更新 `src/ui/lib/cn.ts`：追加 Shade token 到 `tailwind-merge` 注册列表
-8. 更新 `src/root.tsx` 的 `Layout`：添加 `useLocation()`，动态设置 `data-admin-theme`
-9. **验证**: `vp check` 通过；访问 public 首页确认视觉无回归；访问 admin 确认新主题生效
-
-**关键文件**:
-- `src/assets/styles/tailwind.css`（重写）
-- `src/assets/styles/public-theme.css`（新建）
-- `src/assets/styles/admin-theme.css`（新建）
-- `src/assets/styles/prose-content.css`（新建）
-- `src/assets/styles/public.css`（更新）
-- `src/assets/styles/admin.css`（更新）
-- `src/ui/lib/cn.ts`（更新）
-- `src/root.tsx`（更新 Layout）
+- [ ] **CSS 拆分**：`tailwind.css` 无 `:root` 颜色值、`public-theme.css` 和 `admin-theme.css` 独立存在
+- [ ] **主题切换**：public → admin → public，颜色正确切换，无 flash
+- [ ] **Light Mode**：登录页、Dashboard、Posts 列表、Settings 与 Ghost Admin 风格一致
+- [ ] **Dark Mode**：`.dark` 下 admin 色彩协调，sidebar 暗色、内容区暗色
+- [ ] **Sidebar-only 布局**：桌面端无顶部 header，sidebar 固定左侧
+- [ ] **Sidebar 浅色**：亮色模式下 sidebar 为浅色（Ghost 原始设计）
+- [ ] **移动端**：sidebar 通过 Sheet drawer 正常访问
+- [ ] **PostContent/CommentContent**：所有 7 个使用处已替换
+- [ ] **Settings 全屏覆盖层**：点击 "系统设置" 打开全屏 overlay，搜索/导航/滚动联动正常
+- [ ] **Settings 连续滚动**：14 个 section 纵向排列，左侧 nav 点击跳转，右侧滚动跟踪
+- [ ] **Public 无回归**：`src/routes/public/` 页面视觉 100% 保持原样
+- [ ] **测试**：`vp check` + `vp test` 全部通过
+- [ ] **Token 契约**：`tests/contract.tailwind-tokens.test.ts` 通过
+- [ ] **License**：`licenses/LICENSE.ghost-shade.txt` 存在
 
 ---
 
-#### Module B: 基础组件库 — 核心 UI（Core UI Components）
+## 十一、License 与文档
 
-**负责人 Agent**: 1 个
-**输入**: Ghost Shade `src/components/ui/` 源码
-**输出**: 更新后的 `src/ui/components/` + 新增 `src/ui/primitives/`
-**依赖**: Module A（token 已就位）
+### License
 
-**任务清单**:
-1. 从 Ghost Shade 复制并替换：
-   - `button.tsx`（保留项目额外 variants）
-   - `badge.tsx`
-   - `card.tsx`
-   - `avatar.tsx`
-   - `separator.tsx`
-   - `skeleton.tsx`
-   - `label.tsx`
-   - `sonner.tsx`
-2. 新增 primitives 目录：`box.tsx`, `stack.tsx`, `inline.tsx`, `grid.tsx`, `text.tsx`, `container.tsx`
-3. 所有组件：`forwardRef` → prop ref，`@/lib/utils` → `@/ui/lib/cn`
+新建 `licenses/LICENSE.ghost-shade.txt`（Ghost MIT License）。
 
-**关键文件**:
-- `src/ui/components/button.tsx`
-- `src/ui/components/badge.tsx`
-- `src/ui/components/card.tsx`
-- `src/ui/components/avatar.tsx`
-- `src/ui/components/separator.tsx`
-- `src/ui/components/skeleton.tsx`
-- `src/ui/components/label.tsx`
-- `src/ui/components/sonner.tsx`
-- `src/ui/primitives/*`（6 个新增）
-
----
-
-#### Module C: 基础组件库 — 覆盖层与表单（Overlays & Forms）
-
-**负责人 Agent**: 1 个
-**输入**: Ghost Shade overlay/form 组件
-**输出**: 更新后的 overlay/form 组件
-**依赖**: Module A
-
-**任务清单**:
-1. 复制并适配（移除 `SHADE_APP_NAMESPACES`）：
-   `dialog.tsx`, `sheet.tsx`, `dropdown-menu.tsx`, `select.tsx`, `popover.tsx`, `tooltip.tsx`, `alert-dialog.tsx`
-2. 直接复制：`accordion.tsx`, `tabs.tsx`, `checkbox.tsx`, `switch.tsx`, `radio-group.tsx`, `calendar.tsx`
-3. 新增 `command.tsx`（可选）
-4. 同样进行 forwardRef → prop ref 迁移
-
-**关键文件**:
-- `src/ui/components/dialog.tsx`
-- `src/ui/components/sheet.tsx`
-- `src/ui/components/dropdown-menu.tsx`
-- `src/ui/components/select.tsx`
-- `src/ui/components/popover.tsx`
-- `src/ui/components/tooltip.tsx`
-- `src/ui/components/alert-dialog.tsx`
-- `src/ui/components/accordion.tsx`
-- `src/ui/components/tabs.tsx`
-- `src/ui/components/checkbox.tsx`
-- `src/ui/components/switch.tsx`
-- `src/ui/components/radio-group.tsx`
-- `src/ui/components/calendar.tsx`
-
----
-
-#### Module D: 布局层重构 — Sidebar-only Admin Shell
-
-**负责人 Agent**: 1 个
-**输入**: Ghost Shade `sidebar.tsx` + 现有 `AdminShell.tsx`
-**输出**: 重写后的 `AdminShell.tsx`
-**依赖**: Module A, Module C
-
-**任务清单**:
-1. 参考 Ghost Shade `sidebar.tsx` 精简重写项目专用 Sidebar（200-300 LOC）
-2. 重写 `src/ui/admin/shell/AdminShell.tsx`：
-   - 移除顶部 header
-   - Sidebar 深色背景（`bg-sidebar` = `#191b1e`）
-   - 包含：Logo、主导航、底部用户区
-   - 内容区：`flex-1`, `overflow-y-auto`, `bg-background`
-   - 移动端：Sheet drawer（使用 Module C 的 Sheet）
-3. 更新 `AdminScrollTopButton.tsx` 适配新布局
-4. 保留 `AdminChromeContext`（focus mode, scrollTopLifted）
-
-**关键文件**:
-- `src/ui/admin/shell/AdminShell.tsx`（重写）
-- `src/ui/admin/shell/AdminScrollTopButton.tsx`（调整）
-
----
-
-#### Module E: PostContent / CommentContent 公共组件提取
-
-**负责人 Agent**: 1 个
-**输入**: 现有 `tailwind.css` 中的 post-content / comment-content 样式 + 7 个使用处
-**输出**: 新组件 + 所有使用处替换
-**依赖**: Module A（prose-content.css 已就位）
-
-**任务清单**:
-1. 创建 `src/ui/pt/PostContent.tsx`：封装 `post-content prose-blog prose prose-lg max-w-none`
-2. 创建 `src/ui/pt/CommentContent.tsx`：封装 `comment-content prose-blog prose prose-sm max-w-none`
-3. 导出常量 `POST_CONTENT_BASE_CLASSES` 和 `COMMENT_CONTENT_BASE_CLASSES` 供 Editor 等无法直接包裹的场景使用
-4. 替换所有使用处（见 2.3 替换范围表）
-5. 检查 `CodeBlock.tsx` 中的 `in-[.comment-content]` 选择器是否仍然生效
-
-**关键文件**:
-- `src/ui/pt/PostContent.tsx`（新增）
-- `src/ui/pt/CommentContent.tsx`（新增）
-- `src/ui/public/post/DetailBodyChrome.tsx`
-- `src/ui/admin/editor-shell/PreviewPanel.tsx`
-- `src/ui/admin/editor/PageBodyEditor.tsx`
-- `src/ui/public/comments/comment-item/helpers.ts`
-- `src/ui/admin/users/UserDetailView.tsx`
-- `src/ui/admin/my/MyCommentsView.tsx`
-- `src/ui/admin/comments/AdminCommentRow.tsx`
-
----
-
-### Phase 2：页面层重构（5 个模块并行）
-
-> 模块 F/G/H/I/J 依赖 Phase 1 完成，但彼此之间无依赖，可并行。
-
----
-
-#### Module F: 登录页与认证页面（Login & Auth）
-
-**负责人 Agent**: 1 个
-**依赖**: Module A, Module B, Module E
-
-**任务清单**:
-1. 重写 `src/routes/auth/signin.tsx`：移除 Card，改为居中 flow（max-w-[500px]）
-2. 重写 `src/ui/admin/auth/AdminCredentialsForm.tsx`：
-   - 大输入框（`h-12` / `h-13`, `rounded-lg`, `bg-muted`）
-   - Focus：白底 + 绿色 border + `ring-2 ring-[#30cf43]/25`
-   - 密码框内嵌 "忘记密码"（Ghost 风格）
-   - 全宽黑色 primary 按钮（`h-12`, `rounded-lg`）
-3. 同步更新 `install/index.tsx` 和 `install/settings.tsx`
-
-**关键文件**:
-- `src/routes/auth/signin.tsx`
-- `src/ui/admin/auth/AdminCredentialsForm.tsx`
-- `src/routes/auth/install/index.tsx`
-- `src/routes/auth/install/settings.tsx`
-
----
-
-#### Module G: 列表页（List Views）
-
-**负责人 Agent**: 1 个
-**依赖**: Module A, Module B, Module D, Module E
-
-**任务清单**:
-1. 更新 `src/ui/admin/shared/AdminListPage.tsx`：
-   - Header 标题：`text-3xl font-bold tracking-tight`
-   - Toolbar Card：`variant="outline"`，增大 padding
-2. 更新所有 List View 适配新 Table、Button、Badge、Input 样式：
-   - `PostsView.tsx`, `PagesView.tsx`, `CommentsView.tsx`
-   - `UsersView.tsx`, `SessionsView.tsx`
-   - `ImagesView.tsx`, `MusicsView.tsx`
-   - `CategoriesView.tsx`, `TagsView.tsx`, `FriendsView.tsx`
-
-**关键文件**:
-- `src/ui/admin/shared/AdminListPage.tsx`
-- `src/ui/admin/posts/PostsView.tsx`
-- `src/ui/admin/pages/PagesView.tsx`
-- `src/ui/admin/comments/CommentsView.tsx`
-- `src/ui/admin/users/UsersView.tsx`
-- `src/ui/admin/sessions/SessionsView.tsx`
-- `src/ui/admin/images/ImagesView.tsx`
-- `src/ui/admin/musics/MusicsView.tsx`
-- `src/ui/admin/categories/CategoriesView.tsx`
-- `src/ui/admin/tags/TagsView.tsx`
-- `src/ui/admin/friends/FriendsView.tsx`
-
----
-
-#### Module H: 设置页（Settings Pages）
-
-**负责人 Agent**: 1 个
-**依赖**: Module A, Module B, Module C
-
-**任务清单**:
-1. 更新 `SettingsShell.tsx`：settings sidebar 配色适配新 token
-2. 更新 `SettingsSection.tsx`：改用 `Card variant="outline"`，`rounded-xl`，`p-6`
-3. 更新 `SettingsRow.tsx`：调整 label/control 间距
-4. 遍历所有 `*Form.tsx`：统一更新输入框、按钮、间距
-
-**关键文件**:
-- `src/ui/admin/settings/SettingsShell.tsx`
-- `src/ui/admin/settings/SettingsSection.tsx`
-- `src/ui/admin/settings/SettingsRow.tsx`
-- `src/ui/admin/settings/*Form.tsx`（13 个文件）
-
----
-
-#### Module I: Dashboard、个人中心与杂项视图（Dashboard, My, Analytics, User Detail）
-
-**负责人 Agent**: 1 个
-**依赖**: Module A, Module B, Module E
-
-**任务清单**:
-1. 更新 `src/routes/admin/welcome.tsx`：
-   - 页面标题 `text-3xl font-bold tracking-tight`
-   - StatsGrid 卡片改用 bordered style，增大间距
-2. 更新 `src/ui/admin/welcome/*` widget 组件
-3. 更新 `src/ui/admin/my/*.tsx`
-4. 更新 `src/ui/admin/analytics/*.tsx`
-5. 更新 `src/ui/admin/users/UserDetailView.tsx`
-
-**关键文件**:
-- `src/routes/admin/welcome.tsx`
-- `src/ui/admin/welcome/*`
-- `src/ui/admin/my/MyProfileView.tsx`
-- `src/ui/admin/my/MyCommentsView.tsx`
-- `src/ui/admin/my/MySessionsView.tsx`
-- `src/ui/admin/analytics/*.tsx`
-- `src/ui/admin/users/UserDetailView.tsx`
-
----
-
-#### Module J: 编辑器适配（Editor Shell & Editor）
-
-**负责人 Agent**: 1 个
-**依赖**: Module A, Module B, Module E
-
-**任务清单**:
-1. 更新 `editor-shell/*.tsx`：按钮样式、面板边框阴影
-2. 更新 `editor/*.tsx`：BubbleMenu、SlashMenu、ImageNodeView 等
-3. 确保 focus mode 在 Sidebar-only 布局下正常工作
-4. 确保 `PostContent` 常量在 Editor 中正确使用
-
-**关键文件**:
-- `src/ui/admin/editor-shell/PostEditorShell.tsx`
-- `src/ui/admin/editor-shell/PageEditorShell.tsx`
-- `src/ui/admin/editor-shell/FloatingPublishButton.tsx`
-- `src/ui/admin/editor-shell/PreviewPanel.tsx`
-- `src/ui/admin/editor/*.tsx`
-
----
-
-### Phase 3：收尾与一致性（1 个模块，串行）
-
-#### Module K: 全局检查、License 与文档
-
-**负责人 Agent**: 1 个
-**依赖**: Phase 1 和 Phase 2 全部完成
-
-**任务清单**:
-1. **全局搜索替换**:
-   - `max-w-7xl` → `max-w-[1480px]` 或移除
-   - 旧 shadow class → 新 shadow token
-   - 旧 card pattern → `Card variant="outline"`
-2. **Public 回归检查**: 确认 `src/routes/public/` 页面无视觉回归
-3. **测试**: `vp check` + `vp test`
-4. **License**:
-   - 新建 `licenses/LICENSE.ghost-shade.txt`（Ghost MIT License）
-   - `README.md` 追加 Design System 章节
-   - `AGENTS.md` 追加 Admin UI 组件说明
-5. **清理**: 删除不再使用的旧组件文件
-
-**关键文件**:
-- `licenses/LICENSE.ghost-shade.txt`（新增）
-- `README.md`（追加）
-- `AGENTS.md`（追加）
-
----
-
-## 六、Agent 并行执行依赖图
-
-```
-Phase 1（5 个模块完全并行）
-├── Module A: CSS 架构拆分 ────────┐
-├── Module B: Core UI 组件 ────────┤
-├── Module C: Overlays & Forms ────┤──→ Phase 2（5 个模块完全并行）
-├── Module D: Sidebar-only Shell ──┤      ├── Module F: Login & Auth
-└── Module E: Post/Comment 组件 ───┘      ├── Module G: List Views
-                                          ├── Module H: Settings
-                                          ├── Module I: Dashboard & My
-                                          └── Module J: Editor
-                                                         │
-                                              Phase 3（串行）
-                                              └── Module K: Polish & Docs
-```
-
----
-
-## 七、License 与文档
-
-### 7.1 Ghost Shade MIT License 声明
-
-新建 `licenses/LICENSE.ghost-shade.txt`：
-
-```
-Ghost Shade Design System
-Copyright (c) 2013-2025 Ghost Foundation
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-### 7.2 README.md 追加
+### README.md 追加
 
 ```markdown
 ## Design System
 
-The admin dashboard UI is styled using components and design tokens derived from the
+The admin dashboard UI uses components and design tokens derived from the
 [Ghost Shade Design System](https://github.com/TryGhost/Ghost/tree/main/apps/shade),
 used under the MIT License. See `licenses/LICENSE.ghost-shade.txt`.
 ```
 
-### 7.3 AGENTS.md 追加
+### AGENTS.md 追加
 
 ```markdown
 ### Admin UI Components
 
-Most admin UI components under `src/ui/components/` are derived from Ghost Shade.
-When modifying these components, refer to the original source in
-`/Users/YufanSheng/Downloads/Ghost/apps/shade/src/components/ui/` for the
-intended design behavior. Do not reintroduce old component APIs without
-updating all call sites.
-
+Admin UI components under `src/ui/components/` are derived from Ghost Shade.
 The admin theme is scoped to `html[data-admin-theme]` and is independent from
 the public site's theme. The `data-admin-theme` attribute is set dynamically
 by `root.tsx` based on the current route path.
+
+Ghost Token names (e.g. `--focus-ring`, `--surface-elevated`) are mapped to
+project tokens in `src/assets/styles/admin-theme.css`. When modifying admin
+components, use the mapped token names, not Ghost's originals.
 ```
-
----
-
-## 八、验收标准
-
-- [ ] **CSS 拆分验证**: `tailwind.css` 中无 `:root` 颜色值、`public-theme.css` 和 `admin-theme.css` 独立存在
-- [ ] **主题切换验证**: 访问 public 首页 → 导航到 admin → 导航回 public，颜色和背景正确切换，无 flash
-- [ ] **Light Mode 视觉**: 登录页、Dashboard、Posts 列表、Settings 与 Ghost Admin 风格一致
-- [ ] **Dark Mode 视觉**: `.dark` 下 admin 页面色彩协调，sidebar 深色、内容区暗色
-- [ ] **Sidebar-only 布局**: 桌面端无顶部 header，sidebar 固定左侧，内容区可滚动
-- [ ] **移动端**: sidebar 通过 Sheet drawer 正常访问
-- [ ] **PostContent/CommentContent**: 所有 7 个使用处已替换为新组件，内容渲染正常
-- [ ] **Public 无回归**: `src/routes/public/` 页面视觉 100% 保持原样
-- [ ] **测试通过**: `vp check` + `vp test` 全部通过
-- [ ] **License 合规**: `licenses/LICENSE.ghost-shade.txt` 存在，README 和 AGENTS.md 已更新

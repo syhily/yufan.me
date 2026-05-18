@@ -34,6 +34,7 @@ import {
   type PublishLatestResult,
   type SaveDraftResult,
 } from '@/server/domains/pages/repo'
+import { createProcessCache } from '@/server/infra/cache/process-cache'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetric } from '@/server/infra/db/operations/metric'
 import { DomainError } from '@/server/infra/http/errors'
@@ -69,27 +70,23 @@ const log = getLogger('pages.service')
 
 // Visibility gate shared by the listing and single-page lookups.
 // A page is considered live publicly iff:
-let cachedPages: CmsPage[] | null = null
-let cachedPagesAt = 0
-const PAGE_CACHE_TTL_MS = 10_000
+const pagesCache = createProcessCache<CmsPage[]>({ ttlMs: 10_000 })
 
 function clearPagesCache(): void {
-  cachedPages = null
-  cachedPagesAt = 0
+  pagesCache.clear()
 }
 
 /** All non-deleted, non-scheduled, published pages joined with their content. */
 export async function loadCatalogPages(): Promise<CmsPage[]> {
-  const now = Date.now()
-  if (cachedPages !== null && now - cachedPagesAt < PAGE_CACHE_TTL_MS) {
-    return cachedPages.map((p) => ({ ...p }))
+  const cached = pagesCache.get()
+  if (cached !== null) {
+    return cached.map((p) => ({ ...p }))
   }
   const metas = await listPublicPageMetas()
   const asOf = new Date()
   const visible = metas.filter((meta) => isCatalogVisible(meta, asOf))
   if (visible.length === 0) {
-    cachedPages = []
-    cachedPagesAt = now
+    pagesCache.set([])
     return []
   }
   const revisionIds = visible.map((m) => m.publishedRevisionId).filter((id): id is bigint => id !== null)
@@ -104,8 +101,7 @@ export async function loadCatalogPages(): Promise<CmsPage[]> {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
     return toCmsPage(meta, revision)
   })
-  cachedPages = result
-  cachedPagesAt = now
+  pagesCache.set(result)
   return result.map((p) => ({ ...p }))
 }
 

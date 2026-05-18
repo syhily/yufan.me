@@ -71,7 +71,7 @@ export function InviteAuthorDialog({ open, onClose, onInvited }: Props) {
               required
             />
           </div>
-          {error && <div className="text-sm text-destructive">{error}</div>}
+          {!!error && <div className="text-sm text-destructive">{error}</div>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               <XIcon data-icon /> 取消

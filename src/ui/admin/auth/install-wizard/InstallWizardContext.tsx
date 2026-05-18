@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, use, useCallback, useEffect, useState } from 'react'
 
 import type { InstallWizardData, InstallWizardSession } from '@/shared/types/install'
 
@@ -192,7 +192,7 @@ export function InstallWizardProvider({ children }: { children: React.ReactNode 
 }
 
 export function useInstallWizard(): InstallWizardContextValue {
-  const ctx = useContext(InstallWizardContext)
+  const ctx = use(InstallWizardContext)
   if (!ctx) {
     throw new Error('useInstallWizard must be used within InstallWizardProvider')
   }

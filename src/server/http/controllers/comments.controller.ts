@@ -17,14 +17,6 @@ import {
 import { getCommentById, updateComment, updateOwnComment } from '@/server/domains/comments/moderation'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
 import {
-  appendCommentToken,
-  cleanupExpiredTokens,
-  issueCommentToken,
-  revokeCommentToken,
-  verifyCommentOwnership,
-} from '@/server/domains/comments/token'
-import { authedProc, publicProc } from '@/server/http/orpc-base'
-import {
   clearDeleteRequest,
   countApprovedRepliesOfComment,
   countMyComments,
@@ -32,7 +24,15 @@ import {
   findCommentsByIds,
   listMyComments,
   requestDeleteComment,
-} from '@/server/infra/db/operations/comment'
+} from '@/server/domains/comments/repo'
+import {
+  appendCommentToken,
+  cleanupExpiredTokens,
+  issueCommentToken,
+  revokeCommentToken,
+  verifyCommentOwnership,
+} from '@/server/domains/comments/token'
+import { authedProc, publicProc } from '@/server/http/orpc-base'
 import { findUserIdByEmail } from '@/server/infra/db/operations/user'
 import {
   tryCommentPostRateLimit,

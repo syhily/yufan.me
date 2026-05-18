@@ -1,0 +1,65 @@
+import { call } from '@orpc/server'
+import { describe, expect, it, vi } from 'vite-plus/test'
+
+import { makeAuthedCtx } from './_helpers/mock-ctx'
+
+vi.mock('@/server/domains/settings/service', () => ({
+  getAdminBlogSettings: vi.fn(),
+  updateBlogSettingsSection: vi.fn(),
+}))
+
+const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { adminSettingsRouter } = await import('@/server/http/controllers/admin/settings.controller')
+
+const bundleStub = {
+  siteIdentity: null,
+  assets: null,
+  navigation: null,
+  socials: null,
+  content: null,
+  sidebar: null,
+  comments: null,
+  seo: null,
+  mail: null,
+  cache: null,
+  backup: null,
+}
+
+describe('adminSettingsRouter.get', () => {
+  it('returns the settings bundle', async () => {
+    vi.mocked(getAdminBlogSettings).mockResolvedValueOnce({ bundle: bundleStub } as never)
+    const ctx = makeAuthedCtx()
+    const res = await call(adminSettingsRouter.get, {}, { context: ctx })
+    expect(res.bundle).toEqual(bundleStub)
+  })
+})
+
+describe('adminSettingsRouter.update', () => {
+  it('updates a section with a valid payload', async () => {
+    vi.mocked(updateBlogSettingsSection).mockResolvedValueOnce(bundleStub as never)
+    const ctx = makeAuthedCtx()
+    const res = await call(
+      adminSettingsRouter.update,
+      {
+        section: 'mail',
+        payload: { mail: { enabled: false, host: 'api.zeabur.com', sender: 'noreply@example.com' } },
+      },
+      { context: ctx },
+    )
+    expect(res.success).toBe(true)
+  })
+
+  it('throws BAD_REQUEST for an invalid payload', async () => {
+    const ctx = makeAuthedCtx()
+    await expect(
+      call(
+        adminSettingsRouter.update,
+        {
+          section: 'mail',
+          payload: { mail: { enabled: false, host: '', sender: '' } },
+        },
+        { context: ctx },
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' })
+  })
+})

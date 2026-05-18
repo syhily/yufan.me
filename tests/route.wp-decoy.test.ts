@@ -35,21 +35,6 @@ fixtures.samplePost = {
 }
 fixtures.samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [], publishedRevisionId: null }
 
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => session),
-    isAdmin: vi.fn(() => false),
-    userSession: vi.fn((s: { data?: { user?: unknown } } | undefined) => s?.data?.user),
-    resolveSessionContext: vi.fn(async () => ({
-      session,
-      user: session?.data?.user,
-      admin: false,
-    })),
-  }
-})
-
 // catalog/catalog removed; pages/loader.ts now uses findPublicPostMetaBySlug +
 // findPageBySlug directly. Catalog slug routing is gone.
 vi.mock('@/server/domains/posts/repo', () => ({

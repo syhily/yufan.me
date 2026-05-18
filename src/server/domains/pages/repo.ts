@@ -6,10 +6,10 @@ import type { Page } from '@/shared/types/catalog'
 
 import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
 import { isCatalogVisible } from '@/server/domains/content/schema'
+import { hydrateImageRefs } from '@/server/domains/images/image-meta'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { db } from '@/server/infra/db/pool'
 import { page as pageMetaTable, user } from '@/server/infra/db/schema'
-import { hydrateImageRefs } from '@/server/render/image-enhance'
 
 export {
   findContentById,

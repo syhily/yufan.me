@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import type { MyCommentsStatus } from '@/server/infra/db/operations/comment'
+import type { MyCommentsStatus } from '@/server/domains/comments/repo'
 import type { EntityType } from '@/server/infra/db/target'
 import type { PortableTextBody as PortableTextBodyType } from '@/shared/pt/schema'
 
@@ -12,7 +12,7 @@ import {
   listMyCommentEntities,
   listMyComments,
   resolveEntitiesForComments,
-} from '@/server/infra/db/operations/comment'
+} from '@/server/domains/comments/repo'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MyCommentsView } from '@/ui/admin/my/MyCommentsView'
 

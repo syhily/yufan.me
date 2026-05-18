@@ -1,32 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { makeCategory, makePost, makePostList, makeTag } from './_helpers/catalog'
-import { adminSession, regularSession } from './_helpers/session'
-
 // Listing routes (`/cats/:slug`, `/tags/:slug`, `/search/:keyword`) all share
 // the same skeleton. We pin the public 404/redirect contracts that are part
 // of the URL surface (AGENTS.md says these paths must remain stable forever).
 
-let session = regularSession()
 const publicPosts = makePostList(3, { slug: 'post' })
 const hiddenPost = makePost({ slug: 'hidden-post', visible: false })
 const samplePosts = [...publicPosts, hiddenPost]
 const sampleCategory = makeCategory({ name: 'general', slug: 'general' })
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
-
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => session),
-    userSession: vi.fn((s) => s?.data?.user),
-    resolveSessionContext: vi.fn(async () => ({
-      session,
-      user: session?.data?.user,
-      role: session?.data?.user?.role ?? null,
-    })),
-  }
-})
 
 vi.mock('@/server/infra/db/operations/category', () => ({
   findCategoryBySlug: vi.fn(async (slug: string) => (slug === 'general' ? sampleCategory : null)),
@@ -93,7 +76,6 @@ const tagRoute = await import('@/routes/public/tag/list')
 const searchRoute = await import('@/routes/public/search/list')
 beforeEach(() => {
   vi.clearAllMocks()
-  session = regularSession()
 })
 
 describe('routes/category.list loader', () => {
@@ -134,8 +116,6 @@ describe('routes/category.list loader', () => {
   })
 
   it('includes hidden posts for admin category visitors', async () => {
-    session = adminSession()
-
     const data = (await categoryRoute.loader({
       request: new Request('http://localhost/cats/general'),
       params: { slug: 'general' },

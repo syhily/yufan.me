@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
+const BUBBLE_MENU_OPTIONS = { placement: 'top' as const, offset: 8 }
+
 import { orpc } from '@/client/api/client'
 import { generateBlockKey } from '@/shared/pt/utils'
 import { MathInlinePanel } from '@/ui/admin/editor/tiptap/InlineMarkPanels'
@@ -89,10 +91,7 @@ export function PageBubbleMenu({ editor }: PageBubbleMenuProps) {
   return (
     <BubbleMenu
       editor={editor}
-      options={{
-        placement: 'top',
-        offset: 8,
-      }}
+      options={BUBBLE_MENU_OPTIONS}
       shouldShow={({ editor: instance, state }) => {
         if (!instance.isEditable) {
           return false

@@ -1,37 +1,24 @@
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChartLineIcon,
-  FilePenIcon,
-  MessageSquareIcon,
-  PinIcon,
-  PlusIcon,
-  RefreshCwIcon,
-  SearchIcon,
-  Trash2Icon,
-  Undo2Icon,
-} from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
 
-import type { AdminPostDto } from '@/shared/types/posts'
 import type { AdminUserDto } from '@/shared/types/users'
 
 import { orpc } from '@/client/api/client'
 import { orpcQuery, useMutation, useQuery } from '@/client/api/query'
+import { PostRow } from '@/ui/admin/posts/PostRow'
+import { PostsSkeleton } from '@/ui/admin/posts/PostsSkeleton'
 import { usePostsController } from '@/ui/admin/posts/usePostsController'
 import { AdminListPage } from '@/ui/admin/shared/AdminListPage'
 import { type ConfirmState, ConfirmDialog } from '@/ui/admin/shared/ConfirmDialog'
 import { useDebouncedSearch } from '@/ui/admin/shared/useDebouncedSearch'
-import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Card } from '@/ui/components/card'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/ui/components/empty'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/ui/components/input-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
-import { Skeleton } from '@/ui/components/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/ui/components/table'
 
 const DELETED_STATUS_OPTIONS = [
@@ -406,139 +393,6 @@ export function PostsView() {
       </AdminListPage>
 
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
-    </>
-  )
-}
-
-interface PostRowProps {
-  post: AdminPostDto
-  onDelete: () => void
-  onRestore: () => void
-}
-
-function PostRow({ post, onDelete, onRestore }: PostRowProps) {
-  const isDeleted = post.deletedAt !== null
-  return (
-    <TableRow className={isDeleted ? 'opacity-60' : undefined}>
-      <TableCell className="pl-4 align-top">
-        <div className="flex items-center gap-1.5">
-          <span className="font-medium">{post.title}</span>
-          {post.pinnedAt !== null && (
-            <span title="已置顶">
-              <PinIcon className="size-3.5 text-status-warn-fg" />
-            </span>
-          )}
-        </div>
-        <Link
-          to={`/posts/${post.slug}`}
-          className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
-        >
-          /posts/{post.slug}
-        </Link>
-      </TableCell>
-      <TableCell className="hidden md:table-cell">
-        <p className="text-sm text-muted-foreground">{post.category || '—'}</p>
-      </TableCell>
-      <TableCell className="hidden w-24 text-center align-middle md:table-cell">
-        <p className="text-sm text-muted-foreground">{post.authorName || '—'}</p>
-      </TableCell>
-      <TableCell className="text-center align-middle">
-        <StatusBadge post={post} />
-      </TableCell>
-      <TableCell className="hidden align-middle text-sm lg:table-cell">
-        {new Date(post.firstPublishedAt ?? post.publishedAt).toLocaleString('zh-CN')}
-      </TableCell>
-      <TableCell className="pr-4 text-right align-top">
-        <div className="flex justify-end gap-2">
-          {!isDeleted ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                title="查看评论"
-                className="w-20 justify-start"
-                render={
-                  <Link to={`/admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}>
-                    <MessageSquareIcon /> {post.commentCount}
-                  </Link>
-                }
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                render={
-                  <Link to={`/editor/post/${post.id}`}>
-                    <FilePenIcon /> 编辑
-                  </Link>
-                }
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                title="分析"
-                render={
-                  <Link to={`/admin/posts/${post.id}/analytics`}>
-                    <ChartLineIcon />
-                  </Link>
-                }
-              />
-              <Button variant="ghost" size="sm" onClick={onDelete} title="删除">
-                <Trash2Icon />
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" size="sm" onClick={onRestore} title="恢复">
-              <Undo2Icon /> 恢复
-            </Button>
-          )}
-        </div>
-      </TableCell>
-    </TableRow>
-  )
-}
-
-function StatusBadge({ post }: { post: AdminPostDto }) {
-  if (post.deletedAt !== null) {
-    return <Badge variant="destructive">已删除</Badge>
-  }
-  if (!post.published) {
-    return <Badge variant="secondary">未发布</Badge>
-  }
-  if (post.publishedRevisionId === null) {
-    return <Badge variant="outline">仅草稿</Badge>
-  }
-  if (!post.visible) {
-    return <Badge variant="outline">隐藏</Badge>
-  }
-  return <Badge>已发布</Badge>
-}
-
-function PostsSkeleton() {
-  return (
-    <>
-      {[0, 1, 2, 3].map((i) => (
-        <TableRow key={i}>
-          <TableCell className="pl-4">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="mt-2 h-3 w-20" />
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
-            <Skeleton className="h-3 w-full" />
-          </TableCell>
-          <TableCell className="hidden md:table-cell">
-            <Skeleton className="mx-auto h-3 w-16" />
-          </TableCell>
-          <TableCell>
-            <Skeleton className="mx-auto h-5 w-16" />
-          </TableCell>
-          <TableCell className="hidden lg:table-cell">
-            <Skeleton className="h-3 w-32" />
-          </TableCell>
-          <TableCell className="pr-4">
-            <Skeleton className="ml-auto h-8 w-32" />
-          </TableCell>
-        </TableRow>
-      ))}
     </>
   )
 }

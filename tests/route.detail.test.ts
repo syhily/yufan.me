@@ -19,21 +19,6 @@ const samplePage = { ...makePage({ slug: 'about' }), body: [], imageSources: [],
 const sampleTag = makeTag({ name: 'typescript', slug: 'typescript' })
 const sidebarSamples = makePostList(3, { slug: 'sidebar' })
 
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => session),
-    isAdmin: vi.fn(() => false),
-    userSession: vi.fn((s) => s?.data?.user),
-    resolveSessionContext: vi.fn(async () => ({
-      session,
-      user: session?.data?.user,
-      admin: false,
-    })),
-  }
-})
-
 // catalog/catalog removed; post detail uses findPostBySlug directly, page
 // detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/posts/repo', () => ({

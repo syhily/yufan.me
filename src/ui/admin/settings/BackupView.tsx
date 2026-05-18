@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import type { BackupFileDto } from '@/server/domains/backup/service'
 import type { BackupSettings } from '@/shared/config/blog'
+import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'

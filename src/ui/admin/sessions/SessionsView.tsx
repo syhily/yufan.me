@@ -1,7 +1,7 @@
 import type { DateRange } from 'react-day-picker'
 
 import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
 import type { AdminSessionItem } from '@/routes/admin/security/sessions'
@@ -115,11 +115,6 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
       updateParams({ q: value || null })
     },
   })
-
-  useEffect(() => {
-    setSearchInput(filters.q)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.q])
 
   const submitting = revoke.isPending
 
@@ -281,7 +276,7 @@ function AdminSessionRow({ item, submitting, onRevoke, config }: RowProps) {
                 {item.userName}
               </Link>
               <span className="text-xs text-muted-foreground">{item.userEmail}</span>
-              {item.userRole && <Badge variant="secondary">{roleLabel(item.userRole)}</Badge>}
+              {!!item.userRole && <Badge variant="secondary">{roleLabel(item.userRole)}</Badge>}
               {item.isCurrent && <Badge className="bg-emerald-600 text-white hover:bg-emerald-600">当前会话</Badge>}
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">

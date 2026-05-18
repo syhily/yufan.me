@@ -797,6 +797,9 @@ describe('contract: module and bundle boundaries', () => {
       if (file.startsWith('src/ui/admin/editor/tiptap/block-cards/') && specifier.startsWith('./')) {
         return true
       }
+      if (file.startsWith('src/ui/admin/editor-shell/') && specifier.startsWith('./')) {
+        return true
+      }
       // Hono server layer uses relative imports for its own sub-tree
       if (file.startsWith('src/server/http/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
         return true
@@ -964,7 +967,7 @@ describe('contract: module and bundle boundaries', () => {
   it('forbids template-literal `className=` strings under src/ui in favour of cn()', () => {
     // Hand-rolled `className={`a ${x ? 'b' : ''}`}` patterns silently
     // produce stray spaces, miss the dedupe `tailwind-merge` provides,
-    // and bypass the `` prefix audit. `cn()` (`@/ui/lib/cn`)
+    // and bypass the `cn()` prefix audit. `cn()` (`@/ui/lib/cn`)
     // handles all three. The matcher excludes `${ctx.placement}` style
     // *interpolated suffixes* in tooltip placement keys etc., which
     // legitimately read better as a single template — those callers

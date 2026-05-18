@@ -1,10 +1,7 @@
 import type { NavigateFunction } from 'react-router'
 
 import { ArrowLeftIcon, AlertTriangleIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
-
-import type { AdminPostDetailDto } from '@/shared/types/posts'
 
 import { orpcQuery, useQuery } from '@/client/api/query'
 import { PostEditorShell } from '@/ui/admin/posts/PostEditorShell'
@@ -17,31 +14,15 @@ export interface PostEditorRouteProps {
 }
 
 export function PostEditorRoute({ postId, navigate }: PostEditorRouteProps) {
-  const [detail, setDetail] = useState<AdminPostDetailDto | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
   const postQuery = useQuery(orpcQuery.admin.posts.get.queryOptions({ input: { id: postId } }))
 
-  useEffect(() => {
-    if (postQuery.data) {
-      setDetail(postQuery.data)
-      setErrorMessage(null)
-    }
-  }, [postQuery.data])
-
-  useEffect(() => {
-    if (postQuery.error) {
-      setErrorMessage(postQuery.error.message)
-    }
-  }, [postQuery.error])
-
-  if (errorMessage !== null) {
-    return <PostEditorError message={errorMessage} />
+  if (postQuery.error) {
+    return <PostEditorError message={postQuery.error.message} />
   }
-  if (postQuery.isPending || detail === null) {
+  if (postQuery.isPending || postQuery.data === undefined) {
     return <PostEditorSkeleton />
   }
-  return <PostEditorShell mode="edit" detail={detail} navigate={navigate} />
+  return <PostEditorShell mode="edit" detail={postQuery.data} navigate={navigate} />
 }
 
 function PostEditorError({ message }: { message: string }) {
@@ -64,7 +45,7 @@ function PostEditorError({ message }: { message: string }) {
 
 function PostEditorSkeleton() {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-0 md:gap-4 md:p-4">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-0 p-2 md:gap-4 md:p-4">
       <div className="flex items-center gap-3">
         <Skeleton className="h-9 w-24" />
         <Skeleton className="h-5 w-48" />

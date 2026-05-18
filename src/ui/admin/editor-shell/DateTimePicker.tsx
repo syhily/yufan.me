@@ -28,6 +28,13 @@ export interface DateTimePickerProps {
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1)
 const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5)
 
+const CALENDAR_FORMATTERS = {
+  formatMonthDropdown: (date: Date) => format(date, 'LLLL', { locale: zhCN }),
+  formatYearDropdown: (date: Date) => `${date.getFullYear()} 年`,
+}
+
+const CALENDAR_COMPONENTS = { Dropdown: CalendarDropdown }
+
 export function DateTimePicker({ value, onChange, disabled, id }: DateTimePickerProps) {
   const [open, setOpen] = useState(false)
   const parsed = parseLocal(value)
@@ -134,13 +141,8 @@ export function DateTimePicker({ value, onChange, disabled, id }: DateTimePicker
             // (which hardcodes `toLocaleString('default', …)` and
             // therefore renders English month abbreviations regardless
             // of the active locale prop) with a zhCN-bound formatter.
-            formatters={{
-              formatMonthDropdown: (date) => format(date, 'LLLL', { locale: zhCN }),
-              formatYearDropdown: (date) => `${date.getFullYear()} 年`,
-            }}
-            components={{
-              Dropdown: CalendarDropdown,
-            }}
+            formatters={CALENDAR_FORMATTERS}
+            components={CALENDAR_COMPONENTS}
             onSelect={handleDateSelect}
             disabled={disabled}
           />

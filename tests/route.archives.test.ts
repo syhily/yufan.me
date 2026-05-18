@@ -1,25 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import { makePost } from './_helpers/catalog'
-import { emptySession } from './_helpers/session'
-
 const mocks = vi.hoisted(() => ({
   listClientPosts: vi.fn(),
   listAllPosts: vi.fn(),
   getClientPostsWithMetadata: vi.fn(async (posts: unknown[]) => posts),
 }))
-
-const session = emptySession()
-
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => session),
-    isAdmin: vi.fn(() => false),
-    userSession: vi.fn(() => undefined),
-  }
-})
 
 vi.mock('@/server/domains/posts/repo', () => ({
   listClientPosts: mocks.listClientPosts,

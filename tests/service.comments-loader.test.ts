@@ -43,7 +43,7 @@ vi.mock('@/server/domains/analytics/pv-batcher', () => ({
   bumpPageView: vi.fn(),
 }))
 
-vi.mock('@/server/infra/email/sender', () => ({
+vi.mock('@/server/domains/comments/email', () => ({
   sendApprovedComment: vi.fn(async () => undefined),
   sendNewComment: vi.fn(async () => undefined),
   sendNewReply: vi.fn(async () => undefined),

@@ -62,8 +62,12 @@ const userQuery = await import('@/server/infra/db/operations/user')
 const settingQuery = await import('@/server/infra/db/operations/setting')
 const settingsSnapshot = await import('@/server/domains/settings/snapshot')
 const rateLimit = await import('@/server/infra/rate-limit')
-const { issueCsrfToken, seedInstallSettingsWithSession, signInWithSession, signUpInitialAdminWithSession } =
-  await import('@/server/session')
+import { issueCsrfToken } from '@/server/domains/auth/csrf'
+import {
+  seedInstallSettingsWithSession,
+  signInWithSession,
+  signUpInitialAdminWithSession,
+} from '@/server/domains/auth/flows'
 
 const verifyUserPasswordMock = vi.mocked(userQuery.verifyUserPassword)
 

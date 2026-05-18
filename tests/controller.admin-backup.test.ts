@@ -1,0 +1,67 @@
+import { call } from '@orpc/server'
+import { describe, expect, it, vi } from 'vite-plus/test'
+
+import { makeAuthedCtx } from './_helpers/mock-ctx'
+
+vi.mock('@/server/domains/backup/service', () => ({
+  checkPgToolsAvailable: vi.fn(),
+  createBackup: vi.fn(),
+  getBackupBuffer: vi.fn(),
+  listBackups: vi.fn(),
+  restoreFromBackup: vi.fn(),
+}))
+
+vi.mock('@/shared/config/blog', () => ({
+  getBlogSettingsBundleSync: vi.fn(),
+}))
+
+const service = await import('@/server/domains/backup/service')
+const blogConfig = await import('@/shared/config/blog')
+const { adminBackupRouter } = await import('@/server/http/controllers/admin/backup.controller')
+
+describe('adminBackupRouter.status', () => {
+  it('returns s3Enabled and pgToolsAvailable', async () => {
+    vi.mocked(blogConfig.getBlogSettingsBundleSync).mockReturnValue({ assets: { storage: { enabled: true } } } as never)
+    vi.mocked(service.checkPgToolsAvailable).mockResolvedValueOnce(true)
+    const ctx = makeAuthedCtx()
+    const res = await call(adminBackupRouter.status, undefined, { context: ctx })
+    expect(res).toEqual({ s3Enabled: true, pgToolsAvailable: true })
+  })
+})
+
+describe('adminBackupRouter.list', () => {
+  it('returns files array', async () => {
+    const files = [
+      {
+        key: 'backup/2026-01-01.sql.gz',
+        fileName: '2026-01-01.sql.gz',
+        size: 1024,
+        lastModified: '2026-01-01T00:00:00.000Z',
+      },
+    ]
+    vi.mocked(service.listBackups).mockResolvedValueOnce(files as never)
+    const ctx = makeAuthedCtx()
+    const res = await call(adminBackupRouter.list, undefined, { context: ctx })
+    expect(res.files).toHaveLength(1)
+    expect(res.files[0].fileName).toBe('2026-01-01.sql.gz')
+  })
+})
+
+describe('adminBackupRouter.create', () => {
+  it('returns fileName and size on success', async () => {
+    vi.mocked(service.createBackup).mockResolvedValueOnce({ fileName: '2026-01-01.sql.gz', size: 2048 } as never)
+    const ctx = makeAuthedCtx()
+    const res = await call(adminBackupRouter.create, undefined, { context: ctx })
+    expect(res).toEqual({ fileName: '2026-01-01.sql.gz', size: 2048 })
+  })
+})
+
+describe('adminBackupRouter.restore', () => {
+  it('returns success after restoring backup', async () => {
+    vi.mocked(service.getBackupBuffer).mockResolvedValueOnce(Buffer.from('sql') as never)
+    vi.mocked(service.restoreFromBackup).mockResolvedValueOnce(undefined)
+    const ctx = makeAuthedCtx()
+    const res = await call(adminBackupRouter.restore, { key: 'backup/2026-01-01.sql.gz' }, { context: ctx })
+    expect(res).toEqual({ success: true })
+  })
+})

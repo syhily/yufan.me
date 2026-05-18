@@ -6,8 +6,8 @@ import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { projectAssetsForAdmin } from '@/server/domains/settings/projection'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
+import { projectAssetsForAdmin } from '@/shared/config/settings'
 import { AssetsForm } from '@/ui/admin/settings/AssetsForm'
 
 export const meta = settingsMeta('存储配置')

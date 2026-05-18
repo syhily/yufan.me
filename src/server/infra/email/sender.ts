@@ -1,16 +1,5 @@
-import { createElement } from 'react'
-
-import type { CommentAndUser } from '@/server/domains/comments/types'
-import type { EntityTarget } from '@/server/infra/db/target'
-import type { Comment, User } from '@/server/infra/db/types'
-
-import { entityCommentUrl, findEntitySlugTitle } from '@/server/domains/comments/url'
-import { commentBodyToHtml } from '@/server/domains/pt/comment-to-html'
 import { render } from '@/server/infra/email/render'
-import ApprovedComment from '@/server/infra/email/templates/ApprovedComment'
 import AuthorInvite from '@/server/infra/email/templates/AuthorInvite'
-import NewComment from '@/server/infra/email/templates/NewComment'
-import NewReply from '@/server/infra/email/templates/NewReply'
 import PasswordReset from '@/server/infra/email/templates/PasswordReset'
 import { getLogger } from '@/server/infra/logger'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
@@ -48,7 +37,7 @@ function readMailConfig(): MailConfig {
 // Single source of truth for "should this notification actually fire?"
 // — used both internally by the comment-fired senders below and by the
 // admin "send test" action so the UI can surface the same skip reason.
-function checkMailReady(
+export function checkMailReady(
   mail: MailConfig,
 ): { ready: true } | { ready: false; reason: 'disabled' | 'unconfigured'; message: string } {
   if (!mail.enabled) {
@@ -69,7 +58,7 @@ interface InternalSendOptions {
   bcc?: string[]
 }
 
-async function internalSend(
+export async function sendEmail(
   to: string,
   subject: string,
   html: string,
@@ -133,118 +122,43 @@ async function internalSend(
   return { ok: true }
 }
 
-async function resolveEntity(target: EntityTarget): Promise<{ title: string; url: string } | null> {
-  const entity = await findEntitySlugTitle(target)
-  if (entity === null) {
-    return null
-  }
-  return { title: entity.title, url: entityCommentUrl(target.type, entity.slug) }
-}
-
-// Sent to the administrator whenever a new comment is posted.
-export async function sendNewComment(commentInfo: CommentAndUser, target: EntityTarget): Promise<SendResult> {
-  const entity = await resolveEntity(target)
-  const commentHtml = commentBodyToHtml(commentInfo.body)
-  if (entity === null) {
-    log.warn('Skipping new-comment email: target entity not found', { target })
-    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
-  }
-  const html = render(
-    createElement(NewComment, {
-      postTitle: entity.title,
-      postLink: entity.url,
-      commentNeedApproval: commentInfo.isPending === true,
-      commentContent: commentHtml,
-      commentLink: `${entity.url}#user-comment-${commentInfo.id}`,
-    }),
-  )
-  const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  return internalSend(siteIdentity.author.email, `您的网站【${siteIdentity.title}】有了新评论`, html)
-}
-
-// Sent to the original commenter when one of their comments receives a reply.
-export async function sendNewReply(
-  sourceUser: User,
-  source: Comment,
-  reply: CommentAndUser,
-  target: EntityTarget,
-): Promise<SendResult> {
-  const entity = await resolveEntity(target)
-  const sourceHtml = commentBodyToHtml(source.body)
-  const replyHtml = commentBodyToHtml(reply.body)
-  if (entity === null) {
-    log.warn('Skipping reply email: target entity not found', { target })
-    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
-  }
-  const html = render(
-    createElement(NewReply, {
-      receiver: sourceUser.name,
-      postTitle: entity.title,
-      postLink: entity.url,
-      sourceContent: sourceHtml,
-      replyContent: replyHtml,
-      replyLink: `${entity.url}#user-comment-${reply.id}`,
-    }),
-  )
-  return internalSend(
-    sourceUser.email,
-    `您在【${requireBlogSettingsSection('siteIdentity').title}】的留言有了新回复`,
-    html,
-  )
-}
+// Re-export render so domain email composers can build HTML from React
+// Email components without reaching into `infra/email/render` directly.
+const renderEmail = render
+export { render, render as renderEmail }
 
 // Sent to a newly invited author with a setup link. The inviter is
 // BCC'd so admin actions stay on the audit trail (the recipient does
 // not see the BCC).
 export async function sendAuthorInvite(
-  user: User,
+  user: { name: string; email: string },
   link: string,
   inviterName: string,
   inviterEmail?: string,
 ): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = render(
-    createElement(AuthorInvite, {
+  const html = renderEmail(
+    AuthorInvite({
       receiver: user.name,
       inviter: inviterName,
       link,
     }),
   )
-  return internalSend(user.email, `【${siteIdentity.title}】作者邀请`, html, {
+  return sendEmail(user.email, `【${siteIdentity.title}】作者邀请`, html, {
     bcc: inviterEmail ? [inviterEmail] : undefined,
   })
 }
 
 // Sent when a user requests a password reset.
-export async function sendPasswordReset(user: User, link: string): Promise<SendResult> {
+export async function sendPasswordReset(user: { name: string; email: string }, link: string): Promise<SendResult> {
   const siteIdentity = requireBlogSettingsSection('siteIdentity')
-  const html = render(
-    createElement(PasswordReset, {
+  const html = renderEmail(
+    PasswordReset({
       receiver: user.name,
       link,
     }),
   )
-  return internalSend(user.email, `【${siteIdentity.title}】密码重置`, html)
-}
-
-// Sent to the commenter when an admin approves their previously pending comment.
-export async function sendApprovedComment(comment: Comment, user: User, target: EntityTarget): Promise<SendResult> {
-  const entity = await resolveEntity(target)
-  const commentHtml = commentBodyToHtml(comment.body)
-  if (entity === null) {
-    log.warn('Skipping approval email: target entity not found', { target })
-    return { ok: false, reason: 'unconfigured', message: '评论目标已不存在' }
-  }
-  const html = render(
-    createElement(ApprovedComment, {
-      receiver: user.name,
-      postTitle: entity.title,
-      postLink: entity.url,
-      commentContent: commentHtml,
-      commentLink: `${entity.url}#user-comment-${comment.id}`,
-    }),
-  )
-  return internalSend(user.email, `您在【${requireBlogSettingsSection('siteIdentity').title}】的留言已经通过审核`, html)
+  return sendEmail(user.email, `【${siteIdentity.title}】密码重置`, html)
 }
 
 // Sent on demand from the admin "测试发送" button. Bypasses the
@@ -279,7 +193,7 @@ export async function sendTestMail(to: string): Promise<SendResult> {
     `</ul>`,
   ].join('\n')
 
-  // Send through a direct fetch instead of `internalSend` so we report
+  // Send through a direct fetch instead of `sendEmail` so we report
   // the upstream status verbatim — the admin UI surfaces it for
   // troubleshooting.
   const url = `https://${mail.host}/api/v1/zsend/emails`

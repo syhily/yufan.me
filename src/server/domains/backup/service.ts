@@ -45,12 +45,8 @@ function getDatabaseUrl(): string {
   return url
 }
 
-export interface BackupFileDto {
-  key: string
-  fileName: string
-  size: number
-  lastModified: string
-}
+import type { BackupFileDto } from '@/shared/types/backup'
+export type { BackupFileDto }
 
 export async function createBackup(): Promise<{ fileName: string; size: number }> {
   ensurePgTools()

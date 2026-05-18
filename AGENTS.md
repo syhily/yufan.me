@@ -71,15 +71,19 @@ Page modules grouped into four nested trees, each with its own layout
   `categories`, `category/list`, `tag/list`, `search/list`,
   `post/detail`, `page/detail`, `not-found`.
 - `routes/auth/` — split-screen login + install: `signin`,
-  `install/index` (`/admin/setup`), `install/settings`
+  `setup/index` (`/admin/setup`), `setup/settings`
   (`/admin/setup/settings`).
 
-- `routes/admin/` — admin SPA. `dashboard`, `dashboard`, `comments`,
-  `users/{index,detail}`, `my/{profile,comments,sessions}`, `sessions`,
-  `friends`, `categories`, `tags`, `pages/{index,new,edit}`,
-  `posts/{index,new,edit}`, `images`, `musics`,
-  `analytics/{layout,overview,realtime}`, `settings/{layout,…}` —
-  one file per settings section.
+- `routes/admin/` — admin SPA. `dashboard`, `comments`,
+  `users/{index,detail}`, `me/{profile,comments,sessions}`,
+  `security/sessions`, `friends`, `categories`, `tags`, `pages/index`,
+  `posts/{index,analytics}`, `library/images`, `library/music`,
+  `restore`, `analytics/{layout,overview,realtime,mentions}`,
+  `settings/{layout,…}` — one file per settings section.
+
+- `routes/editor/` — standalone immersive editing shell (split from
+  `routes/admin/`). `post/{new,edit,analytics}`, `page/{new,edit}`. Owns
+  its own layout so the editor chrome is free of admin SPA chrome.
 
 Read session/context at the perimeter, call into `server/`, project
 DTOs through `shared/`, render with `ui/`. No DB queries, Redis access,
@@ -123,12 +127,11 @@ cache.ts` plus feature-named files (`preview.ts`, `loader.ts`, etc.).
   storage, key, process), `music`, `pages`, `posts`, `pt`
   (Shiki/KaTeX/Mermaid prerender, canonicalize, comment-to-html),
   `settings` (sections, snapshot, install-flow, install-gate),
-  `taxonomies/{categories,tags}`, `users`. Plus `content-revisions.ts`
-  and `audit.ts`. Domains may import from `shared/`, `infra/`, and
+  `taxonomies/{categories,tags}`, `users`. Plus `audit.ts` (currently
+  dead code — pending promotion to a full `domains/audit/` directory or
+  removal). Domains may import from `shared/`, `infra/`, and
   other `domains/`. `tests/contract.cookie.test.ts` pins
-  `domains/auth/session-storage.ts`. `src/server/session.ts` is a
-  deprecated barrel preserved for `vi.mock('@/server/session')`;
-  production code imports `domains/auth/*` directly.
+  `domains/auth/session-storage.ts`.
 - **`server/http/`** — HTTP perimeter only. Procedure base
   (`orpc-base.ts`), context, composed router (`api-router.ts`), error
   hook (`errors.ts`), OpenAPI export (`openapi.ts`), Hono entry
@@ -175,8 +178,8 @@ or the closest interactive parent. Three tiers:
   single-file leaves (`Search.tsx`, `Sidebar.tsx`, `LikeActions.tsx`).
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
   `categories`, `comments`, `editor`, `editor-shell`, `friends`,
-  `images`, `musics`, `my`, `pages`, `posts`, `sessions`, `settings`,
-  `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
+  `images`, `musics`, `my` (route is `me/`), `pages`, `posts`, `sessions`,
+  `settings`, `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
   - `editor/` — the Tiptap micro-app (`PageBodyEditor`, `tiptap/`,
     `toolbar/`, `pickers/`, `FootnoteEditorDialog`,
     `portable-text-diff`). Self-contained; only `PageBodyEditor` is
@@ -474,7 +477,7 @@ viewport `<meta>` while any control is focused.
   NOT** read the aggregated `useBlogSettingsBundle()` — reading a slice
   you don't need re-renders on every unrelated section save.
 - Install flow is two stages, gated by admin login:
-  1. `routes/auth/install/index.tsx` (`/admin/setup`) creates
+  1. `routes/auth/setup/index.tsx` (`/admin/setup`) creates
      the first admin row and auto-logs in. Redirects to stage 2.
   2. `routes/auth/setup/settings.tsx`
      (`/admin/setup/settings`) persists `blog.general` and

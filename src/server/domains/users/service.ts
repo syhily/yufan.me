@@ -1,7 +1,7 @@
 import type { UserSortOrder } from '@/server/domains/users/schema'
 import type { User } from '@/server/infra/db/types'
 
-import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server/infra/db/operations/comment'
+import { bulkApprovePendingByUser, bulkSoftDeleteCommentsByUser } from '@/server/domains/comments/repo'
 import {
   type AdminUserRow,
   type AdminUsersListFilters,

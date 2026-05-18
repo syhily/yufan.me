@@ -10,12 +10,8 @@ import {
   searchPageOptions,
 } from '@/server/domains/comments/moderation'
 import { asAdminCommentsWire } from '@/server/domains/comments/projection'
+import { adminClearDeleteRequest, findCommentWithUserById, softDeleteCommentById } from '@/server/domains/comments/repo'
 import { adminProc } from '@/server/http/orpc-base'
-import {
-  adminClearDeleteRequest,
-  findCommentWithUserById,
-  softDeleteCommentById,
-} from '@/server/infra/db/operations/comment'
 import { getLogger } from '@/server/infra/logger'
 import { adminCommentDto, adminPendingDashboardDto } from '@/shared/contracts/comments'
 

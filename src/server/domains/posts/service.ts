@@ -38,6 +38,7 @@ import {
   type ListPostsFilters,
 } from '@/server/domains/posts/repo'
 import { resolveSlugForTaxonomy } from '@/server/domains/taxonomies/shared'
+import { createProcessCache } from '@/server/infra/cache/process-cache'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
 import { seedTagIfMissing } from '@/server/infra/db/operations/tag'
@@ -65,21 +66,18 @@ async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {
 // --- Public catalog helpers -------------------------------------------------
 
 // Process-level cache for catalog post metas. Cleared on admin writes
-// via `clearPostMetasCache()`; the TTL is a stale-while-revalidate floor
-// for multi-process deployments.
-let cachedPostMetas: CmsPost[] | null = null
-let cachedPostMetasAt = 0
-const POST_META_CACHE_TTL_MS = 10_000
+// via `clearPostMetasCache()`. See `infra/cache/process-cache` for the
+// multi-process caveat.
+const postMetaCache = createProcessCache<CmsPost[]>({ ttlMs: 10_000 })
 
 function clearPostMetasCache(): void {
-  cachedPostMetas = null
-  cachedPostMetasAt = 0
+  postMetaCache.clear()
 }
 
 export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
-  const now = Date.now()
-  if (cachedPostMetas !== null && now - cachedPostMetasAt < POST_META_CACHE_TTL_MS) {
-    return cachedPostMetas.map((p) => ({ ...p }))
+  const cached = postMetaCache.get()
+  if (cached !== null) {
+    return cached.map((p) => ({ ...p }))
   }
 
   const contentSettings = requireBlogSettingsSection('content')
@@ -103,8 +101,7 @@ export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
     return toCmsPost(meta, revision)
   })
 
-  cachedPostMetas = result
-  cachedPostMetasAt = now
+  postMetaCache.set(result)
   return result.map((p) => ({ ...p }))
 }
 

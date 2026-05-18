@@ -2,7 +2,7 @@ import { data } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { countMyComments } from '@/server/infra/db/operations/comment'
+import { countMyComments } from '@/server/domains/comments/repo'
 import { findUserById } from '@/server/infra/db/operations/user'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MyProfileView } from '@/ui/admin/my/MyProfileView'
@@ -21,8 +21,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // contract explicit for the loader.
   requireRole(ctx, 'visitor')
   const userId = BigInt(ctx.user.id)
-  const dbUser = await findUserById(userId)
-  const counts = await countMyComments(userId)
+  const [dbUser, counts] = await Promise.all([findUserById(userId), countMyComments(userId)])
   return data({
     user: {
       id: ctx.user.id,

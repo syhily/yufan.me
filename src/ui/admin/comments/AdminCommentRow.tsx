@@ -253,8 +253,8 @@ export function AdminCommentRow({
           </div>
           {(truncatedUa || comment.ip) && (
             <div className="mt-3 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-              {truncatedUa && <span>UA: {truncatedUa}</span>}
-              {comment.ip && <span>IP: {comment.ip}</span>}
+              {!!truncatedUa && <span>UA: {truncatedUa}</span>}
+              {!!comment.ip && <span>IP: {comment.ip}</span>}
             </div>
           )}
         </div>

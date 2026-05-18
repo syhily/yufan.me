@@ -1,19 +1,19 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
-import type { ResolvedImageMeta } from '@/server/render/image-enhance'
+import type { ResolvedImageMeta } from '@/server/domains/images/image-meta'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { isCatalogVisible } from '@/server/domains/content/schema'
+import { resolveImageMetaBySources } from '@/server/domains/images/image-meta'
 import { buildDbPage, findPageBySlug } from '@/server/domains/pages/repo'
 import { loadPageDraftPreviewBySlug } from '@/server/domains/pages/service'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repo'
-import { redirectPermanent } from '@/server/http/loaders/detail'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
+import { redirectPermanent } from '@/server/infra/http/redirects'
 import { notFound } from '@/server/infra/http/status'
-import { resolveImageMetaBySources } from '@/server/render/image-enhance'
 
 type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
 

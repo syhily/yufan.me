@@ -15,20 +15,6 @@ import { regularSession } from './_helpers/session'
 
 const session = regularSession()
 
-vi.mock('@/server/session', async () => {
-  const actual = await vi.importActual<typeof import('@/server/session')>('@/server/session')
-  return {
-    ...actual,
-    getRequestSession: vi.fn(async () => session),
-    userSession: vi.fn((s) => s?.data?.user),
-    resolveSessionContext: vi.fn(async () => ({
-      session,
-      user: session?.data?.user,
-      role: session?.data?.user?.role ?? null,
-    })),
-  }
-})
-
 // Fixture size and pagination: the home loader's tail-merge guard
 // folds an orphan last page into its predecessor when the tail is
 // strictly smaller than `pageSize - 2`. The test blog-config fixture

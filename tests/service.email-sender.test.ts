@@ -31,7 +31,8 @@ vi.mock('@/server/domains/comments/url', async (importOriginal) => {
 })
 
 const { setBlogSettingsBundleForTests } = await import('@/server/domains/settings/snapshot')
-const { sendNewComment, sendTestMail } = await import('@/server/infra/email/sender')
+const { sendNewComment } = await import('@/server/domains/comments/email')
+const { sendTestMail } = await import('@/server/infra/email/sender')
 const { TEST_BLOG_SETTINGS_BUNDLE } = await import('./_helpers/blog-settings')
 
 interface MailFixture {

@@ -8,8 +8,8 @@ import { establishLoginSession, logout } from '@/server/domains/auth/primitives'
 import { signInSchema } from '@/server/domains/auth/schema'
 import { destroySession } from '@/server/domains/auth/session-storage'
 import { consumeToken, issueResetToken, peekToken } from '@/server/domains/auth/verification-tokens'
+import { countApprovedCommentsByUser } from '@/server/domains/comments/repo'
 import { ensureInstalledOrRedirect } from '@/server/domains/settings/install-gate'
-import { countApprovedCommentsByUser } from '@/server/infra/db/operations/comment'
 import { findUserByEmail, findUserById, updateUserById } from '@/server/infra/db/operations/user'
 import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
@@ -84,8 +84,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     // a single mailbox. Either tripping silently short-circuits with
     // the generic success message so neither path leaks which limit
     // (or even which email) was throttled.
-    const ipLimit = await tryPasswordResetRateLimit(clientAddress)
-    const emailLimit = email ? await tryPasswordResetByEmailRateLimit(email) : null
+    const [ipLimit, emailLimit] = await Promise.all([
+      tryPasswordResetRateLimit(clientAddress),
+      email ? tryPasswordResetByEmailRateLimit(email) : Promise.resolve(null),
+    ])
     if (ipLimit.exceeded || emailLimit?.exceeded) {
       return data({ error: null, message: '如果该邮箱存在且符合要求，重置邮件已发送。' })
     }

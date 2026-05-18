@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto'
 
 import type { RateLimitBucket, RateLimitSettings } from '@/shared/config/blog'
 
-import { rateLimitDefaults } from '@/server/domains/settings/sections'
 import { redisInstance } from '@/server/infra/redis/storage'
 import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+import { rateLimitDefaults } from '@/shared/config/settings'
 
 // All keys live under the reserved `rate-limit:` namespace so the
 // admin cache panel can never SCAN/UNLINK them by accident — see the
