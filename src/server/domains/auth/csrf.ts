@@ -11,7 +11,7 @@ import { makeToken, timingSafeEqual } from '@/shared/utils/security'
 // breaks every login / install / reset / accept-invite flow at once.
 // If you really need a different name, search the repo first.
 
-const CSRF_TOKEN_TTL_SECONDS = 60 * 5
+const CSRF_TOKEN_TTL_SECONDS = 60 * 60 * 4
 const CSRF_TOKEN_LENGTH = 48
 
 const csrfCookie = createCookie('csrf-token', {
