@@ -49,8 +49,23 @@ export function regularUser(overrides: Partial<SessionUser> = {}): SessionUser {
   }
 }
 
+export function authorUser(overrides: Partial<SessionUser> = {}): SessionUser {
+  return {
+    id: '3',
+    name: 'author',
+    email: 'author@yufan.me',
+    website: null,
+    role: 'author',
+    ...overrides,
+  }
+}
+
 export function adminSession(): BlogSession {
   return makeSession({ user: adminUser() })
+}
+
+export function authorSession(): BlogSession {
+  return makeSession({ user: authorUser() })
 }
 
 export function regularSession(): BlogSession {
