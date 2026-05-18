@@ -118,8 +118,7 @@ server/
   vocabulary: `schema.ts / repo.ts / service.ts / projection.ts /
 cache.ts` plus feature-named files (`preview.ts`, `loader.ts`, etc.).
   Domains: `analytics`, `auth` (session-storage, csrf, rbac, flows,
-  verification-tokens), `catalog` (build, snapshot, queries, fence,
-  invalidate), `comments` (loader, moderation, projection, likes, token,
+  verification-tokens), `comments` (loader, moderation, projection, likes, token,
   badge, url, canonicalize), `friends`, `images` (schema, service,
   storage, key, process), `music`, `pages`, `posts`, `pt`
   (Shiki/KaTeX/Mermaid prerender, canonicalize, comment-to-html),
@@ -302,8 +301,7 @@ viewport `<meta>` while any control is focused.
 - `post` + `content` → `/posts/:slug`. `page` + `content` → `/:slug`.
   Both rendered via `<PortableTextBody>`. Public URLs use `slug`, not
   internal id.
-- `@/server/domains/catalog` serves compiled body, headings, raw source,
-  and listing fields. Custom block components in `@/ui/pt/blocks/`.
+- Custom block components in `@/ui/pt/blocks/`.
 - `visible=false` posts are hidden from the public home and random-post
   widgets but stay in `/archives`, `/tags/:slug`, `/search/:keyword`,
   `sitemap.xml`, feeds, and category/tag listings and counts.
@@ -349,10 +347,9 @@ viewport `<meta>` while any control is focused.
   comment threading, and sitemap key on slug alone. Enforcement is
   split: DB `UNIQUE(slug)` on `page` catches page↔page; the cross-table
   fence lives in
-  `@/server/domains/catalog/fence::validatePageSlugs`, run at catalog
-  cold start and after every admin save (a colliding save succeeds at
-  save time and surfaces as a 500 on the next rebuild). New slug
-  emitters MUST fold into `postSlugs` or `validatePageSlugs`.
+  `@/server/domains/pages/fence::validateSlugFence`, available for
+  cold-start slug fence validation. New slug emitters MUST fold into
+  `validateSlugFence`.
 
 ### Page draft preview
 
@@ -374,7 +371,7 @@ viewport `<meta>` while any control is focused.
   mutations. `show_friends` appends the global friends grid below the
   body before the Like button; PortableText has no `friends` block.
 - Adding a toggle touches: db schema + migration + snapshot, page
-  projection, page service + schema, shared DTOs + catalog type,
+  projection, page service + schema, shared DTOs,
   `MetaSidebar` + `PageEditorShell`, and the `CreateDraftMeta` mirror
   in `@/client/hooks/use-create-page-draft`. Test fixtures in
   `tests/_helpers/catalog.ts` + `tests/service.cms-pages*.test.ts` need

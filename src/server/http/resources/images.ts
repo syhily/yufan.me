@@ -5,7 +5,6 @@ import crypto from 'node:crypto'
 
 import type { Env } from '@/server/http/context'
 
-import { getEntryBySlug } from '@/server/domains/catalog/catalog'
 import { findPageBySlug } from '@/server/domains/pages/repo'
 import { findPostBySlug } from '@/server/domains/posts/repo'
 import { loadBuffer } from '@/server/infra/redis/buffer-cache'
@@ -67,16 +66,12 @@ export const imagesRouter = new Hono<Env>()
     }
 
     const ttl = requireBlogSettingsSection('cache').cache.og.ttlSeconds
-    const entry = await getEntryBySlug(slug)
-    if (entry === null) {
+    const [post, page] = await Promise.all([findPostBySlug(slug), findPageBySlug(slug)])
+    if (!post && !page) {
       return ogFallback(c)
     }
 
-    if (entry.type === 'post') {
-      const post = await findPostBySlug(slug)
-      if (!post) {
-        return ogFallback(c)
-      }
+    if (post) {
       const buffer = await loadBuffer(
         ogCacheKey(slug, post.title, post.summary, post.cover),
         () => drawOpenGraph({ title: post.title, summary: post.summary, cover: post.cover }),
@@ -87,14 +82,10 @@ export const imagesRouter = new Hono<Env>()
       return c.body(new Uint8Array(buffer))
     }
 
-    const page = await findPageBySlug(slug)
-    if (!page) {
-      return ogFallback(c)
-    }
-    const summary = page.summary || requireBlogSettingsSection('siteIdentity').description
+    const summary = page!.summary || requireBlogSettingsSection('siteIdentity').description
     const buffer = await loadBuffer(
-      ogCacheKey(slug, page.title, summary, page.cover),
-      () => drawOpenGraph({ title: page.title, summary, cover: page.cover }),
+      ogCacheKey(slug, page!.title, summary, page!.cover),
+      () => drawOpenGraph({ title: page!.title, summary, cover: page!.cover }),
       ttl,
     )
     c.header('Content-Type', 'image/png')

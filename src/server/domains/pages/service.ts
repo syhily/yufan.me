@@ -1,7 +1,6 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
-import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/domains/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import {
   toAdminPageDto,
@@ -90,16 +89,12 @@ function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
 
 let cachedPages: CmsPage[] | null = null
 let cachedPagesAt = 0
-// Short TTL so multi-process deployments (Docker multi-replica) don't
-// stay stale long when another instance invalidates the catalog.
 const PAGE_CACHE_TTL_MS = 10_000
 
-subscribeCatalogInvalidate((kind) => {
-  if (kind === 'page' || kind === 'taxonomy') {
-    cachedPages = null
-    cachedPagesAt = 0
-  }
-})
+function clearPagesCache(): void {
+  cachedPages = null
+  cachedPagesAt = 0
+}
 
 /** All non-deleted, non-scheduled, published pages joined with their content. */
 export async function loadCatalogPages(): Promise<CmsPage[]> {
@@ -366,7 +361,7 @@ export async function createPage(input: UpsertPageMetaInput, authorId: bigint | 
     publishedAt: input.publishedAt ?? now,
     authorId,
   })
-  invalidateCatalog('page')
+  clearPagesCache()
   return toAdminPageDto(row)
 }
 
@@ -401,14 +396,14 @@ export async function updatePageMeta(input: UpsertPageMetaInput): Promise<AdminP
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  invalidateCatalog('page')
+  clearPagesCache()
   return toAdminPageDto(updated)
 }
 
 export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
   const deleted = await softDeletePageMeta(id)
   if (deleted) {
-    invalidateCatalog('page')
+    clearPagesCache()
   }
   return { deleted }
 }
@@ -416,7 +411,7 @@ export async function deletePage(id: bigint): Promise<{ deleted: boolean }> {
 export async function restorePage(id: bigint): Promise<{ restored: boolean }> {
   const restored = await restorePageMeta(id)
   if (restored) {
-    invalidateCatalog('page')
+    clearPagesCache()
   }
   return { restored }
 }
@@ -430,7 +425,7 @@ export async function unpublishPage(id: bigint): Promise<AdminPageDto> {
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '页面不存在或已被删除。')
   }
-  invalidateCatalog('page')
+  clearPagesCache()
   return toAdminPageDto(updated)
 }
 
@@ -536,7 +531,7 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    invalidateCatalog('page')
+    clearPagesCache()
   }
   return projectSaveResult(result)
 }

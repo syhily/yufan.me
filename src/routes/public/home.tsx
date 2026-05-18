@@ -6,13 +6,14 @@ import type { SidebarData } from '@/ui/public/Sidebar'
 import { trackAccess } from '@/server/domains/analytics/track'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { userSession } from '@/server/domains/auth/primitives'
-import { getCategoryLinks, listAllTags } from '@/server/domains/catalog/queries'
 import {
   countPublicPosts,
   listPublicPostCardsPaginated,
   selectFeaturePosts,
   selectSidebarPosts,
 } from '@/server/domains/posts/repo'
+import { getCategoryLinks } from '@/server/domains/taxonomies/categories/service'
+import { listAllTags } from '@/server/domains/taxonomies/tags/service'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { loadSidebarData } from '@/server/http/loaders/sidebar'

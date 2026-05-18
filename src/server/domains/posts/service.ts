@@ -5,7 +5,6 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
-import { invalidateCatalog, subscribeCatalogInvalidate } from '@/server/domains/catalog/invalidate'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import { indexPost, removePostIndex } from '@/server/domains/posts/indexer'
 import {
@@ -79,20 +78,17 @@ function isCatalogVisible(meta: PostMetaRow, asOf: Date = new Date()): boolean {
   return true
 }
 
-// Process-level cache for catalog post metas. Invalidated explicitly by
-// admin writes via `subscribeCatalogInvalidate`; the TTL is a stale-while-
-// revalidate floor for environments where the subscription channel doesn't
-// fire (e.g. external DB edits or multi-process deployments).
+// Process-level cache for catalog post metas. Cleared on admin writes
+// via `clearPostMetasCache()`; the TTL is a stale-while-revalidate floor
+// for multi-process deployments.
 let cachedPostMetas: CmsPost[] | null = null
 let cachedPostMetasAt = 0
 const POST_META_CACHE_TTL_MS = 10_000
 
-subscribeCatalogInvalidate((kind) => {
-  if (kind === 'post' || kind === 'taxonomy') {
-    cachedPostMetas = null
-    cachedPostMetasAt = 0
-  }
-})
+function clearPostMetasCache(): void {
+  cachedPostMetas = null
+  cachedPostMetasAt = 0
+}
 
 export async function loadCatalogPostMetas(): Promise<CmsPost[]> {
   const now = Date.now()
@@ -337,7 +333,7 @@ export async function createPost(
       .returning()
     return inserted
   })
-  invalidateCatalog('post')
+  clearPostMetasCache()
   return toAdminPostDto(row)
 }
 
@@ -384,7 +380,7 @@ export async function updatePostMeta(input: UpsertPostMetaInput, viewer?: Viewer
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
-  invalidateCatalog('post')
+  clearPostMetasCache()
   return toAdminPostDto(updated)
 }
 
@@ -393,7 +389,7 @@ export async function deletePost(id: bigint, viewer?: ViewerContext): Promise<{ 
   assertOwnPostOr404(meta, viewer)
   const deleted = await softDeletePostMeta(id)
   if (deleted) {
-    invalidateCatalog('post')
+    clearPostMetasCache()
     await removePostIndex(id).catch(() => undefined)
   }
   return { deleted }
@@ -404,7 +400,7 @@ export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{
   assertOwnPostOr404(meta, viewer)
   const restored = await restorePostMeta(id)
   if (restored) {
-    invalidateCatalog('post')
+    clearPostMetasCache()
     const meta = await findPostMetaById(id)
     if (meta !== null && meta.published && meta.publishedRevisionId !== null) {
       const revision = await findContentById(meta.publishedRevisionId)
@@ -423,7 +419,7 @@ export async function unpublishPost(id: bigint, viewer?: ViewerContext): Promise
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
-  invalidateCatalog('post')
+  clearPostMetasCache()
   await removePostIndex(id).catch(() => undefined)
   return toAdminPostDto(updated)
 }
@@ -494,7 +490,7 @@ async function savePostBodyInternal(
     }
   }
   if (mode === 'publish' && wroteSuccessfully) {
-    invalidateCatalog('post')
+    clearPostMetasCache()
     const publishedRevision = await findContentById(result.row.id)
     if (publishedRevision !== null) {
       const postMeta = await findPostMetaById(input.postId)

@@ -1,4 +1,5 @@
 import type { FriendRow } from '@/server/infra/db/types'
+import type { Friend } from '@/shared/types/catalog'
 import type { AdminFriendDto } from '@/shared/types/friends'
 
 import {
@@ -13,6 +14,7 @@ import {
   updateFriend,
 } from '@/server/infra/db/operations/friend'
 import { DomainError } from '@/server/infra/http/errors'
+import { hydrateImageRefs } from '@/server/render/image-enhance'
 
 // Public projection (no `id`/`visible`/`createdAt`/`updatedAt`/`rssUrl`).
 // The `Friend` shape exported from `@/shared/types/catalog` already matches —
@@ -160,4 +162,31 @@ function normaliseNullable(value: string | null | undefined): string | null {
   }
   const trimmed = value.trim()
   return trimmed === '' ? null : trimmed
+}
+
+// --- Public catalog queries -------------------------------------------------
+
+async function hydrateFriendImages(friends: Friend[]): Promise<void> {
+  await hydrateImageRefs(
+    friends,
+    (f) => f.poster,
+    (f, lookup) => {
+      f.posterThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        f.poster = lookup.publicUrl
+      }
+    },
+  )
+}
+
+export async function listAllFriends(): Promise<Friend[]> {
+  const rows = await listPublicFriends()
+  const friends = rows.map((row) => ({
+    website: row.website,
+    description: row.description,
+    homepage: row.homepage,
+    poster: row.poster,
+  }))
+  await hydrateFriendImages(friends)
+  return friends
 }

@@ -1,9 +1,9 @@
 import type { ListingPageLoaderData } from '@/server/http/loaders/listing'
 
-import { findTagBySlug } from '@/server/domains/catalog/queries'
 import { countPublicPosts, listPublicPostCardsPaginated } from '@/server/domains/posts/repo'
 import { listingLoader } from '@/server/http/loaders/listing'
 import { listingHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
+import { findTagBySlug } from '@/server/infra/db/operations/tag'
 import { notFound } from '@/server/infra/http/status'
 import { metaWithFallback } from '@/server/render/seo/meta'
 import { PostListingBody } from '@/ui/public/post/PostListViews'

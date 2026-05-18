@@ -34,21 +34,18 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/domains/catalog/catalog', () => ({
-  getEntryBySlug: vi.fn(async (slug: string) => {
-    if (slug === 'hello' || slug === 'hello-old') {
-      return { type: 'post', id: samplePost.id, slug }
-    }
-    if (slug === 'about') {
-      return { type: 'page', id: samplePage.id, slug }
-    }
-    return null
-  }),
-}))
+// catalog/catalog removed; post detail uses findPostBySlug directly, page
+// detail uses pages/loader which queries findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/posts/repo', () => ({
   findPostBySlug: vi.fn(async (slug: string) => {
     if (slug === 'hello' || slug === 'hello-old') {
       return samplePost
+    }
+    return null
+  }),
+  findPublicPostMetaBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello' || slug === 'hello-old') {
+      return { slug, published: true, deletedAt: null, publishedRevisionId: 1n, publishedAt: new Date() }
     }
     return null
   }),
@@ -63,9 +60,12 @@ vi.mock('@/server/domains/pages/repo', () => ({
     }
     return null
   }),
+  buildDbPage: (p: unknown) => p,
 }))
-vi.mock('@/server/domains/catalog/queries', () => ({
+vi.mock('@/server/domains/friends/service', () => ({
   listAllFriends: vi.fn(async () => []),
+}))
+vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: vi.fn(async () => [sampleTag]),
   listAllTags: vi.fn(async () => [sampleTag]),
 }))

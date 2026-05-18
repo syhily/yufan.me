@@ -50,26 +50,23 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/domains/catalog/catalog', () => ({
-  getEntryBySlug: vi.fn(async (slug: string) => {
-    if (slug === 'hello') {
-      return { type: 'post', id: fixtures.samplePost.id, slug }
-    }
-    if (slug === 'about') {
-      return { type: 'page', id: fixtures.samplePage.id, slug }
-    }
-    return null
-  }),
-}))
+// catalog/catalog removed; pages/loader.ts now uses findPublicPostMetaBySlug +
+// findPageBySlug directly. Catalog slug routing is gone.
 vi.mock('@/server/domains/posts/repo', () => ({
   listPublicPostMetas: vi.fn(async () => []),
   findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? fixtures.samplePost : null)),
+  findPublicPostMetaBySlug: vi.fn(async (slug: string) =>
+    slug === 'hello'
+      ? { slug, published: true, deletedAt: null, publishedRevisionId: 1n, publishedAt: new Date() }
+      : null,
+  ),
 }))
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? fixtures.samplePage : null)),
+  buildDbPage: (p: unknown) => p,
 }))
-vi.mock('@/server/domains/catalog/queries', () => ({
+vi.mock('@/server/domains/friends/service', () => ({
   listAllFriends: vi.fn(async () => []),
 }))
 vi.mock('@/shared/types/catalog', async () => {

@@ -1,8 +1,10 @@
+import { asc, inArray, sql } from 'drizzle-orm'
+
 import type { TagRow } from '@/server/infra/db/types'
+import type { Tag } from '@/shared/types/catalog'
 import type { AdminTagDto } from '@/shared/types/tags'
 
 import { hasAtLeast, type Role } from '@/server/domains/auth/rbac'
-import { invalidateCatalog } from '@/server/domains/catalog/invalidate'
 import { listPostsByTag, listPublicPosts } from '@/server/domains/posts/repo'
 import {
   deleteAdminTaxonomy,
@@ -21,7 +23,10 @@ import {
   listAdminTagRows,
   updateTag,
 } from '@/server/infra/db/operations/tag'
+import { db } from '@/server/infra/db/pool'
+import { post as postMetaTable, tag as tagTable } from '@/server/infra/db/schema'
 import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
+import { createInflight } from '@/server/infra/redis/inflight'
 
 // Wire-format DTO for every admin tag endpoint. `postCount` is
 // projected by the caller from the live `ContentCatalog` (mirrors
@@ -105,7 +110,6 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
   if (input.id === undefined) {
     await ensureUniqueOnCreateTaxonomy(findTagByName, findTagBySlug, input.name, slug, '标签')
     const row = await insertTag({ name: input.name, slug })
-    invalidateCatalog('taxonomy')
     const countOf = await tagPostCounter()
     return toAdminTagDto(row, await countOf(row.name))
   }
@@ -133,7 +137,6 @@ export async function upsertAdminTag(input: UpsertTagInputs, viewer?: TagViewerC
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '标签不存在')
   }
-  invalidateCatalog('taxonomy')
   const countOf = await tagPostCounter()
   return toAdminTagDto(updated, await countOf(updated.name))
 }
@@ -151,4 +154,113 @@ export async function deleteAdminTag(id: bigint, _viewer?: TagViewerContext): Pr
     deleteRow: deleteTagRow,
     listPostsBy: listPostsByTag,
   })
+}
+
+// --- Public catalog queries -------------------------------------------------
+
+let tagCache: Tag[] | null = null
+let tagCacheAt = 0
+const TAG_CACHE_TTL_MS = 30_000
+const tagInflight = createInflight<Tag[]>()
+
+export async function listAllTags(): Promise<Tag[]> {
+  if (tagCache !== null && Date.now() - tagCacheAt < TAG_CACHE_TTL_MS) {
+    return tagCache
+  }
+
+  return tagInflight('listAllTags', async () => {
+    if (tagCache !== null && Date.now() - tagCacheAt < TAG_CACHE_TTL_MS) {
+      return tagCache
+    }
+
+    const now = new Date()
+
+    const tagRows = await db
+      .select({ name: tagTable.name, slug: tagTable.slug })
+      .from(tagTable)
+      .orderBy(asc(tagTable.name))
+
+    if (tagRows.length === 0) {
+      tagCache = []
+      tagCacheAt = Date.now()
+      return []
+    }
+
+    const countsResult = await db.execute<{ tag_name: string; counts: number }>(sql`
+      SELECT jsonb_array_elements_text(${postMetaTable.tags}) AS tag_name,
+             COUNT(*)::int AS counts
+      FROM ${postMetaTable}
+      WHERE ${postMetaTable.deletedAt} IS NULL
+        AND ${postMetaTable.published} = true
+        AND ${postMetaTable.visible} = true
+        AND ${postMetaTable.publishedAt} <= ${now}
+      GROUP BY jsonb_array_elements_text(${postMetaTable.tags})
+    `)
+
+    const countsMap = new Map<string, number>()
+    for (const row of countsResult.rows) {
+      countsMap.set(row.tag_name, row.counts)
+    }
+
+    const tags = tagRows.map((row) => ({
+      name: row.name,
+      slug: row.slug,
+      counts: countsMap.get(row.name) ?? 0,
+      permalink: `/tags/${row.slug}`,
+    }))
+
+    tagCache = tags
+    tagCacheAt = Date.now()
+    return tags
+  })
+}
+
+export async function getTagsByNames(names: readonly string[]): Promise<Tag[]> {
+  if (names.length === 0) {
+    return []
+  }
+  const uniqueNames = [...new Set(names)]
+  const now = new Date()
+
+  const tagRowsPromise = db
+    .select({ name: tagTable.name, slug: tagTable.slug })
+    .from(tagTable)
+    .where(inArray(tagTable.name, uniqueNames))
+  const countsResultPromise = db.execute<{ tag_name: string; counts: number }>(sql`
+    SELECT jsonb_array_elements_text(${postMetaTable.tags}) AS tag_name,
+           COUNT(*)::int AS counts
+    FROM ${postMetaTable}
+    WHERE ${postMetaTable.deletedAt} IS NULL
+      AND ${postMetaTable.published} = true
+      AND ${postMetaTable.visible} = true
+      AND ${postMetaTable.publishedAt} <= ${now}
+    GROUP BY jsonb_array_elements_text(${postMetaTable.tags})
+  `)
+  const [tagRows, countsResult] = (await Promise.all([tagRowsPromise, countsResultPromise])) as [
+    Awaited<typeof tagRowsPromise>,
+    Awaited<typeof countsResultPromise>,
+  ]
+
+  if (tagRows.length === 0) {
+    return []
+  }
+
+  const countsMap = new Map<string, number>()
+  for (const row of countsResult.rows) {
+    countsMap.set(row.tag_name, row.counts)
+  }
+
+  const tagMap = new Map(
+    tagRows.map((r) => [
+      r.name,
+      {
+        name: r.name,
+        slug: r.slug,
+        counts: countsMap.get(r.name) ?? 0,
+        permalink: `/tags/${r.slug}`,
+      } as Tag,
+    ]),
+  )
+
+  return uniqueNames.map((name) => tagMap.get(name)).filter(Boolean) as Tag[]
 }

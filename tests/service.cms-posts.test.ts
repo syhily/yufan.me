@@ -43,14 +43,8 @@ vi.mock('@/server/infra/db/pool', () => ({
   },
 }))
 
-// Prevent `invalidateCatalog` from throwing because no listeners are registered.
-vi.mock(import('@/server/domains/catalog/invalidate'), async (importOriginal) => {
-  const actual = await importOriginal()
-  return {
-    ...(actual as object),
-    invalidateCatalog: vi.fn(),
-  }
-})
+// catalog/invalidate was removed; the posts service now has an inline
+// clearPostMetasCache() helper, so no external mock is needed.
 
 const repo = await import('@/server/domains/posts/repo')
 // DomainError not needed for these assertions

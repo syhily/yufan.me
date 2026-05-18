@@ -28,8 +28,10 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/domains/catalog/queries', () => ({
+vi.mock('@/server/infra/db/operations/category', () => ({
   findCategoryBySlug: vi.fn(async (slug: string) => (slug === 'general' ? sampleCategory : null)),
+}))
+vi.mock('@/server/infra/db/operations/tag', () => ({
   findTagBySlug: vi.fn(async (slug: string) => (slug === 'typescript' ? sampleTag : null)),
 }))
 

@@ -81,13 +81,14 @@ function files(...args: string[]): string[] {
 }
 
 describe('contract: module and bundle boundaries', () => {
-  it('keeps catalog private modules behind @/shared/types/catalog', () => {
-    const offenders = files('src', 'tests', '-g', '*.ts', '-g', '*.tsx')
-      .filter((file) => !file.startsWith('src/server/domains/catalog/'))
-      .filter((file) => {
-        const source = readFileSync(file, 'utf8')
-        return /@\/server\/catalog\/schema(?:["'/])/.test(source)
+  it('keeps value imports from @/server out of shared modules', () => {
+    const offenders = files('src/shared', '-g', '*.ts', '-g', '*.tsx').filter((file) => {
+      const source = readFileSync(file, 'utf8')
+      return source.split('\n').some((line) => {
+        const trimmed = line.trim()
+        return trimmed.startsWith('import') && !trimmed.startsWith('import type') && /@\/server\//.test(trimmed)
       })
+    })
 
     expect(offenders).toEqual([])
   })

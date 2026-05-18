@@ -2,15 +2,11 @@ import { Feed } from 'feed'
 
 import type { Page, Post } from '@/shared/types/catalog'
 
-import {
-  findCategoryByName,
-  findCategoryBySlug,
-  findTagByName,
-  findTagBySlug,
-  getTagsByNames,
-  listAllCategories,
-} from '@/server/domains/catalog/queries'
 import { listPublicPostsWithContent } from '@/server/domains/posts/repo'
+import { listAllCategories } from '@/server/domains/taxonomies/categories/service'
+import { getTagsByNames } from '@/server/domains/taxonomies/tags/service'
+import { findCategoryByName, findCategoryBySlug } from '@/server/infra/db/operations/category'
+import { findTagByName, findTagBySlug } from '@/server/infra/db/operations/tag'
 import { renderPortableTextToHtml } from '@/server/render/feed/feed-pt-render'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'

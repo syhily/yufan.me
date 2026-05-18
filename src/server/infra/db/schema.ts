@@ -386,7 +386,7 @@ export const music = pgTable(
 //   IMPORTANT: page slugs share a global namespace with post slugs.
 //   The DB-level `UNIQUE(slug)` here only enforces page↔page;
 //   page↔post collisions are caught by `validateSlugFence` inside
-//   every catalog snapshot rebuild (`@/server/domains/catalog/fence`).
+//   `@/server/domains/pages/fence`.
 // - `title` / `summary` / `cover` / `og` mirror the post card surface — kept on
 //   the meta row so listings and feeds avoid joining `content`.
 // - `published` / `comments_enabled` / `show_toc` / `show_updated` are

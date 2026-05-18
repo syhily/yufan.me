@@ -1,6 +1,6 @@
 import { data } from 'react-router'
 
-import { listAllFriends } from '@/server/domains/catalog/queries'
+import { listAllFriends } from '@/server/domains/friends/service'
 import { loadPagePreview } from '@/server/domains/pages/loader'
 import { loadPublicDetailData } from '@/server/http/loaders/detail'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'

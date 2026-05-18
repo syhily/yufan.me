@@ -1,7 +1,9 @@
+import { asc, inArray, sql } from 'drizzle-orm'
+
 import type { CategoryRow } from '@/server/infra/db/types'
+import type { Category } from '@/shared/types/catalog'
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
-import { invalidateCatalog } from '@/server/domains/catalog/invalidate'
 import { listPostsByCategory, listPublicPosts } from '@/server/domains/posts/repo'
 import {
   deleteAdminTaxonomy,
@@ -21,7 +23,10 @@ import {
   reorderCategories as reorderCategoryRows,
   updateCategory,
 } from '@/server/infra/db/operations/category'
+import { db } from '@/server/infra/db/pool'
+import { category as categoryTable, post as postMetaTable } from '@/server/infra/db/schema'
 import { DomainError } from '@/server/infra/http/errors'
+import { hydrateImageRefs } from '@/server/render/image-enhance'
 
 // Wire-format DTO returned by every admin category endpoint. Bigint
 // id stringified so the browser bundle never touches BigInt. The
@@ -120,7 +125,6 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
       description: input.description,
       sortOrder: input.sortOrder,
     })
-    invalidateCatalog('taxonomy')
     const countOf = await categoryPostCounter()
     return toAdminCategoryDto(row, await countOf(row.name))
   }
@@ -149,7 +153,6 @@ export async function upsertAdminCategory(input: UpsertCategoryInputs): Promise<
   if (updated === null) {
     throw new DomainError('NOT_FOUND', '分类不存在')
   }
-  invalidateCatalog('taxonomy')
   const countOf = await categoryPostCounter()
   return toAdminCategoryDto(updated, await countOf(updated.name))
 }
@@ -185,7 +188,6 @@ export async function reorderAdminCategories(orderedIds: readonly string[]): Pro
   }
 
   const updated = await reorderCategoryRows(orderedIds.map((id) => BigInt(id)))
-  invalidateCatalog('taxonomy')
   const countOf = await categoryPostCounter()
   return await Promise.all(updated.map(async (row) => toAdminCategoryDto(row, await countOf(row.name))))
 }
@@ -203,4 +205,78 @@ export async function deleteAdminCategory(id: bigint): Promise<boolean> {
     deleteRow: deleteCategoryRow,
     listPostsBy: listPostsByCategory,
   })
+}
+
+// --- Public catalog queries -------------------------------------------------
+
+async function hydrateCategoryImages(categories: Category[]): Promise<void> {
+  await hydrateImageRefs(
+    categories,
+    (c) => c.cover,
+    (c, lookup) => {
+      c.coverThumbhash = lookup?.thumbhash
+      if (lookup?.publicUrl != null) {
+        c.cover = lookup.publicUrl
+      }
+    },
+  )
+}
+
+export async function listAllCategories(): Promise<Category[]> {
+  const now = new Date()
+  const rows = await db
+    .select({
+      name: categoryTable.name,
+      slug: categoryTable.slug,
+      cover: categoryTable.cover,
+      description: categoryTable.description,
+      counts: sql<number>`COALESCE((
+        SELECT COUNT(*)::int FROM ${postMetaTable}
+        WHERE ${postMetaTable.category} = ${categoryTable.name}
+          AND ${postMetaTable.deletedAt} IS NULL
+          AND ${postMetaTable.published} = true
+          AND ${postMetaTable.visible} = true
+          AND ${postMetaTable.publishedAt} <= ${now}
+      ), 0)`.as('counts'),
+    })
+    .from(categoryTable)
+    .orderBy(asc(categoryTable.sortOrder), asc(categoryTable.id))
+
+  const categories: Category[] = []
+  for (const row of rows) {
+    categories.push({
+      name: row.name,
+      slug: row.slug,
+      cover: row.cover,
+      description: row.description,
+      counts: row.counts,
+      permalink: `/cats/${row.slug}`,
+    })
+  }
+
+  await hydrateCategoryImages(categories)
+  return categories
+}
+
+export async function getCategoryLink(name: string): Promise<string> {
+  const category = await findCategoryByName(name)
+  return category ? `/cats/${category.slug}` : ''
+}
+
+export async function getCategoryLinks(names: readonly string[]): Promise<Record<string, string>> {
+  const uniqueNames = [...new Set(names.filter((n): n is string => Boolean(n)))]
+  if (uniqueNames.length === 0) {
+    return {}
+  }
+
+  const rows = await db
+    .select({ name: categoryTable.name, slug: categoryTable.slug })
+    .from(categoryTable)
+    .where(inArray(categoryTable.name, uniqueNames))
+
+  const result: Record<string, string> = {}
+  for (const row of rows) {
+    result[row.name] = `/cats/${row.slug}`
+  }
+  return result
 }

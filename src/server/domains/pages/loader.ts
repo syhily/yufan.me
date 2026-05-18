@@ -1,20 +1,37 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
+import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ResolvedImageMeta } from '@/server/render/image-enhance'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
-import { getEntryBySlug } from '@/server/domains/catalog/catalog'
 import { buildDbPage, findPageBySlug } from '@/server/domains/pages/repo'
 import { loadPageDraftPreviewBySlug } from '@/server/domains/pages/service'
+import { findPublicPostMetaBySlug } from '@/server/domains/posts/repo'
 import { redirectPermanent } from '@/server/http/loaders/detail'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
 import { notFound } from '@/server/infra/http/status'
 import { resolveImageMetaBySources } from '@/server/render/image-enhance'
 
 type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
+
+function isCatalogVisible(meta: PostMetaRow, asOf = new Date()): boolean {
+  if (meta.deletedAt !== null) {
+    return false
+  }
+  if (!meta.published) {
+    return false
+  }
+  if (meta.publishedRevisionId === null) {
+    return false
+  }
+  if (meta.publishedAt.getTime() > asOf.getTime()) {
+    return false
+  }
+  return true
+}
 
 export interface PagePreviewResult {
   page: {
@@ -53,13 +70,16 @@ export async function loadPagePreview({
   request: Request
   context: LoaderFunctionArgs['context']
 }): Promise<PagePreviewResult> {
-  const entry = await getEntryBySlug(slug)
-  if (entry !== null && entry.type === 'post') {
-    redirectPermanent(`/posts/${entry.slug}`)
+  const [postMeta, page] = await Promise.all([findPublicPostMetaBySlug(slug), findPageBySlug(slug)])
+
+  // If the slug belongs to a published, non-deleted, non-scheduled post,
+  // redirect to the canonical post URL. Matches the old catalog visibility
+  // semantics where only visible posts appeared in the slug map.
+  if (postMeta !== null && isCatalogVisible(postMeta)) {
+    redirectPermanent(`/posts/${slug}`)
   }
 
-  const publishedPage =
-    entry !== null && entry.type === 'page' ? ((await findPageBySlug(slug)) ?? undefined) : undefined
+  const publishedPage = page ?? undefined
 
   let sourcePage = publishedPage
   let draftMarker: DraftMarker = null
@@ -95,7 +115,7 @@ export async function loadPagePreview({
     throw notModifiedResponse(publicEtag)
   }
 
-  const page = {
+  const pageProjection = {
     id: sourcePage.id,
     slug: sourcePage.slug,
     title: sourcePage.title,
@@ -117,7 +137,7 @@ export async function loadPagePreview({
   const imageMeta = Object.fromEntries(await resolveImageMetaBySources(sourcePage.imageSources))
 
   return {
-    page,
+    page: pageProjection,
     body: sourcePage.body,
     showFriends: sourcePage.showFriends,
     draftMarker,

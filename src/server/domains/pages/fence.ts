@@ -6,13 +6,6 @@ export interface CatalogEntry {
   slug: string
 }
 
-export interface CatalogSnapshot {
-  bySlug: ReadonlyMap<string, CatalogEntry>
-  posts: ReadonlyArray<CatalogEntry>
-  pages: ReadonlyArray<CatalogEntry>
-  builtAt: Date
-}
-
 export class CatalogConsistencyError extends Error {
   readonly conflicts: Array<{ slug: string; entries: CatalogEntry[] }>
   constructor(conflicts: Array<{ slug: string; entries: CatalogEntry[] }>) {
@@ -23,5 +16,23 @@ export class CatalogConsistencyError extends Error {
     super(`Catalog slug fence violation: ${summary}`)
     this.name = 'CatalogConsistencyError'
     this.conflicts = conflicts
+  }
+}
+
+export function validateSlugFence(entries: ReadonlyArray<CatalogEntry>): void {
+  const seen = new Map<string, CatalogEntry[]>()
+  for (const entry of entries) {
+    const list = seen.get(entry.slug) ?? []
+    list.push(entry)
+    seen.set(entry.slug, list)
+  }
+  const conflicts: Array<{ slug: string; entries: CatalogEntry[] }> = []
+  for (const [slug, list] of seen) {
+    if (list.length > 1) {
+      conflicts.push({ slug, entries: list })
+    }
+  }
+  if (conflicts.length > 0) {
+    throw new CatalogConsistencyError(conflicts)
   }
 }

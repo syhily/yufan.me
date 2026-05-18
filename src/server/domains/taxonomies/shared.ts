@@ -1,4 +1,3 @@
-import { invalidateCatalog } from '@/server/domains/catalog/invalidate'
 import { DomainError } from '@/server/infra/http/errors'
 import { deriveSlug } from '@/server/infra/slug'
 
@@ -114,8 +113,5 @@ export async function deleteAdminTaxonomy<T extends { name: string }>(
   }
 
   const removed = await deps.deleteRow(id)
-  if (removed) {
-    invalidateCatalog('taxonomy')
-  }
   return removed
 }

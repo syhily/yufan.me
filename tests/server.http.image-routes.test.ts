@@ -25,9 +25,8 @@ vi.mock('@/server/render/avatar/cache', () => ({
 vi.mock('@/server/infra/redis/buffer-cache', () => ({
   loadBuffer: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
 }))
-vi.mock('@/server/domains/catalog/catalog', () => ({
-  getEntryBySlug: vi.fn().mockResolvedValue({ type: 'post' }),
-}))
+// catalog/catalog was removed; images.ts now queries posts/repo and pages/repo
+// directly via findPostBySlug / findPageBySlug in parallel.
 vi.mock('@/server/render/avatar/fetch', () => ({
   defaultAvatarUrl: () => 'https://example.test/images/default-avatar.png',
   fetchAvatarImage: vi.fn().mockResolvedValue(Buffer.from([0x89, 0x50, 0x4e, 0x47])),
@@ -91,10 +90,12 @@ describe('imagesRouter avatar', () => {
 })
 
 describe('imagesRouter og', () => {
-  it('extracts the bare slug from `/images/og/<slug>.png`', async () => {
-    const { getEntryBySlug } = await import('@/server/domains/catalog/catalog')
+  it('looks up slug via findPostBySlug and findPageBySlug in parallel', async () => {
+    const { findPostBySlug } = await import('@/server/domains/posts/repo')
+    const { findPageBySlug } = await import('@/server/domains/pages/repo')
     await imagesRouter.request('/images/og/hello-world.png')
-    expect(vi.mocked(getEntryBySlug)).toHaveBeenCalledWith('hello-world')
+    expect(vi.mocked(findPostBySlug)).toHaveBeenCalledWith('hello-world')
+    expect(vi.mocked(findPageBySlug)).toHaveBeenCalledWith('hello-world')
   })
 })
 

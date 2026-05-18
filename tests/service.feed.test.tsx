@@ -19,12 +19,18 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/server/domains/posts/repo', () => ({
   listPublicPostsWithContent: mocks.listPublicPostsWithContent,
 }))
-vi.mock('@/server/domains/catalog/queries', () => ({
+vi.mock('@/server/infra/db/operations/category', () => ({
   findCategoryBySlug: mocks.findCategoryBySlug,
   findCategoryByName: mocks.findCategoryByName,
+}))
+vi.mock('@/server/infra/db/operations/tag', () => ({
   findTagBySlug: mocks.findTagBySlug,
   findTagByName: mocks.findTagByName,
+}))
+vi.mock('@/server/domains/taxonomies/categories/service', () => ({
   listAllCategories: mocks.listAllCategories,
+}))
+vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: mocks.getTagsByNames,
 }))
 

@@ -74,11 +74,7 @@ vi.mock('@/server/session', async () => {
   }
 })
 
-vi.mock('@/server/domains/catalog/catalog', () => ({
-  getEntryBySlug: vi.fn(async (slug: string) =>
-    slug === 'about' ? { type: 'page', id: publishedPage.id, slug } : null,
-  ),
-}))
+// catalog/catalog removed; pages/loader uses findPublicPostMetaBySlug + findPageBySlug.
 vi.mock('@/server/domains/pages/repo', () => ({
   listPublicPageMetas: vi.fn(async () => []),
   findPageBySlug: vi.fn(async (slug: string) => (slug === 'about' ? publishedPage : null)),
@@ -87,8 +83,9 @@ vi.mock('@/server/domains/pages/repo', () => ({
 vi.mock('@/server/domains/posts/repo', () => ({
   listPublicPostMetas: vi.fn(async () => []),
   findPostBySlug: vi.fn(async () => null),
+  findPublicPostMetaBySlug: vi.fn(async () => null),
 }))
-vi.mock('@/server/domains/catalog/queries', () => ({
+vi.mock('@/server/domains/friends/service', () => ({
   listAllFriends: vi.fn(async () => []),
 }))
 vi.mock('@/shared/types/catalog', async () => {

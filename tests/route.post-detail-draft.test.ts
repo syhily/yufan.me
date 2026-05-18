@@ -78,7 +78,7 @@ vi.mock('@/server/domains/posts/repo', () => ({
   selectSidebarPosts: vi.fn(async () => []),
   listPublicPostMetas: vi.fn(async () => []),
 }))
-vi.mock('@/server/domains/catalog/queries', () => ({
+vi.mock('@/server/domains/taxonomies/tags/service', () => ({
   getTagsByNames: vi.fn(async () => []),
   listAllTags: vi.fn(async () => []),
   selectSidebarTags: vi.fn(async () => []),
