@@ -8,6 +8,7 @@ import type {
   CommentsSettings,
   ContentSettings,
   FontsSettings,
+  LimitsSettings,
   MailSettings,
   NavigationSettings,
   RateLimitSettings,
@@ -58,6 +59,7 @@ const SECTION_CONTEXTS: SectionContextMap = {
   search: makeContext('search'),
   fonts: makeContext('fonts'),
   backup: makeContext('backup'),
+  limits: makeContext('limits'),
 }
 
 interface BlogSettingsProviderProps {
@@ -219,4 +221,11 @@ export function useBackupSettings(): BackupSettings {
 }
 export function useBackupSettingsOptional(): BackupSettings | undefined {
   return useSectionOptional('backup')
+}
+
+export function useLimitsSettings(): LimitsSettings {
+  return useSection('useLimitsSettings', 'limits')
+}
+export function useLimitsSettingsOptional(): LimitsSettings | undefined {
+  return useSectionOptional('limits')
 }

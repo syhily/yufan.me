@@ -3,6 +3,7 @@ import type { Editor } from '@tiptap/core'
 import { useCallback, useRef, useState } from 'react'
 
 import type { PmDoc } from '@/shared/pt/bridge/types'
+import type { FootnoteDefinitionBlock, PortableTextBody } from '@/shared/pt/schema'
 
 import { footnoteSyncSignature, synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
 import { pmDocToBody } from '@/shared/pt/bridge/pm-to-pt'
@@ -14,7 +15,7 @@ import {
   plainTextToFootnoteChildren,
   stripFootnoteDefinitionsForEditor,
 } from '@/shared/pt/footnote-merge'
-import { generateBlockKey, type FootnoteDefinitionBlock, type PortableTextBody } from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 import {
   canInsertFootnoteMark,
   computeNextFootnoteIndex,

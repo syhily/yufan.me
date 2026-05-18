@@ -29,7 +29,7 @@ import {
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
 import { adminRevisionDto } from '@/shared/contracts/revision'
-import { collectHeadings } from '@/shared/pt/schema'
+import { collectHeadings } from '@/shared/pt/utils'
 
 const idInput = z.object({ id: z.string().min(1) })
 

@@ -388,6 +388,13 @@ export interface BackupSettings {
   }
 }
 
+export interface LimitsSettings {
+  /** Maximum request body size in bytes (default: 10 MB). */
+  maxRequestBodySize: number
+  /** Session cookie max-age in seconds (default: 30 days). */
+  sessionMaxAge: number
+}
+
 // Composed bundle of every section. Each field is `null` until the
 // corresponding `setting('blog.<section>')` row has been seeded by the
 // install flow or the admin panel. A "fully installed" deployment has
@@ -415,6 +422,7 @@ export interface BlogSettingsBundle {
   search: SearchSettings | null
   fonts: FontsSettings | null
   backup: BackupSettings | null
+  limits: LimitsSettings | null
 }
 
 // Runtime half of the blog-config module. The pure-types half lives in

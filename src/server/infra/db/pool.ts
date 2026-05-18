@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { Pool } from 'pg'
 
 import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 
 import { runDatabaseMigrations } from '@/server/infra/db/migrate'
 import { DATABASE_URL } from '@/server/infra/env'
@@ -36,5 +36,9 @@ if (!globalForDb.db) {
 // reach the raw pool through this helper to acquire a `PoolClient` for
 // `pg-copy-streams`. Every other call site should keep using `db`.
 export function getRawPool(): Pool {
-  return (db as unknown as { $client: Pool }).$client
+  const client = (db as unknown as Record<string, unknown>).$client
+  if (!(client instanceof Pool)) {
+    throw new Error('Expected db.$client to be a pg Pool')
+  }
+  return client
 }

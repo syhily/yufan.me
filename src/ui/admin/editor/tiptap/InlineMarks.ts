@@ -2,7 +2,7 @@ import type { EditorState } from '@tiptap/pm/state'
 
 import { InputRule, Mark, markInputRule, markPasteRule } from '@tiptap/core'
 
-import { generateBlockKey } from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 
 // `mathInline` is forbidden inside table cells: the bridge's
 // `pmCellToTableCell` filters every mark def except `link` before saving,

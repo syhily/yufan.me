@@ -1,15 +1,13 @@
 import { describe, expect, it } from 'vite-plus/test'
 
+import { portableTextBodySchema, type Block, type PortableTextBody } from '@/shared/pt/schema'
 import {
   bodyToPlainText,
   collectHeadings,
   collectImageStoragePaths,
-  portableTextBodySchema,
   safeValidatePortableTextBody,
   validatePortableTextBody,
-  type Block,
-  type PortableTextBody,
-} from '@/shared/pt/schema'
+} from '@/shared/pt/utils'
 
 // Pin the in-repo PortableText dialect. Every editor save and every
 // SSR render parses through `portableTextBodySchema`, so drift here

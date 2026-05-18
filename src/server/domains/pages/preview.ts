@@ -2,7 +2,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { deriveSlug } from '@/server/infra/slug'
 import { renderPortableTextToHtml as renderPortableTextBodyToHtml } from '@/server/render/feed/feed-pt-render'
-import { collectHeadings } from '@/shared/pt/schema'
+import { collectHeadings } from '@/shared/pt/utils'
 
 // Render the supplied PortableText body to a stand-alone HTML fragment
 // for the editor's right-pane preview.

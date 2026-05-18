@@ -1,19 +1,19 @@
-import type { EditorView } from '@tiptap/pm/view'
-
 import Focus from '@tiptap/extension-focus'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
 import TextAlign from '@tiptap/extension-text-align'
 import Typography from '@tiptap/extension-typography'
-import { type Editor, EditorContent, useEditor } from '@tiptap/react'
+import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { bodyToPmDoc } from '@/shared/pt/bridge/pt-to-pm'
 import { stripFootnoteDefinitionsForEditor } from '@/shared/pt/footnote-merge'
-import { generateBlockKey, validatePortableTextBody, type PortableTextBody } from '@/shared/pt/schema'
+import { validatePortableTextBody } from '@/shared/pt/utils'
 import { FootnoteEditorDialog } from '@/ui/admin/editor/FootnoteEditorDialog'
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
 import { MusicPickerDialog } from '@/ui/admin/editor/pickers/MusicPickerDialog'
@@ -32,6 +32,12 @@ import { TwoColumnNode, TwoColumnPaneNode } from '@/ui/admin/editor/tiptap/TwoCo
 import { useEditorFootnotes } from '@/ui/admin/editor/tiptap/use-editor-footnotes'
 import { useToolbarDensityPreference } from '@/ui/admin/editor/toolbar/density'
 import { Toolbar } from '@/ui/admin/editor/toolbar/Toolbar'
+import { useEditorPickers } from '@/ui/admin/editor/use-editor-pickers'
+import {
+  useMathInlineClickEditorRef,
+  useOpenFootnoteEditDialogRef,
+  useTiptapEditorProps,
+} from '@/ui/admin/editor/use-editor-props'
 import { cn } from '@/ui/lib/cn'
 
 export interface PageBodyEditorProps {
@@ -108,70 +114,9 @@ export function PageBodyEditor({
   const editorZoomContainerRef = useRef<HTMLDivElement>(null)
   useMediumZoom(editorZoomContainerRef)
 
-  // `handleClick` must read the live `Editor` from a ref: `editorProps`
-  // is fixed at mount but `useEditor` returns `null` on the first render.
-  const mathInlineClickEditorRef = useRef<Editor | null>(null)
-
-  const openFootnoteEditDialogRef = useRef<(targetKey: string) => void>(() => {})
-
-  const tiptapEditorProps = useMemo(
-    () => ({
-      handleClick(view: EditorView, pos: number, event: MouseEvent): boolean {
-        if (!view.editable) {
-          return false
-        }
-        if (!(event.target instanceof Element)) {
-          return false
-        }
-        const ed = mathInlineClickEditorRef.current
-        if (ed === null) {
-          return false
-        }
-
-        if (event.target.closest('[data-math-inline]')) {
-          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY })
-          const base = coords?.pos ?? pos
-          const docSize = view.state.doc.content.size
-          for (const anchor of [base, base - 1, base + 1]) {
-            if (anchor < 0 || anchor > docSize) {
-              continue
-            }
-            ed.chain().focus().setTextSelection({ from: anchor, to: anchor }).extendMarkRange('mathInline').run()
-            const { from, to } = ed.state.selection
-            if (ed.isActive('mathInline') && from < to) {
-              return true
-            }
-          }
-          return false
-        }
-
-        if (event.target.closest('[data-footnote-ref], sup.footnote-ref')) {
-          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY })
-          const base = coords?.pos ?? pos
-          const docSize = view.state.doc.content.size
-          for (const anchor of [base, base - 1, base + 1]) {
-            if (anchor < 0 || anchor > docSize) {
-              continue
-            }
-            ed.chain().focus().setTextSelection({ from: anchor, to: anchor }).extendMarkRange('footnoteRef').run()
-            const { from, to } = ed.state.selection
-            if (ed.isActive('footnoteRef') && from < to) {
-              const attrs = ed.getAttributes('footnoteRef') as { targetKey?: string }
-              const tk = attrs.targetKey ?? ''
-              if (tk !== '') {
-                openFootnoteEditDialogRef.current(tk)
-                return true
-              }
-            }
-          }
-          return false
-        }
-
-        return false
-      },
-    }),
-    [],
-  )
+  const mathInlineClickEditorRef = useMathInlineClickEditorRef()
+  const openFootnoteEditDialogRef = useOpenFootnoteEditDialogRef()
+  const tiptapEditorProps = useTiptapEditorProps(mathInlineClickEditorRef, openFootnoteEditDialogRef)
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -265,7 +210,7 @@ export function PageBodyEditor({
         mathInlineClickEditorRef.current = null
       }
     }
-  }, [editor])
+  }, [editor, mathInlineClickEditorRef])
 
   // Reset content whenever the upstream `bodyKey` changes.
   const lastResetKey = useRef<string | null>(null)
@@ -290,14 +235,10 @@ export function PageBodyEditor({
     editor.setEditable(disabled !== true)
   }, [editor, disabled])
 
-  // Single controlled-open state per picker — the toolbar buttons
-  // and the slash-command events both flip this. Driving the dialog
-  // via state (rather than synthesising a click on the trigger
-  // button) avoids a Base UI focus race where the dialog would
-  // briefly open and then close because the click fired while the
-  // suggestion plugin was tearing down its portal.
-  const [imagePickerOpen, setImagePickerOpen] = useState(false)
-  const [musicPickerOpen, setMusicPickerOpen] = useState(false)
+  const pickers = useEditorPickers(editor)
+
+  // Wire picker openers into the editor's action storage so slash
+  // commands and toolbar buttons can trigger them without prop drilling.
   useEffect(() => {
     if (editor === null) {
       return
@@ -306,20 +247,16 @@ export function PageBodyEditor({
     if (actions === undefined) {
       return
     }
-    actions.openImagePicker = () => setImagePickerOpen(true)
-    actions.openMusicPicker = () => setMusicPickerOpen(true)
+    actions.openImagePicker = () => pickers.setImagePickerOpen(true)
+    actions.openMusicPicker = () => pickers.setMusicPickerOpen(true)
     actions.openFootnoteDialog = () => footnotes.openInsertDialog()
     return () => {
       actions.openImagePicker = undefined
       actions.openMusicPicker = undefined
       actions.openFootnoteDialog = undefined
     }
-  }, [editor, footnotes])
+  }, [editor, footnotes, pickers])
 
-  // Toolbar density. Two-state toggle: `'full'` shows block style and
-  // inserts as buttons (toolbar wraps to more rows when narrow);
-  // `'compact'` collapses inserts into 「插入 ▼」 and block style into a
-  // Select. The preference survives navigations via localStorage.
   const [toolbarDensity, setToolbarDensity] = useToolbarDensityPreference()
 
   const inlineToolbarRef = useRef<HTMLDivElement>(null)
@@ -334,11 +271,6 @@ export function PageBodyEditor({
     if (target === null) {
       return
     }
-    // `AdminShell` lets the document scroll (the `<main>` column is not a
-    // fixed-height scrollport), so our inner `overflow-y-auto` often never
-    // scrolls — `IntersectionObserver` must use the viewport as `root`
-    // or the inline toolbar would always read as "intersecting" and the
-    // floated duplicate would never mount.
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0]
@@ -353,53 +285,6 @@ export function PageBodyEditor({
     return () => observer.disconnect()
   }, [editor, livePreviewOpen, bodyKey])
 
-  const insertImage = useCallback(
-    (image: import('@/shared/types/images').AdminImageDto) => {
-      if (editor === null) {
-        return
-      }
-      editor
-        .chain()
-        .focus()
-        .insertContent({
-          type: 'image',
-          attrs: {
-            _key: generateBlockKey(),
-            src: image.publicUrl,
-            alt: image.note ?? '',
-            width: image.width,
-            height: image.height,
-            thumbhash: image.thumbhash ?? undefined,
-            storagePath: image.storagePath,
-            imageId: image.id,
-          },
-        })
-        .run()
-    },
-    [editor],
-  )
-
-  const insertMusic = useCallback(
-    (music: import('@/shared/types/music').AdminMusicDto) => {
-      if (editor === null) {
-        return
-      }
-      editor
-        .chain()
-        .focus()
-        .insertContent({
-          type: 'blockCard',
-          attrs: {
-            _key: generateBlockKey(),
-            _ptType: 'musicPlayer',
-            payload: { _type: 'musicPlayer', _key: generateBlockKey(), playerId: music.playerId },
-          },
-        })
-        .run()
-    },
-    [editor],
-  )
-
   if (editor === null) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center rounded-md border bg-card p-4 text-sm text-muted-foreground">
@@ -413,8 +298,8 @@ export function PageBodyEditor({
     disabled,
     density: toolbarDensity,
     onDensityChange: setToolbarDensity,
-    onOpenImagePicker: () => setImagePickerOpen(true),
-    onOpenMusicPicker: () => setMusicPickerOpen(true),
+    onOpenImagePicker: () => pickers.setImagePickerOpen(true),
+    onOpenMusicPicker: () => pickers.setMusicPickerOpen(true),
     onOpenFootnoteInsertDialog: footnotes.openInsertDialog,
   } as const
 
@@ -512,8 +397,16 @@ export function PageBodyEditor({
           ) : null}
         </>
       )}
-      <ImageLibraryPicker open={imagePickerOpen} onOpenChange={setImagePickerOpen} onPick={insertImage} />
-      <MusicPickerDialog open={musicPickerOpen} onOpenChange={setMusicPickerOpen} onPick={insertMusic} />
+      <ImageLibraryPicker
+        open={pickers.imagePickerOpen}
+        onOpenChange={pickers.setImagePickerOpen}
+        onPick={pickers.insertImage}
+      />
+      <MusicPickerDialog
+        open={pickers.musicPickerOpen}
+        onOpenChange={pickers.setMusicPickerOpen}
+        onPick={pickers.insertMusic}
+      />
       <FootnoteEditorDialog
         open={footnotes.dialogOpen}
         onOpenChange={footnotes.setDialogOpen}

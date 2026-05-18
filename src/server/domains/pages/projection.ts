@@ -2,7 +2,7 @@ import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { ClientPage, MarkdownHeading } from '@/shared/types/catalog'
 
-import { validatePortableTextBody } from '@/shared/pt/schema'
+import { validatePortableTextBody } from '@/shared/pt/utils'
 
 // --- Public catalog projection ----------------------------------------------
 

@@ -7,6 +7,7 @@ import type { HandlerContext } from '@/server/http/orpc-base'
 
 import { apiRouter } from '@/server/http/api-router'
 import { csrfGuard } from '@/server/http/middlewares/csrf'
+import { getBlogSettingsBundleSync } from '@/shared/config/blog'
 
 // ─── oRPC + Hono perimeter ──────────────────────────────
 //
@@ -14,7 +15,7 @@ import { csrfGuard } from '@/server/http/middlewares/csrf'
 // composed `apiRouter` and answers every request whose path matches
 // `/rpc/*`. The Hono wrapper here is responsible for three things:
 //
-//   1. `bodyLimit` — same 10 MB ceiling as before.
+//   1. `bodyLimit` — read from `blog.limits` settings (default 10 MB).
 //   2. `csrfGuard` — must run **before** the RPCHandler so it can
 //      validate the body without racing the handler's own parse.
 //      The guard short-circuits GET / HEAD requests itself.
@@ -32,12 +33,20 @@ import { csrfGuard } from '@/server/http/middlewares/csrf'
 
 const handler = new RPCHandler(apiRouter)
 
+const DEFAULT_MAX_BODY_SIZE = 10 * 1024 * 1024 // 10 MB
+
+function resolveMaxBodySize(): number {
+  const bundle = getBlogSettingsBundleSync()
+  const configured = bundle?.limits?.maxRequestBodySize
+  return typeof configured === 'number' && configured > 0 ? configured : DEFAULT_MAX_BODY_SIZE
+}
+
 export function createApiApp(): Hono<Env> {
   const app = new Hono<Env>()
 
   app.use(
     bodyLimit({
-      maxSize: 10 * 1024 * 1024, // 10 MB
+      maxSize: resolveMaxBodySize(),
       onError: (c) => c.json({ error: { message: '请求体过大' } }, 413),
     }),
   )

@@ -13,6 +13,7 @@ export const SETTINGS_SECTIONS = [
   'search',
   'fonts',
   'backup',
+  'limits',
 ] as const
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number]
@@ -45,6 +46,7 @@ export const SECTION_TO_BUNDLE_KEY = {
   search: 'search',
   fonts: 'fonts',
   backup: 'backup',
+  limits: 'limits',
 } as const satisfies Record<SettingsSection, string>
 
 export type BundleKey = (typeof SECTION_TO_BUNDLE_KEY)[SettingsSection]
@@ -109,6 +111,11 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
     to: '/wp-admin/settings/backup',
     label: '备份与还原',
     description: '数据库自动备份、手动备份与还原',
+  },
+  limits: {
+    to: '/wp-admin/settings/limits',
+    label: '运行限制',
+    description: '请求体大小限制、会话有效期等运行时阈值',
   },
 }
 

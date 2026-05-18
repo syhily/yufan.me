@@ -25,7 +25,7 @@ vi.mock('@/server/domains/users/service', () => ({
 vi.mock('@/server/domains/auth/session-storage', () => ({
   revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('@/server/domains/auth/sessions', () => ({
+vi.mock('@/server/domains/auth/repo', () => ({
   findSessionMeta: vi.fn(),
   revokeSessionById: vi.fn(),
 }))

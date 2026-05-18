@@ -2,15 +2,16 @@ import { PortableText, type PortableTextComponents, type PortableTextTypeCompone
 import GithubSlugger from 'github-slugger'
 import { useMemo, type ReactNode } from 'react'
 
-import {
-  collectHeadingSlotsInPortableTextRenderOrder,
-  type FootnoteDefinitionBlock,
-  type NonRecursiveBlock,
-  type PortableTextBody as PortableTextBodyType,
-  type SolutionBlock,
-  type TextBlock,
-  type TwoColumnBlock,
+import type {
+  FootnoteDefinitionBlock,
+  NonRecursiveBlock,
+  PortableTextBody as PortableTextBodyType,
+  SolutionBlock,
+  TextBlock,
+  TwoColumnBlock,
 } from '@/shared/pt/schema'
+
+import { collectHeadingSlotsInPortableTextRenderOrder } from '@/shared/pt/utils'
 import { Solution } from '@/ui/pt/blocks/Solution'
 import { FootnoteProvider, FootnotePreviewRegistrar } from '@/ui/pt/Footnotes'
 import { ImageMetaProvider, type ImageMetaMap } from '@/ui/pt/image-meta-context'

@@ -10,6 +10,7 @@ import { requestContext, sessionContext } from '@/server/domains/auth/context'
 import { scheduleNextBackup } from '@/server/domains/backup/scheduler'
 import { createApiApp } from '@/server/http/app'
 import { onErrorHandler } from '@/server/http/errors'
+import { wrapFetchWithLeakedResponseHandler } from '@/server/http/leaked-response'
 import { honoInstallGateMiddleware } from '@/server/http/middlewares/install-gate'
 import { buildRouteContexts, honoSessionMiddleware } from '@/server/http/middlewares/session'
 import { trailingSlashNormaliser } from '@/server/http/middlewares/trailing-slash'
@@ -24,9 +25,9 @@ import { imagesRouter } from '@/server/http/resources/images'
 import { redirectsRouter } from '@/server/http/resources/redirects'
 import { sitemapRouter } from '@/server/http/resources/sitemap'
 import { getLogger } from '@/server/infra/logger'
+import { buildOpenApiDocsHtml } from '@/server/render/openapi-docs'
 
 const requestLog = getLogger('http.request')
-const leakedResponseLog = getLogger('http.leaked-response')
 
 const server = await createHonoServer<Env>({
   configure(app) {
@@ -89,29 +90,7 @@ const server = await createHonoServer<Env>({
     // ─── Dev-only API docs ────────────────────────────────
     if (process.env.NODE_ENV !== 'production') {
       app.get('/openapi.json', async (c) => c.json(await buildOpenApiDocument()))
-      app.get('/docs', (c) =>
-        c.html(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>API Documentation</title>
-  <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
-  <style>
-    body { margin: 0; }
-    elements-api { display: block; height: 100vh; }
-  </style>
-</head>
-<body>
-  <elements-api
-    apiDescriptionUrl="/openapi.json"
-    router="hash"
-    layout="sidebar"
-  />
-</body>
-</html>`),
-      )
+      app.get('/docs', (c) => c.html(buildOpenApiDocsHtml()))
     }
   },
   getLoadContext(c) {
@@ -123,43 +102,7 @@ const server = await createHonoServer<Env>({
   },
 })
 
-// Defensive: Hono's app.onError does not catch thrown Response objects (only
-// Error instances).  React Router loaders/actions throw Response/redirect()
-// as control flow, and in rare edge cases (streaming deferred boundaries,
-// middleware ordering bugs, or react-router-hono-server internal leakage) the
-// Response can bubble past Hono's error handler and crash the dev server with
-// "Unknown error: [object Response]".  Wrapping app.fetch lets us intercept
-// the leaked Response, log it for diagnostics, and return it normally.
-const originalFetch = server.fetch.bind(server)
-server.fetch = (request, env, executionContext) => {
-  try {
-    const result = originalFetch(request, env, executionContext)
-    if (result instanceof Promise) {
-      return result.catch((e) => {
-        if (e instanceof Response) {
-          leakedResponseLog.warn('leaked-response', {
-            url: request instanceof Request ? request.url : undefined,
-            status: e.status,
-            statusText: e.statusText,
-          })
-          return e
-        }
-        throw e
-      })
-    }
-    return result
-  } catch (e) {
-    if (e instanceof Response) {
-      leakedResponseLog.warn('leaked-response', {
-        url: request instanceof Request ? request.url : undefined,
-        status: e.status,
-        statusText: e.statusText,
-      })
-      return e
-    }
-    throw e
-  }
-}
+wrapFetchWithLeakedResponseHandler(server)
 
 // Start backup scheduler after server is configured
 scheduleNextBackup()

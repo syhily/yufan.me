@@ -5,6 +5,7 @@ import type { ContentRow, PostMetaRow } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
+import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import { indexPost, removePostIndex } from '@/server/domains/posts/indexer'
 import {
@@ -35,7 +36,6 @@ import {
   updatePostMetaById,
   type ListPostsFilters,
 } from '@/server/domains/posts/repo'
-import { canonicalizePortableTextBody } from '@/server/domains/pt/canonicalize'
 import { resolveSlugForTaxonomy } from '@/server/domains/taxonomies/shared'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetricsBatch } from '@/server/infra/db/operations/metric'
@@ -46,9 +46,10 @@ import { DomainError, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
 import { requireBlogSettingsSection } from '@/shared/config/blog'
-import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
+import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
 const auditLog = getLogger('audit.cms.posts')
+const log = getLogger('posts.service')
 
 /** Auto-create any tags that don't already exist in the database. */
 async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {
@@ -390,7 +391,9 @@ export async function deletePost(id: bigint, viewer?: ViewerContext): Promise<{ 
   const deleted = await softDeletePostMeta(id)
   if (deleted) {
     clearPostMetasCache()
-    await removePostIndex(id).catch(() => undefined)
+    await removePostIndex(id).catch((err: unknown) => {
+      log.warn('remove post index failed', { postId: id, error: err })
+    })
   }
   return { deleted }
 }
@@ -405,7 +408,9 @@ export async function restorePost(id: bigint, viewer?: ViewerContext): Promise<{
     if (meta !== null && meta.published && meta.publishedRevisionId !== null) {
       const revision = await findContentById(meta.publishedRevisionId)
       if (revision !== null) {
-        await indexPost(meta.id, meta.title, meta.summary, revision.body as PortableTextBody).catch(() => undefined)
+        await indexPost(meta.id, meta.title, meta.summary, revision.body as PortableTextBody).catch((err: unknown) => {
+          log.warn('index post failed', { postId: meta.id, error: err })
+        })
       }
     }
   }
@@ -420,7 +425,9 @@ export async function unpublishPost(id: bigint, viewer?: ViewerContext): Promise
     throw new DomainError('NOT_FOUND', '文章不存在或已被删除。')
   }
   clearPostMetasCache()
-  await removePostIndex(id).catch(() => undefined)
+  await removePostIndex(id).catch((err: unknown) => {
+    log.warn('remove post index failed', { postId: id, error: err })
+  })
   return toAdminPostDto(updated)
 }
 
@@ -451,7 +458,9 @@ async function savePostBodyInternal(
   const meta = await findPostMetaById(input.postId)
   assertOwnPostOr404(meta, viewer)
   const body = await canonicalizeBodyOrThrow(input.body)
-  await syncLibraryImageBlocks(body).catch(() => undefined)
+  await syncLibraryImageBlocks(body).catch((err: unknown) => {
+    log.warn('sync library image blocks failed', { postId: input.postId, error: err })
+  })
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 
@@ -500,7 +509,9 @@ async function savePostBodyInternal(
           postMeta.title,
           postMeta.summary,
           publishedRevision.body as PortableTextBody,
-        ).catch(() => undefined)
+        ).catch((err: unknown) => {
+          log.warn('index post failed', { postId: postMeta.id, error: err })
+        })
       }
     }
   }
@@ -515,14 +526,6 @@ export function publishLatest(input: SavePostBodyInput, viewer?: ViewerContext):
   return savePostBodyInternal(input, 'publish', viewer)
 }
 
-async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {
-  try {
-    return await canonicalizePortableTextBody(value)
-  } catch (error) {
-    throw new DomainError('BAD_REQUEST', '正文格式不合法。', extractZodIssues(error))
-  }
-}
-
 function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SavePostResult {
   if (result.status === 'conflict') {
     return {
@@ -532,22 +535,6 @@ function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SaveP
     }
   }
   return { status: 'saved', revision: toAdminRevisionDto(result.row) }
-}
-
-function extractZodIssues(error: unknown): { message: string; path?: string[] }[] | undefined {
-  if (typeof error !== 'object' || error === null) {
-    return undefined
-  }
-  const issues = (error as { issues?: unknown }).issues
-  if (!Array.isArray(issues)) {
-    return undefined
-  }
-  return issues
-    .filter((issue): issue is { message: string; path?: unknown[] } => typeof issue === 'object' && issue !== null)
-    .map((issue) => ({
-      message: typeof issue.message === 'string' ? issue.message : 'invalid body',
-      path: Array.isArray(issue.path) ? issue.path.map(String) : undefined,
-    }))
 }
 
 // --- Re-exports -------------------------------------------------------------

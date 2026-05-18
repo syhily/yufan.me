@@ -41,8 +41,16 @@ beforeEach(() => {
   mocks.findPageBySlug.mockImplementation(async () => null)
 })
 
+let imagesRouter: typeof import('@/server/http/resources/images').imagesRouter
+
+beforeEach(async () => {
+  if (!imagesRouter) {
+    const mod = await import('@/server/http/resources/images')
+    imagesRouter = mod.imagesRouter
+  }
+})
+
 async function requestOg(slug: string) {
-  const { imagesRouter } = await import('@/server/http/resources/images')
   const res = await imagesRouter.request(`/images/og/${slug}.png`)
   return res
 }

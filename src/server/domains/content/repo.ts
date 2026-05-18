@@ -2,14 +2,20 @@ import { and, desc, eq, inArray, max } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 
+import type {
+  ContentType,
+  PublishLatestInput,
+  PublishLatestResult,
+  SaveDraftInput,
+  SaveDraftResult,
+} from '@/server/domains/content/schema'
 import type { ContentRow, NewContent } from '@/server/infra/db/types'
 import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { db } from '@/server/infra/db/pool'
 import { content as contentTable, page as pageMetaTable, post as postMetaTable } from '@/server/infra/db/schema'
+import { DomainError } from '@/server/infra/http/errors'
 import { arePortableTextBodiesEquivalent } from '@/shared/pt/bridge/canonicalize'
-
-export type ContentType = 'page' | 'post'
 
 function metaTableFor(type: ContentType) {
   return type === 'page' ? pageMetaTable : postMetaTable
@@ -55,20 +61,6 @@ export async function listRevisions(type: ContentType, ownerId: bigint): Promise
     .orderBy(desc(contentTable.revisionNo))
 }
 
-export interface SaveDraftInput {
-  ownerId: bigint
-  body: unknown
-  imageSources: string[]
-  headings: unknown
-  authorId: bigint | null
-  expectedClientRevisionToken?: string | null
-  force?: boolean
-}
-
-export type SaveDraftResult =
-  | { status: 'saved'; row: ContentRow }
-  | { status: 'conflict'; latest: ContentRow; expectedToken: string }
-
 export async function saveDraftRevision(type: ContentType, input: SaveDraftInput): Promise<SaveDraftResult> {
   const metaTable = metaTableFor(type)
   return db.transaction(async (tx) => {
@@ -78,7 +70,7 @@ export async function saveDraftRevision(type: ContentType, input: SaveDraftInput
       .where(eq(metaTable.id, input.ownerId))
       .for('update')
     if (lockRows.length === 0) {
-      throw new Error(`${type} meta row ${input.ownerId} not found`)
+      throw new DomainError('NOT_FOUND', `${type} meta row ${input.ownerId} not found`)
     }
 
     const latestRows = await tx
@@ -156,14 +148,6 @@ export async function saveDraftRevision(type: ContentType, input: SaveDraftInput
   })
 }
 
-export interface PublishLatestInput extends SaveDraftInput {
-  publishedAt?: Date
-}
-
-export type PublishLatestResult =
-  | { status: 'published'; row: ContentRow }
-  | { status: 'conflict'; latest: ContentRow; expectedToken: string }
-
 export async function publishLatestRevision(
   type: ContentType,
   input: PublishLatestInput,
@@ -176,7 +160,7 @@ export async function publishLatestRevision(
       .where(eq(metaTable.id, input.ownerId))
       .for('update')
     if (lockRows.length === 0) {
-      throw new Error(`${type} meta row ${input.ownerId} not found`)
+      throw new DomainError('NOT_FOUND', `${type} meta row ${input.ownerId} not found`)
     }
 
     const latestRows = await tx

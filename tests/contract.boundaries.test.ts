@@ -785,7 +785,13 @@ describe('contract: module and bundle boundaries', () => {
       ) {
         return true
       }
-      if (file.startsWith('src/shared/pt/bridge/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
+      if (file.startsWith('src/shared/pt/') && (specifier.startsWith('./') || specifier.startsWith('../'))) {
+        return true
+      }
+      if (
+        file.startsWith('src/server/domains/content/') &&
+        (specifier.startsWith('./') || specifier.startsWith('../'))
+      ) {
         return true
       }
       if (file.startsWith('src/ui/admin/editor/tiptap/block-cards/') && specifier.startsWith('./')) {

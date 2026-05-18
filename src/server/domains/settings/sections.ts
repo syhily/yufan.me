@@ -10,6 +10,7 @@ import {
   contentSchema,
   fontsSchema,
   generalSchema,
+  limitsSchema,
   mailSchema,
   navigationSchema,
   rateLimitSchema,
@@ -244,6 +245,15 @@ export const SECTION_REGISTRY = {
     defaults: {
       scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
       retention: { enabled: true, days: 30 },
+    },
+  },
+  limits: {
+    scope: 'blog.limits',
+    schema: limitsSchema,
+    key: 'limits',
+    defaults: {
+      maxRequestBodySize: 10 * 1024 * 1024,
+      sessionMaxAge: 60 * 60 * 24 * 30,
     },
   },
 } as const satisfies Record<SettingsSection, SectionMeta>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 import type { PortableTextBody } from '@/shared/pt/schema'
 
@@ -95,11 +95,17 @@ beforeEach(() => {
   mocks.resolveSessionContext.mockImplementation(async () => ({ role: 'anonymous', user: null, session: null }))
 })
 
+let loadPagePreview: (typeof import('@/server/domains/pages/loader'))['loadPagePreview']
+
+beforeAll(async () => {
+  const mod = await import('@/server/domains/pages/loader')
+  loadPagePreview = mod.loadPagePreview
+})
+
 describe('loadPagePreview — slug redirect logic', () => {
   it('redirects to /posts/slug when a published post matches', async () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ slug: 'hello' }))
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     await expect(loadPagePreview(makeArgs('hello'))).rejects.toThrow()
     // The thrown response should be a 301 redirect
     try {
@@ -112,21 +118,18 @@ describe('loadPagePreview — slug redirect logic', () => {
   it('does not redirect for an unpublished post (published=false)', async () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ published: false }))
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     await expect(loadPagePreview(makeArgs('draft-post'))).rejects.toMatchObject({ status: 404 })
   })
 
   it('does not redirect for a deleted post (deletedAt set)', async () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ deletedAt: new Date() }))
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     await expect(loadPagePreview(makeArgs('deleted-post'))).rejects.toMatchObject({ status: 404 })
   })
 
   it('does not redirect for a scheduled post (publishedAt in future)', async () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ publishedAt: new Date('2099-01-01') }))
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     await expect(loadPagePreview(makeArgs('scheduled-post'))).rejects.toMatchObject({ status: 404 })
   })
 
@@ -134,7 +137,6 @@ describe('loadPagePreview — slug redirect logic', () => {
     const dbPage = makeDbPage({ slug: 'about', title: 'About' })
     mocks.findPageBySlug.mockImplementation(async () => dbPage)
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     const result = await loadPagePreview(makeArgs('about'))
 
     expect(result.page.title).toBe('About')
@@ -146,7 +148,6 @@ describe('loadPagePreview — slug redirect logic', () => {
     mocks.findPublicPostMetaBySlug.mockImplementation(async () => makePostMeta({ slug: 'collision' }))
     mocks.findPageBySlug.mockImplementation(async () => makeDbPage({ slug: 'collision' }))
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     try {
       await loadPagePreview(makeArgs('collision'))
       expect.unreachable('should have thrown')
@@ -160,7 +161,6 @@ describe('loadPagePreview — slug redirect logic', () => {
     mocks.loadPageDraftPreviewBySlug.mockImplementation(async () => ({ page: draftPage, hasNewerDraft: false }))
     mocks.tryGetSessionContext.mockReturnValue({ role: 'admin', user: { id: '1' }, session: {} })
 
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     const result = await loadPagePreview(makeArgs('new-page'))
 
     expect(result.draftMarker).toBe('draft')
@@ -168,7 +168,6 @@ describe('loadPagePreview — slug redirect logic', () => {
   })
 
   it('returns 404 when slug matches nothing and no admin session', async () => {
-    const { loadPagePreview } = await import('@/server/domains/pages/loader')
     await expect(loadPagePreview(makeArgs('nonexistent'))).rejects.toMatchObject({ status: 404 })
   })
 })

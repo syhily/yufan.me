@@ -114,6 +114,10 @@ export class ActionFailure extends Error {
 export const ErrorMessages = {
   FORBIDDEN: '权限不足，需要更高角色。',
   NOT_FOUND: '资源不存在。',
+  UNAUTHORIZED: '未登录',
+  INSUFFICIENT_PERMISSIONS: '权限不足',
+  INVALID_INPUT: '输入数据无效',
+  INTERNAL_SERVER_ERROR: '服务器内部错误',
 } as const
 
 // -----------------------------------------------------------------------------

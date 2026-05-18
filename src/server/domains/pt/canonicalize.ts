@@ -1,5 +1,7 @@
+import type { PortableTextBody } from '@/shared/pt/schema'
+
 import { prerenderPortableTextBody } from '@/server/domains/pt/prerender'
-import { validatePortableTextBody, type PortableTextBody } from '@/shared/pt/schema'
+import { validatePortableTextBody } from '@/shared/pt/utils'
 
 export async function canonicalizePortableTextBody(input: unknown): Promise<PortableTextBody> {
   const body = validatePortableTextBody(input)

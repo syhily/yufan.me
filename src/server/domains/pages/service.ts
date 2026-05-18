@@ -1,6 +1,6 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
-import type { PortableTextBody } from '@/shared/pt/schema'
 
+import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import {
   toAdminPageDto,
@@ -33,13 +33,12 @@ import {
   type PublishLatestResult,
   type SaveDraftResult,
 } from '@/server/domains/pages/repo'
-import { canonicalizePortableTextBody } from '@/server/domains/pt/canonicalize'
 import { commentCountsByOwnerIds, metricsByOwnerIds } from '@/server/infra/db/operations/like'
 import { ensureMetric } from '@/server/infra/db/operations/metric'
 import { DomainError } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 import { deriveSlug } from '@/server/infra/slug'
-import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
+import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/utils'
 
 // Audit logger for force-overwrite saves. Emits at info level so
 // admin actions stay visible in production without being noisy in
@@ -55,6 +54,7 @@ import { collectHeadings, collectImageStoragePaths } from '@/shared/pt/schema'
 //   - mode ('draft' | 'publish')
 //   - resultRevisionId (the row that ended up persisted)
 const auditLog = getLogger('audit.cms.pages')
+const log = getLogger('pages.service')
 
 // Service layer for the page CMS. Wraps the repository's transactional
 // state machines with input validation, ActionFailure surfacing, and
@@ -79,6 +79,9 @@ function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
     return false
   }
   if (!meta.published) {
+    return false
+  }
+  if (meta.publishedRevisionId === null) {
     return false
   }
   if (meta.publishedAt.getTime() > asOf.getTime()) {
@@ -477,7 +480,9 @@ async function savePageBodyInternal(input: SavePageBodyInput, mode: 'draft' | 'p
   // lockstep with the media library; external blocks are stripped of
   // any incidental `storagePath` so they aren't projected into
   // `image_sources`. Best-effort — failures don't block the save.
-  await syncLibraryImageBlocks(body).catch(() => undefined)
+  await syncLibraryImageBlocks(body).catch((err: unknown) => {
+    log.warn('sync library image blocks failed', { pageId: input.pageId, error: err })
+  })
   const imageSources = collectImageStoragePaths(body)
   const headings = collectHeadings(body, deriveSlug)
 
@@ -544,14 +549,6 @@ export function publishLatest(input: SavePageBodyInput): Promise<SavePageResult>
   return savePageBodyInternal(input, 'publish')
 }
 
-async function canonicalizeBodyOrThrow(value: unknown): Promise<PortableTextBody> {
-  try {
-    return await canonicalizePortableTextBody(value)
-  } catch (error) {
-    throw new DomainError('BAD_REQUEST', '正文格式不合法。', extractZodIssues(error))
-  }
-}
-
 function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SavePageResult {
   if (result.status === 'conflict') {
     return {
@@ -561,26 +558,6 @@ function projectSaveResult(result: SaveDraftResult | PublishLatestResult): SaveP
     }
   }
   return { status: 'saved', revision: toAdminRevisionDto(result.row) }
-}
-
-function extractZodIssues(error: unknown): { message: string; path?: string[] }[] | undefined {
-  // Zod errors expose `.issues`; everything else surfaces as a single
-  // generic message. We deliberately don't expose the raw payload so
-  // a malformed save doesn't echo the editor body back to the client
-  // (privacy + log noise).
-  if (typeof error !== 'object' || error === null) {
-    return undefined
-  }
-  const issues = (error as { issues?: unknown }).issues
-  if (!Array.isArray(issues)) {
-    return undefined
-  }
-  return issues
-    .filter((issue): issue is { message: string; path?: unknown[] } => typeof issue === 'object' && issue !== null)
-    .map((issue) => ({
-      message: typeof issue.message === 'string' ? issue.message : 'invalid body',
-      path: Array.isArray(issue.path) ? issue.path.map(String) : undefined,
-    }))
 }
 
 // --- Re-exports -------------------------------------------------------------

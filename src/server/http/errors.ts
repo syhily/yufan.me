@@ -5,7 +5,7 @@ import { ZodError } from 'zod'
 
 import type { Env } from '@/server/http/context'
 
-import { ActionFailure, DomainError, domainStatus } from '@/server/infra/http/errors'
+import { ActionFailure, DomainError, domainStatus, ErrorMessages } from '@/server/infra/http/errors'
 import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('http.error')
@@ -56,7 +56,7 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
     return c.json(
       {
         error: {
-          message: '输入数据无效',
+          message: ErrorMessages.INVALID_INPUT,
           issues: err.issues.map((i) => ({ message: i.message, path: i.path.map(String) })),
         },
       },
@@ -66,5 +66,5 @@ export function onErrorHandler(err: Error, c: Context<Env>): Response {
 
   log.error('unexpected', { requestId, error: err })
   c.header('X-Request-Id', requestId)
-  return c.json({ error: { message: '服务器内部错误' } }, 500)
+  return c.json({ error: { message: ErrorMessages.INTERNAL_SERVER_ERROR } }, 500)
 }

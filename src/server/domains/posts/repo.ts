@@ -13,7 +13,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 import { toListingPostCard, toSidebarPostLink } from '@/shared/types/catalog'
 import { shuffle } from '@/shared/utils/tools'
 
-export type { ContentType } from '@/server/domains/content-revisions'
+export type { ContentType } from '@/server/domains/content/schema'
 export {
   findContentById,
   findContentsByIds,
@@ -23,7 +23,7 @@ export {
   saveDraftRevision,
   publishLatestRevision,
   maxRevisionNo,
-} from '@/server/domains/content-revisions'
+} from '@/server/domains/content/repo'
 
 // --- Reads -------------------------------------------------------------------
 
@@ -220,9 +220,7 @@ export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Pro
     q = q.offset(filters.offset) as typeof q
   }
   const result = await q
-  // Defense-in-depth: if the SQL filter somehow slips a draft through,
-  // drop it before it reaches the public site.
-  return result.filter((meta) => meta.published)
+  return result
 }
 
 export async function countPublicPosts(

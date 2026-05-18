@@ -202,6 +202,7 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
     typeof value.retention === 'object' &&
     value.retention !== null &&
     typeof (value.retention as Record<string, unknown>).enabled === 'boolean',
+  limits: (value) => typeof value.maxRequestBodySize === 'number' && typeof value.sessionMaxAge === 'number',
 }
 
 // Project the canonical `BUNDLE_KEYS` list (mirrors `SETTINGS_SECTIONS`)

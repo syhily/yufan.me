@@ -5,7 +5,11 @@ import { createSession, createSessionStorage } from 'react-router'
 import type { Role } from '@/shared/utils/roles'
 
 import { SESSION_SECRET } from '@/server/infra/env'
+import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
+import { getBlogSettingsBundleSync } from '@/shared/config/blog'
+
+const log = getLogger('auth.session-storage')
 
 export type { Role } from '@/shared/utils/roles'
 
@@ -32,6 +36,12 @@ export type BlogSession = Session<BlogSessionData, BlogSessionData>
 
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30
 
+function resolveSessionMaxAge(): number {
+  const bundle = getBlogSettingsBundleSync()
+  const configured = bundle?.limits?.sessionMaxAge
+  return typeof configured === 'number' && configured > 0 ? configured : SESSION_MAX_AGE
+}
+
 const storage = createSessionStorage<BlogSessionData>({
   cookie: {
     name: '__session',
@@ -52,7 +62,12 @@ const storage = createSessionStorage<BlogSessionData>({
     if (!value) {
       return null
     }
-    return JSON.parse(value) as BlogSessionData
+    try {
+      return JSON.parse(value) as BlogSessionData
+    } catch {
+      log.warn('session parse failed', { id })
+      return null
+    }
   },
   async updateData(id, data, expires) {
     await writeSession(id, data, expires)
@@ -65,10 +80,11 @@ const storage = createSessionStorage<BlogSessionData>({
 async function writeSession(id: string, data: BlogSessionData, expires: Date | undefined): Promise<void> {
   const redis = redisInstance()
   const payload = JSON.stringify(data)
+  const ttl = resolveSessionMaxAge()
   if (expires) {
     await redis.set(`session:${id}`, payload, 'PXAT', expires.getTime())
   } else {
-    await redis.set(`session:${id}`, payload, 'EX', SESSION_MAX_AGE)
+    await redis.set(`session:${id}`, payload, 'EX', ttl)
   }
 }
 

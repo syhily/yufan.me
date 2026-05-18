@@ -5,7 +5,7 @@ import { CheckIcon, EraserIcon, XIcon } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 
 import { orpc } from '@/client/api/client'
-import { generateBlockKey } from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 import { useAdminMathPreview } from '@/ui/admin/editor/tiptap/use-admin-math-preview'
 import { Button } from '@/ui/components/button'
 import { Label } from '@/ui/components/label'

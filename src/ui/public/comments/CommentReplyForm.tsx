@@ -8,7 +8,7 @@ import type { FindAvatarOutput, ReplyCommentInput, ReplyCommentOutput } from '@/
 
 import { useMutation, orpcQuery } from '@/client/api/query'
 import { useCommentGuest } from '@/client/hooks/use-comment-guest'
-import { bodyToPlainText } from '@/shared/pt/schema'
+import { bodyToPlainText } from '@/shared/pt/utils'
 import { joinUrl } from '@/shared/utils/urls'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'

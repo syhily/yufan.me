@@ -1,8 +1,9 @@
 import { CodeIcon, ListIcon, ListOrderedIcon, QuoteIcon, SigmaIcon, Type as TypeIcon } from 'lucide-react'
 
+import type { Block } from '@/shared/pt/schema'
 import type { SlashCommand } from '@/ui/admin/editor/tiptap/SlashMenu'
 
-import { generateBlockKey, type Block } from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 
 // Slash command catalogue scoped to comment bodies. Mirrors the
 // shape of the admin catalogue (so the same `SlashCommandsExtension`

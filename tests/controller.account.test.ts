@@ -21,14 +21,14 @@ vi.mock('@/server/domains/auth/session-storage', () => ({
   revokeAllSessionsOfUser: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/server/domains/auth/sessions', () => ({
+vi.mock('@/server/domains/auth/repo', () => ({
   findSessionMeta: vi.fn(),
   revokeSessionById: vi.fn().mockResolvedValue(true),
 }))
 
 const { findUserById, updateUserById } = await import('@/server/infra/db/operations/user')
 const { revokeAllSessionsOfUser } = await import('@/server/domains/auth/session-storage')
-const { revokeSessionById } = await import('@/server/domains/auth/sessions')
+const { revokeSessionById } = await import('@/server/domains/auth/repo')
 const { accountRouter } = await import('@/server/http/controllers/account.controller')
 
 const dbUserStub = {

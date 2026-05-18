@@ -111,6 +111,10 @@ const fixture: BlogSettingsBundle = {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
     retention: { enabled: true, days: 30 },
   },
+  limits: {
+    maxRequestBodySize: 10 * 1024 * 1024,
+    sessionMaxAge: 60 * 60 * 24 * 30,
+  },
 }
 
 beforeAll(() => {

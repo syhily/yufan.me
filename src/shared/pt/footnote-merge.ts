@@ -1,11 +1,7 @@
+import type { FootnoteDefinitionBlock, NonRecursiveBlock, PortableTextBody, TextBlock } from '@/shared/pt/schema'
+
 import { synchronizeFootnoteIndices } from '@/shared/pt/bridge/nodes/footnote'
-import {
-  generateBlockKey,
-  type FootnoteDefinitionBlock,
-  type NonRecursiveBlock,
-  type PortableTextBody,
-  type TextBlock,
-} from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 
 export function extractFootnoteDefinitionBlocks(body: PortableTextBody): FootnoteDefinitionBlock[] {
   return body.filter((b): b is FootnoteDefinitionBlock => b._type === 'footnoteDefinition')

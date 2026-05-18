@@ -3,6 +3,7 @@ import { ORPCError, os } from '@orpc/server'
 import type { Env } from '@/server/http/context'
 
 import { hasAtLeast, type Role, type ViewerContext } from '@/server/domains/auth/rbac'
+import { ErrorMessages } from '@/server/infra/http/errors'
 
 // Context every oRPC procedure sees. The Hono `/rpc/*` bridge in
 // `app.ts` builds this from `c.var` after the perimeter middleware
@@ -41,7 +42,7 @@ const root = os.$context<HandlerContext>()
 const requireAuth = root.middleware(({ context, next }) => {
   const user = context.session.get('user')
   if (!user) {
-    throw new ORPCError('UNAUTHORIZED', { message: '未登录' })
+    throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
   }
   return next({
     context: {
@@ -56,10 +57,10 @@ function requireRole(role: Role) {
   return root.middleware(({ context, next }) => {
     const user = context.session.get('user')
     if (!user) {
-      throw new ORPCError('UNAUTHORIZED', { message: '未登录' })
+      throw new ORPCError('UNAUTHORIZED', { message: ErrorMessages.UNAUTHORIZED })
     }
     if (!hasAtLeast(user.role, role)) {
-      throw new ORPCError('FORBIDDEN', { message: '权限不足' })
+      throw new ORPCError('FORBIDDEN', { message: ErrorMessages.INSUFFICIENT_PERMISSIONS })
     }
     return next({
       context: {

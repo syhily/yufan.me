@@ -132,6 +132,10 @@ const fixtureBundle: BlogSettingsBundle = {
     scheduled: { enabled: false, frequency: 'daily', hour: 3, minute: 0 },
     retention: { enabled: true, days: 30 },
   },
+  limits: {
+    maxRequestBodySize: 10 * 1024 * 1024,
+    sessionMaxAge: 60 * 60 * 24 * 30,
+  },
 }
 
 // Decompose the bundle into the actual `Setting[]` rows the DB would
@@ -152,6 +156,7 @@ function bundleRows(bundle: BlogSettingsBundle): Setting[] {
     rateLimit: 'blog.rateLimit',
     search: 'blog.search',
     fonts: 'blog.fonts',
+    limits: 'blog.limits',
   }
   const rows: Setting[] = []
   let id = 1n

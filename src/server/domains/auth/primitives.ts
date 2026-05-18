@@ -1,6 +1,7 @@
 import type { User } from '@/server/infra/db/types'
 
 import { type Role } from '@/server/domains/auth/rbac'
+import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth/repo'
 import {
   type BlogSession,
   buildSessionWithSid,
@@ -9,7 +10,6 @@ import {
   revokeAllSessionsOfUser,
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
-import { recordSessionActivity, recordSessionLogin } from '@/server/domains/auth/sessions'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/infra/db/operations/user'
 import { redisInstance } from '@/server/infra/redis/storage'
 

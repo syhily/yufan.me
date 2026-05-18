@@ -4,7 +4,7 @@ import type { CmsPage } from '@/server/domains/pages/projection'
 import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
-import { findContentById, findContentsByIds } from '@/server/domains/content-revisions'
+import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { db } from '@/server/infra/db/pool'
 import { page as pageMetaTable, user } from '@/server/infra/db/schema'
@@ -19,12 +19,14 @@ export {
   maxRevisionNo,
   publishLatestRevision,
   saveDraftRevision,
-  type ContentType,
-  type PublishLatestInput,
-  type PublishLatestResult,
-  type SaveDraftInput,
-  type SaveDraftResult,
-} from '@/server/domains/content-revisions'
+} from '@/server/domains/content/repo'
+export type {
+  ContentType,
+  PublishLatestInput,
+  PublishLatestResult,
+  SaveDraftInput,
+  SaveDraftResult,
+} from '@/server/domains/content/schema'
 
 // --- Reads -------------------------------------------------------------------
 
@@ -177,13 +179,16 @@ export async function restorePageMeta(id: bigint): Promise<boolean> {
 // --- Hydrated queries (return public Page DTOs) ------------------------------
 
 function isCatalogVisible(
-  meta: { deletedAt: Date | null; published: boolean; publishedAt: Date },
+  meta: { deletedAt: Date | null; published: boolean; publishedRevisionId: bigint | null; publishedAt: Date },
   asOf: Date = new Date(),
 ): boolean {
   if (meta.deletedAt !== null) {
     return false
   }
   if (!meta.published) {
+    return false
+  }
+  if (meta.publishedRevisionId === null) {
     return false
   }
   if (meta.publishedAt.getTime() > asOf.getTime()) {

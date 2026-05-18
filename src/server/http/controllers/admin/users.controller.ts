@@ -1,8 +1,8 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod'
 
+import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/repo'
 import { revokeAllSessionsOfUser } from '@/server/domains/auth/session-storage'
-import { findSessionMeta, revokeSessionById } from '@/server/domains/auth/sessions'
 import { issueResetToken, issueSetupToken, revokeTokensFor } from '@/server/domains/auth/verification-tokens'
 import {
   bulkApproveCommentsForUser,

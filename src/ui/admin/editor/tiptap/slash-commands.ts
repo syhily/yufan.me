@@ -24,7 +24,7 @@ import {
 
 import type { Block } from '@/shared/pt/schema'
 
-import { generateBlockKey } from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 
 // Default `mathBlock` TeX when inserting from `/` — mirrors typical lecture
 // notes (`align*` derivations) rather than a one-line identity; authors

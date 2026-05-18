@@ -12,7 +12,7 @@ import { solutionBlockToPmNode } from '@/shared/pt/bridge/nodes/solution'
 import { tableBlockToPmNode } from '@/shared/pt/bridge/nodes/table'
 import { textBlockToPmNode } from '@/shared/pt/bridge/nodes/text'
 import { twoColumnBlockToPmNode } from '@/shared/pt/bridge/nodes/twoColumn'
-import { validatePortableTextBody } from '@/shared/pt/schema'
+import { validatePortableTextBody } from '@/shared/pt/utils'
 
 import type { PmDoc, PmNode, PmBlockNode } from './types'
 

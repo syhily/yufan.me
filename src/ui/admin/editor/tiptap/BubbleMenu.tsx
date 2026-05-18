@@ -15,7 +15,7 @@ import {
 import { useState } from 'react'
 
 import { orpc } from '@/client/api/client'
-import { generateBlockKey } from '@/shared/pt/schema'
+import { generateBlockKey } from '@/shared/pt/utils'
 import { MathInlinePanel } from '@/ui/admin/editor/tiptap/InlineMarkPanels'
 import { LinkPopover } from '@/ui/admin/editor/tiptap/LinkPopover'
 import { Button } from '@/ui/components/button'

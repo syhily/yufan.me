@@ -481,13 +481,9 @@ describe('cms/pages/service — public catalog projection', () => {
     expect(await service.loadCatalogPageBySlug('about')).toBeNull()
   })
 
-  it('loadCatalogPageBySlug emits an empty body when no revision has been published yet', async () => {
+  it('loadCatalogPageBySlug 404s when publishedRevisionId is null (no revision promoted)', async () => {
     vi.mocked(repo.findPublicPageMetaBySlug).mockResolvedValue(metaRow({ id: 1n, publishedRevisionId: null }))
-    const page = await service.loadCatalogPageBySlug('about')
-    expect(page?.body).toEqual([])
-    expect(page?.headings).toEqual([])
-    expect(page?.imageSources).toEqual([])
-    expect(repo.findContentById).not.toHaveBeenCalled()
+    expect(await service.loadCatalogPageBySlug('about')).toBeNull()
   })
 
   it('loadCatalogPageBySlug joins the published revision body when present', async () => {

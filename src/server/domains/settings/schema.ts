@@ -517,6 +517,22 @@ export const backupSchema = z
   })
 export type BackupInput = z.infer<typeof backupSchema>
 
+export const limitsSchema = z.object({
+  maxRequestBodySize: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(100 * 1024 * 1024)
+    .default(10 * 1024 * 1024),
+  sessionMaxAge: z.coerce
+    .number()
+    .int()
+    .min(60)
+    .max(365 * 24 * 60 * 60)
+    .default(60 * 60 * 24 * 30),
+})
+export type LimitsInput = z.infer<typeof limitsSchema>
+
 /** Bounds re-exported so the admin form can mirror them in `min`/`max` attributes. */
 export const RATE_LIMIT_BOUNDS = {
   windowSeconds: { min: RATE_LIMIT_MIN_WINDOW, max: RATE_LIMIT_MAX_WINDOW },

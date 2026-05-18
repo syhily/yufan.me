@@ -24,7 +24,8 @@ import {
   listPagesOutputDto,
 } from '@/shared/contracts/pages'
 import { adminRevisionDto } from '@/shared/contracts/revision'
-import { collectHeadings, portableTextBodySchema } from '@/shared/pt/schema'
+import { portableTextBodySchema } from '@/shared/pt/schema'
+import { collectHeadings } from '@/shared/pt/utils'
 
 const idInput = z.object({ id: z.string().min(1) })
 
