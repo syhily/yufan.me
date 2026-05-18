@@ -187,7 +187,11 @@ export interface ListPublicPostsFilters {
 }
 
 function buildPublicPostsWhere(filters: ListPublicPostsFilters): SQL {
-  const conditions: SQL[] = [isNull(postMetaTable.deletedAt), eq(postMetaTable.published, true)]
+  const conditions: SQL[] = [
+    isNull(postMetaTable.deletedAt),
+    eq(postMetaTable.published, true),
+    isNotNull(postMetaTable.publishedRevisionId),
+  ]
 
   if (!filters.includeHidden) {
     conditions.push(eq(postMetaTable.visible, true))
@@ -215,7 +219,10 @@ export async function listPublicPosts(filters: ListPublicPostsFilters = {}): Pro
   if (filters.offset !== undefined && filters.offset > 0) {
     q = q.offset(filters.offset) as typeof q
   }
-  return q
+  const result = await q
+  // Defense-in-depth: if the SQL filter somehow slips a draft through,
+  // drop it before it reaches the public site.
+  return result.filter((meta) => meta.published)
 }
 
 export async function countPublicPosts(
@@ -379,7 +386,7 @@ function buildPublicPostFilters(
 
 export async function findPostBySlug(slug: string): Promise<Post | null> {
   const meta = await findPublicPostMetaBySlug(slug)
-  if (meta === null || !meta.published) {
+  if (meta === null || !meta.published || meta.publishedRevisionId === null) {
     return null
   }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)
@@ -547,6 +554,7 @@ export async function selectFeaturePosts(seed: string): Promise<ClientPost[]> {
   const publicWhere = and(
     isNull(postMetaTable.deletedAt),
     eq(postMetaTable.published, true),
+    isNotNull(postMetaTable.publishedRevisionId),
     eq(postMetaTable.visible, true),
     sql`${postMetaTable.publishedAt} <= ${now}`,
   )
@@ -614,6 +622,7 @@ export async function selectSidebarPosts(count: number): Promise<SidebarPostLink
       and(
         isNull(postMetaTable.deletedAt),
         eq(postMetaTable.published, true),
+        isNotNull(postMetaTable.publishedRevisionId),
         eq(postMetaTable.visible, true),
         sql`${postMetaTable.publishedAt} <= ${new Date()}`,
       ),

@@ -70,6 +70,9 @@ function isCatalogVisible(meta: PostMetaRow, asOf: Date = new Date()): boolean {
   if (!meta.published) {
     return false
   }
+  if (meta.publishedRevisionId === null) {
+    return false
+  }
   if (meta.publishedAt.getTime() > asOf.getTime()) {
     return false
   }
