@@ -660,8 +660,9 @@ Landmines from past refactors. Do not reintroduce:
   `git status --short` and avoid mixing unrelated user changes.
 - Commit message: semantic `<type>: <summary>` or
   `<type>(<scope>): <summary>` (`feat`, `fix`, `docs`, `refactor`,
-  `test`, `chore`). ASCII colon + one space. Imperative English
-  summary. Multi-line: blank line after subject; bullets focused on
-  user-visible or reviewer-relevant changes.
+  `test`, `chore`). ASCII colon + one space. **All commit messages
+  MUST be in English** — imperative mood, lowercase subject, no
+  trailing period. Multi-line: blank line after subject; bullets
+  focused on user-visible or reviewer-relevant changes.
 - Before committing code changes, run `vp check`, `vp test run`, and
   `vp build`.
