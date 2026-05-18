@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type {
   ListMusicOutput,
   PublicMusicMeta,
@@ -104,8 +105,6 @@ export const updateMusicOutputDto = z.object({
 })
 
 // ─── parity assertions ─────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _publicMusicMetaParity = Assert<Equals<z.infer<typeof publicMusicMetaDto>, PublicMusicMeta>>
 type _listMusicOutputParity = Assert<Equals<z.infer<typeof listMusicOutputDto>, ListMusicOutput>>
 type _searchMusicOutputParity = Assert<Equals<z.infer<typeof searchMusicOutputDto>, SearchMusicOutput>>

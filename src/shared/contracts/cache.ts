@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type {
   AdminCacheStatsDto,
   CacheBucketStats,
@@ -45,8 +46,6 @@ export const clearCacheResultDto = z.object({
 })
 
 // ─── parity assertions ─────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _cacheBucketStatsParity = Assert<Equals<z.infer<typeof cacheBucketStatsDto>, CacheBucketStats>>
 type _reservedCacheBucketStatsParity = Assert<
   Equals<z.infer<typeof reservedCacheBucketStatsDto>, ReservedCacheBucketStats>

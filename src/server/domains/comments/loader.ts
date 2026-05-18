@@ -31,6 +31,35 @@ import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/conf
 import { groupBy } from '@/shared/utils/tools'
 const log = getLogger('comments.loader')
 
+// --- Metric helpers (shared with comments controller) ------------------------
+
+export interface MetricTarget {
+  type: 'post' | 'page'
+  ownerId: bigint
+}
+
+export async function resolveMetricTarget(key: string): Promise<MetricTarget> {
+  const row = await findMetricByPublicId(key)
+  if (row === null || row.type === null || row.ownerId === null) {
+    throw new DomainError('NOT_FOUND', '评论目标不存在')
+  }
+  if (row.type !== 'post' && row.type !== 'page') {
+    throw new DomainError('BAD_REQUEST', '无效的评论目标类型')
+  }
+  return { type: row.type, ownerId: row.ownerId }
+}
+
+export async function safeResolveMetricTarget(key: string): Promise<MetricTarget | null> {
+  const row = await findMetricByPublicId(key)
+  if (row === null || row.type === null || row.ownerId === null) {
+    return null
+  }
+  if (row.type !== 'post' && row.type !== 'page') {
+    return null
+  }
+  return { type: row.type, ownerId: row.ownerId }
+}
+
 function trimSiteSuffix(title: string | null): string {
   let trim = title ?? ''
   const siteTitle = requireBlogSettingsSection('siteIdentity').title

@@ -10,3 +10,7 @@ export const markdownHeadingDto = z.object({
   slug: z.string(),
   text: z.string(),
 })
+
+// ─── parity assertion helpers ──────────────────────────
+export type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
+export type Assert<T extends true> = T

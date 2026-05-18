@@ -197,6 +197,7 @@ export type { PortableTextBody } from '@/shared/pt/schema'
 export interface Post extends ClientPost {
   body: import('@/shared/pt/schema').PortableTextBody
   imageSources: string[]
+  publishedRevisionId: bigint | null
 }
 
 export interface Page extends ClientPage {
@@ -206,7 +207,7 @@ export interface Page extends ClientPage {
 }
 
 export function toClientPost(post: Post): ClientPost {
-  const { body: _body, imageSources: _imageSources, ...rest } = post
+  const { body: _body, imageSources: _imageSources, publishedRevisionId: _rev, ...rest } = post
   return rest
 }
 

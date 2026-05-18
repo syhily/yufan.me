@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminRevisionDto } from '@/shared/types/posts'
 
 import { idString, isoDateTime, markdownHeadingDto } from '@/shared/contracts/primitives'
@@ -18,7 +19,15 @@ export const adminRevisionDto = z.object({
   updatedAt: isoDateTime,
 })
 
+export const saveResultOutput = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
+  z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
+])
+
+export const previewOutputDto = z.object({
+  html: z.string(),
+  headings: z.array(markdownHeadingDto),
+})
+
 // ─── parity helpers ────────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _adminRevisionDtoParity = Assert<Equals<z.infer<typeof adminRevisionDto>, AdminRevisionDto>>

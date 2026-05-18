@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminPendingDashboardDto } from '@/shared/types/comments'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
@@ -75,6 +76,4 @@ export const adminCommentDto = commentBaseDto.extend({
 export type AdminCommentWire = z.infer<typeof adminCommentDto>
 
 // ─── parity assertion ──────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _adminPendingDashboardParity = Assert<Equals<z.infer<typeof adminPendingDashboardDto>, AdminPendingDashboardDto>>

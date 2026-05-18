@@ -7,7 +7,13 @@ import { issueCsrfToken } from '@/server/domains/auth/csrf'
 import { userSession } from '@/server/domains/auth/primitives'
 import { isCommentOwner } from '@/server/domains/auth/rbac'
 import { decreaseLikes, increaseLikes, queryLikes, validateLikeToken } from '@/server/domains/comments/likes'
-import { createComment, loadComments, parseComments } from '@/server/domains/comments/loader'
+import {
+  createComment,
+  loadComments,
+  parseComments,
+  resolveMetricTarget,
+  safeResolveMetricTarget,
+} from '@/server/domains/comments/loader'
 import { getCommentById, updateComment, updateOwnComment } from '@/server/domains/comments/moderation'
 import { asCommentItemWire, asCommentItemsWire } from '@/server/domains/comments/projection'
 import {
@@ -27,7 +33,6 @@ import {
   listMyComments,
   requestDeleteComment,
 } from '@/server/infra/db/operations/comment'
-import { findMetricByPublicId } from '@/server/infra/db/operations/metric'
 import { findUserIdByEmail } from '@/server/infra/db/operations/user'
 import {
   tryCommentPostRateLimit,
@@ -45,28 +50,6 @@ import { encodedEmail } from '@/shared/utils/security'
 import { joinUrl } from '@/shared/utils/urls'
 
 const COMMENT_HONEYPOT_MAX_LEN = 240
-
-async function resolveMetricTarget(key: string) {
-  const row = await findMetricByPublicId(key)
-  if (row === null || row.type === null || row.ownerId === null) {
-    throw new ORPCError('NOT_FOUND', { message: '评论目标不存在' })
-  }
-  if (row.type !== 'post' && row.type !== 'page') {
-    throw new ORPCError('BAD_REQUEST', { message: '无效的评论目标类型' })
-  }
-  return { type: row.type, ownerId: row.ownerId }
-}
-
-async function safeResolveMetricTarget(key: string) {
-  const row = await findMetricByPublicId(key)
-  if (row === null || row.type === null || row.ownerId === null) {
-    return null
-  }
-  if (row.type !== 'post' && row.type !== 'page') {
-    return null
-  }
-  return { type: row.type, ownerId: row.ownerId }
-}
 
 const successOutput = z.object({ success: z.boolean() })
 

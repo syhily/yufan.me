@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminImageDto, ListImagesOutput } from '@/shared/types/images'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
@@ -28,7 +29,5 @@ export const listImagesOutputDto = z.object({
 })
 
 // ─── parity assertions ─────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _adminImageDtoParity = Assert<Equals<z.infer<typeof adminImageDto>, AdminImageDto>>
 type _listImagesParity = Assert<Equals<z.infer<typeof listImagesOutputDto>, ListImagesOutput>>

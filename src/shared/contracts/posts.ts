@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminPostDetailDto, AdminPostDto, ListPostsOutput } from '@/shared/types/posts'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
@@ -50,8 +51,6 @@ export const listPostRevisionsOutputDto = z.object({
 })
 
 // ─── parity assertions ─────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _adminPostDtoParity = Assert<Equals<z.infer<typeof adminPostDto>, AdminPostDto>>
 type _adminPostDetailParity = Assert<Equals<z.infer<typeof adminPostDetailDto>, AdminPostDetailDto>>
 type _listPostsOutputParity = Assert<Equals<z.infer<typeof listPostsOutputDto>, ListPostsOutput>>

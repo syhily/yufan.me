@@ -315,7 +315,7 @@ async function hydratePostMetasToFullPosts(metas: PostMetaRow[]): Promise<Post[]
   }
   const posts = metas.map((meta) => {
     const revision = meta.publishedRevisionId === null ? null : (revisionMap.get(meta.publishedRevisionId) ?? null)
-    return toCmsPost(meta, revision) as unknown as Post
+    return toCmsPost(meta, revision)
   })
   await hydratePostImages(posts)
   return posts
@@ -368,6 +368,15 @@ export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
     permalink: `/posts/${meta.slug}`,
     headings: [],
     pinnedAt: meta.pinnedAt ?? undefined,
+  }
+}
+
+function toPostFromMeta(meta: PostMetaRow): Post {
+  return {
+    ...toClientPostFromMeta(meta),
+    body: [],
+    imageSources: [],
+    publishedRevisionId: meta.publishedRevisionId,
   }
 }
 
@@ -457,7 +466,7 @@ export async function listPublicPostCardsPaginated(
 export async function listPostsByCategory(category: string, options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts({ ...filters, category })
-  const posts = metas.map((meta) => toClientPostFromMeta(meta) as unknown as Post)
+  const posts = metas.map((meta) => toPostFromMeta(meta))
   await hydratePostImages(posts)
   return posts
 }
@@ -465,7 +474,7 @@ export async function listPostsByCategory(category: string, options?: PostVisibi
 export async function listPostsByTag(tag: string, options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts({ ...filters, tag })
-  const posts = metas.map((meta) => toClientPostFromMeta(meta) as unknown as Post)
+  const posts = metas.map((meta) => toPostFromMeta(meta))
   await hydratePostImages(posts)
   return posts
 }
@@ -488,7 +497,7 @@ export async function getPostsBySlugs(slugs: readonly string[], options?: PostVi
       const published = filters.includeScheduled || meta.publishedAt <= now
       return visible && published && meta.published
     })
-    .map((meta) => toClientPostFromMeta(meta) as unknown as Post)
+    .map((meta) => toPostFromMeta(meta))
   await hydratePostImages(posts)
   return posts
 }
@@ -496,7 +505,7 @@ export async function getPostsBySlugs(slugs: readonly string[], options?: PostVi
 export async function listAllPosts(options?: PostVisibilityOptions): Promise<Post[]> {
   const filters = buildPublicPostFilters(options)
   const metas = await listPublicPosts({ ...filters })
-  const posts = metas.map((meta) => toClientPostFromMeta(meta) as unknown as Post)
+  const posts = metas.map((meta) => toPostFromMeta(meta))
   await hydratePostImages(posts)
   return posts
 }

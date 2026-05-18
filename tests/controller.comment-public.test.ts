@@ -31,6 +31,8 @@ vi.mock('@/server/domains/comments/loader', () => ({
   loadComments: vi.fn(),
   parseComments: vi.fn().mockResolvedValue([]),
   createComment: vi.fn(),
+  resolveMetricTarget: vi.fn(),
+  safeResolveMetricTarget: vi.fn(),
 }))
 
 vi.mock('@/server/render/avatar/fetch', () => ({
@@ -76,14 +78,12 @@ vi.mock('@/shared/config/blog', () => ({
 }))
 
 const rateLimitMod = await import('@/server/infra/rate-limit')
-const metricMod = await import('@/server/infra/db/operations/metric')
 const loaderMod = await import('@/server/domains/comments/loader')
 const { commentsRouter } = await import('@/server/http/controllers/comments.controller')
 
 describe('commentsRouter.increaseLike', () => {
   it('throws TOO_MANY_REQUESTS when the per-IP rate limit is exceeded', async () => {
     vi.mocked(rateLimitMod.tryLikeIncreaseRateLimit).mockResolvedValueOnce({ exceeded: true } as never)
-    vi.mocked(metricMod.findMetricByPublicId).mockResolvedValue({ type: 'post', ownerId: 1n } as never)
     const ctx = makePublicCtx({ clientAddress: '1.2.3.4' })
     await expect(call(commentsRouter.increaseLike, { key: 'pk-1' }, { context: ctx })).rejects.toMatchObject({
       code: 'TOO_MANY_REQUESTS',
@@ -103,7 +103,10 @@ describe('commentsRouter.findAvatar', () => {
 
 describe('commentsRouter.loadComments', () => {
   it('throws NOT_FOUND when the metric public_id has no matching target', async () => {
-    vi.mocked(metricMod.findMetricByPublicId).mockResolvedValueOnce(null)
+    const { ORPCError } = await import('@orpc/server')
+    vi.mocked(loaderMod.resolveMetricTarget).mockRejectedValueOnce(
+      new ORPCError('NOT_FOUND', { message: '评论目标不存在' }),
+    )
     const ctx = makePublicCtx()
     await expect(
       call(commentsRouter.loadComments, { page_key: 'missing', offset: 0 }, { context: ctx }),
@@ -111,7 +114,7 @@ describe('commentsRouter.loadComments', () => {
   })
 
   it('throws BAD_GATEWAY when the comment loader fails', async () => {
-    vi.mocked(metricMod.findMetricByPublicId).mockResolvedValueOnce({ type: 'post', ownerId: 1n } as never)
+    vi.mocked(loaderMod.resolveMetricTarget).mockResolvedValueOnce({ type: 'post', ownerId: 1n })
     vi.mocked(loaderMod.loadComments).mockResolvedValueOnce(null)
     const ctx = makePublicCtx()
     await expect(

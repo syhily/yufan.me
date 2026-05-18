@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminCategoryDto } from '@/shared/types/categories'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
@@ -17,6 +18,4 @@ export const adminCategoryDto = z.object({
 })
 
 // ─── parity assertion ──────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _adminCategoryDtoParity = Assert<Equals<z.infer<typeof adminCategoryDto>, AdminCategoryDto>>

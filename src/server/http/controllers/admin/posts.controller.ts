@@ -28,15 +28,10 @@ import {
   listPostRevisionsOutputDto,
   listPostsOutputDto,
 } from '@/shared/contracts/posts'
-import { adminRevisionDto } from '@/shared/contracts/revision'
+import { previewOutputDto, saveResultOutput } from '@/shared/contracts/revision'
 import { collectHeadings } from '@/shared/pt/utils'
 
 const idInput = z.object({ id: z.string().min(1) })
-
-const saveResultOutput = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('saved'), revision: adminRevisionDto }),
-  z.object({ status: z.literal('conflict'), latest: adminRevisionDto, expectedToken: z.string() }),
-])
 
 const list = authorProc
   .route({ method: 'GET', path: '/admin/posts/list' })
@@ -126,12 +121,7 @@ const publishLatest = authorProc
 const preview = authorProc
   .route({ method: 'POST', path: '/admin/posts/preview' })
   .input(previewPostBodySchema)
-  .output(
-    z.object({
-      html: z.string(),
-      headings: z.array(z.object({ text: z.string(), depth: z.number(), slug: z.string() })),
-    }),
-  )
+  .output(previewOutputDto)
   .handler(async ({ input }) => {
     const html = await renderPostPortableTextToHtml(input.body)
     const headings = collectHeadings(input.body, deriveSlug)

@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import type { Assert, Equals } from '@/shared/contracts/primitives'
 import type { AdminTagDto } from '@/shared/types/tags'
 
 import { idString, isoDateTime } from '@/shared/contracts/primitives'
@@ -14,6 +15,4 @@ export const adminTagDto = z.object({
 })
 
 // ─── parity assertion ──────────────────────────────────
-type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false
-type Assert<T extends true> = T
 type _adminTagDtoParity = Assert<Equals<z.infer<typeof adminTagDto>, AdminTagDto>>
