@@ -127,7 +127,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
     directSaveDraft: (input) => orpc.admin.posts.saveDraft(input as never),
-    editPath: (id) => `/admin/posts/${id}/edit`,
+    editPath: (id) => `/editor/post/${id}`,
     navigate,
   })
 

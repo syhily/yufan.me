@@ -173,7 +173,7 @@ export function PostsView() {
           <Button
             type="button"
             render={
-              <Link to="/admin/posts/new">
+              <Link to="/editor/post/new">
                 <PlusIcon /> 新建文章
               </Link>
             }
@@ -466,7 +466,7 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
                 variant="outline"
                 size="sm"
                 render={
-                  <Link to={`/admin/posts/${post.id}/edit`}>
+                  <Link to={`/editor/post/${post.id}`}>
                     <FilePenIcon /> 编辑
                   </Link>
                 }

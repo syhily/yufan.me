@@ -81,7 +81,7 @@ function EmptyHomeState({ currentUser, hasSidebar }: { currentUser?: { role: str
               {canWrite ? '去写第一篇文章，开始你的博客之旅吧' : '博客正在建设中，敬请期待'}
             </div>
           </div>
-          {canWrite && <Button render={<Link to="/admin/posts/new" prefetch="intent" />}>新建文章</Button>}
+          {canWrite && <Button render={<Link to="/editor/post/new" prefetch="intent" />}>新建文章</Button>}
         </div>
       </div>
     </div>

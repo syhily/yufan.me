@@ -65,7 +65,7 @@ export function PageDetailBody({
             currentUser={currentUser}
             commentsEnabled={page.comments}
             admin={admin}
-            editHref={admin ? `/admin/pages/${page.id}/edit` : undefined}
+            editHref={admin ? `/editor/page/${page.id}` : undefined}
             draftMarker={draftMarker}
             postContentRef={postContentRef}
             metaClassName="mt-3 mb-4"

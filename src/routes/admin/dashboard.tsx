@@ -336,10 +336,10 @@ function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardPr
 function QuickActions() {
   return (
     <div className="flex flex-wrap gap-2">
-      <Button type="button" variant="outline" size="sm" render={<Link to="/admin/posts/new" />}>
+      <Button type="button" variant="outline" size="sm" render={<Link to="/editor/post/new" />}>
         <NotebookPenIcon data-icon className="size-4" /> 新建文章
       </Button>
-      <Button type="button" variant="outline" size="sm" render={<Link to="/admin/pages/new" />}>
+      <Button type="button" variant="outline" size="sm" render={<Link to="/editor/page/new" />}>
         <FileTextIcon data-icon className="size-4" /> 新建页面
       </Button>
       <Button type="button" variant="outline" size="sm" render={<Link to="/admin/library/images" />}>
@@ -443,7 +443,7 @@ function RecentPublishedCard({ posts }: { posts: DraftSummary[] }) {
         <ul className="mt-3 flex flex-col gap-2 text-sm">
           {posts.map((post) => (
             <li key={post.id} className="flex items-center justify-between gap-3">
-              <Link to={`/admin/posts/${post.id}/edit`} className="truncate text-foreground hover:underline">
+              <Link to={`/editor/post/${post.id}`} className="truncate text-foreground hover:underline">
                 {post.title || '(未命名)'}
               </Link>
               <time
@@ -476,7 +476,7 @@ function RecentDraftsCard({ drafts }: { drafts: DraftSummary[] }) {
         <ul className="mt-3 flex flex-col gap-2 text-sm">
           {drafts.map((draft) => (
             <li key={draft.id} className="flex items-center justify-between gap-3">
-              <Link to={`/admin/posts/${draft.id}/edit`} className="truncate text-foreground hover:underline">
+              <Link to={`/editor/post/${draft.id}`} className="truncate text-foreground hover:underline">
                 {draft.title || '(未命名草稿)'}
               </Link>
               <time

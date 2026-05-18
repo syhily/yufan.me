@@ -26,15 +26,18 @@ export default [
     route('admin/setup', 'routes/auth/setup/index.tsx'),
     route('admin/setup/settings', 'routes/auth/setup/settings.tsx'),
   ]),
+  // Editor shell — standalone layout for immersive editing.
+  layout('routes/editor/layout.tsx', [
+    route('editor/post/new', 'routes/editor/post/new.tsx'),
+    route('editor/post/:id', 'routes/editor/post/edit.tsx'),
+    route('editor/page/new', 'routes/editor/page/new.tsx'),
+    route('editor/page/:id', 'routes/editor/page/edit.tsx'),
+  ]),
   // Admin SPA shell — see README.md §G.
   layout('routes/admin/layout.tsx', [
     index('routes/admin/dashboard.tsx'),
     route('admin/posts', 'routes/admin/posts/index.tsx'),
-    route('admin/posts/new', 'routes/admin/posts/new.tsx'),
-    route('admin/posts/:id/edit', 'routes/admin/posts/edit.tsx'),
     route('admin/pages', 'routes/admin/pages/index.tsx'),
-    route('admin/pages/new', 'routes/admin/pages/new.tsx'),
-    route('admin/pages/:id/edit', 'routes/admin/pages/edit.tsx'),
     route('admin/comments', 'routes/admin/comments.tsx'),
     route('admin/categories', 'routes/admin/categories.tsx'),
     route('admin/tags', 'routes/admin/tags.tsx'),

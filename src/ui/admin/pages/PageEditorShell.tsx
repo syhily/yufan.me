@@ -119,7 +119,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
     directSaveDraft: (input) => orpc.admin.pages.saveDraft(input as never),
-    editPath: (id) => `/admin/pages/${id}/edit`,
+    editPath: (id) => `/editor/page/${id}`,
     navigate,
   })
 

@@ -118,7 +118,7 @@ export function PagesView() {
           <Button
             type="button"
             render={
-              <Link to="/admin/pages/new">
+              <Link to="/editor/page/new">
                 <PlusIcon /> 新建页面
               </Link>
             }
@@ -273,7 +273,7 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
                 variant="outline"
                 size="sm"
                 render={
-                  <Link to={`/admin/pages/${page.id}/edit`}>
+                  <Link to={`/editor/page/${page.id}`}>
                     <FilePenIcon /> 编辑
                   </Link>
                 }

@@ -214,12 +214,16 @@ interface AdminChromeContextValue {
 
 const AdminChromeContext = createContext<AdminChromeContextValue | null>(null)
 
+const NOOP_CHROME: AdminChromeContextValue = {
+  focused: false,
+  setFocused: () => {},
+  scrollTopLifted: false,
+  setScrollTopLifted: () => {},
+}
+
 export function useAdminChrome(): AdminChromeContextValue {
   const ctx = use(AdminChromeContext)
-  if (ctx === null) {
-    throw new Error('useAdminChrome must be used inside <AdminShell>')
-  }
-  return ctx
+  return ctx ?? NOOP_CHROME
 }
 
 /**
