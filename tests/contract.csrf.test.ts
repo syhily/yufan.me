@@ -32,14 +32,14 @@ describe('contract: CSRF cookie configuration', () => {
 
   it('has a TTL of at least 4 hours so long-lived admin sessions do not break', () => {
     // 60 * 60 * 4 = 14400 seconds
-    // The value may be a literal number or an expression like 60 * 60 * 4
-    expect(source).toMatch(/CSRF_TOKEN_TTL_SECONDS\s*=/)
-    const match = source.match(/CSRF_TOKEN_TTL_SECONDS\s*=\s*(.+)/)
+    const match = source.match(/CSRF_TOKEN_TTL_SECONDS\s*=\s*([\d\s*+\-/]+)/)
     expect(match).not.toBeNull()
-    const raw = match![1].trim()
-    // Evaluate the expression safely; if it's already a number this still works
-    const value =
-      /\d+/.test(raw) && !/[a-zA-Z_]/.test(raw) ? (new Function(`return (${raw})`)() as number) : Number(raw)
+    // Safe evaluation: only digits and * are expected (e.g. 60*60*4)
+    const expr = match![1].replace(/\s+/g, '')
+    const value = expr
+      .split('*')
+      .map(Number)
+      .reduce((a, b) => a * b, 1)
     expect(value).toBeGreaterThanOrEqual(14400)
   })
 
