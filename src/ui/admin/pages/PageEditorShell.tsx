@@ -257,7 +257,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
 
       <div
         className={cn(
-          'grid min-h-0 gap-4',
+          'mt-4 grid min-h-0 gap-4 md:mt-0',
           state.previewOpen ? 'flex-1' : 'grow',
           !state.previewOpen && state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)_360px]',
           !state.previewOpen && !state.metaOpen && 'lg:grid-cols-[minmax(0,1fr)]',
