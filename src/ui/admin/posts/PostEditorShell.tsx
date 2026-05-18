@@ -10,7 +10,6 @@ import {
   SaveIcon,
   SlidersHorizontalIcon,
   UploadIcon,
-  XIcon,
 } from 'lucide-react'
 import { Link } from 'react-router'
 
@@ -19,6 +18,7 @@ import type { AdminPostDetailDto, AdminPostDto } from '@/shared/types/posts'
 import { orpc } from '@/client/api/client'
 import { useCreatePostDraft } from '@/client/hooks/use-create-post-draft'
 import { usePostLocalDraft } from '@/client/hooks/use-post-local-draft'
+import { ActionBanner } from '@/ui/admin/editor-shell/ActionBanner'
 import { DraftConflictDialog } from '@/ui/admin/editor-shell/DraftConflictDialog'
 import { FloatingPublishButton } from '@/ui/admin/editor-shell/FloatingPublishButton'
 import { PreviewPane } from '@/ui/admin/editor-shell/PreviewPanel'
@@ -162,7 +162,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
               variant="ghost"
               size="sm"
               render={
-                <Link to={`/${detail.post.slug}`} target="_blank" rel="noreferrer">
+                <Link to={`/posts/${detail.post.slug}`} target="_blank" rel="noreferrer">
                   <ExternalLinkIcon />
                   <span className="sr-only lg:not-sr-only">公开预览</span>
                 </Link>
@@ -260,6 +260,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
         <ActionBanner
           kind={state.previewBanner.kind}
           slug={state.previewBanner.slug}
+          basePath="/posts"
           onClose={state.dismissPreviewBanner}
         />
       ) : null}
@@ -405,53 +406,6 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
           onChooseServer={state.adoptServerVersion}
         />
       ) : null}
-    </div>
-  )
-}
-
-interface ActionBannerProps {
-  kind: 'draft' | 'published'
-  slug: string
-  onClose: () => void
-}
-
-// Persistent banner shown after a manual 保存草稿 / 发布草稿
-// succeeds. The operator dismisses it manually; a follow-up
-// successful action replaces the banner in place.
-function ActionBanner({ kind, slug, onClose }: ActionBannerProps) {
-  const href = kind === 'draft' ? `/${slug}?draft=true` : `/${slug}`
-  const message =
-    kind === 'draft'
-      ? '草稿已保存，可通过下方链接预览最新内容（仅管理员可见草稿）：'
-      : '草稿已发布，可通过下方链接访问最新内容：'
-  const themeClass =
-    kind === 'draft'
-      ? 'border-status-warn-border/30 bg-status-warn-bg text-status-warn-fg'
-      : 'border-status-success-border/30 bg-status-success-bg text-status-success-fg'
-  const closeBtnClass =
-    kind === 'draft'
-      ? 'text-status-warn-fg/80 hover:bg-status-warn-border/20 hover:text-status-warn-fg'
-      : 'text-status-success-fg/80 hover:bg-status-success-border/20 hover:text-status-success-fg'
-  return (
-    <div
-      role="status"
-      className={cn('flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-xs', themeClass)}
-    >
-      <span>{message}</span>
-      <Link to={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono underline">
-        <ExternalLinkIcon className="size-3" />
-        {href}
-      </Link>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="关闭提示"
-        title="关闭提示"
-        className={cn('ml-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5', closeBtnClass)}
-      >
-        <XIcon className="size-3.5" />
-        <span>关闭</span>
-      </button>
     </div>
   )
 }

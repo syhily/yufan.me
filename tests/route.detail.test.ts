@@ -194,15 +194,21 @@ describe('routes/page.detail loader', () => {
   })
 
   it('301-redirects to /posts/:slug when a page slug actually belongs to a post', async () => {
-    await expect(
-      pageRoute.loader(
+    try {
+      await pageRoute.loader(
         makeLoaderArgs({
           request: new Request('http://localhost/hello'),
           session,
           params: { slug: 'hello' },
         }),
-      ),
-    ).rejects.toMatchObject({ status: 301 })
+      )
+      expect.unreachable('should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(Response)
+      const response = err as Response
+      expect(response.status).toBe(301)
+      expect(response.headers.get('Location')).toBe('/posts/hello')
+    }
   })
 
   it('404s when neither page nor post matches the slug', async () => {
