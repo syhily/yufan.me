@@ -71,6 +71,7 @@ export default [
       route('admin/settings/search', 'routes/admin/settings/search.tsx'),
       route('admin/settings/fonts', 'routes/admin/settings/fonts.tsx'),
       route('admin/settings/backup', 'routes/admin/settings/backup.tsx'),
+      route('admin/settings/limits', 'routes/admin/settings/limits.tsx'),
     ]),
   ]),
 ] satisfies RouteConfig
