@@ -14,10 +14,10 @@ import { hasAdmin } from '@/server/infra/db/operations/user'
 // `getInstallState()`:
 //
 //   noAdmin     — no admin user, regardless of settings row presence.
-//                 `/wp-admin/install.php`.
+//                 `/admin/setup`.
 //   noSettings  — admin row exists but at least one of the two install
 //                 rows (`blog.general` + `blog.assets`) is absent.
-//                 303s to `/wp-admin/install/settings.php`. The
+//                 303s to `/admin/setup/settings`. The
 //                 admin session.
 //   installed   — admin AND both install settings rows present.
 //
@@ -38,8 +38,8 @@ export type InstallState = 'noAdmin' | 'noSettings' | 'installed'
  * 1-row partial index in practice).
  *
  * Wrapped in `React.cache` so the `installGateMiddleware` and any
- * downstream loader (`/wp-admin/install.php`, `/wp-admin/install/settings.php`,
- * `/wp-login.php`) that calls `ensure…OrRedirect()` share a single
+ * downstream loader (`/admin/setup`, `/admin/setup/settings`,
+ * `/admin/signin`) that calls `ensure…OrRedirect()` share a single
  * resolution per render pass — see
  * `vercel-react-best-practices/server-cache-react`.
  */
@@ -59,7 +59,7 @@ export const getInstallState = cache(async function getInstallState(): Promise<I
 
 /**
  * Convenience: `true` iff the deployment has finished BOTH stages.
- * Other code (e.g. `wp-login.php`) only cares about the binary
+ * Other code (e.g. `/admin/signin`) only cares about the binary
  * "ready to log in?" question.
  */
 export async function isInstalled(): Promise<boolean> {
@@ -68,8 +68,8 @@ export async function isInstalled(): Promise<boolean> {
 
 /**
  *
- *   noSettings  → throw 303 → `/wp-admin/install/settings.php`.
- *   installed   → throw 303 → `/wp-login.php`.
+ *   noSettings  → throw 303 → `/admin/setup/settings`.
+ *   installed   → throw 303 → `/admin/signin`.
  */
 export async function ensureNoAdminOrRedirect(): Promise<null> {
   const state = await getInstallState()
@@ -77,16 +77,16 @@ export async function ensureNoAdminOrRedirect(): Promise<null> {
     return null
   }
   if (state === 'noSettings') {
-    throw redirect('/wp-admin/install/settings.php', { status: 303 })
+    throw redirect('/admin/install/settings.php', { status: 303 })
   }
-  throw redirect('/wp-login.php', { status: 303 })
+  throw redirect('/admin/signin', { status: 303 })
 }
 
 /**
  *
- *   noAdmin     → throw 303 → `/wp-admin/install.php`.
+ *   noAdmin     → throw 303 → `/admin/setup`.
  *                 that the request is authenticated as admin).
- *   installed   → throw 303 → `/wp-login.php`.
+ *   installed   → throw 303 → `/admin/signin`.
  */
 export async function ensureNoSettingsOrRedirect(): Promise<null> {
   const state = await getInstallState()
@@ -94,15 +94,15 @@ export async function ensureNoSettingsOrRedirect(): Promise<null> {
     return null
   }
   if (state === 'noAdmin') {
-    throw redirect('/wp-admin/install.php', { status: 303 })
+    throw redirect('/admin/install.php', { status: 303 })
   }
-  throw redirect('/wp-login.php', { status: 303 })
+  throw redirect('/admin/signin', { status: 303 })
 }
 
 /**
- * Loader/action helper for `/wp-login.php`.
+ * Loader/action helper for `/admin/signin`.
  *
- *   noAdmin     → throw 303 → `/wp-admin/install.php` (nothing to log
+ *   noAdmin     → throw 303 → `/admin/setup` (nothing to log
  *                 into yet — go create the first admin).
  *   noSettings  → resolve, render the login form (the user can log in,
  *                 immediately afterwards).
@@ -111,7 +111,7 @@ export async function ensureNoSettingsOrRedirect(): Promise<null> {
 export async function ensureInstalledOrRedirect(): Promise<null> {
   const state = await getInstallState()
   if (state === 'noAdmin') {
-    throw redirect('/wp-admin/install.php', { status: 303 })
+    throw redirect('/admin/install.php', { status: 303 })
   }
   return null
 }

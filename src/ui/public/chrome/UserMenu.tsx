@@ -46,21 +46,21 @@ export function UserMenu({ currentUser, logoutQuery }: Props) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           render={
-            <Link to="/wp-admin/my/comments" prefetch="intent">
+            <Link to="/admin/me/comments" prefetch="intent">
               <MessageSquareIcon /> 我的评论
             </Link>
           }
         />
         <DropdownMenuItem
           render={
-            <Link to="/wp-admin/my/sessions" prefetch="intent">
+            <Link to="/admin/me/sessions" prefetch="intent">
               <MonitorIcon /> 登录设备
             </Link>
           }
         />
         <DropdownMenuItem
           render={
-            <Link to="/wp-admin/my/profile" prefetch="intent">
+            <Link to="/admin/me/profile" prefetch="intent">
               <UserIcon /> 个人信息
             </Link>
           }
@@ -68,7 +68,7 @@ export function UserMenu({ currentUser, logoutQuery }: Props) {
         {canEnterAdmin && (
           <DropdownMenuItem
             render={
-              <Link to="/wp-admin/" prefetch="intent">
+              <Link to="/admin/" prefetch="intent">
                 <SettingsIcon /> 管理后台
               </Link>
             }
@@ -77,7 +77,7 @@ export function UserMenu({ currentUser, logoutQuery }: Props) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           render={
-            <a href={`/wp-login.php?${logoutQuery}`}>
+            <a href={`/admin/signin?${logoutQuery}`}>
               <LogOutIcon /> 登出
             </a>
           }

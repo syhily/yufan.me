@@ -15,7 +15,7 @@ import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 //      compiled `public.css` chunk in `<Links />` during SSR, eliminating
 //      the FOUC that occurs when stylesheets ride a `React.lazy()` chunk.
 //
-//   2. The wp-admin SPA never touches this file (its layout imports
+//   2. The admin SPA never touches this file (its layout imports
 //      `tailwind.css` directly), so the admin chunk stays Bootstrap-free.
 //      The login / install split-screen also imports `tailwind.css`
 //      through `routes/auth/layout.tsx`, sharing admin tokens without
@@ -24,7 +24,7 @@ import { BaseLayout } from '@/ui/public/chrome/BaseLayout'
 // IMPORTANT: do not re-export `PublicChrome` (or any binding from this
 // module) from `@/root` or `@/ui/public/chrome/BaseLayout`. A re-export
 // statically pins the module — the live binding must be observable —
-// which would drag `public.css` into the wp-admin chunk and break the
+// which would drag `public.css` into the admin chunk and break the
 // cascade contract documented in `tailwind.css` (the un-layered
 // `button { padding: 0; border: none }` rule from `reset.css` would
 // then beat the layered `px-5` / `border` utilities, stripping

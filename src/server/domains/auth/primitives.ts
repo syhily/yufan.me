@@ -97,7 +97,7 @@ export async function establishLoginSession(
   await updateLastLogin(dbUser.id, clientAddress, userAgent)
   await redisInstance().sadd(`user_sessions:${dbUser.id}`, sid)
   // Persist the per-session metadata that powers /my/sessions and
-  // /wp-admin/sessions. Best-effort: any Redis hiccup here would
+  // /admin/security/sessions. Best-effort: any Redis hiccup here would
   // otherwise force a fresh login to fail, even though the cookie is
   // already valid. We log and continue.
   try {

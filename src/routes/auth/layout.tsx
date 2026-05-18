@@ -7,7 +7,7 @@ import { AdminErrorFallback } from '@/ui/admin/shell/AdminErrorFallback'
 import { useSiteIdentityOptional } from '@/ui/lib/blog-config-context'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 // The login / install screen is admin chrome — same shadcn / Tailwind v4
-// cascade the wp-admin SPA uses, so import `tailwind.css` directly. This
+// cascade the admin SPA uses, so import `tailwind.css` directly. This
 // keeps the public-site Bootstrap cascade (`public.css`) and the
 // historical `admin.css` Bootstrap split-screen rules out of this route's
 // chunk, matching the project's "admin pages do not load public.css"
@@ -21,7 +21,7 @@ export const handle: RouteHandle = { layout: 'admin' }
 export { AdminErrorFallback as ErrorBoundary }
 
 export default function AdminLayoutRoute() {
-  // Defensive cleanup mirroring the wp-admin SPA: when the user reaches
+  // Defensive cleanup mirroring the admin SPA: when the user reaches
   // this route via a client-side navigation from the public site, RR
   // keeps the public `public.css` <link> attached to <head>. The
   // un-layered Bootstrap reset would otherwise smother every shadcn

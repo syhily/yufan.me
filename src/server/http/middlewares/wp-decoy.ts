@@ -3,9 +3,9 @@ import { createMiddleware } from 'hono/factory'
 import type { Env } from '@/server/http/context'
 
 // WordPress probe detector. The site borrows the WordPress URL shape for
-// its real admin (`/wp-login.php`, `/wp-admin`, the two-stage install
-// pair `/wp-admin/install.php` + `/wp-admin/install/settings.php`, plus
-// the SPA sub-routes mounted under `/wp-admin/*`); every other request
+// its real admin (`/admin/signin`, `/admin`, the two-stage install
+// pair `/admin/install.php` + `/admin/install/settings.php`, plus
+// the SPA sub-routes mounted under `/admin/*`); every other request
 // that *looks* like a WordPress install is almost certainly an
 // automated scanner. We answer those with a HTTP 404 plus a custom
 // "this is not a WordPress site" view rather than the generic 404.
@@ -14,22 +14,16 @@ import type { Env } from '@/server/http/context'
 // `ErrorBoundary` reads to switch from the regular 404 view to
 // `<NotWordPressView />`.
 
-const LEGIT_WP_PATHS = new Set([
-  '/wp-login.php',
-  '/wp-admin',
-  '/wp-admin/',
-  '/wp-admin/install.php',
-  '/wp-admin/install/settings.php',
-])
+const LEGIT_WP_PATHS = new Set(['/admin/signin', '/admin', '/admin/', '/admin/setup', '/admin/setup/settings'])
 
 export function isWordPressDecoyPath(pathname: string): boolean {
   if (LEGIT_WP_PATHS.has(pathname)) {
     return false
   }
 
-  // `/wp-admin/*` is the SPA admin shell. Everything the real shell ever
+  // `/admin/*` is the SPA admin shell. Everything the real shell ever
   // serves is a clean React Router path with no file extension
-  // (`/wp-admin/comments`, `/wp-admin/users`, `/wp-admin/users/123`).
+  // (`/admin/comments`, `/admin/users`, `/admin/users/123`).
   // The probes we want to keep intercepting under this prefix are
   // exclusively WordPress PHP entry points (e.g. `options.php`,
   // `setup-config.php`, `admin-ajax.php`, `network/setup-config.php`),

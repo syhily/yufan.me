@@ -7,7 +7,7 @@ import { cn } from '@/ui/lib/cn'
 
 // Scroll-to-top button for the public site. Becomes visible only once
 // the reader has moved past the initial viewport. The twin
-// `AdminScrollTopButton` in the wp-admin SPA uses shadcn tokens
+// `AdminScrollTopButton` in the admin SPA uses shadcn tokens
 // instead because admin chunks don't load `public.css`; the
 // scroll-position observer is shared through `useShowOnScroll` so
 // both widgets stay in lockstep.

@@ -20,7 +20,7 @@ export enum AvatarStatus {
 const avatarInflight = createInflight<Avatar | null>()
 
 // Prefix + TTL pulled from the live snapshot so an admin rename in
-// `/wp-admin/settings/cache` applies to the next read / write. Old keys
+// `/admin/settings/cache` applies to the next read / write. Old keys
 // under the previous prefix age out at their stored TTL.
 function avatarConfig(): { prefix: string; ttlSeconds: number } {
   return requireBlogSettingsSection('cache').cache.avatar

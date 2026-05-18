@@ -51,7 +51,7 @@ export async function deleteMusicObject(key: string): Promise<void> {
 export function buildMusicPublicUrl(storagePath: string): string {
   const publicBaseUrl = getPublicBaseUrl()
   if (publicBaseUrl === null) {
-    throw new ActionFailure(503, '请先在 /wp-admin/settings/assets 配置 S3 公共访问基地址')
+    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
   }
   const tail = storagePath.startsWith('/') ? storagePath.slice(1) : storagePath
   return `${publicBaseUrl}/${tail}`

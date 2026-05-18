@@ -8,11 +8,11 @@ import { ensureNoSettingsOrRedirect } from '@/server/domains/settings/install-ga
 // render. Anything that needs a `redirect()` or DB lookup lives here.
 
 /** Canonical URL for stage 2. Used both to build the
- *  `/wp-login.php?redirect_to=…` bounce target and for `meta()` `og:url`. */
-export const SETTINGS_INSTALL_PATH = '/wp-admin/install/settings.php'
+ *  `/admin/signin?redirect_to=…` bounce target and for `meta()` `og:url`. */
+export const SETTINGS_INSTALL_PATH = '/admin/install/settings.php'
 
 /** Built once so callers don't repeat the encodeURIComponent dance. */
-export const SETTINGS_INSTALL_LOGIN_BOUNCE = `/wp-login.php?redirect_to=${encodeURIComponent(SETTINGS_INSTALL_PATH)}`
+export const SETTINGS_INSTALL_LOGIN_BOUNCE = `/admin/signin?redirect_to=${encodeURIComponent(SETTINGS_INSTALL_PATH)}`
 
 interface RouteRequest {
   request: Request

@@ -2,7 +2,7 @@
 //
 // The `Intl.DateTimeFormat` instance can no longer be cached at module
 // scope because the locale / time zone come from the runtime DB-backed
-// blog config — the value an admin picks in `/wp-admin/settings/general`
+// blog config — the value an admin picks in `/admin/settings/general`
 // must take effect on the next render without restarting the server.
 //
 // Callers thread the relevant slice of the config in explicitly:

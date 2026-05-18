@@ -32,7 +32,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/wp-admin/install.php')
+    const res = await app.request('/admin/install.php')
     expect(res.status).toBe(200)
   })
 
@@ -41,7 +41,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/wp-admin/install.php.data', { method: 'POST' })
+    const res = await app.request('/admin/install.php.data', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 
@@ -50,7 +50,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/wp-admin/install/settings.php.data', { method: 'POST' })
+    const res = await app.request('/admin/install/settings.php.data', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 
@@ -59,7 +59,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue({ general: {}, assets: {} })
 
     const app = await createApp()
-    const res = await app.request('/wp-login.php.data', { method: 'POST' })
+    const res = await app.request('/admin/signin.data', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 
@@ -68,9 +68,9 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/wp-admin/some-other.php.data', { method: 'POST' })
+    const res = await app.request('/admin/some-other.php.data', { method: 'POST' })
     expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/wp-admin/install.php')
+    expect(res.headers.get('Location')).toBe('/admin/install.php')
   })
 
   it('redirects non-exempt requests in noSettings state', async () => {
@@ -80,7 +80,7 @@ describe('honoInstallGateMiddleware', () => {
     const app = await createApp()
     const res = await app.request('/dashboard')
     expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/wp-admin/install/settings.php')
+    expect(res.headers.get('Location')).toBe('/admin/install/settings.php')
   })
 
   it('redirects non-exempt requests in noAdmin state', async () => {
@@ -90,6 +90,6 @@ describe('honoInstallGateMiddleware', () => {
     const app = await createApp()
     const res = await app.request('/dashboard')
     expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/wp-admin/install.php')
+    expect(res.headers.get('Location')).toBe('/admin/install.php')
   })
 })

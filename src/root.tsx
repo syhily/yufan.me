@@ -25,7 +25,7 @@ import type { Route } from './+types/root'
 // the SSR `<Links />` output include the resolved stylesheet on first paint.
 // The root `ErrorBoundary` only fires for errors that propagate above the
 // route layouts (root middleware, root loader, or wp-decoy probes), so it
-// can afford to lazy-load the chrome — that keeps the wp-admin SPA chunk
+// can afford to lazy-load the chrome — that keeps the admin SPA chunk
 // free of `public.css` while still giving fatal-error pages real styling.
 //
 // IMPORTANT: do NOT re-export `PublicChrome` (or any binding from
@@ -40,7 +40,7 @@ const PublicChromeLazy = lazy(() =>
 // Order matters:
 //   1. Session middleware decrypts the cookie + populates request
 //      context.
-//   2. Install gate redirects to `/wp-admin/install.php` when the
+//   2. Install gate redirects to `/admin/install.php` when the
 //      deployment hasn't been installed yet (no admin user OR no
 //      `setting` row). Sits AFTER session so the gate's exemption list
 //      can be reasoned about against the same context every loader sees.
@@ -124,7 +124,7 @@ export function loader({ request, context }: Route.LoaderArgs) {
 // calls `useRevalidator()` after a successful oRPC mutation, so
 // admin saves through other tabs are already covered.
 export function shouldRevalidate({ formAction, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
-  if (formAction && (formAction.startsWith('/wp-login.php') || formAction.startsWith('/wp-admin/install'))) {
+  if (formAction && (formAction.startsWith('/admin/signin') || formAction.startsWith('/admin/install'))) {
     return defaultShouldRevalidate
   }
   return false
@@ -200,7 +200,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // all. There is no longer a render-time `globalThis` write here.
   //
   // The chrome is owned by the matched layout route (`public.layout.tsx`,
-  // `admin.layout.tsx`, or `wp-admin.layout.tsx`). The root just renders
+  // `admin.layout.tsx`, or `admin.layout.tsx`). The root just renders
   // the route tree wrapped in the per-section settings contexts that UI
   // components reach for through `useSiteIdentity()` /
   // `useFooterSettings()` / etc.

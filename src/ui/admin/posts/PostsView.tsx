@@ -173,7 +173,7 @@ export function PostsView() {
           <Button
             type="button"
             render={
-              <Link to="/wp-admin/posts/new">
+              <Link to="/admin/posts/new">
                 <PlusIcon /> 新建文章
               </Link>
             }
@@ -457,7 +457,7 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
                 title="查看评论"
                 className="w-20 justify-start"
                 render={
-                  <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}>
+                  <Link to={`/admin/comments?pageKey=${encodeURIComponent(post.commentPublicId)}`}>
                     <MessageSquareIcon /> {post.commentCount}
                   </Link>
                 }
@@ -466,7 +466,7 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
                 variant="outline"
                 size="sm"
                 render={
-                  <Link to={`/wp-admin/posts/${post.id}/edit`}>
+                  <Link to={`/admin/posts/${post.id}/edit`}>
                     <FilePenIcon /> 编辑
                   </Link>
                 }

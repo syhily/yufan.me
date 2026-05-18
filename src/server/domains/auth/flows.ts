@@ -167,7 +167,7 @@ export async function signUpInitialAdminWithSession({
   headers.append('Set-Cookie', await clearCsrfCookie(request))
   return {
     ok: true,
-    data: { redirectTo: '/wp-admin/install/settings.php' },
+    data: { redirectTo: '/admin/install/settings.php' },
     headers,
   }
 }
@@ -264,7 +264,7 @@ export async function seedInstallSettingsWithSession({
 
   return {
     ok: true,
-    data: { redirectTo: '/wp-admin/welcome' },
+    data: { redirectTo: '/admin/welcome' },
     headers: await commitHeaders(session, await clearCsrfCookie(request)),
   }
 }

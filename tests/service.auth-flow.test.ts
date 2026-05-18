@@ -92,7 +92,7 @@ function setCookieHeaders(headers: HeadersInit): string[] {
 async function buildSignedRequest(token: string): Promise<{ request: Request; token: string }> {
   const issued = token === '' ? await issueCsrfToken() : { token, setCookie: '' }
   const cookie = issued.setCookie === '' ? '' : issued.setCookie.split(';')[0]!
-  const request = new Request('http://localhost/wp-login.php', {
+  const request = new Request('http://localhost/admin/signin', {
     method: 'POST',
     headers: cookie ? { Cookie: cookie } : {},
   })
@@ -122,7 +122,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/admin',
     })
 
     expect(result.ok).toBe(true)
@@ -153,7 +153,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/admin',
     })
 
     expect(rateLimit.tryRateLimit).toHaveBeenCalledTimes(1)
@@ -171,7 +171,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/admin',
     })
 
     expect(result.ok).toBe(false)
@@ -192,7 +192,7 @@ describe('services/auth/flow — signInWithSession', () => {
       session: emptySession(),
       request,
       clientAddress: '127.0.0.1',
-      redirectTo: '/wp-admin',
+      redirectTo: '/admin',
     })
 
     expect(result.ok).toBe(false)
@@ -227,7 +227,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 
     expect(result.ok).toBe(true)
     if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/wp-admin/install/settings.php')
+      expect(result.data.redirectTo).toBe('/admin/install/settings.php')
     }
     expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@yufan.me', baseSeed.password)
     expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
@@ -258,7 +258,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       ...baseSeed,
       csrf: '',
       session: emptySession(),
-      request: new Request('http://localhost/wp-admin/install.php', { method: 'POST' }),
+      request: new Request('http://localhost/admin/install.php', { method: 'POST' }),
       clientAddress: '127.0.0.1',
     })
 
@@ -344,7 +344,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
 
     expect(result.ok).toBe(true)
     if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/wp-admin/welcome')
+      expect(result.data.redirectTo).toBe('/admin/welcome')
     }
     // user-driven rows (`blog.general` for the site identity AND the
     // locale/timeZone/timeFormat trio, `blog.assets` for the music CDN
@@ -352,7 +352,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // the remaining 9 rows come from the registry's per-section
     // `defaults` payloads. The S3 storage toggle defaults to OFF —
     // the admin opts in by flipping it on later from
-    // `/wp-admin/settings/assets`. Writing every row up front means
+    // `/admin/settings/assets`. Writing every row up front means
     // the very first public render after install can use the strict
     // per-section hooks (`useFooterSettings()`, `useNavigationSettings()`,
     // …) without throwing on a `null` bucket.
@@ -391,7 +391,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     expect(general?.data.asset).toBeUndefined()
     expect(general?.updatedBy).toBe(7n)
     // The seed payload MUST already satisfy `generalSchema` — the
-    // first thing the admin will do is open `/wp-admin/settings/general`
+    // first thing the admin will do is open `/admin/settings/general`
     // and click 保存, which re-validates the same row through the
     // strict per-section schema. A drifted seed would silently break
     // the very first edit. Spot-check the constraints that historically
@@ -413,7 +413,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // The install seed contributes the conservative S3 defaults
     // (toggle OFF, every bucket field empty) alongside the
     // user-supplied asset host. The admin opts into S3 later from
-    // `/wp-admin/settings/assets` once they have credentials ready.
+    // `/admin/settings/assets` once they have credentials ready.
     const assetsData = assets!.data as Record<string, unknown>
     const assetsStorage = assetsData.storage as Record<string, unknown>
     expect(assetsStorage.enabled).toBe(false)
@@ -446,7 +446,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
     // The rate-limit row's seeded buckets mirror the historical
     // hard-coded thresholds so an upgrading deployment behaves
     // identically until the admin tunes the caps from
-    // `/wp-admin/settings/rate-limit`.
+    // `/admin/settings/rate-limit`.
     const rateLimit = byScope.get('blog.rateLimit')?.data
     expect(rateLimit).toBeDefined()
     expect(rateLimit).toMatchObject({
@@ -461,7 +461,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
       expect(entry.updatedBy).toBe(7n)
     }
 
-    // The synchronous reader is force-refreshed so the `/wp-admin`
+    // The synchronous reader is force-refreshed so the `/admin`
     // redirect lands on a hydrated snapshot.
     expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledOnce()
     // session before calling this helper.
@@ -474,7 +474,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
       csrf: '',
       admin: adminCtx,
       session: emptySession(),
-      request: new Request('http://localhost/wp-admin/install/settings.php', { method: 'POST' }),
+      request: new Request('http://localhost/admin/install/settings.php', { method: 'POST' }),
     })
 
     expect(result.ok).toBe(false)

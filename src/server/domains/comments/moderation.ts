@@ -67,7 +67,7 @@ export async function updateComment(rid: string, newBody: CommentBody) {
 
 // Owner self-edit path (`comment.updateOwn`). Distinct from
 // `updateComment` so a moderator editing someone else's comment from
-// `/wp-admin/comments` neither flips the row back into the moderation
+// `/admin/comments` neither flips the row back into the moderation
 // queue nor fires another admin-notification email.
 //
 // Edits within `OWN_EDIT_GRACE_MS` of the original `createdAt` are
@@ -143,7 +143,7 @@ export async function searchAuthorOptions(
 // Welcome-dashboard moderation inbox. Same row shape across both queues
 // (approval / deletion) so the UI renders a single table — the
 // `kind` discriminator switches the action buttons. `excerpt` is a
-// 120-codepoint slice of the markdown snapshot (mirrors `wp-admin/my/comments`
+// 120-codepoint slice of the markdown snapshot (mirrors `admin/me/comments`
 // at a slightly larger cap so admins reading the dashboard get enough
 // context without expanding the row).
 const DASHBOARD_EXCERPT_LIMIT = 120

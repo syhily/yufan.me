@@ -12,6 +12,7 @@ interface RouteEntry {
   path?: string
   file: string
   id?: string
+  index?: boolean
 }
 
 function flatten(entries: unknown[]): RouteEntry[] {
@@ -66,14 +67,15 @@ describe('contract: public URL stability', () => {
     expect(paths.has('images/avatar/:hash.png')).toBe(false)
   })
 
-  it('WordPress compatibility URLs are still mounted (login + two-stage install)', () => {
+  it('admin URLs are mounted (signin + dashboard + setup + two-stage install)', () => {
     const paths = new Set(all.map((r) => r.path))
-    expect(paths.has('wp-login.php')).toBe(true)
-    expect(paths.has('wp-admin')).toBe(true)
+    expect(paths.has('admin/signin')).toBe(true)
+    // /admin is an index route under the admin layout (no path property)
+    expect(all.some((r) => r.index === true && r.file === 'routes/admin/dashboard.tsx')).toBe(true)
     // live on separate URLs so the install gate can route the user
     // through the right page based on `getInstallState()`.
-    expect(paths.has('wp-admin/install.php')).toBe(true)
-    expect(paths.has('wp-admin/install/settings.php')).toBe(true)
+    expect(paths.has('admin/setup')).toBe(true)
+    expect(paths.has('admin/setup/settings')).toBe(true)
   })
 
   it('post + page detail pages still match /posts/:slug and /:slug', () => {

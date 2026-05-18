@@ -16,7 +16,7 @@ export interface PaginationProps {
 // Visual contract is shared with the admin shell pagination
 // (`src/ui/components/pagination.tsx`). Both surfaces compose the
 // same `chipBase + chipResting/chipActive` Tailwind chains so a chip
-// reads identically in `/page/2` and in `/wp-admin/posts`, and share
+// reads identically in `/page/2` and in `/admin/posts`, and share
 // the same windowing algorithm (`computePageWindow` in
 // `@/shared/utils/pagination`) so the rendered chip sequence is identical
 // for any (current, total) tuple. The only differences are:

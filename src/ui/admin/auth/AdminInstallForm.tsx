@@ -11,7 +11,7 @@ export interface AdminInstallFormProps {
 }
 
 // `AdminCredentialsForm` (which serves the lightweight login flow at
-// `/wp-login.php`) because the install path's submission auto-logs the
+// `/admin/signin`) because the install path's submission auto-logs the
 // everything else.
 export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
   const navigation = useNavigation()

@@ -922,7 +922,7 @@ describe('contract: module and bundle boundaries', () => {
         (file) =>
           !file.startsWith('src/ui/admin/') &&
           !file.startsWith('src/routes/auth/') &&
-          !file.startsWith('src/routes/wp-admin/'),
+          !file.startsWith('src/routes/admin/'),
       )
       .filter((file) => /(?:bg|text|border)-\[#/.test(readFileSync(file, 'utf8')))
 

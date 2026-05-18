@@ -69,7 +69,7 @@ export default function PageDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
-      {/* CSRF anchor consumed by the oRPC client — see wp-admin.layout. */}
+      {/* CSRF anchor consumed by the oRPC client — see admin.layout. */}
       <meta name="csrf-token" content={detail.csrfToken} />
       <PageDetailBody
         page={page}

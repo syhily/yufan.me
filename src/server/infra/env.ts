@@ -39,7 +39,7 @@ export const env = createEnv({
 // Both the legacy `ZEABUR_MAIL_*` SMTP credentials and the original
 // `ASSET_HOST` / `ASSET_SCHEME` CDN env vars used to live here. They
 // have all been promoted to the DB-backed admin settings panel
-// (`/wp-admin/settings/mail` and `/wp-admin/settings/assets`) so an
+// (`/admin/settings/mail` and `/admin/settings/assets`) so an
 // editor can rotate keys, switch buckets, or change the public URL
 // without redeploying. The MDX compile pipeline no longer reads any
 // image config (the rehype plugin is gone — image metadata is now

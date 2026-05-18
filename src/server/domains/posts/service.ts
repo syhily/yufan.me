@@ -222,7 +222,7 @@ const RESERVED_POST_SLUGS = new Set<string>([
   'tags',
   'archives',
   'search',
-  'wp-admin',
+  'admin',
   'api',
   'feed',
   'sitemap.xml',

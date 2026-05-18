@@ -21,10 +21,10 @@ import type { Route } from './+types/layout'
 //      for every public URL — so the first paint is fully styled instead
 //      of flashing un-styled DOM while a `React.lazy()` chunk downloads.
 //
-//   2. ADMIN ISOLATION. The wp-admin SPA (and the legacy login/install
+//   2. ADMIN ISOLATION. The admin SPA (and the legacy login/install
 //      split-screen) sit OUTSIDE this layout, so neither React Router nor
 //      Vite ever pulls `public.css` into their chunks. The admin routes
-//      already own their own chrome through `routes/wp-admin.layout.tsx`
+//      already own their own chrome through `routes/admin/layout.tsx`
 //      and `routes/admin.layout.tsx`.
 //
 // Routes that need to opt out of the site footer (e.g. the page-detail

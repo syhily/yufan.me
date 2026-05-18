@@ -6,7 +6,7 @@
  * then delete this file:
  *   - tests/route.{listing,detail,wp-decoy,archives,page-detail-*,home}.test.ts
  *   - tests/service.{auth,auth-flow,auth-sessions}.test.ts
- *   - tests/route.wp-login{,-reset}.test.ts
+ *   - tests/route.signin{,-reset}.test.ts
  *   - tests/service.cms-pages.test.ts (if it still imports `@/server/session`)
  */
 

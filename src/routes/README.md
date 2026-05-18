@@ -34,9 +34,9 @@ src/routes/
 │   └── page/detail.tsx         # /:slug
 ├── auth/          # public split-screen layout: login + install
 │   ├── layout.tsx
-│   ├── wp-login.tsx
-│   └── install/{index,settings}.tsx
-└── wp-admin/      # the admin SPA shell
+│   ├── signin.tsx
+│   └── setup/{index,settings}.tsx
+└── admin/      # the admin SPA shell
     ├── layout.tsx, dashboard.tsx, welcome.tsx, …
     ├── users/{index,detail}.tsx
     ├── my/{profile,comments,sessions}.tsx
@@ -48,16 +48,16 @@ src/routes/
 
 Conventions inside an area directory:
 
-| Role file                | Meaning                                                                                                                 |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `<area>/layout.tsx`      | Pathless or pathed layout — owns chrome, error boundary, and revalidation policy for its children.                      |
-| `<entity>/detail.tsx`    | Single-resource page (e.g. `public/post/detail.tsx`, `public/page/detail.tsx`, `wp-admin/users/detail.tsx`).            |
-| `<entity>/list.tsx`      | Paginated listing — the same module is mounted twice in `routes.ts` (e.g. `/cats/:slug` AND `/cats/:slug/page/:num`).   |
-| `<entity>/index.tsx`     | The bare-prefix admin page when a sibling `new.tsx`/`edit.tsx`/`detail.tsx` already lives in the same directory.        |
-| `<entity>/new.tsx`       | Admin create form (`/wp-admin/<entity>/new`).                                                                           |
-| `<entity>/edit.tsx`      | Admin edit form (`/wp-admin/<entity>/:id/edit`).                                                                        |
-| `<area>/<role>.tsx`      | Flat role within an area — e.g. `public/home.tsx`, `public/not-found.tsx`, `wp-admin/welcome.tsx`, `auth/wp-login.tsx`. |
-| `<area>/redirect.<x>.ts` | Tiny redirect-only resource route (e.g. `my/redirect.profile.ts`).                                                      |
+| Role file                | Meaning                                                                                                               |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `<area>/layout.tsx`      | Pathless or pathed layout — owns chrome, error boundary, and revalidation policy for its children.                    |
+| `<entity>/detail.tsx`    | Single-resource page (e.g. `public/post/detail.tsx`, `public/page/detail.tsx`, `admin/users/detail.tsx`).             |
+| `<entity>/list.tsx`      | Paginated listing — the same module is mounted twice in `routes.ts` (e.g. `/cats/:slug` AND `/cats/:slug/page/:num`). |
+| `<entity>/index.tsx`     | The bare-prefix admin page when a sibling `new.tsx`/`edit.tsx`/`detail.tsx` already lives in the same directory.      |
+| `<entity>/new.tsx`       | Admin create form (`/admin/<entity>/new`).                                                                            |
+| `<entity>/edit.tsx`      | Admin edit form (`/admin/<entity>/:id/edit`).                                                                         |
+| `<area>/<role>.tsx`      | Flat role within an area — e.g. `public/home.tsx`, `public/not-found.tsx`, `admin/welcome.tsx`, `auth/signin.tsx`.    |
+| `<area>/redirect.<x>.ts` | Tiny redirect-only resource route (e.g. `my/redirect.profile.ts`).                                                    |
 
 When you add a new route, pick the area directory it belongs to,
 choose a role filename from the table above, and add the manifest
@@ -88,7 +88,7 @@ guarantees the very first paint is fully styled. **Do not** lazy-load
 both would reintroduce FOUC for the public surface.
 
 The admin / login / install / API routes live **outside** this
-layout on purpose: the wp-admin SPA chunk and the JSON resource
+layout on purpose: the admin SPA chunk and the JSON resource
 routes must not pull the public stylesheet cascade into their
 bundles.
 
@@ -149,21 +149,21 @@ and are mounted as oRPC procedures. They do **not** appear in
 `routes/auth/layout.tsx` owns the public-facing left/right
 split-screen layout shared by login, the stage-1 install (admin
 sign-up), and the stage-2 install (settings). These three routes
-share the same chrome but are **independent** of the wp-admin SPA
+share the same chrome but are **independent** of the admin SPA
 shell.
 
-### G. wp-admin SPA shell (`routes/wp-admin/layout.tsx`)
+### G. admin SPA shell (`routes/admin/layout.tsx`)
 
 The SPA admin shell owns its own chrome (sidebar + topbar) under
-`routes/wp-admin/layout.tsx`. It opts out of `BaseLayout` via
+`routes/admin/layout.tsx`. It opts out of `BaseLayout` via
 `handle.layout = 'admin'` and does **not** reuse the public
 login/install split-screen layout from section F.
 
-### H. Settings sub-layout (`routes/wp-admin/settings/layout.tsx`)
+### H. Settings sub-layout (`routes/admin/settings/layout.tsx`)
 
-Twelve `/wp-admin/settings/*` URLs share a single sub-layout that
+Twelve `/admin/settings/*` URLs share a single sub-layout that
 hydrates the full `BlogSettingsBundle` once and exposes the
 `{ settings, bundle, timeZones }` triple via `useOutletContext()`.
 The layout also asserts the bundle invariant up front (see
 `SettingsBundle` type) so child routes never have to handle a
-partial install.
+partial setup.

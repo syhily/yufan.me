@@ -19,7 +19,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 //                  so flipping the toggle off does not break public
 //                  pages that already reference uploaded images.
 
-const UPLOAD_DISABLED_MESSAGE = '图片上传未开启；请到 /wp-admin/settings/assets 打开「启用 S3 上传」并填写存储桶配置。'
+const UPLOAD_DISABLED_MESSAGE = '图片上传未开启；请到 /admin/settings/assets 打开「启用 S3 上传」并填写存储桶配置。'
 
 /** Returns the live storage settings, or throws `ActionFailure(503)` if the section is unseeded. */
 export function getImageStorage(): AssetsSettings['storage'] {
@@ -82,7 +82,7 @@ function ensureUploadReady(): void {
     throw new ActionFailure(503, UPLOAD_DISABLED_MESSAGE)
   }
   if (storage.secretAccessKey === '') {
-    throw new ActionFailure(503, '请先在 /wp-admin/settings/assets 配置 S3 Secret Access Key')
+    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 Secret Access Key')
   }
 }
 

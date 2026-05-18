@@ -127,7 +127,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
     },
     buildUpsertMetaPayload: buildPostUpsertPayload,
     directSaveDraft: (input) => orpc.admin.posts.saveDraft(input as never),
-    editPath: (id) => `/wp-admin/posts/${id}/edit`,
+    editPath: (id) => `/admin/posts/${id}/edit`,
     navigate,
   })
 
@@ -151,7 +151,7 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             variant="ghost"
             size="sm"
             render={
-              <Link to="/wp-admin/posts">
+              <Link to="/admin/posts">
                 <ArrowLeftIcon />
                 <span className="sr-only lg:not-sr-only">返回列表</span>
               </Link>

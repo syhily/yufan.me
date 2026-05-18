@@ -203,7 +203,7 @@ export function useCreatePostDraft({ body, meta }: UseCreatePostDraftOptions): U
       try {
         window.localStorage.setItem(editKey, JSON.stringify(editPayload))
         window.localStorage.removeItem(key)
-        // Also burn the per-tab session id so a fresh "/wp-admin/pages/new"
+        // Also burn the per-tab session id so a fresh "/admin/pages/new"
         // starts a clean slot rather than reviving the just-migrated
         // draft.
         window.sessionStorage.removeItem(SESSION_KEY)

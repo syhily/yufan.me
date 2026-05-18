@@ -119,7 +119,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
     },
     buildUpsertMetaPayload: buildPageUpsertPayload,
     directSaveDraft: (input) => orpc.admin.pages.saveDraft(input as never),
-    editPath: (id) => `/wp-admin/pages/${id}/edit`,
+    editPath: (id) => `/admin/pages/${id}/edit`,
     navigate,
   })
 
@@ -141,7 +141,7 @@ export function PageEditorShell({ mode, detail, navigate }: PageEditorShellProps
             variant="ghost"
             size="sm"
             render={
-              <Link to="/wp-admin/pages">
+              <Link to="/admin/pages">
                 <ArrowLeftIcon />
                 <span className="sr-only lg:not-sr-only">返回列表</span>
               </Link>

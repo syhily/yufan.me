@@ -76,7 +76,7 @@ export function PostDetailBody({
                 currentUser={currentUser}
                 commentsEnabled={post.comments}
                 admin={admin}
-                editHref={admin ? `/wp-admin/posts/${post.id}/edit` : undefined}
+                editHref={admin ? `/admin/posts/${post.id}/edit` : undefined}
                 draftMarker={draftMarker}
                 postContentRef={postContentRef}
                 metaClassName="mt-4 mb-3"

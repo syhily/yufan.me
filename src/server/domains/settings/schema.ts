@@ -19,7 +19,7 @@ const sortOrderSchema = z.enum(['asc', 'desc'])
 // `locale` is a BCP 47 tag (e.g. `zh-CN`); `timeZone` is an IANA name
 // (e.g. `Asia/Shanghai`); `timeFormat` is the project's small token
 // language consumed by `formatLocalDate` (`yyyy LL MM dd HH mm`). Date
-// fields live alongside site identity now so `/wp-admin/settings/general`
+// fields live alongside site identity now so `/admin/settings/general`
 // owns every "what does the site call itself, in what language" knob in
 // one place.
 export const generalSchema = z.object({

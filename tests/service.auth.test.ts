@@ -9,7 +9,7 @@ function requestWithCookie(setCookie: string): Request {
   // Strip everything after the value (no `Path`, `Max-Age`, etc.) so the
   // mock request looks like a real browser round-trip.
   const cookie = setCookie.split(';')[0]!
-  return new Request('http://localhost/wp-login.php', {
+  return new Request('http://localhost/admin/signin', {
     headers: { Cookie: cookie },
   })
 }
@@ -47,7 +47,7 @@ describe('services/auth/csrf — issue/validate (double-submit cookie)', () => {
 
   it('validateRequestCsrf rejects requests with no CSRF cookie', async () => {
     const { token } = await issueCsrfToken()
-    const [ok, message] = await validateRequestCsrf(new Request('http://localhost/wp-login.php'), token)
+    const [ok, message] = await validateRequestCsrf(new Request('http://localhost/admin/signin'), token)
     expect(ok).toBe(false)
     expect(message).toMatch(/Missing or expired CSRF cookie/)
   })

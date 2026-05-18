@@ -151,7 +151,7 @@ export async function updateUserById(id: bigint, patch: UserUpdate): Promise<Use
 
 // --- Admin user-management helpers ----------------------------------------
 //
-// Everything below this line is consumed by the wp-admin SPA only. The
+// Everything below this line is consumed by the admin SPA only. The
 // public site never references these helpers, so they can evolve
 // independently without worrying about the public bundle surface.
 

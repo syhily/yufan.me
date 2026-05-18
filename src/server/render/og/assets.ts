@@ -30,7 +30,7 @@ export function logoLight(): Buffer {
 // The TTFs used by `@napi-rs/canvas` (`og.ts` + `calendar.ts`) used to
 // live in the repo as `?binary` imports; the binary then sat embedded
 // in the server bundle as a ~60 MB z85+gzip string. They now live on a
-// CDN and the URL is admin-configurable at `/wp-admin/settings/fonts`.
+// CDN and the URL is admin-configurable at `/admin/settings/fonts`.
 //
 // Three layers of caching protect the SSR hot path:
 //

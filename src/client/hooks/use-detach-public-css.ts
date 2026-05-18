@@ -10,8 +10,8 @@ import { useEffect } from 'react'
 //
 // This hook closes that gap by detaching every public stylesheet on
 // mount and re-attaching them on unmount, so an SPA navigation back to
-// a public page keeps its styling. It is shared by the wp-admin SPA
-// layout and the wp-login / install split-screen layout — every route
+// a public page keeps its styling. It is shared by the admin SPA
+// layout and the signin / install split-screen layout — every route
 // that opts out of the public chrome via `handle.layout = "admin"`
 // must also opt into this hook.
 

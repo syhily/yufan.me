@@ -70,7 +70,7 @@ export interface SectionMeta<
 // install flow can write it through `upsertSetting` without any extra
 // massaging. Keep these values conservative — empty arrays / disabled
 // integrations / 1-day TTLs — so a fresh deployment looks "off" until
-// the admin opts into each surface from the matching `/wp-admin/
+// the admin opts into each surface from the matching `/admin/
 // settings/<section>` page. (`assets` and `general` carry `defaults: null`
 const navigationDefaults = { navigation: { sideNav: [], footerNav: [] } } as const
 const socialsDefaults = { socials: [] } as const
@@ -96,7 +96,7 @@ const commentsDefaults = {
     size: 10,
     // Gravatar's HTTPS endpoint is the historical default mirror; the
     // admin can swap in a regional mirror (e.g. `gravatar.loli.net`)
-    // from `/wp-admin/settings/comments` without dropping a row.
+    // from `/admin/settings/comments` without dropping a row.
     avatar: { mirror: 'https://www.gravatar.com/avatar', size: 80 },
     tokenTtlSeconds: 1800,
   },
@@ -121,7 +121,7 @@ const mailDefaults = {
 //
 // `image-meta:` is routed through Redis so SSR
 // replicas share warmth and so admins can clear them from
-// `/wp-admin/settings/cache`. The 5-minute LRU these replaced was a
+// `/admin/settings/cache`. The 5-minute LRU these replaced was a
 // process-local safety net — bumping the floor to 1 hour matches the
 // schema bound and is fine because both writers explicitly invalidate
 // on the underlying mutation (image upload / N/A respectively).
@@ -139,7 +139,7 @@ const cacheDefaults = {
 // Rate-limit defaults mirror the historical hard-coded values that
 // shipped before this surface was admin-editable, so an upgrading
 // deployment behaves identically until the admin opts to tune the
-// caps from `/wp-admin/settings/rate-limit`:
+// caps from `/admin/settings/rate-limit`:
 //
 //   * Sign-in IP — 5 attempts / 30 minutes (login lockout).
 //   * Comment IP — 12 attempts / 1 hour (anonymous comment spam wall).
@@ -185,7 +185,7 @@ export const SECTION_REGISTRY = {
   // requires a real `asset.host` (an empty default would never satisfy
   // and the registry contributes the conservative S3 starter (toggle
   // OFF, empty credentials, 8 MiB / quality 82) through the install
-  // seed below. The admin then opens `/wp-admin/settings/assets` to
+  // seed below. The admin then opens `/admin/settings/assets` to
   // flip the storage toggle on and supply credentials when ready.
   assets: { scope: 'blog.assets', schema: assetsSchema, key: 'assets', defaults: null },
   navigation: { scope: 'blog.navigation', schema: navigationSchema, key: 'navigation', defaults: navigationDefaults },
@@ -228,7 +228,7 @@ export const SECTION_REGISTRY = {
     key: 'fonts',
     // Empty defaults — every consumer degrades silently to fallback
     // system fonts until the admin pastes URLs at
-    // `/wp-admin/settings/fonts`. So a fresh install renders the
+    // `/admin/settings/fonts`. So a fresh install renders the
     // home / archives / OG image without throwing, just with system
     // typography.
     defaults: {
@@ -262,7 +262,7 @@ export const SECTION_REGISTRY = {
 // `blog.assets` row alongside the user-supplied `asset.host` / `asset.scheme`.
 // The toggle is OFF and the bucket fields are empty so a fresh install
 // never tries to ship to a non-existent S3 endpoint; the admin flips
-// the toggle on from `/wp-admin/settings/assets` after entering valid
+// the toggle on from `/admin/settings/assets` after entering valid
 // credentials.
 export const ASSETS_STORAGE_INSTALL_DEFAULTS = {
   storage: {

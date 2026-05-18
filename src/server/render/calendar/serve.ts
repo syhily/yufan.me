@@ -30,7 +30,7 @@ export async function serveCalendar(
   }
 
   // Read prefix + TTL from the live snapshot so admin renames in
-  // `/wp-admin/settings/cache` apply to the very next render. Dark
+  // `/admin/settings/cache` apply to the very next render. Dark
   // variants get a distinct cache key so the two themes don't clobber
   // each other under the same prefix.
   const cache = requireBlogSettingsSection('cache').cache.calendar

@@ -8,7 +8,7 @@ import { getLogger } from '@/server/infra/logger'
 
 const log = getLogger('install.gate')
 
-const EXEMPT_PATHS = new Set(['/wp-login.php', '/wp-admin/install.php', '/wp-admin/install/settings.php'])
+const EXEMPT_PATHS = new Set(['/admin/signin', '/admin/install.php', '/admin/install/settings.php'])
 
 const EXEMPT_PATH_PREFIXES = [
   '/assets/',
@@ -23,7 +23,7 @@ const EXEMPT_PATH_PREFIXES = [
 
 function isExempt(pathname: string): boolean {
   // React Router data requests append `.data` to the pathname (e.g.
-  // `/wp-admin/install.php.data`). Strip the suffix so the gate
+  // `/admin/install.php.data`). Strip the suffix so the gate
   // recognises exempt install / login routes and static assets.
   const basePath = pathname.replace(/\.data$/, '')
   if (EXEMPT_PATHS.has(basePath)) {
@@ -58,7 +58,7 @@ export const honoInstallGateMiddleware = createMiddleware<Env>(async (c, next) =
     return next()
   }
   if (state === 'noAdmin') {
-    return c.redirect('/wp-admin/install.php', 303)
+    return c.redirect('/admin/install.php', 303)
   }
-  return c.redirect('/wp-admin/install/settings.php', 303)
+  return c.redirect('/admin/install/settings.php', 303)
 })

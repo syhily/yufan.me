@@ -18,7 +18,7 @@ import { UserMenu } from '@/ui/public/chrome/UserMenu'
 // Importing `public.css` here would re-attach the Bootstrap reboot/grid/
 // utility cascade to every consumer of `<BaseLayout>` — including the
 // `<BaseLayout>` rendered by the root `ErrorBoundary`'s lazy chunk — and
-// would drag those bytes into the wp-admin SPA chunk through that lazy
+// would drag those bytes into the admin SPA chunk through that lazy
 // graph. Keep this file CSS-free; mount `<PublicChrome>` instead when you
 // need both the chrome AND the public stylesheet.
 

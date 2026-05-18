@@ -4,7 +4,7 @@ import { CalendarIcon, LogOutIcon, MonitorIcon, RefreshCwIcon, SearchIcon } from
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useRevalidator, useSearchParams } from 'react-router'
 
-import type { AdminSessionItem } from '@/routes/wp-admin/sessions'
+import type { AdminSessionItem } from '@/routes/admin/security/sessions'
 
 import { useMutation, orpcQuery } from '@/client/api/query'
 import { formatLocalDate } from '@/shared/utils/formatter'
@@ -140,7 +140,7 @@ export function SessionsView({ items, filters }: SessionsViewProps) {
           // JSON revoke API only does the former, which leaves the
           // browser holding a stale cookie pointing at a missing
           // Redis blob.
-          window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
+          window.location.href = '/admin/signin?action=logout&redirect_to=/admin/signin'
           return
         }
         revoke.mutate({ sessionId: item.sid })
@@ -277,7 +277,7 @@ function AdminSessionRow({ item, submitting, onRevoke, config }: RowProps) {
           </Avatar>
           <div className="flex min-w-0 flex-col gap-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <Link to={`/wp-admin/users/${item.userId}`} className="text-sm font-medium hover:underline">
+              <Link to={`/admin/users/${item.userId}`} className="text-sm font-medium hover:underline">
                 {item.userName}
               </Link>
               <span className="text-xs text-muted-foreground">{item.userEmail}</span>

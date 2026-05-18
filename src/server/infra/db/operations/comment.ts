@@ -410,7 +410,7 @@ export interface PageOption {
 // touched entities so the dropdown can show a sensible default the
 // moment the user opens it. `publicIds` is the "rehydrate selection
 // from URL" path: when the admin opened
-// `/wp-admin/comments?pageKey=<uuid>` we already know which metric row
+// `/admin/comments?pageKey=<uuid>` we already know which metric row
 // to pin, but need its `title` to render in the trigger.
 export async function searchPages(q: string | undefined, limit: number, publicIds?: string[]): Promise<PageOption[]> {
   const entity = targetSlugTitleSubquery()
@@ -703,7 +703,7 @@ export interface MyCommentsFilters {
   q?: string
   /**
    * Narrow the result to a specific post / page the user has commented
-   * on. URL-driven via `?entity=<type>:<ownerId>` on `/wp-admin/my/comments`.
+   * on. URL-driven via `?entity=<type>:<ownerId>` on `/admin/me/comments`.
    */
   entity?: { type: EntityType; ownerId: bigint }
 }
@@ -868,7 +868,7 @@ const MY_COMMENT_ENTITY_LIMIT = 20
 
 /**
  * Distinct posts / pages the user has commented on. Backs the
- * "按文章筛选" Combobox on `/wp-admin/my/comments`.
+ * "按文章筛选" Combobox on `/admin/me/comments`.
  *
  * Reuses `mineVisibleClause(userId)` as the base predicate so the
  * filter dropdown surfaces the same set of entities the comment list

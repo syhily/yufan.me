@@ -57,7 +57,7 @@ function PageEditorError({ message }: { message: string }) {
       <Button
         variant="outline"
         render={
-          <Link to="/wp-admin/pages">
+          <Link to="/admin/pages">
             <ArrowLeftIcon /> 返回列表
           </Link>
         }

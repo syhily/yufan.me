@@ -17,7 +17,7 @@ import {
 import { Label } from '@/ui/components/label'
 import { CommentBodyEditor, EMPTY_COMMENT_BODY, isCommentBodyBlank } from '@/ui/public/comments/CommentBodyEditor'
 
-// Self-edit dialog for `/wp-admin/my/comments`. Differs from the
+// Self-edit dialog for `/admin/me/comments`. Differs from the
 // admin `EditCommentDialog`:
 // - posts to `comment.updateOwn` (visitor-allowed) instead of `comment.edit` (admin)
 // - takes the body straight from the loader-provided `MyCommentItem.body`

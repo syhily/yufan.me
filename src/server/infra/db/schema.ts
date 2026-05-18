@@ -198,7 +198,7 @@ export const verification = pgTable(
 )
 
 // Friend links for the public grid (`<Friends />` in posts, `show_friends` on
-// pages). CRUD at `/wp-admin/friends`.
+// pages). CRUD at `/admin/friends`.
 //
 // Field design:
 // - No `slug`: the YAML's `slug` was an authoring shorthand only — the
@@ -231,7 +231,7 @@ export const friend = pgTable(
   (table) => [index('idx_friend_visible').on(table.visible), index('idx_friend_homepage').on(table.homepage)],
 )
 
-// Post category. CRUD at `/wp-admin/categories`. MDX references categories by
+// Post category. CRUD at `/admin/categories`. MDX references categories by
 // `name` (`UNIQUE`). `slug` drives `/cats/:slug` (`UNIQUE`). `sort_order`
 // orders `/categories`.
 //
@@ -258,7 +258,7 @@ export const category = pgTable(
   (table) => [index('idx_category_slug').on(table.slug), index('idx_category_sort_order').on(table.sortOrder)],
 )
 
-// Post tag. CRUD at `/wp-admin/tags`. MDX references tags by `name` (`UNIQUE`);
+// Post tag. CRUD at `/admin/tags`. MDX references tags by `name` (`UNIQUE`);
 // `slug` drives `/tags/:slug` (`UNIQUE`).
 export const tag = pgTable(
   'tag',
@@ -406,7 +406,7 @@ export const music = pgTable(
 //   the same transaction).
 // - `deleted_at` follows the soft-delete convention used by every
 //   other long-lived row (friend / image / music).
-//   `/wp-admin/pages/restore` flips it back to NULL.
+//   `/admin/pages/restore` flips it back to NULL.
 export const page = pgTable(
   'page',
   {
@@ -637,7 +637,7 @@ export type PostMetaRow = typeof post.$inferSelect
 export type NewPostMeta = typeof post.$inferInsert
 
 // Append-only time-series access log feeding the analytics dashboard
-// (`/wp-admin/analytics`). One row per non-bot SSR request to a content
+// (`/admin/analytics`). One row per non-bot SSR request to a content
 // route. Backed by a TimescaleDB hypertable created in the companion
 // `*_access_log_timescale` migration; the Drizzle definition only
 // declares the relational shape.

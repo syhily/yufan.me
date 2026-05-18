@@ -149,7 +149,7 @@ export async function tryCommentPostRateLimitByEmail(email: string): Promise<Rat
  * counter — only fresh inserts add `like` rows to the DB, so
  * gating insertion is the right shape to keep table growth
  * bounded. An admin who wants to relax the cap (e.g. a viral post)
- * can raise `maxAttempts` from `/wp-admin/settings/rate-limit`
+ * can raise `maxAttempts` from `/admin/settings/rate-limit`
  * without touching cancel flows.
  */
 export async function tryLikeIncreaseRateLimit(ip: string): Promise<RateLimitResult> {

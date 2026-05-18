@@ -160,7 +160,7 @@ export interface PageDraftPreview {
  * the empty array and `hasNewerDraft` is `false`.
  *
  * Soft-deleted rows still return `null`: an admin who wants the
- * deleted page back must restore it first from `/wp-admin/pages`.
+ * deleted page back must restore it first from `/admin/pages`.
  */
 export async function loadPageDraftPreviewBySlug(slug: string): Promise<PageDraftPreview | null> {
   const meta = await findPublicPageMetaBySlug(slug)
@@ -245,7 +245,7 @@ const RESERVED_PAGE_SLUGS = new Set<string>([
   'tags',
   'archives',
   'search',
-  'wp-admin',
+  'admin',
   'api',
   'feed',
   'sitemap.xml',

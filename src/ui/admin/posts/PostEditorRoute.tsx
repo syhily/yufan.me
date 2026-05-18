@@ -53,7 +53,7 @@ function PostEditorError({ message }: { message: string }) {
       <Button
         variant="outline"
         render={
-          <Link to="/wp-admin/posts">
+          <Link to="/admin/posts">
             <ArrowLeftIcon /> 返回列表
           </Link>
         }

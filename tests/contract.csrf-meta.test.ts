@@ -10,7 +10,7 @@ function readSource(relPath: string): string {
 }
 
 const clientSource = readSource('../src/client/api/client.ts')
-const adminLayoutSource = readSource('../src/routes/wp-admin/layout.tsx')
+const adminLayoutSource = readSource('../src/routes/admin/layout.tsx')
 const postDetailSource = readSource('../src/routes/public/post/detail.tsx')
 const pageDetailSource = readSource('../src/routes/public/page/detail.tsx')
 

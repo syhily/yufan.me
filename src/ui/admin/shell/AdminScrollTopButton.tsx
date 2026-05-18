@@ -21,11 +21,11 @@ export interface AdminScrollTopButtonProps {
   lifted?: boolean
 }
 
-// Floating "back to top" button for the wp-admin SPA. Mirrors the public
+// Floating "back to top" button for the admin SPA. Mirrors the public
 // site's `ScrollTopButton` but is rebuilt on shadcn primitives so it
-// stays Bootstrap-free (the wp-admin chunk does not load `public.css`).
+// stays Bootstrap-free (the admin chunk does not load `public.css`).
 //
-// Visibility follows `window` by default, or the wp-admin `<main>`
+// Visibility follows `window` by default, or the admin `<main>`
 // scrollport when `scrollRootRef` is passed (live preview focus mode).
 export function AdminScrollTopButton({ scrollRootRef, lifted = false }: AdminScrollTopButtonProps) {
   const show = useShowOnScroll(300, scrollRootRef)

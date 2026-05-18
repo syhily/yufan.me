@@ -136,7 +136,7 @@ export function PendingModerationPanel({ initial, emptyStateLine }: PendingModer
           <Button type="button" variant="ghost" size="sm" onClick={refresh} disabled={anyMutationPending}>
             <RefreshCwIcon data-icon /> <span className="hidden sm:inline">刷新</span>
           </Button>
-          <Button type="button" variant="ghost" size="sm" render={<Link to="/wp-admin/comments?status=pending" />}>
+          <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/comments?status=pending" />}>
             <span className="hidden sm:inline">进入评论管理</span> <ArrowRightIcon data-icon />
           </Button>
         </div>

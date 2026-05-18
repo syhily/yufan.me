@@ -21,7 +21,7 @@ import { requireBlogSettingsSection } from '@/shared/config/blog'
 // path still points at `/images/...` are also resolved as S3 keys.
 //
 // The lookup is fronted by a Redis-backed cache (the `image-meta`
-// bucket, manageable from `/wp-admin/settings/cache`) so a hot post
+// bucket, manageable from `/admin/settings/cache`) so a hot post
 // never hammers the DB AND so multiple SSR replicas share the warm
 // rows. Concurrent loads for the same `storagePath` collapse to a
 // single DB round-trip via `createInflight` — the per-process layer
@@ -62,7 +62,7 @@ function rowToCached(row: ImageRow): CachedImageMetaPresent {
 }
 
 // Bucket prefix + TTL pulled from the live snapshot so an admin
-// rename in `/wp-admin/settings/cache` applies on the next read /
+// rename in `/admin/settings/cache` applies on the next read /
 // write. Old keys under the previous prefix age out at their stored
 // TTL — there's no migration step.
 function bucket(): { prefix: string; ttlSeconds: number } {
@@ -326,7 +326,7 @@ function appendCacheBuster(url: string, version: number): string {
 export function buildPublicUrl(storagePath: string): string {
   const publicBaseUrl = getPublicBaseUrl()
   if (publicBaseUrl === null) {
-    throw new ActionFailure(503, '请先在 /wp-admin/settings/assets 配置 S3 公共访问基地址')
+    throw new ActionFailure(503, '请先在 /admin/settings/assets 配置 S3 公共访问基地址')
   }
   const tail = storagePath.startsWith('/') ? storagePath.slice(1) : storagePath
   return `${publicBaseUrl}/${tail}`

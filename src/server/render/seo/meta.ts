@@ -24,7 +24,7 @@ import { extractXHandle, getBlogSettingsBundleSync } from '@/shared/config/blog'
 import { joinUrl } from '@/shared/utils/urls'
 
 // Minimal sentinel rendered before the install flow has populated the
-// settings row. The wp-admin SPA never reaches `routeMeta` (it owns its
+// settings row. The admin SPA never reaches `routeMeta` (it owns its
 // own meta), so the only consumer is the install split-screen — a few
 // generic tags is plenty until the editor finishes installing.
 const PRE_INSTALL_TITLE = '正在安装'

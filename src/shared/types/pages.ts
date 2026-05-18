@@ -1,7 +1,7 @@
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/types/catalog'
 
-// Wire-format DTOs and request shapes for the `/wp-admin/pages` editor +
+// Wire-format DTOs and request shapes for the `/admin/pages` editor +
 // the `/api/admin/list-pages` oRPC procedure. Lives in
 // `@/shared` so server (admin actions, service layer) and client
 // (admin UI fetcher hooks) import the same shape without crossing the
@@ -53,7 +53,7 @@ export interface AdminPageDto {
   /**
    * The page's `metric.public_id` UUID — the opaque wire identifier the
    * admin comment-count link uses to deep-link into
-   * `/wp-admin/comments?pageKey=<uuid>`. Empty string on detail / save
+   * `/admin/comments?pageKey=<uuid>`. Empty string on detail / save
    * paths that don't fan out a metric upsert.
    */
   commentPublicId: string

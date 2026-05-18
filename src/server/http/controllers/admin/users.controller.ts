@@ -211,7 +211,7 @@ const inviteAuthor = adminProc
     }
     const { token } = await issueSetupToken(user.id)
     const origin = new URL(context.request.url).origin
-    const link = `${origin}/wp-login.php?action=accept-invite&token=${encodeURIComponent(token)}`
+    const link = `${origin}/admin/signin?action=accept-invite&token=${encodeURIComponent(token)}`
     const inviterSession = context.session.get('user')
     const inviter = inviterSession?.name ?? '管理员'
     const sendResult = await sendAuthorInvite(user, link, inviter, inviterSession?.email)
@@ -252,7 +252,7 @@ const sendPasswordReset = adminProc
     }
     const { token } = await issueResetToken(user.id)
     const origin = new URL(context.request.url).origin
-    const link = `${origin}/wp-login.php?action=resetpassword&token=${encodeURIComponent(token)}`
+    const link = `${origin}/admin/signin?action=resetpassword&token=${encodeURIComponent(token)}`
     await sendPasswordResetEmail(user, link)
     getLogger('audit.user').info('password reset sent', {
       actor: context.viewer.userId,

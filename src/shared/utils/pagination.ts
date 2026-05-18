@@ -2,7 +2,7 @@
 // (`src/ui/post/pagination/Pagination.tsx`) and the admin shell
 // (`src/ui/admin/shared/AdminPagination.tsx`). Both surfaces compose
 // the same chip ladder so a `/page/3` link reads identically in
-// `/wp-admin/posts` and on the public archive.
+// `/admin/posts` and on the public archive.
 //
 // Inputs / outputs are 1-based — that matches the public consumer's
 // existing semantics, the URL surface (`/page/3`), and human

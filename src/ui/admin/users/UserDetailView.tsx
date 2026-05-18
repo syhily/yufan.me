@@ -119,7 +119,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
   const deleteMutation = useMutation({
     mutationFn: (vars: { userId: string }) => orpc.admin.users.softDelete({ id: vars.userId }),
     onSuccess: () => {
-      void navigate('/wp-admin/users')
+      void navigate('/admin/users')
     },
   })
 
@@ -179,7 +179,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => void navigate('/wp-admin/users')}
+              onClick={() => void navigate('/admin/users')}
               aria-label="返回用户列表"
             >
               <ArrowLeftIcon />
@@ -588,7 +588,7 @@ export function UserDetailView({ userId, navigate }: UserDetailViewProps) {
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           {c.pageTitle && c.pagePublicId && (
                             <Link
-                              to={`/wp-admin/comments?pageKey=${encodeURIComponent(c.pagePublicId)}`}
+                              to={`/admin/comments?pageKey=${encodeURIComponent(c.pagePublicId)}`}
                               className="font-medium hover:underline"
                             >
                               {c.pageTitle}

@@ -15,8 +15,8 @@ export function NewReply({ receiver, postTitle, postLink, sourceContent, replyCo
   // Anonymous commenters can claim their account by self-requesting a
   // reset on the public lostpassword page. Building the link off
   // `siteIdentity.website` keeps the origin in sync with whatever the
-  // operator configured in `/wp-admin/settings/general`.
-  const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/wp-login.php?action=lostpassword`
+  // operator configured in `/admin/settings/general`.
+  const resetPasswordLink = `${requireBlogSettingsSection('siteIdentity').website}/admin/signin?action=lostpassword`
   return (
     <EmailLayout receiver={receiver}>
       <Text style={paragraph}>

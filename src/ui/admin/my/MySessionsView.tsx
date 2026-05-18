@@ -2,7 +2,7 @@ import { LogOutIcon, MonitorIcon, RefreshCwIcon } from 'lucide-react'
 import { useState } from 'react'
 import { useRevalidator } from 'react-router'
 
-import type { MySessionItem } from '@/routes/wp-admin/my/sessions'
+import type { MySessionItem } from '@/routes/admin/me/sessions'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
@@ -49,14 +49,14 @@ export function MySessionsView({ items }: MySessionsViewProps) {
       actionIcon: <LogOutIcon data-icon />,
       onConfirm: () => {
         if (isCurrent) {
-          // The /wp-login.php?action=logout endpoint is the single
+          // The /admin/signin?action=logout endpoint is the single
           // canonical path that BOTH revokes the session and clears
           // the cookie via `destroySession`. Hitting the JSON revoke
           // API here would leave the cookie behind and the next
           // request would briefly look authenticated against a
           // missing Redis blob. Hard-navigate so the logout loader
           // owns the entire transition.
-          window.location.href = '/wp-login.php?action=logout&redirect_to=/wp-login.php'
+          window.location.href = '/admin/signin?action=logout&redirect_to=/admin/signin'
           return
         }
         revoke.mutate({ sid })

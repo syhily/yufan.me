@@ -133,8 +133,8 @@ async function captureThrown(call: () => unknown): Promise<unknown> {
 describe('isWordPressDecoyPath', () => {
   it('matches WordPress probe patterns', () => {
     const probes = [
-      '/wp-admin/options.php',
-      '/wp-admin/setup-config.php',
+      '/admin/options.php',
+      '/admin/setup-config.php',
       '/wp-content/plugins/x.php',
       '/wp-content/uploads/img.jpg',
       '/wp-includes/wlwmanifest.xml',
@@ -150,21 +150,21 @@ describe('isWordPressDecoyPath', () => {
   })
 
   it('preserves the legitimate WordPress-style routes (login, two-stage install, SPA shell)', () => {
-    expect(isWordPressDecoyPath('/wp-login.php')).toBe(false)
-    expect(isWordPressDecoyPath('/wp-admin')).toBe(false)
-    // Both install stages: `/wp-admin/install.php` (admin credentials)
-    // and `/wp-admin/install/settings.php` (site identity / asset /
+    expect(isWordPressDecoyPath('/admin/signin')).toBe(false)
+    expect(isWordPressDecoyPath('/admin')).toBe(false)
+    // Both install stages: `/admin/setup` (admin credentials)
+    // and `/admin/setup/settings` (site identity / asset /
     // localization). Both end in `.php` so without an explicit allow
     // list the decoy filter would happily 404 them.
-    expect(isWordPressDecoyPath('/wp-admin/install.php')).toBe(false)
-    expect(isWordPressDecoyPath('/wp-admin/install/settings.php')).toBe(false)
-    // The wp-admin SPA is mounted at `/wp-admin/<page>` and `/wp-admin/<page>/:id`;
+    expect(isWordPressDecoyPath('/admin/setup')).toBe(false)
+    expect(isWordPressDecoyPath('/admin/setup/settings')).toBe(false)
+    // The admin SPA is mounted at `/admin/<page>` and `/admin/<page>/:id`;
     // it shares the WordPress URL shape on purpose so admins can keep their muscle
     // memory. Paths under that prefix that don't end in `.php` are SPA routes,
     // not scanner probes.
-    expect(isWordPressDecoyPath('/wp-admin/comments')).toBe(false)
-    expect(isWordPressDecoyPath('/wp-admin/users')).toBe(false)
-    expect(isWordPressDecoyPath('/wp-admin/users/12345')).toBe(false)
+    expect(isWordPressDecoyPath('/admin/comments')).toBe(false)
+    expect(isWordPressDecoyPath('/admin/users')).toBe(false)
+    expect(isWordPressDecoyPath('/admin/users/12345')).toBe(false)
   })
 
   it('ignores unrelated paths', () => {
@@ -178,7 +178,7 @@ describe('isWordPressDecoyPath', () => {
       '/feed',
       '/sitemap.xml',
       '/cgi-binx',
-      '/wp-adminx',
+      '/adminx',
     ]
     for (const path of ordinary) {
       expect(isWordPressDecoyPath(path), path).toBe(false)

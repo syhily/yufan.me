@@ -118,7 +118,7 @@ export function PagesView() {
           <Button
             type="button"
             render={
-              <Link to="/wp-admin/pages/new">
+              <Link to="/admin/pages/new">
                 <PlusIcon /> 新建页面
               </Link>
             }
@@ -264,7 +264,7 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
                 title="查看评论"
                 className="w-20 justify-start"
                 render={
-                  <Link to={`/wp-admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}>
+                  <Link to={`/admin/comments?pageKey=${encodeURIComponent(page.commentPublicId)}`}>
                     <MessageSquareIcon /> {page.commentCount}
                   </Link>
                 }
@@ -273,7 +273,7 @@ function PageRow({ page, onDelete, onRestore }: PageRowProps) {
                 variant="outline"
                 size="sm"
                 render={
-                  <Link to={`/wp-admin/pages/${page.id}/edit`}>
+                  <Link to={`/admin/pages/${page.id}/edit`}>
                     <FilePenIcon /> 编辑
                   </Link>
                 }

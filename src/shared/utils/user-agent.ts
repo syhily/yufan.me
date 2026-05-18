@@ -5,7 +5,7 @@
 // we actually see in the wild.
 //
 // The function is intentionally isomorphic so the public `/my/sessions`
-// view and the admin `/wp-admin/sessions` view share the exact same
+// view and the admin `/admin/security/sessions` view share the exact same
 // label. Unknown strings fall back to a truncated copy of the raw UA so
 // the operator never sees an empty cell.
 

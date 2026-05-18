@@ -140,7 +140,7 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
       {!s3Enabled && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
           请先前往
-          <a href="/wp-admin/settings/assets" className="mx-1 underline">
+          <a href="/admin/settings/assets" className="mx-1 underline">
             存储配置
           </a>
           启用 S3 存储。

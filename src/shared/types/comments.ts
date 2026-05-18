@@ -144,7 +144,7 @@ export interface ErrorResp {
 }
 
 /**
- * Status filter for the visitor self-service `/wp-admin/my/comments`
+ * Status filter for the visitor self-service `/admin/me/comments`
  * view. Lives in shared (not server/db) so the admin view can spell
  * the same union the loader parses without crossing the
  * server-import boundary; the server query helpers re-export this

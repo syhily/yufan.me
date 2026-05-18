@@ -88,7 +88,7 @@ export function CoverInputRow({
       return '请先填写 slug / host 后再上传'
     }
     if (!uploadsEnabled) {
-      return 'S3 上传未开启；请到 /wp-admin/settings/assets 启用'
+      return 'S3 上传未开启；请到 /admin/settings/assets 启用'
     }
     return undefined
   })()

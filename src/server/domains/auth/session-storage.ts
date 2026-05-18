@@ -134,7 +134,7 @@ export async function revokeAllSessionsOfUser(userId: bigint, exceptSessionId?: 
   for (const sid of targets) {
     pipeline.del(`session:${sid}`)
     // `session_meta:<sid>` is the parallel HSET that powers
-    // /wp-admin/sessions and /my/sessions. It must die with the
+    // /admin/security/sessions and /my/sessions. It must die with the
     // session it describes; without this DEL the meta hash would
     // outlive the session for up to 30 days and the admin view
     // would render "ghost" rows for sessions that no longer let

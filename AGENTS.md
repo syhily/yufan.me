@@ -36,7 +36,7 @@ document and upstream library docs.
   posts, pages, images, music. Redis for sessions, rate limits, avatars,
   generated-image caches.
 - Posts and pages live in Postgres (`post`/`page` + `content`); edited
-  at `/wp-admin/{posts,pages,categories,tags,friends,images,musics}`.
+  at `/admin/{posts,pages,categories,tags,friends,library/images,library/music}`.
 - Path alias: `@/*` → `./src/*`. No `~/*` alias. `public/*` is served at
   the root URL — reference by absolute URL, not TS import. Use aliases
   over relatives. Allowed relatives: `src/routes.ts` → `./...` (React
@@ -70,11 +70,11 @@ Page modules grouped into four nested trees, each with its own layout
 - `routes/public/` — public site. Layout + `home`, `archives`,
   `categories`, `category/list`, `tag/list`, `search/list`,
   `post/detail`, `page/detail`, `not-found`.
-- `routes/auth/` — split-screen login + install: `wp-login`,
-  `install/index` (`/wp-admin/install.php`), `install/settings`
-  (`/wp-admin/install/settings.php`).
+- `routes/auth/` — split-screen login + install: `signin`,
+  `install/index` (`/admin/setup`), `install/settings`
+  (`/admin/setup/settings`).
 
-- `routes/wp-admin/` — admin SPA. `dashboard`, `welcome`, `comments`,
+- `routes/admin/` — admin SPA. `dashboard`, `dashboard`, `comments`,
   `users/{index,detail}`, `my/{profile,comments,sessions}`, `sessions`,
   `friends`, `categories`, `tags`, `pages/{index,new,edit}`,
   `posts/{index,new,edit}`, `images`, `musics`,
@@ -176,7 +176,7 @@ or the closest interactive parent. Three tiers:
 - **`ui/admin/`** — grouped by domain (`analytics`, `auth`,
   `categories`, `comments`, `editor`, `editor-shell`, `friends`,
   `images`, `musics`, `my`, `pages`, `posts`, `sessions`, `settings`,
-  `tags`, `users`, `welcome`, plus `shared/` and `shell/`).
+  `tags`, `users`, `dashboard`, plus `shared/` and `shell/`).
   - `editor/` — the Tiptap micro-app (`PageBodyEditor`, `tiptap/`,
     `toolbar/`, `pickers/`, `FootnoteEditorDialog`,
     `portable-text-diff`). Self-contained; only `PageBodyEditor` is
@@ -323,7 +323,7 @@ viewport `<meta>` while any control is focused.
 
 ### Taxonomies (categories, tags, friends)
 
-- Postgres tables edited from `/wp-admin/{categories,tags,friends}`.
+- Postgres tables edited from `/admin/{categories,tags,friends}`.
   Deletion is blocked while a post still references the row.
 
 ### Slug derivation and uniqueness
@@ -389,7 +389,7 @@ viewport `<meta>` while any control is focused.
   back on does not require re-pasting credentials.
 - Every `image` row is an S3 object — no `external` origin, no
   `image.source` discriminator.
-- Uploads go through `/wp-admin/images` (generic
+- Uploads go through `/admin/library/images` (generic
   `images/yyyy/MM/<timestamp>.jpg`), plus inline upload in
   `EditCategoryDialog` (`images/categories/<slug>.jpg`) and
   `EditFriendDialog` (`images/links/<host>.jpg`), both 1280×425.
@@ -451,7 +451,7 @@ viewport `<meta>` while any control is focused.
   together.
 - The S3 toggle (`assets.storage.enabled`), credentials, bucket, asset
   CDN host, and upload limits live under `setting('blog.assets')`,
-  edited at `/wp-admin/settings/assets`. No `ASSET_HOST` /
+  edited at `/admin/settings/assets`. No `ASSET_HOST` /
   `ASSET_SCHEME` env vars; `assets.asset.host` / `assets.asset.scheme`
   is the same CDN host used by the image library and `<MusicPlayer>`.
 - CSRF: `@/server/domains/auth/csrf`. Client-address parsing:
@@ -474,18 +474,18 @@ viewport `<meta>` while any control is focused.
   NOT** read the aggregated `useBlogSettingsBundle()` — reading a slice
   you don't need re-renders on every unrelated section save.
 - Install flow is two stages, gated by admin login:
-  1. `routes/auth/install/index.tsx` (`/wp-admin/install.php`) creates
+  1. `routes/auth/install/index.tsx` (`/admin/setup`) creates
      the first admin row and auto-logs in. Redirects to stage 2.
   2. `routes/auth/install/settings.tsx`
-     (`/wp-admin/install/settings.php`) persists `blog.general` and
+     (`/admin/setup/settings`) persists `blog.general` and
      `blog.assets` from the form AND seeds the remaining 12 sections
      from `SECTION_REGISTRY[<section>].defaults`. All 14 rows are
      written atomically. `blog.assets` defaults to upload toggle OFF.
 - `honoInstallGateMiddleware`
   (`@/server/http/middlewares/install-gate.ts`) reads
-  `getInstallState()` and routes: no admin → `/wp-admin/install.php`;
+  `getInstallState()` and routes: no admin → `/admin/setup`;
   admin present but settings missing →
-  `/wp-admin/install/settings.php`; installed → through. Static assets,
+  `/admin/setup/settings`; installed → through. Static assets,
   framework internals, and the install/login trio are exempt via
   `ensureInstalledOrRedirect()` / `ensureNoAdminOrRedirect()` /
   `ensureNoSettingsOrRedirect()` — exactly one helper throws per state.

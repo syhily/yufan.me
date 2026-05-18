@@ -48,29 +48,29 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/wp-admin/welcome', label: '欢迎页面', icon: HomeIcon, minRole: 'visitor' },
-  { to: '/wp-admin/posts', label: '文章管理', icon: NotebookPenIcon, minRole: 'author' },
-  { to: '/wp-admin/pages', label: '页面管理', icon: FileTextIcon, minRole: 'admin' },
-  { to: '/wp-admin/comments', label: '评论管理', icon: MessageSquareIcon, minRole: 'admin' },
-  { to: '/wp-admin/categories', label: '分类管理', icon: FolderIcon, minRole: 'admin' },
-  { to: '/wp-admin/tags', label: '标签管理', icon: TagsIcon, minRole: 'author' },
-  { to: '/wp-admin/friends', label: '友链管理', icon: LinkIcon, minRole: 'admin' },
-  { to: '/wp-admin/images', label: '图片管理', icon: ImagesIcon, minRole: 'author' },
-  { to: '/wp-admin/musics', label: '音乐管理', icon: Music2Icon, minRole: 'author' },
-  { to: '/wp-admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/wp-admin/users', minRole: 'admin' },
-  { to: '/wp-admin/sessions', label: '会话管理', icon: SmartphoneIcon, minRole: 'admin' },
+  { to: '/admin', label: '欢迎页面', icon: HomeIcon, minRole: 'visitor' },
+  { to: '/admin/posts', label: '文章管理', icon: NotebookPenIcon, minRole: 'author' },
+  { to: '/admin/pages', label: '页面管理', icon: FileTextIcon, minRole: 'admin' },
+  { to: '/admin/comments', label: '评论管理', icon: MessageSquareIcon, minRole: 'admin' },
+  { to: '/admin/categories', label: '分类管理', icon: FolderIcon, minRole: 'admin' },
+  { to: '/admin/tags', label: '标签管理', icon: TagsIcon, minRole: 'author' },
+  { to: '/admin/friends', label: '友链管理', icon: LinkIcon, minRole: 'admin' },
+  { to: '/admin/library/images', label: '图片管理', icon: ImagesIcon, minRole: 'author' },
+  { to: '/admin/library/music', label: '音乐管理', icon: Music2Icon, minRole: 'author' },
+  { to: '/admin/users', label: '用户管理', icon: UsersIcon, matchPrefix: '/admin/users', minRole: 'admin' },
+  { to: '/admin/security/sessions', label: '会话管理', icon: SmartphoneIcon, minRole: 'admin' },
   {
-    to: '/wp-admin/analytics',
+    to: '/admin/analytics',
     label: '访问统计',
     icon: ChartLineIcon,
-    matchPrefix: '/wp-admin/analytics',
+    matchPrefix: '/admin/analytics',
     minRole: 'admin',
   },
   {
-    to: '/wp-admin/settings/general',
+    to: '/admin/settings/general',
     label: '系统设置',
     icon: SettingsIcon,
-    matchPrefix: '/wp-admin/settings',
+    matchPrefix: '/admin/settings',
     minRole: 'admin',
   },
 ]
@@ -152,21 +152,21 @@ function UserMenu({ id, name, email }: { id: string; name: string; email: string
         <DropdownMenuSeparator />
         <DropdownMenuItem
           render={
-            <Link to="/wp-admin/my/profile" prefetch="intent">
+            <Link to="/admin/me/profile" prefetch="intent">
               <UserIcon /> 个人信息
             </Link>
           }
         />
         <DropdownMenuItem
           render={
-            <Link to="/wp-admin/my/comments" prefetch="intent">
+            <Link to="/admin/me/comments" prefetch="intent">
               <MessageSquareIcon /> 我的评论
             </Link>
           }
         />
         <DropdownMenuItem
           render={
-            <Link to="/wp-admin/my/sessions" prefetch="intent">
+            <Link to="/admin/me/sessions" prefetch="intent">
               <MonitorIcon /> 登录设备
             </Link>
           }
@@ -174,7 +174,7 @@ function UserMenu({ id, name, email }: { id: string; name: string; email: string
         <DropdownMenuSeparator />
         <DropdownMenuItem
           render={
-            <a href="/wp-login.php?action=logout&redirect_to=/">
+            <a href="/admin/signin?action=logout&redirect_to=/">
               <LogOutIcon /> 登出
             </a>
           }
@@ -301,7 +301,7 @@ export function AdminShell({ currentUser, pathname, children }: AdminShellProps)
               </div>
             </SheetContent>
           </Sheet>
-          <a href="/wp-admin/welcome" className="flex items-center gap-2 text-base font-semibold text-foreground">
+          <a href="/admin" className="flex items-center gap-2 text-base font-semibold text-foreground">
             <BrandLogo className="h-7 w-auto" />
           </a>
           {/* Quick "back to public site" affordance. Wrapped in a ghost

@@ -102,7 +102,7 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PostFontLinks />
-      {/* CSRF anchor consumed by the oRPC client — see wp-admin.layout. */}
+      {/* CSRF anchor consumed by the oRPC client — see admin.layout. */}
       <meta name="csrf-token" content={detail.csrfToken} />
       <PostDetailBody
         post={post}

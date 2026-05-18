@@ -179,11 +179,7 @@ const UserRow = memo(function UserRow({
           </Avatar>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <Link
-                to={`/wp-admin/users/${user.id}`}
-                prefetch="intent"
-                className="truncate font-medium hover:underline"
-              >
+              <Link to={`/admin/users/${user.id}`} prefetch="intent" className="truncate font-medium hover:underline">
                 {user.name}
               </Link>
               {user.badgeName && (
@@ -231,7 +227,7 @@ const UserRow = memo(function UserRow({
         </div>
       </TableCell>
       <TableCell className="text-center">
-        <Link to={`/wp-admin/comments?userId=${user.id}`} className="text-sm font-medium hover:underline">
+        <Link to={`/admin/comments?userId=${user.id}`} className="text-sm font-medium hover:underline">
           {user.commentCount}
         </Link>
         {user.pendingCount > 0 && <div className="mt-0.5 text-xs text-destructive">{user.pendingCount} 待审</div>}
@@ -266,14 +262,14 @@ const UserRow = memo(function UserRow({
           <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuItem
               render={
-                <Link to={`/wp-admin/users/${user.id}`}>
+                <Link to={`/admin/users/${user.id}`}>
                   <EyeIcon /> 查看详情
                 </Link>
               }
             />
             <DropdownMenuItem
               render={
-                <Link to={`/wp-admin/comments?userId=${user.id}`}>
+                <Link to={`/admin/comments?userId=${user.id}`}>
                   <MessageSquareIcon /> 查看其评论
                 </Link>
               }

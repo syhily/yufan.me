@@ -294,7 +294,7 @@ function resolvePublicUrl(row: ImageRow): string {
     if (error instanceof DomainError) {
       // Settings missing — fall back to a relative path so the admin
       // table at least shows the storage key. The form copy already
-      // points the operator at /wp-admin/settings/assets.
+      // points the operator at /admin/settings/assets.
       return row.storagePath
     }
     throw error

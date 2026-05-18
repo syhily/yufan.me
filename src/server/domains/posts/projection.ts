@@ -89,7 +89,7 @@ export interface AdminPostDto {
   /**
    * The post's `metric.public_id` UUID — the opaque wire identifier
    * the admin comment-count link uses to deep-link into
-   * `/wp-admin/comments?pageKey=<uuid>`. Empty string on detail / save
+   * `/admin/comments?pageKey=<uuid>`. Empty string on detail / save
    * paths that don't fan out a metric upsert.
    */
   commentPublicId: string

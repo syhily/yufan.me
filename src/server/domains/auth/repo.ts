@@ -1,7 +1,7 @@
 // Session metadata data-access layer. The cookie-backed session storage
 // lives in `session-storage.ts` (signed `__session` cookie + `session:<sid>`
 // blob in Redis); this module owns the PARALLEL `session_meta:<sid>`
-// hash that powers `/my/sessions` and `/wp-admin/sessions`.
+// hash that powers `/my/sessions` and `/admin/security/sessions`.
 //
 // Orchestration (listing, scanning, orphan cleanup) lives in `service.ts`.
 // This module is limited to raw Redis reads/writes and their helpers.

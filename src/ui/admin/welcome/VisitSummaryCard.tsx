@@ -31,7 +31,7 @@ export function VisitSummaryCard({ summary }: VisitSummaryCardProps) {
     <div className="flex h-full min-h-[280px] flex-col rounded-lg border bg-card p-5">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-lg font-medium">今日概览</h2>
-        <Button type="button" variant="ghost" size="sm" render={<Link to="/wp-admin/analytics?preset=today" />}>
+        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/analytics?preset=today" />}>
           <span className="hidden sm:inline">查看详情</span> <ArrowRightIcon data-icon />
         </Button>
       </div>

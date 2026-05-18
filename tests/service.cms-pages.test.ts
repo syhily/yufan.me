@@ -151,7 +151,7 @@ describe('cms/pages/service — createPage / updatePageMeta validation', () => {
   })
 
   it('rejects reserved slugs that would shadow public routes', async () => {
-    for (const slug of ['posts', 'cats', 'tags', 'wp-admin', 'api']) {
+    for (const slug of ['posts', 'cats', 'tags', 'admin', 'api']) {
       await expect(service.createPage({ slug, title: 't' }, null)).rejects.toBeInstanceOf(DomainError)
     }
   })

@@ -24,7 +24,7 @@ import type { SocialNetwork } from '@/shared/config/socials'
 
 // Site identity now also owns the date-formatter inputs (`locale`,
 // `timeZone`, `timeFormat`). Folding them into a single section keeps
-// `/wp-admin/settings/general` as the one place an operator changes
+// `/admin/settings/general` as the one place an operator changes
 // "what does the site call itself, in what language" without bouncing
 // between two pages.
 //
@@ -254,7 +254,7 @@ export interface AssetsSettings {
 // Centralised rate-limiting policy. Each bucket is a single
 // `(windowSeconds, maxAttempts)` pair the runtime applies to its
 // matching surface (login by IP, comment POST by IP / email, like
-// increase by IP). Editing the bucket from `/wp-admin/settings/rate-limit`
+// increase by IP). Editing the bucket from `/admin/settings/rate-limit`
 // takes effect on the next request — the rate-limit module reads the
 // fresh slot every call so an admin loosening or tightening the cap
 // never has to wait for a TTL or restart.
@@ -399,7 +399,7 @@ export interface LimitsSettings {
 // corresponding `setting('blog.<section>')` row has been seeded by the
 // install flow or the admin panel. A "fully installed" deployment has
 // at least `siteIdentity` and `assets` populated (the install flow
-// admin visits the matching `/wp-admin/settings/*` page.
+// admin visits the matching `/admin/settings/*` page.
 //
 // The field set is fixed (twelve buckets, one per `SettingsSection`).
 // Adding a thirteenth section is a change to `SETTINGS_SECTIONS` and
