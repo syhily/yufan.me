@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react'
 import type { AdminImageDto } from '@/shared/types/images'
 
 import { ImageLibraryPicker } from '@/ui/admin/editor/pickers/ImageLibraryPicker'
+import { UploadImageDialog } from '@/ui/admin/shared/UploadImageDialog'
 import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -76,8 +77,39 @@ export function ImageField({
   emptyHint,
 }: ImageFieldProps) {
   const [showUrl, setShowUrl] = useState(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [dragActive, setDragActive] = useState(false)
   const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
   const hasValue = value !== ''
+
+  const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  const handleDragEnter = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!disabled) {
+      setDragActive(true)
+    }
+  }
+  const handleDragLeave = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+  }
+  const handleDrop = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (disabled) {
+      return
+    }
+    const droppedFile = e.dataTransfer.files?.[0]
+    if (droppedFile && droppedFile.type.startsWith('image/')) {
+      setUploadOpen(true)
+    }
+  }
 
   return (
     <div className="grid gap-2">
@@ -119,6 +151,10 @@ export function ImageField({
             type="button"
             disabled={disabled}
             aria-label={hasValue ? `替换 ${label}` : `选择 ${label}`}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
             className={cn(
               'group relative block w-full overflow-hidden rounded-md border bg-muted/30',
               aspect,
@@ -126,6 +162,7 @@ export function ImageField({
               disabled
                 ? 'cursor-not-allowed opacity-60'
                 : 'cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30',
+              dragActive && 'border-primary ring-2 ring-primary/30',
             )}
           >
             {hasValue ? (
@@ -174,6 +211,15 @@ export function ImageField({
           {value}
         </p>
       ) : null}
+      <UploadImageDialog
+        open={uploadOpen}
+        kind={{ kind: 'generic' }}
+        onClose={() => setUploadOpen(false)}
+        onUploaded={(image) => {
+          onChange(image.publicUrl)
+          setUploadOpen(false)
+        }}
+      />
     </div>
   )
 }

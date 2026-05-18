@@ -40,11 +40,17 @@ export interface UploadImageDialogProps {
   kind: UploadKind
   onClose: () => void
   onUploaded: (image: AdminImageDto) => void
+  /**
+   * When provided, the dialog seeds its editor with this file on open
+   * instead of waiting for the user to pick one through the file input.
+   * Used by drag-and-drop flows.
+   */
+  initialFile?: File
 }
 
 const LOCKED_ASPECT: LockedAspect = { width: 1280, height: 425 }
 
-export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadImageDialogProps) {
+export function UploadImageDialog({ open, kind, onClose, onUploaded, initialFile }: UploadImageDialogProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [file, setFile] = useState<File | null>(null)
@@ -78,7 +84,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
     if (!open) {
       return
     }
-    setFile(null)
+    setFile(initialFile ?? null)
     setRotation(0)
     setJpegQuality(82)
     setNote('')
@@ -88,7 +94,7 @@ export function UploadImageDialog({ open, kind, onClose, onUploaded }: UploadIma
     setTargetWidthDraft('')
     encoderRef.current = null
     setIsPending(false)
-  }, [open])
+  }, [open, initialFile])
 
   const onSelectFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const next = event.target.files?.[0] ?? null

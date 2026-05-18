@@ -93,8 +93,8 @@ export function ImageDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-hidden p-0 outline-none">
-        <div className="flex max-h-[calc(100vh-2rem)] flex-col">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-hidden p-0 outline-none sm:max-w-3xl">
+        <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
           <DialogHeader className="px-6 pt-6">
             <DialogTitle className="truncate">{fileName}</DialogTitle>
             <DialogDescription className="truncate">{image.storagePath}</DialogDescription>
