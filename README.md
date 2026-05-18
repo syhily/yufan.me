@@ -11,7 +11,7 @@
 Source code for [yufan.me](https://yufan.me) — a self-hosted blog CMS
 running on React Router 7 (SSR), Hono, and oRPC. Posts, pages,
 taxonomies, comments, images, music, and per-section settings all live
-in Postgres and are edited from the built-in `/wp-admin` console.
+in Postgres and are edited from the built-in `/admin` console.
 Bodies are stored as **PortableText** and authored through a Tiptap
 editor that round-trips losslessly to the wire format.
 
@@ -50,8 +50,8 @@ schema/migrations.
   `blog.search`, `blog.fonts`. Each section saves independently so
   concurrent admin tabs cannot race.
 - **Two-stage install gate.** Until an admin row exists, every request
-  redirects to `/wp-admin/install.php`. After admin creation, stage 2
-  at `/wp-admin/install/settings.php` writes the 14 settings rows
+  redirects to `/admin/setup`. After admin creation, stage 2
+  at `/admin/setup/settings` writes the 14 settings rows
   atomically.
 - **Optional object storage.** S3 (or any S3-compatible bucket) is
   gated by `assets.storage.enabled`. Off by default — the library is
@@ -82,7 +82,7 @@ graph (`routes → server / ui / client / shared`; `server → shared`;
 
 ```
 src/
-├── routes/      Route modules grouped into public/, auth/, wp-admin/
+├── routes/      Route modules grouped into public/, auth/, admin/
 ├── server/      SSR-only: infra/, domains/, http/, render/
 ├── client/      Hooks, oRPC client, browser-only code
 ├── ui/          Pure-props React components (public, admin, shadcn primitives, PortableText renderer)
@@ -133,22 +133,22 @@ SESSION_SECRET=<high-entropy secret>
 Optional: `MAXMIND_DB_PATH` for geo-enriched analytics,
 `ANALYTICS_TRACK_ADMIN` to include admin visits in dashboards.
 
-First boot redirects every request to `/wp-admin/install.php` until an
-admin row exists; stage 2 at `/wp-admin/install/settings.php` then
+First boot redirects every request to `/admin/setup` until an
+admin row exists; stage 2 at `/admin/setup/settings` then
 seeds the 14 settings rows. After that the public site is live and the
-admin console at `/wp-admin` is available to the new admin user.
+admin console at `/admin` is available to the new admin user.
 
 ## Content model
 
-| Surface           | Storage                           | Public URL                                  | Admin surface                 |
-| ----------------- | --------------------------------- | ------------------------------------------- | ----------------------------- |
-| Posts             | `post` + `content` (PortableText) | `/posts/:slug`                              | `/wp-admin/posts`             |
-| Pages             | `page` + `content` (PortableText) | `/:slug`                                    | `/wp-admin/pages`             |
-| Categories / tags | Postgres                          | `/cats/:slug`, `/tags/:slug`                | `/wp-admin/{categories,tags}` |
-| Friends           | Postgres                          | Friends grid (page meta toggle)             | `/wp-admin/friends`           |
-| Images            | Postgres + optional S3            | `<assetsHost>/images/...`                   | `/wp-admin/images`            |
-| Music             | Postgres + optional S3            | Embedded in PortableText via 16-char nanoid | `/wp-admin/musics`            |
-| Comments          | Postgres (threaded, with likes)   | Inline on posts/pages, moderation in admin  | `/wp-admin/comments`          |
+| Surface           | Storage                           | Public URL                                  | Admin surface              |
+| ----------------- | --------------------------------- | ------------------------------------------- | -------------------------- |
+| Posts             | `post` + `content` (PortableText) | `/posts/:slug`                              | `/admin/posts`             |
+| Pages             | `page` + `content` (PortableText) | `/:slug`                                    | `/admin/pages`             |
+| Categories / tags | Postgres                          | `/cats/:slug`, `/tags/:slug`                | `/admin/{categories,tags}` |
+| Friends           | Postgres                          | Friends grid (page meta toggle)             | `/admin/friends`           |
+| Images            | Postgres + optional S3            | `<assetsHost>/images/...`                   | `/admin/images`            |
+| Music             | Postgres + optional S3            | Embedded in PortableText via 16-char nanoid | `/admin/musics`            |
+| Comments          | Postgres (threaded, with likes)   | Inline on posts/pages, moderation in admin  | `/admin/comments`          |
 
 Slug generation runs through one server-side helper
 (`@/server/infra/slug::deriveSlug`) — `pinyin-pro` → whitespace
@@ -158,7 +158,7 @@ SSR so deep links survive across re-renders.
 
 ## Admin console
 
-The `/wp-admin` SPA shares one Tiptap editor for posts and pages with
+The `/admin` SPA shares one Tiptap editor for posts and pages with
 a three-layer UX: top toolbar (image library / music picker / link /
 table / hr / undo-redo), floating bubble menus for text and table
 selections, and a `/`-driven slash menu for block insertion. Cells are
@@ -220,7 +220,7 @@ in `sections.ts` maps section ↔ DB scope ↔ Zod schema ↔ bundle key.
 
 The S3 toggle, credentials, bucket, asset CDN host, and upload limits
 all live under `setting('blog.assets')` (edited at
-`/wp-admin/settings/assets`) — not in env vars. The dispatcher reads
+`/admin/settings/assets`) — not in env vars. The dispatcher reads
 the toggle on every PUT/DELETE so flipping storage on/off does not
 require a redeploy.
 

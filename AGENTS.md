@@ -476,7 +476,7 @@ viewport `<meta>` while any control is focused.
 - Install flow is two stages, gated by admin login:
   1. `routes/auth/install/index.tsx` (`/admin/setup`) creates
      the first admin row and auto-logs in. Redirects to stage 2.
-  2. `routes/auth/install/settings.tsx`
+  2. `routes/auth/setup/settings.tsx`
      (`/admin/setup/settings`) persists `blog.general` and
      `blog.assets` from the form AND seeds the remaining 12 sections
      from `SECTION_REGISTRY[<section>].defaults`. All 14 rows are

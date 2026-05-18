@@ -30,11 +30,11 @@
 | `/admin` | `/admin` | `/ghost/` | 入口重定向至 `/admin/dashboard` |
 | `/admin/welcome` | `/admin/dashboard` | `/`, `/dashboard` | Dashboard 取代 Welcome |
 | `/admin/posts` | `/admin/posts` | `/posts` | 文章列表 |
-| `/admin/posts/new` | `/admin/posts/new` | `/editor/post` | 新建文章 |
-| `/admin/posts/:id/edit` | `/editor/post/:id` | `/editor/*` | **独立编辑器路径** |
+| `/editor/post/new` | `/editor/post/new` | `/editor/post` | 新建文章 |
+| `/editor/post/:id` | `/editor/post/:id` | `/editor/*` | **独立编辑器路径** |
 | `/admin/pages` | `/admin/pages` | `/pages` | 页面列表 |
-| `/admin/pages/new` | `/admin/pages/new` | `/editor/page` | 新建页面 |
-| `/admin/pages/:id/edit` | `/editor/page/:id` | `/editor/*` | **独立编辑器路径** |
+| `/editor/page/new` | `/editor/page/new` | `/editor/page` | 新建页面 |
+| `/editor/page/:id` | `/editor/page/:id` | `/editor/*` | **独立编辑器路径** |
 | `/admin/comments` | `/admin/comments` | — | 评论管理（Ghost 无独立评论后台） |
 | `/admin/categories` | `/admin/categories` | — | 分类管理（Ghost 无此功能） |
 | `/admin/tags` | `/admin/tags` | `/tags` | 标签管理 |
@@ -127,13 +127,13 @@ Ghost 将编辑器放在 `/editor/*` 而非 `/ghost/editor/*`，原因是：
 
 ### Phase 3：编辑器路径独立化
 
-**目标**：将编辑器从 `/admin/posts/:id/edit` 迁移至 `/editor/post/:id`。
+**目标**：将编辑器从 `/editor/post/:id` 迁移至 `/editor/post/:id`。
 
 **技术要点**：
 - 编辑器路由不再嵌套在 `routes/admin/layout.tsx` 之下，而是作为顶层路由（但共享 `admin.css` + 字体）。
 - 需要新建 `src/routes/editor/layout.tsx`：加载 admin 样式、CSRF token、当前用户信息，但隐藏侧边栏（focus mode 由编辑器自身控制）。
 - `PostEditorShell` 与 `PageEditorShell` 中硬编码的 `editPath` 更新为新的 URL 模式。
-- 旧路径 `/admin/posts/:id/edit` 301 重定向至 `/editor/post/:id`。
+- 旧路径 `/editor/post/:id` 301 重定向至 `/editor/post/:id`。
 
 ### Phase 4：新增核心功能
 
@@ -170,7 +170,7 @@ Ghost 将编辑器放在 `/editor/*` 而非 `/ghost/editor/*`，原因是：
 
 ### 5.5 安装门控中间件
 
-- `honoInstallGateMiddleware` 中硬编码的 `/admin/install.php` 等路径需同步更新。
+- `honoInstallGateMiddleware` 中硬编码的路径已同步更新。
 - `ensureInstalledOrRedirect()` / `ensureNoAdminOrRedirect()` 等 helper 的跳转目标需更新。
 
 ---
