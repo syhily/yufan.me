@@ -25,6 +25,18 @@ import type { ApiRouter } from '@/server/http/api-router'
  * the meta tag in the same response, so any mutation kicked off
  * from that page arrives at the API with a valid token.
  */
+let csrfToken: string | undefined
+
+export function setCsrfToken(token: string | undefined) {
+  csrfToken = token
+  if (typeof document !== 'undefined') {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+    if (meta) {
+      meta.content = token ?? ''
+    }
+  }
+}
+
 export function readCsrfMeta(): string | undefined {
   if (typeof document === 'undefined') {
     return undefined
@@ -45,7 +57,7 @@ const link = new RPCLink({
   //     instead of once-at-construction keeps those overrides honest.
   url: () => `${globalThis.location?.origin ?? 'http://localhost'}/rpc`,
   headers: () => {
-    const token = readCsrfMeta()
+    const token = csrfToken ?? readCsrfMeta()
     return token ? { 'x-csrf-token': token } : {}
   },
 })

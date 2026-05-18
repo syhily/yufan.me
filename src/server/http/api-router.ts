@@ -15,6 +15,7 @@ import { adminTagsRouter } from '@/server/http/controllers/admin/tags.controller
 import { adminUsersRouter } from '@/server/http/controllers/admin/users.controller'
 import { analyticsRouter } from '@/server/http/controllers/analytics.controller'
 import { commentsRouter } from '@/server/http/controllers/comments.controller'
+import { csrfRouter } from '@/server/http/controllers/csrf.controller'
 import { imageRouter } from '@/server/http/controllers/image.controller'
 import { musicRouter } from '@/server/http/controllers/music.controller'
 
@@ -26,6 +27,7 @@ import { musicRouter } from '@/server/http/controllers/music.controller'
 // to see every gated procedure in one shot.
 export const apiRouter = {
   account: accountRouter,
+  csrf: csrfRouter,
   analytics: analyticsRouter,
   comments: commentsRouter,
   image: imageRouter,
