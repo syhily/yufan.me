@@ -188,11 +188,6 @@ export default function App({ loaderData }: Route.ComponentProps) {
   // Same single-install contract as the iOS hook above — never
   // re-install per route. See `@/client/hooks/use-chunk-error-recovery`.
   useChunkErrorRecovery()
-  // Keep the CSRF token fresh for long-lived tabs (admin SPA and
-  // open article detail pages). Seeds from the SSR meta tag on mount,
-  // then refreshes every 30 minutes before the 4-hour cookie TTL.
-  useCsrfRefresh()
-
   // One QueryClient per request on the server; one per browser session
   // on the client.  HydrationBoundary seeds it with the dehydrated
   // state produced by the root loader.
@@ -215,12 +210,23 @@ export default function App({ loaderData }: Route.ComponentProps) {
         <ThemeProvider initialResolved={loaderData.theme ?? undefined}>
           <BlogSettingsProvider value={loaderData.blogSettings ?? undefined}>
             <NavigationSplash />
+            <CsrfRefresh />
             <Outlet />
           </BlogSettingsProvider>
         </ThemeProvider>
       </HydrationBoundary>
     </QueryClientProvider>
   )
+}
+
+function CsrfRefresh() {
+  // Keep the CSRF token fresh for long-lived tabs (admin SPA and
+  // open article detail pages). Seeds from the SSR meta tag on mount,
+  // then refreshes every 30 minutes before the 4-hour cookie TTL.
+  // Must live inside QueryClientProvider so useMutation can access
+  // the QueryClient context.
+  useCsrfRefresh()
+  return null
 }
 
 export function ErrorBoundary({ error, loaderData }: Route.ErrorBoundaryProps) {
