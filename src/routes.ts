@@ -35,7 +35,7 @@ export default [
   ]),
   // Admin SPA shell — see README.md §G.
   layout('routes/admin/layout.tsx', [
-    index('routes/admin/dashboard.tsx'),
+    route('admin', 'routes/admin/dashboard.tsx'),
     route('admin/posts', 'routes/admin/posts/index.tsx'),
     route('admin/pages', 'routes/admin/pages/index.tsx'),
     route('admin/comments', 'routes/admin/comments.tsx'),

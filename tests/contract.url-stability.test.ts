@@ -70,8 +70,7 @@ describe('contract: public URL stability', () => {
   it('admin URLs are mounted (signin + dashboard + setup + two-stage install)', () => {
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('admin/signin')).toBe(true)
-    // /admin is an index route under the admin layout (no path property)
-    expect(all.some((r) => r.index === true && r.file === 'routes/admin/dashboard.tsx')).toBe(true)
+    expect(paths.has('admin')).toBe(true)
     // live on separate URLs so the install gate can route the user
     // through the right page based on `getInstallState()`.
     expect(paths.has('admin/setup')).toBe(true)
