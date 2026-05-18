@@ -1,17 +1,28 @@
 import type { LucideIcon } from 'lucide-react'
 
-import { ArrowRightIcon, ClockIcon, FileCheck2Icon, FilePenLineIcon, MessageSquareIcon } from 'lucide-react'
+import {
+  ArrowRightIcon,
+  ClockIcon,
+  FileCheck2Icon,
+  FileImageIcon,
+  FilePenLineIcon,
+  FileTextIcon,
+  MessageSquareIcon,
+  NotebookPenIcon,
+  TrendingUpIcon,
+} from 'lucide-react'
 import { data, Link } from 'react-router'
 
 import type { EntityType } from '@/server/infra/db/target'
 
-import { queryCounters } from '@/server/domains/analytics/query'
+import { queryCounters, queryViews } from '@/server/domains/analytics/query'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { loadAdminPendingDashboard } from '@/server/domains/comments/moderation'
 import { countPostMetas, listPostMetas } from '@/server/domains/posts/repo'
 import { countMyComments, listMyComments, resolveEntitiesForComments } from '@/server/infra/db/operations/comment'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
+import { computeDateRange } from '@/shared/contracts/analytics'
 import { roleLabel } from '@/shared/utils/roles'
 import { PendingModerationPanel, pickEmptyStateLine } from '@/ui/admin/welcome/PendingModerationPanel'
 import { VisitSummaryCard } from '@/ui/admin/welcome/VisitSummaryCard'
@@ -24,6 +35,7 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 const RECENT_DRAFTS_LIMIT = 5
+const RECENT_PUBLISHED_LIMIT = 5
 const RECENT_MY_COMMENTS_LIMIT = 5
 const COMMENT_EXCERPT_LIMIT = 60
 // Must stay in lockstep with the `PAGE_SIZE` constant in
@@ -94,18 +106,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   // per-query CPU cost.
   const nowSec = Math.floor(now.getTime() / 1000)
   const dayRange = { startAt: nowSec - 24 * 60 * 60, endAt: nowSec }
+  const weekRange = computeDateRange('last-7d', now)
 
   const [
     pendingModeration,
     visitSummary,
+    weeklyTrend,
     draftCount,
     publishedCount,
     myCommentCounts,
     recentDraftRows,
+    recentPublishedRows,
     recentMyCommentRows,
   ] = await Promise.all([
     admin ? loadAdminPendingDashboard('all', 0, PENDING_PAGE_SIZE) : Promise.resolve(null),
     admin ? queryCounters({ range: dayRange, filters: {} }) : Promise.resolve(null),
+    admin ? queryViews({ range: weekRange, filters: {} }) : Promise.resolve(null),
     countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'draft' }),
     countPostMetas({ authorId, deletedStatus: 'normal', lifecycle: 'published' }),
     countMyComments(userId),
@@ -117,6 +133,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       sortOrder: 'desc',
       limit: RECENT_DRAFTS_LIMIT,
     }),
+    listPostMetas({
+      authorId,
+      deletedStatus: 'normal',
+      lifecycle: 'published',
+      sortBy: 'publishedAt',
+      sortOrder: 'desc',
+      limit: RECENT_PUBLISHED_LIMIT,
+    }),
     listMyComments(userId, 0, RECENT_MY_COMMENTS_LIMIT),
   ])
 
@@ -125,6 +149,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     id: String(row.id),
     title: row.title,
     updatedAtIso: row.updatedAt.toISOString(),
+  }))
+
+  // Project recently published posts.
+  const recentPublished: DraftSummary[] = recentPublishedRows.map((row) => ({
+    id: String(row.id),
+    title: row.title,
+    updatedAtIso: row.publishedAt?.toISOString() ?? row.updatedAt.toISOString(),
   }))
 
   // Resolve permalinks for the comments widget. Authors mostly comment on
@@ -151,6 +182,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     greeting,
     pendingModeration,
     visitSummary,
+    weeklyTrend,
     emptyStateLine: pickEmptyStateLine(),
     stats: {
       draftCount,
@@ -159,32 +191,36 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       myCommentsPending: myCommentCounts.pending,
     },
     recentDrafts,
+    recentPublished,
     recentMyComments,
   })
 }
 
-export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
+export default function DashboardRoute({ loaderData }: Route.ComponentProps) {
   const {
     name,
     role,
     greeting,
     pendingModeration,
     visitSummary,
+    weeklyTrend,
     emptyStateLine,
     stats,
     recentDrafts,
+    recentPublished,
     recentMyComments,
   } = loaderData
   const isAdmin = role === 'admin'
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between rounded-lg border bg-card p-6">
+      <div className="flex flex-col gap-4 rounded-lg border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">
             {greeting}，{name}
           </h1>
           <p className="mt-1 text-muted-foreground">当前身份：{roleLabel(role)}</p>
         </div>
+        <QuickActions />
       </div>
       {isAdmin && visitSummary !== null && (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
@@ -195,10 +231,12 @@ export default function WelcomeRoute({ loaderData }: Route.ComponentProps) {
         </div>
       )}
       <StatsGrid stats={stats} />
+      {isAdmin && weeklyTrend !== null && weeklyTrend.length > 0 && <WeeklyTrendCard points={weeklyTrend} />}
       <div className="grid gap-4 lg:grid-cols-2">
+        <RecentPublishedCard posts={recentPublished} />
         <RecentDraftsCard drafts={recentDrafts} />
-        <RecentMyCommentsCard comments={recentMyComments} />
       </div>
+      <RecentMyCommentsCard comments={recentMyComments} />
     </div>
   )
 }
@@ -292,6 +330,134 @@ function StatCard({ label, value, href, icon: Icon, tone, emphasis }: StatCardPr
         {value}
       </p>
     </Link>
+  )
+}
+
+function QuickActions() {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button type="button" variant="outline" size="sm" render={<Link to="/admin/posts/new" />}>
+        <NotebookPenIcon data-icon className="size-4" /> 新建文章
+      </Button>
+      <Button type="button" variant="outline" size="sm" render={<Link to="/admin/pages/new" />}>
+        <FileTextIcon data-icon className="size-4" /> 新建页面
+      </Button>
+      <Button type="button" variant="outline" size="sm" render={<Link to="/admin/library/images" />}>
+        <FileImageIcon data-icon className="size-4" /> 上传图片
+      </Button>
+    </div>
+  )
+}
+
+interface TrendPoint {
+  time: string
+  visits: number
+  visitors: number
+}
+
+function WeeklyTrendCard({ points }: { points: TrendPoint[] }) {
+  // Aggregate hourly points into daily buckets for a 7-day sparkline.
+  const daily = aggregateToDaily(points)
+  const maxVisits = Math.max(1, ...daily.map((d) => d.visits))
+  const width = 320
+  const height = 64
+  const padding = 4
+  const chartW = width - padding * 2
+  const chartH = height - padding * 2
+  const stepX = daily.length > 1 ? chartW / (daily.length - 1) : chartW
+
+  const pathPoints = daily.map((d, i) => {
+    const x = padding + i * stepX
+    const y = padding + chartH - (d.visits / maxVisits) * chartH
+    return `${x},${y}`
+  })
+
+  const areaPath =
+    pathPoints.length > 0
+      ? `M${pathPoints[0]} L${pathPoints.slice(1).join(' L')} L${padding + chartW},${padding + chartH} L${padding},${padding + chartH} Z`
+      : ''
+
+  const linePath = pathPoints.length > 0 ? `M${pathPoints.join(' L')}` : ''
+
+  return (
+    <div className="rounded-lg border bg-card p-6">
+      <div className="flex items-center gap-2">
+        <TrendingUpIcon className="size-4 text-muted-foreground" />
+        <h2 className="text-base font-medium">最近 7 天访问趋势</h2>
+      </div>
+      <div className="mt-4 flex items-end gap-4">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-16 w-full max-w-xs" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {areaPath && <path d={areaPath} fill="url(#trendGradient)" />}
+          {linePath && (
+            <path
+              d={linePath}
+              fill="none"
+              stroke="hsl(var(--primary))"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+        </svg>
+        <div className="mb-1 flex flex-col gap-0.5 text-right">
+          <span className="text-2xl font-semibold tabular-nums">{daily.reduce((s, d) => s + d.visits, 0)}</span>
+          <span className="text-xs text-muted-foreground">总访问</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function aggregateToDaily(points: TrendPoint[]): { date: string; visits: number; visitors: number }[] {
+  const map = new Map<string, { visits: number; visitors: number }>()
+  for (const p of points) {
+    const date = p.time.slice(0, 10)
+    const existing = map.get(date) ?? { visits: 0, visitors: 0 }
+    existing.visits += p.visits
+    existing.visitors += p.visitors
+    map.set(date, existing)
+  }
+  return Array.from(map.entries())
+    .map(([date, vals]) => ({ date, ...vals }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
+function RecentPublishedCard({ posts }: { posts: DraftSummary[] }) {
+  return (
+    <div className="rounded-lg border bg-card p-6">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-medium">最近发布</h2>
+        <Button type="button" variant="ghost" size="sm" render={<Link to="/admin/posts?published=true" />}>
+          <span className="hidden sm:inline">全部文章</span> <ArrowRightIcon data-icon />
+        </Button>
+      </div>
+      {posts.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">暂无已发布文章。</p>
+      ) : (
+        <ul className="mt-3 flex flex-col gap-2 text-sm">
+          {posts.map((post) => (
+            <li key={post.id} className="flex items-center justify-between gap-3">
+              <Link to={`/admin/posts/${post.id}/edit`} className="truncate text-foreground hover:underline">
+                {post.title || '(未命名)'}
+              </Link>
+              <time
+                dateTime={post.updatedAtIso}
+                className="shrink-0 text-xs text-muted-foreground tabular-nums"
+                title={post.updatedAtIso}
+              >
+                {post.updatedAtIso.slice(0, 10)}
+              </time>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
