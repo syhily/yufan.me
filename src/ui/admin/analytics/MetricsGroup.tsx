@@ -35,9 +35,11 @@ export interface MetricsGroupProps {
   group: MetricGroup
   initial?: Partial<Record<MetricType, MetricRow[]>>
   className?: string
+  entityType?: 'post' | 'page'
+  entityId?: string
 }
 
-export function MetricsGroup({ group, initial, className }: MetricsGroupProps) {
+export function MetricsGroup({ group, initial, className, entityType, entityId }: MetricsGroupProps) {
   const tabs = METRIC_GROUP_TABS[group]
   const [active, setActive] = useState<MetricType>(tabs[0]!)
 
@@ -61,7 +63,7 @@ export function MetricsGroup({ group, initial, className }: MetricsGroupProps) {
         <Tabs value={active}>
           {tabs.map((t) => (
             <TabsContent key={t} value={t} className="mt-0">
-              <MetricList type={t} initial={initial?.[t]} />
+              <MetricList type={t} initial={initial?.[t]} entityType={entityType} entityId={entityId} />
             </TabsContent>
           ))}
         </Tabs>

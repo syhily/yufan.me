@@ -1,4 +1,5 @@
 import {
+  ArchiveRestoreIcon,
   ChartLineIcon,
   FileTextIcon,
   FolderIcon,
@@ -44,13 +45,15 @@ interface NavItem {
   label: string
   icon: ComponentType<{ className?: string }>
   matchPrefix?: string
+  end?: boolean
   minRole: 'visitor' | 'author' | 'admin'
 }
 
 const NAV: NavItem[] = [
-  { to: '/admin', label: '欢迎页面', icon: HomeIcon, minRole: 'visitor' },
+  { to: '/admin', label: '欢迎页面', icon: HomeIcon, end: true, minRole: 'visitor' },
   { to: '/admin/posts', label: '文章管理', icon: NotebookPenIcon, minRole: 'author' },
   { to: '/admin/pages', label: '页面管理', icon: FileTextIcon, minRole: 'admin' },
+  { to: '/admin/restore', label: '回收站', icon: ArchiveRestoreIcon, minRole: 'admin' },
   { to: '/admin/comments', label: '评论管理', icon: MessageSquareIcon, minRole: 'admin' },
   { to: '/admin/categories', label: '分类管理', icon: FolderIcon, minRole: 'admin' },
   { to: '/admin/tags', label: '标签管理', icon: TagsIcon, minRole: 'author' },

@@ -2,6 +2,7 @@ import type { NavigateFunction } from 'react-router'
 
 import {
   ArrowLeftIcon,
+  ChartLineIcon,
   ExternalLinkIcon,
   EyeOffIcon,
   Loader2Icon,
@@ -158,16 +159,28 @@ export function PostEditorShell({ mode, detail, navigate }: PostEditorShellProps
             }
           />
           {isEditing ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              render={
-                <Link to={`/posts/${detail.post.slug}`} target="_blank" rel="noreferrer">
-                  <ExternalLinkIcon />
-                  <span className="sr-only lg:not-sr-only">公开预览</span>
-                </Link>
-              }
-            />
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                render={
+                  <Link to={`/posts/${detail.post.slug}`} target="_blank" rel="noreferrer">
+                    <ExternalLinkIcon />
+                    <span className="sr-only lg:not-sr-only">公开预览</span>
+                  </Link>
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                render={
+                  <Link to={`/editor/post/${detail.post.id}/analytics`}>
+                    <ChartLineIcon />
+                    <span className="sr-only lg:not-sr-only">分析</span>
+                  </Link>
+                }
+              />
+            </>
           ) : null}
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-2">

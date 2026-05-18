@@ -93,14 +93,14 @@ export function ImageDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] overflow-hidden p-0 outline-none sm:max-w-3xl">
-        <div className="flex max-h-[calc(100dvh-2rem)] flex-col">
-          <DialogHeader className="px-6 pt-6">
-            <DialogTitle className="truncate">{fileName}</DialogTitle>
-            <DialogDescription className="truncate">{image.storagePath}</DialogDescription>
+      <DialogContent className="h-dvh max-h-dvh w-dvw max-w-dvw gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-auto sm:max-h-[min(900px,92dvh)] sm:max-w-3xl sm:rounded-lg sm:border">
+        <div className="flex h-dvh flex-col sm:h-auto sm:max-h-[min(900px,92dvh)]">
+          <DialogHeader className="shrink-0 px-4 pt-4 sm:px-6 sm:pt-6">
+            <DialogTitle className="truncate text-base sm:text-lg">{fileName}</DialogTitle>
+            <DialogDescription className="truncate text-xs sm:text-sm">{image.storagePath}</DialogDescription>
           </DialogHeader>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 pb-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-2 sm:gap-4 sm:px-6">
             <div className="flex items-center justify-center rounded-md border bg-muted">
               {/* Plain <img>: this is the admin library, lazy-loaded
                   remote URL, alt="" because the file path + meta
@@ -110,11 +110,11 @@ export function ImageDetailDialog({
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="max-h-[60vh] w-auto max-w-full rounded-md object-contain"
+                className="max-h-[35vh] w-auto max-w-full rounded-md object-contain sm:max-h-[50vh] lg:max-h-[60vh]"
               />
             </div>
 
-            <dl className="grid gap-3 sm:grid-cols-2">
+            <dl className="grid grid-cols-2 gap-2 sm:gap-3">
               <MetaField label="尺寸">
                 {image.width}×{image.height}
               </MetaField>
@@ -127,30 +127,33 @@ export function ImageDetailDialog({
 
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs text-muted-foreground">公开 URL</Label>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 truncate rounded border bg-muted px-2 py-1 font-mono text-xs">
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="min-w-0 flex-1 truncate rounded border bg-muted px-2 py-1 font-mono text-xs">
                   {image.publicUrl}
                 </code>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onCopyUrl(image)}
-                  aria-label="复制公开 URL"
-                >
-                  {copied ? <CheckIcon data-icon /> : <CopyIcon data-icon />}
-                  {copied ? '已复制' : '复制'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  render={
-                    <a href={image.publicUrl} target="_blank" rel="nofollow noreferrer" aria-label="在新标签页打开">
-                      <ExternalLinkIcon data-icon /> 打开
-                    </a>
-                  }
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onCopyUrl(image)}
+                    aria-label="复制公开 URL"
+                  >
+                    {copied ? <CheckIcon data-icon /> : <CopyIcon data-icon />}
+                    <span className="hidden sm:inline">{copied ? '已复制' : '复制'}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <a href={image.publicUrl} target="_blank" rel="nofollow noreferrer" aria-label="在新标签页打开">
+                        <ExternalLinkIcon data-icon />
+                        <span className="hidden sm:inline">打开</span>
+                      </a>
+                    }
+                  />
+                </div>
               </div>
             </div>
 
@@ -191,21 +194,29 @@ export function ImageDetailDialog({
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col-reverse gap-2 border-t px-6 py-4 sm:flex-row sm:justify-between">
-            <Button type="button" variant="destructive" onClick={() => onDelete(image)}>
+          <DialogFooter className="shrink-0 flex-col-reverse gap-2 border-t px-4 py-3 sm:flex-row sm:justify-between sm:px-6 sm:py-4">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => onDelete(image)}
+            >
               <Trash2Icon data-icon /> 删除
             </Button>
-            <div className="flex gap-2">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
                 onClick={() => onRecalculateThumbhash(image)}
                 disabled={isRecalculatingThumbhash}
               >
                 <RefreshCwIcon data-icon className={isRecalculatingThumbhash ? 'animate-spin' : ''} />{' '}
                 {isRecalculatingThumbhash ? '计算中…' : '重新计算 thumbhash'}
               </Button>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto" onClick={onClose}>
                 <XIcon data-icon /> 关闭
               </Button>
             </div>

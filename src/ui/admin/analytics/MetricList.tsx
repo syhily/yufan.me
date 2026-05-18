@@ -14,9 +14,11 @@ export interface MetricListProps {
   type: MetricType
   initial?: MetricRow[]
   className?: string
+  entityType?: 'post' | 'page'
+  entityId?: string
 }
 
-export function MetricList({ type, initial, className }: MetricListProps) {
+export function MetricList({ type, initial, className, entityType, entityId }: MetricListProps) {
   const state = useAnalyticsState()
   const query = useQuery(
     orpcQuery.analytics.metrics.queryOptions({
@@ -27,6 +29,8 @@ export function MetricList({ type, initial, className }: MetricListProps) {
         endAt: state.preset ? undefined : String(state.range.endAt),
         filters: Object.keys(state.filters).length > 0 ? JSON.stringify(state.filters) : undefined,
         limit: 10,
+        entityType,
+        entityId,
       },
     }),
   )

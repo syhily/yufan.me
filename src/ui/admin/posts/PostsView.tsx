@@ -1,6 +1,7 @@
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ChartLineIcon,
   FilePenIcon,
   MessageSquareIcon,
   PinIcon,
@@ -468,6 +469,16 @@ function PostRow({ post, onDelete, onRestore }: PostRowProps) {
                 render={
                   <Link to={`/editor/post/${post.id}`}>
                     <FilePenIcon /> 编辑
+                  </Link>
+                }
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                title="分析"
+                render={
+                  <Link to={`/admin/posts/${post.id}/analytics`}>
+                    <ChartLineIcon />
                   </Link>
                 }
               />

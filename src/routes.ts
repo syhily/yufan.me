@@ -30,6 +30,7 @@ export default [
   layout('routes/editor/layout.tsx', [
     route('editor/post/new', 'routes/editor/post/new.tsx'),
     route('editor/post/:id', 'routes/editor/post/edit.tsx'),
+    route('editor/post/:id/analytics', 'routes/editor/post/analytics.tsx'),
     route('editor/page/new', 'routes/editor/page/new.tsx'),
     route('editor/page/:id', 'routes/editor/page/edit.tsx'),
   ]),
@@ -37,7 +38,9 @@ export default [
   layout('routes/admin/layout.tsx', [
     route('admin', 'routes/admin/dashboard.tsx'),
     route('admin/posts', 'routes/admin/posts/index.tsx'),
+    route('admin/posts/:postId/analytics', 'routes/admin/posts/analytics.tsx'),
     route('admin/pages', 'routes/admin/pages/index.tsx'),
+    route('admin/restore', 'routes/admin/restore.tsx'),
     route('admin/comments', 'routes/admin/comments.tsx'),
     route('admin/categories', 'routes/admin/categories.tsx'),
     route('admin/tags', 'routes/admin/tags.tsx'),
@@ -53,6 +56,7 @@ export default [
     route('admin/analytics', 'routes/admin/analytics/layout.tsx', [
       index('routes/admin/analytics/overview.tsx'),
       route('realtime', 'routes/admin/analytics/realtime.tsx'),
+      route('mentions', 'routes/admin/analytics/mentions.tsx'),
     ]),
     // Settings sub-layout — see README.md §H.
     layout('routes/admin/settings/layout.tsx', [
