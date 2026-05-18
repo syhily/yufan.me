@@ -64,6 +64,7 @@ export function ImageField({
   const [showUrl, setShowUrl] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [dragActive, setDragActive] = useState(false)
+  const [droppedFile, setDroppedFile] = useState<File | null>(null)
   const handlePick = (image: AdminImageDto) => onChange(image.publicUrl)
   const hasValue = value !== ''
 
@@ -90,8 +91,9 @@ export function ImageField({
     if (disabled) {
       return
     }
-    const droppedFile = e.dataTransfer.files?.[0]
-    if (droppedFile && droppedFile.type.startsWith('image/')) {
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      setDroppedFile(file)
       setUploadOpen(true)
     }
   }
@@ -199,8 +201,13 @@ export function ImageField({
       <UploadImageDialog
         open={uploadOpen}
         kind={{ kind: 'generic' }}
-        onClose={() => setUploadOpen(false)}
+        initialFile={droppedFile ?? undefined}
+        onClose={() => {
+          setDroppedFile(null)
+          setUploadOpen(false)
+        }}
         onUploaded={(image) => {
+          setDroppedFile(null)
           onChange(image.publicUrl)
           setUploadOpen(false)
         }}
