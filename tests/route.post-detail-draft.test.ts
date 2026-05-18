@@ -67,7 +67,14 @@ vi.mock('@/server/domains/auth/primitives', async () => {
 })
 
 vi.mock('@/server/domains/posts/repo', () => ({
-  findPostBySlug: vi.fn(async (slug: string) => (slug === 'hello' ? publishedPost : null)),
+  findPostBySlug: vi.fn(async (slug: string) => {
+    if (slug === 'hello') {
+      return publishedPost
+    }
+    // never-published is published=true but publishedRevisionId=null;
+    // the real findPostBySlug now returns null for this case.
+    return null
+  }),
   selectSidebarPosts: vi.fn(async () => []),
   listPublicPostMetas: vi.fn(async () => []),
 }))
@@ -153,7 +160,7 @@ describe('routes/post.detail draft visibility', () => {
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 
-  it('404s anonymous visitors on a draft post', async () => {
+  it('404s anonymous visitors on a draft post (published=false)', async () => {
     let thrown: unknown
     try {
       await postRoute.loader(
@@ -169,6 +176,25 @@ describe('routes/post.detail draft visibility', () => {
     expect(thrown).toBeInstanceOf(Response)
     expect((thrown as Response).status).toBe(404)
     expect(findPostBySlugMock).toHaveBeenCalledWith('secret')
+    expect(draftPreviewMock).not.toHaveBeenCalled()
+  })
+
+  it('404s anonymous visitors on a post with published=true but no published revision', async () => {
+    let thrown: unknown
+    try {
+      await postRoute.loader(
+        makeLoaderArgs({
+          request: new Request('http://localhost/posts/never-published'),
+          session: currentSession,
+          params: { slug: 'never-published' },
+        }),
+      )
+    } catch (error) {
+      thrown = error
+    }
+    expect(thrown).toBeInstanceOf(Response)
+    expect((thrown as Response).status).toBe(404)
+    expect(findPostBySlugMock).toHaveBeenCalledWith('never-published')
     expect(draftPreviewMock).not.toHaveBeenCalled()
   })
 

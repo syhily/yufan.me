@@ -315,6 +315,13 @@ viewport `<meta>` while any control is focused.
   image generation. Any new projection function that produces a public
   `cover` field MUST replicate this fallback and be covered by a unit
   test in `tests/service.cms-posts-projection.test.ts`.
+- **Draft post visibility gate.** A post is considered draft (invisible
+  to the public) when `published=false` OR `publishedRevisionId=null`.
+  The admin lifecycle filter treats both cases as draft; all public
+  queries (`buildPublicPostsWhere`, `isCatalogVisible`, `findPostBySlug`)
+  MUST check both conditions. A post with `published=true` but no
+  published revision must NOT appear on the home page, in listings,
+  feeds, or sitemap.
 
 ### Taxonomies (categories, tags, friends)
 
