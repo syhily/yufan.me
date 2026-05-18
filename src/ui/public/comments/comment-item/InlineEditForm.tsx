@@ -46,7 +46,11 @@ export function InlineEditForm({ commentId, onCancel, onSaved }: InlineEditFormP
   // Load the raw PT body on first mount.
   useEffect(() => {
     raw.mutate({ rid: String(commentId) })
-  }, [commentId, raw, raw.mutate])
+    // `raw` object reference is unstable across renders; only `mutate`
+    // is memoised. Keying solely on `commentId` prevents a re-fetch
+    // loop that would keep resetting the editor cursor to the end.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commentId])
 
   const saving = editAction.isPending
 

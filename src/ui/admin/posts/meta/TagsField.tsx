@@ -1,5 +1,5 @@
 import { XIcon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { AdminTagDto } from '@/shared/types/tags'
 
@@ -8,6 +8,7 @@ import { Badge } from '@/ui/components/badge'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
+import { cn } from '@/ui/lib/cn'
 
 export interface TagsFieldProps {
   values: string[]
@@ -18,6 +19,9 @@ export interface TagsFieldProps {
 export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const [input, setInput] = useState('')
   const [tags, setTags] = useState<AdminTagDto[]>([])
+  const [open, setOpen] = useState(false)
+  const [highlighted, setHighlighted] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
   const tagsQuery = useQuery(orpcQuery.admin.tags.list.queryOptions({ input: { limit: 100 } }))
 
   useEffect(() => {
@@ -34,6 +38,7 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
       }
       onChange([...values, name])
       setInput('')
+      setOpen(false)
     },
     [values, onChange],
   )
@@ -48,8 +53,31 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
   const knownTagNames = new Set(tags.map((t) => t.name))
   const unknownTags = values.filter((v) => !knownTagNames.has(v))
 
+  const filtered = tags.filter(
+    (t) => t.name.toLowerCase().includes(input.trim().toLowerCase()) && !values.includes(t.name),
+  )
+
+  // Click outside closes the dropdown.
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    function handleClick(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  // Reset highlight when the filtered list changes.
+  useEffect(() => {
+    setHighlighted(0)
+  }, [input])
+
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2" ref={containerRef}>
       <Label>标签</Label>
       <div className="flex flex-wrap gap-1.5">
         {values.map((tag) => (
@@ -68,19 +96,69 @@ export function TagsField({ values, onChange, disabled }: TagsFieldProps) {
         ))}
       </div>
       <div className="flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              addTag(input)
-            }
-          }}
-          disabled={disabled}
-          placeholder="输入标签名称，按回车添加"
-          className="flex-1"
-        />
+        <div className="relative flex-1">
+          <Input
+            value={input}
+            onChange={(e) => {
+              setInput(e.target.value)
+              setOpen(e.target.value.trim().length > 0)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                if (open && filtered.length > 0) {
+                  addTag(filtered[highlighted]?.name ?? input)
+                } else {
+                  addTag(input)
+                }
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                if (!open && filtered.length > 0) {
+                  setOpen(true)
+                }
+                setHighlighted((i) => Math.min(i + 1, filtered.length - 1))
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                setHighlighted((i) => Math.max(i - 1, 0))
+              } else if (e.key === 'Escape') {
+                setOpen(false)
+              }
+            }}
+            onFocus={() => {
+              if (input.trim().length > 0 && filtered.length > 0) {
+                setOpen(true)
+              }
+            }}
+            disabled={disabled}
+            placeholder="输入标签名称，按回车添加"
+            className="w-full"
+            autoComplete="off"
+          />
+          {open && filtered.length > 0 && (
+            <ul className="absolute z-(--z-modal) mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover py-1 shadow-md">
+              {filtered.map((tag, index) => (
+                <li
+                  key={tag.id}
+                  role="option"
+                  aria-selected={index === highlighted}
+                  onMouseEnter={() => setHighlighted(index)}
+                  onMouseDown={(e) => {
+                    // Prevent the input from losing focus before the click
+                    // is processed, which would prematurely close the list.
+                    e.preventDefault()
+                    addTag(tag.name)
+                  }}
+                  className={cn(
+                    'cursor-pointer px-3 py-2 text-sm',
+                    index === highlighted ? 'bg-accent text-accent-foreground' : 'text-popover-foreground',
+                  )}
+                >
+                  {tag.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         <Button
           type="button"
           variant="outline"
