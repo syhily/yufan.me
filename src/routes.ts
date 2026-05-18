@@ -67,7 +67,7 @@ export default [
       route('admin/settings/seo', 'routes/admin/settings/seo.tsx'),
       route('admin/settings/mail', 'routes/admin/settings/mail.tsx'),
       route('admin/settings/cache', 'routes/admin/settings/cache.tsx'),
-      route('admin/settings/rate-limit', 'routes/admin/settings/rate-limit.tsx'),
+      route('admin/settings/threshold', 'routes/admin/settings/threshold.tsx'),
       route('admin/settings/search', 'routes/admin/settings/search.tsx'),
       route('admin/settings/fonts', 'routes/admin/settings/fonts.tsx'),
       route('admin/settings/backup', 'routes/admin/settings/backup.tsx'),

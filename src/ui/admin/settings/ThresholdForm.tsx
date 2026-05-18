@@ -91,7 +91,7 @@ function RateLimitBucketCard({
   )
 }
 
-export function RateLimitForm({ rateLimit }: RateLimitFormProps) {
+export function ThresholdForm({ rateLimit }: RateLimitFormProps) {
   const { draft, setDraft, isDirty, onSubmit, isPending, status, errorMessage, revert } = useSettingsForm<
     RateLimitSettings,
     FormState

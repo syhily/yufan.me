@@ -93,7 +93,7 @@ export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   mail: { to: '/admin/settings/mail', label: '邮件服务', description: 'Zeabur ZSend 配置 / 测试发送' },
   cache: { to: '/admin/settings/cache', label: '缓存管理', description: 'OG 图 / 头像 / 日历的 Redis 缓存' },
   rateLimit: {
-    to: '/admin/settings/rate-limit',
+    to: '/admin/settings/threshold',
     label: '流控设置',
     description: '登录、评论、点赞按 IP / 邮箱的限流策略',
   },

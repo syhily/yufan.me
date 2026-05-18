@@ -7,9 +7,9 @@ import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
 import { settingsMeta } from '@/server/render/seo/settings-meta'
-import { RateLimitForm } from '@/ui/admin/settings/RateLimitForm'
+import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
 
-export const meta = settingsMeta('流控设置')
+export const meta = settingsMeta('限流阈值')
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const ctx = getRouteRequestContext({ request, context })
@@ -17,7 +17,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return null
 }
 
-export default function WpAdminSettingsRateLimitRoute() {
+export default function AdminSettingsThresholdRoute() {
   const { bundle } = useOutletContext<SettingsOutletContext>()
-  return <RateLimitForm rateLimit={bundle.rateLimit} />
+  return <ThresholdForm rateLimit={bundle.rateLimit} />
 }
