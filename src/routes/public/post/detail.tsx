@@ -1,16 +1,23 @@
 import { data } from 'react-router'
 
+import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
+
+import { tryGetSessionContext } from '@/server/domains/auth/context'
+import { resolveSessionContext } from '@/server/domains/auth/primitives'
 import { getTagsByNames, listAllTags } from '@/server/domains/catalog/queries'
 import { findPostBySlug, selectSidebarPosts } from '@/server/domains/posts/repo'
-import { loadPublicDetailData, redirectPermanent, requireDetailSource } from '@/server/http/loaders/detail'
+import { loadPostDraftPreviewBySlug } from '@/server/domains/posts/service'
+import { loadPublicDetailData, redirectPermanent } from '@/server/http/loaders/detail'
 import { detailHeaders, publicShouldRevalidate } from '@/server/http/loaders/route-exports'
 import { selectSidebarTags } from '@/server/http/loaders/sidebar-select'
 import { ifNoneMatch, notModifiedResponse, weakEtag } from '@/server/infra/http/etag'
+import { notFound } from '@/server/infra/http/status'
 import { resolveImageMetaBySources } from '@/server/render/image-enhance'
 import { bundleFromMatches, routeMeta, seoForPost } from '@/server/render/seo/meta'
 import { getSidebarWidgetCount, requireBlogSettingsSection } from '@/shared/config/blog'
 import { toClientPost, toDetailPostShell } from '@/shared/types/catalog'
 import { canonicalPostPath } from '@/shared/utils/paths'
+import { hasAtLeast } from '@/shared/utils/roles'
 import { PortableTextBody } from '@/ui/pt/render'
 import { PostDetailBody } from '@/ui/public/post/PostDetailBody'
 import { PostFontLinks } from '@/ui/public/post/PostFontLinks'
@@ -21,7 +28,24 @@ export const headers = detailHeaders
 export const shouldRevalidate = publicShouldRevalidate
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
-  const sourcePost = requireDetailSource((await findPostBySlug(params.slug)) ?? undefined)
+  let sourcePost = (await findPostBySlug(params.slug)) ?? undefined
+  let draftMarker: DraftMarker = null
+
+  if (sourcePost === undefined) {
+    const sessionContext = tryGetSessionContext(context) ?? (await resolveSessionContext(request))
+    if (hasAtLeast(sessionContext.role, 'author')) {
+      const preview = await loadPostDraftPreviewBySlug(params.slug)
+      if (preview !== null) {
+        sourcePost = preview.post as unknown as typeof sourcePost
+        draftMarker = 'draft'
+      }
+    }
+  }
+
+  if (sourcePost === undefined) {
+    notFound()
+  }
+
   const clientPost = toClientPost(sourcePost)
   const canonical = canonicalPostPath(params.slug, clientPost.slug)
   if (canonical !== undefined) {
@@ -59,6 +83,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       tags: sidebarTags,
       detail,
       imageMeta,
+      draftMarker,
     },
     { headers: { 'Set-Cookie': commentCsrfSetCookie, ETag: etag } },
   )
@@ -73,7 +98,7 @@ export function meta({ loaderData, matches }: Route.MetaArgs) {
 }
 
 export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta } = loaderData
+  const { post, body, visibleTags, sidebarPosts, tags, detail, imageMeta, draftMarker } = loaderData
   return (
     <>
       <PostFontLinks />
@@ -89,6 +114,7 @@ export default function PostDetailRoute({ loaderData }: Route.ComponentProps) {
         commentCsrfToken={detail.csrfToken}
         commentsPromise={detail.comments}
         currentUser={detail.currentUser}
+        draftMarker={draftMarker}
         sidebar={{
           posts: sidebarPosts,
           tags,

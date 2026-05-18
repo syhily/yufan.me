@@ -379,7 +379,7 @@ function buildPublicPostFilters(
 
 export async function findPostBySlug(slug: string): Promise<Post | null> {
   const meta = await findPublicPostMetaBySlug(slug)
-  if (meta === null) {
+  if (meta === null || !meta.published) {
     return null
   }
   const revision = meta.publishedRevisionId === null ? null : await findContentById(meta.publishedRevisionId)

@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 
 import type { ClientTag, CommentFormUser, DetailPostShell, MarkdownHeading } from '@/shared/types/catalog'
 import type { DetailPageComments } from '@/shared/types/comments'
+import type { DraftMarker } from '@/ui/public/post/DetailBodyChrome'
 
 import { useMediumZoom } from '@/client/hooks/use-medium-zoom'
 import { useSiteIdentity } from '@/ui/lib/blog-config-context'
@@ -23,6 +24,7 @@ export interface PostDetailBodyProps {
   /** Streamed in via React Router `<Await>`. */
   commentsPromise: Promise<DetailPageComments>
   currentUser?: CommentFormUser
+  draftMarker?: DraftMarker
   sidebar: SidebarData
   children: ReactNode
 }
@@ -37,6 +39,7 @@ export function PostDetailBody({
   commentCsrfToken,
   commentsPromise,
   currentUser,
+  draftMarker,
   sidebar,
   children,
 }: PostDetailBodyProps) {
@@ -74,6 +77,7 @@ export function PostDetailBody({
                 commentsEnabled={post.comments}
                 admin={admin}
                 editHref={admin ? `/wp-admin/posts/${post.id}/edit` : undefined}
+                draftMarker={draftMarker}
                 postContentRef={postContentRef}
                 metaClassName="mt-4 mb-3"
                 metaExtra={
