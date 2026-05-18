@@ -308,6 +308,13 @@ viewport `<meta>` while any control is focused.
   widgets but stay in `/archives`, `/tags/:slug`, `/search/:keyword`,
   `sitemap.xml`, feeds, and category/tag listings and counts.
   Future-dated posts stay excluded until publish time.
+- **Post default cover image.** Both `toCmsPost` (detail page) and
+  `toClientPostFromMeta` (listings) must fall back to
+  `/images/open-graph.png` when `meta.cover` is empty. This prevents
+  broken `<Image src="" />` renders in article cards and failed OG
+  image generation. Any new projection function that produces a public
+  `cover` field MUST replicate this fallback and be covered by a unit
+  test in `tests/service.cms-posts-projection.test.ts`.
 
 ### Taxonomies (categories, tags, friends)
 

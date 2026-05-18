@@ -341,7 +341,7 @@ export async function listPublicPostsWithContent(
 // --- Lightweight projection (no content join) --------------------------------
 
 /** Public `date` is first publication time; falls back to `published_at` before the first publish. */
-function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
+export function toClientPostFromMeta(meta: PostMetaRow): ClientPost {
   const date = meta.firstPublishedAt ?? meta.publishedAt
   return {
     id: String(meta.id),
