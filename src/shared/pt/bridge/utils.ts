@@ -1,4 +1,4 @@
-import type { PmNode, PmInlineNode, PmBlockNode } from './types'
+import type { PmNode, PmInlineNode, PmBlockNode } from '@/shared/pt/bridge/types'
 
 export function isInline(node: PmNode): node is PmInlineNode {
   return node.type === 'text'

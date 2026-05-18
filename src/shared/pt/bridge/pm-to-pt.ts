@@ -1,3 +1,4 @@
+import type { PmDoc, PmNode, PmBlockNode } from '@/shared/pt/bridge/types'
 import type {
   Block,
   FootnoteDefinitionBlock,
@@ -12,8 +13,6 @@ import { flattenList } from '@/shared/pt/bridge/nodes/list'
 import { pmTableToBlock } from '@/shared/pt/bridge/nodes/table'
 import { paragraphToTextBlock } from '@/shared/pt/bridge/nodes/text'
 import { isBlock, isInline, stringAttr, numberAttr } from '@/shared/pt/bridge/utils'
-
-import type { PmDoc, PmNode, PmBlockNode } from './types'
 
 /** Convert a ProseMirror `doc` node back into a PortableText body. */
 export function pmDocToBody(doc: PmDoc): PortableTextBody {

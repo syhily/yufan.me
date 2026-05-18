@@ -83,7 +83,10 @@ vi.mock('@/server/infra/db/operations/user', () => ({
   findUsersByIds: vi.fn(async () => []),
 }))
 
-const { listSessionsByUser, recordSessionLogin } = await import('@/server/domains/auth/repo')
+const [{ listSessionsByUser }, { recordSessionLogin }] = await Promise.all([
+  import('@/server/domains/auth/service'),
+  import('@/server/domains/auth/repo'),
+])
 
 beforeEach(() => {
   userSets.clear()

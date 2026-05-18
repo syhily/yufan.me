@@ -1,3 +1,4 @@
+import type { PmDoc, PmNode, PmBlockNode } from '@/shared/pt/bridge/types'
 import type { Block, PortableTextBody } from '@/shared/pt/schema'
 
 import { codeBlockToPmNode } from '@/shared/pt/bridge/nodes/code'
@@ -13,8 +14,6 @@ import { tableBlockToPmNode } from '@/shared/pt/bridge/nodes/table'
 import { textBlockToPmNode } from '@/shared/pt/bridge/nodes/text'
 import { twoColumnBlockToPmNode } from '@/shared/pt/bridge/nodes/twoColumn'
 import { validatePortableTextBody } from '@/shared/pt/utils'
-
-import type { PmDoc, PmNode, PmBlockNode } from './types'
 
 /**
  * Validate and convert untyped input into a ProseMirror `doc` node.

@@ -11,6 +11,7 @@ import {
   type SessionUser,
 } from '@/server/domains/auth/session-storage'
 import { findUserById, updateLastLogin, verifyUserPassword } from '@/server/infra/db/operations/user'
+import { getLogger } from '@/server/infra/logger'
 import { redisInstance } from '@/server/infra/redis/storage'
 
 export interface SessionContext {
@@ -58,6 +59,10 @@ export async function establishLoginSession(
   options: EstablishLoginOptions = {},
 ): Promise<EstablishedLoginSession> {
   if (!dbUser.role) {
+    getLogger('auth').error('establishLoginSession called for user without role', {
+      userId: String(dbUser.id),
+      email: dbUser.email,
+    })
     throw new Error('establishLoginSession requires a user with a role')
   }
   if (options.revokeOtherSessions) {

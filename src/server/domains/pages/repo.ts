@@ -5,6 +5,7 @@ import type { NewPageMeta, PageMetaRow } from '@/server/infra/db/types'
 import type { Page } from '@/shared/types/catalog'
 
 import { findContentById, findContentsByIds } from '@/server/domains/content/repo'
+import { isCatalogVisible } from '@/server/domains/content/schema'
 import { toCmsPage } from '@/server/domains/pages/projection'
 import { db } from '@/server/infra/db/pool'
 import { page as pageMetaTable, user } from '@/server/infra/db/schema'
@@ -177,25 +178,6 @@ export async function restorePageMeta(id: bigint): Promise<boolean> {
 }
 
 // --- Hydrated queries (return public Page DTOs) ------------------------------
-
-function isCatalogVisible(
-  meta: { deletedAt: Date | null; published: boolean; publishedRevisionId: bigint | null; publishedAt: Date },
-  asOf: Date = new Date(),
-): boolean {
-  if (meta.deletedAt !== null) {
-    return false
-  }
-  if (!meta.published) {
-    return false
-  }
-  if (meta.publishedRevisionId === null) {
-    return false
-  }
-  if (meta.publishedAt.getTime() > asOf.getTime()) {
-    return false
-  }
-  return true
-}
 
 async function hydratePageImages(pages: Page[]): Promise<void> {
   await hydrateImageRefs(

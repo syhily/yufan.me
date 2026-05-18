@@ -1,12 +1,12 @@
 import type { LoaderFunctionArgs } from 'react-router'
 
-import type { PostMetaRow } from '@/server/infra/db/types'
 import type { ResolvedImageMeta } from '@/server/render/image-enhance'
 import type { PortableTextBody } from '@/shared/pt/schema'
 import type { MarkdownHeading } from '@/shared/utils/toc'
 
 import { tryGetSessionContext } from '@/server/domains/auth/context'
 import { resolveSessionContext } from '@/server/domains/auth/primitives'
+import { isCatalogVisible } from '@/server/domains/content/schema'
 import { buildDbPage, findPageBySlug } from '@/server/domains/pages/repo'
 import { loadPageDraftPreviewBySlug } from '@/server/domains/pages/service'
 import { findPublicPostMetaBySlug } from '@/server/domains/posts/repo'
@@ -16,22 +16,6 @@ import { notFound } from '@/server/infra/http/status'
 import { resolveImageMetaBySources } from '@/server/render/image-enhance'
 
 type DraftMarker = 'draft' | 'unpublished-draft' | 'published-draft' | null
-
-function isCatalogVisible(meta: PostMetaRow, asOf = new Date()): boolean {
-  if (meta.deletedAt !== null) {
-    return false
-  }
-  if (!meta.published) {
-    return false
-  }
-  if (meta.publishedRevisionId === null) {
-    return false
-  }
-  if (meta.publishedAt.getTime() > asOf.getTime()) {
-    return false
-  }
-  return true
-}
 
 export interface PagePreviewResult {
   page: {

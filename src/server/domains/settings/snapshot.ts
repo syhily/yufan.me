@@ -1,5 +1,6 @@
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
+import { RATE_LIMIT_BUCKET_KEYS } from '@/server/domains/settings/schema'
 import {
   buildDefaultSectionPayloads,
   SECTION_REGISTRY,
@@ -160,8 +161,7 @@ const PROBES: Record<SettingsSection, SectionProbe> = {
   // `likeIncreaseIp` surface (e.g. someone hand-edited the JSONB)
   // falls through and gets repaired by the registry-default backfill.
   rateLimit: (value) => {
-    const buckets = ['signInIp', 'commentPostIp', 'commentPostEmail', 'likeIncreaseIp'] as const
-    for (const key of buckets) {
+    for (const key of RATE_LIMIT_BUCKET_KEYS) {
       const bucket = value[key]
       if (typeof bucket !== 'object' || bucket === null) {
         return false

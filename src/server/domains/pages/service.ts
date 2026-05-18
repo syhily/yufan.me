@@ -1,6 +1,7 @@
 import type { ContentRow, PageMetaRow } from '@/server/infra/db/types'
 
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
+import { isCatalogVisible } from '@/server/domains/content/schema'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import {
   toAdminPageDto,
@@ -68,28 +69,6 @@ const log = getLogger('pages.service')
 
 // Visibility gate shared by the listing and single-page lookups.
 // A page is considered live publicly iff:
-//   1. It hasn't been soft-deleted (the repo lookups already filter
-//      this, but we re-check for defence in depth).
-//   2. `published === true` (operator hasn't taken it offline).
-//   3. `publishedAt <= now()` (i.e. not scheduled for the future).
-// Future-dated rows behave like scheduled posts: promoted in the DB but hidden
-// from listings, feeds, and the public detail route until `publishedAt`.
-function isCatalogVisible(meta: PageMetaRow, asOf: Date = new Date()): boolean {
-  if (meta.deletedAt !== null) {
-    return false
-  }
-  if (!meta.published) {
-    return false
-  }
-  if (meta.publishedRevisionId === null) {
-    return false
-  }
-  if (meta.publishedAt.getTime() > asOf.getTime()) {
-    return false
-  }
-  return true
-}
-
 let cachedPages: CmsPage[] | null = null
 let cachedPagesAt = 0
 const PAGE_CACHE_TTL_MS = 10_000

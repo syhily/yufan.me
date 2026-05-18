@@ -2,7 +2,7 @@ import { data } from 'react-router'
 
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { requireRole } from '@/server/domains/auth/rbac'
-import { listSessionsByUser } from '@/server/domains/auth/repo'
+import { listSessionsByUser } from '@/server/domains/auth/service'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { MySessionsView } from '@/ui/admin/my/MySessionsView'
 

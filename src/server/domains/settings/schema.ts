@@ -445,17 +445,21 @@ const rateLimitBucketSchema = z.object({
   maxAttempts: z.coerce.number().int().min(RATE_LIMIT_MIN_ATTEMPTS).max(RATE_LIMIT_MAX_ATTEMPTS),
 })
 
-export const rateLimitSchema = z.object({
-  signInIp: rateLimitBucketSchema,
-  commentPostIp: rateLimitBucketSchema,
-  commentPostEmail: rateLimitBucketSchema,
-  likeIncreaseIp: rateLimitBucketSchema,
-  inviteIp: rateLimitBucketSchema,
-  inviteEmail: rateLimitBucketSchema,
-  passwordResetIp: rateLimitBucketSchema,
-  passwordResetEmail: rateLimitBucketSchema,
-  passwordResetTarget: rateLimitBucketSchema,
-})
+export const RATE_LIMIT_BUCKET_KEYS = [
+  'signInIp',
+  'commentPostIp',
+  'commentPostEmail',
+  'likeIncreaseIp',
+  'inviteIp',
+  'inviteEmail',
+  'passwordResetIp',
+  'passwordResetEmail',
+  'passwordResetTarget',
+] as const
+
+export const rateLimitSchema = z.object(
+  Object.fromEntries(RATE_LIMIT_BUCKET_KEYS.map((key) => [key, rateLimitBucketSchema])),
+)
 export type RateLimitInput = z.infer<typeof rateLimitSchema>
 
 export const searchSchema = z.object({

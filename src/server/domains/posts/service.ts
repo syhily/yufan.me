@@ -6,6 +6,7 @@ import type { PortableTextBody } from '@/shared/pt/schema'
 
 import { canEditPost, type ViewerContext as RbacViewerContext } from '@/server/domains/auth/rbac'
 import { canonicalizeBodyOrThrow } from '@/server/domains/content/save-helpers'
+import { isCatalogVisible } from '@/server/domains/content/schema'
 import { syncLibraryImageBlocks } from '@/server/domains/pages/image-sync'
 import { indexPost, removePostIndex } from '@/server/domains/posts/indexer'
 import {
@@ -62,22 +63,6 @@ async function ensureTagsExist(tagNames: string[], tx = db): Promise<void> {
 }
 
 // --- Public catalog helpers -------------------------------------------------
-
-function isCatalogVisible(meta: PostMetaRow, asOf: Date = new Date()): boolean {
-  if (meta.deletedAt !== null) {
-    return false
-  }
-  if (!meta.published) {
-    return false
-  }
-  if (meta.publishedRevisionId === null) {
-    return false
-  }
-  if (meta.publishedAt.getTime() > asOf.getTime()) {
-    return false
-  }
-  return true
-}
 
 // Process-level cache for catalog post metas. Cleared on admin writes
 // via `clearPostMetasCache()`; the TTL is a stale-while-revalidate floor
