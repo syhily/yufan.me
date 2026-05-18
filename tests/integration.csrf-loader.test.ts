@@ -1,0 +1,27 @@
+import { describe, expect, it, vi } from 'vite-plus/test'
+
+vi.mock('@/server/domains/auth/context', () => ({
+  getRouteRequestContext: vi.fn().mockReturnValue({
+    role: 'admin',
+    user: { id: '1', name: 'Admin', email: 'admin@test' },
+    url: new URL('http://localhost/wp-admin/posts'),
+  }),
+}))
+
+describe('integration: admin layout loader issues a CSRF token', () => {
+  it('returns csrfToken in the loader data', async () => {
+    const { loader } = await import('@/routes/wp-admin/layout')
+    const request = new Request('http://localhost/wp-admin/posts')
+    const result = await loader({ request, context: new Map(), params: {} } as any)
+
+    expect(result).toBeDefined()
+    expect(result.type).toBe('DataWithResponseInit')
+
+    // React Router's `data()` returns `{ type, data, init }` where `data`
+    // is the plain payload object (already serialised by RR).
+    const payload = result.data
+    expect(payload.csrfToken).toBeDefined()
+    expect(typeof payload.csrfToken).toBe('string')
+    expect(payload.csrfToken.length).toBeGreaterThan(0)
+  })
+})
