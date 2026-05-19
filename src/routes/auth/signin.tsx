@@ -16,7 +16,6 @@ import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/s
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { AdminCredentialsForm } from '@/ui/admin/auth/AdminCredentialsForm'
-import { useSiteIdentityOptional } from '@/ui/lib/blog-config-context'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'
@@ -185,33 +184,12 @@ export function meta({ matches }: Route.MetaArgs) {
 }
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
-  const siteIdentity = useSiteIdentityOptional()
-  const siteTitle = siteIdentity?.title ?? ''
-
-  const description =
-    loaderData.action === 'lostpassword'
-      ? '输入邮箱以接收密码重置链接。'
-      : loaderData.action === 'resetpassword'
-        ? '设置新密码。'
-        : loaderData.action === 'accept-invite'
-          ? '设置登录密码以接受邀请。'
-          : '使用管理员邮箱与密码登陆后台。'
-
   return (
     <div className="flex flex-col items-center">
-      <header className="mb-10 flex flex-col items-center gap-5">
-        <BrandLogo alt={siteTitle} className="h-14 w-auto" />
-        <p className="text-center text-[15px] leading-relaxed text-muted-foreground">{description}</p>
-      </header>
-
-      <AdminCredentialsForm
-        csrf={loaderData.csrf}
-        mode={loaderData.action as 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'}
-        resetToken={loaderData.resetToken ?? undefined}
-      />
+      <BrandLogo alt="" className="mb-10 h-20 w-auto" />
 
       {(actionData?.error || (actionData as unknown as { message?: string })?.message || loaderData.tokenError) && (
-        <div className="mt-5 text-center text-sm">
+        <div className="mb-10 text-center text-sm">
           {actionData?.error && (
             <p role="alert" aria-live="polite" className="text-destructive">
               {actionData.error}
@@ -229,6 +207,12 @@ export default function LoginRoute({ actionData, loaderData }: Route.ComponentPr
           )}
         </div>
       )}
+
+      <AdminCredentialsForm
+        csrf={loaderData.csrf}
+        mode={loaderData.action as 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'}
+        resetToken={loaderData.resetToken ?? undefined}
+      />
     </div>
   )
 }

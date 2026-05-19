@@ -22,14 +22,12 @@ export default function AdminLayoutRoute() {
   useDetachPublicCss()
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background text-foreground">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--accent),transparent_55%),radial-gradient(circle_at_bottom_right,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_60%)]"
-      />
-      <main className="w-full max-w-[500px] px-8 py-12">
-        <Outlet />
-      </main>
+    <div className="flex min-h-screen flex-col bg-white text-foreground">
+      <div className="flex flex-1 flex-shrink-0 items-center justify-center px-[5%] pb-[8vh]">
+        <main className="w-full max-w-[500px] py-12">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }
