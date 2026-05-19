@@ -5,9 +5,11 @@ import { z } from 'zod'
 
 import type { SiteIdentitySettings } from '@/shared/config/blog'
 
-import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
+import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
+import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
+import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
+import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Button } from '@/ui/components/button'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Input } from '@/ui/components/input'
@@ -18,25 +20,10 @@ interface TimeZoneItem {
 }
 
 interface GeneralFormProps {
-  // Per-section DTO: see `SiteIdentitySettings` in `@/shared/config/blog`.
-  // The matching DB row is `setting('blog.general')`.
   siteIdentity: SiteIdentitySettings
-  /**
-   * Canonical IANA timezone list, supplied by the layout loader from
-   * `getSupportedTimeZones()`. Keeps this UI module in the
-   * client-safe `@/ui/*` layer (no server import).
-   */
   timeZones: readonly string[]
 }
 
-// Client-side schema mirrors the server's `generalSchema` in
-// `@/server/domains/settings/schema.ts`. We duplicate it here instead of
-// importing the server module so the client bundle does not pull in
-// `@/server/**`. The two copies move together — the server is still
-// the authoritative validator (the `updateSettings` action will reject
-// a payload that fails the server-side parse), the client copy is
-// only responsible for surfacing field-level errors inline before the
-// user hits "save".
 const generalFormSchema = z.object({
   title: z.string().trim().min(1, '请填写站点标题').max(120, '最多 120 个字符'),
   description: z.string().trim().min(1, '请填写站点描述').max(240, '最多 240 个字符'),
@@ -68,11 +55,7 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
     description: source.description,
     website: source.website,
     keywords: source.keywords.map((value) => ({ value })),
-    author: {
-      name: source.author.name,
-      email: source.author.email,
-      url: source.author.url,
-    },
+    author: { name: source.author.name, email: source.author.email, url: source.author.url },
     locale: source.locale,
     timeZone: source.timeZone,
     timeFormat: source.timeFormat,
@@ -82,8 +65,8 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
   }
 }
 
-export function GeneralForm({ siteIdentity, timeZones }: GeneralFormProps) {
-  const { onSubmit, isDirty, isPending, status, errorMessage, revert, form } = useSettingsForm<
+function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
     SiteIdentitySettings,
     GeneralFormValues
   >({
@@ -109,235 +92,369 @@ export function GeneralForm({ siteIdentity, timeZones }: GeneralFormProps) {
       moeIcpNo: values.moeIcpNo,
     }),
   })
-  const { register, control, formState } = form
-  const keywords = useFieldArray({ control, name: 'keywords' })
 
-  // Adapt the canonical IANA list to Base UI Combobox's `{ value, label }`
-  // contract. The transformation is cheap (~400 entries) but memoised so
-  // the Combobox does not see a fresh array reference on every keystroke
-  // and re-derive its filter state.
-  const timeZoneItems = useMemo<TimeZoneItem[]>(
-    () => timeZones.map((zone) => ({ value: zone, label: zone })),
-    [timeZones],
-  )
+  const keywords = useFieldArray({ control: form.control, name: 'keywords' })
+  const { formState } = form
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <SettingsSection
-        title="基本信息"
-        description="站点标题、描述、关键词、作者签名。SEO 和邮件模板也会读取这些字段。"
-      >
-        <SettingsRow label="站点标题" htmlFor="general-title" error={formState.errors.title?.message}>
-          {(controlProps) => <Input id="general-title" maxLength={120} {...register('title')} {...controlProps} />}
-        </SettingsRow>
-        <SettingsRow
-          label="站点描述"
-          htmlFor="general-description"
-          hint="出现在首页 SEO description 与默认 meta 中。"
-          error={formState.errors.description?.message}
-        >
-          {(controlProps) => (
-            <Input id="general-description" maxLength={240} {...register('description')} {...controlProps} />
-          )}
-        </SettingsRow>
-        <SettingsRow
-          label="站点 URL"
-          htmlFor="general-website"
-          hint="必须是完整的 https URL，结尾不带斜杠。"
-          error={formState.errors.website?.message}
-        >
-          {(controlProps) => (
-            <Input
-              id="general-website"
-              type="url"
-              placeholder="https://example.com"
-              {...register('website')}
-              {...controlProps}
-            />
-          )}
-        </SettingsRow>
-        <SettingsRow
-          label="关键词"
-          hint="搜索引擎 keyword meta，每个不超过 60 字符，最多 20 个。"
-          error={formState.errors.keywords?.message || formState.errors.keywords?.root?.message}
-        >
-          <div className="flex flex-col gap-2">
-            {keywords.fields.map((field, index) => (
-              <div key={field.id} className="flex gap-2">
-                <Input
-                  maxLength={60}
-                  placeholder="例如：blog"
-                  aria-invalid={formState.errors.keywords?.[index]?.value ? true : undefined}
-                  {...register(`keywords.${index}.value` as const)}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => keywords.remove(index)}
-                  aria-label="删除关键词"
-                >
-                  <Trash2Icon data-icon />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => keywords.append({ value: '' })}
-              disabled={keywords.fields.length >= 20}
-            >
-              <PlusIcon data-icon /> 添加关键词
-            </Button>
-          </div>
-        </SettingsRow>
-      </SettingsSection>
+    <GhostSettingGroup
+      title="基本信息"
+      description="站点标题、描述、关键词、作者签名。SEO 和邮件模板也会读取这些字段。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow label="站点标题" htmlFor="general-title" error={formState.errors.title?.message}>
+            <Input id="general-title" maxLength={120} {...form.register('title')} />
+          </SettingsRow>
+          <SettingsRow
+            label="站点描述"
+            htmlFor="general-description"
+            hint="出现在首页 SEO description 与默认 meta 中。"
+            error={formState.errors.description?.message}
+          >
+            <Input id="general-description" maxLength={240} {...form.register('description')} />
+          </SettingsRow>
+          <SettingsRow
+            label="站点 URL"
+            htmlFor="general-website"
+            hint="必须是完整的 https URL，结尾不带斜杠。"
+            error={formState.errors.website?.message}
+          >
+            <Input id="general-website" type="url" placeholder="https://example.com" {...form.register('website')} />
+          </SettingsRow>
+          <SettingsRow
+            label="关键词"
+            hint="搜索引擎 keyword meta，每个不超过 60 字符，最多 20 个。"
+            error={formState.errors.keywords?.message || formState.errors.keywords?.root?.message}
+          >
+            <div className="flex flex-col gap-2">
+              {keywords.fields.map((field, index) => (
+                <div key={field.id} className="flex gap-2">
+                  <Input
+                    maxLength={60}
+                    placeholder="例如：blog"
+                    aria-invalid={formState.errors.keywords?.[index]?.value ? true : undefined}
+                    {...form.register(`keywords.${index}.value` as const)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => keywords.remove(index)}
+                    aria-label="删除关键词"
+                  >
+                    <Trash2Icon data-icon />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => keywords.append({ value: '' })}
+                disabled={keywords.fields.length >= 20}
+              >
+                <PlusIcon data-icon /> 添加关键词
+              </Button>
+            </div>
+          </SettingsRow>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue label="站点标题" value={siteIdentity.title} />
+          <GhostSettingValue label="站点描述" value={siteIdentity.description} />
+          <GhostSettingValue label="站点 URL" value={siteIdentity.website} />
+          <GhostSettingValue label="关键词" value={siteIdentity.keywords.join('、') || '—'} />
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
 
-      <SettingsSection title="页脚信息" description="网站页脚的版权年份与备案号。">
-        <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
-          {(controlProps) => (
+function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+    SiteIdentitySettings,
+    GeneralFormValues
+  >({
+    section: 'general',
+    source: siteIdentity,
+    schema: generalFormSchema,
+    toState: toFormValues,
+    fromState: (values) => ({
+      title: values.title.trim(),
+      description: values.description.trim(),
+      website: values.website.trim(),
+      keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
+      author: {
+        name: values.author.name.trim(),
+        email: values.author.email.trim(),
+        url: values.author.url.trim(),
+      },
+      locale: values.locale.trim(),
+      timeZone: values.timeZone.trim(),
+      timeFormat: values.timeFormat.trim(),
+      initialYear: values.initialYear,
+      icpNo: values.icpNo,
+      moeIcpNo: values.moeIcpNo,
+    }),
+  })
+
+  const { formState } = form
+
+  return (
+    <GhostSettingGroup
+      title="页脚信息"
+      description="网站页脚的版权年份与备案号。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
             <Input
               id="general-initial-year"
               type="number"
               min={1970}
               max={9999}
-              {...register('initialYear', { valueAsNumber: true })}
-              {...controlProps}
+              {...form.register('initialYear', { valueAsNumber: true })}
             />
-          )}
-        </SettingsRow>
-        <SettingsRow label="ICP 备案号" htmlFor="general-icp" error={formState.errors.icpNo?.message}>
-          {(controlProps) => (
+          </SettingsRow>
+          <SettingsRow label="ICP 备案号" htmlFor="general-icp" error={formState.errors.icpNo?.message}>
             <Input
               id="general-icp"
               maxLength={60}
               placeholder="例如：皖ICP备2021002315号-2"
-              {...register('icpNo')}
-              {...controlProps}
+              {...form.register('icpNo')}
             />
-          )}
-        </SettingsRow>
-        <SettingsRow label="萌国备案号" htmlFor="general-moe-icp" error={formState.errors.moeIcpNo?.message}>
-          {(controlProps) => <Input id="general-moe-icp" maxLength={60} {...register('moeIcpNo')} {...controlProps} />}
-        </SettingsRow>
-      </SettingsSection>
+          </SettingsRow>
+          <SettingsRow label="萌国备案号" htmlFor="general-moe-icp" error={formState.errors.moeIcpNo?.message}>
+            <Input id="general-moe-icp" maxLength={60} {...form.register('moeIcpNo')} />
+          </SettingsRow>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue label="起始年份" value={`${siteIdentity.initialYear}`} />
+          <GhostSettingValue label="ICP 备案号" value={siteIdentity.icpNo || '—'} />
+          <GhostSettingValue label="萌国备案号" value={siteIdentity.moeIcpNo || '—'} />
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
 
-      <SettingsSection
-        title="作者信息"
-        description="评论邮件 + RSS feed 的 author 字段都引用这里的姓名 / 邮箱 / 主页。"
-      >
-        <SettingsRow label="作者姓名" htmlFor="general-author-name" error={formState.errors.author?.name?.message}>
-          {(controlProps) => (
-            <Input id="general-author-name" maxLength={60} {...register('author.name')} {...controlProps} />
-          )}
-        </SettingsRow>
-        <SettingsRow
-          label="作者邮箱"
-          htmlFor="general-author-email"
-          hint="评论通知 / 待审核提醒发件人。"
-          error={formState.errors.author?.email?.message}
-        >
-          {(controlProps) => (
-            <Input id="general-author-email" type="email" {...register('author.email')} {...controlProps} />
-          )}
-        </SettingsRow>
-        <SettingsRow label="作者主页" htmlFor="general-author-url" error={formState.errors.author?.url?.message}>
-          {(controlProps) => (
+function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+    SiteIdentitySettings,
+    GeneralFormValues
+  >({
+    section: 'general',
+    source: siteIdentity,
+    schema: generalFormSchema,
+    toState: toFormValues,
+    fromState: (values) => ({
+      title: values.title.trim(),
+      description: values.description.trim(),
+      website: values.website.trim(),
+      keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
+      author: {
+        name: values.author.name.trim(),
+        email: values.author.email.trim(),
+        url: values.author.url.trim(),
+      },
+      locale: values.locale.trim(),
+      timeZone: values.timeZone.trim(),
+      timeFormat: values.timeFormat.trim(),
+      initialYear: values.initialYear,
+      icpNo: values.icpNo,
+      moeIcpNo: values.moeIcpNo,
+    }),
+  })
+
+  const { formState } = form
+
+  return (
+    <GhostSettingGroup
+      title="作者信息"
+      description="评论邮件 + RSS feed 的 author 字段都引用这里的姓名 / 邮箱 / 主页。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow label="作者姓名" htmlFor="general-author-name" error={formState.errors.author?.name?.message}>
+            <Input id="general-author-name" maxLength={60} {...form.register('author.name')} />
+          </SettingsRow>
+          <SettingsRow
+            label="作者邮箱"
+            htmlFor="general-author-email"
+            hint="评论通知 / 待审核提醒发件人。"
+            error={formState.errors.author?.email?.message}
+          >
+            <Input id="general-author-email" type="email" {...form.register('author.email')} />
+          </SettingsRow>
+          <SettingsRow label="作者主页" htmlFor="general-author-url" error={formState.errors.author?.url?.message}>
             <Input
               id="general-author-url"
               type="url"
               placeholder="https://example.com"
-              {...register('author.url')}
-              {...controlProps}
+              {...form.register('author.url')}
             />
-          )}
-        </SettingsRow>
-      </SettingsSection>
+          </SettingsRow>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue label="作者姓名" value={siteIdentity.author.name} />
+          <GhostSettingValue label="作者邮箱" value={siteIdentity.author.email} />
+          <GhostSettingValue label="作者主页" value={siteIdentity.author.url} />
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
 
-      <SettingsSection
-        title="时间与本地化"
-        description="影响日期格式化函数（formatLocalDate / formatShowDate）以及 OG 图、邮件模板等所有依赖时区的渲染分支。"
-      >
-        <SettingsRow
-          label="语言"
-          htmlFor="general-locale"
-          hint="BCP 47 语言标签，例如 zh-CN、en-US。"
-          error={formState.errors.locale?.message}
-        >
-          {(controlProps) => (
-            <Input id="general-locale" maxLength={35} placeholder="zh-CN" {...register('locale')} {...controlProps} />
-          )}
-        </SettingsRow>
-        <SettingsRow
-          label="时区"
-          htmlFor="general-timezone"
-          hint="IANA / tzdata 时区，输入关键字过滤。列表由当前 Node 运行时的 ICU 数据提供。"
-          error={formState.errors.timeZone?.message}
-        >
-          {/*
-           * Searchable combobox — same primitive the comments admin
-           * page uses for its "筛选文章 / 筛选评论人员" filters, so the
-           * picker behaviour stays consistent across the admin
-           * surface. Base UI handles substring filtering against
-           * `items` client-side; no fetcher needed because the full
-           * tzdata list is small and already on the wire.
-           */}
-          <Controller
-            control={control}
-            name="timeZone"
-            render={({ field }) => {
-              const selected = timeZoneItems.find((item) => item.value === field.value) ?? null
-              return (
-                <Combobox<TimeZoneItem>
-                  items={timeZoneItems}
-                  value={selected}
-                  onValueChange={(item) => {
-                    if (item) {
-                      field.onChange(item.value)
-                    }
-                  }}
-                >
-                  <ComboboxTrigger id="general-timezone" className="w-full">
-                    <ComboboxValue placeholder="搜索 IANA 时区…" />
-                  </ComboboxTrigger>
-                  <ComboboxContent<TimeZoneItem> inputPlaceholder="搜索 IANA 时区…" emptyMessage="无匹配时区">
-                    {(item) => (
-                      <ComboboxItem key={item.value} value={item}>
-                        {item.label}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxContent>
-                </Combobox>
-              )
-            }}
-          />
-        </SettingsRow>
-        <SettingsRow
-          label="日期格式"
-          htmlFor="general-time-format"
-          hint="支持 yyyy / LL / MM / dd / HH / mm 占位符，例如 yyyy-LL-dd HH:mm。"
-          error={formState.errors.timeFormat?.message}
-        >
-          {(controlProps) => (
+function GeneralTimeZoneCard({
+  siteIdentity,
+  timeZones,
+}: {
+  siteIdentity: SiteIdentitySettings
+  timeZones: readonly string[]
+}) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+    SiteIdentitySettings,
+    GeneralFormValues
+  >({
+    section: 'general',
+    source: siteIdentity,
+    schema: generalFormSchema,
+    toState: toFormValues,
+    fromState: (values) => ({
+      title: values.title.trim(),
+      description: values.description.trim(),
+      website: values.website.trim(),
+      keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
+      author: {
+        name: values.author.name.trim(),
+        email: values.author.email.trim(),
+        url: values.author.url.trim(),
+      },
+      locale: values.locale.trim(),
+      timeZone: values.timeZone.trim(),
+      timeFormat: values.timeFormat.trim(),
+      initialYear: values.initialYear,
+      icpNo: values.icpNo,
+      moeIcpNo: values.moeIcpNo,
+    }),
+  })
+
+  const timeZoneItems = useMemo<TimeZoneItem[]>(
+    () => timeZones.map((zone) => ({ value: zone, label: zone })),
+    [timeZones],
+  )
+  const { formState } = form
+
+  return (
+    <GhostSettingGroup
+      title="时间与本地化"
+      description="影响日期格式化函数以及 OG 图、邮件模板等所有依赖时区的渲染分支。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow
+            label="语言"
+            htmlFor="general-locale"
+            hint="BCP 47 语言标签，例如 zh-CN、en-US。"
+            error={formState.errors.locale?.message}
+          >
+            <Input id="general-locale" maxLength={35} placeholder="zh-CN" {...form.register('locale')} />
+          </SettingsRow>
+          <SettingsRow
+            label="时区"
+            htmlFor="general-timezone"
+            hint="IANA / tzdata 时区，输入关键字过滤。"
+            error={formState.errors.timeZone?.message}
+          >
+            <Controller
+              control={form.control}
+              name="timeZone"
+              render={({ field }) => {
+                const selected = timeZoneItems.find((item) => item.value === field.value) ?? null
+                return (
+                  <Combobox<TimeZoneItem>
+                    items={timeZoneItems}
+                    value={selected}
+                    onValueChange={(item) => {
+                      if (item) {
+                        field.onChange(item.value)
+                      }
+                    }}
+                  >
+                    <ComboboxTrigger id="general-timezone" className="w-full">
+                      <ComboboxValue placeholder="搜索 IANA 时区…" />
+                    </ComboboxTrigger>
+                    <ComboboxContent<TimeZoneItem> inputPlaceholder="搜索 IANA 时区…" emptyMessage="无匹配时区">
+                      {(item) => (
+                        <ComboboxItem key={item.value} value={item}>
+                          {item.label}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxContent>
+                  </Combobox>
+                )
+              }}
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="日期格式"
+            htmlFor="general-time-format"
+            hint="支持 yyyy / LL / MM / dd / HH / mm 占位符，例如 yyyy-LL-dd HH:mm。"
+            error={formState.errors.timeFormat?.message}
+          >
             <Input
               id="general-time-format"
               maxLength={40}
               placeholder="yyyy-LL-dd HH:mm"
-              {...register('timeFormat')}
-              {...controlProps}
+              {...form.register('timeFormat')}
             />
-          )}
-        </SettingsRow>
-      </SettingsSection>
+          </SettingsRow>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue label="语言" value={siteIdentity.locale} />
+          <GhostSettingValue label="时区" value={siteIdentity.timeZone} />
+          <GhostSettingValue label="日期格式" value={siteIdentity.timeFormat} />
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onRevert={revert}
-      />
-    </form>
+export function GeneralForm({ siteIdentity, timeZones }: GeneralFormProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      <GeneralIdentityCard siteIdentity={siteIdentity} />
+      <GeneralFooterCard siteIdentity={siteIdentity} />
+      <GeneralAuthorCard siteIdentity={siteIdentity} />
+      <GeneralTimeZoneCard siteIdentity={siteIdentity} timeZones={timeZones} />
+    </div>
   )
 }

@@ -3,13 +3,13 @@ import { redirect } from 'react-router'
 import { getRouteRequestContext } from '@/server/domains/auth/context'
 import { ensureNoSettingsOrRedirect } from '@/server/domains/settings/install-gate'
 
-// `src/routes/auth/install/settings.tsx` per the route-orchestration
+// `src/routes/auth/setup/settings.tsx` per the route-orchestration
 // rule. The route module is now reduced to: parse args → call helpers →
 // render. Anything that needs a `redirect()` or DB lookup lives here.
 
 /** Canonical URL for stage 2. Used both to build the
  *  `/admin/signin?redirect_to=…` bounce target and for `meta()` `og:url`. */
-export const SETTINGS_INSTALL_PATH = '/admin/install/settings.php'
+export const SETTINGS_INSTALL_PATH = '/admin/setup/settings'
 
 /** Built once so callers don't repeat the encodeURIComponent dance. */
 export const SETTINGS_INSTALL_LOGIN_BOUNCE = `/admin/signin?redirect_to=${encodeURIComponent(SETTINGS_INSTALL_PATH)}`

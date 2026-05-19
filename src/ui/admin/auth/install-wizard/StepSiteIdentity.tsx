@@ -63,6 +63,7 @@ export function StepSiteIdentity({ timeZones }: StepProps) {
           maxLength={120}
           required
         />
+        <p className="text-xs text-muted-foreground">已在初始化第一步填写，可在此修改。</p>
       </div>
 
       <div className="flex flex-col gap-1.5">

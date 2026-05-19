@@ -41,7 +41,7 @@ const PublicChromeLazy = lazy(() =>
 // Order matters:
 //   1. Session middleware decrypts the cookie + populates request
 //      context.
-//   2. Install gate redirects to `/admin/install.php` when the
+//   2. Install gate redirects to `/admin/setup` when the
 //      deployment hasn't been installed yet (no admin user OR no
 //      `setting` row). Sits AFTER session so the gate's exemption list
 //      can be reasoned about against the same context every loader sees.

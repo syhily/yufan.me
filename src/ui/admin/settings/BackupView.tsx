@@ -1,14 +1,14 @@
 import { useCallback, useRef, useState } from 'react'
-import { useRevalidator } from 'react-router'
 
 import type { BackupSettings } from '@/shared/config/blog'
-import type { BackupFileDto } from '@/shared/types/backup'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
-import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { useMutation, useQuery, useQueryClient } from '@/client/api/query'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
+import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
+import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
+import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
+import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
@@ -18,9 +18,6 @@ import { Switch } from '@/ui/components/switch'
 interface BackupViewProps {
   backup: BackupSettings | null
   timeZone: string
-  s3Enabled: boolean
-  pgToolsAvailable: boolean
-  initialBackups: BackupFileDto[]
 }
 
 interface FormState {
@@ -45,21 +42,13 @@ const FALLBACK_BACKUP: BackupSettings = {
   retention: { enabled: true, days: 30 },
 }
 
-export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, initialBackups }: BackupViewProps) {
-  const revalidator = useRevalidator()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [backups] = useState<BackupFileDto[]>(initialBackups)
-  const [restoreKey, setRestoreKey] = useState<string | null>(null)
-  const [uploading, setUploading] = useState(false)
-
-  const source = backup ?? FALLBACK_BACKUP
-
-  const { draft, setDraft, isDirty, onSubmit, isPending, status, errorMessage, revert } = useSettingsForm<
+function ScheduledBackupCard({ backup, canConfigure }: { backup: BackupSettings; canConfigure: boolean }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
     BackupSettings,
     FormState
   >({
     section: 'backup',
-    source,
+    source: backup,
     toState: (source) => ({
       scheduledEnabled: source.scheduled.enabled,
       frequency: source.scheduled.frequency,
@@ -86,10 +75,218 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
     }),
   })
 
+  const enabled = form.watch('scheduledEnabled')
+  const frequency = form.watch('frequency')
+  const retentionEnabled = form.watch('retentionEnabled')
+
+  return (
+    <GhostSettingGroup
+      title="定时备份"
+      description="配置自动备份的频率与保留策略。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow label="启用定时备份">
+            <div className="flex items-center gap-3">
+              <Switch
+                id="scheduled-enabled"
+                checked={enabled}
+                disabled={!canConfigure}
+                onCheckedChange={(value) => form.setValue('scheduledEnabled', value === true)}
+              />
+              <FieldLabel htmlFor="scheduled-enabled" className="font-normal">
+                开启
+              </FieldLabel>
+            </div>
+          </SettingsRow>
+
+          {enabled && (
+            <>
+              <SettingsRow label="备份频率">
+                <Select
+                  value={frequency}
+                  onValueChange={(v) => form.setValue('frequency', v as 'daily' | 'weekly' | 'monthly')}
+                  disabled={!canConfigure}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">每天</SelectItem>
+                    <SelectItem value="weekly">每周</SelectItem>
+                    <SelectItem value="monthly">每月</SelectItem>
+                  </SelectContent>
+                </Select>
+              </SettingsRow>
+
+              <SettingsRow label="备份时间">
+                <div className="flex gap-2">
+                  <Select
+                    value={String(form.watch('hour'))}
+                    onValueChange={(v) => form.setValue('hour', Number(v))}
+                    disabled={!canConfigure}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HOURS.map((h) => (
+                        <SelectItem key={h} value={String(h)}>
+                          {String(h).padStart(2, '0')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="flex items-center text-muted-foreground">:</span>
+                  <Select
+                    value={String(form.watch('minute'))}
+                    onValueChange={(v) => form.setValue('minute', Number(v))}
+                    disabled={!canConfigure}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MINUTES.map((m) => (
+                        <SelectItem key={m} value={String(m)}>
+                          {String(m).padStart(2, '0')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </SettingsRow>
+
+              {frequency === 'weekly' && (
+                <SettingsRow label="星期">
+                  <Select
+                    value={form.watch('dayOfWeek') ? String(form.watch('dayOfWeek')) : ''}
+                    onValueChange={(v) => form.setValue('dayOfWeek', Number(v))}
+                    disabled={!canConfigure}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WEEKDAY_LABELS.map((label, idx) => (
+                        <SelectItem key={label} value={String(idx + 1)}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </SettingsRow>
+              )}
+
+              {frequency === 'monthly' && (
+                <SettingsRow label="每月日期">
+                  <Select
+                    value={form.watch('dayOfMonth') ? String(form.watch('dayOfMonth')) : ''}
+                    onValueChange={(v) => form.setValue('dayOfMonth', Number(v))}
+                    disabled={!canConfigure}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                        <SelectItem key={d} value={String(d)}>
+                          {d} 日
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </SettingsRow>
+              )}
+
+              <SettingsRow label="保留策略">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="retention-enabled"
+                    checked={retentionEnabled}
+                    disabled={!canConfigure}
+                    onCheckedChange={(value) => form.setValue('retentionEnabled', value === true)}
+                  />
+                  <FieldLabel htmlFor="retention-enabled" className="font-normal">
+                    自动清理历史备份
+                  </FieldLabel>
+                </div>
+              </SettingsRow>
+
+              {retentionEnabled && (
+                <SettingsRow label="保留天数" hint="超过此天数的旧备份将被自动删除。">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    disabled={!canConfigure}
+                    {...form.register('retentionDays', { valueAsNumber: true })}
+                  />
+                </SettingsRow>
+              )}
+            </>
+          )}
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue label="定时备份" value={backup.scheduled.enabled ? '已开启' : '已关闭'} />
+          {backup.scheduled.enabled && (
+            <>
+              <GhostSettingValue label="备份频率" value={FREQ_LABELS[backup.scheduled.frequency]} />
+              <GhostSettingValue
+                label="备份时间"
+                value={`${String(backup.scheduled.hour).padStart(2, '0')}:${String(backup.scheduled.minute).padStart(2, '0')}`}
+              />
+              {backup.scheduled.frequency === 'weekly' && backup.scheduled.dayOfWeek && (
+                <GhostSettingValue label="星期" value={WEEKDAY_LABELS[backup.scheduled.dayOfWeek - 1]} />
+              )}
+              {backup.scheduled.frequency === 'monthly' && backup.scheduled.dayOfMonth && (
+                <GhostSettingValue label="每月日期" value={`${backup.scheduled.dayOfMonth} 日`} />
+              )}
+              <GhostSettingValue
+                label="保留策略"
+                value={backup.retention.enabled ? `保留 ${backup.retention.days} 天` : '不自动清理'}
+              />
+            </>
+          )}
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
+
+export function BackupView({ backup }: BackupViewProps) {
+  const queryClient = useQueryClient()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [restoreKey, setRestoreKey] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+
+  const { data: statusData, isPending: statusLoading } = useQuery({
+    queryKey: ['admin', 'backup', 'status'],
+    queryFn: () => orpc.admin.backup.status(),
+  })
+
+  const { data: listData, isPending: listLoading } = useQuery({
+    queryKey: ['admin', 'backup', 'list'],
+    queryFn: () => orpc.admin.backup.list(),
+  })
+
+  const s3Enabled = statusData?.s3Enabled ?? false
+  const pgToolsAvailable = statusData?.pgToolsAvailable ?? false
+  const backups = listData?.files ?? []
+
+  const source = backup ?? FALLBACK_BACKUP
+
   const createMutation = useMutation({
     mutationFn: () => orpc.admin.backup.create(),
     onSuccess: () => {
-      void revalidator.revalidate()
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'backup', 'list'] })
     },
   })
 
@@ -111,10 +308,7 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch('/api/admin/backup/upload-restore', {
-        method: 'POST',
-        body: formData,
-      })
+      const res = await fetch('/api/admin/backup/upload-restore', { method: 'POST', body: formData })
       if (!res.ok) {
         const data = (await res.json()) as { error?: { message?: string } }
         throw new Error(data.error?.message ?? '上传还原失败')
@@ -129,179 +323,25 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
   }, [])
 
   const canConfigure = s3Enabled && pgToolsAvailable
+  const isLoading = statusLoading || listLoading
 
   return (
     <div className="flex flex-col gap-6">
-      {!pgToolsAvailable && (
+      {isLoading && <div className="text-sm text-muted-foreground">正在读取备份信息…</div>}
+      {!isLoading && !pgToolsAvailable && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
           当前运行环境缺少 postgresql-client，备份与还原功能不可用。
         </div>
       )}
-      {!s3Enabled && (
+      {!isLoading && !s3Enabled && (
         <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4 text-sm text-amber-700">
-          请先前往
-          <a href="/admin/settings/assets" className="mx-1 underline">
-            存储配置
-          </a>
-          启用 S3 存储。
+          请先前往存储配置启用 S3 存储。
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-6">
-        <SettingsSection title="定时备份" description="配置自动备份的频率与保留策略。">
-          <SettingsSwitchRow
-            rowLabel="启用定时备份"
-            switchLabel="开启"
-            id="scheduled-enabled"
-            checked={draft.scheduledEnabled}
-            disabled={!canConfigure}
-            onCheckedChange={(checked) => setDraft((prev) => ({ ...prev, scheduledEnabled: checked }))}
-          />
+      <ScheduledBackupCard backup={source} canConfigure={canConfigure} />
 
-          {draft.scheduledEnabled && (
-            <>
-              <SettingsRow label="备份频率">
-                <Select
-                  value={draft.frequency}
-                  onValueChange={(v) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      frequency: v as 'daily' | 'weekly' | 'monthly',
-                    }))
-                  }
-                  disabled={!canConfigure}
-                >
-                  <SelectTrigger>
-                    <SelectValue>{FREQ_LABELS[draft.frequency]}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="daily">每天</SelectItem>
-                    <SelectItem value="weekly">每周</SelectItem>
-                    <SelectItem value="monthly">每月</SelectItem>
-                  </SelectContent>
-                </Select>
-              </SettingsRow>
-
-              <SettingsRow label="备份时间" hint={`按照 ${timeZone} 时区计算`}>
-                <div className="flex gap-2">
-                  <Select
-                    value={String(draft.hour)}
-                    onValueChange={(v) => setDraft((prev) => ({ ...prev, hour: Number(v) }))}
-                    disabled={!canConfigure}
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue>{String(draft.hour).padStart(2, '0')}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {HOURS.map((h) => (
-                        <SelectItem key={h} value={String(h)}>
-                          {String(h).padStart(2, '0')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <span className="flex items-center text-muted-foreground">:</span>
-                  <Select
-                    value={String(draft.minute)}
-                    onValueChange={(v) => setDraft((prev) => ({ ...prev, minute: Number(v) }))}
-                    disabled={!canConfigure}
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue>{String(draft.minute).padStart(2, '0')}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MINUTES.map((m) => (
-                        <SelectItem key={m} value={String(m)}>
-                          {String(m).padStart(2, '0')}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </SettingsRow>
-
-              {draft.frequency === 'weekly' && (
-                <SettingsRow label="星期">
-                  <Select
-                    value={draft.dayOfWeek ? String(draft.dayOfWeek) : ''}
-                    onValueChange={(v) => setDraft((prev) => ({ ...prev, dayOfWeek: Number(v) }))}
-                    disabled={!canConfigure}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>{draft.dayOfWeek ? WEEKDAY_LABELS[draft.dayOfWeek - 1] : '请选择'}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {WEEKDAY_LABELS.map((label, idx) => (
-                        <SelectItem key={label} value={String(idx + 1)}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SettingsRow>
-              )}
-
-              {draft.frequency === 'monthly' && (
-                <SettingsRow label="每月日期">
-                  <Select
-                    value={draft.dayOfMonth ? String(draft.dayOfMonth) : ''}
-                    onValueChange={(v) => setDraft((prev) => ({ ...prev, dayOfMonth: Number(v) }))}
-                    disabled={!canConfigure}
-                  >
-                    <SelectTrigger>
-                      <SelectValue>{draft.dayOfMonth ? `${draft.dayOfMonth} 日` : '请选择'}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
-                        <SelectItem key={d} value={String(d)}>
-                          {d} 日
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SettingsRow>
-              )}
-
-              <SettingsSwitchRow
-                rowLabel="保留策略"
-                switchLabel="自动清理历史备份"
-                id="retention-enabled"
-                checked={draft.retentionEnabled}
-                disabled={!canConfigure}
-                onCheckedChange={(checked) => setDraft((prev) => ({ ...prev, retentionEnabled: checked }))}
-              />
-
-              {draft.retentionEnabled && (
-                <SettingsRow label="保留天数" hint="超过此天数的旧备份将被自动删除。">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={draft.retentionDays}
-                    disabled={!canConfigure}
-                    onChange={(e) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        retentionDays: Number.parseInt(e.target.value, 10) || 1,
-                      }))
-                    }
-                  />
-                </SettingsRow>
-              )}
-            </>
-          )}
-        </SettingsSection>
-
-        <SettingsFormBar
-          isPending={isPending}
-          isDirty={isDirty}
-          status={status}
-          errorMessage={errorMessage}
-          onRevert={revert}
-        />
-      </form>
-
-      <SettingsSection
+      <GhostSettingGroup
         title="备份文件"
         description="S3 存储中 backup/ 目录下的所有备份文件。"
         actions={
@@ -362,7 +402,7 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
             </table>
           </div>
         )}
-      </SettingsSection>
+      </GhostSettingGroup>
 
       {restoreKey && (
         <ConfirmDialog
@@ -374,7 +414,7 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
         />
       )}
 
-      <SettingsSection title="手动还原" description="上传 .sql.gz 备份文件进行还原。">
+      <GhostSettingGroup title="手动还原" description="上传 .sql.gz 备份文件进行还原。">
         <div className="flex flex-col gap-3">
           <Input ref={fileInputRef} type="file" accept=".sql.gz" disabled={!pgToolsAvailable || uploading} />
           <div className="flex gap-2">
@@ -383,35 +423,8 @@ export function BackupView({ backup, timeZone, s3Enabled, pgToolsAvailable, init
             </Button>
           </div>
         </div>
-      </SettingsSection>
+      </GhostSettingGroup>
     </div>
-  )
-}
-
-interface SettingsSwitchRowProps {
-  rowLabel: string
-  switchLabel: string
-  id: string
-  checked: boolean
-  disabled?: boolean
-  onCheckedChange: (checked: boolean) => void
-}
-
-function SettingsSwitchRow({ rowLabel, switchLabel, id, checked, disabled, onCheckedChange }: SettingsSwitchRowProps) {
-  return (
-    <SettingsRow label={rowLabel}>
-      <div className="flex items-center gap-3">
-        <Switch
-          id={id}
-          checked={checked}
-          disabled={disabled}
-          onCheckedChange={(value) => onCheckedChange(value === true)}
-        />
-        <FieldLabel htmlFor={id} className="font-normal">
-          {switchLabel}
-        </FieldLabel>
-      </div>
-    </SettingsRow>
   )
 }
 

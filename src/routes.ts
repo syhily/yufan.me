@@ -57,24 +57,7 @@ export default [
       route('realtime', 'routes/admin/analytics/realtime.tsx'),
       route('mentions', 'routes/admin/analytics/mentions.tsx'),
     ]),
-    // Settings sub-layout — see README.md §H.
-    layout('routes/admin/settings/layout.tsx', [
-      route('admin/settings', 'routes/admin/settings/index.tsx'),
-      route('admin/settings/general', 'routes/admin/settings/general.tsx'),
-      route('admin/settings/assets', 'routes/admin/settings/assets.tsx'),
-      route('admin/settings/navigation', 'routes/admin/settings/navigation.tsx'),
-      route('admin/settings/socials', 'routes/admin/settings/socials.tsx'),
-      route('admin/settings/content', 'routes/admin/settings/content.tsx'),
-      route('admin/settings/sidebar', 'routes/admin/settings/sidebar.tsx'),
-      route('admin/settings/comments', 'routes/admin/settings/comments.tsx'),
-      route('admin/settings/seo', 'routes/admin/settings/seo.tsx'),
-      route('admin/settings/mail', 'routes/admin/settings/mail.tsx'),
-      route('admin/settings/cache', 'routes/admin/settings/cache.tsx'),
-      route('admin/settings/threshold', 'routes/admin/settings/threshold.tsx'),
-      route('admin/settings/search', 'routes/admin/settings/search.tsx'),
-      route('admin/settings/fonts', 'routes/admin/settings/fonts.tsx'),
-      route('admin/settings/backup', 'routes/admin/settings/backup.tsx'),
-      route('admin/settings/limits', 'routes/admin/settings/limits.tsx'),
-    ]),
+    // Settings single-page panel — see README.md §H.
+    layout('routes/admin/settings/layout.tsx', [route('admin/settings', 'routes/admin/settings/index.tsx')]),
   ]),
 ] satisfies RouteConfig

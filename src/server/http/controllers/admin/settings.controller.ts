@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { SECTION_REGISTRY } from '@/server/domains/settings/sections'
 import { getAdminBlogSettings, updateBlogSettingsSection } from '@/server/domains/settings/service'
+import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { adminProc } from '@/server/http/orpc-base'
 import { ErrorMessages } from '@/server/infra/http/errors'
 import { SETTINGS_SECTIONS, type SettingsSection } from '@/shared/config/settings'
@@ -20,6 +21,19 @@ const get = adminProc
   .route({ method: 'GET', path: '/admin/settings/get' })
   .output(z.object({ bundle: blogSettingsBundleDto.nullable() }))
   .handler(() => getAdminBlogSettings())
+
+const loadAll = adminProc
+  .route({ method: 'GET', path: '/admin/settings/loadAll' })
+  .output(
+    z.object({
+      bundle: blogSettingsBundleDto.nullable(),
+      timeZones: z.array(z.string()),
+    }),
+  )
+  .handler(async () => {
+    const { bundle } = await getAdminBlogSettings()
+    return { bundle, timeZones: [...getSupportedTimeZones()] }
+  })
 
 const update = adminProc
   .route({ method: 'POST', path: '/admin/settings/update' })
@@ -44,4 +58,4 @@ const update = adminProc
     return { success: true }
   })
 
-export const adminSettingsRouter = { get, update }
+export const adminSettingsRouter = { get, loadAll, update }

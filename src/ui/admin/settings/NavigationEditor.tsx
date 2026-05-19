@@ -9,7 +9,6 @@ import {
 } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -17,6 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react'
+import { useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
@@ -24,9 +24,9 @@ import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/con
 import type { SocialNetwork } from '@/shared/config/socials'
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
-import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
+import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
+import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Field, FieldLabel } from '@/ui/components/field'
@@ -39,25 +39,12 @@ interface NavigationEditorProps {
   socials: SocialItem[]
 }
 
-// ---------------------------------------------------------------------------
-// Side-nav row shape
-// ---------------------------------------------------------------------------
-
 interface SideNavRow {
   clientId: string
   text: string
   link: string
   newTab: boolean
 }
-
-interface FormState {
-  sideNavRows: SideNavRow[]
-  footerNavItems: FooterNavItemRowState[]
-}
-
-// ---------------------------------------------------------------------------
-// Footer-nav row shape (lifted from FooterForm)
-// ---------------------------------------------------------------------------
 
 interface FooterNavItemRowState extends FooterNavItem {
   clientId: string
@@ -80,6 +67,154 @@ const NETWORK_ITEMS = SOCIAL_NETWORKS.map((network) => ({
   label: SOCIAL_NETWORK_META[network].label,
 }))
 
+// ---------------------------------------------------------------------------
+// Side Navigation Card
+// ---------------------------------------------------------------------------
+
+function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+    NavigationSettings,
+    { sideNavRows: SideNavRow[] }
+  >({
+    section: 'navigation',
+    source: navigation,
+    toState: (source) => ({
+      sideNavRows: source.navigation.sideNav.map((item) => ({
+        clientId: crypto.randomUUID(),
+        text: item.text,
+        link: item.link,
+        newTab: item.target === '_blank',
+      })),
+    }),
+    fromState: (state) => ({
+      navigation: {
+        sideNav: state.sideNavRows.map((row) => ({
+          text: row.text.trim(),
+          link: row.link.trim(),
+          ...(row.newTab ? { target: '_blank' } : {}),
+        })),
+        footerNav: navigation.navigation.footerNav,
+      },
+    }),
+  })
+
+  const rows = useFieldArray({ control: form.control, name: 'sideNavRows' })
+
+  const moveRow = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target >= 0 && target < rows.fields.length) {
+      rows.move(index, target)
+    }
+  }
+
+  return (
+    <GhostSettingGroup
+      title="侧边导航菜单"
+      description="侧边栏导航条目。顺序、标题、链接均可调整。最多 20 个。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <div className="flex flex-col gap-3">
+          {rows.fields.length === 0 ? (
+            <p className="text-sm text-muted-foreground">还没有任何菜单条目，点下方按钮新增一项。</p>
+          ) : (
+            rows.fields.map((field, index) => (
+              <div
+                key={field.id}
+                className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-end"
+              >
+                <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+                  <div className="flex flex-col gap-1 sm:flex-1">
+                    <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
+                    <Input id={`nav-text-${index}`} maxLength={40} {...form.register(`sideNavRows.${index}.text`)} />
+                  </div>
+                  <div className="flex flex-col gap-1 sm:flex-1">
+                    <Label htmlFor={`nav-link-${index}`}>链接</Label>
+                    <Input
+                      id={`nav-link-${index}`}
+                      maxLength={200}
+                      placeholder="/about 或 https://example.com"
+                      {...form.register(`sideNavRows.${index}.link`)}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Field orientation="horizontal" className="w-fit">
+                    <Checkbox
+                      id={`nav-newtab-${index}`}
+                      checked={form.watch(`sideNavRows.${index}.newTab`)}
+                      onCheckedChange={(value) => form.setValue(`sideNavRows.${index}.newTab`, value === true)}
+                    />
+                    <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
+                      新窗口打开
+                    </FieldLabel>
+                  </Field>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() => moveRow(index, -1)}
+                    >
+                      <ArrowUpIcon data-icon />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={index === rows.fields.length - 1}
+                      onClick={() => moveRow(index, 1)}
+                    >
+                      <ArrowDownIcon data-icon />
+                    </Button>
+                    <Button type="button" variant="destructive-soft" size="icon" onClick={() => rows.remove(index)}>
+                      <Trash2Icon data-icon />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => rows.append({ clientId: crypto.randomUUID(), text: '', link: '/', newTab: false })}
+            disabled={rows.fields.length >= 20}
+          >
+            <PlusIcon data-icon /> 添加菜单项
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {navigation.navigation.sideNav.length === 0 ? (
+            <p className="text-sm text-muted-foreground">未配置</p>
+          ) : (
+            navigation.navigation.sideNav.map((item, i) => (
+              <GhostSettingValue
+                key={i}
+                label={item.text}
+                value={item.link}
+                hint={item.target === '_blank' ? '新窗口打开' : undefined}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </GhostSettingGroup>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Footer Navigation Card
+// ---------------------------------------------------------------------------
+
 function SortableFooterNavRow({
   item,
   index,
@@ -91,15 +226,8 @@ function SortableFooterNavRow({
   onUpdate: (idx: number, patch: Partial<FooterNavItem>) => void
   onRemove: (idx: number) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: item.clientId,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.clientId })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-md border border-line bg-canvas p-3">
@@ -157,229 +285,68 @@ function SortableFooterNavRow({
           </div>
         )}
       </div>
-      <Button
-        type="button"
-        variant="destructive-soft"
-        size="icon"
-        aria-label="删除条目"
-        onClick={() => onRemove(index)}
-      >
+      <Button type="button" variant="destructive-soft" size="icon" onClick={() => onRemove(index)}>
         <Trash2Icon data-icon />
       </Button>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Main editor
-// ---------------------------------------------------------------------------
-
-export function NavigationEditor({ navigation, socials }: NavigationEditorProps) {
-  const { draft, setDraft, isDirty, onSubmit, isPending, status, errorMessage, revert } = useSettingsForm<
+function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
     NavigationSettings,
-    FormState
+    { footerNavItems: FooterNavItemRowState[] }
   >({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
-      sideNavRows: source.navigation.sideNav.map((item) => ({
-        clientId: crypto.randomUUID(),
-        text: item.text,
-        link: item.link,
-        newTab: item.target === '_blank',
-      })),
       footerNavItems: source.navigation.footerNav.map((item) => ({ ...item, clientId: crypto.randomUUID() })),
     }),
     fromState: (state) => ({
       navigation: {
-        sideNav: state.sideNavRows.map((row) => ({
-          text: row.text.trim(),
-          link: row.link.trim(),
-          ...(row.newTab ? { target: '_blank' } : {}),
-        })),
-        footerNav: state.footerNavItems.map((item) => ({
-          type: item.type,
-          network: item.network,
-        })),
+        sideNav: navigation.navigation.sideNav,
+        footerNav: state.footerNavItems.map((item) => ({ type: item.type, network: item.network })),
       },
     }),
   })
 
-  // --- Side-nav helpers ---
-  const updateSideNav = (index: number, patch: Partial<SideNavRow>) =>
-    setDraft((prev) => ({
-      ...prev,
-      sideNavRows: prev.sideNavRows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
-    }))
-  const removeSideNav = (index: number) =>
-    setDraft((prev) => ({ ...prev, sideNavRows: prev.sideNavRows.filter((_, i) => i !== index) }))
-  const moveSideNav = (index: number, direction: -1 | 1) => {
-    setDraft((prev) => {
-      const target = index + direction
-      if (target < 0 || target >= prev.sideNavRows.length) {
-        return prev
-      }
-      const next = [...prev.sideNavRows]
-      ;[next[index], next[target]] = [next[target], next[index]]
-      return { ...prev, sideNavRows: next }
-    })
-  }
-  const addSideNav = () =>
-    setDraft((prev) => ({
-      ...prev,
-      sideNavRows: [...prev.sideNavRows, { clientId: crypto.randomUUID(), text: '', link: '/', newTab: false }],
-    }))
-
-  // --- Footer-nav helpers ---
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  const rows = useFieldArray({ control: form.control, name: 'footerNavItems' })
 
   function handleFooterDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      setDraft((prev) => {
-        const oldIndex = prev.footerNavItems.findIndex((i) => i.clientId === active.id)
-        const newIndex = prev.footerNavItems.findIndex((i) => i.clientId === over.id)
-        return { ...prev, footerNavItems: arrayMove(prev.footerNavItems, oldIndex, newIndex) }
-      })
+      const oldIndex = rows.fields.findIndex((i) => i.clientId === active.id)
+      const newIndex = rows.fields.findIndex((i) => i.clientId === over.id)
+      rows.move(oldIndex, newIndex)
     }
   }
 
   function updateFooterItem(index: number, patch: Partial<FooterNavItem>) {
-    setDraft((prev) => {
-      const next = [...prev.footerNavItems]
-      next[index] = { ...next[index], ...patch }
-      return { ...prev, footerNavItems: next }
-    })
-  }
-
-  function removeFooterItem(index: number) {
-    setDraft((prev) => ({ ...prev, footerNavItems: prev.footerNavItems.filter((_, i) => i !== index) }))
-  }
-
-  function addFooterItem() {
-    setDraft((prev) => ({
-      ...prev,
-      footerNavItems: [
-        ...prev.footerNavItems,
-        { type: 'social' as const, network: 'github', clientId: crypto.randomUUID() },
-      ],
-    }))
+    const current = rows.fields[index]
+    rows.update(index, { ...current, ...patch } as FooterNavItemRowState)
   }
 
   const configuredNetworks = new Set(socials.map((s) => s.network))
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      {/* Side Navigation */}
-      <SettingsSection
-        title="侧边导航菜单"
-        description="侧边栏导航条目。顺序、标题、链接均可调整。最多 20 个，链接可以是站内绝对路径或完整外部 URL。"
-        groupFields={false}
-      >
+    <GhostSettingGroup
+      title="底部导航菜单"
+      description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
         <div className="flex flex-col gap-3">
-          {draft.sideNavRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">还没有任何菜单条目，点下方按钮新增一项。</p>
-          ) : (
-            draft.sideNavRows.map((row, index) => (
-              <div
-                key={row.clientId}
-                className="flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-end"
-              >
-                <div className="flex flex-1 flex-col gap-2 sm:flex-row">
-                  <div className="flex flex-col gap-1 sm:flex-1">
-                    <Label htmlFor={`nav-text-${index}`}>显示文本</Label>
-                    <Input
-                      id={`nav-text-${index}`}
-                      value={row.text}
-                      onChange={(e) => updateSideNav(index, { text: e.target.value })}
-                      maxLength={40}
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 sm:flex-1">
-                    <Label htmlFor={`nav-link-${index}`}>链接</Label>
-                    <Input
-                      id={`nav-link-${index}`}
-                      value={row.link}
-                      onChange={(e) => updateSideNav(index, { link: e.target.value })}
-                      maxLength={200}
-                      required
-                      placeholder="/about 或 https://example.com"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Field orientation="horizontal" className="w-fit">
-                    <Checkbox
-                      id={`nav-newtab-${index}`}
-                      checked={row.newTab}
-                      onCheckedChange={(value) => updateSideNav(index, { newTab: value === true })}
-                    />
-                    <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
-                      新窗口打开
-                    </FieldLabel>
-                  </Field>
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      aria-label="上移"
-                      disabled={index === 0}
-                      onClick={() => moveSideNav(index, -1)}
-                    >
-                      <ArrowUpIcon data-icon />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      aria-label="下移"
-                      disabled={index === draft.sideNavRows.length - 1}
-                      onClick={() => moveSideNav(index, 1)}
-                    >
-                      <ArrowDownIcon data-icon />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive-soft"
-                      size="icon"
-                      aria-label="删除条目"
-                      onClick={() => removeSideNav(index)}
-                    >
-                      <Trash2Icon data-icon />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addSideNav}
-            disabled={draft.sideNavRows.length >= 20}
-          >
-            <PlusIcon data-icon />
-            添加菜单项
-          </Button>
-        </div>
-      </SettingsSection>
-
-      {/* Footer Navigation */}
-      <SettingsSection
-        title="底部导航菜单"
-        description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。社交链接需在「社交链接」页面先配置好。"
-        groupFields={false}
-      >
-        <div className="flex flex-col gap-3">
-          {draft.footerNavItems.length === 0 ? (
+          {rows.fields.length === 0 ? (
             <p className="text-sm text-muted-foreground">还没有任何导航条目，点下方按钮新增一项。</p>
           ) : (
             <DndContext
@@ -388,18 +355,15 @@ export function NavigationEditor({ navigation, socials }: NavigationEditorProps)
               onDragEnd={handleFooterDragEnd}
               modifiers={VERTICAL_AXIS_ONLY}
             >
-              <SortableContext
-                items={draft.footerNavItems.map((i) => i.clientId)}
-                strategy={verticalListSortingStrategy}
-              >
+              <SortableContext items={rows.fields.map((i) => i.clientId)} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-3">
-                  {draft.footerNavItems.map((item, index) => (
+                  {rows.fields.map((item, index) => (
                     <SortableFooterNavRow
                       key={item.clientId}
-                      item={item}
+                      item={item as FooterNavItemRowState}
                       index={index}
                       onUpdate={updateFooterItem}
-                      onRemove={removeFooterItem}
+                      onRemove={(i) => rows.remove(i)}
                     />
                   ))}
                 </div>
@@ -411,26 +375,40 @@ export function NavigationEditor({ navigation, socials }: NavigationEditorProps)
               type="button"
               variant="outline"
               size="sm"
-              onClick={addFooterItem}
-              disabled={draft.footerNavItems.length >= 5}
+              onClick={() => rows.append({ type: 'social', network: 'github', clientId: crypto.randomUUID() })}
+              disabled={rows.fields.length >= 5}
             >
-              <PlusIcon data-icon />
-              添加导航项
+              <PlusIcon data-icon /> 添加导航项
             </Button>
-            {draft.footerNavItems.some(
+            {rows.fields.some(
               (item) => item.type === 'social' && item.network && !configuredNetworks.has(item.network),
             ) && <span className="text-sm text-destructive">部分社交链接尚未配置，保存后不会在页脚显示。</span>}
           </div>
         </div>
-      </SettingsSection>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {navigation.navigation.footerNav.length === 0 ? (
+            <p className="text-sm text-muted-foreground">未配置</p>
+          ) : (
+            navigation.navigation.footerNav.map((item, i) => (
+              <GhostSettingValue
+                key={i}
+                label={`${i + 1}. ${TYPE_LABELS[item.type]}`}
+                value={item.type === 'social' && item.network ? SOCIAL_NETWORK_META[item.network].label : '—'}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </GhostSettingGroup>
+  )
+}
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onRevert={revert}
-      />
-    </form>
+export function NavigationEditor({ navigation, socials }: NavigationEditorProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      <SideNavCard navigation={navigation} />
+      <FooterNavCard navigation={navigation} socials={socials} />
+    </div>
   )
 }

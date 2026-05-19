@@ -1,46 +1,36 @@
 import { Trash2Icon } from 'lucide-react'
 import { useCallback, useState } from 'react'
-import { useRevalidator } from 'react-router'
 
 import type { CacheSettings } from '@/shared/config/blog'
-import type {
-  AdminCacheStatsDto,
-  CacheBucketId,
-  ClearCacheTarget,
-  ReservedCacheBucketStats,
-} from '@/shared/types/cache'
+import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '@/shared/types/cache'
 
 import { orpc } from '@/client/api/client'
-import { useMutation } from '@/client/api/query'
+import { useMutation, useQuery } from '@/client/api/query'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { ConfirmClearDialog } from '@/ui/admin/settings/cache/ConfirmClearDialog'
-import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
 import { Button } from '@/ui/components/button'
 
 type CacheSlice = CacheSettings['cache']
 
 interface CacheViewProps {
-  stats: AdminCacheStatsDto
   cache: CacheSlice
 }
 
-// Cache management page. Composes:
-//   1. A "一键清空" hero card with a floating CTA.
-//   2. Per-bucket cards (`BucketCard`) for the editable prefix / TTL
-//      form, SCAN stats, and the bucket-scoped clear button.
-//   3. A single `ConfirmClearDialog` reused by every clear action.
-//
-// The previous version inlined every helper / sub-component (~680
-// lines in one file). Each piece now lives next to its sibling under
-// `./cache/`, and `CacheView` itself is left to do nothing but
-// orchestration: own the fetcher, dispatch `submitClear` / confirm
-// flows, and hand each bucket its slice of the cache.
-export function CacheView({ stats, cache }: CacheViewProps) {
-  const revalidator = useRevalidator()
+export function CacheView({ cache }: CacheViewProps) {
   const [status, setStatus] = useState<ClearStatus>(idleClearStatus)
   const [confirmTarget, setConfirmTarget] = useState<ClearCacheTarget | null>(null)
+
+  const {
+    data: stats,
+    isPending: statsLoading,
+    error: statsError,
+  } = useQuery({
+    queryKey: ['admin', 'cache', 'stats'],
+    queryFn: () => orpc.admin.cache.getStats({}),
+  })
 
   const clearMutation = useMutation({
     mutationFn: ({ target }: { target: ClearCacheTarget }) => orpc.admin.cache.clear({ target }),
@@ -57,7 +47,6 @@ export function CacheView({ stats, cache }: CacheViewProps) {
           ? `已清空「${result.cleared[0]?.label ?? ''}」缓存（${result.cleared[0]?.removed ?? 0} 项）`
           : `已清空全部缓存（${result.total} 项）`
       setStatus((prev) => ({ state: 'success', target: prev.target, message: summary }))
-      void revalidator.revalidate()
     },
   })
 
@@ -69,48 +58,28 @@ export function CacheView({ stats, cache }: CacheViewProps) {
     [clearMutation],
   )
 
-  const totalKeys = stats.buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0)
+  const totalKeys = stats?.buckets.reduce((sum, bucket) => sum + bucket.keyCount, 0) ?? 0
   const isClearPending = clearMutation.isPending
-
-  // `cache` is already a primitive-value map keyed by bucket id, so
-  // `BucketCard` can read its own slice directly as `cache[bucket.id]`.
-  // Wrapping that into a `useMemo`-produced lookup object only
-  // manufactured a fresh reference on every parent re-render without
-  // saving any work — see `rerender-simple-expression-in-memo`.
 
   return (
     <div className="flex flex-col gap-6">
-      {/*
-       * Top-level wrapper carries `relative` so the desktop "全部清空"
-       * button can `absolute`-pin to the card's bottom-right corner
-       * (a "floating CTA" pattern — no separator line, the button
-       * just hovers over the card chrome). On mobile the button
-       * de-attaches from the corner and renders as a centered block
-       * inside the normal flow.
-       */}
       <div className="relative">
-        <SettingsSection
+        <GhostSettingGroup
           title="一键清空"
-          description={`SCAN 所有已注册的缓存键并通过 UNLINK 异步删除。当前共 ${totalKeys} 个键。`}
+          description={
+            statsLoading
+              ? '正在读取缓存统计…'
+              : statsError
+                ? '读取缓存统计失败'
+                : `SCAN 所有已注册的缓存键并通过 UNLINK 异步删除。当前共 ${totalKeys} 个键。`
+          }
         >
           <p className="text-sm text-muted-foreground">
             清空后下一次访问会触发对应资源（OG 图、头像、日历）的重新生成 / 拉取。Session 与限流计数不会受影响。
           </p>
-          {/*
-           * Reserve right-side breathing room on desktop so the
-           * floating CTA doesn't visually overlap "数据采集时间：…".
-           * On mobile the floating button is hidden so no padding
-           * trick is needed.
-           */}
           <div className="sm:pr-44">
-            <CacheStatusLine status={status} target="all" generatedAt={stats.generatedAt} />
+            {stats ? <CacheStatusLine status={status} target="all" generatedAt={stats.generatedAt} /> : null}
           </div>
-          {/*
-           * Mobile-only inline button: centered, full-flow, no
-           * separator. Hidden on ≥sm — the desktop variant lives
-           * outside `SettingsSection` as an absolutely-positioned
-           * floating button (see below).
-           */}
           <div className="flex justify-center sm:hidden">
             <Button
               type="button"
@@ -121,13 +90,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
               <Trash2Icon data-icon /> {isClearPending && status.target === 'all' ? '清空中…' : '清空全部缓存'}
             </Button>
           </div>
-        </SettingsSection>
-        {/*
-         * Desktop floating CTA: pinned to the card's bottom-right
-         * corner via `absolute` + the parent `relative` wrapper. The
-         * `right-6 bottom-6` matches the card's internal `px-6 py-6`
-         * padding so the button visually sits inside the card edge.
-         */}
+        </GhostSettingGroup>
         <Button
           type="button"
           variant="destructive"
@@ -139,7 +102,7 @@ export function CacheView({ stats, cache }: CacheViewProps) {
         </Button>
       </div>
 
-      {stats.buckets.map((bucket) => (
+      {stats?.buckets.map((bucket) => (
         <BucketCard
           key={bucket.id}
           bucket={bucket}
@@ -151,12 +114,12 @@ export function CacheView({ stats, cache }: CacheViewProps) {
         />
       ))}
 
-      <ReservedBucketsSection reserved={stats.reserved} />
+      <ReservedBucketsSection reserved={stats?.reserved ?? []} />
 
       <ConfirmClearDialog
         open={confirmTarget !== null}
         target={confirmTarget}
-        buckets={stats.buckets}
+        buckets={stats?.buckets ?? []}
         onConfirm={() => {
           if (confirmTarget !== null) {
             submitClear(confirmTarget)
@@ -169,20 +132,11 @@ export function CacheView({ stats, cache }: CacheViewProps) {
   )
 }
 
-// Re-export the bucket id type for any consumer that wants to render a
-// custom bucket-aware UI without re-importing from the server module.
 export type { CacheBucketId }
 
-// Read-only display for cache surfaces that the admin must NOT clear
-// from the UI: `session:*` (clearing logs everyone out) and
-// `rate-limit:*` (clearing lets throttled abusers retry immediately).
-// We surface them for visibility only — current key count, prefix,
-// description — so an operator can see them growing without exposing
-// a foot-gun. Renaming / clearing stays administrative-tool territory
-// (vp shells / Redis CLI).
 function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketStats[] }) {
   return (
-    <SettingsSection
+    <GhostSettingGroup
       title="受保护的缓存（只读）"
       description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `vp` 或 Redis CLI 进行。"
     >
@@ -201,6 +155,6 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
           </div>
         ))}
       </div>
-    </SettingsSection>
+    </GhostSettingGroup>
   )
 }

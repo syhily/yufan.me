@@ -13,7 +13,11 @@ export const blogSettingsBundleDto = z.object({
   seo: sectionPayload,
   mail: sectionPayload,
   cache: sectionPayload,
+  rateLimit: sectionPayload,
+  search: sectionPayload,
+  fonts: sectionPayload,
   backup: sectionPayload,
+  limits: sectionPayload,
 })
 
 // Intentionally omitted — blogSettingsBundleDto uses z.unknown().nullable()

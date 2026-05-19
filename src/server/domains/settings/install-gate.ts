@@ -77,7 +77,7 @@ export async function ensureNoAdminOrRedirect(): Promise<null> {
     return null
   }
   if (state === 'noSettings') {
-    throw redirect('/admin/install/settings.php', { status: 303 })
+    throw redirect('/admin/setup/settings', { status: 303 })
   }
   throw redirect('/admin/signin', { status: 303 })
 }
@@ -94,7 +94,7 @@ export async function ensureNoSettingsOrRedirect(): Promise<null> {
     return null
   }
   if (state === 'noAdmin') {
-    throw redirect('/admin/install.php', { status: 303 })
+    throw redirect('/admin/setup', { status: 303 })
   }
   throw redirect('/admin/signin', { status: 303 })
 }
@@ -111,7 +111,7 @@ export async function ensureNoSettingsOrRedirect(): Promise<null> {
 export async function ensureInstalledOrRedirect(): Promise<null> {
   const state = await getInstallState()
   if (state === 'noAdmin') {
-    throw redirect('/admin/install.php', { status: 303 })
+    throw redirect('/admin/setup', { status: 303 })
   }
   return null
 }

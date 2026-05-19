@@ -112,6 +112,7 @@ export async function signInWithSession({
 }
 
 export interface SignUpAdminSeed {
+  title: string
   name: string
   email: string
   password: string
@@ -119,6 +120,7 @@ export interface SignUpAdminSeed {
 }
 
 export async function signUpInitialAdminWithSession({
+  title,
   name,
   email,
   password,
@@ -167,7 +169,7 @@ export async function signUpInitialAdminWithSession({
   headers.append('Set-Cookie', await clearCsrfCookie(request))
   return {
     ok: true,
-    data: { redirectTo: '/admin/install/settings.php' },
+    data: { redirectTo: `/admin/setup/settings?title=${encodeURIComponent(title)}` },
     headers,
   }
 }
@@ -207,8 +209,9 @@ export async function seedInstallSettingsWithSession({
     moeIcpNo: data.moeIcpNo,
   }
 
+  const assetsHost = data.assets.asset.host.trim() || new URL(request.url).hostname
   const assets: AssetsSettings = {
-    asset: data.assets.asset,
+    asset: { host: assetsHost, scheme: data.assets.asset.scheme },
     storage: data.assets.storage,
     upload: data.assets.upload,
   }
@@ -264,7 +267,7 @@ export async function seedInstallSettingsWithSession({
 
   return {
     ok: true,
-    data: { redirectTo: '/admin/welcome' },
+    data: { redirectTo: '/admin' },
     headers: await commitHeaders(session, await clearCsrfCookie(request)),
   }
 }

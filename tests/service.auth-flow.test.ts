@@ -210,6 +210,7 @@ describe('services/auth/flow — signInWithSession', () => {
 
 describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)', () => {
   const baseSeed = {
+    title: 'My Blog',
     name: 'Admin',
     email: 'admin@yufan.me',
     password: 'correct horse staple battery',
@@ -231,7 +232,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 
     expect(result.ok).toBe(true)
     if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/admin/install/settings.php')
+      expect(result.data.redirectTo).toBe('/admin/setup/settings?title=My%20Blog')
     }
     expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@yufan.me', baseSeed.password)
     expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
@@ -262,7 +263,7 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
       ...baseSeed,
       csrf: '',
       session: emptySession(),
-      request: new Request('http://localhost/admin/install.php', { method: 'POST' }),
+      request: new Request('http://localhost/admin/setup', { method: 'POST' }),
       clientAddress: '127.0.0.1',
     })
 
@@ -348,7 +349,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
 
     expect(result.ok).toBe(true)
     if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/admin/welcome')
+      expect(result.data.redirectTo).toBe('/admin')
     }
     // user-driven rows (`blog.general` for the site identity AND the
     // locale/timeZone/timeFormat trio, `blog.assets` for the music CDN
@@ -478,7 +479,7 @@ describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2
       csrf: '',
       admin: adminCtx,
       session: emptySession(),
-      request: new Request('http://localhost/admin/install/settings.php', { method: 'POST' }),
+      request: new Request('http://localhost/admin/setup/settings', { method: 'POST' }),
     })
 
     expect(result.ok).toBe(false)

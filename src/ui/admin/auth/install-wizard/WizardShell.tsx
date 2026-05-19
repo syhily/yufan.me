@@ -13,7 +13,7 @@ import { StepSiteIdentity } from '@/ui/admin/auth/install-wizard/StepSiteIdentit
 import { cn } from '@/ui/lib/cn'
 
 const STEPS = [
-  { id: 1, label: '站点与身份' },
+  { id: 1, label: '基础信息' },
   { id: 2, label: '导航与社交' },
   { id: 3, label: '外观与侧边栏' },
   { id: 4, label: '内容与互动' },

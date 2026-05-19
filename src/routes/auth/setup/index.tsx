@@ -7,11 +7,10 @@ import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 
 import type { Route } from './+types/index'
 
-const ADMIN_INSTALL_FIELDS = ['name', 'email', 'password', 'csrf'] as const
+const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password', 'csrf'] as const
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   // owns the install-state branching directly through
@@ -48,28 +47,30 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: '初始化管理员' }, bundleFromMatches(matches))
+  return routeMeta({ title: 'Welcome' }, bundleFromMatches(matches))
 }
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">第 1 步 · 创建管理员</CardTitle>
-        <CardDescription>首次部署需要先创建管理员账号。提交后将自动登录，并跳转到第 2 步配置站点信息。</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {actionData?.error && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            {actionData.error}
-          </div>
-        )}
-        <AdminInstallForm csrf={loaderData.csrf} />
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-8">
+      {/* Ghost-style welcome header */}
+      <header className="text-center">
+        <img src="/logo-large.svg" alt="且听书吟" className="mx-auto mb-4 block h-16 w-auto dark:hidden" />
+        <img src="/logo-large-dark.svg" alt="" className="mx-auto mb-4 hidden h-16 w-auto dark:block" aria-hidden />
+        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Welcome to 且听书吟.</h1>
+        <p className="mt-2 text-base text-muted-foreground md:text-lg">
+          世界各地的人已经创建了无数精彩的站点。今天，我们将开启属于你的旅程。
+        </p>
+      </header>
+
+      {/* Error message — centered, Ghost-style */}
+      {actionData?.error && (
+        <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
+          {actionData.error}
+        </div>
+      )}
+
+      <AdminInstallForm csrf={loaderData.csrf} />
+    </div>
   )
 }

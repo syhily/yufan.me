@@ -1,4 +1,4 @@
-import { isRouteErrorResponse, Outlet, useLocation, useOutletContext, useRouteError } from 'react-router'
+import { isRouteErrorResponse, Outlet, useOutletContext, useRouteError } from 'react-router'
 
 import type { BlogSettingsBundle } from '@/shared/config/blog'
 
@@ -7,7 +7,6 @@ import { getAdminBlogSettings } from '@/server/domains/settings/service'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { upsertSetting } from '@/server/infra/db/operations/setting'
 import { SECTION_TO_BUNDLE_KEY } from '@/shared/config/settings'
-import { SettingsShell } from '@/ui/admin/settings/SettingsShell'
 
 import type { Route } from './+types/layout'
 
@@ -102,13 +101,9 @@ export async function loader(_args: Route.LoaderArgs) {
   }
 }
 
-// Render section errors inside the SettingsShell so the admin chrome
-// (sidebar nav, breadcrumb) survives. Without this, a 500 from a
-// per-section loader bubbles to `admin.layout`'s ErrorBoundary which
-// renders a bare error page and the operator loses their context.
+// Render section errors inside a simple card so the admin chrome survives.
 export function ErrorBoundary() {
   const error = useRouteError()
-  const { pathname } = useLocation()
   const title = isRouteErrorResponse(error) ? `${error.status} ${error.statusText}` : '设置加载失败'
   const message = isRouteErrorResponse(error)
     ? typeof error.data === 'string'
@@ -119,26 +114,21 @@ export function ErrorBoundary() {
       : '未知错误'
 
   return (
-    <SettingsShell pathname={pathname}>
-      <div className="space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-6">
+    <div className="flex min-h-[calc(100vh-4rem)] items-start justify-center pt-20">
+      <div className="w-full max-w-lg space-y-2 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
         <h2 className="text-lg font-semibold text-destructive">{title}</h2>
         <p className="text-sm text-muted-foreground">{message}</p>
       </div>
-    </SettingsShell>
+    </div>
   )
 }
 
-export default function WpAdminSettingsLayoutRoute({ loaderData }: Route.ComponentProps) {
+export default function AdminSettingsLayoutRoute({ loaderData }: Route.ComponentProps) {
   const parent = useOutletContext<ParentContext>()
-  const { pathname } = useLocation()
   const context: SettingsOutletContext = {
     ...parent,
     bundle: loaderData.bundle,
     timeZones: loaderData.timeZones,
   }
-  return (
-    <SettingsShell pathname={pathname}>
-      <Outlet context={context} />
-    </SettingsShell>
-  )
+  return <Outlet context={context} />
 }

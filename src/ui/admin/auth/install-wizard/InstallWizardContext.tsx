@@ -131,9 +131,20 @@ export interface InstallWizardContextValue {
 const InstallWizardContext = createContext<InstallWizardContextValue | null>(null)
 
 export function InstallWizardProvider({ children }: { children: React.ReactNode }) {
-  const [data, setData] = useState<InstallWizardData>(() => readSession()?.data ?? DEFAULT_WIZARD_DATA)
-  const [currentStep, setCurrentStep] = useState(() => readSession()?.currentStep ?? 1)
-  const [maxReachedStep, setMaxReachedStep] = useState(() => readSession()?.maxReachedStep ?? 1)
+  // Initialize with deterministic defaults so server and client match during hydration.
+  const [data, setData] = useState<InstallWizardData>(DEFAULT_WIZARD_DATA)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [maxReachedStep, setMaxReachedStep] = useState(1)
+
+  // Rehydrate from sessionStorage after hydration to avoid mismatched HTML.
+  useEffect(() => {
+    const session = readSession()
+    if (session) {
+      setData(session.data)
+      setCurrentStep(session.currentStep)
+      setMaxReachedStep(session.maxReachedStep)
+    }
+  }, [])
 
   const updateData = useCallback((updater: (prev: InstallWizardData) => InstallWizardData) => {
     setData(updater)

@@ -46,7 +46,7 @@ async function getSettingsVersion(): Promise<number> {
 // `DEFAULT_SETTINGS` anymore. Either the install flow has written the
 // `blog.general` + `blog.assets` rows (and consumers see the matching
 // buckets), or the install gate redirects every non-install request
-// to `/admin/install.php` before any consumer reaches for the
+// to `/admin/setup` before any consumer reaches for the
 // snapshot. Pre-install we therefore expose `null`, and
 // `requireBlogSettingsSection()` throws so any post-install path that
 // bypasses the gate fails loudly.
@@ -253,7 +253,7 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
 
   // (`blog.general` + `blog.assets`) must be present. Until they are,
   // treat the deployment as uninstalled so the install gate keeps
-  // redirecting to `/admin/install.php`.
+  // redirecting to `/admin/setup`.
   if (bundle.siteIdentity === null || bundle.assets === null) {
     return null
   }

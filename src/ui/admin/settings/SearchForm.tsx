@@ -5,24 +5,15 @@ import { toast } from 'sonner'
 import type { SearchLoaderShape } from '@/shared/config/settings'
 
 import { orpc } from '@/client/api/client'
-import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
+import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
+import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
+import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
+import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { Button } from '@/ui/components/button'
-import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
-import { Switch } from '@/ui/components/switch'
 
 export type { SearchLoaderShape }
-
-interface FormState {
-  enabled: boolean
-  mode: 'vector' | 'like'
-  endpoint: string
-  apiKey: string
-  model: string
-  similarityThreshold: number
-}
 
 interface SearchFormProps {
   search: SearchLoaderShape
@@ -37,16 +28,101 @@ interface ReindexProgress {
   failed: number
 }
 
-export function SearchForm({ search }: SearchFormProps) {
-  const { draft, setDraft, isDirty, onSubmit, isPending, status, errorMessage, revert } = useSettingsForm<
+function SearchModeCard({ search }: { search: SearchLoaderShape }) {
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
     SearchLoaderShape,
-    FormState
+    { enabled: boolean; mode: 'vector' | 'like' }
   >({
     section: 'search',
     source: search,
     toState: (source) => ({
       enabled: source.search.enabled,
       mode: source.search.mode,
+    }),
+    fromState: (state) => {
+      const trimmedKey = search.search.apiKey.trim()
+      const payload: Record<string, unknown> = {
+        enabled: state.enabled,
+        mode: state.mode,
+        endpoint: search.search.endpoint ?? '',
+        model: search.search.model,
+        similarityThreshold: search.search.similarityThreshold,
+      }
+      if (trimmedKey) {
+        payload.apiKey = trimmedKey
+      }
+      return { search: payload }
+    },
+  })
+
+  return (
+    <GhostSettingGroup
+      title="搜索模式"
+      description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="search-enabled" className="size-4" {...form.register('enabled')} />
+              <label htmlFor="search-enabled" className="text-sm font-normal">
+                {form.watch('enabled') ? '已开启' : '已关闭'}
+              </label>
+            </div>
+          </SettingsRow>
+          <SettingsRow label="搜索模式" htmlFor="search-mode">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  {...form.register('mode')}
+                  value="like"
+                  checked={form.watch('mode') === 'like'}
+                  onChange={() => form.setValue('mode', 'like')}
+                />
+                LIKE（纯 Postgres）
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  {...form.register('mode')}
+                  value="vector"
+                  checked={form.watch('mode') === 'vector'}
+                  onChange={() => form.setValue('mode', 'vector')}
+                />
+                向量（OpenAI + pgvector）
+              </label>
+            </div>
+          </SettingsRow>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue label="AI 向量搜索" value={search.search.enabled ? '已开启' : '已关闭'} />
+          <GhostSettingValue
+            label="搜索模式"
+            value={search.search.mode === 'vector' ? '向量（OpenAI + pgvector）' : 'LIKE（纯 Postgres）'}
+          />
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
+
+function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
+  const apiKeyConfigured = search.apiKeyMask !== null
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+    SearchLoaderShape,
+    { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
+  >({
+    section: 'search',
+    source: search,
+    toState: (source) => ({
       endpoint: source.search.endpoint ?? '',
       apiKey: '',
       model: source.search.model,
@@ -55,8 +131,8 @@ export function SearchForm({ search }: SearchFormProps) {
     fromState: (state) => {
       const trimmedKey = state.apiKey.trim()
       const payload: Record<string, unknown> = {
-        enabled: state.enabled,
-        mode: state.mode,
+        enabled: search.search.enabled,
+        mode: search.search.mode,
         endpoint: state.endpoint.trim(),
         model: state.model.trim(),
         similarityThreshold: state.similarityThreshold,
@@ -68,9 +144,85 @@ export function SearchForm({ search }: SearchFormProps) {
     },
   })
 
-  const apiKeyConfigured = search.apiKeyMask !== null
-  const enabled = draft.enabled
+  return (
+    <GhostSettingGroup
+      title="OpenAI 配置"
+      description="向量搜索需要调用 OpenAI Embedding API。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <SettingsRow
+            label="API Endpoint"
+            htmlFor="search-endpoint"
+            hint="留空表示使用官方 OpenAI 接口。支持任意兼容 OpenAI API 规范的第三方服务。"
+          >
+            <Input
+              id="search-endpoint"
+              type="url"
+              placeholder="https://api.openai.com/v1"
+              maxLength={253}
+              {...form.register('endpoint')}
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="API Key"
+            htmlFor="search-api-key"
+            hint={
+              apiKeyConfigured ? `当前已配置（结尾 …${search.apiKeyMask}）。留空保存表示保留现有 Key。` : '尚未配置。'
+            }
+          >
+            <Input
+              id="search-api-key"
+              type="password"
+              {...form.register('apiKey')}
+              placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 OpenAI API Key'}
+              maxLength={512}
+              autoComplete="new-password"
+            />
+          </SettingsRow>
+          <SettingsRow label="模型" htmlFor="search-model" hint="默认 text-embedding-3-small，性价比最高。">
+            <Input id="search-model" placeholder="text-embedding-3-small" maxLength={80} {...form.register('model')} />
+          </SettingsRow>
+          <SettingsRow
+            label="相似度阈值"
+            htmlFor="search-threshold"
+            hint="0–1 之间。越高结果越精准，但可能漏掉部分内容。建议 0.5–0.7。"
+          >
+            <Input
+              id="search-threshold"
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              {...form.register('similarityThreshold', { valueAsNumber: true })}
+            />
+          </SettingsRow>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          <GhostSettingValue
+            label="API Endpoint"
+            value={search.search.endpoint || 'https://api.openai.com/v1（默认）'}
+          />
+          <GhostSettingValue
+            label="API Key"
+            value={apiKeyConfigured ? `已配置（结尾 …${search.apiKeyMask}）` : '未配置'}
+          />
+          <GhostSettingValue label="模型" value={search.search.model} />
+          <GhostSettingValue label="相似度阈值" value={`${search.search.similarityThreshold}`} />
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
+  )
+}
 
+function SearchReindexCard() {
   const [reindex, setReindex] = useState<ReindexProgress>({
     phase: 'idle',
     total: 0,
@@ -89,7 +241,6 @@ export function SearchForm({ search }: SearchFormProps) {
 
   async function handleReindex() {
     setReindex({ phase: 'running', total: 0, processed: 0, failed: 0 })
-
     let offset = 0
     let total = 0
     let processed = 0
@@ -107,14 +258,11 @@ export function SearchForm({ search }: SearchFormProps) {
         processed += data.processed
         failed += data.failed
         offset = data.nextOffset ?? total
-
         setReindex({ phase: 'running', total, processed, failed })
-
         if (data.nextOffset === null) {
           break
         }
       }
-
       setReindex({ phase: 'success', total, processed, failed })
     } catch (err) {
       console.error('Reindex failed:', err)
@@ -124,133 +272,8 @@ export function SearchForm({ search }: SearchFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <SettingsSection
-        title="搜索模式"
-        description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key 并将调用 Embedding 接口。"
-      >
-        <SettingsRow
-          label="启用 AI 向量搜索"
-          hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询，无需 OpenAI 配置。"
-        >
-          <div className="flex items-center gap-3">
-            <Switch
-              id="search-enabled"
-              checked={enabled}
-              onCheckedChange={(value) => setDraft((prev) => ({ ...prev, enabled: value === true }))}
-            />
-            <FieldLabel htmlFor="search-enabled" className="font-normal">
-              {enabled ? '已开启 — 使用 OpenAI Embedding 生成向量' : '已关闭 — 使用 Postgres LIKE 搜索'}
-            </FieldLabel>
-          </div>
-        </SettingsRow>
-
-        <SettingsRow label="搜索模式" htmlFor="search-mode">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="search-mode"
-                value="like"
-                checked={draft.mode === 'like'}
-                onChange={() => setDraft((prev) => ({ ...prev, mode: 'like' }))}
-              />
-              LIKE（纯 Postgres）
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="search-mode"
-                value="vector"
-                checked={draft.mode === 'vector'}
-                onChange={() => setDraft((prev) => ({ ...prev, mode: 'vector' }))}
-              />
-              向量（OpenAI + pgvector）
-            </label>
-          </div>
-        </SettingsRow>
-      </SettingsSection>
-
-      <SettingsSection
-        title="OpenAI 配置"
-        description={
-          enabled ? '向量搜索需要调用 OpenAI Embedding API。' : '当前未启用向量搜索，可提前填好配置，开启后立即生效。'
-        }
-      >
-        <SettingsRow
-          label="API Endpoint"
-          htmlFor="search-endpoint"
-          hint="留空表示使用官方 OpenAI 接口（https://api.openai.com/v1）。支持任意兼容 OpenAI API 规范的第三方服务。"
-        >
-          <Input
-            id="search-endpoint"
-            type="url"
-            value={draft.endpoint}
-            onChange={(e) => setDraft((prev) => ({ ...prev, endpoint: e.target.value }))}
-            placeholder="https://api.openai.com/v1"
-            maxLength={253}
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          label="API Key"
-          htmlFor="search-api-key"
-          hint={
-            apiKeyConfigured
-              ? `当前已配置（结尾 …${search.apiKeyMask}）。留空保存表示保留现有 Key，填入新值才会覆盖。`
-              : '尚未配置。将以明文存入 setting 表，请确保数据库本身处于受控环境。'
-          }
-        >
-          <Input
-            id="search-api-key"
-            type="password"
-            value={draft.apiKey}
-            onChange={(e) => setDraft((prev) => ({ ...prev, apiKey: e.target.value }))}
-            placeholder={apiKeyConfigured ? '保留现有 Key' : '粘贴 OpenAI API Key'}
-            maxLength={512}
-            autoComplete="new-password"
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          label="模型"
-          htmlFor="search-model"
-          hint={
-            <>
-              <span>默认 text-embedding-3-small，性价比最高。text-embedding-3-large 质量更好但成本更高。</span>
-              <span className="block text-status-warn-fg">
-                系统固定请求 1536 维向量输出，请确保所选模型支持 dimensions 参数或本身输出 1536 维。
-              </span>
-            </>
-          }
-        >
-          <Input
-            id="search-model"
-            value={draft.model}
-            onChange={(e) => setDraft((prev) => ({ ...prev, model: e.target.value }))}
-            placeholder="text-embedding-3-small"
-            maxLength={80}
-          />
-        </SettingsRow>
-
-        <SettingsRow
-          label="相似度阈值"
-          htmlFor="search-threshold"
-          hint="0–1 之间。越高结果越精准，但可能漏掉部分相关内容。建议 0.5–0.7。"
-        >
-          <Input
-            id="search-threshold"
-            type="number"
-            min={0}
-            max={1}
-            step={0.05}
-            value={draft.similarityThreshold}
-            onChange={(e) => setDraft((prev) => ({ ...prev, similarityThreshold: Number(e.target.value) || 0 }))}
-          />
-        </SettingsRow>
-      </SettingsSection>
-
-      <SettingsSection title="索引管理" description="首次启用向量搜索或批量更新文章后，需要重建搜索索引。">
+    <GhostSettingGroup title="索引管理" description="首次启用向量搜索或批量更新文章后，需要重建搜索索引。">
+      <GhostSettingGroupContent>
         <SettingsRow label="重建搜索索引">
           <div className="flex flex-col gap-2">
             <Button
@@ -280,15 +303,17 @@ export function SearchForm({ search }: SearchFormProps) {
             )}
           </div>
         </SettingsRow>
-      </SettingsSection>
+      </GhostSettingGroupContent>
+    </GhostSettingGroup>
+  )
+}
 
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onRevert={revert}
-      />
-    </form>
+export function SearchForm({ search }: SearchFormProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      <SearchModeCard search={search} />
+      <SearchOpenAiCard search={search} />
+      <SearchReindexCard />
+    </div>
   )
 }

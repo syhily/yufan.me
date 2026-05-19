@@ -11,6 +11,7 @@ export const signInSchema = z.object({
 export type SignInInput = z.infer<typeof signInSchema>
 
 export const signUpAdminSchema = z.object({
+  title: z.string().min(1),
   name: z.string().min(1),
   email: z.email().min(1),
   password: z.string().min(10),

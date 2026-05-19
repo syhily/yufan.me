@@ -80,6 +80,8 @@ export const BUNDLE_KEYS = SETTINGS_SECTIONS.map((section) => SECTION_TO_BUNDLE_
 // Lives in `@/shared/` because the strings are pure data — no
 // server- or DOM-only dependencies — and the UI layer must not
 // reach into `@/server/` to pull them in.
+export type SettingsNavGroup = 'site' | 'content' | 'service' | 'system'
+
 export interface SectionDisplayMeta {
   /** URL the sidebar `NavLink` points at. */
   to: string
@@ -87,51 +89,124 @@ export interface SectionDisplayMeta {
   label: string
   /** One-line Chinese description shown beneath the label. */
   description: string
+  /** Navigation group key. */
+  group: SettingsNavGroup
+  /** Lucide icon name (PascalCase, e.g. 'Settings'). */
+  icon: string
+}
+
+export const NAV_GROUP_LABEL: Record<SettingsNavGroup, string> = {
+  site: '站点',
+  content: '内容与展示',
+  service: '服务集成',
+  system: '系统运维',
 }
 
 export const SECTION_DISPLAY: Record<SettingsSection, SectionDisplayMeta> = {
   general: {
-    to: '/admin/settings/general',
+    to: '/admin/settings',
     label: '基本信息',
     description: '站点标题、描述、关键词、作者、语言与时区',
+    group: 'site',
+    icon: 'Settings',
   },
   assets: {
-    to: '/admin/settings/assets',
+    to: '/admin/settings',
     label: '存储配置',
     description: '资源/CDN 域名、S3 兼容存储、上传参数',
-  },
-  navigation: { to: '/admin/settings/navigation', label: '导航菜单', description: '顶部导航条目顺序与链接' },
-  socials: { to: '/admin/settings/socials', label: '社交链接', description: '社交平台账号与二维码' },
-  content: { to: '/admin/settings/content', label: '内容与分页', description: '列表分页大小、排序、Feed' },
-  sidebar: { to: '/admin/settings/sidebar', label: '侧边栏', description: '日历、搜索、推荐数量等开关' },
-  comments: { to: '/admin/settings/comments', label: '评论与头像', description: '评论分页与 Gravatar 镜像' },
-  seo: { to: '/admin/settings/seo', label: 'SEO 与目录', description: 'TOC 标题级别、OG 尺寸' },
-  mail: { to: '/admin/settings/mail', label: '邮件服务', description: 'Zeabur ZSend 配置 / 测试发送' },
-  cache: { to: '/admin/settings/cache', label: '缓存管理', description: 'OG 图 / 头像 / 日历的 Redis 缓存' },
-  rateLimit: {
-    to: '/admin/settings/threshold',
-    label: '流控设置',
-    description: '登录、评论、点赞按 IP / 邮箱的限流策略',
-  },
-  search: {
-    to: '/admin/settings/search',
-    label: '文章搜索',
-    description: 'AI 向量搜索与关键词搜索切换、OpenAI 配置',
+    group: 'site',
+    icon: 'HardDrive',
   },
   fonts: {
-    to: '/admin/settings/fonts',
+    to: '/admin/settings',
     label: '字体配置',
     description: 'OG 图与日历图渲染所用的远程 TTF 字体地址',
+    group: 'site',
+    icon: 'Type',
   },
-  backup: {
-    to: '/admin/settings/backup',
-    label: '备份与还原',
-    description: '数据库自动备份、手动备份与还原',
+  content: {
+    to: '/admin/settings',
+    label: '内容与分页',
+    description: '列表分页大小、排序、Feed',
+    group: 'content',
+    icon: 'FileText',
+  },
+  sidebar: {
+    to: '/admin/settings',
+    label: '侧边栏',
+    description: '日历、搜索、推荐数量等开关',
+    group: 'content',
+    icon: 'PanelLeft',
+  },
+  comments: {
+    to: '/admin/settings',
+    label: '评论与头像',
+    description: '评论分页与 Gravatar 镜像',
+    group: 'content',
+    icon: 'MessageSquare',
+  },
+  seo: {
+    to: '/admin/settings',
+    label: 'SEO 与目录',
+    description: 'TOC 标题级别、OG 尺寸',
+    group: 'content',
+    icon: 'Search',
+  },
+  navigation: {
+    to: '/admin/settings',
+    label: '导航菜单',
+    description: '顶部导航条目顺序与链接',
+    group: 'content',
+    icon: 'Navigation',
+  },
+  socials: {
+    to: '/admin/settings',
+    label: '社交链接',
+    description: '社交平台账号与二维码',
+    group: 'content',
+    icon: 'Share2',
+  },
+  mail: {
+    to: '/admin/settings',
+    label: '邮件服务',
+    description: 'Zeabur ZSend 配置 / 测试发送',
+    group: 'service',
+    icon: 'Mail',
+  },
+  search: {
+    to: '/admin/settings',
+    label: '文章搜索',
+    description: 'AI 向量搜索与关键词搜索切换、OpenAI 配置',
+    group: 'service',
+    icon: 'SearchCode',
+  },
+  cache: {
+    to: '/admin/settings',
+    label: '缓存管理',
+    description: 'OG 图 / 头像 / 日历的 Redis 缓存',
+    group: 'system',
+    icon: 'Database',
+  },
+  rateLimit: {
+    to: '/admin/settings',
+    label: '流控设置',
+    description: '登录、评论、点赞按 IP / 邮箱的限流策略',
+    group: 'system',
+    icon: 'Shield',
   },
   limits: {
-    to: '/admin/settings/limits',
+    to: '/admin/settings',
     label: '运行限制',
     description: '请求体大小限制、会话有效期等运行时阈值',
+    group: 'system',
+    icon: 'SlidersHorizontal',
+  },
+  backup: {
+    to: '/admin/settings',
+    label: '备份与还原',
+    description: '数据库自动备份、手动备份与还原',
+    group: 'system',
+    icon: 'Archive',
   },
 }
 

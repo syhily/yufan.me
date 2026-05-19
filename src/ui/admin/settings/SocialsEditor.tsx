@@ -1,55 +1,46 @@
 import type { SocialsSettings } from '@/shared/config/blog'
 
 import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@/shared/config/socials'
-import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
+import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
+import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
 
 interface SocialsEditorProps {
-  // Per-section DTO: matches `setting('blog.socials')`.
   socials: SocialsSettings
 }
 
 interface SocialRow {
   network: SocialNetwork
-  /**
-   * Optional account display name. For QR rows it shows under the popup
-   * heading (e.g. "Yufan Sheng"); for link rows it becomes the `<a>`
-   * tooltip. Empty falls back to the platform's default name on save.
-   */
   name: string
-  /** Editable QR popup heading; ignored for `link` rows. */
   title: string
   link: string
 }
 
-interface FormState {
-  rows: SocialRow[]
+function toFormState(source: SocialsSettings): { rows: SocialRow[] } {
+  const sourceMap = new Map(source.socials.map((s) => [s.network, s]))
+  const rows: SocialRow[] = SOCIAL_NETWORKS.map((network) => {
+    const item = sourceMap.get(network)
+    const meta = getSocialNetworkMeta(network)
+    if (item) {
+      const customName = item.name && item.name !== meta.defaultName ? item.name : ''
+      return { network, name: customName, title: item.title ?? '', link: item.link }
+    }
+    return { network, name: '', title: '', link: '' }
+  })
+  return { rows }
 }
 
 export function SocialsEditor({ socials }: SocialsEditorProps) {
-  const { draft, setDraft, isDirty, onSubmit, isPending, status, errorMessage, revert } = useSettingsForm<
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
     SocialsSettings,
-    FormState
+    { rows: SocialRow[] }
   >({
     section: 'socials',
     source: socials,
-    toState: (source) => {
-      const sourceMap = new Map(source.socials.map((s) => [s.network, s]))
-      const rows: SocialRow[] = SOCIAL_NETWORKS.map((network) => {
-        const item = sourceMap.get(network)
-        const meta = getSocialNetworkMeta(network)
-        if (item) {
-          const customName = item.name && item.name !== meta.defaultName ? item.name : ''
-          return { network, name: customName, title: item.title ?? '', link: item.link }
-        }
-        return { network, name: '', title: '', link: '' }
-      })
-      return { rows }
-    },
+    toState: toFormState,
     fromState: (state) => ({
       socials: state.rows
         .filter((row) => row.link.trim() !== '')
@@ -67,20 +58,27 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
     }),
   })
 
-  const update = (index: number, patch: Partial<SocialRow>) =>
-    setDraft((prev) => ({
-      rows: prev.rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
-    }))
+  const rows = form.watch('rows')
+
+  const update = (index: number, patch: Partial<SocialRow>) => {
+    const next = rows.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    form.setValue('rows', next)
+  }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <SettingsSection
-        title="社交链接"
-        description="配置各社交平台的账号或二维码。填写链接后平台即生效，留空则不在网站展示。展示顺序由底部导航菜单控制。"
-        groupFields={false}
-      >
+    <GhostSettingGroup
+      title="社交链接"
+      description="配置各社交平台的账号或二维码。填写链接后平台即生效，留空则不在网站展示。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
         <div className="flex flex-col gap-3">
-          {draft.rows.map((row, index) => {
+          {rows.map((row, index) => {
             const meta = getSocialNetworkMeta(row.network)
             const Icon = SOCIAL_NETWORK_ICONS[row.network]
             return (
@@ -105,11 +103,6 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                     maxLength={60}
                     placeholder={meta.defaultName}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    {meta.type === 'qrcode'
-                      ? `二维码弹窗标题下方的小字。留空则显示平台名「${meta.defaultName}」。`
-                      : `图标的鼠标悬停提示。留空则显示平台名「${meta.defaultName}」。`}
-                  </p>
                 </div>
                 <div className="flex flex-col gap-3">
                   <Label htmlFor={`social-link-${row.network}`}>{meta.linkLabel}</Label>
@@ -130,22 +123,31 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
                       maxLength={120}
                       placeholder={`扫码加我${meta.label}好友`}
                     />
-                    <p className="text-xs text-muted-foreground">弹窗顶部的大标题。留空则只显示用户名 / 平台名。</p>
                   </div>
                 ) : null}
               </div>
             )
           })}
         </div>
-      </SettingsSection>
-
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onRevert={revert}
-      />
-    </form>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {socials.socials.length === 0 ? (
+            <p className="text-sm text-muted-foreground">未配置任何社交链接</p>
+          ) : (
+            socials.socials.map((item) => {
+              const meta = getSocialNetworkMeta(item.network)
+              return (
+                <GhostSettingValue
+                  key={item.network}
+                  label={meta.label}
+                  value={item.link}
+                  hint={item.name !== meta.defaultName ? item.name : undefined}
+                />
+              )
+            })
+          )}
+        </div>
+      )}
+    </GhostSettingGroup>
   )
 }

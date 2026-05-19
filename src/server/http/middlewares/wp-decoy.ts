@@ -4,7 +4,7 @@ import type { Env } from '@/server/http/context'
 
 // WordPress probe detector. The site borrows the WordPress URL shape for
 // its real admin (`/admin/signin`, `/admin`, the two-stage install
-// pair `/admin/install.php` + `/admin/install/settings.php`, plus
+// pair `/admin/setup` + `/admin/setup/settings`, plus
 // the SPA sub-routes mounted under `/admin/*`); every other request
 // that *looks* like a WordPress install is almost certainly an
 // automated scanner. We answer those with a HTTP 404 plus a custom

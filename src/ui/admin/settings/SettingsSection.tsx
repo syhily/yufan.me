@@ -1,48 +1,8 @@
 import { type ReactNode, useId } from 'react'
 
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 import { Checkbox } from '@/ui/components/checkbox'
-import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/ui/components/field'
+import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from '@/ui/components/field'
 import { cn } from '@/ui/lib/cn'
-
-interface SettingsSectionProps {
-  title: string
-  description?: string
-  /**
-   * Slot for top-right buttons (e.g. "添加菜单项"). Forwarded directly to
-   * shadcn's `<CardAction>`, which `<CardHeader>` recognises by its
-   * `data-slot="card-action"` attribute and switches the header into a
-   * 2-column grid (title/description on the left, action on the right
-   * — matches the upstream Card composition documented in the shadcn
-   * Skill).
-   */
-  actions?: ReactNode
-  /**
-   * When the section's body is a form group, wrap the children in a
-   * `<FieldGroup>` so individual `<Field>` rows pick up the canonical
-   * vertical spacing. Defaults to `true`. Disable for sections that
-   * render bespoke layouts (e.g. cache stats, sortable lists).
-   */
-  groupFields?: boolean
-  children: ReactNode
-}
-
-// Card-based wrapper used by every settings page so spacing, headings,
-// and actions stay consistent. Composes the canonical shadcn `Card`
-// primitives (`CardHeader` / `CardAction` / `CardContent`) so a `Card`
-// upgrade lands here without re-styling each section by hand.
-export function SettingsSection({ title, description, actions, groupFields = true, children }: SettingsSectionProps) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description ? <CardDescription>{description}</CardDescription> : null}
-        {actions ? <CardAction>{actions}</CardAction> : null}
-      </CardHeader>
-      <CardContent>{groupFields ? <FieldGroup className="gap-5">{children}</FieldGroup> : children}</CardContent>
-    </Card>
-  )
-}
 
 export interface SettingsControlProps {
   'aria-invalid'?: true

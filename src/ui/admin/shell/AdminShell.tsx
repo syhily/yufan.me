@@ -68,7 +68,7 @@ const NAV: NavItem[] = [
     minRole: 'admin',
   },
   {
-    to: '/admin/settings/general',
+    to: '/admin/settings',
     label: '系统设置',
     icon: SettingsIcon,
     matchPrefix: '/admin/settings',

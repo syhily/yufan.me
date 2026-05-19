@@ -711,7 +711,7 @@ describe('contract: module and bundle boundaries', () => {
     ]
     for (const file of formFiles) {
       const formSource = readFileSync(file, 'utf8')
-      expect(formSource).toContain('useSettingsForm')
+      expect(formSource).toMatch(/useSettingsForm|useSettingsCard/)
       // Direct `import { useForm } from 'react-hook-form'` would mean
       // the form is duplicating the wrapper's lifecycle.
       // `useFieldArray` is allowed (consumed via the wrapper's `form.control`).

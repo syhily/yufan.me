@@ -32,7 +32,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/admin/install.php')
+    const res = await app.request('/admin/setup')
     expect(res.status).toBe(200)
   })
 
@@ -41,7 +41,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/admin/install.php.data', { method: 'POST' })
+    const res = await app.request('/admin/setup.data', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 
@@ -50,7 +50,7 @@ describe('honoInstallGateMiddleware', () => {
     mockHydrateBlogSettings.mockResolvedValue(null)
 
     const app = await createApp()
-    const res = await app.request('/admin/install/settings.php.data', { method: 'POST' })
+    const res = await app.request('/admin/setup/settings.data', { method: 'POST' })
     expect(res.status).toBe(200)
   })
 
@@ -70,7 +70,7 @@ describe('honoInstallGateMiddleware', () => {
     const app = await createApp()
     const res = await app.request('/admin/some-other.php.data', { method: 'POST' })
     expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/admin/install.php')
+    expect(res.headers.get('Location')).toBe('/admin/setup')
   })
 
   it('redirects non-exempt requests in noSettings state', async () => {
@@ -80,7 +80,7 @@ describe('honoInstallGateMiddleware', () => {
     const app = await createApp()
     const res = await app.request('/dashboard')
     expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/admin/install/settings.php')
+    expect(res.headers.get('Location')).toBe('/admin/setup/settings')
   })
 
   it('redirects non-exempt requests in noAdmin state', async () => {
@@ -90,6 +90,6 @@ describe('honoInstallGateMiddleware', () => {
     const app = await createApp()
     const res = await app.request('/dashboard')
     expect(res.status).toBe(303)
-    expect(res.headers.get('Location')).toBe('/admin/install.php')
+    expect(res.headers.get('Location')).toBe('/admin/setup')
   })
 })

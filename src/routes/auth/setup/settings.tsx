@@ -1,14 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { data, redirect } from 'react-router'
 
 import type { InstallWizardData } from '@/shared/types/install'
 
-import { issueCsrfToken } from '@/server/domains/auth/csrf'
+import { reuseOrIssueCsrfToken } from '@/server/domains/auth/csrf'
 import { seedInstallSettingsWithSession } from '@/server/domains/auth/flows'
 import { requireStageTwoSession } from '@/server/domains/settings/install-flow'
 import { getSupportedTimeZones } from '@/server/domains/settings/timezones'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
-import { clearInstallSession, InstallWizardProvider } from '@/ui/admin/auth/install-wizard/InstallWizardContext'
+import {
+  clearInstallSession,
+  InstallWizardProvider,
+  useInstallWizard,
+} from '@/ui/admin/auth/install-wizard/InstallWizardContext'
 import { WizardShell } from '@/ui/admin/auth/install-wizard/WizardShell'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
 
@@ -17,8 +21,14 @@ import type { Route } from './+types/settings'
 export async function loader({ request, context }: Route.LoaderArgs) {
   await requireStageTwoSession({ request, context })
 
-  const { token: csrf, setCookie } = await issueCsrfToken(request)
-  return data({ csrf, timeZones: getSupportedTimeZones() }, { headers: { 'Set-Cookie': setCookie } })
+  const url = new URL(request.url)
+  const prefillTitle = url.searchParams.get('title') ?? ''
+
+  const { token: csrf, setCookie } = await reuseOrIssueCsrfToken(request)
+  return data(
+    { csrf, timeZones: getSupportedTimeZones(), prefillTitle },
+    { headers: setCookie ? { 'Set-Cookie': setCookie } : undefined },
+  )
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -57,11 +67,24 @@ export function meta({ matches }: Route.MetaArgs) {
   return routeMeta({ title: '初始化站点配置' }, bundleFromMatches(matches))
 }
 
+function PrefillWrapper({ prefillTitle }: { prefillTitle: string }) {
+  const { data, updateData } = useInstallWizard()
+
+  useEffect(() => {
+    if (prefillTitle && !data.title) {
+      updateData((prev) => ({ ...prev, title: prefillTitle }))
+    }
+  }, [prefillTitle, data.title, updateData])
+
+  return null
+}
+
 export default function SettingsInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
   const [error] = useState(actionData?.error)
 
   return (
     <InstallWizardProvider>
+      <PrefillWrapper prefillTitle={loaderData.prefillTitle} />
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">初始化站点配置</CardTitle>

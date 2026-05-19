@@ -9,7 +9,6 @@ import {
 } from '@dnd-kit/core'
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -17,14 +16,17 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
+import { useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
 import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared/config/blog'
 
-import { SettingsFormBar } from '@/ui/admin/settings/SettingsFormBar'
-import { SettingsRow, SettingsSection } from '@/ui/admin/settings/SettingsSection'
-import { useSettingsForm } from '@/ui/admin/settings/useSettingsForm'
+import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
+import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
+import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
+import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
+import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
@@ -52,24 +54,16 @@ const WIDGET_HINTS: Record<SidebarWidgetType, string> = {
 function SortableWidgetRow({
   widget,
   index,
-  onToggle,
-  onCountChange,
+  form,
 }: {
   widget: SidebarWidget
   index: number
-  onToggle: (idx: number, enabled: boolean) => void
-  onCountChange: (idx: number, count: number) => void
+  form: ReturnType<typeof useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>>['form']
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: widget.type,
   })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
-
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
   const hasCount = widget.type === 'recentPosts' || widget.type === 'recentComments' || widget.type === 'randomTags'
 
   return (
@@ -88,8 +82,8 @@ function SortableWidgetRow({
           <div className="flex items-center gap-3">
             <Switch
               id={`sidebar-${widget.type}`}
-              checked={widget.enabled}
-              onCheckedChange={(value) => onToggle(index, value === true)}
+              checked={form.watch(`widgets.${index}.enabled`)}
+              onCheckedChange={(value) => form.setValue(`widgets.${index}.enabled`, value === true)}
             />
             <FieldLabel htmlFor={`sidebar-${widget.type}`} className="font-normal">
               启用
@@ -104,8 +98,7 @@ function SortableWidgetRow({
                 type="number"
                 min={0}
                 max={100}
-                value={widget.count ?? 0}
-                onChange={(e) => onCountChange(index, Number.parseInt(e.target.value, 10) || 0)}
+                {...form.register(`widgets.${index}.count`, { valueAsNumber: true })}
               />
             </SettingsRow>
           </div>
@@ -116,7 +109,7 @@ function SortableWidgetRow({
 }
 
 export function SidebarForm({ sidebar }: SidebarFormProps) {
-  const { draft, setDraft, isDirty, onSubmit, isPending, status, errorMessage, revert } = useSettingsForm<
+  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
     SidebarSettings,
     { widgets: SidebarWidget[] }
   >({
@@ -128,70 +121,61 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
 
   const sensors = useSensors(
     useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  const rows = useFieldArray({ control: form.control, name: 'widgets' })
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      setDraft((prev) => {
-        const oldIndex = prev.widgets.findIndex((w) => w.type === active.id)
-        const newIndex = prev.widgets.findIndex((w) => w.type === over.id)
-        return { widgets: arrayMove(prev.widgets, oldIndex, newIndex) }
-      })
+      const oldIndex = rows.fields.findIndex((w) => w.type === active.id)
+      const newIndex = rows.fields.findIndex((w) => w.type === over.id)
+      rows.move(oldIndex, newIndex)
     }
   }
 
-  function toggleWidget(index: number, enabled: boolean) {
-    setDraft((prev) => {
-      const next = [...prev.widgets]
-      next[index] = { ...next[index], enabled }
-      return { widgets: next }
-    })
-  }
-
-  function setCount(index: number, count: number) {
-    setDraft((prev) => {
-      const next = [...prev.widgets]
-      next[index] = { ...next[index], count }
-      return { widgets: next }
-    })
-  }
-
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6">
-      <SettingsSection title="侧边栏组件" description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          modifiers={VERTICAL_AXIS_ONLY}
-        >
-          <SortableContext items={draft.widgets.map((w) => w.type)} strategy={verticalListSortingStrategy}>
-            <div className="flex flex-col gap-3">
-              {draft.widgets.map((widget, index) => (
-                <SortableWidgetRow
-                  key={widget.type}
-                  widget={widget}
-                  index={index}
-                  onToggle={toggleWidget}
-                  onCountChange={setCount}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </SettingsSection>
-
-      <SettingsFormBar
-        isPending={isPending}
-        isDirty={isDirty}
-        status={status}
-        errorMessage={errorMessage}
-        onRevert={revert}
-      />
-    </form>
+    <GhostSettingGroup
+      title="侧边栏组件"
+      description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。"
+      isEditing={isEditing}
+      onEditingChange={setIsEditing}
+      onSave={save}
+      onCancel={cancel}
+      saveState={status}
+      errorMessage={errorMessage}
+    >
+      {isEditing ? (
+        <GhostSettingGroupContent>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            modifiers={VERTICAL_AXIS_ONLY}
+          >
+            <SortableContext items={rows.fields.map((w) => w.type)} strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-3">
+                {rows.fields.map((widget, index) => (
+                  <SortableWidgetRow key={widget.type} widget={widget as SidebarWidget} index={index} form={form} />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </GhostSettingGroupContent>
+      ) : (
+        <GhostSettingGroupContent>
+          {sidebar.sidebar.widgets.map((widget) => (
+            <GhostSettingValue
+              key={widget.type}
+              label={WIDGET_LABELS[widget.type]}
+              value={
+                widget.enabled ? `已启用${widget.count !== undefined ? `（显示 ${widget.count} 条）` : ''}` : '已禁用'
+              }
+            />
+          ))}
+        </GhostSettingGroupContent>
+      )}
+    </GhostSettingGroup>
   )
 }

@@ -8,7 +8,12 @@ vi.mock('@/server/domains/settings/service', () => ({
   updateBlogSettingsSection: vi.fn(),
 }))
 
+vi.mock('@/server/domains/settings/timezones', () => ({
+  getSupportedTimeZones: vi.fn(),
+}))
+
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
+const { getSupportedTimeZones } = await import('@/server/domains/settings/timezones')
 const { adminSettingsRouter } = await import('@/server/http/controllers/admin/settings.controller')
 
 const bundleStub = {
@@ -31,6 +36,17 @@ describe('adminSettingsRouter.get', () => {
     const ctx = makeAuthedCtx()
     const res = await call(adminSettingsRouter.get, {}, { context: ctx })
     expect(res.bundle).toEqual(bundleStub)
+  })
+})
+
+describe('adminSettingsRouter.loadAll', () => {
+  it('returns the settings bundle plus timeZones', async () => {
+    vi.mocked(getAdminBlogSettings).mockResolvedValueOnce({ bundle: bundleStub } as never)
+    vi.mocked(getSupportedTimeZones).mockReturnValueOnce(['Asia/Shanghai', 'UTC'])
+    const ctx = makeAuthedCtx()
+    const res = await call(adminSettingsRouter.loadAll, {}, { context: ctx })
+    expect(res.bundle).toEqual(bundleStub)
+    expect(res.timeZones).toEqual(['Asia/Shanghai', 'UTC'])
   })
 })
 
