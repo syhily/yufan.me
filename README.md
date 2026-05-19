@@ -110,7 +110,7 @@ cache.ts`.
   post-processing. Never persists.
 
 Deeper rationale and the rules each layer enforces live in
-[AGENTS.md](AGENTS.md).
+[AGENTS.md](AGENTS.md) and the subdirectory `AGENTS.md` files.
 
 ## Quick start
 
