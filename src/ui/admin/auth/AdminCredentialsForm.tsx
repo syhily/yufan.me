@@ -1,4 +1,5 @@
-import { ArrowRightIcon, SendIcon } from 'lucide-react'
+import { ArrowRightIcon, EyeIcon, EyeOffIcon, SendIcon } from 'lucide-react'
+import { useState } from 'react'
 import { Form, Link, useNavigation } from 'react-router'
 
 import { Button } from '@/ui/components/button'
@@ -19,6 +20,7 @@ const inputClasses =
 export function AdminCredentialsForm({ action, csrf, mode = 'login', resetToken }: AdminCredentialsFormProps) {
   const navigation = useNavigation()
   const isSubmitting = navigation.state === 'submitting' && navigation.formMethod === 'POST'
+  const [showPassword, setShowPassword] = useState(false)
 
   if (mode === 'lostpassword') {
     return (
@@ -71,17 +73,27 @@ export function AdminCredentialsForm({ action, csrf, mode = 'login', resetToken 
           <Label htmlFor="loginForm-password" className="text-[15px] font-semibold">
             新密码
           </Label>
-          <Input
-            id="loginForm-password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="•••••••••••••••"
-            required
-            minLength={6}
-            disabled={isSubmitting}
-            className={inputClasses}
-          />
+          <div className="relative w-full">
+            <Input
+              id="loginForm-password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="•••••••••••••••"
+              required
+              minLength={6}
+              disabled={isSubmitting}
+              className={cn(inputClasses, 'pr-12')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute top-3 right-2 bottom-3 flex items-center px-2 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? '隐藏密码' : '显示密码'}
+            >
+              {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+            </button>
+          </div>
         </div>
         <Button
           type="submit"
@@ -127,20 +139,30 @@ export function AdminCredentialsForm({ action, csrf, mode = 'login', resetToken 
           <Input
             id="loginForm-password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
             placeholder="•••••••••••••••"
             required
             minLength={10}
             disabled={isSubmitting}
-            className={cn(inputClasses, 'pr-[5.5rem]')}
+            className={cn(inputClasses, 'pr-[8rem]')}
           />
-          <Link
-            to="?action=lostpassword"
-            className="absolute top-3 right-[1px] bottom-3 flex items-center border-l border-foreground/20 px-4 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-          >
-            忘记？
-          </Link>
+          <div className="absolute top-3 right-2 bottom-3 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="flex items-center px-2 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? '隐藏密码' : '显示密码'}
+            >
+              {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+            </button>
+            <Link
+              to="?action=lostpassword"
+              className="flex items-center border-l border-foreground/20 px-4 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+            >
+              忘记？
+            </Link>
+          </div>
         </div>
       </div>
       <Button
