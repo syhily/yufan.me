@@ -32,7 +32,9 @@ export function GhostSettingValue({ label, value, hint, code, className }: Ghost
             {value || <span className="text-muted-foreground">—</span>}
           </div>
         ) : (
-          <span className="text-sm text-foreground">{value || <span className="text-muted-foreground">—</span>}</span>
+          <span className="text-sm break-all text-foreground">
+            {value || <span className="text-muted-foreground">—</span>}
+          </span>
         )}
         {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       </div>
