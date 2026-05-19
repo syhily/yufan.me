@@ -16,7 +16,7 @@ import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/s
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
 import { AdminCredentialsForm } from '@/ui/admin/auth/AdminCredentialsForm'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card'
+import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'
 
@@ -185,53 +185,34 @@ export function meta({ matches }: Route.MetaArgs) {
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">用户登陆</CardTitle>
-        <CardDescription>
-          {loaderData.action === 'lostpassword'
-            ? '输入邮箱以接收密码重置链接。'
-            : loaderData.action === 'resetpassword'
-              ? '设置新密码。'
-              : loaderData.action === 'accept-invite'
-                ? '设置登录密码以接受邀请。'
-                : '使用管理员邮箱与密码登陆后台。'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {actionData?.error && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            {actionData.error}
-          </div>
-        )}
-        {(actionData as unknown as { message?: string })?.message && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 text-sm text-green-600"
-          >
-            {(actionData as unknown as { message?: string }).message}
-          </div>
-        )}
-        {loaderData.tokenError && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-          >
-            {loaderData.tokenError}
-          </div>
-        )}
-        <AdminCredentialsForm
-          csrf={loaderData.csrf}
-          mode={loaderData.action as 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'}
-          resetToken={loaderData.resetToken ?? undefined}
-        />
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-center">
+      <BrandLogo alt="" className="mb-10 h-20 w-auto" />
+
+      {(actionData?.error || (actionData as unknown as { message?: string })?.message || loaderData.tokenError) && (
+        <div className="mb-10 text-center text-sm">
+          {actionData?.error && (
+            <p role="alert" aria-live="polite" className="text-destructive">
+              {actionData.error}
+            </p>
+          )}
+          {(actionData as unknown as { message?: string })?.message && (
+            <p role="status" aria-live="polite" className="text-green-600 dark:text-green-400">
+              {(actionData as unknown as { message?: string }).message}
+            </p>
+          )}
+          {loaderData.tokenError && (
+            <p role="alert" aria-live="polite" className="text-destructive">
+              {loaderData.tokenError}
+            </p>
+          )}
+        </div>
+      )}
+
+      <AdminCredentialsForm
+        csrf={loaderData.csrf}
+        mode={loaderData.action as 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'}
+        resetToken={loaderData.resetToken ?? undefined}
+      />
+    </div>
   )
 }
