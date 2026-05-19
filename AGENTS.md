@@ -32,6 +32,7 @@ writing code when a task triggers one:
 | Skill                         | Triggers                                                                       |
 | ----------------------------- | ------------------------------------------------------------------------------ |
 | `react-router-framework-mode` | Routes, loaders, actions, forms, navigation, `react-router.config.ts`          |
+| `hono`                        | Hono APIs, routing, middleware, JSX, validation, testing, streaming.           |
 | `vercel-react-best-practices` | Any React/SSR code. The 70 numbered rules are the performance baseline.        |
 | `vercel-composition-patterns` | New components, boolean-prop matrices, compound components, context providers. |
 | `shadcn`                      | shadcn/ui components, presets, `components.json`.                              |
