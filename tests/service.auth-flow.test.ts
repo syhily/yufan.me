@@ -62,14 +62,35 @@ const userQuery = await import('@/server/infra/db/operations/user')
 const settingQuery = await import('@/server/infra/db/operations/setting')
 const settingsSnapshot = await import('@/server/domains/settings/snapshot')
 const rateLimit = await import('@/server/infra/rate-limit')
+import type { User } from '@/server/infra/db/types'
+
 import { issueCsrfToken } from '@/server/domains/auth/csrf'
-import {
-  seedInstallSettingsWithSession,
-  signInWithSession,
-  signUpInitialAdminWithSession,
-} from '@/server/domains/auth/flows'
+import { signInWithSession, signUpInitialAdminWithSession } from '@/server/domains/auth/flows'
 
 const verifyUserPasswordMock = vi.mocked(userQuery.verifyUserPassword)
+
+function testUser(partial: Partial<User> = {}): User {
+  return {
+    id: 1n,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    name: 'Test',
+    email: 'test@example.com',
+    emailVerified: false,
+    link: null,
+    password: 'hashed',
+    badgeName: null,
+    badgeColor: null,
+    badgeTextColor: null,
+    lastIp: null,
+    lastUa: null,
+    role: 'admin',
+    isMuted: false,
+    receiveEmail: true,
+    ...partial,
+  }
+}
 
 beforeEach(() => {
   verifyUserPasswordMock.mockReset()
@@ -106,13 +127,13 @@ async function buildSignedRequest(token: string): Promise<{ request: Request; to
 // `login()` reads the password through `verifyUserPassword`. Returning a
 // non-null record makes `login()` resolve `true`, returning `null` makes it
 // resolve `false` — without us having to spy on `login` itself.
-const stubUser = {
-  id: 1,
+const stubUser = testUser({
+  id: 1n,
   name: 'Admin',
   email: 'admin@yufan.me',
   link: null,
   role: 'admin',
-} as never
+})
 
 describe('services/auth/flow — signInWithSession', () => {
   it('on success emits both a session cookie and a freshly-rotated CSRF cookie', async () => {
@@ -216,9 +237,9 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     password: 'correct horse staple battery',
   }
 
-  it('creates the admin row and redirects to stage 2', async () => {
+  it('creates the admin row, seeds all settings, and redirects to /admin', async () => {
     vi.mocked(userQuery.insertAdmin).mockResolvedValue([
-      { id: 7n, name: 'Admin', email: 'admin@yufan.me', link: '', role: 'admin' } as never,
+      testUser({ id: 7n, name: 'Admin', email: 'admin@yufan.me', link: '', role: 'admin' }),
     ])
     const { request, token } = await buildSignedRequest('')
 
@@ -232,11 +253,51 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
 
     expect(result.ok).toBe(true)
     if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/admin/setup/settings?title=My%20Blog')
+      expect(result.data.redirectTo).toBe('/admin')
     }
     expect(userQuery.insertAdmin).toHaveBeenCalledWith('Admin', 'admin@yufan.me', baseSeed.password)
-    expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
-    expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()
+
+    // All settings sections are seeded in one pass.
+    expect(settingQuery.upsertSetting).toHaveBeenCalled()
+    const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
+    const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: bigint | null }>()
+    for (const [data, updatedBy, scope] of calls) {
+      byScope.set(scope, { data: data as Record<string, unknown>, updatedBy })
+    }
+
+    const EXPECTED_SECTIONS = [
+      'blog.general',
+      'blog.assets',
+      'blog.navigation',
+      'blog.socials',
+      'blog.content',
+      'blog.sidebar',
+      'blog.comments',
+      'blog.seo',
+      'blog.mail',
+      'blog.cache',
+      'blog.rateLimit',
+      'blog.search',
+      'blog.fonts',
+      'blog.backup',
+      'blog.limits',
+    ]
+    for (const scope of EXPECTED_SECTIONS) {
+      expect(byScope.has(scope)).toBe(true)
+    }
+
+    const general = byScope.get('blog.general')
+    expect(general?.data.title).toBe('My Blog')
+    expect(general?.data.locale).toBe('zh-CN')
+    expect(general?.data.author).toMatchObject({
+      name: 'Admin',
+      email: 'admin@yufan.me',
+    })
+
+    const assets = byScope.get('blog.assets')
+    expect(assets?.data.asset).toEqual({ host: 'localhost', scheme: 'https' })
+
+    expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledOnce()
   })
 
   it('refuses a duplicate stage-1 install (returns 409, no DB writes)', async () => {
@@ -258,10 +319,11 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     expect(userQuery.insertAdmin).not.toHaveBeenCalled()
   })
 
-  it('returns 403 and never touches the DB when the CSRF token is missing', async () => {
+  it('returns 403 when the CSRF token is present but the cookie is missing', async () => {
+    const { token } = await buildSignedRequest('')
     const result = await signUpInitialAdminWithSession({
       ...baseSeed,
-      csrf: '',
+      csrf: token,
       session: emptySession(),
       request: new Request('http://localhost/admin/setup', { method: 'POST' }),
       clientAddress: '127.0.0.1',
@@ -273,219 +335,43 @@ describe('services/auth/flow — signUpInitialAdminWithSession (install stage 1)
     }
     expect(userQuery.insertAdmin).not.toHaveBeenCalled()
   })
-})
 
-describe('services/auth/flow — seedInstallSettingsWithSession (install stage 2)', () => {
-  const baseWizardData = {
-    title: 'Yufan Blog',
-    description: 'Yufan Blog Description',
-    website: 'https://yufan.me',
-    keywords: [],
-    locale: 'zh-CN',
-    timeZone: 'Asia/Shanghai',
-    timeFormat: 'yyyy-LL-dd HH:mm',
-    initialYear: new Date().getFullYear(),
-    icpNo: '',
-    moeIcpNo: '',
-    navigation: { sideNav: [], footerNav: [] },
-    socials: [],
-    sidebar: {
-      widgets: [
-        { type: 'search' as const, enabled: false },
-        { type: 'recentPosts' as const, enabled: false, count: 5 },
-        { type: 'recentComments' as const, enabled: false, count: 5 },
-        { type: 'randomTags' as const, enabled: false, count: 20 },
-        { type: 'todayCalendar' as const, enabled: false },
-      ],
-    },
-    fonts: { og: { url: '' }, calendar: { url: '' }, globalCss: [], postCss: [] },
-    content: {
-      pagination: { posts: 10, category: 10, tags: 10, search: 10 },
-      feed: { full: false, size: 20 },
-      post: { sort: 'desc' as const, sortBy: 'publishedAt' as const, featureEnabled: false },
-      footnotes: { sectionTitle: '尾声礼记' },
-    },
-    comments: {
-      size: 10,
-      avatar: { mirror: 'https://www.gravatar.com/avatar', size: 80 },
-      tokenTtlSeconds: 1800,
-    },
-    assets: {
-      asset: { host: 'yufan.me', scheme: 'https' as const },
-      storage: {
-        enabled: false,
-        endpoint: '',
-        region: '',
-        bucket: '',
-        accessKeyId: '',
-        secretAccessKey: '',
-        forcePathStyle: false,
-        urlTemplate: '',
-      },
-      upload: { maxBytes: 8 * 1024 * 1024, jpegQuality: 82 },
-    },
-    mail: { enabled: false, host: 'api.zeabur.com', apiKey: '', sender: 'noreply@example.com' },
-    search: {
-      enabled: false,
-      mode: 'like' as const,
-      endpoint: '',
-      apiKey: '',
-      model: 'text-embedding-3-small',
-      similarityThreshold: 0.5,
-    },
-  }
-  const adminCtx = { id: '7', name: 'Admin', email: 'mailbox@yufan.me' }
-
-  it('seeds the settings row using the authenticated admin id', async () => {
+  it('returns 500 and never seeds when insertAdmin yields an empty result', async () => {
+    vi.mocked(userQuery.insertAdmin).mockResolvedValue([])
     const { request, token } = await buildSignedRequest('')
 
-    const result = await seedInstallSettingsWithSession({
-      data: baseWizardData,
+    const result = await signUpInitialAdminWithSession({
+      ...baseSeed,
       csrf: token,
-      admin: adminCtx,
       session: emptySession(),
       request,
-    })
-
-    expect(result.ok).toBe(true)
-    if (result.ok === true) {
-      expect(result.data.redirectTo).toBe('/admin')
-    }
-    // user-driven rows (`blog.general` for the site identity AND the
-    // locale/timeZone/timeFormat trio, `blog.assets` for the music CDN
-    // host plus the conservative S3 defaults) come from the form, and
-    // the remaining 9 rows come from the registry's per-section
-    // `defaults` payloads. The S3 storage toggle defaults to OFF —
-    // the admin opts in by flipping it on later from
-    // `/admin/settings/assets`. Writing every row up front means
-    // the very first public render after install can use the strict
-    // per-section hooks (`useFooterSettings()`, `useNavigationSettings()`,
-    // …) without throwing on a `null` bucket.
-    expect(settingQuery.upsertSetting).toHaveBeenCalledTimes(13)
-    const calls = vi.mocked(settingQuery.upsertSetting).mock.calls
-    const byScope = new Map<string, { data: Record<string, unknown>; updatedBy: bigint | null }>()
-    for (const [data, updatedBy, scope] of calls) {
-      byScope.set(scope, { data: data as Record<string, unknown>, updatedBy })
-    }
-    expect([...byScope.keys()].sort()).toEqual([
-      'blog.assets',
-      'blog.cache',
-      'blog.comments',
-      'blog.content',
-      'blog.fonts',
-      'blog.general',
-      'blog.mail',
-      'blog.navigation',
-      'blog.rateLimit',
-      'blog.search',
-      'blog.seo',
-      'blog.sidebar',
-      'blog.socials',
-    ])
-
-    const general = byScope.get('blog.general')
-    expect(general).toBeDefined()
-    expect(general?.data.title).toBe('Yufan Blog')
-    expect(general?.data.website).toBe('https://yufan.me')
-    // The general row also carries the date-formatter inputs after
-    // the localization+general merge.
-    expect(general?.data.locale).toBe('zh-CN')
-    expect(general?.data.timeZone).toBe('Asia/Shanghai')
-    expect(general?.data.timeFormat).toBe('yyyy-LL-dd HH:mm')
-    // Asset host / scheme belong to the sibling assets row.
-    expect(general?.data.asset).toBeUndefined()
-    expect(general?.updatedBy).toBe(7n)
-    // The seed payload MUST already satisfy `generalSchema` — the
-    // first thing the admin will do is open `/admin/settings/general`
-    // and click 保存, which re-validates the same row through the
-    // strict per-section schema. A drifted seed would silently break
-    // the very first edit. Spot-check the constraints that historically
-    // tripped: `description` is `min(1)` so it cannot be the empty
-    // string, and `keywords` must be an array (even if empty).
-    const generalDescription = general?.data.description
-    expect(typeof generalDescription).toBe('string')
-    expect((generalDescription as string).length).toBeGreaterThanOrEqual(1)
-    expect(Array.isArray(general?.data.keywords)).toBe(true)
-    expect(general?.data.author).toMatchObject({
-      name: 'Admin',
-      email: 'mailbox@yufan.me',
-      url: 'https://yufan.me',
-    })
-
-    const assets = byScope.get('blog.assets')
-    expect(assets).toBeDefined()
-    expect(assets?.data.asset).toEqual({ host: 'yufan.me', scheme: 'https' })
-    // The install seed contributes the conservative S3 defaults
-    // (toggle OFF, every bucket field empty) alongside the
-    // user-supplied asset host. The admin opts into S3 later from
-    // `/admin/settings/assets` once they have credentials ready.
-    const assetsData = assets!.data as Record<string, unknown>
-    const assetsStorage = assetsData.storage as Record<string, unknown>
-    expect(assetsStorage.enabled).toBe(false)
-    expect(assetsStorage.endpoint).toBe('')
-    expect(assetsStorage.secretAccessKey).toBe('')
-    const assetsUpload = assetsData.upload as Record<string, unknown>
-    expect(assetsUpload.maxBytes).toBe(8 * 1024 * 1024)
-    expect(assetsUpload.jpegQuality).toBe(82)
-    // Asset row carries no identity fields — those live on the sibling
-    // `blog.general` row.
-    expect(assets?.data.title).toBeUndefined()
-    expect(assets?.data.locale).toBeUndefined()
-    expect(assets?.updatedBy).toBe(7n)
-
-    // Spot-check the seeded defaults: each row's payload must match
-    // its bucket DTO shape verbatim (no extra `settings` nesting) and
-    // must already satisfy the matching per-section schema. The full
-    // schema validation is what `buildDefaultSectionPayloads()` does
-    // internally, so reaching this point at all proves the registry
-    // defaults are valid.
-    expect(byScope.get('blog.navigation')?.data).toEqual({ navigation: { sideNav: [], footerNav: [] } })
-    expect(byScope.get('blog.socials')?.data).toEqual({ socials: [] })
-    expect((general!.data as Record<string, unknown>).initialYear).toEqual(expect.any(Number))
-    const cache = byScope.get('blog.cache')?.data
-    expect(cache).toBeDefined()
-    const cacheBuckets = (cache as Record<string, unknown>).cache as Record<string, Record<string, unknown>>
-    expect(cacheBuckets.og.prefix).toBe('og:')
-    expect(cacheBuckets.calendar.prefix).toBe('calendar:')
-    expect(cacheBuckets.avatar.prefix).toBe('avatar:')
-    // The rate-limit row's seeded buckets mirror the historical
-    // hard-coded thresholds so an upgrading deployment behaves
-    // identically until the admin tunes the caps from
-    // `/admin/settings/rate-limit`.
-    const rateLimit = byScope.get('blog.rateLimit')?.data
-    expect(rateLimit).toBeDefined()
-    expect(rateLimit).toMatchObject({
-      signInIp: { windowSeconds: 60 * 30, maxAttempts: 5 },
-      commentPostIp: { windowSeconds: 60 * 60, maxAttempts: 12 },
-      commentPostEmail: { windowSeconds: 60 * 60, maxAttempts: 8 },
-      likeIncreaseIp: { windowSeconds: 60 * 60, maxAttempts: 30 },
-    })
-    // All seeded rows share the same `updatedBy` (the admin who
-    // install actor from the row metadata alone.
-    for (const entry of byScope.values()) {
-      expect(entry.updatedBy).toBe(7n)
-    }
-
-    // The synchronous reader is force-refreshed so the `/admin`
-    // redirect lands on a hydrated snapshot.
-    expect(settingsSnapshot.refreshBlogSettings).toHaveBeenCalledOnce()
-    // session before calling this helper.
-    expect(userQuery.insertAdmin).not.toHaveBeenCalled()
-  })
-
-  it('returns 403 and never touches the DB when the CSRF token is missing', async () => {
-    const result = await seedInstallSettingsWithSession({
-      data: baseWizardData,
-      csrf: '',
-      admin: adminCtx,
-      session: emptySession(),
-      request: new Request('http://localhost/admin/setup/settings', { method: 'POST' }),
+      clientAddress: '127.0.0.1',
     })
 
     expect(result.ok).toBe(false)
     if (result.ok === false) {
-      expect(result.status).toBe(403)
+      expect(result.status).toBe(500)
     }
+    expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
+    expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()
+  })
+
+  it('propagates the error when insertAdmin throws (simulated concurrent install race)', async () => {
+    vi.mocked(userQuery.insertAdmin).mockImplementation(() => {
+      throw new Error('unique constraint on email')
+    })
+    const { request, token } = await buildSignedRequest('')
+
+    await expect(
+      signUpInitialAdminWithSession({
+        ...baseSeed,
+        csrf: token,
+        session: emptySession(),
+        request,
+        clientAddress: '127.0.0.1',
+      }),
+    ).rejects.toThrow('unique constraint on email')
+
     expect(settingQuery.upsertSetting).not.toHaveBeenCalled()
     expect(settingsSnapshot.refreshBlogSettings).not.toHaveBeenCalled()
   })

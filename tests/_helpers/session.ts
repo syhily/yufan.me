@@ -1,30 +1,12 @@
+import { createSession } from 'react-router'
+
 import type { BlogSession, BlogSessionData, SessionUser } from '@/server/domains/auth/session-storage'
 
 // In-memory `BlogSession` doppelganger. `react-router`'s real `Session`
 // builds on top of `createSessionStorage`, which pulls Redis. Tests don't
 // need that — they only need `.get` / `.set` / `.unset` semantics.
 export function makeSession(data: Partial<BlogSessionData> = {}): BlogSession {
-  const store = new Map<string, unknown>(Object.entries(data))
-  const session = {
-    id: 'test-session',
-    data,
-    has(key: string) {
-      return store.has(key)
-    },
-    get(key: string) {
-      return store.get(key)
-    },
-    set(key: string, value: unknown) {
-      store.set(key, value)
-    },
-    unset(key: string) {
-      store.delete(key)
-    },
-    flash() {
-      // No-op: tests using flash messages should mock explicitly.
-    },
-  } as unknown as BlogSession
-  return session
+  return createSession<BlogSessionData, BlogSessionData>(data, 'test-session')
 }
 
 export function adminUser(overrides: Partial<SessionUser> = {}): SessionUser {

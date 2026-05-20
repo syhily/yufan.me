@@ -171,11 +171,11 @@ the caller's responsibility.
 - `honoInstallGateMiddleware`
   (`@/server/http/middlewares/install-gate.ts`) reads
   `getInstallState()` and routes: no admin → `/admin/setup`;
-  admin present but settings missing →
-  `/admin/setup/settings`; installed → through. Static assets,
-  framework internals, and the install/login trio are exempt via
-  `ensureInstalledOrRedirect()` / `ensureNoAdminOrRedirect()` /
-  `ensureNoSettingsOrRedirect()` — exactly one helper throws per state.
+  installed → through. Static assets, framework internals, and the
+  install/login pair are exempt via `ensureInstalledOrRedirect()` /
+  `ensureNoAdminOrRedirect()`. After the one-step install migration,
+  "has admin" is equivalent to "installed" — there is no intermediate
+  state.
 - Pre-existing deployments missing optional sections are backfilled
   lazily by `loadSettingsFromDb()` + `upsertSetting`. Best-effort,
   swallows DB errors.

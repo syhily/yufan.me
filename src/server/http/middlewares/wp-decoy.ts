@@ -3,18 +3,18 @@ import { createMiddleware } from 'hono/factory'
 import type { Env } from '@/server/http/context'
 
 // WordPress probe detector. The site borrows the WordPress URL shape for
-// its real admin (`/admin/signin`, `/admin`, the two-stage install
-// pair `/admin/setup` + `/admin/setup/settings`, plus
-// the SPA sub-routes mounted under `/admin/*`); every other request
-// that *looks* like a WordPress install is almost certainly an
-// automated scanner. We answer those with a HTTP 404 plus a custom
-// "this is not a WordPress site" view rather than the generic 404.
+// its real admin (`/admin/signin`, `/admin`, the install route
+// `/admin/setup`, plus the SPA sub-routes mounted under `/admin/*`);
+// every other request that *looks* like a WordPress install is almost
+// certainly an automated scanner. We answer those with a HTTP 404 plus
+// a custom "this is not a WordPress site" view rather than the generic
+// 404.
 //
 // The marker (`statusText: "Not WordPress"`) is what `src/root.tsx`
 // `ErrorBoundary` reads to switch from the regular 404 view to
 // `<NotWordPressView />`.
 
-const LEGIT_WP_PATHS = new Set(['/admin/signin', '/admin', '/admin/', '/admin/setup', '/admin/setup/settings'])
+const LEGIT_WP_PATHS = new Set(['/admin/signin', '/admin', '/admin/', '/admin/setup'])
 
 export function isWordPressDecoyPath(pathname: string): boolean {
   if (LEGIT_WP_PATHS.has(pathname)) {

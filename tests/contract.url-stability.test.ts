@@ -67,14 +67,11 @@ describe('contract: public URL stability', () => {
     expect(paths.has('images/avatar/:hash.png')).toBe(false)
   })
 
-  it('admin URLs are mounted (signin + dashboard + setup + two-stage install)', () => {
+  it('admin URLs are mounted (signin + dashboard + setup)', () => {
     const paths = new Set(all.map((r) => r.path))
     expect(paths.has('admin/signin')).toBe(true)
     expect(paths.has('admin')).toBe(true)
-    // live on separate URLs so the install gate can route the user
-    // through the right page based on `getInstallState()`.
     expect(paths.has('admin/setup')).toBe(true)
-    expect(paths.has('admin/setup/settings')).toBe(true)
   })
 
   it('post + page detail pages still match /posts/:slug and /:slug', () => {

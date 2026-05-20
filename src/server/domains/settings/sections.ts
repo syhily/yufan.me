@@ -288,7 +288,7 @@ export const updateSettingsSchema = z.object({
  * data error, so loud failure is the right behaviour.
  *
  * Used by:
- *   - `seedInstallSettingsWithSession()` (first-time install).
+ *   - `signUpInitialAdminWithSession()` (first-time install).
  *   - `backfillMissingSectionDefaults()` (existing deployments that
  *     pre-date the "seed all sections at install" change).
  */

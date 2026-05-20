@@ -7,18 +7,16 @@ import { signUpAdminSchema } from '@/server/domains/auth/schema'
 import { ensureNoAdminOrRedirect } from '@/server/domains/settings/install-gate'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { AdminInstallForm } from '@/ui/admin/auth/AdminInstallForm'
+import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/index'
 
 const ADMIN_INSTALL_FIELDS = ['title', 'name', 'email', 'password', 'csrf'] as const
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  // owns the install-state branching directly through
-  // `ensureNoAdminOrRedirect()`. Possible outcomes:
-  //
-  //   noAdmin    → render the admin-credentials form.
-  //   noSettings → 303 → /admin/setup/settings
-  //   installed  → 303 → /admin/signin
+  // Possible outcomes:
+  //   noAdmin   → render the admin-credentials form.
+  //   installed → 303 → /admin/signin
   await ensureNoAdminOrRedirect()
 
   // Pull the request context so we trip session middleware exactly once
@@ -47,7 +45,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export function meta({ matches }: Route.MetaArgs) {
-  return routeMeta({ title: 'Welcome' }, bundleFromMatches(matches))
+  return routeMeta({ title: '创建站点' }, bundleFromMatches(matches))
 }
 
 export default function AdminInstallRoute({ actionData, loaderData }: Route.ComponentProps) {
@@ -55,20 +53,16 @@ export default function AdminInstallRoute({ actionData, loaderData }: Route.Comp
     <div className="flex flex-col gap-8">
       {/* Ghost-style welcome header */}
       <header className="text-center">
-        <img src="/logo-large.svg" alt="且听书吟" className="mx-auto mb-4 block h-16 w-auto dark:hidden" />
-        <img src="/logo-large-dark.svg" alt="" className="mx-auto mb-4 hidden h-16 w-auto dark:block" aria-hidden />
-        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Welcome to 且听书吟.</h1>
-        <p className="mt-2 text-base text-muted-foreground md:text-lg">
-          世界各地的人已经创建了无数精彩的站点。今天，我们将开启属于你的旅程。
-        </p>
+        <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
+        <p className="text-base text-muted-foreground md:text-lg">填写以下信息，开启你的创作之旅。</p>
       </header>
 
       {/* Error message — centered, Ghost-style */}
-      {actionData?.error && (
+      {actionData?.error ? (
         <div role="alert" aria-live="polite" className="text-center text-sm leading-relaxed text-destructive">
           {actionData.error}
         </div>
-      )}
+      ) : null}
 
       <AdminInstallForm csrf={loaderData.csrf} />
     </div>

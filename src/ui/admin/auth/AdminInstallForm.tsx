@@ -1,4 +1,4 @@
-import { EyeIcon, EyeOffIcon, GlobeIcon, LockIcon, MailIcon, UserIcon } from 'lucide-react'
+import { EyeIcon, EyeOffIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Form, useNavigation } from 'react-router'
 
@@ -11,9 +11,9 @@ export interface AdminInstallFormProps {
   csrf: string
 }
 
-// Ghost-style large input: 48px height, rounded-lg, muted background.
-const inputBaseClasses =
-  'h-12 rounded-lg border-0 bg-muted/60 px-4 text-base placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
+// Shared auth input styling — must match AdminCredentialsForm.
+const inputClasses =
+  'h-[54px] rounded-lg border-0 bg-muted/50 px-4 text-xl md:text-xl placeholder:text-muted-foreground/50 focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:border-primary'
 
 export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
   const navigation = useNavigation()
@@ -21,92 +21,62 @@ export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <Form method="post" id="adminInstallForm" className="flex flex-col gap-5">
+    <Form method="post" id="adminInstallForm" className="flex w-full flex-col gap-6">
       <input type="hidden" name="csrf" value={csrf} />
 
-      {/* Site title — prefixed with Globe icon */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="install-title" className="text-[15px] font-semibold">
           站点名称
         </Label>
-        <div className="relative">
-          <GlobeIcon
-            size={18}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            id="install-title"
-            name="title"
-            type="text"
-            autoComplete="off"
-            placeholder="My Blog"
-            required
-            disabled={isSubmitting}
-            className={cn(inputBaseClasses, 'pl-10')}
-          />
-        </div>
+        <Input
+          id="install-title"
+          name="title"
+          type="text"
+          autoComplete="off"
+          placeholder="My Blog"
+          required
+          disabled={isSubmitting}
+          className={inputClasses}
+        />
       </div>
 
-      {/* Name — prefixed with User icon */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="install-name" className="text-[15px] font-semibold">
           昵称
         </Label>
-        <div className="relative">
-          <UserIcon
-            size={18}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            id="install-name"
-            name="name"
-            type="text"
-            autoComplete="nickname"
-            placeholder="你的名字"
-            required
-            disabled={isSubmitting}
-            className={cn(inputBaseClasses, 'pl-10')}
-          />
-        </div>
+        <Input
+          id="install-name"
+          name="name"
+          type="text"
+          autoComplete="nickname"
+          placeholder="你的名字"
+          required
+          disabled={isSubmitting}
+          className={inputClasses}
+        />
       </div>
 
-      {/* Email — prefixed with Mail icon */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="install-email" className="text-[15px] font-semibold">
           邮箱
         </Label>
-        <div className="relative">
-          <MailIcon
-            size={18}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            id="install-email"
-            name="email"
-            type="email"
-            autoComplete="username"
-            placeholder="your@email.com"
-            required
-            disabled={isSubmitting}
-            className={cn(inputBaseClasses, 'pl-10')}
-          />
-        </div>
+        <Input
+          id="install-email"
+          name="email"
+          type="email"
+          autoComplete="username"
+          placeholder="your@email.com"
+          required
+          disabled={isSubmitting}
+          className={inputClasses}
+        />
       </div>
 
-      {/* Password — prefixed with Lock icon, with show/hide toggle */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex w-full flex-col gap-2">
         <Label htmlFor="install-password" className="text-[15px] font-semibold">
           密码
         </Label>
-        <div className="relative">
-          <LockIcon
-            size={18}
-            className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
+        <div className="relative w-full">
           <Input
             id="install-password"
             name="password"
@@ -116,27 +86,25 @@ export function AdminInstallForm({ csrf }: AdminInstallFormProps) {
             required
             minLength={10}
             disabled={isSubmitting}
-            className={cn(inputBaseClasses, 'pr-12 pl-10')}
+            className={cn(inputClasses, 'pr-12')}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            disabled={isSubmitting}
-            className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none"
-            aria-label={showPassword ? '隐藏密码' : '显示密码'}
-            aria-pressed={showPassword}
-          >
-            {showPassword ? <EyeOffIcon size={16} aria-hidden /> : <EyeIcon size={16} aria-hidden />}
-          </button>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="px-1 text-muted-foreground hover:text-foreground"
+              aria-label={showPassword ? '隐藏密码' : '显示密码'}
+            >
+              {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Ghost-style full-width CTA button */}
       <Button
         type="submit"
-        name="submit"
         disabled={isSubmitting}
-        className="mt-2 h-[52px] w-full rounded-lg bg-brand text-lg font-normal text-white hover:opacity-90"
+        className="mt-7 h-[52px] w-full rounded-lg bg-brand text-xl font-normal text-white hover:opacity-90"
       >
         {isSubmitting ? (
           '创建中...'

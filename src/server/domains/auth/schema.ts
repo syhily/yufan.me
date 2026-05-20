@@ -13,16 +13,11 @@ export type SignInInput = z.infer<typeof signInSchema>
 export const signUpAdminSchema = z.object({
   title: z.string().min(1),
   name: z.string().min(1),
-  email: z.email().min(1),
+  email: z.email(),
   password: z.string().min(10),
   csrf: z.string().default(''),
 })
 export type SignUpAdminInput = z.infer<typeof signUpAdminSchema>
-
-// Install wizard no longer posts traditional FormData.
-// The final step submits the full InstallWizardData as JSON,
-// and the action validates each section against its own schema.
-// Per-section CSRF validation still happens in the action handler.
 
 export const updateUserSchema = z
   .object({

@@ -24,7 +24,6 @@ export default [
   layout('routes/auth/layout.tsx', [
     route('admin/signin', 'routes/auth/signin.tsx'),
     route('admin/setup', 'routes/auth/setup/index.tsx'),
-    route('admin/setup/settings', 'routes/auth/setup/settings.tsx'),
   ]),
   // Editor shell — standalone layout for immersive editing.
   layout('routes/editor/layout.tsx', [

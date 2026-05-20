@@ -89,7 +89,6 @@ vi.mock('@/server/domains/auth/flows', async () => {
 vi.mock('@/server/domains/settings/install-gate', () => ({
   ensureInstalledOrRedirect: vi.fn(async () => null),
   ensureNoAdminOrRedirect: vi.fn(async () => null),
-  ensureNoSettingsOrRedirect: vi.fn(async () => null),
   isInstalled: vi.fn(async () => true),
   getInstallState: vi.fn(async () => 'installed' as const),
 }))

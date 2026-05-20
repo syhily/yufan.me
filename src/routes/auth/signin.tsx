@@ -15,10 +15,19 @@ import { sendPasswordReset } from '@/server/infra/email/sender'
 import { tryPasswordResetByEmailRateLimit, tryPasswordResetRateLimit } from '@/server/infra/rate-limit'
 import { bundleFromMatches, routeMeta } from '@/server/render/seo/meta'
 import { safeRedirectPath } from '@/shared/utils/safe-url'
-import { AdminCredentialsForm } from '@/ui/admin/auth/AdminCredentialsForm'
+import { LoginForm, LostPasswordForm, ResetPasswordForm } from '@/ui/admin/auth/AdminCredentialsForm'
 import { BrandLogo } from '@/ui/public/chrome/BrandLogo'
 
 import type { Route } from './+types/signin'
+
+function hasMessage(data: unknown): data is { message: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'message' in data &&
+    typeof (data as Record<string, unknown>).message === 'string'
+  )
+}
 
 function formFieldString(formData: FormData, key: string): string {
   const value = formData.get(key)
@@ -185,34 +194,37 @@ export function meta({ matches }: Route.MetaArgs) {
 
 export default function LoginRoute({ actionData, loaderData }: Route.ComponentProps) {
   return (
-    <div className="flex flex-col items-center">
-      <BrandLogo alt="" className="mb-10 h-20 w-auto" />
+    <div className="flex flex-col gap-8">
+      <header className="text-center">
+        <BrandLogo className="mx-auto mb-10 h-20 w-auto" />
+        <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">用户登陆</h1>
+      </header>
 
-      {(actionData?.error || (actionData as unknown as { message?: string })?.message || loaderData.tokenError) && (
-        <div className="mb-10 text-center text-sm">
-          {actionData?.error && (
+      {actionData?.error || hasMessage(actionData) || loaderData.tokenError ? (
+        <div className="text-center text-sm leading-relaxed">
+          {actionData?.error ? (
             <p role="alert" aria-live="polite" className="text-destructive">
               {actionData.error}
             </p>
-          )}
-          {(actionData as unknown as { message?: string })?.message && (
+          ) : null}
+          {hasMessage(actionData) ? (
             <p role="status" aria-live="polite" className="text-green-600 dark:text-green-400">
-              {(actionData as unknown as { message?: string }).message}
+              {actionData.message}
             </p>
-          )}
-          {loaderData.tokenError && (
+          ) : null}
+          {loaderData.tokenError ? (
             <p role="alert" aria-live="polite" className="text-destructive">
               {loaderData.tokenError}
             </p>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
 
-      <AdminCredentialsForm
-        csrf={loaderData.csrf}
-        mode={loaderData.action as 'login' | 'lostpassword' | 'resetpassword' | 'accept-invite'}
-        resetToken={loaderData.resetToken ?? undefined}
-      />
+      {loaderData.action === 'login' && <LoginForm csrf={loaderData.csrf} />}
+      {loaderData.action === 'lostpassword' && <LostPasswordForm csrf={loaderData.csrf} />}
+      {(loaderData.action === 'resetpassword' || loaderData.action === 'accept-invite') && loaderData.resetToken && (
+        <ResetPasswordForm csrf={loaderData.csrf} token={loaderData.resetToken} />
+      )}
     </div>
   )
 }

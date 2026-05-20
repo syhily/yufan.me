@@ -134,15 +134,12 @@ describe('isWordPressDecoyPath', () => {
     }
   })
 
-  it('preserves the legitimate WordPress-style routes (login, two-stage install, SPA shell)', () => {
+  it('preserves the legitimate WordPress-style routes (login, install, SPA shell)', () => {
     expect(isWordPressDecoyPath('/admin/signin')).toBe(false)
     expect(isWordPressDecoyPath('/admin')).toBe(false)
-    // Both install stages: `/admin/setup` (admin credentials)
-    // and `/admin/setup/settings` (site identity / asset /
-    // localization). Both end in `.php` so without an explicit allow
-    // list the decoy filter would happily 404 them.
+    // The one-step install route. It ends in `.php` so without an
+    // explicit allow list the decoy filter would happily 404 it.
     expect(isWordPressDecoyPath('/admin/setup')).toBe(false)
-    expect(isWordPressDecoyPath('/admin/setup/settings')).toBe(false)
     // The admin SPA is mounted at `/admin/<page>` and `/admin/<page>/:id`;
     // it shares the WordPress URL shape on purpose so admins can keep their muscle
     // memory. Paths under that prefix that don't end in `.php` are SPA routes,

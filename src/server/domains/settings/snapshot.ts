@@ -265,7 +265,7 @@ async function loadSettingsFromDb(): Promise<BlogSettingsBundle | null> {
   // sections here, write the registry's default payload for each, and
   // fold the freshly-seeded data into the bundle so the SAME hydration
   // call returns a complete snapshot. New installs run through
-  // `seedInstallSettingsWithSession()` which writes all 11 rows up
+  // `signUpInitialAdminWithSession()` which writes all rows up
   // front, so they hit this branch with nothing to do.
   await backfillMissingSectionDefaults(bundle)
 
