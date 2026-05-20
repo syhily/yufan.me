@@ -610,9 +610,9 @@ export async function countAdminPendingDashboard(): Promise<{ all: number; appro
     })
     .from(comment)
   return {
-    all: rows[0]?.all ?? 0,
-    approval: rows[0]?.approval ?? 0,
-    deletion: rows[0]?.deletion ?? 0,
+    all: Number(rows[0]?.all ?? 0),
+    approval: Number(rows[0]?.approval ?? 0),
+    deletion: Number(rows[0]?.deletion ?? 0),
   }
 }
 
@@ -918,9 +918,9 @@ export async function countMyComments(
     .from(comment)
     .where(mineWhere(userId, filters))
   return {
-    total: rows[0]?.total ?? 0,
-    pending: rows[0]?.pending ?? 0,
-    deleteRequested: rows[0]?.deleteRequested ?? 0,
-    deleted: rows[0]?.deleted ?? 0,
+    total: Number(rows[0]?.total ?? 0),
+    pending: Number(rows[0]?.pending ?? 0),
+    deleteRequested: Number(rows[0]?.deleteRequested ?? 0),
+    deleted: Number(rows[0]?.deleted ?? 0),
   }
 }
