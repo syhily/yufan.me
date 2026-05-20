@@ -17,16 +17,12 @@ const BOUNDS = {
 } as const
 
 function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    LimitsSettings,
-    { maxRequestBodySize: number }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<LimitsSettings, { maxRequestBodySize: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ maxRequestBodySize: source.maxRequestBodySize }),
     fromState: (state) => ({
       maxRequestBodySize: state.maxRequestBodySize,
-      sessionMaxAge: limits.sessionMaxAge,
     }),
   })
 
@@ -34,12 +30,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
     <SettingGroup
       title="请求限制"
       description="控制上传文件、表单提交等场景的最大请求体大小。过大可能增加内存压力，过小则可能导致图片上传失败。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -71,15 +62,11 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
 }
 
 function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    LimitsSettings,
-    { sessionMaxAge: number }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<LimitsSettings, { sessionMaxAge: number }>({
     section: 'limits',
     source: limits,
     toState: (source) => ({ sessionMaxAge: source.sessionMaxAge }),
     fromState: (state) => ({
-      maxRequestBodySize: limits.maxRequestBodySize,
       sessionMaxAge: state.sessionMaxAge,
     }),
   })
@@ -88,12 +75,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
     <SettingGroup
       title="会话限制"
       description="管理后台与公共站点的登录会话有效期。过期后用户需要重新登录。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

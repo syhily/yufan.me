@@ -34,19 +34,12 @@ interface TestStatus {
 const idleTestStatus: TestStatus = { state: 'idle', message: null }
 
 function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    MailLoaderShape,
-    { enabled: boolean }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<MailLoaderShape, { enabled: boolean }>({
     section: 'mail',
     source: mail,
     toState: (source) => ({ enabled: source.enabled }),
     fromState: (state) => ({
-      mail: {
-        enabled: state.enabled,
-        host: mail.host.trim(),
-        sender: mail.sender.trim(),
-      },
+      enabled: state.enabled,
     }),
   })
 
@@ -54,12 +47,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
     <SettingGroup
       title="邮件发送总开关"
       description="关闭后，所有评论通知 / 回复通知 / 审核通过通知都不会再发送（不会报错，仅记录 debug 日志）。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -89,7 +77,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
 
 function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
   const apiKeyConfigured = mail.apiKeyMask !== null
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     MailLoaderShape,
     { host: string; sender: string; apiKey: string }
   >({
@@ -103,12 +91,9 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
     fromState: (state) => {
       const trimmedKey = state.apiKey.trim()
       return {
-        mail: {
-          enabled: mail.enabled,
-          host: state.host.trim(),
-          sender: state.sender.trim(),
-          ...(trimmedKey ? { apiKey: trimmedKey } : {}),
-        },
+        host: state.host.trim(),
+        sender: state.sender.trim(),
+        ...(trimmedKey ? { apiKey: trimmedKey } : {}),
       }
     },
   })
@@ -117,12 +102,7 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
     <SettingGroup
       title="Zeabur ZSend 配置"
       description="配置 Zeabur ZSend 的接入地址、API Key 和发件人邮箱。修改后立即生效。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

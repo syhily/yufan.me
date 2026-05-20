@@ -12,33 +12,19 @@ interface CommentsFormProps {
 }
 
 function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    CommentsSettings,
-    { size: number }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<CommentsSettings, { size: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ size: source.comments.size }),
     fromState: (state) => ({
       comments: {
         size: state.size,
-        avatar: comments.comments.avatar,
-        tokenTtlSeconds: comments.comments.tokenTtlSeconds,
       },
     }),
   })
 
   return (
-    <SettingGroup
-      title="评论分页"
-      description="控制文章页面下方的评论列表加载行为。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
-    >
+    <SettingGroup title="评论分页" description="控制文章页面下方的评论列表加载行为。" {...settingGroupProps}>
       {isEditing ? (
         <SettingGroupContent>
           <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
@@ -61,7 +47,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     CommentsSettings,
     { avatarMirror: string; avatarSize: number }
   >({
@@ -73,9 +59,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
     }),
     fromState: (state) => ({
       comments: {
-        size: comments.comments.size,
         avatar: { mirror: state.avatarMirror.trim(), size: state.avatarSize },
-        tokenTtlSeconds: comments.comments.tokenTtlSeconds,
       },
     }),
   })
@@ -84,12 +68,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
     <SettingGroup
       title="头像镜像"
       description="访客头像通过 Gravatar 协议拉取。镜像 URL 用于绕过 gravatar.com 的访问限制。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -121,17 +100,12 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
 }
 
 function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    CommentsSettings,
-    { tokenTtlSeconds: number }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<CommentsSettings, { tokenTtlSeconds: number }>({
     section: 'comments',
     source: comments,
     toState: (source) => ({ tokenTtlSeconds: source.comments.tokenTtlSeconds }),
     fromState: (state) => ({
       comments: {
-        size: comments.comments.size,
-        avatar: comments.comments.avatar,
         tokenTtlSeconds: state.tokenTtlSeconds,
       },
     }),
@@ -141,12 +115,7 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
     <SettingGroup
       title="匿名评论 Token"
       description="控制匿名评论者发表后可编辑自己评论的时间窗口。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

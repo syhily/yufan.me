@@ -24,7 +24,7 @@ const SCHEME_OPTIONS: { value: 'http' | 'https'; label: string }[] = [
 ]
 
 function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     { assetHost: string; assetScheme: 'http' | 'https' }
   >({
@@ -36,16 +36,6 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
     }),
     fromState: (state) => ({
       asset: { host: state.assetHost.trim(), scheme: state.assetScheme },
-      storage: {
-        enabled: assets.storage.enabled,
-        endpoint: assets.storage.endpoint,
-        region: assets.storage.region,
-        bucket: assets.storage.bucket,
-        accessKeyId: assets.storage.accessKeyId,
-        forcePathStyle: assets.storage.forcePathStyle,
-        urlTemplate: assets.storage.urlTemplate,
-      },
-      upload: { maxBytes: assets.upload.maxBytes, jpegQuality: assets.upload.jpegQuality },
     }),
   })
 
@@ -53,12 +43,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
     <SettingGroup
       title="资源域名"
       description="统一的资源域名：MDX `<MusicPlayer>` 读取音频/歌词，图片公共 URL 也复用这里的 host + scheme。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -106,25 +91,12 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    AssetsLoaderShape,
-    { enabled: boolean }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<AssetsLoaderShape, { enabled: boolean }>({
     section: 'assets',
     source: assets,
     toState: (source) => ({ enabled: source.storage.enabled }),
     fromState: (state) => ({
-      asset: { host: assets.asset.host, scheme: assets.asset.scheme },
-      storage: {
-        enabled: state.enabled,
-        endpoint: assets.storage.endpoint,
-        region: assets.storage.region,
-        bucket: assets.storage.bucket,
-        accessKeyId: assets.storage.accessKeyId,
-        forcePathStyle: assets.storage.forcePathStyle,
-        urlTemplate: assets.storage.urlTemplate,
-      },
-      upload: { maxBytes: assets.upload.maxBytes, jpegQuality: assets.upload.jpegQuality },
+      storage: { enabled: state.enabled },
     }),
   })
 
@@ -132,28 +104,23 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
     <SettingGroup
       title="启用图片上传"
       description="未开启时「图片管理」页面只能浏览历史图片，所有上传 / 替换入口都会返回 503。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
           <SettingsRow label="启用 S3 上传" hint="关闭后已经入库的图片仍按上方的资源域名解析。">
-            <div className="flex items-center gap-3">
-              <Controller
-                control={form.control}
-                name="enabled"
-                render={({ field }) => (
+            <Controller
+              control={form.control}
+              name="enabled"
+              render={({ field }) => (
+                <div className="flex items-center gap-3">
                   <Switch id="assets-storage-enabled" checked={field.value} onCheckedChange={field.onChange} />
-                )}
-              />
-              <FieldLabel htmlFor="assets-storage-enabled" className="font-normal">
-                {form.watch('enabled') ? '已开启' : '已关闭'}
-              </FieldLabel>
-            </div>
+                  <FieldLabel htmlFor="assets-storage-enabled" className="font-normal">
+                    {field.value ? '已开启' : '已关闭'}
+                  </FieldLabel>
+                </div>
+              )}
+            />
           </SettingsRow>
         </SettingGroupContent>
       ) : (
@@ -171,7 +138,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
 
 function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
   const secretConfigured = assets.secretAccessKeyMask !== null
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     {
       endpoint: string
@@ -197,9 +164,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
     fromState: (state) => {
       const trimmedSecret = state.secretAccessKey.trim()
       return {
-        asset: { host: assets.asset.host, scheme: assets.asset.scheme },
         storage: {
-          enabled: assets.storage.enabled,
           endpoint: state.endpoint.trim(),
           region: state.region.trim(),
           bucket: state.bucket.trim(),
@@ -208,7 +173,6 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
           urlTemplate: state.urlTemplate.trim(),
           ...(trimmedSecret ? { secretAccessKey: trimmedSecret } : {}),
         },
-        upload: { maxBytes: assets.upload.maxBytes, jpegQuality: assets.upload.jpegQuality },
       }
     },
   })
@@ -217,12 +181,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
     <SettingGroup
       title="S3 兼容存储"
       description="所有上传到「图片管理」的图片都会写入这里。修改后立即生效。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -307,7 +266,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
 }
 
 function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     AssetsLoaderShape,
     { maxBytes: number; jpegQuality: number }
   >({
@@ -318,16 +277,6 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
       jpegQuality: source.upload.jpegQuality,
     }),
     fromState: (state) => ({
-      asset: { host: assets.asset.host, scheme: assets.asset.scheme },
-      storage: {
-        enabled: assets.storage.enabled,
-        endpoint: assets.storage.endpoint,
-        region: assets.storage.region,
-        bucket: assets.storage.bucket,
-        accessKeyId: assets.storage.accessKeyId,
-        forcePathStyle: assets.storage.forcePathStyle,
-        urlTemplate: assets.storage.urlTemplate,
-      },
       upload: { maxBytes: state.maxBytes, jpegQuality: state.jpegQuality },
     }),
   })
@@ -336,12 +285,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
     <SettingGroup
       title="上传参数"
       description="影响后台「图片管理」上传时的体积上限与 JPEG 重编码画质。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

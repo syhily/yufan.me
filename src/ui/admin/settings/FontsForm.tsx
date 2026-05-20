@@ -21,34 +21,26 @@ interface FontsFormProps {
 }
 
 function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    FontsSettings,
-    { ogUrl: string; calendarUrl: string }
-  >({
-    section: 'fonts',
-    source: fonts,
-    toState: (source) => ({
-      ogUrl: source.og.url,
-      calendarUrl: source.calendar.url,
-    }),
-    fromState: (state) => ({
-      og: { url: state.ogUrl.trim() },
-      calendar: { url: state.calendarUrl.trim() },
-      globalCss: fonts.globalCss,
-      postCss: fonts.postCss,
-    }),
-  })
+  const { isEditing, form, settingGroupProps } = useSettingsCard<FontsSettings, { ogUrl: string; calendarUrl: string }>(
+    {
+      section: 'fonts',
+      source: fonts,
+      toState: (source) => ({
+        ogUrl: source.og.url,
+        calendarUrl: source.calendar.url,
+      }),
+      fromState: (state) => ({
+        og: { url: state.ogUrl.trim() },
+        calendar: { url: state.calendarUrl.trim() },
+      }),
+    },
+  )
 
   return (
     <SettingGroup
       title="Canvas 字体"
       description="服务端渲染 OG 图与日历图时使用的字体。必须是 TTF / OTF 格式。留空时降级使用系统中文字体。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -84,20 +76,14 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    FontsSettings,
-    { globalCss: CssRow[] }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<FontsSettings, { globalCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
-      globalCss: source.globalCss.map((url) => ({ clientId: crypto.randomUUID(), url })),
+      globalCss: source.globalCss.map((url, i) => ({ clientId: `css-global-${i}`, url })),
     }),
     fromState: (state) => ({
-      og: fonts.og,
-      calendar: fonts.calendar,
       globalCss: state.globalCss.map((row) => row.url.trim()).filter((url) => url !== ''),
-      postCss: fonts.postCss,
     }),
   })
 
@@ -107,12 +93,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
     <SettingGroup
       title="全站字体 CSS"
       description="每个 URL 都会在所有页面的 <head> 注入一个 <link rel='stylesheet'>。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -169,19 +150,13 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
 }
 
 function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    FontsSettings,
-    { postCss: CssRow[] }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<FontsSettings, { postCss: CssRow[] }>({
     section: 'fonts',
     source: fonts,
     toState: (source) => ({
-      postCss: source.postCss.map((url) => ({ clientId: crypto.randomUUID(), url })),
+      postCss: source.postCss.map((url, i) => ({ clientId: `css-post-${i}`, url })),
     }),
     fromState: (state) => ({
-      og: fonts.og,
-      calendar: fonts.calendar,
-      globalCss: fonts.globalCss,
       postCss: state.postCss.map((row) => row.url.trim()).filter((url) => url !== ''),
     }),
   })
@@ -192,12 +167,7 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
     <SettingGroup
       title="文章页字体 CSS"
       description="仅在文章详情页的 <head> 注入。适合体积大、仅长文阅读需要的字体。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

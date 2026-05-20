@@ -678,22 +678,18 @@ describe('contract: module and bundle boundaries', () => {
   })
 
   it('routes every settings form through the unified react-hook-form wrapper', () => {
-    // After the unification, both `GeneralForm` (which used to wire up
-    // its own `useForm` + `zodResolver`) and the simpler forms (which
-    // used to keep a hand-rolled `useState<TState>` + `setSnapshot(draft)`
-    // pair) go through `useSettingsForm`. RHF owns the dirty tracking
-    // and the "what was submitted" baseline (`reset(getValues(), …)`
-    // inside `onSaved`), which makes the previous `submittedDraftRef`
-    // bookkeeping unnecessary. Guard against accidental re-introduction
-    // of the old pattern.
-    const source = readFileSync('src/ui/admin/settings/useSettingsForm.ts', 'utf8')
+    // All settings forms go through `useSettingsCard` which owns the
+    // react-hook-form lifecycle (dirty tracking, zod validation, save,
+    // revert). Guard against accidental re-introduction of hand-rolled
+    // `useState<TState>` + `setSnapshot(draft)` patterns.
+    const source = readFileSync('src/ui/admin/settings/shell/useSettingsCard.tsx', 'utf8')
 
     expect(source).toContain('useForm<TState>')
     expect(source).toContain('zodResolver(schema as never)')
     expect(source).not.toContain('submittedDraftRef')
     expect(source).not.toContain('setSnapshot(')
 
-    // Every settings form delegates to `useSettingsForm`; none of them
+    // Every settings form delegates to `useSettingsCard`; none of them
     // imports `useForm` directly (which would bypass the shared dirty /
     // status / save / revert pipeline). `GeneralForm` may still import
     // `useFieldArray` to drive its `keywords` array, but `useForm`
@@ -711,7 +707,7 @@ describe('contract: module and bundle boundaries', () => {
     ]
     for (const file of formFiles) {
       const formSource = readFileSync(file, 'utf8')
-      expect(formSource).toMatch(/useSettingsForm|useSettingsCard/)
+      expect(formSource).toMatch(/useSettingsCard/)
       // Direct `import { useForm } from 'react-hook-form'` would mean
       // the form is duplicating the wrapper's lifecycle.
       // `useFieldArray` is allowed (consumed via the wrapper's `form.control`).

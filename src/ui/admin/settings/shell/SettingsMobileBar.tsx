@@ -2,12 +2,12 @@ import { SearchIcon, XIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 
-import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
+import { useSettingsSearchFilter } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { Input } from '@/ui/components/input'
 
 export function SettingsMobileBar() {
   const navigate = useNavigate()
-  const { filter, setFilter } = useSettingsSearch()
+  const { filter, setFilter } = useSettingsSearchFilter()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   return (
@@ -46,19 +46,7 @@ export function SettingsMobileBar() {
         }}
         className="inline-flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand focus-visible:outline-hidden"
       >
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="size-6"
-        >
-          <line x1="0.75" y1="23.249" x2="23.25" y2="0.749" />
-          <line x1="23.25" y1="23.249" x2="0.75" y2="0.749" />
-        </svg>
+        <XIcon className="size-6" aria-hidden="true" />
         <span className="sr-only">关闭</span>
       </button>
     </div>

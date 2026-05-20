@@ -1,7 +1,7 @@
 import { SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
-import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
+import { useSettingsSearchFilter } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { Input } from '@/ui/components/input'
 
 function isTypingTarget(target: EventTarget | null): boolean {
@@ -20,7 +20,7 @@ function SearchShortcutHint() {
 }
 
 export function SettingsSearchInput() {
-  const { filter, setFilter } = useSettingsSearch()
+  const { filter, setFilter } = useSettingsSearchFilter()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export function SettingsSearchInput() {
           placeholder="搜索设置…"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="h-10 w-full rounded-lg border border-transparent bg-transparent pr-8 pl-9 text-sm shadow-sm transition-[color,background-color,border-color,box-shadow] hover:shadow focus-visible:border-brand focus-visible:bg-transparent focus-visible:ring-2 focus-visible:ring-brand/25 dark:bg-background"
+          className="h-10 w-full rounded-lg border border-transparent bg-card pr-8 pl-9 text-sm shadow-sm transition-[color,background-color,border-color,box-shadow] hover:shadow focus-visible:border-brand focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-brand/25"
           autoComplete="off"
           autoCorrect="off"
         />

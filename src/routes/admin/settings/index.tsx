@@ -1,4 +1,4 @@
-import { Children, useCallback, useEffect, useState } from 'react'
+import { Children, useCallback, useEffect, useSyncExternalStore } from 'react'
 import { useNavigate, useOutletContext } from 'react-router'
 
 import type { SettingsOutletContext } from '@/routes/admin/settings/layout'
@@ -25,7 +25,7 @@ import { SettingsNav } from '@/ui/admin/settings/shell/SettingsNav'
 import { SettingsPanel } from '@/ui/admin/settings/shell/SettingsPanel'
 import { SettingsSearchInput } from '@/ui/admin/settings/shell/SettingsSearchInput'
 import { ScrollSpyProvider, useScrollSpy } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
-import { SettingsSearchProvider, useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
+import { SettingsSearchProvider, useSettingsSearchContext } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { SidebarForm } from '@/ui/admin/settings/SidebarForm'
 import { SocialsEditor } from '@/ui/admin/settings/SocialsEditor'
 import { ThresholdForm } from '@/ui/admin/settings/ThresholdForm'
@@ -62,16 +62,24 @@ const SECTIONS = [
   { id: 'backup', ...SECTION_DISPLAY.backup },
 ] as const
 
+const MOBILE_QUERY = '(max-width: 1023px)'
+
+function subscribeMobile(callback: () => void) {
+  const mql = window.matchMedia(MOBILE_QUERY)
+  mql.addEventListener('change', callback)
+  return () => mql.removeEventListener('change', callback)
+}
+
+function getMobileSnapshot() {
+  return window.matchMedia(MOBILE_QUERY).matches
+}
+
+function getMobileServerSnapshot() {
+  return false
+}
+
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false)
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 1023px)')
-    const update = () => setIsMobile(mql.matches)
-    update()
-    mql.addEventListener('change', update)
-    return () => mql.removeEventListener('change', update)
-  }, [])
-  return isMobile
+  return useSyncExternalStore(subscribeMobile, getMobileSnapshot, getMobileServerSnapshot)
 }
 
 function SectionWrapper({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
@@ -108,7 +116,7 @@ function SettingsPageInner() {
   const { bundle, timeZones } = useOutletContext<SettingsOutletContext>()
   const settings = bundle
   const tz = timeZones
-  const { checkVisible, filter } = useSettingsSearch()
+  const { checkVisible, filter } = useSettingsSearchContext()
   const isMobile = useIsMobile()
 
   useEffect(() => {

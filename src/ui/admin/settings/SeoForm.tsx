@@ -12,10 +12,7 @@ interface SeoFormProps {
 }
 
 function SeoTocCard({ seo }: { seo: SeoSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SeoSettings,
-    { tocMin: number; tocMax: number }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SeoSettings, { tocMin: number; tocMax: number }>({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -24,21 +21,11 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
     }),
     fromState: (state) => ({
       toc: { minHeadingLevel: state.tocMin, maxHeadingLevel: state.tocMax },
-      og: seo.og,
     }),
   })
 
   return (
-    <SettingGroup
-      title="目录 (TOC)"
-      description="文章右侧目录的标题层级范围。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
-    >
+    <SettingGroup title="目录 (TOC)" description="文章右侧目录的标题层级范围。" {...settingGroupProps}>
       {isEditing ? (
         <SettingGroupContent>
           <SettingsRow label="最浅级别" htmlFor="seo-toc-min" hint="只显示比这个级别更深的标题。1 表示包含 h1。">
@@ -71,10 +58,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
 }
 
 function SeoOgCard({ seo }: { seo: SeoSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SeoSettings,
-    { ogWidth: number; ogHeight: number }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SeoSettings, { ogWidth: number; ogHeight: number }>({
     section: 'seo',
     source: seo,
     toState: (source) => ({
@@ -82,7 +66,6 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
       ogHeight: source.og.height,
     }),
     fromState: (state) => ({
-      toc: seo.toc,
       og: { width: state.ogWidth, height: state.ogHeight },
     }),
   })
@@ -91,12 +74,7 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
     <SettingGroup
       title="OG 图渲染尺寸"
       description="服务端 Canvas 用以下尺寸生成 /images/og/:slug.png 并写入 og:image:width / og:image:height meta。修改后会立即影响新生成的图片，已缓存的图片需手动清理。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

@@ -1,4 +1,4 @@
-import { type ReactNode, createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 export type SearchComponentId = string & { __brand: 'SearchComponentId' }
 
@@ -6,9 +6,24 @@ export function createSearchComponentId(base: string, unique: string): SearchCom
   return `${base}-${unique}` as SearchComponentId
 }
 
-export interface SettingsSearchService {
+// ---------------------------------------------------------------------------
+// Split Context: high-frequency filter state vs low-frequency search API.
+// Prevents every nav item from re-rendering on each keystroke — only
+// components that read `filter` / `setFilter` subscribe to the volatile
+// Context; the rest read from the stable API Context.
+// ---------------------------------------------------------------------------
+
+interface FilterState {
   filter: string
   setFilter: (value: string) => void
+}
+
+const FilterContext = createContext<FilterState>({
+  filter: '',
+  setFilter: () => {},
+})
+
+interface SearchApiState {
   checkVisible: (keywords: string[]) => boolean
   highlightKeywords: (text: ReactNode) => ReactNode
   noResult: boolean
@@ -19,9 +34,7 @@ export interface SettingsSearchService {
   isOnlyVisibleComponent: (id: SearchComponentId) => boolean
 }
 
-const SettingsSearchContext = createContext<SettingsSearchService>({
-  filter: '',
-  setFilter: () => {},
+const SearchApiContext = createContext<SearchApiState>({
   checkVisible: () => true,
   highlightKeywords: (text) => text,
   noResult: false,
@@ -92,15 +105,16 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
     return visibleComponents
   }, [visibleComponents])
 
-  const highlightKeywords = useCallback(
-    (text: ReactNode): ReactNode => {
-      if (!filter) {
-        return text
-      }
+  const highlightKeywords = useMemo(() => {
+    if (!filter) {
+      return (text: ReactNode): ReactNode => text
+    }
+    const words = filter.split(/\s+/).map((word) => word.toLowerCase())
+    const wordsPattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
+    const regex = new RegExp(`(${wordsPattern})`, 'gi')
+    return (text: ReactNode): ReactNode => {
       if (typeof text === 'string') {
-        const words = filter.split(/\s+/).map((word) => word.toLowerCase())
-        const wordsPattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
-        const parts = text.split(new RegExp(`(${wordsPattern})`, 'gi'))
+        const parts = text.split(regex)
         return parts.reduce<ReactNode[]>((result, part) => {
           if (words.includes(part.toLowerCase())) {
             result.push(
@@ -121,34 +135,47 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
         }, [])
       }
       return text
-    },
-    [filter],
+    }
+  }, [filter])
+
+  const filterState = useMemo(() => ({ filter, setFilter }), [filter])
+  const apiState = useMemo(
+    () => ({
+      checkVisible,
+      highlightKeywords,
+      noResult,
+      setNoResult,
+      registerComponent,
+      unregisterComponent,
+      getVisibleComponents,
+      isOnlyVisibleComponent,
+    }),
+    [
+      checkVisible,
+      highlightKeywords,
+      noResult,
+      registerComponent,
+      unregisterComponent,
+      getVisibleComponents,
+      isOnlyVisibleComponent,
+    ],
   )
 
   return (
-    <SettingsSearchContext.Provider
-      value={{
-        filter,
-        setFilter,
-        checkVisible,
-        highlightKeywords,
-        noResult,
-        setNoResult,
-        registerComponent,
-        unregisterComponent,
-        getVisibleComponents,
-        isOnlyVisibleComponent,
-      }}
-    >
-      {children}
-    </SettingsSearchContext.Provider>
+    <FilterContext.Provider value={filterState}>
+      <SearchApiContext.Provider value={apiState}>{children}</SearchApiContext.Provider>
+    </FilterContext.Provider>
   )
 }
 
-export function useSettingsSearchContext() {
-  return useContext(SettingsSearchContext)
+export function useSettingsSearchFilter() {
+  return useContext(FilterContext)
 }
 
 export function useSettingsSearch() {
-  return useSettingsSearchContext()
+  return useContext(SearchApiContext)
+}
+
+export function useSettingsSearchContext() {
+  return { ...useContext(FilterContext), ...useContext(SearchApiContext) }
 }

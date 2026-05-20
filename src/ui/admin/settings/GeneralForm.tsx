@@ -66,10 +66,7 @@ function toFormValues(source: SiteIdentitySettings): GeneralFormValues {
 }
 
 function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SiteIdentitySettings,
-    GeneralFormValues
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
@@ -79,17 +76,6 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
       description: values.description.trim(),
       website: values.website.trim(),
       keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
-      author: {
-        name: values.author.name.trim(),
-        email: values.author.email.trim(),
-        url: values.author.url.trim(),
-      },
-      locale: values.locale.trim(),
-      timeZone: values.timeZone.trim(),
-      timeFormat: values.timeFormat.trim(),
-      initialYear: values.initialYear,
-      icpNo: values.icpNo,
-      moeIcpNo: values.moeIcpNo,
     }),
   })
 
@@ -100,12 +86,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
     <SettingGroup
       title="基本信息"
       description="站点标题、描述、关键词、作者签名。SEO 和邮件模板也会读取这些字段。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -178,27 +159,12 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
 }
 
 function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SiteIdentitySettings,
-    GeneralFormValues
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
     toState: toFormValues,
     fromState: (values) => ({
-      title: values.title.trim(),
-      description: values.description.trim(),
-      website: values.website.trim(),
-      keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
-      author: {
-        name: values.author.name.trim(),
-        email: values.author.email.trim(),
-        url: values.author.url.trim(),
-      },
-      locale: values.locale.trim(),
-      timeZone: values.timeZone.trim(),
-      timeFormat: values.timeFormat.trim(),
       initialYear: values.initialYear,
       icpNo: values.icpNo,
       moeIcpNo: values.moeIcpNo,
@@ -208,16 +174,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
   const { formState } = form
 
   return (
-    <SettingGroup
-      title="页脚信息"
-      description="网站页脚的版权年份与备案号。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
-    >
+    <SettingGroup title="页脚信息" description="网站页脚的版权年份与备案号。" {...settingGroupProps}>
       {isEditing ? (
         <SettingGroupContent>
           <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
@@ -253,30 +210,17 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
 }
 
 function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SiteIdentitySettings,
-    GeneralFormValues
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
     toState: toFormValues,
     fromState: (values) => ({
-      title: values.title.trim(),
-      description: values.description.trim(),
-      website: values.website.trim(),
-      keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
       author: {
         name: values.author.name.trim(),
         email: values.author.email.trim(),
         url: values.author.url.trim(),
       },
-      locale: values.locale.trim(),
-      timeZone: values.timeZone.trim(),
-      timeFormat: values.timeFormat.trim(),
-      initialYear: values.initialYear,
-      icpNo: values.icpNo,
-      moeIcpNo: values.moeIcpNo,
     }),
   })
 
@@ -286,12 +230,7 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
     <SettingGroup
       title="作者信息"
       description="评论邮件 + RSS feed 的 author 字段都引用这里的姓名 / 邮箱 / 主页。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -333,30 +272,15 @@ function GeneralTimeZoneCard({
   siteIdentity: SiteIdentitySettings
   timeZones: readonly string[]
 }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SiteIdentitySettings,
-    GeneralFormValues
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SiteIdentitySettings, GeneralFormValues>({
     section: 'general',
     source: siteIdentity,
     schema: generalFormSchema,
     toState: toFormValues,
     fromState: (values) => ({
-      title: values.title.trim(),
-      description: values.description.trim(),
-      website: values.website.trim(),
-      keywords: values.keywords.map((k) => k.value.trim()).filter((v) => v.length > 0),
-      author: {
-        name: values.author.name.trim(),
-        email: values.author.email.trim(),
-        url: values.author.url.trim(),
-      },
       locale: values.locale.trim(),
       timeZone: values.timeZone.trim(),
       timeFormat: values.timeFormat.trim(),
-      initialYear: values.initialYear,
-      icpNo: values.icpNo,
-      moeIcpNo: values.moeIcpNo,
     }),
   })
 
@@ -370,12 +294,7 @@ function GeneralTimeZoneCard({
     <SettingGroup
       title="时间与本地化"
       description="影响日期格式化函数以及 OG 图、邮件模板等所有依赖时区的渲染分支。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

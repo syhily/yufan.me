@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, PlusIcon, Trash2Icon } from 'lucide-react'
-import { useFieldArray } from 'react-hook-form'
+import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
@@ -56,31 +56,17 @@ const TYPE_LABELS: Record<FooterNavItem['type'], string> = {
   search: '搜索',
 }
 
-const TYPE_ITEMS: { value: FooterNavItem['type']; label: string }[] = [
-  { value: 'social', label: TYPE_LABELS.social },
-  { value: 'themeToggle', label: TYPE_LABELS.themeToggle },
-  { value: 'search', label: TYPE_LABELS.search },
-]
-
-const NETWORK_ITEMS = SOCIAL_NETWORKS.map((network) => ({
-  value: network,
-  label: SOCIAL_NETWORK_META[network].label,
-}))
-
 // ---------------------------------------------------------------------------
 // Side Navigation Card
 // ---------------------------------------------------------------------------
 
 function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    NavigationSettings,
-    { sideNavRows: SideNavRow[] }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<NavigationSettings, { sideNavRows: SideNavRow[] }>({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
-      sideNavRows: source.navigation.sideNav.map((item) => ({
-        clientId: crypto.randomUUID(),
+      sideNavRows: source.navigation.sideNav.map((item, i) => ({
+        clientId: `sidenav-${i}`,
         text: item.text,
         link: item.link,
         newTab: item.target === '_blank',
@@ -93,7 +79,6 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
           link: row.link.trim(),
           ...(row.newTab ? { target: '_blank' } : {}),
         })),
-        footerNav: navigation.navigation.footerNav,
       },
     }),
   })
@@ -111,12 +96,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
     <SettingGroup
       title="侧边导航菜单"
       description="侧边栏导航条目。顺序、标题、链接均可调整。最多 20 个。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <div className="flex flex-col gap-3">
@@ -145,10 +125,12 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
                 </div>
                 <div className="flex items-center gap-3">
                   <Field orientation="horizontal" className="w-fit">
-                    <Checkbox
-                      id={`nav-newtab-${index}`}
-                      checked={form.watch(`sideNavRows.${index}.newTab`)}
-                      onCheckedChange={(value) => form.setValue(`sideNavRows.${index}.newTab`, value === true)}
+                    <Controller
+                      control={form.control}
+                      name={`sideNavRows.${index}.newTab` as const}
+                      render={({ field }) => (
+                        <Checkbox id={`nav-newtab-${index}`} checked={field.value} onCheckedChange={field.onChange} />
+                      )}
                     />
                     <FieldLabel htmlFor={`nav-newtab-${index}`} className="font-normal">
                       新窗口打开
@@ -245,7 +227,6 @@ function SortableFooterNavRow({
           <Label htmlFor={`footer-item-type-${index}`}>类型</Label>
           <Select
             value={item.type}
-            items={TYPE_ITEMS}
             onValueChange={(value) =>
               onUpdate(index, {
                 type: value as FooterNavItem['type'],
@@ -268,7 +249,6 @@ function SortableFooterNavRow({
             <Label htmlFor={`footer-item-network-${index}`}>平台</Label>
             <Select
               value={item.network}
-              items={NETWORK_ITEMS}
               onValueChange={(value) => onUpdate(index, { network: value as SocialNetwork })}
             >
               <SelectTrigger id={`footer-item-network-${index}`}>
@@ -293,18 +273,17 @@ function SortableFooterNavRow({
 }
 
 function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings; socials: SocialItem[] }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     NavigationSettings,
     { footerNavItems: FooterNavItemRowState[] }
   >({
     section: 'navigation',
     source: navigation,
     toState: (source) => ({
-      footerNavItems: source.navigation.footerNav.map((item) => ({ ...item, clientId: crypto.randomUUID() })),
+      footerNavItems: source.navigation.footerNav.map((item, i) => ({ ...item, clientId: `footer-${i}` })),
     }),
     fromState: (state) => ({
       navigation: {
-        sideNav: navigation.navigation.sideNav,
         footerNav: state.footerNavItems.map((item) => ({ type: item.type, network: item.network })),
       },
     }),
@@ -337,12 +316,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
     <SettingGroup
       title="底部导航菜单"
       description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <div className="flex flex-col gap-3">

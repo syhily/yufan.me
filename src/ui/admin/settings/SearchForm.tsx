@@ -1,5 +1,6 @@
 import { CheckIcon, Loader2Icon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Controller } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import type { SearchLoaderShape } from '@/shared/config/settings'
@@ -11,7 +12,10 @@ import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupConte
 import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
 import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
+import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
+import { RadioGroup, RadioGroupItem } from '@/ui/components/radio-group'
+import { Switch } from '@/ui/components/switch'
 
 export type { SearchLoaderShape }
 
@@ -29,7 +33,7 @@ interface ReindexProgress {
 }
 
 function SearchModeCard({ search }: { search: SearchLoaderShape }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     SearchLoaderShape,
     { enabled: boolean; mode: 'vector' | 'like' }
   >({
@@ -39,66 +43,55 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
       enabled: source.search.enabled,
       mode: source.search.mode,
     }),
-    fromState: (state) => {
-      const trimmedKey = search.search.apiKey.trim()
-      const payload: Record<string, unknown> = {
-        enabled: state.enabled,
-        mode: state.mode,
-        endpoint: search.search.endpoint ?? '',
-        model: search.search.model,
-        similarityThreshold: search.search.similarityThreshold,
-      }
-      if (trimmedKey) {
-        payload.apiKey = trimmedKey
-      }
-      return { search: payload }
-    },
+    fromState: (state) => ({
+      enabled: state.enabled,
+      mode: state.mode,
+    }),
   })
 
   return (
     <SettingGroup
       title="搜索模式"
       description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
           <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
-            <div className="flex items-center gap-3">
-              <input type="checkbox" id="search-enabled" className="size-4" {...form.register('enabled')} />
-              <label htmlFor="search-enabled" className="text-sm font-normal">
-                {form.watch('enabled') ? '已开启' : '已关闭'}
-              </label>
-            </div>
+            <Controller
+              control={form.control}
+              name="enabled"
+              render={({ field }) => (
+                <div className="flex items-center gap-3">
+                  <Switch id="search-enabled" checked={field.value} onCheckedChange={field.onChange} />
+                  <FieldLabel htmlFor="search-enabled" className="font-normal">
+                    {field.value ? '已开启' : '已关闭'}
+                  </FieldLabel>
+                </div>
+              )}
+            />
           </SettingsRow>
           <SettingsRow label="搜索模式" htmlFor="search-mode">
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  {...form.register('mode')}
-                  value="like"
-                  checked={form.watch('mode') === 'like'}
-                  onChange={() => form.setValue('mode', 'like')}
-                />
-                LIKE（纯 Postgres）
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  {...form.register('mode')}
-                  value="vector"
-                  checked={form.watch('mode') === 'vector'}
-                  onChange={() => form.setValue('mode', 'vector')}
-                />
-                向量（OpenAI + pgvector）
-              </label>
-            </div>
+            <Controller
+              control={form.control}
+              name="mode"
+              render={({ field }) => (
+                <RadioGroup value={field.value} onValueChange={field.onChange} className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="like" id="search-mode-like" />
+                    <FieldLabel htmlFor="search-mode-like" className="font-normal">
+                      LIKE（纯 Postgres）
+                    </FieldLabel>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="vector" id="search-mode-vector" />
+                    <FieldLabel htmlFor="search-mode-vector" className="font-normal">
+                      向量（OpenAI + pgvector）
+                    </FieldLabel>
+                  </div>
+                </RadioGroup>
+              )}
+            />
           </SettingsRow>
         </SettingGroupContent>
       ) : (
@@ -116,7 +109,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
 
 function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
   const apiKeyConfigured = search.apiKeyMask !== null
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     SearchLoaderShape,
     { endpoint: string; apiKey: string; model: string; similarityThreshold: number }
   >({
@@ -130,31 +123,17 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
     }),
     fromState: (state) => {
       const trimmedKey = state.apiKey.trim()
-      const payload: Record<string, unknown> = {
-        enabled: search.search.enabled,
-        mode: search.search.mode,
+      return {
         endpoint: state.endpoint.trim(),
         model: state.model.trim(),
         similarityThreshold: state.similarityThreshold,
+        ...(trimmedKey ? { apiKey: trimmedKey } : {}),
       }
-      if (trimmedKey) {
-        payload.apiKey = trimmedKey
-      }
-      return { search: payload }
     },
   })
 
   return (
-    <SettingGroup
-      title="OpenAI 配置"
-      description="向量搜索需要调用 OpenAI Embedding API。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
-    >
+    <SettingGroup title="OpenAI 配置" description="向量搜索需要调用 OpenAI Embedding API。" {...settingGroupProps}>
       {isEditing ? (
         <SettingGroupContent>
           <SettingsRow

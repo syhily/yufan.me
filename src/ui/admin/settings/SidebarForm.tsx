@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVerticalIcon } from 'lucide-react'
-import { useFieldArray } from 'react-hook-form'
+import { Controller, useFieldArray } from 'react-hook-form'
 
 const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
@@ -80,10 +80,12 @@ function SortableWidgetRow({
       <div className="flex-1">
         <SettingsRow label={WIDGET_LABELS[widget.type]} hint={WIDGET_HINTS[widget.type]}>
           <div className="flex items-center gap-3">
-            <Switch
-              id={`sidebar-${widget.type}`}
-              checked={form.watch(`widgets.${index}.enabled`)}
-              onCheckedChange={(value) => form.setValue(`widgets.${index}.enabled`, value === true)}
+            <Controller
+              control={form.control}
+              name={`widgets.${index}.enabled` as const}
+              render={({ field }) => (
+                <Switch id={`sidebar-${widget.type}`} checked={field.value} onCheckedChange={field.onChange} />
+              )}
             />
             <FieldLabel htmlFor={`sidebar-${widget.type}`} className="font-normal">
               启用
@@ -109,10 +111,7 @@ function SortableWidgetRow({
 }
 
 export function SidebarForm({ sidebar }: SidebarFormProps) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    SidebarSettings,
-    { widgets: SidebarWidget[] }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<SidebarSettings, { widgets: SidebarWidget[] }>({
     section: 'sidebar',
     source: sidebar,
     toState: (source) => ({ widgets: [...source.sidebar.widgets] }),
@@ -139,12 +138,7 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
     <SettingGroup
       title="侧边栏组件"
       description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>

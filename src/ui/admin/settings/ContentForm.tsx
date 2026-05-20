@@ -27,7 +27,7 @@ const SORT_BY_ITEMS = [
 ]
 
 function ContentPaginationCard({ content }: { content: ContentSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     ContentSettings,
     { pagPosts: number; pagCategory: number; pagTags: number; pagSearch: number }
   >({
@@ -46,9 +46,6 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
         tags: state.pagTags,
         search: state.pagSearch,
       },
-      feed: content.feed,
-      post: content.post,
-      footnotes: content.footnotes,
     }),
   })
 
@@ -56,12 +53,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
     <SettingGroup
       title="分页"
       description="每个列表页显示多少篇文章。改动会立即影响首页 / 分类 / 标签 / 搜索结果。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -115,7 +107,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFeedCard({ content }: { content: ContentSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     ContentSettings,
     { feedFull: boolean; feedSize: number }
   >({
@@ -126,10 +118,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
       feedSize: source.feed.size,
     }),
     fromState: (state) => ({
-      pagination: content.pagination,
       feed: { full: state.feedFull, size: state.feedSize },
-      post: content.post,
-      footnotes: content.footnotes,
     }),
   })
 
@@ -137,12 +126,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
     <SettingGroup
       title="RSS / Atom Feed"
       description="决定 /feed 与 /feed/atom 输出的条目数与是否包含正文。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -181,7 +165,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentSortCard({ content }: { content: ContentSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
+  const { isEditing, form, settingGroupProps } = useSettingsCard<
     ContentSettings,
     { postSort: 'asc' | 'desc'; postSortBy: 'publishedAt' | 'updatedAt'; postFeatureEnabled: boolean }
   >({
@@ -193,14 +177,11 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
       postFeatureEnabled: source.post.featureEnabled ?? false,
     }),
     fromState: (state) => ({
-      pagination: content.pagination,
-      feed: content.feed,
       post: {
         sort: state.postSort,
         sortBy: state.postSortBy,
         featureEnabled: state.postFeatureEnabled,
       },
-      footnotes: content.footnotes,
     }),
   })
 
@@ -208,12 +189,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
     <SettingGroup
       title="文章排序与置顶"
       description="文章列表的默认排序方向。开启置顶后，可在文章编辑页将文章置顶到首页精选区。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
@@ -290,19 +266,13 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
 }
 
 function ContentFootnotesCard({ content }: { content: ContentSettings }) {
-  const { isEditing, setIsEditing, form, save, cancel, status, errorMessage } = useSettingsCard<
-    ContentSettings,
-    { footnotesSectionTitle: string }
-  >({
+  const { isEditing, form, settingGroupProps } = useSettingsCard<ContentSettings, { footnotesSectionTitle: string }>({
     section: 'content',
     source: content,
     toState: (source) => ({
       footnotesSectionTitle: source.footnotes?.sectionTitle ?? '尾声礼记',
     }),
     fromState: (state) => ({
-      pagination: content.pagination,
-      feed: content.feed,
-      post: content.post,
       footnotes: { sectionTitle: state.footnotesSectionTitle.trim() || '尾声礼记' },
     }),
   })
@@ -311,12 +281,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
     <SettingGroup
       title="脚注汇总标题"
       description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。不影响 MDX 文章页的脚注样式。"
-      isEditing={isEditing}
-      onEditingChange={setIsEditing}
-      onSave={save}
-      onCancel={cancel}
-      saveState={status}
-      errorMessage={errorMessage}
+      {...settingGroupProps}
     >
       {isEditing ? (
         <SettingGroupContent>
