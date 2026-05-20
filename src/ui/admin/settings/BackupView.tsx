@@ -4,11 +4,11 @@ import type { BackupSettings } from '@/shared/config/blog'
 
 import { orpc } from '@/client/api/client'
 import { useMutation, useQuery, useQueryClient } from '@/client/api/query'
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
@@ -80,7 +80,7 @@ function ScheduledBackupCard({ backup, canConfigure }: { backup: BackupSettings;
   const retentionEnabled = form.watch('retentionEnabled')
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="定时备份"
       description="配置自动备份的频率与保留策略。"
       isEditing={isEditing}
@@ -91,7 +91,7 @@ function ScheduledBackupCard({ backup, canConfigure }: { backup: BackupSettings;
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="启用定时备份">
             <div className="flex items-center gap-3">
               <Switch
@@ -232,32 +232,32 @@ function ScheduledBackupCard({ backup, canConfigure }: { backup: BackupSettings;
               )}
             </>
           )}
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="定时备份" value={backup.scheduled.enabled ? '已开启' : '已关闭'} />
+        <SettingGroupContent>
+          <SettingValue label="定时备份" value={backup.scheduled.enabled ? '已开启' : '已关闭'} />
           {backup.scheduled.enabled && (
             <>
-              <GhostSettingValue label="备份频率" value={FREQ_LABELS[backup.scheduled.frequency]} />
-              <GhostSettingValue
+              <SettingValue label="备份频率" value={FREQ_LABELS[backup.scheduled.frequency]} />
+              <SettingValue
                 label="备份时间"
                 value={`${String(backup.scheduled.hour).padStart(2, '0')}:${String(backup.scheduled.minute).padStart(2, '0')}`}
               />
               {backup.scheduled.frequency === 'weekly' && backup.scheduled.dayOfWeek && (
-                <GhostSettingValue label="星期" value={WEEKDAY_LABELS[backup.scheduled.dayOfWeek - 1]} />
+                <SettingValue label="星期" value={WEEKDAY_LABELS[backup.scheduled.dayOfWeek - 1]} />
               )}
               {backup.scheduled.frequency === 'monthly' && backup.scheduled.dayOfMonth && (
-                <GhostSettingValue label="每月日期" value={`${backup.scheduled.dayOfMonth} 日`} />
+                <SettingValue label="每月日期" value={`${backup.scheduled.dayOfMonth} 日`} />
               )}
-              <GhostSettingValue
+              <SettingValue
                 label="保留策略"
                 value={backup.retention.enabled ? `保留 ${backup.retention.days} 天` : '不自动清理'}
               />
             </>
           )}
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -341,7 +341,7 @@ export function BackupView({ backup }: BackupViewProps) {
 
       <ScheduledBackupCard backup={source} canConfigure={canConfigure} />
 
-      <GhostSettingGroup
+      <SettingGroup
         title="备份文件"
         description="S3 存储中 backup/ 目录下的所有备份文件。"
         actions={
@@ -402,7 +402,7 @@ export function BackupView({ backup }: BackupViewProps) {
             </table>
           </div>
         )}
-      </GhostSettingGroup>
+      </SettingGroup>
 
       {restoreKey && (
         <ConfirmDialog
@@ -414,7 +414,7 @@ export function BackupView({ backup }: BackupViewProps) {
         />
       )}
 
-      <GhostSettingGroup title="手动还原" description="上传 .sql.gz 备份文件进行还原。">
+      <SettingGroup title="手动还原" description="上传 .sql.gz 备份文件进行还原。">
         <div className="flex flex-col gap-3">
           <Input ref={fileInputRef} type="file" accept=".sql.gz" disabled={!pgToolsAvailable || uploading} />
           <div className="flex gap-2">
@@ -423,7 +423,7 @@ export function BackupView({ backup }: BackupViewProps) {
             </Button>
           </div>
         </div>
-      </GhostSettingGroup>
+      </SettingGroup>
     </div>
   )
 }

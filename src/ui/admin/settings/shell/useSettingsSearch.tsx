@@ -101,18 +101,24 @@ export function SettingsSearchProvider({ children }: { children: ReactNode }) {
         const words = filter.split(/\s+/).map((word) => word.toLowerCase())
         const wordsPattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
         const parts = text.split(new RegExp(`(${wordsPattern})`, 'gi'))
-        return parts.map((part, i) =>
-          words.includes(part.toLowerCase()) ? (
-            <mark key={i} className="rounded-sm bg-yellow-500/40">
-              {part}
-            </mark>
-          ) : (
-            part
-          ),
-        )
+        return parts.reduce<ReactNode[]>((result, part) => {
+          if (words.includes(part.toLowerCase())) {
+            result.push(
+              <mark key={`mark-${result.length}`} className="rounded-sm bg-yellow-500/40">
+                {part}
+              </mark>,
+            )
+          } else {
+            result.push(part)
+          }
+          return result
+        }, [])
       }
       if (Array.isArray(text)) {
-        return text.map((part, i) => <span key={i}>{highlightKeywords(part)}</span>)
+        return text.reduce<ReactNode[]>((result, part) => {
+          result.push(<span key={`span-${result.length}`}>{highlightKeywords(part)}</span>)
+          return result
+        }, [])
       }
       return text
     },

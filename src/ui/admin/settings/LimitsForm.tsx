@@ -1,10 +1,10 @@
 import type { LimitsSettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 
 interface LimitsFormProps {
@@ -31,7 +31,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="请求限制"
       description="控制上传文件、表单提交等场景的最大请求体大小。过大可能增加内存压力，过小则可能导致图片上传失败。"
       isEditing={isEditing}
@@ -42,7 +42,7 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="最大请求体大小（字节）"
             htmlFor="limits-max-request-body-size"
@@ -56,17 +56,17 @@ function LimitsRequestCard({ limits }: { limits: LimitsSettings }) {
               {...form.register('maxRequestBodySize', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue
             label="最大请求体大小"
             value={`${limits.maxRequestBodySize.toLocaleString()} 字节`}
             hint={`约 ${(limits.maxRequestBodySize / (1024 * 1024)).toFixed(1)} MB`}
           />
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -85,7 +85,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="会话限制"
       description="管理后台与公共站点的登录会话有效期。过期后用户需要重新登录。"
       isEditing={isEditing}
@@ -96,7 +96,7 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="会话最大有效期（秒）"
             htmlFor="limits-session-max-age"
@@ -110,17 +110,17 @@ function LimitsSessionCard({ limits }: { limits: LimitsSettings }) {
               {...form.register('sessionMaxAge', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue
             label="会话最大有效期"
             value={`${limits.sessionMaxAge.toLocaleString()} 秒`}
             hint={`约 ${Math.round(limits.sessionMaxAge / (60 * 60 * 24))} 天`}
           />
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

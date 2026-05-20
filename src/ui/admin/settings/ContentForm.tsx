@@ -2,11 +2,11 @@ import { Controller } from 'react-hook-form'
 
 import type { ContentSettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -53,7 +53,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="分页"
       description="每个列表页显示多少篇文章。改动会立即影响首页 / 分类 / 标签 / 搜索结果。"
       isEditing={isEditing}
@@ -64,7 +64,7 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="首页每页文章数" htmlFor="content-pag-posts">
             <Input
               id="content-pag-posts"
@@ -101,16 +101,16 @@ function ContentPaginationCard({ content }: { content: ContentSettings }) {
               {...form.register('pagSearch', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="首页每页" value={`${content.pagination.posts}`} />
-          <GhostSettingValue label="分类页每页" value={`${content.pagination.category}`} />
-          <GhostSettingValue label="标签页每页" value={`${content.pagination.tags}`} />
-          <GhostSettingValue label="搜索结果每页" value={`${content.pagination.search}`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="首页每页" value={`${content.pagination.posts}`} />
+          <SettingValue label="分类页每页" value={`${content.pagination.category}`} />
+          <SettingValue label="标签页每页" value={`${content.pagination.tags}`} />
+          <SettingValue label="搜索结果每页" value={`${content.pagination.search}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -134,7 +134,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="RSS / Atom Feed"
       description="决定 /feed 与 /feed/atom 输出的条目数与是否包含正文。"
       isEditing={isEditing}
@@ -145,7 +145,7 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="包含完整正文" hint="关闭后只输出摘要 + 永久链接。订阅器中阅读体验更好但不利于离线阅读。">
             <div className="flex items-center gap-3">
               <Controller
@@ -169,14 +169,14 @@ function ContentFeedCard({ content }: { content: ContentSettings }) {
               {...form.register('feedSize', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="包含完整正文" value={content.feed.full ? '是' : '否'} />
-          <GhostSettingValue label="Feed 条目数" value={`${content.feed.size}`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="包含完整正文" value={content.feed.full ? '是' : '否'} />
+          <SettingValue label="Feed 条目数" value={`${content.feed.size}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -205,7 +205,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="文章排序与置顶"
       description="文章列表的默认排序方向。开启置顶后，可在文章编辑页将文章置顶到首页精选区。"
       isEditing={isEditing}
@@ -216,7 +216,7 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="排序字段" htmlFor="content-post-sort-by">
             <Controller
               control={form.control}
@@ -271,21 +271,21 @@ function ContentSortCard({ content }: { content: ContentSettings }) {
               </FieldLabel>
             </div>
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue
             label="排序字段"
             value={SORT_BY_ITEMS.find((i) => i.value === content.post.sortBy)?.label ?? content.post.sortBy}
           />
-          <GhostSettingValue
+          <SettingValue
             label="排序方向"
             value={SORT_DIR_ITEMS.find((i) => i.value === content.post.sort)?.label ?? content.post.sort}
           />
-          <GhostSettingValue label="置顶功能" value={content.post.featureEnabled ? '已开启' : '已关闭'} />
-        </GhostSettingGroupContent>
+          <SettingValue label="置顶功能" value={content.post.featureEnabled ? '已开启' : '已关闭'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -308,7 +308,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="脚注汇总标题"
       description="Portable Text 页面文末脚注列表上方的标题，默认为「尾声礼记」。不影响 MDX 文章页的脚注样式。"
       isEditing={isEditing}
@@ -319,7 +319,7 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="标题文案" htmlFor="content-footnotes-section-title">
             <Input
               id="content-footnotes-section-title"
@@ -328,13 +328,13 @@ function ContentFootnotesCard({ content }: { content: ContentSettings }) {
               {...form.register('footnotesSectionTitle')}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="标题文案" value={content.footnotes?.sectionTitle ?? '尾声礼记'} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="标题文案" value={content.footnotes?.sectionTitle ?? '尾声礼记'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

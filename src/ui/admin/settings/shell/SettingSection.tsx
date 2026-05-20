@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-interface GhostSettingSectionProps {
+interface SettingSectionProps {
   /** Section title — rendered as a prominent heading above all groups. */
   title: string
   /** Optional description shown beneath the title. */
@@ -13,10 +13,10 @@ interface GhostSettingSectionProps {
   className?: string
 }
 
-// A logical grouping of one or more `GhostSettingGroup`s.
+// A logical grouping of one or more `SettingGroup`s.
 // Renders a large heading + optional description, then the children.
 // The `id` prop enables smooth-scroll anchor navigation from the sidebar.
-export function GhostSettingSection({ title, description, id, children, className }: GhostSettingSectionProps) {
+export function SettingSection({ title, description, id, children, className }: SettingSectionProps) {
   return (
     <section id={id} className={cn('scroll-mt-8', className)}>
       <div className="mb-4">

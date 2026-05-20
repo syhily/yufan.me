@@ -4,11 +4,11 @@ import { Controller } from 'react-hook-form'
 
 import { orpc } from '@/client/api/client'
 import { useMutation } from '@/client/api/query'
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
@@ -51,7 +51,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="邮件发送总开关"
       description="关闭后，所有评论通知 / 回复通知 / 审核通过通知都不会再发送（不会报错，仅记录 debug 日志）。"
       isEditing={isEditing}
@@ -62,7 +62,7 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="启用邮件发送" hint="生产环境推荐先用「测试发送」确认连接，再打开此开关。">
             <div className="flex items-center gap-3">
               <Controller
@@ -77,13 +77,13 @@ function MailToggleCard({ mail }: { mail: MailLoaderShape }) {
               </FieldLabel>
             </div>
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="邮件发送" value={mail.enabled ? '已开启' : '已关闭'} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="邮件发送" value={mail.enabled ? '已开启' : '已关闭'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -114,7 +114,7 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="Zeabur ZSend 配置"
       description="配置 Zeabur ZSend 的接入地址、API Key 和发件人邮箱。修改后立即生效。"
       isEditing={isEditing}
@@ -125,7 +125,7 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="接入域名" htmlFor="mail-host" hint="不带协议，例如 api.zeabur.com。">
             <Input id="mail-host" placeholder="api.zeabur.com" maxLength={253} {...form.register('host')} />
           </SettingsRow>
@@ -156,18 +156,15 @@ function MailConfigCard({ mail }: { mail: MailLoaderShape }) {
               {...form.register('sender')}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="接入域名" value={mail.host} />
-          <GhostSettingValue
-            label="API Key"
-            value={apiKeyConfigured ? `已配置（结尾 …${mail.apiKeyMask}）` : '未配置'}
-          />
-          <GhostSettingValue label="发件人邮箱" value={mail.sender} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="接入域名" value={mail.host} />
+          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${mail.apiKeyMask}）` : '未配置'} />
+          <SettingValue label="发件人邮箱" value={mail.sender} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -193,8 +190,8 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
     !isTestPending && mail.host.trim() !== '' && mail.sender.trim() !== '' && apiKeyConfigured && isLikelyEmail(testTo)
 
   return (
-    <GhostSettingGroup title="测试发送" description="不依赖「启用邮件发送」开关，可在配置完成后立即验证连接。">
-      <GhostSettingGroupContent>
+    <SettingGroup title="测试发送" description="不依赖「启用邮件发送」开关，可在配置完成后立即验证连接。">
+      <SettingGroupContent>
         <SettingsRow label="收件人" htmlFor="mail-test-to" hint="默认填站点作者邮箱，可以改成任意能收信的地址来验证。">
           <div className="flex flex-col gap-3 sm:flex-row">
             <Input
@@ -228,8 +225,8 @@ function MailTestCard({ mail }: { mail: MailLoaderShape }) {
         {testStatus.state === 'error' && testStatus.message ? (
           <p className="text-sm break-all text-destructive">{testStatus.message}</p>
         ) : null}
-      </GhostSettingGroupContent>
-    </GhostSettingGroup>
+      </SettingGroupContent>
+    </SettingGroup>
   )
 }
 

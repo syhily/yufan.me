@@ -24,9 +24,9 @@ import type { FooterNavItem, NavigationSettings, SocialItem } from '@/shared/con
 import type { SocialNetwork } from '@/shared/config/socials'
 
 import { SOCIAL_NETWORK_META, SOCIAL_NETWORKS } from '@/shared/config/socials'
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Checkbox } from '@/ui/components/checkbox'
 import { Field, FieldLabel } from '@/ui/components/field'
@@ -108,7 +108,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
   }
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="侧边导航菜单"
       description="侧边栏导航条目。顺序、标题、链接均可调整。最多 20 个。"
       isEditing={isEditing}
@@ -196,9 +196,9 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
           {navigation.navigation.sideNav.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            navigation.navigation.sideNav.map((item, i) => (
-              <GhostSettingValue
-                key={i}
+            navigation.navigation.sideNav.map((item) => (
+              <SettingValue
+                key={item.link}
                 label={item.text}
                 value={item.link}
                 hint={item.target === '_blank' ? '新窗口打开' : undefined}
@@ -207,7 +207,7 @@ function SideNavCard({ navigation }: { navigation: NavigationSettings }) {
           )}
         </div>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -334,7 +334,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
   const configuredNetworks = new Set(socials.map((s) => s.network))
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="底部导航菜单"
       description="页脚中显示的快捷按钮。可选择社交链接、主题切换或搜索。最多 5 项，拖拽可调整顺序。"
       isEditing={isEditing}
@@ -391,8 +391,8 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
             navigation.navigation.footerNav.map((item, i) => (
-              <GhostSettingValue
-                key={i}
+              <SettingValue
+                key={`${item.type}-${item.network ?? ''}`}
                 label={`${i + 1}. ${TYPE_LABELS[item.type]}`}
                 value={item.type === 'social' && item.network ? SOCIAL_NETWORK_META[item.network].label : '—'}
               />
@@ -400,7 +400,7 @@ function FooterNavCard({ navigation, socials }: { navigation: NavigationSettings
           )}
         </div>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

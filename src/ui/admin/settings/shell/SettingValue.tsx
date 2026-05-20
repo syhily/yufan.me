@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-interface GhostSettingValueProps {
+interface SettingValueProps {
   /** Field label rendered in the left column. */
   label: string
   /** The read-only value — plain text, ReactNode, or a placeholder. */
@@ -14,10 +14,10 @@ interface GhostSettingValueProps {
   className?: string
 }
 
-// A read-only key-value row inside a `GhostSettingGroup`.
+// A read-only key-value row inside a `SettingGroup`.
 // On desktop it renders as a two-column grid (label left, value right);
 // on narrow viewports the columns collapse vertically.
-export function GhostSettingValue({ label, value, hint, code, className }: GhostSettingValueProps) {
+export function SettingValue({ label, value, hint, code, className }: SettingValueProps) {
   return (
     <div
       className={cn(

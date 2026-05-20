@@ -10,6 +10,7 @@ vi.mock('@/server/domains/settings/service', () => ({
 
 vi.mock('@/server/domains/settings/timezones', () => ({
   getSupportedTimeZones: vi.fn(),
+  isSupportedTimeZone: vi.fn(() => true),
 }))
 
 const { getAdminBlogSettings, updateBlogSettingsSection } = await import('@/server/domains/settings/service')
@@ -28,6 +29,10 @@ const bundleStub = {
   mail: null,
   cache: null,
   backup: null,
+  rateLimit: null,
+  search: null,
+  fonts: null,
+  limits: null,
 }
 
 describe('adminSettingsRouter.get', () => {

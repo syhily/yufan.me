@@ -5,11 +5,11 @@ import { toast } from 'sonner'
 import type { SearchLoaderShape } from '@/shared/config/settings'
 
 import { orpc } from '@/client/api/client'
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 
@@ -56,7 +56,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="搜索模式"
       description="选择文章搜索的底层实现。LIKE 模式仅依赖 Postgres，无需外部 API；向量模式需要 OpenAI API Key。"
       isEditing={isEditing}
@@ -67,7 +67,7 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="启用 AI 向量搜索" hint="关闭时所有搜索请求都会降级为 Postgres LIKE 查询。">
             <div className="flex items-center gap-3">
               <input type="checkbox" id="search-enabled" className="size-4" {...form.register('enabled')} />
@@ -100,17 +100,17 @@ function SearchModeCard({ search }: { search: SearchLoaderShape }) {
               </label>
             </div>
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="AI 向量搜索" value={search.search.enabled ? '已开启' : '已关闭'} />
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue label="AI 向量搜索" value={search.search.enabled ? '已开启' : '已关闭'} />
+          <SettingValue
             label="搜索模式"
             value={search.search.mode === 'vector' ? '向量（OpenAI + pgvector）' : 'LIKE（纯 Postgres）'}
           />
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -145,7 +145,7 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="OpenAI 配置"
       description="向量搜索需要调用 OpenAI Embedding API。"
       isEditing={isEditing}
@@ -156,7 +156,7 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="API Endpoint"
             htmlFor="search-endpoint"
@@ -203,22 +203,16 @@ function SearchOpenAiCard({ search }: { search: SearchLoaderShape }) {
               {...form.register('similarityThreshold', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
-            label="API Endpoint"
-            value={search.search.endpoint || 'https://api.openai.com/v1（默认）'}
-          />
-          <GhostSettingValue
-            label="API Key"
-            value={apiKeyConfigured ? `已配置（结尾 …${search.apiKeyMask}）` : '未配置'}
-          />
-          <GhostSettingValue label="模型" value={search.search.model} />
-          <GhostSettingValue label="相似度阈值" value={`${search.search.similarityThreshold}`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="API Endpoint" value={search.search.endpoint || 'https://api.openai.com/v1（默认）'} />
+          <SettingValue label="API Key" value={apiKeyConfigured ? `已配置（结尾 …${search.apiKeyMask}）` : '未配置'} />
+          <SettingValue label="模型" value={search.search.model} />
+          <SettingValue label="相似度阈值" value={`${search.search.similarityThreshold}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -272,8 +266,8 @@ function SearchReindexCard() {
   }
 
   return (
-    <GhostSettingGroup title="索引管理" description="首次启用向量搜索或批量更新文章后，需要重建搜索索引。">
-      <GhostSettingGroupContent>
+    <SettingGroup title="索引管理" description="首次启用向量搜索或批量更新文章后，需要重建搜索索引。">
+      <SettingGroupContent>
         <SettingsRow label="重建搜索索引">
           <div className="flex flex-col gap-2">
             <Button
@@ -303,8 +297,8 @@ function SearchReindexCard() {
             )}
           </div>
         </SettingsRow>
-      </GhostSettingGroupContent>
-    </GhostSettingGroup>
+      </SettingGroupContent>
+    </SettingGroup>
   )
 }
 

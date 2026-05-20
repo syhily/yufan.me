@@ -1,10 +1,10 @@
 import type { SeoSettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 
 interface SeoFormProps {
@@ -29,7 +29,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="目录 (TOC)"
       description="文章右侧目录的标题层级范围。"
       isEditing={isEditing}
@@ -40,7 +40,7 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="最浅级别" htmlFor="seo-toc-min" hint="只显示比这个级别更深的标题。1 表示包含 h1。">
             <Input
               id="seo-toc-min"
@@ -59,14 +59,14 @@ function SeoTocCard({ seo }: { seo: SeoSettings }) {
               {...form.register('tocMax', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="最浅级别" value={`h${seo.toc.minHeadingLevel}`} />
-          <GhostSettingValue label="最深级别" value={`h${seo.toc.maxHeadingLevel}`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="最浅级别" value={`h${seo.toc.minHeadingLevel}`} />
+          <SettingValue label="最深级别" value={`h${seo.toc.maxHeadingLevel}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -88,7 +88,7 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="OG 图渲染尺寸"
       description="服务端 Canvas 用以下尺寸生成 /images/og/:slug.png 并写入 og:image:width / og:image:height meta。修改后会立即影响新生成的图片，已缓存的图片需手动清理。"
       isEditing={isEditing}
@@ -99,7 +99,7 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="宽度 (px)"
             htmlFor="seo-og-width"
@@ -122,14 +122,14 @@ function SeoOgCard({ seo }: { seo: SeoSettings }) {
               {...form.register('ogHeight', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="宽度" value={`${seo.og.width}px`} />
-          <GhostSettingValue label="高度" value={`${seo.og.height}px`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="宽度" value={`${seo.og.width}px`} />
+          <SettingValue label="高度" value={`${seo.og.height}px`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

@@ -2,7 +2,7 @@ import { SearchIcon, XIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 
-import { useSettingsSearch } from '@/ui/admin/settings-ghost/useSettingsSearch'
+import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { Input } from '@/ui/components/input'
 
 export function SettingsMobileBar() {

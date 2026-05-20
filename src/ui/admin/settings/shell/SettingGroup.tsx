@@ -5,7 +5,7 @@ import { CheckIcon, Loader2Icon, PencilIcon, XIcon } from 'lucide-react'
 import { Button } from '@/ui/components/button'
 import { cn } from '@/ui/lib/cn'
 
-interface GhostSettingGroupProps {
+interface SettingGroupProps {
   title: string
   description?: string
   children?: ReactNode
@@ -21,7 +21,7 @@ interface GhostSettingGroupProps {
   errorMessage?: string | null
 }
 
-export function GhostSettingGroup({
+export function SettingGroup({
   title,
   description,
   children,
@@ -33,7 +33,7 @@ export function GhostSettingGroup({
   onCancel,
   saveState,
   errorMessage,
-}: GhostSettingGroupProps) {
+}: SettingGroupProps) {
   const showEdit = !isEditing && onEditingChange && !actions
   const showActions = isEditing && (onSave || onCancel)
 

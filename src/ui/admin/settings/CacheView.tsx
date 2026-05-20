@@ -6,11 +6,11 @@ import type { CacheBucketId, ClearCacheTarget, ReservedCacheBucketStats } from '
 
 import { orpc } from '@/client/api/client'
 import { useMutation, useQuery } from '@/client/api/query'
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
 import { BucketCard } from '@/ui/admin/settings/cache/BucketCard'
 import { type ClearStatus, idleClearStatus } from '@/ui/admin/settings/cache/cache-status'
 import { CacheStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { ConfirmClearDialog } from '@/ui/admin/settings/cache/ConfirmClearDialog'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { Button } from '@/ui/components/button'
 
 type CacheSlice = CacheSettings['cache']
@@ -64,7 +64,7 @@ export function CacheView({ cache }: CacheViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative">
-        <GhostSettingGroup
+        <SettingGroup
           title="一键清空"
           description={
             statsLoading
@@ -90,7 +90,7 @@ export function CacheView({ cache }: CacheViewProps) {
               <Trash2Icon data-icon /> {isClearPending && status.target === 'all' ? '清空中…' : '清空全部缓存'}
             </Button>
           </div>
-        </GhostSettingGroup>
+        </SettingGroup>
         <Button
           type="button"
           variant="destructive"
@@ -136,7 +136,7 @@ export type { CacheBucketId }
 
 function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketStats[] }) {
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="受保护的缓存（只读）"
       description="以下缓存关键到运行时安全，仅作可视化展示，不支持改名或清空。如确需操作，请通过 `vp` 或 Redis CLI 进行。"
     >
@@ -155,6 +155,6 @@ function ReservedBucketsSection({ reserved }: { reserved: ReservedCacheBucketSta
           </div>
         ))}
       </div>
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }

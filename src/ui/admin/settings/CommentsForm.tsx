@@ -1,10 +1,10 @@
 import type { CommentsSettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 
 interface CommentsFormProps {
@@ -29,7 +29,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="评论分页"
       description="控制文章页面下方的评论列表加载行为。"
       isEditing={isEditing}
@@ -40,7 +40,7 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="每页评论数" htmlFor="comments-size" hint="客户端「加载更多」每次抓取的根评论数量。">
             <Input
               id="comments-size"
@@ -50,13 +50,13 @@ function CommentsPaginationCard({ comments }: { comments: CommentsSettings }) {
               {...form.register('size', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="每页评论数" value={`${comments.comments.size}`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="每页评论数" value={`${comments.comments.size}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -81,7 +81,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="头像镜像"
       description="访客头像通过 Gravatar 协议拉取。镜像 URL 用于绕过 gravatar.com 的访问限制。"
       isEditing={isEditing}
@@ -92,7 +92,7 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="Gravatar 镜像 URL"
             htmlFor="comments-avatar-mirror"
@@ -109,14 +109,14 @@ function CommentsAvatarCard({ comments }: { comments: CommentsSettings }) {
               {...form.register('avatarSize', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="镜像 URL" value={comments.comments.avatar.mirror} />
-          <GhostSettingValue label="头像尺寸" value={`${comments.comments.avatar.size}px`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="镜像 URL" value={comments.comments.avatar.mirror} />
+          <SettingValue label="头像尺寸" value={`${comments.comments.avatar.size}px`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -138,7 +138,7 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="匿名评论 Token"
       description="控制匿名评论者发表后可编辑自己评论的时间窗口。"
       isEditing={isEditing}
@@ -149,7 +149,7 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="Token 有效期 (秒)"
             htmlFor="comments-token-ttl"
@@ -163,17 +163,17 @@ function CommentsTokenCard({ comments }: { comments: CommentsSettings }) {
               {...form.register('tokenTtlSeconds', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue
             label="Token 有效期"
             value={`${comments.comments.tokenTtlSeconds} 秒`}
             hint={`约 ${Math.round(comments.comments.tokenTtlSeconds / 60)} 分钟`}
           />
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

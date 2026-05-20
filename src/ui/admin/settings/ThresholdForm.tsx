@@ -1,10 +1,10 @@
 import type { RateLimitSettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 
 const BOUNDS = {
@@ -97,7 +97,7 @@ function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; r
   const bucket = rateLimit[bucketKey]
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title={meta.title}
       description={meta.description}
       isEditing={isEditing}
@@ -108,7 +108,7 @@ function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; r
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="时间窗口（秒）" htmlFor={`rate-limit-${bucketKey}-window`} hint={meta.windowHint}>
             <Input
               id={`rate-limit-${bucketKey}-window`}
@@ -127,14 +127,14 @@ function RateLimitBucketCard({ bucketKey, rateLimit }: { bucketKey: BucketKey; r
               {...form.register('maxAttempts', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="时间窗口" value={`${bucket.windowSeconds.toLocaleString()} 秒`} />
-          <GhostSettingValue label="最大尝试次数" value={`${bucket.maxAttempts}`} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="时间窗口" value={`${bucket.windowSeconds.toLocaleString()} 秒`} />
+          <SettingValue label="最大尝试次数" value={`${bucket.maxAttempts}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/ui/lib/cn'
 
-interface GhostSettingNavItemProps {
+interface SettingNavItemProps {
   /** Navigation item label rendered as the primary text. */
   label: string
   /** Optional one-line description shown beneath the label. */
@@ -18,7 +18,7 @@ interface GhostSettingNavItemProps {
 // A single item in the Ghost-style settings sidebar.
 // Mimics AdminX's compact nav: muted by default, bold + accent border
 // when active, subtle background tint on hover.
-export function GhostSettingNavItem({ label, description, isActive, onClick, icon }: GhostSettingNavItemProps) {
+export function SettingNavItem({ label, description, isActive, onClick, icon }: SettingNavItemProps) {
   return (
     <button
       type="button"

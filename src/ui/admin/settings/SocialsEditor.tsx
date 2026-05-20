@@ -1,9 +1,9 @@
 import type { SocialsSettings } from '@/shared/config/blog'
 
 import { type SocialNetwork, SOCIAL_NETWORKS, getSocialNetworkMeta } from '@/shared/config/socials'
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Input } from '@/ui/components/input'
 import { Label } from '@/ui/components/label'
 import { SOCIAL_NETWORK_ICONS } from '@/ui/icons/social-icons'
@@ -66,7 +66,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
   }
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="社交链接"
       description="配置各社交平台的账号或二维码。填写链接后平台即生效，留空则不在网站展示。"
       isEditing={isEditing}
@@ -137,7 +137,7 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
             socials.socials.map((item) => {
               const meta = getSocialNetworkMeta(item.network)
               return (
-                <GhostSettingValue
+                <SettingValue
                   key={item.network}
                   label={meta.label}
                   value={item.link}
@@ -148,6 +148,6 @@ export function SocialsEditor({ socials }: SocialsEditorProps) {
           )}
         </div>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }

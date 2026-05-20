@@ -1,7 +1,7 @@
 import { SearchIcon, XIcon } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
-import { useSettingsSearch } from '@/ui/admin/settings-ghost/useSettingsSearch'
+import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { Input } from '@/ui/components/input'
 
 function isTypingTarget(target: EventTarget | null): boolean {

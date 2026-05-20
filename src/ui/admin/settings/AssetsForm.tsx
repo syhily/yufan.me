@@ -2,11 +2,11 @@ import { Controller } from 'react-hook-form'
 
 import type { AssetsLoaderShape } from '@/shared/config/settings'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/components/select'
@@ -50,7 +50,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="资源域名"
       description="统一的资源域名：MDX `<MusicPlayer>` 读取音频/歌词，图片公共 URL 也复用这里的 host + scheme。"
       isEditing={isEditing}
@@ -61,7 +61,7 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="协议" htmlFor="assets-asset-scheme">
             <Controller
               control={form.control}
@@ -94,14 +94,14 @@ function AssetsDomainCard({ assets }: { assets: AssetsLoaderShape }) {
               {...form.register('assetHost')}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="协议" value={assets.asset.scheme} />
-          <GhostSettingValue label="域名" value={assets.asset.host} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="协议" value={assets.asset.scheme} />
+          <SettingValue label="域名" value={assets.asset.host} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -129,7 +129,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="启用图片上传"
       description="未开启时「图片管理」页面只能浏览历史图片，所有上传 / 替换入口都会返回 503。"
       isEditing={isEditing}
@@ -140,7 +140,7 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="启用 S3 上传" hint="关闭后已经入库的图片仍按上方的资源域名解析。">
             <div className="flex items-center gap-3">
               <Controller
@@ -155,17 +155,17 @@ function AssetsToggleCard({ assets }: { assets: AssetsLoaderShape }) {
               </FieldLabel>
             </div>
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue
             label="S3 上传"
             value={assets.storage.enabled ? '已开启' : '已关闭'}
             hint="关闭后已经入库的图片仍按上方的资源域名解析，确保历史文章不会出现裂图。"
           />
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -214,7 +214,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="S3 兼容存储"
       description="所有上传到「图片管理」的图片都会写入这里。修改后立即生效。"
       isEditing={isEditing}
@@ -225,7 +225,7 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="Endpoint" htmlFor="assets-endpoint" hint="完整 URL，例如 https://s3.amazonaws.com。">
             <Input
               id="assets-endpoint"
@@ -287,22 +287,22 @@ function AssetsS3Card({ assets }: { assets: AssetsLoaderShape }) {
               placeholder="!upyun520/both/{width}x{height}/format/webp/quality/{quality}/..."
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="Endpoint" value={assets.storage.endpoint} />
-          <GhostSettingValue label="Region" value={assets.storage.region} />
-          <GhostSettingValue label="Bucket" value={assets.storage.bucket} />
-          <GhostSettingValue label="Access Key ID" value={assets.storage.accessKeyId} />
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue label="Endpoint" value={assets.storage.endpoint} />
+          <SettingValue label="Region" value={assets.storage.region} />
+          <SettingValue label="Bucket" value={assets.storage.bucket} />
+          <SettingValue label="Access Key ID" value={assets.storage.accessKeyId} />
+          <SettingValue
             label="Secret Access Key"
             value={secretConfigured ? `已配置（结尾 …${assets.secretAccessKeyMask}）` : '未配置'}
           />
-          <GhostSettingValue label="Path-style" value={assets.storage.forcePathStyle ? '已开启' : '已关闭'} />
-          <GhostSettingValue label="图片地址模板" value={assets.storage.urlTemplate || '—'} />
-        </GhostSettingGroupContent>
+          <SettingValue label="Path-style" value={assets.storage.forcePathStyle ? '已开启' : '已关闭'} />
+          <SettingValue label="图片地址模板" value={assets.storage.urlTemplate || '—'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -333,7 +333,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="上传参数"
       description="影响后台「图片管理」上传时的体积上限与 JPEG 重编码画质。"
       isEditing={isEditing}
@@ -344,7 +344,7 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="最大上传体积（字节）"
             htmlFor="assets-max-bytes"
@@ -367,18 +367,18 @@ function AssetsUploadCard({ assets }: { assets: AssetsLoaderShape }) {
               {...form.register('jpegQuality', { valueAsNumber: true })}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue
+        <SettingGroupContent>
+          <SettingValue
             label="最大上传体积"
             value={`${assets.upload.maxBytes.toLocaleString()} 字节`}
             hint={`约 ${(assets.upload.maxBytes / (1024 * 1024)).toFixed(1)} MB`}
           />
-          <GhostSettingValue label="JPEG 质量" value={`${assets.upload.jpegQuality}`} />
-        </GhostSettingGroupContent>
+          <SettingValue label="JPEG 质量" value={`${assets.upload.jpegQuality}`} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

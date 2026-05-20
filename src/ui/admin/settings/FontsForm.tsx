@@ -3,11 +3,11 @@ import { useFieldArray } from 'react-hook-form'
 
 import type { FontsSettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
 
@@ -40,7 +40,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
   })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="Canvas 字体"
       description="服务端渲染 OG 图与日历图时使用的字体。必须是 TTF / OTF 格式。留空时降级使用系统中文字体。"
       isEditing={isEditing}
@@ -51,7 +51,7 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="OG 图字体 URL"
             htmlFor="fonts-og-url"
@@ -72,14 +72,14 @@ function FontsCanvasCard({ fonts }: { fonts: FontsSettings }) {
               {...form.register('calendarUrl')}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="OG 图字体" value={fonts.og.url || '—'} />
-          <GhostSettingValue label="日历图字体" value={fonts.calendar.url || '—'} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="OG 图字体" value={fonts.og.url || '—'} />
+          <SettingValue label="日历图字体" value={fonts.calendar.url || '—'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -104,7 +104,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
   const rows = useFieldArray({ control: form.control, name: 'globalCss' })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="全站字体 CSS"
       description="每个 URL 都会在所有页面的 <head> 注入一个 <link rel='stylesheet'>。"
       isEditing={isEditing}
@@ -115,7 +115,7 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
               <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
@@ -154,17 +154,17 @@ function FontsGlobalCssCard({ fonts }: { fonts: FontsSettings }) {
               {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
             </div>
           </div>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           {fonts.globalCss.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            fonts.globalCss.map((url, i) => <GhostSettingValue key={i} label={`CSS ${i + 1}`} value={url} />)
+            fonts.globalCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
           )}
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -189,7 +189,7 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
   const rows = useFieldArray({ control: form.control, name: 'postCss' })
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="文章页字体 CSS"
       description="仅在文章详情页的 <head> 注入。适合体积大、仅长文阅读需要的字体。"
       isEditing={isEditing}
@@ -200,7 +200,7 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <div className="flex flex-col gap-3">
             {rows.fields.length === 0 ? (
               <p className="text-sm text-muted-foreground">还没有添加 CSS，点击下方按钮新增一项。</p>
@@ -239,17 +239,17 @@ function FontsPostCssCard({ fonts }: { fonts: FontsSettings }) {
               {rows.fields.length >= 8 && <span className="ml-2 text-xs text-muted-foreground">上限 8 条</span>}
             </div>
           </div>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           {fonts.postCss.length === 0 ? (
             <p className="text-sm text-muted-foreground">未配置</p>
           ) : (
-            fonts.postCss.map((url, i) => <GhostSettingValue key={i} label={`CSS ${i + 1}`} value={url} />)
+            fonts.postCss.map((url, i) => <SettingValue key={url} label={`CSS ${i + 1}`} value={url} />)
           )}
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

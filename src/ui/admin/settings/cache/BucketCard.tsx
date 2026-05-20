@@ -5,7 +5,6 @@ import type { CacheSettings } from '@/shared/config/blog'
 import type { CacheBucketId, CacheBucketStats } from '@/shared/types/cache'
 import type { ClearStatus } from '@/ui/admin/settings/cache/cache-status'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
 import { MAX_TTL_HOURS, MIN_TTL_HOURS, SECONDS_PER_HOUR } from '@/ui/admin/settings/cache/cache-constants'
 import { clamp, formatTtl, hoursToSeconds } from '@/ui/admin/settings/cache/cache-formatters'
 import {
@@ -16,6 +15,7 @@ import {
 } from '@/ui/admin/settings/cache/cache-validation'
 import { BucketSaveStatus, ReadOnlyStatusLine } from '@/ui/admin/settings/cache/CacheStatusLine'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
 import { useSettingsFetcher } from '@/ui/admin/settings/useSettingsFetcher'
 import { Button } from '@/ui/components/button'
 import { Input } from '@/ui/components/input'
@@ -230,7 +230,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
   )
 
   return (
-    <GhostSettingGroup title={bucket.label} description={bucket.description}>
+    <SettingGroup title={bucket.label} description={bucket.description}>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <BucketField label="Redis 键数" value={`${bucket.keyCount}`} />
         <BucketField label="当前前缀" value={<code className="font-mono text-xs">{bucket.prefix}</code>} />
@@ -282,7 +282,7 @@ export function BucketCard({ bucket, settings, allBuckets, isClearPending, clear
       ) : (
         actionBar
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

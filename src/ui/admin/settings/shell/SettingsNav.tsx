@@ -19,8 +19,8 @@ import {
 import type { SettingsNavGroup, SettingsSection } from '@/shared/config/settings'
 
 import { NAV_GROUP_LABEL } from '@/shared/config/settings'
-import { useScrollSpyContext, useScrollSpyNav } from '@/ui/admin/settings-ghost/useSettingsScrollSpy'
-import { useSettingsSearch } from '@/ui/admin/settings-ghost/useSettingsSearch'
+import { useScrollSpyContext, useScrollSpyNav } from '@/ui/admin/settings/shell/useSettingsScrollSpy'
+import { useSettingsSearch } from '@/ui/admin/settings/shell/useSettingsSearch'
 import { cn } from '@/ui/lib/cn'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {

@@ -5,11 +5,11 @@ import { z } from 'zod'
 
 import type { SiteIdentitySettings } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { Button } from '@/ui/components/button'
 import { Combobox, ComboboxContent, ComboboxItem, ComboboxTrigger, ComboboxValue } from '@/ui/components/combobox'
 import { Input } from '@/ui/components/input'
@@ -97,7 +97,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
   const { formState } = form
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="基本信息"
       description="站点标题、描述、关键词、作者签名。SEO 和邮件模板也会读取这些字段。"
       isEditing={isEditing}
@@ -108,7 +108,7 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="站点标题" htmlFor="general-title" error={formState.errors.title?.message}>
             <Input id="general-title" maxLength={120} {...form.register('title')} />
           </SettingsRow>
@@ -164,16 +164,16 @@ function GeneralIdentityCard({ siteIdentity }: { siteIdentity: SiteIdentitySetti
               </Button>
             </div>
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="站点标题" value={siteIdentity.title} />
-          <GhostSettingValue label="站点描述" value={siteIdentity.description} />
-          <GhostSettingValue label="站点 URL" value={siteIdentity.website} />
-          <GhostSettingValue label="关键词" value={siteIdentity.keywords.join('、') || '—'} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="站点标题" value={siteIdentity.title} />
+          <SettingValue label="站点描述" value={siteIdentity.description} />
+          <SettingValue label="站点 URL" value={siteIdentity.website} />
+          <SettingValue label="关键词" value={siteIdentity.keywords.join('、') || '—'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -208,7 +208,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
   const { formState } = form
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="页脚信息"
       description="网站页脚的版权年份与备案号。"
       isEditing={isEditing}
@@ -219,7 +219,7 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="起始年份" htmlFor="general-initial-year" error={formState.errors.initialYear?.message}>
             <Input
               id="general-initial-year"
@@ -240,15 +240,15 @@ function GeneralFooterCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
           <SettingsRow label="萌国备案号" htmlFor="general-moe-icp" error={formState.errors.moeIcpNo?.message}>
             <Input id="general-moe-icp" maxLength={60} {...form.register('moeIcpNo')} />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="起始年份" value={`${siteIdentity.initialYear}`} />
-          <GhostSettingValue label="ICP 备案号" value={siteIdentity.icpNo || '—'} />
-          <GhostSettingValue label="萌国备案号" value={siteIdentity.moeIcpNo || '—'} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="起始年份" value={`${siteIdentity.initialYear}`} />
+          <SettingValue label="ICP 备案号" value={siteIdentity.icpNo || '—'} />
+          <SettingValue label="萌国备案号" value={siteIdentity.moeIcpNo || '—'} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -283,7 +283,7 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
   const { formState } = form
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="作者信息"
       description="评论邮件 + RSS feed 的 author 字段都引用这里的姓名 / 邮箱 / 主页。"
       isEditing={isEditing}
@@ -294,7 +294,7 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow label="作者姓名" htmlFor="general-author-name" error={formState.errors.author?.name?.message}>
             <Input id="general-author-name" maxLength={60} {...form.register('author.name')} />
           </SettingsRow>
@@ -314,15 +314,15 @@ function GeneralAuthorCard({ siteIdentity }: { siteIdentity: SiteIdentitySetting
               {...form.register('author.url')}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="作者姓名" value={siteIdentity.author.name} />
-          <GhostSettingValue label="作者邮箱" value={siteIdentity.author.email} />
-          <GhostSettingValue label="作者主页" value={siteIdentity.author.url} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="作者姓名" value={siteIdentity.author.name} />
+          <SettingValue label="作者邮箱" value={siteIdentity.author.email} />
+          <SettingValue label="作者主页" value={siteIdentity.author.url} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 
@@ -367,7 +367,7 @@ function GeneralTimeZoneCard({
   const { formState } = form
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="时间与本地化"
       description="影响日期格式化函数以及 OG 图、邮件模板等所有依赖时区的渲染分支。"
       isEditing={isEditing}
@@ -378,7 +378,7 @@ function GeneralTimeZoneCard({
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <SettingsRow
             label="语言"
             htmlFor="general-locale"
@@ -436,15 +436,15 @@ function GeneralTimeZoneCard({
               {...form.register('timeFormat')}
             />
           </SettingsRow>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
-          <GhostSettingValue label="语言" value={siteIdentity.locale} />
-          <GhostSettingValue label="时区" value={siteIdentity.timeZone} />
-          <GhostSettingValue label="日期格式" value={siteIdentity.timeFormat} />
-        </GhostSettingGroupContent>
+        <SettingGroupContent>
+          <SettingValue label="语言" value={siteIdentity.locale} />
+          <SettingValue label="时区" value={siteIdentity.timeZone} />
+          <SettingValue label="日期格式" value={siteIdentity.timeFormat} />
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
 

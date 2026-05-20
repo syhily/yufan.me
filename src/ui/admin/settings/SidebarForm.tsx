@@ -22,11 +22,11 @@ const VERTICAL_AXIS_ONLY = [restrictToVerticalAxis]
 
 import type { SidebarSettings, SidebarWidget, SidebarWidgetType } from '@/shared/config/blog'
 
-import { GhostSettingGroup } from '@/ui/admin/settings-ghost/GhostSettingGroup'
-import { GhostSettingGroupContent } from '@/ui/admin/settings-ghost/GhostSettingGroupContent'
-import { GhostSettingValue } from '@/ui/admin/settings-ghost/GhostSettingValue'
-import { useSettingsCard } from '@/ui/admin/settings-ghost/useSettingsCard'
 import { SettingsRow } from '@/ui/admin/settings/SettingsSection'
+import { SettingGroup } from '@/ui/admin/settings/shell/SettingGroup'
+import { SettingGroupContent } from '@/ui/admin/settings/shell/SettingGroupContent'
+import { SettingValue } from '@/ui/admin/settings/shell/SettingValue'
+import { useSettingsCard } from '@/ui/admin/settings/shell/useSettingsCard'
 import { FieldLabel } from '@/ui/components/field'
 import { Input } from '@/ui/components/input'
 import { Switch } from '@/ui/components/switch'
@@ -136,7 +136,7 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
   }
 
   return (
-    <GhostSettingGroup
+    <SettingGroup
       title="侧边栏组件"
       description="控制侧边栏的功能模块。拖拽可调整顺序，取消勾选则隐藏对应模块。"
       isEditing={isEditing}
@@ -147,7 +147,7 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
       errorMessage={errorMessage}
     >
       {isEditing ? (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -162,11 +162,11 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
               </div>
             </SortableContext>
           </DndContext>
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       ) : (
-        <GhostSettingGroupContent>
+        <SettingGroupContent>
           {sidebar.sidebar.widgets.map((widget) => (
-            <GhostSettingValue
+            <SettingValue
               key={widget.type}
               label={WIDGET_LABELS[widget.type]}
               value={
@@ -174,8 +174,8 @@ export function SidebarForm({ sidebar }: SidebarFormProps) {
               }
             />
           ))}
-        </GhostSettingGroupContent>
+        </SettingGroupContent>
       )}
-    </GhostSettingGroup>
+    </SettingGroup>
   )
 }
